@@ -3,11 +3,12 @@
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
  *          (the bound legal-hold registry and sequence time zone, the database at the url the Encore database provides with the
  *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts and pool with `DATABASE_POOL_MAX` over its max (ADR 0473), and the hold, stamp, append-only (stackra-256) and outbox writer
- *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
+ *          subscribers (stackra-250) and the writer as the native-write watcher (STA-2047), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
  *          (stackra-262); the live queries' refresh subscribed on the bus with realtime declared (STA-1445); each
- *          step only when its package is used; no file for a package, an app or a service with nothing to connect.
+ *          step only when its package is used; the record policies first when the manifest lists one (STA-2045); no
+ *          file for a package, an app or a service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4); ADR 0238; ADR 0473.
@@ -29,7 +30,7 @@ describe("emitBoot", () => {
       'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     expect(boot).toContain(
-      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectNativeWriteWatcher, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
     // The service program never reaches `.stackra/encore` (STA-1652).
     expect(boot).not.toContain("../encore/");
@@ -52,6 +53,8 @@ describe("emitBoot", () => {
         "  connectSequenceTimeZone(",
         "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
         "  );",
+        // Reads take the bound VisibilityFilter, writes stamp the call's actor, the call's time zone is read (STA-2044).
+        "  connectVisibilityFilter(container);",
         "  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;",
         '  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");',
         "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
@@ -64,6 +67,8 @@ describe("emitBoot", () => {
         "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
         "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), container.get(OutboxWriterService)],",
         "  });",
+        // Native CrudService writes reach the change log through the writer (STA-2047).
+        "  connectNativeWriteWatcher(container.get(OutboxWriterService));",
         "  container.get(SegmentService).connect(container);",
         "  const bus = container.get(EventBus);",
         "  bus.connect(container);",
@@ -91,6 +96,7 @@ describe("emitBoot", () => {
       "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()],",
     );
     expect(boot).not.toContain("Outbox");
+    expect(boot).not.toContain("connectNativeWriteWatcher");
     expect(boot).not.toContain("SegmentService");
     expect(boot).not.toContain("EventBus");
   });
@@ -162,7 +168,7 @@ describe("emitBoot", () => {
         ),
       }) ?? "";
     expect(boot).toContain(
-      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber, TreeSubscriber } from "@stackra/database";',
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber, TreeSubscriber } from "@stackra/database";',
     );
     expect(boot).toContain(
       "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), new TreeSubscriber()],",
@@ -177,6 +183,20 @@ describe("emitBoot", () => {
     expect(emitBoot(LOYALTY_KIT_IR)).toBeUndefined();
     expect(emitBoot(WEB_APP_IR)).toBeUndefined();
     expect(emitBoot({ ...COMMERCE_IR, classes: [] })).toBeUndefined();
+  });
+
+  it("connects the record policies first when the manifest lists one, and only then (STA-2045)", () => {
+    const manifest = {
+      policies: [{ class: "OrderPolicy", model: "Order", module: "orders", file: "x.ts" }],
+    } as unknown as StackraManifest;
+    const boot = emitBoot(COMMERCE_IR, manifest) ?? "";
+    expect(boot).toContain('import { connectPolicies } from "@stackra/iam";');
+    expect(boot).toContain("  if (options.signal.aborted) return;\n  connectPolicies(container);");
+    expect(emitBoot(COMMERCE_IR)).not.toContain("connectPolicies");
+    // A service with nothing else to connect still connects its policies.
+    expect(emitBoot({ ...COMMERCE_IR, classes: [] }, manifest)).toContain(
+      "connectPolicies(container);",
+    );
   });
 
   it("subscribes each live query's refresh routes on the bus when the service runs realtime (STA-1445)", () => {

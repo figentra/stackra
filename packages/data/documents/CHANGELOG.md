@@ -1,5 +1,37 @@
 # @stackra/documents
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/integrations@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/data-transfer@0.9.0
+  - @stackra/support@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/integrations@0.8.0
+  - @stackra/data-transfer@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+  - @stackra/support@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes

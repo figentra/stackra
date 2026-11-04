@@ -1569,3 +1569,11 @@
   slug: design-system-docs-on-fumadocs-ai-first
   status: accepted
   issue: STA-2024
+"0522":
+  slug: testbed-own-repo
+  status: reserved
+  issue: STA-2073
+"0523":
+  slug: humans-approve-policy-not-instances
+  status: accepted
+  issue: STA-2094

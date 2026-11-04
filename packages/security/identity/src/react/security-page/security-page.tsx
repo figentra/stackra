@@ -29,7 +29,7 @@ import {
 import { type FormEvent, type ReactElement, useCallback, useEffect, useState } from "react";
 
 import { AccountSecurity, Passkeys } from "#contracts/index";
-import type { AccountSecurityOverview, DeviceSession } from "#contracts/index";
+import type { AccountSecurityOverview, AccountSession } from "#contracts/index";
 import { registerPasskey } from "#core/index";
 import type { SecurityPageProps } from "#react/security-page/security-page.props";
 import { StepUpDialog } from "#react/step-up-dialog/step-up-dialog";
@@ -67,7 +67,7 @@ export function SecurityPage({
   const security = container.get(AccountSecurity);
   const passkeys = container.has(Passkeys) ? container.get(Passkeys) : undefined;
   const [overview, setOverview] = useState<AccountSecurityOverview | null>(null);
-  const [devices, setDevices] = useState<readonly DeviceSession[]>([]);
+  const [devices, setDevices] = useState<readonly AccountSession[]>([]);
   const [notice, setNotice] = useState<"saved" | "failed" | null>(null);
   const [isPending, setPending] = useState(false);
   const [isChanging, setChanging] = useState(false);

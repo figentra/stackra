@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { BrandStepRun } from "#node/types/brand-step-run.type";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
@@ -48,7 +48,7 @@ function manifestPaths(repository: string, outDir: string): string[] {
  *
  * @param repository - the repository root.
  * @param runs - the runs `runBrandStep` made (write mode), whose manifests list the generated files.
- * @param run - the command runner; `runProgram` when absent.
+ * @param run - the command runner; `runCommand` when absent.
  * @throws RunwayUnresolvedError when a run's asset manifest is missing or has no file list.
  * @example
  * const issues = await committedBrandOutputs(".", runs);
@@ -57,7 +57,7 @@ function manifestPaths(repository: string, outDir: string): string[] {
 export async function committedBrandOutputs(
   repository: string,
   runs: readonly BrandStepRun[],
-  run: CommandRunner = runProgram,
+  run: CommandRunner = runCommand,
 ): Promise<RunwayIssue[]> {
   const paths = runs.flatMap((entry) => manifestPaths(repository, entry.outDir));
   if (paths.length === 0) return [];

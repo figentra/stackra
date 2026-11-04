@@ -19,13 +19,14 @@ import type { EdgeBundle } from "#node/types/edge-bundle.type";
  * The keys uploaded, sorted.
  *
  * @example
- * await uploadBundle(bundle, "mezzora", "figentra-assets", runProgram);
+ * await uploadBundle(bundle, "mezzora", "figentra-assets", runCommand);
  */
 export async function uploadBundle(
   bundle: EdgeBundle,
   product: string,
   bucket: string,
   run: CommandRunner,
+  env?: Readonly<Record<string, string>>,
 ): Promise<string[]> {
   const { wrangler, cacheControl, contentTypes } = EDGE_PUBLISH_SETTINGS;
   const prefix = `${product}/${bundle.surface}/${bundle.manifest.version}`;
@@ -52,7 +53,7 @@ export async function uploadBundle(
         ...(type === undefined ? [] : [`--content-type=${type}`]),
         "--remote",
       ],
-      {},
+      env === undefined ? {} : { env },
     );
     keys.push(key);
   }

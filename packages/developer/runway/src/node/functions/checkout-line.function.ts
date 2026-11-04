@@ -33,7 +33,7 @@ import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { LineCheckout } from "#node/types/line-checkout.type";
 import type { LineCheckoutRequest } from "#node/types/line-checkout-request.type";
 
@@ -132,7 +132,7 @@ export async function checkoutLine(request: LineCheckoutRequest): Promise<LineCh
   const [owner = "", rest = ""] = request.line.split("/");
   const [name = "", major = ""] = rest.split("@");
   const packageName = `${request.scope}/${owner}-${name}`;
-  const run = request.run ?? runProgram;
+  const run = request.run ?? runCommand;
   const steps: DeployStep[] = [];
   const step = async (command: string, args: readonly string[], cwd?: string): Promise<string> => {
     steps.push({ command, args, ...(cwd === undefined ? {} : { cwd }) });

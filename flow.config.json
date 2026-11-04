@@ -32,8 +32,8 @@
   },
   "apps": {
     "gate": {
-      "slug": "figentra-gate",
-      "login": "figentra-gate[bot]"
+      "slug": "figentra-flow",
+      "login": "figentra-flow[bot]"
     },
     "review": {
       "slug": "stackra-reviewer"
@@ -47,12 +47,13 @@
     "keep": ["g-*", "*-gate", "land-*", "tpl-core", "c6-lock*", "template-wt-lean"]
   },
   "baseline": {
+    "tasks": ["lint", "typecheck", "build"],
     "mustPass": [
-      "@stackra/tenancy#test",
-      "@stackra/identity#test",
-      "@stackra/infra-identity#test",
-      "@stackra/licensing#test",
-      "@stackra/access-log#test"
+      "@stackra/tenancy#typecheck",
+      "@stackra/identity#typecheck",
+      "@stackra/infra-identity#typecheck",
+      "@stackra/licensing#typecheck",
+      "@stackra/access-log#typecheck"
     ],
     "setup": [
       {
@@ -74,6 +75,15 @@
           "secret-path": "/ci",
           "secret-name": "UNIWIND_AUTH_TOKEN",
           "export-type": "env"
+        }
+      },
+      {
+        "name": "Uniwind Pro download cache",
+        "uses": "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "with": {
+          "path": "~/.uniwind/cache/pro",
+          "key": "uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}",
+          "restore-keys": "uniwind-pro-${{ runner.os }}-"
         }
       }
     ]

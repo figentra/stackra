@@ -27,7 +27,7 @@ import { RunwayProvider } from "#core/ports/runway-provider.port";
 import type { DeployRecord } from "#core/types/deploy-record.type";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { DeployTarget } from "#core/types/deploy-target.type";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
 /** A branch name git and Mintlify accept. */
@@ -50,8 +50,8 @@ export class MintlifyProviderDriver extends Driver(RunwayProvider) {
   /** The runway destination this provider serves. */
   override readonly destination = "mintlify";
 
-  /** The command runner, `runProgram`; a test or a dry run replaces it. */
-  run: CommandRunner = runProgram;
+  /** The command runner, `runCommand`; a test or a dry run replaces it. */
+  run: CommandRunner = runCommand;
 
   private readonly projectDir: string;
 

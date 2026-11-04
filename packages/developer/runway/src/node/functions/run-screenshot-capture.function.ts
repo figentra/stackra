@@ -11,7 +11,7 @@
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { ScreenshotCaptureJob } from "#node/types/screenshot-capture-job.type";
 
@@ -20,7 +20,7 @@ import type { ScreenshotCaptureJob } from "#node/types/screenshot-capture-job.ty
  *
  * @param job - the job `screenshotCaptureJob` defined.
  * @param repository - the repository root every step's folder is relative to.
- * @param run - the command runner; `runProgram` when absent.
+ * @param run - the command runner; `runCommand` when absent.
  * @throws Error from the command runner when a command exits with an error.
  * @example
  * await runScreenshotCapture(screenshotCaptureJob({ repository: ".", app: "shopper", appPath }), ".");
@@ -28,7 +28,7 @@ import type { ScreenshotCaptureJob } from "#node/types/screenshot-capture-job.ty
 export async function runScreenshotCapture(
   job: ScreenshotCaptureJob,
   repository: string,
-  run: CommandRunner = runProgram,
+  run: CommandRunner = runCommand,
 ): Promise<void> {
   for (const step of job.steps) {
     await run(step.command, step.args, { cwd: join(repository, step.cwd ?? "") });

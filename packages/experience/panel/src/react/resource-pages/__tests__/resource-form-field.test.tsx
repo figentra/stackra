@@ -7,7 +7,9 @@
  *          `…Minor` field follows the currency beside it in the form, which is a pick of ISO codes; a JSON value is
  *          edited as text that submits the parsed value and refuses text that does not parse; a map is edited as key and
  *          value rows; a calendar day is held as `YYYY-MM-DD` and an instant, entered in the viewer's time zone, as
- *          UTC ISO.
+ *          UTC ISO; a field's SDUI look (STA-1981): its own label, a named control (text area, radio group, email) in
+ *          place of the inferred one, the spec's choices in place of an enum's codes, its span on a grid, and
+ *          `visibleWhen`, which hides it while the form's value is not true.
  * Boundary: unit tier, jsdom; the web kit and the list binding are stand-ins, translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (form keys are input paths).
@@ -48,8 +50,12 @@ vi.mock("@stackra/ui/react", async () => {
   const { createElement } = await import("react");
   const { parseDate } = await import("@internationalized/date");
   type FieldProps = { readonly name: string; readonly label: string };
-  const field = (kind: string) => (props: FieldProps) =>
-    createElement("label", null, `${kind}:${props.name}:${props.label}`);
+  const field = (kind: string) => (props: FieldProps & { readonly type?: string }) =>
+    createElement(
+      "label",
+      null,
+      `${kind}:${props.name}:${props.label}${props.type === undefined ? "" : `:${props.type}`}`,
+    );
   return {
     Field: {
       Text: field("text"),
@@ -62,6 +68,14 @@ vi.mock("@stackra/ui/react", async () => {
           `select:${props.name}:${props.options.map((option) => option.label).join("|")}`,
         ),
       ComboBox: field("combo"),
+      RadioGroup: (
+        props: FieldProps & { readonly options: readonly { readonly label: string }[] },
+      ) =>
+        createElement(
+          "label",
+          null,
+          `radio:${props.name}:${props.options.map((option) => option.label).join("|")}`,
+        ),
     },
     NumberField: (props: {
       readonly name?: string;
@@ -327,5 +341,51 @@ describe("ResourceFormField objects and lists", () => {
     );
     fireEvent.change(day, { target: { value: "" } });
     expect(spies.onChange).toHaveBeenLastCalledWith("startsAt", undefined);
+  });
+});
+
+/** Draws `node` over the buy-label input. */
+const drawNode = (node: Parameters<typeof ResourceFormField>[0]["node"]) =>
+  render(<ResourceFormField resourceKey="shipping.shipment" schema={BuyLabelInput} node={node} />);
+
+describe("ResourceFormField look", () => {
+  it("takes the spec's own label and a named control", () => {
+    drawNode({ kind: "value", key: "shipmentId", label: "Shipment", control: "email" });
+    expect(screen.getByText("text:shipmentId:Shipment:email")).toBeTruthy();
+    cleanup();
+    drawNode({ kind: "value", key: "shipmentId", control: "textarea" });
+    expect(screen.getByText("shipping::resources.shipment.fields.shipment_id")).toBeTruthy();
+    expect(document.querySelector("textarea")).toBeTruthy();
+  });
+
+  it("offers the spec's choices in place of the enum's codes, as a radio group when asked", () => {
+    drawNode({
+      kind: "value",
+      key: "service",
+      control: "radio",
+      choices: [
+        { value: "standard", label: "Standard" },
+        { value: "express", label: "Express" },
+      ],
+    });
+    expect(screen.getByText("radio:service:Standard|Express")).toBeTruthy();
+  });
+
+  it("spans grid columns and hides a field while its predicate is not true", () => {
+    spies.lists = { hasTags: false };
+    drawNode({
+      kind: "grid",
+      columns: 2,
+      fields: [
+        { kind: "value", key: "shipmentId", span: 2 },
+        { kind: "value", key: "mode", visibleWhen: "hasTags" },
+      ],
+    });
+    expect(screen.getByText(/^text:shipmentId:/).closest(".md\\:col-span-2")).toBeTruthy();
+    expect(screen.queryByText(/^select:mode:/)).toBeNull();
+    cleanup();
+    spies.lists = { hasTags: true };
+    drawNode({ kind: "value", key: "mode", visibleWhen: "hasTags" });
+    expect(screen.getByText(/^select:mode:/)).toBeTruthy();
   });
 });

@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `RUNWAY_UNREAD_FIELDS`, the runway fields the repositories set but nothing reads yet, each with the work
- *          that will read it. The Runway inventory of 2026-11-02 found them; a full trace of core confirmed no reader.
+ * Purpose: `RUNWAY_UNREAD_FIELDS`, the typed runway fields nothing reads yet, each with the work that will read it:
+ *          the ones the repositories set (STA-2001) and the ones kept for a planned reader though no repository sets
+ *          them yet (STA-2028). The Runway inventory of 2026-11-02 found them; a full trace of core confirmed no reader.
  * Boundary: data only. `checkRunwayUnreadFields` fails when this list, the "Not read yet (…)" schema descriptions and
  *           the reader sources disagree: a field that gains a reader leaves this list and its description in the same
  *           change. `access` is name matching: it catches the plain read (`group.scaling`, `database?.plan`), not one
  *           through a renamed variable.
  * Runtime: node
- * Governing contract: ADR 0296; STA-2001 (Runway plan PR 6c); STA-2002; STA-2003; STA-339.
+ * Governing contract: ADR 0296; STA-2001 (Runway plan PR 6c); STA-2028 (6d); STA-2002; STA-2003; STA-339.
  */
 import type { RunwayUnreadField } from "#node/types/runway-unread-field.type";
 
@@ -22,6 +23,7 @@ const SCALING = /\.scaling\b|\["scaling"\]/;
 const WORKERS = /\.workers\??\.(?:split|cpu|memory|instances)\b|\bworkers\??\.split\b/;
 const HEALTH = /\bhealth\??\.(?:readiness|liveness)\b|\brequireMigrations\b|\beventLoopLagMs\b/;
 const CRONS = /\bcrons\??\.enabled\b|\b(?:environment|env)\??\.crons\b/;
+const APP_HEALTH = /\bhealth\??\.(?:path|expects)\b/;
 
 /** The runway fields set but not read yet, with the work that reads each (STA-2001). */
 export const RUNWAY_UNREAD_FIELDS: readonly RunwayUnreadField[] = [
@@ -123,10 +125,6 @@ export const RUNWAY_UNREAD_FIELDS: readonly RunwayUnreadField[] = [
     reader: "STA-2002",
     access: /\bwhiteLabel\??\.entitlement\b/,
   },
-  {
-    kind: "root",
-    path: "surfaces.ops.contributes",
-    reader: "STA-2003",
-    access: /\bops\??\.contributes\b/,
-  },
+  { kind: "app", path: "health.path", reader: RECORDS, access: APP_HEALTH },
+  { kind: "app", path: "health.expects", reader: RECORDS, access: APP_HEALTH },
 ];

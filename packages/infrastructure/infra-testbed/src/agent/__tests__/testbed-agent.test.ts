@@ -117,7 +117,7 @@ case "$1" in
   run) while [ "$1" != -- ]; do shift; done; shift; exec "$@" ;;
 esac`,
   );
-  stub("pnpm", `echo "pnpm $*" >> "$FAKE_LOG"`);
+  stub("pnpm", `echo "pnpm $* (in $PWD)" >> "$FAKE_LOG"`);
   // IMDS: a token always; the spot notices only when the test sets them (404, so curl -f fails, otherwise).
   stub(
     "curl",
@@ -286,7 +286,24 @@ describe("testbed-agent job run", () => {
     const run = agent(["job", "run", "j4", "light", "me", "core", "--", "echo hi"]);
 
     expect(run.code).toBe(0);
-    expect(logged()).toContain("pnpm fetch --store-dir");
+    // The fetch only fills the store, without scripts, from a copy outside the workspace: run there it would leave a
+    // node_modules that makes the container skip its install.
+    expect(logged()).toMatch(
+      /pnpm fetch --ignore-scripts --store-dir \S+ \(in \S+\/data\/jobs\/j4\/\.fetch\)/,
+    );
+    expect(existsSync(dir("data/jobs/j4/.fetch"))).toBe(false);
+    expect(logged()).toMatch(/-e CI=true /);
+    // The container reads the metadata cache the fetch filled; a lockfile install needs it for the release-age check.
+    expect(logged()).toMatch(/-v \S+\/data\/pnpm-cache:\/pnpm-cache /);
+    expect(logged()).toContain("-e PNPM_CONFIG_CACHE_DIR=/pnpm-cache");
+    expect(logged()).toContain("pnpm install --prefer-offline --frozen-lockfile");
+    // A repository narrows the install from its own .testbed/install-args, read inside the container.
+    expect(logged()).toContain("$(cat .testbed/install-args 2>/dev/null)");
+    // Writable, so a package the store lacks can be added during the install, with integrity checks forced on.
+    expect(logged()).toMatch(/-v \S+\/pnpm-store:\/pnpm-store /);
+    expect(logged()).toContain("-e PNPM_CONFIG_VERIFY_STORE_INTEGRITY=true");
+    // Uniwind Pro's verified tarball stays in the box's pnpm cache, so its CI download quota is spent once per box.
+    expect(logged()).toContain("-e UNIWIND_CACHE_DIR=/pnpm-cache/uniwind");
     expect(logged()).not.toContain(TOKEN);
     expect(run.out + run.err).not.toContain(TOKEN);
     expect(readFileSync(`${log}.env`, "utf8")).toContain(`INFISICAL_TOKEN=${TOKEN}`);

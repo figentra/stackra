@@ -69,15 +69,7 @@ const CONSOLE = {
   version: 3,
   secrets: [],
   health: { path: "/healthz", expects: "sha" },
-  release: {
-    pwa: { updates: "from-config", betaBadgeOutsideProduction: true },
-    desktop: {
-      channels: ["beta", "latest"],
-      signing: { mac: false, windows: false },
-      feedPath: "console",
-      platforms: { mac: ["dmg", "zip"], windows: ["nsis"], linux: ["AppImage"] },
-    },
-  },
+  release: { desktop: { feedPath: "console" } },
   telemetry: { sentryProject: "acme-console" },
   environments: {
     dev: {
@@ -88,7 +80,6 @@ const CONSOLE = {
       desktop: { devtools: true, remoteDebugPort: 9222, pkceLoopbackPort: 5179 },
       vars: { VITE_SENTRY_DSN: "", EXPO_PUBLIC_API_ORIGIN: { "from-port": "gateway" } },
       config: { "logger.telemetry": { traces: { sampleRate: 1 } } },
-      e2e: { baseUrl: "from-port", seeds: "from-stackra-config" },
     },
     preview: {
       domain: "console-pr-${pr}.preview.acme.example",
@@ -99,7 +90,6 @@ const CONSOLE = {
     },
     production: {
       domain: "console.acme.example",
-      aliases: ["app.acme.example"],
       workers: { observability: { headSamplingRate: 0.1 } },
       desktop: { channel: "latest" },
     },
@@ -160,6 +150,13 @@ function issuePaths(run: () => unknown): string[] {
     throw error;
   }
   throw new Error("expected a RunwayInvalidError");
+}
+
+/** The issue paths of a service runway whose staging environment has the given `events` block. */
+function refused(events: unknown): string[] {
+  return issuePaths(() =>
+    parseRunway("service", { version: 3, environments: { staging: { events } } }),
+  );
 }
 
 /** Parses an app runway whose dev environment has the given vars. */
@@ -473,12 +470,91 @@ describe("parseRunway", () => {
     const mobile = parseRunway("app", {
       version: 3,
       health: { path: "/healthz" },
-      environments: { dev: { mobile: { metroPort: 8081 }, e2e: { device: "pixel" } } },
+      environments: { dev: { mobile: { metroPort: 8081 } } },
     });
     expect(mobile.environments.dev?.mobile?.metroPort).toBe(8081);
     expect(
       issuePaths(() => parseRunway("app", { ...CONSOLE, health: { expects: "200" } })),
     ).toEqual(["health.expects"]);
+  });
+
+  // @covers sta-1910:FR-012 @covers sta-1910:FR-015
+  it("reads a producer's cross-app events block: a secret name, public keys and subscribers", () => {
+    const events = {
+      keys: [{ id: "pay-dev-1", publicKey: "MCowBQYDK2VwAyEA" }],
+      subscribers: [
+        {
+          member: "billing",
+          inbox: "http://localhost:4012",
+          events: ["payments.payment.captured.v1", "payments.payment.failed.v1"],
+        },
+      ],
+    };
+    const service = parseRunway("service", { version: 3, environments: { dev: { events } } });
+    expect(service.environments.dev?.events?.signingKey).toBe("STACKRA_EVENTS_SIGNING_KEY");
+    expect(service.environments.dev?.events?.subscribers[0]?.member).toBe("billing");
+    expect(refused({ ...events, signingKey: "sk-live-value" })).toEqual([
+      "environments.staging.events.signingKey",
+    ]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], inbox: "http://billing.example.com" }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.inbox"]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], inbox: "https://billing.example.com/events" }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.inbox"]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], events: ["payments.payment.captured"] }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.events.0"]);
+    expect(refused({ ...events, keys: [...events.keys, ...events.keys] })).toEqual([
+      "environments.staging.events.keys",
+    ]);
+  });
+
+  it("refuses each key STA-2028 removed, naming the block it was in", () => {
+    const app = (document: Record<string, unknown>) =>
+      issuePaths(() => parseRunway("app", { version: 3, environments: {}, ...document }));
+    const dev = (values: Record<string, unknown>) => app({ environments: { dev: values } });
+    expect(app({ release: { pwa: {} } })).toEqual(["release"]);
+    for (const key of ["channels", "signing", "platforms"])
+      expect(app({ release: { desktop: { feedPath: "console", [key]: {} } } })).toEqual([
+        "release.desktop",
+      ]);
+    expect(app({ release: { mobile: { whiteLabel: true } } })).toEqual(["release.mobile"]);
+    for (const key of [
+      "distribution",
+      "developmentClient",
+      "simulator",
+      "androidApk",
+      "autoIncrement",
+    ])
+      expect(
+        app({
+          release: { mobile: { profiles: { store: { environment: "production", [key]: true } } } },
+        }),
+      ).toEqual(["release.mobile.profiles.store"]);
+    for (const key of ["aliases", "e2e", "pwa"])
+      expect(dev({ [key]: {} })).toEqual(["environments.dev"]);
+    expect(dev({ desktop: { devtools: true, rollout: {} } })).toEqual(["environments.dev.desktop"]);
+    expect(dev({ mobile: { metroPort: 8081, devClient: true } })).toEqual([
+      "environments.dev.mobile",
+    ]);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          resources: { db: { kind: "postgres", reason: "residency" } },
+        }),
+      ),
+    ).toEqual(["resources.db"]);
   });
 
   it("needs a var reference to name exactly one origin, and a var to be SCREAMING_SNAKE", () => {

@@ -52,6 +52,6 @@ export type ProductDeployRequest = {
   readonly play?: PlayConsole;
   /** Record every upload, KV write and submission instead of making it. */
   readonly dryRun?: boolean;
-  /** The command runner; `runProgram` when absent. */
+  /** The command runner; `runCommand` when absent. */
   readonly run?: CommandRunner;
 };

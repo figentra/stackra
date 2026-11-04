@@ -24,6 +24,7 @@ describe("@stackra/infra-cloudflare/node", () => {
       "resolveRef",
       "storefrontEdge",
       "turboCache",
+      "workerAccess",
       "zoneEdge",
     ]);
   });

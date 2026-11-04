@@ -18,7 +18,7 @@ import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 import { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 import { readRunway } from "#node/functions/read-runway.function";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { BrandStepRequest } from "#node/types/brand-step-request.type";
 import type { BrandStepRun } from "#node/types/brand-step-run.type";
 
@@ -93,7 +93,7 @@ function plan(request: BrandStepRequest): BrandStepRun[] {
  * await runBrandStep({ repository: ".", variant: { app: "shopper", scope: "sc_42", kitDir: ".stackra/scope-kits/sc_42" } });
  */
 export async function runBrandStep(request: BrandStepRequest): Promise<BrandStepRun[]> {
-  const run = request.run ?? runProgram;
+  const run = request.run ?? runCommand;
   const runs = plan(request);
   for (const entry of runs) {
     await run(

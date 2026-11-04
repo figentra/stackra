@@ -20,6 +20,6 @@ export type LineCheckoutRequest = LineSource & {
   readonly git?: boolean;
   /** Resolve the version (one `npm view`, a read) and plan the rest: nothing is fetched, copied or written. */
   readonly dryRun?: boolean;
-  /** The command runner; `runProgram` when absent, `dryRunCommand` for a dry run. */
+  /** The command runner; `runCommand` when absent, `dryRunCommand` for a dry run. */
   readonly run?: CommandRunner;
 };

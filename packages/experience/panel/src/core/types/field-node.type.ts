@@ -4,17 +4,27 @@
  *          (a wizard on Create, tabs on Edit).
  * Boundary: a type only; built by `FormField.*`, `FormStep.of` and the form builder. A step is part of a steps node.
  *           `essential` marks a field normal mode shows (ADR 0359 decision 1); a repeater, grid or step shows when a
- *           field inside it does.
+ *           field inside it does. A value field also carries its `FormFieldSpec` look (words, overrides, `control`, number
+ *           bounds and format, `visibleWhen`, and the spec's `options` as `choices`).
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 11: forms); ADR 0294 (decision 23: "step" alone means a workflow step, so the form's are
- *                     `FormStep`); ADR 0359 (decision 1: normal mode shows essential fields).
+ *                     `FormStep`); ADR 0359 (decision 1: normal mode shows essential fields); the SDUI catalogue case
+ *                     `formFields` (STA-1981).
  */
 import type { AnyClass } from "@stackra/container";
 import type { Enum } from "@stackra/contracts";
 
+import type { FormFieldSpec } from "#core/types/form-field-spec.type";
+
+/** A value field's look: the spec's fields but its path and span, with its choices as `choices`. */
+type FieldLook = Omit<FormFieldSpec, "name" | "span" | "options"> & {
+  /** The choices of a select-like control, with their words. */
+  readonly choices?: FormFieldSpec["options"];
+};
+
 /** One form element. */
 export type FieldNode =
-  | {
+  | (FieldLook & {
       /** A field rendered from its type: a text, a number, a switch, an enum or a `T | null` object switch. */
       readonly kind: "value";
       /** The input path. */
@@ -29,7 +39,7 @@ export type FieldNode =
       readonly optionLabel?: string;
       /** Whether normal mode shows it; developer mode shows every field. */
       readonly essential?: boolean;
-    }
+    })
   | {
       /** A file upload through the bucket's signed URL, attached with an action. */
       readonly kind: "upload";

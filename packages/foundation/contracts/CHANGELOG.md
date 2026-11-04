@@ -1,5 +1,17 @@
 # @stackra/contracts
 
+## 0.9.0
+
+### Minor Changes
+
+- 2e43c48: `StackraManifest` gains an optional `relay` section: a producer's public keys and the consumers it delivers to, per
+  environment (ADR 0511, amendment of 2026-11-02, STA-1910). Gen writes it for a service that delivers events to another
+  app; a consumer's inbox verifies deliveries with those keys.
+
+## 0.8.0
+
+No changes in this release.
+
 ## 0.7.1
 
 No changes in this release.

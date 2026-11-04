@@ -21,7 +21,7 @@ import { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.con
 import { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { readRunway } from "#node/functions/read-runway.function";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { CompatibilityRequest } from "#node/types/compatibility-request.type";
 
 /** The import map keys of `file`. */
@@ -51,7 +51,7 @@ export async function checkShellCompatibility(request: CompatibilityRequest): Pr
   const keys = importKeys(request.importMap);
   const resolves = (specifier: string): boolean =>
     keys.some((key) => key === specifier || (key.endsWith("/") && specifier.startsWith(key)));
-  const run = request.run ?? runProgram;
+  const run = request.run ?? runCommand;
   const command = request.command ?? EDGE_PUBLISH_SETTINGS.compatibility.command;
   const args = (request.args ?? EDGE_PUBLISH_SETTINGS.compatibility.args).map((arg) =>
     arg.replaceAll("{importMap}", request.importMap),

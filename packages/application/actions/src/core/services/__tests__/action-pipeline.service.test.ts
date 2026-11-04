@@ -3188,8 +3188,12 @@ describe("ActionPipeline approval stage (ADR 0509)", () => {
       pipeline.execute(CouponAction, { percent: 41 }, { actor: customer }),
     ).rejects.toMatchObject({ code: "approval_pending_limit" });
     const line = lines.errors.find(([event]) => event === APPROVAL_PARK_FAILED);
-    expect(line?.[1]).toMatchObject({ key: "coupon.update", code: "approval_pending_limit" });
-    expect(JSON.stringify(line)).not.toContain("41");
+    // Exactly these fields: the input ({ percent: 41 }) never reaches the log.
+    expect(line?.[1]).toEqual({
+      approvalId: expect.any(String),
+      key: "coupon.update",
+      code: "approval_pending_limit",
+    });
   });
 
   it("runs a granted on_grant request once, through the executor's begin, and records the voters", async () => {

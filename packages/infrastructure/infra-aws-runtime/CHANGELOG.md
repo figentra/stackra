@@ -1,5 +1,53 @@
 # @stackra/infra-aws-runtime
 
+## 0.9.0
+
+### Minor Changes
+
+- bd3f314: A runway workload takes `command`, the container's arguments in place of the image's default, and `aliases`, which
+  hand the image a variable of a Postgres resource it uses under the name it reads
+  (`ZITADEL_DATABASE_POSTGRES_DSN: MAIN_DB_URL`). `runtimePlan` refuses an alias of a variable no used Postgres resource
+  publishes, and `awsWorkloads` puts the arguments and each alias's SSM parameter in the task definition. Self-hosted
+  ZITADEL, the first workload user, now plans in dev, staging and production (STA-1649).
+
+### Patch Changes
+
+- Updated dependencies [2aeaec8]
+- Updated dependencies [5030040]
+- Updated dependencies [e80a99b]
+- Updated dependencies [93bb1e7]
+- Updated dependencies [b0d6fcc]
+- Updated dependencies [2e43c48]
+- Updated dependencies [2e43c48]
+- Updated dependencies [ca1614e]
+- Updated dependencies [f9c825d]
+- Updated dependencies [bd3f314]
+  - @stackra/runway@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/infra-tools@0.9.0
+  - @stackra/config@0.9.0
+
+## 0.8.0
+
+### Minor Changes
+
+- 7776fbb: `runtimePlan` counts the tools stack's GPU tools in the monthly cost estimate: one `tools.<tool>` item each (hourly
+  price x 730 hours x max replicas), so a dev plan with a GPU tool enabled is checked against its $150 cap.
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+- Updated dependencies [02c47c3]
+- Updated dependencies [67e7e8f]
+  - @stackra/container@0.8.0
+  - @stackra/runway@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/infra-tools@0.8.0
+  - @stackra/contracts@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes

@@ -23,7 +23,7 @@ import { RunwayProvider } from "#core/ports/runway-provider.port";
 import type { DeployRecord } from "#core/types/deploy-record.type";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { DeployTarget } from "#core/types/deploy-target.type";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
 /** An Encore Cloud app id. */
@@ -55,8 +55,8 @@ export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
   /** The runway destination this provider serves. */
   override readonly destination = "encore-cloud";
 
-  /** The command runner, `runProgram`; a test or a dry run replaces it. */
-  run: CommandRunner = runProgram;
+  /** The command runner, `runCommand`; a test or a dry run replaces it. */
+  run: CommandRunner = runCommand;
 
   /** The HTTP client verify probes `/readyz` with; a test replaces it. */
   fetch: typeof globalThis.fetch = (input, init) => globalThis.fetch(input, init);

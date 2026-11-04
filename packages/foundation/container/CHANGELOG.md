@@ -1,5 +1,23 @@
 # @stackra/container
 
+## 0.9.0
+
+### Patch Changes
+
+- f9c825d: gen binds Menu, Shortcut, Store, Bridge (request-scoped) and ExtensionPoint classes; a config override keeps its base's key. The container's binding kinds gain `shortcut` and `extension_point`.
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- 7dd35b3: A member's generated Vitest setup imports each generated schemas file statically and calls the new
+  `markMemberSchemasLoaded()` from `@stackra/container/testing`, instead of awaiting `loadMemberSchemas()`. In a
+  consumer, `@stackra/container` sits in node_modules, which Vitest leaves to Node, so the schemas loaded through Node:
+  with no `#` imports-map fallback and no legacy decorators, every unit test failed at import (STA-2032).
+- @stackra/contracts@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes

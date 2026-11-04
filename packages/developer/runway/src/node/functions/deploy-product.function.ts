@@ -34,7 +34,7 @@ import { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { publishProduct } from "#node/functions/publish-product.function";
 import { readRunway } from "#node/functions/read-runway.function";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { ProductBuild } from "#node/types/product-build.type";
 import type { ProductDeploy } from "#node/types/product-deploy.type";
 import type { ProductDeployRequest } from "#node/types/product-deploy-request.type";
@@ -64,7 +64,7 @@ export async function deployProduct(request: ProductDeployRequest): Promise<Prod
       `${request.environment} deploys only after its approval (${approval}): run the deploy in the job behind it and pass --approved`,
     );
 
-  const real = request.run ?? runProgram;
+  const real = request.run ?? runCommand;
   const run = request.dryRun === true ? dryRunCommand({ head: build.sha }) : real;
 
   const issues: RunwayIssue[] = [];

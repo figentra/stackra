@@ -83,6 +83,7 @@ describe("@stackra/gen", () => {
       "emitSdks",
       "emitSettings",
       "emitToolConfigs",
+      "emitUiFacade",
       "emitWebhooks",
       "emitWiring",
       "eventName",

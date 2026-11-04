@@ -14,7 +14,7 @@ import { argvOf } from "#core/functions/argv-of.function";
 import { buildRegistry } from "#core/functions/build-registry.function";
 import { createConsole } from "#core/functions/create-console.function";
 import { errorCode } from "#core/functions/error-code.function";
-import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
+import { inputSchemaOf } from "#core/functions/input-schema-of.function";
 import type { ConsoleConfig } from "#core/types/console-config.type";
 import type { ConsoleTool } from "#core/types/console-tool.type";
 import type { ToolPorts } from "#core/types/tool-ports.type";
@@ -36,7 +36,7 @@ export function toolsOf(config: ConsoleConfig, ports: ToolPorts): ConsoleTool[] 
       {
         name: structure.name.replaceAll(":", "_"),
         description: structure.description,
-        inputSchema: jsonSchemaOf(structure),
+        inputSchema: inputSchemaOf(structure),
         readOnly: structure.tool.readOnly,
         invoke: async (input) => {
           let argv: string[];

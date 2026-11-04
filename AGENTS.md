@@ -37,7 +37,8 @@ STA-339, STA-340), so today's code and `stackra validate --repository` still sho
 Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in
 `apps/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
 
-Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
+Done = `pnpm verify` green on the box after the merge (format, lint, typecheck, test, build, validate, boundaries, knip; "Tests run
+later" below). Conventional commits.
 
 Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
 
@@ -46,6 +47,16 @@ prereleases run without the owner; production (a deploy, promote, rollback or pa
 the owner's one GitHub Environment approval, which an agent may start. Secret values stay with the owner, main changes
 only through a merged pull request, and a workstation `encore deploy` stays denied. Until the owner applies the guard
 and settings edits listed on STA-1395, the guard still asks before staging deploys.
+
+## Tests run later: merge now, label `needs-testing`
+
+Owner decision 2026-11-03 (STA-2083, replaces "Tests run on the box"): nothing waits on tests before it lands. No box
+run before the merge and no waiting on CI: open the pull request and merge it right away
+(`gh pr merge --squash --admin`), then add the Linear label `needs-testing` to its STA issue and a
+`Needs testing: <what to run>` line to the pull request body. The tester lane later runs those tests on the box
+(`ci-box run "core STA-n" . "pnpm verify"`; `stackra testbed run` once the testbed is live) and removes the label.
+GitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a
+workstation.
 
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 
@@ -80,8 +91,9 @@ amended). This applies in Stackra, OS, Commerce and every product.
 #### Enforcement
 
 - `ToolSource` is a closed enum (`packages/application/ai/src/core/enums/tool-source.enum.ts`).
-- planned — STA-1631: gen refuses client tool collisions, a `.prefill` of an action that is `tool: false`, and an
-  undeclared anchor.
+- automated — `client-tools-of.function.ts` in `packages/developer/gen`: gen refuses client tool collisions
+  (`client_tool_collision`), a `.prefill` of an action that is `tool: false` (`prefill_tool_off`), and an undeclared
+  anchor (`anchor_undeclared`).
 - planned — STA-1637: `stackra validate --repository` refuses a `.py` file outside the tools-stack images.
 
 #### See Also
@@ -228,7 +240,8 @@ class (ADR 0308).
 | Any other query name                   | `GET /xs/<name-kebab>`      |
 
 `endpoint: { method, path }` overrides the route and `endpoint: false` removes it. An action whose actors include
-neither a user nor an agent gets no public endpoint.
+neither a user nor an agent gets no public endpoint. Each path parameter (`:xId`) is a field of the input, which Encore
+binds it from, or gen refuses the call (`endpoint_param_unbound`).
 
 ```typescript
 // src/modules/orders/schemas/cancel-order-input.schema.ts — the input, one declaration per file (ADR 0305)
@@ -270,18 +283,25 @@ HTTP methods **by idempotency**:
 
 #### Authentication
 
-Every endpoint is authenticated by default. A public endpoint opts out explicitly with `auth: false` in the action's
-or query's options; the flag applies to its API area (ADR 0082), and the gateway enforces it (ADR 0237):
+Every endpoint is authenticated by default. A call open to callers without a session lists `ActorKind.Anonymous` in
+its `actors` beside `ActorKind.User` or `ActorKind.Agent` (STA-2025); `Anonymous` alone gives no endpoint, and there is
+no separate `auth` option. Gen writes its endpoint with `auth: false`, and it runs as the signed-in actor when a session
+is presented, otherwise as an anonymous one; the gateway enforces it per API area (ADR 0082, ADR 0237):
 
 ```typescript
-export class GetHealthQuery extends Query({ key: "health.get", auth: false }) {
-  async handle(): Promise<HealthOutput> {
+// GET /products/search, open to callers without a session
+export class SearchProductsQuery extends Query({
+  key: "product.search",
+  actors: [ActorKind.Anonymous, ActorKind.User],
+}) {
+  async handle(input: SearchProductsInput): Promise<SearchProductsOutput> {
     // ...
   }
 }
 ```
 
-The caller is the typed `Actor` the action pipeline provides (ADR 0098); never read a user id from the request body.
+The caller is the typed `Actor` the action pipeline provides (ADR 0098): the generated endpoint takes it from the
+verified auth data, never from the request body, a path parameter or a header.
 The permission is derived from the key, and record rules run through `ctx.authorize(record)` (ADR 0132 as amended).
 
 #### Request/Response
@@ -500,7 +520,9 @@ code may still show the older forms; write new code in the v3 form.
 - **One meaning per word** (ADR 0294 decision 23): Precondition, never Guard or Gate; extension point and extension, never a backend hook; an extension point's slots are `before` and `after`, and an `Interceptor` wraps one action call (ADR 0305); Hook means a React `use*` function only; Provider means a React context component only (DI registrations are bindings); Command means a CLI command only; Lifetime, never scope, for DI. Banned identifiers: `*Guard`, `*Gate`, `*HookPoint`.
 - **The decorator test**: if the folder, the suffix, the base class, a field type, a method name or a derived name already says it, write no decorator. Only field, method (`@Step`, `@Transition`) and class-facet decorators exist; there are no kind decorators.
 
-Enforcement: planned — STA-338 (`base-matches-suffix` and the validator's `kind-path` check), STA-340 (the decorator-registry checks, the `names` validator row for abbreviations and banned identifiers, the gen checks `kind_class_name` and `identity_changed`), and oxlint `unicorn/filename-case` and the house rules of ADR 0129. Nothing here is checked yet.
+Enforcement: automated — the gen checks `kind_class_name` and `identity_changed` (`check-conventions.function.ts` and `check-identity-lock.function.ts` in `packages/developer/gen`).
+
+Planned — STA-338 (`base-matches-suffix` and the validator's `kind-path` check), STA-340 (the decorator-registry checks and the `names` validator row for abbreviations and banned identifiers), and oxlint `unicorn/filename-case` and the house rules of ADR 0129. Nothing else here is checked yet.
 
 <!-- source: .agents/rules/not-built-yet.md -->
 

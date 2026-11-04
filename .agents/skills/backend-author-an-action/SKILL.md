@@ -81,7 +81,8 @@ What gen derives, so you never write it:
 - **The class name** `CancelOrderAction` matches the file `cancel-order.action.ts`.
 
 Other options: `idempotency: Idempotency.Required`, `job:` (a queue or cron schedule; jobs are actions, not a kind),
-`intents: [...]` (palette and AI triggers), `auth: false` (a public endpoint), `version: 2`.
+`intents: [...]` (palette and AI triggers), `version: 2`. A public endpoint lists `ActorKind.Anonymous` in `actors`
+beside a user or an agent; there is no `auth` option.
 
 ## What the pipeline does for you (ADR 0138 as amended)
 

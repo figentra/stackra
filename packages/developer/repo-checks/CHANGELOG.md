@@ -1,5 +1,47 @@
 # @stackra/repo-checks
 
+## 0.9.0
+
+### Minor Changes
+
+- ca1614e: `checkRequires(root, service)` reports each `valkey` entry of a service runway's `requires` that no environment's cache driver serves, at `requires.<name>`; `stackra validate` (`checkRunwayFiles`) now runs it for every service runway against the root (STA-2049).
+- cbbe4e3: Add the `docs` registry kind (STA-1920, ADR 0514 decision 10). `StackraKind.Docs` is a product's content-only docs
+  package, `@figentra/<product>-docs`: MDX pages and their Fumadocs `meta.json` in `content/`, plus assets, with no code.
+  `STACKRA_MANIFEST_SCHEMA` accepts `{ "kind": "docs" }` with nothing more. `pnpm validate` places a docs package at the
+  repository's `docs/`, asks for no tier, turbo.jsonc or tsconfig, requires `content/`, and treats it as UNLICENSED like
+  an app. `stackra add` never installs one: the docs hub depends on it.
+- 75e94ff: `stackra validate --repository` refuses a paid job (a macOS, Windows or larger runner, also through `strategy.matrix`; `eas build`; a device farm run) on a branch push, pull request or merge queue trigger, and, in a job with no `environment:`, a deploy credential in its env or a deploy variable or secret read in a step's env, `with:` or `run:` (rule `workflow-triggers`, `checkWorkflowTriggers`; STA-256, ADR 0166, 0167).
+
+### Patch Changes
+
+- 2aeaec8: `writeDevFacts(root, lane)` in `@stackra/runway/node` writes `.stackra/dev/ports.json`, the file `readDevFacts` reads: each member runway's dev url, port, host, https, TLS files and Electron dev ports with the lane offset applied. `stackra dev` calls it before the member tool starts (lane from `STACKRA_LANE`, default 0). The app runway's `environments.<env>.desktop.devtools` is now read, so it leaves `RUNWAY_UNREAD_FIELDS` and its "Not read yet" schema note.
+- 93bb1e7: `buildProduct` writes a product's `surfaces.ops.contributes` as a declarative `ops` bundle (the contributions file and its manifest, targeting `ops@1`), and `publishProduct` uploads it and writes its canary or release row like any surface. The root runway schema no longer marks `surfaces.ops.contributes` and its fields "Not read yet", and the list of runway fields not yet read drops them.
+- da0af20: The runway schema copy check now says to put the zod-derived text in the canonical `tools/schemas` file and copy it
+  to runway's `schema/`, instead of only `cp`, which overwrote a correct copy with a stale canonical file.
+
+## 0.8.0
+
+### Patch Changes
+
+- 67e7e8f: The runway schemas drop the fields that no repository set and nothing read (STA-2028), so each of these keys now
+  fails `parseRunway` and `pnpm validate`:
+  
+  - root runway: `resources.<name>.reason` (ADR 0493's reason rule is the workloads');
+  - app runway: `brands` (ADR 0335 puts brands in `stackra.config.ts`), `release.pwa` (ADR 0326 decision 6),
+    `release.desktop.channels`, `release.desktop.signing` and `release.desktop.platforms` (ADR 0344 decision 7; they
+    return with the desktop release job), `release.mobile.whiteLabel` (the root `mobile.<app>.whiteLabel` is the one
+    read), and `release.mobile.profiles.<profile>.distribution`, `.developmentClient`, `.simulator`, `.androidApk` and
+    `.autoIncrement` (`easJsonOf` sets them);
+  - app runway environments: `aliases`, `e2e`, `pwa`, `desktop.rollout` and `mobile.devClient`.
+  
+  The app runway's `release.desktop`, `release.mobile`, each mobile profile and each environment's `desktop` and `mobile`
+  blocks are now strict. `brandsOf`, the `Brand` type and the `brands` entry of the runway facts are removed with
+  `brands`; nothing called them.
+  
+  Kept, marked "Not read yet" in their description and in repo-checks' `RUNWAY_UNREAD_FIELDS`: the
+  `surfaces.ops.contributes` children (STA-2003), the app `health.path` and `health.expects` (Runway plan PR 13) and the
+  app environments' `desktop.devtools` (STA-2029).
+
 ## 0.7.1
 
 No changes in this release.

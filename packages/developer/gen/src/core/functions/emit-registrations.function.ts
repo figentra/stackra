@@ -12,7 +12,8 @@
  *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
  *          then `registerRoles`; without
  *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
- *          STA-1702), and every action and query with its locked key, permission, risk, effects and input class
+ *          STA-1702), each record policy with its model (`registerPolicies`; without it `ctx.authorize(record)` runs no
+ *          policy, STA-2045), and every action and query with its locked key, permission, risk, effects and input class
  *          (`registerActions`; without it the pipeline checks no permission and validates no input, STA-2025).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
@@ -37,9 +38,11 @@ import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { ownClass } from "#core/functions/own-class.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
+import { shapeOfRef } from "#core/functions/shape-of-ref.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -78,9 +81,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   };
   /** A class of this member, by name and, when given, module. */
   const own = (name: string, module?: unknown): ClassRef | undefined => {
-    const declared =
-      ir.classes.find((candidate) => candidate.name === name && candidate.module === module) ??
-      ir.classes.find((candidate) => candidate.name === name);
+    const declared = ownClass(ir, name, module);
     return declared === undefined ? undefined : { name, from: declared.importPath };
   };
   /** The class of a manifest entry: this member's, or a hosted package's from the entry exporting its file. */
@@ -376,6 +377,33 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }),
   );
 
+  // Each record policy with the model it judges, own and hosted, so `ctx.authorize(record)` runs it (ADR 0132 as
+  // amended, STA-2045); the base's type argument is gone at runtime, so this row is the only pairing.
+  // shortcut: a hosted policy whose model the package does not declare (no `modelFile`) is not registered; upgrade when
+  // the manifest names the model's package and file.
+  call(
+    "registerPolicies",
+    "@stackra/iam",
+    ((manifest["policies"] ?? []) as readonly Entry[]).map((entry) => {
+      // The model is resolved first, so a row that cannot be written imports nothing.
+      const partner =
+        typeof entry["from"] === "string"
+          ? undefined
+          : ir.classes.find(
+              (declared) => declared.name === entry["class"] && declared.module === entry["module"],
+            )?.partner;
+      const model =
+        typeof entry["from"] === "string"
+          ? classOf(entry, "model", "modelFile")
+          : partner === undefined
+            ? undefined
+            : ref({ name: partner.name, from: partner.from });
+      if (model === undefined) return undefined;
+      const policy = classOf(entry);
+      return policy === undefined ? undefined : `{ model: ${model}, policy: ${policy} }`;
+    }),
+  );
+
   // Every action and query with the identities the manifest locked, own and hosted, so the pipeline checks the
   // permission and validates the input (ADR 0098, STA-2025). Every row carries its permission: an anonymous caller of a
   // class that lists `ActorKind.Anonymous` skips the check in the access-control driver, never by a missing row.
@@ -383,16 +411,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   // file that declares it; its calls are permission-checked but not validated until the manifest carries that file.
   const inputOf = (entry: Entry): string | undefined => {
     if (typeof entry["from"] === "string") return undefined;
-    const input = entry["input"];
-    const target = /^#\/schemas\/([^.]+)\.(.+)$/.exec(
-      typeof input === "object" && input !== null ? String((input as Entry)["$ref"] ?? "") : "",
-    );
-    const shape =
-      target === null
-        ? undefined
-        : ir.shapes.find(
-            (candidate) => candidate.module === target[1] && candidate.name === target[2],
-          );
+    const shape = shapeOfRef(ir, entry["input"]);
     return shape === undefined ? undefined : ref({ name: shape.name, from: shape.importPath });
   };
   call(

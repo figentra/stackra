@@ -9,7 +9,7 @@
  */
 import { join } from "node:path";
 
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { LaunchCheckJob } from "#node/types/launch-check-job.type";
 
@@ -18,7 +18,7 @@ import type { LaunchCheckJob } from "#node/types/launch-check-job.type";
  *
  * @param job - the job `launchCheckJob` defined.
  * @param repository - the repository root every step runs from.
- * @param run - the command runner; `runProgram` when absent.
+ * @param run - the command runner; `runCommand` when absent.
  * @throws Error from the command runner when a command, a Maestro flow included, exits with an error.
  * @example
  * await runLaunchCheck(launchCheckJob({ repository: ".", app: "shopper", platform: "ios", appPath, templateDir }), ".");
@@ -26,7 +26,7 @@ import type { LaunchCheckJob } from "#node/types/launch-check-job.type";
 export async function runLaunchCheck(
   job: LaunchCheckJob,
   repository: string,
-  run: CommandRunner = runProgram,
+  run: CommandRunner = runCommand,
 ): Promise<void> {
   for (const step of job.steps)
     await run(step.command, step.args, { cwd: join(repository, step.cwd ?? "") });

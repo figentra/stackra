@@ -270,6 +270,22 @@ describe("awsTestbed", () => {
     expect(dockerfile).toContain(`ARG SHFMT_VERSION=${TOOLCHAIN_PINS.shfmt}`);
     expect(dockerfile).toContain(`ARG ENCORE_VERSION=${TOOLCHAIN_PINS.encore}`);
     expect(dockerfile).toContain(`ARG PLAYWRIGHT_VERSION=${TOOLCHAIN_PINS.playwright}`);
+    // Every browser the playground's projects may name, a display for Electron, and ffmpeg for renders.
+    expect(dockerfile).toContain("install --with-deps chromium firefox webkit");
+    expect(dockerfile).toMatch(/ffmpeg xauth xvfb/);
+  });
+
+  it("warms and checks the store without lifecycle scripts", () => {
+    // The build instance has no job tokens, so a licence-gated postinstall fails the build (image 1.236066669.0).
+    const agent = readFileSync(
+      `${testbedPackageRoot()}/images/host/components/03-agent.yml`,
+      "utf8",
+    );
+    const fetches = agent.match(/pnpm fetch [^\n]*/g) ?? [];
+    expect(fetches).toHaveLength(2);
+    for (const fetch of fetches) expect(fetch).toContain("--ignore-scripts");
+    // The metadata cache lives on /data, which Clean keeps: an offline install needs it (image 1.224117217.0).
+    expect(agent.match(/PNPM_CONFIG_CACHE_DIR=\/data\/pnpm-cache/g)).toHaveLength(2);
   });
 });
 

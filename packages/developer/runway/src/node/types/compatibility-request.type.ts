@@ -22,6 +22,6 @@ export type CompatibilityRequest = {
   readonly command?: string;
   /** Its arguments, `{importMap}` replaced by the import map path; the setting's when absent. */
   readonly args?: readonly string[];
-  /** The command runner; `runProgram` when absent. */
+  /** The command runner; `runCommand` when absent. */
   readonly run?: CommandRunner;
 };

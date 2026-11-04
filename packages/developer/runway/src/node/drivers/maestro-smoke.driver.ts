@@ -14,7 +14,7 @@ import { SmokeDriver } from "#core/ports/smoke-driver.port";
 import type { SmokeResult } from "#core/types/smoke-result.type";
 import type { SmokeSubject } from "#core/types/smoke-subject.type";
 import { launchCheckJob } from "#node/functions/launch-check-job.function";
-import { runProgram } from "#node/functions/run-program.function";
+import { runCommand } from "#node/functions/run-command.function";
 import { runLaunchCheck } from "#node/functions/run-launch-check.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
@@ -28,8 +28,8 @@ export class MaestroSmokeDriver extends Driver(SmokeDriver) {
   /** The target this driver checks. */
   override readonly target = "mobile";
 
-  /** The command runner, `runProgram`; a test or a dry run replaces it. */
-  run: CommandRunner = runProgram;
+  /** The command runner, `runCommand`; a test or a dry run replaces it. */
+  run: CommandRunner = runCommand;
 
   /** Runs the app's launch check. */
   override async check(subject: SmokeSubject, repository: string): Promise<SmokeResult> {

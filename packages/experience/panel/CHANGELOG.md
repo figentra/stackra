@@ -1,5 +1,100 @@
 # @stackra/panel
 
+## 0.9.0
+
+### Minor Changes
+
+- 681d01a: The panel's generic resource pages on React Native. `@stackra/clients/native` is a new entry with the native data
+  hooks: `useQuery`, which refetches a stale answer when the app returns to the foreground, and `useAction`, the same
+  action hook as on the web. `@stackra/panel/native` adds `ResourceListPage`, `ResourceViewPage`, `ResourceFormPage` and
+  `ActionInputModal` with the web pages' props: the list with search, filters, sort, cursor paging, views, row and bulk
+  actions and pull to refresh; the record with its entries and sections; the Create and Edit form drawn from the action's
+  input and checked by its schema; and the action form for an input that needs more than the record id. Every run goes
+  through a native action runner with the declared confirmation and toasts. Each page takes the resource, and a View or
+  Edit page the record id, from the host screen until gen registers resource screens on native. The showcase lists the
+  four for native.
+- 681d01a: The panel's server-driven UI specs (STA-1981). `@stackra/panel` adds the spec types `ActionButtonSpec`,
+  `EmptyStateSpec`, `RowActionsSpec`, `BulkActionsSpec`, `FormFieldSpec`, `FilterSpec` and `TableColumnSpec`, with the
+  `FieldControl` and `FilterKind` enums. A placed action, a column, a filter, a form field and the table now record that
+  look: `Placement.*`, `Column.*`, `Filter.*` and `FormField.from` take the fields, and each builder gains `with(look)`.
+  The generic resource pages draw it: a placement's icon, description, shortcut, tone, disabled reason and link, hidden
+  without its permission or while its `visibleWhen` record path is not true, its own confirmation words through the
+  action runner's new `confirm` option, and a bulk `runMode` of `once`; a column's header words, alignment, widths, pin,
+  wrap, resizing, row header, start hidden (a `hidden` column now stays choosable), inline edit through the update action,
+  aggregate and cell kind (badge, status, money, principal, date, link, copy); a filter's words, control, quick filter
+  settings and choices (an enum's codes by their labels); the table's sticky header, column tools, resize handles, search
+  words, filtered empty state, hover row actions and bulk bar name; the empty state's words, icon, reason and heading
+  level with its buttons drawn as action buttons; and a form field's words, required, disabled and read-only overrides,
+  named control, number bounds, grid span, choices and `visibleWhen`. `@stackra/panel/react` adds the kit's
+  `ActionButton`, `RowActions` and `BulkActions`. The showcase lists the three under Blocks.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [681d01a]
+- Updated dependencies [681d01a]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [681d01a]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/navigation@0.9.0
+  - @stackra/clients@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/ui@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/access-log@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/tenancy@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/pricing@0.9.0
+  - @stackra/documents@0.9.0
+  - @stackra/filesystem@0.9.0
+  - @stackra/icons@0.9.0
+  - @stackra/experience@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/query@0.9.0
+  - @stackra/money@0.9.0
+  - @stackra/data-transfer@0.9.0
+  - @stackra/entitlements@0.9.0
+  - @stackra/support@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+  - @stackra/database@0.8.0
+  - @stackra/container@0.8.0
+  - @stackra/access-log@0.8.0
+  - @stackra/entitlements@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/tenancy@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/clients@0.8.0
+  - @stackra/money@0.8.0
+  - @stackra/pricing@0.8.0
+  - @stackra/data-transfer@0.8.0
+  - @stackra/documents@0.8.0
+  - @stackra/filesystem@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/icons@0.8.0
+  - @stackra/ui@0.8.0
+  - @stackra/experience@0.8.0
+  - @stackra/navigation@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/i18n@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/query@0.8.0
+  - @stackra/contracts@0.8.0
+  - @stackra/support@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes

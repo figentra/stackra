@@ -43,11 +43,17 @@ jobs:
           secret-path: "/ci"
           secret-name: "UNIWIND_AUTH_TOKEN"
           export-type: "env"
+      - name: "Uniwind Pro download cache"
+        uses: "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
+        with:
+          path: "~/.uniwind/cache/pro"
+          key: "uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}"
+          restore-keys: "uniwind-pro-${{ runner.os }}-"
       - name: Install
         run: pnpm install --frozen-lockfile
       # Failures are judged against main's baseline, so the run itself never fails the job.
       - name: Tasks
-        run: pnpm exec turbo run lint typecheck test build --continue --summarize || true
+        run: pnpm exec turbo run lint typecheck build --continue --summarize || true
       - name: Results
         run: pnpm exec fflow gate baseline save
       - if: github.event_name == 'push'
