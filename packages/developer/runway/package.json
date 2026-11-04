@@ -90,6 +90,7 @@
   "dependencies": {
     "@stackra/app": "workspace:*",
     "@stackra/config": "workspace:*",
+    "@stackra/console": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/validation": "workspace:*",

@@ -11,8 +11,10 @@ Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `min
 
 Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway` (`tier:lib`). Entries `.` and
 `./node`, plus the `schema/{root,app,service}.json` assets, byte copies of `tools/schemas/runway-*.schema.json`
-(ADR 0127, 2026-10-24 note). The `runway` binary (`src/node/runway.ts`, body `runRunway`; root alias `pnpm runway`)
-runs `plan`, `deploy` and `promote` (ADR 0170, STA-268).
+(ADR 0127, 2026-10-24 note). The `runway` binary (`src/node/runway.ts`; root alias `pnpm runway`) runs
+`RUNWAY_COMMANDS` on `@stackra/console` (ADR 0506 decision 8): plan, deploy, promote, rollback, status, validate, drift
+and `secrets sync` (ADR 0170, ADR 0352, STA-268). A command class lives in `src/node/commands/runway-<name>.command.ts`
+and only parses and prints; the work stays in the functions it calls.
 
 ## Where code goes
 
@@ -76,6 +78,10 @@ runs `plan`, `deploy` and `promote` (ADR 0170, STA-268).
   `wellknown:` row (the edge projector's). Every check runs before the first upload or write. Thresholds, windows,
   folders, commands and headers live in `EDGE_PUBLISH_SETTINGS`; a timer alone never promotes a canary. Agents never
   run `wrangler kv` or `wrangler r2` against a real namespace or bucket: tests use `MemoryEdgeKv` and fake runners.
+- An approval or "CI only" is proved by the job's GitHub OIDC token (`proveGithubJob`), never by a flag, an
+  environment variable such as `GITHUB_ACTIONS`, or a caller's word (ADR 0523, STA-2100).
+- A destination needs a driver: `checkDestinations` and `DRIVEN_TARGETS` list them; a new driver adds its destination
+  there (owner decision O8).
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
 - A provider takes `RunwayConfig` (`src/config/runway.config.ts`, key `runway`) by constructor type, never an options
