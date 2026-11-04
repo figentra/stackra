@@ -21,8 +21,8 @@ import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { buildProduct } from "#node/functions/build-product.function";
 import { deployProduct } from "#node/functions/deploy-product.function";
-import { dryRunCommand } from "#node/functions/dry-run-command.function";
-import { runCommand } from "#node/functions/run-command.function";
+import { dryRunCommand } from "#node/functions/dry-run-program.function";
+import { runProgram } from "#node/functions/run-program.function";
 import type { SurfaceBundler } from "#node/types/surface-bundler.type";
 
 import {
@@ -122,7 +122,7 @@ describe("buildProduct", () => {
       answer: (command, args, cwd) =>
         command === "eas"
           ? JSON.stringify([{ id: "build-ios" }, { id: "build-android" }])
-          : runCommand(command, args, { cwd }),
+          : runProgram(command, args, { cwd }),
     });
     const build = await buildProduct({
       repository: product,
@@ -283,7 +283,7 @@ async function built(): Promise<void> {
     answer: (command, args, cwd) =>
       command === "eas"
         ? JSON.stringify([{ id: "build-ios" }])
-        : runCommand(command, args, { cwd }),
+        : runProgram(command, args, { cwd }),
   });
   await buildProduct({
     repository: product,
