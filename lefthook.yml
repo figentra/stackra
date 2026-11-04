@@ -41,6 +41,8 @@ pre-commit:
       exclude:
         - ".agents/skills/**"
         - ".agents/reference/**"
+        # .oxlintrc.jsonc ignores it; oxlint exits 1 when every file it is given is ignored
+        - "packages/developer/flow-preset/preset/**"
       # The mise-pinned oxlint runs without a workspace install; where mise is missing the job is skipped (no pnpm fallback).
       run: >-
         sh -c 'command -v mise >/dev/null 2>&1 || { echo "oxlint skipped: mise not installed; CI lints"; exit 0; };

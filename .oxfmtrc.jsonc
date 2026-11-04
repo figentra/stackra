@@ -49,6 +49,9 @@
     // Figentra Flow output (lock, README) and the constitution agents-sync generates from the docs laws
     ".flow/**",
     ".opencode/commands/**",
+    // @stackra/flow-preset's content, kept byte for byte as moved from figentra/flow (STA-2097), which never
+    // formats it: `fflow sync` renders it and .flow/lock.json pins its digest in every repository
+    "packages/developer/flow-preset/preset/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",
   ],
