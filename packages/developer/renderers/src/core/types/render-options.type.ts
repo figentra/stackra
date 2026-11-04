@@ -9,7 +9,7 @@
 /** Options of `renderAssistant`. */
 export type RenderOptions = {
   /**
-   * Who generated the files (`stackra agents setup`, `figentra-flow`); defaults to
+   * Who generated the files (`stackra agents setup`, `fflow`); defaults to
    * `@stackra/renderers`.
    */
   readonly generator?: string;

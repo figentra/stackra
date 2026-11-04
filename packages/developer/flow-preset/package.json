@@ -5,7 +5,7 @@
   "description": "Stackra's Figentra Flow preset: the flow-* command texts, templates, agents, rules, skills, guard tables and surfaces that fflow sync renders into a Stackra repository",
   "keywords": [
     "developer",
-    "figentra-flow",
+    "fflow",
     "flow",
     "preset",
     "spec-driven",
