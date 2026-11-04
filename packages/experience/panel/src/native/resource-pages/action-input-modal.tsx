@@ -12,13 +12,10 @@
  * Runtime: react-native
  * Governing contract: ADR 0307 (rule 3); ADR 0139 (declared confirmation); ADR 0140 (refusals); ADR 0055; ADR 0164.
  */
-import { useTranslation } from "@stackra/i18n/react";
 import { Button, Form, Modal, Text, useSchemaForm } from "@stackra/ui/native";
 import type { ReactElement } from "react";
 
-import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { actionFormKeys } from "#core/functions/action-form-keys.function";
-import { actionLabelKey } from "#core/functions/action-label-key.function";
 import { useActionRunner } from "#native/action-runner/use-action-runner";
 import type { ActionInputModalProps } from "#native/resource-pages/action-input-modal.props";
 import { ResourceFormField } from "#native/resource-pages/resource-form-field";
@@ -43,8 +40,8 @@ function OpenModal({
     readonly keys: readonly string[];
     readonly close: () => void;
   }): ReactElement {
-  const { t } = useTranslation();
-  const { defaultValues, serverErrors, submit } = useActionInput({
+  const { words, fields, defaultValues, serverErrors, submit } = useActionInput({
+    resourceKey,
     action,
     idKey,
     ids,
@@ -58,7 +55,6 @@ function OpenModal({
     defaultValues,
     serverErrors,
   });
-  const ask = action.texts.confirm;
   return (
     <Modal
       isOpen
@@ -68,30 +64,23 @@ function OpenModal({
     >
       <Form form={form} className="gap-4">
         <Modal.Header>
-          <Modal.Title>{t(actionLabelKey(resourceKey, action.key))}</Modal.Title>
-          {ask === undefined ? null : <Text>{t(typeof ask === "object" ? ask.text : ask)}</Text>}
+          <Modal.Title>{words.title}</Modal.Title>
+          {words.confirmText === undefined ? null : <Text>{words.confirmText}</Text>}
         </Modal.Header>
         <Modal.Body>
-          {keys.map((key) => (
-            <ResourceFormField
-              key={key}
-              resourceKey={resourceKey}
-              schema={action.input}
-              enumOwner={action.key.slice(0, action.key.lastIndexOf("."))}
-              record={record}
-              node={{ kind: "value", key }}
-            />
+          {fields.map(({ key, ...field }) => (
+            <ResourceFormField key={key} {...field} />
           ))}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onPress={close}>
-            {t(PANEL_KEYS.panel.actions.cancel)}
+            {words.cancel}
           </Button>
           <Button
             isLoading={form.formState.isSubmitting}
             onPress={() => void form.handleSubmit(submit)()}
           >
-            {t(PANEL_KEYS.panel.actions.confirm)}
+            {words.confirm}
           </Button>
         </Modal.Footer>
       </Form>

@@ -13,6 +13,7 @@ import { Card, ErrorState, Select, Skeleton } from "@stackra/ui/react";
 import { useState, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { answerFailureOf } from "#core/functions/answer-failure-of.function";
 import { TimeRange } from "#core/enums/time-range.enum";
 import { WidgetBody } from "#react/widget-body/widget-body";
 import { useWidgetAnswer } from "#react/widget-tile/use-widget-answer";
@@ -49,14 +50,7 @@ export function WidgetTile({ widget, range, actor }: WidgetTileProps): ReactElem
         {answer.isPending ? (
           <Skeleton />
         ) : answer.error ? (
-          <ErrorState
-            title={t(PANEL_KEYS.panel.widgets.failed)}
-            error={answer.error}
-            retry={{
-              label: t(PANEL_KEYS.panel.widgets.retry),
-              onPress: () => void answer.refetch(),
-            }}
-          />
+          <ErrorState {...answerFailureOf(answer, PANEL_KEYS.panel.widgets, t)} />
         ) : (
           <WidgetBody widget={widget} data={answer.data} isRefreshing={answer.isFetching} />
         )}

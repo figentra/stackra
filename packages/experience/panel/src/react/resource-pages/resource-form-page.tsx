@@ -11,7 +11,6 @@
  * Runtime: browser
  * Governing contract: ADR 0307 (form keys; rule 3); ADR 0139 (declared confirmation); ADR 0055.
  */
-import type { ActionRef } from "@stackra/clients";
 import { useTranslation } from "@stackra/i18n/react";
 import { useNavigate } from "@stackra/navigation/react";
 import {
@@ -25,33 +24,25 @@ import {
 import type { ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { answerFailureOf } from "#core/functions/answer-failure-of.function";
 import { formActionOf } from "#core/functions/form-action-of.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
-import type { ResourceRoutes } from "#core/types/resource-routes.type";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import { ResourceFormField } from "#react/resource-pages/resource-form-field";
 import type { ResourceFormPageProps } from "#react/resource-pages/resource-form-page.props";
 import { useRecord } from "#react/resource-pages/use-record";
+import type { EditFormProps } from "#react/resource-pages/edit-form.props";
+import type { ResourceFormProps } from "#react/resource-pages/resource-form.props";
 import { useResourceForm } from "#react/resource-pages/use-resource-form";
 
 /** The form over `action`'s input, started from `defaults`. */
-function ResourceForm({
-  resource,
-  action,
-  defaults,
-  recordId,
-}: {
-  readonly resource: ResourceRoutes;
-  readonly action: ActionRef;
-  readonly defaults: Readonly<Record<string, unknown>>;
-  readonly recordId?: string;
-}): ReactElement {
-  const { t } = useTranslation();
+function ResourceForm({ resource, action, defaults, recordId }: ResourceFormProps): ReactElement {
   const navigate = useNavigate();
-  const { fields, serverErrors, submit } = useResourceForm({
+  const { fields, saveLabel, serverErrors, submit } = useResourceForm({
     resource,
     action,
+    defaults,
     recordId,
     run: useActionRunner(),
     go: (page, id) => (id === undefined ? navigate(page) : navigate(page, { id })),
@@ -62,46 +53,24 @@ function ResourceForm({
   });
   return (
     <Form form={form} submit={submit}>
-      {fields.map((node, index) => (
-        <ResourceFormField
-          // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
-          key={index}
-          resourceKey={resource.key}
-          schema={action.input}
-          node={node}
-          // On Edit the defaults are the record, whose currency a `…Minor` field is entered in.
-          record={recordId === undefined ? undefined : defaults}
-        />
+      {fields.map(({ key, ...field }) => (
+        <ResourceFormField key={key} {...field} />
       ))}
       <Button type="submit" isLoading={form.formState.isSubmitting}>
-        {t(PANEL_KEYS.panel.resources.save)}
+        {saveLabel}
       </Button>
     </Form>
   );
 }
 
 /** The Edit form, once the record is read. */
-function EditForm({
-  resource,
-  action,
-  id,
-}: {
-  readonly resource: ResourceRoutes;
-  readonly action: ActionRef;
-  readonly id?: string | undefined;
-}): ReactElement {
+function EditForm({ resource, action, id }: EditFormProps): ReactElement {
   const { t } = useTranslation();
   const { id: recordId, answer } = useRecord(resource, id);
   if (answer.isPending)
     return <PageSkeleton loadingLabel={t(resourceLabel(resource.key, "title"))} />;
   if (answer.error !== null || typeof answer.data !== "object" || answer.data === null)
-    return (
-      <ErrorState
-        title={t(PANEL_KEYS.panel.resources.failed)}
-        error={answer.error}
-        retry={{ label: t(PANEL_KEYS.panel.resources.retry), onPress: () => void answer.refetch() }}
-      />
-    );
+    return <ErrorState {...answerFailureOf(answer, PANEL_KEYS.panel.resources, t)} />;
   const idKey = recordIdKey(action.input, resource.key);
   return (
     <ResourceForm

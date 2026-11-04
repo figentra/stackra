@@ -21,6 +21,7 @@ import {
 import type { ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { answerFailureOf } from "#core/functions/answer-failure-of.function";
 import { ActionPlace } from "#core/enums/action-place.enum";
 import { entryRowsOf } from "#core/functions/entry-rows-of.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
@@ -92,13 +93,7 @@ export function ResourceViewPage({ resource, id }: ResourceViewPageProps): React
   const title = t(resourceLabel(resource.key, "title"));
   if (answer.isPending) return <PageSkeleton loadingLabel={title} />;
   if (answer.error !== null || typeof answer.data !== "object" || answer.data === null)
-    return (
-      <ErrorState
-        title={t(PANEL_KEYS.panel.resources.failed)}
-        error={answer.error}
-        retry={{ label: t(PANEL_KEYS.panel.resources.retry), onPress: () => void answer.refetch() }}
-      />
-    );
+    return <ErrorState {...answerFailureOf(answer, PANEL_KEYS.panel.resources, t)} />;
   const record = answer.data;
   return (
     <>

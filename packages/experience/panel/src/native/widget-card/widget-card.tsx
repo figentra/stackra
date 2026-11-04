@@ -12,6 +12,7 @@ import { Card, ErrorState, Skeleton } from "@stackra/ui/native";
 import type { ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { answerFailureOf } from "#core/functions/answer-failure-of.function";
 import type { WidgetCardProps } from "#native/widget-card/widget-card.props";
 import { WidgetContent } from "#native/widget-content/widget-content";
 import { useWidgetAnswer } from "#react/widget-tile/use-widget-answer";
@@ -34,14 +35,7 @@ export function WidgetCard({ widget, range, actor }: WidgetCardProps): ReactElem
         {answer.isPending ? (
           <Skeleton />
         ) : answer.error ? (
-          <ErrorState
-            title={t(PANEL_KEYS.panel.widgets.failed)}
-            error={answer.error}
-            retry={{
-              label: t(PANEL_KEYS.panel.widgets.retry),
-              onPress: () => void answer.refetch(),
-            }}
-          />
+          <ErrorState {...answerFailureOf(answer, PANEL_KEYS.panel.widgets, t)} />
         ) : (
           <WidgetContent widget={widget} data={answer.data} isRefreshing={answer.isFetching} />
         )}

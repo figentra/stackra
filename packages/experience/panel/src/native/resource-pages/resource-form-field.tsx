@@ -40,7 +40,6 @@ import { View } from "react-native";
 import type { ZodType } from "zod";
 
 import { CURRENCY_OPTIONS } from "#core/constants/currency-options.constant";
-import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { currencyScale } from "#core/functions/currency-scale.function";
 import { dayOf } from "#core/functions/day-of.function";
 import { enumChoicesOf } from "#core/functions/enum-choices-of.function";
@@ -51,6 +50,7 @@ import { moneyInputOf } from "#core/functions/money-input-of.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { valueAt } from "#core/functions/value-at.function";
 import type { FieldNode } from "#core/types/field-node.type";
+import type { FieldPartProps } from "#core/types/field-part-props.type";
 import { useDateTimeField } from "#react/resource-pages/use-date-time-field";
 import { useFieldEnumLabel } from "#react/resource-pages/use-field-enum-label";
 import { useJsonField } from "#react/resource-pages/use-json-field";
@@ -91,9 +91,7 @@ function OptionsField({
   label,
   query,
   labelPath,
-}: {
-  readonly name: string;
-  readonly label: string;
+}: FieldPartProps & {
   readonly query: QueryRef;
   readonly labelPath: string;
 }): ReactElement {
@@ -122,28 +120,20 @@ function ListField({
   name,
   label,
   item,
-}: {
+}: FieldPartProps & {
   readonly shared: Omit<ResourceFormFieldProps, "node">;
-  readonly name: string;
-  readonly label: string;
   readonly item: "object" | "value";
 }): ReactElement {
-  const { t } = useTranslation();
-  const { rows, error, add, remove } = useListField(name);
+  const { section, rows, add } = useListField(name, label, item);
   return (
-    <FormSection title={label} {...(error === undefined ? {} : { description: error })}>
-      {rows.map((_, index) => (
-        // oxlint-disable-next-line react/no-array-index-key -- reason: a row is its place in the list; the form binds rows by index
-        <View key={index} className="gap-2">
-          <ResourceFormField {...shared} node={{ kind: "value", key: `${name}.${index}` }} />
-          <Button variant="ghost" onPress={() => remove(index)}>
-            {t(PANEL_KEYS.panel.resources.remove_item, { number: index + 1 })}
-          </Button>
+    <FormSection {...section}>
+      {rows.map((row) => (
+        <View key={row.path} className="gap-2">
+          <ResourceFormField {...shared} node={{ kind: "value", key: row.path }} />
+          <Button variant="ghost" {...row.remove} />
         </View>
       ))}
-      <Button variant="secondary" onPress={() => add(item)}>
-        {t(PANEL_KEYS.panel.resources.add_item)}
-      </Button>
+      <Button variant="secondary" {...add} />
     </FormSection>
   );
 }
@@ -154,9 +144,7 @@ function MoneyField({
   label,
   currency,
   scale,
-}: {
-  readonly name: string;
-  readonly label: string;
+}: FieldPartProps & {
   readonly currency: string;
   readonly scale: number;
 }): ReactElement {
@@ -177,9 +165,7 @@ function FormMoneyField({
   name,
   label,
   currencyPath,
-}: {
-  readonly name: string;
-  readonly label: string;
+}: FieldPartProps & {
   readonly currencyPath: string;
 }): ReactElement {
   const currency = useSchemaField<string | null | undefined>(currencyPath).value;
@@ -191,13 +177,7 @@ function FormMoneyField({
 }
 
 /** A JSON value edited as JSON text: valid text holds the parsed value, invalid text shows an error and fails the form. */
-function JsonField({
-  name,
-  label,
-}: {
-  readonly name: string;
-  readonly label: string;
-}): ReactElement {
+function JsonField({ name, label }: FieldPartProps): ReactElement {
   return <TextArea name={name} label={label} rows={6} {...useJsonField(name)} />;
 }
 
@@ -206,56 +186,27 @@ function RecordField({
   name,
   label,
   value: valueKind,
-}: {
-  readonly name: string;
-  readonly label: string;
+}: FieldPartProps & {
   readonly value: "number" | "text";
 }): ReactElement {
-  const { t } = useTranslation();
-  const { rows, error, set, add, remove } = useRecordField(name, valueKind);
+  const { section, rows, add } = useRecordField(name, label, valueKind);
   return (
-    <FormSection title={label} {...(error === undefined ? {} : { description: error })}>
-      {rows.map(([key, value], index) => (
+    <FormSection {...section}>
+      {rows.map((row, index) => (
         // oxlint-disable-next-line react/no-array-index-key -- reason: a row is its place in the list; its key is being edited
         <View key={index} className="gap-2">
-          <TextField
-            label={t(PANEL_KEYS.panel.resources.record_key, { number: index + 1 })}
-            value={key}
-            onChange={(next) => set(index, [next, value])}
-          />
-          {valueKind === "number" ? (
-            <NumberField
-              label={t(PANEL_KEYS.panel.resources.record_value, { number: index + 1 })}
-              value={typeof value === "number" ? value : null}
-              onChange={(next) => set(index, [key, next])}
-            />
-          ) : (
-            <TextField
-              label={t(PANEL_KEYS.panel.resources.record_value, { number: index + 1 })}
-              value={typeof value === "string" ? value : ""}
-              onChange={(next) => set(index, [key, next])}
-            />
-          )}
-          <Button variant="ghost" onPress={() => remove(index)}>
-            {t(PANEL_KEYS.panel.resources.remove_item, { number: index + 1 })}
-          </Button>
+          <TextField {...row.key} />
+          {row.number === undefined ? <TextField {...row.text} /> : <NumberField {...row.number} />}
+          <Button variant="ghost" {...row.remove} />
         </View>
       ))}
-      <Button variant="secondary" onPress={add}>
-        {t(PANEL_KEYS.panel.resources.add_item)}
-      </Button>
+      <Button variant="secondary" {...add} />
     </FormSection>
   );
 }
 
 /** A calendar day, held as `YYYY-MM-DD`: no time and no time zone. */
-function DateInput({
-  name,
-  label,
-}: {
-  readonly name: string;
-  readonly label: string;
-}): ReactElement {
+function DateInput({ name, label }: FieldPartProps): ReactElement {
   const field = useSchemaField<string | null | undefined>(name);
   return (
     <DatePicker
@@ -273,43 +224,17 @@ function DateInput({
  *
  * shortcut: the hour and minute are two NumberFields, as on the web, until STA-1668's TimeField replaces both.
  */
-function DateTimeInput({
-  name,
-  label,
-}: {
-  readonly name: string;
-  readonly label: string;
-}): ReactElement {
-  const { t } = useTranslation();
-  const { field, parts, change, zone } = useDateTimeField(name);
+function DateTimeInput({ name, label }: FieldPartProps): ReactElement {
+  const { field, section, day, hour, minute } = useDateTimeField(name, label);
   return (
-    <FormSection title={label} description={t(PANEL_KEYS.panel.resources.time_zone, { zone })}>
-      <DatePicker
-        {...bound(field)}
-        label={t(PANEL_KEYS.panel.resources.date_part)}
-        value={parts.day}
-        onChange={(day) => change({ ...parts, day })}
-      />
+    <FormSection {...section}>
+      <DatePicker {...bound(field)} {...day} />
       <View className="flex-row gap-2">
         <View className="flex-1">
-          <NumberField
-            label={t(PANEL_KEYS.panel.resources.hour)}
-            minValue={0}
-            maxValue={23}
-            value={parts.hour}
-            onChange={(hour) => change({ ...parts, hour: Number.isNaN(hour) ? null : hour })}
-          />
+          <NumberField {...hour} />
         </View>
         <View className="flex-1">
-          <NumberField
-            label={t(PANEL_KEYS.panel.resources.minute)}
-            minValue={0}
-            maxValue={59}
-            value={parts.minute}
-            onChange={(minute) =>
-              change({ ...parts, minute: Number.isNaN(minute) ? null : minute })
-            }
-          />
+          <NumberField {...minute} />
         </View>
       </View>
     </FormSection>
@@ -317,13 +242,7 @@ function DateTimeInput({
 }
 
 /** A switch bound to `name`. */
-function SwitchInput({
-  name,
-  label,
-}: {
-  readonly name: string;
-  readonly label: string;
-}): ReactElement {
+function SwitchInput({ name, label }: FieldPartProps): ReactElement {
   const field = useSchemaField<boolean | null | undefined>(name);
   return (
     <Switch
@@ -340,9 +259,7 @@ function SelectInput({
   name,
   label,
   items,
-}: {
-  readonly name: string;
-  readonly label: string;
+}: FieldPartProps & {
   readonly items: readonly { readonly id: string; readonly label: string }[];
 }): ReactElement {
   const field = useSchemaField<string | null | undefined>(name);
@@ -358,13 +275,7 @@ function SelectInput({
 }
 
 /** A pick of ISO 4217 codes bound to `name`. */
-function CurrencyInput({
-  name,
-  label,
-}: {
-  readonly name: string;
-  readonly label: string;
-}): ReactElement {
+function CurrencyInput({ name, label }: FieldPartProps): ReactElement {
   const field = useSchemaField<string | null | undefined>(name);
   return (
     <ComboBox
