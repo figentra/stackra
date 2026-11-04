@@ -94,7 +94,7 @@ export { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 export { syncSecrets } from "#node/functions/sync-secrets.function";
 export { releaseOf } from "#node/functions/release-of.function";
 export { renderShellPage } from "#node/functions/render-shell-page.function";
-export { runCommand } from "#node/functions/run-command.function";
+export { runProgram } from "#node/functions/run-program.function";
 export { runBrandStep } from "#node/functions/run-brand-step.function";
 export { runLaunchCheck } from "#node/functions/run-launch-check.function";
 export { runMobileJob } from "#node/functions/run-mobile-job.function";

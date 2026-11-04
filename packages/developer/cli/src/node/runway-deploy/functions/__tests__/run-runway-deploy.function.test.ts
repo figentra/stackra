@@ -111,7 +111,8 @@ describe("runRunwayDeploy", () => {
       [
         "production/web → cloudflare-workers",
         "  .$ pnpm turbo run build --filter=./workers/static",
-        `  workers/static$ pnpm exec wrangler deploy --message ${SHA}`,
+        `  workers/static$ pnpm exec wrangler versions upload --message ${SHA}`,
+        `  workers/static$ pnpm exec wrangler versions deploy $VERSION@100 --message ${SHA} --yes`,
         "",
       ].join("\n"),
     );

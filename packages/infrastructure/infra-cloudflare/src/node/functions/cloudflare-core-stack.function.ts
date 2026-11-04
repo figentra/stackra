@@ -24,6 +24,8 @@ import { parseEdge } from "#core/functions/parse-edge.function";
 import { tunnelIngress } from "#core/functions/tunnel-ingress.function";
 import { workersCacheNamespaces } from "#core/functions/workers-cache-namespaces.function";
 import { zoneOf } from "#core/functions/zone-of.function";
+import type { ZonePlan } from "#core/enums/zone-plan.enum";
+import type { ZonePolicy } from "#core/enums/zone-policy.enum";
 import type { CloudflareStack } from "#core/types/cloudflare-stack.type";
 import type { StorefrontPolicy } from "#core/types/storefront-policy.type";
 import { accessGate } from "#node/functions/access-gate.function";
@@ -122,7 +124,16 @@ export function cloudflareCoreStack(args: {
   const accountId = resolveRef(provider.accountId, "providers.cloudflare.accountId");
   const edge = parseEdge(root);
   const zones = Object.fromEntries(
-    Object.entries(runwayZones).map(([name, id]) => {
+    Object.entries(runwayZones).map(([name, entry]) => {
+      const {
+        id,
+        plan,
+        policy: zonePolicy,
+      }: {
+        id: typeof entry;
+        plan?: ZonePlan | undefined;
+        policy?: ZonePolicy | undefined;
+      } = typeof entry === "object" ? entry : { id: entry };
       const options = stack.zones[name] ?? ZONE_OPTIONS_SCHEMA.parse({});
       const zoneId = resolveRef(id, `providers.cloudflare.zones.${name}`);
       const zone = cloudflareZone({ accountId, name, zoneId, options, proxy: edge.proxy });
@@ -135,9 +146,10 @@ export function cloudflareCoreStack(args: {
         ? zoneEdge({
             name,
             zoneId: zone.zone.id,
-            plan: options.plan,
+            plan: plan ?? options.plan,
             edge,
             shopperRules: shop?.rules,
+            policy: zonePolicy,
           })
         : undefined;
       return [name, { ...zone, edge: edgeResources, storefront: shop?.rooms }] as const;

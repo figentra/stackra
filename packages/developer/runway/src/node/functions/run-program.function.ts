@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `runCommand(command, args, options)`, the real `CommandRunner`: runs a program without a shell, writes
+ * Purpose: `runProgram(command, args, options)`, the real `CommandRunner`: runs a program without a shell, writes
  *          `options.input` to its standard input when given, and answers its standard output, or throws with its exit
  *          code and standard error.
  * Boundary: no shell, so no argument is ever interpreted; the environment is the caller's (CI's OIDC login, the owner's
@@ -21,9 +21,9 @@ const MAX_BUFFER = 16 * 1024 * 1024;
  *
  * @throws Error naming the command and its standard error when it exits with an error.
  * @example
- * const head = await runCommand("git", ["rev-parse", "HEAD"], {});
+ * const head = await runProgram("git", ["rev-parse", "HEAD"], {});
  */
-export const runCommand: CommandRunner = async (command, args, options) => {
+export const runProgram: CommandRunner = async (command, args, options) => {
   try {
     const pending = promisify(execFile)(command, [...args], {
       cwd: options.cwd,

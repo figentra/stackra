@@ -59,6 +59,7 @@ describe("@stackra/runway", () => {
       "SmokeDriver",
       "TopologyMode",
       "VaultWriter",
+      "WorkerPreset",
       "baseUrlOf",
       "checkDestinations",
       "checkHosts",
@@ -66,9 +67,11 @@ describe("@stackra/runway", () => {
       "checkPorts",
       "checkRegions",
       "checkRequires",
+      "checkZoneOwners",
       "deploy",
       "deployTargets",
       "devPorts",
+      "diffWorkerSettings",
       "mobileIdsOf",
       "parseRunway",
       "poolMaxOf",
@@ -77,11 +80,13 @@ describe("@stackra/runway", () => {
       "productOf",
       "promote",
       "regionsOf",
+      "renderWranglerConfig",
       "rollback",
       "runwayJsonSchema",
       "surfaceHosts",
       "updateFeed",
       "withDeployLock",
+      "workerSettingsOf",
     ]);
   });
 

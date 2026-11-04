@@ -35,7 +35,7 @@ import {
   fileDeployLock,
   readRunway,
   readRunways,
-  runCommand,
+  runProgram,
   syncSecrets,
 } from "@stackra/runway/node";
 
@@ -90,7 +90,7 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
   const sha =
     typeof values["sha"] === "string"
       ? values["sha"]
-      : (await runCommand("git", ["rev-parse", "HEAD"], { cwd })).trim();
+      : (await runProgram("git", ["rev-parse", "HEAD"], { cwd })).trim();
   // A product's web surfaces and mobile apps ship through the product publish (edge KV, R2, EAS submit), not a
   // Runway provider; every other kind goes through `deploy()` (STA-1972).
   const productKinds = [

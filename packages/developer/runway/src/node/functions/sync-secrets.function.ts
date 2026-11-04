@@ -20,7 +20,7 @@ import { join } from "node:path";
 
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { readMemberSecrets } from "#node/functions/read-member-secrets.function";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
@@ -48,7 +48,7 @@ function lineOf(entry: SecretSyncEntry, source: string, encoreEnvironment: strin
  * @param input.repository - the repository root.
  * @param input.dryRun - print the names and writers only; reads and writes nothing.
  * @param input.log - receives each line, names only.
- * @param input.run - the command runner; `runCommand` by default.
+ * @param input.run - the command runner; `runProgram` by default.
  * @param input.ci - a test's answer to "is this a proved CI job"; by default the GitHub OIDC token answers it.
  * @throws RunwayUnresolvedError outside CI without `dryRun`, when a value is missing, when two services hold different
  *         values under one name, when the Encore app is not generated, or when a write fails; names only.
@@ -65,7 +65,7 @@ export async function syncSecrets(input: {
   readonly ci?: boolean | undefined;
 }): Promise<void> {
   const { environment, runways, log } = input;
-  const run = input.run ?? runCommand;
+  const run = input.run ?? runProgram;
   const plan = secretSyncPlan(environment, runways);
   const encoreEnvironment =
     runways.root.environments?.[environment]?.encore?.environment ?? environment;

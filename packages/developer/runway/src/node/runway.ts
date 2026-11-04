@@ -2,7 +2,7 @@
 /**
  * Stackra file contract:
  * Purpose: the `runway` binary (package.json `bin`, built to `dist/runway.mjs`; `pnpm runway` is its alias): runs
- *          `runRunway` (`plan`, `deploy`, `promote`) or `runRunwaySecrets` (`secrets sync`) in the repository the
+ *          `runRunway` (`plan`, `deploy`, `promote`), `runRunwaySecrets` (`secrets sync`) or `runRunwayDrift` (`drift`, read-only) in the repository the
  *          working directory is in, with the real git, gh and command runner, and prints `runway: <reason>` and exits 1
  *          on an error.
  * Boundary: the only file with a side effect on import; nothing imports it. git runs in the repository root; gh
@@ -15,6 +15,7 @@ import { execFileSync } from "node:child_process";
 
 import { repositoryRoot } from "#node/functions/repository-root.function";
 import { runRunway } from "#node/functions/run-runway.function";
+import { runRunwayDrift } from "#node/functions/run-runway-drift.function";
 import { runRunwaySecrets } from "#node/functions/run-runway-secrets.function";
 
 const log = (line: string): void => {
@@ -24,7 +25,10 @@ const log = (line: string): void => {
 try {
   const root = repositoryRoot();
   const [command, ...rest] = process.argv.slice(2);
-  if (command === "secrets") await runRunwaySecrets(rest, { root, log });
+  if (command === "drift") {
+    // Drift is a finding, not a crash: the exit code fails the nightly run.
+    if ((await runRunwayDrift(rest, { root, log })) > 0) process.exitCode = 1;
+  } else if (command === "secrets") await runRunwaySecrets(rest, { root, log });
   else
     runRunway(process.argv.slice(2), {
       root,
