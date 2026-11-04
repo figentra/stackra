@@ -47,7 +47,7 @@ export class SettingsApplyCommand extends Command({
   @Str
   author?: string;
 
-  /** Why. */
+  /** Why the change is made, kept on each revision. */
   @Option({ description: "Why, kept on each revision" })
   @Str
   reason?: string;

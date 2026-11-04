@@ -7,9 +7,12 @@
  */
 import type { DriftRow } from "#core/types/drift-row.type";
 
+/** One Worker member's settings that differ from what Cloudflare reports. */
 export type WorkerDrift = {
+  /** The Worker member's key in the runway. */
   readonly member: string;
   /** The Worker's name on Cloudflare. */
   readonly worker: string;
+  /** The differing settings, empty when the Worker matches. */
   readonly rows: readonly DriftRow[];
 };

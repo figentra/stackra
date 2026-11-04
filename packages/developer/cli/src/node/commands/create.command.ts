@@ -61,7 +61,7 @@ export class CreateCommand extends Command({
   @Str({ pattern: SCOPE })
   scope?: string;
 
-  /** The edition. */
+  /** The edition to create, `free` or `pro`. */
   @Option({ description: "free, or pro with STACKRA_LICENCE_TOKEN set" })
   @Str({ pattern: /^(free|pro)$/ })
   edition?: string;

@@ -8,6 +8,7 @@
 
 /** One zone with more than one owner. */
 export type ZoneOwnerIssue = {
+  /** The issue's machine code. */
   readonly code: "zone_owner_conflict";
   /** The zone name. */
   readonly subject: string;

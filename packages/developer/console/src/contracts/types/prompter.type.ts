@@ -9,7 +9,7 @@
 import type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 import type { PromptRequest } from "#contracts/types/prompt-request.type";
 
-/** Answers prompts. */
+/** Asks the Operator a prompt and returns the answer. */
 export interface Prompter {
   /** Asks `request` and resolves with the answer. */
   readonly ask: (request: PromptRequest) => Promise<PromptAnswer>;

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: how many dots of an indeterminate dot loader are lit at a moment, and when the next change is due.
  * Boundary: pure maths; the components own the timers.
- * Runtime: any
+ * Runtime: isomorphic
  * Governing contract: .agents/specs/sta-2017-dot-loader/spec.md (FR-001)
  */
 import { DOT_LOADER } from "#core/constants/dot-loader.constant";
