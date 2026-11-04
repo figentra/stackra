@@ -96,12 +96,15 @@ most 30 days each; a `security`, `tenant-isolation`, `data-integrity` or `leak` 
 It never fetches: the caller clones the product at its pin.
 
 `stackra testbed` (ADR 0484) replaces the Mac script `ci-box`; it starts `aws`, `ssh`, `rsync` and `gh` without a shell
-and never prints or passes a secret value. Defaults: AWS profile `academorix`, region `eu-west-1`, key
+and never prints or passes a secret value. Defaults: AWS profile `academorix`, regions eu-west-1, eu-west-2 and
+eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change), key
 `~/.ssh/academorix-ci.pem`, user `ubuntu`; override with `STACKRA_TESTBED_AWS_PROFILE`, `STACKRA_TESTBED_REGION`,
 `STACKRA_TESTBED_SSH_KEY` or `--profile`, `--region`, `--key`.
 
 - `run "<session> <what>" <dir> "<cmd>"` claims a free slot (heavy for `encore test`, `playwright`, `e2e`, `act `,
   `build`; else light), rsyncs `<dir>` into the box's job directory and runs the command there under the slot's lock.
+  The job runs detached on the box and the CLI follows its log: when the SSH-over-SSM connection drops, the job keeps
+  running and the CLI reattaches (three tries, 10 s apart) and exits with the job's code; Ctrl-C stops the job.
   A command naming `ci-box` or `stackra testbed` is refused (exit 2). With every slot busy it prints "every box busy,
   waiting", polls every 20 s and, after 2 minutes, raises the group's desired count by one. `--no-wait` exits 75 when
   no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
