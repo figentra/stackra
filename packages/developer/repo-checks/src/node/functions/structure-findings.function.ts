@@ -5,7 +5,7 @@
  *          the runway schemas and files, member imports, raw SQL reasons, the Expo form factor and window sizing, the
  *          native module packages (ADR 0478), the brand NOTICE, and
  *          per member its manifest, required files and service shape, a notice listing every anonymous-callable call
- *          (STA-2025), and in the Stackra repository its npm and
+ *          not in REVIEWED_ANONYMOUS_SURFACES (STA-2025), and in the Stackra repository its npm and
  *          `stackra` metadata.
  * Boundary: reads the listed files and runs `pnpm -r list`; returns findings and never prints. The runway check loads
  *           the built `@stackra/runway` (local member first, then the installed package); unbuilt is a finding when
@@ -20,6 +20,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { REVIEWED_ANONYMOUS_SURFACES } from "#node/constants/reviewed-anonymous-surfaces.constant";
 import { RAW_SQL_BASELINE } from "#node/constants/raw-sql-baseline.constant";
 import { checkImports } from "#node/functions/check-imports.function";
 import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.function";
@@ -213,9 +214,11 @@ export async function structureFindings(
         )
       : [];
   });
-  if (anonymous.length > 0)
+  // A reviewed one is recorded with its reason; only the rest are named, so a new one stands out.
+  const unreviewed = anonymous.filter((key) => !Object.hasOwn(REVIEWED_ANONYMOUS_SURFACES, key));
+  if (unreviewed.length > 0)
     options.warn(
-      `validate: ${anonymous.length} anonymous-callable action(s) and query(ies), past the permission and record-policy steps for a caller with no session: ${anonymous.join(", ")}`,
+      `validate: ${unreviewed.length} anonymous-callable action(s) and query(ies) not yet reviewed, past the permission and record-policy steps for a caller with no session (not in REVIEWED_ANONYMOUS_SURFACES of @stackra/repo-checks): ${unreviewed.join(", ")}`,
     );
   for (const { dir, path } of members) {
     const at = (f: string): unknown =>

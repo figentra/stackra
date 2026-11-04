@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { vi } from "vitest";
 import { z } from "zod";
 
+import type { StandInProps as Props } from "#core/__tests__/stand-in-props.fixture";
 import { resource } from "#core/functions/resource.function";
 import { ResourceViewPage } from "#native/resource-pages/resource-view-page";
 
@@ -46,8 +47,6 @@ vi.mock("react-native", async () => {
 
 vi.mock("@stackra/ui/native", async () => {
   const { createElement } = await import("react");
-  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
-  type Props = Record<string, any>;
   return {
     Text: (props: Props) => createElement("span", null, props.children),
     PageSkeleton: (props: Props) =>

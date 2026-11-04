@@ -119,7 +119,7 @@ components:
   - id: lib-application
     type: database
     label: application
-    sublabel: browser, isomorphic, node, worker
+    sublabel: browser, isomorphic, node, react-native, worker
     tag: 7 packages
     row: 3
     col: 0

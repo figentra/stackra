@@ -10,7 +10,7 @@
  */
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import { kindOf } from "@stackra/container";
-import { ApiArea } from "@stackra/contracts";
+import { ApiArea, Clock } from "@stackra/contracts";
 import { registerModelPartners } from "@stackra/database";
 import { ForbiddenError } from "@stackra/errors";
 import {
@@ -35,6 +35,13 @@ const OWNER = "usr_01ja0000000000000000000001";
 
 /** Another customer. */
 const STRANGER = "usr_01ja0000000000000000000002";
+
+/** A clock stopped at the cases' instant. */
+class FixedClock extends Clock {
+  now(): Date {
+    return new Date("2026-11-02T00:00:00Z");
+  }
+}
 
 describe("LoyaltyAccountPolicy", () => {
   const policy = new LoyaltyAccountPolicy();
@@ -80,9 +87,7 @@ describe("LoyaltyAccountPolicy", () => {
       get: () => policy as never,
     });
     const access = new IamAccessControlDriver(
-      new PolicyDecisionPointService(new MemoryPolicySourceDriver(), {
-        now: () => new Date("2026-11-02T00:00:00Z"),
-      }),
+      new PolicyDecisionPointService(new MemoryPolicySourceDriver(), new FixedClock()),
       {} as never,
     );
     const own = LoyaltyAccountFactory.new().make({ memberId: OWNER });

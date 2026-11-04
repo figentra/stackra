@@ -14,7 +14,7 @@
       "minHeight": 240
     }
   ],
-  "related": ["free/button", "free/page-header", "free/confirmation"],
+  "related": ["free/button", "free/page-header", "free/use-confirmation"],
   "tokens": ["color.accent", "color.danger"],
   "keywords": ["action", "button", "sdui", "run", "confirm", "shortcut", "kit"],
   "status": "new"

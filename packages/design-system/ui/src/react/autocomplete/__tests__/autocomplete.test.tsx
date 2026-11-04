@@ -26,6 +26,9 @@ const press = (element: HTMLElement) => act(() => element.click());
 /** The field's button: React Aria names it by the value and the label. */
 const trigger = () => screen.getByRole("button", { name: /Country/ });
 
+/** The field's drawn value: HeroUI's trigger is a group, and the value is a sibling of its indicator button. */
+const shown = () => document.querySelector("[data-slot='autocomplete-value']")?.textContent;
+
 /** Types into the open list's search box. */
 const type = (name: string, text: string) =>
   fireEvent.change(screen.getByRole("searchbox", { name }), { target: { value: text } });
@@ -82,7 +85,7 @@ describe("Autocomplete (web)", () => {
 
   it("shows a controlled value", () => {
     render(<Autocomplete label="Country" items={ITEMS} value="eg" />);
-    expect(trigger().textContent).toContain("Egypt");
+    expect(shown()).toBe("Egypt");
   });
 
   it("keeps the list shut and drops the clear button while read-only", () => {
@@ -98,7 +101,8 @@ describe("Autocomplete (web)", () => {
         <Autocomplete label="Country" items={ITEMS} labels={{ clear: "مسح" }} defaultValue="ar" />
       </div>,
     );
-    expect(trigger().textContent).toContain("Argentina");
+    // the label alone: the item's description stays in the list
+    expect(shown()).toBe("Argentina");
     expect(document.querySelector("[aria-label='مسح']")).toBeTruthy();
   });
 });

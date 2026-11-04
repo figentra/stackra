@@ -30,10 +30,7 @@ beforeEach(async () => {
   const signature = await signer.sign(new TextEncoder().encode(canonicalJson(body)));
   writeFileSync(
     join(root, "proof.jsonl"),
-    [
-      { link, hash },
-      { checkpoint: body, signature },
-    ]
+    [{ key: await signer.publicKey() }, { link, hash }, { checkpoint: body, signature }]
       .map((line) => JSON.stringify(line))
       .join("\n"),
   );

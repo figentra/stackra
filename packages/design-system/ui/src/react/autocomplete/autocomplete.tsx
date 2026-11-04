@@ -85,7 +85,12 @@ export function Autocomplete({
     >
       {label ? <Label>{label}</Label> : null}
       <HeroAutocomplete.Trigger>
-        <HeroAutocomplete.Value />
+        {/* The label alone: the item's own content would repeat its description and check mark in the field. */}
+        <HeroAutocomplete.Value>
+          {({ isPlaceholder, selectedText, defaultChildren }) =>
+            isPlaceholder ? defaultChildren : selectedText
+          }
+        </HeroAutocomplete.Value>
         {isReadOnly ? null : (
           <HeroAutocomplete.ClearButton
             aria-label={labels?.clear ?? t(UI_KEYS.ui.bulk_action_bar.clear)}
