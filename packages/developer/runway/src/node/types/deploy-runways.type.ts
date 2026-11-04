@@ -47,6 +47,15 @@ export interface DeployRunways {
     readonly member: string;
     /** The member root it sits under (`services`, `workers`, `apps`); its runtime follows from it. */
     readonly folder?: string;
+    /**
+     * The names the member's committed manifest declares (gen's `env` rows), with their kind (`secret`, `config`,
+     * `public`) and the environments that need them.
+     */
+    readonly env?: readonly {
+      readonly name: string;
+      readonly kind?: string;
+      readonly environments?: readonly string[];
+    }[];
     readonly runway: {
       readonly secrets?: readonly string[];
       readonly environments?: Readonly<
