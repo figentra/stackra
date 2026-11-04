@@ -54,7 +54,7 @@ const OPTIONS: ShapeIR = {
   fields: [
     field("apiOrigin", { type: { kind: "brand", brand: "url" } }),
     field("checkoutOrigin", {
-      default: { kind: "literal", value: "https://pay.test" } as FieldIR["default"],
+      default: { value: "https://pay.test", code: '"https://pay.test"', imports: [] },
     }),
     field("stripeKey", {
       secret: {
@@ -123,7 +123,7 @@ describe("envOf", () => {
     const override = config(
       "PayConfig",
       {},
-      { kind: "package", name: "PayConfig", from: "@stackra/pay" },
+      { name: "PayConfig", from: "@stackra/pay", own: false },
     );
     expect(envOf(member("service", [override]))).toEqual([]);
   });
@@ -155,6 +155,35 @@ describe("envOf", () => {
         home: "/runtime/checkout",
       },
     ]);
+  });
+
+  it("gives an app only its packages' public rows and a worker none", () => {
+    const hosted: StackraManifest = {
+      member: "pay",
+      package: "@stackra/pay",
+      version: "1.0.0",
+      env: [
+        {
+          name: "STRIPE_SECRET_KEY",
+          kind: "secret",
+          config: "pay",
+          class: "PayConfig",
+          field: "key",
+        },
+        {
+          name: "VITE_PAY_ORIGIN",
+          kind: "public",
+          config: "pay",
+          class: "PayConfig",
+          field: "origin",
+        },
+      ],
+    };
+    const dependencies = [{ package: "@stackra/pay", manifest: hosted }];
+    expect(envOf(member("app", [], [], dependencies)).map((row) => row["name"])).toEqual([
+      "VITE_PAY_ORIGIN",
+    ]);
+    expect(envOf(member("worker", [], [], dependencies))).toEqual([]);
   });
 
   it("is the manifest's env section, absent when empty", () => {

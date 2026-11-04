@@ -4,9 +4,10 @@
  *          variable the member's own configuration classes declare (`Config({ schema, env })` names and the schema's
  *          `@Secret` fields), with its kind (`secret`, `public` for a `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` name,
  *          `config` otherwise), its type and rules, whether it is required, the per-environment refused prefixes and
- *          environments of a secret, and the config key and class that declare it. A service, app or worker also takes
- *          the rows of every hosted package, marked `from`, and gives every row its Infisical path
- *          (`home: "/runtime/<member>"`); runway resolves the project (`<project>-runtime`, `-runtime-prod`).
+ *          environments of a secret, and the config key and class that declare it. A service also takes the rows of
+ *          every hosted package and an app only their `public` rows, marked `from`; a worker takes none. Every row of a
+ *          service, app or worker gets its Infisical path (`home: "/runtime/<member>"`); runway resolves the project
+ *          (`<project>-runtime`, `-runtime-prod`).
  * Boundary: pure; names and rules only, never a default or a value, so ADR 0305 rule 34 holds. A host override of a
  *           package config adds no row (the package's row stands); an integration's or connection's `@Secret` is a
  *           tenant credential, not an environment variable, and adds none. Sorted by name, one row per name and
@@ -92,10 +93,13 @@ export function envOf(ir: MemberIR): Entry[] {
     }
   }
   if (ir.layout !== "package") {
-    for (const dependency of ir.dependencies) {
+    // A service hosts its packages' modules, so it needs their names; an app's bundle takes only public values
+    // (decision 3); a Worker runs no module container, so it declares its own names only.
+    for (const dependency of ir.layout === "worker" ? [] : ir.dependencies) {
       if (dependency.manifest["kind"] === "app") continue;
-      for (const row of (dependency.manifest["env"] ?? []) as readonly Entry[])
-        rows.push({ ...row, from: row["from"] ?? dependency.package });
+      for (const row of (dependency.manifest["env"] ?? []) as unknown as readonly Entry[])
+        if (ir.layout === "service" || row["kind"] === "public")
+          rows.push({ ...row, from: row["from"] ?? dependency.package });
     }
     for (const row of rows) row["home"] = `/runtime/${ir.member}`;
   }
