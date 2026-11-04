@@ -22,7 +22,7 @@ export const REVIEWED_ANONYMOUS_SURFACES: Readonly<Record<string, string>> = Obj
     "id only, so an anonymous caller can sign nothing but its own claimed decision",
   "identity.passkey.challenge@1":
     "starts a passkey sign-in, which by definition has no session yet (ADR 0206 d8); 10 calls a minute. " +
-    "Follow-up STA-2102: an unknown login answers UnauthenticatedError, a login-existence signal the bucket only slows",
+    "an unknown login answers a same-shape decoy that verify refuses, so no login-existence signal (STA-2102)",
   "identity.passkey.verify@1":
     "finishes a passkey sign-in (ADR 0206 d7-8); the identity provider checks the signature against the challenge " +
     "session, a refusal is UnauthenticatedError, and the bearer token it answers is never logged; 10 calls a minute",
