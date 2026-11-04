@@ -436,7 +436,7 @@ describe("CloudflareWorkersProviderDriver", () => {
       driver.runways = RUNWAYS;
       await driver.apply(WEB, SHA);
       expect(calls).toContain(
-        `<root>/workers/registry$ pnpm exec wrangler secret bulk <<< {"REGISTRY_SIGNING_KEY":"infisical-value"}`,
+        `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file /dev/stdin <<< {"REGISTRY_SIGNING_KEY":"infisical-value"}`,
       );
     });
 
@@ -449,7 +449,7 @@ describe("CloudflareWorkersProviderDriver", () => {
       const driver = workers(root, answering);
       driver.runways = RUNWAYS;
       await expect(driver.apply(WEB, SHA)).rejects.toThrow("REGISTRY_SIGNING_KEY");
-      expect(calls.some((call) => call.includes("wrangler deploy"))).toBe(false);
+      expect(calls.some((call) => /wrangler (deploy|versions)/.test(call))).toBe(false);
     });
   });
 });
