@@ -301,7 +301,12 @@ function awsTestbedHome(
   // ---- the box's role: SSM, Auto Scaling on its own groups, and the AWS identity Infisical checks ------------------
   const instanceRole = new aws.iam.Role(
     "testbed-instance",
-    { name: D.instanceProfile, assumeRolePolicy: assumedBy("ec2.amazonaws.com"), tags },
+    {
+      name: D.instanceProfile,
+      assumeRolePolicy: assumedBy("ec2.amazonaws.com"),
+      permissionsBoundary: options.permissionsBoundary,
+      tags,
+    },
     opts,
   );
   // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
@@ -391,6 +396,7 @@ function awsTestbedHome(
     {
       name: "stackra-testbed-image-builder",
       assumeRolePolicy: assumedBy("ec2.amazonaws.com"),
+      permissionsBoundary: options.permissionsBoundary,
       tags,
     },
     opts,

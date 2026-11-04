@@ -319,6 +319,7 @@ describe("awsTestbed with a given network and no groups", () => {
       vpcId: "vpc-9",
       subnetIds: ["subnet-9", "subnet-10"],
       groups: false,
+      permissionsBoundary: "arn:aws:iam::111122223333:policy/stackra-testbed-boundary",
     });
     await new Promise((resolve) => {
       bare.securityGroupId.apply(resolve);
@@ -328,6 +329,19 @@ describe("awsTestbed with a given network and no groups", () => {
 
   const later = (kind: string): Registered[] =>
     registered.slice(start).filter((entry) => entry.type.endsWith(`:${kind}`));
+
+  it("sets the given permissions boundary on every role it creates, and none without it", () => {
+    const roles = later("iam/role:Role");
+    expect(roles.map((role) => role.inputs.permissionsBoundary)).toEqual([
+      "arn:aws:iam::111122223333:policy/stackra-testbed-boundary",
+      "arn:aws:iam::111122223333:policy/stackra-testbed-boundary",
+    ]);
+    const first = registered
+      .slice(0, start)
+      .filter((entry) => entry.type.endsWith(":iam/role:Role"));
+    expect(first.length).toBe(2);
+    for (const role of first) expect(role.inputs.permissionsBoundary).toBeUndefined();
+  });
 
   it("uses the given VPC and first subnet, and declares no Auto Scaling group", () => {
     expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.vpcId).toBe("vpc-9");
