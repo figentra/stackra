@@ -49,6 +49,7 @@ import { DocStandardCommand } from "#node/commands/doc-standard.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
 import { DuplicateExportsCommand } from "#node/commands/duplicate-exports.command";
 import { DuplicationCommand } from "#node/commands/duplication.command";
+import { LintCommand } from "#node/commands/lint.command";
 import { LsCommand } from "#node/commands/ls.command";
 import { McpSyncCommand } from "#node/commands/mcp-sync.command";
 import { MobileOnboardCommand } from "#node/commands/mobile-onboard.command";
@@ -61,9 +62,11 @@ import { SettingsApplyCommand } from "#node/commands/settings-apply.command";
 import { SettingsDiffCommand } from "#node/commands/settings-diff.command";
 import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
 import { SmokeCommand } from "#node/commands/smoke.command";
+import { StartCommand } from "#node/commands/start.command";
 import { StructureCommand } from "#node/commands/structure.command";
+import { TestCommand } from "#node/commands/test.command";
+import { TypecheckCommand } from "#node/commands/typecheck.command";
 import { checkCommand } from "#node/functions/check-command.function";
-import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommands } from "#node/types/cli-commands.type";
 
 /** The commands of `stackra`. */
@@ -74,10 +77,10 @@ export const COMMANDS: CliCommands = [
   CONSOLE_COMMAND,
   DEV_COMMAND,
   BUILD_COMMAND,
-  toolCommand("start", "Generate, then preview an app's web build"),
-  toolCommand("typecheck", "Generate, then type-check the member"),
-  toolCommand("test", "Generate, then run the member's tests (--tier unit, int or e2e)"),
-  toolCommand("lint", "Lint the member with oxlint"),
+  StartCommand,
+  TypecheckCommand,
+  TestCommand,
+  LintCommand,
   checkCommand(
     "check",
     "Run the quality gate: config, format, spelling, secrets, structure, docs, lint, gen, …",

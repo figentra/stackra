@@ -9,20 +9,10 @@
  * Governing contract: ADR 0295 (decision 5); POSIX exit status 127 for a command that cannot run.
  */
 import { spawn } from "node:child_process";
-import { delimiter, dirname, join } from "node:path";
 
+import { toolPath } from "#node/functions/tool-path.function";
 import type { CliIo } from "#node/types/cli-io.type";
 import type { ToolRun } from "#node/types/tool-run.type";
-
-/** `PATH` with every `node_modules/.bin` from `cwd` to the filesystem root in front. */
-function pathFrom(cwd: string): string {
-  const bins: string[] = [];
-  for (let folder = cwd; ; folder = dirname(folder)) {
-    bins.push(join(folder, "node_modules", ".bin"));
-    if (dirname(folder) === folder) break;
-  }
-  return [...bins, process.env["PATH"] ?? ""].join(delimiter);
-}
 
 /**
  * Runs `run` and resolves with its exit code.
@@ -37,7 +27,7 @@ export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
     // shortcut: no shell, so Windows `.cmd` shims do not start; add `shell: true` with quoting when Windows is supported.
     const child = spawn(run.command, [...run.args], {
       cwd: run.cwd,
-      env: { ...process.env, ...run.env, PATH: pathFrom(run.cwd) },
+      env: { ...process.env, ...run.env, PATH: toolPath(run.cwd) },
       stdio: io.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
     });
     child.stdout?.setEncoding("utf8").on("data", io.out);

@@ -168,7 +168,7 @@ describe("COMMANDS on the console", () => {
     const classes = COMMANDS.map((command) =>
       typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
     );
-    // 23 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
+    // 19 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
     expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);
   });
 });
@@ -186,16 +186,12 @@ const PASSTHROUGH: string[] = [
   "dev",
   "eas-preflight",
   "gen",
-  "lint",
   "mcp",
   "mcp:exec",
   "new",
   "preview:serve",
   "seed-pack",
-  "start",
-  "test",
   "testbed",
-  "typecheck",
   "validate",
   "verify",
 ];
