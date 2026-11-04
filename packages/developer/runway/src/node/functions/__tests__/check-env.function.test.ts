@@ -74,6 +74,8 @@ describe("checkEnv", () => {
       "services/api/src/mode.ts":
         "if (process.env.NODE_ENV === 'test' || import.meta.env.DEV) {}\n",
       "services/api/src/key.ts": "const key = process.env.STRIPE_SECRET_KEY;\n",
+      "services/api/src/doc.ts":
+        "/**\n * @example process.env.IN_A_DOC_COMMENT\n */\n// process.env.IN_A_LINE_COMMENT\nexport {};\n",
     });
     expect(checkEnv(root)).toEqual([]);
   });
