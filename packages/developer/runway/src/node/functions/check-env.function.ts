@@ -49,6 +49,12 @@ const RAW_READ =
 const PLATFORM =
   /^(?:NODE_|GITHUB_|RUNNER_|ENCORE_|TURBO_|INFISICAL_|EAS_|CLAUDE_|npm_)|^(?:CI|PATH|HOME|DEV|PROD|MODE|SSR|BASE_URL|TZ|VITEST)$/;
 
+// shortcut: a text scan, not a parse; comments are dropped so documentation examples are not reads, but a read inside a
+// string (generated source) is still reported. The lint rule, which reads the AST, is the exact check.
+/** `text` with block comments and whole-line `//` comments blanked. */
+const withoutComments = (text: string): string =>
+  text.replaceAll(/\/\*[\s\S]*?\*\//g, "").replaceAll(/^\s*\/\/.*$/gm, "");
+
 /** Every source file under `dir`, relative to `root`. */
 function sources(root: string, dir: string): string[] {
   const out: string[] = [];
@@ -187,7 +193,7 @@ export function checkEnv(root: string): EnvFinding[] {
   for (const dir of SOURCE_ROOTS)
     for (const file of sources(root, dir)) {
       if (EXEMPT.some((pattern) => pattern.test(file))) continue;
-      const text = readFileSync(join(root, file), "utf8");
+      const text = withoutComments(readFileSync(join(root, file), "utf8"));
       for (const match of text.matchAll(RAW_READ)) {
         const name = match[1] ?? match[2] ?? "";
         if (PLATFORM.test(name) || declared.has(name)) continue;
