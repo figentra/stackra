@@ -133,7 +133,7 @@ jobs:
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm install $INSTALL_ARGS
 
-      # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
+      # STA-1393: Turborepo remote cache (turbo.figentra.com, ADR 0026 as amended). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
       - name: Turborepo remote cache (Infisical OIDC)
         if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''

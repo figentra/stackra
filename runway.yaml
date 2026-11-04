@@ -84,12 +84,15 @@ observability:
     - name: registry
       url: https://npm.stackra.figentra.com/-/ping
       checkFrequencySeconds: 30
+    # figentra-static (figentra/figentra, ADR 0284 as amended 2026-11-05); its alias static.stackra.figentra.com
+    # serves the same files.
     - name: static
-      url: https://static.stackra.figentra.com/
+      url: https://static.figentra.com/
     # Every cache route needs the CI token; an unauthenticated status call answers 401 when the Worker is up and 503
     # when its settings are missing (workers/turbo-cache/src/cache/handle-request.ts).
+    # figentra-turbo-cache (figentra/figentra, ADR 0026 as amended 2026-11-05).
     - name: turbo-cache
-      url: https://turbo.stackra.figentra.com/v8/artifacts/status
+      url: https://turbo.figentra.com/v8/artifacts/status
       expectedStatusCodes: [401]
   # Unpublished until the owner picks the host (STA-1574); publishing is flipping `published` and adding customDomain.
   statusPage:
@@ -171,7 +174,8 @@ targets:
     workflows:
       static: deploy-static.yml
       registry: deploy-registry.yml
-      # stackra-turbo-cache (ADR 0026), turbo.stackra.figentra.com; runs in the `static` environment.
+      # stackra-turbo-cache (ADR 0026), runs in the `static` environment. Both are rollback paths only since the
+      # 2026-11-05 switch to figentra-static and figentra-turbo-cache (figentra/figentra): dispatch only.
       turbo-cache: deploy-turbo-cache.yml
   # The reusable provider is .github/workflows/runway-mintlify.yml (ADR 0299).
   mintlify:

@@ -1,8 +1,10 @@
 # Stackra file contract:
-# Purpose: deploy workers/static (the `stackra-static` Cloudflare Worker, static.stackra.figentra.com), the `static`
-#          member of runway.yaml, through Runway's `cloudflare-workers` provider (runway-cloudflare-workers.yml, ADR 0352
-#          decision 1, ADR 0284). Runs on main and on schema release tags only, never on a pull request; by hand (or
-#          `pnpm runway promote <sha>`) it redeploys a given commit of main. The deployment message is the commit.
+# Purpose: deploy workers/static (the `stackra-static` Cloudflare Worker), the `static` member of runway.yaml, through
+#          Runway's `cloudflare-workers` provider (runway-cloudflare-workers.yml, ADR 0352 decision 1, ADR 0284). Since
+#          the switch of 2026-11-05 (ADR 0284 amendment, STA-2111), `figentra-static` in figentra/figentra serves
+#          static.figentra.com and static.stackra.figentra.com, and deploys core's schemas from there. This workflow
+#          is the rollback path only, by hand: its wrangler deploy takes static.stackra.figentra.com back to
+#          `stackra-static`. Removed with the member when the owner deletes `stackra-static`.
 # Secrets: CLOUDFLARE_API_TOKEN comes from Infisical /ci (env prod) through GitHub OIDC inside the provider job. No
 #          repository secret holds it (ADR 0173, ADR 0019 D2). Without INFISICAL_CI_IDENTITY_ID the job builds, prints
 #          a notice and deploys nothing, so main stays green.
@@ -10,17 +12,9 @@
 
 name: Deploy static
 
+# By hand only: a push or a `schemas@*` tag no longer deploys, because any deploy of `stackra-static` moves the alias
+# back from figentra-static. A schema change or tag reaches the hosts through figentra/figentra's deploy-static.yml.
 on:
-  push:
-    branches: [main]
-    # Only what changes the site: the member, the schema sources, this caller and its provider.
-    paths:
-      - "workers/static/**"
-      - "tools/schemas/**"
-      - ".github/workflows/deploy-static.yml"
-      - ".github/workflows/runway-cloudflare-workers.yml"
-    # A schema release (`schemas@1.4.0`) adds an immutable /schemas/1.4.0/ tree and moves /schemas/v1/.
-    tags: ["schemas@*"]
   workflow_dispatch:
     inputs:
       sha:

@@ -2,6 +2,11 @@
 
 # @figentra/worker-turbo-cache
 
+> **Moved (2026-11-05, ADR 0026 as amended).** This Worker is replaced by `figentra-turbo-cache`, whose member lives in
+> figentra/figentra `workers/turbo-cache`, moved there with its history. This copy stays only as the rollback path: its
+> deploy runs by hand, and any deploy takes the old host back from `figentra-turbo-cache`. It is removed when the owner
+> deletes the old Worker (cloudflare-hosts runbook in stackra-notes). Make changes in figentra/figentra.
+
 Stackra's Turborepo remote cache: one Cloudflare Worker (`stackra-turbo-cache`) that implements Turborepo's
 remote-cache HTTP API (v8 artifacts) over an R2 bucket
 ([ADR 0026](../../apps/docs/src/docs/adr/0026-turborepo-remote-cache-on-r2.mdx), built now by

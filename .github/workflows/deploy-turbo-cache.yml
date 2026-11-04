@@ -4,7 +4,10 @@
 #          `cloudflare-workers` provider (runway-cloudflare-workers.yml, ADR 0352 decision 1): build, deploy, set the
 #          TURBO_CACHE_TOKEN Worker secret from CI's TURBO_TOKEN, then check `GET /v8/artifacts/status` with that token
 #          as the bearer. Runs on main pushes that touch the member or this file, and by hand (or
-#          `pnpm runway promote <sha>`) for a given commit of main; never on a pull request.
+#          `pnpm runway promote <sha>`) for a given commit of main; never on a pull request. Since the switch of
+#          2026-11-05 (ADR 0026 amendment, STA-2112), `figentra-turbo-cache` in figentra/figentra serves
+#          turbo.figentra.com and turbo.stackra.figentra.com from the same bucket. This workflow is the rollback path
+#          only, by hand: its wrangler deploy takes turbo.stackra.figentra.com back to `stackra-turbo-cache`.
 # Boundary: the R2 bucket `turbo-cache` and its 7-day lifecycle rule are infrastructure: @stackra/infra-cloudflare
 #           (src/node/turbo-cache/) declares them, and Runway's infra step (STA-1921 step 4) applies them; this job no
 #           longer creates them. ci.yml's TURBO_* env belongs to the testing session, not this file.
@@ -19,13 +22,8 @@
 #          no new trust. Without the identity id the job builds, prints a notice and deploys nothing.
 name: Deploy turbo cache
 
+# By hand only: any deploy of `stackra-turbo-cache` moves the old host back from figentra-turbo-cache.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "workers/turbo-cache/**"
-      - ".github/workflows/deploy-turbo-cache.yml"
-      - ".github/workflows/runway-cloudflare-workers.yml"
   workflow_dispatch:
     inputs:
       sha:

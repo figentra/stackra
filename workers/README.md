@@ -10,8 +10,8 @@ deployed, so it reuses the app tier: `tier:app` in its `turbo.jsonc`.
 | ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | [`edge`](edge)               | `@figentra/worker-edge`        | `stackra-edge`: resolves the host, refuses a bad JWT by JWKS, signs the edge headers and forwards (ADR 0437) |
 | [`registry`](registry)       | `@figentra/worker-registry`    | `stackra-registry`: the Stackra registry at `npm.stackra.figentra.com`, npm protocol and licences (ADR 0453) |
-| [`static`](static)           | `@figentra/worker-static`      | `stackra-static`: the hosted static files at `static.stackra.figentra.com` (`/schemas/…`)                    |
-| [`turbo-cache`](turbo-cache) | `@figentra/worker-turbo-cache` | `stackra-turbo-cache`: the Turborepo remote cache, turbo's v8 artifacts API over R2 (ADR 0026)               |
+| [`static`](static)           | `@figentra/worker-static`      | `stackra-static`, the rollback path only: `figentra-static` (figentra/figentra) serves its hosts             |
+| [`turbo-cache`](turbo-cache) | `@figentra/worker-turbo-cache` | `stackra-turbo-cache`, the rollback path only: `figentra-turbo-cache` (figentra/figentra) serves its hosts   |
 
 ## Rules
 
