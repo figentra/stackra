@@ -440,6 +440,28 @@ providers:
         image: ghcr.io/figentra/tools-photon:0.6.0
 ```
 
+## The `runway` command
+
+`runway` (root alias `pnpm runway`) runs on `@stackra/console` (ADR 0506 decision 8): `runway help <command>` prints
+a command's help, `--json` gives its data in the `{ ok, data }` envelope, a usage error exits 2 and a failure 1.
+Nothing here builds or deploys from a workstation: deploy, promote and rollback dispatch the caller workflows on
+GitHub, where each run sits behind its environment's protection (and, in a private repository, the O1 owner gate).
+
+| Command                                      | Does                                                                                                                                         | Exit                     |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `runway plan [env]`                          | What a deploy of `env` (default production) does, as JSON: each target, its caller workflows, the CI secret names, the synced names | 0                        |
+| `runway deploy <target> [--dry-run]`         | From a clean checkout of the head of origin/main, dispatches each caller workflow of `targets.<target>`                                      | 0                        |
+| `runway promote <sha> [--dry-run]`           | Dispatches every production caller that takes a `sha`, for a commit of origin/main; the record is `rollback to <sha>`                       | 0                        |
+| `runway rollback <sha> [--dry-run]`          | The same for an earlier commit; refuses the head of origin/main (ADR 0352)                                                                   | 0; 2 on the head         |
+| `runway status [env]`                        | What each GitHub environment runs, from GitHub's deployment records: commit, time, state                                                     | 0                        |
+| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), service `requires` | 0; 1 with each finding   |
+| `runway drift [env]`                         | Each Cloudflare Worker's live settings against what runway.yaml renders (read-only, `CLOUDFLARE_API_TOKEN_READ`)                            | 0; 1 when a Worker drifted |
+| `runway secrets sync <env> [--dry-run]`      | The member secrets of `env` from Infisical into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves                 | 0                        |
+
+Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
+by a flag or `GITHUB_ACTIONS`; a deploy job needs `permissions: id-token: write`. A destination is one of
+`encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`; `validate` refuses any other (owner decision O8, 2026-11-04).
+
 ## Deploy, promote and roll back
 
 `deployTargets(root, environment)` lists every place a release lands: each kind of member in build order, in each

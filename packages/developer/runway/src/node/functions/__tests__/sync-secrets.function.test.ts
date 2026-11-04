@@ -3,8 +3,7 @@
  * Purpose: unit tests of the secret sync (STA-606): `secretSyncPlan` gives each member its names, Infisical folder and
  *          writer; `readMemberSecrets` reads only in CI, returns only the declared names and fails on a missing one;
  *          `syncSecrets` writes each service secret into Encore with the value on stdin, reads everything before it
- *          writes, refuses one name with two values, and its dry run reads nothing; `runRunwaySecrets` parses
- *          `sync <env> [--dry-run]`. Canary values prove no value reaches an argument, a printed line or an error.
+ *          writes, refuses one name with two values, and its dry run reads nothing. Canary values prove no value reaches an argument, a printed line or an error.
  * Boundary: test only; a recording command runner stands in for infisical and encore, and a temporary folder for the
  *           repository. Nothing reaches a real vault or app.
  * Runtime: node (vitest)
@@ -17,7 +16,6 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { readMemberSecrets } from "#node/functions/read-member-secrets.function";
-import { runRunwaySecrets } from "#node/functions/run-runway-secrets.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import { syncSecrets } from "#node/functions/sync-secrets.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
@@ -394,16 +392,5 @@ describe("syncSecrets", () => {
         }),
       ),
     ).toMatch(/run `stackra gen` first/);
-  });
-});
-
-describe("runRunwaySecrets", () => {
-  it("takes sync <env> [--dry-run] and nothing else", async () => {
-    await expect(
-      runRunwaySecrets(["list"], { root: repository(false), log: () => undefined }),
-    ).rejects.toThrow(/usage: pnpm runway secrets sync <env>/);
-    await expect(
-      runRunwaySecrets(["sync"], { root: repository(false), log: () => undefined }),
-    ).rejects.toThrow(/usage/);
   });
 });
