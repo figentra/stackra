@@ -19,6 +19,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { Command, Option, UsageError, type CommandIo } from "@stackra/console";
+import { Enum } from "@stackra/contracts";
 import {
   deployTargets,
   promote,
@@ -36,7 +37,7 @@ import { runwayProviders } from "#node/runway-deploy/functions/runway-providers.
 const LOCKS = join(tmpdir(), "stackra-runway-locks");
 
 /** The environments a runway names. */
-const ENVIRONMENTS: readonly string[] = Object.values(RunwayEnvironment);
+const ENVIRONMENTS: readonly string[] = Enum.values(RunwayEnvironment).map(String);
 
 /** Ships what one environment runs to the next. */
 export class PromoteCommand extends Command({

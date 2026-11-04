@@ -294,7 +294,8 @@ export async function compileMigrations(
   // Each macro as a same-named subclass that records its owner when a migration calls it (the macro edge).
   const called = new Set<string>();
   const macros = owned.map(({ macro, owner }) => {
-    const Base = macro as new () => { apply: (...args: never[]) => unknown };
+    // oxlint-disable-next-line typescript/method-signature-style -- Recording overrides apply as a method, which TS2425 refuses against a property signature
+    const Base = macro as new () => { apply(...args: never[]): unknown };
     const Recording = class extends Base {
       override apply(...args: never[]): unknown {
         called.add(owner);

@@ -78,8 +78,10 @@ describe(emitEncoreApi, () => {
   };
   const built = buildManifest(ir).manifest;
   const entries = built.actions ?? [];
-  const cancel = entries.find((entry) => entry.key === "orders.order.cancel@1");
-  const list = entries.find((entry) => entry.key === "orders.order.list@1");
+  type Entry = (typeof entries)[number];
+  // Both are in `ir`, so the lookups always find them; the casts keep the spreads below complete.
+  const cancel = entries.find((entry) => entry.key === "orders.order.cancel@1") as Entry;
+  const list = entries.find((entry) => entry.key === "orders.order.list@1") as Entry;
   const manifest: StackraManifest = {
     ...built,
     actions: [
