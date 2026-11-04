@@ -7,6 +7,8 @@
  * Runtime: node
  * Governing contract: ADR 0166, ADR 0167; STA-256.
  */
+
+/** The workflow jobs the trigger check skips, each with the reason it may. */
 export const WORKFLOW_TRIGGER_ALLOWED: readonly {
   readonly path: string;
   readonly job: string;

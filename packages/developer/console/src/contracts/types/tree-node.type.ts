@@ -22,6 +22,6 @@ export interface TreeNode {
   /** A status cell before the label. */
   readonly status?: CheckStatus;
 
-  /** Its children. */
+  /** The nodes drawn under this one. */
   readonly children?: readonly TreeNode[];
 }

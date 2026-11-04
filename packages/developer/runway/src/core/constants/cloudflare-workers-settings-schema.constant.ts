@@ -61,7 +61,7 @@ const MEMBER_SCHEMA = WORKER_SETTINGS_SCHEMA.extend({
   smoke: z.array(SMOKE_SCHEMA).default([]),
 });
 
-/** `targets.cloudflare-workers`. */
+/** The schema of a runway's `targets.cloudflare-workers` block. */
 export const CLOUDFLARE_WORKERS_SETTINGS_SCHEMA = z.looseObject({
   compatibilityDate: COMPATIBILITY_DATE_SCHEMA.optional(),
   defaults: WORKER_SETTINGS_SCHEMA.optional(),

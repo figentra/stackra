@@ -39,7 +39,7 @@ const show = (value: unknown): string =>
   value === undefined ? "<unset>" : JSON.stringify(Array.isArray(value) ? value.toSorted() : value);
 
 /**
- * The differences.
+ * Lists the compared settings whose rendered value differs from the live one.
  *
  * @example
  * diffWorkerSettings({ workers_dev: false }, { workers_dev: true });

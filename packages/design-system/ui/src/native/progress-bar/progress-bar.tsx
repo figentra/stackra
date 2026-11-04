@@ -27,6 +27,7 @@ import { useDotLoader } from "#native/hooks/use-dot-loader";
 import { Text } from "#native/text/text";
 import type { ProgressBarProps } from "#native/progress-bar/progress-bar.props";
 
+/** The dot loader as a progress bar: a row filled to the value, or the build running when there is none. */
 export function ProgressBar({
   value,
   minValue = 0,
