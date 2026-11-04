@@ -1,0 +1,73 @@
+# Stackra file contract:
+# Purpose: the nightly drift check of Runway's `cloudflare-workers` provider (ADR 0519 decision 7, STA-1992): runs
+#          `pnpm runway drift`, which compares the rendered Worker config of runway.yaml with what Cloudflare reports,
+#          and fails the run, listing each differing setting, on any drift. It only runs the CLI (ADR 0352 decision 1).
+# Secrets: CLOUDFLARE_API_TOKEN_READ only (a read-only token), from Infisical `/ci` through GitHub OIDC. No
+#          repository secret. Without an identity id the job notices and checks nothing.
+# Owner: release-operations
+name: Runway drift
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs.
+permissions: {}
+
+concurrency:
+  group: runway-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Worker drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The `static` environment's name is in the OIDC subject the Infisical identity trusts (STA-1968).
+    environment: static
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter=@stackra/runway...
+
+      - name: Build runway
+        run: pnpm turbo run build --filter=@stackra/runway
+
+      - name: Prerequisites missing
+        if: env.INFISICAL_IDENTITY_ID == ''
+        run: echo "::notice title=Drift skipped::No Infisical identity id (vars.INFISICAL_CI_IDENTITY_ID). Nothing checked."
+
+      - name: Read-only Cloudflare token (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: CLOUDFLARE_API_TOKEN_READ
+          export-type: env
+
+      # Exits 1, and so fails the run, when any Worker drifted.
+      - name: runway drift
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: packages/developer/runway
+        run: node dist/runway.mjs drift production

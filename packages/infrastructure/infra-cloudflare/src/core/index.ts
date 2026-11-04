@@ -22,6 +22,7 @@ export { CustomHostnameState } from "#core/enums/custom-hostname-state.enum";
 export { OriginLock } from "#core/enums/origin-lock.enum";
 export { WafMode } from "#core/enums/waf-mode.enum";
 export { ZonePlan } from "#core/enums/zone-plan.enum";
+export { ZonePolicy } from "#core/enums/zone-policy.enum";
 export { CloudflareConfigInvalidError } from "#core/errors/cloudflare-config-invalid.error";
 export { customHostnameRequest } from "#core/functions/custom-hostname-request.function";
 export { customHostnameState } from "#core/functions/custom-hostname-state.function";
