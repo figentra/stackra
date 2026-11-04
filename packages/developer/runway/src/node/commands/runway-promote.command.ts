@@ -29,13 +29,16 @@ export class RunwayPromoteCommand extends Command({
   @Option({ description: "Print the gh commands and dispatch nothing" })
   dryRun = false;
 
+  /** The dispatcher; a test replaces it. */
+  dispatch: typeof runRunway = runRunway;
+
   /**
    * Dispatches and resolves with 0.
    *
    * @throws Error when the commit is not on origin/main.
    */
   handle(io: CommandIo): number {
-    runRunway(
+    this.dispatch(
       ["promote", this.sha, ...(this.dryRun ? ["--dry-run"] : [])],
       runwayIo(repositoryRoot(io.cwd), (line) => io.output.line(line)),
     );

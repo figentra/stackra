@@ -28,13 +28,16 @@ export class RunwayDeployCommand extends Command({
   @Option({ description: "Print the gh commands and dispatch nothing" })
   dryRun = false;
 
+  /** The dispatcher; a test replaces it. */
+  dispatch: typeof runRunway = runRunway;
+
   /**
    * Dispatches and resolves with 0.
    *
    * @throws Error when the target has no caller workflows or the checkout is not the head of origin/main.
    */
   handle(io: CommandIo): number {
-    runRunway(
+    this.dispatch(
       ["deploy", this.target, ...(this.dryRun ? ["--dry-run"] : [])],
       runwayIo(repositoryRoot(io.cwd), (line) => io.output.line(line)),
     );

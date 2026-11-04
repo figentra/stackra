@@ -25,13 +25,16 @@ export class RunwayDriftCommand extends Command({
   })
   environment = "production";
 
+  /** The drift reader; a test replaces it. */
+  read: typeof runRunwayDrift = runRunwayDrift;
+
   /**
    * Reads and resolves with 1 when a Worker drifted, else 0.
    *
    * @throws RunwayUnresolvedError without the read token.
    */
   async handle(io: CommandIo): Promise<number> {
-    const drifted = await runRunwayDrift([this.environment], {
+    const drifted = await this.read([this.environment], {
       root: repositoryRoot(io.cwd),
       log: (line) => io.output.line(line),
     });

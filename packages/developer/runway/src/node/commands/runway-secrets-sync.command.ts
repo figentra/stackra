@@ -27,6 +27,9 @@ export class RunwaySecretsSyncCommand extends Command({
   @Option({ description: "Print the secret names and writers; read and write nothing" })
   dryRun = false;
 
+  /** The sync; a test replaces it. */
+  sync: typeof syncSecrets = syncSecrets;
+
   /**
    * Syncs and resolves with 0.
    *
@@ -34,7 +37,7 @@ export class RunwaySecretsSyncCommand extends Command({
    */
   async handle(io: CommandIo): Promise<number> {
     const root = repositoryRoot(io.cwd);
-    await syncSecrets({
+    await this.sync({
       environment: this.environment,
       runways: readRunways(root),
       repository: root,
