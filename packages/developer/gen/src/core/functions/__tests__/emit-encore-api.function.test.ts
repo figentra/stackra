@@ -107,7 +107,7 @@ describe(emitEncoreApi, () => {
         input: { $ref: "#/schemas/orders.Summary" },
         output: { $ref: "#/schemas/billing.Summary" },
       },
-    ] as StackraManifest["actions"],
+    ] as NonNullable<StackraManifest["actions"]>,
   };
   const content = emitEncoreApi(ir, manifest)?.content ?? "";
   const endpoint = (

@@ -14,7 +14,7 @@
  * Governing contract: ADR 0468 (the owner's approval); ADR 0523 (no self-asserted trust); ADR 0173; STA-2099;
  *                     STA-2100.
  */
-import { createPublicKey, verify, type JsonWebKey } from "node:crypto";
+import { createPublicKey, verify, type webcrypto } from "node:crypto";
 
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { RootRunway } from "#core/types/root-runway.type";
@@ -86,7 +86,7 @@ export async function proveGithubJob(input: {
     throw refuse("the runner's OIDC token is not a JWT");
   }
   const { keys } = (await get(RUNWAY_OIDC.keys, {})) as {
-    keys?: readonly (JsonWebKey & { kid?: string })[];
+    keys?: readonly (webcrypto.JsonWebKey & { kid?: string })[];
   };
   const key = keys?.find((candidate) => candidate.kid === header["kid"]);
   const signed =

@@ -115,7 +115,7 @@ describe("proveGithubJob", () => {
 
   it("never puts the token in a refusal", async () => {
     const token = jwt({ ...CLAIMS, aud: "elsewhere" });
-    const refusal = await prove(token).catch((error: unknown) => error as Error);
+    const refusal = (await prove(token).catch((error: unknown) => error)) as Error;
     expect(refusal.message.includes(token)).toBe(false);
   });
 });

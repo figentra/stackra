@@ -28,7 +28,7 @@ export async function proveApproval(
   environment: string,
   verb: string,
 ): Promise<boolean> {
-  const approval = root.environments[environment as RunwayEnvironment]?.deploy?.approval;
+  const approval = root.environments?.[environment as RunwayEnvironment]?.deploy?.approval;
   if (approval === undefined) return false;
   try {
     await proveGithubJob({ github: root.providers?.github, environment });
