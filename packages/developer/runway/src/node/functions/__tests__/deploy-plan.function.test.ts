@@ -49,7 +49,18 @@ describe("deployPlan", () => {
       "mintlify",
     ]);
     expect(new Set(runways.members.map((m) => m.member))).toEqual(
-      new Set(["docs", "mobile", "playground", "static"]),
+      new Set([
+        "console",
+        "docs",
+        "mobile",
+        "playground",
+        "example",
+        "health",
+        "edge",
+        "registry",
+        "static",
+        "turbo-cache",
+      ]),
     );
   });
 });

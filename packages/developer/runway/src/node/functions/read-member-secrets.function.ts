@@ -5,16 +5,19 @@
  *          Infisical environment it maps `environment` to, and the member's runtime folder (`<runtime path>/<member>`,
  *          ADR 0512). The secret sync writes them into Encore, and the Workers provider uploads them with a version.
  * Boundary: the values live in memory only: they are returned, never logged, printed, written to a file or put in an
- *           argument, and no error carries one, only names. It runs only in CI (`GITHUB_ACTIONS=true`, whose job
- *           logged in to Infisical with its environment's own OIDC identity); anywhere else it refuses before reading.
+ *           argument, and no error carries one, only names. It runs only in a GitHub Actions job of the repository,
+ *           proved by GitHub's signed OIDC token (`proveGithubJob`), never by `GITHUB_ACTIONS`; anywhere else it
+ *           refuses before reading.
  *           `infisical export` runs through the `CommandRunner`, and its output never reaches an error or `cause`.
  *           Every declared name must exist in the folder, or it throws naming the missing ones; other names in the
  *           folder are not returned.
  * Runtime: node
  * Governing contract: ADR 0173 (nobody reads a value; Infisical is the source); ADR 0512 (one project per reader,
- *                     `/runtime/<member>`); ADR 0257; STA-606; STA-1990 (the Workers provider reads through it).
+ *                     `/runtime/<member>`); ADR 0257; STA-606; STA-1990 (the Workers provider reads through it);
+ *                     STA-2100 (the OIDC proof).
  */
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import { proveGithubJob } from "#node/functions/prove-github-job.function";
 import { runProgram } from "#node/functions/run-program.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
@@ -49,7 +52,7 @@ function exportedPairs(output: string): Map<string, string> {
  * @param input.member - the member folder name (`api`).
  * @param input.runways - the root and member runways (`readRunways`).
  * @param input.run - the command runner; `runProgram` by default.
- * @param input.ci - whether this is a CI job; `GITHUB_ACTIONS === "true"` by default.
+ * @param input.ci - a test's answer to "is this a proved CI job"; by default `proveGithubJob` answers it.
  * @throws RunwayUnresolvedError outside CI, when the root runway maps no Infisical environment, workspace or runtime
  *         path, when the export fails, or when a declared name is missing; the message names names, never a value.
  * @example
@@ -64,10 +67,12 @@ export async function readMemberSecrets(input: {
   readonly ci?: boolean | undefined;
 }): Promise<ReadonlyMap<string, string>> {
   const { environment, member, runways } = input;
-  if (!(input.ci ?? process.env["GITHUB_ACTIONS"] === "true"))
+  if (input.ci === false)
     throw new RunwayUnresolvedError(
-      `secret values are read only in a CI deploy job (GITHUB_ACTIONS=true); run the sync with --dry-run here to see the names`,
+      `secret values are read only in a CI deploy job of the repository (proved by its GitHub OIDC token); run the sync with --dry-run here to see the names`,
     );
+  // The proof's refusal names what is missing; it never carries the token.
+  if (input.ci === undefined) await proveGithubJob({ github: runways.root.providers.github });
   const entry = secretSyncPlan(environment, runways).find((item) => item.member === member);
   if (entry === undefined) return new Map();
   const infisical = runways.root.providers.infisical;

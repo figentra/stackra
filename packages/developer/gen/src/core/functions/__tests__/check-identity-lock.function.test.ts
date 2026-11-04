@@ -77,6 +77,7 @@ const statics = (module: string): StackraManifest =>
       class: "OrderPermissions",
       module,
       member,
+      risk: "L1",
       file: "src/order.permissions.ts",
     })),
   }) as StackraManifest;

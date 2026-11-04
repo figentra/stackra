@@ -49,7 +49,7 @@ function lineOf(entry: SecretSyncEntry, source: string, encoreEnvironment: strin
  * @param input.dryRun - print the names and writers only; reads and writes nothing.
  * @param input.log - receives each line, names only.
  * @param input.run - the command runner; `runProgram` by default.
- * @param input.ci - whether this is a CI job; `GITHUB_ACTIONS === "true"` by default.
+ * @param input.ci - a test's answer to "is this a proved CI job"; by default the GitHub OIDC token answers it.
  * @throws RunwayUnresolvedError outside CI without `dryRun`, when a value is missing, when two services hold different
  *         values under one name, when the Encore app is not generated, or when a write fails; names only.
  * @example

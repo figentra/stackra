@@ -110,7 +110,8 @@ describe("runDeployProduct", () => {
     expect(options).toMatchObject({
       repository: folder,
       environment: "staging",
-      approved: true,
+      // staging declares no approval, and the flag proves none (STA-2100).
+      approved: false,
       assets: { bucket: "acme-assets", origin: "https://assets.staging.figentra.com" },
       served: ["console", "landing"],
       canaryScopes: ["tenant-a", "tenant-b"],
