@@ -28,6 +28,9 @@ const stripeSecretKey = secret("STRIPE_SECRET_KEY");
 - A human sets each value per environment; an agent only names the secret (the secret-manager flow covers the
   runtime store once a tool for it exists; ADR 0257)
 - Never in git
+- Every name is declared once in code (ADR 0173 amendment 2026-11-04): `Config({ schema, env })` or `@Secret`, never
+  a raw `process.env.X` (`stackra/no-raw-env`). `runway env check` fails on a name with no declaration or no Infisical
+  home; `runway env sync` pushes values to the runtimes; no command prints a value
 
 ## 2. Dev/CI Secrets (Infisical)
 
