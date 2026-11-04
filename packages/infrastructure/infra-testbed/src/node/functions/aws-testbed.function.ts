@@ -72,10 +72,28 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     options.vpcId === undefined
       ? aws.ec2.getVpcOutput({ default: true }, { provider }).id
       : pulumi.output(options.vpcId);
+  // Only the default VPC's subnets in zones that offer the heavy type (every light override is offered there too, or
+  // the mixed-instances policy skips it): us-east-1e offers none of the three types (runbook step 16).
+  const zones = aws.ec2.getInstanceTypeOfferingsOutput(
+    {
+      locationType: "availability-zone",
+      filters: [
+        { name: "instance-type", values: [plan.groups.heavy.instanceTypes[0] ?? "c7i.2xlarge"] },
+      ],
+    },
+    { provider },
+  ).locations;
   const subnetIds: pulumi.Input<string[]> =
     options.subnetIds === undefined
-      ? aws.ec2.getSubnetsOutput({ filters: [{ name: "vpc-id", values: [vpcId] }] }, { provider })
-          .ids
+      ? aws.ec2.getSubnetsOutput(
+          {
+            filters: [
+              { name: "vpc-id", values: [vpcId] },
+              { name: "availability-zone", values: zones },
+            ],
+          },
+          { provider },
+        ).ids
       : [...options.subnetIds];
 
   // No ingress by default: the CLI reaches a box through SSM Session Manager. With `--ssh-direct` it authorises and
