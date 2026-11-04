@@ -152,6 +152,12 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     healthCheckGracePeriod: 300,
     newInstancesProtectedFromScaleIn: false,
     instanceRefresh: refresh,
+    // Cost backstop outside the box: Auto Scaling replaces any box older than a day (AWS's minimum), so a box whose
+    // idle pass never fires cannot bill for long; a job's own timeout is 3 hours. The in-service count is published
+    // for the CloudWatch alarm the owner sets (notes cost-backstop draft).
+    maxInstanceLifetime: 86_400,
+    metricsGranularity: "1Minute",
+    enabledMetrics: ["GroupInServiceInstances", "GroupDesiredCapacity"],
   };
   // The CLI and the idle pass move the desired count, so Pulumi owns the bounds and not the count.
   const groupOpts = { ...opts, ignoreChanges: ["desiredCapacity"] };

@@ -191,6 +191,9 @@ describe("awsTestbed", () => {
     for (const name of ["heavy", "light"]) {
       const group = resource("autoscaling/group:Group", name).inputs;
       expect(group.healthCheckType).toBe("EC2");
+      // The cost backstop: no box lives past a day, and the in-service count feeds the owner's alarm.
+      expect(group.maxInstanceLifetime).toBe(86_400);
+      expect(group.enabledMetrics).toEqual(["GroupInServiceInstances", "GroupDesiredCapacity"]);
       expect(group.instanceRefresh).toMatchObject({
         strategy: "Rolling",
         preferences: { minHealthyPercentage: 100, scaleInProtectedInstances: "Wait" },
