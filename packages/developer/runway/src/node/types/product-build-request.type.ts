@@ -29,6 +29,6 @@ export type ProductBuildRequest = {
   readonly surfacesOnly?: boolean;
   /** Plan the bundles and record the EAS builds instead of starting them; local outputs are still written. */
   readonly dryRun?: boolean;
-  /** The command runner; `runCommand` when absent. */
+  /** The command runner; `runProgram` when absent. */
   readonly run?: CommandRunner;
 };

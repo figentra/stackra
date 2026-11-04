@@ -26,7 +26,7 @@ import { platformRows } from "#node/functions/platform-rows.function";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { releaseOf } from "#node/functions/release-of.function";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import { uploadBundle } from "#node/functions/upload-bundle.function";
 import type { EdgeCanary } from "#node/types/edge-canary.type";
 import type { EdgeRelease } from "#node/types/edge-release.type";
@@ -74,7 +74,7 @@ export async function publishProduct(
     });
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
-  const run = request.run ?? runCommand;
+  const run = request.run ?? runProgram;
   const accountId = root.providers?.cloudflare?.accountId;
   const env = accountId === undefined ? undefined : { CLOUDFLARE_ACCOUNT_ID: String(accountId) };
   const uploaded: string[] = [];
