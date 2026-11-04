@@ -4,7 +4,7 @@
  *          `enumOwner`'s (the modal's action model), else the code itself.
  * Boundary: platform-free: imports `react` hooks and no UI kit; the web and native form fields label a select's codes
  *           with it. A list row's index is dropped from the key (`fieldLabelPath`).
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0294 decision 22 (derived enum labels); ADR 0307.
  */
 import { fieldLabelPath } from "#core/functions/field-label-path.function";

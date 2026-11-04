@@ -5,7 +5,7 @@
  *          change against the previous period with the tone of the better direction, and the target.
  * Boundary: platform-free: imports `react` hooks and no UI kit, so the web `KpiView` and the native widget content draw
  *           the same KPI with their own kit. Computes nothing the metric does not carry beyond the change ratio.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 15); ADR 0220 (money in minor units); ADR 0164.
  */
 import { Tone } from "@stackra/contracts";

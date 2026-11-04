@@ -8,7 +8,7 @@
  * Boundary: platform-free: imports `react` and no UI kit, so the web and native `ActionInputModal` draw the same state
  *           with their own kit. Registers the input schema under the action ref so `@stackra/ui`'s schema form reads
  *           it. The caller's runner runs each record with `confirmed`, since the modal is the confirmation.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 3); ADR 0139 (declared confirmation); ADR 0140 (refusals); ADR 0164.
  */
 import type { ActionRef } from "@stackra/clients";

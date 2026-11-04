@@ -7,7 +7,7 @@
  *           confirmation and toast (`@stackra/ui/react` or `@stackra/ui/native`). Needs a container binding
  *           `ClientTransport`; the run still decides on the server. A refusal resolves as `refused` after its toast;
  *           any other error rejects.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0139 (an action runs with its declared confirmation); ADR 0307 (rule 4); ADR 0140 (refusals);
  *          ADR 0260; ADR 0164 (native parity).
  */

@@ -7,7 +7,7 @@
  * Boundary: platform-free: imports `react` and `@stackra/ui/form`'s binding and no UI kit; the web and native form fields
  *           spread the props on their own kit's parts. The parts live here: a day without its time yet is not an
  *           instant; an empty time is the start of the day.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys are paths of the input); ADR 0055 (thin field adapters).
  */
 import { CalendarDate } from "@internationalized/date";

@@ -6,7 +6,7 @@
  * Boundary: platform-free: imports `react` and no UI kit, so the web `WidgetBody` and the native widget content draw the
  *           same display with their own kit. Presents the answer and computes nothing beyond it. shortcut: a View
  *           display is "not shown here" until the resource table renderer is built.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 14 and 15); ADR 0164 (0294 note: only Custom takes a renderer); ADR 0305 (rule 31).
  */
 import { useNumber, useTranslation } from "@stackra/i18n/react";

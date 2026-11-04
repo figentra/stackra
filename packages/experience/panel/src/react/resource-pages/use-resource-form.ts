@@ -8,7 +8,7 @@
  *           with their own kit. Registers the action's input schema under the action ref so `@stackra/ui`'s schema
  *           form reads it. The caller hands in its runner and how it goes to a page (push on the web, replace on a
  *           phone).
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys; rule 3); ADR 0139 (declared confirmation); ADR 0055; ADR 0164.
  */
 import { useTranslation } from "@stackra/i18n/react";

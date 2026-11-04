@@ -6,7 +6,7 @@
  * Boundary: platform-free: imports `react` hooks and no UI kit, so the web and native `ResourceValue` show the same
  *           text, each in its own element. A money object is recognised by its shape, so the panel needs no dependency
  *           on `@stackra/money`. An enum code takes its label (`useEnumLabel`), else shows as its code.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 1: wire paths); ADR 0164; ADR 0294 decision 22 (derived enum labels).
  */
 import { useMoney, useTranslation } from "@stackra/i18n/react";

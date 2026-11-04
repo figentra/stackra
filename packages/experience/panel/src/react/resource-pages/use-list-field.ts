@@ -4,7 +4,7 @@
  *          section (its title and the list's error), each row's path and remove button, and the add button.
  * Boundary: platform-free: imports `@stackra/ui/form`'s binding and no UI kit; the web and native form fields spread the
  *           props on their own kit's parts, each row bound by index (`parcels.0.weight`).
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys are paths of the input); ADR 0055 (thin field adapters).
  */
 import { useTranslation } from "@stackra/i18n/react";

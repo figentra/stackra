@@ -4,7 +4,7 @@
  *          value shown and the change that holds it back in minor units.
  * Boundary: platform-free: imports `@stackra/ui/form`'s binding and no UI kit; the web and native form fields draw it
  *           with their own number field in the currency's format.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0220 (money in minor units); ADR 0055 (thin field adapters).
  */
 import type { FormFieldBinding } from "@stackra/ui/contracts";

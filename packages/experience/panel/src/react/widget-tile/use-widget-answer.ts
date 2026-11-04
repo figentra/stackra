@@ -5,7 +5,7 @@
  * Boundary: platform-free: imports `react` and no UI kit, so the web tile and the native card read the same answer.
  *           The answer comes from `useQuery` (live when the query declares `invalidateOn`); `refreshOn` of an uncached
  *           query and `refreshEvery` are added here.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 14, 17 and 20); ADR 0164 (0294 note: refreshEvery at least 30 seconds).
  */
 import { useQuery, type UseQueryResult } from "@stackra/clients/react";

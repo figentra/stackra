@@ -4,7 +4,7 @@
  *          parsed value, invalid text shows an error and fails the form), blur and the error state.
  * Boundary: platform-free: imports `react` and `@stackra/ui/form`'s binding and no UI kit; the web and native form fields
  *           spread the result on their own text area. The raw text never goes out.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys are paths of the input); ADR 0055 (thin field adapters).
  */
 import { useTranslation } from "@stackra/i18n/react";

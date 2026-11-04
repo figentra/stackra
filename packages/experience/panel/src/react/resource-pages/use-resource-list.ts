@@ -8,7 +8,7 @@
  * Boundary: platform-free: imports `react` and no UI kit (the collection options are typed by `@stackra/ui`'s web
  *           entry, a type only; both kits' `useCollection` is the same engine). The web and native tables run the query
  *           with their own `useQuery` and draw the engine with their own kit; the columns are each table's own.
- * Runtime: isomorphic (react)
+ * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 1, 2, 9, 11 and 12); ADR 0164; ADR 0271 (decision 1); ADR 0505.
  */
 import { SortDirection } from "@stackra/contracts";
