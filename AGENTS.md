@@ -52,11 +52,29 @@ and settings edits listed on STA-1395, the guard still asks before staging deplo
 
 Owner decision 2026-11-03 (STA-2083, replaces "Tests run on the box"): nothing waits on tests before it lands. No box
 run before the merge and no waiting on CI: open the pull request and merge it right away
-(`gh pr merge --squash --admin`), then add the Linear label `needs-testing` to its STA issue and a
-`Needs testing: <what to run>` line to the pull request body. The tester lane later runs those tests on the box
-(`ci-box run "core STA-n" . "pnpm verify"`; `stackra testbed run` once the testbed is live) and removes the label.
+(`figentra pr merge --admin [-R figentra/<repo>] <n>`, as stackra-bot; see below), then add the Linear label
+`needs-testing` to its STA issue and a `Needs testing: <what to run>` line to the pull request body. The tester
+lane later runs those tests on the box (`ci-box run "core STA-n" . "pnpm verify"`; `stackra testbed run` once the
+testbed is live) and removes the label.
 GitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a
 workstation.
+
+## GitHub identity: agents are stackra-bot
+
+Owner decision 2026-11-04 (STA-2105): agents act on GitHub only as the `stackra-bot` App. Raw `gh` and a plain
+`git push` run as the owner's login `figentra-usr`, so they mean the owner; an agent never runs them, in any
+repository or directory.
+
+- In this repository: `pnpm bot:gh -- …`, `pnpm bot:git -- push origin HEAD`, `pnpm pr:merge <n>`.
+- Anywhere else (another repository, `~/Projects/figentra`): `figentra bot gh …`,
+  `figentra bot git push origin HEAD` and `figentra pr merge --admin [-R figentra/<repo>] <n>` from
+  `@figentra/cli`. Each mints the installation token in-process from Infisical `agents` dev `/agents`; none prints
+  it or puts it on argv.
+- A merge-now (`--admin`) merge lands only where the repository's rulesets name stackra-bot as a bypass actor. Where
+  GitHub refuses it, hand the pull request to the leader for the owner; never retry as the owner.
+- The bot has no `administration`, `environments`, `secrets` or `variables` permission. Rulesets, environments,
+  branch protection, secrets, variables, App permissions and production approvals stay the owner's; a production
+  dispatch by the bot stops at the owner check (`github.triggering_actor`).
 
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 
