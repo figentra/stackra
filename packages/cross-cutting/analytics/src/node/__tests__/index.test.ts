@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: the server analytics relay and erasure listeners are exported,
+ * Purpose: the consumer contract of the `./node` entry: the server analytics relay and erasure listeners, the ingest action and the
+ *          `memory` analytics store driver are exported,
  *          nothing else is.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
@@ -20,6 +21,7 @@ describe("@stackra/analytics/node", () => {
       "IngestAnalyticsBatchAction",
       "IngestAnalyticsBatchInput",
       "IngestAnalyticsBatchOutput",
+      "MemoryAnalyticsStoreDriver",
       "RelayTrackedAnalyticsListener",
     ]);
   });

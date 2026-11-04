@@ -24,6 +24,7 @@
     "@stackra/settings",
     "@stackra/testing",
     "@stackra/tsdown-config",
+    "@stackra/ui",
     "@stackra/validation",
     "@stackra/vitest-config"
   ],

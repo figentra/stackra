@@ -1,5 +1,20 @@
 # @stackra/ledger
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [f9c825d]
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/locking@0.9.0
+  - @stackra/money@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

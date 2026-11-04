@@ -250,6 +250,17 @@
           "from": "@stackra/analytics"
         }
       }
+    },
+    {
+      "port": "AnalyticsStore",
+      "key": "analytics.AnalyticsStore",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAnalyticsStoreDriver",
+          "from": "@stackra/analytics/node"
+        }
+      }
     }
   ],
   "integrations": [],

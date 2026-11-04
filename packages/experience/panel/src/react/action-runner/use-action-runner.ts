@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `useActionRunner()`, the panel's one way to run an action a button, a palette intent or a row placed: it asks the
- *          action's declared confirmation (or a generic one for an L2 to L4 risk), sends it, refreshes the cached
+ *          action's declared confirmation (a spec's own `confirm` words in its place, or a generic one for an L2 to L4
+ *          risk), sends it, refreshes the cached
  *          queries and toasts the success text or the refusal's message.
  * Boundary: needs a `PanelShell` (or another `ConfirmationProvider`) and a container binding `ClientTransport`; the run
  *           still decides on the server. A refusal resolves as `refused` after its toast; any other error rejects.
@@ -20,6 +21,7 @@ import { toast, useConfirmation } from "@stackra/ui/react";
 import { useCallback } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { specText } from "#core/functions/spec-text.function";
 import type { ActionRun } from "#react/action-runner/action-run.type";
 import { ActionRunStatus } from "#react/action-runner/action-run-status.enum";
 import { ActionRunnerClient } from "#react/action-runner/action-runner.client";
@@ -44,20 +46,33 @@ export function useActionRunner(): ActionRunner {
     async <A extends ActionRef>(
       action: A,
       input: RefInput<A>,
-      options?: { readonly confirmed?: boolean },
+      options?: Parameters<ActionRunner>[2],
     ): Promise<ActionRun<RefOutput<A>>> => {
       const ask = action.texts.confirm;
+      const own = options?.confirm;
       // A caller's modal that showed the declared copy was the yes already (ADR 0307 rule 3).
-      const asks = ask !== undefined || (action.risk !== undefined && CONFIRMED.has(action.risk));
+      const asks =
+        own !== undefined ||
+        ask !== undefined ||
+        (action.risk !== undefined && CONFIRMED.has(action.risk));
       if (asks && options?.confirmed !== true) {
         const yes = await confirm({
-          title: t(PANEL_KEYS.panel.actions.confirm_title),
-          ...(ask === undefined
-            ? {}
-            : { description: t(typeof ask === "object" ? ask.text : ask) }),
+          // A spec's own words win over the declared ones (ADR 0139: the action still confirms).
+          title:
+            own === undefined ? t(PANEL_KEYS.panel.actions.confirm_title) : specText(own.title, t),
+          ...(own?.description !== undefined
+            ? { description: specText(own.description, t) }
+            : own !== undefined || ask === undefined
+              ? {}
+              : { description: t(typeof ask === "object" ? ask.text : ask) }),
           confirmLabel: t(PANEL_KEYS.panel.actions.confirm),
           cancelLabel: t(PANEL_KEYS.panel.actions.cancel),
-          tone: typeof ask === "object" ? ask.tone : Tone.Warning,
+          tone:
+            own !== undefined
+              ? (own.tone ?? Tone.Warning)
+              : typeof ask === "object"
+                ? ask.tone
+                : Tone.Warning,
         });
         if (!yes) return { status: ActionRunStatus.Cancelled };
       }

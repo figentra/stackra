@@ -1,5 +1,31 @@
 # @stackra/ui
 
+## 0.9.0
+
+### Minor Changes
+
+- 681d01a: Five web components in `@stackra/ui/react` from the UI build list (STA-1981). `Autocomplete` wraps HeroUI v3's
+  Autocomplete with the single ComboBox contract: a select whose list opens with a search box that narrows it.
+  `ColorField` wraps HeroUI v3's ColorField with ColorPicker's field contract, a typed `#rrggbb` value with a swatch
+  of it. `ColorSwatch` wraps HeroUI v3's ColorSwatch and also draws a colour React Aria cannot parse, such as a token's
+  `var()`. `Flag` draws a country's flag from its ISO code (or a language tag's region) with `flagOf`. `MarkerMap`
+  places pins by projection on an SVG, with no map tiles, beside a selectable `List` of them in a `SidePanel`.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [e8cb518]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/tokens@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/icons@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/shortcuts@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

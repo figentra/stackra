@@ -3,7 +3,8 @@
  * Purpose: `Filter`, the data constructors of a table filter, as a generated resource table writes them
  *          (`Filter.from("status", { enum: OrderStatus, pinned: true })`, `Filter.dateRange("createdAt")`,
  *          `Filter.compare("totals.totalMinor", FilterComparison.Gte)`).
- * Boundary: pure: each returns a frozen `FilterNode`; the table builder records through them.
+ * Boundary: pure: each returns a frozen `FilterNode`; the table builder records through them. The look fields
+ *           (`label`, `control`, `choices`, ...) pass through.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 2); reporting gap 5 (range, date range, compare, contains, is-null).
  */
@@ -12,12 +13,13 @@ import type { Enum } from "@stackra/contracts";
 import type { FilterComparison } from "#core/enums/filter-comparison.enum";
 import type { FilterNode } from "#core/types/filter-node.type";
 
-/** The options a field filter takes. */
-interface FilterOptions {
-  readonly default?: unknown;
-  readonly pinned?: boolean;
+/** The options a field filter takes, its `FilterSpec` look among them. */
+type FilterOptions = Omit<
+  Extract<FilterNode, { readonly key: string }>,
+  "kind" | "key" | "operator" | "enum"
+> & {
   readonly enum?: Enum.Any;
-}
+};
 
 /** A field filter node of `kind`. */
 const field = (

@@ -11,14 +11,16 @@
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
  *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
  *           secrets are read by name from `env`; a secret value goes to wrangler on stdin only, never as an argument,
- *           a file or a log line. Agents and tests never apply against a real account (ADR 0352 decision 6).
+ *           a file or a log line. When `runways` is set, the secret values are read from Infisical
+ *           (`readMemberSecrets`, in CI) before anything ships, instead of from `env` (ADR 0173). Agents and tests
+ *           never apply against a real account (ADR 0352 decision 6).
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
  *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921; ADR 0519; STA-1989, STA-1990.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
@@ -37,8 +39,10 @@ import type { DeployRecord } from "#core/types/deploy-record.type";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { DeployTarget } from "#core/types/deploy-target.type";
 import type { WorkerDrift } from "#core/types/worker-drift.type";
+import { readMemberSecrets } from "#node/functions/read-member-secrets.function";
 import { runCommand } from "#node/functions/run-command.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
+import type { DeployRunways } from "#node/types/deploy-runways.type";
 
 /** One parsed member of `targets.cloudflare-workers.members`. */
 type Member = z.output<typeof CLOUDFLARE_WORKERS_SETTINGS_SCHEMA>["members"][string];
@@ -92,6 +96,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
 
   /** The environment ids, vars and secrets are read from; a test replaces it. */
   env: Readonly<Record<string, string | undefined>> = process.env;
+
+  /** The root and member runways; when set, secrets are read from Infisical, not `env` (STA-606). */
+  runways?: DeployRunways;
 
   /** The smoke request; a test replaces it. */
   fetch: (
@@ -174,6 +181,18 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       );
     const members = this.membersOf(target);
     for (const [key, member] of members) this.checkValues(key, member);
+    // Read every Worker's values before anything ships: a missing secret fails with nothing changed.
+    const secrets = new Map<string, ReadonlyMap<string, string>>();
+    for (const [key, member] of members) {
+      if (this.runways === undefined || Object.keys(member.secrets).length === 0) continue;
+      const read = await readMemberSecrets({
+        environment: target.environment,
+        member: basename(member.path),
+        runways: this.runways,
+        run: this.run,
+      });
+      secrets.set(key, read);
+    }
 
     const versions: string[] = [];
     for (const [key, member] of members) {
@@ -202,7 +221,10 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
                 ? undefined
                 : JSON.stringify(
                     Object.fromEntries(
-                      Object.entries(member.secrets).map(([name, from]) => [name, this.env[from]]),
+                      Object.entries(member.secrets).map(([name, from]) => [
+                        name,
+                        secrets.get(key)?.get(name) ?? this.env[from],
+                      ]),
                     ),
                   ),
           },
@@ -490,7 +512,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           path: `${SETTINGS_PATH}.members.${key}.ids.${name}`,
           message: `Set ${name} to the real id in the deploy job's environment`,
         })),
-      ...Object.values(member.secrets)
+      ...(this.runways === undefined ? Object.values(member.secrets) : [])
         .filter((name) => (this.env[name] ?? "") === "")
         .map((name) => ({
           path: `${SETTINGS_PATH}.members.${key}.secrets`,

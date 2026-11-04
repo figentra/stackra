@@ -43,6 +43,22 @@ const service = (deps: readonly { name: string; from: string }[]) => ({
   traits: [],
 });
 
+const billingClass = (name: string, kind: string, extra: object = {}) => ({
+  name,
+  kind,
+  module: "billing",
+  file: `src/modules/billing/x/${name}.ts`,
+  importPath: `#modules/billing/x/${name}`,
+  options: {},
+  deps: [],
+  facets: [],
+  methods: [],
+  refusals: [],
+  statics: {},
+  traits: [],
+  ...extra,
+});
+
 describe("emitWiring", () => {
   const wiring = emitWiring(COMMERCE_IR);
 
@@ -336,6 +352,120 @@ describe("emitWiring", () => {
     };
     expect(emitWiring(ir)).toContain(
       '    { module: "billing", kind: "projection", provide: InvoiceBook, deps: [] },',
+    );
+  });
+
+  it("binds a Menu, Shortcut, Store, Bridge and ExtensionPoint, a Bridge per request (STA-2055)", () => {
+    const ir = {
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        billingClass("MainMenu", "menu"),
+        billingClass("SaveShortcut", "shortcut"),
+        billingClass("CartStore", "store"),
+        billingClass("PrintBridge", "bridge"),
+        billingClass("ScanBridge", "bridge", { lifetime: "singleton" }),
+        billingClass("BillingPoint", "extension_point"),
+      ],
+    } as MemberIR;
+    const content = emitWiring(ir);
+    for (const [name, kind] of [
+      ["MainMenu", "menu"],
+      ["SaveShortcut", "shortcut"],
+      ["CartStore", "store"],
+      ["BillingPoint", "extension_point"],
+    ])
+      expect(content).toContain(
+        `    { module: "billing", kind: "${kind}", provide: ${name}, deps: [] },`,
+      );
+    expect(content).toContain(
+      '    { module: "billing", kind: "bridge", provide: PrintBridge, lifetime: Lifetime.Request, deps: [] },',
+    );
+    expect(content).toContain(
+      '    { module: "billing", kind: "bridge", provide: ScanBridge, lifetime: Lifetime.Singleton, deps: [] },',
+    );
+  });
+
+  it("keeps a config override's base key and writes no second row (STA-2055)", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const emitOver = (manifest: MemberIR["dependencies"][number]["manifest"] = kit): string =>
+      emitWiring({
+        ...COMMERCE_IR,
+        member: "web",
+        classes: [
+          ...COMMERCE_IR.classes.filter((candidate) => candidate.kind !== "config"),
+          {
+            name: "LoyaltyKitConfig",
+            kind: "config",
+            module: "orders",
+            file: "src/config/loyalty-kit.config.ts",
+            importPath: "#config/loyalty-kit.config",
+            options: {
+              schema: {
+                $class: "WebLoyaltyOptions",
+                from: "#config/web-loyalty-options.schema",
+                kind: "schema",
+              },
+            },
+            base: { name: "LoyaltyKitConfig", from: "@acme/loyalty-kit", own: false },
+            deps: [],
+            facets: [],
+            methods: [],
+            refusals: [],
+            statics: {},
+            traits: [],
+          },
+          {
+            name: "RewardsService",
+            kind: "service",
+            module: "orders",
+            file: "src/modules/orders/services/rewards.service.ts",
+            importPath: "#modules/orders/services/rewards.service",
+            options: {},
+            deps: [
+              { class: { name: "LoyaltyKitConfig", from: "@acme/loyalty-kit" } },
+              { class: { name: "LoyaltyLedger", from: "@acme/loyalty-kit" } },
+            ],
+            facets: [],
+            methods: [],
+            refusals: [],
+            statics: {},
+            traits: [],
+          },
+        ],
+        shapes: [
+          ...COMMERCE_IR.shapes,
+          {
+            name: "WebLoyaltyOptions",
+            kind: "schema",
+            module: "orders",
+            file: "src/config/web-loyalty-options.schema.ts",
+            importPath: "#config/web-loyalty-options.schema",
+            fields: [
+              {
+                name: "hostLedger",
+                optional: false,
+                nullable: false,
+                type: { kind: "driver_name", port: "LoyaltyLedger", values: ["memory"] },
+                rules: [],
+              },
+            ],
+            relations: [],
+          },
+        ],
+        dependencies: [{ package: "@acme/loyalty-kit", manifest }],
+      });
+    const content = emitOver();
+    expect(content.match(/key: "loyalty_kit"/g)).toHaveLength(1);
+    expect(content).not.toContain("web.loyalty_kit");
+    expect(content).toMatch(
+      /key: "loyalty_kit", provide: BaseLoyaltyKitConfig, override: LoyaltyKitConfig/,
+    );
+    // US3 scenario 2 / FR-007: the override's driver field selects under the base's key.
+    expect(content).toContain('selectedBy: "config:loyalty_kit.hostLedger"');
+    // EC-01: a base manifest with no `config` section derives the key from the base's member.
+    expect(emitOver({ member: kit.member, package: kit.package, version: kit.version })).toMatch(
+      /key: "loyalty_kit", provide: BaseLoyaltyKitConfig, override: LoyaltyKitConfig/,
     );
   });
 

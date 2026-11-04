@@ -1,0 +1,21 @@
+{
+  "slug": "action-input-modal",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["native"],
+  "packageName": "@stackra/panel",
+  "exportName": "ActionInputModal",
+  "parts": ["ActionInputModal"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 520
+    }
+  ],
+  "related": ["free/modal", "free/form", "free/text-area"],
+  "tokens": ["color.surface", "color.field"],
+  "keywords": ["action", "modal", "dialog", "input", "confirm", "panel", "kit"],
+  "status": "new"
+}

@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
@@ -22,6 +22,7 @@ import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { DeployTarget } from "#core/types/deploy-target.type";
 import { CloudflareWorkersProviderDriver } from "#node/drivers/cloudflare-workers-provider.driver";
 import type { CommandRunner } from "#node/types/command-runner.type";
+import type { DeployRunways } from "#node/types/deploy-runways.type";
 
 const SHA = "a".repeat(40);
 const OLD = "b".repeat(40);
@@ -395,6 +396,61 @@ describe("CloudflareWorkersProviderDriver", () => {
       driver.plan({ ...WEB, settings: { members: { static: { path: "../outside" } } } }, SHA),
     ).toThrow(/targets\.cloudflare-workers\.members\.static\.path/);
     expect(() => driver.plan({ ...WEB, kind: "mobile" }, SHA)).toThrow(RunwayUnresolvedError);
+  });
+
+  describe("with runways (secrets read from Infisical)", () => {
+    const RUNWAYS: DeployRunways = {
+      root: {
+        environments: { production: {} },
+        providers: {
+          github: { org: "acme", repo: "platform" },
+          infisical: {
+            workspace: "ws-1",
+            environments: { production: "prod" },
+            paths: { runtime: "/runtime" },
+          },
+        },
+        secrets: { defaultPath: "runtime" },
+      },
+      members: [
+        { member: "registry", folder: "workers", runway: { secrets: ["REGISTRY_SIGNING_KEY"] } },
+      ],
+    };
+    const before = process.env["GITHUB_ACTIONS"];
+    afterEach(() => {
+      if (before === undefined) Reflect.deleteProperty(process.env, "GITHUB_ACTIONS");
+      else process.env["GITHUB_ACTIONS"] = before;
+    });
+
+    it("sends the Infisical value on stdin, not the environment's", async () => {
+      process.env["GITHUB_ACTIONS"] = "true";
+      const root = repository();
+      const { run, calls } = fakeRunner(root);
+      const answering: CommandRunner = async (command, args, options) =>
+        command === "infisical"
+          ? JSON.stringify([{ key: "REGISTRY_SIGNING_KEY", value: "infisical-value" }])
+          : run(command, args, options);
+      const driver = workers(root, answering, {
+        env: { REGISTRY_D1_DATABASE_ID: REAL_D1, REGISTRY_READ_ONLY: "" },
+      });
+      driver.runways = RUNWAYS;
+      await driver.apply(WEB, SHA);
+      expect(calls).toContain(
+        `<root>/workers/registry$ pnpm exec wrangler secret bulk <<< {"REGISTRY_SIGNING_KEY":"infisical-value"}`,
+      );
+    });
+
+    it("ships nothing when Infisical lacks a secret", async () => {
+      process.env["GITHUB_ACTIONS"] = "true";
+      const root = repository();
+      const { run, calls } = fakeRunner(root);
+      const answering: CommandRunner = async (command, args, options) =>
+        command === "infisical" ? "[]" : run(command, args, options);
+      const driver = workers(root, answering);
+      driver.runways = RUNWAYS;
+      await expect(driver.apply(WEB, SHA)).rejects.toThrow("REGISTRY_SIGNING_KEY");
+      expect(calls.some((call) => call.includes("wrangler deploy"))).toBe(false);
+    });
   });
 });
 

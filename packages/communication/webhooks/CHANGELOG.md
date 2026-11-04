@@ -1,5 +1,28 @@
 # @stackra/webhooks
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/scheduler@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/queue@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/integrations@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/support@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

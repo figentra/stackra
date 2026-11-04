@@ -38,6 +38,8 @@ export type ProductBuild = {
       }
     >
   >;
+  /** The ops bundle: the product's declarative contributions to the ops console, when it has any; not on a dry run. */
+  readonly ops?: BundleManifest;
   /** Per mobile app. */
   readonly mobile: Readonly<
     Record<

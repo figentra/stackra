@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./native` entry of @stackra/navigation (the React Navigation adapters: `toScreen` and
- *          `useLayoutLoader` for the generated navigation tree, the native `useNavigate`, `useRouteReload`, and the
- *          `ContextMenu` a menu class is bound to a value with) until `stackra gen` writes the entry barrels (STA-339).
+ *          `useLayoutLoader` for the generated navigation tree, the native `useNavigate`, `useRouteReload`, the
+ *          `ContextMenu` a menu class is bound to a value with, `useMenu` and `useMenus` at parity with the web hooks,
+ *          and the `ModuleMenu` list of the declared module menus) until `stackra gen` writes the entry barrels
+ *          (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` internals one way; nothing here touches the DOM or
  *           React Router. `RouteProps` is exported from `.` only (registry A3).
  * Runtime: react-native
@@ -11,6 +13,10 @@
  */
 export { ContextMenu } from "#native/context-menu/context-menu";
 export type { ContextMenuProps } from "#native/context-menu/context-menu.props";
+export { useMenu } from "#native/menu/use-menu";
+export { useMenus } from "#native/menu/use-menus";
+export { ModuleMenu } from "#native/module-menu/module-menu";
+export type { ModuleMenuProps } from "#native/module-menu/module-menu.props";
 export type { LayoutLoaderState } from "#native/layout-loader/layout-loader-state.type";
 export { useLayoutLoader } from "#native/layout-loader/use-layout-loader";
 export type { NativeNavigate } from "#native/navigate/native-navigate.type";

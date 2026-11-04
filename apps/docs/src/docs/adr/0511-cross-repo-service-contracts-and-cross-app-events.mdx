@@ -110,6 +110,30 @@ apps is decided here too, and phase 1 ships only the clients.
     contract-only, is refused with `client_event_remote_transport`. The refusal names the event and the service. The refusal
     is lifted when the relay of decision 12 ships.
 
+## Amendment of 2026-11-02 (owner, STA-1910)
+
+The owner approved the relay's plan (STA-1910) on 2026-11-02. It settles what decisions 11 to 13 leave open:
+
+16. **A producer key is the relay's sender identity.** Each producer service signs every delivery with its own Ed25519
+    key. The private key is read from the secret store by name (`STACKRA_EVENTS_SIGNING_KEY` by default), never from
+    code or a file. Its public key and key id are listed per environment in the producer's `runway.yaml` (`events.keys`),
+    and gen copies them into the `relay` section of the producer's `stackra.manifest.json`, so the contract a consumer
+    pins carries them. This adds a section to decision 1's manifest; the package still holds only its three items. A
+    consumer's inbox accepts only a key that the pinned contract lists for its environment, and sets `producer` (decision 11) to that contract's service. The manifest lists at most the current and the next key, so a rotation needs no
+    simultaneous deploy. STA-1792's workload identity later replaces this key, through the inbox's verifier only.
+17. **Subscribers come from the producer's runway, through one seam.** The producer's `runway.yaml` lists per environment
+    each consumer's inbox origin and the events it takes (`events.subscribers`). The relay reads them only through a
+    `SubscriberSource`, so a later source (the Control Plane) needs no relay change. Gen writes the consumer names and
+    events, without origins, into the manifest's `relay` section, and a consumer's gen warns
+    (`client_event_unsubscribed`) when the producer contract it pins does not list it for an event it listens to.
+18. **The inbox is one generated route.** A consumer service with a listener on a contract-only producer's event gets one
+    raw route, `POST /events/inbox`, outside session authentication. It verifies the signature before it reads the body,
+    then hands the envelope to the service's inbox (decision 13). A service without such a listener gets no route.
+19. **The envelope keeps today's field names.** The cross-app envelope is the code's `EventEnvelope` (`id`, `type`,
+    `occurredAt`, `scope`, `meta`, `data`) plus `envelopeVersion` and `producer`. The names of
+    [0141](/adr/0141-integration-event-names-and-envelope) decision 2 that [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)'s
+    2026-11-01 note names are not renamed here.
+
 ## Consequences
 
 - A consumer builds against the manifest it declares. A wrong manifest can no longer be picked by name, and a missing one is a

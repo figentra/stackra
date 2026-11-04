@@ -1,5 +1,13 @@
 # @stackra/coordinator
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+  - @stackra/state@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./native` entry: the template's `ContextMenu`, `toScreen`, `useLayoutLoader`,
- *          `useNavigate` and `useRouteReload`, the `ReactNavigationProvider`, the `RouteLeaveConfirmation` and the
- *          route overlay (`RouteOverlay`, `routeOverlayScreenOptions`, `useRouteOverlay`), and nothing else
+ *          `useNavigate` and `useRouteReload`, `useMenu`, `useMenus` and the `ModuleMenu`, the
+ *          `ReactNavigationProvider`, the `RouteLeaveConfirmation` and the route overlay (`RouteOverlay`, `routeOverlayScreenOptions`, `useRouteOverlay`), and nothing else
  *          (`RouteProps` is `.`'s only, registry A3).
  * Boundary: test only; React Native and React Navigation are stubbed, since the barrel imports modules that use them.
  * Runtime: node (vitest)
@@ -21,12 +21,15 @@ describe("@stackra/navigation/native", () => {
     const native = await import("#native/index");
     expect(Object.keys(native).sort()).toEqual([
       "ContextMenu",
+      "ModuleMenu",
       "ReactNavigationProvider",
       "RouteLeaveConfirmation",
       "RouteOverlay",
       "routeOverlayScreenOptions",
       "toScreen",
       "useLayoutLoader",
+      "useMenu",
+      "useMenus",
       "useNavigate",
       "useRouteOverlay",
       "useRouteReload",

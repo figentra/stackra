@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `edgeWorker(args)`, the Cloudflare resources around the OS edge Worker: its KV namespaces (the `host:`,
- *          `boot:`, `shell:`, `release:`, `canary:` and `wellknown:` copy), its routes on each zone, its gradual
+ *          `boot:`, `shell:`, `release:`, `canary:` and `wellknown:` copy), its routes and script-less exclusions on each zone, its gradual
  *          deployment over one or two uploaded versions, and the origin lock of each regional API (a Cloudflare Tunnel
  *          or authenticated origin pulls, behind an Access application that admits only the Worker's service token);
  *          plus the secret slots of the two active signing keys.
@@ -78,6 +78,16 @@ export function edgeWorker(args: {
         }),
     ),
   );
+  // A route with no script switches the Worker off for the pattern: the exclusions of a `*/*` (STA-267).
+  const exclusions = Object.entries(worker.exclusions).flatMap(([zone, patterns]) =>
+    patterns.map(
+      (pattern, index) =>
+        new cloudflare.WorkersRoute(`${script}-${zone}-exclusion-${index}`, {
+          zoneId: zoneIds[zone] ?? "",
+          pattern,
+        }),
+    ),
+  );
   const deployment =
     worker.rollout === undefined
       ? undefined
@@ -151,7 +161,7 @@ export function edgeWorker(args: {
 
   return {
     namespaces,
-    routes,
+    routes: [...routes, ...exclusions],
     deployment,
     originToken,
     originPolicy,

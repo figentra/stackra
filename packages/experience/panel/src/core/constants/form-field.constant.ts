@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `FormField`, the data constructors of a resource form's elements, as a generated form writes them
  *          (`FormField.repeater("variants", [FormField.from("sku")])`).
- * Boundary: pure: each returns a frozen `FieldNode`; the form builder records through them. Named for its kind: a bare
+ * Boundary: pure: each returns a frozen `FieldNode`; the form builder records through them. A value field's look
+ *           (`label`, `control`, `minValue`, `visibleWhen`, `choices`, ...) passes through. Named for its kind: a bare
  *           `Field` is `@stackra/validation`'s field decorator (ADR 0294 decision 23, one meaning per word).
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 11: forms); ADR 0294 (decision 23).
@@ -21,15 +22,11 @@ import type { FormStepNode } from "#core/types/form-step-node.type";
  * FormField.upload("images", { action: AttachProductImageAction, accept: ["image/png"] });
  */
 export const FormField = Object.freeze({
-  /** A field rendered from its type. */
+  /** A field rendered from its type, or drawn as its look's `control`. */
   from: (
     key: string,
-    options: {
-      readonly span?: number;
+    options: Omit<Extract<FieldNode, { readonly kind: "value" }>, "kind" | "key" | "enum"> & {
       readonly enum?: Enum.Any;
-      readonly options?: AnyClass;
-      readonly optionLabel?: string;
-      readonly essential?: boolean;
     } = {},
   ): FieldNode => Object.freeze({ kind: "value", key, ...options }),
 
