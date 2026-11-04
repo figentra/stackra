@@ -75,6 +75,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** The root and member runways; when set, secrets are read from Infisical, not `env` (STA-606). */
   runways?: DeployRunways;
 
+  /** A test's answer to "is this a proved CI job"; unset, the job's GitHub OIDC token proves it (STA-2100). */
+  ci?: boolean;
+
   /** The smoke request; a test replaces it. */
   fetch: (url: string) => Promise<{ readonly ok: boolean; readonly status: number }> = (url) =>
     globalThis.fetch(url, { redirect: "manual", signal: AbortSignal.timeout(30_000) });
@@ -126,6 +129,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         member: basename(member.path),
         runways: this.runways,
         run: this.run,
+        ci: this.ci,
       });
       secrets.set(key, read);
     }

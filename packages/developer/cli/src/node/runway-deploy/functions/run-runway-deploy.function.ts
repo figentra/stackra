@@ -5,7 +5,8 @@
  *          the commit (the checked-out `HEAD` unless `--sha`) to every target of the environment through Runway's
  *          `deploy()` and its providers (`encore-cloud`, `eas`, `mintlify`, `cloudflare-workers`). `--kind` keeps the
  *          targets of those kinds, `--member` the named Worker members. A dry run prints each target's plan. An
- *          environment whose runway declares `deploy.approval` ships only with `--approved` (ADR 0468), and one deploy
+ *          environment whose runway declares `deploy.approval` ships only from the job behind it, proved by its
+ *          GitHub OIDC token (`proveApproval`; `--approved` proves nothing, ADR 0468, STA-2100), and one deploy
  *          of an environment runs at a time on a host (`withDeployLock` over `fileDeployLock`). In a product
  *          repository (a root runway with `surfaces` or `mobile`), the web and mobile kinds ship through the
  *          product publish (`runDeployProduct`, the former `--product` path, which stays as an alias) inside the
@@ -42,6 +43,7 @@ import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { runDeployProduct } from "#node/product/functions/run-deploy-product.function";
 import { printDeployResults } from "#node/runway-deploy/functions/print-deploy-results.function";
+import { proveApproval } from "#node/runway-deploy/functions/prove-approval.function";
 import { runwayProviders } from "#node/runway-deploy/functions/runway-providers.function";
 import type { CliContext } from "#node/types/cli-context.type";
 
@@ -64,7 +66,7 @@ function list(value: string | boolean | undefined): string[] | undefined {
  * Deploys the commit to the environment's targets and resolves with the exit code.
  *
  * @throws CliUsageError when the environment or a kind is missing or unknown.
- * @throws CliUsageError when the environment declares an approval and `--approved` is not passed.
+ * @throws CliUsageError when the environment declares an approval the job's OIDC token does not prove.
  * @throws RunwayLockedError when another deploy of the environment holds this host's lock.
  * @throws RunwayUnresolvedError when the secret sync cannot read or write a value; nothing has shipped then.
  * @throws RunwayDeployFailedError at the first target that does not verify.
@@ -125,12 +127,8 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
     return product === undefined ? 0 : runDeployProduct(product);
   }
 
-  // ADR 0468: an environment with an approval ships only from the job behind it, which passes --approved.
-  const approval = root.environments[environment as RunwayEnvironment]?.deploy?.approval;
-  if (approval !== undefined && values["approved"] !== true)
-    throw new CliUsageError(
-      `${environment} deploys only after its approval (${approval}): run the deploy in the job behind it and pass --approved`,
-    );
+  // ADR 0468: an environment with an approval ships only from the job behind it, proved by its OIDC token.
+  await proveApproval(root, environment, "deploys");
   // One deploy of an environment at a time on this host; the caller workflow's concurrency group serialises runners.
   const outcome = await withDeployLock(
     root,

@@ -13,7 +13,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
@@ -240,14 +240,8 @@ describe("CloudflareWorkersProviderDriver", () => {
         { member: "registry", folder: "workers", runway: { secrets: ["REGISTRY_SIGNING_KEY"] } },
       ],
     };
-    const before = process.env["GITHUB_ACTIONS"];
-    afterEach(() => {
-      if (before === undefined) Reflect.deleteProperty(process.env, "GITHUB_ACTIONS");
-      else process.env["GITHUB_ACTIONS"] = before;
-    });
 
     it("sends the Infisical value on stdin, not the environment's", async () => {
-      process.env["GITHUB_ACTIONS"] = "true";
       const root = repository();
       const { run, calls } = fakeRunner(root);
       const answering: CommandRunner = async (command, args, options) =>
@@ -258,6 +252,7 @@ describe("CloudflareWorkersProviderDriver", () => {
         env: { REGISTRY_D1_DATABASE_ID: REAL_D1, REGISTRY_READ_ONLY: "" },
       });
       driver.runways = RUNWAYS;
+      driver.ci = true;
       await driver.apply(WEB, SHA);
       expect(calls).toContain(
         `<root>/workers/registry$ pnpm exec wrangler secret bulk <<< {"REGISTRY_SIGNING_KEY":"infisical-value"}`,
@@ -265,13 +260,13 @@ describe("CloudflareWorkersProviderDriver", () => {
     });
 
     it("ships nothing when Infisical lacks a secret", async () => {
-      process.env["GITHUB_ACTIONS"] = "true";
       const root = repository();
       const { run, calls } = fakeRunner(root);
       const answering: CommandRunner = async (command, args, options) =>
         command === "infisical" ? "[]" : run(command, args, options);
       const driver = workers(root, answering);
       driver.runways = RUNWAYS;
+      driver.ci = true;
       await expect(driver.apply(WEB, SHA)).rejects.toThrow("REGISTRY_SIGNING_KEY");
       expect(calls.some((call) => call.includes("wrangler deploy"))).toBe(false);
     });
