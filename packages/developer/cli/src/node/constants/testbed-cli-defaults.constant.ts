@@ -12,10 +12,11 @@ export const TESTBED_CLI_DEFAULTS = {
   /** The AWS CLI profile that reaches the testbed account. */
   profile: "academorix",
   /**
-   * The enabled regions in the order a run tries them. A region joins by a one-line change here once its old pair is
-   * stopped; the full order is eu-west-1, eu-west-2, eu-central-1, us-east-1 (STA-2042).
+   * The enabled regions in the order a run tries them (STA-2042). A region whose groups do not exist yet has no box and
+   * no group to raise, so it is skipped until its `up` has run. us-east-1 joins once box 1 stops (runbook step 30):
+   * until then its on-demand quota is box 1's, and a heavy box there could not launch.
    */
-  regions: ["eu-west-1"],
+  regions: ["eu-west-1", "eu-west-2", "eu-central-1"],
   /** The SSH private key, relative to the home folder. */
   key: ".ssh/academorix-ci.pem",
   /** The SSH user on every box. */

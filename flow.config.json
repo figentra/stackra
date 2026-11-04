@@ -62,30 +62,8 @@
         "with": {
           "install_args": "node pnpm gitleaks shfmt aqua:rhysd/actionlint aqua:zizmorcore/zizmor aqua:google/osv-scanner"
         }
-      },
-      {
-        "name": "Uniwind Pro token (Infisical OIDC)",
-        "uses": "Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d",
-        "with": {
-          "method": "oidc",
-          "identity-id": "${{ vars.INFISICAL_GATE_IDENTITY_ID }}",
-          "domain": "https://eu.infisical.com",
-          "project-id": "${{ vars.INFISICAL_GATE_PROJECT_ID }}",
-          "env-slug": "prod",
-          "secret-path": "/ci",
-          "secret-name": "UNIWIND_AUTH_TOKEN",
-          "export-type": "env"
-        }
-      },
-      {
-        "name": "Uniwind Pro download cache",
-        "uses": "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-        "with": {
-          "path": "~/.uniwind/cache/pro",
-          "key": "uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}",
-          "restore-keys": "uniwind-pro-${{ runner.os }}-"
-        }
       }
-    ]
+    ],
+    "install": "pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'"
   }
 }
