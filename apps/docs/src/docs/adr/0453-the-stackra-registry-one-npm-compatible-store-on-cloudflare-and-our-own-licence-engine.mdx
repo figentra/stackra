@@ -1,9 +1,17 @@
 ---
 title: "0453 — The Stackra registry: one npm-compatible store on Cloudflare for packages, skills, agents, MCP servers and plugins, with our own licence engine"
-description: "Accepted, amended by 0461, 0514, 0522 · 2026-10-27"
+description: "Accepted, amended by 0461, 0514, 0522 and the Figentra Registry amendment (STA-1733) · 2026-10-27"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0453, the Stackra registry: its host, the workers/registry member, the R2, D1 and KV split, the npm protocol surface, CI-only publish through GitHub OIDC, integrity and registry signatures, the read rules of the @stackra and @stackra-pro scopes, the `stackra.kind` values and the catalogue API, the licence model and the OS billing hook, the optional npmjs mirror and the retirement of npm.figentra.com. Boundary: decision text only; the Worker is built by stackra-182, the licence engine by stackra-183, the CLI kinds by stackra-184, the release and template switch by stackra-185. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0024, 0077, 0173, 0177, 0178, 0284, 0316, 0349; STA-1333. Amendment note from ADR 0461 added by stackra-90 (2026-10-28). */}
+
+<Note>
+  Decisions 1 and 2 amended by the owner on 2026-10-31 (STA-1733, "Amendment 2026-10-31 (owner
+  decision): Figentra Registry" below). The registry becomes Figentra Registry at
+  `registry.figentra.com`: the Worker is `figentra-registry` and the member lives in
+  figentra/figentra. `npm.stackra.figentra.com` stays as a permanent second host on the same Worker.
+  The text above still names the old host until the domain move (Stop B).
+</Note>
 
 <Note>
   Decision 11 amended 2026-11-02 (STA-1920) by [0514](/adr/0514-self-hosted-docs-replace-mintlify)
@@ -379,6 +387,54 @@ On 2026-11-03 the owner decided that figentra/testbed (`release`) joins the trus
 `@figentra/testbed`, the testbed's package and CLI ([0522](/adr/0522-testbed-own-repo) decision 2). The publisher row
 is added by migration `0010_figentra_testbed.sql`, with the repository's numeric id and owner id, as
 `0009_figentra_billing.sql` did. STA-2073.
+
+## Amendment 2026-10-31 (owner decision): Figentra Registry
+
+The owner decided on 2026-10-31 (STA-1733; owner requests ledger, "One registry, `registry.figentra.com`" and "Figentra
+Registry plan approved") that there is one registry for every Figentra scope and every kind. It is renamed **Figentra
+Registry** and leaves Stackra core. This amends decisions 1 and 2. The plan is
+`figentra/figentra` `.agents/specs/sta-1733-figentra-registry/plan.md`.
+
+- **Decision 1 (host), as amended.** The primary host is `registry.figentra.com`, the Worker's `REGISTRY_HOST`: every
+  packument names its tarballs there. `npm.stackra.figentra.com` stays as a second Custom Domain on the same Worker, so
+  `.npmrc` files and lockfiles that name it keep resolving with the same bytes and integrity. The owner made it a
+  permanent alias; retiring it would take a later owner decision. Still one Worker, one database, one bucket.
+- **Decision 2 (member), as amended.** The Worker script is `figentra-registry`. Its member `workers/registry`
+  (`@figentra/worker-registry`) lives in figentra/figentra, moved with its history. It deploys from that repository's
+  `.github/workflows/deploy-registry.yml` in its GitHub environment `registry`, whose Infisical OIDC subject is
+  `repo:figentra@314302700/figentra@1435864013:environment:registry`. Core keeps `workers/registry` and its deploy, but
+  only as the rollback path, until 30 days after the switch; then they are removed.
+- **Storage (decisions 3 to 5).** Cloudflare cannot rename a D1 database or an R2 bucket, so the Worker gets new ones
+  (D1 and R2 `figentra-registry`, KV `figentra-registry-cache`). The data is copied from the old resources and never
+  transformed: the D1 export goes into an empty database, and R2 is copied with every object's `sha256` metadata. A
+  verification matrix compares old and new before the switch. The old resources stay unchanged and unrouted for 30 days,
+  then are deleted on the owner's go.
+- **Publishing (decision 6).** A trusted publisher's OIDC audience is `npm:registry.figentra.com`. The Worker also
+  accepts `npm:npm.stackra.figentra.com` (`REGISTRY_OIDC_AUDIENCES`) until every release workflow has moved. During the
+  data move, `REGISTRY_READ_ONLY=true` makes every write answer 503 while reads go on. It is set as a GitHub environment
+  variable, so a redeploy never unfreezes the registry by accident.
+- **Signing (decision 8).** The same `REGISTRY_SIGNING_KEY` signs on the new Worker, so `/-/npm/v1/keys` and every
+  stored signature stay valid.
+- **Scopes, kinds and licences (decisions 10 to 17)** are unchanged: the same scope rows, `name_rules`, licences,
+  grants and token hashes, copied with D1, so no token is reissued. Future product scopes join through a numbered
+  migration and an amendment of decision 10, as `@figentra-oss` did. The internal read token Figentra's own CI uses is
+  named `FIGENTRA_REGISTRY_TOKEN` (`STACKRA_REGISTRY_TOKEN` stays readable until every reader has switched). A
+  customer's licence token keeps the name `STACKRA_LICENCE_TOKEN`.
+
+A repository's `.npmrc` after its rollout:
+
+```ini
+@stackra:registry=https://registry.figentra.com/
+@stackra-pro:registry=https://registry.figentra.com/
+@figentra:registry=https://registry.figentra.com/
+@figentra-oss:registry=https://registry.figentra.com/
+//registry.figentra.com/:_authToken=${FIGENTRA_REGISTRY_TOKEN}
+```
+
+The kinds of decision 11 (`package`, `skill`, `agent`, `mcp`, `plugin`, `contract`, `docs`) are served as npm tarballs,
+checked at publish only by their naming rule. Items have been published only as `package` so far. Kind-specific content
+checks and protocols other than npm (an MCP registry listing, a plugin marketplace index) are not part of this amendment
+and need their own decision.
 
 ## Supersedes and sources
 
