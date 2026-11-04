@@ -92,10 +92,7 @@ test("entries parse in exports order and reject unknown names", () => {
 });
 
 test("scaffold imports the lists and declares none of its own; the validator wraps @stackra/repo-checks", () => {
-  for (const file of [
-    "scaffold/functions/scaffold.function.ts",
-    "constants/validate-command.constant.ts",
-  ]) {
+  for (const file of ["scaffold/functions/scaffold.function.ts", "commands/validate.command.ts"]) {
     const source = readFileSync(join(NODE, file), "utf8");
     assert.match(source, /from "@stackra\/repo-checks\/node"/, file);
     assert.doesNotMatch(

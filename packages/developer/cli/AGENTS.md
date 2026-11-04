@@ -46,7 +46,8 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
   (`DEV_SURFACE_FILES.descriptor`). Every origin, port and version comes from the runway files or a flag, never code.
 - `stackra check` phases return findings and never print them; `runCheck` prints. A phase whose tool cannot start
   returns `skipped: "not installed"`, and a tool that fails without a parsable finding gives one `exit` finding, so a
-  failure is never silent. `validate`, `verify`, `code:check` and `code:fix` are `checkCommand` presets, not new code.
+  failure is never silent. `check`, `validate`, `verify`, `code:check` and `code:fix` subclass `checkCommand`, not
+  new code.
 - The `hooks` phase (after `lint`) is the hooks lint of ADR 0305 rule 41: it compiles each component-home `.tsx` file
   with gen's `compileClassComponents` (`retainLines`) into a temp folder and runs `react/rules-of-hooks` alone on it,
   because `lint` has that rule off there. Findings carry the source path and line, no column; a compile refusal is one
@@ -57,8 +58,9 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 - Two tools reporting the same problem on the same file is a pair in `SAME_MEANING_RULES` (later phase to the kept
   earlier one), never a special case inside a phase. A phase whose orchestrator cannot run falls back to the plain
   tool (typecheck: turbo, else `tsc --noEmit -p <member>`) rather than reporting one opaque `exit` finding.
-- Every command writes through its `CliIo`, never `console` or `process.stdout`: `stackra mcp` runs commands with a
-  capturing io because standard output carries the protocol.
+- Every command writes through its `CliIo` or its console `io`, never `console` or `process.stdout`: `stackra mcp`
+  runs commands with a capturing io because standard output carries the protocol. A console command hands the shared
+  runners `cliIoOf(io)` and starts a tool people watch (turbo, vitest, a seed entry) with `runInherited`.
 - Tools start without a shell; a secret value never passes through this process (`mcp exec` names a location only).
   The one exception is `ops bootstrap-operator`: it reads the environment's bootstrap token from `STACKRA_OPS_TOKEN`
   and sends it only as the bearer token of its one call; never print it, log it or pass it as an argument.

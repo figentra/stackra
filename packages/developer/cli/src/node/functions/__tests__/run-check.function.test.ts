@@ -38,7 +38,7 @@ const phase = (name: string, run: CheckPhase["run"]): CheckPhase => ({
 /** Runs `stackra check` with `values` in an empty folder and returns the exit code and the output. */
 async function check(values: CliContext["values"]): Promise<{ code: number; text: string }> {
   const { io, output } = captureIo();
-  const code = await runCheck(
+  const { code } = await runCheck(
     {
       cwd: mkdtempSync(join(tmpdir(), "check-")),
       io,

@@ -26,7 +26,6 @@ import { MCP_EXEC_COMMAND } from "#node/constants/mcp-exec-command.constant";
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { TESTBED_COMMAND } from "#node/constants/testbed-command.constant";
-import { VALIDATE_COMMAND } from "#node/constants/validate-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
 import { EAS_PREFLIGHT_COMMAND } from "#node/eas-preflight/constants/eas-preflight-command.constant";
 import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
@@ -40,6 +39,9 @@ import { AppNativeDepsCommand } from "#node/commands/app-native-deps.command";
 import { ArchitectureMapCommand } from "#node/commands/architecture-map.command";
 import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
 import { CatalogueCompletenessCommand } from "#node/commands/catalogue-completeness.command";
+import { CheckCommand } from "#node/commands/check.command";
+import { CodeCheckCommand } from "#node/commands/code-check.command";
+import { CodeFixCommand } from "#node/commands/code-fix.command";
 import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
 import { CreateCommand } from "#node/commands/create.command";
 import { CyclesCommand } from "#node/commands/cycles.command";
@@ -66,7 +68,8 @@ import { StartCommand } from "#node/commands/start.command";
 import { StructureCommand } from "#node/commands/structure.command";
 import { TestCommand } from "#node/commands/test.command";
 import { TypecheckCommand } from "#node/commands/typecheck.command";
-import { checkCommand } from "#node/functions/check-command.function";
+import { ValidateCommand } from "#node/commands/validate.command";
+import { VerifyCommand } from "#node/commands/verify.command";
 import type { CliCommands } from "#node/types/cli-commands.type";
 
 /** The commands of `stackra`. */
@@ -81,25 +84,11 @@ export const COMMANDS: CliCommands = [
   TypecheckCommand,
   TestCommand,
   LintCommand,
-  checkCommand(
-    "check",
-    "Run the quality gate: config, format, spelling, secrets, structure, docs, lint, gen, …",
-  ),
-  VALIDATE_COMMAND,
-  checkCommand("verify", "Run every check phase, tests included (`stackra check --with-tests`)", {
-    withTests: true,
-  }),
-  checkCommand("code:check", "Check formatting and lint (`stackra check --only format,lint`)", {
-    only: ["format", "lint"],
-  }),
-  checkCommand(
-    "code:fix",
-    "Format and apply lint fixes (`stackra check --only format,lint --fix`)",
-    {
-      only: ["format", "lint"],
-      fix: true,
-    },
-  ),
+  CheckCommand,
+  ValidateCommand,
+  VerifyCommand,
+  CodeCheckCommand,
+  CodeFixCommand,
   DbMigrateCommand,
   DbRollbackCommand,
   DB_SEED_COMMAND,

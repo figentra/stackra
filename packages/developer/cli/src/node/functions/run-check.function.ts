@@ -4,7 +4,8 @@
  *          at the workspace root, each over the affected files when `--affected`, stopping after the first phase that
  *          fails unless `--keep-going`; a finding that repeats an earlier phase's on the same file
  *          (`SAME_MEANING_RULES`) is reported once; then the findings (text lines grouped by phase, a JSON array, or
- *          GitHub annotations) and, except for JSON, the summary table. Resolves 1 when any phase failed, 0 otherwise.
+ *          GitHub annotations) and, except for JSON, the summary table. Resolves with the exit code (1 when any phase
+ *          failed, 0 otherwise), the findings and the phase rows, which a console command's `--json` data carries.
  * Boundary: writes findings and the table to `io.out` and phase notices to `io.err`; a phase that throws becomes one
  *           `crash` finding, never an uncaught error. Reads `CI` from the environment.
  * Runtime: node
@@ -33,12 +34,22 @@ import type { PhaseOutcome } from "#node/types/phase-outcome.type";
  * @param defaults - what an alias presets (`only`, `fix`, `withTests`).
  * @throws CliUsageError when a flag value is unknown.
  * @example
- * await runCheck(context, { only: ["format", "lint"], fix: true }); // `stackra code:fix`
+ * const { code } = await runCheck(context, { only: ["format", "lint"], fix: true }); // `stackra code:fix`
  */
 export async function runCheck(
-  context: CliContext,
+  context: Pick<CliContext, "cwd" | "io" | "values">,
   defaults: Parameters<typeof parseCheckOptions>[1],
-): Promise<number> {
+): Promise<{
+  readonly code: number;
+  readonly findings: readonly Finding[];
+  readonly phases: readonly {
+    phase: string;
+    status: string;
+    findings: number;
+    fixable: number;
+    ms: number;
+  }[];
+}> {
   const options = parseCheckOptions(context.values, defaults);
   const root = workspaceRoot(context.cwd);
   const files = options.affected ? changedFiles(root, options.base ?? "origin/main") : undefined;
@@ -98,9 +109,10 @@ export async function runCheck(
   }
 
   const { io } = context;
+  const result = { code: failed ? 1 : 0, findings: all, phases: rows };
   if (options.format === "json") {
     io.out(`${JSON.stringify(all, null, 2)}\n`);
-    return failed ? 1 : 0;
+    return result;
   }
   if (options.format === "github") {
     for (const finding of all) io.out(`${formatFinding(finding, "github")}\n`);
@@ -113,5 +125,5 @@ export async function runCheck(
     }
   }
   io.out(`\n${summaryTable(rows)}`);
-  return failed ? 1 : 0;
+  return result;
 }
