@@ -21,7 +21,7 @@ import type { RegistryAccess } from "#node/types/registry-access.type";
  * @param access - the registry origin and licence token.
  * @param fetcher - the fetch to use; the global one by default.
  * @example
- * const client = httpCatalogueClient({ origin: "https://npm.stackra.figentra.com/", token: undefined });
+ * const client = httpCatalogueClient({ origin: "https://registry.figentra.com/", token: undefined });
  */
 export function httpCatalogueClient(
   { origin, token }: RegistryAccess,

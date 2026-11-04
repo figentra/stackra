@@ -9,7 +9,7 @@ icon: "package-check"
 <Note>
   Status 2026-10-29: live. `.github/workflows/release.yml` calls Runway's `npm` provider
   (`runway-npm.yml`), which opens the version pull request and, on its merge, publishes to the
-  Stackra registry `https://npm.stackra.figentra.com/`
+  Stackra registry `https://registry.figentra.com/`
   ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)).
   Every package is `"private": false`. `0.1.0` is not released yet; prereleases go out under `next`.
   Not built: the packed-tarball smoke test (`publint`, `attw`, Node, Vite and Metro,
@@ -56,7 +56,7 @@ icon: "package-check"
     1. Trivy scans the lockfile; a critical vulnerability with a released fix stops the run ([0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)).
     2. It installs and builds what `build-args` selects.
     3. For each package with `"private": false` whose version is not on the registry yet, it asks GitHub
-       for an ID token with audience `npm:npm.stackra.figentra.com`, exchanges it at
+       for an ID token with audience `npm:registry.figentra.com`, exchanges it at
        `/-/npm/v1/oidc/token/exchange/package/<name>` for a publish token bound to that one name
        (15 minutes by default), and runs `pnpm publish --provenance` with it as `NODE_AUTH_TOKEN`.
     4. The registry matches the token's repository (by numeric id too), workflow `release.yml`, ref
@@ -70,7 +70,7 @@ icon: "package-check"
   </Step>
   <Step title="Verify">
     `git ls-remote --tags origin` shows the new tags on the merge commit. In a clean folder with the
-    `@stackra` scope mapped, `npm view @stackra/<name> versions --registry https://npm.stackra.figentra.com/`
+    `@stackra` scope mapped, `npm view @stackra/<name> versions --registry https://registry.figentra.com/`
     lists the version and `npm audit signatures` passes. `git cat-file -t <name>@<version>` says `tag`
     (annotated). To check a tarball by hand, download `sha256sums.txt` from the release and run
     `sha256sum -c --ignore-missing sha256sums.txt` next to it; the integrity that matters is still

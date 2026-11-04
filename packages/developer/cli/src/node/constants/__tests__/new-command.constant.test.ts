@@ -176,7 +176,7 @@ describe("NEW_COMMAND", () => {
       /stackra:\n\s+"@stackra\/app": \d+\.\d+\.\d+/,
     );
     expect(readFileSync(join(fresh, ".npmrc"), "utf8")).toBe(
-      "@stackra:registry=https://npm.stackra.figentra.com/\n",
+      "@stackra:registry=https://registry.figentra.com/\n",
     );
     const pkg = JSON.parse(readFileSync(join(fresh, "services/demo/package.json"), "utf8")) as {
       dependencies: Record<string, string>;

@@ -345,7 +345,7 @@
               "type": "string",
               "pattern": "^https://.+/$",
               "description": "The npm-compatible registry URL, ending in /.",
-              "examples": ["https://npm.stackra.figentra.com/"]
+              "examples": ["https://registry.figentra.com/"]
             },
             "scope": {
               "type": "string",

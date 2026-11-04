@@ -39,7 +39,7 @@ describe("appFiles", () => {
   });
 
   it("names the Stackra registry for the scope and writes no token", () => {
-    expect(files[".npmrc"]).toBe("@stackra:registry=https://npm.stackra.figentra.com/\n");
+    expect(files[".npmrc"]).toBe("@stackra:registry=https://registry.figentra.com/\n");
     expect(files[".npmrc"]).not.toMatch(/_auth|token/i);
   });
 

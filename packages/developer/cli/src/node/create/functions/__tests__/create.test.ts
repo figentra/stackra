@@ -96,10 +96,7 @@ test("the rename list, the catalog pin and the registry line apply; binary files
   assert.match(workspace, /"@stackra\/cli": 0\.5\.1/);
   assert.match(workspace, /"@stackra\/gen": 0\.5\.1/);
   assert.doesNotMatch(workspace, /overrides/);
-  assert.match(
-    read(files, ".npmrc"),
-    /^@stackra:registry=https:\/\/npm\.stackra\.figentra\.com\/\n/,
-  );
+  assert.match(read(files, ".npmrc"), /^@stackra:registry=https:\/\/registry\.figentra\.com\/\n/);
   assert.deepEqual(
     files.get("services/example/assets/logo.png"),
     new Uint8Array([137, 80, 78, 71, 0, 1, 2]),
@@ -108,7 +105,7 @@ test("the rename list, the catalog pin and the registry line apply; binary files
 
 test("tarballs become pnpm overrides; an existing .npmrc keeps its lines", () => {
   const files = starterFiles(
-    starter({ ".npmrc": "@figentra:registry=https://npm.stackra.figentra.com/" }),
+    starter({ ".npmrc": "@figentra:registry=https://registry.figentra.com/" }),
     {
       ...options,
       tarballs: { "@stackra/cli": "file:/tmp/stackra-cli-0.5.1.tgz" },
@@ -120,7 +117,7 @@ test("tarballs become pnpm overrides; an existing .npmrc keeps its lines", () =>
   );
   assert.equal(
     read(files, ".npmrc"),
-    "@figentra:registry=https://npm.stackra.figentra.com/\n@stackra:registry=https://npm.stackra.figentra.com/\n",
+    "@figentra:registry=https://registry.figentra.com/\n@stackra:registry=https://registry.figentra.com/\n",
   );
 });
 

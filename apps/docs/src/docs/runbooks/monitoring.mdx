@@ -1,6 +1,6 @@
 ---
 title: "Monitoring our Workers and the registry"
-description: "How npm.stackra.figentra.com, static.stackra.figentra.com and turbo.stackra.figentra.com are watched: Workers Logs, Better Stack uptime monitors and the status page, what the owner sets up first, and how the stack is applied from CI."
+description: "How registry.figentra.com, static.stackra.figentra.com and turbo.stackra.figentra.com are watched: Workers Logs, Better Stack uptime monitors and the status page, what the owner sets up first, and how the stack is applied from CI."
 icon: "activity"
 ---
 
@@ -18,7 +18,7 @@ other Workers: logs from inside, uptime monitors from outside.
 
 | Host                          | Workers Logs (sampling) | Uptime monitor (Better Stack)                                                    |
 | ----------------------------- | ----------------------- | -------------------------------------------------------------------------------- |
-| `npm.stackra.figentra.com`    | on, every request (1.0) | `GET /-/ping` every 30 seconds, up on 2xx                                        |
+| `registry.figentra.com`       | on, every request (1.0) | `GET /-/ping` every 30 seconds, up on 2xx                                        |
 | `static.stackra.figentra.com` | on, one in ten (0.1)    | `GET /` every 60 seconds, up on 2xx                                              |
 | `turbo.stackra.figentra.com`  | on, one in ten (0.1)    | `GET /v8/artifacts/status` every 60 seconds, up on 401 (the route needs a token) |
 

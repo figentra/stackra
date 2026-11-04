@@ -24,7 +24,7 @@ describe("IssuerConfig", () => {
   it("defaults to the registry driver with no tokens", () => {
     const config = buildConfig(IssuerConfig);
     expect(config.driver).toBe("registry");
-    expect(config.registryUrl).toBe("https://npm.stackra.figentra.com");
+    expect(config.registryUrl).toBe("https://registry.figentra.com");
     expect(config.issuerToken).toBe("");
     expect(config.productToken).toBe("");
   });

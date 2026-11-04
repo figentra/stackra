@@ -177,7 +177,7 @@ the catalogue API, checks the tarball against its integrity, and installs it:
 Every non-package install is pinned by name, version, integrity and target in `stackra-items.lock.yaml` at the
 workspace root. A target that exists but is not in the lock (a hand-written skill of the same name) is refused, never
 overwritten. The registry is a setting: `--registry`, else `STACKRA_REGISTRY`, else the `@stackra:registry` line of
-the workspace `.npmrc`, else `https://npm.stackra.figentra.com/`. `@stackra-pro` items read `STACKRA_LICENCE_TOKEN`.
+the workspace `.npmrc`, else `https://registry.figentra.com/`. `@stackra-pro` items read `STACKRA_LICENCE_TOKEN`.
 
 `stackra publish` refuses a member whose `stackra` field is invalid, whose scope is not `@stackra` or `@stackra-pro`,
 whose name is not `@<scope>/<kind>-<name>` for its kind (or is, for a package), or that lacks `SKILL.md` (skill) or

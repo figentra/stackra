@@ -3,7 +3,7 @@
 # `.changeset/`
 
 Pending [Changesets](https://github.com/changesets/changesets): one Markdown file per release note. Changesets
-versions **packages** only; the release workflow publishes them to the Stackra registry at `npm.stackra.figentra.com`
+versions **packages** only; the release workflow publishes them to the Stackra registry at `registry.figentra.com`
 ([ADR 0453](../apps/docs/src/docs/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)),
 never to npmjs. Apps and services are not versioned; they deploy by commit SHA
 (`privatePackages: { version: false, tag: false }`). A package publishes, with provenance, once it flips

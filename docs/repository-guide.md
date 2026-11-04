@@ -8,7 +8,7 @@ root commands and how a change moves from issue to merge.
 ## Stackra and Figentra OS
 
 Figentra OS is Figentra's private product: a set of services built on Stackra packages and sold as SaaS, on-prem and
-air-gapped. Its services live in their own repository and install published `@stackra/*` packages from the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453)
+air-gapped. Its services live in their own repository and install published `@stackra/*` packages from the Stackra registry (`https://registry.figentra.com/`, ADR 0453)
 ([ADR 0025](../apps/docs/src/docs/adr/0025-packages-publish-to-private-registry.mdx),
 [ADR 0075](../apps/docs/src/docs/adr/0075-stackra-ships-packages-figentra-os-ships-services.mdx)). No product code lands here,
 and shared packages never contain a product name or literal. Several Stackra packages are being ported from Figentra

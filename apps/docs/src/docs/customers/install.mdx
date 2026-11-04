@@ -6,7 +6,7 @@ icon: "download"
 
 {/* Stackra file contract: Purpose: the customer guide from zero to an installed package: the registry, the .npmrc, the free and licensed scopes, licence tokens in CI, the answers the registry gives and what is still pending. Boundary: customer-facing documentation only; the decision is ADR 0453 and the registry's behaviour is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 4, 10, 13 and 18); ADR 0461; ADR 0316; ADR 0025 (decision 3); STA-1575. */}
 
-Every Stackra package is served by one npm-compatible registry, `https://npm.stackra.figentra.com/`
+Every Stackra package is served by one npm-compatible registry, `https://registry.figentra.com/`
 ([ADR 0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)). It
 holds two scopes:
 
@@ -21,7 +21,7 @@ usual registry.
 <Note>
   Status, 2026-10-29: the registry is built and the release workflow publishes to it. Version `0.1.0` is not released
   yet, so `latest` is absent; prereleases go out under the `next` dist-tag (the tooling presets first). Check what is
-  there with `npm view @stackra/<name> dist-tags --registry https://npm.stackra.figentra.com/`.
+  there with `npm view @stackra/<name> dist-tags --registry https://registry.figentra.com/`.
 </Note>
 
 ## Requirements
@@ -37,7 +37,7 @@ usual registry.
     Add one line to the `.npmrc` at the root of your project and commit it:
 
     ```ini
-    @stackra:registry=https://npm.stackra.figentra.com/
+    @stackra:registry=https://registry.figentra.com/
     ```
 
   </Step>
@@ -70,9 +70,9 @@ usual registry.
   </Step>
   <Step title="Map both scopes and name the token">
     ```ini
-    @stackra:registry=https://npm.stackra.figentra.com/
-    @stackra-pro:registry=https://npm.stackra.figentra.com/
-    //npm.stackra.figentra.com/:_authToken=${STACKRA_LICENCE_TOKEN}
+    @stackra:registry=https://registry.figentra.com/
+    @stackra-pro:registry=https://registry.figentra.com/
+    //registry.figentra.com/:_authToken=${STACKRA_LICENCE_TOKEN}
     ```
 
     Commit this file: it names the environment variable, never the value. Set the variable in your shell or your
@@ -82,11 +82,11 @@ usual registry.
   <Step title="Check the token">
     ```bash
     curl -fsS -H "Authorization: Bearer $STACKRA_LICENCE_TOKEN" \
-      https://npm.stackra.figentra.com/-/stackra/v1/entitlements
+      https://registry.figentra.com/-/stackra/v1/entitlements
     ```
 
     The answer is `{ holder, grants, expiresAt, status }`: the scopes and names the licence may read, and until when.
-    `npm whoami --registry https://npm.stackra.figentra.com/` prints the holder.
+    `npm whoami --registry https://registry.figentra.com/` prints the holder.
 
   </Step>
   <Step title="Install">
@@ -144,7 +144,7 @@ npm audit signatures
 ```
 
 Each version also has a Sigstore provenance bundle tying the tarball to the release workflow run that built it,
-served at `https://npm.stackra.figentra.com/-/npm/v1/attestations/@scope%2fname@<version>`. See
+served at `https://registry.figentra.com/-/npm/v1/attestations/@scope%2fname@<version>`. See
 [Security overview](/customers/security) for the whole chain.
 
 ## Not ready yet

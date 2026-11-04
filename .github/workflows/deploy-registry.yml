@@ -3,8 +3,8 @@
 #          `registry` member of runway.yaml, through Runway's `cloudflare-workers` provider (runway-cloudflare-workers.yml,
 #          ADR 0352 decision 1): build, put the real D1 and KV ids into wrangler.jsonc on the runner, apply the D1
 #          migrations (remote), deploy with REGISTRY_READ_ONLY, set the REGISTRY_SIGNING_KEY Worker secret, then check
-#          /-/ping and /-/npm/v1/keys. Runs on main pushes that touch the member or this file, and by hand (or
-#          `pnpm runway promote <sha>`) for a given commit of main.
+#          /-/ping and /-/npm/v1/keys. Runs only by hand (or `pnpm runway promote <sha>`) for a given commit of
+#          main, since the Figentra Registry switch (STA-1733); a run is the switch's rollback.
 # Boundary: the resource ids are never committed: they come from the `registry` environment's variables (the outputs
 #           of infra-cloudflare `registryWorker`, or the ids printed by the wrangler create commands, runbook in
 #           workers/registry/README.md). The one-off move of npm.stackra.figentra.com off another Worker (owner
@@ -18,13 +18,10 @@
 #          deploys nothing, so main stays green until the owner has run the runbook.
 name: Deploy registry
 
+# Dispatch only from the Figentra Registry switch on (STA-1733, Stop B): outside a terminal, wrangler deploy takes
+# npm.stackra.figentra.com back from figentra-registry, so a push here would undo the switch. A dispatch is the
+# rollback: it moves the domain back to this Worker. This member is removed 30 days after the switch.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "workers/registry/**"
-      - ".github/workflows/deploy-registry.yml"
-      - ".github/workflows/runway-cloudflare-workers.yml"
   workflow_dispatch:
     inputs:
       sha:

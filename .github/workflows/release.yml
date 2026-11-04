@@ -117,7 +117,7 @@ jobs:
       build-args: --filter=./packages/**
       dry-run: ${{ inputs.dry_run == true }}
       # The one place the registry is set: runway.yaml `providers.npm.registry` (ADR 0453).
-      registry: https://npm.stackra.figentra.com/
+      registry: https://registry.figentra.com/
     secrets:
       app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
       app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
@@ -142,7 +142,7 @@ jobs:
       PACKAGES: ${{ inputs.packages }}
       DIST_TAG: ${{ inputs.dist_tag }}
       BASE_VERSION: ${{ inputs.base_version }}
-      REGISTRY: https://npm.stackra.figentra.com/
+      REGISTRY: https://registry.figentra.com/
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

@@ -31,7 +31,7 @@ describe("workspaceTemplate", () => {
       "pnpm-workspace.yaml",
       ".npmrc",
     ]);
-    expect(content(".npmrc")).toBe("@stackra:registry=https://npm.stackra.figentra.com/\n");
+    expect(content(".npmrc")).toBe("@stackra:registry=https://registry.figentra.com/\n");
     expect(content(".npmrc")).not.toContain("authToken");
   });
 

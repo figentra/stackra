@@ -8,4 +8,4 @@
  */
 
 /** The registry host of ADR 0453. */
-export const REGISTRY_ORIGIN_DEFAULT = "https://npm.stackra.figentra.com/";
+export const REGISTRY_ORIGIN_DEFAULT = "https://registry.figentra.com/";

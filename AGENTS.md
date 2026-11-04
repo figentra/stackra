@@ -40,7 +40,7 @@ Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue S
 Done = `pnpm verify` green on the box after the merge (format, lint, typecheck, test, build, validate, boundaries, knip; "Tests run
 later" below). Conventional commits.
 
-Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
+Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://registry.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
 
 Deploys (owner decision 2026-10-28, ADR 0468): agents develop and deploy end to end. Dev and staging deploys and
 prereleases run without the owner; production (a deploy, promote, rollback or package release) runs in CI and waits on

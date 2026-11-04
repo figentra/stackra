@@ -31,7 +31,7 @@ afterEach(() => {
 
 describe("registryOrigin", () => {
   it("defaults to the ADR 0453 host", () => {
-    expect(registryOrigin(root, undefined)).toBe("https://npm.stackra.figentra.com/");
+    expect(registryOrigin(root, undefined)).toBe("https://registry.figentra.com/");
   });
 
   it("reads the workspace .npmrc, then the environment, then the flag", () => {

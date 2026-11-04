@@ -81,7 +81,7 @@ root runway states where members run: providers, destinations, shared pools, def
 cache driver serves (`config.cache.driver`, in the member or the root's `defaults.service.config`).
 
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
-and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);
+and `scope` the npm scope it owns. For Stackra that is `https://registry.figentra.com/` and `@stackra` (ADR 0453);
 the release workflow's `registry` input carries the same value to `runway-npm.yml`, and no member's `publishConfig`
 names a registry.
 

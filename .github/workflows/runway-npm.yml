@@ -47,7 +47,7 @@ on:
           The npm-compatible registry packages publish to, an https URL ending in /. The caller passes its root
           runway's `providers.npm.registry`; this default is the Stackra registry (ADR 0453).
         type: string
-        default: https://npm.stackra.figentra.com/
+        default: https://registry.figentra.com/
     secrets:
       app-id:
         description: The GitHub App id the version PR and the tags are pushed as; unset, it comes from Infisical.

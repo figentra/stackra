@@ -92,7 +92,7 @@ export class LicensingConfig extends BaseLicensingConfig {
 ## Issuing licences (the issuing service only)
 
 The default `registry` driver calls the Stackra registry licence API (`IssuerConfig.registryUrl`, default
-`https://npm.stackra.figentra.com`) with the `REGISTRY_ISSUER_TOKEN` secret. OS billing sends commands with the
+`https://registry.figentra.com`) with the `REGISTRY_ISSUER_TOKEN` secret. OS billing sends commands with the
 billing event id as the Idempotency-Key, so a retried webhook is applied once:
 
 ```ts

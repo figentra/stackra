@@ -89,7 +89,7 @@ belongs to (default `production`, a monitored one), `checkFrequencySeconds` (at 
 observability:
   uptime:
     - name: registry
-      url: https://npm.stackra.figentra.com/-/ping
+      url: https://registry.figentra.com/-/ping
       checkFrequencySeconds: 30
     - name: turbo-cache
       url: https://turbo.stackra.figentra.com/v8/artifacts/status

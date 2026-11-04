@@ -19,7 +19,7 @@ import { CliUsageError } from "#node/errors/cli-usage.error";
  * @param root - the workspace root.
  * @param flag - the `--registry` value, if given.
  * @example
- * registryOrigin("/repo", undefined); // "https://npm.stackra.figentra.com/"
+ * registryOrigin("/repo", undefined); // "https://registry.figentra.com/"
  */
 export function registryOrigin(root: string, flag: string | undefined): string {
   const npmrc = join(root, ".npmrc");

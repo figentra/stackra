@@ -9,7 +9,7 @@
 
 /** Where the registry is and how to read it. */
 export type RegistryAccess = {
-  /** The registry origin, `https://npm.stackra.figentra.com/` by default. */
+  /** The registry origin, `https://registry.figentra.com/` by default. */
   readonly origin: string;
   /** The licence token, when one is set. */
   readonly token: string | undefined;

@@ -142,9 +142,7 @@ describe("AddCommand", () => {
         },
       },
     });
-    expect(fake.accesses).toEqual([
-      { origin: "https://npm.stackra.figentra.com/", token: undefined },
-    ]);
+    expect(fake.accesses).toEqual([{ origin: "https://registry.figentra.com/", token: undefined }]);
     expect(fake.calls).toEqual([
       { method: "item", args: ["@stackra/skill-archify"] },
       { method: "tarball", args: ["@stackra/skill-archify", "0.2.0"] },

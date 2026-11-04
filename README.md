@@ -45,7 +45,7 @@ prove them. This repository is its monorepo, on pnpm and Turborepo.
   same authorisation as a human caller, and a write tool needs a named human approver. The repository is built with
   AI agents too, under the rules in [`AGENTS.md`](AGENTS.md).
 
-Packages publish only to the Stackra registry (`https://npm.stackra.figentra.com/`,
+Packages publish only to the Stackra registry (`https://registry.figentra.com/`,
 [ADR 0453](apps/docs/src/docs/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)),
 never npmjs. The plan is the [roadmap](apps/docs/src/docs/roadmap.mdx).
 

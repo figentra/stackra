@@ -70,7 +70,7 @@ providers:
   betterstack: {}
   # The Stackra registry every package publishes to (ADR 0453 decision 6); release.yml passes it to runway-npm.yml.
   npm:
-    registry: https://npm.stackra.figentra.com/
+    registry: https://registry.figentra.com/
     scope: "@stackra"
 
 # ── Observability: @stackra/infra-observability, applied by apply-observability.yml (ADR 0184) ──
@@ -82,7 +82,7 @@ observability:
   uptime:
     # GET /-/ping, npm's health check (workers/registry/src/npm/handle-ping.ts).
     - name: registry
-      url: https://npm.stackra.figentra.com/-/ping
+      url: https://registry.figentra.com/-/ping
       checkFrequencySeconds: 30
     - name: static
       url: https://static.stackra.figentra.com/

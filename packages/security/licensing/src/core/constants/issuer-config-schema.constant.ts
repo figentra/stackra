@@ -19,6 +19,6 @@ const ORIGIN = /^(https:\/\/[^\s/?#]+|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$
 export const ISSUER_CONFIG_SCHEMA = z.object({
   driver: z.enum(LICENCE_ISSUER_DRIVERS).default("registry"),
   productToken: z.string().default(""),
-  registryUrl: z.string().regex(ORIGIN).default("https://npm.stackra.figentra.com"),
+  registryUrl: z.string().regex(ORIGIN).default("https://registry.figentra.com"),
   issuerToken: z.string().default(""),
 });

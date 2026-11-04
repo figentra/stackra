@@ -36,7 +36,7 @@ export class IssuerOptions extends Schema {
   issuerToken = "";
 
   /** The Stackra registry origin the `registry` driver calls (`/-/stackra/v1/licences`). */
-  registryUrl = "https://npm.stackra.figentra.com";
+  registryUrl = "https://registry.figentra.com";
 
   /**
    * The `LicenceIssuer` driver: `registry` writes Stackra registry licences (the default), `keygen` writes Keygen
