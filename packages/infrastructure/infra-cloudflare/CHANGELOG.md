@@ -1,5 +1,33 @@
 # @stackra/infra-cloudflare
 
+## 0.9.0
+
+### Minor Changes
+
+- 5030040: The runway host map now generates the edge Worker's routes (`surfaceHosts`, `edgeRoutes`): one `<host>/*` per surface host under a runway zone, beside the stack's own patterns. A bare `*/*` route is refused unless the zone lists `exclusions`, which become script-less routes. The CLI's runway ship probes every host of the map after a product publish and fails when one does not serve TLS.
+- 30b2f24: `workerAccess` puts Cloudflare Access in front of the `internal-tool` Worker members: one application over each
+  member's custom domains and one over its Version URLs (`*-<worker>.<subdomain>.workers.dev`), open to the GitHub
+  organisation. The core stack takes them from a new `internalTools` config, which needs `access` (ADR 0519 decision 4,
+  STA-1994).
+
+### Patch Changes
+
+- Updated dependencies [2aeaec8]
+- Updated dependencies [5030040]
+- Updated dependencies [e80a99b]
+- Updated dependencies [93bb1e7]
+- Updated dependencies [b0d6fcc]
+- Updated dependencies [2e43c48]
+- Updated dependencies [2e43c48]
+- Updated dependencies [ca1614e]
+- Updated dependencies [f9c825d]
+- Updated dependencies [bd3f314]
+  - @stackra/runway@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/config@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

@@ -1,5 +1,39 @@
 # @stackra/navigation
 
+## 0.9.0
+
+### Minor Changes
+
+- 681d01a: `ModuleMenu`, the navigation kit's module menu (ADR 0504), on the web and on native. It draws every declared
+  navigation menu (`Menu({ kind: MenuKind.Navigation })`, collected into the menu registry) in registry order: on the web
+  as `@stackra/ui`'s Sidebar, with each place's href in the visitor's locale mount and the place under the current path
+  marked current; on native as `@stackra/ui`'s NavigationList, each place opening its app path through the
+  `RouterProvider` that `ReactNavigationProvider` binds. `items` replaces the declared menus. The native entry gains
+  `useMenu` and `useMenus`, at parity with the web hooks. The showcase lists ModuleMenu under Blocks.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [681d01a]
+- Updated dependencies [2e43c48]
+- Updated dependencies [681d01a]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/clients@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/ui@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/seo@0.9.0
+  - @stackra/icons@0.9.0
+  - @stackra/platform@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/feature-flags@0.9.0
+  - @stackra/settings@0.9.0
+  - @stackra/testing@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

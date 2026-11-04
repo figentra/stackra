@@ -1,5 +1,22 @@
 # @stackra/devices
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/storage@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/transport@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

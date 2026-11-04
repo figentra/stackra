@@ -1,5 +1,67 @@
 # @stackra/gen
 
+## 0.9.0
+
+### Minor Changes
+
+- 3db6529: The docs-site target can now write a Fumadocs site. `emitDocsSite(input, "fumadocs")` prerenders the site to static files with Vite and React Router. It writes the pages under `content/`, the navigation as a page tree in `app/site.json`, the site shell, `llms.txt`, `llms-full.txt` and `_redirects` under `public/`, and a transitional map for the Mintlify component names. It refuses a redirect from a page's own path (`docs_redirect_shadows_page`), a redirect to nowhere (`docs_redirect_target_missing`) and an unmapped, unimported component (`docs_component_unknown`). `DocsConfig` gains `redirects`. Mintlify stays the default until a docs app switches (STA-2026). For a docs member whose generated site is Fumadocs, `stackra dev` and `build` run React Router, and they name `pnpm install` when the site's dependencies are missing. `stackra lint` builds the site, then checks every internal link, image and anchor in it, and exits 1 naming each broken link by page.
+- c19ca9c: Gen records each record `Policy<Model>` in a manifest `policies` section (class, model, module, file and the model's
+  `modelFile`, own then hosted with `from`, written only when there is one), writes `registerPolicies([...])` in
+  `#stackra/registrations` from it, and a service's boot calls `connectPolicies(container)`. Until now nothing paired a
+  model with its policy, so `ctx.authorize(record)` ran no policy and a caller holding a permission could act on another
+  principal's record, such as another customer's loyalty account (STA-2045).
+- 502cba1: A service's generated Encore app gains its service declaration and its endpoints. Every service gets
+  `.stackra/encore/<member>/encore.service.ts` (`export default new Service("<member>")`), and a service with an own
+  action or query that has an endpoint gets `.stackra/encore/<member>/api.ts`: one `api()` per such entry, with its
+  derived method and path, typed by its input and output schemas, running the call through
+  `ActionPipeline.execute` inside `app.handlers.run`.
+  
+  The actor comes only from Encore's verified auth data (`getAuthData()` of `~encore/auth`, `{ userID, actor }`). An
+  endpoint is `auth: true` unless its call lists `ActorKind.Anonymous` in `actors`; that one is `auth: false` and runs as
+  an anonymous actor when no session is presented. The auth handler that returns the auth data comes with the generated
+  gateway; until then `encore build` refuses the `auth: true` endpoints. A hosted package's entry, and one whose schema
+  the member does not declare, get no endpoint yet. Gen now refuses a route whose path parameter is no field of the
+  input (`endpoint_param_unbound`), since Encore binds path parameters from the input.
+
+### Patch Changes
+
+- b210fc8: A service that runs `@stackra/outbox` now connects the outbox writer as the native-write watcher in its generated
+  `boot` (`connectNativeWriteWatcher`), so a native `CrudService` write (increment, soft or archive delete, restore,
+  repath, purge) reaches the change log, and search indexes, segments and `@ConsumesChanges` consumers no longer keep
+  stale or deleted rows (STA-2047).
+- e80a99b: `stackra gen --check` locks permissions, roles, config keys, schema names, endpoints and reports (`identity_changed` unless `@Renamed` names the old identity), and accepts an integration event version bump; `@Renamed` may mark a report class.
+- c00ae11: Migrations apply after the modules they depend on and after the owner of each macro they call (ai after tenancy); a migration that imports anything but `@stackra/database` or `#stackra/migrations` is refused (`migration_import_forbidden`); a service's own macros are merged into `Blueprint` through the generated `.stackra/gen/blueprint.ts`.
+- 94354cc: The generated public SDKs: the TypeScript client now requests the base URL plus the endpoint path, so a base URL with a
+  path prefix (`https://example.com/api`) keeps it, as the Python and PHP clients already did; a host-only base URL
+  requests the same URL as before. Every write in the TypeScript, Python and PHP clients now sends an `Idempotency-Key`:
+  the caller's when passed, else a UUID v4 generated once per call before the request (`crypto.randomUUID()`,
+  `uuid.uuid4()`, `random_bytes`), so a retry around the request replays one call. A `GET` sends none. A TypeScript
+  runtime without Web Crypto passes `idempotencyKey` on writes.
+- dbe1e9d: Gen writes `.stackra/gen/ui.ts` (`#stackra/ui`) for a member that declares `@stackra/ui`: it re-exports `Component`
+  from `@stackra/ui/native` on an app that renders only on iOS and Android, and from `@stackra/ui/react` otherwise. A
+  class component (`class Greeting extends Component<GreetingProps>`) now type-checks; the class-components compiler
+  still removes the import before a bundle loads it. The `.` entry exports the emitter as `emitUiFacade`.
+- b174a17: `stackra db diff` reports pivots, search columns and partial indexes faithfully. `expectedSchema` now expects each
+  many-to-many relation's pivot table, named by `pivotTable` or `<table>_<field>`, with the two `varchar(33)` keys the
+  ORM names (`<owner>_id` and `<target>_id`, or `<table>_1_id` and `<table>_2_id` for a self-reference), the owner's
+  `tenant_id` and their same-module foreign keys, so a migrated pivot is no longer `undeclared_table`. A `@Searchable`
+  model expects `search_text` and `search_filters`; `diffSchemas` tolerates the search vectors and `__v<n>` shadows only
+  on such a table and reports search columns on any other table as `undeclared_column`. A partial index's predicate
+  compares as Postgres renders it (multi-word and array casts, quoted identifiers, `<>`, `= ANY`, `<> ALL`, `~~` and
+  `between` folded), so a correct partial index is no longer `index_shape`.
+  
+  `ManyToManyOptions` documents the pivot name the ORM uses without the option, `<table>_<field>`.
+- 2ae4f65: `sort_not_indexed` and `filter_not_indexed` now judge the resource trees gen reads in this run, not the committed
+  `stackra.manifest.json`. A sortable column, default sort, tiebreak key or filter on a path no index leads with is
+  refused in the run that adds it, including a first run with no committed manifest; a tree only the committed manifest
+  still holds is no longer judged. `checkTableIndexes(ir, manifest)` takes the manifest this run derives.
+- f9c825d: gen binds Menu, Shortcut, Store, Bridge (request-scoped) and ExtensionPoint classes; a config override keeps its base's key. The container's binding kinds gain `shortcut` and `extension_point`.
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/money@0.9.0
+  - @stackra/support@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes
