@@ -34,6 +34,14 @@
       "problemMatcher": []
     },
     {
+      "label": "dev: surface-landing",
+      "detail": "Start surface-landing on http://localhost:4173 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@stackra/cli... && node packages/developer/cli/dist/stackra.mjs build --product --surfaces-only && exec node packages/developer/cli/dist/stackra.mjs preview serve --surface landing --port 4173",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
       "label": "dev: docs",
       "detail": "Start docs on http://localhost:3333 (written by stackra gen from the runways)",
       "type": "shell",
