@@ -50,7 +50,7 @@ export const COMMERCE_IR: MemberIR = {
       facets: [],
       methods: [],
       refusals: [],
-      statics: { read: "Permission.L0", create: "Permission.L1", cancel: "Permission.L2" },
+      statics: { read: "Permission.L0", create: "Permission.L2", cancel: "Permission.L2" },
       traits: [],
     },
     {

@@ -42,7 +42,7 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `./native`    | `RelayAnalyticsDriver`                                                                             | the `relay` driver for React Native: buffered like PostHog's, stamps `context.device`   |
 | `./contracts` | `ANALYTICS_INGEST_PATH`                                                                            | `/analytics/batches`, the ingest path under the public API origin                       |
 | `./node`      | `IngestAnalyticsBatchAction`, `IngestAnalyticsBatchInput`, `IngestAnalyticsBatchOutput`            | the analytics service's ingest endpoint (`analytics_batch.ingest`)                      |
-| `./node`      | `AnalyticsBatchAccepted`, `FanOutAnalyticsListener`, `AnalyticsBatchPermissions`                   | one outbox event per granted destination, sent to its driver; the L0 permission         |
+| `./node`      | `AnalyticsBatchAccepted`, `FanOutAnalyticsListener`, `AnalyticsBatchPermissions`                   | one outbox event per granted destination, sent to its driver; the L2 permission         |
 | `./contracts` | `AnalyticsStore`, `AnalyticsStoreQuery`                                                            | the port of Stackra's own delivery store (`append`, `scan`, `erasePerson`) and its scan |
 | `./node`      | `MemoryAnalyticsStoreDriver`                                                                       | the `memory` store driver: in-process, for tests and previews                           |
 | `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event     |
