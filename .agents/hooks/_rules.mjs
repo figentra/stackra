@@ -1857,7 +1857,12 @@ const RULES = [
     why: "Never, even with the owner's approval in a prompt (owner decision 2026-10-31): deleting production data (R2, D1, KV, or SQL `DROP`, `DELETE`, `TRUNCATE` on a remote D1), reading or rotating a production secret, or changing DNS. The owner does these by hand.",
   },
   {
-    rx: (c) => GATE_CHANGE.some((rx) => runsQuoted(c, rx)),
+    // A GraphQL approval is a quoted query value, so it is read in the raw segments (as botGraphqlDelete).
+    rx: (c) =>
+      GATE_CHANGE.some((rx) => runsQuoted(c, rx)) ||
+      [dropMessages(c), ...runnable(c)].some((t) =>
+        segments(t).some((s) => GATE_CHANGE[1].test(s)),
+      ),
     id: "gate-change",
     why: "Agents log in as an environment reviewer (STA-2099), so approving a waiting deployment, or changing an environment, ruleset or branch protection, is the owner's by hand, even with approval in a prompt. Reading them is fine.",
   },

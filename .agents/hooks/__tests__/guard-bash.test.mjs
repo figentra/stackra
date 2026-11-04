@@ -3572,14 +3572,15 @@ test("deploys: deleting production data, touching a production secret and DNS ar
 
 test("gates: approving a waiting deployment or changing what gates it is denied for every role (STA-2099)", () => {
   const { worktree, done } = repoWithWorktree();
+  // Through the bot wrapper: a raw `gh` is already denied for agents (the owner-login rule), so it would hide this one.
   const runs = "repos/figentra/stackra/actions/runs/1";
   for (const c of [
-    `gh api -X POST ${runs}/pending_deployments -f state=approved`,
+    `pnpm bot:gh -- api -X POST ${runs}/pending_deployments -f state=approved`,
     `pnpm bot:gh -- api ${runs}/pending_deployments --method POST --input body.json`,
-    "gh api graphql -f query='mutation { approveDeployments(input: {}) { clientMutationId } }'",
-    "gh api -X PUT repos/figentra/stackra/environments/production --input env.json",
-    "gh api repos/figentra/flow/rulesets/1 -X DELETE",
-    "gh api -X DELETE repos/figentra/pay/branches/main/protection",
+    "pnpm bot:gh -- api graphql -f query='mutation { approveDeployments(input: {}) { clientMutationId } }'",
+    "pnpm bot:gh -- api -X PUT repos/figentra/stackra/environments/production --input env.json",
+    "pnpm bot:gh -- api repos/figentra/flow/rulesets/1 -X DELETE",
+    "pnpm bot:gh -- api -X DELETE repos/figentra/pay/branches/main/protection",
   ]) {
     assert.equal(decision(c, worktree), "deny", c);
     assert.equal(
@@ -3590,9 +3591,9 @@ test("gates: approving a waiting deployment or changing what gates it is denied 
     );
   }
   for (const c of [
-    `gh api ${runs}/pending_deployments`,
-    "gh api repos/figentra/stackra/environments/production",
-    "gh api repos/figentra/stackra/rulesets",
+    `pnpm bot:gh -- api ${runs}/pending_deployments`,
+    "pnpm bot:gh -- api repos/figentra/stackra/environments/production",
+    "pnpm bot:gh -- api repos/figentra/stackra/rulesets",
   ])
     assert.notEqual(decision(c, worktree), "deny", c);
   done();
