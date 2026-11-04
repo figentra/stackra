@@ -263,5 +263,9 @@ test("ciHome: build tokens live in ci-build, every other CI name in ci-deploy /c
     project: "ci-build",
     path: "/ci/registry",
   });
+  assert.deepEqual(ciHome("FIGENTRA_REGISTRY_TOKEN"), {
+    project: "ci-build",
+    path: "/ci/registry",
+  });
   assert.deepEqual(ciHome("MINTLIFY_ADMIN_KEY"), { project: "ci-deploy", path: "/ci" });
 });

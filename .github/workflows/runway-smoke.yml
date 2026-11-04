@@ -79,8 +79,23 @@ jobs:
       # A product's install of @stackra and @figentra packages needs the registry read token; pnpm 12 ignores a token in
       # the repository's .npmrc. Read from /ci/registry over OIDC when the caller's org has the INFISICAL_GATE_*
       # variables, as runway-mintlify.yml does; a workspace-only install needs none, so a refused lookup does not stop.
+      # FIGENTRA_REGISTRY_TOKEN is the token's name from STA-1733; the old name is read while it exists.
       - name: Registry token (Infisical OIDC)
         if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/registry
+          secret-name: FIGENTRA_REGISTRY_TOKEN
+          export-type: env
+
+      - name: Registry token, old name (Infisical OIDC)
+        if: env.FIGENTRA_REGISTRY_TOKEN == '' && vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
         continue-on-error: true
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
@@ -94,10 +109,12 @@ jobs:
           export-type: env
 
       - name: Registry token (user .npmrc)
-        if: env.STACKRA_REGISTRY_TOKEN != ''
+        if: env.FIGENTRA_REGISTRY_TOKEN != '' || env.STACKRA_REGISTRY_TOKEN != ''
         run: |
           umask 077
-          printf '//npm.stackra.figentra.com/:_authToken=%s\n' "$STACKRA_REGISTRY_TOKEN" >> "$HOME/.npmrc"
+          token="${FIGENTRA_REGISTRY_TOKEN:-$STACKRA_REGISTRY_TOKEN}"
+          # Both hosts serve the same registry from the STA-1733 move on; the token goes to no other host.
+          printf '//%s/:_authToken=%s\n' npm.stackra.figentra.com "$token" registry.figentra.com "$token" >> "$HOME/.npmrc"
 
       # The arguments arrive through the environment, never spliced into the script (zizmor template-injection).
       - name: Install dependencies
@@ -152,8 +169,23 @@ jobs:
       # A product's install of @stackra and @figentra packages needs the registry read token; pnpm 12 ignores a token in
       # the repository's .npmrc. Read from /ci/registry over OIDC when the caller's org has the INFISICAL_GATE_*
       # variables, as runway-mintlify.yml does; a workspace-only install needs none, so a refused lookup does not stop.
+      # FIGENTRA_REGISTRY_TOKEN is the token's name from STA-1733; the old name is read while it exists.
       - name: Registry token (Infisical OIDC)
         if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/registry
+          secret-name: FIGENTRA_REGISTRY_TOKEN
+          export-type: env
+
+      - name: Registry token, old name (Infisical OIDC)
+        if: env.FIGENTRA_REGISTRY_TOKEN == '' && vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
         continue-on-error: true
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
@@ -167,10 +199,12 @@ jobs:
           export-type: env
 
       - name: Registry token (user .npmrc)
-        if: env.STACKRA_REGISTRY_TOKEN != ''
+        if: env.FIGENTRA_REGISTRY_TOKEN != '' || env.STACKRA_REGISTRY_TOKEN != ''
         run: |
           umask 077
-          printf '//npm.stackra.figentra.com/:_authToken=%s\n' "$STACKRA_REGISTRY_TOKEN" >> "$HOME/.npmrc"
+          token="${FIGENTRA_REGISTRY_TOKEN:-$STACKRA_REGISTRY_TOKEN}"
+          # Both hosts serve the same registry from the STA-1733 move on; the token goes to no other host.
+          printf '//%s/:_authToken=%s\n' npm.stackra.figentra.com "$token" registry.figentra.com "$token" >> "$HOME/.npmrc"
 
       - name: Install dependencies
         env:
@@ -239,8 +273,23 @@ jobs:
       # A product's install of @stackra and @figentra packages needs the registry read token; pnpm 12 ignores a token in
       # the repository's .npmrc. Read from /ci/registry over OIDC when the caller's org has the INFISICAL_GATE_*
       # variables, as runway-mintlify.yml does; a workspace-only install needs none, so a refused lookup does not stop.
+      # FIGENTRA_REGISTRY_TOKEN is the token's name from STA-1733; the old name is read while it exists.
       - name: Registry token (Infisical OIDC)
         if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/registry
+          secret-name: FIGENTRA_REGISTRY_TOKEN
+          export-type: env
+
+      - name: Registry token, old name (Infisical OIDC)
+        if: env.FIGENTRA_REGISTRY_TOKEN == '' && vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
         continue-on-error: true
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
@@ -254,10 +303,12 @@ jobs:
           export-type: env
 
       - name: Registry token (user .npmrc)
-        if: env.STACKRA_REGISTRY_TOKEN != ''
+        if: env.FIGENTRA_REGISTRY_TOKEN != '' || env.STACKRA_REGISTRY_TOKEN != ''
         run: |
           umask 077
-          printf '//npm.stackra.figentra.com/:_authToken=%s\n' "$STACKRA_REGISTRY_TOKEN" >> "$HOME/.npmrc"
+          token="${FIGENTRA_REGISTRY_TOKEN:-$STACKRA_REGISTRY_TOKEN}"
+          # Both hosts serve the same registry from the STA-1733 move on; the token goes to no other host.
+          printf '//%s/:_authToken=%s\n' npm.stackra.figentra.com "$token" registry.figentra.com "$token" >> "$HOME/.npmrc"
 
       - name: Install dependencies
         env:

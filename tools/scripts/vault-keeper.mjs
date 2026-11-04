@@ -48,6 +48,7 @@ export const STORE_PATH = "/ci/store";
 /** The build tokens every CI job reads from ci-build (ADR 0512); any other CI name is a deploy credential. */
 const BUILD_TOKENS = {
   UNIWIND_AUTH_TOKEN: "/ci",
+  FIGENTRA_REGISTRY_TOKEN: "/ci/registry",
   STACKRA_REGISTRY_TOKEN: "/ci/registry",
   TURBO_API: "/ci/turbo",
   TURBO_TEAM: "/ci/turbo",
