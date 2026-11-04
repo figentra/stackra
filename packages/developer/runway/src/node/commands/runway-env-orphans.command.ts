@@ -7,6 +7,7 @@
  * Governing contract: ADR 0173 (amendment 2026-11-04, decision 4); STA-2104.
  */
 import { Argument, Command, Option, type CommandIo } from "@stackra/console";
+import { Str } from "@stackra/validation";
 
 import { envOrphans } from "#node/functions/env-orphans.function";
 import { repositoryRoot } from "#node/functions/repository-root.function";
@@ -24,6 +25,7 @@ export class RunwayEnvOrphansCommand extends Command({
 
   /** The runtime Infisical project id; `providers.infisical.workspace` by default. */
   @Option({ description: "The Infisical project id of the environment's runtime project" })
+  @Str
   projectId?: string;
 
   /** The read; a test replaces it. */

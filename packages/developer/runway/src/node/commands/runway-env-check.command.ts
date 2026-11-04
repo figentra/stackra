@@ -11,6 +11,7 @@
  * Governing contract: ADR 0173 (amendment 2026-11-04, decision 4); STA-2104.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
+import { Str } from "@stackra/validation";
 
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { checkEnv } from "#node/functions/check-env.function";
@@ -32,10 +33,12 @@ export class RunwayEnvCheckCommand extends Command({
   @Option({
     description: "The runway environment the job deploys (dev, preview, staging, production)",
   })
+  @Str
   env?: string;
 
   /** The runtime Infisical project id; `providers.infisical.workspace` by default. */
   @Option({ description: "The Infisical project id of the environment's runtime project" })
+  @Str
   projectId?: string;
 
   /** The names check; a test replaces it. */

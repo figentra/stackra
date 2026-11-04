@@ -199,7 +199,7 @@ describe("runway env check --values", () => {
         requireCommand: true,
       },
     );
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode, result.stdout + result.stderr).toBe(1);
     expect(result.stdout + result.stderr).toContain("STRIPE_SECRET_KEY");
     expect(result.stdout + result.stderr).not.toContain("CANARY");
   });
