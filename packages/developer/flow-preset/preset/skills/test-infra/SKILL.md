@@ -66,7 +66,7 @@ unpushed worktrees have no fallback, and nothing ever falls back to the Mac.
 ## Never
 
 - Never install, patch or reconfigure anything on a box. Boxes are replaced, not repaired. A missing tool belongs in
-  the image (`packages/infrastructure/infra-testbed`).
+  the image (`packages/testbed` in figentra/testbed).
 - Never free disk by hand. The guard cleans at 70% and drains the box at 85%.
 - Never copy a token to a box, and never use `put-env`: it is retired. Jobs get tokens from Infisical. A missing token
   is the owner's to add.

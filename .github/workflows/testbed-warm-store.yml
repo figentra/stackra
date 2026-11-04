@@ -1,0 +1,60 @@
+# Stackra file contract:
+# Purpose: proves on a pull request that core's lockfile still warms a testbed box's pnpm store (STA-1953): warms a
+#          store from the four files WarmStore uploads with no environment, then fetches offline from it, as the
+#          testbed image's validate phase does. The image itself, its job image checks and the box agent now live in
+#          figentra/testbed (ADR 0522 step 7). Advisory, never a required check (ADR 0166 CI2).
+# Secrets: none. Like the image build instance, the job has no token.
+# Owner: release-operations
+
+name: Testbed warm store
+
+on:
+  pull_request:
+    paths:
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .pnpmfile.mjs
+      - .npmrc
+      - .github/workflows/testbed-warm-store.yml
+
+concurrency:
+  group: testbed-warm-store-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  warm-store:
+    name: Testbed warm store
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # WarmStore, Clean and the offline check (03-agent.yml), from a shell with no environment: the build instance has
+      # no licence token, so a fetch that ran an install script would fail here as it did there, and Clean empties every
+      # home cache, so the offline check reads only the store and the metadata cache on /data.
+      - name: Warm store with no environment
+        run: |
+          warm=$RUNNER_TEMP/warm
+          mkdir -p "$warm" "$RUNNER_TEMP/home"
+          cp pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs .npmrc "$warm/"
+          tools="$(dirname "$(mise which pnpm)"):$(dirname "$(mise which node)"):/usr/bin:/bin"
+          cd "$warm"
+          env -i PATH="$tools" HOME="$RUNNER_TEMP/home" PNPM_CONFIG_CACHE_DIR="$RUNNER_TEMP/cache" \
+            pnpm fetch --ignore-scripts --store-dir "$RUNNER_TEMP/store"
+          rm -rf node_modules "${RUNNER_TEMP:?}/home"
+          mkdir -p "$RUNNER_TEMP/home"
+          env -i PATH="$tools" HOME="$RUNNER_TEMP/home" PNPM_CONFIG_CACHE_DIR="$RUNNER_TEMP/cache" \
+            pnpm fetch --offline --ignore-scripts --store-dir "$RUNNER_TEMP/store" >/dev/null
