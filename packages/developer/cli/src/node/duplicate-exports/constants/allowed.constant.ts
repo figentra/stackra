@@ -44,10 +44,6 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
     "@stackra/console's running-spinner handle (update, stop) vs @stackra/ui's native spinner component",
   TableColumn:
     "@stackra/console's terminal table column contract (row key, kind, alignment) vs @stackra/ui's Table component column (sort, width, pin)",
-  findCommand:
-    "@stackra/console's lookup in a registry of Command classes vs @stackra/cli's lookup in its CliCommand list, which goes when stackra moves onto the console (STA-1966)",
-  runCommand:
-    "@stackra/console's dispatch of one parsed command vs @stackra/runway's child-process helper",
   shapeArabic:
     "@stackra/console depends on no domain package (ADR 0506 decision 5), so it shapes terminal text itself; @stackra/documents shapes PDF text",
   // One shape, kept by the design system so it depends on no domain package.

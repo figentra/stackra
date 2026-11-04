@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `PRODUCT_ROOT` and `writeBundle`, the fixtures of the publish tests: a product root runway with a
  *          console (two packages, one host), a landing site on two hosts (one canonical, one the product's own
- *          domain), an ops contribution and a staff app linked to the console host; and a writer of a built bundle
- *          folder with its manifest.
+ *          domain), an ops contribution and a staff app linked to the console host; a writer of a built bundle
+ *          folder with its manifest; and `writeOpsBundle`, the declarative ops bundle `buildProduct` writes.
  * Boundary: test only; never exported from an entry.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); app-shells 8.2; owner decisions D2 and D9.
@@ -64,6 +64,29 @@ export function writeBundle(
       css: ["style-123.css"],
       imports: ["react", "@stackra/ui/button"],
       ...overrides,
+    }),
+  );
+}
+
+/** Writes the ops bundle `buildProduct` writes for `PRODUCT_ROOT` at `version`: the contributions and the manifest. */
+export function writeOpsBundle(repository: string, version: string): void {
+  const folder = join(repository, "dist/bundles/ops", version);
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(
+    join(folder, "ops.contributions.json"),
+    JSON.stringify({ product: "mezzora", contributes: { package: "@mezzora/ops-ui" } }),
+  );
+  writeFileSync(
+    join(folder, "bundle.manifest.json"),
+    JSON.stringify({
+      package: "mezzora",
+      surface: "ops",
+      targets: "ops@1",
+      version,
+      entry: "ops.contributions.json",
+      modulepreload: [],
+      css: [],
+      imports: [],
     }),
   );
 }

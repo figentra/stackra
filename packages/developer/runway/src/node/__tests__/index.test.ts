@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: the template's Vite configs import `definesFor` and
- *          `devServer` from `@stackra/runway/node`; with `readRunway`, `runCommand`, the three provider drivers and the
+ *          `devServer` from `@stackra/runway/node`; with `readRunway`, `runProgram`, the three provider drivers and the
  *          mobile job (`runMobileJob`, `capabilityConfig`), the brand step (`runBrandStep`, `committedBrandOutputs`,
  *          `BRAND_STEP_SETTINGS`) and the capture job (`screenshotCaptureJob`, `runScreenshotCapture`,
  *          `SCREENSHOT_CAPTURE_DEFAULTS`), the smoke step and its drivers (`smokePreview`, `PlaywrightSmokeDriver`, `MaestroSmokeDriver`,
@@ -103,9 +103,9 @@ describe("@stackra/runway/node", () => {
       "releaseOf",
       "renderShellPage",
       "runBrandStep",
-      "runCommand",
       "runLaunchCheck",
       "runMobileJob",
+      "runProgram",
       "runScreenshotCapture",
       "screenshotCaptureJob",
       "secretSyncPlan",
@@ -115,6 +115,7 @@ describe("@stackra/runway/node", () => {
       "toolVersionOf",
       "uploadBundle",
       "workspacePackages",
+      "writeDevFacts",
     ]);
     for (const name of Object.keys(node)) expect(Object.keys(core)).not.toContain(name);
   });

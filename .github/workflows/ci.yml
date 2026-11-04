@@ -9,9 +9,10 @@
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
 # Secrets: UNIWIND_AUTH_TOKEN (the Uniwind Pro CI/CD licence token) from Infisical /ci (env prod) through GitHub
-#          OIDC, for the install step only: the Uniwind Pro postinstall downloads the licensed build with it (ADR 0310
-#          decision 11; no HeroUI Pro, ADR 0469). No repository
-#          secret; the Infisical identity id is the non-secret repository variable INFISICAL_GATE_IDENTITY_ID.
+#          OIDC, in the Mobile apps job only: the gate installs without the two members that use Uniwind Pro, whose
+#          postinstall downloads the licensed build against a monthly quota (ADR 0310 decision 11; no HeroUI Pro, ADR
+#          0469). No repository secret; the Infisical identity id is the non-secret repository variable
+#          INFISICAL_GATE_IDENTITY_ID.
 name: CI
 
 on:
@@ -34,14 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # ADR 0310: GitHub OIDC token, exchanged with Infisical for the licence token only
-    env:
-      # Non-secret id of the Infisical machine identity that may read UNIWIND_AUTH_TOKEN in /ci
-      # (ADR 0310 decisions 9 and 11). It trusts the pull_request, main-push and merge-queue (gh-readonly-queue/main/*)
-      # OIDC subjects, one per event this job runs on, in the immutable form the repository uses:
-      # repo:figentra@314302700/stackra@1425140001:<pull_request | ref:refs/heads/...>.
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
-
+      id-token: write # STA-1393: GitHub OIDC token, exchanged with Infisical for the Turborepo cache only
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
@@ -73,29 +67,6 @@ jobs:
       - name: Dependency scan (OSV-Scanner)
         run: osv-scanner scan source --lockfile=pnpm-lock.yaml
 
-      # Without the licensed build, the playground and the mobile app cannot typecheck or build; stop here with the
-      # reason instead of failing later on missing types.
-      - name: Licensed UI prerequisites
-        if: env.INFISICAL_IDENTITY_ID == ''
-        run: >-
-          echo "::error title=Uniwind Pro token unavailable::Repository variable INFISICAL_GATE_IDENTITY_ID is not set.
-          The install needs UNIWIND_AUTH_TOKEN from Infisical /ci (ADR 0310 decision 11)." && exit 1
-
-      # Exchanges this job's OIDC token for Infisical access and exports only UNIWIND_AUTH_TOKEN into the environment
-      # of later steps; the Uniwind Pro postinstall reads it (ADR 0310 decision 11). The secret-name filter keeps every
-      # other /ci value out.
-      - name: Uniwind Pro token (Infisical OIDC)
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
-        with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci
-          secret-name: UNIWIND_AUTH_TOKEN
-          export-type: env
-
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo. Skipped when the variable is unset, and on fork pull requests
       # (no OIDC token there): turbo then has no TURBO_TOKEN and uses its local cache only, so no `--cache` flag is
@@ -112,8 +83,10 @@ jobs:
           secret-path: /ci/turbo
           export-type: env
 
+      # Every member but the two that alias `uniwind` to Uniwind Pro, whose postinstall downloads the licensed build
+      # against a monthly CI quota; the Mobile apps job below covers those two. Lint, typecheck and build drop them too.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
 
       # ADR 0065: the PR names its Linear issue, and every feat/fix/refactor/perf commit carries `Refs: STA-n`.
       # Offline checks only; nothing here calls Linear.
@@ -136,7 +109,7 @@ jobs:
         run: pnpm format:check
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm exec turbo run lint --filter='!@figentra/mobile' --filter='!@figentra/playground' && pnpm lint:root
 
       # dependencies-successful runs every task whose dependencies passed instead of stopping at the first failure, so
       # one run shows every failing member; turbo still exits 1 when any task fails (STA-1937, as os#105).
@@ -145,7 +118,7 @@ jobs:
         env:
           AFFECTED: ${{ github.event_name == 'pull_request' && '1' || '' }}
           TURBO_SCM_BASE: HEAD~1 # a PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own
-        run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --continue=dependencies-successful
+        run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --filter='!@figentra/mobile' --filter='!@figentra/playground' --continue=dependencies-successful
 
       # On a pull request: the affected members (`...[base]`, what `--affected` selects) plus the CLI, whose dist
       # `pnpm validate` runs. Two `--filter`s are a union; `--affected` with a `--filter` would intersect them.
@@ -155,9 +128,9 @@ jobs:
         run: |
           # A PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own.
           if [ -n "$AFFECTED" ]; then
-            pnpm exec turbo run build --filter='...[HEAD~1]' --filter='@stackra/cli...'
+            pnpm exec turbo run build --filter='...[HEAD~1]' --filter='@stackra/cli...' --filter='!@figentra/mobile' --filter='!@figentra/playground'
           else
-            pnpm exec turbo run build
+            pnpm exec turbo run build --filter='!@figentra/mobile' --filter='!@figentra/playground'
           fi
 
       # STA-1403: .stackra is gitignored, so gen compiles each reference service's migrations into its
@@ -211,6 +184,70 @@ jobs:
 
   # STA-310: refuse a pull request that adds a dependency with a known high or critical advisory. The OSV step in the
   # gate scans the whole lockfile; this job reads only the pull request's dependency diff.
+  # The two Uniwind Pro members, apart from the required gate, so a used-up licence quota never blocks a merge. It runs
+  # only when a change can reach them, and its tarball cache means one licensed download per cache entry.
+  mobile:
+    name: Mobile apps (Uniwind Pro)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # ADR 0310: GitHub OIDC token, exchanged with Infisical for the licence token only
+    env:
+      # Non-secret id of the Infisical machine identity that may read UNIWIND_AUTH_TOKEN in /ci
+      # (ADR 0310 decisions 9 and 11).
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # Without the licensed build, the playground and the mobile app cannot typecheck or build; stop here with the
+      # reason instead of failing later on missing types.
+      - name: Licensed UI prerequisites
+        if: env.INFISICAL_IDENTITY_ID == ''
+        run: >-
+          echo "::error title=Uniwind Pro token unavailable::Repository variable INFISICAL_GATE_IDENTITY_ID is not set.
+          The install needs UNIWIND_AUTH_TOKEN from Infisical /ci (ADR 0310 decision 11)." && exit 1
+
+      # Exchanges this job's OIDC token for Infisical access and exports only UNIWIND_AUTH_TOKEN into the environment
+      # of later steps; the Uniwind Pro postinstall reads it (ADR 0310 decision 11). The secret-name filter keeps every
+      # other /ci value out.
+      - name: Uniwind Pro token (Infisical OIDC)
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: UNIWIND_AUTH_TOKEN
+          export-type: env
+
+      # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
+      # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
+      - name: Uniwind Pro download cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.uniwind/cache/pro
+          key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
+          restore-keys: uniwind-pro-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint, typecheck and build the mobile apps
+        run: >-
+          pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground
+          --continue=dependencies-successful
+
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest

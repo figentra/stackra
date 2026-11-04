@@ -69,7 +69,7 @@
           "properties": {
             "contributes": {
               "$ref": "#/$defs/contribution",
-              "description": "Not read yet (STA-2003). A declarative ops contribution: the package that carries it, or the package with its panels, resources and widgets over registered blocks. No component, entry or script (app-shells 16.7)."
+              "description": "A declarative ops contribution: the package that carries it, or the package with its panels, resources and widgets over registered blocks. No component, entry or script (app-shells 16.7)."
             }
           }
         }
@@ -192,9 +192,36 @@
             },
             "zones": {
               "type": "object",
-              "description": "Zone name → zone id or `ref:`. Member runways name hosts under these zones.",
+              "description": "Zone name → zone id or `ref:`, or an object with the id and, for the one root runway that owns the zone, its plan and policy (ADR 0519). Member runways name hosts under these zones.",
               "additionalProperties": {
-                "$ref": "#/$defs/value"
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/value"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["id"],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/$defs/value",
+                        "description": "Zone id or `ref:`."
+                      },
+                      "owner": {
+                        "type": "boolean",
+                        "description": "True in exactly one root runway per zone; every other repository only reads the id. An owner states its plan."
+                      },
+                      "plan": {
+                        "enum": ["free", "pro"],
+                        "description": "The Cloudflare plan, which decides what the policy may ask for."
+                      },
+                      "policy": {
+                        "enum": ["baseline", "strict"],
+                        "description": "Zone preset, set by the owner only: baseline (SSL strict, TLS 1.3, HSTS, DNSSEC, CAA), or strict (plus bot protection, needs plan: pro)."
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
@@ -413,6 +440,84 @@
             "compatibilityDate": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "defaults": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cache": {
+                  "type": "boolean"
+                },
+                "compatibilityDate": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "compatibilityFlags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "keepVars": {
+                  "type": "boolean"
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cpuMs"],
+                  "properties": {
+                    "cpuMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                },
+                "observability": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "headSamplingRate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "invocationLogs": {
+                      "type": "boolean"
+                    },
+                    "issues": {
+                      "type": "boolean"
+                    },
+                    "logs": {
+                      "type": "boolean"
+                    },
+                    "redactQueryString": {
+                      "type": "boolean"
+                    },
+                    "traces": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "previewUrls": {
+                  "type": "boolean"
+                },
+                "rollout": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  }
+                },
+                "uploadSourceMaps": {
+                  "type": "boolean"
+                },
+                "workersDev": {
+                  "type": "boolean"
+                }
+              }
             },
             "observability": {
               "type": "object",
@@ -1823,28 +1928,28 @@
           "properties": {
             "package": {
               "$ref": "#/$defs/packageName",
-              "description": "Not read yet (STA-2003). The package that carries the contribution."
+              "description": "The package that carries the contribution."
             },
             "panels": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
               },
-              "description": "Not read yet (STA-2003). The panels it contributes."
+              "description": "The panels it contributes."
             },
             "resources": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
               },
-              "description": "Not read yet (STA-2003). The resources it contributes."
+              "description": "The resources it contributes."
             },
             "widgets": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
               },
-              "description": "Not read yet (STA-2003). The widgets it contributes."
+              "description": "The widgets it contributes."
             }
           }
         }
@@ -1859,21 +1964,21 @@
         "key": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9_-]*$",
-          "description": "Not read yet (STA-2003). The entry's key."
+          "description": "The entry's key."
         },
         "block": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9.-]*$",
-          "description": "Not read yet (STA-2003). A registered block id, never a module path or an export.",
+          "description": "A registered block id, never a module path or an export.",
           "examples": ["os/table"]
         },
         "title": {
           "type": "string",
-          "description": "Not read yet (STA-2003). The entry's title."
+          "description": "The entry's title."
         },
         "props": {
           "type": "object",
-          "description": "Not read yet (STA-2003). Data the block reads."
+          "description": "Data the block reads."
         }
       }
     },
@@ -2111,6 +2216,16 @@
           "type": "string",
           "pattern": "^/"
         },
+        "command": {
+          "type": "array",
+          "description": "The container's arguments, replacing the image's default command.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"]]
+        },
         "expose": {
           "enum": ["internal", "public"],
           "description": "public puts an ALB behind Cloudflare in front; internal is service discovery only."
@@ -2139,6 +2254,18 @@
             "$ref": "#/$defs/secretName"
           },
           "uniqueItems": true
+        },
+        "aliases": {
+          "type": "object",
+          "description": "The name the image reads, mapped to a variable of a resource it uses (ADR 0493 d4).",
+          "propertyNames": {
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "examples": [{ "ZITADEL_DATABASE_POSTGRES_DSN": "MAIN_DB_URL" }]
         },
         "size": {
           "type": "object",

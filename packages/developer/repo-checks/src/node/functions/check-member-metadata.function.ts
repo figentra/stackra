@@ -7,7 +7,8 @@
  *          `runtimes` and a `summary` that is not the description, and turbo tags equal to `turboTagsFor` of it.
  *          A `"kind": "contract"` member (a producer service's published manifest, OpenAPI and lang, no source) needs only
  *          that kind, which the schema accepts, and a `stackra.manifest.json` among `files`; it has no tier, category,
- *          runtimes, summary or turbo tags (STA-1820).
+ *          runtimes, summary or turbo tags (STA-1820). A `"kind": "docs"` member (ADR 0514 decision 10) needs only that
+ *          kind and its pages in `content/`.
  * Boundary: pure: the caller passes the parsed package.json and turbo.jsonc, and the schema (from the built
  *           `@stackra/skills/contracts`; skipped when undefined, the other rules still run).
  * Runtime: node
@@ -50,6 +51,15 @@ export function checkMemberMetadata(member: {
   readonly files?: readonly string[] | undefined;
 }): string[] {
   const { dir, pkg, turbo, schema, files } = member;
+  // ADR 0514 decision 10: a docs package sits at docs/, outside every tier, so it is checked before the tier gate.
+  if (pkg.stackra?.kind === "docs") {
+    const docs: string[] = [];
+    for (const issue of schema?.safeParse(pkg.stackra).error?.issues ?? [])
+      docs.push(`stackra.${issue.path.join(".")}: ${issue.message} (STACKRA_MANIFEST_SCHEMA)`);
+    if (files !== undefined && !files.includes("content"))
+      docs.push("a docs package must hold its pages and meta.json in content/");
+    return docs;
+  }
   const tierTag = tierFor(dir);
   if (tierTag === null || tierTag === "unknown") return [];
   const out: string[] = [];

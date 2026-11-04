@@ -1,5 +1,24 @@
 # @stackra/repo-checks
 
+## 0.9.0
+
+### Minor Changes
+
+- ca1614e: `checkRequires(root, service)` reports each `valkey` entry of a service runway's `requires` that no environment's cache driver serves, at `requires.<name>`; `stackra validate` (`checkRunwayFiles`) now runs it for every service runway against the root (STA-2049).
+- cbbe4e3: Add the `docs` registry kind (STA-1920, ADR 0514 decision 10). `StackraKind.Docs` is a product's content-only docs
+  package, `@figentra/<product>-docs`: MDX pages and their Fumadocs `meta.json` in `content/`, plus assets, with no code.
+  `STACKRA_MANIFEST_SCHEMA` accepts `{ "kind": "docs" }` with nothing more. `pnpm validate` places a docs package at the
+  repository's `docs/`, asks for no tier, turbo.jsonc or tsconfig, requires `content/`, and treats it as UNLICENSED like
+  an app. `stackra add` never installs one: the docs hub depends on it.
+- 75e94ff: `stackra validate --repository` refuses a paid job (a macOS, Windows or larger runner, also through `strategy.matrix`; `eas build`; a device farm run) on a branch push, pull request or merge queue trigger, and, in a job with no `environment:`, a deploy credential in its env or a deploy variable or secret read in a step's env, `with:` or `run:` (rule `workflow-triggers`, `checkWorkflowTriggers`; STA-256, ADR 0166, 0167).
+
+### Patch Changes
+
+- 2aeaec8: `writeDevFacts(root, lane)` in `@stackra/runway/node` writes `.stackra/dev/ports.json`, the file `readDevFacts` reads: each member runway's dev url, port, host, https, TLS files and Electron dev ports with the lane offset applied. `stackra dev` calls it before the member tool starts (lane from `STACKRA_LANE`, default 0). The app runway's `environments.<env>.desktop.devtools` is now read, so it leaves `RUNWAY_UNREAD_FIELDS` and its "Not read yet" schema note.
+- 93bb1e7: `buildProduct` writes a product's `surfaces.ops.contributes` as a declarative `ops` bundle (the contributions file and its manifest, targeting `ops@1`), and `publishProduct` uploads it and writes its canary or release row like any surface. The root runway schema no longer marks `surfaces.ops.contributes` and its fields "Not read yet", and the list of runway fields not yet read drops them.
+- da0af20: The runway schema copy check now says to put the zod-derived text in the canonical `tools/schemas` file and copy it
+  to runway's `schema/`, instead of only `cp`, which overwrote a correct copy with a stale canonical file.
+
 ## 0.8.0
 
 ### Patch Changes

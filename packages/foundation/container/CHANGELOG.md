@@ -1,5 +1,13 @@
 # @stackra/container
 
+## 0.9.0
+
+### Patch Changes
+
+- f9c825d: gen binds Menu, Shortcut, Store, Bridge (request-scoped) and ExtensionPoint classes; a config override keeps its base's key. The container's binding kinds gain `shortcut` and `extension_point`.
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

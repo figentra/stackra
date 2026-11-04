@@ -32,19 +32,8 @@ jobs:
         uses: "jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7"
         with:
           install_args: "node pnpm gitleaks shfmt aqua:rhysd/actionlint aqua:zizmorcore/zizmor aqua:google/osv-scanner"
-      - name: "Uniwind Pro token (Infisical OIDC)"
-        uses: "Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d"
-        with:
-          method: "oidc"
-          identity-id: "${{ vars.INFISICAL_GATE_IDENTITY_ID }}"
-          domain: "https://eu.infisical.com"
-          project-id: "${{ vars.INFISICAL_GATE_PROJECT_ID }}"
-          env-slug: "prod"
-          secret-path: "/ci"
-          secret-name: "UNIWIND_AUTH_TOKEN"
-          export-type: "env"
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
       # Failures are judged against main's baseline, so the run itself never fails the job.
       - name: Tasks
         run: pnpm exec turbo run lint typecheck build --continue --summarize || true

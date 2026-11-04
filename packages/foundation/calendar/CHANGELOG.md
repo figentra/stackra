@@ -1,5 +1,16 @@
 # @stackra/calendar
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/market-packs@0.9.0
+  - @stackra/support@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

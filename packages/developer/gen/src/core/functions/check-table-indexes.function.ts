@@ -4,9 +4,10 @@
  *          column, the default sort or a tiebreak key on a path no index leads with) and `filter_not_indexed` (a
  *          declared filter on such a path). An own model's indexed paths are the primary key and public id, the
  *          leading property of each `@Index`, and every `@Searchable` filter, read through its own base models too.
- * Boundary: pure; reads `ir.classes`, `ir.shapes` and the recorded resource trees under the committed manifest's
- *           `ui.resources` (by `<module>.<model>`), which the resource-recording step writes; with no recorded tree
- *           there is nothing to check. A table key is a model path (ADR 0307 rule 1, until gen writes `ListRows`); a
+ * Boundary: pure; reads `ir.classes`, `ir.shapes` and the recorded resource trees under the `ui.resources` (by
+ *           `<module>.<model>`) of the manifest this run derives (`resourcesOf`, from the trees `readResourceTrees`
+ *           read), so a path is judged in the run that adds it, committed or not; with no recorded tree there is
+ *           nothing to check. A table key is a model path (ADR 0307 rule 1, until gen writes `ListRows`); a
  *           path through a relation is not judged here, nor is the trashed filter. An index's method is not read, so a
  *           `contains` filter passes on any index that leads with its path (a pg_trgm GIN index serves it best).
  * Runtime: isomorphic
@@ -42,12 +43,12 @@ function objectOf(value: unknown): Readonly<Record<string, unknown>> | undefined
  * The index refusals of `ir`'s recorded resource tables.
  *
  * @param ir - the member read by discovery.
- * @param previous - the committed manifest, whose `ui.resources` holds the recorded trees.
+ * @param manifest - the manifest this run derives, whose `ui.resources` holds the recorded trees.
  * @example
- * checkTableIndexes(ir, committed).map((refusal) => refusal.subject); // ["orders.order.table.sort.total"]
+ * checkTableIndexes(ir, manifest).map((refusal) => refusal.subject); // ["orders.order.table.sort.total"]
  */
-export function checkTableIndexes(ir: MemberIR, previous?: StackraManifest): GenError[] {
-  const resources = objectOf(objectOf(previous?.["ui"])?.["resources"]);
+export function checkTableIndexes(ir: MemberIR, manifest?: StackraManifest): GenError[] {
+  const resources = objectOf(objectOf(manifest?.["ui"])?.["resources"]);
   if (resources === undefined) return [];
   const models = new Map(
     ir.classes

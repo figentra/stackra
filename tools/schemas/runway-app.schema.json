@@ -291,7 +291,7 @@
           "properties": {
             "devtools": {
               "type": "boolean",
-              "description": "Not read yet (STA-2029). Open devtools in dev."
+              "description": "Open devtools in dev."
             },
             "remoteDebugPort": {
               "$ref": "#/$defs/port",

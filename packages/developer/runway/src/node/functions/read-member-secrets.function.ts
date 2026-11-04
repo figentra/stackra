@@ -15,7 +15,7 @@
  *                     `/runtime/<member>`); ADR 0257; STA-606; STA-1990 (the Workers provider reads through it).
  */
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
@@ -48,7 +48,7 @@ function exportedPairs(output: string): Map<string, string> {
  * @param input.environment - the runway environment (`staging`).
  * @param input.member - the member folder name (`api`).
  * @param input.runways - the root and member runways (`readRunways`).
- * @param input.run - the command runner; `runCommand` by default.
+ * @param input.run - the command runner; `runProgram` by default.
  * @param input.ci - whether this is a CI job; `GITHUB_ACTIONS === "true"` by default.
  * @throws RunwayUnresolvedError outside CI, when the root runway maps no Infisical environment, workspace or runtime
  *         path, when the export fails, or when a declared name is missing; the message names names, never a value.
@@ -87,7 +87,7 @@ export async function readMemberSecrets(input: {
   const where = `${infisicalEnvironment}:${entry.path}`;
   let output: string;
   try {
-    output = await (input.run ?? runCommand)(
+    output = await (input.run ?? runProgram)(
       "infisical",
       [
         "export",

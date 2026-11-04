@@ -4994,5 +4994,35 @@
       "with_email": "Email link",
       "error": "That email and password don't match. Try again or reset your password."
     }
+  },
+  "module_menu": {
+    "basics": {
+      "label": "Main navigation",
+      "home": "Home",
+      "orders": "Orders",
+      "customers": "Customers",
+      "reports": "Reports",
+      "sales": "Sales",
+      "stock": "Stock"
+    }
+  },
+  "resource_list_page": {
+    "basics": {
+      "title": "Products",
+      "id": "ID",
+      "name": "Name",
+      "stock": "In stock",
+      "status": "Status",
+      "active": "Active",
+      "draft": "Draft"
+    }
+  },
+  "action_input_modal": {
+    "basics": {
+      "open": "Restock a product",
+      "restock": "Restock",
+      "quantity": "Quantity",
+      "note": "Note"
+    }
   }
 }

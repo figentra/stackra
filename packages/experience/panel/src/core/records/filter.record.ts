@@ -9,11 +9,11 @@ import { DraftRecord } from "#core/records/draft.record";
 import type { FilterBuilder } from "#core/types/filter-builder.type";
 import type { FilterNode } from "#core/types/filter-node.type";
 
-/** The flags a filter records. */
-interface FilterFlags {
-  readonly default?: unknown;
-  readonly pinned?: boolean;
-}
+/** The flags a filter records, its look among them. */
+type FilterFlags = Omit<
+  Extract<FilterNode, { readonly key: string }>,
+  "kind" | "key" | "operator" | "enum"
+>;
 
 /** Records the flags of one filter before it builds. */
 export class FilterRecord extends DraftRecord<FilterFlags, FilterNode> implements FilterBuilder {
@@ -32,5 +32,10 @@ export class FilterRecord extends DraftRecord<FilterFlags, FilterNode> implement
   /** Pins the filter beside search. */
   pinned(): this {
     return this.set({ pinned: true });
+  }
+
+  /** Sets the filter's look. */
+  with(look: Omit<FilterFlags, "default" | "pinned">): this {
+    return this.set(look);
   }
 }

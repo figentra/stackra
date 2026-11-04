@@ -1573,3 +1573,7 @@
   slug: testbed-own-repo
   status: reserved
   issue: STA-2073
+"0523":
+  slug: humans-approve-policy-not-instances
+  status: accepted
+  issue: STA-2094

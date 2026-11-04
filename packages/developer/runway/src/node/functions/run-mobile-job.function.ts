@@ -42,7 +42,7 @@ import { checkoutLine } from "#node/functions/checkout-line.function";
 import { easJsonOf } from "#node/functions/eas-json-of.function";
 import { expoConfigOf } from "#node/functions/expo-config-of.function";
 import { readRunway } from "#node/functions/read-runway.function";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import { toolVersionOf } from "#node/functions/tool-version-of.function";
 import type { LineCheckout } from "#node/types/line-checkout.type";
 import type { MobileCapability } from "#node/types/mobile-capability.type";
@@ -160,7 +160,7 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
     }
   }
 
-  const run = request.run ?? runCommand;
+  const run = request.run ?? runProgram;
   let template: LineCheckout | undefined;
   if (request.line !== undefined) {
     template = await checkoutLine({

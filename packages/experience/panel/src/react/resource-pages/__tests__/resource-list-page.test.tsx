@@ -6,7 +6,10 @@
  *          shows the row's own keys; a page's row count shows, capped past the limit; a view store's saved views draw
  *          as tabs on the table's engine, an applied view's columns and sort reach the table; the preset views draw
  *          as tabs without a store, and an applied preset's filter values and fixed input reach the list query
- *          (STA-1688, ADR 0505).
+ *          (STA-1688, ADR 0505); the SDUI look (STA-1981): the empty state's own words and its placements drawn as
+ *          action buttons, a placement hidden without its permission or while its record predicate is false, its own
+ *          label and confirmation, a `once` bulk run over the whole selection, a column's own header and status cell,
+ *          and a hidden column kept out of view.
  * Boundary: unit tier, jsdom; `useQuery`, the action runner and navigation are spies, the web kit is DOM stand-ins,
  *           translation returns the key.
  * Runtime: node (vitest)
@@ -27,10 +30,16 @@ import { registerResources } from "#core/functions/register-resources.function";
 import { resource } from "#core/functions/resource.function";
 import { ResourceListPage } from "#react/resource-pages/resource-list-page";
 
-const spies = vi.hoisted(() => ({ useQuery: vi.fn(), run: vi.fn(), navigate: vi.fn() }));
+const spies = vi.hoisted(() => ({
+  can: vi.fn((permission?: string) => permission !== "orders.order.refund"),
+  useQuery: vi.fn(),
+  run: vi.fn(),
+  navigate: vi.fn(),
+}));
 
 vi.mock("@stackra/clients/react", () => ({ useQuery: spies.useQuery }));
 vi.mock("#react/action-runner/use-action-runner", () => ({ useActionRunner: () => spies.run }));
+vi.mock("#react/action-runner/use-can", () => ({ useCan: () => spies.can }));
 vi.mock("@stackra/navigation/react", () => ({ useNavigate: () => spies.navigate }));
 vi.mock("#react/resource-pages/action-input-modal", async () => {
   const { createElement } = await import("react");
@@ -65,7 +74,10 @@ vi.mock("@stackra/ui/react", async (importOriginal) => {
     useCollection,
     Button: (props: Props) =>
       createElement("button", { type: "button", onClick: props.onPress }, props.children),
-    EmptyState: (props: Props) => createElement("div", null, props.title, props.actions),
+    EmptyState: (props: Props) =>
+      createElement("div", null, props.title, props.description, props.actions),
+    StatusBadge: (props: Props) =>
+      createElement("mark", { "data-tone": props.tone }, props.children),
     Text: (props: Props) => createElement("small", null, props.children),
     FilterBar: (props: Props) =>
       createElement(
@@ -149,6 +161,10 @@ const PauseOrderingAction = actionRef("orders.order.pause_ordering@1", {
 });
 const HoldOrderAction = actionRef("orders.order.hold@1", {
   input: z.object({ orderId: z.string(), reason: z.string(), note: z.string().optional() }),
+  output: z.object({}),
+});
+const CloseOrdersAction = actionRef("orders.order.close@1", {
+  input: z.object({ orderIds: z.array(z.string()) }),
   output: z.object({}),
 });
 const DeleteOrderAction = actionRef("orders.order.delete@1", {
@@ -419,6 +435,143 @@ describe("ResourceListPage", () => {
       limit: 25,
       filter: { status: "open" },
     });
+    dispose();
+  });
+
+  it("draws the empty spec's words and its placements as action buttons", async () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        table: {
+          columns: [{ kind: "value", key: "status" }],
+          filters: [],
+          count: Count.Estimated,
+          empty: { title: "No orders yet", description: "Orders show here once placed." },
+        },
+        actions: [{ kind: "create", variant: "secondary", startIcon: "plus" }],
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: { items: [], hasMore: false },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceListPage resource={Orders} />);
+    expect(screen.getByText("No orders yet")).toBeTruthy();
+    expect(screen.getByText("Orders show here once placed.")).toBeTruthy();
+    press("panel::resources.create", 1);
+    await vi.waitFor(() => expect(spies.navigate).toHaveBeenCalledWith(Orders.create, {}));
+    dispose();
+  });
+
+  it("hides a placement without its permission or while its record predicate is false", async () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        actions: [
+          {
+            kind: "run",
+            action: CancelOrderAction,
+            label: "Cancel now",
+            visibleWhen: "isOpen",
+            confirm: { title: "Cancel this order?", tone: "danger" },
+          },
+          { kind: "run", action: HoldOrderAction, permission: "orders.order.refund" },
+        ],
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: {
+        items: [
+          { id: "ord_1", isOpen: true },
+          { id: "ord_2", isOpen: false },
+        ],
+        hasMore: false,
+      },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    spies.run.mockResolvedValue({ status: "done", data: {} });
+    render(<ResourceListPage resource={Orders} />);
+    expect(screen.getAllByText("Cancel now")).toHaveLength(1);
+    expect(screen.queryByText("orders::resources.order.actions.hold")).toBeNull();
+    press("Cancel now");
+    await vi.waitFor(() =>
+      expect(spies.run).toHaveBeenCalledWith(
+        CancelOrderAction,
+        { orderId: "ord_1" },
+        { confirm: { title: "Cancel this order?", tone: "danger" } },
+      ),
+    );
+    dispose();
+  });
+
+  it("runs a once bulk action over the whole selection in one call", async () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        table: {
+          columns: [{ kind: "value", key: "status" }],
+          filters: [],
+          count: Count.Estimated,
+          bulkActions: { runMode: "once", label: "Order actions" },
+        },
+        actions: [{ kind: "run", action: CloseOrdersAction, bulk: true }],
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: { items: rows, hasMore: false },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    spies.run.mockResolvedValue({ status: "done", data: {} });
+    render(<ResourceListPage resource={Orders} />);
+    fireEvent.click(screen.getByText("select"));
+    const bulk = screen.getByRole("navigation");
+    const close = [...bulk.querySelectorAll("button")].find(
+      (button) => button.textContent === "orders::resources.order.actions.close",
+    );
+    if (close === undefined) throw new Error("the bulk bar has no close button");
+    fireEvent.click(close);
+    await vi.waitFor(() => expect(spies.run).toHaveBeenCalledTimes(1));
+    expect(spies.run).toHaveBeenCalledWith(CloseOrdersAction, { orderIds: ["ord_1", "ord_2"] });
+    dispose();
+  });
+
+  it("draws a column's own header and status cell, and keeps a hidden column out of view", () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        table: {
+          columns: [
+            {
+              kind: "value",
+              key: "status",
+              label: "State",
+              cell: "status",
+              tones: { paid: "success" },
+            },
+            { kind: "value", key: "internal", hidden: true },
+          ],
+          filters: [],
+          count: Count.Estimated,
+        },
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: { items: rows, hasMore: false },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceListPage resource={Orders} />);
+    expect(screen.getByRole("heading", { name: "State" })).toBeTruthy();
+    // The paid row's status draws in its tone; the open row's has none.
+    expect(document.querySelectorAll('mark[data-tone="success"]')).toHaveLength(1);
+    expect(document.querySelectorAll("mark")).toHaveLength(2);
     dispose();
   });
 });

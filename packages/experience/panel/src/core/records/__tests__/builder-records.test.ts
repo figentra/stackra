@@ -3,7 +3,8 @@
  * Purpose: unit tests of the builder records' own checks: a span or grid outside 1 to 12, a list limit outside 1 to 100, an
  *          empty KPI group and an empty place list are refused, a field records `essential`, a later call of a table
  *          method replaces the earlier, operator filters and tiebreak sort keys record (two tiebreaks at most), and a
- *          column or entry records its enum labels.
+ *          column or entry records its enum labels, and each builder's `with` records its SDUI look (a placement's button,
+ *          a column's cell, a filter's control, a field's control, the table's empty state, row menu and bulk bar).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rules 5, 11 and 14).
@@ -106,6 +107,64 @@ describe("builder records", () => {
       key: "lines",
       currency: "currency",
       labels: { status: labels },
+    });
+  });
+
+  it("records each builder's SDUI look", () => {
+    const placement = new ActionsRecord<Row>()
+      .run(CancelAction)
+      .bulk()
+      .with({ variant: "danger", startIcon: "x", confirm: { title: "Cancel?", tone: "danger" } })
+      .with({ visibleWhen: "isCancellable" })
+      .toNode();
+    expect(placement).toEqual({
+      kind: "run",
+      action: CancelAction,
+      bulk: true,
+      variant: "danger",
+      startIcon: "x",
+      confirm: { title: "Cancel?", tone: "danger" },
+      visibleWhen: "isCancellable",
+    });
+    expect(new ActionsRecord<Row>().create().with({ size: "lg" }).toNode()).toEqual({
+      kind: "create",
+      size: "lg",
+    });
+    const table = new TableRecord<Row>()
+      .columns((c) => [
+        c
+          .from("id")
+          .copyable()
+          .with({ cell: "status", tones: { paid: "success" } }),
+      ])
+      .filters((f) => [f.from("id").pinned().with({ control: "multi-choice", label: "Status" })])
+      .with({ hasColumnTools: true, empty: { description: "No orders yet" } })
+      .with({ bulkActions: { runMode: "once" } })
+      .toNode();
+    expect(table).toMatchObject({
+      hasColumnTools: true,
+      empty: { description: "No orders yet" },
+      bulkActions: { runMode: "once" },
+      columns: [{ key: "id", copyable: true, cell: "status", tones: { paid: "success" } }],
+      filters: [{ key: "id", pinned: true, control: "multi-choice", label: "Status" }],
+    });
+    expect(
+      new FieldsRecord<Row>()
+        .from("id")
+        .span(2)
+        .with({
+          control: "textarea",
+          visibleWhen: "hasNote",
+          choices: [{ value: "a", label: "A" }],
+        })
+        .toNode(),
+    ).toEqual({
+      kind: "value",
+      key: "id",
+      span: 2,
+      control: "textarea",
+      visibleWhen: "hasNote",
+      choices: [{ value: "a", label: "A" }],
     });
   });
 });

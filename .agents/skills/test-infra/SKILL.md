@@ -22,6 +22,7 @@ stackra testbed run "<session> <what>" <project-dir> "<command>"
 - The command runs in a fresh container with a clean workspace. Nothing you leave there survives the job.
 - Heavy jobs (`encore test`, `playwright`, `e2e`, `act `, `build`) take the heavy slot. Everything else takes the
   light slot. A light job may land on a spot box. If that box is taken back, the job is retried once on another box.
+  A dropped connection does not end a job: it runs detached on the box and the CLI reattaches.
 - `--serve console` builds the product's surfaces, starts the generated Encore app, seeds the `test` profile, serves
   the surface and runs your command (the e2e run) with `STACKRA_E2E_BASE_URL` set; it always takes the heavy slot.
 - The exit code is the command's own: 0 is green, anything else is a real failure. Read the output.

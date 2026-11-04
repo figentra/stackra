@@ -36,6 +36,7 @@ and `yaml`.
 | `stackra mobile onboard [--app <key>]`                    | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI                                             |
 | `stackra preview serve --surface <s>`                     | serve a built surface on 127.0.0.1 as the edge would, with an `--api` proxy (STA-1676)                                                    |
 | `stackra smoke --env <e> [--only <targets>]`              | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265)             |
+| `stackra promote --to <e> [--from <e>] [--sha <sha>]`     | ship what `--from` (default staging) runs to `--to` through runway's providers; `--approved` behind an approval                           |
 | `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                            |
 | `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                                  |
 | `stackra test [--tier unit\|int\|e2e]`                    | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
@@ -95,15 +96,19 @@ most 30 days each; a `security`, `tenant-isolation`, `data-integrity` or `leak` 
 It never fetches: the caller clones the product at its pin.
 
 `stackra testbed` (ADR 0484) replaces the Mac script `ci-box`; it starts `aws`, `ssh`, `rsync` and `gh` without a shell
-and never prints or passes a secret value. Defaults: AWS profile `academorix`, region `eu-west-1`, key
+and never prints or passes a secret value. Defaults: AWS profile `academorix`, regions eu-west-1, eu-west-2 and
+eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change), key
 `~/.ssh/academorix-ci.pem`, user `ubuntu`; override with `STACKRA_TESTBED_AWS_PROFILE`, `STACKRA_TESTBED_REGION`,
 `STACKRA_TESTBED_SSH_KEY` or `--profile`, `--region`, `--key`.
 
 - `run "<session> <what>" <dir> "<cmd>"` claims a free slot (heavy for `encore test`, `playwright`, `e2e`, `act `,
   `build`; else light), rsyncs `<dir>` into the box's job directory and runs the command there under the slot's lock.
+  The job runs detached on the box and the CLI follows its log: when the SSH-over-SSM connection drops, the job keeps
+  running and the CLI reattaches (three tries, 10 s apart) and exits with the job's code; Ctrl-C stops the job.
   A command naming `ci-box` or `stackra testbed` is refused (exit 2). With every slot busy it prints "every box busy,
   waiting", polls every 20 s and, after 2 minutes, raises the group's desired count by one. `--no-wait` exits 75 when
-  no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
+  no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--postgres` starts a throwaway Postgres beside the job and sets
+  `TESTBED_POSTGRES_HOST`; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
   never runs on the Mac.
 - `status`, `unlock [--box N|id] [--slot heavy|light]`, `ip`, `ssh [--box] [cmd]`, `sync [--box] <dir>`; box numbers
   are by launch time.
@@ -283,7 +288,11 @@ origin exits 1.
 `stackra db diff [--json]` compares the member's models with the schema its migrations build, with no database and no
 network: it compiles the member's migrations (its own and its declared packages', in gen's order), replays them on an
 in-memory PGlite through the member's own `@stackra/database/node`, and compares tables, columns (type and
-nullability), indexes and foreign keys with what the models declare. One line per difference,
+nullability), indexes and foreign keys with what the models declare: each many-to-many relation's pivot table (its
+two keys, the owner's `tenant_id` and their foreign keys) and a `@Searchable` model's `search_text` and
+`search_filters` included, its vectors and rebuild shadows tolerated (search columns on another table are undeclared),
+and a partial index's predicate compared as Postgres rewrites it (`in` as `= ANY`, `like` as `~~`, casts dropped). One
+line per difference,
 `<module>  <table>  <kind>  <subject>  <expected>  <actual>`; `--json` prints the same as an array. Exit 0 when they
 agree, 1 on a difference, 2 when a migration does not compile or replay, or `@stackra/database` or PGlite
 (`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) is not installed in the member. Only the member's own modules

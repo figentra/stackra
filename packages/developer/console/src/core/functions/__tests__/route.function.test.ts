@@ -2,15 +2,22 @@
  * Stackra file contract:
  * Purpose: proves `route` decides one intent per invocation: the list, the version, a command's help by `--help`,
  *          `-h` and `help <cmd>` (never a run), a run with its values, spaced names joined longest first, and a usage
- *          problem for an unknown name or a bad argument; and that the registry refuses a command named `help`.
+ *          problem for an unknown name or a bad argument; that the registry refuses a command named `help`; that
+ *          `requireCommand` turns a nameless invocation into a usage problem; and that a value option may come before
+ *          the name only when every command gives it a value, on either side of `help`, taking the next token as its
+ *          value.
  * Boundary: unit test; pure functions, no console run.
  * Runtime: node
- * Governing contract: STA-1966 spec FR-012 to FR-016, AC-002 and AC-003; ADR 0022 (test placement).
+ * Governing contract: STA-1966 spec FR-012 to FR-016, AC-002 and AC-003; ADR 0506 (amendment 2026-11-03); ADR 0022
+ *                     (test placement).
  */
 // @covers sta-1966:FR-012 sta-1966:FR-013 sta-1966:FR-014 sta-1966:FR-015 sta-1966:FR-016
 // @covers sta-1966:AC-002 sta-1966:AC-003
+import { Str } from "@stackra/validation";
+
 import { Command } from "#core/bases/command.base";
 import { Argument } from "#core/decorators/argument.decorator";
+import { Option } from "#core/decorators/option.decorator";
 import { ConsoleDeclarationError } from "#core/errors/console-declaration.error";
 import { buildRegistry } from "#core/functions/build-registry.function";
 import { route } from "#core/functions/route.function";
@@ -90,5 +97,92 @@ describe("route", () => {
 
   it("refuses a command named help", () => {
     expect(() => buildRegistry([make("help")])).toThrow(ConsoleDeclarationError);
+  });
+});
+
+/** Reaches a box: `box` and `mode` take values. */
+class SshCommand extends Command({
+  name: "ssh",
+  description: "Ssh",
+}) {
+  @Option({ short: "b" })
+  @Str
+  box?: string;
+
+  @Option
+  @Str
+  mode?: string;
+
+  handle() {
+    return 0;
+  }
+}
+
+/** Declares `mode` as a flag, so `--mode` takes no value before a name. */
+class SyncCommand extends Command({
+  name: "sync",
+  description: "Sync",
+}) {
+  @Option
+  mode = false;
+
+  handle() {
+    return 0;
+  }
+}
+
+describe("route with requireCommand", () => {
+  const options = { requireCommand: true };
+
+  it.each([[[]], [["--json"]], [["-v"]]])("reports a usage problem for %j", (argv) => {
+    const intent = route(argv, registry, options);
+    expect(intent.kind).toBe("usage");
+    expect(intent.kind === "usage" && intent.error.message).toBe("Name a command");
+  });
+
+  it.each([[["--help"]], [["help"]]])("still lists for %j", (argv) => {
+    expect(route(argv, registry, options).kind).toBe("list");
+  });
+
+  it("still versions for --version", () => {
+    expect(route(["--version"], registry, options).kind).toBe("version");
+  });
+});
+
+describe("route with a value option before the name", () => {
+  const boxes = buildRegistry([make("status"), SshCommand, SyncCommand]);
+
+  it.each([[["--box", "2", "ssh"]], [["--box=2", "ssh"]], [["-b", "2", "ssh"]]])(
+    "runs ssh with box 2 for %j",
+    (argv) => {
+      expect(route(argv, boxes)).toMatchObject({ kind: "run", values: { box: "2" } });
+    },
+  );
+
+  it.each([[["help", "--box", "2", "ssh"]], [["--box", "2", "help", "ssh"]]])(
+    "helps for ssh, the value option on either side of help, for %j",
+    (argv) => {
+      const intent = route(argv, boxes);
+      expect(intent.kind).toBe("help");
+      expect(intent.kind === "help" && intent.entry.structure.name).toBe("ssh");
+    },
+  );
+
+  it("reads the token after a value option as its value, not the name", () => {
+    // `--box deploy ./dist` used to run deploy with --box=./dist; the value now comes first.
+    const intent = route(["--box", "status", "ssh"], boxes);
+    expect(intent).toMatchObject({ kind: "run", values: { box: "status" } });
+    expect(intent.kind === "run" && intent.entry.structure.name).toBe("ssh");
+  });
+
+  it("takes no value for a flag that is boolean in another command", () => {
+    const intent = route(["--mode", "fast", "ssh"], boxes);
+    expect(intent.kind).toBe("usage");
+  });
+
+  it("leaves a global flag before the name as it was", () => {
+    const intent = route(["--json", "status"], boxes);
+    expect(intent.kind === "run" && intent.entry.structure.name).toBe("status");
+    expect(intent.globals.json).toBe(true);
   });
 });

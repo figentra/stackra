@@ -11,11 +11,8 @@ import { DraftRecord } from "#core/records/draft.record";
 import type { ColumnBuilder } from "#core/types/column-builder.type";
 import type { ColumnNode } from "#core/types/column-node.type";
 
-/** The flags a column records. */
-interface ColumnFlags {
-  readonly copyable?: boolean;
-  readonly sortable?: boolean;
-  readonly hidden?: boolean;
+/** The flags a column records, its look among them. */
+interface ColumnFlags extends Omit<ColumnNode, "kind" | "key" | "currency" | "enum" | "labels"> {
   readonly labels?: Readonly<Record<string, I18nKey>>;
 }
 
@@ -46,5 +43,10 @@ export class ColumnRecord extends DraftRecord<ColumnFlags, ColumnNode> implement
   /** Names the label key of each enum code. */
   labels(labels: Readonly<Record<string, I18nKey>>): this {
     return this.set({ labels });
+  }
+
+  /** Sets the column's look. */
+  with(look: Omit<ColumnFlags, "labels">): this {
+    return this.set(look);
   }
 }

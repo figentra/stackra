@@ -147,18 +147,28 @@ function write(root: string, files: readonly GeneratedFile[], check: boolean): s
   return changed;
 }
 
+/** The merged `Blueprint` augmentation `compileMigrations` writes for a service's own macros. */
+const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
+
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
- * unless `check`, so the runner never applies a stale file. `--check` reports them as changed.
+ * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
  */
-function staleMigrations(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
+function staleMigrations(
+  root: string,
+  files: readonly GeneratedFile[],
+  check: boolean,
+  compiled: boolean,
+): string[] {
   const dir = join(root, MIGRATIONS_DIR);
-  if (!existsSync(dir)) return [];
   const kept = new Set(files.map((file) => file.path));
-  const stale = readdirSync(dir)
+  const stale = (existsSync(dir) ? readdirSync(dir) : [])
     .filter((name) => name.endsWith(".sql"))
     .map((name) => `${MIGRATIONS_DIR}/${name}`)
     .filter((path) => !kept.has(path));
+  if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))
+    stale.push(BLUEPRINT_FILE);
   if (!check) for (const path of stale) rmSync(join(root, path));
   return stale;
 }
@@ -361,7 +371,12 @@ export async function generate(
       ...new Set([
         ...partial,
         ...write(root, result.files, check),
-        ...staleMigrations(root, result.files, check),
+        ...staleMigrations(
+          root,
+          result.files,
+          check,
+          ir.layout === "service" && options.pass === undefined,
+        ),
       ]),
     ],
   };
