@@ -22,29 +22,18 @@ import {
   PageSkeleton,
   useSchemaForm,
 } from "@stackra/ui/react";
-import { registerSchemas } from "@stackra/validation";
-import { useState, type ReactElement } from "react";
-import type { ZodType } from "zod";
+import type { ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
-import { fieldsForInput } from "#core/functions/fields-for-input.function";
+import { formActionOf } from "#core/functions/form-action-of.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
-import { resourceTreeOf } from "#core/functions/resource-tree-of.function";
-import type { FieldNode } from "#core/types/field-node.type";
-import type { PageRef } from "#core/types/page-ref.type";
 import type { ResourceRoutes } from "#core/types/resource-routes.type";
-import { ActionRunStatus } from "#react/action-runner/action-run-status.enum";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import { ResourceFormField } from "#react/resource-pages/resource-form-field";
 import type { ResourceFormPageProps } from "#react/resource-pages/resource-form-page.props";
 import { useRecord } from "#react/resource-pages/use-record";
-
-/** The fields a resource without a form shows: the input's own keys but the record id. */
-const derived = (schema: ZodType, idKey: string | undefined): FieldNode[] =>
-  Object.keys((schema as { readonly shape?: object }).shape ?? {})
-    .filter((key) => key !== idKey)
-    .map((key) => ({ kind: "value", key }));
+import { useResourceForm } from "#react/resource-pages/use-resource-form";
 
 /** The form over `action`'s input, started from `defaults`. */
 function ResourceForm({
@@ -59,31 +48,18 @@ function ResourceForm({
   readonly recordId?: string;
 }): ReactElement {
   const { t } = useTranslation();
-  const run = useActionRunner();
   const navigate = useNavigate();
-  const [serverErrors, setServerErrors] = useState<Readonly<Record<string, string>>>({});
-  // The ref's input is its schema; the schema form reads schemas by class, so record it under the ref.
-  useState(() => registerSchemas([[action, action.input]]));
+  const { fields, serverErrors, submit } = useResourceForm({
+    resource,
+    action,
+    recordId,
+    run: useActionRunner(),
+    go: (page, id) => (id === undefined ? navigate(page) : navigate(page, { id })),
+  });
   const form = useSchemaForm(action as unknown as abstract new () => Record<string, unknown>, {
     defaultValues: defaults,
     serverErrors,
   });
-  const idKey = recordIdKey(action.input, resource.key);
-  // One recorded form serves Create and Edit: each page keeps the fields its own action takes.
-  const recorded = fieldsForInput(resourceTreeOf(resource.key).form?.fields ?? [], action.input);
-  const fields = recorded.length > 0 ? recorded : derived(action.input, idKey);
-  const pages = resource as ResourceRoutes & { readonly view?: PageRef };
-  const submit = async (values: Readonly<Record<string, unknown>>) => {
-    const done = await run(action, values as never);
-    if (done.status === ActionRunStatus.Refused) {
-      setServerErrors(done.error.fieldErrors ?? {});
-      return;
-    }
-    if (done.status !== ActionRunStatus.Done) return;
-    const id = recordId ?? (done.data as { readonly id?: unknown } | undefined)?.id;
-    if (pages.view !== undefined && id !== undefined) navigate(pages.view, { id: String(id) });
-    else navigate(resource.list);
-  };
   return (
     <Form form={form} submit={submit}>
       {fields.map((node, index) => (
@@ -146,11 +122,7 @@ function EditForm({
  */
 export function ResourceFormPage({ resource, mode, id }: ResourceFormPageProps): ReactElement {
   const { t } = useTranslation();
-  const action = resource.operations[mode === "create" ? "create" : "update"] as
-    | ActionRef
-    | undefined;
-  if (action === undefined)
-    throw new TypeError(`${resource.key} has no ${mode === "create" ? "create" : "update"} action`);
+  const action = formActionOf(resource, mode);
   return (
     <>
       <PageHeader

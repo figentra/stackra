@@ -12,14 +12,14 @@
  *           `Field.*` parts; the others bind their path with `useSchemaField`, so validation errors (the schema's and
  *           the server's) show on each field. A list binds its rows by index (`parcels.0.weight`); a row's label drops
  *           the index. An upload field and the recorded repeater node are not drawn yet; the step set is not a wizard.
+ *           The field state is the web's platform-free hooks (`useListField`, `useRecordField`, `useJsonField`,
+ *           `useDateTimeField`, `useMoneyField`) and the pure helpers in `core/functions`.
  * Runtime: react-native
  * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters);
  *          ADR 0164 (native parity).
  */
-import { CalendarDate, parseDate } from "@internationalized/date";
 import type { QueryRef } from "@stackra/clients";
 import { useQuery } from "@stackra/clients/native";
-import { Enum } from "@stackra/contracts";
 import { useTranslation } from "@stackra/i18n/react";
 import type { FormFieldBinding } from "@stackra/ui/contracts";
 import { useSchemaField } from "@stackra/ui/form";
@@ -35,18 +35,28 @@ import {
   TextArea,
   TextField,
 } from "@stackra/ui/native";
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { View } from "react-native";
 import type { ZodType } from "zod";
 
+import { CURRENCY_OPTIONS } from "#core/constants/currency-options.constant";
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { currencyScale } from "#core/functions/currency-scale.function";
+import { dayOf } from "#core/functions/day-of.function";
+import { enumChoicesOf } from "#core/functions/enum-choices-of.function";
+import { fieldLabelPath } from "#core/functions/field-label-path.function";
 import { inputKind } from "#core/functions/input-kind.function";
-import { listCellCurrency } from "#core/functions/list-cell-currency.function";
-import { minorUnitScale } from "#core/functions/minor-unit-scale.function";
+import { isMinorKey } from "#core/functions/is-minor-key.function";
+import { moneyInputOf } from "#core/functions/money-input-of.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { valueAt } from "#core/functions/value-at.function";
 import type { FieldNode } from "#core/types/field-node.type";
-import { useEnumLabel } from "#react/resource-pages/use-enum-label";
+import { useDateTimeField } from "#react/resource-pages/use-date-time-field";
+import { useFieldEnumLabel } from "#react/resource-pages/use-field-enum-label";
+import { useJsonField } from "#react/resource-pages/use-json-field";
+import { useListField } from "#react/resource-pages/use-list-field";
+import { useMoneyField } from "#react/resource-pages/use-money-field";
+import { useRecordField } from "#react/resource-pages/use-record-field";
 
 /** Props of the native `ResourceFormField`. */
 interface ResourceFormFieldProps {
@@ -106,9 +116,6 @@ function OptionsField({
   );
 }
 
-/** The label path of a form key: a list row's index is dropped (`parcels.0.weight` is `parcels.weight`). */
-const fieldLabelPath = (key: string): string => key.replaceAll(/\.\d+(?=\.|$)/g, "");
-
 /** The rows of a list field: per row an object's group or one field, each with a remove button, and an add button. */
 function ListField({
   shared,
@@ -122,30 +129,19 @@ function ListField({
   readonly item: "object" | "value";
 }): ReactElement {
   const { t } = useTranslation();
-  const list = useSchemaField<readonly unknown[] | null | undefined>(name);
-  const rows = Array.isArray(list.value) ? list.value : [];
-  const error =
-    list.isInvalid === true && typeof list.errorMessage === "string"
-      ? list.errorMessage
-      : undefined;
+  const { rows, error, add, remove } = useListField(name);
   return (
     <FormSection title={label} {...(error === undefined ? {} : { description: error })}>
       {rows.map((_, index) => (
         // oxlint-disable-next-line react/no-array-index-key -- reason: a row is its place in the list; the form binds rows by index
         <View key={index} className="gap-2">
           <ResourceFormField {...shared} node={{ kind: "value", key: `${name}.${index}` }} />
-          <Button
-            variant="ghost"
-            onPress={() => list.onChange?.(rows.filter((__, other) => other !== index))}
-          >
+          <Button variant="ghost" onPress={() => remove(index)}>
             {t(PANEL_KEYS.panel.resources.remove_item, { number: index + 1 })}
           </Button>
         </View>
       ))}
-      <Button
-        variant="secondary"
-        onPress={() => list.onChange?.([...rows, item === "object" ? {} : undefined])}
-      >
+      <Button variant="secondary" onPress={() => add(item)}>
         {t(PANEL_KEYS.panel.resources.add_item)}
       </Button>
     </FormSection>
@@ -164,41 +160,16 @@ function MoneyField({
   readonly currency: string;
   readonly scale: number;
 }): ReactElement {
-  const field = useSchemaField<number | null>(name);
+  const { field, value, onChange } = useMoneyField(name, scale);
   return (
     <NumberField
       {...bound(field)}
       label={label}
       formatOptions={{ style: "currency", currency }}
-      value={typeof field.value === "number" ? field.value / scale : null}
-      onChange={(major) =>
-        field.onChange?.(
-          typeof major === "number" && !Number.isNaN(major) ? Math.round(major * scale) : null,
-        )
-      }
+      value={value}
+      onChange={onChange}
     />
   );
-}
-
-/** Whether `key` holds minor units: a `…Minor` field or a money object's `minor`. */
-const isMinorKey = (key: string): boolean =>
-  key.endsWith("Minor") || key === "minor" || key.endsWith(".minor");
-
-/** The `currency` path beside `key` (`totals.totalMinor` and `cost.minor` sit beside `totals.currency`, `cost.currency`). */
-const currencyBeside = (key: string): string => `${key.slice(0, key.lastIndexOf(".") + 1)}currency`;
-
-/** The ISO 4217 codes a currency field offers. */
-const CURRENCIES: readonly { readonly id: string; readonly label: string }[] =
-  Intl.supportedValuesOf("currency").map((id) => ({ id, label: id }));
-
-/** The scale of `currency`, or undefined when it is not a currency code (the field then stays in minor units). */
-function scaleOf(currency: string | undefined): number | undefined {
-  if (currency === undefined) return undefined;
-  try {
-    return minorUnitScale(currency);
-  } catch {
-    return undefined;
-  }
 }
 
 /** A minor-unit amount whose currency is the form's own value at `currencyPath`, entered in major units once known. */
@@ -212,7 +183,7 @@ function FormMoneyField({
   readonly currencyPath: string;
 }): ReactElement {
   const currency = useSchemaField<string | null | undefined>(currencyPath).value;
-  const scale = scaleOf(typeof currency === "string" ? currency : undefined);
+  const scale = currencyScale(typeof currency === "string" ? currency : undefined);
   // Until a valid currency is chosen the amount stays in minor units, so nothing is scaled by a guess.
   if (typeof currency !== "string" || scale === undefined)
     return <Field.Number name={name} label={label} />;
@@ -227,36 +198,7 @@ function JsonField({
   readonly name: string;
   readonly label: string;
 }): ReactElement {
-  const { t } = useTranslation();
-  const field = useSchemaField<unknown>(name);
-  const [text, setText] = useState(() =>
-    field.value === undefined ? "" : JSON.stringify(field.value, null, 2),
-  );
-  const [isBroken, setBroken] = useState(false);
-  const onChange = (next: string) => {
-    setText(next);
-    setBroken(false);
-    if (next.trim() === "") return field.onChange?.(undefined);
-    try {
-      field.onChange?.(JSON.parse(next));
-    } catch {
-      setBroken(true);
-      // NaN is no JSON value, so the schema refuses the submit until the text parses; the raw text never goes out.
-      field.onChange?.(Number.NaN);
-    }
-  };
-  return (
-    <TextArea
-      name={name}
-      label={label}
-      rows={6}
-      value={text}
-      onChange={onChange}
-      onBlur={field.onBlur}
-      isInvalid={isBroken || field.isInvalid === true}
-      errorMessage={isBroken ? t(PANEL_KEYS.panel.resources.invalid_json) : field.errorMessage}
-    />
-  );
+  return <TextArea name={name} label={label} rows={6} {...useJsonField(name)} />;
 }
 
 /** A map of string keys as key and value rows; a row with an empty key is left out of the value. */
@@ -270,22 +212,7 @@ function RecordField({
   readonly value: "number" | "text";
 }): ReactElement {
   const { t } = useTranslation();
-  const field = useSchemaField<Readonly<Record<string, unknown>> | null | undefined>(name);
-  // The rows live here: a key being typed or renamed, or a second row with the same key, is not yet a valid map.
-  const [rows, setRows] = useState<readonly (readonly [string, unknown])[]>(() =>
-    Object.entries(field.value ?? {}),
-  );
-  const change = (next: readonly (readonly [string, unknown])[]) => {
-    setRows(next);
-    // shortcut: a repeated key keeps its last row's value; flag duplicates if a map ever needs it.
-    field.onChange?.(Object.fromEntries(next.filter(([key]) => key.trim() !== "")));
-  };
-  const set = (index: number, row: readonly [string, unknown]) =>
-    change(rows.map((other, at) => (at === index ? row : other)));
-  const error =
-    field.isInvalid === true && typeof field.errorMessage === "string"
-      ? field.errorMessage
-      : undefined;
+  const { rows, error, set, add, remove } = useRecordField(name, valueKind);
   return (
     <FormSection title={label} {...(error === undefined ? {} : { description: error })}>
       {rows.map(([key, value], index) => (
@@ -309,36 +236,16 @@ function RecordField({
               onChange={(next) => set(index, [key, next])}
             />
           )}
-          <Button variant="ghost" onPress={() => change(rows.filter((__, at) => at !== index))}>
+          <Button variant="ghost" onPress={() => remove(index)}>
             {t(PANEL_KEYS.panel.resources.remove_item, { number: index + 1 })}
           </Button>
         </View>
       ))}
-      <Button
-        variant="secondary"
-        onPress={() => change([...rows, ["", valueKind === "number" ? null : ""]])}
-      >
+      <Button variant="secondary" onPress={add}>
         {t(PANEL_KEYS.panel.resources.add_item)}
       </Button>
     </FormSection>
   );
-}
-
-/** The calendar day of a `YYYY-MM-DD` value, or null for anything else. */
-function dayOf(value: unknown): CalendarDate | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  try {
-    return parseDate(value);
-  } catch {
-    return null;
-  }
-}
-
-/** The instant a Date or an ISO 8601 string holds, or undefined. */
-function instantOf(value: unknown): Date | undefined {
-  const instant =
-    value instanceof Date ? value : typeof value === "string" ? new Date(value) : undefined;
-  return instant === undefined || Number.isNaN(instant.getTime()) ? undefined : instant;
 }
 
 /** A calendar day, held as `YYYY-MM-DD`: no time and no time zone. */
@@ -374,30 +281,7 @@ function DateTimeInput({
   readonly label: string;
 }): ReactElement {
   const { t } = useTranslation();
-  const field = useSchemaField<Date | string | null | undefined>(name);
-  // The parts live here: a day without its time yet is not an instant.
-  const [parts, setParts] = useState(() => {
-    const instant = instantOf(field.value);
-    return {
-      day:
-        instant === undefined
-          ? null
-          : new CalendarDate(instant.getFullYear(), instant.getMonth() + 1, instant.getDate()),
-      hour: instant?.getHours() ?? null,
-      minute: instant?.getMinutes() ?? null,
-    };
-  });
-  const change = (next: typeof parts) => {
-    setParts(next);
-    const { day, hour, minute } = next;
-    // `new Date(y, m, d, h, min)` reads the parts in the phone's time zone; an empty time is the start of the day.
-    field.onChange?.(
-      day === null
-        ? undefined
-        : new Date(day.year, day.month - 1, day.day, hour ?? 0, minute ?? 0).toISOString(),
-    );
-  };
-  const zone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const { field, parts, change, zone } = useDateTimeField(name);
   return (
     <FormSection title={label} description={t(PANEL_KEYS.panel.resources.time_zone, { zone })}>
       <DatePicker
@@ -486,7 +370,7 @@ function CurrencyInput({
     <ComboBox
       {...bound(field)}
       label={label}
-      items={CURRENCIES}
+      items={CURRENCY_OPTIONS}
       value={field.value ?? null}
       onChange={(id) => field.onChange?.(id ?? undefined)}
     />
@@ -507,7 +391,7 @@ export function ResourceFormField({
   record,
 }: ResourceFormFieldProps): ReactElement | null {
   const { t } = useTranslation();
-  const enumLabel = useEnumLabel();
+  const codeLabel = useFieldEnumLabel(resourceKey, enumOwner);
   const shared = { resourceKey, schema, enumOwner, record };
   const children = (fields: readonly FieldNode[]) =>
     fields.map((child, index) => (
@@ -547,26 +431,13 @@ export function ResourceFormField({
     return <ListField shared={shared} name={node.key} label={label} item={kind.item} />;
   if (kind.kind === "record")
     return <RecordField name={node.key} label={label} value={kind.value} />;
-  const codes =
-    node.enum === undefined
-      ? kind.kind === "enum"
-        ? kind.options
-        : undefined
-      : Enum.values(node.enum).map(String);
-  if (codes !== undefined)
+  const choices = enumChoicesOf(node, kind, (code) => codeLabel(node.key, code));
+  if (choices !== undefined)
     return (
       <SelectInput
         name={node.key}
         label={label}
-        items={codes.map((code) => ({
-          id: code,
-          label:
-            enumLabel(resourceKey, fieldLabelPath(node.key), code) ??
-            (enumOwner === undefined
-              ? undefined
-              : enumLabel(enumOwner, fieldLabelPath(node.key), code)) ??
-            code,
-        }))}
+        items={choices.map((choice) => ({ id: choice.value, label: choice.label }))}
       />
     );
   if (kind.kind === "boolean") return <SwitchInput name={node.key} label={label} />;
@@ -574,15 +445,14 @@ export function ResourceFormField({
   if (kind.kind === "date") return <DateInput name={node.key} label={label} />;
   if (kind.kind === "datetime") return <DateTimeInput name={node.key} label={label} />;
   if (kind.kind === "number" && isMinorKey(node.key)) {
-    // A currency beside it in the input (a MoneyAmount, a list row's `priceMinor` and `currency`) is the form's own.
-    const beside = currencyBeside(node.key);
-    if (inputKind(schema, beside).kind !== "missing")
-      return <FormMoneyField name={node.key} label={label} currencyPath={beside} />;
-    // Money travels in minor units; with a known currency it is entered in major units.
-    const currency = listCellCurrency(record ?? {}, node.key, record ?? {}, "currency");
-    const scale = scaleOf(currency);
-    if (currency !== undefined && scale !== undefined)
-      return <MoneyField name={node.key} label={label} currency={currency} scale={scale} />;
+    // A currency beside it in the input is the form's own; else the record's known currency, in major units.
+    const money = moneyInputOf(schema, node.key, record);
+    if (money !== undefined && "currencyPath" in money)
+      return <FormMoneyField name={node.key} label={label} currencyPath={money.currencyPath} />;
+    if (money !== undefined)
+      return (
+        <MoneyField name={node.key} label={label} currency={money.currency} scale={money.scale} />
+      );
   }
   if (kind.kind === "number") return <Field.Number name={node.key} label={label} />;
   if (fieldLabelPath(node.key).split(".").at(-1) === "currency")

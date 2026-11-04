@@ -21,15 +21,14 @@ import {
   Section,
   Table,
 } from "@stackra/ui/native";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import { View } from "react-native";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";
-import { listCellCurrency } from "#core/functions/list-cell-currency.function";
+import { entryRowsOf } from "#core/functions/entry-rows-of.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { resourceTreeOf } from "#core/functions/resource-tree-of.function";
-import { valueAt } from "#core/functions/value-at.function";
 import type { EntryNode } from "#core/types/entry-node.type";
 import { ResourceValue } from "#native/resource-pages/resource-value";
 import type { ResourceViewPageProps } from "#native/resource-pages/resource-view-page.props";
@@ -51,65 +50,34 @@ function Entries({
   readonly record: object;
 }): ReactElement {
   const { t } = useTranslation();
-  const rows: { id: string; label: string; value: ReactNode }[] = [];
-  const sections: ReactElement[] = [];
-  for (const entry of entries) {
-    if (entry.kind === "section") {
-      sections.push(
-        <Section key={entry.name} title={t(resourceLabel(resourceKey, "sections", entry.name))}>
-          <Entries resourceKey={resourceKey} entries={entry.entries} record={record} />
-        </Section>,
-      );
-      continue;
-    }
-    const label = t(resourceLabel(resourceKey, "entries", entry.key));
-    const value = valueAt(record, entry.key);
-    rows.push({
-      id: entry.key,
-      label,
-      value:
-        entry.kind === "list" ? (
-          <Table
-            label={label}
-            scrollEnabled={false}
-            columns={entry.columns.map((column) => ({
-              id: column,
-              label: t(resourceLabel(resourceKey, "entries", `${entry.key}.${column}`)),
-            }))}
-            items={(Array.isArray(value) ? (value as object[]) : []).map((item, index) => ({
-              ...item,
-              id: String(index),
-            }))}
-            renderCell={(item, column) => {
-              const currency = listCellCurrency(item, column.id, record, entry.currency);
-              return (
-                <ResourceValue
-                  resourceKey={resourceKey}
-                  path={column.id}
-                  kind={currency === undefined ? "value" : "money"}
-                  value={valueAt(item, column.id)}
-                  currency={currency}
-                  labels={entry.labels?.[column.id]}
-                />
-              );
-            }}
-          />
-        ) : (
-          <ResourceValue
-            resourceKey={resourceKey}
-            path={entry.key}
-            kind={entry.kind}
-            value={value}
-            currency={entry.kind === "money" ? valueAt(record, entry.currency) : undefined}
-            labels={entry.kind === "value" ? entry.labels : undefined}
-          />
-        ),
-    });
-  }
+  const { rows, sections } = entryRowsOf(resourceKey, entries, record, t);
   return (
     <>
-      {rows.length > 0 && <PropertyList items={rows} />}
-      {sections}
+      {rows.length > 0 && (
+        <PropertyList
+          items={rows.map(({ id, label, cell, list }) => ({
+            id,
+            label,
+            value:
+              list === undefined ? (
+                <ResourceValue {...cell} />
+              ) : (
+                <Table
+                  label={label}
+                  scrollEnabled={false}
+                  columns={list.columns}
+                  items={list.items}
+                  renderCell={(item, column) => <ResourceValue {...list.cell(item, column.id)} />}
+                />
+              ),
+          }))}
+        />
+      )}
+      {sections.map((section) => (
+        <Section key={section.name} title={section.title}>
+          <Entries resourceKey={resourceKey} entries={section.entries} record={record} />
+        </Section>
+      ))}
     </>
   );
 }

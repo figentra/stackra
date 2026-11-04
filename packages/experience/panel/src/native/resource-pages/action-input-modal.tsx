@@ -14,17 +14,15 @@
  */
 import { useTranslation } from "@stackra/i18n/react";
 import { Button, Form, Modal, Text, useSchemaForm } from "@stackra/ui/native";
-import { registerSchemas } from "@stackra/validation";
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { actionFormKeys } from "#core/functions/action-form-keys.function";
 import { actionLabelKey } from "#core/functions/action-label-key.function";
-import { valueAt } from "#core/functions/value-at.function";
 import { useActionRunner } from "#native/action-runner/use-action-runner";
 import type { ActionInputModalProps } from "#native/resource-pages/action-input-modal.props";
 import { ResourceFormField } from "#native/resource-pages/resource-form-field";
-import { ActionRunStatus } from "#react/action-runner/action-run-status.enum";
+import { useActionInput } from "#react/resource-pages/use-action-input";
 
 /** No bound inputs; one stable object, so a default prop does not change every render. */
 const NOTHING_BOUND: Readonly<Record<string, unknown>> = Object.freeze({});
@@ -46,47 +44,21 @@ function OpenModal({
     readonly close: () => void;
   }): ReactElement {
   const { t } = useTranslation();
-  const run = useActionRunner();
-  // An action without a record runs once, with no id.
-  const [left, setLeft] = useState<readonly (string | undefined)[]>(
-    idKey === undefined || ids === undefined ? [undefined] : ids,
-  );
-  const [serverErrors, setServerErrors] = useState<Readonly<Record<string, string>>>({});
-  // The ref's input is its schema; the schema form reads schemas by class, so record it under the ref.
-  useState(() => registerSchemas([[action, action.input]]));
-  // A key the record holds starts from its value (a drafted reply), so staff confirm rather than retype it.
-  const prefill = Object.fromEntries(
-    keys.flatMap((key) => {
-      const value = record === undefined ? undefined : valueAt(record, key);
-      return value === undefined || value === null ? [] : [[key, value]];
-    }),
-  );
+  const { defaultValues, serverErrors, submit } = useActionInput({
+    action,
+    idKey,
+    ids,
+    record,
+    bound,
+    keys,
+    run: useActionRunner(),
+    close,
+  });
   const form = useSchemaForm(action as unknown as abstract new () => Record<string, unknown>, {
-    // The id field is not drawn; it is filled so the schema validates, and replaced per record on submit.
-    defaultValues:
-      idKey === undefined || ids?.[0] === undefined
-        ? { ...bound, ...prefill }
-        : { ...bound, ...prefill, [idKey]: ids[0] },
+    defaultValues,
     serverErrors,
   });
   const ask = action.texts.confirm;
-  const submit = async (values: Readonly<Record<string, unknown>>) => {
-    const refused: (string | undefined)[] = [];
-    let errors: Readonly<Record<string, string>> = {};
-    // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
-    for (const id of left) {
-      const filled = { ...values, ...bound };
-      const input = idKey === undefined || id === undefined ? filled : { ...filled, [idKey]: id };
-      const done = await run(action, input as never, { confirmed: true });
-      if (done.status === ActionRunStatus.Refused) {
-        refused.push(id);
-        errors = done.error.fieldErrors ?? errors;
-      }
-    }
-    if (refused.length === 0) return close();
-    setLeft(refused);
-    setServerErrors(errors);
-  };
   return (
     <Modal
       isOpen
