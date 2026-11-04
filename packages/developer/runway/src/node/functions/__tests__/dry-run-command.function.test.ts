@@ -10,7 +10,7 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
-import { dryRunCommand } from "#node/functions/dry-run-program.function";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
 
 describe("dryRunCommand", () => {
   it("records each command and answers with stand-ins", async () => {

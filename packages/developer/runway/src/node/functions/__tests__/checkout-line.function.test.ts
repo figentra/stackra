@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { checkoutLine } from "#node/functions/checkout-line.function";
-import { dryRunCommand } from "#node/functions/dry-run-program.function";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
 
 const SHA = "c".repeat(40);
 

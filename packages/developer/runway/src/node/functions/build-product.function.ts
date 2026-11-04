@@ -29,7 +29,7 @@ import { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.c
 import { MOBILE_DEV_SETTINGS } from "#node/constants/mobile-dev-settings.constant";
 import { PRODUCT_BUILD_SETTINGS } from "#node/constants/product-build-settings.constant";
 import { checkoutLine } from "#node/functions/checkout-line.function";
-import { dryRunCommand } from "#node/functions/dry-run-program.function";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { runProgram } from "#node/functions/run-program.function";
 import { runMobileJob } from "#node/functions/run-mobile-job.function";

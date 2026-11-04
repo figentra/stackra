@@ -31,7 +31,7 @@ import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { PRODUCT_BUILD_SETTINGS } from "#node/constants/product-build-settings.constant";
 import { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
 import { EasProviderDriver } from "#node/drivers/eas-provider.driver";
-import { dryRunCommand } from "#node/functions/dry-run-program.function";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { publishProduct } from "#node/functions/publish-product.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { runProgram } from "#node/functions/run-program.function";

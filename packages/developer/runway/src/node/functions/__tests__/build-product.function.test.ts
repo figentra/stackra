@@ -21,7 +21,7 @@ import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { buildProduct } from "#node/functions/build-product.function";
 import { deployProduct } from "#node/functions/deploy-product.function";
-import { dryRunCommand } from "#node/functions/dry-run-program.function";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { runProgram } from "#node/functions/run-program.function";
 import type { SurfaceBundler } from "#node/types/surface-bundler.type";
 

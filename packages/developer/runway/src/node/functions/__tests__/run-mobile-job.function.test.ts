@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
-import { dryRunCommand } from "#node/functions/dry-run-program.function";
+import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { runMobileJob } from "#node/functions/run-mobile-job.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { MobileJobRequest } from "#node/types/mobile-job-request.type";
