@@ -48,6 +48,8 @@ describe("deployPlan", () => {
       "cloudflare-workers",
       "mintlify",
     ]);
-    expect(runways.members.map((m) => m.member)).toEqual(["docs"]);
+    expect(new Set(runways.members.map((m) => m.member))).toEqual(
+      new Set(["docs", "mobile", "playground", "static"]),
+    );
   });
 });
