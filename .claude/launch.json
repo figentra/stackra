@@ -2,6 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "surface-landing",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "pnpm turbo run build --output-logs=errors-only --filter=@stackra/cli... && node packages/developer/cli/dist/stackra.mjs build --product --surfaces-only && exec node packages/developer/cli/dist/stackra.mjs preview serve --surface landing --port 4173"
+      ],
+      "port": 4173
+    },
+    {
       "name": "docs",
       "runtimeExecutable": "sh",
       "runtimeArgs": [
