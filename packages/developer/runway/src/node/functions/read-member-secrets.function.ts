@@ -18,32 +18,10 @@
  */
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { proveGithubJob } from "#node/functions/prove-github-job.function";
-import { runProgram } from "#node/functions/run-program.function";
+import { exportInfisicalFolder } from "#node/functions/export-infisical-folder.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
-
-/** One secret as `infisical export --format json` prints it. */
-type ExportedSecret = { readonly key?: unknown; readonly value?: unknown };
-
-/** The name → value pairs of an `infisical export --format json` output; empty when it is not that shape. */
-function exportedPairs(output: string): Map<string, string> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(output);
-  } catch {
-    return new Map();
-  }
-  const pairs = new Map<string, string>();
-  const entries: readonly ExportedSecret[] = Array.isArray(parsed)
-    ? (parsed as ExportedSecret[])
-    : typeof parsed === "object" && parsed !== null
-      ? Object.entries(parsed).map(([key, value]) => ({ key, value }))
-      : [];
-  for (const { key, value } of entries)
-    if (typeof key === "string" && typeof value === "string") pairs.set(key, value);
-  return pairs;
-}
 
 /**
  * The values of `member`'s declared secrets for `environment`, in memory only and in CI only.
@@ -90,32 +68,20 @@ export async function readMemberSecrets(input: {
       `runway.yaml names no runtime folder for ${member}'s secrets (secrets.defaultPath in providers.infisical.paths)`,
     );
   const where = `${infisicalEnvironment}:${entry.path}`;
-  let output: string;
+  let pairs: ReadonlyMap<string, string>;
   try {
-    output = await (input.run ?? runProgram)(
-      "infisical",
-      [
-        "export",
-        "--env",
-        infisicalEnvironment,
-        "--path",
-        entry.path,
-        "--projectId",
-        infisical.workspace,
-        "--format",
-        "json",
-        "--silent",
-        ...(infisical.domain === undefined ? [] : ["--domain", infisical.domain]),
-      ],
-      {},
-    );
+    pairs = await exportInfisicalFolder({
+      projectId: infisical.workspace,
+      environment: infisicalEnvironment,
+      path: entry.path,
+      domain: infisical.domain,
+      run: input.run,
+    });
   } catch {
-    // No `cause` and no stderr: a failed export's output may hold values.
     throw new RunwayUnresolvedError(
       `infisical export of ${member}'s secrets (${where}) failed: check the job's Infisical login and that its identity may read ${entry.path}`,
     );
   }
-  const pairs = exportedPairs(output);
   const missing = entry.names.filter((name) => !pairs.has(name));
   if (missing.length > 0)
     throw new RunwayUnresolvedError(
