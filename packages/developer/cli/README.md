@@ -107,7 +107,8 @@ eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change),
   running and the CLI reattaches (three tries, 10 s apart) and exits with the job's code; Ctrl-C stops the job.
   A command naming `ci-box` or `stackra testbed` is refused (exit 2). With every slot busy it prints "every box busy,
   waiting", polls every 20 s and, after 2 minutes, raises the group's desired count by one. `--no-wait` exits 75 when
-  no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
+  no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--postgres` starts a throwaway Postgres beside the job and sets
+  `TESTBED_POSTGRES_HOST`; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
   never runs on the Mac.
 - `status`, `unlock [--box N|id] [--slot heavy|light]`, `ip`, `ssh [--box] [cmd]`, `sync [--box] <dir>`; box numbers
   are by launch time.

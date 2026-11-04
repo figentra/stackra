@@ -27,7 +27,7 @@ export const TESTBED_COMMAND: CliCommand = {
   summary:
     "Run heavy work on the shared test boxes (run, status, unlock, ip, ssh, sync, scale, image)",
   usage:
-    'stackra testbed run "<session> <what>" <dir> "<cmd>" [--preset verify|e2e|integration --ref <ref>] [--json] [--regions a,b] [--region r] [--no-wait] [--on-demand] [--ssh-direct] | status [--json] | unlock [--box N|id] [--region r] [--slot heavy|light] | ip [--box] | ssh [--box] [cmd] | sync [--box] <dir> | scale [--box N|id] [--region r] [--slot heavy|light] | image',
+    'stackra testbed run "<session> <what>" <dir> "<cmd>" [--preset verify|e2e|integration --ref <ref>] [--json] [--regions a,b] [--region r] [--no-wait] [--on-demand] [--postgres] [--ssh-direct] | status [--json] | unlock [--box N|id] [--region r] [--slot heavy|light] | ip [--box] | ssh [--box] [cmd] | sync [--box] <dir> | scale [--box N|id] [--region r] [--slot heavy|light] | image',
   options: {
     box: { type: "string" },
     slot: { type: "string" },
@@ -35,6 +35,7 @@ export const TESTBED_COMMAND: CliCommand = {
     ref: { type: "string" },
     "no-wait": { type: "boolean" },
     "on-demand": { type: "boolean" },
+    postgres: { type: "boolean" },
     "ssh-direct": { type: "boolean" },
     profile: { type: "string" },
     region: { type: "string" },
@@ -62,6 +63,7 @@ export const TESTBED_COMMAND: CliCommand = {
         ref: flag(values["ref"]),
         noWait: values["no-wait"] === true,
         onDemand: values["on-demand"] === true,
+        postgres: values["postgres"] === true,
         json,
         settings: resolveTestbedSettings(values, process.env, homedir()),
       },
