@@ -60,6 +60,7 @@ describe("@stackra/runway", () => {
       "TopologyMode",
       "VaultWriter",
       "baseUrlOf",
+      "checkDestinations",
       "checkHosts",
       "checkPlacement",
       "checkPorts",

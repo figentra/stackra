@@ -103,11 +103,7 @@ observability:
 # ── Environments ─────────────────────────────────────────────────────────────────────────────────────
 environments:
   dev:
-    destinations:
-      services: compose
-      web: vite-dev
-      mobile: expo-dev
-      docs: mint-dev
+    # No destinations: dev runs locally (`stackra dev`), and no driver ships it (owner decision O8, 2026-11-04).
     # `encore run` serves the reference services from one process.
     topology:
       mode: monolith

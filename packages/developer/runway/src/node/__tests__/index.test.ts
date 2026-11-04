@@ -94,6 +94,7 @@ describe("@stackra/runway/node", () => {
       "prepareMobileDev",
       "previewServe",
       "promoteCanary",
+      "proveGithubJob",
       "publishProduct",
       "publishShell",
       "readBundles",
