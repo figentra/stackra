@@ -1560,7 +1560,9 @@ const EAS_DEPLOY = atName(
  */
 const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publish` + END);
 /** `pnpm runway deploy|promote`, the `runway` binary or its `runway.mjs` build (STA-268) without `--dry-run`; `plan` is a read. */
-const RUNWAY_DEPLOY = /\brunway(?:\.mjs)?\s+(?:--\s+)?(?:deploy|promote)\b(?![^|;&\n]*--dry-run)/;
+// STA-2099: also `node …/runway.ts`, tsx, the secrets sync, and a script that calls the runner directly.
+const RUNWAY_DEPLOY =
+  /\brunway(?:\.m?[jt]s)?\s+(?:--\s+)?(?:deploy|promote|secrets\s+sync)\b(?![^|;&\n]*--dry-run)|\brunRunway\b/;
 /** `pnpm secrets:import`, its script run directly, or the private CLI's `figentra secrets import` (ADR 0500). */
 const SECRETS_IMPORT = String.raw`\bsecrets(?::import|-import(?:\.mjs)?|\s+import)\b`;
 /** An import that writes: not `--list`, not `--dry-run` (the owner's keeper rule of 2026-10-31). */
@@ -1649,6 +1651,23 @@ const PRODUCTION_FORBIDDEN = [
   /\bdns_records\b|\bflarectl\s+dns\b/,
   new RegExp(
     String.raw`(?:${BOT_GH}\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?secret\s+(?:set|delete)\b`,
+  ),
+];
+/** A write flag of `gh api`: a POST, PUT, PATCH or DELETE method, a field or a body file. */
+const GH_API_WRITE = String.raw`(?:-X\s*|--method(?:=|\s+))(?:POST|PUT|PATCH|DELETE)\b|\s-[fF]\s|--(?:raw-)?field\b|--input\b`;
+/**
+ * Approving a waiting deployment (REST `pending_deployments`, GraphQL `approveDeployments`, a custom protection
+ * rule's callback) or writing the environment, ruleset or branch protection that gates it (STA-2099).
+ */
+const GATE_CHANGE = [
+  new RegExp(
+    String.raw`\bpending_deployments\b[^|;&\n]*(?:${GH_API_WRITE})|(?:${GH_API_WRITE})[^|;&\n]*\bpending_deployments\b`,
+    "i",
+  ),
+  /\b(?:approveDeployments|deployment_protection_rule)\b/,
+  new RegExp(
+    String.raw`\bapi\b[^|;&\n]*(?:-X\s*|--method(?:=|\s+))(?:PUT|PATCH|POST|DELETE)\b[^|;&\n]*\/(?:environments|rulesets|protection)\b|\bapi\b[^|;&\n]*\/(?:environments|rulesets|protection)\b[^|;&\n]*(?:-X\s*|--method(?:=|\s+))(?:PUT|PATCH|POST|DELETE)\b`,
+    "i",
   ),
 ];
 /**
@@ -1836,6 +1855,11 @@ const RULES = [
       (WRANGLER_D1_REMOTE.test(c) && /\b(?:DROP|DELETE|TRUNCATE)\b/i.test(c)),
     id: "production-forbidden",
     why: "Never, even with the owner's approval in a prompt (owner decision 2026-10-31): deleting production data (R2, D1, KV, or SQL `DROP`, `DELETE`, `TRUNCATE` on a remote D1), reading or rotating a production secret, or changing DNS. The owner does these by hand.",
+  },
+  {
+    rx: (c) => GATE_CHANGE.some((rx) => runsQuoted(c, rx)),
+    id: "gate-change",
+    why: "Agents log in as an environment reviewer (STA-2099), so approving a waiting deployment, or changing an environment, ruleset or branch protection, is the owner's by hand, even with approval in a prompt. Reading them is fine.",
   },
   {
     rx: (c) =>
