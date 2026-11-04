@@ -464,6 +464,8 @@ const target = (settings: Record<string, unknown>): DeployTarget => ({
 
 describe("CloudflareWorkersProviderDriver drift", () => {
   const ACCOUNT = "d861f9ac9df28b7f0b1298cc0c89bc9d";
+  // The worker base turns logs on (ADR 0519), so a matching Worker reports them on.
+  const OBSERVED = { enabled: true, logs: { enabled: true, invocation_logs: true } };
   const drifting = (root: string, live: Record<string, Record<string, unknown>>) => {
     const reads: string[] = [];
     const provider = workers(root, fakeRunner(root).run, {
@@ -477,7 +479,7 @@ describe("CloudflareWorkersProviderDriver drift", () => {
   };
   it("is empty when Cloudflare reports what runway.yaml renders", async () => {
     const { provider, reads } = drifting(repository(), {
-      settings: { compatibility_date: "2026-10-01" },
+      settings: { compatibility_date: "2026-10-01", observability: OBSERVED },
       subdomain: { enabled: false, previews_enabled: false },
     });
     const [result] = await provider.drift(
@@ -489,7 +491,7 @@ describe("CloudflareWorkersProviderDriver drift", () => {
 
   it("lists each differing setting, and an unset one", async () => {
     const { provider } = drifting(repository(), {
-      settings: { compatibility_date: "2026-01-01" },
+      settings: { compatibility_date: "2026-01-01", observability: OBSERVED },
       subdomain: { enabled: true },
     });
     const [result] = await provider.drift(

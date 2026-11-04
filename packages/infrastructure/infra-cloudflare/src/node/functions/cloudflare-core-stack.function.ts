@@ -129,9 +129,11 @@ export function cloudflareCoreStack(args: {
         id,
         plan,
         policy: zonePolicy,
-      }: { id: typeof entry; plan?: ZonePlan; policy?: ZonePolicy } = typeof entry === "object"
-        ? entry
-        : { id: entry };
+      }: {
+        id: typeof entry;
+        plan?: ZonePlan | undefined;
+        policy?: ZonePolicy | undefined;
+      } = typeof entry === "object" ? entry : { id: entry };
       const options = stack.zones[name] ?? ZONE_OPTIONS_SCHEMA.parse({});
       const zoneId = resolveRef(id, `providers.cloudflare.zones.${name}`);
       const zone = cloudflareZone({ accountId, name, zoneId, options, proxy: edge.proxy });
