@@ -26,6 +26,7 @@ import { fakeSettings } from "@stackra/settings/testing";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
+import { LoyaltyMembers } from "#contracts/ports/loyalty-members.port";
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
 import type { EarnDraft } from "#contracts/types/earn-draft.type";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
@@ -308,6 +309,8 @@ describe("AccountService in the kit's container", () => {
       .override(RequestContext, {
         current: () => fakeExtensionContext(),
       } as unknown as RequestContext)
+      // the kit's one LoyaltyMembers driver is abstract: the host supplies it, so the test does
+      .override(LoyaltyMembers, LoyaltyMembersFake.with([]))
       .compile();
     const accounts = app.get(AccountService);
     expect(accounts).toBeInstanceOf(AccountService);

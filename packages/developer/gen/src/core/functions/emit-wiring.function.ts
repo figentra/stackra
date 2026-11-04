@@ -349,6 +349,13 @@ export function emitWiring(ir: MemberIR): string {
   const lines: string[] = [];
   const root = rootModuleOf(ir);
   const rootName = root === undefined ? undefined : ref(root);
+  // A config override keeps its plain name and its base is `Base<Name>` (ADR 0305), so both are named before a
+  // binding that injects the base can take the plain name.
+  for (const declared of ir.classes)
+    if (declared.kind === "config" && declared.base !== undefined && !declared.base.own) {
+      ref(own(declared));
+      ref(declared.base, "Base");
+    }
 
   // Modules, own then each dependency's, in dependency order.
   const edges = new Map<string, string[]>();

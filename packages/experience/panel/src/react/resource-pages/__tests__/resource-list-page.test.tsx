@@ -23,6 +23,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import { z } from "zod";
 
+import type { StandInProps as Props } from "#core/__tests__/stand-in-props.fixture";
 import { Count } from "#core/enums/count.enum";
 import type { ViewStore } from "#core/ports/view-store.port";
 import type { SavedView } from "#core/schemas/saved-view.schema";
@@ -60,8 +61,6 @@ vi.mock("@stackra/i18n/react", () => ({
 vi.mock("@stackra/ui/react", async (importOriginal) => {
   const { createElement } = await import("react");
   const { useCollection } = await importOriginal<{ readonly useCollection: unknown }>();
-  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
-  type Props = Record<string, any>;
   const buttons = (actions: { id: string; label: string; onPress?: () => void }[] = []) =>
     actions.map((action) =>
       createElement(
@@ -75,7 +74,13 @@ vi.mock("@stackra/ui/react", async (importOriginal) => {
     Button: (props: Props) =>
       createElement("button", { type: "button", onClick: props.onPress }, props.children),
     EmptyState: (props: Props) =>
-      createElement("div", null, props.title, props.description, props.actions),
+      createElement(
+        "div",
+        null,
+        createElement("h3", null, props.title),
+        createElement("p", null, props.description),
+        props.actions,
+      ),
     StatusBadge: (props: Props) =>
       createElement("mark", { "data-tone": props.tone }, props.children),
     Text: (props: Props) => createElement("small", null, props.children),

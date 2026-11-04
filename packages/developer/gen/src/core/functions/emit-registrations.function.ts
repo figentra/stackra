@@ -386,6 +386,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     "@stackra/iam",
     ((manifest["policies"] ?? []) as readonly Entry[]).map((entry) => {
       // The model is resolved first, so a row that cannot be written imports nothing.
+      if (typeof entry["from"] === "string" && typeof entry["modelFile"] !== "string")
+        return undefined;
       const partner =
         typeof entry["from"] === "string"
           ? undefined

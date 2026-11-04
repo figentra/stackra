@@ -18,6 +18,7 @@ import type { ReactNode } from "react";
 import { vi } from "vitest";
 import { z } from "zod";
 
+import type { StandInProps as Props } from "#core/__tests__/stand-in-props.fixture";
 import { resource } from "#core/functions/resource.function";
 import { ResourceListPage } from "#native/resource-pages/resource-list-page";
 
@@ -48,8 +49,6 @@ vi.mock("react-native", async () => {
 
 vi.mock("@stackra/ui/native", async () => {
   const { createElement } = await import("react");
-  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
-  type Props = Record<string, any>;
   return {
     Text: (props: Props) => createElement("span", null, props.children),
     Button: (props: Props) =>
@@ -80,30 +79,35 @@ vi.mock("@stackra/ui/native", async () => {
     DataTable: (props: Props) =>
       props.error === undefined
         ? createElement(
-            "table",
-            { "aria-label": props.label },
+            "div",
+            null,
+            props.filterBar,
             createElement(
-              "tbody",
-              null,
-              props.collection.rows.map((row: Props) =>
-                createElement(
-                  "tr",
-                  { key: row.id },
-                  props.collection.columns.map((column: Props) =>
-                    createElement("td", { key: column.id }, props.renderCell(row, column)),
-                  ),
+              "table",
+              { "aria-label": props.label },
+              createElement(
+                "tbody",
+                null,
+                props.collection.rows.map((row: Props) =>
                   createElement(
-                    "td",
-                    null,
-                    props
-                      .rowActions(row)
-                      .map((action: Props) =>
-                        createElement(
-                          "button",
-                          { type: "button", key: action.id, onClick: () => action.onPress?.() },
-                          action.label,
+                    "tr",
+                    { key: row.id },
+                    props.collection.columns.map((column: Props) =>
+                      createElement("td", { key: column.id }, props.renderCell(row, column)),
+                    ),
+                    createElement(
+                      "td",
+                      null,
+                      props
+                        .rowActions(row)
+                        .map((action: Props) =>
+                          createElement(
+                            "button",
+                            { type: "button", key: action.id, onClick: () => action.onPress?.() },
+                            action.label,
+                          ),
                         ),
-                      ),
+                    ),
                   ),
                 ),
               ),

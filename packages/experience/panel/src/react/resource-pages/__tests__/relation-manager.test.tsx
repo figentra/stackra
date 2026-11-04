@@ -15,6 +15,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import { z } from "zod";
 
+import type { StandInProps as Props } from "#core/__tests__/stand-in-props.fixture";
 import { RelationManager } from "#react/resource-pages/relation-manager";
 
 const spies = vi.hoisted(() => ({
@@ -56,8 +57,6 @@ vi.mock("@stackra/i18n/react", () => ({
 vi.mock("@stackra/ui/react", async (importOriginal) => {
   const { createElement } = await import("react");
   const { useCollection } = await importOriginal<{ readonly useCollection: unknown }>();
-  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
-  type Props = Record<string, any>;
   return {
     useCollection,
     Section: (props: Props) => createElement("section", null, props.title, props.children),

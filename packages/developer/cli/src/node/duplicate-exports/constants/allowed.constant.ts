@@ -30,6 +30,9 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   ContextMenu:
     "@stackra/navigation's native long-press menu on a navigation item vs @stackra/ui's web context menu component",
   ContextMenuProps: "the props of the two ContextMenu components above",
+  FilterKind:
+    "@stackra/panel's SDUI filter controls (nine codes, the spec's `control`) vs @stackra/ui's six FilterBar editors; the panel's list renderer maps one onto the other",
+  Flag: "@stackra/feature-flags' Flag kind (a declared feature flag) vs @stackra/ui's web country flag component",
   CreateCommand:
     "@stackra/console's `stackra-console create` command class vs @stackra/cli's `stackra create`, which goes when stackra moves onto the console (STA-1966)",
   Meter: "@stackra/model's usage-meter decorator vs @stackra/ui's native meter component",
@@ -77,6 +80,10 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
     "@stackra/actions' contract type of a parked call vs @stackra/tenancy's model that stores it for the approval-binding store; the model's name derives its locked key and table (ADR 0509)",
   StepUpRequiredError:
     "@stackra/actions' testing stand-in for its memory ActorStatusCheck, since actions cannot depend on @stackra/identity, whose refusal of the same code is the real one",
+  DbMigrateCommand:
+    "@stackra/cli's `stackra db:migrate` (the release step, any environment) loads the member's own @stackra/database/node at run time, so the CLI never depends on MikroORM; @stackra/database's is the command that member's console runs",
+  DbRollbackCommand:
+    "@stackra/cli's `stackra db:rollback` refuses staging and production before it loads the member's @stackra/database/node, so the CLI never depends on MikroORM; @stackra/database's is the command that member's console runs",
   DatabaseRunner:
     "@stackra/cli declares the runner shape it needs and loads @stackra/database/node from the member at run time, so the CLI never depends on MikroORM; the database package's service is the real runner",
 });
