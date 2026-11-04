@@ -12,7 +12,7 @@
 import { runCommandForTest } from "@stackra/console/testing";
 import { promote } from "@stackra/runway";
 import type { RootRunway } from "@stackra/runway";
-import { readRunway } from "@stackra/runway/node";
+import { proveGithubJob, readRunway } from "@stackra/runway/node";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -26,7 +26,11 @@ vi.mock("@stackra/runway", async (original) => ({
 vi.mock("@stackra/runway/node", async (original) => ({
   ...(await original<Record<string, unknown>>()),
   readRunway: vi.fn(),
+  proveGithubJob: vi.fn(),
 }));
+
+/** The console draws an error in a box; its text, unwrapped. */
+const text = (stderr: string) => stderr.replaceAll(/[\s│╭╮╰╯─]+/g, " ");
 
 const SHA = "d".repeat(40);
 
@@ -55,6 +59,10 @@ beforeEach(() => {
         report: { status: "up" },
       },
     ] as never);
+  // As on a workstation: no OIDC token proves an approval.
+  vi.mocked(proveGithubJob)
+    .mockReset()
+    .mockRejectedValue(new Error("no GitHub OIDC token can be requested here"));
 });
 
 describe("PromoteCommand", () => {
@@ -70,7 +78,7 @@ describe("PromoteCommand", () => {
   it("refuses a --to that does not deploy on promotion, on a dry run too", async () => {
     const dry = await run("--to", "staging", "--dry-run");
     expect(dry.exitCode).toBe(1);
-    expect(dry.stderr).toContain("staging is not deployed by promotion");
+    expect(text(dry.stderr)).toContain("staging is not deployed by promotion");
     expect((await run("--to", "staging", "--approved")).exitCode).toBe(1);
     expect(promote).not.toHaveBeenCalled();
   });
@@ -85,18 +93,26 @@ describe("PromoteCommand", () => {
     expect(promote).not.toHaveBeenCalled();
   });
 
-  it("refuses an approval-gated environment unless --approved is passed", async () => {
-    const result = await run("--to", "production", "--sha", SHA);
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain(
-      "production is promoted only after its approval (github-environment)",
-    );
+  it("refuses an approval-gated environment unless the job's OIDC token proves it; --approved proves nothing", async () => {
+    for (const result of [
+      await run("--to", "production", "--sha", SHA),
+      await run("--to", "production", "--sha", SHA, "--approved"),
+    ]) {
+      expect(result.exitCode).toBe(2);
+      expect(text(result.stderr)).toContain(
+        "production is promoted only after its approval (github-environment)",
+      );
+    }
     expect(promote).not.toHaveBeenCalled();
   });
 
   it("ships staging to production by default and draws each record", async () => {
-    const result = await run("--to", "production", "--sha", SHA, "--approved");
+    vi.mocked(proveGithubJob).mockResolvedValueOnce({ repository: "figentra/stackra" });
+    const result = await run("--to", "production", "--sha", SHA);
     expect(result.exitCode).toBe(0);
+    expect(vi.mocked(proveGithubJob).mock.calls[0]?.[0]).toMatchObject({
+      environment: "production",
+    });
     const [root, from, to, providers, sha] = vi.mocked(promote).mock.calls[0] ?? [];
     expect([root, from, to, sha]).toEqual([ROOT, "staging", "production", SHA]);
     expect(providers?.map((provider) => provider.destination)).toEqual([

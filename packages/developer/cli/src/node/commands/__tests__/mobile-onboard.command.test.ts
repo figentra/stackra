@@ -58,7 +58,10 @@ describe("MobileOnboardCommand", () => {
       "mobile onboard academorix (offline plan: nothing is called or written)",
     );
     expect(result.stdout).toContain("eas-project");
-    expect(result.stdout).toContain("App Store Connect › Apps › + › New App");
+    // The owner's steps are a note, which the console draws as a box on stderr.
+    expect(`${result.stdout}${result.stderr}`.replaceAll(/[\s│╭╮╰╯─]+/g, " ")).toContain(
+      "App Store Connect › Apps › + › New App",
+    );
     expect(result.stdout).not.toContain("wrote ");
   });
 

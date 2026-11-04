@@ -12,7 +12,7 @@
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { deploy } from "@stackra/runway";
 import type { RootRunway } from "@stackra/runway";
-import { readRunway, readRunways, syncSecrets } from "@stackra/runway/node";
+import { proveGithubJob, readRunway, readRunways, syncSecrets } from "@stackra/runway/node";
 import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -32,6 +32,7 @@ vi.mock("@stackra/runway/node", async (original) => ({
   readRunway: vi.fn(),
   readRunways: vi.fn(),
   syncSecrets: vi.fn(),
+  proveGithubJob: vi.fn(),
 }));
 
 vi.mock("#node/doctor/functions/probe-hosts.function", () => ({ probeHosts: vi.fn() }));
@@ -75,6 +76,10 @@ beforeEach(() => {
     .mockReset()
     .mockReturnValue({ root: ROOT, members: [] } as never);
   vi.mocked(syncSecrets).mockReset().mockResolvedValue();
+  // As on a workstation: no OIDC token proves an approval.
+  vi.mocked(proveGithubJob)
+    .mockReset()
+    .mockRejectedValue(new Error("no GitHub OIDC token can be requested here"));
   vi.mocked(deploy)
     .mockReset()
     .mockResolvedValue([
@@ -139,7 +144,7 @@ describe("runRunwayDeploy", () => {
     ]);
   });
 
-  it("refuses an environment whose runway declares an approval unless --approved is passed", async () => {
+  it("refuses an environment whose runway declares an approval unless the job's OIDC token proves it", async () => {
     const gated = {
       ...ROOT,
       environments: {
@@ -153,8 +158,16 @@ describe("runRunwayDeploy", () => {
     await expect(run({ env: "production", sha: SHA }).code).rejects.toThrow(
       "production deploys only after its approval (github-environment)",
     );
+    // `--approved` alone proves nothing.
+    await expect(run({ env: "production", sha: SHA, approved: true }).code).rejects.toThrow(
+      "no GitHub OIDC token can be requested here",
+    );
     expect(deploy).not.toHaveBeenCalled();
-    expect(await run({ env: "production", sha: SHA, approved: true }).code).toBe(0);
+    vi.mocked(proveGithubJob).mockResolvedValueOnce({ repository: "figentra/stackra" });
+    expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+    expect(vi.mocked(proveGithubJob).mock.calls.at(-1)?.[0]).toMatchObject({
+      environment: "production",
+    });
     expect(deploy).toHaveBeenCalledTimes(1);
   });
 

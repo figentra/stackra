@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `runMobileOnboard`: the offline plan of the only app resolves with every step and the
  *          owner's steps, a manual one among them, and writes nothing; `--app` is needed when the runway has several
- *          apps; `--check` and `--live` refuse to run outside GitHub Actions.
+ *          apps; `--check` and `--live` refuse to run outside a proved GitHub Actions job.
  * Boundary: test only; a temporary product repository, Runway's real `onboardMobile` over the memory drivers, so
  *           nothing leaves the process and nothing is written.
  * Runtime: node (vitest)
@@ -84,8 +84,10 @@ describe("stackra mobile onboard", () => {
   });
 
   // @covers sta-1623:FR-005
-  it("refuses --check and --live outside GitHub Actions", async () => {
+  it("refuses --check and --live outside GitHub Actions, and GITHUB_ACTIONS=true alone proves nothing", async () => {
     await expect(run({ live: true })).rejects.toBeInstanceOf(CliUsageError);
     await expect(run({ check: true })).rejects.toBeInstanceOf(CliUsageError);
+    process.env["GITHUB_ACTIONS"] = "true";
+    await expect(run({ live: true })).rejects.toThrow(/production job/);
   });
 });

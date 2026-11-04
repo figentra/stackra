@@ -37,6 +37,7 @@ export { RunwaySmokeFailedError } from "#core/errors/runway-smoke-failed.error";
 export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
+export { checkDestinations } from "#core/functions/check-destinations.function";
 export { checkHosts } from "#core/functions/check-hosts.function";
 export { surfaceHosts } from "#core/functions/surface-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";

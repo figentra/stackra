@@ -196,6 +196,25 @@ describe("readMemberSecrets", () => {
     expect(calls).toEqual([]);
   });
 
+  /** GITHUB_ACTIONS=true is not proof: without the runner's OIDC token nothing is read. */
+  it("refuses a self-asserted CI job (GITHUB_ACTIONS=true and no OIDC token)", async () => {
+    const { run, calls } = recorder({});
+    const before = { ...process.env };
+    process.env["GITHUB_ACTIONS"] = "true";
+    Reflect.deleteProperty(process.env, "ACTIONS_ID_TOKEN_REQUEST_URL");
+    Reflect.deleteProperty(process.env, "ACTIONS_ID_TOKEN_REQUEST_TOKEN");
+    try {
+      expect(
+        await rejection(
+          readMemberSecrets({ environment: "staging", member: "api", runways: RUNWAYS, run }),
+        ),
+      ).toMatch(/no GitHub OIDC token can be requested here/);
+    } finally {
+      process.env = before;
+    }
+    expect(calls).toEqual([]);
+  });
+
   it("names a missing secret without any value, and keeps a failed export's output out of the error", async () => {
     const missing = recorder({ "/runtime/api": { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY } });
     const message = await rejection(

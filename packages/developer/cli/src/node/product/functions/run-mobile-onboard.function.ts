@@ -4,12 +4,12 @@
  *          product root: onboards one mobile app (Runway's `onboardMobile`) and resolves with its ids, every step with
  *          its state and the owner's steps, and the files written. The default is an offline plan: the memory drivers
  *          start empty, so it reads no secret, calls no store and plans every step as if nothing existed. `--check`
- *          reads the real stores and plans only what is missing; `--live` makes the changes. Both run only in GitHub
- *          Actions, where the keys are.
+ *          reads the real stores and plans only what is missing; `--live` makes the changes. Both run only in the
+ *          product's production job, proved by its GitHub OIDC token (`proveGithubJob`), where the keys are.
  * Boundary: validates the flags and chooses the drivers; the steps are Runway's and `MobileOnboardCommand` draws
  *           them. `--app` defaults to the only app of the runway's `mobile`.
  * Runtime: node
- * Governing contract: ADR 0482 (decisions 1 and 9), ADR 0480 (decision 5: live only in CI); ADR 0506; STA-1966.
+ * Governing contract: ADR 0482 (decisions 1 and 9), ADR 0480 (decision 5: live only in CI); ADR 0506; STA-1966; STA-2100.
  */
 import { join } from "node:path";
 
@@ -29,6 +29,7 @@ import {
   MemorySentryProjectsDriver,
   MemoryVaultWriterDriver,
   onboardMobile,
+  proveGithubJob,
   readRunway,
   SentryApiProjectsDriver,
 } from "@stackra/runway/node";
@@ -55,11 +56,17 @@ export async function runMobileOnboard(
   const live = values.live;
   const real = live || values.check;
   if (live && values.check) throw new CliUsageError("pass --check or --live, not both");
-  if (real && process.env["GITHUB_ACTIONS"] !== "true")
-    throw new CliUsageError(
-      "--check and --live run only in GitHub Actions (the product's production environment); run without them for an offline plan",
+  const root = readRunway(join(cwd, "runway.yaml"), "root");
+  // Proved by the job's GitHub OIDC token in the production environment, never by GITHUB_ACTIONS (STA-2100).
+  if (real)
+    await proveGithubJob({ github: root.providers?.github, environment: "production" }).catch(
+      (error: unknown) => {
+        throw new CliUsageError(
+          `--check and --live run only in the product's production job; run without them for an offline plan (${(error as Error).message})`,
+        );
+      },
     );
-  const apps = Object.keys(readRunway(join(cwd, "runway.yaml"), "root").mobile ?? {});
+  const apps = Object.keys(root.mobile ?? {});
   const app = values.app ?? (apps.length === 1 ? apps[0] : undefined);
   if (app === undefined)
     throw new CliUsageError(`name the app: --app <${apps.join("|") || "key"}>`);
