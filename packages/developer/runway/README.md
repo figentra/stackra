@@ -461,6 +461,8 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
 by a flag or `GITHUB_ACTIONS`; a deploy job needs `permissions: id-token: write`. A destination is one of
 `encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`; `validate` refuses any other (owner decision O8, 2026-11-04).
+A docs app ships through `mintlify` until its site moves to Fumadocs (ADR 0514). The self-hosted site is then
+`docs: cloudflare-workers`, with the docs app as a `targets.cloudflare-workers.members` entry of `kind: docs`.
 
 ## Deploy, promote and roll back
 
