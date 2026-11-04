@@ -9,14 +9,15 @@
  *          is the CI gate. At a workspace root with a root runway it also writes Claude's `.claude/launch.json`
  *          and VS Code's `dev: …` tasks from the runways (`writeLaunchFiles`); `--check` fails when one is stale.
  * Boundary: runs every member even after one fails, so one run reports everything; only the last round's refusals
- *           print; exits 1 when any member is not clean.
+ *           print; exits 1 when any member is not clean. At a workspace root a member with no `node_modules` (left
+ *           out by a filtered install) is skipped by name, never refused.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: `stackra gen --check`); ADR 0295 (decisions 1 and 5); ADR 0261;
  *                     ADR 0260 (a cycle between services is allowed at the manifest level);
  *                     STA-2081 (the launch file).
  */
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { writeLaunchFiles } from "#node/launch-config/functions/write-launch-files.function";
@@ -49,9 +50,16 @@ export const GEN_COMMAND: CliCommand = {
       ...(backend === "tsgo" || backend === "ts6" ? { backend } : {}),
     };
     const workspace = existsSync(join(cwd, "pnpm-workspace.yaml"));
-    const roots = workspace
+    const configured = workspace
       ? workspaceMembers(cwd).filter((root) => existsSync(join(root, "stackra.config.ts")))
       : [cwd];
+    // A member a filtered install left out (CI's `--filter='!@figentra/playground'`) cannot resolve its @stackra
+    // bases, so every class reads as unregistered; skip it by name instead of refusing it.
+    const roots = workspace
+      ? configured.filter((folder) => existsSync(join(folder, "node_modules")))
+      : configured;
+    for (const folder of configured.filter((root) => !roots.includes(root)))
+      io.out(`gen: skipped ${relative(cwd, folder)}: not installed\n`);
 
     // The dev-server lists (Claude, VS Code) read only the runways, so they are settled before the members (STA-2081).
     const launch =
