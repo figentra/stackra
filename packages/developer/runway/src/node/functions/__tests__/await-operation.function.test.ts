@@ -51,6 +51,12 @@ describe("awaitOperation", () => {
     });
   });
 
+  it("answers neither for a null response or error", async () => {
+    const fetcher = polls({ done: true, response: null, error: null });
+
+    expect(await awaitOperation(fetcher, REQUEST)).toEqual({});
+  });
+
   it("throws naming the operation when it does not finish in time", async () => {
     const fetcher = polls({ done: false });
 

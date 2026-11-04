@@ -9,11 +9,13 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { WorkspacePackage } from "#node/types/workspace-package.type";
 
 /**
  * The product's packages by name.
  *
+ * @throws RunwayUnresolvedError naming the file when a package.json is not valid JSON.
  * @example
  * workspacePackages("/repo").get("@figentra/acme-example")?.version; // "0.1.0"
  */
@@ -26,7 +28,12 @@ export function workspacePackages(
   if (depth < 0 || !existsSync(folder)) return found;
   const file = join(folder, "package.json");
   if (existsSync(file)) {
-    const manifest = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    let manifest: Record<string, unknown>;
+    try {
+      manifest = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    } catch (error) {
+      throw new RunwayUnresolvedError(`${file} is not valid JSON: ${(error as Error).message}`);
+    }
     if (typeof manifest["name"] === "string")
       found.set(manifest["name"], {
         dir: resolve(folder),

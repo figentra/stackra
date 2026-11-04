@@ -11,6 +11,7 @@ import { join } from "node:path";
 
 import { parse } from "yaml";
 
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
 
 /** The member roots that may hold a member runway (ADR 0296; `workers/` per ADR 0284). */
@@ -19,10 +20,15 @@ const MEMBER_ROOTS = ["apps", "services", "workers"];
 /**
  * The root runway and every member runway under `root`.
  *
+ * @throws RunwayUnresolvedError when `root` has no runway.yaml.
  * @example
  * readRunways("/work/acme").members.map((m) => m.member); // ["docs"]
  */
 export function readRunways(root: string): DeployRunways {
+  if (!existsSync(join(root, "runway.yaml")))
+    throw new RunwayUnresolvedError(
+      `No runway.yaml in ${root}: run runway from the repository root, or add its root runway`,
+    );
   const read = (path: string) => parse(readFileSync(join(root, path), "utf8"));
   const members = MEMBER_ROOTS.flatMap((dir) =>
     existsSync(join(root, dir))
