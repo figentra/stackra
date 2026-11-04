@@ -94,6 +94,7 @@ function treeOf(definitions: readonly CommandStructure[]): RootCommand {
 
 /** Completes command lines through Bombshell Tab. */
 export class TabCompletionsDriver extends Driver(Completions) {
+  /** Returns the script that makes `shell` complete `binary` with Tab. */
   script(
     shell: "bash" | "zsh" | "fish",
     binary: string,
@@ -103,6 +104,7 @@ export class TabCompletionsDriver extends Driver(Completions) {
     return `${printed(() => root.setup(binary, binary, shell)).join("\n")}\n`;
   }
 
+  /** Returns the candidates for the last of `words`. */
   complete(
     words: readonly string[],
     definitions: readonly CommandStructure[],

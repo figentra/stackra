@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0159; ADR 0282 (decision 3: `stackra db diff`); STA-1808.
  */
-/** One disagreement. */
+/** One place where the models and the migrations disagree. */
 export interface SchemaDifference {
   /** The module key, which is the Postgres schema. */
   readonly module: string;

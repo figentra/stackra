@@ -31,11 +31,13 @@ export class MemoryTenantProfileDriver extends Driver(TenantProfile) {
     return this;
   }
 
+  /** Answers the profile; rejects while none is set. */
   get(): Promise<TenantProfileView> {
     if (this.profile === undefined) return Promise.reject(new Error("no profile is set"));
     return Promise.resolve(this.profile);
   }
 
+  /** Records the input and merges its defined fields into the profile; rejects while none is set. */
   update(input: Parameters<TenantProfile["update"]>[0]): Promise<TenantProfileView> {
     this.updates.push(input);
     if (this.profile === undefined) return Promise.reject(new Error("no profile is set"));

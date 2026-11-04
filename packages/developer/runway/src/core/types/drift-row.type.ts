@@ -6,6 +6,7 @@
  * Governing contract: ADR 0519 (decision 7); STA-1992.
  */
 
+/** One setting whose rendered value differs from what Cloudflare reports. */
 export type DriftRow = {
   /** The wrangler key, dotted (`observability.logs.enabled`). */
   readonly key: string;

@@ -17,7 +17,7 @@ export interface FilterSpec {
   readonly id: string;
   /** The label; absent, the derived i18n key. */
   readonly label?: string | undefined;
-  /** The control. */
+  /** The control the filter is drawn with. */
   readonly kind?: FilterKind | undefined;
   /** Hint text of a text filter. */
   readonly placeholder?: string | undefined;

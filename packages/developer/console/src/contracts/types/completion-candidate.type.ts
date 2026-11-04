@@ -8,7 +8,7 @@
 
 /** A word Tab offers. */
 export interface CompletionCandidate {
-  /** The word. */
+  /** The word Tab inserts. */
   readonly value: string;
 
   /** What it is, shown beside it by shells that can. */

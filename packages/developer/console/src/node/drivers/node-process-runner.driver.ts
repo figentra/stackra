@@ -18,6 +18,7 @@ import type { ProcessRunOptions } from "#contracts/types/process-run-options.typ
 
 /** Runs child processes of this machine. */
 export class NodeProcessRunnerDriver extends Driver(ProcessRunner) {
+  /** Spawns `command` with `args` and resolves with its exit code and output once it exits. */
   run(
     command: string,
     args: readonly string[],

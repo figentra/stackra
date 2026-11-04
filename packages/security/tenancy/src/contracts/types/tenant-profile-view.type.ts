@@ -9,7 +9,7 @@ import type { PublicId } from "@stackra/contracts";
 
 /** The active tenant's profile. */
 export interface TenantProfileView {
-  /** The tenant. */
+  /** The tenant's public id. */
   readonly tenantId: PublicId<"scp">;
   /** The tenant's handle, fixed at sign-up. */
   readonly handle: string;

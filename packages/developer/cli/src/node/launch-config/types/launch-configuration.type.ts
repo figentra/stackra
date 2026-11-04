@@ -14,7 +14,7 @@ export type LaunchConfiguration = {
   /** The program run. */
   readonly runtimeExecutable: string;
 
-  /** Its arguments. */
+  /** The arguments the program runs with. */
   readonly runtimeArgs: readonly string[];
 
   /** The port it listens on, which Claude opens. */

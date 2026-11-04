@@ -23,9 +23,9 @@ export abstract class RenderContext {
   /** The CLI's version, shown in the banner. */
   declare readonly version: string;
 
-  /** Standard output. */
+  /** The standard output stream. */
   declare readonly stdout: WritableText;
 
-  /** Standard error. */
+  /** The standard error stream. */
   declare readonly stderr: WritableText;
 }
