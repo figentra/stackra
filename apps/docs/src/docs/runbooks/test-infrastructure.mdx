@@ -7,8 +7,9 @@ icon: "server"
 <Note>
   Status: written, not applied (STA-1626). The design is [ADR
   0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical).
-  The code is `@stackra/infra-testbed` and `stackra testbed`. Nothing is applied until the owner
-  says so. Until the migration below finishes, `ci-box` and the eight old boxes stay in service.
+  The code is `@figentra/testbed` in figentra/testbed ([ADR 0522](/adr/0522-testbed-own-repo)) and
+  `stackra testbed`. Nothing is applied until the owner says so. Until the migration below finishes,
+  `ci-box` and the eight old boxes stay in service.
 </Note>
 
 <Warning>
@@ -155,7 +156,7 @@ regions and writes each region's `/imagebuilder/stackra-testbed/ami`, so no othe
 instance is a second on-demand `c7i.2xlarge`, and the home region's on-demand quota fits one
 ([ADR 0516](/adr/0516-aws-quotas-are-fixed-inputs)). So after a recipe change (the Dockerfile, the host components or
 the toolchain pins give it a new version), the owner starts a build by hand, only while eu-west-1's `heavy` group is
-at 0. The usual way is `apply-testbed.yml` with `action=build-image` and `region=eu-west-1`; by hand:
+at 0. The usual way is figentra/testbed's `apply-testbed.yml` with `action=build-image` and `region=eu-west-1`; by hand:
 
 ```bash
 aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names stackra-testbed-heavy --query 'AutoScalingGroups[0].DesiredCapacity' --profile academorix --region eu-west-1
@@ -179,7 +180,7 @@ Repeat with `stackra-testbed-light`, and in each region that runs boxes (`--regi
   one the Quality Gate uses over GitHub OIDC). AWS Auth sits beside its OIDC auth; no new identity is created.
 - At job start the agent gets a token that lives for the job's timeout. The container runs the command under
   `infisical run`. No value touches a disk, a log or a command line.
-- Which project paths a job may read is `secretGrants` in `@stackra/infra-testbed`, reviewed like code. The identity's
+- Which project paths a job may read is `secretGrants` in `@figentra/testbed`, reviewed like code. The identity's
   permissions in Infisical are the real limit.
 - `ci-box put-env` and `~/.ci-env` are retired. A missing token is fixed in Infisical, by the owner. To rotate the
   identity's auth, see [Token rotation](/runbooks/token-rotation).
@@ -215,10 +216,11 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
     The owner adds AWS Auth to the shared gate identity, bound to the testbed instance role.
   </Step>
   <Step title="Stand up beside">
-    The `apply-testbed.yml` workflow in eu-west-1 (Step 2 below): the image pipeline, the first AMI,
-    both groups 0 to 1. The old eu-west-1 boxes 1 and 2 must be **stopped** first: they hold the
-    region's whole on-demand and spot quota while running, and stopped instances count against
-    neither. `ci-box` skips them since 2026-11-02, so they stop themselves after 60 idle minutes.
+    figentra/testbed's `apply-testbed.yml` workflow in eu-west-1 (Step 2 below): the image pipeline,
+    the first AMI, both groups 0 to 1. The old eu-west-1 boxes 1 and 2 must be **stopped** first:
+    they hold the region's whole on-demand and spot quota while running, and stopped instances count
+    against neither. `ci-box` skips them since 2026-11-02, so they stop themselves after 60 idle
+    minutes.
   </Step>
   <Step title="Canary">
     The tester runs the same jobs on both fleets for a day (core verify, playground e2e, an
@@ -276,7 +278,7 @@ Step 2 needs two ids, neither of them secret: the identity's id (`INFISICAL_GATE
 
 ## Step 2 in detail: the first deploy
 
-Nothing is applied from the Mac. The testbed is applied by the manual workflow `apply-testbed.yml` (Actions, "Apply
+Nothing is applied from the Mac. The testbed is applied by figentra/testbed's manual workflow `apply-testbed.yml` (Actions, "Apply
 testbed", Run workflow), on `main` only, in the GitHub environment `testbed`, whose required reviewer (the owner)
 approves every run. It signs in to AWS by GitHub OIDC, so no AWS key is stored anywhere, and keeps Pulumi's state in the
 private, versioned bucket `stackra-pulumi-state-591473336656` (eu-west-1), which its first run creates. Pulumi's S3
