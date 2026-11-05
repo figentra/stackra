@@ -2,7 +2,7 @@
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
-#          .stackra/migrations exists), migration lint (Squawk), validate, boundaries, knip, secrets scan, agent sync),
+#          .stackra/migrations exists), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
 #          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
 #          build run for the members the change affects (turbo `--affected` against the base commit).
@@ -172,6 +172,13 @@ jobs:
           SPEC_GATE_REQUIRE_READY: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && '1' || '' }}
           STACKRA_BRANCH: ${{ github.head_ref }}
         run: pnpm validate
+
+      # ADR 0173 amendment 2026-11-04 (STA-2104): every environment name is declared and has an Infisical home. Names
+      # only, no login; a raw read of an undeclared name is a warning until stackra/no-raw-env is at error.
+      - name: Environment names (runway env check)
+        run: |
+          pnpm exec turbo run build --filter=@stackra/runway --output-logs=errors-only
+          pnpm runway env check
 
       - name: Check boundaries
         run: pnpm boundaries

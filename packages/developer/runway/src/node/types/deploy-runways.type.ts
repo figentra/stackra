@@ -14,6 +14,8 @@ type Workflows = Readonly<Record<string, string>>;
 export interface DeployRunways {
   /** The root `runway.yaml`. */
   readonly root: {
+    /** The repository's project key (`pay`); its runtime Infisical projects are `<project>-runtime(-prod)`. */
+    readonly project?: string;
     readonly environments?: Readonly<
       Record<
         string,

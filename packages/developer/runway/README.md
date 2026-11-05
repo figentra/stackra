@@ -457,6 +457,7 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), service `requires` | 0; 1 with each finding   |
 | `runway drift [env]`                         | Each Cloudflare Worker's live settings against what runway.yaml renders (read-only, `CLOUDFLARE_API_TOKEN_READ`)                            | 0; 1 when a Worker drifted |
 | `runway secrets sync <env> [--dry-run]`      | The member secrets of `env` from Infisical into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves                 | 0                        |
+| `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, workflow `secret-name:`) has an Infisical home; a raw read of an undeclared name warns. Names only, no login | 1 on an error |
 
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
 by a flag or `GITHUB_ACTIONS`; a deploy job needs `permissions: id-token: write`. A destination is one of
