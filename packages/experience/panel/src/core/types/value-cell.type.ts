@@ -19,7 +19,7 @@ export interface ValueCell {
   /** The column or entry kind (`money`, `count`, `value`). */
   readonly kind: string;
 
-  /** The value. */
+  /** The raw value as the record holds it, formatted by `kind`. */
   readonly value: unknown;
 
   /** The currency beside a money value. */
