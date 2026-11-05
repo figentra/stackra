@@ -80,6 +80,7 @@ describe("deployPlan", () => {
         "example",
         "health",
         "edge",
+        "env-sync",
         "registry",
         "static",
         "turbo-cache",
