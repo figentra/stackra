@@ -1,5 +1,29 @@
 # @stackra/infra-testbed
 
+## 0.10.0
+
+### Patch Changes
+
+- f5fa82c: `stackra testbed run` no longer uploads a worktree's `.cache` (its pnpm store, about 7.5 GB); the box agent's seed
+  refresh leaves it out too.
+- ff36aea: The job image's base, `ubuntu:24.04`, is pinned by its index digest.
+- ff36aea: Both testbed groups replace any box older than a day and publish their in-service count each minute, for the cost
+  alarm.
+- ff36aea: `awsTestbed` takes an optional `permissionsBoundary` and sets it on the box's and Image Builder's roles; the Pulumi
+  program reads it from the `permissionsBoundary` config key.
+- cfb684e: Every project's box job can read the registry: the plan grants `prod` `/ci/registry` of the CI project to every
+  project (the `*` key of `grants.json`, which the agent adds to each project's own paths), and the agent gives pnpm the
+  token under both names (`FIGENTRA_REGISTRY_TOKEN` first, `STACKRA_REGISTRY_TOKEN` second) with the repository's own
+  `.npmrc` as its auth file, since pnpm 12 ignores `${...}` in a project `.npmrc`. The agent is byte for byte
+  figentra/testbed's. Changes a hashed image input: the image is rebuilt.
+- 04d5dfd: testbed-agent: a job stopped while it cleans up (Ctrl-C, SIGTERM, `job stop`) still removes its workspace and drops
+  the box's scale-in protection, byte for byte as figentra/testbed#13. Seen live on 2026-11-05: a cancelled job left
+  both. A hashed image input: boxes get it with the next image build.
+- ff36aea: The testbed groups use only the default subnets in zones that offer the heavy instance type, so us-east-1e (none of
+  the three types) is left out.
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes
