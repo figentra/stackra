@@ -54,6 +54,9 @@ providers:
       observability:
         branches: [main]
         reviewers: [figentra-usr]
+      # deploy-env-sync.yml (STA-2133): the Infisical → runtime env sync; main only, no reviewer.
+      env-sync:
+        branches: [main]
   infisical:
     # Infisical Cloud EU. Core has no runtime project (ADR 0512): CI reads ci-build and ci-deploy through
     # the org variables, agents read agents through .infisical.yaml.
