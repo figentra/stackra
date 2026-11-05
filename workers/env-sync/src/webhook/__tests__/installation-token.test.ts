@@ -94,7 +94,8 @@ describe("installationToken", () => {
   });
 
   it.each([
-    ["no App id", env(PKCS1.privateKey, undefined)],
+    // An explicit object: `env(key, undefined)` would fall back to the default App id.
+    ["no App id", { ...env(), STACKRA_BOT_APP_ID: undefined }],
     ["an empty App id", env(PKCS1.privateKey, " ")],
     ["no key", { STACKRA_BOT_APP_ID: "123" }],
     ["a key that is not PEM", env("not a key")],
