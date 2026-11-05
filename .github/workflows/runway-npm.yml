@@ -125,7 +125,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the App
+          token: ${{ steps.bot.outputs.token }} # the checkout itself reads as the App
+          # changesets/action v2 pushes the version branch and tags through the GitHub API with its own `github-token`
+          # (push-with-git-cli is off), so no later step needs the checkout's git credentials (zizmor artipacked).
+          persist-credentials: false
           fetch-depth: 0 # changesets diffs against history and reads existing tags
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
