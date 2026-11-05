@@ -121,7 +121,7 @@
             },
             "accounts": {
               "type": "object",
-              "description": "Deprecated: the three accounts (shared, nonprod, prod) no longer match ADR 0524; figentra/infra resolves `ref:aws.accounts.<region>` from `environments.<env>.region`. `runway validate` warns for one release. Account role → account id or `ref:`.",
+              "description": "Deprecated: the three accounts (shared, nonprod, prod) no longer match ADR 0524; a product has one AWS account holding all its regions, which figentra/infra resolves as `ref:aws.account`. `runway validate` warns for one release. Account role → account id or `ref:`.",
               "additionalProperties": {
                 "$ref": "#/$defs/value"
               }
@@ -1760,7 +1760,7 @@
         },
         "region": {
           "enum": ["me", "eu", "ksa"],
-          "description": "The tenant region this environment lives in (OS 0001): `me` (AWS me-central-1), `eu` (AWS eu-central-1) or `ksa` (GCP me-central2). Required on staging and production of a product runway (`runway validate`). figentra/infra derives the account from it (`ref:aws.accounts.<region>`, ADR 0524). Distinct from `regions`, the deploy order across the root `regions` entries."
+          "description": "The tenant region this environment lives in (OS 0001): `me` (AWS me-central-1), `eu` (AWS eu-central-1) or `ksa` (GCP me-central2). Required on staging and production of a product runway (`runway validate`). figentra/infra places the environment in that region of the product's one account (`ref:aws.account`, ADR 0524). Distinct from `regions`, the deploy order across the root `regions` entries."
         },
         "regions": {
           "type": "array",

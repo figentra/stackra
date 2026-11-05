@@ -76,7 +76,7 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
     })
     .optional(),
   topology: TOPOLOGY_SCHEMA.optional(),
-  // The tenant region this environment lives in; figentra/infra derives its account (`ref:aws.accounts.<region>`).
+  // The tenant region this environment lives in, inside the product's one account (`ref:aws.account`, ADR 0524).
   region: z.enum(Enum.values(RegionKey) as [RegionKey, ...RegionKey[]]).optional(),
   regions: z
     .array(z.string())

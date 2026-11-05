@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `checkEnvironmentRegion(root)`, the region check of a product's parsed root runway: its staging and
- *          production each name `region` (`me`, `eu` or `ksa`), since figentra/infra derives the environment's
- *          account (`ref:aws.accounts.<region>`) and Infisical project from it (ADR 0524).
+ *          production each name `region` (`me`, `eu` or `ksa`), since figentra/infra places the environment in that
+ *          region of the product's one account (`ref:aws.account`) and picks its Infisical project from it (ADR 0524).
  * Boundary: pure; returns every failure instead of throwing, for `runway validate` to print. A runway without
  *           `product` (Stackra core) is not a product estate and is skipped; an environment it does not declare is too.
  * Runtime: isomorphic
@@ -31,6 +31,6 @@ export function checkEnvironmentRegion(root: RootRunway): RunwayIssue[] {
   ).map((environment) => ({
     path: `environments.${environment}.region`,
     message:
-      "Name the tenant region this environment lives in (me, eu or ksa); figentra/infra derives its account from it",
+      "Name the tenant region this environment lives in (me, eu or ksa); figentra/infra places it there",
   }));
 }

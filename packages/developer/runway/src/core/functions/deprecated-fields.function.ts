@@ -30,7 +30,7 @@ export function deprecatedFields(root: RootRunway): RunwayIssue[] {
     found.push({
       path: "providers.aws.accounts",
       message:
-        "Deprecated: figentra/infra resolves `ref:aws.accounts.<region>` from each environment's `region`; removed in the next release",
+        "Deprecated: a product has one AWS account (`ref:aws.account`), and each environment names its `region`; removed in the next release",
     });
   return found;
 }
