@@ -99,4 +99,35 @@ describe("productAccount", () => {
       entitlement: { principalRole: { principal: { identityCenter: { userId: "user-1" } } } },
     });
   });
+
+  it("adds a read-only reader and reaches the account through it in a preview", async () => {
+    const engine = await mockPulumi();
+    productAccount(
+      "pay-me",
+      {
+        ...ARGS,
+        reader: {
+          name: "InfraPreview",
+          path: "/acme/",
+          trustedArns: ["arn:aws:iam::111111111111:role/preview"],
+        },
+        readOnly: true,
+      },
+      {},
+    );
+    const reader = await engine.find("Role", "pay-me-reader");
+    expect(JSON.parse(reader.inputs["assumeRolePolicy"] as string).Statement[0].Principal).toEqual({
+      AWS: ["arn:aws:iam::111111111111:role/preview"],
+    });
+    expect((await engine.find("RolePolicyAttachment", "pay-me-reader")).inputs["policyArn"]).toBe(
+      "arn:aws:iam::aws:policy/ReadOnlyAccess",
+    );
+    const provider = await engine.find("pulumi:providers:aws", "pay-me");
+    expect(JSON.stringify(provider.inputs["assumeRoles"])).toContain("role/acme/InfraPreview");
+  });
+
+  it("refuses a read-only preview without a reader", async () => {
+    await mockPulumi();
+    expect(() => productAccount("pay-me", { ...ARGS, readOnly: true }, {})).toThrow(TypeError);
+  });
 });

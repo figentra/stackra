@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `productAccount(name, args, opts)`, account vending: a member account in its unit, its opt-in region turned
- *          on, a provider into it through the role Organizations made there, its monthly budget with email alerts, and
- *          the sign-in roles with their Account Access Manager entitlements.
+ *          on, a provider into it through the role Organizations made there, its monthly budget with email alerts, the
+ *          sign-in roles with their Account Access Manager entitlements, and optionally a read-only role that
+ *          pull-request previews assume instead of the access role.
  * Boundary: runs in the management account (`opts` carries its provider, in the Account Access application's region).
  *           The account is protected: removing it from the list never closes it. Its workloads, infra roles and
  *           Encore role come later from `awsBaseline` and Runway, not from here.
@@ -15,7 +16,11 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
 import { accessRoles } from "#node/functions/access-roles.function";
+import { policyOf } from "#node/functions/policy-of.function";
 import type { ProductAccountArgs } from "#node/types/product-account-args.type";
+
+/** AWS's managed read-only policy, for the preview reader. */
+const READ_ONLY_ACCESS = "arn:aws:iam::aws:policy/ReadOnlyAccess";
 
 /** IAM and Budgets are global; the member provider talks to them through us-east-1. */
 const GLOBAL_REGION = "us-east-1";
@@ -60,6 +65,13 @@ export function productAccount(
           opts,
         );
 
+  const { reader } = args;
+  if (args.readOnly === true && reader === undefined)
+    throw new TypeError(`${name}: readOnly needs a reader role`);
+  const through =
+    args.readOnly === true && reader !== undefined
+      ? `${reader.path}${reader.name}`
+      : `/${accessRoleName}`;
   const provider = new aws.Provider(
     name,
     {
@@ -67,7 +79,7 @@ export function productAccount(
       allowedAccountIds: [account.id],
       assumeRoles: [
         {
-          roleArn: pulumi.interpolate`arn:aws:iam::${account.id}:role/${accessRoleName}`,
+          roleArn: pulumi.interpolate`arn:aws:iam::${account.id}:role${through}`,
           sessionName: `vending-${name}`,
         },
       ],
@@ -101,6 +113,29 @@ export function productAccount(
       },
       inAccount,
     );
+
+  if (reader !== undefined) {
+    const role = new aws.iam.Role(
+      `${name}-reader`,
+      {
+        name: reader.name,
+        path: reader.path,
+        assumeRolePolicy: policyOf([
+          {
+            Effect: "Allow",
+            Principal: { AWS: [...reader.trustedArns] },
+            Action: "sts:AssumeRole",
+          },
+        ]),
+      },
+      inAccount,
+    );
+    new aws.iam.RolePolicyAttachment(
+      `${name}-reader`,
+      { role: role.name, policyArn: READ_ONLY_ACCESS },
+      inAccount,
+    );
+  }
 
   const roles = accessRoles(
     name,

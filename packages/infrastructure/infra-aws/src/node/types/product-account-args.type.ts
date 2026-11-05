@@ -35,4 +35,15 @@ export interface ProductAccountArgs {
   };
   /** The role Organizations creates in the account, which the management account assumes. */
   readonly accessRoleName?: string;
+  /**
+   * A read-only role a pull-request preview assumes instead, trusted by the given principals (the management
+   * account's preview role), so a preview never holds the access role.
+   */
+  readonly reader?: {
+    readonly name: string;
+    readonly path: string;
+    readonly trustedArns: readonly string[];
+  };
+  /** Reach the account through `reader` (a preview, which may not write). The first apply creates the reader. */
+  readonly readOnly?: boolean;
 }

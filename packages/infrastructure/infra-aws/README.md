@@ -72,6 +72,8 @@ holds the ids and the list of accounts (for Figentra, `figentra/infra`). Nothing
 - A vended account gets a provider that assumes the role Organizations made in it (`OrganizationAccountAccessRole`
   by default). Its budget and sign-in roles go through that provider; the entitlements go through the management
   account's provider, in the Account Access application's region.
+- `reader` adds a read-only role trusted by the management account's preview role; with `readOnly`, the account's
+  provider assumes it instead of the access role, so a pull-request preview never holds admin in a member account.
 - Each sign-in role trusts `account-access.amazonaws.com` with `sts:AssumeRole` and `sts:SetContext`. AWS's
   examples add `sts:TagSession`; add it when a sign-in needs session tags.
 - `regionLock` keeps the global services open (IAM, Organizations, STS, Route 53, CloudFront, WAF, billing,
