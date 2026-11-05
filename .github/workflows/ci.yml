@@ -143,6 +143,8 @@ jobs:
       # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file
       # is linted as the runner applies it, inside one. Excluded rules are house decisions: no IF NOT EXISTS (the
       # checksummed history never re-runs a file), varchar and char(3) columns, integer counters.
+      # 2.0.0 could not parse a schema-qualified GRANT/REVOKE (STA-2117). The runner sets lock and
+      # statement timeouts per session (ADR 0159), so the files need no `set lock_timeout`.
       - name: Migration lint (Squawk)
         run: |
           mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)
@@ -156,9 +158,10 @@ jobs:
             if head -n 1 "$file" | grep -qx -- '-- stackra:transactional=false'; then online+=("$file"); else transactional+=("$file"); fi
           done
           lint() {
-            mise exec github:sbdchd/squawk@2.0.0 -- squawk --pg-version=18.0 \
+            mise exec github:sbdchd/squawk@2.71.0 -- squawk --pg-version=18.0 \
               --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \
-              --exclude=prefer-bigint-over-int "$@"
+              --exclude=prefer-bigint-over-int \
+              --exclude=require-lock-timeout --exclude=require-statement-timeout "$@"
           }
           if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi
           if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi
