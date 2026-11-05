@@ -1,9 +1,23 @@
 ---
 title: "0512 — One Infisical layout: projects by reader, one agents vault, product runtimes"
-description: "Proposed · 2026-11-01"
+description: "Proposed, amended by 0524 · 2026-11-01"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0512, the one Infisical layout every Figentra repository follows: a project per reader for shared CI, deploy, registry and gate secrets, one `agents` vault for agents and developers, and a project per product holding only `/runtime/<member>`; names, environments, folders, bindings and the writers' project targeting. Boundary: decision text only; the values are the owner's, moved by hand. Runtime: documentation. Governing contract: ADR template; ADR 0009, 0173, 0257, 0371, 0484, 0493. */}
+
+<Note>
+  Amended 2026-11-05 (owner, STA-2115) by
+  [0524](/adr/0524-cloud-estate-aws-organization-gcp-projects-and-four-infisical-identities)
+  decision 4, to fit Infisical's Free plan (5 identities, no environment-scoped roles). The machine
+  identities are four CI trust levels: `figentra-ci-build` (the `figentra-ci-gate` row),
+  `figentra-ci-deploy`, `figentra-ci-deploy-production` (which absorbs `figentra-registry`) and
+  `figentra-flow` (which replaces `figentra-flow-box`). The `<product>` row's "a 0371 bootstrap
+  identity per environment and member" is dropped: synced runtimes read no Infisical, and a bootstrap
+  identity exists only for a process bound to the `infisical` driver, on-prem against the customer's
+  own Infisical. Proposed in 0524 D4.3: a product's `prod` moves to its own project per region,
+  `<product>-prod-<region>`, read only by the production identity, and `<product>` keeps `dev` and
+  `staging`. Folders (decision 3) are unchanged.
+</Note>
 
 <Note>
   Proposed 2026-11-01 (STA-1867), from the owner's audit of the Figentra Technologies org on
