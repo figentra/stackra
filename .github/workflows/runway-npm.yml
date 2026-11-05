@@ -11,9 +11,11 @@
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
 # Secrets: the GitHub App id and key the version PR is pushed with (a PR pushed with GITHUB_TOKEN would not trigger
-#          the caller's gate). A caller that passes neither gets them from Infisical `prod` `/ci/release`
-#          (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC with the org variables
-#          INFISICAL_CI_IDENTITY_ID and INFISICAL_DEPLOY_PROJECT_ID, so no repository holds them (STA-1747).
+#          the caller's gate). A caller that passes neither gets them by name from Infisical `ci-production`
+#          `prod` `/ci/release` (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC as the production
+#          identity (variables INFISICAL_PRODUCTION_IDENTITY_ID and INFISICAL_PRODUCTION_PROJECT_ID), so no repository
+#          holds them (STA-1747) and the dev/staging deploy identity never reads them (Infisical plan K2). That
+#          identity trusts only its allow-listed environments (`release`, not `release-pr`).
 #          No registry token exists: per package the job exchanges its
 #          GitHub ID token (audience `npm:<registry host>`) at the registry's OIDC endpoint for a publish token bound to
 #          that one name (ADR 0453 decision 6, the workflow-run form), masks it and passes it as NODE_AUTH_TOKEN;
@@ -82,17 +84,32 @@ jobs:
       HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}
 
     steps:
-      # STA-1747: a caller that passes no App secrets gets them from Infisical; the action masks and exports both.
+      # STA-1747: a caller that passes no App secrets gets them from Infisical by name; the action masks and exports
+      # each (one name per call).
+      - name: Bot App id (Infisical OIDC)
+        if: env.HAS_APP_SECRETS != 'true'
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/release
+          secret-name: STACKRA_BOT_APP_ID
+          export-type: env
+
       - name: Bot App key (Infisical OIDC)
         if: env.HAS_APP_SECRETS != 'true'
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
           domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci/release
+          secret-name: STACKRA_BOT_PRIVATE_KEY
           export-type: env
 
       # Scoped to what this job needs; revoked when the job ends.
