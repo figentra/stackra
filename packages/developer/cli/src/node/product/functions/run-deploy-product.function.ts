@@ -60,7 +60,10 @@ function pairs(value: string | undefined): [string, string][] {
  * The wrangler KV writer, run with the Cloudflare account the runway names: a literal id is set, a `ref:` id leaves
  * the job's `CLOUDFLARE_ACCOUNT_ID` in place, and an unresolved one refuses (STA-2124).
  */
-function edgeKv(namespace: string, accountId: string | number | undefined): WranglerEdgeKvDriver {
+function edgeKv(
+  namespace: string,
+  accountId: string | number | boolean | undefined,
+): WranglerEdgeKvDriver {
   const kv = new WranglerEdgeKvDriver(
     buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
   );

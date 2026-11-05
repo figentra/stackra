@@ -181,6 +181,8 @@ describe("publishProduct", () => {
       await expect(publishProduct(request())).rejects.toThrow(RunwayUnresolvedError);
       expect(calls).toEqual([]);
       expect(kv.calls).toEqual([]);
+      // A dry run uploads and writes nothing, so it previews without the job's variable.
+      await expect(publishProduct(request({ dryRun: true }))).resolves.toBeDefined();
     } finally {
       if (saved === undefined) Reflect.deleteProperty(process.env, "CLOUDFLARE_ACCOUNT_ID");
       else process.env["CLOUDFLARE_ACCOUNT_ID"] = saved;

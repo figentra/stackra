@@ -177,7 +177,8 @@ describe("runDeployProduct", () => {
     await run(values).code;
     const options = vi.mocked(deployProduct).mock.calls[0]?.[0];
     expect(options).toHaveProperty("kv");
-    expect(options).not.toHaveProperty("kv.env");
+    // The driver declares `env` as a field, so it exists as undefined: no override reaches wrangler.
+    expect((options?.kv as { env?: unknown } | undefined)?.env).toBeUndefined();
 
     vi.mocked(deployProduct).mockClear();
     Reflect.deleteProperty(process.env, "CLOUDFLARE_ACCOUNT_ID");

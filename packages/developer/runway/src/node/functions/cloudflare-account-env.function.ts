@@ -25,7 +25,7 @@ const VARIABLE = "CLOUDFLARE_ACCOUNT_ID";
  * cloudflareAccountEnv("ref:cloudflare.accountId", { CLOUDFLARE_ACCOUNT_ID: "d861f9ac" }); // undefined
  */
 export function cloudflareAccountEnv(
-  accountId: string | number | undefined,
+  accountId: string | number | boolean | undefined,
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): Readonly<Record<string, string>> | undefined {
   if (accountId === undefined) return undefined;

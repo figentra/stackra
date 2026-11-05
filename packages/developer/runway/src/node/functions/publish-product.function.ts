@@ -77,7 +77,10 @@ export async function publishProduct(
 
   const run = request.run ?? runProgram;
   // A `ref:` id is the job's to resolve; an unresolved one refuses here, before the first upload (STA-2124).
-  const env = cloudflareAccountEnv(root.providers?.cloudflare?.accountId);
+  const env =
+    request.dryRun === true
+      ? undefined
+      : cloudflareAccountEnv(root.providers?.cloudflare?.accountId);
   const uploaded: string[] = [];
   for (const bundle of bundles)
     uploaded.push(...(await uploadBundle(bundle, product, request.assets.bucket, run, env)));

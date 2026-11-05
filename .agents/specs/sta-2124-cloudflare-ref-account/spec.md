@@ -150,6 +150,7 @@ catalog; RUNWAY verifies Pay's dev deploy.
 ## Amendments
 
 - A-001 · 2026-11-05 · leader's revision before approval: SC-002 reads the KV rows, not the page; AC-003's upload half split out as AC-005 (spec gate: one EARS clause each)
+- A-002 · 2026-11-05 · review (RUNWAY note, Flow review finding 3): FR-003 does not apply to a dry run, which uploads and writes nothing; `deployProduct` passes `dryRun` to `publishProduct`, which then skips the check
 
 ## Status history
 
