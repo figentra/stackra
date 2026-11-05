@@ -32,6 +32,9 @@ In order, the Worker:
    repository alone with `actions: write`. GitHub's 204 answers 202; anything else answers 502 with GitHub's status
    (`app_not_installed`, `token_refused` or `dispatch_failed`).
 
+`GET /readyz` answers 200 `{ "ready": true }` when the three secrets and `ENV_SYNC_ROUTES` are there and the App key
+reads as a PEM private key, and 503 `not_ready` naming the ones that are not (names only); the deploy smoke-checks it.
+
 Errors use `{ "error": { "code", "message" } }`. 503 means a setting is missing (the App id, its key, or the routes). No
 header, token or body is logged.
 
@@ -44,7 +47,7 @@ header, token or body is logged.
 | `STACKRA_BOT_APP_ID` (secret)       | none    | the stackra-bot GitHub App's id; unset is 503                                     |
 | `STACKRA_BOT_PRIVATE_KEY` (secret)  | none    | the App's private key (PEM, PKCS#1 or PKCS#8); unset or unreadable is 503        |
 
-`INFISICAL_WEBHOOK_SECRET` lives in Infisical `ci-deploy` (`prod`, a folder such as `/ci/env-sync`). The App id and
+`INFISICAL_WEBHOOK_SECRET` lives in Infisical `ci-production` `prod` `/ci/env-sync`. The App id and
 key are the stackra-bot App's one stored copy in `ci-production` `prod` `/ci/release` (SECRETS Q17, STA-2133); the
 deploy job reads them by name with the production identity and sets them as Worker secret bindings, a synced runtime
 copy (ADR 0371). The deploy workflow names all three with `secret-name:`, as `deploy-registry.yml` does with
@@ -56,7 +59,7 @@ copy (ADR 0371). The deploy workflow names all three with `secret-name:`, as `de
 | Path                     | Holds                                                                                 |
 | ------------------------ | ------------------------------------------------------------------------------------- |
 | `wrangler.jsonc`         | Worker name, entry and the routes setting (code facts only, ADR 0519)                 |
-| `runway.yaml`            | the member's runway (no root target yet)                                              |
+| `runway.yaml`            | the member's runway (the root target is `targets.cloudflare-workers.members.env-sync`) |
 | `src/main.ts`            | the Worker entry                                                                      |
 | `src/webhook/`           | `handleEnvSyncRequest`, `installationToken`, `pkcs8Of`, `signatureValid`, …          |
 | `src/constants/`         | the environment map, the replay window, the value keys and the repository shape       |
@@ -72,26 +75,25 @@ copy (ADR 0371). The deploy workflow names all three with `secret-name:`, as `de
 | `pnpm --filter @figentra/worker-env-sync test`  | the unit tests                            |
 | `typecheck` / `lint` / `format`                 | the usual checks                          |
 
-## Deploy (not wired yet)
+## Deploy
 
-The Worker is not in the root `runway.yaml` (`targets.cloudflare-workers` and `environments.production.destinations`)
-and has no caller workflow: where and when it ships is the owner's deploy decision. Once it is added there, the
-`cloudflare-workers` provider renders its account, compatibility date, `workers_dev: false`, observability and any
-route into `wrangler.jsonc` and puts the three secrets. Never run `wrangler deploy` or `wrangler secret` by hand.
+`deploy-env-sync.yml` ships it on a main push that touches the member, after the owner's production approval, through
+`runway-cloudflare-workers.yml` (the root runway's `targets.cloudflare-workers.members.env-sync`, preset `api`). The
+job runs in the `env-sync` GitHub environment as the production identity and reads, from `ci-production` `prod`:
+`CLOUDFLARE_API_TOKEN` (`/ci`), `INFISICAL_WEBHOOK_SECRET` (`/ci/env-sync`), and `STACKRA_BOT_APP_ID` and
+`STACKRA_BOT_PRIVATE_KEY` (`/ci/release`, the `bot-app` read). Runway puts the three as Worker secrets, attaches
+`env-sync.stackra.figentra.com`, and smoke-checks `/readyz`, which stays 503 until every secret binds. Without the
+production identity id the job builds and deploys nothing. Never run `wrangler deploy` or `wrangler secret` by hand.
 
-## Owner runbook
+## Runbook
 
-1. Add the Worker to the root `runway.yaml` (`targets.cloudflare-workers.members.env-sync`, a caller workflow, and a
-   route or custom domain).
-2. In Infisical `ci-deploy` `prod` (a folder such as `/ci/env-sync`), set `INFISICAL_WEBHOOK_SECRET` (a random
-   value), and add a `deploy-env-sync.yml` caller that reads it, plus `STACKRA_BOT_APP_ID` and
-   `STACKRA_BOT_PRIVATE_KEY` from `ci-production` `prod` `/ci/release` with the production identity, and puts all three.
-   The production identity must trust the caller's GitHub environment (SECRETS runbook step 2). The reusable
-   `runway-cloudflare-workers.yml` reads one `secret-name` from one project today, so the caller needs a second read.
-   The stackra-bot App must be installed on every routed repository with Actions write.
+1. Infisical (SECRETS, runbook step 2 and 3): the production identity trusts the `env-sync` environment and
+   `deploy-env-sync.yml`; `ci-production` `prod` has `/ci/env-sync` with `INFISICAL_WEBHOOK_SECRET` (a random value).
+2. GitHub (INFRA-CODE): the `env-sync` environment, main only; the stackra-bot App installed with Actions write on
+   every routed repository.
 3. Set `ENV_SYNC_ROUTES` to each runtime project id and its repository.
-4. In each Infisical runtime project, add a webhook to the Worker's `/infisical` URL with the same secret and the event
-   **Secret Modified** only, scoped to the runtime folders (`/runtime`).
+4. In each Infisical runtime project, add a webhook to `https://env-sync.stackra.figentra.com/infisical` with the same
+   secret and the event **Secret Modified** only, scoped to the runtime folders (`/runtime`).
 5. Each routed repository carries `.github/workflows/env-sync.yml` (`workflow_dispatch` with `environment` and `path`)
    that calls `figentra/stackra/.github/workflows/runway-env-sync.yml`, and schedules it as the fallback.
 

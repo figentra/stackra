@@ -5,8 +5,8 @@
 //        STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY (ci-production /ci/release) are Worker secrets set by its deploy
 //        workflow (`secret-name:`, as deploy-registry.yml does), never by hand (STA-2133).
 // Code facts only (ADR 0519 decision 1, `pnpm validate` check wrangler-operational-keys): the account, compatibility
-// date, workers_dev (false), observability and any route are runway.yaml's, rendered on deploy. It has no route or
-// custom domain yet; that and its root runway `targets` entry are the owner's step.
+// date, workers_dev (false) and observability are runway.yaml's (`targets.cloudflare-workers.members.env-sync`),
+// rendered on deploy by deploy-env-sync.yml. The route is its custom domain, as static and registry do.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "stackra-env-sync",
@@ -16,4 +16,5 @@
   "vars": {
     "ENV_SYNC_ROUTES": "{}",
   },
+  "routes": [{ "pattern": "env-sync.stackra.figentra.com", "custom_domain": true }],
 }

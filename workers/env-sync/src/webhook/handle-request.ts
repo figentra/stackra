@@ -3,7 +3,8 @@
  * Purpose: `handleEnvSyncRequest(request, env, fetcher)`, Infisical's webhook: `POST /infisical` with a signed JSON
  *          body naming the changed project, environment and path dispatches the env-sync workflow
  *          (`.github/workflows/env-sync.yml` on `main`) of the repository `ENV_SYNC_ROUTES` maps the project to, with
- *          the Runway environment and the path as inputs.
+ *          the Runway environment and the path as inputs. `GET /readyz` answers 200 when every setting is there and
+ *          503 naming the unset or unreadable ones (names only), for the deploy's smoke check.
  * Boundary: fails closed: a missing webhook secret or a bad, missing or stale signature answers 401 before the body is
  *           parsed; a payload holding a value key (`value`, `secretValue`, `secrets`) answers 400, since the webhook
  *           carries metadata only. An event other than `secrets.modified` answers 200 and dispatches nothing. An
@@ -18,10 +19,14 @@ import type { EnvSyncEnv } from "#src/interfaces";
 
 import { carriesValue } from "./carries-value";
 import { installationToken } from "./installation-token";
+import { missingSettings } from "./missing-settings";
 import { signatureValid } from "./signature-valid";
 
-/** The one route. */
+/** The webhook route. */
 const PATH = "/infisical";
+
+/** The readiness route the deploy's smoke check reads: 200 when every setting is there, 503 naming the missing ones. */
+const READY_PATH = "/readyz";
 
 /** The one Infisical event that dispatches a sync. */
 const EVENT = "secrets.modified";
@@ -74,7 +79,17 @@ export async function handleEnvSyncRequest(
   env: EnvSyncEnv,
   fetcher: typeof fetch = globalFetch,
 ): Promise<Response> {
-  if (new URL(request.url).pathname !== PATH) return fail(404, "not_found", "Not found");
+  const pathname = new URL(request.url).pathname;
+  if (pathname === READY_PATH) {
+    if (request.method !== "GET")
+      return new Response(null, { status: 405, headers: { allow: "GET" } });
+    const missing = missingSettings(env);
+    if (readRoutes(env.ENV_SYNC_ROUTES) === undefined) missing.push("ENV_SYNC_ROUTES");
+    return missing.length === 0
+      ? json(200, { ready: true })
+      : fail(503, "not_ready", `Unset or unreadable: ${missing.join(", ")}`);
+  }
+  if (pathname !== PATH) return fail(404, "not_found", "Not found");
   if (request.method !== "POST")
     return new Response(null, { status: 405, headers: { allow: "POST" } });
 
