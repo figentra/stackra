@@ -1,5 +1,26 @@
 # @stackra/database
 
+## 0.10.0
+
+### Patch Changes
+
+- aea9b1d: `registerEntities` keeps one schema per schema-qualified table. A service that hosts a package's models (gen's
+  `#stackra/entities/hosted/…`) and also loads that package's own entity list (`registerEntities(TENANCY_ENTITIES)` in
+  its `node` entry) registered the table twice, and MikroORM refused to start ("Duplicate table names are not allowed").
+  Every test of pay's two services failed on `tenancy.approval_bindings`, and a server would not boot (STA-2116).
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/cache@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/testing@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

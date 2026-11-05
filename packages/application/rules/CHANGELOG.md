@@ -1,5 +1,27 @@
 # @stackra/rules
 
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/market-packs@0.10.0
+  - @stackra/ai@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/content@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes
