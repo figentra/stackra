@@ -67,7 +67,7 @@ jobs:
       - name: Dependency scan (OSV-Scanner)
         run: osv-scanner scan source --lockfile=pnpm-lock.yaml
 
-      # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
+      # STA-1393: Turborepo remote cache (turbo.figentra.com, ADR 0026 as amended). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo. Skipped when the variable is unset, and on fork pull requests
       # (no OIDC token there): turbo then has no TURBO_TOKEN and uses its local cache only, so no `--cache` flag is
       # needed to keep a fork from writing to the remote cache.

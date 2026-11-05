@@ -1,6 +1,6 @@
 ---
 title: "Monitoring our Workers and the registry"
-description: "How npm.stackra.figentra.com, static.stackra.figentra.com and turbo.stackra.figentra.com are watched: Workers Logs, Better Stack uptime monitors and the status page, what the owner sets up first, and how the stack is applied from CI."
+description: "How npm.stackra.figentra.com, static.figentra.com and turbo.figentra.com are watched: Workers Logs, Better Stack uptime monitors and the status page, what the owner sets up first, and how the stack is applied from CI."
 icon: "activity"
 ---
 
@@ -16,11 +16,15 @@ other Workers: logs from inside, uptime monitors from outside.
 
 ## What watches what
 
-| Host                          | Workers Logs (sampling) | Uptime monitor (Better Stack)                                                    |
-| ----------------------------- | ----------------------- | -------------------------------------------------------------------------------- |
-| `npm.stackra.figentra.com`    | on, every request (1.0) | `GET /-/ping` every 30 seconds, up on 2xx                                        |
-| `static.stackra.figentra.com` | on, one in ten (0.1)    | `GET /` every 60 seconds, up on 2xx                                              |
-| `turbo.stackra.figentra.com`  | on, one in ten (0.1)    | `GET /v8/artifacts/status` every 60 seconds, up on 401 (the route needs a token) |
+| Host                       | Workers Logs (sampling) | Uptime monitor (Better Stack)                                                    |
+| -------------------------- | ----------------------- | -------------------------------------------------------------------------------- |
+| `npm.stackra.figentra.com` | on, every request (1.0) | `GET /-/ping` every 30 seconds, up on 2xx                                        |
+| `static.figentra.com`      | on, one in ten (0.1)    | `GET /` every 60 seconds, up on 2xx                                              |
+| `turbo.figentra.com`       | on, one in ten (0.1)    | `GET /v8/artifacts/status` every 60 seconds, up on 401 (the route needs a token) |
+
+Since 2026-11-05 the static and turbo-cache Workers are `figentra-static` and `figentra-turbo-cache` in
+figentra/figentra (ADR 0284 and ADR 0026 as amended). Their old hosts, `static.stackra.figentra.com` and
+`turbo.stackra.figentra.com`, are aliases on the same Workers, so one monitor per Worker covers both.
 
 - **Workers Logs** are the `observability` block of each `workers/*/wrangler.jsonc`. Read them in the Cloudflare
   dashboard (Workers, the Worker, Logs). Lines above the plan's included volume are billed, so lower

@@ -1,5 +1,10 @@
 # @figentra/worker-static
 
+> **Moved (2026-11-05, ADR 0284 as amended).** This Worker is replaced by `figentra-static`, whose member lives in
+> figentra/figentra `workers/static`, moved there with its history. This copy stays only as the rollback path: its
+> deploy runs by hand, and any deploy takes the old host back from `figentra-static`. It is removed when the owner
+> deletes the old Worker (cloudflare-hosts runbook in stackra-notes). Make changes in figentra/figentra.
+
 Stackra's hosted static files: one Cloudflare Worker (`stackra-static`) with static assets only and no Worker script
 ([ADR 0284](../../apps/docs/src/docs/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker.mdx)). It serves
 `https://static.stackra.figentra.com/`. Each kind of file has its own first path segment: `/schemas/` today, more
