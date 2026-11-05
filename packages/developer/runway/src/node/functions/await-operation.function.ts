@@ -41,10 +41,10 @@ export async function awaitOperation(
     });
     if (body["done"] === true)
       return {
-        ...(typeof body["response"] === "object"
+        ...(typeof body["response"] === "object" && body["response"] !== null
           ? { response: body["response"] as Record<string, unknown> }
           : {}),
-        ...(typeof body["error"] === "object"
+        ...(typeof body["error"] === "object" && body["error"] !== null
           ? { error: body["error"] as Record<string, unknown> }
           : {}),
       };

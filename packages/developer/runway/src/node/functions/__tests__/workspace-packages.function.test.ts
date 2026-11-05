@@ -13,6 +13,7 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { workspacePackages } from "#node/functions/workspace-packages.function";
 
 let repository: string;
@@ -58,6 +59,16 @@ describe("workspacePackages", () => {
       version: "0.0.0",
       exports: {},
     });
+  });
+
+  it("names the file when a package.json is not valid JSON", () => {
+    mkdirSync(join(repository, "packages/broken"), { recursive: true });
+    writeFileSync(join(repository, "packages/broken/package.json"), "{ name: ");
+
+    expect(() => workspacePackages(repository)).toThrow(RunwayUnresolvedError);
+    expect(() => workspacePackages(repository)).toThrow(
+      `${join(repository, "packages/broken/package.json")} is not valid JSON`,
+    );
   });
 
   it("finds none without a packages folder", () => {

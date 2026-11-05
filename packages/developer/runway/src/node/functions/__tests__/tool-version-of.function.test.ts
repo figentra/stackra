@@ -36,6 +36,14 @@ describe("toolVersionOf", () => {
     expect(toolVersionOf(repository, "gitleaks")).toBeUndefined();
   });
 
+  it("matches a tool name literally, regex characters included", () => {
+    writeFileSync(join(repository, "mise.toml"), '[tools]\nnodexjs = "1.0.0"\n"c++" = "2.0.0"\n');
+
+    expect(toolVersionOf(repository, "node.js")).toBeUndefined();
+    expect(() => toolVersionOf(repository, "c++")).not.toThrow();
+    expect(toolVersionOf(repository, "(")).toBeUndefined();
+  });
+
   it("answers undefined without a mise.toml", () => {
     expect(toolVersionOf(repository, "node")).toBeUndefined();
   });

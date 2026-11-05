@@ -19,6 +19,7 @@ import { join } from "node:path";
 export function toolVersionOf(repository: string, tool: string): string | undefined {
   const file = join(repository, "mise.toml");
   if (!existsSync(file)) return undefined;
-  const pattern = new RegExp(`^${tool}\\s*=\\s*"([^"]+)"`, "m");
+  const name = tool.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`^${name}\\s*=\\s*"([^"]+)"`, "m");
   return pattern.exec(readFileSync(file, "utf8"))?.[1];
 }

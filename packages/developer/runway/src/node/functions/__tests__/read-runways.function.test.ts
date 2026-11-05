@@ -13,6 +13,7 @@ import { dirname, join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { readRunways } from "#node/functions/read-runways.function";
 
 let repository: string;
@@ -47,9 +48,10 @@ describe("readRunways", () => {
     ]);
   });
 
-  it("fails without a root runway", () => {
+  it("fails naming the root runway when there is none", () => {
     put("services/api/runway.yaml", "secrets: []\n");
 
-    expect(() => readRunways(repository)).toThrow(/ENOENT/);
+    expect(() => readRunways(repository)).toThrow(RunwayUnresolvedError);
+    expect(() => readRunways(repository)).toThrow(`No runway.yaml in ${repository}`);
   });
 });
