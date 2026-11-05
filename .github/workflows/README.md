@@ -21,7 +21,7 @@
   workflow is read-only or empty, and a job asks only for what it needs.
 - No token is a repository secret: CI logs in to Infisical by GitHub OIDC for one step and reads `/ci` only
   ([ADR 0009](../../apps/docs/src/docs/adr/0009-secrets-two-mechanisms.mdx)). Build and PR jobs read `ci-build`
-  (`INFISICAL_GATE_*`, `INFISICAL_TURBO_*`); deploy jobs read `ci-deploy` (`INFISICAL_CI_IDENTITY_ID`,
+  (`INFISICAL_GATE_*`, the build identity; the TURBO pair held the same ids and is retired); deploy jobs read `ci-deploy` (`INFISICAL_CI_IDENTITY_ID`,
   `INFISICAL_DEPLOY_PROJECT_ID`) in a protected environment; no project id is written in a workflow
   ([ADR 0512](../../apps/docs/src/docs/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes.mdx)).
 - `stackra validate --repository` (rule `workflow-triggers`, STA-256) refuses a paid job (a macOS, Windows or larger
@@ -32,7 +32,7 @@
 - Third-party actions are pinned to a commit SHA, with the version in a comment.
 - The toolchain comes from `mise.toml`, so CI runs the same versions as a contributor.
 - Turborepo remote cache (STA-1393): every job that runs turbo first logs in to Infisical by OIDC with the org variable
-  `INFISICAL_TURBO_IDENTITY_ID`, from the project in `INFISICAL_TURBO_PROJECT_ID`, and exports `TURBO_API`, `TURBO_TOKEN`, `TURBO_TEAM` and
+  `INFISICAL_GATE_IDENTITY_ID`, from the project in `INFISICAL_GATE_PROJECT_ID`, and exports `TURBO_API`, `TURBO_TOKEN`, `TURBO_TEAM` and
   `TURBO_REMOTE_CACHE_SIGNATURE_KEY` from `/ci/turbo`. Either variable unset, or a fork pull request: the step is skipped and
   turbo uses its local cache only.
 

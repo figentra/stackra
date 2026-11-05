@@ -21,9 +21,10 @@
 # Runtime: GitHub Actions
 # Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
 # Owner: release-operations
-# Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
-#          decision A1), passed to the provider until the owner has stored them in Infisical `/ci/release`; then the
-#          `secrets:` block goes and the provider reads them over OIDC (STA-1747). Publishing uses GitHub OIDC exchanged at the registry; no token.
+# Secrets: none passed. The provider reads STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (the stackra-bot app, owner
+#          decision A1) by name from Infisical `ci-production` `/ci/release` over OIDC as the production identity, which
+#          trusts `release` and `release-pr` on main (STA-1747; catalog P03, leader answer A of 2026-11-06). Publishing
+#          uses GitHub OIDC exchanged at the registry; no token.
 name: Release
 
 on:
@@ -118,9 +119,6 @@ jobs:
       dry-run: ${{ inputs.dry_run == true }}
       # The one place the registry is set: runway.yaml `providers.npm.registry` (ADR 0453).
       registry: https://npm.stackra.figentra.com/
-    secrets:
-      app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
-      app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
 
   # The prerelease path (stackra-212). The same registry exchange as runway-npm.yml's registry script, per package:
   # this file, refs/heads/main and the `release` environment are what the publisher row matches, so the job runs here
@@ -187,13 +185,13 @@ jobs:
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
       - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
+        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
           domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci/turbo
           export-type: env
