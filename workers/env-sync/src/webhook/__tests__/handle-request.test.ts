@@ -9,20 +9,29 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0173 (amendment of 2026-11-04, decision 6).
  */
-import { createHmac } from "node:crypto";
+import { createHmac, generateKeyPairSync } from "node:crypto";
 
 import type { EnvSyncEnv } from "#src/interfaces";
 import { handleEnvSyncRequest } from "#src/webhook/handle-request";
 
 const URL_BASE = "https://env-sync.example.test";
 const SECRET = "webhook-key";
+const APP_KEY = generateKeyPairSync("rsa", {
+  modulusLength: 2048,
+  privateKeyEncoding: { type: "pkcs1", format: "pem" },
+  publicKeyEncoding: { type: "spki", format: "pem" },
+}).privateKey;
 
 let env: EnvSyncEnv;
+/** The dispatch calls only; the App's installation lookup and token mint answer as GitHub does. */
 let calls: { url: string; init: RequestInit }[];
 let status: number;
 
 const fetcher: typeof fetch = async (input, init) => {
-  calls.push({ url: String(input), init: init ?? {} });
+  const url = String(input);
+  if (url.endsWith("/installation")) return Response.json({ id: 42 });
+  if (url.endsWith("/access_tokens")) return Response.json({ token: "ghs-token" }, { status: 201 });
+  calls.push({ url, init: init ?? {} });
   return new Response(null, { status });
 };
 
@@ -31,7 +40,8 @@ beforeEach(() => {
   status = 204;
   env = {
     INFISICAL_WEBHOOK_SECRET: SECRET,
-    ENV_SYNC_GITHUB_TOKEN: "gh-token",
+    STACKRA_BOT_APP_ID: "123",
+    STACKRA_BOT_PRIVATE_KEY: APP_KEY,
     ENV_SYNC_ROUTES: JSON.stringify({ "proj-1": "figentra/pay" }),
   };
 });
@@ -82,7 +92,7 @@ describe("handleEnvSyncRequest", () => {
       inputs: { environment: "dev", path: "/runtime/api" },
     });
     const headers = new Headers(call?.init.headers);
-    expect(headers.get("authorization")).toBe("Bearer gh-token");
+    expect(headers.get("authorization")).toBe("Bearer ghs-token");
     expect(headers.get("accept")).toBe("application/vnd.github+json");
     expect(headers.get("user-agent")).toBe("stackra-env-sync");
   });
@@ -167,6 +177,14 @@ describe("handleEnvSyncRequest", () => {
   it("answers 503 when the routes are not a JSON object of repositories", async () => {
     env = { ...env, ENV_SYNC_ROUTES: JSON.stringify({ "proj-1": "../../evil" }) };
     expect((await post(payload())).status).toBe(503);
+  });
+
+  it("answers 503 and dispatches nothing when the App's key is not configured", async () => {
+    env = { ...env, STACKRA_BOT_PRIVATE_KEY: undefined };
+    const response = await post(payload());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ error: { code: "sync_misconfigured" } });
+    expect(calls).toHaveLength(0);
   });
 
   it("answers 502 when GitHub refuses the dispatch", async () => {
