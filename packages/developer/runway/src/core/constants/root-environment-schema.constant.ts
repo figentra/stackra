@@ -22,6 +22,7 @@ import { KEY_SCHEMA } from "#core/constants/key-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { TOPOLOGY_SCHEMA } from "#core/constants/topology-schema.constant";
 import { DeployKind } from "#core/enums/deploy-kind.enum";
+import { RegionKey } from "#core/enums/region-key.enum";
 
 /** One root environment. */
 export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
@@ -75,6 +76,8 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
     })
     .optional(),
   topology: TOPOLOGY_SCHEMA.optional(),
+  // The tenant region this environment lives in; figentra/infra derives its account (`ref:aws.accounts.<region>`).
+  region: z.enum(Enum.values(RegionKey) as [RegionKey, ...RegionKey[]]).optional(),
   regions: z
     .array(z.string())
     .refine((keys) => new Set(keys).size === keys.length, "A region is listed more than once")

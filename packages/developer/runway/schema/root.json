@@ -116,12 +116,12 @@
           "properties": {
             "region": {
               "type": "string",
-              "description": "The one region (ADR 0186). A tenant's region is immutable (ADR 0210 d4).",
+              "description": "Deprecated: use `environments.<env>.region` (ADR 0524); `runway validate` warns for one release. The one region (ADR 0186).",
               "examples": ["me-central-1"]
             },
             "accounts": {
               "type": "object",
-              "description": "Account role → account id or `ref:` (shared, nonprod, prod).",
+              "description": "Deprecated: the three accounts (shared, nonprod, prod) no longer match ADR 0524; figentra/infra resolves `ref:aws.accounts.<region>` from `environments.<env>.region`. `runway validate` warns for one release. Account role → account id or `ref:`.",
               "additionalProperties": {
                 "$ref": "#/$defs/value"
               }
@@ -136,7 +136,15 @@
             },
             "budgets": {
               "type": "object",
-              "description": "Cost alerts: percentage thresholds and the point non-production stops."
+              "description": "Cost alerts: the monthly cap, percentage thresholds and the point non-production stops.",
+              "properties": {
+                "monthlyUsd": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "default": 300,
+                  "description": "The monthly budget in US dollars figentra/infra sets per account; the thresholds are percentages of it."
+                }
+              }
             },
             "requiredTags": {
               "type": "array",
@@ -184,7 +192,7 @@
         },
         "cloudflare": {
           "type": "object",
-          "description": "Cloudflare account and DNS zones (ADR 0175).",
+          "description": "Cloudflare account, DNS zones (ADR 0175) and the non-Worker DNS records figentra/infra writes.",
           "properties": {
             "accountId": {
               "$ref": "#/$defs/value",
@@ -222,6 +230,41 @@
                     }
                   }
                 ]
+              }
+            },
+            "records": {
+              "type": "array",
+              "description": "Non-Worker DNS records (verification TXT, MX, CAA). Worker hosts stay in wrangler and Runway (ADR 0519). Each `name` is a full host name under a `zones` entry.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "type", "content"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^(?:[a-z0-9_*-]+\\.)+[a-z]{2,}$",
+                    "description": "The full host name, lower case (`_dmarc.pay.figentra.com`)."
+                  },
+                  "type": {
+                    "enum": ["A", "AAAA", "CNAME", "TXT", "MX", "CAA", "NS", "SRV"],
+                    "description": "The record type."
+                  },
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The record's value, as Cloudflare stores it."
+                  },
+                  "proxied": {
+                    "type": "boolean",
+                    "description": "Through Cloudflare's proxy; only A, AAAA and CNAME."
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "Required for MX."
+                  }
+                }
               }
             }
           }
@@ -1715,6 +1758,10 @@
         "topology": {
           "$ref": "#/$defs/topology"
         },
+        "region": {
+          "enum": ["me", "eu", "ksa"],
+          "description": "The tenant region this environment lives in (OS 0001): `me` (AWS me-central-1), `eu` (AWS eu-central-1) or `ksa` (GCP me-central2). Required on staging and production of a product runway (`runway validate`). figentra/infra derives the account from it (`ref:aws.accounts.<region>`, ADR 0524). Distinct from `regions`, the deploy order across the root `regions` entries."
+        },
         "regions": {
           "type": "array",
           "description": "The regions this environment deploys to, by key of the root `regions`, in release order (a release rolls region by region).",
@@ -2265,7 +2312,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Z0-9_]*$"
           },
-          "examples": [{ "ZITADEL_DATABASE_POSTGRES_DSN": "MAIN_DB_URL" }]
+          "examples": [
+            {
+              "ZITADEL_DATABASE_POSTGRES_DSN": "MAIN_DB_URL"
+            }
+          ]
         },
         "size": {
           "type": "object",
