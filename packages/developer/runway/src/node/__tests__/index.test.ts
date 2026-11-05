@@ -79,6 +79,7 @@ describe("@stackra/runway/node", () => {
       "capabilityConfig",
       "checkOpsReview",
       "checkShellCompatibility",
+      "cloudflareAccountEnv",
       "checkoutLine",
       "committedBrandOutputs",
       "definesFor",
