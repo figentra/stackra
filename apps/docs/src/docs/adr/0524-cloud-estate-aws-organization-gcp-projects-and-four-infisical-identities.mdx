@@ -7,8 +7,8 @@ description: "Accepted (D4.3 proposed) · 2026-11-05"
 
 <Note>
   Accepted 2026-11-05 (STA-2115), recording the owner's decisions of that date. Decision 4.3 is the
-  agent's reconciliation of the owner's "projects per 0512" with the Free plan and stays **Proposed**
-  until the owner confirms it. It amends
+  agent's reconciliation of the owner's "projects per 0512" with the Free plan and stays
+  **Proposed** until the owner confirms it. It amends
   [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) (open questions 1
   for KSA and 2, answered),
   [0512](/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes) (identities,
@@ -155,14 +155,14 @@ This answers 0354 open question 2 and OS 0001's layout question.
 
 ## Rejected alternatives
 
-| Option                                                                 | Why not                                                                                                                       |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Create the Organization from 591473336656                              | SCPs never bind the management account, so the account with the most workloads and CI roles would have no guardrail          |
-| One GCP project per region with every product in it                    | Breaks the per-product blast radius and budget that the AWS side keeps; one Encore grant would reach every product            |
-| Keep 0512's single `<product>` project with `prod`                     | On the Free plan the staging deploy identity would read production values                                                      |
-| A bootstrap identity per environment and member (0512 as written)      | Exceeds the 5-identity limit at the first product, and synced runtimes need none                                                |
-| Infisical Pro now                                                      | Not needed for the pilot; the triggers in D4.4 say when                                                                        |
-| An Identity Center user for agents instead of D5                        | Needs an interactive MFA login every session; Roles Anywhere is the non-interactive path                                       |
+| Option                                                            | Why not                                                                                                             |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Create the Organization from 591473336656                         | SCPs never bind the management account, so the account with the most workloads and CI roles would have no guardrail |
+| One GCP project per region with every product in it               | Breaks the per-product blast radius and budget that the AWS side keeps; one Encore grant would reach every product  |
+| Keep 0512's single `<product>` project with `prod`                | On the Free plan the staging deploy identity would read production values                                           |
+| A bootstrap identity per environment and member (0512 as written) | Exceeds the 5-identity limit at the first product, and synced runtimes need none                                    |
+| Infisical Pro now                                                 | Not needed for the pilot; the triggers in D4.4 say when                                                             |
+| An Identity Center user for agents instead of D5                  | Needs an interactive MFA login every session; Roles Anywhere is the non-interactive path                            |
 
 ## Consequences
 

@@ -8,8 +8,8 @@ description: "Accepted, amended by 0353, 0354, 0524, OS 0001 · 2026-10-20"
   [0524](/adr/0524-cloud-estate-aws-organization-gcp-projects-and-four-infisical-identities):
   decision 1 is built as one AWS Organization under a new management account, with the existing
   account 591473336656 as the tooling account and one account per product and region, people through
-  Identity Center, and SCPs that refuse IAM users and access keys. One dated exception (0524 D5): the
-  IAM user `figentra-agents` in the tooling account, whose only permission is to assume
+  Identity Center, and SCPs that refuse IAM users and access keys. One dated exception (0524 D5):
+  the IAM user `figentra-agents` in the tooling account, whose only permission is to assume
   `stackra-testbed-operator`, until IAM Roles Anywhere replaces it and by 2026-12-31 at the latest.
   The rest of decision 1 stands.
 </Note>
