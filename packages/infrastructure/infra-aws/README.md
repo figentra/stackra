@@ -74,6 +74,8 @@ holds the ids and the list of accounts (for Figentra, `figentra/infra`). Nothing
   account's provider, in the Account Access application's region.
 - `reader` adds a read-only role trusted by the management account's preview role; with `readOnly`, the account's
   provider assumes it instead of the access role, so a pull-request preview never holds admin in a member account.
+- `regionLock` gives the account its own region SCP (`regionLock` above), attached to the account. One account
+  serves a product in all its regions, so the lock is per account, not per unit.
 - Each sign-in role trusts `account-access.amazonaws.com` with `sts:AssumeRole` and `sts:SetContext`. AWS's
   examples add `sts:TagSession`; add it when a sign-in needs session tags.
 - `regionLock` keeps the global services open (IAM, Organizations, STS, Route 53, CloudFront, WAF, billing,
