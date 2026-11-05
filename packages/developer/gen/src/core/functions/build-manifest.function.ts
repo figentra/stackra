@@ -38,6 +38,8 @@
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
  *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
  *          `uiMenusOf`) (STA-1947).
+ *          It lists each environment variable its configuration classes declare in `env` (`envOf`: name, kind, type,
+ *          rules, the config that declares it; a host adds its packages' rows and the Infisical path), STA-2104.
  *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
  *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
@@ -73,6 +75,7 @@ import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
+import { envOf } from "#core/functions/env-of.function";
 import { eventName } from "#core/functions/event-name.function";
 import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
@@ -1127,6 +1130,9 @@ export function buildManifest(ir: MemberIR): {
         }))
     : [];
 
+  // The environment variables its configuration classes declare, own then hosted (ADR 0173 amendment 2026-11-04).
+  const env = envOf(ir);
+
   // The shell slots it declares and the fills it binds, for the OS registry and a filler's check (ADR 0438).
   const slots: Entry[] = [...(ir.slots ?? [])]
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
@@ -1202,6 +1208,7 @@ export function buildManifest(ir: MemberIR): {
     ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
     ...(configs.length > 0 ? { config: configs } : {}),
+    ...(env.length > 0 ? { env } : {}),
     ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
     ...(slots.length > 0 ? { slots } : {}),
