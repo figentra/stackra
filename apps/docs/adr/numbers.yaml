@@ -1577,3 +1577,7 @@
   slug: humans-approve-policy-not-instances
   status: accepted
   issue: STA-2094
+"0524":
+  slug: cloud-estate-aws-organization-gcp-projects-and-four-infisical-identities
+  status: accepted
+  issue: STA-2115

@@ -1,0 +1,213 @@
+---
+title: "0524 — Cloud estate: one AWS Organization, a GCP project per product-region, Infisical on four machine identities"
+description: "Accepted (D4.3 proposed) · 2026-11-05"
+---
+
+{/* Stackra file contract. Purpose: ADR 0524, the owner's decisions of 2026-11-05 on the cloud and secrets estate: an AWS Organization under a new management account with one account per product and region and the existing account as tooling, people through Identity Center; GCP under an Organization on figentra.com with one project per product and region and Encore Cloud running KSA there with ENCORE_ROLES; Encore with one app per product linked to the account of each environment; Infisical on the Free plan with four machine identities as CI trust levels and no runtime identity; and the dated `figentra-agents` IAM user exception. Boundary: decision text only; the inventory, target and migration plan live in stackra-notes `plans/infra-structure-2026-11-05/`, and every cloud change there is the owner's. Runtime: documentation. Governing contract: ADR template; ADR 0172, 0173, 0186, 0289, 0354, 0371, 0401, 0435, 0468, 0484, 0512, 0516, 0517, 0523. */}
+
+<Note>
+  Accepted 2026-11-05 (STA-2115), recording the owner's decisions of that date. Decision 4.3 is the
+  agent's reconciliation of the owner's "projects per 0512" with the Free plan and stays
+  **Proposed** until the owner confirms it. It amends
+  [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) (open questions 1
+  for KSA and 2, answered),
+  [0512](/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes) (identities,
+  product projects, bootstrap identities) and
+  [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) (decision 1: a dated
+  exception to "no IAM users"), each by a dated Note. Figentra OS ADR 0001's question on the GCP
+  layout is answered by decision 2.
+</Note>
+
+## Context
+
+On 2026-11-05 one AWS account, 591473336656, held everything:
+
+- the testbed stacks in four regions;
+- the testbed's roles, budgets and alarms;
+- box 1;
+- an admin IAM user with a static key.
+
+Two more accounts appear in the owner's AWS configuration and no plan names them: 968177690643, and 058222268766
+(old Academorix Terraform). No AWS Organization or Identity Center existed. `me-central-1`, the primary region of 0172
+d2, is an opt-in region that 591473336656 has not enabled.
+
+GCP was owned by a personal Gmail login, with no Organization. On project `figentra`, six Encore app service accounts
+held `roles/owner`.
+
+[0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) left two questions open: the runtime
+on GCP, and the GCP layout. [0435](/adr/0435-encore-cloud-roles-on-gcp-and-one-apply-per-environment) and
+[0401](/adr/0401-gcp-spend-stop-cloud-sql-recovery-and-deploy-roles-narrower-than-owner) left the project-per-
+product layout to the owner.
+
+The Pay pilot goes live in `me-central-1` on 2026-12-01. It needs its account and its Encore link by about
+2026-11-12.
+
+Infisical's Free plan, read on 2026-11-05, allows:
+
+- 5 identities in total, human and machine;
+- unlimited projects;
+- 3 environments per project;
+- no custom or environment-scoped roles;
+- no dynamic secrets.
+
+A project is therefore the only access boundary. [0512](/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes)
+gave each product one project with `dev`, `staging` and `prod`, plus "a 0371 bootstrap identity per environment and
+member", which the identity limit cannot hold.
+
+The owner also created an IAM user, `figentra-agents`, on 2026-11-05, so agents can assume the narrow testbed
+operator role. That conflicts with 0172 d1's "no IAM users".
+
+## Decision
+
+### D1. **AWS is one Organization: a new, empty management account, the existing account as tooling, and one account per product and region.**
+
+- **The management account** holds the Organization, consolidated billing, IAM Identity Center, StackSets and the
+  organization policies, and nothing else. If the inventory shows 968177690643 empty, it may serve as this account.
+- **591473336656 joins as `figentra-tooling`**: testbed, Pulumi state, CI images, dev boxes (0172 d4).
+- **Product accounts** are named `figentra-<product>-<region>`, with root emails `aws+<product>-<region>@figentra.com`.
+  The first is `figentra-pay-me`.
+- **Organizational units:** `Security` (the audit account, and a backup account per jurisdiction, 0186 d2),
+  `Infrastructure`, `Workloads/<region>`, and `Suspended`.
+- **Environments of one product-region share its account.** They are split by roles, tags and SCPs (0172 d1). The
+  ledger's interim "shared, nonprod and prod accounts" layout of 2026-11-01 is replaced.
+- **People sign in through Identity Center** with MFA (0172 d1). Root is not used day to day, and member accounts
+  have no root credentials (centralized root access).
+- **The baseline SCP enforces:** no leaving the Organization; no IAM users, passwords or access keys (except D5); no
+  quota increase except by the owner's `Admin` permission set (0516); no stopping the audit trail.
+- **A region SCP per workload OU** keeps each jurisdiction in its region (0353, OS 0001 d5).
+
+### D2. **GCP is one Organization on figentra.com, with one project per product and region; Encore Cloud runs KSA in it with `ENCORE_ROLES`.**
+
+This answers 0354 open question 2 and OS 0001's layout question.
+
+- **Identity:** Cloud Identity Free (or Workspace) on figentra.com, with two super admins.
+- **Folders:** `tooling`, `workloads/<region>`, `backup`, `legacy`.
+- **Projects** are named `figentra-<product>-<region>`, for example `figentra-pay-ksa` in `me-central2`. One is
+  created when that product gets its first customer in that region.
+- **The runtime (answers 0354 open question 1 for KSA).** KSA staging and production run on Encore Cloud in our
+  project (0517 d3). If Encore does not offer `me-central2`, the self-hosted fallback of 0517 d4 applies.
+- **The grant.** Each Encore app's own service account gets `ENCORE_ROLES` (0435 d1) on its own project only. It
+  never gets `roles/owner`, and never an organization- or folder-level grant. Domain-restricted sharing allows
+  Encore's customer id on the `workloads` folder only.
+- **CI** reaches GCP through Workload Identity Federation, never a service-account key (0401 d3).
+
+### D3. **Encore is one organization with one app per product; each environment links to the account or project of its product-region.**
+
+- dev runs on Encore Cloud's hosting (0517 d2).
+- staging and production run through the app's connection to `figentra-<product>-<region>`. That connection is one
+  role per AWS account, `figentra-<product>-staging-encore` (`encoreAccess`), or the app's service account per GCP
+  project.
+- The six apps of 2026-11-04 move into the organization and keep their ids.
+- Encore's paid plan is the owner's billing decision (0523 d10).
+
+### D4. **Infisical stays the one source on the Free plan: four machine identities, one per CI trust level, and no runtime identity.**
+
+1. **The identities:**
+   - `figentra-ci-build`: pull requests and build jobs, plus the testbed's AWS Auth (0484 d7); it reads `ci-build`;
+   - `figentra-ci-deploy`: `main`, in the dev and staging environments; it reads `ci-deploy` and each `<product>`
+     project;
+   - `figentra-ci-deploy-production`: `main`, in `production`, `release` and `registry`, with allow-listed
+     workflows; it reads `ci-production`, each production runtime project, and `registry` until that project retires;
+   - `figentra-flow`: Flow's approve workflow; it reads `flow`.
+   - The owner's login is the fifth identity. Agents on a workstation use it, for `agents` `/agents` only (0512 d6).
+2. **No bootstrap identity in our organization.** Every runtime of ours is synced (0371 d2): Encore secrets, Worker
+   bindings, and AWS Secrets Manager or GCP Secret Manager per account. So no runtime calls Infisical. 0371 d3's
+   bootstrap pair applies only to a process bound to the `infisical` driver, which means on-prem or air-gapped,
+   against the customer's own Infisical. The vault keeper runs under the owner's login until the plan changes.
+3. **(Proposed) A product's runtime values split by trust level.** On the Free plan, one project with `dev`,
+   `staging` and `prod` would let the dev and staging identity, which agents trigger without approval (0468 d1),
+   read production. So:
+   - `<product>` holds `dev` and `staging`, and `figentra-ci-deploy` is its member;
+   - `<product>-prod-<region>` holds `prod` for one region, and `figentra-ci-deploy-production` is its member.
+   - Folders stay `/runtime/<member>` (0512 d3). Runway names the Infisical project per environment.
+   - Each product-region's production values live in their own project (0371 d5).
+4. **Upgrade triggers.** Any one of these moves the organization to a paid plan:
+   - a second person;
+   - a vault-keeper identity;
+   - agents needing an identity narrower than the owner's;
+   - an audit log for production.
+
+### D5. **`figentra-agents` is a dated exception to "no IAM users", ending by 2026-12-31.**
+
+- **What it is:**
+  - an IAM user in `figentra-tooling` with no password;
+  - one access key, stored only in Infisical `agents` `/agents`;
+  - one permission: `sts:AssumeRole` on `stackra-testbed-operator`.
+  - The baseline SCP lets an access key be created for this user alone, so the key can be rotated.
+- **The exit path:** IAM Roles Anywhere in `figentra-tooling`. The trust anchor is our own CA, and the certificate
+  sits in the keychain of the agents' separate macOS user (0523 d6). Then the user and its key are deleted, and the
+  SCP exception goes.
+- **The date.** The exception lapses on 2026-12-31 even if the exit path is late. The owner then deactivates the key
+  until it lands.
+
+## Rationale
+
+- **Account boundaries.** A product's blast radius, budget and residency evidence are its account's (0172, 0354).
+  Encore's AWS connection is account-wide `AdministratorAccess`, so the only boundary that contains it is a dedicated
+  account under SCPs.
+- **A new management account.** The account that runs workloads and CI should not also own the Organization, and
+  SCPs never apply to the management account. Joining the existing account as tooling keeps the testbed's state,
+  roles and quota history.
+- **GCP mirrors AWS.** One project per product-region keeps one rule for both clouds. Runway already names an
+  environment's cloud and account (0400 d5).
+- **On the Free plan an identity is a trust context, and a project is a lock.** Mapping identities to CI trust levels
+  uses four of the five slots and leaves runtime secrets to the sync, which 0371 already requires.
+
+## Rejected alternatives
+
+| Option                                                            | Why not                                                                                                             |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Create the Organization from 591473336656                         | SCPs never bind the management account, so the account with the most workloads and CI roles would have no guardrail |
+| One GCP project per region with every product in it               | Breaks the per-product blast radius and budget that the AWS side keeps; one Encore grant would reach every product  |
+| Keep 0512's single `<product>` project with `prod`                | On the Free plan the staging deploy identity would read production values                                           |
+| A bootstrap identity per environment and member (0512 as written) | Exceeds the 5-identity limit at the first product, and synced runtimes need none                                    |
+| Infisical Pro now                                                 | Not needed for the pilot; the triggers in D4.4 say when                                                             |
+| An Identity Center user for agents instead of D5                  | Needs an interactive MFA login every session; Roles Anywhere is the non-interactive path                            |
+
+## Consequences
+
+- **The owner creates accounts, the Organization, Identity Center, the Encore organization and the GCP
+  Organization.** Every step is in the migration plan, with a check and a rollback.
+- **Every product-region account must enable its opt-in region** (`me-central-1`) before Encore or Runway can use it.
+- **Runway needs one schema change:** the Infisical project named per environment. `awsBaseline` must reuse an
+  account's existing GitHub OIDC provider, and import an Encore role made by hand. `ENCORE_ROLES` gains the five roles
+  Encore's documentation lists that it lacks.
+- **Infisical's legacy projects** (`stackra`, `registry`, `academorix-legacy`) retire on the conditions the plan
+  lists. `registry` goes only after the registry move's day-30 step.
+- **Agents still ride the owner's Infisical login** for `/agents`. The Free plan cannot narrow it. The guard and the
+  rules keep production reads out, and D4.4 names the trigger.
+
+## Enforcement
+
+planned:
+
+- The SCPs and the tag policy in stackra-notes `plans/infra-structure-2026-11-05/scps/`, attached by the owner. They
+  enforce no IAM users or keys outside D5, the region locks, quota increases, and staging against production.
+- `encore-access.function.test.ts` and `gcp-baseline.function.test.ts` assert the absence of `roles/owner` (0435).
+- The re-run Infisical inventory (`infisical-inventory.sh`) compares identities and memberships with the plan's
+  target.
+- Nothing checks D5's end date automatically: the plan's P11 and the owner's to-do carry it.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends:
+
+- [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region): its open questions;
+- [0512](/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes): decision 1's identities,
+  product row and bootstrap identities;
+- [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls): decision 1, the D5 exception.
+
+Related: [0371](/adr/0371-secret-store-drivers-which-deploy-mode-binds-which-and-how-the-bootstrap-credential-arrives),
+[0435](/adr/0435-encore-cloud-roles-on-gcp-and-one-apply-per-environment),
+[0517](/adr/0517-where-services-and-their-resources-run) and
+[0523](/adr/0523-humans-approve-policy-not-instances).
+
+Sources:
+
+- the owner's decisions of 2026-11-05 (INFRA brief);
+- stackra-notes `plans/infra-structure-2026-11-05/` (TARGET, MIGRATION, KEEP-REMOVE);
+- `plans/infisical-2026-11-04/PLAN.md`;
+- Infisical's pricing page, and Encore's pricing and own-cloud documentation, read 2026-11-05;
+- Linear STA-2115.
