@@ -22,6 +22,7 @@ import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
 import { checkOpsReview } from "#node/functions/check-ops-review.function";
+import { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 import { platformRows } from "#node/functions/platform-rows.function";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { readRunway } from "#node/functions/read-runway.function";
@@ -75,8 +76,8 @@ export async function publishProduct(
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
   const run = request.run ?? runProgram;
-  const accountId = root.providers?.cloudflare?.accountId;
-  const env = accountId === undefined ? undefined : { CLOUDFLARE_ACCOUNT_ID: String(accountId) };
+  // A `ref:` id is the job's to resolve; an unresolved one refuses here, before the first upload (STA-2124).
+  const env = cloudflareAccountEnv(root.providers?.cloudflare?.accountId);
   const uploaded: string[] = [];
   for (const bundle of bundles)
     uploaded.push(...(await uploadBundle(bundle, product, request.assets.bucket, run, env)));

@@ -21,6 +21,7 @@ import { join } from "node:path";
 import { buildConfig } from "@stackra/config";
 import { RunwayEnvironment } from "@stackra/runway";
 import {
+  cloudflareAccountEnv,
   deployProduct,
   EdgeKvConfig,
   GooglePlayConsoleDriver,
@@ -55,12 +56,16 @@ function pairs(value: string | undefined): [string, string][] {
   });
 }
 
-/** The wrangler KV writer, run with the Cloudflare account the runway names. */
-function edgeKv(namespace: string, accountId: string | undefined): WranglerEdgeKvDriver {
+/**
+ * The wrangler KV writer, run with the Cloudflare account the runway names: a literal id is set, a `ref:` id leaves
+ * the job's `CLOUDFLARE_ACCOUNT_ID` in place, and an unresolved one refuses (STA-2124).
+ */
+function edgeKv(namespace: string, accountId: string | number | undefined): WranglerEdgeKvDriver {
   const kv = new WranglerEdgeKvDriver(
     buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
   );
-  if (accountId !== undefined) kv.env = { CLOUDFLARE_ACCOUNT_ID: accountId };
+  const env = cloudflareAccountEnv(accountId);
+  if (env !== undefined) kv.env = env;
   return kv;
 }
 
@@ -155,8 +160,7 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
           ),
         }),
   };
-  const cloudflare = root.providers?.cloudflare?.accountId;
-  const accountId = cloudflare === undefined ? undefined : String(cloudflare);
+  const accountId = root.providers?.cloudflare?.accountId;
   const region = deployFact(values, "region", "STACKRA_REGION");
   const deploy = await deployProduct({
     repository: cwd,

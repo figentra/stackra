@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-05
 
-**Status**: Draft
+**Status**: Implementing — Approved by leader 2026-11-05
 
 **Tier**: small
 
@@ -73,16 +73,19 @@ and refuses it ("Invalid account ID"). Pay's Deploy (dev) failed at b8016e9 (run
 - **AC-001**: WHEN the account id is a literal THE function SHALL return `{ CLOUDFLARE_ACCOUNT_ID: <id> }`.
 - **AC-002**: WHEN the account id is a `ref:` and the environment has `CLOUDFLARE_ACCOUNT_ID` THE function SHALL return
   no override.
-- **AC-003**: IF the account id is a `ref:` and the environment lacks `CLOUDFLARE_ACCOUNT_ID` THEN THE function SHALL
-  throw `RunwayUnresolvedError` naming the variable, and `publishProduct` SHALL upload nothing.
+- **AC-003**: IF the id is a `ref:` and `CLOUDFLARE_ACCOUNT_ID` is unset THEN THE function SHALL throw
+  `RunwayUnresolvedError` naming the variable.
 - **AC-004**: WHEN no account id is declared THE function SHALL return no override, as today.
+- **AC-005**: IF the account id is a `ref:` and the job lacks `CLOUDFLARE_ACCOUNT_ID` THEN THE publish step SHALL upload no
+  bundle and write no KV row.
 
 ## Success Criteria
 
 - **SC-001**: the runway and CLI unit tests for AC-001 to AC-004 pass in CI — verified by: unit
 - **SC-002**: after a released `@stackra/cli` reaches Pay's catalog, Pay's Deploy (dev) job on main passes its Deploy
-  step and `console.pay.dev.figentra.com` no longer answers "Not released yet" for the published surfaces —
-  verified by: manual (the RUNWAY lane reads the job and the address)
+  step and its log shows the KV rows written, as at 0c06e1b ("3 KV row(s)") — verified by: manual (the RUNWAY lane
+  reads the job). Pay's surfaces build currently produces no bundle, so `console.pay.dev.figentra.com` may still answer
+  "Not released yet"; that is not this issue.
 
 ## Design
 
@@ -103,6 +106,10 @@ runway owns the `ref:` rule; the CLI only passes the result to the KV driver.
 
 `packages/developer/runway/src/node/functions/cloudflare-account-env.function.ts` (new) and its test; the two callers;
 runway's node index exports it.
+
+### Data models and migrations
+
+None.
 
 ### Contracts
 
@@ -127,11 +134,9 @@ catalog; RUNWAY verifies Pay's dev deploy.
 
 ## Tasks
 
-- [ ] T001 `cloudflareAccountEnv` and its tests in `packages/developer/runway/src/node/functions/` — covers: FR-001,
-      FR-002, FR-003, AC-001, AC-002, AC-003, AC-004
-- [ ] T002 `publishProduct` and the CLI's `edgeKv` use it, with a `ref:` case in `publish-product.function.test.ts` —
-      covers: FR-004, AC-003
-- [ ] T003 Changesets for `@stackra/runway` and `@stackra/cli` (patch) — covers: SC-002
+- [ ] T001 `cloudflareAccountEnv` and its tests in `packages/developer/runway/src/node/functions/` — covers: FR-001, FR-002, FR-003, AC-001, AC-002, AC-003, AC-004
+- [ ] T002 `publishProduct` and the CLI's `edgeKv` use it, with `ref:` cases in `publish-product.function.test.ts` — covers: FR-004, AC-005
+- [ ] T003 Changesets for `@stackra/runway` and `@stackra/cli` (patch) — covers: SC-002, AC-001
 
 ## Out of scope
 
@@ -144,8 +149,9 @@ catalog; RUNWAY verifies Pay's dev deploy.
 
 ## Amendments
 
-None.
+- A-001 · 2026-11-05 · leader's revision before approval: SC-002 reads the KV rows, not the page; AC-003's upload half split out as AC-005 (spec gate: one EARS clause each)
 
 ## Status history
 
 - 2026-11-05 · — → Draft · Flow lane (Claude) · created from STA-2124
+- 2026-11-05 · Draft → Implementing · leader · Approved by leader 2026-11-05, after revising SC-002 (KV rows, not the page)
