@@ -24,7 +24,7 @@ ADR 0289 decision 9), where the owner runs `pulumi up`; here it is tested under 
 | `.`      | `GithubHealthIndicatorDriver`, `InfraGithubConfig`                                              | the `HealthIndicator` driver: the GitHub API answers; its target is `config.infra_github` |
 | `.`      | `GithubPlan`, `GithubEnvironment`, `GithubRules`, `RulesetDocument`, `BranchProtectionDocument` | types                                                                                     |
 | `./node` | `readGithubRules(directory)`                                                                    | every `rulesets/*.json` and `branch-protection.json` under a `.github` folder             |
-| `./node` | `githubStack(plan, rules, config?)`                                                             | the whole GitHub slice in one call; returns the repository and the CI secrets             |
+| `./node` | `githubStack(plan, rules, config?, options?)`                                                   | the GitHub slice in one call; `options.oidcTemplate` and `options.rules` opt in           |
 | `./node` | `GithubStack`                                                                                   | type                                                                                      |
 
 ## The input
@@ -65,6 +65,9 @@ import { readRunway } from "@stackra/runway/node";
 const github = githubStack(
   githubPlan(readRunway("runway.yaml", "root")),
   readGithubRules(".github"),
+  undefined,
+  // Both off by default: the OIDC template may already be custom (immutable subjects), and Flow renders the rules.
+  { oidcTemplate: false, rules: false },
 );
 
 export const repository = github.repository;
