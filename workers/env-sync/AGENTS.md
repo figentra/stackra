@@ -15,13 +15,14 @@ wrangler deploys. Read `README.md` first.
 
 ## Rules agents follow
 
-- Never run `wrangler deploy`, `wrangler secret …` or anything that changes the Cloudflare account. The Worker is not
-  in the root runway yet; adding it is the owner's decision.
+- Never run `wrangler deploy`, `wrangler secret …` or anything that changes the Cloudflare account. The Worker ships
+  only through `deploy-env-sync.yml` (the root runway's `env-sync` member), behind the production approval.
 - Fail closed: a missing webhook secret or a bad signature answers 401 before the body is parsed. Never add a default
   secret or skip the signature.
 - Compare signatures only through `tokensMatch` (constant time); never log a token, header or body.
 - The webhook carries metadata only: keep refusing any payload with a value key (`carriesValue`).
 - A repository reaches the GitHub URL only after `REPOSITORY_PATTERN`.
+- `GET /readyz` names missing settings, never a value; the deploy's smoke check reads it.
 - Tests run in Node with a stand-in fetch; the repo has no Workers test pool.
 
 ## Tasks

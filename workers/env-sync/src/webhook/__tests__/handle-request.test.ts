@@ -192,6 +192,42 @@ describe("handleEnvSyncRequest", () => {
     expect((await post(payload())).status).toBe(502);
   });
 
+  it("answers GET /readyz with 200 when every setting is there", async () => {
+    const response = await handleEnvSyncRequest(new Request(`${URL_BASE}/readyz`), env, fetcher);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ready: true });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("answers GET /readyz with 503 naming each unset or unreadable setting, never a value", async () => {
+    env = {
+      ENV_SYNC_ROUTES: "not json",
+      STACKRA_BOT_APP_ID: " ",
+      STACKRA_BOT_PRIVATE_KEY: "not a key",
+    };
+    const response = await handleEnvSyncRequest(new Request(`${URL_BASE}/readyz`), env, fetcher);
+    expect(response.status).toBe(503);
+    const body = (await response.json()) as { error: { code: string; message: string } };
+    expect(body.error.code).toBe("not_ready");
+    for (const name of [
+      "INFISICAL_WEBHOOK_SECRET",
+      "STACKRA_BOT_APP_ID",
+      "STACKRA_BOT_PRIVATE_KEY",
+      "ENV_SYNC_ROUTES",
+    ])
+      expect(body.error.message).toContain(name);
+    expect(body.error.message).not.toContain("not a key");
+  });
+
+  it("answers 405 for a POST to /readyz", async () => {
+    const response = await handleEnvSyncRequest(
+      new Request(`${URL_BASE}/readyz`, { method: "POST" }),
+      env,
+      fetcher,
+    );
+    expect(response.status).toBe(405);
+  });
+
   it("answers 404 off the route and 405 for another method", async () => {
     expect((await post(payload(), undefined, "/other")).status).toBe(404);
     const response = await handleEnvSyncRequest(new Request(`${URL_BASE}/infisical`), env, fetcher);
