@@ -14,20 +14,24 @@ import type { BudgetAlert } from "#node/types/budget-alert.type";
 
 /** One vended account. */
 export interface ProductAccountArgs {
+  /** The account name AWS shows (`acme-pay-me`). */
   readonly accountName: string;
   /** The root email; unique across AWS. */
   readonly email: string;
   /** The unit's id. */
   readonly parentId: pulumi.Input<string>;
+  /** Tags on the account, for policies and cost reports. */
   readonly tags?: Readonly<Record<string, string>>;
   /** An opt-in region to enable (`me-central-1`); omit for a default region. */
   readonly optInRegion?: string;
+  /** The monthly budget with its alerts and the addresses they go to; omit for none. */
   readonly budget?: {
     readonly name: string;
     readonly monthlyUsd: string;
     readonly alerts: readonly BudgetAlert[];
     readonly emails: readonly string[];
   };
+  /** The sign-in application, the principal granted access and the roles it may assume. */
   readonly access: {
     readonly applicationArn: string;
     readonly principal: AccessPrincipal;

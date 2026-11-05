@@ -9,6 +9,8 @@
 
 /** One budget alert: a percentage of the limit, on actual or forecast spend. */
 export interface BudgetAlert {
+  /** Whether the alert fires on actual or forecast spend. */
   readonly kind: "ACTUAL" | "FORECASTED";
+  /** The share of the monthly limit, in percent, that fires it. */
   readonly percent: number;
 }

@@ -9,7 +9,7 @@
 
 import type { OrganizationPolicy } from "#node/types/organization-policy.type";
 
-/** The layout. */
+/** The organization layout to declare: trusted services, policy types, root access, units and policies. */
 export interface OrganizationLayoutArgs {
   /** Trusted access, e.g. `sso.amazonaws.com`, `account.amazonaws.com`. */
   readonly servicePrincipals: readonly string[];

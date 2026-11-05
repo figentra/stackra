@@ -26,7 +26,7 @@ const READ_ONLY_ACCESS = "arn:aws:iam::aws:policy/ReadOnlyAccess";
 const GLOBAL_REGION = "us-east-1";
 
 /**
- * The account.
+ * Vends one product account: the account, its unit, opt-in region, budget and sign-in roles.
  *
  * @example
  * productAccount("pay-me", { accountName: "acme-pay-me", email: "aws-pay-me@acme.example", parentId: units["Workloads/me"].id,

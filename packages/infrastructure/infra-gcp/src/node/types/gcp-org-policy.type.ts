@@ -13,7 +13,10 @@ export interface GcpOrgPolicy {
   readonly constraint: string;
   /** `org`, or a folder path (`workloads/ksa`). */
   readonly target: string;
+  /** Whether a boolean constraint is enforced. */
   readonly enforce?: boolean;
+  /** The values a list constraint allows. */
   readonly allowedValues?: readonly string[];
+  /** The values a list constraint denies. */
   readonly deniedValues?: readonly string[];
 }
