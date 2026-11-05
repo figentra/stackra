@@ -20,7 +20,7 @@ import type { OrganizationLayoutOutputs } from "#node/types/organization-layout-
 const slug = (path: string): string => path.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-");
 
 /**
- * The layout.
+ * Declares the organization layout: trusted services, policy types, root access, units and policies.
  *
  * @throws TypeError when a unit's parent path is not listed before it, or a policy targets an unknown unit.
  * @example

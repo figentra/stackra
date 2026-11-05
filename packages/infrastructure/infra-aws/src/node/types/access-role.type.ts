@@ -19,5 +19,6 @@ export interface AccessRole {
   readonly inline?: Readonly<Record<string, object>>;
   /** The longest session, in seconds (3600 to 43200). */
   readonly maxSessionSeconds: number;
+  /** Tags on the role, for access policies and cost reports. */
   readonly tags?: Readonly<Record<string, string>>;
 }

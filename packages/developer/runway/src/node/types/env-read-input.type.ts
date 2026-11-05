@@ -10,9 +10,18 @@ import type { CommandRunner } from "#node/types/command-runner.type";
 
 /** The inputs of the CI-only environment reads. */
 export type EnvReadInput = {
+  /** The repository root that holds the runways. */
   readonly root: string;
+
+  /** The Runway environment whose values are read. */
   readonly environment: string;
+
+  /** The runtime Infisical project id; the root runway's `providers.infisical.workspace` when unset. */
   readonly projectId?: string | undefined;
+
+  /** The command runner for the Infisical CLI; a test replaces it. */
   readonly run?: CommandRunner | undefined;
+
+  /** Whether this is a CI job; unset proves it by the job's GitHub OIDC token, and a test sets it. */
   readonly ci?: boolean | undefined;
 };

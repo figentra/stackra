@@ -11,6 +11,7 @@
 export interface OrganizationPolicy {
   /** `SERVICE_CONTROL_POLICY`, `RESOURCE_CONTROL_POLICY`, `TAG_POLICY`, … */
   readonly type: string;
+  /** The description AWS shows for the policy. */
   readonly description?: string;
   /** The document, as an object or the exact JSON text (kept byte for byte, which an imported policy needs). */
   readonly content: object | string;

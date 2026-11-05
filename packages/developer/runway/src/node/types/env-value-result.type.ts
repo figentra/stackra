@@ -9,10 +9,16 @@
 
 /** One checked name. */
 export type EnvValueResult = {
+  /** How serious the finding is: an error fails the check. */
   readonly level: "error" | "warning";
+
+  /** The Runway environment the name was checked in. */
   readonly environment: string;
+
+  /** The checked variable name. */
   readonly name: string;
-  /** `<infisical environment>:<path>`. */
+
+  /** Where the value lives, as `<infisical environment>:<path>`. */
   readonly where: string;
   /** The broken rule, or `undefined` when the value passes. */
   readonly failure?: string;

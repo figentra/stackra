@@ -10,7 +10,12 @@ import type { EnvRow } from "#core/types/env-row.type";
 
 /** One member's declared rows for an environment, with its home. */
 export type EnvHome = {
+  /** The deployable member key. */
   readonly member: string;
+
+  /** The member's Infisical path, `/runtime/<member>`. */
   readonly path: string;
+
+  /** The manifest rows the member declares for this environment. */
   readonly rows: readonly EnvRow[];
 };

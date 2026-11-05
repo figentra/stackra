@@ -17,7 +17,10 @@ export interface GcpOrganizationArgs {
   readonly organizationId: string;
   /** Folder paths, parents first: `["workloads", "workloads/ksa"]`. */
   readonly folders: readonly string[];
+  /** The organization policies, each on the organization or a folder. */
   readonly policies: readonly GcpOrgPolicy[];
+  /** The projects, each in the organization or a folder. */
   readonly projects: readonly GcpProject[];
+  /** The IAM grants across the organization, folders, projects and billing. */
   readonly grants: readonly GcpGrant[];
 }
