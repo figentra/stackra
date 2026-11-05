@@ -50,4 +50,14 @@ export interface ProductAccountArgs {
   };
   /** Reach the account through `reader` (a preview, which may not write). The first apply creates the reader. */
   readonly readOnly?: boolean;
+  /**
+   * The account's own region lock: an SCP named `name`, attached to the account, denying regional actions outside
+   * `regions` (built by `regionLock`) except for the `exempt` principals.
+   */
+  readonly regionLock?: {
+    readonly name: string;
+    readonly sid: string;
+    readonly regions: readonly string[];
+    readonly exempt: readonly string[];
+  };
 }

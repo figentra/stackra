@@ -3,7 +3,8 @@
  * Purpose: `productAccount(name, args, opts)`, account vending: a member account in its unit, its opt-in region turned
  *          on, a provider into it through the role Organizations made there, its monthly budget with email alerts, the
  *          sign-in roles with their Account Access Manager entitlements, and optionally a read-only role that
- *          pull-request previews assume instead of the access role.
+ *          pull-request previews assume instead of the access role; and optionally the account's own region lock
+ *          (an SCP attached to the account, so each account allows exactly the regions its product runs in).
  * Boundary: runs in the management account (`opts` carries its provider, in the Account Access application's region).
  *           The account is protected: removing it from the list never closes it. Its workloads, infra roles and
  *           Encore role come later from `awsBaseline` and Runway, not from here.
@@ -15,6 +16,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
+import { regionLock } from "#core/functions/region-lock.function";
 import { accessRoles } from "#node/functions/access-roles.function";
 import { policyOf } from "#node/functions/policy-of.function";
 import type { ProductAccountArgs } from "#node/types/product-account-args.type";
@@ -56,6 +58,24 @@ export function productAccount(
     // Neither is readable after creation, so an imported account would always show a diff.
     { ...opts, protect: true, ignoreChanges: ["iamUserAccessToBilling", "roleName"] },
   );
+  const { regionLock: lock } = args;
+  if (lock !== undefined) {
+    const policy = new aws.organizations.Policy(
+      `${name}-regions`,
+      {
+        name: lock.name,
+        type: "SERVICE_CONTROL_POLICY",
+        description: `${args.accountName}: only ${lock.regions.join(", ")}`,
+        content: JSON.stringify(regionLock(lock)),
+      },
+      opts,
+    );
+    new aws.organizations.PolicyAttachment(
+      `${name}-regions`,
+      { policyId: policy.id, targetId: account.id },
+      opts,
+    );
+  }
   const region =
     args.optInRegion === undefined
       ? undefined

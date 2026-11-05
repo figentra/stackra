@@ -130,4 +130,29 @@ describe("productAccount", () => {
     await mockPulumi();
     expect(() => productAccount("pay-me", { ...ARGS, readOnly: true }, {})).toThrow(TypeError);
   });
+
+  it("locks the account to its own regions with an SCP attached to it", async () => {
+    const engine = await mockPulumi();
+    productAccount(
+      "pay",
+      {
+        ...ARGS,
+        regionLock: {
+          name: "acme-pay-regions",
+          sid: "OnlyPayRegions",
+          regions: ["me-central-1", "eu-central-1"],
+          exempt: [],
+        },
+      },
+      {},
+    );
+    const policy = await engine.find("Policy", "pay-regions");
+    expect(policy.inputs["name"]).toBe("acme-pay-regions");
+    expect(
+      JSON.parse(policy.inputs["content"] as string).Statement[0].Condition.StringNotEquals,
+    ).toEqual({ "aws:RequestedRegion": ["me-central-1", "eu-central-1"] });
+    expect((await engine.find("PolicyAttachment", "pay-regions")).inputs["targetId"]).toBe(
+      "pay-id",
+    );
+  });
 });
