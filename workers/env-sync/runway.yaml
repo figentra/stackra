@@ -2,7 +2,8 @@
 # Stackra file contract:
 # Purpose: the env-sync member's runway (ADR 0296). Where it ships is the root runway's (`targets`,
 #          `environments.<env>.destinations`), and it is not there yet: adding it is the owner's deploy decision.
-#          Its two Worker secrets (INFISICAL_WEBHOOK_SECRET, ENV_SYNC_GITHUB_TOKEN) are not listed under `secrets:`:
+#          Its three Worker secrets (INFISICAL_WEBHOOK_SECRET, and the stackra-bot App's STACKRA_BOT_APP_ID and
+#          STACKRA_BOT_PRIVATE_KEY, SECRETS Q17, STA-2133) are not listed under `secrets:`:
 #          core has no runtime project (ADR 0512), so, as with the registry's REGISTRY_SIGNING_KEY, its deploy
 #          workflow declares them with `secret-name:` and a `secret-path:` in ci-deploy (ADR 0173 amendment of
 #          2026-11-04, decisions 1 and 3), and `runway env check` sees them there.

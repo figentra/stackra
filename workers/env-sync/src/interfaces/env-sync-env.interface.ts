@@ -11,8 +11,10 @@
 export interface EnvSyncEnv {
   /** Worker secret: the key Infisical signs its webhook with. Unset: every request gets 401. */
   readonly INFISICAL_WEBHOOK_SECRET?: string | undefined;
-  /** Worker secret: a GitHub token that may dispatch each routed repository's env-sync.yml. Unset: 503. */
-  readonly ENV_SYNC_GITHUB_TOKEN?: string | undefined;
+  /** Worker secret: the stackra-bot GitHub App's id (SECRETS Q17). Unset: 503. */
+  readonly STACKRA_BOT_APP_ID?: string | undefined;
+  /** Worker secret: the stackra-bot App's private key, PEM (PKCS#1 or PKCS#8). Unset or unreadable: 503. */
+  readonly STACKRA_BOT_PRIVATE_KEY?: string | undefined;
   /** JSON object of Infisical project id to "owner/repo". Invalid: 503. */
   readonly ENV_SYNC_ROUTES?: string | undefined;
 }

@@ -5,6 +5,7 @@
  * Runtime: worker
  * Governing contract: ADR 0006 (explicit barrels), ADR 0233 (subpath imports).
  */
+export { GITHUB_HEADERS } from "./github-headers.constant";
 export { REPOSITORY_PATTERN } from "./repository-pattern.constant";
 export { RUNWAY_ENVIRONMENTS } from "./runway-environments.constant";
 export { SIGNATURE_MAX_AGE_MS } from "./signature-max-age.constant";

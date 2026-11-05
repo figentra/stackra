@@ -7,15 +7,17 @@
  * Boundary: fails closed: a missing webhook secret or a bad, missing or stale signature answers 401 before the body is
  *           parsed; a payload holding a value key (`value`, `secretValue`, `secrets`) answers 400, since the webhook
  *           carries metadata only. An event other than `secrets.modified` answers 200 and dispatches nothing. An
- *           unknown project answers 404, an unknown environment slug 400, a missing GitHub
- *           token or invalid routes 503, and a GitHub refusal 502. No header, token or body is ever logged.
+ *           unknown project answers 404, an unknown environment slug 400, a missing App id or key
+ *           (`installationToken`) or invalid routes 503, and a GitHub refusal 502. No header, token or body is ever
+ *           logged.
  * Runtime: worker
  * Governing contract: ADR 0173 (amendment of 2026-11-04, decision 6); GitHub's workflow dispatch REST API.
  */
-import { REPOSITORY_PATTERN, RUNWAY_ENVIRONMENTS } from "#src/constants";
+import { GITHUB_HEADERS, REPOSITORY_PATTERN, RUNWAY_ENVIRONMENTS } from "#src/constants";
 import type { EnvSyncEnv } from "#src/interfaces";
 
 import { carriesValue } from "./carries-value";
+import { installationToken } from "./installation-token";
 import { signatureValid } from "./signature-valid";
 
 /** The one route. */
@@ -116,20 +118,17 @@ export async function handleEnvSyncRequest(
   const environment = RUNWAY_ENVIRONMENTS.get(slug);
   if (environment === undefined)
     return fail(400, "unknown_environment", "The environment must be dev, staging or prod");
-  const token = env.ENV_SYNC_GITHUB_TOKEN;
-  if (token === undefined || token === "")
-    return fail(503, "sync_misconfigured", "The GitHub token is not configured");
+  const got = await installationToken(repository, env, fetcher, Math.floor(Date.now() / 1000));
+  if (!("token" in got)) return fail(got.status, got.code, got.message);
 
   const answer = await fetcher(
     `https://api.github.com/repos/${repository}/actions/workflows/${WORKFLOW}/dispatches`,
     {
       method: "POST",
       headers: {
-        accept: "application/vnd.github+json",
-        authorization: `Bearer ${token}`,
+        ...GITHUB_HEADERS,
+        authorization: `Bearer ${got.token}`,
         "content-type": "application/json",
-        "user-agent": "stackra-env-sync",
-        "x-github-api-version": "2022-11-28",
       },
       body: JSON.stringify({ ref: "main", inputs: { environment, path } }),
     },

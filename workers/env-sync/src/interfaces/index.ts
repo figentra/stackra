@@ -5,4 +5,5 @@
  * Runtime: worker
  * Governing contract: ADR 0006 (explicit barrels), ADR 0233 (subpath imports).
  */
+export type { AppToken } from "./app-token.interface";
 export type { EnvSyncEnv } from "./env-sync-env.interface";

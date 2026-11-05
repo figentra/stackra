@@ -1,8 +1,9 @@
 // Stackra file contract:
 // Purpose: the Cloudflare Worker that takes Infisical's webhook and dispatches the owning repository's env-sync
 //          workflow (ADR 0173 amendment of 2026-11-04, decision 6). The script is dist/main.mjs, built by `pnpm build`.
-// Owner: release-operations · Secrets: INFISICAL_WEBHOOK_SECRET and ENV_SYNC_GITHUB_TOKEN are Worker secrets set by
-//        its deploy workflow from Infisical ci-deploy (`secret-name:`, as deploy-registry.yml does), never by hand.
+// Owner: release-operations · Secrets: INFISICAL_WEBHOOK_SECRET (Infisical ci-deploy) and the stackra-bot App's
+//        STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY (ci-production /ci/release) are Worker secrets set by its deploy
+//        workflow (`secret-name:`, as deploy-registry.yml does), never by hand (STA-2133).
 // Code facts only (ADR 0519 decision 1, `pnpm validate` check wrangler-operational-keys): the account, compatibility
 // date, workers_dev (false), observability and any route are runway.yaml's, rendered on deploy. It has no route or
 // custom domain yet; that and its root runway `targets` entry are the owner's step.
