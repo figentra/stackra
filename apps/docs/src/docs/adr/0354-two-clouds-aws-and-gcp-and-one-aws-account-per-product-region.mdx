@@ -1,7 +1,16 @@
 ---
 title: "0354 — Two clouds: AWS and GCP, and one AWS account per product-region"
-description: "Accepted · 2026-10-25"
+description: "Accepted, amended by 0524 · 2026-10-25"
 ---
+
+<Note>
+  Amended 2026-11-05 (owner, STA-2115) by
+  [0524](/adr/0524-cloud-estate-aws-organization-and-gcp-projects)
+  decisions 1 to 3, which answer both open questions: GCP uses one project per product and region
+  (`figentra-<product>-<region>`) under an Organization on figentra.com (open question 2), and a KSA
+  stack runs on Encore Cloud in that project, whose Encore service account holds `ENCORE_ROLES`
+  (ADR 0435) and never `roles/owner` (open question 1, for KSA). Decisions 1 to 5 stand.
+</Note>
 
 <Note>
   Amends [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) (decision 2:

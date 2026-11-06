@@ -1577,6 +1577,10 @@
   slug: humans-approve-policy-not-instances
   status: accepted
   issue: STA-2094
+"0524":
+  slug: cloud-estate-aws-organization-and-gcp-projects
+  status: accepted
+  issue: STA-2115
 "0525":
   slug: secrets-sops-and-cloud-kms-replace-infisical
   status: accepted
