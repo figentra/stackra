@@ -1,5 +1,27 @@
 # @stackra/navigation
 
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [c6e4715]
+- Updated dependencies [5bf8ad3]
+  - @stackra/settings@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/clients@0.16.0
+  - @stackra/seo@0.16.0
+  - @stackra/icons@0.16.0
+  - @stackra/ui@0.16.0
+  - @stackra/platform@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/feature-flags@0.16.0
+  - @stackra/testing@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

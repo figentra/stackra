@@ -1,5 +1,24 @@
 # @stackra/achievements
 
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/rules@0.16.0
+  - @stackra/integrations@0.16.0
+  - @stackra/content@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/documents@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/outbox@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/contracts@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @stackra/analytics
 
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/storage@0.16.0
+  - @stackra/platform@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/consent@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/privacy@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes
