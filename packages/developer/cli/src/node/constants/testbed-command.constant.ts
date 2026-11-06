@@ -25,7 +25,7 @@ const flag = (value: string | boolean | undefined): string | undefined =>
 export const TESTBED_COMMAND: CliCommand = {
   name: "testbed",
   summary:
-    "Run heavy work on the shared test boxes (run, status, unlock, ip, ssh, sync, scale, image)",
+    "Run heavy work on the shared test boxes (run, status, unlock, ip, ssh, sync, scale, image); deprecated: use `testbed` from @figentra/testbed (ADR 0522)",
   usage:
     'stackra testbed run "<session> <what>" <dir> "<cmd>" [--preset verify|e2e|integration --ref <ref>] [--json] [--regions a,b] [--region r] [--no-wait] [--on-demand] [--postgres] [--ssh-direct] | status [--json] | unlock [--box N|id] [--region r] [--slot heavy|light] | ip [--box] | ssh [--box] [cmd] | sync [--box] <dir> | scale [--box N|id] [--region r] [--slot heavy|light] | image',
   options: {
