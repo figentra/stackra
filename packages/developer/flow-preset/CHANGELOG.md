@@ -1,5 +1,16 @@
 # @stackra/flow-preset
 
+## 0.14.1
+
+### Patch Changes
+
+- e05bbe2: The preset's test-infra skill and flow-gate command name the `testbed` CLI from `@figentra/testbed` (ADR 0522) for
+  run, status, unlock and scale, in place of `stackra testbed`.
+- 470d710: `stackra testbed` is deprecated in favour of `testbed` from `@figentra/testbed` (ADR 0522): it keeps working for
+  one release, then goes (ADR 0522 step 8). Install `@figentra/testbed` and call `testbed`; the verbs, flags, exit codes
+  and `--json` lines are the same.
+  The preset's ci-steward and flow-gate command name `testbed run`.
+
 ## 0.14.0
 
 No changes in this release.

@@ -1,5 +1,27 @@
 # @stackra/access-log
 
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/testing@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/outbox@0.14.1
+  - @stackra/queue@0.14.1
+  - @stackra/scheduler@0.14.1
+  - @stackra/iam@0.14.1
+  - @stackra/tenancy@0.14.1
+
 ## 0.14.0
 
 ### Patch Changes
