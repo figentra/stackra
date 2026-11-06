@@ -74,15 +74,9 @@
     "contextCommands": [
       ["node", "tools/scripts/ai-spend.mjs", "--context"],
       [
-        "infisical",
-        "run",
-        "--env=dev",
-        "--path=/agents",
-        "--silent",
-        "--",
-        "node",
-        "tools/scripts/linear.mjs",
-        "digest"
+        "bash",
+        "-c",
+        "if [ -n \"${LINEAR_AGENT_TOKEN:-}${LINEAR_API_KEY:-}${LINEAR_AGENT_CLIENT_ID:-}\" ]; then exec node tools/scripts/linear.mjs digest; fi; exec tools/scripts/mcp.sh node tools/scripts/linear.mjs digest"
       ]
     ]
   },
