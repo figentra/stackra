@@ -1,5 +1,59 @@
 # @stackra/repo-checks
 
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+### Minor Changes
+
+- 46951df: The root runway carries the estate figentra/infra derives from (ADR 0524): `environments.<env>.region` (`me`, `eu` or
+  `ksa`), which `runway validate` and `stackra validate --repository` require on a product's staging and production;
+  `providers.aws.budgets.monthlyUsd` (default 300) beside the open thresholds; and `providers.cloudflare.records`, the
+  non-Worker DNS records (verification TXT, MX, CAA) under a declared zone, an MX with its priority and only A, AAAA and
+  CNAME proxied. `providers.aws.region` and `providers.aws.accounts` are deprecated: `runway validate` warns, and they go
+  in the next release. Runway exports `checkEnvironmentRegion`, `deprecatedFields` and `RegionKey`.
+
+## 0.10.0
+
+### Minor Changes
+
+- 242ebe4: `checkDestinations(root)` refuses a destination or target block no driver serves (owner decision O8):
+  destinations must be `encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`, and target blocks one of
+  those, `npm` or `electron-release` (the desktop feed origin builds read). `stackra validate` runs it on the
+  root runway. Core's dev environment drops its `compose`, `vite-dev`, `expo-dev` and `mint-dev` lines.
+- 0d65e3f: The `cloudflare-workers` provider now renders each Worker's wrangler config from `runway.yaml` before it deploys
+  (ADR 0519, STA-1989): the member's `wrangler.jsonc` stays the code facts, and the merged operational settings (the
+  base, the preset, `defaults`, the member and its `environments.<environment>` entry) are added in wrangler's keys.
+  `renderWranglerConfig` is exported from `@stackra/runway`, and a member may now set `environments`. `stackra
+  validate` refuses an operational key (`compatibility_date`, `workers_dev`, `observability`, `routes` and the rest) in
+  a new member's `wrangler.jsonc`; the four existing Workers are listed until they deploy through the provider.
+
 ## 0.9.0
 
 ### Minor Changes

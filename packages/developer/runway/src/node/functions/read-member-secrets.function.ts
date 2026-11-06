@@ -4,6 +4,8 @@
  *          one environment, read from Infisical: the root runway's workspace (`providers.infisical.workspace`), the
  *          Infisical environment it maps `environment` to, and the member's runtime folder (`<runtime path>/<member>`,
  *          ADR 0512). The secret sync writes them into Encore, and the Workers provider uploads them with a version.
+ *          With `source: "environment"` they come from the job's environment instead, where the shared
+ *          `secrets-decrypt` action put the product's sops scope (ADR 0525); Infisical is not read.
  * Boundary: the values live in memory only: they are returned, never logged, printed, written to a file or put in an
  *           argument, and no error carries one, only names. It runs only in a GitHub Actions job of the repository,
  *           proved by GitHub's signed OIDC token (`proveGithubJob`), never by `GITHUB_ACTIONS`; anywhere else it
@@ -18,32 +20,10 @@
  */
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { proveGithubJob } from "#node/functions/prove-github-job.function";
-import { runProgram } from "#node/functions/run-program.function";
+import { exportInfisicalFolder } from "#node/functions/export-infisical-folder.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
-
-/** One secret as `infisical export --format json` prints it. */
-type ExportedSecret = { readonly key?: unknown; readonly value?: unknown };
-
-/** The name → value pairs of an `infisical export --format json` output; empty when it is not that shape. */
-function exportedPairs(output: string): Map<string, string> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(output);
-  } catch {
-    return new Map();
-  }
-  const pairs = new Map<string, string>();
-  const entries: readonly ExportedSecret[] = Array.isArray(parsed)
-    ? (parsed as ExportedSecret[])
-    : typeof parsed === "object" && parsed !== null
-      ? Object.entries(parsed).map(([key, value]) => ({ key, value }))
-      : [];
-  for (const { key, value } of entries)
-    if (typeof key === "string" && typeof value === "string") pairs.set(key, value);
-  return pairs;
-}
 
 /**
  * The values of `member`'s declared secrets for `environment`, in memory only and in CI only.
@@ -65,6 +45,13 @@ export async function readMemberSecrets(input: {
   readonly runways: DeployRunways;
   readonly run?: CommandRunner | undefined;
   readonly ci?: boolean | undefined;
+  /**
+   * Where the values come from: Infisical (the default), or the job's environment, which the shared
+   * `secrets-decrypt` action filled from the product's sops scope (ADR 0525).
+   */
+  readonly source?: "infisical" | "environment" | undefined;
+  /** The job's environment for `source: "environment"`; a test replaces it. */
+  readonly env?: Readonly<Record<string, string | undefined>> | undefined;
 }): Promise<ReadonlyMap<string, string>> {
   const { environment, member, runways } = input;
   if (input.ci === false)
@@ -75,6 +62,15 @@ export async function readMemberSecrets(input: {
   if (input.ci === undefined) await proveGithubJob({ github: runways.root.providers.github });
   const entry = secretSyncPlan(environment, runways).find((item) => item.member === member);
   if (entry === undefined) return new Map();
+  if (input.source === "environment") {
+    const env = input.env ?? process.env;
+    const missing = entry.names.filter((name) => (env[name] ?? "") === "");
+    if (missing.length > 0)
+      throw new RunwayUnresolvedError(
+        `the job's environment lacks ${member}'s ${missing.join(", ")}: decrypt the product's ${environment} scope first (.github/actions/secrets-decrypt)`,
+      );
+    return new Map(entry.names.map((name) => [name, env[name] ?? ""]));
+  }
   const infisical = runways.root.providers.infisical;
   const infisicalEnvironment = infisical?.environments?.[environment];
   if (infisicalEnvironment === undefined)
@@ -90,32 +86,20 @@ export async function readMemberSecrets(input: {
       `runway.yaml names no runtime folder for ${member}'s secrets (secrets.defaultPath in providers.infisical.paths)`,
     );
   const where = `${infisicalEnvironment}:${entry.path}`;
-  let output: string;
+  let pairs: ReadonlyMap<string, string>;
   try {
-    output = await (input.run ?? runProgram)(
-      "infisical",
-      [
-        "export",
-        "--env",
-        infisicalEnvironment,
-        "--path",
-        entry.path,
-        "--projectId",
-        infisical.workspace,
-        "--format",
-        "json",
-        "--silent",
-        ...(infisical.domain === undefined ? [] : ["--domain", infisical.domain]),
-      ],
-      {},
-    );
+    pairs = await exportInfisicalFolder({
+      projectId: infisical.workspace,
+      environment: infisicalEnvironment,
+      path: entry.path,
+      domain: infisical.domain,
+      run: input.run,
+    });
   } catch {
-    // No `cause` and no stderr: a failed export's output may hold values.
     throw new RunwayUnresolvedError(
       `infisical export of ${member}'s secrets (${where}) failed: check the job's Infisical login and that its identity may read ${entry.path}`,
     );
   }
-  const pairs = exportedPairs(output);
   const missing = entry.names.filter((name) => !pairs.has(name));
   if (missing.length > 0)
     throw new RunwayUnresolvedError(

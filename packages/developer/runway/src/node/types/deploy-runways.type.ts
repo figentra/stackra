@@ -14,6 +14,8 @@ type Workflows = Readonly<Record<string, string>>;
 export interface DeployRunways {
   /** The root `runway.yaml`. */
   readonly root: {
+    /** The repository's project key (`pay`); its runtime Infisical projects are `<project>-runtime(-prod)`. */
+    readonly project?: string;
     readonly environments?: Readonly<
       Record<
         string,
@@ -45,6 +47,15 @@ export interface DeployRunways {
     readonly member: string;
     /** The member root it sits under (`services`, `workers`, `apps`); its runtime follows from it. */
     readonly folder?: string;
+    /**
+     * The names the member's committed manifest declares (gen's `env` rows), with their kind (`secret`, `config`,
+     * `public`) and the environments that need them.
+     */
+    readonly env?: readonly {
+      readonly name: string;
+      readonly kind?: string;
+      readonly environments?: readonly string[];
+    }[];
     readonly runway: {
       readonly secrets?: readonly string[];
       readonly environments?: Readonly<

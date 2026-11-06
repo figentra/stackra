@@ -76,13 +76,21 @@ components:
     row: 1
     col: 0
     size: *a1
+  - id: workers-env-sync
+    type: cloud
+    label: worker-env-sync
+    sublabel: worker
+    tag: "@figentra/worker-env-sync"
+    row: 1
+    col: 1
+    size: *a1
   - id: workers-registry
     type: cloud
     label: worker-registry
     sublabel: worker
     tag: "@figentra/worker-registry"
     row: 1
-    col: 1
+    col: 2
     size: *a1
   - id: workers-static
     type: cloud
@@ -90,22 +98,22 @@ components:
     sublabel: node
     tag: "@figentra/worker-static"
     row: 1
-    col: 2
+    col: 3
     size: *a1
   - id: workers-turbo-cache
     type: cloud
     label: worker-turbo-cache
     sublabel: worker
     tag: "@figentra/worker-turbo-cache"
-    row: 1
-    col: 3
+    row: 2
+    col: 0
     size: *a1
   - id: services-example
     type: backend
     label: service-example
     sublabel: node
     tag: "@figentra/service-example"
-    row: 2
+    row: 3
     col: 0
     size: *a1
   - id: services-health
@@ -113,7 +121,7 @@ components:
     label: service-health
     sublabel: node
     tag: "@figentra/service-health"
-    row: 2
+    row: 3
     col: 1
     size: *a1
   - id: lib-application
@@ -121,7 +129,7 @@ components:
     label: application
     sublabel: browser, isomorphic, node, react-native, worker
     tag: 7 packages
-    row: 3
+    row: 4
     col: 0
     size: *a1
   - id: lib-commerce
@@ -129,7 +137,7 @@ components:
     label: commerce
     sublabel: browser, isomorphic, node, react-native
     tag: 7 packages
-    row: 3
+    row: 4
     col: 1
     size: *a1
   - id: lib-communication
@@ -137,7 +145,7 @@ components:
     label: communication
     sublabel: isomorphic, node
     tag: 4 packages
-    row: 3
+    row: 4
     col: 2
     size: *a1
   - id: lib-cross-cutting
@@ -145,7 +153,7 @@ components:
     label: cross-cutting
     sublabel: isomorphic, node, react-native, worker
     tag: 2 packages
-    row: 3
+    row: 4
     col: 3
     size: *a1
   - id: lib-data
@@ -153,7 +161,7 @@ components:
     label: data
     sublabel: browser, isomorphic, node, react-native
     tag: 13 packages
-    row: 4
+    row: 5
     col: 0
     size: *a1
   - id: lib-design-system
@@ -161,15 +169,15 @@ components:
     label: design-system
     sublabel: browser, isomorphic, node, react-native
     tag: 4 packages
-    row: 4
+    row: 5
     col: 1
     size: *a1
   - id: lib-developer
     type: database
     label: developer
     sublabel: browser, isomorphic, node, react-native
-    tag: 13 packages
-    row: 4
+    tag: 14 packages
+    row: 5
     col: 2
     size: *a1
   - id: lib-experience
@@ -177,7 +185,7 @@ components:
     label: experience
     sublabel: browser, isomorphic, node, react-native, worker
     tag: 15 packages
-    row: 4
+    row: 5
     col: 3
     size: *a1
   - id: lib-foundation
@@ -185,7 +193,7 @@ components:
     label: foundation
     sublabel: isomorphic, node, react-native
     tag: 12 packages
-    row: 5
+    row: 6
     col: 0
     size: *a1
   - id: lib-infrastructure
@@ -193,7 +201,7 @@ components:
     label: infrastructure
     sublabel: isomorphic, node
     tag: 10 packages
-    row: 5
+    row: 6
     col: 1
     size: *a1
   - id: lib-runtime
@@ -201,7 +209,7 @@ components:
     label: runtime
     sublabel: browser, isomorphic, node, react-native, worker
     tag: 10 packages
-    row: 5
+    row: 6
     col: 2
     size: *a1
   - id: lib-security
@@ -209,7 +217,7 @@ components:
     label: security
     sublabel: browser, isomorphic, node, react-native
     tag: 10 packages
-    row: 5
+    row: 6
     col: 3
     size: *a1
   - id: lib-state
@@ -217,7 +225,7 @@ components:
     label: state
     sublabel: browser, isomorphic, node, react-native
     tag: 6 packages
-    row: 6
+    row: 7
     col: 0
     size: *a1
   - id: config-tooling
@@ -225,7 +233,7 @@ components:
     label: tooling
     sublabel: node
     tag: 5 packages
-    row: 7
+    row: 8
     col: 0
     size: *a1
 boundaries:
@@ -237,6 +245,7 @@ boundaries:
       - apps-mobile
       - apps-playground
       - workers-edge
+      - workers-env-sync
       - workers-registry
       - workers-static
       - workers-turbo-cache
@@ -275,6 +284,7 @@ cards:
       - "@figentra/mobile"
       - "@figentra/playground"
       - "@figentra/worker-edge"
+      - "@figentra/worker-env-sync"
       - "@figentra/worker-registry"
       - "@figentra/worker-static"
       - "@figentra/worker-turbo-cache"
@@ -292,7 +302,7 @@ cards:
       - "cross-cutting: analytics, seo"
       - "data: assets, content, data-maintenance, data-transfer, database, documents, filesystem, media, model, reports, search, state-machine, storage"
       - "design-system: icons, showcase, tokens, ui"
-      - "developer: brand-kit, cli, coding-standard, console, devtools-kit, gen, mcp, renderers, repo-checks, runway, skills, testing, vite-plugin"
+      - "developer: brand-kit, cli, coding-standard, console, devtools-kit, flow-preset, gen, mcp, renderers, repo-checks, runway, skills, testing, vite-plugin"
       - "experience: builder, collaboration, experience, native-card-terminal, native-cash-drawer, native-customer-display, native-receipt-printer, native-scale, native-share, native-spotlight, navigation, panel, peripherals, platform, shortcuts"
       - "foundation: calendar, config, container, contracts, errors, events, i18n, logger, market-packs, support, transport, validation"
       - "infrastructure: infra-aws, infra-aws-runtime, infra-cloudflare, infra-gcp, infra-github, infra-identity, infra-mobile, infra-observability, infra-testbed, infra-tools"

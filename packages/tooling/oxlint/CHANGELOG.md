@@ -1,5 +1,76 @@
 # @stackra/oxlint-config
 
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/coding-standard@0.14.3
+  - @stackra/feature-flags@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/feature-flags@0.14.2
+  - @stackra/coding-standard@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/coding-standard@0.14.1
+  - @stackra/feature-flags@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.14.0
+  - @stackra/feature-flags@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.13.0
+  - @stackra/feature-flags@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.12.0
+  - @stackra/feature-flags@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/coding-standard@0.11.1
+  - @stackra/feature-flags@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.11.0
+  - @stackra/feature-flags@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- 33c1abd: New house rule `stackra/no-raw-env` (ADR 0173 amendment 2026-11-04, STA-2104): a named read of `process.env` or
+  `import.meta.env` outside configuration classes, generated code, tooling and tests is reported, so every name is
+  declared once in a `Config({ schema, env })` class or with `@Secret`. The base preset turns it on at `warn` while the
+  current reads migrate; it moves to `error` with the last one.
+
+### Patch Changes
+
+- Updated dependencies [33c1abd]
+  - @stackra/coding-standard@0.10.0
+  - @stackra/feature-flags@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

@@ -2,7 +2,7 @@
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
-#          .stackra/migrations exists), migration lint (Squawk), validate, boundaries, knip, secrets scan, agent sync),
+#          .stackra/migrations exists), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
 #          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
 #          build run for the members the change affects (turbo `--affected` against the base commit).
@@ -24,8 +24,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
-# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job alone holds an OIDC token,
-# for the Infisical step (ADR 0310).
+# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job holds an OIDC token for the
+# sops decrypt of ci/build/turbo (ADR 0525), and the Mobile apps job one for its Infisical licence step (ADR 0310).
 permissions:
   contents: read
 
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # STA-1393: GitHub OIDC token, exchanged with Infisical for the Turborepo cache only
+      id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build/turbo scope only
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
@@ -68,20 +68,15 @@ jobs:
         run: osv-scanner scan source --lockfile=pnpm-lock.yaml
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo. Skipped when the variable is unset, and on fork pull requests
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525, P4): this job signs in to Google
+      # Cloud as itself through infra's `callers` provider and decrypts only that scope. Skipped on fork pull requests
       # (no OIDC token there): turbo then has no TURBO_TOKEN and uses its local cache only, so no `--cache` flag is
       # needed to keep a fork from writing to the remote cache.
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != '' && !github.event.pull_request.head.repo.fork
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      - name: Turborepo remote cache (sops)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       # Every member but the two that alias `uniwind` to Uniwind Pro, whose postinstall downloads the licensed build
       # against a monthly CI quota; the Mobile apps job below covers those two. Lint, typecheck and build drop them too.
@@ -143,6 +138,8 @@ jobs:
       # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file
       # is linted as the runner applies it, inside one. Excluded rules are house decisions: no IF NOT EXISTS (the
       # checksummed history never re-runs a file), varchar and char(3) columns, integer counters.
+      # 2.0.0 could not parse a schema-qualified GRANT/REVOKE (STA-2117). The runner sets lock and
+      # statement timeouts per session (ADR 0159), so the files need no `set lock_timeout`.
       - name: Migration lint (Squawk)
         run: |
           mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)
@@ -156,9 +153,10 @@ jobs:
             if head -n 1 "$file" | grep -qx -- '-- stackra:transactional=false'; then online+=("$file"); else transactional+=("$file"); fi
           done
           lint() {
-            mise exec github:sbdchd/squawk@2.0.0 -- squawk --pg-version=18.0 \
+            mise exec github:sbdchd/squawk@2.71.0 -- squawk --pg-version=18.0 \
               --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \
-              --exclude=prefer-bigint-over-int "$@"
+              --exclude=prefer-bigint-over-int \
+              --exclude=require-lock-timeout --exclude=require-statement-timeout "$@"
           }
           if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi
           if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi
@@ -169,6 +167,13 @@ jobs:
           SPEC_GATE_REQUIRE_READY: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && '1' || '' }}
           STACKRA_BRANCH: ${{ github.head_ref }}
         run: pnpm validate
+
+      # ADR 0173 amendment 2026-11-04 (STA-2104): every environment name is declared and has an Infisical home. Names
+      # only, no login; a raw read of an undeclared name is a warning until stackra/no-raw-env is at error.
+      - name: Environment names (runway env check)
+        run: |
+          pnpm exec turbo run build --filter=@stackra/runway --output-logs=errors-only
+          pnpm runway env check
 
       - name: Check boundaries
         run: pnpm boundaries

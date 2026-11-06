@@ -1,6 +1,6 @@
 {
   "name": "@stackra/csp",
-  "version": "0.9.0",
+  "version": "0.14.3",
   "private": false,
   "description": "Stackra Content Security Policy: the CspConfig configuration, the nonce-based baseline policy builder, per-request nonces, and the React NonceProvider, useNonce and Style",
   "keywords": [

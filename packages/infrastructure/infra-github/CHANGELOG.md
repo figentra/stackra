@@ -1,5 +1,131 @@
 # @stackra/infra-github
 
+## 0.14.3
+
+### Patch Changes
+
+- Updated dependencies [3ccf74a]
+- Updated dependencies [64e4840]
+  - @stackra/runway@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/runway@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [54e05c6]
+  - @stackra/runway@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- 2e94d79: infra-aws: `productAccount` passes no `provider: undefined` or `parent: undefined` into resource options
+  (exactOptionalPropertyTypes), and `organizationLayout` reads an unknown `roots` as an empty root id instead of
+  throwing, so units register under previews and mocks. infra-github: the `./node` contract test names
+  `githubStack`'s `options` parameter.
+- Updated dependencies [dc4b3f0]
+- Updated dependencies [5d10209]
+- Updated dependencies [6e61084]
+  - @stackra/runway@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [e36505c]
+  - @stackra/runway@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/runway@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Minor Changes
+
+- e4aaacd: `githubStack` takes `options` (STA-2115): the OIDC subject template (`oidcTemplate`) and the committed rulesets and
+  branch protection (`rules`) are opt-in and off by default, so a stacks repository can manage repositories whose
+  subjects are immutable or custom, and whose rules a tool such as Flow renders. Pass `{ oidcTemplate: true, rules: true }`
+  for the previous behaviour.
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [a15cacf]
+- Updated dependencies [4c0eead]
+- Updated dependencies [4749967]
+- Updated dependencies [f511762]
+- Updated dependencies [e57b9a1]
+- Updated dependencies [ea40871]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [242ebe4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [c4348cd]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+  - @stackra/runway@0.10.0
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes
