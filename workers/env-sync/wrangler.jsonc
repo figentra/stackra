@@ -5,8 +5,8 @@
 //        STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY (ci-production /ci/release) are Worker secrets set by its deploy
 //        workflow (`secret-name:`, as deploy-registry.yml does), never by hand (STA-2133).
 // Code facts only (ADR 0519 decision 1, `pnpm validate` check wrangler-operational-keys): the account, compatibility
-// date, workers_dev (false) and observability are runway.yaml's (`targets.cloudflare-workers.members.env-sync`),
-// rendered on deploy by deploy-env-sync.yml. The route is its custom domain, as static and registry do.
+// date, workers_dev (false), observability and the custom domain env-sync.stackra.figentra.com (`customDomains`)
+// are runway.yaml's (`targets.cloudflare-workers.members.env-sync`), rendered on deploy by deploy-env-sync.yml.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "stackra-env-sync",
@@ -18,5 +18,4 @@
     // it; `figentra` joins once its project exists (STA-2133).
     "ENV_SYNC_ROUTES": "{\"8edd11a5-fcd8-456f-9589-261db1302386\":\"figentra/pay\",\"7898394a-7f4d-4ef5-95de-03badaf0ea69\":\"figentra/billing\",\"28649a4f-9b29-4924-a590-ab63c603d812\":\"figentra/invoicing\",\"0aa24cb1-ba4f-4e8d-b0d3-9e4c5ddd3de0\":\"figentra/commerce\",\"90e28980-14fe-431f-85d8-75186bb1f43e\":\"figentra/tamo\",\"7871f337-a3f8-48df-a169-12ebc8c98d59\":\"figentra/os\"}",
   },
-  "routes": [{ "pattern": "env-sync.stackra.figentra.com", "custom_domain": true }],
 }

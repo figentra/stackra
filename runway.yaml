@@ -176,6 +176,7 @@ targets:
       env-sync:
         path: workers/env-sync
         preset: api
+        customDomains: [env-sync.stackra.figentra.com]
         secrets: [INFISICAL_WEBHOOK_SECRET, STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY]
         smoke:
           - url: https://env-sync.stackra.figentra.com/readyz
