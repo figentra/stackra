@@ -1,5 +1,16 @@
 # @stackra/native-card-terminal
 
+## 0.17.1
+
+### Patch Changes
+
+- Updated dependencies [0b917cf]
+  - @stackra/payments@0.17.1
+  - @stackra/peripherals@0.17.1
+  - @stackra/platform@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes

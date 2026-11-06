@@ -1,5 +1,12 @@
 # @stackra/infra-tools
 
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/runway@0.17.1
+  - @stackra/contracts@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes

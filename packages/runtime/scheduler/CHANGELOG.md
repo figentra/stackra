@@ -1,5 +1,21 @@
 # @stackra/scheduler
 
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/actions@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/gen@0.17.1
+  - @stackra/testing@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/locking@0.17.1
+  - @stackra/queue@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes

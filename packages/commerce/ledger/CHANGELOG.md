@@ -1,5 +1,17 @@
 # @stackra/ledger
 
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/money@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/locking@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes

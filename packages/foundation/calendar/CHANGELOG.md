@@ -1,5 +1,15 @@
 # @stackra/calendar
 
+## 0.17.1
+
+### Patch Changes
+
+- Updated dependencies [0b917cf]
+  - @stackra/market-packs@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/support@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @stackra/cli
 
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/runway@0.17.1
+  - @stackra/mcp@0.17.1
+  - @stackra/console@0.17.1
+  - @stackra/gen@0.17.1
+  - @stackra/repo-checks@0.17.1
+  - @stackra/skills@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+
 ## 0.17.0
 
 ### Minor Changes

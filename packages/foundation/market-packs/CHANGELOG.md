@@ -1,5 +1,20 @@
 # @stackra/market-packs
 
+## 0.17.1
+
+### Patch Changes
+
+- 0b917cf: Market packs list payment providers under `payments.byo_providers` (the old hyphenated key failed the pack key
+  grammar), and the ae, sa and eg packs list their launch providers.
+- @stackra/assets@0.17.1
+  - @stackra/filesystem@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes

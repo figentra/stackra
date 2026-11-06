@@ -1,5 +1,19 @@
 # @stackra/documents
 
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/integrations@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/data-transfer@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes
