@@ -1,0 +1,83 @@
+# Stackra file contract:
+# Purpose: the one CI step that replaces every Infisical login (ADR 0525, P4): it signs in to Google Cloud as the job's
+#          Workload Identity service account, copies one scope's ciphertext (`<scope>/<NAME>.enc.yaml`, published by
+#          figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts each
+#          file with Cloud KMS in memory and exports the values, masked, into the job's environment.
+# Boundary: no GitHub token and no stored credential: the service account may read only its scope's prefix and decrypt
+#           only its scope's key, pinned by figentra/infra to (repository, environment, workflow). Values are never
+#           echoed; the ciphertext folder is removed after the decrypt. The job needs `permissions: id-token: write`
+#           and mise on PATH (jdx/mise-action) for sops.
+# Runtime: GitHub Actions (composite)
+# Governing contract: ADR 0525 (SOPS and Cloud KMS; CI decrypts in place); ADR 0019; ADR 0257.
+name: Secrets decrypt
+description: Decrypt one figentra/secrets scope into the job's environment (masked) with Workload Identity.
+inputs:
+  scope:
+    description: The scope, e.g. ci/build/registry, ci/deploy or ci/production/release.
+    required: true
+  names:
+    description: Only these names, comma-separated; the whole scope when empty.
+    required: false
+    default: ""
+  service-account:
+    description: The scope's decrypter service account (figentra/infra), e.g. <name>@figentra-tools.iam.gserviceaccount.com.
+    required: true
+  workload-identity-provider:
+    description: The Workload Identity provider resource name.
+    required: false
+    default: projects/330719355948/locations/global/workloadIdentityPools/github/providers/secrets
+  bucket:
+    description: The ciphertext bucket sync.yml publishes to.
+    required: false
+    default: figentra-secrets-ciphertext
+  runway-version:
+    description: The @stackra/runway version whose `secrets decrypt` runs (from the Stackra registry).
+    required: false
+    default: 0.13.0
+runs:
+  using: composite
+  steps:
+    - name: Google Cloud (Workload Identity)
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+      with:
+        workload_identity_provider: ${{ inputs.workload-identity-provider }}
+        service_account: ${{ inputs.service-account }}
+        create_credentials_file: true
+
+    - name: sops
+      shell: bash
+      run: |
+        set -euo pipefail
+        mise install aqua:getsops/sops@3.10.2
+        dirname "$(mise which --tool aqua:getsops/sops@3.10.2 sops)" >> "$GITHUB_PATH"
+
+    # Only the scope's own files: the glob stops at the folder, so a subscope (ci/production/release under
+    # ci/production) is never copied by its parent.
+    - name: Ciphertext
+      shell: bash
+      env:
+        BUCKET: ${{ inputs.bucket }}
+        SCOPE: ${{ inputs.scope }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$RUNNER_TEMP/secrets/$SCOPE"
+        gcloud storage cp "gs://$BUCKET/$SCOPE/*.enc.yaml" "$RUNNER_TEMP/secrets/$SCOPE/"
+
+    - name: Decrypt
+      shell: bash
+      env:
+        SCOPE: ${{ inputs.scope }}
+        NAMES: ${{ inputs.names }}
+        RUNWAY_VERSION: ${{ inputs.runway-version }}
+      run: |
+        set -euo pipefail
+        args=(secrets decrypt --scope "$SCOPE" --dir "$RUNNER_TEMP/secrets")
+        if [ -n "$NAMES" ]; then args+=(--names "$NAMES"); fi
+        # @stackra/* reads anonymously from the Stackra registry, so this needs no token before any secret exists.
+        npx --yes --@stackra:registry=https://npm.stackra.figentra.com/ -p "@stackra/runway@$RUNWAY_VERSION" \
+          runway "${args[@]}"
+
+    - name: Ciphertext cleanup
+      if: always()
+      shell: bash
+      run: rm -rf "$RUNNER_TEMP/secrets"
