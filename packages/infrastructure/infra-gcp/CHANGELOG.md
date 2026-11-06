@@ -1,5 +1,22 @@
 # @stackra/infra-gcp
 
+## 0.11.0
+
+### Minor Changes
+
+- cac58f5: `gcpOrganization` (STA-2115, ADR 0524): a GCP organization's layer as code, with folders by path, organization
+  policies on the organization or a folder, protected projects with their billing account, and non-authoritative IAM
+  members on the organization, folders, projects and billing accounts.
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes

@@ -1,5 +1,18 @@
 # @stackra/theming
 
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/assets@0.11.0
+  - @stackra/storage@0.11.0
+  - @stackra/tokens@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes
