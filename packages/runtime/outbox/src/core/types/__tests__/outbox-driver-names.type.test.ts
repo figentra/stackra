@@ -11,6 +11,7 @@ import "#core/types/outbox-driver-names.type";
 import type { DriverName, DriverRegistry } from "@stackra/container";
 import { describe, expectTypeOf, it } from "@stackra/testing";
 
+import type { DeliveryDriver } from "#contracts/ports/delivery-driver.port";
 import type { InboxDriver } from "#contracts/ports/inbox-driver.port";
 import type { OutboxDriver } from "#contracts/ports/outbox-driver.port";
 
@@ -18,6 +19,7 @@ describe("DriverRegistry['outbox.OutboxDriver'] and ['outbox.InboxDriver']", () 
   it("narrows both driver names to the shipped drivers", () => {
     expectTypeOf<DriverName<OutboxDriver>>().toEqualTypeOf<"postgres" | "memory">();
     expectTypeOf<DriverName<InboxDriver>>().toEqualTypeOf<"postgres" | "memory">();
+    expectTypeOf<DriverName<DeliveryDriver>>().toEqualTypeOf<"postgres" | "memory">();
     expectTypeOf<DriverRegistry["outbox.OutboxDriver"]>().toEqualTypeOf<DriverName<OutboxDriver>>();
   });
 });
