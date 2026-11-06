@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryDeliveryDriver`: a write keeps the envelope as JSON and skips a kept (event id,
- *          subscriber, type); `due` lists live due deliveries grouped by subscriber, oldest first, up to the limit of each
- *          subscriber (so a backlog of one never starves another, 1,000 deep included); `retry` counts and moves the due
+ *          subscriber, type); `lease` takes live due deliveries grouped by subscriber, oldest first, up to the limit of
+ *          each subscriber (so a backlog of one never starves another, 1,000 deep included) and hides them until the
+ *          lease ends; `retry` counts and moves the due
  *          time; `deadLetter` counts and hides; `remove` deletes; `list` narrows by subscriber and state; `replay` makes
  *          a dead delivery pending once and refuses a live or unknown one.
  * Boundary: test only.
@@ -32,10 +33,13 @@ describe(MemoryDeliveryDriver, () => {
       deliveryOf({ id: "dlv_2" }),
       deliveryOf({ id: "dlv_3", type: "payments.payment.captured.v0" }),
     ]);
-    expect((await driver.due(NOON, 10)).map((each) => each.id)).toEqual(["dlv_1", "dlv_3"]);
+    expect((await driver.lease(NOON, 10, LATER)).map((each) => each.id)).toEqual([
+      "dlv_1",
+      "dlv_3",
+    ]);
   });
 
-  it("lists each subscriber's due deliveries up to the limit, so a backlog starves no one", async () => {
+  it("leases each subscriber's due deliveries up to the limit, so a backlog starves no one", async () => {
     const driver = new MemoryDeliveryDriver();
     const backlog = Array.from({ length: 1000 }, (_, index) =>
       deliveryOf({
@@ -47,27 +51,40 @@ describe(MemoryDeliveryDriver, () => {
       ...backlog,
       deliveryOf({ id: "dlv_z", subscriber: "os", eventId: "evt_z" }),
     ]);
-    const due = await driver.due(NOON, 100);
+    const due = await driver.lease(NOON, 100, LATER);
     expect(due.filter((each) => each.subscriber === "billing")).toHaveLength(100);
     expect(due.filter((each) => each.subscriber === "os").map((each) => each.id)).toEqual([
       "dlv_z",
     ]);
-    expect(due[0]?.id).toBe("dlv_a0000");
+    expect(due[0]).toMatchObject({ id: "dlv_a0000", availableAt: LATER });
+    const next = await driver.lease(NOON, 100, LATER);
+    expect(next[0]?.id).toBe("dlv_a0100");
+    expect(next.some((each) => each.subscriber === "os")).toBe(false);
+  });
+
+  it("hides a leased delivery until its lease ends", async () => {
+    const driver = new MemoryDeliveryDriver();
+    await driver.write([deliveryOf()]);
+    expect(await driver.lease(NOON, 10, LATER)).toHaveLength(1);
+    expect(await driver.lease(NOON, 10, LATER)).toEqual([]);
+    expect(await driver.lease(LATER, 10, LATER)).toEqual([
+      expect.objectContaining({ id: "dlv_1", attempts: 0 }),
+    ]);
   });
 
   it("counts a retry, dead-letters, removes and leaves an unknown id alone", async () => {
     const driver = new MemoryDeliveryDriver();
     await driver.write([deliveryOf(), deliveryOf({ id: "dlv_2", eventId: "evt_2" })]);
     await driver.retry("dlv_1", LATER, FAILURE);
-    expect(await driver.due(NOON, 10)).toEqual([expect.objectContaining({ id: "dlv_2" })]);
-    expect(await driver.due(LATER, 10)).toEqual([
+    expect(await driver.lease(NOON, 10, NOON)).toEqual([expect.objectContaining({ id: "dlv_2" })]);
+    expect(await driver.lease(LATER, 10, LATER)).toEqual([
       expect.objectContaining({ id: "dlv_1", attempts: 1, lastError: FAILURE }),
       expect.objectContaining({ id: "dlv_2" }),
     ]);
     await driver.deadLetter("dlv_1", FAILURE, LATER);
     await driver.remove("dlv_2");
     await driver.retry("dlv_9", LATER, FAILURE);
-    expect(await driver.due(LATER, 10)).toEqual([]);
+    expect(await driver.lease(LATER, 10, LATER)).toEqual([]);
     expect(await driver.list({ limit: 10 })).toEqual([
       expect.objectContaining({ id: "dlv_1", attempts: 2, deadAt: LATER }),
     ]);

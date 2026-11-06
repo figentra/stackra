@@ -12,7 +12,7 @@ import { SecretStore } from "@stackra/config/contracts";
 
 import { EventsRelayConfig } from "#config/events-relay.config";
 import { RelayInboxConfig } from "#config/relay-inbox.config";
-import type { ProducerKeys, RelayKey, Subscriber } from "#contracts/index";
+import type { PinnedProducer, RelayKey, Subscriber } from "#contracts/index";
 
 /** A generated relay key: the secret value that signs and the public key that verifies. */
 export interface RelayKeyPair {
@@ -80,6 +80,9 @@ export function relayConfig(values: {
 }
 
 /** The consumer's inbox configuration pinning `producers`, running in `environment`. */
-export function inboxConfig(producers: ProducerKeys, environment = "dev"): RelayInboxConfig {
-  return buildConfig(RelayInboxConfig, { values: { producers, environment } });
+export function inboxConfig(
+  producers: Readonly<Record<string, PinnedProducer>>,
+  environment = "dev",
+): RelayInboxConfig {
+  return buildConfig(RelayInboxConfig, { values: { producers: { ...producers }, environment } });
 }

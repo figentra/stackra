@@ -5,8 +5,9 @@
  *          sent in parallel and each stops at its first failure in a tick, so a failing consumer never holds back a
  *          healthy one; a network error, a timeout, a redirect, a 5xx, 408 or 429 backs off; any other 4xx dead-letters
  *          at once; the last attempt dead-letters; an unlisted subscriber dead-letters; every dead letter is logged
- *          with subscriber, type and code; nothing runs while another relay holds the lock; `work` logs a failed tick
- *          and stops when its signal aborts.
+ *          with subscriber, type and code; nothing runs while another relay holds the lock; a tick leases its rows and
+ *          sends them outside the lock, so another tick takes none in flight and a crashed relay's rows return when the
+ *          lease ends; `work` logs a failed tick and stops when its signal aborts.
  * Boundary: test only; the memory delivery store, the memory lock driver, the real Ed25519 signer with a fresh key, a
  *           fixed clock, a recording logger and a stubbed `fetch`.
  * Runtime: node (vitest)
@@ -39,7 +40,12 @@ import { CrossAppRelayService } from "#node/services/cross-app-relay.service";
 
 const NOON = new Date(Date.UTC(2026, 10, 6, 12));
 
-const clock = { now: () => new Date(NOON) } as Clock;
+const LEASE_END = new Date(NOON.getTime() + 110_000);
+
+/** The time the fake clock reads; a test moves it and puts it back. */
+let current = NOON;
+
+const clock = { now: () => new Date(current) } as Clock;
 
 const TYPE = "payments.payment.captured.v1";
 
@@ -77,6 +83,7 @@ beforeAll(async () => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  current = NOON;
 });
 
 /** One request the stubbed `fetch` saw. */
@@ -144,7 +151,7 @@ describe(CrossAppRelayService, () => {
     expect(headers["content-type"]).toBe("application/json");
     expect(headers["webhook-id"]).toBe("dlv_1");
     const verifier = new ContractInboxVerifierDriver(
-      inboxConfig({ pay: { dev: [key.key] } }),
+      inboxConfig({ pay: { keys: { dev: [key.key] }, events: [TYPE] } }),
       clock,
     );
     await expect(verifier.verify(headers, body)).resolves.toMatchObject({
@@ -173,6 +180,44 @@ describe(CrossAppRelayService, () => {
     ]);
     expect(left[0]?.lastError).toEqual({ code: "http_status", status: 503 });
     expect(left[0]?.availableAt.getTime()).toBeGreaterThan(NOON.getTime());
+    // the untried rows wait for their lease to end
+    expect(left[1]?.availableAt).toEqual(LEASE_END);
+  });
+
+  it("leases its rows: a tick while they are in flight takes none, and the send runs outside the lock", async () => {
+    let answer: ((response: Response) => void) | undefined;
+    const sent: string[] = [];
+    vi.stubGlobal("fetch", (url: URL) => {
+      sent.push(String(url));
+      return new Promise<Response>((resolve) => {
+        answer = resolve;
+      });
+    });
+    const { relay, driver, lockDriver } = await relayOf([deliveryOf()]);
+    const first = relay.relay();
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    await expect(relay.relay()).resolves.toBe(0);
+    await new Locks(lockDriver, clock).tryWith(
+      "outbox.cross-app",
+      Duration.minutes(1),
+      async () => {
+        answer?.(new Response(null, { status: 204 }));
+        await expect(first).resolves.toBe(1);
+      },
+    );
+    expect(sent).toHaveLength(1);
+    expect(await stored(driver)).toEqual([]);
+  });
+
+  it("sends a row a crashed relay leased once its lease ends", async () => {
+    const sent = transport();
+    const { relay, driver } = await relayOf([deliveryOf()]);
+    await driver.lease(NOON, 10, LEASE_END);
+    await expect(relay.relay()).resolves.toBe(0);
+    current = LEASE_END;
+    await expect(relay.relay()).resolves.toBe(1);
+    expect(sent).toHaveLength(1);
+    expect(await stored(driver)).toEqual([]);
   });
 
   it.each([

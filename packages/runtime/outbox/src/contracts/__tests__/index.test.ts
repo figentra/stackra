@@ -39,7 +39,7 @@ describe("@stackra/outbox/contracts", () => {
     expectTypeOf<contracts.ChangeRecord["change"]>().toEqualTypeOf<contracts.RowChange>();
     expectTypeOf<contracts.ChangeCursor["position"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<contracts.Delivery["envelope"]>().toEqualTypeOf<contracts.CrossAppEnvelope>();
-    expectTypeOf<contracts.ProducerKeys[string][string]>().toEqualTypeOf<
+    expectTypeOf<contracts.PinnedProducer["keys"][string]>().toEqualTypeOf<
       readonly contracts.RelayKey[]
     >();
     expectTypeOf<contracts.RowChange["after"]>().toEqualTypeOf<

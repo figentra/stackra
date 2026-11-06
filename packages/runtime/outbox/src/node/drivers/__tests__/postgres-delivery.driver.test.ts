@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresDeliveryDriver`: a write is one insert-or-ignore on (event id, subscriber, type) of a
- *          bound JSON array, and none for an empty batch; `due` ranks each subscriber's live due rows so each takes at
- *          most the limit and reads rows back into deliveries; `remove`, `retry`, `deadLetter` and `replay` are one
- *          bound statement each, `replay` touching dead rows only; `list` narrows by subscriber and state with fixed
+ *          bound JSON array, and none for an empty batch; `lease` ranks each subscriber's live due rows so each takes at
+ *          most the limit and moves their due time to the lease's end in one statement, read back sorted; `remove`,
+ *          `retry`, `deadLetter` and `replay` are one bound statement each, `replay` touching dead rows only; `list` narrows by subscriber and state with fixed
  *          conditions and bound values.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
@@ -18,6 +18,8 @@ import { deliveryOf } from "#core/__tests__/fixtures/delivery.fixture";
 import { PostgresDeliveryDriver } from "#node/drivers/postgres-delivery.driver";
 
 const NOON = new Date(Date.UTC(2026, 10, 6, 12));
+
+const LATER = new Date(NOON.getTime() + 110_000);
 
 /** One recorded statement. */
 interface Statement {
@@ -79,16 +81,20 @@ describe(PostgresDeliveryDriver, () => {
     expectBound(statements);
   });
 
-  it("takes each subscriber's due rows up to the limit and reads them back", async () => {
-    const { database, statements } = databaseWith([ROW]);
-    const due = await new PostgresDeliveryDriver(database).due(NOON, 100);
-    expect(statements[0]?.sql).toContain(
+  it("leases each subscriber's due rows up to the limit in one statement and reads them back sorted", async () => {
+    const { database, statements } = databaseWith([{ ...ROW, id: "dlv_2", subscriber: "os" }, ROW]);
+    const due = await new PostgresDeliveryDriver(database).lease(NOON, 10, LATER);
+    const [statement] = statements;
+    expect(statement?.sql).toContain(
       "row_number() over (partition by subscriber order by created_at, id)",
     );
-    expect(statements[0]?.sql).toContain("where dead_at is null and available_at <= ?");
-    expect(statements[0]?.sql).toContain("where rank <= ? order by subscriber, created_at, id");
-    expect(statements[0]?.params).toEqual([NOON, 100]);
-    expect(due).toEqual([
+    expect(statement?.sql).toContain("where dead_at is null and available_at <= ?");
+    expect(statement?.sql).toContain("where rank <= ?");
+    expect(statement?.sql).toContain('update "outbox"."deliveries" as d set available_at = ?');
+    expect(statement?.sql).toContain("returning d.id, d.event_id");
+    expect(statement?.params).toEqual([NOON, 10, LATER]);
+    expect(due.map((each) => each.id)).toEqual(["dlv_1", "dlv_2"]);
+    expect(due.slice(0, 1)).toEqual([
       {
         id: "dlv_1",
         eventId: "evt_1",

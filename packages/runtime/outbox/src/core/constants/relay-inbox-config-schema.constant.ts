@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `RELAY_INBOX_CONFIG_SCHEMA`, the zod schema of `RelayInboxConfig`: the running environment and the public
- *          keys of each producer the consumer pins, per environment.
+ * Purpose: `RELAY_INBOX_CONFIG_SCHEMA`, the zod schema of `RelayInboxConfig`: the running environment and, for each
+ *          producer the consumer pins, its public keys per environment and the events it publishes.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default; with no producer listed the
  *           inbox verifies nothing. Public facts only.
  * Runtime: isomorphic
@@ -15,10 +15,13 @@ export const RELAY_INBOX_CONFIG_SCHEMA = z.object({
   producers: z
     .record(
       z.string(),
-      z.record(
-        z.string(),
-        z.array(z.object({ id: z.string().min(1), publicKey: z.string().min(1) })),
-      ),
+      z.object({
+        keys: z.record(
+          z.string(),
+          z.array(z.object({ id: z.string().min(1), publicKey: z.string().min(1) })),
+        ),
+        events: z.array(z.string().min(1)),
+      }),
     )
     .default({}),
 });

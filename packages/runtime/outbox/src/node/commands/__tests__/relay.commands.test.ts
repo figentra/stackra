@@ -91,7 +91,7 @@ describe(RelayReplayCommand, () => {
     });
     expect(result.exitCode).toBe(0);
     expect(await driver.list({ state: DeliveryState.Dead, limit: 10 })).toEqual([]);
-    expect(await driver.due(NOON, 10)).toHaveLength(2);
+    expect(await driver.lease(NOON, 10, NOON)).toHaveLength(2);
   });
 
   it("exits 2 for a live or unknown delivery", async () => {

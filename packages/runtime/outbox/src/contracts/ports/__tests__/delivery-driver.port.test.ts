@@ -17,7 +17,7 @@ import type { Delivery } from "#contracts/types/delivery.type";
 class NullDeliveryDriver extends Driver(DeliveryDriver) {
   async write(): Promise<void> {}
 
-  async due(): Promise<readonly Delivery[]> {
+  async lease(): Promise<readonly Delivery[]> {
     return [];
   }
 
@@ -41,7 +41,7 @@ describe("DeliveryDriver", () => {
     const driver: DeliveryDriver = new NullDeliveryDriver();
     expect(driver).toBeInstanceOf(DeliveryDriver);
     expect(driver).toBeInstanceOf(Port);
-    await expect(driver.due(new Date(), 10)).resolves.toEqual([]);
+    await expect(driver.lease(new Date(), 10, new Date())).resolves.toEqual([]);
     await expect(driver.replay("dlv_1", new Date())).resolves.toBe(false);
   });
 

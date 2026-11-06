@@ -34,7 +34,7 @@ export type { InboxRequest } from "#contracts/types/inbox-request.type";
 export type { InboxVerification } from "#contracts/types/inbox-verification.type";
 export type { OutboxError } from "#contracts/types/outbox-error.type";
 export type { OutboxMessage } from "#contracts/types/outbox-message.type";
-export type { ProducerKeys } from "#contracts/types/producer-keys.type";
+export type { PinnedProducer } from "#contracts/types/pinned-producer.type";
 export type { RelayKey } from "#contracts/types/relay-key.type";
 export type { RowChange } from "#contracts/types/row-change.type";
 export type { SignedHeaders } from "#contracts/types/signed-headers.type";

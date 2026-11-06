@@ -524,6 +524,12 @@
             "name": "InboxVerifier",
             "from": "@stackra/outbox/contracts"
           }
+        },
+        {
+          "class": {
+            "name": "RelayInboxConfig",
+            "from": "@stackra/outbox"
+          }
         }
       ]
     }

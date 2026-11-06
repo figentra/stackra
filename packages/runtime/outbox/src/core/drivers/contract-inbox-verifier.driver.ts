@@ -83,8 +83,8 @@ export class ContractInboxVerifierDriver extends Driver(InboxVerifier) {
     let listed = false;
     for (const value of values) {
       const [, keyId = "", encoded = ""] = SIGNATURE.exec(value) ?? [];
-      for (const [service, environments] of Object.entries(this.config.producers)) {
-        const key = environments[this.config.environment]?.find((each) => each.id === keyId);
+      for (const [service, producer] of Object.entries(this.config.producers)) {
+        const key = producer.keys[this.config.environment]?.find((each) => each.id === keyId);
         if (key === undefined) continue;
         listed = true;
         if (await this.verifies(key.publicKey, encoded, content))

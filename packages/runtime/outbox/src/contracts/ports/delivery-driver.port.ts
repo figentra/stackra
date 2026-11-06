@@ -6,8 +6,8 @@
  *          (`postgres`, `memory`).
  * Boundary: an abstract class that is its own token, keyed `outbox.DeliveryDriver`. A driver stores and lists; it never
  *           sends, computes a backoff or reads a clock. `write` ignores a delivery whose (event id, subscriber, type) is
- *           kept already, so a relay retry writes nothing twice. One cross-app relay runs at a time (a lock), so `due`
- *           reserves nothing. A leaf file.
+ *           kept already, so a relay retry writes nothing twice. A relay takes due deliveries under a lock with `lease`,
+ *           which moves their due time past the sending, and records each outcome later on its own. A leaf file.
  * Runtime: isomorphic
  * Governing contract: ADR 0511 (decisions 12 and 13, amendment of 2026-11-02); ADR 0078 (decision 4); ADR 0142.
  */
@@ -32,10 +32,11 @@ export abstract class DeliveryDriver extends Port {
   abstract write(deliveries: readonly Delivery[]): Promise<void>;
 
   /**
-   * Up to `limit` live deliveries due at `now` of each subscriber, so one backlog never starves another: grouped by
-   * subscriber, oldest written first and by id within one instant.
+   * Takes up to `limit` live deliveries due at `now` of each subscriber, so one backlog never starves another, and
+   * makes them due again at `until` (the lease) in the same step, so no other tick takes them while they are sent;
+   * grouped by subscriber, oldest written first and by id within one instant.
    */
-  abstract due(now: Date, limit: number): Promise<readonly Delivery[]>;
+  abstract lease(now: Date, limit: number, until: Date): Promise<readonly Delivery[]>;
 
   /** Deletes delivery `id`: the consumer took it. */
   abstract remove(id: PublicId<"dlv">): Promise<void>;

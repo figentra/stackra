@@ -29,6 +29,8 @@ export async function pruneOutbox(
   now: Date,
 ): Promise<{ readonly dead: number }> {
   const cutoff = new Date(now.getTime() - days * DAY);
+  // shortcut: dead cross-app deliveries (outbox.deliveries) are not pruned yet; add DeliveryDriver.pruneDead and a
+  // driver argument here (with @stackra/data-maintenance's job) before a producer's dead letters grow large
   const dead = await outbox.pruneDead(cutoff);
   await inbox.prune(cutoff);
   return { dead };

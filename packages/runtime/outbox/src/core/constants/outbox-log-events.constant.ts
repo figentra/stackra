@@ -23,6 +23,8 @@ export const OUTBOX_LOG_EVENTS = Object.freeze({
   crossAppRelayFailed: "outbox.cross_app_relay_failed",
   /** The inbox refused a request it could not verify (the reason only, never the body). */
   inboxUnverified: "outbox.inbox_unverified",
+  /** The inbox refused a verified request for an event its producer does not publish. */
+  inboxForbidden: "outbox.inbox_forbidden",
   /** The inbox refused a verified request whose envelope or data broke its schema. */
   inboxInvalid: "outbox.inbox_invalid",
 });

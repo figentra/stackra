@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `RelayInboxConfig`: a configuration keyed `outbox.relay_inbox`, running in `dev` with no
- *          producer by default, that takes the pinned producers' key table and refuses an empty environment.
+ *          producer by default, that takes the pinned producers' keys and events and refuses an empty environment.
  * Boundary: test only; builds the configuration through @stackra/config.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0511 (decisions 16 and 18); ADR 0294 (decisions 19 and 20).
@@ -23,7 +23,12 @@ describe("RelayInboxConfig", () => {
   });
 
   it("takes the pinned producers' keys and refuses an empty environment", () => {
-    const producers = { pay: { prod: [{ id: "pay-prod-1", publicKey: "AAAA" }] } };
+    const producers = {
+      pay: {
+        keys: { prod: [{ id: "pay-prod-1", publicKey: "AAAA" }] },
+        events: ["payments.payment.captured.v1"],
+      },
+    };
     const config = buildConfig(RelayInboxConfig, { values: { environment: "prod", producers } });
     expect(config.producers).toEqual(producers);
     expect(() => buildConfig(RelayInboxConfig, { values: { environment: "" } })).toThrow(

@@ -73,8 +73,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   `evt_` check to one body form; stored ids of the older forms must keep passing (STA-1380).
 - Cross-app delivery (ADR 0511 d11-19): the fan-out runs only when the container binds `CrossAppFanOut`, so a service
   with no relay configuration relays exactly as before; a fan-out failure fails the outbox message, and
-  `outbox.deliveries`' unique (event id, subscriber, type) keeps a retry single. `CrossAppRelayService` has its own lock
-  (`outbox.cross-app`) and reuses `OUTBOX_DEFAULTS`' batch, attempts, backoff and poll. Never send `producer`: the
+  `outbox.deliveries`' unique (event id, subscriber, type) keeps a retry single. `CrossAppRelayService` holds its own lock
+  (`outbox.cross-app`) only to lease deliveries (`DeliveryDriver.lease`); it never sends HTTP inside the lock or a
+  transaction, and records each outcome in its own write. It reuses `OUTBOX_DEFAULTS`' attempts, backoff and poll. The
+  inbox answers 403 to an event its verified producer does not publish (`RelayInboxConfig.producers[s].events`). Never send `producer`: the
   inbox sets it from the verified sender. Never parse an inbox body before `InboxVerifier.verify`, never log a body,
   and never import @stackra/webhooks (the signature layout is copied, research R-4). The signing key's value is read
   only through the `SecretStore` port by its name; it is never logged or kept as text. `EventsRelayConfig`

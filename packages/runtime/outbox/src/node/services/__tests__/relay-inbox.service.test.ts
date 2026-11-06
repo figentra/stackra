@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `RelayInboxService`: a verified delivery runs its listener once and answers 204, a repeat
  *          answers 204 and runs nothing; `producer` is the verified sender's service whatever the body says; an
- *          unsigned or forged request answers 401, logs the reason (never the body) and records nothing; a method other
+ *          unsigned or forged request answers 401, logs the reason (never the body) and records nothing; another pinned
+ *          producer's key delivering this producer's event answers 403 and records nothing; a method other
  *          than POST answers 405; a body that is not JSON, an envelope that breaks its schema, data that breaks the
  *          event's schema and an unknown event answer 422 and record nothing; a newer version than this process reads
  *          answers 204 and waits; a throwing inbox propagates (the route answers a 5xx and the producer retries);
@@ -75,9 +76,12 @@ let pay: RelayKeyPair;
 
 let stranger: RelayKeyPair;
 
+let os: RelayKeyPair;
+
 beforeAll(async () => {
   pay = await relayKeyPair("pay-dev-1");
   stranger = await relayKeyPair("stranger-dev-1");
+  os = await relayKeyPair("os-dev-1");
 });
 
 /** The envelope body of `evt_1`, with `fields` replaced. */
@@ -93,11 +97,11 @@ function bodyOf(fields: Readonly<Record<string, unknown>> = {}): string {
   });
 }
 
-/** A POST of `body` signed by `pair` (the listed pay key by default). */
-async function request(body: string, pair: RelayKeyPair = pay) {
+/** A POST of `body` signed by `pair` under `keyId`'s key (the listed pay key by default). */
+async function request(body: string, pair: RelayKeyPair = pay, key = pay.key) {
   const signer = new Ed25519EventSignerDriver(
     secretsOf({ KEY: pair.secret }),
-    relayConfig({ signingKey: "KEY", keys: [pay.key] }),
+    relayConfig({ signingKey: "KEY", keys: [key] }),
   );
   return { method: "POST", headers: { ...(await signer.sign("dlv_1", NOON, body)) }, body };
 }
@@ -113,9 +117,17 @@ function inboxOf(inbox?: Pick<InboxService, "receive">) {
   } as unknown as Database;
   const driver = new MemoryInboxDriver();
   const logger = new RecordingLogger();
+  const config = inboxConfig({
+    pay: {
+      keys: { dev: [pay.key] },
+      events: ["payments.payment.captured.v1", "payments.refund.issued.v1"],
+    },
+    os: { keys: { dev: [os.key] }, events: ["scheduling.booking.created.v1"] },
+  });
   const service = new RelayInboxService(
     (inbox ?? new InboxService(driver, bus, database, clock)) as InboxService,
-    new ContractInboxVerifierDriver(inboxConfig({ pay: { dev: [pay.key] } }), clock),
+    new ContractInboxVerifierDriver(config, clock),
+    config,
   );
   const bound = new Map<AnyClass, object>([[Logger, logger]]);
   const resolver: Resolver = {
@@ -162,6 +174,41 @@ describe(RelayInboxService, () => {
     expect(JSON.stringify(logger.warnings)).not.toContain("pay_1");
   });
 
+  it("answers 403 to another pinned producer's key delivering this producer's event, recording nothing", async () => {
+    const { service, listener, driver, logger } = inboxOf();
+    await expect(service.receive(await request(bodyOf(), os, os.key))).resolves.toBe(403);
+    expect(listener.seen).toEqual([]);
+    await expect(driver.claim("evt_1", NOON)).resolves.toBe(true);
+    expect(logger.warnings).toEqual([
+      [
+        OUTBOX_LOG_EVENTS.inboxForbidden,
+        {
+          producer: "os",
+          type: "payments.payment.captured.v1",
+          eventId: "evt_1",
+          reason: "event_not_of_producer",
+        },
+      ],
+    ]);
+  });
+
+  it("takes another version of an event its producer lists", async () => {
+    const received: EventEnvelope[] = [];
+    const { service } = inboxOf({
+      receive: async (envelope) => {
+        received.push(envelope);
+        return true;
+      },
+    });
+    await expect(
+      service.receive(await request(bodyOf({ type: "payments.payment.captured.v2" }))),
+    ).resolves.toBe(204);
+    await expect(
+      service.receive(await request(bodyOf({ type: "payments.refund.captured.v1" }))),
+    ).resolves.toBe(403);
+    expect(received).toHaveLength(1);
+  });
+
   it("answers 405 to another method", async () => {
     const { service } = inboxOf();
     await expect(service.receive({ ...(await request(bodyOf())), method: "GET" })).resolves.toBe(
@@ -174,7 +221,10 @@ describe(RelayInboxService, () => {
     ["an envelope without its version", bodyOf({ envelopeVersion: undefined })],
     ["an envelope of another version", bodyOf({ envelopeVersion: 2 })],
     ["data that breaks the event's schema", bodyOf({ data: { paymentId: 7 } })],
-    ["an unknown event", bodyOf({ type: "payments.refund.issued.v1" })],
+    [
+      "an event of its producer this process does not know",
+      bodyOf({ type: "payments.refund.issued.v1" }),
+    ],
   ])("answers 422 to %s and records nothing", async (_name, body) => {
     const { service, listener, driver, logger } = inboxOf();
     await expect(service.receive(await request(body))).resolves.toBe(422);

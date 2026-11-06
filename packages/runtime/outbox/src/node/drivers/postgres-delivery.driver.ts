@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresDeliveryDriver`, the server's `DeliveryDriver`: cross-app deliveries are rows of
- *          `outbox.deliveries`, written insert-or-ignore on (event id, subscriber, type), listed for the relay up to a
- *          limit per subscriber, deleted once delivered, counted, rescheduled or dead-lettered when an attempt fails,
+ *          `outbox.deliveries`, written insert-or-ignore on (event id, subscriber, type), leased to the relay up to a
+ *          limit per subscriber in one statement, deleted once delivered, counted, rescheduled or dead-lettered when an attempt fails,
  *          listed per subscriber and state for an operator, and replayed once dead.
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
  *           and every result row read through zod. The table is the producer's operational table, read across scopes,
@@ -25,6 +25,20 @@ const TABLE = '"outbox"."deliveries"';
 /** The columns a delivery is read from. */
 const COLUMNS =
   "id, event_id, subscriber, type, envelope, attempts, available_at, last_error, dead_at, created_at";
+
+/** The columns of a leased row, qualified by the update's alias. */
+const LEASED_COLUMNS = COLUMNS.split(", ")
+  .map((column) => `d.${column}`)
+  .join(", ");
+
+/** By subscriber, then oldest written first, by id within one instant: the relay's order. */
+function byOrder(left: Delivery, right: Delivery): number {
+  return (
+    (left.subscriber < right.subscriber ? -1 : left.subscriber > right.subscriber ? 1 : 0) ||
+    left.createdAt.getTime() - right.createdAt.getTime() ||
+    (left.id < right.id ? -1 : left.id > right.id ? 1 : 0)
+  );
+}
 
 /** The SQL condition of each state, on `attempts` and `dead_at`. */
 const STATE_WHERE: Readonly<Record<DeliveryState, string>> = Object.freeze({
@@ -109,19 +123,21 @@ export class PostgresDeliveryDriver extends Driver(DeliveryDriver) {
       );
   }
 
-  /** Implements `DeliveryDriver.due`, documented there. */
-  async due(now: Date, limit: number): Promise<readonly Delivery[]> {
-    // raw-sql: the deliveries have no model; a window ranks each subscriber's due rows so each takes at most `limit`
+  /** Implements `DeliveryDriver.lease`, documented there. */
+  async lease(now: Date, limit: number, until: Date): Promise<readonly Delivery[]> {
+    // raw-sql: the deliveries have no model; one statement ranks each subscriber's due rows, takes at most `limit` of
+    // each and moves their due time to the lease's end; `returning` has no order, so the rows are sorted here
     const rows = await this.database
       .em()
       .execute(
-        `select ${COLUMNS} from (select ${COLUMNS}, row_number() over ` +
+        `with due as (select id from (select id, row_number() over ` +
           "(partition by subscriber order by created_at, id) as rank " +
-          `from ${TABLE} where dead_at is null and available_at <= ?) as due ` +
-          "where rank <= ? order by subscriber, created_at, id",
-        [now, limit],
+          `from ${TABLE} where dead_at is null and available_at <= ?) as ranked where rank <= ?) ` +
+          `update ${TABLE} as d set available_at = ? from due where d.id = due.id returning ${LEASED_COLUMNS}`,
+        [now, limit, until],
       );
-    return ROWS.parse(rows).map(deliveryOf);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+    return ROWS.parse(rows).map(deliveryOf).sort(byOrder);
   }
 
   /** Implements `DeliveryDriver.remove`, documented there. */

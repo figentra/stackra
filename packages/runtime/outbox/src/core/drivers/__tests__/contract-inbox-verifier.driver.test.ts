@@ -13,7 +13,7 @@ import type { Clock } from "@stackra/contracts";
 import { beforeAll, describe, expect, it } from "@stackra/testing";
 
 import { InboxVerifier } from "#contracts/index";
-import type { ProducerKeys, RelayKey, SignedHeaders } from "#contracts/index";
+import type { PinnedProducer, RelayKey, SignedHeaders } from "#contracts/index";
 import {
   inboxConfig,
   relayConfig,
@@ -34,7 +34,7 @@ let pay: RelayKeyPair;
 let payNext: RelayKeyPair;
 let billing: RelayKeyPair;
 let stranger: RelayKeyPair;
-let keys: ProducerKeys;
+let keys: Record<string, PinnedProducer>;
 
 beforeAll(async () => {
   pay = await relayKeyPair("pay-dev-1");
@@ -43,8 +43,11 @@ beforeAll(async () => {
   stranger = await relayKeyPair("stranger-dev-1");
   const prod = await relayKeyPair("pay-prod-1");
   keys = {
-    pay: { dev: [pay.key, payNext.key], prod: [prod.key] },
-    billing: { dev: [billing.key] },
+    pay: {
+      keys: { dev: [pay.key, payNext.key], prod: [prod.key] },
+      events: ["payments.payment.captured.v2"],
+    },
+    billing: { keys: { dev: [billing.key] }, events: ["billing.invoice.paid.v1"] },
   };
 });
 

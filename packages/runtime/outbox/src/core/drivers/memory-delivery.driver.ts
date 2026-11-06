@@ -58,8 +58,8 @@ export class MemoryDeliveryDriver extends Driver(DeliveryDriver) {
     return Promise.resolve();
   }
 
-  /** Implements `DeliveryDriver.due`, documented there. */
-  due(now: Date, limit: number): Promise<readonly Delivery[]> {
+  /** Implements `DeliveryDriver.lease`, documented there. */
+  lease(now: Date, limit: number, until: Date): Promise<readonly Delivery[]> {
     const taken = new Map<string, number>();
     const due = [...this.deliveries.values()]
       .filter((each) => each.deadAt === undefined && each.availableAt.getTime() <= now.getTime())
@@ -69,7 +69,9 @@ export class MemoryDeliveryDriver extends Driver(DeliveryDriver) {
         const count = (taken.get(each.subscriber) ?? 0) + 1;
         taken.set(each.subscriber, count);
         return count <= limit;
-      });
+      })
+      .map((each) => Object.freeze({ ...each, availableAt: until }));
+    for (const each of due) this.deliveries.set(each.id, each);
     return Promise.resolve(due);
   }
 
