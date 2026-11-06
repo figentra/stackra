@@ -48,8 +48,8 @@ its exit code. The job runs detached on the box and the CLI follows its log: whe
 the job keeps running, the CLI reattaches up to three times, 10 s apart, and exits with the job's code. Ctrl-C stops
 the job on the box.
 
-The enabled regions are `TESTBED_CLI_DEFAULTS.regions` in `@stackra/cli`: eu-west-1, eu-west-2 and eu-central-1 (a
-region whose groups do not exist yet is skipped); us-east-1 joins once box 1 stops. `--regions a,b` or `STACKRA_TESTBED_REGIONS` overrides it for one machine, and `--region r` narrows it to one
+The enabled regions are `TESTBED_CLI_DEFAULTS.regions` in `@stackra/cli`: eu-west-1, eu-west-2, eu-central-1 and
+us-east-1 (a region whose groups do not exist yet is skipped). `--regions a,b` or `STACKRA_TESTBED_REGIONS` overrides it for one machine, and `--region r` narrows it to one
 region. The other verbs:
 
 | Verb                                 | Does                                                                                       |
