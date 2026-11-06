@@ -1,12 +1,14 @@
 # Stackra file contract:
-# Purpose: the one CI step that replaces every Infisical login (ADR 0525, P4): it signs in to Google Cloud as the job's
-#          Workload Identity service account, copies one scope's ciphertext (`<NAME>.enc.yaml` under the flat prefix `<scope with . for />/`, published by
-#          figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts each
-#          file with Cloud KMS in memory and exports the values, masked, into the job's environment.
-# Boundary: no GitHub token and no stored credential: the service account may read only its scope's prefix and decrypt
-#           only its scope's key, pinned by figentra/infra to (repository, environment, workflow). Values are never
-#           echoed; the ciphertext folder is removed after the decrypt. The job needs `permissions: id-token: write`
-#           and mise on PATH (jdx/mise-action) for sops.
+# Purpose: the one CI step that replaces every Infisical login (ADR 0525, P4): it signs in to Google Cloud as the job
+#          itself (direct Workload Identity Federation through figentra/infra's `callers` provider, no service account),
+#          copies one scope's ciphertext (`<NAME>.enc.yaml` under the flat prefix `<scope with . for />/`, published
+#          by figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts
+#          each file with Cloud KMS in memory and exports the values, masked, into the job's environment.
+# Boundary: no GitHub token and no stored credential: figentra/infra grants the job's principal
+#           (`<repo>.<environment>.<workflow repo>.<workflow file>`, main only outside ci/build) a viewer condition on
+#           its scope's prefix and decrypt on its scope's key (estate/secret-callers.mjs). Values are never echoed; the
+#           ciphertext folder is removed after the decrypt. The job needs `permissions: id-token: write` and mise on
+#           PATH (jdx/mise-action) for sops.
 # Runtime: GitHub Actions (composite)
 # Governing contract: ADR 0525 (SOPS and Cloud KMS; CI decrypts in place); ADR 0019; ADR 0257.
 name: Secrets decrypt
@@ -19,21 +21,20 @@ inputs:
     description: Only these names, comma-separated; the whole scope when empty.
     required: false
     default: ""
-  service-account:
-    description: The scope's decrypter service account (figentra/infra), e.g. <name>@figentra-tools.iam.gserviceaccount.com.
-    required: true
   workload-identity-provider:
-    description: The Workload Identity provider resource name.
+    description: The Workload Identity provider CI callers sign in through (figentra/infra stacks/secrets `callers`).
     required: false
-    default: projects/330719355948/locations/global/workloadIdentityPools/github/providers/secrets
+    default: projects/330719355948/locations/global/workloadIdentityPools/github/providers/callers
   bucket:
     description: The ciphertext bucket sync.yml publishes to.
     required: false
     default: figentra-secrets-ciphertext
   runway-version:
-    description: The @stackra/runway version whose `secrets decrypt` runs (from the Stackra registry).
+    description: >-
+      The @stackra/runway version whose `secrets decrypt` runs (from the Stackra registry). Empty means the version of
+      packages/developer/runway at the same core ref as this action, so the two never drift.
     required: false
-    default: 0.13.0
+    default: ""
 runs:
   using: composite
   steps:
@@ -41,7 +42,6 @@ runs:
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
       with:
         workload_identity_provider: ${{ inputs.workload-identity-provider }}
-        service_account: ${{ inputs.service-account }}
         create_credentials_file: true
 
     - name: sops
@@ -72,6 +72,11 @@ runs:
         RUNWAY_VERSION: ${{ inputs.runway-version }}
       run: |
         set -euo pipefail
+        # A remote action is the whole repository at its ref, so the runway package beside it names the version that
+        # ref released; a version PR merged but not yet published fails the npx below, which an explicit input avoids.
+        if [ -z "$RUNWAY_VERSION" ]; then
+          RUNWAY_VERSION="$(jq -r .version "$GITHUB_ACTION_PATH/../../../packages/developer/runway/package.json")"
+        fi
         args=(secrets decrypt --scope "$SCOPE" --dir "$RUNNER_TEMP/secrets")
         if [ -n "$NAMES" ]; then args+=(--names "$NAMES"); fi
         # @stackra/* reads anonymously from the Stackra registry, so this needs no token before any secret exists.
