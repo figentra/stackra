@@ -1,5 +1,20 @@
 # @stackra/runway
 
+## 0.14.0
+
+### Minor Changes
+
+- 54e05c6: `runway secrets sync <env> --from-env` reads each member's declared values from the job's environment, where `.github/actions/secrets-decrypt` put the product's sops scope (ADR 0525), instead of Infisical. A missing name fails before anything is written, and the error names the scope to decrypt. Everything else stays as it was: it writes only in a proved CI job, prints names only and writes each name to Encore once.
+
+### Patch Changes
+
+- @stackra/console@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/app@0.14.0
+
 ## 0.13.0
 
 ### Minor Changes

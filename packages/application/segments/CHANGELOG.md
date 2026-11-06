@@ -1,5 +1,24 @@
 # @stackra/segments
 
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/rules@0.14.0
+  - @stackra/content@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/queue@0.14.0
+  - @stackra/scheduler@0.14.0
+  - @stackra/iam@0.14.0
+
 ## 0.13.0
 
 ### Patch Changes
