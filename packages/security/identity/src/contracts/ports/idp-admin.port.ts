@@ -113,9 +113,10 @@ export abstract class IdpAdmin extends Port {
   abstract findStackraUserId(email: string): Promise<string | undefined>;
 
   /**
-   * Opens a provider session for the login name `loginName` with a passkey challenge on it.
+   * Opens a provider session for the login name `loginName` with a passkey challenge on it. An unknown login answers
+   * a decoy of the same shape, after the same provider round trip, whose session `finishPasskeySignIn` always
+   * refuses, so the answer never tells whether a login exists (STA-2102).
    *
-   * @throws UnauthenticatedError when the provider knows no such login.
    * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
    */
   abstract startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge>;
