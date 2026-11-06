@@ -1,6 +1,6 @@
 # Stackra file contract:
 # Purpose: the one CI step that replaces every Infisical login (ADR 0525, P4): it signs in to Google Cloud as the job's
-#          Workload Identity service account, copies one scope's ciphertext (`<scope>/<NAME>.enc.yaml`, published by
+#          Workload Identity service account, copies one scope's ciphertext (`<NAME>.enc.yaml` under the flat prefix `<scope with . for />/`, published by
 #          figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts each
 #          file with Cloud KMS in memory and exports the values, masked, into the job's environment.
 # Boundary: no GitHub token and no stored credential: the service account may read only its scope's prefix and decrypt
@@ -51,8 +51,9 @@ runs:
         mise install aqua:getsops/sops@3.10.2
         dirname "$(mise which --tool aqua:getsops/sops@3.10.2 sops)" >> "$GITHUB_PATH"
 
-    # Only the scope's own files: the glob stops at the folder, so a subscope (ci/production/release under
-    # ci/production) is never copied by its parent.
+    # sync.yml publishes each scope under a flat prefix, "/" replaced by "." (ci/production/release becomes
+    # ci.production.release/), so a viewer grant on one scope never covers a nested one (ADR 0525 decision 6).
+    # The files land in <dir>/<scope>/, the layout `runway secrets decrypt` reads.
     - name: Ciphertext
       shell: bash
       env:
@@ -61,7 +62,7 @@ runs:
       run: |
         set -euo pipefail
         mkdir -p "$RUNNER_TEMP/secrets/$SCOPE"
-        gcloud storage cp "gs://$BUCKET/$SCOPE/*.enc.yaml" "$RUNNER_TEMP/secrets/$SCOPE/"
+        gcloud storage cp "gs://$BUCKET/${SCOPE//\//.}/*.enc.yaml" "$RUNNER_TEMP/secrets/$SCOPE/"
 
     - name: Decrypt
       shell: bash
