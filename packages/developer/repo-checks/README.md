@@ -23,6 +23,7 @@ TypeScript 6 compiler API the doc standard parses with).
 | `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored                  |
 | `structure`             | `structureFindings` | test placement, workflow triggers, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files, public id prefix uniqueness across apps and services |
 | `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                                    |
+| `layout` (`--repository`) | `layoutFindings`  | the root against the preset's template (`LAYOUT_TEMPLATES`): no root `src/` or script folder, `apps/` and extras only when declared in package.json `stackra.layout.allow`, `tools/` with a README, no `figentra-flow` path (ADR 0526, 0528, 0529) |
 | `catalogues`            | `catalogueFindings` | lang catalogues complete per locale, ICU placeholders match `en` (ADR 0403)                                        |
 | `spec`                  | `specFindings`      | spec stage gates, foreign-status, bug and lane gates, trace and drift (ADR 0120, 0198); see below                  |
 
@@ -36,7 +37,7 @@ The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkMember
 `stackra` field and its turbo tags of ADR 0453 decision 11, run in the Stackra repository only, with the built
 `STACKRA_MANIFEST_SCHEMA` of `@stackra/skills`), `checkExports`, `checkService`,
 `checkTestPlacement`, `checkWorkflowTriggers`, `checkJsonConfigs`, `checkRunwaySchemas`, `checkRunwayFiles`, `checkYamlFlowMaps`,
-`checkImports`, `checkRawSql`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`, `checkIgnoredGoldens` (a file under `__golden__` that git ignores), `checkAdrNumbers`), and so
+`checkImports`, `checkRawSql`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`, `checkRepositoryLayout`, `checkIgnoredGoldens` (a file under `__golden__` that git ignores), `checkAdrNumbers`), and so
 do the structure tables (`CATEGORIES`, `ENTRIES`, `MODULE_GROUPS`, `APP_GROUPS`, `PACKAGE_FOLDERS`, `MEMBER_ROOT`,
 `KIND_FOLDERS`, `BANNED_FOLDERS`, `TEST_TIERS`, …) and their lookups.
 
