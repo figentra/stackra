@@ -26,7 +26,7 @@ rules:
       # local secrets-decrypt action (ADR 0525, called by SHA from other repositories).
       - apply-observability.yml:106
       - ci.yml:76
-      - ci.yml:217
+      - ci.yml:227
       - deploy-docs.yml:55
       - deploy-env-sync.yml:64
       - deploy-registry.yml:65
