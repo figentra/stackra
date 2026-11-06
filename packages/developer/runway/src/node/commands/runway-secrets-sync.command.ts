@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `RunwaySecretsSyncCommand`, `runway secrets sync <env> [--dry-run]` (`runway secrets:sync`, alias
+ * Purpose: `RunwaySecretsSyncCommand`, `runway secrets sync <env> [--dry-run] [--from-env]` (`runway secrets:sync`, alias
  *          `runway env sync`, ADR 0173 amendment 2026-11-04): the member secrets of `env`, and the names each member's
  *          manifest declares, from Infisical into the runtimes (`syncSecrets`). A real sync runs only in a GitHub
- *          Actions job its OIDC token proves (STA-2100); `--dry-run` prints the names and writers anywhere.
+ *          Actions job its OIDC token proves (STA-2100); `--dry-run` prints the names and writers anywhere; `--from-env` reads
+ *          the values from the job's environment, where `.github/actions/secrets-decrypt` put the product's sops scope
+ *          (ADR 0525), instead of Infisical.
  * Boundary: names only; values stay in memory inside `syncSecrets`.
  * Runtime: node
  * Governing contract: ADR 0173; ADR 0506 (decision 8); STA-606; STA-2100.
@@ -30,6 +32,13 @@ export class RunwaySecretsSyncCommand extends Command({
   @Option({ description: "Print the secret names and writers; read and write nothing" })
   dryRun = false;
 
+  /** Read the values from the job's environment, where the secrets-decrypt action put the sops scope. */
+  @Option({
+    description:
+      "Read the values from this job's environment (the product's sops scope, decrypted by .github/actions/secrets-decrypt) instead of Infisical",
+  })
+  fromEnv = false;
+
   /** The sync; a test replaces it. */
   sync: typeof syncSecrets = syncSecrets;
 
@@ -45,6 +54,7 @@ export class RunwaySecretsSyncCommand extends Command({
       runways: readRunways(root),
       repository: root,
       dryRun: this.dryRun,
+      fromEnv: this.fromEnv,
       log: (line) => io.output.line(line),
     });
     return 0;
