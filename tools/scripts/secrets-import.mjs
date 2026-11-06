@@ -20,6 +20,7 @@
  *
  * Usage:
  *   pnpm secrets:import --scope <scope> [FILE…]       # into figentra/secrets (sops), names only in the output
+ *   pnpm secrets:import --tree [--dry-run]           # every <scope>/<NAME> folder file, one pull request
  *   pnpm secrets:import --list                       # inbox file NAMES, nothing else
  *   pnpm secrets:import --dry-run [FILE…]            # validate, reach Infisical, would-overwrite; prod: prints a token
  *   pnpm secrets:import [FILE…] [--project P --env e --path p --name N] [--confirm <token>] [--actor <agent>]
@@ -40,6 +41,7 @@ import {
   readFileSync,
   readSync,
   readdirSync,
+  rmdirSync,
   rmSync,
   unlinkSync,
   writeFileSync,
@@ -468,6 +470,7 @@ export function main(
         confirm: { type: "string" },
         actor: { type: "string" },
         scope: { type: "string" },
+        tree: { type: "boolean" },
       },
     });
   } catch {
@@ -479,6 +482,8 @@ export function main(
   const actor = o.actor ?? process.env.STACKRA_AGENT ?? "unknown";
   const inbox = join(home, "Secrets-inbox");
   cleanStaleTemps(inbox);
+  if (o.tree)
+    return importTree(inbox, { dryRun: o["dry-run"], actor, home, say, run: sopsRun, env });
   const { entries, problems } = scanInbox(inbox);
 
   if (o.list) {
@@ -664,6 +669,92 @@ function importToSops(
     }
   }
   return failed ? 1 : 0;
+}
+
+/**
+ * The inbox's scope-shaped folders (`--tree`): `<scope>/<NAME>[.ext]` → `{ file, name, scope }`, and value-free
+ * problems. Files directly in the inbox belong to the flat modes and are skipped. Never opens a file.
+ */
+export function scanTree(inbox) {
+  const entries = [];
+  const problems = [];
+  const st = lstatSync(inbox, { throwIfNoEntry: false });
+  if (!st || st.isSymbolicLink() || !st.isDirectory())
+    return { entries, problems: [{ file: inbox, error: NOT_A_DIRECTORY }] };
+  const walk = (rel, depth) => {
+    for (const f of readdirSync(join(inbox, rel)).toSorted()) {
+      if (f.startsWith(".") || f.endsWith(SIDECAR)) continue;
+      const file = rel ? `${rel}/${f}` : f;
+      const s = lstatSync(join(inbox, file));
+      if (s.isSymbolicLink()) problems.push({ file, error: "symlink refused" });
+      else if (s.isDirectory()) {
+        if (depth < 6) walk(file, depth + 1);
+        else problems.push({ file, error: "folders nested too deep" });
+      } else if (!rel) continue;
+      else if (!s.isFile()) problems.push({ file, error: "not a regular file" });
+      else if (s.size > MAX_BYTES) problems.push({ file, error: `larger than ${MAX_BYTES} bytes` });
+      else entries.push({ file, name: f.replace(/\.[^.]*$/, ""), scope: rel });
+    }
+  };
+  walk("", 0);
+  return { entries, problems };
+}
+
+/**
+ * `--tree`: every file under a scope-shaped folder goes to that scope, all in one pull request. Each file is deleted
+ * once the pull request is open, then any folder left empty. Returns the exit code; prints names and scopes only.
+ */
+function importTree(inbox, { dryRun, actor, home, say, run, env }) {
+  const { entries: found, problems } = scanTree(inbox);
+  let failed = problems.length;
+  for (const p of problems) say(`${p.file}  refused: ${p.error}`);
+  const entries = [];
+  for (const e of found)
+    try {
+      const t = checkSopsTarget({ scope: e.scope, name: e.name }, { agent: isAgentRunSops(env) });
+      entries.push({ ...t, file: e.file, value: readValue(join(inbox, e.file)).value });
+    } catch (error) {
+      if (!(error instanceof Refusal)) throw error;
+      failed++;
+      say(`${NAME_RX.test(e.name) ? e.name : "(file)"}  (folder)  refused: ${error.message}`);
+    }
+  if (!found.length && !failed) say("secrets-import: no scope folders in the inbox");
+  if (dryRun) for (const e of entries) say(`${e.name}  ${e.scope}  ok (dry run, nothing written)`);
+  if (failed && !dryRun) say("secrets-import: nothing written; fix the refusals first");
+  if (dryRun || failed) return failed ? 1 : 0;
+  if (!entries.length) return 0;
+  try {
+    const { written, url } = publishSops(entries, {
+      actor,
+      run,
+      title: `secrets: import ${entries.length} names from the inbox tree`,
+    });
+    for (const [i, e] of entries.entries()) {
+      unlinkSync(join(inbox, e.file));
+      audit(home, { actor, name: e.name, scope: e.scope, action: "import-tree", result: "ok" });
+      say(`${e.name}  ${e.scope}  ${written[i].replaced ? "replaced" : "added"}  ${url}`);
+    }
+    for (const dir of [...new Set(entries.map((e) => e.scope))].toSorted().toReversed())
+      for (let d = dir; d && d !== "."; d = dirname(d)) {
+        if (readdirSync(join(inbox, d)).length) break;
+        rmdirSync(join(inbox, d));
+      }
+    say(`secrets-import: ${entries.length} imported; inbox files deleted`);
+    return 0;
+  } catch (error) {
+    if (!(error instanceof Refusal)) throw error;
+    for (const e of entries)
+      audit(home, {
+        actor,
+        name: e.name,
+        scope: e.scope,
+        action: "import-tree",
+        result: "refused",
+        reason: error.message,
+      });
+    say(`secrets-import: refused: ${error.message} (nothing deleted)`);
+    return 1;
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
