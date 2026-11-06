@@ -48,7 +48,8 @@ export function organizationLayout(
       { enabledFeatures: [...args.rootFeatures] },
       { ...opts, dependsOn: [organization] },
     );
-  const rootId = organization.roots.apply((roots) => roots[0]?.id ?? "");
+  // `roots` is unknown until the organization exists (and in a preview, or under mocks): an empty id, never a throw.
+  const rootId = organization.roots.apply((roots) => roots?.[0]?.id ?? "");
 
   const units: Record<string, aws.organizations.OrganizationalUnit> = {};
   for (const path of args.units) {
