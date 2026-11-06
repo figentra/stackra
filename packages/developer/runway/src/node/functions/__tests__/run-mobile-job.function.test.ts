@@ -148,6 +148,7 @@ describe("runMobileJob", () => {
     expect(manifest.expo.autolinking.exclude).toEqual(["expo-dev-menu", "expo-camera"]);
 
     expect(calls).toEqual([
+      "pnpm install --ignore-workspace --no-frozen-lockfile --ignore-scripts",
       "git rev-parse HEAD",
       "eas build --profile production --platform all --non-interactive --no-wait --json",
     ]);
@@ -254,6 +255,7 @@ describe("runMobileJob", () => {
       ["git", "add"],
       ["git", "-c"],
       ["git", "rev-parse"],
+      ["pnpm", "install"],
       ["git", "add"],
       ["git", "-c"],
       ["git", "rev-parse"],
@@ -261,6 +263,21 @@ describe("runMobileJob", () => {
       ["eas", "build"],
     ]);
     expect(result.record.sha).toBe(SHA);
+  });
+
+  it("installs a checkout without node_modules under the product's .npmrc, and leaves an installed one alone", async () => {
+    writeFileSync(
+      join(repository, ".npmrc"),
+      "@figentra:registry=https://npm.stackra.figentra.com/\n",
+    );
+    await runMobileJob(request());
+    expect(readFileSync(join(templateDir, ".npmrc"), "utf8")).toContain("@figentra:registry");
+    expect(calls.filter((call) => call.startsWith("pnpm "))).toHaveLength(1);
+
+    calls = [];
+    mkdirSync(join(templateDir, "node_modules"));
+    await runMobileJob(request());
+    expect(calls.some((call) => call.startsWith("pnpm "))).toBe(false);
   });
 
   it("refuses a job with neither a commit nor a line", async () => {

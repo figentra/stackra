@@ -5,14 +5,16 @@
  *          store accounts, refuses a white-label build under the platform's Apple account until the 4.2.6 and 4.3
  *          checks are recorded as passed, writes the template checkout's Expo config with the capability flags applied
  *          (unused plugins, native modules, permission strings and entitlements left out, the Firebase config files
- *          copied in), writes its `eas.json` profiles with the product's exact toolchain pins, and starts the build
+ *          copied in), writes its `eas.json` profiles with the product's exact toolchain pins, installs the
+ *          checkout's dependencies when it has none (EAS loads the config plugins from them), and starts the build
  *          through the `eas` provider on the app's EAS channel. With `line`, it first checks the app's template line
  *          out into `templateDir` (`checkoutLine`, a git checkout of the release) and commits the written config there,
  *          so EAS builds exactly that commit.
  * Boundary: reads the root runway, the record file, `mise.toml`, the app's Firebase config files and the template's
  *           `app.json`, `capabilities.json`, `eas.json` and `package.json`; writes only `app.json`, `eas.json`, the
- *           Firebase config files, `package.json` and, with `packages`, the product module in the
- *           template checkout (and, with `line`, the checkout itself); runs `npm`, `tar`, `git` and `eas` through the
+ *           Firebase config files, `package.json`, a copy of the product's `.npmrc`, the install and, with
+ *           `packages`, the product module in the template checkout (and, with `line`, the checkout itself); runs
+ *           `npm`, `tar`, `pnpm`, `git` and `eas` through the
  *           command runner, so `dryRunCommand` makes the whole job a dry run that still writes the generated config.
  *           Store submission and the scope theme's icon and splash (stackra-13) are not this job's; `buildOnly` skips
  *           the store account check for a build that submits later. Store accounts arrive resolved (`storeAccountsOf`).
@@ -251,6 +253,17 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
       2,
     )}\n`,
   );
+
+  // EAS loads the config plugins app.json names from the checkout's node_modules before it uploads, so a checkout
+  // without an install fails ("Failed to resolve plugin for module ..."). The product's .npmrc maps the registry
+  // scopes, for this install and the EAS worker's.
+  if (!existsSync(join(templateDir, "node_modules"))) {
+    const npmrc = join(repository, ".npmrc");
+    if (existsSync(npmrc) && !existsSync(join(templateDir, ".npmrc"))) {
+      copyFileSync(npmrc, join(templateDir, ".npmrc"));
+    }
+    await run("pnpm", [...MOBILE_DEV_SETTINGS.install], { cwd: templateDir });
+  }
 
   let sha = request.sha;
   if (template !== undefined) {
