@@ -12,10 +12,13 @@
 import type { Schema } from "#core/bases/schema.base";
 
 /** A field's value with every nested shape replaced by its data fields. */
-type FieldValue<V> = V extends Schema
+// `D` counts nested arrays: `Json` holds `Json[]`, so without a bound it maps back into itself (TS2589, STA-2215).
+type FieldValue<V, D extends readonly unknown[] = []> = V extends Schema
   ? Fields<V>
   : V extends readonly unknown[]
-    ? { [I in keyof V]: FieldValue<V[I]> }
+    ? D["length"] extends 4
+      ? V
+      : { [I in keyof V]: FieldValue<V[I], [...D, unknown]> }
     : V;
 
 /**
