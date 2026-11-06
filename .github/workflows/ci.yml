@@ -24,8 +24,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
-# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job alone holds an OIDC token,
-# for the Infisical step (ADR 0310).
+# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job holds an OIDC token for the
+# sops decrypt of ci/build/turbo (ADR 0525), and the Mobile apps job one for its Infisical licence step (ADR 0310).
 permissions:
   contents: read
 
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # STA-1393: GitHub OIDC token, exchanged with Infisical for the Turborepo cache only
+      id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build/turbo scope only
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
@@ -68,20 +68,15 @@ jobs:
         run: osv-scanner scan source --lockfile=pnpm-lock.yaml
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo. Skipped when the variable is unset, and on fork pull requests
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525, P4): this job signs in to Google
+      # Cloud as itself through infra's `callers` provider and decrypts only that scope. Skipped on fork pull requests
       # (no OIDC token there): turbo then has no TURBO_TOKEN and uses its local cache only, so no `--cache` flag is
       # needed to keep a fork from writing to the remote cache.
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != '' && !github.event.pull_request.head.repo.fork
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      - name: Turborepo remote cache (sops)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       # Every member but the two that alias `uniwind` to Uniwind Pro, whose postinstall downloads the licensed build
       # against a monthly CI quota; the Mobile apps job below covers those two. Lint, typecheck and build drop them too.
