@@ -522,7 +522,7 @@
   status: accepted
 "0173":
   slug: secrets-infisical-is-the-source-of-production-secrets
-  status: accepted
+  status: superseded
 "0174":
   slug: supply-chain-images-signing-sbom-dependency-policy-and-rotation
   status: accepted
@@ -1577,3 +1577,7 @@
   slug: humans-approve-policy-not-instances
   status: accepted
   issue: STA-2094
+"0525":
+  slug: secrets-sops-and-cloud-kms-replace-infisical
+  status: accepted
+  issue: STA-2142
