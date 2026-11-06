@@ -44,6 +44,13 @@ const identityOf = (market: string) => {
   };
 };
 
+/** The payment provider codes `market` lists, in routing order. */
+const providersOf = (market: string) =>
+  (
+    (valueOf(resolvePack(packs, market, drafts), "payments.byo_providers", "2026-12-01")?.value ??
+      []) as { provider: string }[]
+  ).map((entry) => entry.provider);
+
 describe("SA, AE and EG seed packs", () => {
   it("are draft base packs that pass the identity schemas and wait for counsel", () => {
     for (const pack of packs) {
@@ -88,6 +95,12 @@ describe("SA, AE and EG seed packs", () => {
       true,
     );
     expect(new RegExp(String(identityOf("ae").format.region?.pattern)).test("DU")).toBe(true);
+  });
+
+  it("list the launch payment providers in each market's order", () => {
+    expect(providersOf("ae")).toEqual(["stripe", "checkout", "network-international", "telr"]);
+    expect(providersOf("sa")).toEqual(["hyperpay", "moyasar", "stc-pay", "tabby", "tamara"]);
+    expect(providersOf("eg")).toEqual(["paymob", "fawry", "valu", "souhoola", "sympl"]);
   });
 
   it("let the us address format pass the same schema", () => {
