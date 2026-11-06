@@ -65,6 +65,7 @@ export { checkMemberFiles } from "#node/functions/check-member-files.function";
 export { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 export { checkMember } from "#node/functions/check-member.function";
 export { checkNativeModules } from "#node/functions/check-native-modules.function";
+export { checkPublicIdPrefixes } from "#node/functions/check-public-id-prefixes.function";
 export { checkRawSql } from "#node/functions/check-raw-sql.function";
 export { checkWranglerOperationalKeys } from "#node/functions/check-wrangler-operational-keys.function";
 export { checkRunwayFiles } from "#node/functions/check-runway-files.function";

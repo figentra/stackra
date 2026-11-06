@@ -21,7 +21,7 @@ TypeScript 6 compiler API the doc standard parses with).
 | Phase (`stackra check`) | Runner              | Checks                                                                                                             |
 | ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored                  |
-| `structure`             | `structureFindings` | test placement, workflow triggers, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files |
+| `structure`             | `structureFindings` | test placement, workflow triggers, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files, public id prefix uniqueness across apps and services |
 | `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                                    |
 | `catalogues`            | `catalogueFindings` | lang catalogues complete per locale, ICU placeholders match `en` (ADR 0403)                                        |
 | `spec`                  | `specFindings`      | spec stage gates, foreign-status, bug and lane gates, trace and drift (ADR 0120, 0198); see below                  |

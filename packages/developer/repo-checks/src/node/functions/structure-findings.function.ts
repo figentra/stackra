@@ -3,7 +3,7 @@
  * Purpose: `structureFindings(context, options)`, the `structure` phase of `stackra check` (what `pnpm validate` ran
  *          as validate-repository.mjs, minus the config and catalogue checks): test placement and forbidden files,
  *          the runway schemas and files, member imports, raw SQL reasons, the Expo form factor and window sizing, the
- *          native module packages (ADR 0478), the brand NOTICE, and
+ *          native module packages (ADR 0478), the brand NOTICE, public id prefixes across apps and services, and
  *          per member its manifest, required files and service shape, a notice listing every anonymous-callable call
  *          not in REVIEWED_ANONYMOUS_SURFACES (STA-2025), and in the Stackra repository its npm and
  *          `stackra` metadata.
@@ -13,7 +13,7 @@
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0025; ADR 0090; ADR 0124; ADR 0177; ADR 0195; ADR 0233; ADR 0296; STA-461;
  *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27); ADR 0478;
- *                     ADR 0160 (decision 1: the `raw-sql` reason, stackra-288).
+ *                     ADR 0160 (decision 1: the `raw-sql` reason, stackra-288); ADR 0135 (public id prefixes).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -29,6 +29,7 @@ import { checkMemberMetadata } from "#node/functions/check-member-metadata.funct
 import { checkRawSql } from "#node/functions/check-raw-sql.function";
 import { checkMember } from "#node/functions/check-member.function";
 import { checkNativeModules } from "#node/functions/check-native-modules.function";
+import { checkPublicIdPrefixes } from "#node/functions/check-public-id-prefixes.function";
 import { checkRunwayFiles } from "#node/functions/check-runway-files.function";
 import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
 import { checkRunwayUnreadFields } from "#node/functions/check-runway-unread-fields.function";
@@ -122,6 +123,20 @@ export async function structureFindings(
   const maybe = (p: string): string | undefined =>
     existsSync(join(root, p)) ? text(p) : undefined;
   const members = listMembers(root);
+
+  const manifests = members.flatMap(({ dir }) => {
+    const file = `${dir}/stackra.manifest.json`;
+    if (!(dir.startsWith("services/") || dir.startsWith("apps/")) || !files.includes(file))
+      return [];
+    const source = text(file);
+    try {
+      return [{ dir, manifest: JSON.parse(source) as unknown }];
+    } catch {
+      // Other checks report malformed manifests.
+      return [];
+    }
+  });
+  report("public-id-prefixes", "", checkPublicIdPrefixes(manifests));
 
   report("test-placement", "", checkTestPlacement(files));
   report(
