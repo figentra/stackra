@@ -1479,6 +1479,32 @@ export function createSourceReader(
         : [];
       return { type: publicIdType(prefixes), nullable };
     }
+    // A trait's enum field keeps the enum's alias (`PublicationStatus`, or `Enum.Value<typeof X>`) (STA-2215).
+    if (alias !== undefined) {
+      const named = enumOf(alias.symbol, at);
+      const valueOf =
+        host.symbolName(alias.symbol) === "Value" && alias.args[0] !== undefined
+          ? enumOf(host.typeSymbol(alias.args[0]), at)
+          : undefined;
+      const found = named ?? valueOf;
+      if (found !== undefined) return { type: found, nullable };
+      // A built package's `.d.ts` has no `Enum.of` initializer to read: the alias's string literals are its codes.
+      const codes = rest.map((member) => host.literal(member));
+      if (rest.length > 1 && codes.every((code): code is string => typeof code === "string")) {
+        const aliasName = host.symbolName(alias.symbol);
+        const name =
+          aliasName === "Value" && alias.args[0] !== undefined
+            ? host.symbolName(host.typeSymbol(alias.args[0]) ?? alias.symbol)
+            : aliasName;
+        return { type: { kind: "enum", name, values: codes }, nullable };
+      }
+    }
+    // A trait's `PublicId` with no prefix, its alias lost on `| null`, is `${string}_${string}`: any prefix (STA-2215).
+    if (
+      rest.length > 0 &&
+      rest.every((member) => host.typeText(member) === "`${string}_${string}`")
+    )
+      return { type: publicIdType([]), nullable };
     // A trait's `PublicId<P>` field reaches here as its bare template literal once `Model.with` infers it (STA-1720).
     const textPrefixes = rest.map((member) =>
       host.typeHas(member, "TemplateLiteral")
@@ -1506,6 +1532,20 @@ export function createSourceReader(
         isLib(host.fileName(declaration))
       )
         return { type: { kind: "date" }, nullable };
+      // A trait's `Translated` field and its list of primitives, as their type nodes read (STA-2215).
+      if (
+        symbol !== undefined &&
+        declaration !== undefined &&
+        isStackra(host.fileName(declaration))
+      ) {
+        const name = host.symbolName(symbol);
+        if (name === "Translated") return { type: { kind: "translated", form: "value" }, nullable };
+        if (name === "TranslatedStrings")
+          return { type: { kind: "translated", form: "strings" }, nullable };
+      }
+      const listed = /^(?:readonly )?(string|number|boolean)\[\]$/.exec(host.typeText(only))?.[1];
+      if (listed === "string" || listed === "number" || listed === "boolean")
+        return { type: { kind: "array", element: { kind: listed } }, nullable };
       if (host.literal(only) !== undefined) {
         const enumName =
           initializer !== undefined &&
