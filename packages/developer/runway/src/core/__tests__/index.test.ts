@@ -87,6 +87,7 @@ describe("@stackra/runway", () => {
       "rollback",
       "runwayJsonSchema",
       "surfaceHosts",
+      "unusedCloudOptIns",
       "updateFeed",
       "withDeployLock",
       "workerSettingsOf",

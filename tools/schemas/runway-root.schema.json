@@ -114,6 +114,11 @@
           "type": "object",
           "description": "AWS accounts, Pulumi state, ECR and cost controls.",
           "properties": {
+            "account": {
+              "type": "boolean",
+              "default": false,
+              "description": "Opt-in (ADR 0524): figentra/infra vends the product's one AWS account only when true, in the regions of its me and eu environments."
+            },
             "region": {
               "type": "string",
               "description": "Deprecated: use `environments.<env>.region` (ADR 0524); `runway validate` warns for one release. The one region (ADR 0186).",
@@ -173,6 +178,21 @@
                   }
                 ]
               }
+            },
+            "project": {
+              "type": "boolean",
+              "default": false,
+              "description": "Opt-in (ADR 0524): figentra/infra vends the product's one GCP project only when true. An environment in `ksa` needs it."
+            },
+            "apis": {
+              "type": "array",
+              "description": "The Google services figentra/infra enables in the product's project.",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+\\.googleapis\\.com$"
+              },
+              "examples": [["aiplatform.googleapis.com"]]
             },
             "state": {
               "type": "object",
@@ -1832,7 +1852,8 @@
           }
         },
         "cloud": {
-          "$ref": "#/$defs/cloud"
+          "$ref": "#/$defs/cloud",
+          "description": "Deprecated (ADR 0524): an environment's `region` fixes its cloud, and the product's one account or project is `providers.aws.account` or `providers.gcp.project`; `runway validate` warns for one release."
         },
         "dedicated": {
           "type": "object",
