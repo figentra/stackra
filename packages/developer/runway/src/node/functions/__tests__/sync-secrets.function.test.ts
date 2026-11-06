@@ -147,6 +147,53 @@ describe("secretSyncPlan", () => {
   });
 });
 
+describe("secretSyncPlan gateway", () => {
+  const withGateway: DeployRunways = {
+    ...RUNWAYS,
+    root: {
+      ...RUNWAYS.root,
+      secrets: { defaultPath: "runtime", gateway: ["GATEWAY_VISITOR_SIGNING_KEY"] },
+    },
+  };
+
+  it("adds the generated gateway's names as one Encore entry when a service makes an Encore app", () => {
+    expect(secretSyncPlan("staging", withGateway).at(-1)).toEqual({
+      member: "gateway",
+      folder: ".stackra/encore (generated API gateway)",
+      names: ["GATEWAY_VISITOR_SIGNING_KEY"],
+      path: "/runtime/gateway",
+      writer: "encore",
+    });
+  });
+
+  it("adds no gateway entry without a service member", () => {
+    const noServices: DeployRunways = {
+      ...withGateway,
+      members: withGateway.members.filter(({ folder }) => folder !== "services"),
+    };
+    expect(secretSyncPlan("staging", noServices).some(({ member }) => member === "gateway")).toBe(
+      false,
+    );
+  });
+
+  it("syncs the gateway's names into Encore with fromEnv, the value on stdin", async () => {
+    const { run, calls } = recorder({});
+    await syncSecrets({
+      environment: "staging",
+      runways: withGateway,
+      repository: repository(true),
+      dryRun: false,
+      log: () => {},
+      run,
+      ci: true,
+      fromEnv: true,
+      env: { ...CANARIES, GATEWAY_VISITOR_SIGNING_KEY: "canary-gateway-5d1e" },
+    });
+    const gatewayCall = calls.find((call) => call.args.includes("GATEWAY_VISITOR_SIGNING_KEY"));
+    expect(gatewayCall?.input).toBe("canary-gateway-5d1e");
+  });
+});
+
 describe("readMemberSecrets", () => {
   it("reads only the declared names of the member's folder, in CI, with no value in an argument", async () => {
     const { run, calls } = recorder({

@@ -39,7 +39,12 @@ export interface DeployRunways {
     /** The mobile apps, by app member folder name. */
     readonly mobile?: Readonly<Record<string, unknown>>;
     readonly targets?: Readonly<Record<string, { readonly workflows?: Workflows } | undefined>>;
-    readonly secrets?: { readonly defaultPath?: string; readonly ci?: readonly string[] };
+    readonly secrets?: {
+      readonly defaultPath?: string;
+      readonly ci?: readonly string[];
+      /** The generated API gateway's runtime secret names (ADR 0237). */
+      readonly gateway?: readonly string[];
+    };
     readonly release?: { readonly buildOrder?: readonly string[] };
   };
   /** Each member runway, by member folder name. */
