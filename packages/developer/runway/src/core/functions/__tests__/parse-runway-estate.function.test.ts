@@ -3,10 +3,13 @@
  * Purpose: unit tests of the estate fields figentra/infra reads from the root runway (ADR 0524): an environment's
  *          `region` is one of me, eu and ksa; `providers.aws.budgets.monthlyUsd` defaults to 300 beside the open
  *          thresholds; `providers.cloudflare.records` takes non-Worker DNS records under a declared zone, refuses an MX
- *          without a priority, a proxied TXT and a name under no zone. `checkEnvironmentRegion` asks a product's
- *          staging and production for a region and skips a runway without `product`; `deprecatedFields` names
- *          `providers.aws.region` and `providers.aws.accounts`.
- * Boundary: test only; plain objects through `parseRunway` and the two checks.
+ *          without a priority, a proxied TXT and a name under no zone; `providers.aws.account` and
+ *          `providers.gcp.project` are opt-ins that default to false, and `providers.gcp.apis` takes only unique
+ *          `*.googleapis.com` names. `checkEnvironmentRegion` asks a product's staging and production for a region,
+ *          asks a ksa environment for the GCP project, and skips a runway without `product`; `deprecatedFields` names
+ *          `providers.aws.region`, `providers.aws.accounts` and an environment's `cloud`; `unusedCloudOptIns` names an
+ *          AWS account no me or eu environment uses.
+ * Boundary: test only; plain objects through `parseRunway` and the three checks.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0524; STA-2104.
  */
@@ -16,6 +19,7 @@ import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { checkEnvironmentRegion } from "#core/functions/check-environment-region.function";
 import { deprecatedFields } from "#core/functions/deprecated-fields.function";
 import { parseRunway } from "#core/functions/parse-runway.function";
+import { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
 
 /** A product root runway with `extra` merged in. */
 function root(extra: Record<string, unknown> = {}): Record<string, unknown> {
@@ -47,6 +51,13 @@ const records = (list: unknown[]) =>
     },
   });
 
+/** A product with production in ksa and `gcp` as its GCP provider block. */
+const ksa = (gcp: Record<string, unknown>) =>
+  root({
+    environments: { staging: { region: "me" }, production: { region: "ksa" } },
+    providers: { gcp },
+  });
+
 describe("the root runway's estate fields", () => {
   it("takes a region key per environment and refuses another", () => {
     expect(parseRunway("root", root()).environments.staging?.region).toBe("me");
@@ -63,6 +74,25 @@ describe("the root runway's estate fields", () => {
     expect(parsed.providers?.aws?.budgets).toEqual({ thresholds: [50, 80, 100], monthlyUsd: 300 });
     expect(pathsOf(root({ providers: { aws: { budgets: { monthlyUsd: 0 } } } }))).toEqual([
       "providers.aws.budgets.monthlyUsd",
+    ]);
+  });
+
+  it("opts in to no AWS account and no GCP project by default", () => {
+    const parsed = parseRunway("root", root({ providers: { aws: {}, gcp: {} } }));
+    expect(parsed.providers?.aws?.account).toBe(false);
+    expect(parsed.providers?.gcp?.project).toBe(false);
+  });
+
+  it("takes unique *.googleapis.com services and refuses another name or a repeat", () => {
+    const apis = ["aiplatform.googleapis.com", "run.googleapis.com"];
+    expect(
+      parseRunway("root", root({ providers: { gcp: { apis } } })).providers?.gcp?.apis,
+    ).toEqual(apis);
+    expect(pathsOf(root({ providers: { gcp: { apis: ["aiplatform"] } } }))).toEqual([
+      "providers.gcp.apis.0",
+    ]);
+    expect(pathsOf(root({ providers: { gcp: { apis: [apis[0], apis[0]] } } }))).toEqual([
+      "providers.gcp.apis",
     ]);
   });
 
@@ -111,6 +141,13 @@ describe("checkEnvironmentRegion", () => {
     const { product: _product, ...core } = missing;
     expect(checkEnvironmentRegion(parseRunway("root", core))).toEqual([]);
   });
+
+  it("asks a ksa environment for the product's GCP project", () => {
+    expect(checkEnvironmentRegion(parseRunway("root", ksa({}))).map(({ path }) => path)).toEqual([
+      "environments.production.region",
+    ]);
+    expect(checkEnvironmentRegion(parseRunway("root", ksa({ project: true })))).toEqual([]);
+  });
 });
 
 describe("deprecatedFields", () => {
@@ -123,5 +160,32 @@ describe("deprecatedFields", () => {
       "providers.aws.accounts",
     ]);
     expect(deprecatedFields(parseRunway("root", root()))).toEqual([]);
+  });
+
+  it("names an environment's cloud", () => {
+    const old = root({
+      environments: {
+        staging: { region: "me", cloud: { name: "aws", account: "nonprod" } },
+        production: { region: "me" },
+      },
+    });
+    expect(deprecatedFields(parseRunway("root", old)).map(({ path }) => path)).toEqual([
+      "environments.staging.cloud",
+    ]);
+  });
+});
+
+describe("unusedCloudOptIns", () => {
+  it("names an AWS account no me or eu environment uses", () => {
+    const ksaOnly = root({
+      environments: { staging: { region: "ksa" }, production: { region: "ksa" } },
+      providers: { aws: { account: true }, gcp: { project: true } },
+    });
+    expect(unusedCloudOptIns(parseRunway("root", ksaOnly)).map(({ path }) => path)).toEqual([
+      "providers.aws.account",
+    ]);
+    expect(
+      unusedCloudOptIns(parseRunway("root", root({ providers: { aws: { account: true } } }))),
+    ).toEqual([]);
   });
 });

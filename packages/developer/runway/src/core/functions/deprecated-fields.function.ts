@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `deprecatedFields(root)`, the deprecated fields a parsed root runway still sets, each with what replaces it:
  *          `providers.aws.region` and `providers.aws.accounts` (the three-account layout that no longer matches ADR
- *          0524) give way to `environments.<env>.region`.
+ *          0524) and an environment's `cloud` give way to `environments.<env>.region`.
  * Boundary: pure; `runway validate` prints each as a warning and still passes. The fields stay accepted for one release.
  * Runtime: isomorphic
  * Governing contract: ADR 0524; STA-2104.
@@ -32,5 +32,12 @@ export function deprecatedFields(root: RootRunway): RunwayIssue[] {
       message:
         "Deprecated: a product has one AWS account (`ref:aws.account`), and each environment names its `region`; removed in the next release",
     });
+  for (const [name, environment] of Object.entries(root.environments))
+    if (environment?.cloud !== undefined)
+      found.push({
+        path: `environments.${name}.cloud`,
+        message:
+          "Deprecated: the environment's `region` fixes its cloud, and the product's one account or project is `providers.aws.account` or `providers.gcp.project`; removed in the next release",
+      });
   return found;
 }
