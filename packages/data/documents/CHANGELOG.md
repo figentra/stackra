@@ -1,5 +1,21 @@
 # @stackra/documents
 
+## 0.15.0
+
+### Patch Changes
+
+- 3c99709: The Word renderer decodes its Base64 output with `@stackra/support`'s `decodeBase64` instead of its own
+  copy, so the name `bytesOfBase64` has one home (`@stackra/outbox`) and the duplicate-export check passes.
+- @stackra/data-transfer@0.15.0
+  - @stackra/integrations@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes

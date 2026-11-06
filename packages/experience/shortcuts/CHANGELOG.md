@@ -1,5 +1,13 @@
 # @stackra/shortcuts
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/icons@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes

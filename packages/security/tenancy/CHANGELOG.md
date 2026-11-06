@@ -1,5 +1,21 @@
 # @stackra/tenancy
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/scope@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/scheduler@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes
