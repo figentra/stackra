@@ -62,6 +62,7 @@ export { rollback } from "#core/functions/rollback.function";
 export { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";
 export { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
+export { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
 export { workerSettingsOf } from "#core/functions/worker-settings-of.function";
 export { updateFeed } from "#core/functions/update-feed.function";
 export { withDeployLock } from "#core/functions/with-deploy-lock.function";

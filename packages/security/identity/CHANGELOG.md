@@ -1,5 +1,32 @@
 # @stackra/identity
 
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/clients@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/storage@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/market-packs@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/transport@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/outbox@0.12.0
+  - @stackra/queue@0.12.0
+  - @stackra/scheduler@0.12.0
+  - @stackra/iam@0.12.0
+  - @stackra/privacy@0.12.0
+  - @stackra/scope@0.12.0
+  - @stackra/tenancy@0.12.0
+  - @stackra/query@0.12.0
+
 ## 0.11.1
 
 ### Patch Changes

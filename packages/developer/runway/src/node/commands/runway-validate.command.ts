@@ -20,6 +20,7 @@ import { checkEnvironmentRegion } from "#core/functions/check-environment-region
 import { checkPlacement } from "#core/functions/check-placement.function";
 import { checkRequires } from "#core/functions/check-requires.function";
 import { deprecatedFields } from "#core/functions/deprecated-fields.function";
+import { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
 import type { RootRunway } from "#core/types/root-runway.type";
 import type { ServiceRunway } from "#core/types/service-runway.type";
 import { readRunway } from "#node/functions/read-runway.function";
@@ -68,7 +69,10 @@ export class RunwayValidateCommand extends Command({
         ...checkEnvironmentRegion(parsedRoot),
       ])
         findings.push(`runway.yaml: ${path}: ${message}`);
-      for (const { path, message } of deprecatedFields(parsedRoot))
+      for (const { path, message } of [
+        ...deprecatedFields(parsedRoot),
+        ...unusedCloudOptIns(parsedRoot),
+      ])
         io.output.warn(`runway.yaml: ${path}: ${message}`);
       for (const [file, service] of services)
         for (const { path, message } of checkRequires(parsedRoot, service))

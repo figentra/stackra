@@ -1,5 +1,21 @@
 # @stackra/iam
 
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/rules@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/testing@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/scope@0.12.0
+
 ## 0.11.1
 
 ### Patch Changes
