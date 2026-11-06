@@ -41,7 +41,7 @@ const row = (path, name, value) => ({ project: "pay", env: "prod", path, name, v
  * A fake for every CLI the scripts call. sops "encrypts" to a fixed text that never holds the plaintext, and keeps the
  * plaintext in a map so `decrypt` can return it; `git add` snapshots the clone's files.
  */
-function fakeCli({ existing = [], failPush = false } = {}) {
+function fakeCli({ existing = [], failPush = false, failAuto = false } = {}) {
   const calls = [];
   const stdins = [];
   const vault = new Map();
@@ -78,6 +78,8 @@ function fakeCli({ existing = [], failPush = false } = {}) {
     }
     if (command === "git" && args[0] === "push" && failPush)
       return { status: 1, stdout: "", stderr: "remote: Permission denied" };
+    if (command === "gh" && args[1] === "merge" && args.includes("--auto") && failAuto)
+      return { status: 1, stdout: "", stderr: "Pull request is in clean status" };
     if (command === "gh" && args[0] === "pr" && args[1] === "create")
       return { status: 0, stdout: "https://github.com/figentra/secrets/pull/1\n", stderr: "" };
     if (command === "age-keygen" && args[0] === "-o") {
@@ -156,6 +158,15 @@ test("publish: one file per secret, the value only on sops' stdin, a self-mergin
   );
   assert.ok(cli.calls.some((c) => c.join(" ") === `gh pr merge ${url} --auto --squash`));
   assertNoLeak(v, { cli });
+});
+
+test("publish: merges directly when --auto refuses an already mergeable pull request", () => {
+  const cli = fakeCli({ failAuto: true });
+  const { url } = publish([{ scope: "ci/infra", name: "APP_KEY", value: Buffer.from(canary()) }], {
+    run: cli.run,
+    actor: "test",
+  });
+  assert.ok(cli.calls.some((c) => c.join(" ") === `gh pr merge ${url} --squash`));
 });
 
 test("publish: replace false refuses an existing name; a failed push is a fixed message", () => {

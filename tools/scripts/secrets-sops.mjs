@@ -213,7 +213,9 @@ export function publish(
       clone,
       "pull request",
     );
-    step(run, "gh", ["pr", "merge", url, "--auto", "--squash"], clone, "auto-merge");
+    // --auto fails on a pull request that is already mergeable (no required checks); then merge it now.
+    const auto = run("gh", ["pr", "merge", url, "--auto", "--squash"], { cwd: clone });
+    if (auto.status !== 0) step(run, "gh", ["pr", "merge", url, "--squash"], clone, "merge");
     return { written, url };
   } finally {
     rmSync(clone, { recursive: true, force: true });
