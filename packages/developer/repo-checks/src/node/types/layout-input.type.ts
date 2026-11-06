@@ -24,6 +24,9 @@ export type LayoutInput = {
   /** package.json `stackra.layout.allow`: an extra root entry and the reason it is there. */
   readonly allow: Readonly<Record<string, string>>;
 
+  /** package.json `stackra.layout.banned`: retired names no path may carry, compared without case. */
+  readonly banned: readonly string[];
+
   /** Whether `tools/README.md` exists. */
   readonly toolsReadme: boolean;
 };

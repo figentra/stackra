@@ -23,7 +23,7 @@ TypeScript 6 compiler API the doc standard parses with).
 | `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored                  |
 | `structure`             | `structureFindings` | test placement, workflow triggers, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files, public id prefix uniqueness across apps and services |
 | `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                                    |
-| `layout` (`--repository`) | `layoutFindings`  | the root against the preset's template (`LAYOUT_TEMPLATES`): no root `src/` or script folder, `apps/` and extras only when declared in package.json `stackra.layout.allow`, `tools/` with a README, no `figentra-flow` path (ADR 0526, 0528, 0529) |
+| `layout` (`--repository`) | `layoutFindings`  | the root against the preset's template (`LAYOUT_TEMPLATES`): no root `src/` or script folder, `apps/` and extras only when declared in package.json `stackra.layout.allow`, `tools/` with a README, no `figentra-flow` path and none with a name the repository lists in package.json `stackra.layout.banned` (ADR 0526, 0528, 0529) |
 | `catalogues`            | `catalogueFindings` | lang catalogues complete per locale, ICU placeholders match `en` (ADR 0403)                                        |
 | `spec`                  | `specFindings`      | spec stage gates, foreign-status, bug and lane gates, trace and drift (ADR 0120, 0198); see below                  |
 
