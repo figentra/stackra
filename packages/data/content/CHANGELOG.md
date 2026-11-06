@@ -1,5 +1,19 @@
 # @stackra/content
 
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/entitlements@0.14.2
+  - @stackra/contracts@0.14.2
+
 ## 0.14.1
 
 ### Patch Changes

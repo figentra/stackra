@@ -1,5 +1,23 @@
 # @stackra/achievements
 
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/actions@0.14.2
+  - @stackra/rules@0.14.2
+  - @stackra/integrations@0.14.2
+  - @stackra/content@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/documents@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/contracts@0.14.2
+
 ## 0.14.1
 
 ### Patch Changes
