@@ -57,5 +57,5 @@ eg packs list none either.
 ## Status history
 
 - 2026-11-06 → Clarified (the cause is in the pack key grammar; the providers are the owner's 2026-11-06 choice)
-- 2026-11-06 → Planned (plan.md) — Approved by leader 2026-11-07 (technical stop; plan reviewed: key rename, schema registration, three packs' provider lists)
+- 2026-11-06 → Planned (plan.md) — Approved by leader 2026-11-07
 - 2026-11-06 → Tasked (tasks.md; built in the same branch)
