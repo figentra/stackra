@@ -1612,6 +1612,6 @@
   issue: STA-2201
 "0531":
   slug: figentra-pay-hosted-payment-suite
-  status: reserved
+  status: proposed
   owner: claude
   issue: STA-2220
