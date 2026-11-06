@@ -57,8 +57,6 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   RuleBuilderProps: "the props of the two RuleBuilder components above",
   RuleField:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/rules maps its field onto it",
-  SavedView:
-    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/panel's schema validates the stored one",
   SocialProvider:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/identity's enum names the same providers",
   WidgetSize:
