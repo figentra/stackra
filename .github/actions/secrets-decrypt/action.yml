@@ -111,7 +111,11 @@ runs:
         if [ -n "$NAMES" ]; then args+=(--names "$NAMES"); fi
         npx --yes --@stackra:registry="$registry" -p "@stackra/runway@$RUNWAY_VERSION" runway "${args[@]}"
 
-    - name: Ciphertext cleanup
+    # The auth step writes its credentials file into the workspace (gha-creds-*.json), where a caller's format or
+    # secrets scan would find it. Nothing needs it after the decrypt, so it goes now, not at the end of the job.
+    - name: Ciphertext and credentials cleanup
       if: always()
       shell: bash
-      run: rm -rf "$RUNNER_TEMP/secrets"
+      run: |
+        rm -rf "$RUNNER_TEMP/secrets"
+        if [ -n "${GOOGLE_GHA_CREDS_PATH:-}" ]; then rm -f "$GOOGLE_GHA_CREDS_PATH"; fi
