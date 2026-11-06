@@ -6,11 +6,13 @@ description: "Accepted · 2026-11-06"
 {/* Stackra file contract. Purpose: ADR 0527 (Accepted 2026-11-06, STA-2198), the owner's decision that every Cloudflare Worker Figentra operates (registry, static, turbo-cache, edge) lives in figentra/figentra, that core keeps no operated infrastructure, and that the registry, static and turbo-cache Workers serve any npm scope from a namespaces table in D1. Boundary: decision text only; the design is STA-2204, the build STA-2206 and the move STA-2111 and STA-2207. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0026, 0074, 0453, 0526. */}
 
 <Note>
-  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that date (rows 6 to 8).
-  It amends [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
-  (the registry's scope rules, decision 10, become rows in D1, and the Worker lives in figentra/figentra) and
-  [0026](/adr/0026-turborepo-remote-cache-on-r2) (where the cache Worker lives). Each Worker's boundary
-  and capabilities get a short ADR of their own when the design (STA-2204) is agreed.
+  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that
+  date (rows 6 to 8). It amends
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  (the registry's scope rules, decision 10, become rows in D1, and the Worker lives in
+  figentra/figentra) and [0026](/adr/0026-turborepo-remote-cache-on-r2) (where the cache Worker
+  lives). Each Worker's boundary and capabilities get a short ADR of their own when the design
+  (STA-2204) is agreed.
 </Note>
 
 ## Context
