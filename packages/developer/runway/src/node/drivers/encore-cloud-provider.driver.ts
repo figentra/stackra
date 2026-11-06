@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `EncoreCloudProviderDriver`, the `encore-cloud` driver of the `RunwayProvider` port: an Encore Cloud
- *          environment deploys the commit its branch points to, so apply pushes the commit to the branch on the app's
- *          `encore://<app>` remote, rollback force-pushes an earlier commit, current reads the branch, and verify reads
- *          the branch and then the deployment's `GET <origin>/readyz`.
+ *          environment deploys the commit its branch points to, so apply pushes to the branch on the app's
+ *          `encore://<app>` remote, rollback force-pushes an earlier deploy, current reads the branch, and verify reads
+ *          the branch and then the deployment's `GET <origin>/readyz`. The generated app is gitignored, so when the
+ *          working tree holds one, apply pushes its deploy commit (`encoreDeployTree`: the source commit plus the
+ *          generated app) and records that commit as the deploy's reference; without one it pushes the commit as is.
  * Boundary: runs `git` through the given `CommandRunner` and one `GET` through `fetch`; the push credentials are the
  *           job's Encore login. The branch and origin are runway data: `encore.branch` / `encore.origin` of the
  *           environment, `encore.regions.<region>.*` for one region, or a dedicated deployment's own `encore` block.
@@ -23,6 +25,7 @@ import { RunwayProvider } from "#core/ports/runway-provider.port";
 import type { DeployRecord } from "#core/types/deploy-record.type";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { DeployTarget } from "#core/types/deploy-target.type";
+import { encoreDeployTree } from "#node/functions/encore-deploy-tree.function";
 import { runProgram } from "#node/functions/run-program.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
@@ -31,6 +34,13 @@ const APP = /^[a-z0-9][a-z0-9-]*$/;
 
 /** A branch name git and a refspec accept without quoting. */
 const BRANCH = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
+
+/** A full git commit id. */
+const COMMIT = /^[0-9a-f]{40}$/;
+
+/** The commit a record put on the branch: its reference when that is a commit (a deploy commit), else its sha. */
+const pushedOf = (record: DeployRecord): string =>
+  COMMIT.test(record.reference) ? record.reference : record.sha;
 
 /** The readiness route of every Stackra server app (@stackra/app `answerProbe`). */
 const READINESS_PATH = "/readyz";
@@ -87,20 +97,39 @@ export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
     ];
   }
 
-  /** Pushes `sha`; Encore Cloud builds and deploys it. */
+  /** Pushes the deploy commit of `sha` (or `sha` itself when no generated app is present); Encore Cloud builds it. */
   override async apply(target: DeployTarget, sha: string): Promise<DeployRecord> {
-    for (const step of this.plan(target, sha))
-      await this.run(step.command, step.args, { cwd: this.cwd });
-    return { target: target.id, sha, reference: sha };
+    const tree = await encoreDeployTree({
+      repository: this.cwd ?? process.cwd(),
+      sha,
+      run: this.run,
+    });
+    if (tree === undefined) {
+      for (const step of this.plan(target, sha))
+        await this.run(step.command, step.args, { cwd: this.cwd });
+      return { target: target.id, sha, reference: sha };
+    }
+    try {
+      // Each deploy commit sits on its own source commit, so the branch moves by force.
+      await this.run(
+        "git",
+        ["push", this.remote, `+${tree.sha}:refs/heads/${this.branchOf(target)}`],
+        { cwd: this.cwd },
+      );
+    } finally {
+      await tree.dispose();
+    }
+    return { target: target.id, sha, reference: tree.sha };
   }
 
   /** Up when the branch holds the record's commit and, when the target names an origin, `/readyz` answers 200. */
   override async verify(target: DeployTarget, record: DeployRecord): Promise<HealthReport> {
     const now = await this.current(target);
-    if (now !== record.sha)
+    const pushed = pushedOf(record);
+    if (now !== pushed)
       return {
         status: HealthStatus.Down,
-        detail: `${this.branchOf(target)} points to ${now ?? "nothing"}, not ${record.sha}`,
+        detail: `${this.branchOf(target)} points to ${now ?? "nothing"}, not ${pushed}`,
       };
     const origin = this.blockField(target, "origin");
     if (typeof origin !== "string" || origin === "") return { status: HealthStatus.Up };
@@ -119,12 +148,13 @@ export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
     }
   }
 
-  /** Force-pushes the earlier commit to the branch. */
+  /** Force-pushes the earlier deploy (its deploy commit when it had one) to the branch. */
   override async rollback(target: DeployTarget, to: DeployRecord): Promise<DeployRecord> {
-    await this.run("git", ["push", this.remote, `+${to.sha}:refs/heads/${this.branchOf(target)}`], {
+    const pushed = pushedOf(to);
+    await this.run("git", ["push", this.remote, `+${pushed}:refs/heads/${this.branchOf(target)}`], {
       cwd: this.cwd,
     });
-    return { target: target.id, sha: to.sha, reference: to.sha };
+    return { target: target.id, sha: to.sha, reference: pushed };
   }
 
   /** The commit the branch points to. */
