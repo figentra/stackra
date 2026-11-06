@@ -96,7 +96,7 @@ jobs:
 
       - name: Bot App (sops)
         if: env.HAS_APP_SECRETS != 'true'
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/production/release
           names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
@@ -146,7 +146,7 @@ jobs:
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525).
       - name: Turborepo remote cache (sops)
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/turbo
 

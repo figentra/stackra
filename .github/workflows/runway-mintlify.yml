@@ -109,7 +109,7 @@ jobs:
         # A repository whose packages all come from its workspace installs without it, so a refused decrypt must not
         # stop the job; a product that needs the token then fails at the install with the registry's 401.
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN
@@ -132,7 +132,7 @@ jobs:
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525).
       - name: Turborepo remote cache (sops)
         if: inputs.build-first != ''
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/turbo
 
@@ -247,7 +247,7 @@ jobs:
             node = "24.22.0"
 
       - name: Mintlify admin key (sops)
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.scope }}
           names: MINTLIFY_ADMIN_KEY

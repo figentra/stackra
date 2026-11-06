@@ -81,7 +81,7 @@ jobs:
       # runway-mintlify.yml does; a workspace-only install needs none, so a refused decrypt does not stop.
       - name: Registry token (sops)
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN
@@ -147,7 +147,7 @@ jobs:
       # runway-mintlify.yml does; a workspace-only install needs none, so a refused decrypt does not stop.
       - name: Registry token (sops)
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN
@@ -227,7 +227,7 @@ jobs:
       # runway-mintlify.yml does; a workspace-only install needs none, so a refused decrypt does not stop.
       - name: Registry token (sops)
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN

@@ -134,7 +134,7 @@ jobs:
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525). The turbo-cache member's
       # TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
       - name: Turborepo remote cache (sops)
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/turbo
 
@@ -150,14 +150,14 @@ jobs:
 
       # Only CLOUDFLARE_API_TOKEN from the scope, so no other value of it enters the job.
       - name: Cloudflare token (sops)
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.scope }}
           names: CLOUDFLARE_API_TOKEN
 
       - name: Member secret (sops)
         if: inputs.secret-scope != ''
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.secret-scope }}
           names: ${{ inputs.secret-name }}
@@ -165,7 +165,7 @@ jobs:
       # The names stay literal so `runway env check` sees them (STA-2133).
       - name: Bot App (sops)
         if: inputs.bot-app
-        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.scope }}/release
           names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
