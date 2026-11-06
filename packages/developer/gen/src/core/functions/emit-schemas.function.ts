@@ -15,7 +15,7 @@
  *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`. A bare
  *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`. A `@stackra/*` type with a shipped `X$` imports that schema
  *           (as `ShippedX$`) instead of compiling the shape again (STA-1290). A `@Field(zod)` hatch brings the imports its
- *           source uses, and a nullable field is `.nullable()` once, even when the hatch already says it (STA-1293). A
+ *           source uses (one named as an `X$` this file declares comes in as `HatchX$`, STA-2215), and a nullable field is `.nullable()` once, even when the hatch already says it (STA-1293). A
  *           form over a consumed shape of `#stackra/clients/<service>` extends that class's `schema` static (aliased
  *           `Remote<Name>`), picked, omitted or made partial first when it derives from it (STA-1363).
  *          A shape with initializers also gets a `declare module "<its import path>"` augmentation naming them in the
@@ -72,6 +72,8 @@ interface Context {
   readonly module: string;
   readonly imports: Imports;
   readonly declared: Set<string>;
+  /** Every `X$` this module file declares, which a hatch's import of the same name must not shadow (STA-2215). */
+  readonly local: ReadonlySet<string>;
 }
 
 /** A reference to the `X$` of a shape or enum: local, lazy when not yet declared, or imported from its module file. */
@@ -190,9 +192,21 @@ function zodOf(
       return `z.discriminatedUnion(${JSON.stringify(type.discriminator)}, [${members.join(", ")}])`;
     }
     case "hatch": {
-      for (const [name, from, typeOnly] of type.imports ?? [])
-        use(imports, from, name, typeOnly === true);
-      return type.source;
+      let source = type.source;
+      for (const [name, from, typeOnly] of type.imports ?? []) {
+        if (!context.local.has(name)) {
+          use(imports, from, name, typeOnly === true);
+          continue;
+        }
+        // `@Field(BaseX$.shape.f)` in an override of X: the import is aliased, since this file declares `X$` itself.
+        const alias = `Hatch${name}`;
+        use(imports, from, `${name} as ${alias}`, typeOnly === true);
+        source = source.replaceAll(
+          new RegExp(`(?<![\\w$])${name.replaceAll("$", "\\$")}(?![\\w$])`, "g"),
+          alias,
+        );
+      }
+      return source;
     }
   }
 }
@@ -370,7 +384,20 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
  */
 export function emitSchemas(ir: MemberIR, module: string): string {
   const imports: Imports = new Map();
-  const context: Context = { module, imports, declared: new Set() };
+  const local = new Set(
+    [
+      ...ir.enums.filter((candidate) => candidate.module === module),
+      ...ir.shapes.filter((candidate) => candidate.module === module),
+      ...ir.classes.filter(
+        (candidate) =>
+          candidate.module === module &&
+          (candidate.kind === "config" ||
+            candidate.kind === "action" ||
+            candidate.kind === "query"),
+      ),
+    ].map((declaration) => `${declaration.name}$`),
+  );
+  const context: Context = { module, imports, declared: new Set(), local };
   const body: string[] = [];
   for (const declaration of ir.enums.filter((candidate) => candidate.module === module)) {
     body.push(
