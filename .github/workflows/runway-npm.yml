@@ -297,10 +297,10 @@ jobs:
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm install $INSTALL_ARGS
 
-      # `--ignore-npm-errors`: cyclonedx-npm shells out to `npm ls`, which reports the devDependency-only peer graphs
-      # of transitive tools as errors although pnpm installed fine. Pinned through npx: not a catalog dependency.
+      # pnpm's own `sbom` reads the pnpm lockfile and store; cyclonedx-npm shelled out to `npm ls`, which cannot read a
+      # pnpm tree and listed hundreds of false missing and invalid packages.
       - name: Generate SBOM (CycloneDX)
-        run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file sbom.cdx.json
+        run: pnpm sbom --sbom-format cyclonedx --out sbom.cdx.json
 
       # Keyless: the certificate names this workflow and repository, so a verifier pins both
       # (`cosign verify-blob --certificate-identity-regexp … --certificate-oidc-issuer https://token.actions.githubusercontent.com`).
