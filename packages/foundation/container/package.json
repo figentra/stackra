@@ -1,6 +1,6 @@
 {
   "name": "@stackra/container",
-  "version": "0.14.3",
+  "version": "0.14.4",
   "private": false,
   "description": "The Stackra DI and kind machinery: classes are tokens, gen-written wiring, createKind, createDecorator, Driver(Port), Lifetime, Explorer, DiscoveryService, Named, Module, Service and the testing module",
   "keywords": [

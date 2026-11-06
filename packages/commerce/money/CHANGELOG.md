@@ -1,5 +1,12 @@
 # @stackra/money
 
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes

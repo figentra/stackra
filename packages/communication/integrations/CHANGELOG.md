@@ -1,5 +1,21 @@
 # @stackra/integrations
 
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/clients@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/money@0.14.4
+  - @stackra/data-transfer@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/market-packs@0.14.4
+  - @stackra/validation@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes

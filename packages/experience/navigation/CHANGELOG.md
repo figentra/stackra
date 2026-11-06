@@ -1,5 +1,29 @@
 # @stackra/navigation
 
+## 0.14.4
+
+### Patch Changes
+
+- cc150d2: The native `SettingsForm`, `useMenu`, `useMenus` and the menu flag check now share their logic with the web entry
+  (`useSettingsForm`, `useMenuResolverWith`, `useMenuFrom`) instead of keeping copies. Behaviour and exports are unchanged.
+- Updated dependencies [6406843]
+- Updated dependencies [cc150d2]
+  - @stackra/settings@0.14.4
+  - @stackra/clients@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/seo@0.14.4
+  - @stackra/icons@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/testing@0.14.4
+  - @stackra/platform@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/feature-flags@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes

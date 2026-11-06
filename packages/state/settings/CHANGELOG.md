@@ -1,5 +1,23 @@
 # @stackra/settings
 
+## 0.14.4
+
+### Patch Changes
+
+- 6406843: `SettingKeyInput` extends `SettingOptions` instead of repeating its fields. The shape is unchanged.
+- cc150d2: The native `SettingsForm`, `useMenu`, `useMenus` and the menu flag check now share their logic with the web entry
+  (`useSettingsForm`, `useMenuResolverWith`, `useMenuFrom`) instead of keeping copies. Behaviour and exports are unchanged.
+- @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/icons@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/market-packs@0.14.4
+  - @stackra/validation@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes

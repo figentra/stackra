@@ -1,5 +1,14 @@
 # @stackra/native-customer-display
 
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/peripherals@0.14.4
+  - @stackra/platform@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes
