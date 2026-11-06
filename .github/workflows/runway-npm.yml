@@ -68,7 +68,8 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 0.17.0 published 118 of 119 packages (~13 s each) before a 30-minute limit cancelled the job (run 42297058735).
+    timeout-minutes: 60
     # Runbook (release): a human keeps this environment protected and restricted to main, so a branch that edits the
     # workflow cannot obtain a credential, and every run waits for the owner's approval.
     environment: ${{ inputs.environment }}
