@@ -113,6 +113,7 @@ test("scopes: the documented shapes pass, anything else is refused", () => {
     "ci/production",
     "ci/production/release",
     "ci/flow/gate",
+    "ci/infra",
     "products/pay/production",
   ])
     assert.ok(SCOPE_RX.test(s), s);
@@ -128,10 +129,12 @@ test("scopes: the documented shapes pass, anything else is refused", () => {
     assert.ok(!SCOPE_RX.test(s), s);
   assert.throws(
     () => checkTarget({ scope: "ci/flow/gate", name: "X" }, { agent: true }),
-    /gate or registry/,
+    /gate, registry or infra/,
   );
   assert.throws(() => checkTarget({ scope: "ci/production/registry", name: "X" }, { agent: true }));
+  assert.throws(() => checkTarget({ scope: "ci/infra", name: "X" }, { agent: true }), /infra key/);
   assert.doesNotThrow(() => checkTarget({ scope: "ci/flow/gate", name: "X" }));
+  assert.doesNotThrow(() => checkTarget({ scope: "ci/infra", name: "X" }));
 });
 
 test("publish: one file per secret, the value only on sops' stdin, a self-merging pull request", () => {
@@ -225,7 +228,7 @@ test("put: a hidden prompt when there is no inbox file; a refusal keeps nothing"
     }),
     1,
   );
-  assert.match(refused.lines[0], /refused: an agent never writes a gate or registry key/);
+  assert.match(refused.lines[0], /refused: an agent never writes a gate, registry or infra key/);
   assert.equal(
     await put(["x-not-a-name", "--scope", "agents"], {
       home: h,
