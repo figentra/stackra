@@ -144,8 +144,10 @@ jobs:
           pnpm install $INSTALL_ARGS
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525).
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525). The cache only speeds the build,
+      # so a caller without the turbo grant builds with the local cache instead of failing the release.
       - name: Turborepo remote cache (sops)
+        continue-on-error: true
         uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/turbo
