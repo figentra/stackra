@@ -1,5 +1,33 @@
 # @stackra/infra-github
 
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [54e05c6]
+  - @stackra/runway@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- 2e94d79: infra-aws: `productAccount` passes no `provider: undefined` or `parent: undefined` into resource options
+  (exactOptionalPropertyTypes), and `organizationLayout` reads an unknown `roots` as an empty root id instead of
+  throwing, so units register under previews and mocks. infra-github: the `./node` contract test names
+  `githubStack`'s `options` parameter.
+- Updated dependencies [dc4b3f0]
+- Updated dependencies [5d10209]
+- Updated dependencies [6e61084]
+  - @stackra/runway@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes

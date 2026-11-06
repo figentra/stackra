@@ -1,5 +1,67 @@
 # @stackra/loyalty-kit
 
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/ledger@0.14.0
+  - @stackra/money@0.14.0
+  - @stackra/integrations@0.14.0
+  - @stackra/versioning@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/search@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/testing@0.14.0
+  - @stackra/experience@0.14.0
+  - @stackra/panel@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/queue@0.14.0
+  - @stackra/scheduler@0.14.0
+  - @stackra/workflow@0.14.0
+  - @stackra/iam@0.14.0
+  - @stackra/tenancy@0.14.0
+  - @stackra/settings@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/ledger@0.13.0
+  - @stackra/money@0.13.0
+  - @stackra/integrations@0.13.0
+  - @stackra/versioning@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/search@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/testing@0.13.0
+  - @stackra/experience@0.13.0
+  - @stackra/panel@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/outbox@0.13.0
+  - @stackra/queue@0.13.0
+  - @stackra/scheduler@0.13.0
+  - @stackra/workflow@0.13.0
+  - @stackra/iam@0.13.0
+  - @stackra/tenancy@0.13.0
+  - @stackra/settings@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes

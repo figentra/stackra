@@ -1,5 +1,37 @@
 # @stackra/tenancy
 
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/scheduler@0.14.0
+  - @stackra/scope@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/scheduler@0.13.0
+  - @stackra/scope@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes

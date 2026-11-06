@@ -4,6 +4,8 @@
  *          one environment, read from Infisical: the root runway's workspace (`providers.infisical.workspace`), the
  *          Infisical environment it maps `environment` to, and the member's runtime folder (`<runtime path>/<member>`,
  *          ADR 0512). The secret sync writes them into Encore, and the Workers provider uploads them with a version.
+ *          With `source: "environment"` they come from the job's environment instead, where the shared
+ *          `secrets-decrypt` action put the product's sops scope (ADR 0525); Infisical is not read.
  * Boundary: the values live in memory only: they are returned, never logged, printed, written to a file or put in an
  *           argument, and no error carries one, only names. It runs only in a GitHub Actions job of the repository,
  *           proved by GitHub's signed OIDC token (`proveGithubJob`), never by `GITHUB_ACTIONS`; anywhere else it
@@ -43,6 +45,13 @@ export async function readMemberSecrets(input: {
   readonly runways: DeployRunways;
   readonly run?: CommandRunner | undefined;
   readonly ci?: boolean | undefined;
+  /**
+   * Where the values come from: Infisical (the default), or the job's environment, which the shared
+   * `secrets-decrypt` action filled from the product's sops scope (ADR 0525).
+   */
+  readonly source?: "infisical" | "environment" | undefined;
+  /** The job's environment for `source: "environment"`; a test replaces it. */
+  readonly env?: Readonly<Record<string, string | undefined>> | undefined;
 }): Promise<ReadonlyMap<string, string>> {
   const { environment, member, runways } = input;
   if (input.ci === false)
@@ -53,6 +62,15 @@ export async function readMemberSecrets(input: {
   if (input.ci === undefined) await proveGithubJob({ github: runways.root.providers.github });
   const entry = secretSyncPlan(environment, runways).find((item) => item.member === member);
   if (entry === undefined) return new Map();
+  if (input.source === "environment") {
+    const env = input.env ?? process.env;
+    const missing = entry.names.filter((name) => (env[name] ?? "") === "");
+    if (missing.length > 0)
+      throw new RunwayUnresolvedError(
+        `the job's environment lacks ${member}'s ${missing.join(", ")}: decrypt the product's ${environment} scope first (.github/actions/secrets-decrypt)`,
+      );
+    return new Map(entry.names.map((name) => [name, env[name] ?? ""]));
+  }
   const infisical = runways.root.providers.infisical;
   const infisicalEnvironment = infisical?.environments?.[environment];
   if (infisicalEnvironment === undefined)
