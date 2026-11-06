@@ -1,5 +1,22 @@
 # @stackra/payments
 
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/money@0.14.1
+  - @stackra/integrations@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/testing@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/market-packs@0.14.1
+  - @stackra/validation@0.14.1
+
 ## 0.14.0
 
 ### Patch Changes

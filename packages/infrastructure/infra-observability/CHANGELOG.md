@@ -1,5 +1,16 @@
 # @stackra/infra-observability
 
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/validation@0.14.1
+
 ## 0.14.0
 
 ### Patch Changes

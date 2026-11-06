@@ -1,5 +1,15 @@
 # @stackra/filesystem
 
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+
 ## 0.14.0
 
 ### Patch Changes
