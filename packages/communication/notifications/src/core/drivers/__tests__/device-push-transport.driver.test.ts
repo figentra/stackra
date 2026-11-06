@@ -10,6 +10,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; RFC 8030; RFC 8292; stackra-207 (STA-1360).
  */
+import { buildConfig } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
 import { Clock } from "@stackra/contracts";
 import { OutboxFake } from "@stackra/events/testing";
@@ -19,6 +20,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 import { base64url } from "@stackra/support";
 
+import { NotificationsConfig } from "#config/notifications.config";
 import { PushTokenStore } from "#contracts/ports/push-token-store.port";
 import { SendLog } from "#contracts/ports/send-log.port";
 import type { PushTarget } from "#contracts/types/push-target.type";
@@ -60,8 +62,8 @@ class FixedClock extends Clock {
   }
 }
 
-/** A VAPID key pair and a browser subscription, generated. */
-async function keys() {
+/** A VAPID key pair and a browser subscription, generated; `subject` is the contact secret, none when undefined. */
+async function keys(subject?: string) {
   const vapid = (await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
     "sign",
   ])) as CryptoKeyPair;
@@ -73,7 +75,7 @@ async function keys() {
       await crypto.subtle.exportKey("raw", vapid.publicKey),
     ),
     WEB_PUSH_VAPID_PRIVATE_KEY: (await crypto.subtle.exportKey("jwk", vapid.privateKey)).d ?? "",
-    WEB_PUSH_VAPID_SUBJECT: "mailto:push@platform.example",
+    ...(subject === undefined ? {} : { WEB_PUSH_VAPID_SUBJECT: subject }),
   };
   return {
     secrets: new (class extends SecretStore {
@@ -86,8 +88,13 @@ async function keys() {
   };
 }
 
-/** The driver with an Expo client answering `ticket`. */
-async function driverWith(ticket: unknown, outbox?: OutboxFake) {
+/** The driver with an Expo client answering `ticket`, and the contact from `config` or the `subject` secret. */
+async function driverWith(
+  ticket: unknown,
+  outbox?: OutboxFake,
+  config?: NotificationsConfig,
+  subject?: string,
+) {
   const expo = new ExpoIntegration();
   const bodies: unknown[] = [];
   Object.defineProperty(expo, "api", {
@@ -109,11 +116,13 @@ async function driverWith(ticket: unknown, outbox?: OutboxFake) {
   });
   const tokens = new Tokens();
   const log = new Log();
-  const { secrets, p256dh, auth } = await keys();
+  const { secrets, p256dh, auth } = await keys(
+    config === undefined ? (subject ?? "mailto:push@platform.example") : subject,
+  );
   return {
     driver: new (class extends DevicePushTransportDriver {
       protected override readonly expo = expo;
-    })(secrets, tokens, log, new FixedClock(), outbox),
+    })(secrets, tokens, log, new FixedClock(), outbox, config),
     tokens,
     log,
     bodies,
@@ -207,6 +216,36 @@ describe("DevicePushTransportDriver", () => {
         "w3",
       ),
     ).rejects.toThrow(TypeError);
+  });
+
+  it.each([
+    { from: "config", config: "mailto:ops@acme.example", secret: undefined },
+    { from: "the secret while config is empty", config: "", secret: "https://acme.example/push" },
+  ])("signs the VAPID token with the contact from $from", async ({ config, secret }) => {
+    const settings = buildConfig(NotificationsConfig, { values: { webPushVapidSubject: config } });
+    const { driver, p256dh, auth } = await driverWith({}, undefined, settings, secret);
+    const fetchMock = vi.fn(async () => new Response(null, { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const target = { kind: "web", endpoint: "https://push.example/sub/9", p256dh, auth } as const;
+    await driver.send({ target, title: "T", body: "B", ttlSeconds: 60 }, "s1");
+    const init = (fetchMock.mock.calls[0] as unknown as [URL, RequestInit])[1];
+    const token = /^vapid t=([^,]+),/.exec(
+      new Headers(init.headers).get("authorization") ?? "",
+    )?.[1];
+    const claims = JSON.parse(
+      new TextDecoder().decode(base64url.decode(token?.split(".")[1] ?? "")),
+    ) as { sub: string };
+    expect(claims.sub).toBe(config || secret);
+  });
+
+  it("refuses a Web Push when neither config nor the secret holds the contact", async () => {
+    const settings = buildConfig(NotificationsConfig);
+    const { driver, p256dh, auth } = await driverWith({}, undefined, settings, undefined);
+    vi.stubGlobal("fetch", vi.fn());
+    const target = { kind: "web", endpoint: "https://push.example/sub/9", p256dh, auth } as const;
+    await expect(
+      driver.send({ target, title: "T", body: "B", ttlSeconds: 60 }, "s2"),
+    ).rejects.toThrow("WEB_PUSH_VAPID_SUBJECT is not set");
   });
 
   it("revokes devices that receipts report gone", async () => {
