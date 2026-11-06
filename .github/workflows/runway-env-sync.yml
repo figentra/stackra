@@ -122,7 +122,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Only in core, where @stackra/runway is a workspace member: a product installs it built from the registry, and
+      # turbo refuses a filter that names no workspace package. `pnpm runway` then runs the script (core) or the
+      # package's `runway` binary (a product, @stackra/runway 0.10 or later: the `env` commands).
       - name: Build runway
+        if: hashFiles('packages/developer/runway/package.json') != ''
         run: pnpm exec turbo run build --filter=@stackra/runway
 
       # The GitHub OIDC token is fetched with GitHub's default audience, the one Infisical/secrets-action asks for, so
