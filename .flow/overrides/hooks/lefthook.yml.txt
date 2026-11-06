@@ -17,7 +17,8 @@ pre-commit:
         - ".agents/skills/**"
         - ".agents/reference/**"
         - ".agents/hooks/fflow-guard.mjs"
-        # .oxlintrc.jsonc ignores it; oxlint exits 1 when every file it is given is ignored
+        # .oxlintrc.jsonc ignores these; oxlint exits 1 when every file it is given is ignored
+        - ".opencode/plugins/fflow-guard.mjs"
         - "packages/developer/flow-preset/preset/**"
       run: |
         if [ ! -d node_modules/@stackra/oxlint-config ] && grep -qs @stackra/oxlint-config .oxlintrc.json .oxlintrc.jsonc; then

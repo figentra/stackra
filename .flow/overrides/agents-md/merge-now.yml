@@ -1,7 +1,0 @@
-kind: extend
-target: AGENTS.md
-section: How work flows
-items:
-  - "In this repository the owner's merge-now rule above (STA-2083) wins over `fflow land`: merge the pull request right away with `pnpm pr:merge <n>`, never wait on the gate, then remove the worktree yourself."
-reason: "STA-2083 (owner, 2026-11-03): merge now, test later; the preset's land step waits for the gate"
-owner: figentra-usr
