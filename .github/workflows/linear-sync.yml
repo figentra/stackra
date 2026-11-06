@@ -3,13 +3,12 @@
 #          ADR 0065 rule 7: a separate, non-blocking job. It is not a required check and never fails the run.
 # Owner: release-operations
 # Secrets: LINEAR_AGENT_CLIENT_ID / LINEAR_AGENT_CLIENT_SECRET (the "Stackra Agent" app; the script mints a
-#          client_credentials token), LINEAR_API_KEY as fallback. Read from the environment only; never printed.
-#          STA-1822: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (the stackra-bot App, the same repository secrets
-#          release.yml passes today), given only to this job in the `linear-sync` environment (main only, no reviewer),
-#          mint a read-only installation token for the figentra org, so the reconcile
-#          reads every repo in tools/scripts/linear-reconcile.repos.yaml. Without a token the job uses github.token,
-#          reads this repo only and lists the others as skipped. STA-1827 moves the key to Infisical prod `/ci/release`
-#          for release.yml and this file together (STA-1747).
+#          client_credentials token) and STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (the stackra-bot App: a
+#          read-only installation token for the figentra org, so the reconcile reads every repo in
+#          tools/scripts/linear-reconcile.repos.yaml). All four come by name from Infisical `ci-production` prod
+#          `/ci/release` over GitHub OIDC as the production identity, which trusts this job's `linear-sync` environment
+#          (main only) and this workflow (catalog Q7, STA-1747); no repository secret. Without the bot token the job
+#          uses github.token, reads this repo only and lists the others as skipped. Never printed.
 name: Linear sync
 
 on:
@@ -38,7 +37,64 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      id-token: write # Infisical OIDC, the four names below only
     steps:
+      # One name per call (the action's limit); each masked and exported. A failed read leaves the name unset.
+      - name: Bot App id (Infisical OIDC)
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/release
+          secret-name: STACKRA_BOT_APP_ID
+          export-type: env
+
+      - name: Bot App key (Infisical OIDC)
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/release
+          secret-name: STACKRA_BOT_PRIVATE_KEY
+          export-type: env
+
+      - name: Linear app client id (Infisical OIDC)
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/release
+          secret-name: LINEAR_AGENT_CLIENT_ID
+          export-type: env
+
+      - name: Linear app client secret (Infisical OIDC)
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/release
+          secret-name: LINEAR_AGENT_CLIENT_SECRET
+          export-type: env
+
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -63,8 +119,8 @@ jobs:
         continue-on-error: true
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
-          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          app-id: ${{ env.STACKRA_BOT_APP_ID }}
+          private-key: ${{ env.STACKRA_BOT_PRIVATE_KEY }}
           owner: figentra
           repositories: |
             stackra
@@ -92,8 +148,5 @@ jobs:
       - name: Reconcile
         env:
           GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
-          LINEAR_AGENT_CLIENT_ID: ${{ secrets.LINEAR_AGENT_CLIENT_ID }}
-          LINEAR_AGENT_CLIENT_SECRET: ${{ secrets.LINEAR_AGENT_CLIENT_SECRET }}
-          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
           DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
         run: node tools/scripts/linear-reconcile.mjs ${DRY_RUN:+"$DRY_RUN"}

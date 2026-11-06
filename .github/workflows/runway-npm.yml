@@ -15,7 +15,7 @@
 #          `prod` `/ci/release` (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC as the production
 #          identity (variables INFISICAL_PRODUCTION_IDENTITY_ID and INFISICAL_PRODUCTION_PROJECT_ID), so no repository
 #          holds them (STA-1747) and the dev/staging deploy identity never reads them (Infisical plan K2). That
-#          identity trusts only its allow-listed environments (`release`, not `release-pr`).
+#          identity trusts its allow-listed environments, `release` and `release-pr` among them, on main only.
 #          No registry token exists: per package the job exchanges its
 #          GitHub ID token (audience `npm:<registry host>`) at the registry's OIDC endpoint for a publish token bound to
 #          that one name (ADR 0453 decision 6, the workflow-run form), masks it and passes it as NODE_AUTH_TOKEN;
