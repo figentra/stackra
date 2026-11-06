@@ -33,7 +33,7 @@
     "clean": "turbo run clean",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "changeset:version": "changeset version && pnpm install --lockfile-only",
+    "changeset:version": "changeset version && pnpm install --lockfile-only && turbo run gen:workspace gen --output-logs=errors-only",
     "secrets:scan": "gitleaks git . --config .gitleaks.toml --no-banner --redact",
     "delegate": "node tools/scripts/delegate.mjs",
     "linear": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/linear.mjs",

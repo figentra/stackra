@@ -2,7 +2,7 @@
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
-#          .stackra/migrations exists), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
+#          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
 #          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
 #          build run for the members the change affects (turbo `--affected` against the base commit).
@@ -132,6 +132,16 @@ jobs:
       # it skipped as unaffected run gen now.
       - name: Service gen (stackra gen)
         run: pnpm exec turbo run gen --filter='./services/*'
+
+      # STA-2036: typecheck and the step above ran gen, so a committed contract that differs from what gen writes now
+      # is stale: the member's hosts would read old identities from it (and from the package it is published in).
+      - name: Committed manifests match gen
+        run: |
+          if ! git diff --quiet -- '*stackra.manifest.json' '*src/node/entities.gen.ts'; then
+            git diff --stat -- '*stackra.manifest.json' '*src/node/entities.gen.ts'
+            echo "::error title=Stale manifests::run pnpm gen and commit the stackra.manifest.json and entities.gen.ts files above"
+            exit 1
+          fi
 
       # ADR 0159 d3 (stackra-251): Squawk lints the SQL gen compiled into each service's .stackra/migrations. A file
       # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file
