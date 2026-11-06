@@ -43,3 +43,5 @@
 **/NOTICE* @figentra-usr
 **/COPYRIGHT* @figentra-usr
 /package.json @figentra-usr
+/.opencode/plugins/** @figentra-usr
+/.claude/hooks/** @figentra-usr

@@ -57,7 +57,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           INTEGRITY: 'sha512-FlAm9PYjyszfce4Ven727RC9TtPoJrisau85DT0ztzDvpZLfDE32vlbgSA773Gej+iKrENbKA09atmIu79aLAw=='
           TRUSTED: '{"fflow/gate":"figentra-flow[bot]"}'
-          OWNER_ONLY_EXTRA: '[]'
+          OWNER_ONLY_EXTRA: '[".opencode/plugins/**",".claude/hooks/**"]'
           TOLERATE: '[]'
         run: |
           cd "$RUNNER_TEMP"

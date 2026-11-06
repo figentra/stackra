@@ -40,6 +40,9 @@
   "gate": {
     "check": "pnpm verify"
   },
+  "approve": {
+    "ownerOnly": [".opencode/plugins/**", ".claude/hooks/**"]
+  },
   "clean": {
     "keep": ["g-*", "*-gate", "land-*", "tpl-core", "c6-lock*", "template-wt-lean"]
   },
@@ -106,15 +109,5 @@
       "type": "http",
       "url": "https://mcp.sentry.dev/mcp"
     }
-  },
-  "lefthook": {
-    "pre-commit": [
-      {
-        "name": "shfmt",
-        "glob": "*.sh",
-        "exclude": [".flow/**"],
-        "run": "if command -v shfmt >/dev/null 2>&1; then\n  shfmt -d {staged_files}\nelse\n  echo \"shfmt not installed (mise install) — CI still checks\"\nfi\n"
-      }
-    ]
   }
 }

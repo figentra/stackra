@@ -7,7 +7,7 @@
     "digest": "sha256:a7246d79b2caf5455a654567326b615e7267286347810e73d7919991f255edfe"
   },
   "profile": "framework",
-  "overrides": "sha256:09fea68319765087bfebec9762410519bf9ca1391c0e5450cbc6741c1e6b55e9",
+  "overrides": "sha256:070cfa1cd5f8ededc1aeae6207f8f54d63cf07957d4f7ef10b8b125427c411fe",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:9c3c3a5747c55536e4b9a6f3c088c165fc8485ef1c52d3e00885682b21de969f",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:113648c527b389a80ac4400edb6772b9563d9760d9858b51685b638271703a00",
@@ -55,8 +55,8 @@
     ".agents/rules/linear.md": "sha256:a9487e9e09615e83c27e66048c1dceded9d1b9f0c805c8a60ebfa2c2b9864693",
     ".agents/rules/module-boundary.md": "sha256:ea6c4199ecc79159f1c1bf2ee52bbf01cb9e999d51dcbdc9d2367a74847b7391",
     ".agents/rules/naming-and-casing.md": "sha256:e6c5bdebac59c6d833aa23fff18107e41c10e6628d42318db51f4faaee08a0fc",
-    ".agents/rules/not-built-yet.md": "sha256:f4235cf260bf2d81424cad3607d603aa36f9f86ecdaaa52c2536f63dd195f638",
-    ".agents/rules/secrets.md": "sha256:a395fdb334b4da43be82400141edd3a43a0ac033e40792882422f102f755c8dc",
+    ".agents/rules/not-built-yet.md": "sha256:e36369027d4eed1f2c098e056afc843e796a26dfe6d7baedbd786ef8d375a19d",
+    ".agents/rules/secrets.md": "sha256:5714c119a6891d8fb8ab6c1112317d1ada99f153c3c8598195b1cf644227f926",
     ".agents/rules/service-checklist.md": "sha256:caa846c5af988a23aa2f3fb55e48b0f18ede03a3c863c060e358214274783cfe",
     ".agents/rules/task-vocabulary.md": "sha256:24727014467172b62a8c44d0b306401fdcf72b8e5bda7f4f288d54c6ff5bee6b",
     ".agents/rules/tenancy.md": "sha256:bcf43f3022d6ff972ca2b20359212d6ceaaea3c64ab366ae941f7f65142ac7bb",
@@ -116,13 +116,13 @@
     "opencode.jsonc": "sha256:3f5c12a5a40b45712aa85595af25c607fba62aa0a3fe6a581065a7ed6ff06a13",
     ".opencode/plugins/fflow-guard.mjs": "sha256:e158afff001869cc462f62044e5505bb272ed852790b6ac85b724e86ea69b496",
     ".mcp.yaml": "sha256:b43734020ee9afc165bd7d312fa8908bb4224f7f1e56313365919d58b8049b5b",
-    "AGENTS.md": "sha256:23cfee8caa2f89956636cee9c68bbb7e16f79ea7718aa3a7c22b994962a9a63c",
+    "AGENTS.md": "sha256:ea44130fcfe9352d4e02d565c9fd0628114e2e200c69de6ce7e42bc11cb905fe",
     "CLAUDE.md": "sha256:5f1c5a594f8cb01d3a9d1eb30f2634c0babf52743b122be828c595f465c2b2bf",
-    "lefthook.yml": "sha256:d8a627e203ce9b7c81e4fd7d95873ce22d092551395d313f4b74b3f204eeb5b9",
+    "lefthook.yml": "sha256:14a9176873bc54376a1f59be74cbd6b1f1ffadb0ff5d19c6b063a7a57e723119",
     "README.md": "sha256:7fc05d83966e282ed14999eb9ccc5774b5fc28219d8175d72bc61caf2b9f7748",
     ".github/workflows/fflow-baseline.yml": "sha256:abb39f3210a9ea764f64bd84e8f283a7a9ead03fc46e5f19c671f1b9dbb49dd3",
-    ".github/workflows/fflow-approve.yml": "sha256:cf59055c85af67c0907c6f822220cefc5ef79fd519a5a31be079fdd882ac194b",
-    ".github/CODEOWNERS": "sha256:35a46db94f9a319a4cba441f54ad9e851af68f06d83c6e6efd0212f494613392"
+    ".github/workflows/fflow-approve.yml": "sha256:4cf9b3373ec5337c63997804580fc4978c0e78fa3f0c70b24fa757536ab6977c",
+    ".github/CODEOWNERS": "sha256:76f0fb92f3ff865a9123a8c6e2dea83595d85a8d127a7eb52d83b1348b4ca5a4"
   },
   "skills": {}
 }
