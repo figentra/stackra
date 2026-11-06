@@ -1586,3 +1586,8 @@
   status: reserved
   owner: claude
   issue: STA-2197
+"0527":
+  slug: operated-workers-and-namespaces-as-data
+  status: reserved
+  owner: claude
+  issue: STA-2198
