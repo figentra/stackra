@@ -1,5 +1,23 @@
 # @stackra/infra-github
 
+## 0.11.0
+
+### Minor Changes
+
+- e4aaacd: `githubStack` takes `options` (STA-2115): the OIDC subject template (`oidcTemplate`) and the committed rulesets and
+  branch protection (`rules`) are opt-in and off by default, so a stacks repository can manage repositories whose
+  subjects are immutable or custom, and whose rules a tool such as Flow renders. Pass `{ oidcTemplate: true, rules: true }`
+  for the previous behaviour.
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes

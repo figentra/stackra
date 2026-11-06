@@ -1,5 +1,25 @@
 # @stackra/infra-aws
 
+## 0.11.0
+
+### Minor Changes
+
+- 68099f7: `productAccount` takes `regionLock` (STA-2115): the account's own region SCP, attached to the account, for the one
+  account per product model, where each account allows exactly the regions its product runs in.
+- 5755516: The management account's building blocks (STA-2115, ADR 0524): `organizationLayout` (the organization's trusted
+  services, policy types, root access, units by path and policies with their targets), `productAccount` (account
+  vending: account, unit, opt-in region, budget, sign-in roles and their Account Access Manager entitlements),
+  `accessRoles`, and `regionLock` with `GLOBAL_ACTIONS` for the region SCPs.
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @stackra/infra-cloudflare
 
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
 ## 0.10.0
 
 ### Minor Changes

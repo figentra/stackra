@@ -1,5 +1,18 @@
 # @stackra/actions
 
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/testing@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/cache@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes
