@@ -72,7 +72,7 @@
   },
   "session": {
     "contextCommands": [
-      ["node", "tools/scripts/ai-spend.mjs"],
+      ["node", "tools/scripts/ai-spend.mjs", "--context"],
       [
         "infisical",
         "run",
