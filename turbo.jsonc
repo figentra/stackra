@@ -84,12 +84,18 @@
     },
     // ADR 0182 d1, STA-1570: the integration tier. Never cached: the result depends on a live Docker daemon and the
     // Postgres image it builds, which no input hash sees. Docker and Testcontainers settings pass through without
-    // entering a key; STACKRA_FISCAL_SANDBOX opts @stackra/fiscal's certification run in (skipped when unset).
+    // entering a key; STACKRA_FISCAL_SANDBOX opts @stackra/fiscal's certification run in (skipped when unset), and
+    // TESTBED_POSTGRES_HOST (the testbed's `--postgres`) runs the tests that need a Postgres but no Docker.
     "test:int": {
       "description": "Run a member's `.int.test.ts` files (and gen's .stackra/tests) on a Testcontainers Postgres: `vitest run --config vitest.int.config.ts`. Needs Docker. Defined only by members that have int tests. After gen and //#gen:workspace, as test.",
       "dependsOn": ["^build", "gen", "//#gen:workspace"],
       "cache": false,
-      "passThroughEnv": ["DOCKER_*", "TESTCONTAINERS_*", "STACKRA_FISCAL_SANDBOX"],
+      "passThroughEnv": [
+        "DOCKER_*",
+        "TESTCONTAINERS_*",
+        "STACKRA_FISCAL_SANDBOX",
+        "TESTBED_POSTGRES_HOST",
+      ],
       "outputs": [],
     },
     // `stackra gen` once at the root (`gen:workspace`) over every member with a stackra.config.ts. One root task, not

@@ -135,6 +135,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runbooks/setup",
             "runbooks/secrets",
             "runbooks/token-rotation",
+            "runbooks/cross-app-event-relay",
             "runbooks/github-identities",
             "runbooks/ci",
             "runbooks/release",

@@ -173,9 +173,15 @@ The owner approved the relay's plan (STA-1910) on 2026-11-02. It settles what de
   refuses a stable version from a ref other than `refs/heads/main`, and refuses the `contract` kind until its schema lands.
 - planned — STA-TBD: `pnpm validate` refuses a prerelease contract in a catalog of the `main` branch.
 - planned — STA-TBD: `stackra gen --check` fails when a consumer's generated output differs from its pinned contract.
-- planned — STA-TBD: gen refuses a remote listener with `client_event_remote_transport` (decision 15).
-- planned — STA-TBD: the relay sets `producer` from the verified sender identity (STA-1792), refuses an unsigned or mis-signed
-  push, and the inbox handles a repeated event id once (decisions 11 to 13).
+- automated — STA-1910: `client_event_remote_transport` (decision 15) is lifted now that the relay ships; gen writes a
+  consumer's inbox and a producer's relay wiring, checked by the goldens `cross-app-consumer` and `cross-app-producer`
+  (`golden.test.ts` in `packages/developer/gen`).
+- automated — STA-1910: the relay sets `producer` from the verified sender's key (decision 16), refuses an unsigned or
+  mis-signed push, and the inbox handles a repeated event id once (decisions 11 to 13): the unit tests of
+  `@stackra/outbox` (`cross-app-fan-out.service.test.ts`, `cross-app-relay.service.test.ts`,
+  `relay-inbox.service.test.ts`, `ed25519-event-signer.driver.test.ts`, `contract-inbox-verifier.driver.test.ts`,
+  `postgres-delivery.driver.test.ts`) and the end-to-end `cross-app-relay.int.test.ts` on real Postgres and HTTP
+  (`test:int` on a testbed box with `--postgres`).
 - Nothing checks the handover of decision 8, the registry seed check of the Rollout, or the AGENTS.md update; they are owner and
   lane steps tracked in Linear.
 
