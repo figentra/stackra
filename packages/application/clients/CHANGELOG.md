@@ -1,5 +1,21 @@
 # @stackra/clients
 
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/iam@0.17.1
+  - @stackra/query@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/transport@0.17.1
+  - @stackra/validation@0.17.1
+
 ## 0.17.0
 
 ### Patch Changes
