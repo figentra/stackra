@@ -25,7 +25,7 @@ import { SCOPE_RX, checkTarget, listNames, publish } from "../secrets-sops.mjs";
 import { main as put } from "../secrets-put.mjs";
 import { generateValue, main as generate } from "../secrets-generate.mjs";
 import { main as importMain } from "../secrets-import.mjs";
-import { main as migrate, plan, scopeFor } from "../secrets-migrate.mjs";
+import { main as migrate, plan, readInfisical, scopeFor } from "../secrets-migrate.mjs";
 import { buildCatalog, checkCatalog, declaredNames } from "../secrets-catalog.mjs";
 import { agentVars, expandArg } from "../secrets-exec.mjs";
 import { main as ageInit } from "../secrets-age-init.mjs";
@@ -328,6 +328,47 @@ test("migrate: scopes map one to one, repeats merge or conflict, unmapped is rep
   const names = plan([row("/runtime/a", "X", undefined), row("/runtime/b", "X", undefined)]);
   assert.equal(names.duplicates.length, 1, "a names-only repeat is not a conflict");
   assert.equal(names.conflicts.length, 0);
+});
+
+test("migrate reads through a 429 and gives up after 6 retries", async () => {
+  let calls = 0;
+  const waits = [];
+  const limited = (n) => async (url) => {
+    calls += 1;
+    if (calls <= n) return { ok: false, status: 429, headers: new Headers({ "retry-after": "3" }) };
+    return {
+      ok: true,
+      json: async () =>
+        url.includes("/v1/projects")
+          ? {
+              projects: [
+                {
+                  id: "p",
+                  slug: "agents",
+                  type: "secret-manager",
+                  environments: [{ slug: "dev" }],
+                },
+              ],
+            }
+          : { secrets: [{ secretKey: "A_KEY", secretPath: "/agents" }] },
+    };
+  };
+  const sleep = async (ms) => void waits.push(ms);
+  const rows = await readInfisical({
+    domain: "d",
+    token: "t",
+    withValues: false,
+    fetchImpl: limited(2),
+    sleep,
+  });
+  assert.deepEqual(rows, [{ project: "agents", env: "dev", path: "/agents", name: "A_KEY" }]);
+  assert.deepEqual(waits, [3000, 3000]);
+  calls = 0;
+  await assert.rejects(
+    readInfisical({ domain: "d", token: "t", withValues: false, fetchImpl: limited(99), sleep }),
+    /429 on \/v1\/projects/,
+  );
+  assert.equal(calls, 7);
 });
 
 test("migrate --write: owner only, names and 8-hex prefixes only, one pull request", async () => {

@@ -16,6 +16,7 @@
  * Secrets: values exist only in this process and on sops' stdin; the token is sent in a header, never on argv.
  */
 import { homedir } from "node:os";
+import { setTimeout as wait } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { stringify } from "yaml";
@@ -129,14 +130,28 @@ export function userToken(domain, run = cliRunner) {
   return token;
 }
 
-/** Every secret row of every Secret Manager project and environment: `{ project, env, path, name, value? }`. */
-export async function readInfisical({ domain, token, withValues, fetchImpl = fetch }) {
+/**
+ * Every secret row of every Secret Manager project and environment: `{ project, env, path, name, value? }`.
+ * A 429 is retried up to 6 times (Retry-After seconds, else 2^n), so one rate limit doesn't fail the run.
+ */
+export async function readInfisical({
+  domain,
+  token,
+  withValues,
+  fetchImpl = fetch,
+  sleep = wait,
+}) {
   const get = async (path) => {
-    const res = await fetchImpl(`${domain}/api${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Refusal(`infisical api: ${res.status} on ${path.split("?")[0]}`);
-    return res.json();
+    for (let attempt = 0; ; attempt += 1) {
+      const res = await fetchImpl(`${domain}/api${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) return res.json();
+      if (res.status !== 429 || attempt === 6)
+        throw new Refusal(`infisical api: ${res.status} on ${path.split("?")[0]}`);
+      const after = Number(res.headers?.get?.("retry-after"));
+      await sleep(1000 * (after > 0 ? Math.min(after, 60) : 2 ** attempt));
+    }
   };
   const rows = [];
   const { projects = [] } = await get("/v1/projects");
