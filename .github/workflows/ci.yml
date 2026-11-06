@@ -17,7 +17,7 @@ name: CI
 
 on:
   # Owner decision 2026-10-31: every pull request into main is checked here until this repository switches to the
-  # required figentra-flow/gate (STA-1729 phase 6); pushes to main run on demand only (Actions > CI > Run workflow).
+  # required fflow/gate (STA-1729 phase 6); pushes to main run on demand only (Actions > CI > Run workflow).
   pull_request:
     branches: [main]
     # ready_for_review re-runs the gate when a draft PR is marked ready, so the Tasked rule applies.
