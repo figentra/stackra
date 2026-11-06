@@ -1,5 +1,42 @@
 # @stackra/calendar
 
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/market-packs@0.12.0
+  - @stackra/support@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/market-packs@0.11.1
+  - @stackra/support@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/market-packs@0.11.0
+  - @stackra/support@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/market-packs@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

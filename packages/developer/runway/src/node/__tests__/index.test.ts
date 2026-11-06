@@ -80,6 +80,7 @@ describe("@stackra/runway/node", () => {
       "checkOpsReview",
       "checkShellCompatibility",
       "checkoutLine",
+      "cloudflareAccountEnv",
       "committedBrandOutputs",
       "definesFor",
       "deployProduct",

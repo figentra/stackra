@@ -1,5 +1,138 @@
 # @stackra/runway
 
+## 0.12.0
+
+### Minor Changes
+
+- e36505c: A product's root runway opts in to the cloud estate figentra/infra vends (ADR 0524): `providers.aws.account: true` for its one AWS account and `providers.gcp.project: true` for its one GCP project, both false by default, with `providers.gcp.apis` naming the `*.googleapis.com` services infra enables. An environment's `region` fixes its cloud (me and eu run in AWS, ksa in Google Cloud), so `runway validate` refuses a ksa environment without `providers.gcp.project: true` and warns on an AWS account no me or eu environment uses. An environment's `cloud` is deprecated and warns. Runway exports `unusedCloudOptIns`.
+
+### Patch Changes
+
+- @stackra/console@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/app@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/console@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/app@0.11.1
+
+## 0.11.0
+
+### Minor Changes
+
+- 46951df: The root runway carries the estate figentra/infra derives from (ADR 0524): `environments.<env>.region` (`me`, `eu` or
+  `ksa`), which `runway validate` and `stackra validate --repository` require on a product's staging and production;
+  `providers.aws.budgets.monthlyUsd` (default 300) beside the open thresholds; and `providers.cloudflare.records`, the
+  non-Worker DNS records (verification TXT, MX, CAA) under a declared zone, an MX with its priority and only A, AAAA and
+  CNAME proxied. `providers.aws.region` and `providers.aws.accounts` are deprecated: `runway validate` warns, and they go
+  in the next release. Runway exports `checkEnvironmentRegion`, `deprecatedFields` and `RegionKey`.
+
+### Patch Changes
+
+- @stackra/console@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/app@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- 4c0eead: `runway env check` (ADR 0173 amendment 2026-11-04, STA-2104): the names-only environment check. Every declared name
+  (a member manifest's `env` rows, a member runway's `secrets:`, a workflow Infisical step's `secret-name:`) must have an
+  Infisical home; a raw read of an undeclared name, an export-all step and a deploy secret no code declares are
+  warnings. No login, never a value. The Quality Gate runs it on every pull request.
+- 4749967: `runway env sync` is `runway secrets sync` under the ADR 0173 amendment of 2026-11-04 (STA-2104): an alias, not a
+  second tool. The sync, the deploy plan and the Workers provider's secret read now take each member's
+  manifest-declared names (gen's `env` rows, filtered by their environments) beside its runway `secrets:`, so a name
+  declared in code reaches its runtime without a runway line. `readRunways` reads the names from each member's
+  committed `stackra.manifest.json`.
+- f511762: `runway env check --values --env <env>` and `runway env orphans <env>` (ADR 0173 amendment 2026-11-04, STA-2104).
+  In a CI job its GitHub OIDC token proves, the value check reads each declared name from its Infisical home and checks
+  it against its rules (missing, type, bounds, refused prefixes): an error in the deployed environment, a warning in its
+  sibling non-production environments. It prints names, pass or the broken rule and at most a SHA-256 prefix, never a
+  value. `env orphans` warns on Infisical names no code declares. `--project-id` takes the job's runtime project.
+- ea40871: The `runway` binary runs on `@stackra/console` (ADR 0506 decision 8): `plan`, `deploy`, `promote`, `drift` and
+  `secrets sync` keep their words, and ADR 0352's `rollback <sha>` (refuses the head of origin/main), `status [env]`
+  (each GitHub environment's latest deployment record) and `validate` (schemas, placement, drivers and service
+  requirements; exit 1 with each finding) are new. `--json` gives each command's data in the envelope, `runway help
+  <command>` its help, and a usage error exits 2. `repositoryRoot` takes the folder to start from. The README lists
+  every command.
+- 0d65e3f: `runway drift [env]` compares what the `cloudflare-workers` provider renders from `runway.yaml` with what Cloudflare
+  reports for each Worker (ADR 0519 decision 7, STA-1992), prints the settings that differ and exits 1 on any. It only
+  reads, with `CLOUDFLARE_API_TOKEN_READ`. `CloudflareWorkersProviderDriver.drift` and `diffWorkerSettings` are the same
+  check as code.
+- 242ebe4: `checkDestinations(root)` refuses a destination or target block no driver serves (owner decision O8):
+  destinations must be `encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`, and target blocks one of
+  those, `npm` or `electron-release` (the desktop feed origin builds read). `stackra validate` runs it on the
+  root runway. Core's dev environment drops its `compose`, `vite-dev`, `expo-dev` and `mint-dev` lines.
+- 242ebe4: Approvals and "CI only" are proved, never asserted (STA-2099 item 4). `proveGithubJob` asks the GitHub
+  Actions runner for an OIDC token (audience `stackra-runway`), checks GitHub's RS256 signature, the issuer,
+  the expiry and the repository, and, for an approval, that the job runs in that runway environment or in a
+  GitHub environment `providers.github.environments` declares with reviewers. The deploy, promote and
+  product deploy commands prove an environment's `deploy.approval` with it; `--approved` is still parsed
+  and proves nothing. Reading runtime secrets from Infisical and `stackra mobile onboard --check|--live`
+  need the proof instead of `GITHUB_ACTIONS=true`. A job needs `permissions: id-token: write`.
+- 0d65e3f: The `cloudflare-workers` provider now renders each Worker's wrangler config from `runway.yaml` before it deploys
+  (ADR 0519, STA-1989): the member's `wrangler.jsonc` stays the code facts, and the merged operational settings (the
+  base, the preset, `defaults`, the member and its `environments.<environment>` entry) are added in wrangler's keys.
+  `renderWranglerConfig` is exported from `@stackra/runway`, and a member may now set `environments`. `stackra
+  validate` refuses an operational key (`compatibility_date`, `workers_dev`, `observability`, `routes` and the rest) in
+  a new member's `wrangler.jsonc`; the four existing Workers are listed until they deploy through the provider.
+- c4348cd: Runway's child-process helper is `runProgram` (was `runCommand`, file `run-program.function.ts`): a Command is a
+  CLI command only (ADR 0294 d23), and `@stackra/console` exports `runCommand` (one symbol, one owner, d15). Behaviour
+  unchanged. The duplicate-exports allowance for `runCommand` is gone.
+- 0d65e3f: The `cloudflare-workers` provider now ships each Worker as a version (ADR 0519, STA-1990): `wrangler versions upload`
+  with the commit as its message and the secrets on stdin, a smoke request routed to the version at 0% traffic by
+  `Cloudflare-Workers-Version-Overrides` (a failure moves no traffic), then `wrangler versions deploy`. A member may set
+  `rollout` (ascending percentages ending at 100); the `api` and `edge` presets use `[10, 50, 100]`, held five minutes
+  per step, in production only. A version with a Durable Object migration goes out at 100%. The first deploy of a new
+  Worker still needs one `wrangler deploy` by hand, since a version needs a deployment to split with. Rollback stays
+  `wrangler rollback` to the recorded version id.
+- 0d65e3f: `targets.cloudflare-workers` members are typed (ADR 0519, STA-1988): a member names a `preset` (`public-site`, `api`,
+  `internal-tool`, `cache` or `edge`) and may set `compatibilityDate`, `compatibilityFlags`, `workersDev`, `previewUrls`,
+  `observability`, `limits`, `cache`, `uploadSourceMaps` and `keepVars`; the target takes the same keys under `defaults`.
+  `workerSettingsOf(target, member)` merges the built-in base, the preset, the defaults and the member, with the target's
+  `compatibilityDate` as the fallback, and `WorkerPreset` is exported. An unknown preset or Worker key now fails the
+  provider's parse. Nothing deploys differently yet; the renderer reads these in the next change.
+- 0d65e3f: A root runway's `providers.cloudflare.zones.<zone>` takes the zone policy (ADR 0519, STA-1993): besides a plain id it
+  takes `{ id, owner, plan, policy }`, closed, where `policy` is `baseline` or `strict` (Pro only), only the `owner` sets
+  it, and an owner states its `plan`. `checkZoneOwners(runways)` reports a zone two root runways own. `zoneEdge` takes a
+  `policy` and adds SSL Full (strict), TLS 1.3, Automatic HTTPS Rewrites, HSTS, DNSSEC and CAA records for Cloudflare's
+  CAs; `strict` also turns bot protection on and throws on the Free plan. `cloudflareCoreStack` passes the zone's plan and
+  policy through. A zone without a policy keeps today's settings. The DS record at the registrar stays the owner's.
+
+### Patch Changes
+
+- a15cacf: A `ref:` Cloudflare account id in `runway.yaml` (`providers.cloudflare.accountId: ref:cloudflare.accountId`) no longer
+  reaches wrangler as the account. The deploy job resolves a `ref:`, so the product publish and the edge KV writer now
+  leave the job's `CLOUDFLARE_ACCOUNT_ID` in place, and refuse before any upload or KV write when the job has none
+  (`RunwayUnresolvedError` names the variable). A literal id is set as before. Runway exports the decision as
+  `cloudflareAccountEnv` (STA-2124).
+- 0d65e3f: The `cloudflare-workers` provider retries each smoke check (60 attempts, 10 s apart) while a new version or a new
+  domain's certificate comes up, and a check can send `Authorization: Bearer` from a named variable. `smoke` is now a
+  list of `{ url, bearer? }`, and `secrets` may be a map that reads a Worker secret from another variable
+  (`TURBO_CACHE_TOKEN: TURBO_TOKEN`).
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/app@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

@@ -52,11 +52,29 @@ and settings edits listed on STA-1395, the guard still asks before staging deplo
 
 Owner decision 2026-11-03 (STA-2083, replaces "Tests run on the box"): nothing waits on tests before it lands. No box
 run before the merge and no waiting on CI: open the pull request and merge it right away
-(`gh pr merge --squash --admin`), then add the Linear label `needs-testing` to its STA issue and a
-`Needs testing: <what to run>` line to the pull request body. The tester lane later runs those tests on the box
-(`ci-box run "core STA-n" . "pnpm verify"`; `stackra testbed run` once the testbed is live) and removes the label.
+(`figentra pr merge --admin [-R figentra/<repo>] <n>`, as stackra-bot; see below), then add the Linear label
+`needs-testing` to its STA issue and a `Needs testing: <what to run>` line to the pull request body. The tester
+lane later runs those tests on the box (`ci-box run "core STA-n" . "pnpm verify"`; `stackra testbed run` once the
+testbed is live) and removes the label.
 GitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a
 workstation.
+
+## GitHub identity: agents are stackra-bot
+
+Owner decision 2026-11-04 (STA-2105): agents act on GitHub only as the `stackra-bot` App. Raw `gh` and a plain
+`git push` run as the owner's login `figentra-usr`, so they mean the owner; an agent never runs them, in any
+repository or directory.
+
+- In this repository: `pnpm bot:gh -- …`, `pnpm bot:git -- push origin HEAD`, `pnpm pr:merge <n>`.
+- Anywhere else (another repository, `~/Projects/figentra`): `figentra bot gh …`,
+  `figentra bot git push origin HEAD` and `figentra pr merge --admin [-R figentra/<repo>] <n>` from
+  `@figentra/cli`. Each mints the installation token in-process from Infisical `agents` dev `/agents`; none prints
+  it or puts it on argv.
+- A merge-now (`--admin`) merge lands only where the repository's rulesets name stackra-bot as a bypass actor. Where
+  GitHub refuses it, hand the pull request to the leader for the owner; never retry as the owner.
+- The bot has no `administration`, `environments`, `secrets` or `variables` permission. Rulesets, environments,
+  branch protection, secrets, variables, App permissions and production approvals stay the owner's; a production
+  dispatch by the bot stops at the owner check (`github.triggering_actor`).
 
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 
@@ -542,7 +560,7 @@ means not yet. A row changes only by a new ADR. Full table with revival triggers
 | ESLint, Prettier, Jest                                                                                      | Rejected | oxlint, oxfmt, vitest                                                                                                                                                                                                                                                  |
 | Express, Fastify as a server framework                                                                      | Rejected | the service runtime chosen by ADR                                                                                                                                                                                                                                      |
 | Vite+ (`vp`) as task runner                                                                                 | Rejected | Turborepo, oxlint, oxfmt, lefthook                                                                                                                                                                                                                                     |
-| A second vault, Doppler, secret values in files, `.env`                                                     | Rejected | Infisical + runtime secret store (`/adr/0173-secrets-infisical-is-the-source-of-production-secrets`)                                                                                                                                                                   |
+| A second vault, Doppler, plain-text secret values in files, `.env`                                          | Rejected | SOPS files in `figentra/secrets`, keyed by Cloud KMS (`/adr/0525-secrets-sops-and-cloud-kms-replace-infisical`); Infisical until the move ends                                                                                                                         |
 | A second code host in this repo (code host is GitHub)                                                       | Rejected | one host (`/adr/0012-code-host-and-ci`)                                                                                                                                                                                                                                |
 | expo-router in the mobile app                                                                               | Rejected | code-based React Navigation (`@react-navigation/*`, `react-native-bottom-tabs`)                                                                                                                                                                                        |
 | Tauri as the desktop shell                                                                                  | Rejected | Electron, one app member with a desktop target (`/adr/0058-desktop-is-electron`)                                                                                                                                                                                       |
@@ -586,6 +604,9 @@ Rows naming no package are planned (architecture-guardian review). Docs: `/adr/0
 
 Stackra keeps production secret values in Infisical. Infisical is the source, and runway syncs them into the runtimes on deploy
 (ADR 0173, which supersedes ADR 0009). Secret names are in git; values never are.
+
+**Moving (ADR 0525, 2026-11-06).** SOPS files in `figentra/secrets`, keyed by Google Cloud KMS, replace Infisical.
+Until every workflow reads sops (STA-2146), the Infisical flow below stays in force; this rule is rewritten then.
 
 **Invariant: nobody reads a value.** A value is set by a human, or by the secret-manager flow (section 3,
 ADR 0257), which writes it without anyone, the agent included, ever seeing it.

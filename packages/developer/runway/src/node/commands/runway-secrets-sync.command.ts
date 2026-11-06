@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `RunwaySecretsSyncCommand`, `runway secrets sync <env> [--dry-run]` (`runway secrets:sync`): the member
- *          secrets of `env` from Infisical into the runtimes (`syncSecrets`). A real sync runs only in a GitHub
+ * Purpose: `RunwaySecretsSyncCommand`, `runway secrets sync <env> [--dry-run]` (`runway secrets:sync`, alias
+ *          `runway env sync`, ADR 0173 amendment 2026-11-04): the member secrets of `env`, and the names each member's
+ *          manifest declares, from Infisical into the runtimes (`syncSecrets`). A real sync runs only in a GitHub
  *          Actions job its OIDC token proves (STA-2100); `--dry-run` prints the names and writers anywhere.
  * Boundary: names only; values stay in memory inside `syncSecrets`.
  * Runtime: node
@@ -16,8 +17,10 @@ import { syncSecrets } from "#node/functions/sync-secrets.function";
 /** Syncs an environment's member secrets. */
 export class RunwaySecretsSyncCommand extends Command({
   name: "secrets:sync",
-  description: "Sync an environment's member secrets from Infisical into the runtimes (CI only)",
-  examples: ["runway secrets sync staging --dry-run"],
+  aliases: ["env:sync"],
+  description:
+    "Sync an environment's declared names from Infisical into the runtimes (CI only); `env sync` is the same command",
+  examples: ["runway secrets sync staging --dry-run", "runway env sync staging --dry-run"],
 }) {
   /** The environment whose secrets sync. */
   @Argument({ description: "The environment (dev, preview, staging, production)" })

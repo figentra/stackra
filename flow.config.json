@@ -35,9 +35,6 @@
       "slug": "figentra-flow",
       "login": "figentra-flow[bot]"
     },
-    "review": {
-      "slug": "stackra-reviewer"
-    },
     "owner": "figentra-usr"
   },
   "gate": {
