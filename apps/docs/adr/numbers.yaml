@@ -1583,26 +1583,26 @@
   issue: STA-2142
 "0526":
   slug: repository-layout
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-2197
 "0527":
   slug: operated-workers-and-namespaces-as-data
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-2198
 "0528":
   slug: neutral-and-stackra-templates
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-2199
 "0529":
   slug: naming-product-keys-and-one-figentra-cli
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-2200
 "0530":
   slug: where-work-runs
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-2201
