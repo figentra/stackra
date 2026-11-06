@@ -14,7 +14,7 @@
  *           platform's ZITADEL or a tenant's own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
  *           Ending a session that is already gone (404) succeeds. A refused passkey check (400, 404, 412) or an
- *           unknown login or user (404) is `UnauthenticatedError`; a 403 (a missing permission) stays a bug. The passkey relying party is the configured URL's host, so the app lists that host
+ *           unknown user (404) is `UnauthenticatedError`, while an unknown passkey login answers a decoy (STA-2102); a 403 (a missing permission) stays a bug. The passkey relying party is the configured URL's host, so the app lists that host
  *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
@@ -36,10 +36,12 @@ import type {
   LoginPolicy,
   PasskeyCredential,
   PasskeyRegistrationChallenge,
+  PasskeyRequestOptions,
   PasskeySignInChallenge,
 } from "#contracts/index";
 import { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
 import { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
+import { randomToken } from "#core/functions/random-token.function";
 
 /** The OAuth grant type of a device-flow poll. */
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
@@ -377,7 +379,11 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     return status === 404 || typeof value !== "string" ? undefined : atob(value);
   }
 
-  /** See `IdpAdmin.startPasskeySignIn`: a v2 session with the user check and a `webAuthN` challenge. */
+  /**
+   * See `IdpAdmin.startPasskeySignIn`: a v2 session with the user check and a `webAuthN` challenge. ZITADEL's 404 for
+   * an unknown login answers a decoy after the same round trip: a random numeric session id ZITADEL never issued (so
+   * `finishPasskeySignIn` gets its 404 and refuses) and options with the same keys as a live answer's.
+   */
   async startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge> {
     const { status, body } = await this.call(
       {
@@ -395,13 +401,32 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       },
       UNKNOWN,
     );
-    refuseOn(status, UNKNOWN);
-    const options = (
-      body as {
-        challenges?: { webAuthN?: { publicKeyCredentialRequestOptions?: { publicKey?: unknown } } };
-      }
-    ).challenges?.webAuthN?.publicKeyCredentialRequestOptions?.publicKey;
-    return { sessionId: stringOf(body, "sessionId"), options: objectOf(options) };
+    if (UNKNOWN.includes(status))
+      return {
+        sessionId: String(crypto.getRandomValues(new BigUint64Array(1))[0] ?? 0n)
+          .padStart(20, "0")
+          .slice(-18),
+        options: { challenge: randomToken(), rpId: this.domain, userVerification: "required" },
+      };
+    const options = objectOf<Partial<PasskeyRequestOptions>>(
+      (
+        body as {
+          challenges?: {
+            webAuthN?: { publicKeyCredentialRequestOptions?: { publicKey?: unknown } };
+          };
+        }
+      ).challenges?.webAuthN?.publicKeyCredentialRequestOptions?.publicKey,
+    );
+    // A live answer keeps only the decoy's keys: `allowCredentials` would name the login's passkeys (and so show it
+    // exists), and a passkey is a discoverable credential, so the device offers it without the list.
+    return {
+      sessionId: stringOf(body, "sessionId"),
+      options: {
+        challenge: stringOf(options, "challenge"),
+        rpId: stringOf(options, "rpId"),
+        userVerification: "required",
+      },
+    };
   }
 
   /** See `IdpAdmin.finishPasskeySignIn`: the session's `webAuthN` check. */

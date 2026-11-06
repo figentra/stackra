@@ -10,13 +10,8 @@
  * Governing contract: ADR 0307 (rules 15 and 16); ADR 0220 (money in minor units); ADR 0294 (decision 26).
  */
 import { currencyCode } from "@stackra/money";
-import { z } from "zod";
 
-/** The shipped `MoneyMetric$`. */
-export const MONEY_METRIC_SCHEMA = z.object({
-  value: z.number().int().nullable(),
-  previous: z.number().int().nullable(),
-  series: z.array(z.number().int()).nullable(),
-  target: z.number().int().nullable(),
-  currency: currencyCode(),
-});
+import { COUNT_METRIC_SCHEMA } from "#core/constants/count-metric-schema.constant";
+
+/** The shipped `MoneyMetric$`: the count metric's integer fields (here minor units) and the currency. */
+export const MONEY_METRIC_SCHEMA = COUNT_METRIC_SCHEMA.extend({ currency: currencyCode() });

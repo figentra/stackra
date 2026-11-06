@@ -31,7 +31,7 @@ optional peer, needed by `./node`, `./react` and `./testing` only.
 | `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`                                       |
 | `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`                                       |
 | `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                                            |
-| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target`, `mandatoryCategories`, `unsubscribeUrl`, `unsubscribeKey` |
+| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | key `notifications`: `driver`, `target`, `mandatoryCategories`, `unsubscribeUrl`, `unsubscribeKey`, `webPushVapidSubject` |
 | `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                                              |
 | `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)                               |
 | `./contracts` | `MailAttachment`, `MailFeature`, `MailSender` (types)                          | attachments by bytes or storage ref; the optional parts a provider carries                         |
@@ -219,8 +219,10 @@ export class OsSmsTransportDriver extends ConnectionSmsTransportDriver {
 - A device the push service reports gone is revoked through `PushTokenStore`; `receipts` reads Expo receipts.
 - An Expo push names its Android channel when `OutboundPush.channelId` is set: the notification's category code, one
   of the app's `PushConfig.androidChannels` ids, so the person mutes a category in the system settings (STA-1536).
-- The VAPID keys and contact are platform secrets: `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`,
-  `WEB_PUSH_VAPID_SUBJECT`.
+- The VAPID keys are platform secrets: `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`. The contact is
+  configuration, `NotificationsConfig.webPushVapidSubject` (a `mailto:` or `https://` URL set in the member runway's
+  config), passed to the driver as its last constructor argument; while a host passes none or leaves it empty, the
+  driver still reads the `WEB_PUSH_VAPID_SUBJECT` secret (STA-2162, until os moves to config).
 
 ### Mail parts (stackra-218)
 

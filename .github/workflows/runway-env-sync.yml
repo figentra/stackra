@@ -1,0 +1,156 @@
+# Stackra file contract:
+# Purpose: Runway's env sync (ADR 0173 amendment of 2026-11-04, decisions 4 to 6), a public reusable workflow
+#          (ADR 0168 decision 1). A repository's own `env-sync.yml` calls it when the `stackra-env-sync` Worker
+#          dispatches it on an Infisical change, or by hand. Three jobs: `owner-gate` (production only) fails unless the
+#          owner started the run from main; `notify` (production only) writes the step summary that production values
+#          changed and the owner must run this workflow; `sync` logs in to Infisical with the environment's identity
+#          over GitHub OIDC, runs `runway env check --values` (names, rules and short hashes only, never a value), then
+#          `runway env sync <env>` into the runtimes. dev and staging sync on the webhook; production syncs only on
+#          the owner's own run (ADR 0468).
+#          Fallback: the scheduled hash compare is not built here. A caller schedules this workflow (cron) as the
+#          fallback for a missed webhook; a true compare needs a record of the last-synced hashes, because Encore
+#          cannot read a value back.
+#          Another repository pins `figentra/stackra/.github/workflows/runway-env-sync.yml@<sha> # runway-v<n>`.
+# Secrets: none of the caller's. The `sync` job exchanges its GitHub OIDC token for an Infisical token of
+#          `identity-id` (masked, kept in the job's env only), so the caller grants `id-token: write` and runs it in
+#          the GitHub environment named `environment`, whose OIDC subject that identity trusts. The registry read token
+#          comes from Infisical /ci/registry when the org has the INFISICAL_GATE_* variables, as runway-smoke.yml does.
+# Owner: release-operations
+name: Runway env sync
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The Runway environment to check and sync (dev, staging or production).
+        type: string
+        required: true
+      project-id:
+        description: The Infisical runtime project id whose values are checked (`<product>-runtime` or `-runtime-prod`).
+        type: string
+        required: true
+      identity-id:
+        description: The Infisical machine identity that logs in over GitHub OIDC for this environment.
+        type: string
+        required: true
+
+# ADR 0019: nothing by default; each job asks for what it needs.
+permissions: {}
+
+jobs:
+  # Production syncs only from the owner's own run from main, as the products' deploy.yml owner gate (O1).
+  owner-gate:
+    name: Owner gate
+    if: inputs.environment == 'production'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Triggered by the owner
+        env:
+          ACTOR: ${{ github.triggering_actor }}
+          REF: ${{ github.ref }}
+        run: |
+          [ "$ACTOR" = "figentra-usr" ] || { echo "::error::production syncs only from the owner (got $ACTOR)"; exit 1; }
+          [ "$REF" = "refs/heads/main" ] || { echo "::error::production syncs from main only (got $REF)"; exit 1; }
+
+  # Production values changed: say so on the run, with no name or value, so the owner runs this workflow.
+  notify:
+    name: Notify (production)
+    if: inputs.environment == 'production'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Summary
+        run: |
+          {
+            echo "### Production values changed"
+            echo
+            echo "Production values changed in Infisical. Production syncs only when the owner runs this"
+            echo "workflow from main (Actions, env-sync, Run workflow, environment production)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  sync:
+    name: Sync
+    needs: owner-gate
+    # dev and staging run with the gate skipped; production needs the gate to pass.
+    if: >-
+      always() && (needs.owner-gate.result == 'success' ||
+      (inputs.environment != 'production' && needs.owner-gate.result == 'skipped'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read # checkout
+      id-token: write # the GitHub OIDC token, exchanged with Infisical
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      # ADR 0027 D2: node, pnpm and the Infisical CLI come from the caller's mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm github:Infisical/cli
+
+      # A product's install of @stackra and @figentra packages needs the registry read token, as in runway-smoke.yml.
+      - name: Registry token (Infisical OIDC)
+        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/registry
+          secret-name: STACKRA_REGISTRY_TOKEN
+          export-type: env
+
+      - name: Registry token (user .npmrc)
+        if: env.STACKRA_REGISTRY_TOKEN != ''
+        run: |
+          umask 077
+          printf '//npm.stackra.figentra.com/:_authToken=%s\n' "$STACKRA_REGISTRY_TOKEN" >> "$HOME/.npmrc"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Only in core, where @stackra/runway is a workspace member: a product installs it built from the registry, and
+      # turbo refuses a filter that names no workspace package. `pnpm runway` then runs the script (core) or the
+      # package's `runway` binary (a product, @stackra/runway 0.10 or later: the `env` commands).
+      - name: Build runway
+        if: hashFiles('packages/developer/runway/package.json') != ''
+        run: pnpm exec turbo run build --filter=@stackra/runway
+
+      # The GitHub OIDC token is fetched with GitHub's default audience, the one Infisical/secrets-action asks for, so
+      # the same identity trust applies. The Infisical token is masked and leaves the step only through GITHUB_ENV.
+      - name: Infisical login (OIDC)
+        env:
+          IDENTITY_ID: ${{ inputs.identity-id }}
+        run: |
+          jwt="$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r .value)"
+          echo "::add-mask::$jwt"
+          token="$(infisical login --method=oidc-auth --machine-identity-id="$IDENTITY_ID" --oidc-jwt="$jwt" \
+            --domain=https://eu.infisical.com --silent --plain)"
+          [ -n "$token" ] || { echo "::error::the Infisical OIDC login returned no token"; exit 1; }
+          echo "::add-mask::$token"
+          echo "INFISICAL_TOKEN=$token" >> "$GITHUB_ENV"
+
+      # Names, homes, pass or fail and at most eight hex characters of a hash per line; never a value.
+      - name: Check values
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          PROJECT_ID: ${{ inputs.project-id }}
+        run: pnpm runway env check --values --env "$ENVIRONMENT" --project-id "$PROJECT_ID"
+
+      - name: Sync
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: pnpm runway env sync "$ENVIRONMENT"

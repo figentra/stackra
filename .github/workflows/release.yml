@@ -22,8 +22,9 @@
 # Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
-#          decision A1), passed to the provider until the owner has stored them in Infisical `/ci/release`; then the
-#          `secrets:` block goes and the provider reads them over OIDC (STA-1747). Publishing uses GitHub OIDC exchanged at the registry; no token.
+#          decision A1), passed to the provider until the provider decrypts them from the sops scope
+#          ci/production/release (ADR 0525); then the `secrets:` block goes (STA-1747). Publishing uses GitHub OIDC
+#          exchanged at the registry; no token.
 name: Release
 
 on:
@@ -185,18 +186,11 @@ jobs:
         run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525).
+      - name: Turborepo remote cache (sops)
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       - name: Build
         env:

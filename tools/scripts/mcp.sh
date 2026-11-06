@@ -17,7 +17,9 @@
 #     expands them inside a vault-injected subprocess
 #
 # Secret Source:
-#   Infisical vault at /agents path (developer/MCP tokens, env: dev).
+#   The `agents` scope of figentra/secrets (ADR 0525): a local clone at $STACKRA_SECRETS_DIR (default
+#   ~/.stackra/secrets), decrypted per file by tools/scripts/secrets-exec.mjs into the server's process only.
+#   Until that clone exists (the move, STA-2141), the Infisical vault at /agents (env: dev) as before.
 #
 #   There is no .env fallback. It existed, and was removed when the repository
 #   moved to Infisical for every developer token — `.env.example`, which was the
@@ -71,7 +73,17 @@ if [ "$#" -eq 0 ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Infisical Helper Functions
+# figentra/secrets (sops) path, ADR 0525
+# -----------------------------------------------------------------------------
+
+SECRETS_DIR="${STACKRA_SECRETS_DIR:-$HOME/.stackra/secrets}"
+if command -v sops >/dev/null 2>&1 && [ -d "$SECRETS_DIR/agents" ]; then
+  # Decrypts each agents/<NAME>.enc.yaml in memory, expands $VAR in the args, then runs the server.
+  exec node "$ROOT/tools/scripts/secrets-exec.mjs" --scope agents -- "$@"
+fi
+
+# -----------------------------------------------------------------------------
+# Infisical Helper Functions (until every token is in figentra/secrets)
 # -----------------------------------------------------------------------------
 
 # Check if Infisical CLI is available and project is configured

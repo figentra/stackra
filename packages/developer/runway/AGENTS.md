@@ -13,7 +13,8 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 `./node`, plus the `schema/{root,app,service}.json` assets, byte copies of `tools/schemas/runway-*.schema.json`
 (ADR 0127, 2026-10-24 note). The `runway` binary (`src/node/runway.ts`; root alias `pnpm runway`) runs
 `RUNWAY_COMMANDS` on `@stackra/console` (ADR 0506 decision 8): plan, deploy, promote, rollback, status, validate, drift
-and `secrets sync` (ADR 0170, ADR 0352, STA-268). A command class lives in `src/node/commands/runway-<name>.command.ts`
+and `secrets sync` (ADR 0170, ADR 0352, STA-268), and `env check` (ADR 0173 amendment 2026-11-04, STA-2104: names
+only, never a value). A command class lives in `src/node/commands/runway-<name>.command.ts`
 and only parses and prints; the work stays in the functions it calls.
 
 ## Where code goes

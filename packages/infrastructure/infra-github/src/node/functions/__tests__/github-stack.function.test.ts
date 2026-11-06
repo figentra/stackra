@@ -145,7 +145,7 @@ beforeAll(async () => {
     false,
   );
   pulumi.runtime.setAllConfig({ "infra:infisical": JSON.stringify({ workspace: "ws-123" }) });
-  stack = githubStack(PLAN, RULES);
+  stack = githubStack(PLAN, RULES, undefined, { oidcTemplate: true, rules: true });
   // Provider, repository, OIDC template, 2 variables, 3 environments, 3 deploy policies, 1 environment variable,
   // 1 ruleset and 1 branch protection: 14 registrations, some after the team and user lookups.
   await vi.waitFor(() => expect(registered).toHaveLength(14));
@@ -282,5 +282,22 @@ describe("githubStack", () => {
         { rulesets: [] },
       ),
     ).toThrow(/missing/);
+  });
+
+  it("leaves the OIDC subject template and the committed rules alone by default", async () => {
+    githubStack({ ...PLAN, repo: "acme-default", environments: [] }, RULES);
+    await vi.waitFor(() => resource("Repository", "acme-default"));
+
+    expect(
+      registered
+        .filter((entry) => entry.name.startsWith("acme-default-"))
+        .map((entry) => entry.type),
+    ).toEqual(
+      expect.not.arrayContaining([
+        expect.stringMatching(
+          /OidcSubjectClaimCustomizationTemplate|RepositoryRuleset|BranchProtection/,
+        ),
+      ]),
+    );
   });
 });

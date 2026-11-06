@@ -1,5 +1,115 @@
 # @stackra/gen
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/money@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/support@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/money@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/support@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/money@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/support@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/money@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/money@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/support@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/money@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/support@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/money@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/support@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/money@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/support@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/money@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/support@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/money@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/support@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- e57b9a1: `stackra gen` writes an `env` section into `stackra.manifest.json` (ADR 0173 amendment 2026-11-04, STA-2104): one
+  row per environment name the member's configuration classes declare (`Config({ env })` names and `@Secret` fields),
+  with its kind (`secret`, `public`, `config`), type, rules, refused prefixes and environments; a service adds its
+  hosted packages' rows, an app only their public rows, and each gets the Infisical path `/runtime/<member>`. `@Secret` takes an optional second
+  argument, `{ refuse, environments }`, read by gen. `StackraManifest` types the section.
+
+### Patch Changes
+
+- 05da3d4: An action is never advertised to MCP clients as read-only, even at L0 or L1; only a query at L0 or L1 is.
+- 242ebe4: The migration compiler's macro recorder and two tests typecheck again under `exactOptionalPropertyTypes`.
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

@@ -1,7 +1,13 @@
 ---
 title: "0026 — Turborepo remote cache self-hosted on Cloudflare R2"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended 2026-11-05 (figentra-turbo-cache) · 2026-10-19"
 ---
+
+<Note>
+  Amended by the owner on 2026-11-05 (STA-2112, "Amendment 2026-11-05 (owner decision):
+  figentra-turbo-cache" below): the cache Worker is `figentra-turbo-cache` on `turbo.figentra.com`,
+  in figentra/figentra, shared by every repository.
+</Note>
 
 <Note>
   Amended and accepted by
@@ -35,6 +41,24 @@ repository does not otherwise use.
 
 Planned — the Worker itself, the CI step that sets `TURBO_API`, `TURBO_TOKEN` and `TURBO_TEAM` from `/ci`, and an R2 lifecycle rule.
 Today only `turbo.jsonc` (`remoteCache.signature: true`) exists; nothing uses a remote cache.
+
+## Amendment 2026-11-05 (owner decision): figentra-turbo-cache
+
+The owner decided on 2026-11-05 that one Figentra-owned cache serves every repository. STA-2112.
+
+- **Decision 1, as amended.** The Worker is `figentra-turbo-cache`, built by `workers/turbo-cache`
+  (`@figentra/worker-turbo-cache`) in figentra/figentra, moved there with its history, on `turbo.figentra.com`. It
+  replaces `stackra-turbo-cache` (`turbo.stackra.figentra.com`).
+- **No data copy.** Both Workers bind the same R2 bucket `turbo-cache` (7-day lifecycle) with the same key prefix and
+  token, so a job hits the same artifacts through either host. Only Infisical `ci-build` `/ci/turbo` `TURBO_API`
+  changes.
+- **The switch.** `turbo.stackra.figentra.com` stays as an alias on the new Worker during the switch, for any job
+  that still names it. It is retired, and `stackra-turbo-cache` deleted, on the owner's go.
+- **Deploy.** `figentra/figentra` `.github/workflows/deploy-turbo-cache.yml` deploys, by the owner's dispatch only, in
+  the GitHub environment `workers`. A custom domain that another Worker holds moves only on a dispatch with the dry run
+  off. The Worker's `TURBO_CACHE_TOKEN` is CI's `TURBO_TOKEN`, as before.
+
+Decisions 2 to 4 are unchanged: signed artifacts, no lock-in, no Vercel.
 
 ## Supersedes and sources
 

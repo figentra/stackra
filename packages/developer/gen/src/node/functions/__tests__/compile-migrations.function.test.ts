@@ -6,7 +6,8 @@
  *          call alone, and an own module after the sibling its classes depend on), the import check
  *          (`migration_import_forbidden` for a value, a type-only and a dynamic import, before the file is loaded), and
  *          the merged `Blueprint` augmentation of an own macro, through which a TypeScript program accepts the call
- *          and rejects a wrong argument.
+ *          and rejects a wrong argument, and `module_key_collision` for an own module with migrations whose key a
+ *          made-up declared package's migrations need (STA-2161).
  * Boundary: test only; writes under the OS temp folder and removes it. No workspace dependency is used.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305.
@@ -113,6 +114,23 @@ const serviceIr = (modules: readonly string[]): MemberIR => ({
   packages: ["@stackra/ai", "@stackra/tenancy"],
 });
 
+/** A made-up package whose migration needs the `widgets` module through its package.json. */
+const GIZMOS: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/gizmos/package.json": JSON.stringify({
+    name: "@stackra/gizmos",
+    type: "module",
+    dependencies: { "@stackra/widgets": "workspace:*" },
+  }),
+  "node_modules/@stackra/gizmos/src/node/database/migrations/0001-create-gizmos.migration.ts":
+    migration("CreateGizmos", 'schema.create("gizmos", () => {});'),
+};
+
+/** The service IR that also declares the made-up `@stackra/gizmos`. */
+const gizmosIr = (modules: readonly string[]): MemberIR => ({
+  ...serviceIr(modules),
+  packages: ["@stackra/ai", "@stackra/gizmos", "@stackra/tenancy"],
+});
+
 describe("compileMigrations", () => {
   it("writes tenancy's migrations before ai's, which calls tenancy's macro", async () => {
     const { files, errors } = await compileMigrations(host(), serviceIr(["shop"]));
@@ -180,6 +198,44 @@ describe("compileMigrations", () => {
     const { files, errors } = await compileMigrations(root, serviceIr(["shop"]));
     expect(errors).toEqual([]);
     expect(files.at(-1)?.path).toBe(".stackra/migrations/0003_shop_0001_create_shops.up.sql");
+  });
+
+  describe("an own module whose key a declared package's migrations need (STA-2161)", () => {
+    it("refuses it with module_key_collision alone, naming both, and no migration_cycle", async () => {
+      const root = host({
+        ...GIZMOS,
+        "src/modules/widgets/database/migrations/0001-create-widgets.migration.ts": migration(
+          "CreateWidgets",
+          'schema.create("widgets", () => {});',
+        ),
+      });
+      const { files, errors } = await compileMigrations(root, gizmosIr(["widgets"]));
+      expect(files).toEqual([]);
+      expect(errors.map((error) => error.code)).toEqual(["module_key_collision"]);
+      expect(errors[0]?.message).toContain(
+        "`@stackra/gizmos` (hosted) needs `@stackra/widgets`'s module `widgets`",
+      );
+      expect(errors[0]?.message).toContain("own module `widgets` (src/modules/widgets)");
+      expect(errors[0]?.fix).toMatch(/^rename the member module/);
+    });
+
+    it("compiles when the own module's key is distinct", async () => {
+      const root = host({
+        ...GIZMOS,
+        "src/modules/gadgets/database/migrations/0001-create-gadgets.migration.ts": migration(
+          "CreateGadgets",
+          'schema.create("gadgets", () => {});',
+        ),
+      });
+      const { errors } = await compileMigrations(root, gizmosIr(["gadgets"]));
+      expect(errors).toEqual([]);
+    });
+
+    it("allows the shared key when the own module owns no migration (the hosting rule)", async () => {
+      const root = host({ ...GIZMOS, "src/modules/widgets/widgets.module.ts": "export {};\n" });
+      const { errors } = await compileMigrations(root, gizmosIr(["widgets"]));
+      expect(errors.map((error) => error.code)).not.toContain("module_key_collision");
+    });
   });
 
   it("refuses a migration importing a model, a type or a dynamic import, before loading it", async () => {

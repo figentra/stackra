@@ -1,6 +1,6 @@
 ---
 title: "0511 — Cross-repo service contracts and cross-app events"
-description: "Proposed · 2026-11-01"
+description: "Accepted · 2026-11-06"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0511, cross-repo service contracts and cross-app events: the `@figentra/<service>-contract` packages that carry a producer's committed manifest and OpenAPI document to consumers in other repositories, the `contract` kind, release and trusted publishing per producer repository, prerelease builds for branches, the first contracts from the OS handover, and the transport of integration events that cross apps (HTTP push from the producer's outbox to idempotent consumer inboxes, with a broker driver deferred). Boundary: decision text only; the gen changes, the registry rows, the kind's schema and the relay are built by their own issues. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0260, 0453, 0141, 0349, 0294, 0142. */}
@@ -17,6 +17,9 @@ description: "Proposed · 2026-11-01"
   [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule R10),
   [0142](/adr/0142-cross-service-transport-through-drivers) and
   [0227](/adr/0227-rejected-and-deferred-technologies-refreshed).
+
+Accepted by the owner 2026-11-06.
+
 </Note>
 
 ## Context

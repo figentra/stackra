@@ -68,6 +68,7 @@ export { capabilityConfig } from "#node/functions/capability-config.function";
 export { checkoutLine } from "#node/functions/checkout-line.function";
 export { checkOpsReview } from "#node/functions/check-ops-review.function";
 export { checkShellCompatibility } from "#node/functions/check-shell-compatibility.function";
+export { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 export { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";

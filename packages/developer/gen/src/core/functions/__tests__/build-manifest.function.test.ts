@@ -25,6 +25,7 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import {
   CONNECTOR_PACKAGES,
   connectorPackage,
@@ -1022,5 +1023,24 @@ describe("buildManifest's package config section (STA-1308)", () => {
 
   it("writes no config section for a service", () => {
     expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("config");
+  });
+});
+
+describe("buildManifest's relay section (STA-1910)", () => {
+  it("lists the keys and subscribers of each runway environment, without origins", () => {
+    expect(buildManifest(PRODUCER_IR).manifest.relay).toEqual({
+      keys: {
+        dev: [{ id: "pay-dev-1", publicKey: "cGF5LWRldi1wdWJsaWM" }],
+        prod: [{ id: "pay-prod-1", publicKey: "cGF5LXByb2QtcHVibGlj" }],
+      },
+      subscribers: {
+        dev: [{ member: "billing", events: ["payments.payment.captured.v1"] }],
+        prod: [],
+      },
+    });
+  });
+
+  it("is absent when no environment has an events block", () => {
+    expect("relay" in buildManifest(INBOX_IR).manifest).toBe(false);
   });
 });

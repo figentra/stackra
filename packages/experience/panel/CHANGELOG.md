@@ -1,5 +1,342 @@
 # @stackra/panel
 
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [3c99709]
+  - @stackra/documents@0.15.0
+  - @stackra/experience@0.15.0
+  - @stackra/data-transfer@0.15.0
+  - @stackra/access-log@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/tenancy@0.15.0
+  - @stackra/pricing@0.15.0
+  - @stackra/clients@0.15.0
+  - @stackra/navigation@0.15.0
+  - @stackra/query@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/money@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/filesystem@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/icons@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/entitlements@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- 1f55b7a: `EntryFactory.list` and `Display.list` take named option types (`ListEntryOptions`, `ListDisplayOptions`) shared with
+  their records, and `WidgetDescriptorOptions` is derived from `WidgetDescriptor`. The shapes are unchanged.
+- Updated dependencies [cc150d2]
+  - @stackra/navigation@0.14.4
+  - @stackra/query@0.14.4
+  - @stackra/clients@0.14.4
+  - @stackra/experience@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/pricing@0.14.4
+  - @stackra/documents@0.14.4
+  - @stackra/access-log@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/money@0.14.4
+  - @stackra/data-transfer@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/filesystem@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/icons@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/entitlements@0.14.4
+  - @stackra/tenancy@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/clients@0.14.3
+  - @stackra/money@0.14.3
+  - @stackra/pricing@0.14.3
+  - @stackra/data-transfer@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/documents@0.14.3
+  - @stackra/filesystem@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/icons@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/experience@0.14.3
+  - @stackra/navigation@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/access-log@0.14.3
+  - @stackra/entitlements@0.14.3
+  - @stackra/iam@0.14.3
+  - @stackra/tenancy@0.14.3
+  - @stackra/query@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/clients@0.14.2
+  - @stackra/money@0.14.2
+  - @stackra/pricing@0.14.2
+  - @stackra/data-transfer@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/documents@0.14.2
+  - @stackra/filesystem@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/icons@0.14.2
+  - @stackra/ui@0.14.2
+  - @stackra/experience@0.14.2
+  - @stackra/navigation@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/access-log@0.14.2
+  - @stackra/entitlements@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/tenancy@0.14.2
+  - @stackra/query@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/clients@0.14.1
+  - @stackra/money@0.14.1
+  - @stackra/pricing@0.14.1
+  - @stackra/data-transfer@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/documents@0.14.1
+  - @stackra/filesystem@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/icons@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/experience@0.14.1
+  - @stackra/navigation@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/access-log@0.14.1
+  - @stackra/entitlements@0.14.1
+  - @stackra/iam@0.14.1
+  - @stackra/tenancy@0.14.1
+  - @stackra/query@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/clients@0.14.0
+  - @stackra/money@0.14.0
+  - @stackra/pricing@0.14.0
+  - @stackra/data-transfer@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/documents@0.14.0
+  - @stackra/filesystem@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/icons@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/experience@0.14.0
+  - @stackra/navigation@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/access-log@0.14.0
+  - @stackra/entitlements@0.14.0
+  - @stackra/iam@0.14.0
+  - @stackra/tenancy@0.14.0
+  - @stackra/query@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/clients@0.13.0
+  - @stackra/money@0.13.0
+  - @stackra/pricing@0.13.0
+  - @stackra/data-transfer@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/documents@0.13.0
+  - @stackra/filesystem@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/icons@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/experience@0.13.0
+  - @stackra/navigation@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/access-log@0.13.0
+  - @stackra/entitlements@0.13.0
+  - @stackra/iam@0.13.0
+  - @stackra/tenancy@0.13.0
+  - @stackra/query@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/clients@0.12.0
+  - @stackra/money@0.12.0
+  - @stackra/pricing@0.12.0
+  - @stackra/data-transfer@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/documents@0.12.0
+  - @stackra/filesystem@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/icons@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/experience@0.12.0
+  - @stackra/navigation@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/access-log@0.12.0
+  - @stackra/entitlements@0.12.0
+  - @stackra/iam@0.12.0
+  - @stackra/tenancy@0.12.0
+  - @stackra/query@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/clients@0.11.1
+  - @stackra/money@0.11.1
+  - @stackra/pricing@0.11.1
+  - @stackra/data-transfer@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/documents@0.11.1
+  - @stackra/filesystem@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/icons@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/experience@0.11.1
+  - @stackra/navigation@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/access-log@0.11.1
+  - @stackra/entitlements@0.11.1
+  - @stackra/iam@0.11.1
+  - @stackra/tenancy@0.11.1
+  - @stackra/query@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/clients@0.11.0
+  - @stackra/money@0.11.0
+  - @stackra/pricing@0.11.0
+  - @stackra/data-transfer@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/documents@0.11.0
+  - @stackra/filesystem@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/icons@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/experience@0.11.0
+  - @stackra/navigation@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/access-log@0.11.0
+  - @stackra/entitlements@0.11.0
+  - @stackra/iam@0.11.0
+  - @stackra/tenancy@0.11.0
+  - @stackra/query@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/access-log@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/clients@0.10.0
+  - @stackra/documents@0.10.0
+  - @stackra/filesystem@0.10.0
+  - @stackra/icons@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/navigation@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/tenancy@0.10.0
+  - @stackra/query@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/pricing@0.10.0
+  - @stackra/data-transfer@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/experience@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/entitlements@0.10.0
+  - @stackra/iam@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

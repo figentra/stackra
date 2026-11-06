@@ -4,7 +4,9 @@
  *          identity provider and answers the provider's session with the WebAuthn options the device signs;
  *          `POST /passkeys/challenge`, the `api.passkeyChallenge` of the app's sign-in screen.
  * Boundary: anonymous, in the public API area with its own small bucket against login-name probing. Opens a provider
- *           session through `IdpAdmin`; an unknown login is `UnauthenticatedError`. Not an MCP tool.
+ *           session through `IdpAdmin`; an unknown login answers a decoy of the same shape that
+ *           `identity.passkey.verify` refuses, so the answer never tells whether a login exists (STA-2102). Not an
+ *           MCP tool.
  * Runtime: node
  * Governing contract: ADR 0206 (decision 8); ADR 0462; ADR 0294 (decisions 16 and 21); ADR 0082; STA-1538.
  */

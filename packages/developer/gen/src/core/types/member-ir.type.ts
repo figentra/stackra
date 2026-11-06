@@ -118,6 +118,26 @@ export interface MemberIR {
   }[];
 
   /**
+   * The `events` block of each environment of a service's `runway.yaml` that has one (ADR 0511 decisions 16 and 17):
+   * the signing key's secret name, the public keys (current first) and the subscribers in other apps. Absent when no
+   * environment has one, and in an IR built by hand.
+   */
+  readonly eventsRelay?: Readonly<
+    Record<
+      string,
+      {
+        readonly signingKey: string;
+        readonly keys: readonly { readonly id: string; readonly publicKey: string }[];
+        readonly subscribers: readonly {
+          readonly member: string;
+          readonly inbox: string;
+          readonly events: readonly string[];
+        }[];
+      }
+    >
+  >;
+
+  /**
    * The committed manifests of every other service beside the member that publishes an integration event, with the
    * folder each sits in. Read only for a member with a relay listener (ADR 0260 decision 4), whose events target
    * subscribes it to all of their topics. Absent otherwise and in an IR built by hand.

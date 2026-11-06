@@ -29,6 +29,7 @@
  *           leftover one.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
  *           A member that declares a resource has each tree read through `loader` before the manifest is built
  *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
  * Runtime: node
@@ -49,6 +50,7 @@ import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.con
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
+import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -364,9 +366,12 @@ export async function generate(
   }
   if (errors.length > 0) return { errors, files: [], changed: partial };
   result = { ...result, files };
+  // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
+  const warnings = options.pass === undefined ? checkSubscriptions(ir) : [];
   return {
     errors: [],
     files: result.files,
+    ...(warnings.length > 0 ? { warnings } : {}),
     changed: [
       ...new Set([
         ...partial,
