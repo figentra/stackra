@@ -1,5 +1,26 @@
 # @stackra/runway
 
+## 0.13.0
+
+### Minor Changes
+
+- dc4b3f0: Each product declares its operations in its root runway (the design of 2026-11-06).
+  
+  - **Tier.** `environments.<env>.tier` names one of `staging`, `launch` or `growth`, from the finance tiers. Production defaults to `launch` and every other environment to `staging`.
+  - **Sizes.** The typed keys `shared.database` (`class`, `multiAz`, `storageGb`), `shared.cache` (`mode`, `class`, `nodes`) and `shared.network.natGateways` override the tier. `environmentSizesOf` resolves what an environment runs at, and `runway validate` refuses a t4g or m6g cache class in `me`.
+  - **Alerts and routes.** `observability.alerts` covers error rate, p95 latency, budget, database CPU, connections and free storage, and cache memory and evictions. `observability.notify` sets the routes per severity: `oncall`, `email:`, `slack:<channel id>` or `linear:<team key>`. infra-observability applies the defaults (staging and production alarmed, critical to on-call) and returns both in its plan.
+- 5d10209: `runway secrets decrypt --scope <scope> [--dir <dir>] [--names A,B]` (ADR 0525) runs inside a GitHub Actions job. It decrypts one figentra/secrets scope with the job's own Cloud KMS identity, reading the per-secret `<scope>/<NAME>.enc.yaml` ciphertext that `.github/actions/secrets-decrypt` downloaded. It masks every value and exports it into `GITHUB_ENV` for the steps after it. It prints names only, and refuses to run without `GITHUB_ENV`. Together with the shared action (Workload Identity login, a `gcloud storage cp` of the scope, then this command), it replaces every Infisical login step.
+- 6e61084: A Worker's Custom Domains are runway settings (ADR 0519): `customDomains: [host]` on a `targets.cloudflare-workers` member, its defaults or an environment override. The renderer writes each host as a wrangler `routes` entry with `custom_domain: true`, and refuses a member whose `wrangler.jsonc` still holds `routes`.
+
+### Patch Changes
+
+- @stackra/console@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/app@0.13.0
+
 ## 0.12.0
 
 ### Minor Changes

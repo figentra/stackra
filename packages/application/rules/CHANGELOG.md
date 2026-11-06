@@ -1,5 +1,25 @@
 # @stackra/rules
 
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/ai@0.13.0
+  - @stackra/money@0.13.0
+  - @stackra/content@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/market-packs@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes

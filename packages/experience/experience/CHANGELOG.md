@@ -1,5 +1,20 @@
 # @stackra/experience
 
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/clients@0.13.0
+  - @stackra/documents@0.13.0
+  - @stackra/icons@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes
