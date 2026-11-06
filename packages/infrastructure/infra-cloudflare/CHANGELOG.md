@@ -1,5 +1,282 @@
 # @stackra/infra-cloudflare
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/runway@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [fda1d53]
+  - @stackra/runway@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- Updated dependencies [3ccf74a]
+- Updated dependencies [64e4840]
+  - @stackra/runway@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/runway@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [54e05c6]
+  - @stackra/runway@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [dc4b3f0]
+- Updated dependencies [5d10209]
+- Updated dependencies [6e61084]
+  - @stackra/runway@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [e36505c]
+  - @stackra/runway@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/runway@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- 0d65e3f: A root runway's `providers.cloudflare.zones.<zone>` takes the zone policy (ADR 0519, STA-1993): besides a plain id it
+  takes `{ id, owner, plan, policy }`, closed, where `policy` is `baseline` or `strict` (Pro only), only the `owner` sets
+  it, and an owner states its `plan`. `checkZoneOwners(runways)` reports a zone two root runways own. `zoneEdge` takes a
+  `policy` and adds SSL Full (strict), TLS 1.3, Automatic HTTPS Rewrites, HSTS, DNSSEC and CAA records for Cloudflare's
+  CAs; `strict` also turns bot protection on and throws on the Free plan. `cloudflareCoreStack` passes the zone's plan and
+  policy through. A zone without a policy keeps today's settings. The DS record at the registrar stays the owner's.
+
+### Patch Changes
+
+- Updated dependencies [a15cacf]
+- Updated dependencies [4c0eead]
+- Updated dependencies [4749967]
+- Updated dependencies [f511762]
+- Updated dependencies [e57b9a1]
+- Updated dependencies [ea40871]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [242ebe4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [c4348cd]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+  - @stackra/runway@0.10.0
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- 5030040: The runway host map now generates the edge Worker's routes (`surfaceHosts`, `edgeRoutes`): one `<host>/*` per surface host under a runway zone, beside the stack's own patterns. A bare `*/*` route is refused unless the zone lists `exclusions`, which become script-less routes. The CLI's runway ship probes every host of the map after a product publish and fails when one does not serve TLS.
+- 30b2f24: `workerAccess` puts Cloudflare Access in front of the `internal-tool` Worker members: one application over each
+  member's custom domains and one over its Version URLs (`*-<worker>.<subdomain>.workers.dev`), open to the GitHub
+  organisation. The core stack takes them from a new `internalTools` config, which needs `access` (ADR 0519 decision 4,
+  STA-1994).
+
+### Patch Changes
+
+- Updated dependencies [2aeaec8]
+- Updated dependencies [5030040]
+- Updated dependencies [e80a99b]
+- Updated dependencies [93bb1e7]
+- Updated dependencies [b0d6fcc]
+- Updated dependencies [2e43c48]
+- Updated dependencies [2e43c48]
+- Updated dependencies [ca1614e]
+- Updated dependencies [f9c825d]
+- Updated dependencies [bd3f314]
+  - @stackra/runway@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/config@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+- Updated dependencies [02c47c3]
+- Updated dependencies [67e7e8f]
+  - @stackra/container@0.8.0
+  - @stackra/runway@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/runway@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/runway@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/runway@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [67dac91]
+- Updated dependencies [0183006]
+- Updated dependencies [a736fb5]
+- Updated dependencies [b74c373]
+- Updated dependencies [2ed03e2]
+  - @stackra/runway@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/runway@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [f7321ea]
+  - @stackra/runway@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/validation@0.5.0
+
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [1a09488]
+- Updated dependencies [d065062]
+- Updated dependencies [d63eb09]
+- Updated dependencies [2e94f1e]
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/runway@0.4.0
+  - @stackra/config@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

@@ -3,15 +3,21 @@
  * Purpose: the registrations of @golden/service-shop: loads the generated entity and schemas files, then names each
  *          class the platform packages look up by its locked identity (entities, model partners, event wire names,
  *          listeners, relays, change consumers, jobs, cached queries, connections, webhook events, outbound
- *          webhooks, sequences, entitlements, searchable models and report sources).
+ *          webhooks, sequences, entitlements, searchable models, report sources, permissions, module roles, and
+ *          actions and queries).
  * Boundary: imported by the server entry and the generated test setup before the container boots; every row comes
  *           from the committed identities, so a hand edit is overwritten.
  * Runtime: node
  */
 import "#stackra/entities/shop";
 import "#stackra/schemas/shop";
+import { OrderPermissions } from "#node/access/order.permissions";
+import { CancelOrderAction } from "#node/actions/cancel-order.action";
 import { OrderPaid } from "#node/events/order-paid.event";
 import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.listener";
+import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";
+import { registerActions } from "@stackra/actions";
+import { registerPermissions } from "@stackra/container";
 import { registerEventNames, registerListeners } from "@stackra/events";
 
 registerEventNames([
@@ -20,4 +26,12 @@ registerEventNames([
 
 registerListeners([
   [OrderPaid, ShipOnOrderPaidListener],
+]);
+
+registerPermissions([
+  { type: OrderPermissions, keys: { read: "shop.order.read", cancel: "shop.order.cancel" } },
+]);
+
+registerActions([
+  { type: CancelOrderAction, key: "shop.order.cancel@1", permission: "shop.order.cancel", risk: "L2", input: CancelOrderInput },
 ]);

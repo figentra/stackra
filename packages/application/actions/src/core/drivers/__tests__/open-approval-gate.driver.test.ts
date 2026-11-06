@@ -24,7 +24,7 @@ describe(OpenApprovalGateDriver, () => {
   });
 
   it("cannot park, so a declared stage fails closed with it bound", async () => {
-    const gate = new OpenApprovalGateDriver();
+    const gate: ApprovalGate = new OpenApprovalGateDriver();
     await expect(gate.park({} as ApprovalDraft)).rejects.toThrow(/cannot park/);
     await expect(gate.find("apr_1")).resolves.toBeUndefined();
     await expect(gate.begin("apr_1", "approval:apr_1")).resolves.toBe(false);

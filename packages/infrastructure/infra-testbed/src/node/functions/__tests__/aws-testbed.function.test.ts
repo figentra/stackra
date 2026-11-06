@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `awsTestbed` under Pulumi's mocks: the provider is pinned to eu-west-1; the security group
+ * Purpose: unit tests of `awsTestbed` under Pulumi's mocks: the provider is pinned to eu-west-1; the default subnets
+ *          are only those in zones that offer the heavy type; the security group
  *          allows SSH only from the allowlist; the launch template resolves the AMI from the SSM parameter, requires
  *          IMDSv2, has a 40 GB root and a 200 GB data volume deleted with the instance, and its user data holds ids
  *          and no secret; `heavy` is on-demand and `light` is mixed-instances spot with capacity rebalance; both
@@ -39,6 +40,8 @@ const LOCKFILE = fileURLToPath(new URL("../../../../../../../pnpm-lock.yaml", im
 const PLAN = testbedPlan({ identityId: "identity-1", ciGateProjectId: "project-1" });
 
 let stack: AwsTestbed;
+// The inputs of the getSubnets call, as the mocks saw them.
+let subnetQuery: Record<string, unknown> | undefined;
 
 function resource(kind: string, name: string): Registered {
   const found = registered.find((entry) => entry.type.endsWith(`:${kind}`) && entry.name === name);
@@ -76,8 +79,17 @@ beforeAll(async () => {
         if (args.token === "aws:index/getCallerIdentity:getCallerIdentity")
           return { accountId: "111122223333", arn: "arn:mock", userId: "mock", id: "mock" };
         if (args.token === "aws:ec2/getVpc:getVpc") return { id: "vpc-1" };
-        if (args.token === "aws:ec2/getSubnets:getSubnets")
+        if (args.token === "aws:ec2/getInstanceTypeOfferings:getInstanceTypeOfferings")
+          return {
+            locations: ["eu-west-1a", "eu-west-1b"],
+            instanceTypes: [],
+            locationTypes: [],
+            id: "x",
+          };
+        if (args.token === "aws:ec2/getSubnets:getSubnets") {
+          subnetQuery = args.inputs as Record<string, unknown>;
           return { ids: ["subnet-a", "subnet-b"] };
+        }
         return args.inputs as Record<string, unknown>;
       },
     },
@@ -91,15 +103,23 @@ beforeAll(async () => {
     tags: { owner: "platform" },
   });
   await new Promise((resolve) => {
-    stack.imagePipelineArn.apply(resolve);
+    stack.securityGroupId.apply(resolve);
   });
   await settle();
 });
 
 describe("awsTestbed", () => {
+  it("takes only the subnets in zones that offer the heavy instance type", () => {
+    expect(subnetQuery?.["filters"]).toEqual([
+      { name: "vpc-id", values: ["vpc-1"] },
+      { name: "availability-zone", values: ["eu-west-1a", "eu-west-1b"] },
+    ]);
+  });
+
   it("pins the provider to the plan's region", () => {
     expect(resource("providers:aws", "testbed").inputs.region).toBe("eu-west-1");
     expect(stack.region).toBe("eu-west-1");
+    expect(stack.home).toBe(true);
   });
 
   it("opens SSH only to the allowlist and allows all egress", () => {
@@ -148,12 +168,12 @@ describe("awsTestbed", () => {
   it("keeps heavy on-demand and runs only light on spot", () => {
     const heavy = resource("autoscaling/group:Group", "heavy").inputs;
     expect(heavy.name).toBe("stackra-testbed-heavy");
-    expect(heavy).toMatchObject({ minSize: 2, maxSize: 6 });
+    expect(heavy).toMatchObject({ minSize: 0, maxSize: 1 });
     expect(heavy.mixedInstancesPolicy).toBeUndefined();
 
     const light = resource("autoscaling/group:Group", "light").inputs;
     expect(light.name).toBe("stackra-testbed-light");
-    expect(light).toMatchObject({ minSize: 1, maxSize: 4, capacityRebalance: true });
+    expect(light).toMatchObject({ minSize: 0, maxSize: 1, capacityRebalance: true });
     expect(light.mixedInstancesPolicy).toMatchObject({
       instancesDistribution: { onDemandBaseCapacity: 0, onDemandPercentageAboveBaseCapacity: 0 },
     });
@@ -171,6 +191,9 @@ describe("awsTestbed", () => {
     for (const name of ["heavy", "light"]) {
       const group = resource("autoscaling/group:Group", name).inputs;
       expect(group.healthCheckType).toBe("EC2");
+      // The cost backstop: no box lives past a day, and the in-service count feeds the owner's alarm.
+      expect(group.maxInstanceLifetime).toBe(86_400);
+      expect(group.enabledMetrics).toEqual(["GroupInServiceInstances", "GroupDesiredCapacity"]);
       expect(group.instanceRefresh).toMatchObject({
         strategy: "Rolling",
         preferences: { minHealthyPercentage: 100, scaleInProtectedInstances: "Wait" },
@@ -199,7 +222,13 @@ describe("awsTestbed", () => {
     expect(own?.Condition).toEqual({
       StringEquals: { "autoscaling:ResourceTag/stackra:testbed": ["heavy", "light"] },
     });
-    expect(own?.Resource).toContain("autoScalingGroupName/stackra-testbed-");
+    // One role for every region's boxes (STA-2042): the four regions' testbed groups, and no other.
+    expect(own?.Resource).toEqual(
+      ["eu-west-1", "eu-west-2", "eu-central-1", "us-east-1"].map(
+        (region) =>
+          `arn:aws:autoscaling:${region}:111122223333:autoScalingGroup:*:autoScalingGroupName/stackra-testbed-*`,
+      ),
+    );
   });
 
   it("builds the image weekly into the SSM parameter, versioned by its inputs", () => {
@@ -211,6 +240,19 @@ describe("awsTestbed", () => {
       const data = String(resource("imagebuilder/component:Component", name).inputs.data);
       expect(data).not.toContain("@@");
     }
+    // `pnpm fetch` refuses a lockfile without the catalogs and the pnpmfile it was written with, and needs the
+    // `@figentra-oss` scope from .npmrc.
+    const uploaded = registered
+      .filter((entry) => entry.type.endsWith(":BucketObjectv2"))
+      .map((entry) => entry.inputs.key);
+    expect(uploaded).toEqual(
+      expect.arrayContaining([
+        "build/pnpm-lock.yaml",
+        "build/pnpm-workspace.yaml",
+        "build/.pnpmfile.mjs",
+        "build/.npmrc",
+      ]),
+    );
     // Only the base component downloads the build inputs; the others use the files it fetched.
     expect(
       String(resource("imagebuilder/component:Component", "testbed-base").inputs.data),
@@ -219,14 +261,26 @@ describe("awsTestbed", () => {
       "imagebuilder/distributionConfiguration:DistributionConfiguration",
       "testbed",
     );
-    expect(JSON.stringify(distribution.inputs.distributions)).toContain(
-      "/imagebuilder/stackra-testbed/ami",
-    );
+    // One build, copied to every region, each writing its own AMI parameter (STA-2042).
+    const targets = distribution.inputs.distributions as {
+      region: string;
+      ssmParameterConfigurations: { parameterName: string }[];
+    }[];
+    expect(targets.map((target) => target.region)).toEqual([
+      "eu-west-1",
+      "eu-west-2",
+      "eu-central-1",
+      "us-east-1",
+    ]);
+    for (const target of targets) {
+      expect(target.ssmParameterConfigurations).toEqual([
+        expect.objectContaining({ parameterName: "/imagebuilder/stackra-testbed/ami" }),
+      ]);
+    }
+    // No schedule: the image is built by hand while heavy is at 0 (ADR 0516).
     expect(
       resource("imagebuilder/imagePipeline:ImagePipeline", "testbed").inputs.schedule,
-    ).toMatchObject({
-      scheduleExpression: "cron(0 3 ? * SUN *)",
-    });
+    ).toBeUndefined();
   });
 
   it("keeps the job Dockerfile's argument defaults equal to the pins", () => {
@@ -235,7 +289,25 @@ describe("awsTestbed", () => {
     expect(dockerfile).toContain(`ARG NODE_VERSION=${TOOLCHAIN_PINS.node}`);
     expect(dockerfile).toContain(`ARG PNPM_VERSION=${TOOLCHAIN_PINS.pnpm}`);
     expect(dockerfile).toContain(`ARG INFISICAL_VERSION=${TOOLCHAIN_PINS.infisical}`);
+    expect(dockerfile).toContain(`ARG SHFMT_VERSION=${TOOLCHAIN_PINS.shfmt}`);
+    expect(dockerfile).toContain(`ARG ENCORE_VERSION=${TOOLCHAIN_PINS.encore}`);
     expect(dockerfile).toContain(`ARG PLAYWRIGHT_VERSION=${TOOLCHAIN_PINS.playwright}`);
+    // Every browser the playground's projects may name, a display for Electron, and ffmpeg for renders.
+    expect(dockerfile).toContain("install --with-deps chromium firefox webkit");
+    expect(dockerfile).toMatch(/ffmpeg xauth xvfb/);
+  });
+
+  it("warms and checks the store without lifecycle scripts", () => {
+    // The build instance has no job tokens, so a licence-gated postinstall fails the build (image 1.236066669.0).
+    const agent = readFileSync(
+      `${testbedPackageRoot()}/images/host/components/03-agent.yml`,
+      "utf8",
+    );
+    const fetches = agent.match(/pnpm fetch [^\n]*/g) ?? [];
+    expect(fetches).toHaveLength(2);
+    for (const fetch of fetches) expect(fetch).toContain("--ignore-scripts");
+    // The metadata cache lives on /data, which Clean keeps: an offline install needs it (image 1.224117217.0).
+    expect(agent.match(/PNPM_CONFIG_CACHE_DIR=\/data\/pnpm-cache/g)).toHaveLength(2);
   });
 });
 
@@ -246,14 +318,14 @@ describe("awsTestbed with a given network and no groups", () => {
   beforeAll(async () => {
     start = registered.length;
     bare = awsTestbed(PLAN, {
-      allowedCidrs: ["203.0.113.7/32"],
       lockfilePath: LOCKFILE,
       vpcId: "vpc-9",
       subnetIds: ["subnet-9", "subnet-10"],
       groups: false,
+      permissionsBoundary: "arn:aws:iam::111122223333:policy/stackra-testbed-boundary",
     });
     await new Promise((resolve) => {
-      bare.imagePipelineArn.apply(resolve);
+      bare.securityGroupId.apply(resolve);
     });
     await settle();
   });
@@ -261,8 +333,23 @@ describe("awsTestbed with a given network and no groups", () => {
   const later = (kind: string): Registered[] =>
     registered.slice(start).filter((entry) => entry.type.endsWith(`:${kind}`));
 
+  it("sets the given permissions boundary on every role it creates, and none without it", () => {
+    const roles = later("iam/role:Role");
+    expect(roles.map((role) => role.inputs.permissionsBoundary)).toEqual([
+      "arn:aws:iam::111122223333:policy/stackra-testbed-boundary",
+      "arn:aws:iam::111122223333:policy/stackra-testbed-boundary",
+    ]);
+    const first = registered
+      .slice(0, start)
+      .filter((entry) => entry.type.endsWith(":iam/role:Role"));
+    expect(first.length).toBe(2);
+    for (const role of first) expect(role.inputs.permissionsBoundary).toBeUndefined();
+  });
+
   it("uses the given VPC and first subnet, and declares no Auto Scaling group", () => {
     expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.vpcId).toBe("vpc-9");
+    // No allowlist given: no inbound rule at all; the CLI reaches the boxes through SSM (STA-1953).
+    expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.ingress).toEqual([]);
     expect(
       later("imagebuilder/infrastructureConfiguration:InfrastructureConfiguration")[0]?.inputs,
     ).toMatchObject({ subnetId: "subnet-9" });
@@ -277,5 +364,45 @@ describe("awsTestbed with a given network and no groups", () => {
     const userData = testbedUserData(testbedPlan());
     expect(userData).toContain("printf '%s\\n' '' > /etc/testbed/identity");
     expect(userData).toContain("{}");
+  });
+});
+
+describe("awsTestbed for a member region (STA-2042)", () => {
+  let start = 0;
+  let member: AwsTestbed;
+
+  beforeAll(async () => {
+    start = registered.length;
+    member = awsTestbed(
+      testbedPlan({ region: "eu-west-2", identityId: "identity-1", ciGateProjectId: "project-1" }),
+      { lockfilePath: LOCKFILE },
+    );
+    await new Promise((resolve) => {
+      member.securityGroupId.apply(resolve);
+    });
+    await settle();
+  });
+
+  const later = (kind: string): Registered[] =>
+    registered.slice(start).filter((entry) => entry.type.endsWith(`:${kind}`));
+
+  it("declares only the region's pool: no role, bucket or image pipeline", () => {
+    expect(later("providers:aws")[0]?.inputs.region).toBe("eu-west-2");
+    expect(member).toMatchObject({ region: "eu-west-2", home: false });
+    expect(member.imagePipelineArn).toBeUndefined();
+    expect(member.instanceRoleArn).toBeUndefined();
+    const types = registered.slice(start).map((entry) => entry.type);
+    expect(types.filter((type) => /aws:(iam|s3|imagebuilder)\//.test(type))).toEqual([]);
+    expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.ingress).toEqual([]);
+    expect(later("autoscaling/group:Group").map((group) => group.inputs.name)).toEqual([
+      "stackra-testbed-heavy",
+      "stackra-testbed-light",
+    ]);
+  });
+
+  it("launches from its own region's AMI parameter with the global instance profile", () => {
+    const template = later("ec2/launchTemplate:LaunchTemplate")[0]?.inputs;
+    expect(template?.imageId).toBe("resolve:ssm:/imagebuilder/stackra-testbed/ami");
+    expect(template?.iamInstanceProfile).toEqual({ name: "stackra-testbed-instance" });
   });
 });

@@ -1,7 +1,15 @@
 ---
 title: "0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components"
-description: "Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-27 (STA-1306)"
+description: "Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-27 (STA-1306) · amended 2026-11-02 (STA-1966)"
 ---
+
+<Note>
+  Amended 2026-11-02 (owner decision, STA-1966) by the 2026-11-02 amendment of
+  [0506](/adr/0506-console-command-kind#amendment-2026-11-02-owner-decision-one-cli-engine): rule 28 gains a `command` option on `Action` and `Query`
+  (`command: string | { name, group }`, off by default). gen adds the action to `#stackra/commands`, and
+  `ActionCommand` runs it through the pipeline as the signed-in CLI identity. It never makes the
+  action an AI tool.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-478) by
@@ -241,12 +249,16 @@ These conventions are used by the template and the apps. They are decided here, 
 - planned — STA-338: `base-matches-suffix`, and the validator's `kind-path` check of the group tables (rules 1 to 3
   and 10 to 14).
 - planned — STA-339: `member-root` (rule 15 to 18), with the `entries` check.
-- planned — STA-340: `site_cache_reads_caller` (rule 31), so that a public cache key never depends on the caller.
+- automated — `stackra gen` (`check-query-cache.function.ts`, `create-source-reader.function.ts`,
+  `build-manifest.function.ts` and `check-conventions.function.ts` in `packages/developer/gen`):
+  `site_cache_reads_caller` (rule 31, so that a public cache key never depends on the caller),
+  `two_declarations_in_file`, `partner_mismatch` (which also refuses a `WebhookEvent` argument that is not an
+  Integration, ADR 0308 rule 15), `override_duplicate`, `identity_collision`, `empty_module`, `event_base_abstract` and
+  `secret_name_missing` (ADR 0294 2026-10-23 item 2); and the `one-declaration-per-file` lint rule in
+  `@stackra/coding-standard`.
 - planned — STA-340: `secret_on_wire` (rule 34), so that no schema with a secret reaches a wire surface.
-- planned — STA-340: the webhook checks of ADR 0308 rules 15 to 17, which are `partner_mismatch` (a `WebhookEvent` argument that is not an Integration) and `integration_placeholder_unknown` (a webhook secret placeholder that names no field).
-- planned — STA-340: `two_declarations_in_file`, `partner_mismatch`, `override_duplicate`, `identity_collision`,
-  `empty_module`, `event_base_abstract`, the action surface checks, `secret_name_missing` (ADR 0294 2026-10-23
-  item 2), and the `one-declaration-per-file` lint rule.
+- planned — STA-340: the rest of the webhook checks of ADR 0308 rules 15 to 17, which is `integration_placeholder_unknown` (a webhook secret placeholder that names no field).
+- planned — STA-340: the action surface checks.
 - planned — STA-348: the kind base signatures, with the partner parameter defaulting to `never` behind a readable hint, exported bases and abstract partner members (rules 42 to 46).
 - planned — the gen class-component compiler and its lint mapping. The work item is not yet open in Linear, so no
   check exists today.

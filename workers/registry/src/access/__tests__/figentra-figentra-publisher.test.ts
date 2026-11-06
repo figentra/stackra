@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: tests of migration 0007: `figentra/figentra`'s release workflow on main, in the `release` environment,
+ * Purpose: tests of migration 0011: `figentra/figentra`'s release workflow on main, in the `release` environment,
  *          is a trusted publisher of `@figentra` (it publishes `@figentra/cli`); the same repository from another
  *          ref or environment, another repository with the same name but a different id, and the core publisher's
  *          claims are not; figentra/brand, figentra/commerce and figentra/os stay trusted.
@@ -14,7 +14,7 @@ import type { GithubClaims } from "#src/interfaces/github-claims.interface";
 import { matchPublisher } from "#src/oidc/match-publisher";
 import { RegistryStore } from "#src/store/registry-store";
 
-/** The claims of the figentra/figentra release workflow (migrations/0007_figentra_figentra.sql). */
+/** The claims of the figentra/figentra release workflow (migrations/0011_figentra_figentra.sql). */
 const FIGENTRA_CLAIMS: GithubClaims = {
   ...STACKRA_CLAIMS,
   repository: "figentra/figentra",
@@ -24,7 +24,7 @@ const FIGENTRA_CLAIMS: GithubClaims = {
   environment: "release",
 };
 
-describe("migration 0007: figentra/figentra publishes @figentra", () => {
+describe("migration 0011: figentra/figentra publishes @figentra", () => {
   it("matches the figentra release workflow on main in the release environment", async () => {
     const { db } = sqliteD1();
     const publishers = await new RegistryStore(db).publishers("@figentra");

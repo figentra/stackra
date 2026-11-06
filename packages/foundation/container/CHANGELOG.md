@@ -1,5 +1,160 @@
 # @stackra/container
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/contracts@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/contracts@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/contracts@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- 896c8a3: The kind registry and the permission registry live on `globalThis` under `Symbol.for` keys, so two installed copies of
+  `@stackra/container` (a React peer variant, or a second version) share them. A member that pins React for React Native
+  got a second container copy beside `@stackra/console`'s, and `stackra gen` crashed with "`@str` may mark … AddCommand
+  is of no kind".
+- @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/contracts@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/contracts@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/contracts@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/contracts@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/contracts@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/contracts@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- f9c825d: gen binds Menu, Shortcut, Store, Bridge (request-scoped) and ExtensionPoint classes; a config override keeps its base's key. The container's binding kinds gain `shortcut` and `extension_point`.
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- 7dd35b3: A member's generated Vitest setup imports each generated schemas file statically and calls the new
+  `markMemberSchemasLoaded()` from `@stackra/container/testing`, instead of awaiting `loadMemberSchemas()`. In a
+  consumer, `@stackra/container` sits in node_modules, which Vitest leaves to Node, so the schemas loaded through Node:
+  with no `#` imports-map fallback and no legacy decorators, every unit test failed at import (STA-2032).
+- @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/contracts@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/contracts@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/contracts@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/contracts@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/contracts@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/contracts@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- c9cf778: Register `approval_condition` as a binding kind (STA-1724, ADR 0509).
+- 1856ee0: Add the `Permissions` kind base, `registerPermissions`, `permissionKey`, `PERMISSION_REGISTRY` and the
+  `PermissionRegistration` type, moved from `@stackra/iam` (STA-1890, ADR 0513), so a module can declare permissions
+  without depending on iam.
+- ca7d004: `PortRegistry`, an empty interface gen augments with the class of each port it registers drivers for. `DriverName<P>`
+  keeps a hand-written `~key` brand first, then narrows an unbranded port to the names of the `PortRegistry` keys whose
+  class instance is the same type (structural identity; identical unbranded ports give a wider union), and otherwise
+  stays the union of every registered name.
+
+### Patch Changes
+
+- eccdaf0: The testing module binds a `MemoryLoggerFake` (exported from `./testing`) to `Logger` when the test overrides none
+  and no registered wiring lists a Logger driver, so a driver that logs boots in a member that does not depend on
+  `@stackra/logger`; its `lines` hold what was logged.
+- ff56870: The container's missing-binding error now ends with a hint to run `stackra gen` first when a test hits it (gen's setup
+  registers the member's wiring). The bundled rule and skills no longer say the v3 packages "do not ship yet", and the
+  migrations skill says to write migrations by hand until `stackra db diff` exists (STA-1808).
+- e219411: The events testing plugin connects only the listeners a testing app can build: one whose dependency nothing binds (a
+  listener of a module the test did not boot, such as one needing `QueueService`) is skipped, and any other error
+  building a listener still throws. The container throws a typed `UnboundTokenError` for a class nothing binds; its
+  message is unchanged.
+- Updated dependencies [9c8d108]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+  - @stackra/contracts@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

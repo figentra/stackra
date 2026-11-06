@@ -1,5 +1,326 @@
 # @stackra/ui
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/icons@0.15.0
+  - @stackra/tokens@0.15.0
+  - @stackra/shortcuts@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/icons@0.14.4
+  - @stackra/tokens@0.14.4
+  - @stackra/shortcuts@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/icons@0.14.3
+  - @stackra/tokens@0.14.3
+  - @stackra/shortcuts@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/icons@0.14.2
+  - @stackra/tokens@0.14.2
+  - @stackra/shortcuts@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/icons@0.14.1
+  - @stackra/tokens@0.14.1
+  - @stackra/shortcuts@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/icons@0.14.0
+  - @stackra/tokens@0.14.0
+  - @stackra/shortcuts@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/icons@0.13.0
+  - @stackra/tokens@0.13.0
+  - @stackra/shortcuts@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/icons@0.12.0
+  - @stackra/tokens@0.12.0
+  - @stackra/shortcuts@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/icons@0.11.1
+  - @stackra/tokens@0.11.1
+  - @stackra/shortcuts@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/icons@0.11.0
+  - @stackra/tokens@0.11.0
+  - @stackra/shortcuts@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/icons@0.10.0
+  - @stackra/tokens@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/shortcuts@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- 681d01a: Five web components in `@stackra/ui/react` from the UI build list (STA-1981). `Autocomplete` wraps HeroUI v3's
+  Autocomplete with the single ComboBox contract: a select whose list opens with a search box that narrows it.
+  `ColorField` wraps HeroUI v3's ColorField with ColorPicker's field contract, a typed `#rrggbb` value with a swatch
+  of it. `ColorSwatch` wraps HeroUI v3's ColorSwatch and also draws a colour React Aria cannot parse, such as a token's
+  `var()`. `Flag` draws a country's flag from its ISO code (or a language tag's region) with `flagOf`. `MarkerMap`
+  places pins by projection on an SVG, with no map tiles, beside a selectable `List` of them in a `SidePanel`.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [e8cb518]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/tokens@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/icons@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/shortcuts@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/icons@0.8.0
+  - @stackra/tokens@0.8.0
+  - @stackra/shortcuts@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/i18n@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/icons@0.7.1
+  - @stackra/tokens@0.7.1
+  - @stackra/shortcuts@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/icons@0.7.0
+  - @stackra/tokens@0.7.0
+  - @stackra/shortcuts@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/i18n@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/icons@0.6.1
+  - @stackra/tokens@0.6.1
+  - @stackra/shortcuts@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/i18n@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- d53d9d3: Button gains `variant="core"` and `shape="pill"`, and Heading and Text gain `tone="core"`, for the Stackra champagne
+  core (STA-2016). `core` draws HeroUI's primary filled by the theme's `core-strong` (web `button--core`, native
+  `bg-core-strong`). A pill takes the theme's `--radius-pill`. Heading draws `core` at the looks h1 to h4 and
+  `core-strong` below; Text always draws `core-strong`. Until `@stackra/tokens` ships the core roles (STA-2015), a core
+  button draws as the primary and core text keeps its default colour.
+- 712fb89: Spinner, ProgressBar, ProgressCircle and RouteProgress draw the brand's dot loader on web and native (STA-2017,
+  figentra/brand rules §41), under the loaders' exception to ADR 0303 decision 6 (owner, 2026-11-02). Dots build the st
+  tile's floors 80 ms a step with the last or leading dot in the emphasis colour (`--core`, falling back to the accent
+  on the web; the tone's colour on native until STA-2015). Every prop, role, name and value stays. Reduced motion,
+  from the system or the provider, shows the dots at rest. The web Spinner's props are now the span's own (HeroUI's
+  `animation` and `render` are gone) and the native Spinner's the view's.
+
+### Patch Changes
+
+- Updated dependencies [ef62362]
+  - @stackra/tokens@0.6.0
+  - @stackra/icons@0.6.0
+  - @stackra/shortcuts@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/icons@0.5.1
+  - @stackra/tokens@0.5.1
+  - @stackra/shortcuts@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/i18n@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- d7f72d3: The `@heroui/react` peer range is `^3.2.7`, the first release with `Sheet`, which `@stackra/ui/react` imports; a consumer on
+  3.2.6 failed to build with MISSING_EXPORT.
+- Updated dependencies [d7f72d3]
+  - @stackra/i18n@0.5.0
+  - @stackra/icons@0.5.0
+  - @stackra/tokens@0.5.0
+  - @stackra/shortcuts@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/validation@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 149ca06: Add the `@stackra/ui/rich-text` subpath (STA-1895). The web `RichTextEditor` and its `RichTextEditorProps`,
+  `RichTextContribution` and `RichTextToolbarItem` types move there from `@stackra/ui/react`, so no other entry imports
+  `@tiptap/*`. Vite stubs a missing optional peer, so 0.3.0 failed a consumer build that had no TipTap installed with
+  `MISSING_EXPORT` for `CharacterCount`, `Placeholder` and `EditorContent`. The `@tiptap/*` peers stay optional.
+  
+  ### Breaking
+  
+  - `RichTextEditor` and its three types are no longer exported from `@stackra/ui/react`. Change
+    `import { RichTextEditor } from "@stackra/ui/react"` to `import { RichTextEditor } from "@stackra/ui/rich-text"`.
+    Only an app that renders the editor needs the `@tiptap/*` peers.
+
+### Patch Changes
+
+- 1567384: `@stackra/ui/native` loads in an app without `@shopify/react-native-skia`, which stays an optional peer (Expo SDK 57's
+  2.6.2). The Skia-backed charts, maps and the chart export reach Skia and `victory-native` through lazy `require`s the build
+  keeps for Metro, and draw nothing when the app has not installed them (STA-1791).
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/icons@0.4.0
+  - @stackra/tokens@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/i18n@0.4.0
+  - @stackra/shortcuts@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

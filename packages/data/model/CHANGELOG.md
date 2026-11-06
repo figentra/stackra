@@ -1,5 +1,252 @@
 # @stackra/model
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/money@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/money@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/money@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/money@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/money@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/money@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/money@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/money@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/money@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/money@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- b174a17: `stackra db diff` reports pivots, search columns and partial indexes faithfully. `expectedSchema` now expects each
+  many-to-many relation's pivot table, named by `pivotTable` or `<table>_<field>`, with the two `varchar(33)` keys the
+  ORM names (`<owner>_id` and `<target>_id`, or `<table>_1_id` and `<table>_2_id` for a self-reference), the owner's
+  `tenant_id` and their same-module foreign keys, so a migrated pivot is no longer `undeclared_table`. A `@Searchable`
+  model expects `search_text` and `search_filters`; `diffSchemas` tolerates the search vectors and `__v<n>` shadows only
+  on such a table and reports search columns on any other table as `undeclared_column`. A partial index's predicate
+  compares as Postgres renders it (multi-word and array casts, quoted identifiers, `<>`, `= ANY`, `<> ALL`, `~~` and
+  `between` folded), so a correct partial index is no longer `index_shape`.
+  
+  `ManyToManyOptions` documents the pivot name the ORM uses without the option, `<table>_<field>`.
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/money@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/money@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/money@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/money@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/money@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/money@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/money@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/money@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 2bbc0e8: Add the AI-everywhere retrieval lane of `@stackra/search` (STA-1636, ADR 0492 decisions 4, 5 and 8).
+  
+  - `Reranker` port with `HttpRerankerDriver` (text-embeddings-inference `/rerank`, token from `SecretStore` at call time,
+    `search.reranker`) and `MemoryRerankerDriver`; `runRerankerConformance` in `./testing`. `SearchIndex` reranks the first
+    `topN` fused candidates when a read passes `rerank: true` or the model declares `@Searchable({ rerank: true })`
+    (new in `@stackra/model`); with no reranker, or when it fails, the fused order stands.
+  - Arabizi also applies to any Latin word when the read's locale is Arabic (`arabiziOf(word, anyLatin)`).
+  - Tenant synonyms as data: the `SynonymSource` port with `MemorySynonymSourceDriver`, and query expansion in
+    `SearchIndex` (the rows, actions and database driver are `@stackra/data-maintenance`'s, so search stays below iam).
+  - `Recommender` port (`similar`, `boughtTogether`) with `PostgresRecommenderDriver`, `HttpRecommenderDriver` (the
+    `tools-recommend` contract) and `MemoryRecommenderDriver`; `search.recommender` config.
+  - Evaluation set in `./testing` (catalogue, judged Arabic, English and mixed queries, `ndcgAt`, `recallAt`, thresholds) and
+    a `test:int` script that fails when NDCG@10 or recall@50 drops under them.
+
+### Patch Changes
+
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [90f55b1]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [5fc0db7]
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/money@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

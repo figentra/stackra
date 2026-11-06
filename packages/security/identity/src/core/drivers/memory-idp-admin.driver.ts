@@ -196,12 +196,14 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     return found[0]?.stackraUserId;
   }
 
-  /** See `IdpAdmin.startPasskeySignIn`; opens the session at once, as the memory provider checks nothing. */
+  /**
+   * See `IdpAdmin.startPasskeySignIn`; opens the session at once, as the memory provider checks nothing. An unknown
+   * login gets a decoy of the same shape whose session is never opened, so `finishPasskeySignIn` refuses it.
+   */
   async startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge> {
     const userId = [...this.users].find(([, user]) => user.username === loginName)?.[0];
-    if (userId === undefined) throw UnauthenticatedError.create();
     return {
-      sessionId: this.openSession(userId),
+      sessionId: userId === undefined ? `ses_${randomToken()}` : this.openSession(userId),
       options: { challenge: randomToken(), rpId: "id.example", userVerification: "required" },
     };
   }

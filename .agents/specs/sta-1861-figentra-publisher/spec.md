@@ -19,7 +19,7 @@ has a `publishers` row for that repository on `@figentra`. figentra/figentra#18 
 
 - **Apps touched**: `apps/docs` (one paragraph and the publisher table of ADR 0453)
 - **Services touched**: none
-- **Packages touched**: `workers/registry` (migration `0007_figentra_figentra.sql`, README)
+- **Packages touched**: `workers/registry` (migration `0011_figentra_figentra.sql`, README)
 - **Cross-service events**: none
 - **Tenancy and data**: one seed row in the registry's D1 (`publishers`); no schema change
 - **Secrets**: none
@@ -33,7 +33,7 @@ has a `publishers` row for that repository on `@figentra`. figentra/figentra#18 
 
 ## Requirements
 
-- **FR-001** Migration `0007_figentra_figentra.sql`, in the form of 0004 to 0006: the `figentra/figentra` publisher
+- **FR-001** Migration `0011_figentra_figentra.sql`, in the form of 0004 to 0006: the `figentra/figentra` publisher
   row for `@figentra` (repository id 1435864013, owner 314302700, `.github/workflows/release.yml`,
   `refs/heads/main`, environment `release`, the environment of figentra/figentra's release job).
 - **FR-002** The README's Publishing section and layout table, and ADR 0453, name the publisher and the migration.

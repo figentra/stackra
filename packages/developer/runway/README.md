@@ -33,6 +33,8 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `poolMaxOf(root, service, member, environment)`                                                                                                             | one instance's share of the service's `poolBudget`, handed over as `DATABASE_POOL_MAX` (ADR 0473)                                                                      |
 | `.`         | `previewDatabaseOf(root, branch)`, `previewSeedStep(database, product)`, `PreviewDatabaseBrancher`, `PreviewDatabaseSource`                                 | how a pull request's preview gets its database (seed pack or Neon branch), its seed command, and the branching port                                                    |
 | `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                                                                                        | region failures for `stackra validate`; an environment's resolved regions                                                                                              |
+| `.`         | `environmentSizesOf(root, env)`, `TIER_SIZES`, `EnvironmentTier`, `CacheMode`, `EnvironmentSizes` | the sizes an environment runs at: its `tier` (production defaults to `launch`, the rest to `staging`; the finance tiers of 2026-11-06) with its own `shared.database`, `shared.cache` and `shared.network` keys over it. Encore Cloud applies them from its dashboard, so they are the desired values a drift report compares |
+| `.`         | `checkEnvironmentRegion(root)`, `deprecatedFields(root)`, `unusedCloudOptIns(root)`, `RegionKey` | a product's staging or production with no `region` (`me`, `eu`, `ksa`; ADR 0524), a ksa environment without `providers.gcp.project: true`, or a t4g or m6g cache class in `me` (me-central-1 lacks them); deprecated fields still set (`providers.aws.region`, `providers.aws.accounts`, an environment's `cloud`) and an AWS account opt-in (`providers.aws.account: true`) no me or eu environment uses, which `validate` warns about |
 | `.`         | `checkPorts(root, members)`, `PortIssue`                                                                                                                    | every duplicate effective dev port across the repository lanes, both owners                                                                                            |
 | `.`         | `RunwayCloud`                                                                                                                                               | `aws`, `gcp`: the cloud a region names                                                                                                                                 |
 | `.`         | `runwayJsonSchema(kind)`                                                                                                                                    | the zod schemas as JSON Schema, tested against the shipped canonical files                                                                                             |
@@ -42,7 +44,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `RunwayProvider`                                                                                                                                            | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                                                                                             |
 | `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                                                             | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`)                                                      |
 | `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                                                                  | the `encore-cloud`, `eas` and `mintlify` providers                                                                                                                     |
-| `./node`    | `runCommand`, `CommandRunner`                                                                                                                               | how a provider runs its CLI, with no shell                                                                                                                             |
+| `./node`    | `runProgram`, `CommandRunner`                                                                                                                               | how a provider runs its CLI, with no shell                                                                                                                             |
 | `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                                                                             |
 | `./node`    | `onboardMobile(request)`, `MobileOnboardRequest`, `MobileOnboard`, `OnboardStep`, `easJsonOf`, `toolVersionOf`                                              | mobile onboarding (ADR 0482): ids, EAS, Apple, Google, Firebase, Sentry, signing, push, stores; see below                                                              |
 | `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…`, `InfisicalVaultWriter…` drivers, and a `Memory…` driver of each | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
@@ -63,6 +65,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`, `RunwayDeployFailedError`                                                                                    | errors                                                                                                                                                                 |
 | `./node`    | `definesFor(member, environment)`                                                                                                                           | the bundler `define` map: public vars and the injected runway facts                                                                                                    |
 | `./node`    | `devServer(member)`                                                                                                                                         | the Vite `server` block from the dev facts                                                                                                                             |
+| `./node`    | `writeDevFacts(root, lane)` | writes `.stackra/dev/ports.json`, the inverse of `readDevFacts` (`stackra dev` calls it) |
 | `./node`    | `readRunway(file, kind)`                                                                                                                                    | read, YAML-parse and check one runway file                                                                                                                             |
 | `./schema/` | `root.json`, `app.json`, `service.json`                                                                                                                     | `$schema: "@stackra/runway/schema/app.json"` in a runway file                                                                                                          |
 
@@ -76,7 +79,8 @@ vars, config values and sizes.
 It never holds `member`, `deployable`, `isolate`, `group`, `cpu`, `memory` or `instances`; those fail the schema. The
 root runway states where members run: providers, destinations, shared pools, defaults and each environment's
 `topology`. In a grouped environment every service member sits in exactly one group, or in the `default` group;
-`checkPlacement` reports what is not.
+`checkPlacement` reports what is not. `checkRequires(root, service)` reports each `valkey` requirement that no environment's
+cache driver serves (`config.cache.driver`, in the member or the root's `defaults.service.config`).
 
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
 and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);
@@ -108,7 +112,9 @@ An app runway's `release.mobile.whiteLabel` takes `true` or the same `whiteLabel
 
 `resources.<name>` declares a managed resource (`postgres` with `engine: rds | aurora` and a major `version`, or
 `queue`, `topic`, `cache`, `bucket`) and `workloads.<name>` a container (an image pinned by digest, `port`, `health`,
-`expose: internal | public`, `uses`, public `env`, `secrets` names, and a required `reason`). Both size per environment
+`expose: internal | public`, `uses`, public `env`, `secrets` names, an optional `command` that replaces the image's
+default arguments, `aliases` that hand the image a resource variable under the name it reads, and a required
+`reason`). Both size per environment
 (`small`, `medium`, `large`; `small` where unsized), a workload also `scale`s per environment, and
 `environments.<env>.limits.monthly` caps the plan's estimate (ADR 0493). A service runway names the resources it uses
 (`uses`); a workload's `uses` must name a declared resource. Kafka, OpenSearch and SES are reserved and refused.
@@ -328,7 +334,9 @@ capture job's runner it runs before `runScreenshotCapture`, from the same build.
    `mezzora.com.`); every host of a surface names the canonical one (D2). The home region is the request's, else the
    environment's first. Apple team ids and Android certificate fingerprints are request data (`appLinks`).
 3. Reads each bundle surface's one built bundle (`<bundleDir>/<surface>/<version>/bundle.manifest.json`, written by
-   `stackra.bundleConfig`) and refuses one whose `targets` is not a shell line the edge serves (`served`).
+   `stackra.bundleConfig`), and the `ops` bundle when the product sets `surfaces.ops.contributes` (`buildProduct`
+   writes its declarative `ops.contributions.json` and a manifest that targets `ops@1`), and refuses one whose
+   `targets` is not a shell line the edge serves (`served`).
 4. With every check passed, uploads each bundle to the asset store (`wrangler r2 object put`, under
    `<product>/<surface>/<version>/`, immutable), writes the platform rows, then per surface the `canary:` row (the
    release, the internal and demo `canaryScopes` and its start, D6), or the `release:` row on a `firstRelease`.
@@ -344,9 +352,9 @@ checkout it runs the `compatibility` build with the next shell's import map, the
 edge will not serve or whose imports the next map does not resolve, listing every break at once. Every threshold,
 window, folder, command and header is in `EDGE_PUBLISH_SETTINGS`.
 
-Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the ops release that
-takes `contributes`, the landing seed import, removing rows of hosts a runway no longer lists, the metrics query that
-fills a `CanarySample`, and the CI workflows that call these functions.
+Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the landing seed
+import, removing rows of hosts a runway no longer lists, the metrics query that fills a `CanarySample`, and the CI
+workflows that call these functions.
 
 ## Dev lanes and the repository index
 
@@ -433,6 +441,34 @@ providers:
       photon:
         image: ghcr.io/figentra/tools-photon:0.6.0
 ```
+
+## The `runway` command
+
+`runway` (root alias `pnpm runway`) runs on `@stackra/console` (ADR 0506 decision 8): `runway help <command>` prints
+a command's help, `--json` gives its data in the `{ ok, data }` envelope, a usage error exits 2 and a failure 1.
+Nothing here builds or deploys from a workstation: deploy, promote and rollback dispatch the caller workflows on
+GitHub, where each run sits behind its environment's protection (and, in a private repository, the O1 owner gate).
+
+| Command                                      | Does                                                                                                                                         | Exit                     |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `runway plan [env]`                          | What a deploy of `env` (default production) does, as JSON: each target, its caller workflows, the CI secret names, the synced names | 0                        |
+| `runway deploy <target> [--dry-run]`         | From a clean checkout of the head of origin/main, dispatches each caller workflow of `targets.<target>`                                      | 0                        |
+| `runway promote <sha> [--dry-run]`           | Dispatches every production caller that takes a `sha`, for a commit of origin/main; the record is `rollback to <sha>`                       | 0                        |
+| `runway rollback <sha> [--dry-run]`          | The same for an earlier commit; refuses the head of origin/main (ADR 0352)                                                                   | 0; 2 on the head         |
+| `runway status [env]`                        | What each GitHub environment runs, from GitHub's deployment records: commit, time, state                                                     | 0                        |
+| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), a product's staging and production `region` and a ksa environment's GCP project (ADR 0524), service `requires`; deprecated fields and an unused AWS account opt-in warn | 0; 1 with each finding   |
+| `runway drift [env]`                         | Each Cloudflare Worker's live settings against what runway.yaml renders (read-only, `CLOUDFLARE_API_TOKEN_READ`)                            | 0; 1 when a Worker drifted |
+| `runway secrets sync <env> [--dry-run]` (alias `runway env sync`) | The member secrets of `env`, and the names each member's manifest declares (STA-2104), from Infisical into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves                 | 0                        |
+| `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |
+| `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, workflow `secret-name:`) has an Infisical home; a raw read of an undeclared name warns. Names only, no login | 1 on an error |
+| `runway env check --values --env <env> [--project-id <id>]` | CI only: each declared name of `<env>` (errors) and its sibling non-production environments (warnings) read from its Infisical home and checked against its rules; prints names, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
+| `runway env orphans <env> [--project-id <id>]` | CI only: warns on each name in `<env>`'s runtime homes that no code declares | 0 |
+
+Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
+by a flag or `GITHUB_ACTIONS`; a deploy job needs `permissions: id-token: write`. A destination is one of
+`encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`; `validate` refuses any other (owner decision O8, 2026-11-04).
+A docs app ships through `mintlify` until its site moves to Fumadocs (ADR 0514). The self-hosted site is then
+`docs: cloudflare-workers`, with the docs app as a `targets.cloudflare-workers.members` entry of `kind: docs`.
 
 ## Deploy, promote and roll back
 

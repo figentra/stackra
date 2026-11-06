@@ -28,6 +28,7 @@ export default {
       form: "src/form/index.ts",
       node: "src/node/ui.module.ts",
       react: "src/react/index.ts",
+      "rich-text": "src/react/rich-text-editor/index.ts",
       native: "src/native/index.ts",
       testing: "src/testing/fakes/fake-confirmation-provider.tsx",
     },

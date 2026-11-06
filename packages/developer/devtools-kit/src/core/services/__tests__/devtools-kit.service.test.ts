@@ -152,6 +152,7 @@ describe(DevtoolsKit, () => {
         occurredAt: NOW,
         scopeId: "tnt_1",
         correlationId: "cor_1",
+        audit: expect.any(Function),
       });
     });
   });

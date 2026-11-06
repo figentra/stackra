@@ -1,0 +1,154 @@
+---
+title: "0522 — The testbed moves to its own public repo"
+description: "Accepted · 2026-11-03"
+---
+
+{/* Stackra file contract. Purpose: ADR 0522 (Accepted 2026-11-03, STA-2073), the owner's decision that the testbed leaves core for its own public, unbranded repository figentra/testbed: the package @figentra/testbed, its own CLI `testbed`, the frozen interface that FLOW and the agents call, the live AWS names that stay, and the order of the move. Boundary: decision text only; the move is built under STA-2073 in figentra/testbed and in core. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0484, 0500, 0503, 0453, 0516. */}
+
+<Note>
+  Accepted 2026-11-03 (STA-2073), recording the owner's decisions of that date. It amends
+  [0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical)
+  decision 1 (the code home), [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra)
+  decisions 1 and 3 (a fifth CLI), [0503](/adr/0503-figentra-flow-runs-the-development-workflow)
+  decision 2 (the gate's command) and
+  [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  (the `@figentra` publishers). [0516](/adr/0516-aws-quotas-are-fixed-inputs) stands; only its
+  enforcement path moves.
+</Note>
+
+## Context
+
+The testbed is a Pulumi program, an image build, a box agent and a CLI. [0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical)
+put all of it in core, as `@stackra/infra-testbed` and `stackra testbed` in `@stackra/cli`. The testbed's deploy role
+trusts workflows of core, so a core change that dispatches the apply can assume that role. The owner wants the
+per-run approval on `up` and `build-image` kept. The organization is on GitHub Team: a private repository there gets
+branch protection but no environment required reviewers (those need Enterprise), and a public one gets both (the
+owner's check, 2026-11-03). Core is already public, through its history and its
+published 0.x tarballs, so a public repository exposes nothing new. The package name cannot stay: only
+figentra/stackra publishes `@stackra`, so a package in another repository needs another scope. Figentra's own scope,
+`@figentra`, is the one its release workflow can publish to. The alternative, `figentra testbed` in `@figentra/cli`,
+was weighed; the owner chose a separate CLI.
+
+## Decision
+
+1. **Own repository.** The testbed moves to `figentra/testbed`, a public repository with an unbranded name. It is one
+   pnpm workspace with one package, `@figentra/testbed`, shaped like figentra/flow. It holds the Pulumi program, the
+   job and host images, the box agent, the CLI, the runbook and its own workflows. It is the code home that 0484
+   decision 1 named in core.
+
+2. **Scope and publishing.** `@figentra/testbed` is published to the `@figentra` scope, which is `internal` and read
+   only with Figentra's own tokens. The release workflow of figentra/testbed is a trusted publisher of that scope
+   (0453, its amendment of 2026-10-31, and the amendment of 2026-11-03 at its end). The package names
+   `SEE LICENSE IN LICENSE` as its licence and ships a `LICENSE` file, the string that scope requires. The package is
+   not published under its old name.
+
+3. **The published package stays.** Every published `@stackra/infra-testbed` up to 0.7.x stays immutable and readable
+   (0453). Core stops shipping its copy at step 7 below, and the published package is deprecated once
+   `@figentra/testbed` ships.
+
+4. **A fifth CLI, `testbed`.** This amends 0500 decisions 1 and 3. `testbed` is the bin of `@figentra/testbed`, built
+   in figentra/testbed. It is not part of `figentra` (0500 decision 3): the CLI and the box agent share constants
+   (exit codes, the rsync excludes, the tag and the AMI parameter), and one package keeps one source of them and one
+   test. The CLI imports `TESTBED_DEFAULTS`, and its copies of those constants are deleted. `ci-box` becomes a thin
+   shim that calls `testbed`.
+
+5. **The frozen interface.** FLOW's gate and the agents call these. A change to any of them needs its own ADR:
+   - the verbs `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale` and `image`, with their flags;
+   - `testbed run --json` prints one line on stdout, `{region, box, slot, waitSeconds, runSeconds, exitCode}`, and the
+     job's own output goes to stderr;
+   - `testbed status --json` prints the boxes as JSON;
+   - the exit codes: 2 for a usage error or a refused nested call, 73 when the slot is busy, 75 when the box is
+     unhealthy, and 124 when the job times out.
+
+6. **Nested calls and the fallback.** A command that calls `ci-box`, `stackra testbed` or `testbed <verb>` is refused,
+   as today. The match is on the command word, not on a substring, so the repository's own test filter
+   (`pnpm --filter @figentra/testbed test`) runs. The fallback workflow `testbed-fallback.yml` is dispatched only in a
+   repository that holds it. Elsewhere the CLI prints a hint and exits 75.
+
+7. **Names.** The repository, the package, the CLI and the docs carry no brand in their own names. The live AWS names
+   keep the `stackra` prefix on purpose: the state bucket `stackra-pulumi-state-591473336656`, the Pulumi project
+   `stackra-testbed` with its stacks `testbed-<region>`, every `stackra-testbed-*` resource, the tag `stackra:testbed`,
+   the AMI parameter `/imagebuilder/stackra-testbed/ami`, and the instance, image-builder and deploy roles. A rename
+   would orphan the state or replace the resources, so it is a separate decision.
+
+8. **A clean copy.** The repository starts from a copy of the testbed at core `beaafa27`, with no history from core.
+   The files that set the image version are copied without a byte changed: `images/job/Dockerfile`,
+   `src/agent/testbed-agent.sh`, `images/host/files/*` and `images/host/components/*`. Until step 7 core's image
+   changes are copied over the same way, byte for byte, so both repositories build the same image version. A brand
+   comment in them (the agent's header names infra-testbed) stays until a later change rebuilds the image.
+
+9. **Inputs by reference.** The image and the stack read core's four install files (`pnpm-lock.yaml`,
+   `pnpm-workspace.yaml`, `.pnpmfile.mjs` and `.npmrc`) and `mise.toml` from `figentra/stackra` at `core_ref`, a sparse
+   checkout that defaults to `main`. No token is needed, as core is public. `lockfilePath` is passed as Pulumi config.
+   `pulumi stack select` never creates a stack: a missing stack fails the run. Only the owner's `new_stack` input
+   creates one, for a member region not yet set up, never for the home region and never on `build-image`. The warm pnpm store serves core's lockfile only, for now.
+
+10. **Owner dispatches.** Every `up`, `build-image`, stack rename and canary is dispatched by the owner, and the
+    `testbed` environment keeps the owner as its required reviewer. Agents run `preview` only. The repository's guards
+    make the apply and image dispatches owner-only.
+
+11. **Callers.** `fflow gate` calls `testbed run` (0503 decision 2). Sessions and FLOW machines install
+    `@figentra/testbed` with the internal licence token. The `ci-steward` prompts and the `ci-box` shim call `testbed`.
+    `stackra testbed` stays in `@stackra/cli` for one release, with a deprecation note on stderr and stdout unchanged.
+
+12. **Order.** Each step waits for the one before it.
+    1. Bootstrap: the repository, its environment and variables, the AWS trust for its subjects, and its registry
+       publisher row. Core's testbed paths are frozen until step 7.
+    2. The copy at `beaafa27`, and the changes it needs to run alone: the renames, one constants source, `core_ref`,
+       no stack creation, the workflows, the guards and the CLI.
+    3. Previews at one recorded core SHA: core's apply at that SHA, and the new repository with `core_ref` set to it.
+       The two diffs must be identical; any difference stops the move. Core's apply stays enabled.
+    4. The owner runs `up`, then `build-image`, then a canary `testbed run --json`. Core's apply stays enabled until all
+       three pass.
+    5. The owner removes core's two `figentra/stackra` subjects from the deploy role's trust. Core can no longer assume
+       the role, and its apply is disabled.
+    6. The callers switch (decision 11).
+    7. Core removes the package and its two testbed workflows, and keeps `testbed-fallback.yml` and the advisory
+       warm-store job.
+    8. At least one release cycle after step 6, and once no open branch or worktree names `stackra testbed`, the
+       command is removed from `@stackra/cli`.
+
+## Consequences
+
+- From step 5 the deploy role trusts one repository, figentra/testbed. A change in core can no longer reach the
+  testbed's AWS account.
+- The owner's per-run approval on `up` and `build-image` stays, now through the environment of a public repository.
+- The source is public, as core's already is. The published 0.x tarballs keep it public whatever the repository.
+- Two repositories must agree on the image. A core lockfile change moves the image hash, so the daily pin test and
+  core's advisory job catch the drift before a build.
+- While both repositories can apply, two appliers could touch one stack. The freeze of core's testbed paths and the
+  owner's order cover that; Pulumi's state lock only stops runs that overlap.
+- New chores: the owner's steps (the repository, its environment, the variables `TESTBED_DEPLOY_ROLE_ARN` and
+  `TESTBED_SSH_CIDRS`, the AWS trust, and the internal licence token on every Mac and FLOW machine); the publisher row;
+  and a deprecate step in core's release path, which has none today.
+- A machine without the internal licence token cannot run `testbed`.
+- [0516](/adr/0516-aws-quotas-are-fixed-inputs) stands. Its enforcement path moves with the package to
+  `packages/testbed` in figentra/testbed. [0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical)'s
+  enforcement moves with its code.
+- The runbook, the `test-infra` skill and the specs move. Core keeps a pointer at each old path, so the nav entry stays
+  valid; links to the moved files need re-pointing.
+
+## Enforcement
+
+- Until step 2, the checks named by 0484 and 0516 run in core, as they do today.
+- planned — in figentra/testbed, under `packages/testbed/src/**/__tests__/`: a frozen-interface test that asserts the
+  verbs, the `--json` fields and the exit codes 2, 73, 75 and 124; a nested-call test that allows
+  `pnpm --filter @figentra/testbed test` and refuses `testbed run`; and a constants test that the CLI reads
+  `TESTBED_DEFAULTS`.
+- planned — the pin test against core `main`, run daily in figentra/testbed, and core's advisory warm-store job on the
+  four install files.
+- planned — the repository's guards refuse any dispatch of the apply and the image build by anyone but the owner, and
+  the `testbed` environment names the owner as required reviewer.
+- planned — the publisher-row test in `workers/registry` for `figentra/testbed`, with migration
+  `0010_figentra_testbed.sql`.
+- planned — before step 8, a grep of `stackra", *"testbed` across every open branch and worktree, recorded in the
+  removal pull request.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical)
+decision 1 (code home, CLI name and enforcement location); [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra)
+decisions 1 and 3 (a fifth CLI); [0503](/adr/0503-figentra-flow-runs-the-development-workflow) decision 2 (the gate calls
+`testbed run`); [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+(the `@figentra` publishers). Related: [0516](/adr/0516-aws-quotas-are-fixed-inputs) (enforcement path only); [0506](/adr/0506-console-command-kind) (the engine's bare `--json` and shared streams, amendment 2026-11-03). Sources:
+the owner's decisions in chat, 2026-11-03; the testbed move plan of the same date; Refs STA-2073.

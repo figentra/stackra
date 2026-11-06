@@ -11,14 +11,17 @@
 import type { ReactNode } from "react";
 
 import type { TextAlign } from "#contracts/enums/text-align.enum";
-import type { TextTone } from "#contracts/enums/text-tone.enum";
+import type { TypographyTone } from "#contracts/enums/typography-tone.enum";
 
 /** Props shared by the web and native Text and Heading. */
 export interface TypographyContractProps {
   /** The text to show; it may hold inline elements and nested Text. */
   readonly children?: ReactNode;
-  /** The colour of the text: `muted` for secondary copy, a status tone for meaning. Defaults to `default`. */
-  readonly tone?: TextTone | undefined;
+  /**
+   * The colour of the text: `muted` for secondary copy, a status tone for meaning, `core` for the brand's engine colour
+   * (large headings take `core`, small text `core-strong`). Defaults to `default`.
+   */
+  readonly tone?: TypographyTone | undefined;
   /** The horizontal alignment; `start` and `end` follow the text direction, `justify` is iOS-only on native. Defaults to `start`. */
   readonly align?: TextAlign | undefined;
   /** True to cut the text to one line with an ellipsis; assistive technology still reads all of it. */

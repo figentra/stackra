@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `STACKRA_MANIFEST_SCHEMA`, the check of an item's `stackra` field: a known kind (`package` when missing),
  *          for a `package` its optional `tier`, `category`, `runtimes` (non-empty, no repeats) and `summary`, and for
- *          `mcp` its server entry, and for a `contract` nothing more (its `stackra.manifest.json` is the payload). Unknown keys are dropped.
+ *          `mcp` its server entry, and for a `contract` or `docs` nothing more (its `stackra.manifest.json` or its pages are the payload). Unknown keys are dropped.
  * Boundary: shape only; the Worker runs it on publish (decision 7), `stackra publish` before packing, and `pnpm
  *           validate` on every member (which also requires the package fields this schema leaves optional).
  * Runtime: isomorphic
@@ -35,7 +35,13 @@ export const STACKRA_MANIFEST_SCHEMA: z.ZodType<StackraPackageField> = z.union([
     summary: z.string().trim().min(1).optional(),
   }),
   z.object({
-    kind: z.enum([StackraKind.Skill, StackraKind.Agent, StackraKind.Plugin, StackraKind.Contract]),
+    kind: z.enum([
+      StackraKind.Skill,
+      StackraKind.Agent,
+      StackraKind.Plugin,
+      StackraKind.Contract,
+      StackraKind.Docs,
+    ]),
   }),
   z.object({
     kind: z.literal(StackraKind.Mcp),

@@ -1924,6 +1924,16 @@
       "travel": "Travel"
     }
   },
+  "tenant_menu": {
+    "basics": {
+      "label": "Your organisations",
+      "switching": "Switching…",
+      "failed": "Couldn't switch organisation. Try again.",
+      "owner": "Owner",
+      "manager": "Manager",
+      "staff": "Staff"
+    }
+  },
   "text_area": {
     "lines": {
       "six": "Six lines",
@@ -4967,6 +4977,52 @@
       "heading": "Backdrop",
       "body": "The screen behind stays blocked whatever the backdrop looks like.",
       "close": "Close"
+    }
+  },
+  "sign_in": {
+    "basics": {
+      "title": "Sign in",
+      "description": "Welcome back. Sign in to manage your shop.",
+      "email": "Email",
+      "password": "Password",
+      "remember": "Remember me",
+      "submit": "Sign in",
+      "forgot": "Forgot password?",
+      "divider": "or",
+      "prompt": "New here?",
+      "sign_up": "Create an account",
+      "with_email": "Email link",
+      "error": "That email and password don't match. Try again or reset your password."
+    }
+  },
+  "module_menu": {
+    "basics": {
+      "label": "Main navigation",
+      "home": "Home",
+      "orders": "Orders",
+      "customers": "Customers",
+      "reports": "Reports",
+      "sales": "Sales",
+      "stock": "Stock"
+    }
+  },
+  "resource_list_page": {
+    "basics": {
+      "title": "Products",
+      "id": "ID",
+      "name": "Name",
+      "stock": "In stock",
+      "status": "Status",
+      "active": "Active",
+      "draft": "Draft"
+    }
+  },
+  "action_input_modal": {
+    "basics": {
+      "open": "Restock a product",
+      "restock": "Restock",
+      "quantity": "Quantity",
+      "note": "Note"
     }
   }
 }

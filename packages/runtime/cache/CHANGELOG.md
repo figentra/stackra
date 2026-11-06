@@ -1,5 +1,266 @@
 # @stackra/cache
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/storage@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/storage@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/storage@0.14.3
+  - @stackra/console@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/storage@0.14.2
+  - @stackra/console@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/storage@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/storage@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/storage@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/storage@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/storage@0.11.1
+  - @stackra/console@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/storage@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/storage@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [be4a198]
+- Updated dependencies [9bb5d55]
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/console@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/storage@0.9.0
+  - @stackra/config@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/storage@0.8.0
+  - @stackra/console@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/storage@0.7.1
+  - @stackra/console@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/storage@0.7.0
+  - @stackra/console@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/storage@0.6.1
+  - @stackra/console@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [2256bf6]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [4fcb66d]
+  - @stackra/console@0.6.0
+  - @stackra/storage@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/storage@0.5.1
+  - @stackra/console@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/storage@0.5.0
+  - @stackra/console@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/validation@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+
+### Patch Changes
+
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [ef987d9]
+- Updated dependencies [a8c358a]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/validation@0.4.0
+  - @stackra/console@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/storage@0.4.0
+  - @stackra/config@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

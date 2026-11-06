@@ -7,7 +7,7 @@
 # Secrets: forbidden
 [tools]
 node = "24.22.0" # ADR 0019 D3: exact
-pnpm = "12.6.0"
+pnpm = "12.16.1"
 gitleaks = "8.30.1"
 # shell formatter for *.sh (oxfmt has no shell support); reads .editorconfig
 shfmt = "3.14.1"
@@ -25,10 +25,15 @@ shfmt = "3.14.1"
 #   opencode (v2 installer: https://opencode.ai/install), encore (brew install encoredev/tap/encore), aws, claude.
 # mise `infisical` reads .infisical.yaml from 0.44 on; maestro also needs a JDK on PATH.
 "github:Infisical/cli" = "0.44.2"
+# SOPS and age: figentra/secrets (ADR 0525); `secrets:*` scripts call them with output captured.
+"aqua:getsops/sops" = "3.10.2"
+"aqua:FiloSottile/age" = "1.2.1"
 "aqua:astral-sh/uv" = "0.11.16"
 "github:mobile-dev-inc/maestro" = "cli-2.10.0"
+# The aws CLI's Session Manager plugin: `stackra testbed` reaches the boxes by SSH through SSM (STA-1953).
+"aqua:aws/session-manager-plugin" = "1.2.896.0"
 
 [env]
-# Bedrock profile for OpenCode (amazon-bedrock/*); `aws sso login --profile bedrock` refreshes it.
-AWS_PROFILE = "bedrock"
-NODE_ENV = "development"
+# Workstation-only values (NODE_ENV=development, AWS_PROFILE=bedrock for OpenCode); unset in CI, where a template could
+# only make them empty (STA-1957, STA-2021).
+_.source = "./tools/scripts/mise-env.sh"

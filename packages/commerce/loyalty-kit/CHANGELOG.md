@@ -1,5 +1,727 @@
 # @stackra/loyalty-kit
 
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [0b0cf51]
+  - @stackra/outbox@0.15.0
+  - @stackra/experience@0.15.0
+  - @stackra/panel@0.15.0
+  - @stackra/search@0.15.0
+  - @stackra/workflow@0.15.0
+  - @stackra/integrations@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/tenancy@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/ledger@0.15.0
+  - @stackra/money@0.15.0
+  - @stackra/versioning@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/testing@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/queue@0.15.0
+  - @stackra/scheduler@0.15.0
+  - @stackra/settings@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [1f55b7a]
+- Updated dependencies [6406843]
+- Updated dependencies [cc150d2]
+  - @stackra/panel@0.14.4
+  - @stackra/settings@0.14.4
+  - @stackra/search@0.14.4
+  - @stackra/integrations@0.14.4
+  - @stackra/experience@0.14.4
+  - @stackra/workflow@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/ledger@0.14.4
+  - @stackra/money@0.14.4
+  - @stackra/versioning@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/testing@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/outbox@0.14.4
+  - @stackra/queue@0.14.4
+  - @stackra/scheduler@0.14.4
+  - @stackra/tenancy@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/ledger@0.14.3
+  - @stackra/money@0.14.3
+  - @stackra/integrations@0.14.3
+  - @stackra/versioning@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/search@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/testing@0.14.3
+  - @stackra/experience@0.14.3
+  - @stackra/panel@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/outbox@0.14.3
+  - @stackra/queue@0.14.3
+  - @stackra/scheduler@0.14.3
+  - @stackra/workflow@0.14.3
+  - @stackra/iam@0.14.3
+  - @stackra/tenancy@0.14.3
+  - @stackra/settings@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/ledger@0.14.2
+  - @stackra/money@0.14.2
+  - @stackra/integrations@0.14.2
+  - @stackra/versioning@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/search@0.14.2
+  - @stackra/ui@0.14.2
+  - @stackra/experience@0.14.2
+  - @stackra/panel@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/queue@0.14.2
+  - @stackra/scheduler@0.14.2
+  - @stackra/workflow@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/tenancy@0.14.2
+  - @stackra/settings@0.14.2
+  - @stackra/testing@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/ledger@0.14.1
+  - @stackra/money@0.14.1
+  - @stackra/integrations@0.14.1
+  - @stackra/versioning@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/search@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/testing@0.14.1
+  - @stackra/experience@0.14.1
+  - @stackra/panel@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/outbox@0.14.1
+  - @stackra/queue@0.14.1
+  - @stackra/scheduler@0.14.1
+  - @stackra/workflow@0.14.1
+  - @stackra/iam@0.14.1
+  - @stackra/tenancy@0.14.1
+  - @stackra/settings@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/ledger@0.14.0
+  - @stackra/money@0.14.0
+  - @stackra/integrations@0.14.0
+  - @stackra/versioning@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/search@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/testing@0.14.0
+  - @stackra/experience@0.14.0
+  - @stackra/panel@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/queue@0.14.0
+  - @stackra/scheduler@0.14.0
+  - @stackra/workflow@0.14.0
+  - @stackra/iam@0.14.0
+  - @stackra/tenancy@0.14.0
+  - @stackra/settings@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/ledger@0.13.0
+  - @stackra/money@0.13.0
+  - @stackra/integrations@0.13.0
+  - @stackra/versioning@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/search@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/testing@0.13.0
+  - @stackra/experience@0.13.0
+  - @stackra/panel@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/outbox@0.13.0
+  - @stackra/queue@0.13.0
+  - @stackra/scheduler@0.13.0
+  - @stackra/workflow@0.13.0
+  - @stackra/iam@0.13.0
+  - @stackra/tenancy@0.13.0
+  - @stackra/settings@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/ledger@0.12.0
+  - @stackra/money@0.12.0
+  - @stackra/integrations@0.12.0
+  - @stackra/versioning@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/search@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/testing@0.12.0
+  - @stackra/experience@0.12.0
+  - @stackra/panel@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/outbox@0.12.0
+  - @stackra/queue@0.12.0
+  - @stackra/scheduler@0.12.0
+  - @stackra/workflow@0.12.0
+  - @stackra/iam@0.12.0
+  - @stackra/tenancy@0.12.0
+  - @stackra/settings@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/ledger@0.11.1
+  - @stackra/money@0.11.1
+  - @stackra/integrations@0.11.1
+  - @stackra/versioning@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/search@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/testing@0.11.1
+  - @stackra/experience@0.11.1
+  - @stackra/panel@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/outbox@0.11.1
+  - @stackra/queue@0.11.1
+  - @stackra/scheduler@0.11.1
+  - @stackra/workflow@0.11.1
+  - @stackra/iam@0.11.1
+  - @stackra/tenancy@0.11.1
+  - @stackra/settings@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/ledger@0.11.0
+  - @stackra/money@0.11.0
+  - @stackra/integrations@0.11.0
+  - @stackra/versioning@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/search@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/testing@0.11.0
+  - @stackra/experience@0.11.0
+  - @stackra/panel@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/outbox@0.11.0
+  - @stackra/queue@0.11.0
+  - @stackra/scheduler@0.11.0
+  - @stackra/workflow@0.11.0
+  - @stackra/iam@0.11.0
+  - @stackra/tenancy@0.11.0
+  - @stackra/settings@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/scheduler@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/integrations@0.10.0
+  - @stackra/search@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/panel@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/outbox@0.10.0
+  - @stackra/queue@0.10.0
+  - @stackra/workflow@0.10.0
+  - @stackra/tenancy@0.10.0
+  - @stackra/settings@0.10.0
+  - @stackra/ledger@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/versioning@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/experience@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/iam@0.10.0
+  - @stackra/testing@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [681d01a]
+- Updated dependencies [681d01a]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [681d01a]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/panel@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/ui@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/scheduler@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/queue@0.9.0
+  - @stackra/tenancy@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/integrations@0.9.0
+  - @stackra/versioning@0.9.0
+  - @stackra/search@0.9.0
+  - @stackra/experience@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/outbox@0.9.0
+  - @stackra/workflow@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/settings@0.9.0
+  - @stackra/ledger@0.9.0
+  - @stackra/money@0.9.0
+  - @stackra/testing@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+  - @stackra/database@0.8.0
+  - @stackra/container@0.8.0
+  - @stackra/scheduler@0.8.0
+  - @stackra/ledger@0.8.0
+  - @stackra/search@0.8.0
+  - @stackra/panel@0.8.0
+  - @stackra/outbox@0.8.0
+  - @stackra/queue@0.8.0
+  - @stackra/workflow@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/tenancy@0.8.0
+  - @stackra/settings@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/money@0.8.0
+  - @stackra/integrations@0.8.0
+  - @stackra/versioning@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/ui@0.8.0
+  - @stackra/experience@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/i18n@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/testing@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/scheduler@0.7.1
+  - @stackra/tenancy@0.7.1
+  - @stackra/panel@0.7.1
+  - @stackra/workflow@0.7.1
+  - @stackra/iam@0.7.1
+  - @stackra/integrations@0.7.1
+  - @stackra/experience@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/ledger@0.7.1
+  - @stackra/money@0.7.1
+  - @stackra/versioning@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/search@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/testing@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/outbox@0.7.1
+  - @stackra/queue@0.7.1
+  - @stackra/settings@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+- Updated dependencies [1f5bf76]
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/settings@0.7.0
+  - @stackra/tenancy@0.7.0
+  - @stackra/panel@0.7.0
+  - @stackra/search@0.7.0
+  - @stackra/integrations@0.7.0
+  - @stackra/experience@0.7.0
+  - @stackra/workflow@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/ledger@0.7.0
+  - @stackra/money@0.7.0
+  - @stackra/versioning@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/testing@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/i18n@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/outbox@0.7.0
+  - @stackra/queue@0.7.0
+  - @stackra/scheduler@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/ledger@0.6.1
+  - @stackra/money@0.6.1
+  - @stackra/integrations@0.6.1
+  - @stackra/versioning@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/search@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/testing@0.6.1
+  - @stackra/experience@0.6.1
+  - @stackra/panel@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/i18n@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/outbox@0.6.1
+  - @stackra/queue@0.6.1
+  - @stackra/scheduler@0.6.1
+  - @stackra/workflow@0.6.1
+  - @stackra/iam@0.6.1
+  - @stackra/tenancy@0.6.1
+  - @stackra/settings@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- e15d9c3: Gen records every panel resource in the manifest's `ui.resources`, under `<module>.<model>`: the tree its builder
+  members return, with its owning `module`, its `class` and, in a package, the `from` a host imports it from. Action
+  and query classes in the tree are written as their locked keys, and a service or app also lists its hosted packages'
+  resources. `generate` takes a `loader` to run the resource classes; `stackra gen` passes one on Vite's module runner,
+  and a run without one refuses a member that declares a resource (`resource_loader_missing`). New refusals:
+  `resource_unloadable`, `builder_impure`, `resource_operation_unknown` and `resource_duplicate` (STA-1947). The loyalty
+  kit's manifest now records its `LoyaltyAccountResource`.
+- Updated dependencies [fb29d41]
+- Updated dependencies [e250d4f]
+- Updated dependencies [c64a55d]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/database@0.6.0
+  - @stackra/iam@0.6.0
+  - @stackra/tenancy@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/queue@0.6.0
+  - @stackra/ledger@0.6.0
+  - @stackra/search@0.6.0
+  - @stackra/panel@0.6.0
+  - @stackra/outbox@0.6.0
+  - @stackra/scheduler@0.6.0
+  - @stackra/workflow@0.6.0
+  - @stackra/settings@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/money@0.6.0
+  - @stackra/integrations@0.6.0
+  - @stackra/versioning@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/testing@0.6.0
+  - @stackra/experience@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4fa949b]
+  - @stackra/database@0.5.1
+  - @stackra/ledger@0.5.1
+  - @stackra/search@0.5.1
+  - @stackra/panel@0.5.1
+  - @stackra/outbox@0.5.1
+  - @stackra/queue@0.5.1
+  - @stackra/scheduler@0.5.1
+  - @stackra/workflow@0.5.1
+  - @stackra/iam@0.5.1
+  - @stackra/tenancy@0.5.1
+  - @stackra/settings@0.5.1
+  - @stackra/integrations@0.5.1
+  - @stackra/experience@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/money@0.5.1
+  - @stackra/versioning@0.5.1
+  - @stackra/model@0.5.1
+  - @stackra/ui@0.5.1
+  - @stackra/testing@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/i18n@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [d7f72d3]
+- Updated dependencies [104d9f4]
+- Updated dependencies [d7f72d3]
+  - @stackra/i18n@0.5.0
+  - @stackra/tenancy@0.5.0
+  - @stackra/ui@0.5.0
+  - @stackra/search@0.5.0
+  - @stackra/experience@0.5.0
+  - @stackra/panel@0.5.0
+  - @stackra/workflow@0.5.0
+  - @stackra/settings@0.5.0
+  - @stackra/integrations@0.5.0
+  - @stackra/iam@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/ledger@0.5.0
+  - @stackra/money@0.5.0
+  - @stackra/versioning@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/testing@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/outbox@0.5.0
+  - @stackra/queue@0.5.0
+  - @stackra/scheduler@0.5.0
+
+## 0.4.0
+
+### Patch Changes
+
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- 36dbd49: Each package with models of its own exports `<MEMBER>_ENTITIES` from `./node`, which a hosting service's generated
+  `registrations.ts` imports to register the package's entities; without it the service failed with TS2305 (STA-1793). `stackra validate --repository` refuses a package with own
+  models whose stand-in `./node` barrel misses it.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [3ce01cf]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [bb08f25]
+- Updated dependencies [1856ee0]
+- Updated dependencies [70e6c17]
+- Updated dependencies [5f63e58]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [36dbd49]
+- Updated dependencies [b5ae8a4]
+- Updated dependencies [d0fa2f8]
+- Updated dependencies [2bcee04]
+- Updated dependencies [1a3bc4d]
+- Updated dependencies [298d942]
+- Updated dependencies [08bd3f9]
+- Updated dependencies [8f2c40a]
+- Updated dependencies [3953e1a]
+- Updated dependencies [9f48901]
+- Updated dependencies [c19730d]
+- Updated dependencies [b8d8554]
+- Updated dependencies [5d60d4a]
+- Updated dependencies [a1229d0]
+- Updated dependencies [39f8662]
+- Updated dependencies [b970c98]
+- Updated dependencies [2bbc0e8]
+- Updated dependencies [9574c22]
+- Updated dependencies [f490040]
+- Updated dependencies [2f5ab1e]
+- Updated dependencies [dbb60dc]
+- Updated dependencies [1856ee0]
+- Updated dependencies [dedaa81]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [149ca06]
+- Updated dependencies [1567384]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/panel@0.4.0
+  - @stackra/workflow@0.4.0
+  - @stackra/settings@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/tenancy@0.4.0
+  - @stackra/queue@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/iam@0.4.0
+  - @stackra/integrations@0.4.0
+  - @stackra/outbox@0.4.0
+  - @stackra/search@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/ui@0.4.0
+  - @stackra/scheduler@0.4.0
+  - @stackra/versioning@0.4.0
+  - @stackra/experience@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/i18n@0.4.0
+  - @stackra/ledger@0.4.0
+  - @stackra/money@0.4.0
+  - @stackra/testing@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

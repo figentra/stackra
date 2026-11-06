@@ -19,7 +19,10 @@ export type StackraManifest = {
   readonly member: string;
   /** The package name (`@acme/loyalty-kit`). */
   readonly package: string;
-  /** The manifest format version. */
+  /**
+   * The member's package version. The manifest has no format version: its sections are additive, and a reader treats
+   * a missing section as empty.
+   */
   readonly version: string;
   /** `app` for an app member; absent for a service and a package. */
   readonly kind?: string;
@@ -109,6 +112,49 @@ export type StackraManifest = {
     /** The package that contributes it, on a host's row. */
     readonly from?: string;
   }[];
+  /**
+   * The environment variables the member's configuration classes declare, own then hosted (ADR 0173 amendment
+   * 2026-11-04): names, kinds and rules for `runway env check`, never a value.
+   */
+  readonly env?: readonly {
+    /** The variable or secret name (`STRIPE_SECRET_KEY`). */
+    readonly name: string;
+    /** `secret` (`@Secret`), `public` (a `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` name) or `config`. */
+    readonly kind: string;
+    /** The field type (`string`, `url`, `number`, `boolean`, `enum`, …). */
+    readonly type?: string;
+    /** An enum's codes. */
+    readonly values?: readonly string[];
+    /** Whether the field has no default and is not optional. */
+    readonly required?: boolean;
+    /** The field's validation decorators. */
+    readonly rules?: readonly { readonly name: string; readonly options: Json }[];
+    /** A secret's refused value prefixes, by runway environment. */
+    readonly refuse?: Readonly<Record<string, readonly string[]>>;
+    /** The runway environments that need it; every environment when absent. */
+    readonly environments?: readonly string[];
+    /** The config key and class, and the schema field, that declare it. */
+    readonly config: string;
+    readonly class: string;
+    readonly field: string;
+    /** The Infisical path on a deployable member's row (`/runtime/<member>`). */
+    readonly home?: string;
+    /** The package that contributes it, on a host's row. */
+    readonly from?: string;
+  }[];
+  /**
+   * A producer's cross-app relay facts, by environment (ADR 0511 decisions 11 to 15, amendment of 2026-11-02): the
+   * public keys a consumer's inbox verifies its deliveries with, current first, and the consumers it delivers to (no
+   * origins); absent for a service that delivers no event to another app.
+   */
+  readonly relay?: {
+    readonly keys: Readonly<
+      Record<string, readonly { readonly id: string; readonly publicKey: string }[]>
+    >;
+    readonly subscribers: Readonly<
+      Record<string, readonly { readonly member: string; readonly events: readonly string[] }[]>
+    >;
+  };
   /** JSON Schemas of the member's shapes, by module-qualified name. */
   readonly schemas?: Json;
   /** The sections other targets add (`ui`, `settings`, `migrations`, `infra`, …). */

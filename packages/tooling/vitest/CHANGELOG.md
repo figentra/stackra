@@ -1,5 +1,87 @@
 # @stackra/vitest-config
 
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+No changes in this release.
+
+## 0.10.0
+
+No changes in this release.
+
+## 0.9.0
+
+No changes in this release.
+
+## 0.8.0
+
+No changes in this release.
+
+## 0.7.1
+
+No changes in this release.
+
+## 0.7.0
+
+No changes in this release.
+
+## 0.6.1
+
+No changes in this release.
+
+## 0.6.0
+
+No changes in this release.
+
+## 0.5.1
+
+No changes in this release.
+
+## 0.5.0
+
+No changes in this release.
+
+## 0.4.0
+
+### Minor Changes
+
+- e070131: The base preset now sets `pool: "forks"`, `maxWorkers` at half the CPUs (override with `STACKRA_TEST_MAX_WORKERS`), `testTimeout` 30 s and `hookTimeout` 60 s, so PGlite-backed service tests stop timing out at 5 s on a busy machine (STA-1685).
+
 ## 0.3.0
 
 ### Patch Changes

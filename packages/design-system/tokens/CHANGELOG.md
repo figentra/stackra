@@ -1,5 +1,215 @@
 # @stackra/tokens
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- e8cb518: Blueprint roles for the marketing pages (ADR 0501 section 9, amended 2026-11-03): each material family now sets
+  `--blueprint-rule`, `-rule-width`, `-mark-size`, `-frame-radius`, `-pipe`, `-pipe-width`, `-junction-size` and
+  `-dock-height`. `front` draws hairline rules mixed from the accent, pipes in the accent with `+` section marks and 10 px frames;
+  `studio` keeps them quiet. `BlueprintRole` and `FAMILY_BLUEPRINT` are exported. The motion steps gain `floor` (80 ms on `steps(1)`), the blueprint's build-log reveal.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/validation@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- ef62362: The stackra theme gains the champagne core beside the steel accent (ADR 0520, brand rules §39): palette roles `core`,
+  `core-strong`, `core-hover`, `core-pressed`, `core-soft` and `core-foreground`, held to the brand's hex and to AA in
+  `STACKRA_CONTRAST_PAIRS` (`core` 3:1 as large display text and art, `core-strong` 8.22:1 with paper). No existing value
+  changes, and no other theme needs the core. The web stylesheet registers every palette and syntax colour as a Tailwind
+  colour (`--color-<name>: var(--<name>)` in `@theme inline`), as the native one already did, so `text-core-strong` and
+  `bg-core-strong` resolve on both; it draws `.button--core`, HeroUI's primary on the core, falling back to the accent in a
+  theme without one. The native stylesheet writes `--radius-pill` as the web does (STA-2015).
+
+### Patch Changes
+
+- @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/validation@0.5.0
+
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [0b660e0]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/validation@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

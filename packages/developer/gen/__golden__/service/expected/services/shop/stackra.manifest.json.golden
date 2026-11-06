@@ -79,12 +79,18 @@
     {
       "key": "shop.order.read",
       "risk": "L0",
-      "class": "OrderPermissions"
+      "class": "OrderPermissions",
+      "module": "shop",
+      "member": "read",
+      "file": "src/node/access/order.permissions.ts"
     },
     {
       "key": "shop.order.cancel",
       "risk": "L2",
-      "class": "OrderPermissions"
+      "class": "OrderPermissions",
+      "module": "shop",
+      "member": "cancel",
+      "file": "src/node/access/order.permissions.ts"
     }
   ],
   "errors": [
@@ -249,6 +255,20 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
+  "env": [
+    {
+      "name": "STACKRA_SHOP_GATEWAY",
+      "kind": "config",
+      "type": "enum",
+      "values": ["stripe"],
+      "required": false,
+      "config": "shop",
+      "class": "ShopConfig",
+      "field": "gateway",
+      "home": "/runtime/shop"
+    }
+  ],
   "schemas": {
     "shop.OrderStatus": {
       "type": "string",

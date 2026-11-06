@@ -1,13 +1,16 @@
 # Stackra file contract:
-# Purpose: Runway's `cloudflare-workers` provider (ADR 0289 decision 1), a public reusable workflow (ADR 0168
-#          decision 1): deploy one Worker member at one commit of main with `wrangler deploy`. Checks out the commit,
-#          refuses one that is not on main, prints the SHA, tests and builds the member, then deploys (with the
-#          `message` input as the deployment message, the rollback record of a promote) and smoke-tests it, printing
-#          readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
-#          `figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<sha> # runway-v<n>` (runbooks/runway).
-# Secrets: CLOUDFLARE_API_TOKEN only, from Infisical `/ci` through GitHub OIDC, exported for the deploy step and
-#          blanked for the smoke step. No repository secret. Without an identity id the job builds, tests, prints a
-#          notice and deploys nothing.
+# Purpose: the job that runs Runway's `cloudflare-workers` provider (@stackra/runway, ADR 0352 decision 1) for one
+#          Worker member of the root runway.yaml (`targets.cloudflare-workers.members.<member>`), a reusable workflow
+#          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
+#          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
+#          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
+#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml,
+#          deploy-env-sync.yml.
+# Secrets: none in the repository. The job decrypts figentra/secrets scopes as itself (ADR 0525, the shared
+#          secrets-decrypt action; figentra/infra estate/secret-callers.mjs grants each caller environment its scopes):
+#          CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from `scope`, the `secret-name`s
+#          from `secret-scope`, with `bot-app` STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from `<scope>/release`,
+#          and the turbo values from ci/build/turbo (TURBO_TOKEN among them).
 # Owner: release-operations
 name: Runway cloudflare-workers
 
@@ -15,16 +18,16 @@ on:
   workflow_call:
     inputs:
       member:
-        description: The Worker member folder, holding its `wrangler.jsonc` (e.g. `workers/static`).
+        description: The member key under `targets.cloudflare-workers.members` in runway.yaml (e.g. `static`).
         type: string
         required: true
       package:
-        description: The member's package name, the turbo filter for its test and build (e.g. `@figentra/worker-static`).
+        description: The member's package name, the turbo filter for its gen and test (e.g. `@figentra/worker-static`).
         type: string
         required: true
       environment:
         description: >-
-          The GitHub environment the job runs in. Its name is in the OIDC subject the Infisical identity trusts,
+          The GitHub environment the job runs in. Its name is in the caller principal figentra/infra grants scopes to,
           and its protection decides which refs may deploy.
         type: string
         required: true
@@ -32,42 +35,40 @@ on:
         description: The commit to deploy (a promote or a rollback). Empty deploys the triggering commit.
         type: string
         default: ""
-      message:
-        description: >-
-          The deployment message `wrangler deploy --message` records on Cloudflare (`rollback to <sha>` from a
-          promote, runbooks/deploys). Empty records none.
-        type: string
-        default: ""
       install-args:
         description: Arguments to `pnpm install`, space-separated words with no quoting.
         type: string
         default: --frozen-lockfile
-      infisical-identity-id:
-        description: The Infisical machine identity id (a repository variable, not a secret). Empty skips the deploy.
+      vars:
+        description: >-
+          Space-separated names of GitHub variables (the environment's or the repository's) the member's runway
+          entry reads as ids or vars; each is exported under its own name. Values only, never a secret.
         type: string
         default: ""
-      infisical-project-id:
-        description: The Infisical project (workspace) id, not a secret.
+      scope:
+        description: The figentra/secrets scope holding CLOUDFLARE_API_TOKEN (`ci/deploy`, or `ci/production`).
+        type: string
+        default: ci/deploy
+      secret-scope:
+        description: A scope holding the member's own secrets (e.g. `ci/production/registry`). Empty reads none.
         type: string
         default: ""
-      infisical-domain:
-        description: The Infisical instance.
-        type: string
-        default: https://eu.infisical.com
-      infisical-env:
-        description: The Infisical environment that holds `/ci`.
-        type: string
-        default: prod
-      smoke-url:
-        description: A URL that must answer 200 after the deploy. Empty skips the smoke test.
+      secret-name:
+        description: The names read from `secret-scope`, comma-separated (e.g. `REGISTRY_SIGNING_KEY`).
         type: string
         default: ""
+      bot-app:
+        description: >-
+          Also read the stackra-bot GitHub App's STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from
+          `<scope>/release`, for a Worker that mints App tokens.
+        type: boolean
+        default: false
     outputs:
       sha:
         description: The deployed commit.
         value: ${{ jobs.deploy.outputs.sha }}
       deployed:
-        description: "`true` when wrangler deployed, `false` when the deploy was skipped."
+        description: "`true` when Runway deployed, `false` when the deploy was skipped."
         value: ${{ jobs.deploy.outputs.deployed }}
 
 # ADR 0019 D2: nothing by default; the job asks for what it needs (the caller's job must grant the same).
@@ -77,18 +78,16 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.member }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     # Only a called workflow can take its environment from an input, which is why this is a reusable workflow and not
     # a step list: the environment binds the deploy to its protection, its OIDC subject and GitHub's deployment record.
     environment: ${{ inputs.environment }}
     permissions:
       contents: read # checkout
-      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci
+      id-token: write # GitHub OIDC token: the secrets-decrypt sign-in to Google Cloud (ADR 0525)
     outputs:
       sha: ${{ steps.commit.outputs.sha }}
       deployed: ${{ steps.deploy.outcome == 'success' }}
-    env:
-      INFISICAL_IDENTITY_ID: ${{ inputs.infisical-identity-id }}
 
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment. Full history
@@ -132,76 +131,66 @@ jobs:
           pnpm install $INSTALL_ARGS
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525). The turbo-cache member's
+      # TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
+      - name: Turborepo remote cache (sops)
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
-      # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
-      # and a broken build never reaches Cloudflare.
-      - name: Test and build
+      # Tests run on the box, not here (STA-2064). This builds the member's dependencies and the CLI that runs the
+      # deploy, then the member's own gen with `--only`: a plain `gen` would wait on the root //#gen:workspace, which
+      # walks every member and fails on the ones left uninstalled (STA-1987). `stackra deploy` builds the member.
+      - name: Build
         env:
           PACKAGE: ${{ inputs.package }}
-        run: pnpm turbo run test build --filter="$PACKAGE"
+        run: |
+          pnpm turbo run build --filter="$PACKAGE^..." --filter=@stackra/cli...
+          pnpm turbo run gen --filter="$PACKAGE" --only
 
-      - name: Deploy prerequisites missing
-        if: env.INFISICAL_IDENTITY_ID == ''
-        run: >-
-          echo "::notice title=Deploy skipped::No Infisical identity id was passed (infisical-identity-id).
-          Built and tested, nothing deployed."
-
-      # Exchanges this job's OIDC token for Infisical access and exports only CLOUDFLARE_API_TOKEN; the secret-name
-      # filter keeps every other /ci value out of the job.
-      - name: Cloudflare token (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # Only CLOUDFLARE_API_TOKEN from the scope, so no other value of it enters the job.
+      - name: Cloudflare token (sops)
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: ${{ inputs.infisical-domain }}
-          project-id: ${{ inputs.infisical-project-id }}
-          env-slug: ${{ inputs.infisical-env }}
-          secret-path: /ci
-          secret-name: CLOUDFLARE_API_TOKEN
-          export-type: env
+          scope: ${{ inputs.scope }}
+          names: CLOUDFLARE_API_TOKEN
 
-      # wrangler reads CLOUDFLARE_API_TOKEN from the environment and everything else from the member's wrangler.jsonc.
-      # The message arrives through the environment, never spliced into the script (zizmor template-injection).
-      - name: wrangler deploy
-        id: deploy
-        if: env.INFISICAL_IDENTITY_ID != ''
-        working-directory: ${{ inputs.member }}
-        env:
-          DEPLOY_MESSAGE: ${{ inputs.message }}
-        run: |
-          args=()
-          [ -z "$DEPLOY_MESSAGE" ] || args=(--message "$DEPLOY_MESSAGE")
-          pnpm exec wrangler deploy "${args[@]}"
+      - name: Member secret (sops)
+        if: inputs.secret-scope != ''
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        with:
+          scope: ${{ inputs.secret-scope }}
+          names: ${{ inputs.secret-name }}
 
-      # Readiness, not just liveness (STA-268): a fresh deploy can answer 5xx or nothing for a while, so each attempt
-      # says "not serving yet" with the status, and only the end of the budget fails the job.
-      - name: Smoke test
-        if: steps.deploy.outcome == 'success' && inputs.smoke-url != ''
+      # The names stay literal so `runway env check` sees them (STA-2133).
+      - name: Bot App (sops)
+        if: inputs.bot-app
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        with:
+          scope: ${{ inputs.scope }}/release
+          names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
+
+      # Each named variable goes into the environment under its own name; a name that is not SCREAMING_SNAKE or a
+      # value holding a newline is refused, so nothing can add another variable to the job.
+      - name: Variables
+        if: inputs.vars != ''
         env:
-          CLOUDFLARE_API_TOKEN: "" # the token stays with the deploy step
-          SMOKE_URL: ${{ inputs.smoke-url }}
+          NAMES: ${{ inputs.vars }}
+          VARIABLES: ${{ toJSON(vars) }}
         run: |
-          for attempt in $(seq 1 12); do
-            code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "$SMOKE_URL" || true)"
-            if [ "$code" = 200 ]; then
-              echo "::notice title=Ready::$SMOKE_URL answered 200 on attempt $attempt"
-              exit 0
-            fi
-            echo "not serving yet: $SMOKE_URL answered ${code:-nothing} (attempt $attempt of 12)"
-            sleep 10
+          for name in $NAMES; do
+            [[ "$name" =~ ^[A-Z][A-Z0-9_]*$ ]] || { echo "::error title=vars::$name is not a variable name"; exit 1; }
+            value="$(jq -r --arg name "$name" '.[$name] // ""' <<<"$VARIABLES")"
+            [[ "$value" != *$'\n'* ]] || { echo "::error title=$name::the variable holds a newline"; exit 1; }
+            echo "$name=$value" >> "$GITHUB_ENV"
           done
-          echo "::error title=Smoke test failed::$SMOKE_URL did not answer 200 within two minutes"
-          exit 1
+
+      # Runway checks every id, secret and bearer before anything ships, then builds, migrates, deploys with the commit
+      # as the message and its secrets on stdin, and retries the smoke checks while a new domain's certificate comes
+      # up. `--kind web` keeps the docs target (Mintlify) out of a Worker deploy.
+      - name: Deploy (Runway)
+        id: deploy
+        env:
+          MEMBER: ${{ inputs.member }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: node packages/developer/cli/dist/stackra.mjs deploy --env production --kind web --member "$MEMBER" --sha "$SHA"

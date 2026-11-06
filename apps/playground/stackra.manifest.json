@@ -76,6 +76,7 @@
         "perMinute": 10
       },
       "area": "public",
+      "anonymous": true,
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "@stackra/identity#/schemas/identity.ChallengePasskeyInput"
@@ -268,6 +269,7 @@
         "perMinute": 10
       },
       "area": "public",
+      "anonymous": true,
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "@stackra/identity#/schemas/identity.VerifyPasskeyInput"
@@ -440,24 +442,36 @@
       "key": "identity.account_deletion.request",
       "risk": "L4",
       "class": "AccountDeletionPermissions",
+      "module": "identity",
+      "member": "request",
+      "file": "src/node/access/account-deletion.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.account_deletion.cancel",
       "risk": "L2",
       "class": "AccountDeletionPermissions",
+      "module": "identity",
+      "member": "cancel",
+      "file": "src/node/access/account-deletion.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.account_deletion.read",
       "risk": "L1",
       "class": "AccountDeletionPermissions",
+      "module": "identity",
+      "member": "read",
+      "file": "src/node/access/account-deletion.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.account_deletion.erase",
       "risk": "L4",
       "class": "AccountDeletionPermissions",
+      "module": "identity",
+      "member": "erase",
+      "file": "src/node/access/account-deletion.permissions.ts",
       "system": true,
       "from": "@stackra/identity"
     },
@@ -465,6 +479,9 @@
       "key": "identity.operator.bootstrap",
       "risk": "L4",
       "class": "OperatorPermissions",
+      "module": "identity",
+      "member": "bootstrap",
+      "file": "src/node/access/operator.permissions.ts",
       "system": true,
       "from": "@stackra/identity"
     },
@@ -472,48 +489,72 @@
       "key": "identity.passkey.challenge",
       "risk": "L0",
       "class": "PasskeyPermissions",
+      "module": "identity",
+      "member": "challenge",
+      "file": "src/node/access/passkey.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.passkey.verify",
       "risk": "L0",
       "class": "PasskeyPermissions",
+      "module": "identity",
+      "member": "verify",
+      "file": "src/node/access/passkey.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.passkey.register",
       "risk": "L2",
       "class": "PasskeyPermissions",
+      "module": "identity",
+      "member": "register",
+      "file": "src/node/access/passkey.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.passkey.confirm",
       "risk": "L2",
       "class": "PasskeyPermissions",
+      "module": "identity",
+      "member": "confirm",
+      "file": "src/node/access/passkey.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.session.list",
       "risk": "L1",
       "class": "SessionPermissions",
+      "module": "identity",
+      "member": "list",
+      "file": "src/node/access/session.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.session.end",
       "risk": "L2",
       "class": "SessionPermissions",
+      "module": "identity",
+      "member": "end",
+      "file": "src/node/access/session.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.session.end_all",
       "risk": "L2",
       "class": "SessionPermissions",
+      "module": "identity",
+      "member": "endAll",
+      "file": "src/node/access/session.permissions.ts",
       "from": "@stackra/identity"
     },
     {
       "key": "identity.session.end_user",
       "risk": "L3",
       "class": "SessionPermissions",
+      "module": "identity",
+      "member": "endUser",
+      "file": "src/node/access/session.permissions.ts",
       "from": "@stackra/identity"
     }
   ],
@@ -711,6 +752,14 @@
       "from": "@stackra/payments"
     },
     {
+      "code": "connected_account_limits_missing",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "ConnectedAccountLimitsMissingError",
+      "from": "@stackra/payments"
+    },
+    {
       "code": "invalid_payment_transition",
       "kind": "failed_precondition",
       "category": "precondition_failed",
@@ -807,6 +856,14 @@
       "from": "@stackra/payments"
     },
     {
+      "code": "terminal_connection_required",
+      "kind": "validation",
+      "category": "validation",
+      "module": "payments",
+      "class": "TerminalConnectionRequiredError",
+      "from": "@stackra/payments"
+    },
+    {
       "code": "invalid_theme",
       "kind": "validation",
       "category": "validation",
@@ -823,6 +880,91 @@
       "table": "ai.a2a_tasks",
       "publicId": "aitask",
       "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "entity": {
+        "module": "ai",
+        "fields": [
+          {
+            "name": "direction",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "enum",
+              "name": "A2aDirection",
+              "values": ["inbound", "outbound"],
+              "module": "ai"
+            }
+          },
+          {
+            "name": "remoteAgent",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "remoteTaskId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "state",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "aitask"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
+            "name": "createdAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "updatedAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
       "from": "@stackra/ai"
     },
     {
@@ -832,6 +974,88 @@
       "table": "ai.conversations",
       "publicId": "aiconv",
       "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "entity": {
+        "module": "ai",
+        "fields": [
+          {
+            "name": "agent",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "principalId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "recordKind",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "recordId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "aiconv"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
+            "name": "createdAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "updatedAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
       "from": "@stackra/ai"
     },
     {
@@ -841,6 +1065,81 @@
       "table": "ai.messages",
       "publicId": "aimsg",
       "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly", "HasEncryptedFields"],
+      "entity": {
+        "module": "ai",
+        "fields": [
+          {
+            "name": "position",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "number"
+            },
+            "int": true
+          },
+          {
+            "name": "content",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "role",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "at",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "aimsg"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
       "from": "@stackra/ai"
     },
     {
@@ -850,6 +1149,91 @@
       "table": "ai.run_approvals",
       "publicId": "aiappr",
       "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "entity": {
+        "module": "ai",
+        "fields": [
+          {
+            "name": "approvalId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "toolCallId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "tool",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "status",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "enum",
+              "name": "RunApprovalStatus",
+              "values": ["pending", "granted", "denied"],
+              "module": "ai"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "aiappr"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
+            "name": "createdAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "updatedAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
       "from": "@stackra/ai"
     },
     {
@@ -859,6 +1243,75 @@
       "table": "ai.run_steps",
       "publicId": "aistep",
       "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"],
+      "entity": {
+        "module": "ai",
+        "fields": [
+          {
+            "name": "index",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "number"
+            },
+            "int": true
+          },
+          {
+            "name": "inputTokens",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "number"
+            },
+            "int": true
+          },
+          {
+            "name": "outputTokens",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "number"
+            },
+            "int": true
+          },
+          {
+            "name": "runId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "finishReason",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "aistep"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
       "from": "@stackra/ai"
     },
     {
@@ -868,6 +1321,184 @@
       "table": "ai.runs",
       "publicId": "airun",
       "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "entity": {
+        "module": "ai",
+        "fields": [
+          {
+            "name": "steps",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "number"
+            },
+            "int": true,
+            "default": 0
+          },
+          {
+            "name": "conversationId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "agent",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "actor",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "shipped",
+              "name": "Actor",
+              "from": "@stackra/validation"
+            }
+          },
+          {
+            "name": "scope",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "shipped",
+              "name": "ScopeRef",
+              "from": "@stackra/validation"
+            }
+          },
+          {
+            "name": "recordKind",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "recordId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "status",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "enum",
+              "name": "RunStatus",
+              "values": [
+                "queued",
+                "running",
+                "waiting_approval",
+                "waiting_client_tool",
+                "completed",
+                "failed"
+              ],
+              "module": "ai"
+            }
+          },
+          {
+            "name": "pendingApprovalId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "pendingToolCallId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "pendingSurfaceId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "pendingTool",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "pendingExpiresAt",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "errorCode",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "finishedAt",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "airun"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
+            "name": "createdAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "updatedAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
       "from": "@stackra/ai"
     },
     {
@@ -877,6 +1508,99 @@
       "table": "ai.tool_calls",
       "publicId": "aitool",
       "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"],
+      "entity": {
+        "module": "ai",
+        "fields": [
+          {
+            "name": "runId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "toolCallId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "tool",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "inputHash",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "outcome",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "enum",
+              "name": "ToolCallOutcome",
+              "values": ["ok", "refused", "approval_required", "proposed", "client_tool"],
+              "module": "ai"
+            }
+          },
+          {
+            "name": "code",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "approvalId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "at",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "aitool"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
       "from": "@stackra/ai"
     }
   ],
@@ -1152,18 +1876,6 @@
         "system": {
           "class": "SystemClockDriver",
           "from": "@stackra/container"
-        }
-      },
-      "from": "@stackra/container"
-    },
-    {
-      "port": "Logger",
-      "key": "contracts.Logger",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryLoggerDriver",
-          "from": "@stackra/container/testing"
         }
       },
       "from": "@stackra/container"
@@ -1501,12 +2213,54 @@
       "from": "@stackra/identity"
     },
     {
-      "port": "AgentCommerceProtocols",
-      "key": "payments.AgentCommerceProtocols",
+      "port": "AccountSecurity",
+      "key": "identity.AccountSecurity",
       "candidates": ["memory"],
       "classes": {
         "memory": {
+          "class": "MemoryAccountSecurityDriver",
+          "from": "@stackra/identity/testing"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "PaymentGateways",
+      "key": "payments.PaymentGateways",
+      "candidates": ["connection"],
+      "classes": {
+        "connection": {
+          "class": "ConnectionPaymentGatewaysDriver",
+          "from": "@stackra/payments",
+          "deps": [
+            {
+              "class": {
+                "name": "ConnectionStore",
+                "from": "@stackra/integrations"
+              }
+            },
+            {
+              "class": {
+                "name": "MarketPaymentDefaults",
+                "from": "@stackra/payments/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "AgentCommerceProtocols",
+      "key": "payments.AgentCommerceProtocols",
+      "candidates": ["memory", "none"],
+      "classes": {
+        "memory": {
           "class": "MemoryAgentCommerceProtocolsDriver",
+          "from": "@stackra/payments"
+        },
+        "none": {
+          "class": "NoneAgentCommerceProtocolsDriver",
           "from": "@stackra/payments"
         }
       },
@@ -1527,11 +2281,23 @@
     {
       "port": "PaymentRecords",
       "key": "payments.PaymentRecords",
-      "candidates": ["memory"],
+      "candidates": ["memory", "postgres"],
       "classes": {
         "memory": {
           "class": "MemoryPaymentRecordsDriver",
           "from": "@stackra/payments"
+        },
+        "postgres": {
+          "class": "PostgresPaymentRecordsDriver",
+          "from": "@stackra/payments/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
         }
       },
       "from": "@stackra/payments"
@@ -1603,6 +2369,30 @@
       "from": "@stackra/payments"
     },
     {
+      "port": "ConnectedAccountLimits",
+      "key": "payments.ConnectedAccountLimits",
+      "candidates": ["none", "postgres"],
+      "classes": {
+        "none": {
+          "class": "NoneConnectedAccountLimitsDriver",
+          "from": "@stackra/payments"
+        },
+        "postgres": {
+          "class": "PostgresConnectedAccountLimitsDriver",
+          "from": "@stackra/payments/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
       "port": "MarketPaymentDefaults",
       "key": "payments.MarketPaymentDefaults",
       "candidates": ["market_pack_payment_defaults"],
@@ -1629,6 +2419,32 @@
       "from": "@stackra/payments"
     },
     {
+      "port": "PaymentPackSource",
+      "key": "payments.PaymentPackSource",
+      "candidates": ["market_pack"],
+      "classes": {
+        "market_pack": {
+          "class": "MarketPackPaymentPackSourceDriver",
+          "from": "@stackra/payments/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ResolvedPackSource",
+                "from": "@stackra/market-packs"
+              }
+            },
+            {
+              "class": {
+                "name": "PaymentsConfig",
+                "from": "@stackra/payments"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
       "port": "TaxProvider",
       "key": "pricing.TaxProvider",
       "candidates": ["memory"],
@@ -1647,6 +2463,7 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
   "blocks": [],
   "routes": [
     {

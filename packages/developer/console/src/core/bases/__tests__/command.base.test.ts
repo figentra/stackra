@@ -31,6 +31,8 @@ describe("Command", () => {
         aliases: [],
         audit: false,
         bin: false,
+        passthrough: false,
+        examples: [],
       },
     });
   });

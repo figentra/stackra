@@ -1,4 +1,4 @@
-<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout, deploy and the owner runbook (deploy with the custom-domain detach step and its dry run, first publish of the presets). Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0173; ADR 0007. -->
+<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout, deploy and the owner runbook (deploy through Runway's cloudflare-workers provider, first publish of the presets). Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0173; ADR 0007. -->
 
 # @figentra/worker-registry
 
@@ -106,8 +106,8 @@ licence is 409. Every call writes an `audit_events` row (`licence.<action>`, the
 
 ### Issuer tokens
 
-The owner makes one per caller (OS billing), stores its value in Infisical `stackra` `prod` `/ci/registry` (the owner
-vault, ADR 0512; migration 0002's "`/registry`" means this path) as
+The owner makes one per caller (OS billing), stores its value in Infisical `os` `prod` `/runtime/licensing` (the OS licensing service reads it, ADR 0512;
+migration 0002's "`/registry`" means the issuer token's Infisical home) as
 `REGISTRY_ISSUER_TOKEN` (the name `@stackra/licensing`'s `IssuerConfig` reads) and inserts only its hash:
 `INSERT INTO issuer_tokens (hash, label, created_at) VALUES ('<sha256 hex>', 'os-billing', '<now>')`, through the
 migration CI job or the Cloudflare dashboard. Rotate by inserting the new hash, then setting `revoked_at` on the old row.
@@ -123,13 +123,13 @@ API grants only `licensed` scopes, so the owner also inserts an internal scope's
 
 Only the release workflows publish (`publishers` rows: `figentra/stackra` for `@stackra`, `figentra/stackra-pro` for
 `@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`;
-`figentra/brand`, `figentra/commerce`, `figentra/os` and `figentra/figentra` for `@figentra`, same workflow and ref,
-environments `brand-registry`, `release`, `release` and `release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
+`figentra/brand`, `figentra/commerce`, `figentra/os`, `figentra/pay`, `figentra/invoicing`, `figentra/billing` and
+`figentra/figentra` for `@figentra`, same workflow and ref, environments `brand-registry`, `release`, `release`, `release`, `release`, `release` and `release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
 repository and owner ids too). A publisher covers its whole scope, not single names. The job asks GitHub for an ID token with audience
 `npm:npm.stackra.figentra.com` and exchanges it for a `stkp_` publish token bound to one package for
 `REGISTRY_PUBLISH_TOKEN_SECONDS`. A publish is refused when the version exists, the tarball is over the size limit,
 package.json's name or version differs from the request, `stackra.kind` is unknown or a non-package item is not named
-`@<scope>/<kind>-<name>`, the scope's licence rule fails (commercial: the scope's licence string, a LICENSE file, and
+`@<scope>/<kind>-<name>` (a `contract` or `docs` item: `@<scope>/<name>-<kind>`), the scope's licence rule fails (commercial: the scope's licence string, a LICENSE file, and
 in a `licensed` scope no `src/` and no `.map`, which an `internal` scope such as `@figentra` may ship; open-source: MIT,
 or another open licence with a NOTICE), the client's integrity or shasum differs,
 or the Sigstore bundle is missing, is for another digest or was signed by another workflow. A brand kit (`@figentra`, commercial)
@@ -166,26 +166,26 @@ secret.
 
 ## Layout
 
-| Path                      | Holds                                                                                                                                                                                                            |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                                                                                           |
-| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os`, `0007` `figentra/figentra` |
-| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                                                                                         |
-| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                                                                                       |
-| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                                                                                                   |
-| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks                                                                                                                               |
-| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange                                                                                                                                    |
-| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)                                                                                                                            |
-| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding                                                                                                                                  |
-| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                                                                                                                                                   |
-| `src/catalogue/`          | the catalogue API and entitlements                                                                                                                                                                               |
-| `src/browse/`             | the browser: list and package pages, the page shell, Markdown, README and provenance readers                                                                                                                     |
-| `src/store/`              | `RegistryStore`, every D1 query                                                                                                                                                                                  |
-| `src/settings/`           | the vars parsed into settings                                                                                                                                                                                    |
-| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                                                                                                                                                       |
-| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                                                                                                                                                   |
-| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                                                                                                                                        |
-| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry                                                                                                                         |
+| Path                      | Holds                                                                                                                                                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                                                                                                                                          |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os`, `0008` `figentra/pay` and `figentra/invoicing`, `0009` `figentra/billing`, `0011` `figentra/figentra` |
+| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                                                                                                                                        |
+| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                                                                                                                                      |
+| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                                                                                                                                                  |
+| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks                                                                                                                                                                              |
+| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange                                                                                                                                                                                   |
+| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)                                                                                                                                                                           |
+| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding                                                                                                                                                                                 |
+| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                                                                                                                                                                                                  |
+| `src/catalogue/`          | the catalogue API and entitlements                                                                                                                                                                                                                              |
+| `src/browse/`             | the browser: list and package pages, the page shell, Markdown, README and provenance readers                                                                                                                                                                    |
+| `src/store/`              | `RegistryStore`, every D1 query                                                                                                                                                                                                                                 |
+| `src/settings/`           | the vars parsed into settings                                                                                                                                                                                                                                   |
+| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                                                                                                                                                                                                      |
+| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                                                                                                                                                                                                  |
+| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                                                                                                                                                                                       |
+| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry                                                                                                                                                                        |
 
 One exported declaration per file, named after it (ADR 0305 rules 10 to 13).
 
@@ -251,8 +251,8 @@ repository's immutable form, `repo:figentra@314302700/stackra@1425140001:environ
 `repo:figentra/stackra:...` form is refused), and reads `prod` `/ci` (`CLOUDFLARE_API_TOKEN`) and `prod` `/ci/registry`
 (`REGISTRY_SIGNING_KEY`). The Cloudflare token in `/ci` needs D1, Workers R2 Storage, Workers KV Storage and Workers
 Scripts edit on the account, and Workers Routes edit on the `figentra.com` zone. The custom domain
-`npm.stackra.figentra.com` must leave the npflared `npm-registry` Worker first (decision 17), or `wrangler deploy`
-refuses the route; the workflow now does that itself (step 4), so nothing is detached by hand.
+`npm.stackra.figentra.com` had to leave the npflared `npm-registry` Worker first (decision 17); that one-off move is
+done, and the workflow no longer carries its detach step.
 
 ### 2. Signing key
 
@@ -261,19 +261,19 @@ straight into the secrets inbox:
 
 ```sh
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ~/Secrets-inbox/REGISTRY_SIGNING_KEY.pem
-printf 'project: figentra-registry\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_SIGNING_KEY.target.yaml
+printf 'project: registry\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_SIGNING_KEY.target.yaml
 pnpm secrets:import --dry-run   # then the import with the printed --confirm token
 ```
 
 ### 3. Issuer token
 
 One per licence API caller (OS billing). Make the value, keep only its SHA-256 hex for D1, and import the value to
-Infisical `stackra` `prod` `/ci/registry` as `REGISTRY_ISSUER_TOKEN` the same way (never `figentra-registry`: the deploy
+Infisical `os` `prod` `/runtime/licensing` as `REGISTRY_ISSUER_TOKEN` the same way (never `registry`: the deploy
 identity must not read it):
 
 ```sh
 openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN
-printf 'project: stackra\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN.target.yaml
+printf 'project: os\nenv: prod\npath: /runtime/licensing\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN.target.yaml
 shasum -a 256 < ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN | cut -d' ' -f1   # the hash, safe to show
 pnpm secrets:import --dry-run   # then the import with the printed --confirm token
 ```
@@ -287,27 +287,13 @@ pnpm exec wrangler d1 execute stackra-registry --remote --command \
 
 ### 4. Deploy
 
-Run "Deploy registry" on `main`. It tests and builds this member, puts the ids into the runner's `wrangler.jsonc`,
-applies the migrations (`wrangler d1 migrations apply stackra-registry --remote`), runs `wrangler deploy`, sets
-`REGISTRY_SIGNING_KEY` from Infisical through stdin, and waits for `/-/ping` and `/-/npm/v1/keys` to answer 200 with at
-least one key. Without `INFISICAL_REGISTRY_IDENTITY_ID` it builds, tests and deploys nothing.
-
-Right before `wrangler deploy`, the step "Custom domain (detach from another Worker)" (owner decision D13) lists the
-account's Workers custom domains (`GET /accounts/<id>/workers/domains`, the account id read from `wrangler.jsonc`) and
-looks for `npm.stackra.figentra.com` by exact hostname:
-
-| Found                                         | The step does                                                          |
-| --------------------------------------------- | ---------------------------------------------------------------------- |
-| not bound (or the list answers 404)           | nothing; `wrangler deploy` attaches it                                 |
-| bound to `stackra-registry`                   | nothing                                                                |
-| bound to any other Worker (`npm-registry`, …) | detaches it (`DELETE …/workers/domains/<id>`), logs that Worker's name |
-
-It never touches `npm.figentra.com`, the `npm-registry` Worker or its bucket (they stay until 0.1.0, decision D13). Any
-other non-2xx answer fails the job. The Cloudflare token reaches curl through stdin and is never printed.
-
-A **dispatch** run has the input `detach_dry_run`, on by default: the step prints what it would do (`would detach … from
-Worker …`), and the job stops there, before the migrations, the deploy and the secret, so the account is not changed.
-Turn it off to deploy by hand. A push to `main` has no inputs and always runs the full deploy. Check by hand too:
+Run "Deploy registry" on `main` (a `sha` input redeploys an earlier commit of main). It tests this member, then hands
+over to `stackra deploy --env production --kind web --member registry`, Runway's `cloudflare-workers` provider, which
+reads the `registry` entry of the root `runway.yaml`: it builds the member, puts the ids into the runner's
+`wrangler.jsonc` (restored afterwards), applies the migrations (`wrangler d1 migrations apply stackra-registry
+--remote`), deploys with the commit as the message and `REGISTRY_READ_ONLY`, sets `REGISTRY_SIGNING_KEY` through stdin,
+and retries `/-/ping` and `/-/npm/v1/keys` for up to ten minutes until each answers 200 (the keys route only does once
+the signing key is readable). Without `INFISICAL_REGISTRY_IDENTITY_ID` it tests and deploys nothing. Check by hand too:
 
 ```sh
 curl -fsS https://npm.stackra.figentra.com/-/ping
@@ -354,6 +340,5 @@ and drop their `packages/tooling` copies, one follow-up batch per product.
 - `@stackra/skills/contracts` (`StackraKind`, `StackraManifest`, `CatalogueItem`, `CataloguePage`): stackra-184. The
   same shapes live in `src/interfaces/` (`stackra-kind.type.ts`, `catalogue-item.interface.ts`, …) and
   `src/constants/stackra-kinds.constant.ts` until then.
-- The runway placement of this member (the deploy is its own workflow, not a `runway-cloudflare-workers.yml` caller:
-  that provider has no D1 migration step and no Worker secret) and the Pulumi stack call of `registryWorker`. The move
-  of the custom domain from the npflared Worker is in the deploy workflow (D13, runbook step 4).
+- The Pulumi stack call of `registryWorker`: the D1 database and KV namespace are still created by hand (runbook
+  step 1) until Runway's infra step (STA-1921).

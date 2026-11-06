@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `TESTBED_CLI_DEFAULTS`, the defaults of `stackra testbed`: AWS profile, region, key file, user, security group,
+ * Purpose: `TESTBED_CLI_DEFAULTS`, the defaults of `stackra testbed`: AWS profile, enabled regions, key file, user, security group,
  *          the SSM parameter of the image, the group name prefix, the instance tag and the fallback workflow.
  * Boundary: data only; every default is overridable by `STACKRA_TESTBED_*` or a flag, none is a secret.
  * Runtime: node
@@ -11,8 +11,12 @@
 export const TESTBED_CLI_DEFAULTS = {
   /** The AWS CLI profile that reaches the testbed account. */
   profile: "academorix",
-  /** The AWS region the testbed runs in. */
-  region: "eu-west-1",
+  /**
+   * The enabled regions in the order a run tries them (STA-2042). A region whose groups do not exist yet has no box and
+   * no group to raise, so it is skipped until its `up` has run. us-east-1 is last: it joined once box 1, whose
+   * on-demand quota it shared, was terminated (2026-11-06).
+   */
+  regions: ["eu-west-1", "eu-west-2", "eu-central-1", "us-east-1"],
   /** The SSH private key, relative to the home folder. */
   key: ".ssh/academorix-ci.pem",
   /** The SSH user on every box. */

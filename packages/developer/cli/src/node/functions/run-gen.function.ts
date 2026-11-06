@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `runGen(root, options, io)`, one gen run over one member as the CLI prints it: every refusal in gen's
- *          two-line form, then the files written, or with `check` the files that are stale; `pass: "manifests"` runs
+ *          two-line form and each warning (`warning: `, never a failure), then the files written, or with `check` the files that are stale; `pass: "manifests"` runs
  *          gen's manifest pass alone. It resolves true when the member is clean: no refusal, and with `check` nothing
  *          stale.
  * Boundary: gen writes only under the member root and, on a refusal, nothing but the client files and manifest it
- *           lists; a check writes nothing.
+ *           lists; a check writes nothing. Gen gets `loadWithVite` as its module loader, so a member's resource trees
+ *           are recorded (STA-1947).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 22 and 26: the committed manifest, `stackra gen --check`, refusals
  *                     print their fix); ADR 0295 (decision 5).
@@ -15,6 +16,7 @@ import { relative } from "node:path";
 import { formatGenError } from "@stackra/gen";
 import { generate } from "@stackra/gen/node";
 
+import { loadWithVite } from "#node/functions/load-with-vite.function";
 import type { CliIo } from "#node/types/cli-io.type";
 
 /**
@@ -40,12 +42,18 @@ export async function runGen(
   io: CliIo,
 ): Promise<boolean> {
   const where = relative(options.base ?? process.cwd(), root) || ".";
-  const { errors, changed } = await generate(root, {
+  const {
+    errors,
+    changed,
+    warnings = [],
+  } = await generate(root, {
     ...(options.check === undefined ? {} : { check: options.check }),
     ...(options.backend === undefined ? {} : { backend: options.backend }),
     ...(options.pass === undefined ? {} : { pass: options.pass }),
+    loader: loadWithVite,
   });
   for (const error of errors) io.err(`${where}/${formatGenError(error)}\n`);
+  for (const warning of warnings) io.err(`warning: ${where}/${formatGenError(warning)}\n`);
   if (errors.length > 0) {
     // A refused run may still have written its clients and manifest, which the next round resolves against.
     for (const path of changed) io.out(`wrote ${where}/${path}\n`);

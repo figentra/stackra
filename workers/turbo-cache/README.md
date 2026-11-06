@@ -63,16 +63,17 @@ Every limit is a `vars` entry in `wrangler.jsonc` (change it there, or in the da
 ## Deploy (CI only)
 
 `.github/workflows/deploy-turbo-cache.yml` deploys on every push to `main` that touches `workers/turbo-cache/**` (or the
-workflow), and by hand (`workflow_dispatch`, main only). Never on a pull request. Its steps:
+workflow), and by hand (`workflow_dispatch`, main only; a `sha` input redeploys an earlier commit of main). Never on a
+pull request. It calls `runway-cloudflare-workers.yml`, whose steps are:
 
-1. install, then `turbo run test build` for this member (a failing test never reaches Cloudflare);
-2. read `CLOUDFLARE_API_TOKEN` from Infisical `prod` `/ci` over GitHub OIDC;
-3. create the R2 bucket `turbo-cache` if `wrangler r2 bucket list` does not show it, and add the lifecycle rule
-   `expire-after-7-days` (`--expire-days 7`) if `wrangler r2 bucket lifecycle list` does not show it;
-4. `wrangler deploy`, which also attaches the Custom Domain `turbo.stackra.figentra.com` (`routes` in `wrangler.jsonc`);
-5. read `TURBO_TOKEN` from `/ci/turbo` (STA-1393) and pipe it into `wrangler secret put TURBO_CACHE_TOKEN`
-   (stdin, never printed); an empty or missing `TURBO_TOKEN` fails the step by name;
-6. smoke: `GET https://turbo.stackra.figentra.com/v8/artifacts/status` with the bearer until it answers 200, ten
+1. install, then gen and test this member (a failing test never reaches Cloudflare);
+2. read `TURBO_TOKEN` from `/ci/turbo` (STA-1393) and `CLOUDFLARE_API_TOKEN` from Infisical `prod` `/ci` over GitHub
+   OIDC;
+3. `stackra deploy --env production --kind web --member turbo-cache`, Runway's `cloudflare-workers` provider, reading
+   the `turbo-cache` entry of the root `runway.yaml`: it refuses an empty `TURBO_TOKEN` by name before anything ships,
+   builds, deploys with the commit as the message (which also attaches the Custom Domain `turbo.stackra.figentra.com`,
+   `routes` in `wrangler.jsonc`), sets `TURBO_CACHE_TOKEN` from `TURBO_TOKEN` through `wrangler secret bulk` on stdin,
+   then retries `GET https://turbo.stackra.figentra.com/v8/artifacts/status` with the bearer until it answers 2xx, ten
    minutes at most (a new Custom Domain needs a few minutes for its certificate).
 
 Identity: the job reuses the existing Infisical identity `INFISICAL_CI_IDENTITY_ID` (the one `deploy-static.yml` and
@@ -88,8 +89,8 @@ Never run `wrangler deploy` or `wrangler secret put` by hand.
 The owner's only steps; everything else is the workflow's.
 
 1. Make two random values on your own machine: `openssl rand -hex 32`, twice (one token, one signature key).
-2. In Infisical, project `figentra-ci`, environment `prod`, path `/ci/turbo` (STA-1393, ADR 0512; `CLOUDFLARE_API_TOKEN`
-   stays in `figentra-ci-deploy` `/ci`), add:
+2. In Infisical, project `ci-build`, environment `prod`, path `/ci/turbo` (STA-1393, ADR 0512; `CLOUDFLARE_API_TOKEN`
+   stays in `ci-deploy` `/ci`), add:
 
    | Secret                             | Value                                |
    | ---------------------------------- | ------------------------------------ |
@@ -107,9 +108,10 @@ To rotate the token, change `TURBO_TOKEN` in Infisical and run the workflow agai
 
 ## Infrastructure
 
-The deploy job creates the bucket `turbo-cache`, its 7-day lifecycle rule and the Custom Domain when they are missing.
-`@stackra/infra-cloudflare` (`src/node/turbo-cache/`) declares the same bucket and rule for Pulumi; when that stack is
-applied, leave its `domain` unset so the Custom Domain has one owner (wrangler).
+The bucket `turbo-cache` and its 7-day lifecycle rule (`expire-after-7-days`) exist; the deploy no longer creates
+them. `@stackra/infra-cloudflare` (`src/node/turbo-cache/`) declares the same bucket and rule, which Runway's infra
+step applies (STA-1921). The deploy attaches the Custom Domain; when that stack is applied, leave its `domain` unset so
+the Custom Domain has one owner (wrangler).
 
 ## CI env (owned by the testing session's ci.yml)
 

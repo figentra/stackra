@@ -5,7 +5,8 @@
  *          (`member`, `deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`) at the top and in an
  *          environment; a dedicated resource needs a non-empty reason; the engines are ADR 0296's four; a grouped
  *          topology needs groups and lists a member once; the root's environments, `secrets` and `destinations` are
- *          closed while its provider and target blocks and the member size blocks stay open; the config layer selects
+ *          closed, as are the known targets, the edge, release, observability and GitHub blocks (STA-1975, STA-1976),
+ *          while the other provider blocks, other targets and the member size blocks stay open; the config layer selects
  *          the Postgres action stores by name; a var reference names
  *          exactly one origin; the npm provider's registry is an https URL ending in / and its scope an npm scope;
  *          a version other than 3, a misspelt environment, a duplicated secret and an inverted
@@ -68,15 +69,7 @@ const CONSOLE = {
   version: 3,
   secrets: [],
   health: { path: "/healthz", expects: "sha" },
-  release: {
-    pwa: { updates: "from-config", betaBadgeOutsideProduction: true },
-    desktop: {
-      channels: ["beta", "latest"],
-      signing: { mac: false, windows: false },
-      feedPath: "console",
-      platforms: { mac: ["dmg", "zip"], windows: ["nsis"], linux: ["AppImage"] },
-    },
-  },
+  release: { desktop: { feedPath: "console" } },
   telemetry: { sentryProject: "acme-console" },
   environments: {
     dev: {
@@ -87,7 +80,6 @@ const CONSOLE = {
       desktop: { devtools: true, remoteDebugPort: 9222, pkceLoopbackPort: 5179 },
       vars: { VITE_SENTRY_DSN: "", EXPO_PUBLIC_API_ORIGIN: { "from-port": "gateway" } },
       config: { "logger.telemetry": { traces: { sampleRate: 1 } } },
-      e2e: { baseUrl: "from-port", seeds: "from-stackra-config" },
     },
     preview: {
       domain: "console-pr-${pr}.preview.acme.example",
@@ -98,7 +90,6 @@ const CONSOLE = {
     },
     production: {
       domain: "console.acme.example",
-      aliases: ["app.acme.example"],
       workers: { observability: { headSamplingRate: 0.1 } },
       desktop: { channel: "latest" },
     },
@@ -136,7 +127,11 @@ const ROOT = {
       },
     },
   },
-  targets: { "electron-release": { feed: { publicOrigin: "https://downloads.acme.example" } } },
+  targets: {
+    "electron-release": {
+      feed: { bucket: "downloads", publicOrigin: "https://downloads.acme.example" },
+    },
+  },
   secrets: {
     sync: "on-deploy",
     defaultPath: "runtime",
@@ -155,6 +150,13 @@ function issuePaths(run: () => unknown): string[] {
     throw error;
   }
   throw new Error("expected a RunwayInvalidError");
+}
+
+/** The issue paths of a service runway whose staging environment has the given `events` block. */
+function refused(events: unknown): string[] {
+  return issuePaths(() =>
+    parseRunway("service", { version: 3, environments: { staging: { events } } }),
+  );
 }
 
 /** Parses an app runway whose dev environment has the given vars. */
@@ -195,6 +197,7 @@ describe("parseRunway", () => {
     });
     expect(root.environments.dev?.infra).toEqual({ gateway: { port: 4000 } });
     expect(root.targets?.["electron-release"]?.["feed"]).toEqual({
+      bucket: "downloads",
       publicOrigin: "https://downloads.acme.example",
     });
   });
@@ -246,6 +249,93 @@ describe("parseRunway", () => {
       stores,
     );
     expect(service.environments.staging?.config?.["actions.stores"]).toEqual(stores);
+  });
+
+  it("types the known targets, refusing a misspelt key, and leaves another destination open", () => {
+    const targets = {
+      "encore-cloud": { cloud: "aws" },
+      "cloudflare-workers": {
+        compatibilityDate: "2026-10-01",
+        observability: { headSamplingRate: 0.1 },
+        workflows: { static: "deploy-static.yml" },
+      },
+      eas: {
+        buildTrigger: "fingerprint",
+        monthlyBuildCap: 60,
+        ota: {
+          rollout: { startPercent: 10, endPercent: 100, stepHours: 24 },
+          rollback: "republish-previous",
+        },
+        minimumVersion: { gate: true, supportedStoreVersions: 2 },
+      },
+      mintlify: { deployOn: "merge-to-main", branch: "docs-site", adminKey: "MINTLIFY_ADMIN_KEY" },
+      npm: { access: "public", provenance: true, trustedPublisher: "release.yml" },
+      "vite-dev": { anything: true },
+    };
+    const root = parseRunway("root", { ...ROOT, targets });
+    expect(root.targets?.["eas"]).toMatchObject({ monthlyBuildCap: 60 });
+    expect(root.targets?.["vite-dev"]).toEqual({ anything: true });
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          targets: { ...targets, eas: { ...targets.eas, ota: { rolout: { startPercent: 10 } } } },
+        }),
+      ),
+    ).toEqual(["targets.eas.ota"]);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          targets: { ...targets, mintlify: { adminKey: "a-secret-value" } },
+        }),
+      ),
+    ).toEqual(["targets.mintlify.adminKey"]);
+  });
+
+  it("closes the edge, release, observability and GitHub blocks, refusing a misspelt key", () => {
+    const sections = {
+      edge: {
+        proxy: "all",
+        waf: "managed",
+        rateLimit: { perIp: { requests: 100, periodSeconds: 10 } },
+      },
+      release: {
+        buildOrder: ["schemas", "services"],
+        gate: { health: "/health", errorWatchMinutes: 15 },
+        windows: {
+          avoid: [
+            { local: "08:00-10:00", days: "sun-thu" },
+            { termStart: { firstDays: 3, source: "calendar" } },
+          ],
+        },
+      },
+      observability: {
+        logs: { hotDays: 30 },
+        uptime: [{ name: "api", url: "https://api.acme.example/health" }],
+      },
+      providers: {
+        github: {
+          org: "acme",
+          repo: "platform",
+          environments: { production: { reviewers: ["acme/owners"] } },
+        },
+      },
+    };
+    const root = parseRunway("root", { ...ROOT, ...sections });
+    expect(root.edge).toEqual(sections.edge);
+    expect(root.providers?.github).toEqual(sections.providers.github);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          edge: { tls: { minVerison: "1.2" } },
+          release: { gate: { helth: "/health" } },
+          observability: { log: {} },
+          providers: { github: { org: "acme", repo: "platform", enviroments: {} } },
+        }),
+      ).sort(),
+    ).toEqual(["edge.tls", "observability", "providers.github", "release.gate"]);
   });
 
   it("refuses root keys in a member runway", () => {
@@ -380,12 +470,91 @@ describe("parseRunway", () => {
     const mobile = parseRunway("app", {
       version: 3,
       health: { path: "/healthz" },
-      environments: { dev: { mobile: { metroPort: 8081 }, e2e: { device: "pixel" } } },
+      environments: { dev: { mobile: { metroPort: 8081 } } },
     });
     expect(mobile.environments.dev?.mobile?.metroPort).toBe(8081);
     expect(
       issuePaths(() => parseRunway("app", { ...CONSOLE, health: { expects: "200" } })),
     ).toEqual(["health.expects"]);
+  });
+
+  // @covers sta-1910:FR-012 @covers sta-1910:FR-015
+  it("reads a producer's cross-app events block: a secret name, public keys and subscribers", () => {
+    const events = {
+      keys: [{ id: "pay-dev-1", publicKey: "MCowBQYDK2VwAyEA" }],
+      subscribers: [
+        {
+          member: "billing",
+          inbox: "http://localhost:4012",
+          events: ["payments.payment.captured.v1", "payments.payment.failed.v1"],
+        },
+      ],
+    };
+    const service = parseRunway("service", { version: 3, environments: { dev: { events } } });
+    expect(service.environments.dev?.events?.signingKey).toBe("STACKRA_EVENTS_SIGNING_KEY");
+    expect(service.environments.dev?.events?.subscribers[0]?.member).toBe("billing");
+    expect(refused({ ...events, signingKey: "sk-live-value" })).toEqual([
+      "environments.staging.events.signingKey",
+    ]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], inbox: "http://billing.example.com" }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.inbox"]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], inbox: "https://billing.example.com/events" }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.inbox"]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], events: ["payments.payment.captured"] }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.events.0"]);
+    expect(refused({ ...events, keys: [...events.keys, ...events.keys] })).toEqual([
+      "environments.staging.events.keys",
+    ]);
+  });
+
+  it("refuses each key STA-2028 removed, naming the block it was in", () => {
+    const app = (document: Record<string, unknown>) =>
+      issuePaths(() => parseRunway("app", { version: 3, environments: {}, ...document }));
+    const dev = (values: Record<string, unknown>) => app({ environments: { dev: values } });
+    expect(app({ release: { pwa: {} } })).toEqual(["release"]);
+    for (const key of ["channels", "signing", "platforms"])
+      expect(app({ release: { desktop: { feedPath: "console", [key]: {} } } })).toEqual([
+        "release.desktop",
+      ]);
+    expect(app({ release: { mobile: { whiteLabel: true } } })).toEqual(["release.mobile"]);
+    for (const key of [
+      "distribution",
+      "developmentClient",
+      "simulator",
+      "androidApk",
+      "autoIncrement",
+    ])
+      expect(
+        app({
+          release: { mobile: { profiles: { store: { environment: "production", [key]: true } } } },
+        }),
+      ).toEqual(["release.mobile.profiles.store"]);
+    for (const key of ["aliases", "e2e", "pwa"])
+      expect(dev({ [key]: {} })).toEqual(["environments.dev"]);
+    expect(dev({ desktop: { devtools: true, rollout: {} } })).toEqual(["environments.dev.desktop"]);
+    expect(dev({ mobile: { metroPort: 8081, devClient: true } })).toEqual([
+      "environments.dev.mobile",
+    ]);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          resources: { db: { kind: "postgres", reason: "residency" } },
+        }),
+      ),
+    ).toEqual(["resources.db"]);
   });
 
   it("needs a var reference to name exactly one origin, and a var to be SCREAMING_SNAKE", () => {

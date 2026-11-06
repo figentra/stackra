@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `AccountDeletions`, `SessionStore`, `SignInBrowser`,
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `AccountDeletions`, `AccountSecurity` (the
+ *          SecurityPage's client port), `SessionStore`, `SignInBrowser`,
  *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals` and
  *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `AppleSignIn` port with
  *          `AppleSignInRefusal`, the `LoginDirectoryStore` port
  *          with `loginDirectoryPrefix` (the login directory's key format, shared with the edge Worker), and the types
  *          and enums their signatures name, `IdpAuthEvent`, the auth events the audit chain keeps, and
- *          `OperatorBootstrapOutcome`, the operator bootstrap's outcome codes)
+ *          `OperatorBootstrapOutcome`, the operator bootstrap's outcome codes, and `PasswordPolicy`)
  *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package. Each
  *           symbol here is exported from this entry only (ADR 0294 decision 15).
@@ -27,6 +28,7 @@ export { VerificationStatus } from "#contracts/enums/verification-status.enum";
 export { VerificationUse } from "#contracts/enums/verification-use.enum";
 export { loginDirectoryPrefix } from "#contracts/functions/login-directory-prefix.function";
 export { AccountDeletions } from "#contracts/ports/account-deletions.port";
+export { AccountSecurity } from "#contracts/ports/account-security.port";
 export { ApiKeyStore } from "#contracts/ports/api-key-store.port";
 export { AppApprovalChallenges } from "#contracts/ports/app-approval-challenges.port";
 export { AppleSignIn } from "#contracts/ports/apple-sign-in.port";
@@ -41,6 +43,7 @@ export { StaffPinStore } from "#contracts/ports/staff-pin-store.port";
 export { Verification } from "#contracts/ports/verification.port";
 export type { AccountDeletion } from "#contracts/types/account-deletion.type";
 export type { AccountDeletionState } from "#contracts/types/account-deletion-state.type";
+export type { AccountSecurityOverview } from "#contracts/types/account-security-overview.type";
 export type { ApiKeyRecord } from "#contracts/types/api-key-record.type";
 export type { AppApprovalChallenge } from "#contracts/types/app-approval-challenge.type";
 export type { AppApprovalRequester } from "#contracts/types/app-approval-requester.type";
@@ -48,6 +51,7 @@ export type { AppleCredential } from "#contracts/types/apple-credential.type";
 export type { AppleSignInResult } from "#contracts/types/apple-sign-in-result.type";
 export type { AutomationPrincipalInput } from "#contracts/types/automation-principal-input.type";
 export type { DeviceAuthorization } from "#contracts/types/device-authorization.type";
+export type { AccountSession } from "#contracts/types/account-session.type";
 export type { DeviceTokenResult } from "#contracts/types/device-token-result.type";
 export type { GuardianLink } from "#contracts/types/guardian-link.type";
 export type { IdpMachineCredential } from "#contracts/types/idp-machine-credential.type";
@@ -64,6 +68,8 @@ export type { PasskeyRegistrationChallenge } from "#contracts/types/passkey-regi
 export type { PasskeyRequestOptions } from "#contracts/types/passkey-request-options.type";
 export type { PasskeyResult } from "#contracts/types/passkey-result.type";
 export type { PasskeySignInChallenge } from "#contracts/types/passkey-sign-in-challenge.type";
+export type { PasskeySummary } from "#contracts/types/passkey-summary.type";
+export type { PasswordPolicy } from "#contracts/types/password-policy.type";
 export type { SessionUser } from "#contracts/types/session-user.type";
 export type { SignInOptions } from "#contracts/types/sign-in-options.type";
 export type { StaffPinCredential } from "#contracts/types/staff-pin-credential.type";

@@ -1,5 +1,182 @@
 # @stackra/repo-checks
 
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+### Minor Changes
+
+- 46951df: The root runway carries the estate figentra/infra derives from (ADR 0524): `environments.<env>.region` (`me`, `eu` or
+  `ksa`), which `runway validate` and `stackra validate --repository` require on a product's staging and production;
+  `providers.aws.budgets.monthlyUsd` (default 300) beside the open thresholds; and `providers.cloudflare.records`, the
+  non-Worker DNS records (verification TXT, MX, CAA) under a declared zone, an MX with its priority and only A, AAAA and
+  CNAME proxied. `providers.aws.region` and `providers.aws.accounts` are deprecated: `runway validate` warns, and they go
+  in the next release. Runway exports `checkEnvironmentRegion`, `deprecatedFields` and `RegionKey`.
+
+## 0.10.0
+
+### Minor Changes
+
+- 242ebe4: `checkDestinations(root)` refuses a destination or target block no driver serves (owner decision O8):
+  destinations must be `encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`, and target blocks one of
+  those, `npm` or `electron-release` (the desktop feed origin builds read). `stackra validate` runs it on the
+  root runway. Core's dev environment drops its `compose`, `vite-dev`, `expo-dev` and `mint-dev` lines.
+- 0d65e3f: The `cloudflare-workers` provider now renders each Worker's wrangler config from `runway.yaml` before it deploys
+  (ADR 0519, STA-1989): the member's `wrangler.jsonc` stays the code facts, and the merged operational settings (the
+  base, the preset, `defaults`, the member and its `environments.<environment>` entry) are added in wrangler's keys.
+  `renderWranglerConfig` is exported from `@stackra/runway`, and a member may now set `environments`. `stackra
+  validate` refuses an operational key (`compatibility_date`, `workers_dev`, `observability`, `routes` and the rest) in
+  a new member's `wrangler.jsonc`; the four existing Workers are listed until they deploy through the provider.
+
+## 0.9.0
+
+### Minor Changes
+
+- ca1614e: `checkRequires(root, service)` reports each `valkey` entry of a service runway's `requires` that no environment's cache driver serves, at `requires.<name>`; `stackra validate` (`checkRunwayFiles`) now runs it for every service runway against the root (STA-2049).
+- cbbe4e3: Add the `docs` registry kind (STA-1920, ADR 0514 decision 10). `StackraKind.Docs` is a product's content-only docs
+  package, `@figentra/<product>-docs`: MDX pages and their Fumadocs `meta.json` in `content/`, plus assets, with no code.
+  `STACKRA_MANIFEST_SCHEMA` accepts `{ "kind": "docs" }` with nothing more. `pnpm validate` places a docs package at the
+  repository's `docs/`, asks for no tier, turbo.jsonc or tsconfig, requires `content/`, and treats it as UNLICENSED like
+  an app. `stackra add` never installs one: the docs hub depends on it.
+- 75e94ff: `stackra validate --repository` refuses a paid job (a macOS, Windows or larger runner, also through `strategy.matrix`; `eas build`; a device farm run) on a branch push, pull request or merge queue trigger, and, in a job with no `environment:`, a deploy credential in its env or a deploy variable or secret read in a step's env, `with:` or `run:` (rule `workflow-triggers`, `checkWorkflowTriggers`; STA-256, ADR 0166, 0167).
+
+### Patch Changes
+
+- 2aeaec8: `writeDevFacts(root, lane)` in `@stackra/runway/node` writes `.stackra/dev/ports.json`, the file `readDevFacts` reads: each member runway's dev url, port, host, https, TLS files and Electron dev ports with the lane offset applied. `stackra dev` calls it before the member tool starts (lane from `STACKRA_LANE`, default 0). The app runway's `environments.<env>.desktop.devtools` is now read, so it leaves `RUNWAY_UNREAD_FIELDS` and its "Not read yet" schema note.
+- 93bb1e7: `buildProduct` writes a product's `surfaces.ops.contributes` as a declarative `ops` bundle (the contributions file and its manifest, targeting `ops@1`), and `publishProduct` uploads it and writes its canary or release row like any surface. The root runway schema no longer marks `surfaces.ops.contributes` and its fields "Not read yet", and the list of runway fields not yet read drops them.
+- da0af20: The runway schema copy check now says to put the zod-derived text in the canonical `tools/schemas` file and copy it
+  to runway's `schema/`, instead of only `cp`, which overwrote a correct copy with a stale canonical file.
+
+## 0.8.0
+
+### Patch Changes
+
+- 67e7e8f: The runway schemas drop the fields that no repository set and nothing read (STA-2028), so each of these keys now
+  fails `parseRunway` and `pnpm validate`:
+  
+  - root runway: `resources.<name>.reason` (ADR 0493's reason rule is the workloads');
+  - app runway: `brands` (ADR 0335 puts brands in `stackra.config.ts`), `release.pwa` (ADR 0326 decision 6),
+    `release.desktop.channels`, `release.desktop.signing` and `release.desktop.platforms` (ADR 0344 decision 7; they
+    return with the desktop release job), `release.mobile.whiteLabel` (the root `mobile.<app>.whiteLabel` is the one
+    read), and `release.mobile.profiles.<profile>.distribution`, `.developmentClient`, `.simulator`, `.androidApk` and
+    `.autoIncrement` (`easJsonOf` sets them);
+  - app runway environments: `aliases`, `e2e`, `pwa`, `desktop.rollout` and `mobile.devClient`.
+  
+  The app runway's `release.desktop`, `release.mobile`, each mobile profile and each environment's `desktop` and `mobile`
+  blocks are now strict. `brandsOf`, the `Brand` type and the `brands` entry of the runway facts are removed with
+  `brands`; nothing called them.
+  
+  Kept, marked "Not read yet" in their description and in repo-checks' `RUNWAY_UNREAD_FIELDS`: the
+  `surfaces.ops.contributes` children (STA-2003), the app `health.path` and `health.expects` (Runway plan PR 13) and the
+  app environments' `desktop.devtools` (STA-2029).
+
+## 0.7.1
+
+No changes in this release.
+
+## 0.7.0
+
+No changes in this release.
+
+## 0.6.1
+
+No changes in this release.
+
+## 0.6.0
+
+### Minor Changes
+
+- e250d4f: Gen writes one `registerActions([...])` in each member's `#stackra/registrations`, a row per action and query with its
+  locked key, permission, risk, effects and input schema, so the pipeline validates input and checks the permission of
+  every call. `IamAccessControlDriver` now refuses a call with no registered permission instead of letting it through,
+  and lets an anonymous caller past `require` and `authorize` only for a class whose `actors` list `anonymous`; the
+  manifest marks such a call `anonymous: true` and its OpenAPI operation takes no security. `stackra validate` lists
+  every anonymous-callable call, and a test pins today's five (STA-2025).
+- 2ed03e2: The 32 runway fields that the repositories set but nothing reads yet now say so in their JSON Schema description, with
+  the work that will read them ("Not read yet (Runway plan PR 12, STA-2001)"); `environments.*.deploy.gate` is marked a
+  deprecated alias of `release.gate`. No field is removed and parsing is unchanged. `@stackra/repo-checks` adds the
+  `runway-unread-fields` structure check (`checkRunwayUnreadFields`, `RUNWAY_UNREAD_FIELDS`): it fails when the list and
+  the schema notes disagree, or when the runway, CLI, gen or infra sources read a field still listed as not read.
+
+## 0.5.1
+
+No changes in this release.
+
+## 0.5.0
+
+### Patch Changes
+
+- 0263e54: `MUST_STAY_JSON` accepts the root `flow.config.json`, the name Figentra Flow reads its configuration by since 0.2.2
+  (`fflow`), as well as the old `figentra-flow.config.json` (STA-1942).
+
+## 0.4.0
+
+### Minor Changes
+
+- 1ba7227: `connectors` is a package category: one provider's Integration and Connection classes per package, `packages/connectors/<provider>`, tier lib. `CATEGORIES`, `StackraCategory`, the scaffold and the manifest schema accept it.
+- c9cf778: Place the `approval-condition` kind in the `access` group (STA-1724, ADR 0509).
+- 3ace90d: Add the read-only spec checks (STA-1669) as published code: `specFindings` runs the stage gate of every changed
+  `.agents/specs/<prefix>-<n>-<slug>/` folder, the foreign-status, bug-lane and lane gates and the trace rules over injected
+  git and file access, with the building blocks `specCheckStage`, `specCheckClarified`, `specCheckPlan`, `specCheckTasks`,
+  `specCheckLane`, `specCheckForeignStatus`, `specCheckBug`, `specTrace`, `specTraceProblems`, `specDrift` and the parsers.
+  The issue prefix is read from the repository's own spec folder names (`os-12-billing` is key `OS-12`), not fixed to one team.
+
+### Patch Changes
+
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- aa21e6b: Gen reads a consumed service from a sibling folder or from a dependency whose `package.json` has `stackra.kind`
+  `contract` (a producer's published `stackra.manifest.json`, OpenAPI and lang, no source) and whose manifest `member` is
+  the service, never by matching a dependency's member name, which could pick a package's manifest for a service of the
+  same name. A contract package is never hosted. Its client and lang are generated; a listener of its events is refused
+  with `client_event_remote_transport` until the event-transport ADR. `StackraKind` gains `contract` (a new kind, so
+  skills is minor); `stackra add` does not offer it; repo-checks asks a contract package only for its kind and manifest.
+- e4383ce: The config phase refuses a file under a `__golden__` folder that git would ignore (`checkIgnoredGoldens`), so a golden can no longer go uncommitted.
+- e457ad6: `json-configs` allows the lines tool's `tools/lines/{expected,fixture}/*.json`, an app's `capabilities.json` (Runway's
+  `capabilityConfig`) and a worker's `edge.json`, each read as strict JSON (STA-1794).
+- d4ae604: `stackra validate` no longer asks to convert seed data under `assets/seeds/**/*.json` to YAML: the seeders read it as
+  JSON, so it joins `MUST_STAY_JSON`.
+- 3bda222: `checkToolPins` and the `tool-pins` finding of the `config` phase: every `"npm:<name>" = "<version>"` pin in `mise.toml`
+  must match a `pnpm-workspace.yaml` catalog pin, so the commit hooks' oxlint and oxfmt run the members' versions
+  (STA-1865).
+
 ## 0.3.0
 
 ### Minor Changes

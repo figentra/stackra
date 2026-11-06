@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `nodePorts()`, the ports of a real run: the process's streams, their TTY state, its environment, the
- *          terminal width, SIGINT and SIGTERM, and the terminal prompter.
+ *          terminal width, SIGINT and SIGTERM, the working directory, the Clack prompter, the process runner and the
+ *          Ink renderer (text, with Ink for live parts).
  * Boundary: reads `process`; installs signal listeners only while a command runs (the kernel subscribes and
  *           unsubscribes).
  * Runtime: node
@@ -9,7 +10,10 @@
  */
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { ConsolePorts } from "#core/types/console-ports.type";
-import { terminalPrompter } from "#node/functions/terminal-prompter.function";
+import { InkRendererDriver } from "#node/drivers/ink-renderer.driver";
+import { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.driver";
+import { TabCompletionsDriver } from "#node/drivers/tab-completions.driver";
+import { clackPrompter } from "#node/functions/clack-prompter.function";
 
 /**
  * The ports of this process.
@@ -24,6 +28,7 @@ export function nodePorts(): ConsolePorts {
     stdoutIsTTY: process.stdout.isTTY === true,
     stdinIsTTY: process.stdin.isTTY === true,
     env: process.env,
+    cwd: process.cwd(),
     ...(process.stdout.columns === undefined ? {} : { columns: process.stdout.columns }),
     signals: {
       on: (handler) => {
@@ -37,6 +42,9 @@ export function nodePorts(): ConsolePorts {
         };
       },
     },
-    prompter: terminalPrompter(process.stdin, process.stdout),
+    prompter: () => clackPrompter(process.stdin, process.stdout),
+    process: () => new NodeProcessRunnerDriver(),
+    renderer: (context) => new InkRendererDriver(context),
+    completions: () => new TabCompletionsDriver(),
   };
 }

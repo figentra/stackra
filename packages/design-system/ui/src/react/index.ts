@@ -309,10 +309,6 @@ export { MaskedField } from "#react/masked-field/masked-field";
 export type { MaskedFieldProps } from "#react/masked-field/masked-field.props";
 export { MentionInput } from "#react/mention-input/mention-input";
 export type { MentionInputProps } from "#react/mention-input/mention-input.props";
-export { RichTextEditor } from "#react/rich-text-editor/rich-text-editor";
-export type { RichTextEditorProps } from "#react/rich-text-editor/rich-text-editor.props";
-export type { RichTextContribution } from "#react/rich-text-editor/rich-text-contribution.type";
-export type { RichTextToolbarItem } from "#react/rich-text-editor/rich-text-toolbar-item.type";
 export { Turnstile } from "#react/turnstile/turnstile";
 export type { TurnstileProps } from "#react/turnstile/turnstile.props";
 export { TwoColumnLayout } from "#react/two-column-layout/two-column-layout";
@@ -730,3 +726,16 @@ export { TamoPanel } from "#react/tamo-panel/tamo-panel";
 export type { TamoPanelProps } from "#react/tamo-panel/tamo-panel.props";
 export { TamoCollectionTools } from "#react/tamo-collection-tools/tamo-collection-tools";
 export type { TamoCollectionToolsProps } from "#react/tamo-collection-tools/tamo-collection-tools.props";
+
+// UI build list wave 2: fields, a flag and a marker map (STA-1981).
+export { Autocomplete } from "#react/autocomplete/autocomplete";
+export type { AutocompleteProps } from "#react/autocomplete/autocomplete.props";
+export { ColorField } from "#react/color-field/color-field";
+export type { ColorFieldProps } from "#react/color-field/color-field.props";
+export { ColorSwatch } from "#react/color-swatch/color-swatch";
+export type { ColorSwatchProps } from "#react/color-swatch/color-swatch.props";
+export { Flag } from "#react/flag/flag";
+export type { FlagProps } from "#react/flag/flag.props";
+export { MarkerMap } from "#react/marker-map/marker-map";
+export type { MarkerMapProps } from "#react/marker-map/marker-map.props";
+export type { MapMarker } from "#react/marker-map/map-marker.type";

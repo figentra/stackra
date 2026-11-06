@@ -1,5 +1,170 @@
 # @stackra/validation
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/container@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- e80a99b: `stackra gen --check` locks permissions, roles, config keys, schema names, endpoints and reports (`identity_changed` unless `@Renamed` names the old identity), and accepts an integration event version bump; `@Renamed` may mark a report class.
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 0b660e0: Add `InputFields<T>` and the type-only `~defaults` brand on `Schema` (STA-1694): `InputFields` is `Fields` with the fields
+  named in `~defaults` optional, recursively for nested shapes, which is what the schema's parse accepts. `Fields` ignores
+  the brand, so `X$Check` and `X.create` are unchanged.
+
+### Patch Changes
+
+- 3c30885: Add `@stackra/console`: the `Command` kind with `@Argument` and `@Option` fields, `createConsole`, themed output
+  (gradient banner, notes, tasks, spinners, progress, tables), prompts on `node:readline`, plain and `--json` modes,
+  right-to-left-safe widths, the `runCommandForTest` harness and the `stackra-console create` scaffolder.
+  `@stackra/validation` lets its field decorators mark commands.
+- Updated dependencies [9c8d108]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

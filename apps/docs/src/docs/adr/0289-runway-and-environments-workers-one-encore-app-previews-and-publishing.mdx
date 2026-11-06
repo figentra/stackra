@@ -1,7 +1,34 @@
 ---
 title: "0289 — Runway and environments: Workers, one Encore app, one preview host and publishing"
-description: "Accepted, amended by 0296, 0352 · 2026-10-22"
+description: "Accepted, amended by 0296, 0352, 0517 · 2026-10-22"
 ---
+
+<Note>
+  Amended 2026-11-02 (owner, STA-1965) by [0517](/adr/0517-where-services-and-their-resources-run), which sets where
+  the one Encore app runs in each kind of environment:
+  - locally, under `stackra dev` with Docker;
+  - dev, on Encore Cloud's own hosting;
+  - staging and production, by Encore Cloud into our own AWS accounts (the UAE, Bahrain) and GCP project (Saudi
+    Arabia);
+  - a self-hosted Encore fallback, which Runway places.
+
+One environment is one cloud account, one region and one network. Runway is the only deploy tool, and the Control
+Plane calls it. The one Encore app and the other decisions here stand. When 0517's branded surface lands, the
+generated runtime folder is named `.stackra/runtime`.
+
+</Note>
+
+<Note>
+  2026-11-01 (owner decision, STA-1908): decision 7 stands for per-pull-request previews, which keep
+  `pr-<n>.figentra.cloud`. A separate registrable domain keeps preview cookies and storage apart
+  from figentra.com production, and one label under one zone takes one wildcard certificate, which a
+  deep name such as `pr-<n>.console.pay.preview.figentra.com` would not. The shared `preview`
+  environment keeps [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)'s naming
+  (`console.pay.preview.figentra.com`), as the 2026-11-01 note on
+  [0290](/adr/0290-dev-environment-and-cloudflare-services) records for every product surface. The
+  per-pull-request path (the pull-request number through the product publish, per-PR rows and
+  hosts, the router Worker and the 7-day cleanup) is not built yet: STA-1907.
+</Note>
 
 <Note>
   Amended by

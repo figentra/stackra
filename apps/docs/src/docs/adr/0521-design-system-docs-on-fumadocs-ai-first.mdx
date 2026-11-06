@@ -1,0 +1,113 @@
+---
+title: "0521 — Design-system docs on Fumadocs: generated component pages, the playground retired, AI-first docs"
+description: "Accepted · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0521, the owner's decisions of 2026-11-02 that the Stackra docs site (Fumadocs, ADR 0514) is the only home of the design-system docs, with generated component pages, one theme switcher, the chrome mapped to @stackra/tokens, Theme Studio and the Glass stage as pages, the contrast tests in @stackra/ui and the playground retired after a parity checklist; and that the docs are AI-first: llms.txt at a named URL, page actions, Ask AI on Tamo's gateway and the docs over the developer MCP. Boundary: decision text only; the build is STA-2024 on top of STA-2026. Runtime: documentation. Governing contract: ADR template; ADR 0155, 0182, 0227, 0282, 0302, 0303, 0320, 0360, 0514. */}
+
+<Note>
+  Accepted 2026-11-02 (STA-2024), recording the owner's decisions of that date: the design-system
+  docs move to Fumadocs, the docs are AI-first ("Yes"), and Ask AI runs on Tamo's gateway ("ship all
+  + tamo"). It amends [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (decision
+  5, the playground) and [0320](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage)
+  (where the showcase stage lives), and extends [0514](/adr/0514-self-hosted-docs-replace-mintlify)
+  for the Stackra site.
+</Note>
+
+## Context
+
+The design system is documented in two places. `apps/playground` ([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)
+decision 5) is a Vite app with one route per component, Theme Studio, the glass showcase stage of
+[0320](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage), its own `llms.txt` and the Playwright and axe gate.
+The docs site at docs.stackra.figentra.com explains the packages but shows no live component. A reader looks in both,
+and each page that exists twice drifts.
+
+[0514](/adr/0514-self-hosted-docs-replace-mintlify) moves every docs site to Fumadocs on a Cloudflare Worker, so the
+Stackra site can now render live React previews itself, and STA-2026 moves it first. At the same time, more of our
+readers are AI assistants and agents. Today `stackra gen`'s Mintlify emitter writes `llms.txt`, the landing links to
+it, and `stackra mcp` ([0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) decision 5) serves
+no docs.
+
+## Decision
+
+1. **The docs site is the only home of the design-system docs.** No design-system package or app keeps its own docs
+   pages. The Stackra site of [0514](/adr/0514-self-hosted-docs-replace-mintlify) decision 9 holds them.
+2. **Component pages are generated.** The build writes one page per component that has a catalogue record, from that
+   record and the component's showcase JSON: live previews, a props table, usage and accessibility notes. Nobody edits
+   a generated page, and a check fails when one differs from what the build would write. The UI work keeps shipping
+   the showcase JSON; the page follows it.
+3. **One theme switcher.** The docs header holds one switcher, and every preview on every page follows it. It offers
+   every theme `@stackra/tokens` defines, Glass included, and the Stackra theme once its tokens exist.
+4. **Fumadocs' Base UI chrome takes its colours from `@stackra/tokens`.** `--color-fd-primary` is `--core-strong` and
+   its foreground `--core-foreground`; large display headings use `--core` (on light, large text only); focus rings and
+   links use `--accent` and `--focus`; the rest map onto the background, surface, border and muted tokens. The site
+   shares the landing's header, theme and this mapping, so the two read as one site.
+5. **Theme Studio and the Glass stage are docs pages.** They do what the playground's did. The glass stage of
+   [0320](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage) is now a docs page; 0320's material rules are
+   unchanged, and the docs landing was already one of its showcase surfaces.
+6. **The contrast and matrix tests belong to `@stackra/ui`.** The brand-theme contrast and matrix tests run as the
+   package's own tests, so they do not depend on any app.
+7. **The playground is retired after parity, in its own change.** A parity checklist maps every playground route to its
+   new home: a docs page, a test, or a stated removal. When every row is done, `apps/playground` is deleted in one pull
+   request whose description carries the checklist. The Playwright and axe gate of
+   [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) decision 5 moves with it to the generated
+   component pages, in the docs app's end-to-end tier ([0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies)).
+   Storybook stays rejected ([0227](/adr/0227-rejected-and-deferred-technologies-refreshed)): the pages are ordinary
+   docs routes that import the public entries of `@stackra/ui`. The native preview stays in the mobile app.
+8. **`llms.txt` at a stable, named URL.** The site serves `https://docs.stackra.figentra.com/llms.txt` and
+   `https://docs.stackra.figentra.com/llms-full.txt`, covering every page, generated ones included. The URLs do not
+   change when the site moves from Mintlify to Fumadocs: the change that replaces gen's docs-site emitter with Fumadocs'
+   output retires the emitter in the same pull request, so there is no gap. The playground's own `llms.txt` goes with
+   the playground.
+9. **Every page is readable by an assistant.** Each page offers "Copy as Markdown", "Open in Claude" and the other
+   assistants Fumadocs offers, and has a raw `.md` route beside it.
+10. **Ask AI is answered by Tamo's gateway.** The site's Ask AI search calls the AI gateway that Tamo owns (today the
+    OS `ai` service, moving to figentra/tamo) through a public, unauthenticated, read-only path. That path:
+    - is rate-limited per visitor and capped by a credit budget per period, and says so when the budget is spent;
+    - answers only from the docs corpus and cites the pages it used;
+    - never reaches tenant data, tools or actions;
+    - answers from an index that lives with the gateway and is rebuilt from the same pages on each docs deploy, so an
+      answer never cites a page the site no longer has.
+
+    The docs Worker holds no model key, and no third-party answer provider is added. Until the gateway's docs endpoint
+    is live, Ask AI shows "coming soon" and sends nothing; every other decision here works without it. The endpoint's
+    shape is agreed with the gateway's owner, and the budget is the owner's number.
+
+11. **The docs are served over the developer MCP.** `stackra mcp` exposes the docs as a search tool, a read tool and one
+    resource per page, beside the `stackra` commands, so an agent searches and reads the docs and the API reference
+    without a browser. The tool shape is agreed with the owner of `toolsOf` and follows
+    [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free): reads only, under the caller's own permissions.
+
+## Consequences
+
+- One place to look: a component, its props, its themes and its accessibility notes sit on one page, and the page
+  cannot drift from the component because it is generated.
+- The build of STA-2024 waits on STA-2026, which moves the Stackra site to Fumadocs and replaces gen's Mintlify
+  emitter.
+- The docs app gains the end-to-end tier with axe that the playground had; the playground's routes, its `llms.txt`
+  plugin and its brand pull leave with it. Starting the docs site from a clean checkout must work, or name the one
+  command to run first, and call no tool that is not a listed dependency (the playground's `predev` failed that).
+- Ask AI costs gateway credits. The cost is bounded by the rate limit and the budget, and the gateway, not the docs
+  site, holds the model key.
+- The OS backend (and Tamo after the move) gains one public, read-only route and a docs index refreshed per deploy;
+  that work is theirs, agreed through the leader.
+- `stackra mcp` grows docs tools, which every agent using the developer MCP sees.
+
+## Enforcement
+
+planned — STA-2024: the generated-page drift check in the docs build; the docs app's end-to-end tier with axe over the
+component pages; the contrast and matrix tests in `@stackra/ui`; a smoke test after each deploy that fetches both
+`llms.txt` URLs and one `.md` route; the parity checklist in the pull request that deletes `apps/playground`. Until
+then nothing checks this rule.
+
+## Supersedes and sources
+
+Amends [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) decision 5 (the playground as the review
+surface) and [0320](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage) (the stage moves from the playground
+to the docs site). Extends [0514](/adr/0514-self-hosted-docs-replace-mintlify). Builds on
+[0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free),
+[0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies),
+[0227](/adr/0227-rejected-and-deferred-technologies-refreshed),
+[0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) and
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions). Sources: the owner's decisions of 2026-11-02, the approved
+spec `.agents/specs/sta-2024-design-system-docs-fumadocs`, Linear STA-2024; the number was reserved by stackra#300.

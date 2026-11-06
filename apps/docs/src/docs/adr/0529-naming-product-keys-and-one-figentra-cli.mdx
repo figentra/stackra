@@ -1,0 +1,58 @@
+---
+title: "0529 — Naming: bare product keys, figentra-<key> only for global names, and one figentra CLI with product groups"
+description: "Accepted · 2026-11-06"
+---
+
+{/* Stackra file contract. Purpose: ADR 0529 (Accepted 2026-11-06, STA-2200), the owner's naming rules for products (one short lowercase key everywhere, figentra-<key> only where a name is global, no f- prefix except fflow), one figentra CLI that discovers product command groups from installed packages, the Flow package rename with a ban on the old name, and Pulumi's own file names. Boundary: decision text only; the CLI work is STA-2209, the rename STA-2106, the checks STA-2203 and STA-2212. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0083, 0171, 0231, 0500, 0526. */}
+
+<Note>
+  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that date (rows 10 to 14)
+  and the owner's CLI decision of the same day. It amends
+  [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decisions 1 and 3 (the `figentra` CLI hosts product
+  command groups; Flow's package folder is `packages/flow`) and extends
+  [0231](/adr/0231-naming-and-casing-standard) with product keys.
+</Note>
+
+## Context
+
+Products were named three ways at once: a bare word in one place, `figentra-<word>` in another, an `f-` prefix in a
+third. Each product was also starting to ship its own binary. Flow's package folder still carried the retired
+`figentra-flow` name after the CLI became `fflow`. Pulumi requires its own file names, which collide with our casing
+rules.
+
+## Decision
+
+1. **A product key is one short lowercase word** (for example `flow`). The repository, folders, runway
+   `product.key`, the Linear project and the secret scopes use the bare key.
+2. **`figentra-<key>` only where a name is global**: the Encore app, the AWS account, Cloudflare Worker and Pages
+   names, GCP projects. npm packages stay `@figentra/<key>-…` ([0083](/adr/0083-npm-scopes-and-cli-names)). There is
+   no `f-` prefix anywhere except the `fflow` CLI.
+3. **One `figentra` CLI that products plug into.** `figentra` is the host: its core commands plus a command group
+   from every installed product. A product's package declares its group in package.json
+   (`"figentra": { "commands": "./cli" }`); the host discovers groups from the dependencies, never from a hard-coded
+   list, through `@stackra/console`'s command registration. `figentra --help` lists the core commands and every group
+   present.
+4. **Binaries that stay.** `stackra` (the public framework) and `fflow` (Flow, sold standalone) keep their own
+   binaries because they are used outside Figentra; `runway` stays as part of the public framework, as 0500 decided.
+   When Flow is installed next to `figentra`, it also registers as `figentra flow`. No product ships another binary.
+5. **Flow's package folder is `packages/flow`** (package `@figentra-oss/flow`, CLI `fflow`). `figentra-flow`,
+   `figentra_flow` and `FIGENTRA_FLOW` are banned in every case, except real external names that cannot change (a
+   GitHub App slug, an identity already issued), which are listed in the check's allow list.
+6. **Pulumi files keep Pulumi's names** (`Pulumi.yaml`, `Pulumi.<stack>.yaml`) because the CLI requires them. Our own
+   files beside them follow [0231](/adr/0231-naming-and-casing-standard).
+
+## Consequences
+
+- Product CLIs become groups under `figentra`; per-product binaries are retired as each product moves.
+- Renames of existing folders and scopes are done repository by repository with each repository's lane.
+- The ban needs an allow list, kept short and reviewed.
+
+## Enforcement
+
+`planned — cspell's forbidden words and stackra validate --repository (STA-2203) for decision 5 and the f- prefix;
+the figentra CLI's discovery test (STA-2209) for decision 3`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0500 decisions 1 and 3. Source: stackra-notes
+`src/plans/repo-standards-2026-11-06/DECISIONS.md`, rows 10 to 14.

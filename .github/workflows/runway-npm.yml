@@ -11,9 +11,10 @@
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
 # Secrets: the GitHub App id and key the version PR is pushed with (a PR pushed with GITHUB_TOKEN would not trigger
-#          the caller's gate). A caller that passes neither gets them from Infisical `prod` `/ci/release`
-#          (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC with the org variables
-#          INFISICAL_CI_IDENTITY_ID and INFISICAL_DEPLOY_PROJECT_ID, so no repository holds them (STA-1747).
+#          the caller's gate). A caller that passes neither gets them (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY)
+#          from the sops scope ci/production/release, decrypted by the job as itself (ADR 0525), so no repository
+#          holds them (STA-1747). figentra/infra grants that scope only to the callers in estate/secret-callers.mjs, on
+#          main only.
 #          No registry token exists: per package the job exchanges its
 #          GitHub ID token (audience `npm:<registry host>`) at the registry's OIDC endpoint for a publish token bound to
 #          that one name (ADR 0453 decision 6, the workflow-run form), masks it and passes it as NODE_AUTH_TOKEN;
@@ -50,10 +51,10 @@ on:
         default: https://npm.stackra.figentra.com/
     secrets:
       app-id:
-        description: The GitHub App id the version PR and the tags are pushed as; unset, it comes from Infisical.
+        description: The GitHub App id the version PR and tags are pushed as; unset, from ci/production/release.
         required: false
       app-private-key:
-        description: That App's private key; unset, it comes from Infisical.
+        description: That App's private key; unset, from ci/production/release (sops).
         required: false
     outputs:
       published:
@@ -77,24 +78,28 @@ jobs:
       id-token: write # the registry's OIDC exchange and the Sigstore provenance of each tarball
     outputs:
       published: ${{ steps.changesets.outputs.published }}
-      packages: ${{ steps.changesets.outputs.published-packages }}
     env:
       # A step's `if` cannot read `secrets`, so only whether the caller passed the App key is carried, never a value.
       HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}
 
     steps:
-      # STA-1747: a caller that passes no App secrets gets them from Infisical; the action masks and exports both.
-      - name: Bot App key (Infisical OIDC)
+      # STA-1747: a caller that passes no App secrets gets them from the sops scope ci/production/release (ADR 0525),
+      # decrypted by the job as itself; the action masks and exports each.
+      - name: Toolchain for the decrypt (mise)
         if: env.HAS_APP_SECRETS != 'true'
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/release
-          export-type: env
+          # Nothing is checked out yet, so the decrypt's node is named here (core's mise.toml pin).
+          mise_toml: |
+            [tools]
+            node = "24.22.0"
+
+      - name: Bot App (sops)
+        if: env.HAS_APP_SECRETS != 'true'
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        with:
+          scope: ci/production/release
+          names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
 
       # Scoped to what this job needs; revoked when the job ends.
       - name: App token
@@ -105,11 +110,15 @@ jobs:
           private-key: ${{ secrets.app-private-key || env.STACKRA_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+          permission-workflows: write
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the App
+          token: ${{ steps.bot.outputs.token }} # the checkout itself reads as the App
+          # changesets/action v2 pushes the version branch and tags through the GitHub API with its own `github-token`
+          # (push-with-git-cli is off), so no later step needs the checkout's git credentials (zizmor artipacked).
+          persist-credentials: false
           fetch-depth: 0 # changesets diffs against history and reads existing tags
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
@@ -135,18 +144,13 @@ jobs:
           pnpm install $INSTALL_ARGS
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525). The cache only speeds the build,
+      # so a caller without the turbo grant builds with the local cache instead of failing the release.
+      - name: Turborepo remote cache (sops)
+        continue-on-error: true
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       # Only what is published is built; each package's dist must exist before it is packed.
       - name: Build
@@ -229,6 +233,22 @@ jobs:
           REGISTRY: ${{ inputs.registry }}
           NPM_CONFIG_PROVENANCE: "true"
 
+      # The published list goes to the SBOM job as an artifact, not a job output: GitHub drops a job output that holds a
+      # masked value, and a package name can (`@figentra-oss/flow`, run 41388316844: "Skip output 'packages'").
+      - name: Published packages
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          PACKAGES: ${{ steps.changesets.outputs.published-packages }}
+        run: printf '%s\n' "$PACKAGES" > published-packages.json
+
+      - name: Upload the published list
+        if: steps.changesets.outputs.published == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: published-packages
+          path: published-packages.json
+          retention-days: 1
+
   # Runs only after a publish: the SBOM of what was installed, signed keylessly with this job's OIDC identity, kept as
   # an artifact and attached, with the tarballs' SHA-256 sums, to every release the publish created. No App token and
   # no npm access here (the tarballs are public reads).
@@ -261,10 +281,10 @@ jobs:
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm install $INSTALL_ARGS
 
-      # `--ignore-npm-errors`: cyclonedx-npm shells out to `npm ls`, which reports the devDependency-only peer graphs
-      # of transitive tools as errors although pnpm installed fine. Pinned through npx: not a catalog dependency.
+      # pnpm's own `sbom` reads the pnpm lockfile and store; cyclonedx-npm shelled out to `npm ls`, which cannot read a
+      # pnpm tree and listed hundreds of false missing and invalid packages.
       - name: Generate SBOM (CycloneDX)
-        run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file sbom.cdx.json
+        run: pnpm sbom --sbom-format cyclonedx --out sbom.cdx.json
 
       # Keyless: the certificate names this workflow and repository, so a verifier pins both
       # (`cosign verify-blob --certificate-identity-regexp … --certificate-oidc-issuer https://token.actions.githubusercontent.com`).
@@ -282,16 +302,20 @@ jobs:
             sbom.cdx.json.sigstore.json
           retention-days: 90
 
+      - name: Download the published list
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: published-packages
+
       # The tarballs exactly as the registry serves them, each checked against the integrity (sha512) the registry
       # computed at publish, then listed by SHA-256. A convenience: integrity rests on provenance and the SBOM.
       - name: Checksums (sha256sums.txt)
         env:
-          PACKAGES: ${{ needs.release.outputs.packages }}
           REGISTRY: ${{ inputs.registry }}
         run: |
           set -euo pipefail
           mkdir tarballs
-          jq -r '.[] | [.name, .version] | @tsv' <<< "$PACKAGES" | while IFS=$'\t' read -r name version; do
+          jq -r '.[] | [.name, .version] | @tsv' published-packages.json | while IFS=$'\t' read -r name version; do
             dist="$(curl -fsS "${REGISTRY}${name/\//%2f}/${version}" | jq -c '.dist')"
             file="${name#@}"
             file="tarballs/${file//\//-}-${version}.tgz"
@@ -306,8 +330,7 @@ jobs:
       - name: Attach SBOM and checksums to the releases
         env:
           GH_TOKEN: ${{ github.token }}
-          PACKAGES: ${{ needs.release.outputs.packages }}
         run: |
-          jq -r '.[] | "\(.name)@\(.version)"' <<< "$PACKAGES" | while read -r tag; do
+          jq -r '.[] | "\(.name)@\(.version)"' published-packages.json | while read -r tag; do
             gh release upload "$tag" sbom.cdx.json sbom.cdx.json.sigstore.json sha256sums.txt --clobber
           done

@@ -1,0 +1,59 @@
+---
+title: "0526 — Repository layout: members only, docs at the root, one tools folder, checked against a template"
+description: "Accepted · 2026-11-06"
+---
+
+{/* Stackra file contract. Purpose: ADR 0526 (Accepted 2026-11-06, STA-2197), the owner's repository-layout rules for every Stackra and Figentra repository: no root src, docs at the root, apps only where an app is the product, the template first and then one layout check, and scripts in the CLIs or one tools folder. Boundary: decision text only; the check is STA-2203 and the rollout STA-2212. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0001, 0010, 0500, 0528. */}
+
+<Note>
+  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that date (rows 1 to 5).
+  It amends [0001](/adr/0001-monorepo-layout) (the root holds no code, and `docs/` and `tools/` are the only extra
+  root folders) and [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decision 4 (a script that is not
+  generic may stay, under one `tools/` with a README).
+</Note>
+
+## Context
+
+Every Stackra and Figentra repository is a pnpm monorepo, but the roots had drifted: some grew a root `src/`, some kept
+several script folders, some had empty `apps/` or `services/` folders made by a command run in the wrong place, and new
+product repositories were copied from whichever product looked most current instead of from a template. A root `src/`
+breaks the member model of [0001](/adr/0001-monorepo-layout) and [0010](/adr/0010-services-are-independent-workspace-members):
+code outside a member has no package.json, no tier and no boundary. Deleting every script outright was weighed and
+rejected: a few scripts are truly about one repository.
+
+## Decision
+
+1. **No root `src/`.** The root holds workspace config and docs only (README, AGENTS.md, CLAUDE.md, package.json for
+   scripts, pnpm-workspace.yaml, turbo.json, mise, lefthook, renovate, security files). Code lives in members:
+   `packages/`, `services/`, `workers/`, `apps/`.
+2. **`docs/` at each repository's root.** A repository whose docs site is published keeps the site as a member (core's
+   `apps/docs`) and may still have a root `docs/` for repository notes.
+3. **`apps/` only where an app is the product.** A repository has `apps/` only when it is the source of apps: the
+   OS template lines that Runway builds every product's apps from, and core's docs site. Product repositories have no
+   `apps/`; Runway builds their apps from the lines.
+4. **Template first, then conformance.** Each repository names its template (decision 1 of
+   [0528](/adr/0528-neutral-and-stackra-templates)). `stackra validate --repository` diffs the repository's root and
+   top-level folders against that template and passes only the declared differences: the repository's members and
+   the exceptions in this ADR. The template is made production-ready before any repository is held to it.
+5. **Scripts: no blanket delete.** A generic script moves into a CLI (`stackra`, `figentra`, `fflow`) or into the
+   template. A script that is truly about one repository stays under one root `tools/` folder whose README says why
+   each entry is there. The layout check refuses a script folder outside `tools/` (a root `scripts/` or `bin/`, or one
+   inside a member that is not a build step of that member).
+6. **Empty folders are removed.** A member folder (`services/`, `workers/`, `apps/`) with no member in it is deleted
+   until a member exists.
+
+## Consequences
+
+- A new product repository is a copy of the template plus its members; nothing is taken from another product.
+- Moving the remaining scripts is work per repository (STA-2211), done with each repository's lane.
+- A reviewer can answer "is this folder allowed?" from the template and this ADR alone.
+
+## Enforcement
+
+`planned — stackra validate --repository` (STA-2203), run in every repository's CI once the repository conforms
+(STA-2212). Until then, review against this page.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0001 and 0500 decision 4. Source: stackra-notes
+`src/plans/repo-standards-2026-11-06/DECISIONS.md`, rows 1 to 5, and the owner ledger entry of 2026-11-06.

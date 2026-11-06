@@ -1,5 +1,439 @@
 # @stackra/collaboration
 
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [0b0cf51]
+  - @stackra/outbox@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/transport@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/realtime@0.15.0
+  - @stackra/entitlements@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/iam@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/transport@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/outbox@0.14.4
+  - @stackra/realtime@0.14.4
+  - @stackra/entitlements@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/transport@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/outbox@0.14.3
+  - @stackra/realtime@0.14.3
+  - @stackra/entitlements@0.14.3
+  - @stackra/iam@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/realtime@0.14.2
+  - @stackra/entitlements@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/transport@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/transport@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/outbox@0.14.1
+  - @stackra/realtime@0.14.1
+  - @stackra/entitlements@0.14.1
+  - @stackra/iam@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/transport@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/realtime@0.14.0
+  - @stackra/entitlements@0.14.0
+  - @stackra/iam@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/transport@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/outbox@0.13.0
+  - @stackra/realtime@0.13.0
+  - @stackra/entitlements@0.13.0
+  - @stackra/iam@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/transport@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/outbox@0.12.0
+  - @stackra/realtime@0.12.0
+  - @stackra/entitlements@0.12.0
+  - @stackra/iam@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/transport@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/outbox@0.11.1
+  - @stackra/realtime@0.11.1
+  - @stackra/entitlements@0.11.1
+  - @stackra/iam@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/transport@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/outbox@0.11.0
+  - @stackra/realtime@0.11.0
+  - @stackra/entitlements@0.11.0
+  - @stackra/iam@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/outbox@0.10.0
+  - @stackra/realtime@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/transport@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/entitlements@0.10.0
+  - @stackra/iam@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/outbox@0.9.0
+  - @stackra/realtime@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/transport@0.9.0
+  - @stackra/entitlements@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+  - @stackra/database@0.8.0
+  - @stackra/container@0.8.0
+  - @stackra/outbox@0.8.0
+  - @stackra/entitlements@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/realtime@0.8.0
+  - @stackra/transport@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/iam@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/transport@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/outbox@0.7.1
+  - @stackra/realtime@0.7.1
+  - @stackra/entitlements@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/transport@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/outbox@0.7.0
+  - @stackra/realtime@0.7.0
+  - @stackra/entitlements@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/transport@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/outbox@0.6.1
+  - @stackra/realtime@0.6.1
+  - @stackra/entitlements@0.6.1
+  - @stackra/iam@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [fb29d41]
+- Updated dependencies [e250d4f]
+  - @stackra/database@0.6.0
+  - @stackra/iam@0.6.0
+  - @stackra/outbox@0.6.0
+  - @stackra/entitlements@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/transport@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/realtime@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4fa949b]
+  - @stackra/database@0.5.1
+  - @stackra/outbox@0.5.1
+  - @stackra/entitlements@0.5.1
+  - @stackra/iam@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/model@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/transport@0.5.1
+  - @stackra/validation@0.5.1
+  - @stackra/realtime@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/iam@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/transport@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/outbox@0.5.0
+  - @stackra/realtime@0.5.0
+  - @stackra/entitlements@0.5.0
+
+## 0.4.0
+
+### Patch Changes
+
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- 36dbd49: Each package with models of its own exports `<MEMBER>_ENTITIES` from `./node`, which a hosting service's generated
+  `registrations.ts` imports to register the package's entities; without it the service failed with TS2305 (STA-1793). `stackra validate --repository` refuses a package with own
+  models whose stand-in `./node` barrel misses it.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [bb08f25]
+- Updated dependencies [1856ee0]
+- Updated dependencies [70e6c17]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [2bbc0e8]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/iam@0.4.0
+  - @stackra/outbox@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/entitlements@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/realtime@0.4.0
+  - @stackra/transport@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

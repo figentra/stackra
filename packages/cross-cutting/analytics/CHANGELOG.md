@@ -1,5 +1,376 @@
 # @stackra/analytics
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/privacy@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/consent@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/storage@0.15.0
+  - @stackra/platform@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/privacy@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/consent@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/storage@0.14.4
+  - @stackra/platform@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/storage@0.14.3
+  - @stackra/platform@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/consent@0.14.3
+  - @stackra/iam@0.14.3
+  - @stackra/privacy@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/storage@0.14.2
+  - @stackra/platform@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/consent@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/privacy@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/storage@0.14.1
+  - @stackra/platform@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/consent@0.14.1
+  - @stackra/iam@0.14.1
+  - @stackra/privacy@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/storage@0.14.0
+  - @stackra/platform@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/consent@0.14.0
+  - @stackra/iam@0.14.0
+  - @stackra/privacy@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/storage@0.13.0
+  - @stackra/platform@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/consent@0.13.0
+  - @stackra/iam@0.13.0
+  - @stackra/privacy@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/storage@0.12.0
+  - @stackra/platform@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/consent@0.12.0
+  - @stackra/iam@0.12.0
+  - @stackra/privacy@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/storage@0.11.1
+  - @stackra/platform@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/consent@0.11.1
+  - @stackra/iam@0.11.1
+  - @stackra/privacy@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/storage@0.11.0
+  - @stackra/platform@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/consent@0.11.0
+  - @stackra/iam@0.11.0
+  - @stackra/privacy@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/platform@0.10.0
+  - @stackra/consent@0.10.0
+  - @stackra/privacy@0.10.0
+  - @stackra/storage@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/iam@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- cc375d5: `./contracts` adds the `AnalyticsStore` port, Stackra's own store of analytics deliveries (ADR 0190 decision 3 as
+  amended), with its `AnalyticsStoreQuery`: `append` keeps a delivery once per event id, `scan` reads a capture-time
+  window oldest first, and `erasePerson` deletes a subject's identified and anonymous deliveries. `./node` adds its
+  `memory` driver, `MemoryAnalyticsStoreDriver`, for tests and previews. The ClickHouse and DuckDB drivers are Pro and
+  wait on ADR 0227, which still defers an OLAP engine.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/storage@0.9.0
+  - @stackra/platform@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/consent@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/privacy@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/privacy@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/storage@0.8.0
+  - @stackra/platform@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/consent@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/privacy@0.7.1
+  - @stackra/iam@0.7.1
+  - @stackra/consent@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/storage@0.7.1
+  - @stackra/platform@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/consent@0.7.0
+  - @stackra/privacy@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/storage@0.7.0
+  - @stackra/platform@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/storage@0.6.1
+  - @stackra/platform@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/consent@0.6.1
+  - @stackra/iam@0.6.1
+  - @stackra/privacy@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [e250d4f]
+  - @stackra/iam@0.6.0
+  - @stackra/privacy@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/storage@0.6.0
+  - @stackra/platform@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/consent@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/iam@0.5.1
+  - @stackra/privacy@0.5.1
+  - @stackra/consent@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/storage@0.5.1
+  - @stackra/platform@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/consent@0.5.0
+  - @stackra/iam@0.5.0
+  - @stackra/privacy@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/storage@0.5.0
+  - @stackra/platform@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 36c9363: Analytics relay (STA-1624, ADR 0483). Apps send product analytics only to the analytics service: the new `relay`
+  driver (`.` and `./native`) posts the envelope deliveries unchanged to `<ingestOrigin>/analytics/batches` with the
+  `Stackra-Consent` header, and holds no vendor key, SDK or host. `./node` adds `IngestAnalyticsBatchAction`
+  (`analytics_batch.ingest`, public), which reads the verified consent snapshot, binds deliveries to its subject, strips
+  `denyProperties` and publishes one `AnalyticsBatchAccepted` per granted destination, and `FanOutAnalyticsListener`,
+  which sends each to its destination's driver. `AnalyticsContext` gains a coarse `device` record, which the PostHog
+  driver maps to `$os`, `$os_version`, `$app_build` and `$device_type` (with `$app_version`); a server send turns
+  PostHog's GeoIP off. `ANALYTICS_INGEST_PATH` joins `./contracts`.
+
+### Patch Changes
+
+- a8c358a: The delivery schema's optional fields are exact-optional, so its output fits `AnalyticsDelivery` under `exactOptionalPropertyTypes` and `@Field` accepts `deliveries`. A delivery that sends an optional field as an explicit `undefined` is now refused; omit it instead.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [90f55b1]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [bb08f25]
+- Updated dependencies [1856ee0]
+- Updated dependencies [70e6c17]
+- Updated dependencies [5fc0db7]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/iam@0.4.0
+  - @stackra/consent@0.4.0
+  - @stackra/privacy@0.4.0
+  - @stackra/storage@0.4.0
+  - @stackra/platform@0.4.0
+  - @stackra/config@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

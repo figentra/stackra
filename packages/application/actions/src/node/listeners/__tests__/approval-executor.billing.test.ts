@@ -225,7 +225,7 @@ describe("a billing-shaped coupon create action with an approval stage", () => {
 
     // the requester cannot approve their own coupon
     await expect(gate.approve(approvalId, { ...approver, actor: requester })).rejects.toMatchObject(
-      { code: "self_approval" },
+      { refusal: "self_approval" },
     );
 
     // a second person can; the grant executes the coupon once, as the requester
@@ -241,6 +241,7 @@ describe("a billing-shaped coupon create action with an approval stage", () => {
       occurredAt: NOW,
       scopeId: "ten_1",
       now: () => NOW,
+      audit: () => {},
     };
     await executor.handle(event, ctx);
     await executor.handle(event, ctx);

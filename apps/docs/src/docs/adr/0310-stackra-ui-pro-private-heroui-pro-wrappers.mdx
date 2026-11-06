@@ -9,7 +9,7 @@ description: "Accepted · 2026-10-23 · amended 2026-10-24 (STA-445, STA-447) ·
   Amended 2026-10-28 (STA-1371) by
   [0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only):
   Stackra ships no HeroUI Pro. Decisions 1 to 10 and 12 are withdrawn: there is no Pro wrapper
-  package, no Pro catalog pin, no Pro install path and no `HEROUI_AUTH_TOKEN` in this repository.
+  package, no Pro catalog pin, no Pro install path and no HeroUI CI/CD token in this repository.
   Decision 11 (Uniwind Pro in our own apps) stands, with `UNIWIND_AUTH_TOKEN` and the gate's
   Infisical identity (decision 9) serving it alone.
 </Note>
@@ -135,10 +135,10 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
    - Both come from the public npm registry. Both are listed in `allowBuilds` in `pnpm-workspace.yaml`, so their `postinstall` runs.
      There is no private registry and no `.npmrc` auth.
    - Locally, the postinstall uses the developer's `heroui-pro login` session, which lasts 180 days.
-   - In CI, it uses `HEROUI_AUTH_TOKEN`, HeroUI's CI/CD token. A step of the Quality Gate reads that one name from Infisical `/ci`
-     (environment `prod`) over GitHub OIDC. The step exports only `HEROUI_AUTH_TOKEN`, and it runs before `pnpm install`.
+   - In CI, it uses HeroUI's CI/CD token. A step of the Quality Gate reads that one name from Infisical `/ci`
+     (environment `prod`) over GitHub OIDC. The step exports only that token, and it runs before `pnpm install`.
 8. **The token names.** `HEROUI_PERSONAL_TOKEN` stays in Infisical `/agents`, and in this repository only the HeroUI MCP servers use it. Our apps
-   install with the `heroui-pro login` session locally and with `HEROUI_AUTH_TOKEN` in CI. CI uses the CI/CD token because
+   install with the `heroui-pro login` session locally and with the CI/CD token in CI. CI uses the CI/CD token because
    HeroUI's postinstall reads only that variable, and HeroUI tells pipelines to use the CI/CD token. This amends
    [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) decision 4, which said that our apps and CI keep `HEROUI_PERSONAL_TOKEN`.
    One exception sits outside this repository: the public stackra-template console uses HeroUI Pro directly
@@ -146,7 +146,7 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
    `HEROUI_PERSONAL_TOKEN`, which the template's CI reads from Infisical over GitHub OIDC (ADR 0197 as amended).
 9. **The CI permission (change risk R3, [0099](/adr/0099-risk-scale-l0-to-l4)).** The Quality Gate job gains `id-token: write`, and
    only the Infisical step uses it. The Infisical machine identity for that step is named by the repository variable
-   `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decision 11). Until the owner
+   `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only HeroUI's CI/CD token and `UNIWIND_AUTH_TOKEN` (decision 11). Until the owner
    sets both, the gate fails at a named step that says what is missing. Without the Pro build, the Pro package cannot typecheck or
    build.
    The identity trusts three GitHub OIDC subjects, one per event the gate runs on, in the immutable form, because the
@@ -191,7 +191,7 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 - Every CI install depends on HeroUI's CDN and on the `/ci` token. A CDN outage or an expired token blocks the install, so the
   gate cannot run.
 - A developer runs `heroui-pro login` once, and renews it every 180 days. That is a chore for each developer.
-- The owner adds `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` to Infisical `/ci`, and sets the `INFISICAL_GATE_IDENTITY_ID` repository variable.
+- The owner adds HeroUI's CI/CD token and `UNIWIND_AUTH_TOKEN` to Infisical `/ci`, and sets the `INFISICAL_GATE_IDENTITY_ID` repository variable.
 - Lifting the private rule needs a new ADR, after the OEM answer (STA-41). The open question in 0197 stays open until then.
 
 ## Enforcement
@@ -214,7 +214,7 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 - `packages/design-system/ui-pro/tsdown.config.ts` builds minified output with no source maps (0316 decision 2).
 - gitleaks (the pre-commit hook and the CI scan) keeps the token out of git, as [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) requires.
 - The Quality Gate (`.github/workflows/ci.yml`) stops at its `Licensed UI prerequisites` step when `INFISICAL_GATE_IDENTITY_ID` is
-  unset, and its `HeroUI Pro token (Infisical OIDC)` and `Uniwind Pro token (Infisical OIDC)` steps export only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decisions 9 and 11). The release workflow
+  unset, and its `HeroUI Pro token (Infisical OIDC)` and `Uniwind Pro token (Infisical OIDC)` steps export only HeroUI's CI/CD token and `UNIWIND_AUTH_TOKEN` (decisions 9 and 11). The release workflow
   builds only the packages, never `@stackra/ui-pro` (`.github/workflows/release.yml`, `Build`), and its
   installs and the static deploy's skip `@figentra/mobile`, `@figentra/playground` and `@stackra/ui-pro`, whose postinstalls
   fail without the tokens.

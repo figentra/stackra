@@ -25,6 +25,8 @@ import FreeAccountConnectionConnected from "#src/demos/free/account-connection/c
 import FreeAccountConnectionConnectedCode from "#src/demos/free/account-connection/connected.code";
 import FreeAccountConnectionLive from "#src/demos/free/account-connection/live";
 import FreeAccountConnectionLiveCode from "#src/demos/free/account-connection/live.code";
+import FreeActionInputModalBasics from "#src/demos/free/action-input-modal/basics";
+import FreeActionInputModalBasicsCode from "#src/demos/free/action-input-modal/basics.code";
 import FreeActionMenuBasics from "#src/demos/free/action-menu/basics";
 import FreeActionMenuBasicsCode from "#src/demos/free/action-menu/basics.code";
 import FreeActionMenuPlacement from "#src/demos/free/action-menu/placement";
@@ -713,6 +715,8 @@ import FreeModelPickerBasics from "#src/demos/free/model-picker/basics";
 import FreeModelPickerBasicsCode from "#src/demos/free/model-picker/basics.code";
 import FreeModelPickerCompact from "#src/demos/free/model-picker/compact";
 import FreeModelPickerCompactCode from "#src/demos/free/model-picker/compact.code";
+import FreeModuleMenuBasics from "#src/demos/free/module-menu/basics";
+import FreeModuleMenuBasicsCode from "#src/demos/free/module-menu/basics.code";
 import FreeMoneyFieldBasics from "#src/demos/free/money-field/basics";
 import FreeMoneyFieldBasicsCode from "#src/demos/free/money-field/basics.code";
 import FreeMoneyFieldCurrencies from "#src/demos/free/money-field/currencies";
@@ -957,6 +961,12 @@ import FreeRecurrenceEditorMonthly from "#src/demos/free/recurrence-editor/month
 import FreeRecurrenceEditorMonthlyCode from "#src/demos/free/recurrence-editor/monthly.code";
 import FreeRecurrenceEditorHijri from "#src/demos/free/recurrence-editor/hijri";
 import FreeRecurrenceEditorHijriCode from "#src/demos/free/recurrence-editor/hijri.code";
+import FreeResourceFormPageBasics from "#src/demos/free/resource-form-page/basics";
+import FreeResourceFormPageBasicsCode from "#src/demos/free/resource-form-page/basics.code";
+import FreeResourceListPageBasics from "#src/demos/free/resource-list-page/basics";
+import FreeResourceListPageBasicsCode from "#src/demos/free/resource-list-page/basics.code";
+import FreeResourceViewPageBasics from "#src/demos/free/resource-view-page/basics";
+import FreeResourceViewPageBasicsCode from "#src/demos/free/resource-view-page/basics.code";
 import FreeResultPaid from "#src/demos/free/result/paid";
 import FreeResultPaidCode from "#src/demos/free/result/paid.code";
 import FreeResultStates from "#src/demos/free/result/states";
@@ -1075,6 +1085,8 @@ import FreeShimmerThinking from "#src/demos/free/shimmer/thinking";
 import FreeShimmerThinkingCode from "#src/demos/free/shimmer/thinking.code";
 import FreeShimmerBlock from "#src/demos/free/shimmer/block";
 import FreeShimmerBlockCode from "#src/demos/free/shimmer/block.code";
+import FreeSignInBasics from "#src/demos/free/sign-in/basics";
+import FreeSignInBasicsCode from "#src/demos/free/sign-in/basics.code";
 import FreeSkeletonAnimations from "#src/demos/free/skeleton/animations";
 import FreeSkeletonAnimationsCode from "#src/demos/free/skeleton/animations.code";
 import FreeSkeletonShapes from "#src/demos/free/skeleton/shapes";
@@ -1213,6 +1225,8 @@ import FreeTaskTrayLive from "#src/demos/free/task-tray/live";
 import FreeTaskTrayLiveCode from "#src/demos/free/task-tray/live.code";
 import FreeTaskTrayStates from "#src/demos/free/task-tray/states";
 import FreeTaskTrayStatesCode from "#src/demos/free/task-tray/states.code";
+import FreeTenantMenuBasics from "#src/demos/free/tenant-menu/basics";
+import FreeTenantMenuBasicsCode from "#src/demos/free/tenant-menu/basics.code";
 import FreeTextAreaVariants from "#src/demos/free/text-area/variants";
 import FreeTextAreaVariantsCode from "#src/demos/free/text-area/variants.code";
 import FreeTextAreaParts from "#src/demos/free/text-area/parts";
@@ -1403,6 +1417,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/account-connection.json") as ApiDoc,
+  },
+  "free/action-input-modal": {
+    examples: {
+      basics: { Demo: FreeActionInputModalBasics, code: FreeActionInputModalBasicsCode },
+    },
   },
   "free/action-menu": {
     examples: {
@@ -2498,6 +2517,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/model-picker.json") as ApiDoc,
   },
+  "free/module-menu": {
+    examples: {
+      basics: { Demo: FreeModuleMenuBasics, code: FreeModuleMenuBasicsCode },
+    },
+  },
   "free/money-field": {
     examples: {
       basics: { Demo: FreeMoneyFieldBasics, code: FreeMoneyFieldBasicsCode },
@@ -2944,6 +2968,21 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/recurrence-editor.json") as ApiDoc,
   },
+  "free/resource-form-page": {
+    examples: {
+      basics: { Demo: FreeResourceFormPageBasics, code: FreeResourceFormPageBasicsCode },
+    },
+  },
+  "free/resource-list-page": {
+    examples: {
+      basics: { Demo: FreeResourceListPageBasics, code: FreeResourceListPageBasicsCode },
+    },
+  },
+  "free/resource-view-page": {
+    examples: {
+      basics: { Demo: FreeResourceViewPageBasics, code: FreeResourceViewPageBasicsCode },
+    },
+  },
   "free/result": {
     examples: {
       paid: { Demo: FreeResultPaid, code: FreeResultPaidCode },
@@ -3131,6 +3170,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/shimmer.json") as ApiDoc,
+  },
+  "free/sign-in": {
+    examples: {
+      basics: { Demo: FreeSignInBasics, code: FreeSignInBasicsCode },
+    },
   },
   "free/skeleton": {
     examples: {
@@ -3356,6 +3400,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/task-tray.json") as ApiDoc,
+  },
+  "free/tenant-menu": {
+    examples: {
+      basics: { Demo: FreeTenantMenuBasics, code: FreeTenantMenuBasicsCode },
+    },
   },
   "free/text-area": {
     examples: {

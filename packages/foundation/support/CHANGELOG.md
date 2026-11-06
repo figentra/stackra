@@ -1,5 +1,92 @@
 # @stackra/support
 
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+No changes in this release.
+
+## 0.10.0
+
+No changes in this release.
+
+## 0.9.0
+
+No changes in this release.
+
+## 0.8.0
+
+No changes in this release.
+
+## 0.7.1
+
+No changes in this release.
+
+## 0.7.0
+
+No changes in this release.
+
+## 0.6.1
+
+No changes in this release.
+
+## 0.6.0
+
+No changes in this release.
+
+## 0.5.1
+
+No changes in this release.
+
+## 0.5.0
+
+No changes in this release.
+
+## 0.4.0
+
+### Minor Changes
+
+- 58c7da9: <!-- Purpose: release note for addCalendarMonths. Boundary: changelog text only. Runtime: none. Governing contract: STA-1725; ADR 0366. -->
+  
+  Add `addCalendarMonths(instant, months, timeZone, anchorDay?)`: whole calendar months on the wall clock of an IANA time
+  zone, the day clamped to the month's end (31 Jan, 28 or 29 Feb, 31 Mar) and `anchorDay` keeping the original day across
+  a chain. A time skipped by a spring-forward change moves to the first valid instant; an ambiguous fall-back time takes
+  the earlier offset. It needs no dependency (`Intl.DateTimeFormat`).
+
 ## 0.3.0
 
 ### Patch Changes

@@ -1,16 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: `TestRunOptions`, how `runCommandForTest` runs: scripted answers (which make the run interactive), extra
- *          environment, colour, width, a container, and a signal to send once the command starts.
+ *          environment, colour, width, a container, a signal to send once the command starts, and the console's
+ *          `--json` shape and `requireCommand`.
  * Boundary: a type only.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-027.
+ * Governing contract: STA-1730 spec FR-027; ADR 0506 (amendment 2026-11-03).
  */
 import type { CommandAudit } from "#contracts/ports/command-audit.port";
+import type { Completions } from "#contracts/ports/completions.port";
 import type { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
+import type { ProcessRunner } from "#contracts/ports/process-runner.port";
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
+import type { ConsolePorts } from "#core/types/console-ports.type";
 
 /** The options of one test run. */
 export interface TestRunOptions {
@@ -37,4 +41,22 @@ export interface TestRunOptions {
 
   /** Sent on the next tick after the run starts, to test interruption. */
   readonly signal?: ConsoleSignal;
+
+  /** The child processes `io.process` runs; a `MemoryProcessRunnerDriver` with nothing scripted when absent. */
+  readonly process?: ProcessRunner;
+
+  /** The run's working directory (`io.cwd`); `/work` by default. */
+  readonly cwd?: string;
+
+  /** The Tab completions `completion` and `complete` use; none when absent. */
+  readonly completions?: Completions;
+
+  /** The console's `--json` shape (`ConsoleConfig.json`); the envelope when absent. */
+  readonly json?: ConsoleConfig["json"];
+
+  /** Whether an invocation must name a command (`ConsoleConfig.requireCommand`). */
+  readonly requireCommand?: boolean;
+
+  /** Makes the run's renderer, to test a driver of your own; the text driver when absent. */
+  readonly renderer?: ConsolePorts["renderer"];
 }

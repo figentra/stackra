@@ -567,6 +567,11 @@ describe("handleRequest", () => {
         expect((await registry.request(`/-/stackra/v1/catalogue?${query}`)).status).toBe(400);
     });
 
+    it("filters by the contract and docs kinds", async () => {
+      for (const kind of ["contract", "docs"])
+        expect((await registry.request(`/-/stackra/v1/catalogue?kind=${kind}`)).status).toBe(200);
+    });
+
     it("answers one item with its versions", async () => {
       const item = await body(await registry.request("/-/stackra/v1/catalogue/@stackra/core"));
       expect(item).toEqual(

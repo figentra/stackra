@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/runway until `stackra gen` writes the entry barrels
  *          (STA-339): the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
  *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
- *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316) with the command runner they share (ADR 0352 decision 3),
+ *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316, `cloudflare-workers`, STA-1921) with the command runner they share (ADR 0352 decision 3),
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
  *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
@@ -26,6 +26,7 @@
  *                     ADR 0441; ADR 0436 (decisions 4 and 10); ADR 0437; ADR 0481; app-shells 4.2, 5.3, 15 and 16.
  */
 export { AscAppleDeveloperDriver } from "#node/drivers/asc-apple-developer.driver";
+export { CloudflareWorkersProviderDriver } from "#node/drivers/cloudflare-workers-provider.driver";
 export { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 export { ExpoGraphqlProjectsDriver } from "#node/drivers/expo-graphql-projects.driver";
 export { FirebaseManagementDriver } from "#node/drivers/firebase-management.driver";
@@ -67,14 +68,17 @@ export { capabilityConfig } from "#node/functions/capability-config.function";
 export { checkoutLine } from "#node/functions/checkout-line.function";
 export { checkOpsReview } from "#node/functions/check-ops-review.function";
 export { checkShellCompatibility } from "#node/functions/check-shell-compatibility.function";
+export { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 export { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";
 export { easJsonOf } from "#node/functions/eas-json-of.function";
 export { exportSourceOf } from "#node/functions/export-source-of.function";
+export { fileDeployLock } from "#node/functions/file-deploy-lock.function";
 export { onboardMobile } from "#node/functions/onboard-mobile.function";
 export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
+export { writeDevFacts } from "#node/functions/write-dev-facts.function";
 export { platformRows } from "#node/functions/platform-rows.function";
 export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";
@@ -83,10 +87,15 @@ export { publishProduct } from "#node/functions/publish-product.function";
 export { publishShell } from "#node/functions/publish-shell.function";
 export { readBundles } from "#node/functions/read-bundles.function";
 export { launchCheckJob } from "#node/functions/launch-check-job.function";
+export { proveGithubJob } from "#node/functions/prove-github-job.function";
+export { readMemberSecrets } from "#node/functions/read-member-secrets.function";
 export { readRunway } from "#node/functions/read-runway.function";
+export { readRunways } from "#node/functions/read-runways.function";
+export { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
+export { syncSecrets } from "#node/functions/sync-secrets.function";
 export { releaseOf } from "#node/functions/release-of.function";
 export { renderShellPage } from "#node/functions/render-shell-page.function";
-export { runCommand } from "#node/functions/run-command.function";
+export { runProgram } from "#node/functions/run-program.function";
 export { runBrandStep } from "#node/functions/run-brand-step.function";
 export { runLaunchCheck } from "#node/functions/run-launch-check.function";
 export { runMobileJob } from "#node/functions/run-mobile-job.function";
@@ -100,6 +109,7 @@ export { uploadBundle } from "#node/functions/upload-bundle.function";
 export type { AppLinkKeys } from "#node/types/app-link-keys.type";
 export type { BundleManifest } from "#node/types/bundle-manifest.type";
 export type { CanaryPromotion } from "#node/types/canary-promotion.type";
+export type { GithubJobClaims } from "#node/types/github-job-claims.type";
 export type { CanaryPromotionRequest } from "#node/types/canary-promotion-request.type";
 export type { CanarySample } from "#node/types/canary-sample.type";
 export type { CanarySettings } from "#node/types/canary-settings.type";
@@ -122,6 +132,8 @@ export type { BrandStepRequest } from "#node/types/brand-step-request.type";
 export type { BrandStepRun } from "#node/types/brand-step-run.type";
 export type { CaptureStep } from "#node/types/capture-step.type";
 export type { CommandRunner } from "#node/types/command-runner.type";
+export type { DeployRunways } from "#node/types/deploy-runways.type";
+export type { SecretSyncEntry } from "#node/types/secret-sync-entry.type";
 export type { DryRunCommand } from "#node/types/dry-run-command.type";
 export type { DevServerOptions } from "#node/types/dev-server-options.type";
 export type { LineCheckout } from "#node/types/line-checkout.type";

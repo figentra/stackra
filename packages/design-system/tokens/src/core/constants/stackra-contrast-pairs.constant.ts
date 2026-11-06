@@ -2,9 +2,10 @@
  * Stackra file contract:
  * Purpose: the stackra theme's own contrast pairs (ADR 0340 decision 8): every WCAG minimum of the approved brand
  *          kit's contrast report, moved into code when the kit's reports left the package, with the palette pairs the
- *          defaults leave out (the accent steps, the signal, the tile ink, the strong amber), the segment pair the kit
- *          predates, and decision 9's banner and chart pairs. `checkTheme(STACKRA_THEME, STACKRA_CONTRAST_PAIRS)` finds
- *          nothing, and the foundations page shows each role's pair from here.
+ *          defaults leave out (the accent steps, the champagne core of ADR 0520, the signal, the tile ink, the strong
+ *          amber), the segment pair the kit predates, and decision 9's banner and chart pairs.
+ *          `checkTheme(STACKRA_THEME, STACKRA_CONTRAST_PAIRS)` finds nothing, and the foundations page shows each
+ *          role's pair from here.
  * Boundary: data only; names the stackra theme's palette, so it measures that theme and its layers, not any theme
  *           (`DEFAULT_CONTRAST_PAIRS` does that). A policy adds its own pairs on top.
  * Runtime: isomorphic
@@ -57,6 +58,16 @@ export const STACKRA_CONTRAST_PAIRS: readonly ContrastPair[] = Object.freeze([
   text("accent-soft-foreground", "background"),
   text("accent-soft-foreground", "surface"),
   text("muted", "accent-soft"),
+  // The champagne core (ADR 0520, brand rules §39): its label on every fill step, `core-strong` as small text.
+  text("core-foreground", "core-strong"),
+  text("core-foreground", "core-hover"),
+  text("core-foreground", "core-pressed"),
+  text("core-strong", "background"),
+  text("core-strong", "surface"),
+  text("core-strong", "core-soft"),
+  // `core` is large display text and art only, so it holds WCAG's large-text minimum of 3:1.
+  edge("core", "background"),
+  edge("core", "surface"),
   text("success-foreground", "success"),
   text("warning-foreground", "warning"),
   text("danger-foreground", "danger"),

@@ -29,6 +29,8 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { TESTBED_DEFAULTS } from "#core/constants/testbed-defaults.constant";
+
 const AGENT = fileURLToPath(new URL("../testbed-agent.sh", import.meta.url));
 const TOKEN = "s3cr3t-token-value";
 
@@ -43,9 +45,15 @@ function stub(name: string, body: string): void {
   chmodSync(join(dir("bin"), name), 0o755);
 }
 
+// A box job runs these tests under `infisical run` with a real Infisical token (core's grants): the agent under test
+// must never inherit it, or a failing assertion prints it.
+const inherited = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => !/TOKEN|SECRET|PASSWORD|_KEY$/.test(name)),
+) as Record<string, string>;
+
 function env(extra: Record<string, string> = {}): Record<string, string> {
   return {
-    ...(process.env as Record<string, string>),
+    ...inherited,
     PATH: `${dir("bin")}:${process.env.PATH ?? ""}`,
     TESTBED_DATA_DIR: dir("data"),
     TESTBED_ROOT_DIR: dir("rootfs"),
@@ -56,6 +64,8 @@ function env(extra: Record<string, string> = {}): Record<string, string> {
     TESTBED_INSTANCE_ID: "i-test",
     TESTBED_AMI_ID: "ami-test",
     TESTBED_REGION: "eu-west-1",
+    // The job container has the real infisical and pnpm under /opt/mise/shims; the stubs must win there too.
+    TESTBED_MISE_SHIMS: dir("bin"),
     FAKE_LOG: log,
     FAKE_DF_DATA: "10",
     FAKE_DF_ROOT: "20",
@@ -115,7 +125,7 @@ case "$1" in
   run) while [ "$1" != -- ]; do shift; done; shift; exec "$@" ;;
 esac`,
   );
-  stub("pnpm", `echo "pnpm $*" >> "$FAKE_LOG"`);
+  stub("pnpm", `echo "pnpm $* (in $PWD)" >> "$FAKE_LOG"`);
   // IMDS: a token always; the spot notices only when the test sets them (404, so curl -f fails, otherwise).
   stub(
     "curl",
@@ -130,6 +140,17 @@ esac`,
 
 afterEach(() => {
   rmSync(root, { recursive: true, force: true });
+});
+
+describe("testbed-agent excludes", () => {
+  it("leaves out the contract's rsync excludes, and keeps the repository's own folders", () => {
+    const excludes = /^EXCLUDES='([^']*)'/m.exec(readFileSync(AGENT, "utf8"))?.[1]?.split(" ");
+    expect(excludes).toEqual([...TESTBED_DEFAULTS.rsyncExcludes]);
+    // `pnpm validate` reads .agents (specs, hooks, rules, skills); a job without it fails.
+    for (const kept of [".agents", ".github", ".flow"]) {
+      expect(TESTBED_DEFAULTS.rsyncExcludes).not.toContain(kept);
+    }
+  });
 });
 
 describe("testbed-agent guard", () => {
@@ -267,13 +288,59 @@ describe("testbed-agent job run", () => {
     );
   });
 
+  it("finishes its cleanup when `job stop` arrives during it: workspace, slot, protection", async () => {
+    // The cleanup's network removal marks that cleanup has begun, then takes a moment, as a real one can.
+    stub(
+      "docker",
+      `echo "docker $*" >> "$FAKE_LOG"
+case "$1 $2" in "network rm") : > "$FAKE_LOG.cleanup"; sleep 2 ;; esac
+exit 0`,
+    );
+    agent(["job", "prepare", "j9", "core"]);
+    const job = spawn("sh", [AGENT, "job", "run", "j9", "light", "me", "core", "--", "true"], {
+      env: env(),
+    });
+    const exited = new Promise<number | null>((done) => {
+      job.on("exit", (code) => done(code));
+    });
+    while (!existsSync(`${log}.cleanup`)) {
+      await new Promise((wait) => {
+        setTimeout(wait, 50);
+      });
+    }
+
+    agent(["job", "stop", "light"]);
+    await exited;
+
+    expect(existsSync(dir("data/jobs/j9"))).toBe(false);
+    expect(existsSync(dir("state/slot-light"))).toBe(false);
+    expect(logged()).toContain("--no-protected-from-scale-in");
+  });
+
   it("hands the Infisical token to the container by environment, never on a command line", () => {
     agent(["job", "prepare", "j4", "core"]);
     writeFileSync(dir("data/jobs/j4/core/pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
     const run = agent(["job", "run", "j4", "light", "me", "core", "--", "echo hi"]);
 
     expect(run.code).toBe(0);
-    expect(logged()).toContain("pnpm fetch --store-dir");
+    // The fetch only fills the store, without scripts, from a copy outside the workspace: run there it would leave a
+    // node_modules that makes the container skip its install.
+    expect(logged()).toMatch(
+      /pnpm fetch --ignore-scripts --store-dir \S+ \(in \S+\/data\/jobs\/j4\/\.fetch\)/,
+    );
+    expect(existsSync(dir("data/jobs/j4/.fetch"))).toBe(false);
+    expect(logged()).toMatch(/-e CI=true /);
+    // The container reads the metadata cache the fetch filled; a lockfile install needs it for the release-age check.
+    expect(logged()).toMatch(/-v \S+\/data\/pnpm-cache:\/pnpm-cache /);
+    expect(logged()).toContain("-e PNPM_CONFIG_CACHE_DIR=/pnpm-cache");
+    expect(logged()).toContain("pnpm install --prefer-offline --frozen-lockfile");
+    // A repository narrows the install from its own .testbed/install-args, read inside the container.
+    expect(logged()).toContain("$(cat .testbed/install-args 2>/dev/null)");
+    // Writable, so a package the store lacks can be added during the install, with integrity checks forced on.
+    expect(logged()).toMatch(/-v \S+\/pnpm-store:\/pnpm-store /);
+    expect(logged()).toContain("-e PNPM_CONFIG_VERIFY_STORE_INTEGRITY=true");
+    // Uniwind Pro's verified tarball stays in the box's pnpm cache, so its CI download quota is spent once per box.
+    expect(logged()).toContain("-e UNIWIND_CACHE_DIR=/pnpm-cache/uniwind");
     expect(logged()).not.toContain(TOKEN);
     expect(run.out + run.err).not.toContain(TOKEN);
     expect(readFileSync(`${log}.env`, "utf8")).toContain(`INFISICAL_TOKEN=${TOKEN}`);
@@ -282,6 +349,26 @@ describe("testbed-agent job run", () => {
       "infisical run --silent --projectId proj1 --env prod --path /ci/turbo",
     );
     expect(logged()).toContain("echo hi");
+  });
+
+  it("gives every project the `*` grants, and pnpm the registry token through the repository's .npmrc", () => {
+    writeFileSync(
+      dir("etc/grants.json"),
+      JSON.stringify({
+        core: [{ projectId: "proj1", environment: "prod", path: "/ci/turbo" }],
+        "*": [{ projectId: "proj1", environment: "prod", path: "/ci/registry" }],
+      }),
+    );
+    const run = agent(["job", "run", "j7", "light", "me", "pay", "--", "echo hi"]);
+
+    expect(run.code).toBe(0);
+    expect(readFileSync(`${log}.env`, "utf8")).toContain(`INFISICAL_TOKEN=${TOKEN}`);
+    expect(logged()).toContain("--path /ci/registry");
+    expect(logged()).not.toContain("--path /ci/turbo");
+    // Both token names, read from either, and the repository's .npmrc as pnpm's auth file; no value on a line.
+    expect(logged()).toContain("PNPM_CONFIG_NPMRC_AUTH_FILE=$PWD/.npmrc");
+    expect(logged()).toContain("${FIGENTRA_REGISTRY_TOKEN:-${STACKRA_REGISTRY_TOKEN:-}}");
+    expect(logged()).not.toContain(TOKEN);
   });
 
   it("gives a project without grants no token", () => {
@@ -311,6 +398,8 @@ describe("testbed-agent job run", () => {
 
     expect(existsSync(dir("data/jobs/j6"))).toBe(false);
     expect(readFileSync(dir("data/seed/core/new.txt"), "utf8")).toBe("n");
+    // The job's git snapshot stays in the job: the seed never takes a `.git`.
+    expect(existsSync(dir("data/seed/core/.git"))).toBe(false);
     expect(existsSync(dir("data/seed/core/stale.txt"))).toBe(false);
     expect(existsSync(dir("data/seed/core/.env.local"))).toBe(false);
     expect(existsSync(dir("data/seed/core/node_modules/big.js"))).toBe(false);

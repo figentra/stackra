@@ -9,12 +9,14 @@
 /** The rsync `--exclude` patterns of a job upload. */
 export const TESTBED_RSYNC_EXCLUDES: readonly string[] = [
   "node_modules",
+  ".git",
   ".claude/worktrees",
-  ".agents",
   ".env*",
   "*.secrets.local.cue",
   ".mcp.json",
   ".turbo",
   "dist",
   ".next",
+  // A worktree's pnpm store (about 7.5 GB), which every run would otherwise resend over SSM; the box has its own.
+  ".cache",
 ];

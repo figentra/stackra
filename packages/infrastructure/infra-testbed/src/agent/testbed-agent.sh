@@ -3,7 +3,8 @@
 # Purpose: testbed-agent, the box agent of the testbed: `slot`, `health`, `status`, `job prepare|run|stop`, `guard` and
 #          `idle` (the verbs, exit codes, paths and tags of .agents/specs/sta-1626-testbed/agent-contract.md). A job
 #          runs in a fresh container from the job image, in /data/jobs/<id>/<project>, under scale-in protection, with
-#          a short-lived Infisical token for the paths its project is granted and nothing else; cleanup always runs.
+#          a short-lived Infisical token for the paths its project is granted (plus the `*` grants every project gets,
+#          the registry read token) and nothing else; cleanup always runs.
 # Boundary: POSIX sh plus jq, rsync, flock and GNU coreutils; installed by the AMI at /usr/local/bin/testbed-agent. It
 #           reads /etc/testbed/grants.json (ids and paths) and /etc/testbed/identity (an id). The Infisical token lives
 #           in one shell variable and reaches the container by `-e INFISICAL_TOKEN` (the name, never the value on a
@@ -23,6 +24,8 @@ INFISICAL_DOMAIN=${INFISICAL_DOMAIN:-https://eu.infisical.com}
 export INFISICAL_DOMAIN
 PG_IMAGE=${TESTBED_POSTGRES_IMAGE:-postgres:17.6-alpine}
 STORE=${TESTBED_STORE:-$DATA/pnpm-store}
+# pnpm's metadata cache: the release-age check reads it even for a lockfile install (the image warms it beside the store).
+PNPM_CACHE=${TESTBED_PNPM_CACHE:-$DATA/pnpm-cache}
 CLEAN_PCT=${TESTBED_CLEAN_PCT:-70}
 DRAIN_PCT=${TESTBED_DRAIN_PCT:-85}
 ROOT_MIN_GB=${TESTBED_ROOT_MIN_FREE_GB:-10}
@@ -34,12 +37,18 @@ MIN_MEM_MB=${TESTBED_MIN_MEM_MB:-1024}
 MEMINFO=${TESTBED_MEMINFO:-/proc/meminfo}
 LABEL=stackra.testbed.job
 # What the Mac's rsync leaves out; the seed refresh leaves out the same.
-EXCLUDES='node_modules .claude/worktrees .agents .env* *.secrets.local.cue .mcp.json .turbo dist .next'
+EXCLUDES='node_modules .git .claude/worktrees .env* *.secrets.local.cue .mcp.json .turbo dist .next .cache'
+# The registry read token (FIGENTRA_REGISTRY_TOKEN; STACKRA_REGISTRY_TOKEN until the registry move retires it) under
+# both names, and the repository's own .npmrc as pnpm's auth file: pnpm 12 expands no variable in a project .npmrc,
+# so its `_authToken=${...}` line is ignored otherwise. The token stays in the environment, never in a file; every
+# project a box runs is ours (ADR 0484). Run in the directory whose .npmrc names the registry.
+REGISTRY_AUTH='t=${FIGENTRA_REGISTRY_TOKEN:-${STACKRA_REGISTRY_TOKEN:-}}; if [ -n "$t" ] && [ -f "$PWD/.npmrc" ]; then FIGENTRA_REGISTRY_TOKEN=$t STACKRA_REGISTRY_TOKEN=$t PNPM_CONFIG_NPMRC_AUTH_FILE=$PWD/.npmrc; export FIGENTRA_REGISTRY_TOKEN STACKRA_REGISTRY_TOKEN PNPM_CONFIG_NPMRC_AUTH_FILE; fi; unset t'
 # The host's mise lives in /opt/mise (01-base.yml); its shims find the tools only through these two variables.
 MISE_DATA_DIR=${MISE_DATA_DIR:-/opt/mise}
 MISE_GLOBAL_CONFIG_FILE=${MISE_GLOBAL_CONFIG_FILE:-/opt/mise/config.toml}
 export MISE_DATA_DIR MISE_GLOBAL_CONFIG_FILE
-PATH=/opt/mise/shims:$PATH
+# Overridable so the unit tests' stubs win inside the job container, whose own /opt/mise holds the real tools.
+PATH=${TESTBED_MISE_SHIMS:-/opt/mise/shims}:$PATH
 TAB=$(printf '\t')
 NL=$(printf '\n_')
 NL=${NL%_}
@@ -146,7 +155,7 @@ protect() {
 
 grants_for() {
   [ -s "$ETC/grants.json" ] || return 0
-  jq -r --arg p "$1" '.[$p] // [] | .[] | [.projectId, .environment, .path] | @tsv' "$ETC/grants.json"
+  jq -r --arg p "$1" '(.[$p] // []) + (.["*"] // []) | .[] | [.projectId, .environment, .path] | @tsv' "$ETC/grants.json"
 }
 has_grants() { [ -s "$ETC/grants.json" ] && jq -e 'map(length) | add > 0' "$ETC/grants.json" >/dev/null 2>&1; }
 infisical_token() {
@@ -327,7 +336,10 @@ finish() {
   rc=$1
   if [ "$JOB_DONE" = 1 ]; then exit "$rc"; fi
   JOB_DONE=1
-  trap - EXIT TERM INT HUP
+  # `job stop` signals the agent right after it removes the container, so cleanup usually starts first: a signal now
+  # must not cut it short and leave the workspace and the scale-in protection behind (seen live, 2026-11-05).
+  trap - EXIT
+  trap '' TERM INT HUP
   ids=$(docker ps -aq --filter "label=$LABEL=$JOB_ID" 2>/dev/null || true)
   # shellcheck disable=SC2086
   [ -z "$ids" ] || docker rm -f $ids >/dev/null 2>&1 || true
@@ -396,17 +408,31 @@ $grants
 EOF
   }
 
+  # A fresh one-commit snapshot of the synced tree, as ci-box made: `.git` is never uploaded (a worktree's is a file
+  # pointing at the Mac), and git-based steps (`git ls-files` in format:check, oxfmt, knip) need a real repository.
+  (cd "$JOB_WS" && rm -rf .git && git init -q && git add -A >/dev/null 2>&1 \
+    && git -c user.name=testbed -c user.email=testbed@localhost commit -qm snapshot >/dev/null 2>&1) || true
+
   [ ! -f "$JOB_WS/services/encore.app" ] \
     || sed -i -E 's/"id":[[:space:]]*"[^"]*"/"id": ""/' "$JOB_WS/services/encore.app" || true
 
-  # One writer to the shared store; the job then installs offline against it read-only.
-  mkdir -p "$STORE" "$DATA/turbo-cache"
+  # The fetch fills the shared store before the job, from a copy of the files it reads: run in the workspace it would
+  # leave a node_modules that makes the container skip its install, and load the job's mise.toml on the host. No
+  # scripts: the container's install runs them.
+  mkdir -p "$STORE" "$PNPM_CACHE" "$DATA/turbo-cache"
+  export PNPM_CONFIG_CACHE_DIR="$PNPM_CACHE"
   if [ -f "$JOB_WS/pnpm-lock.yaml" ]; then
-    wrap "pnpm fetch --store-dir $(sq "$STORE")" || {
+    wrap "sh -c $(sq "$REGISTRY_AUTH; exec pnpm fetch --ignore-scripts --store-dir $(sq "$STORE")")" || {
       say "unhealthy: grants"
       exit 75
     }
-    (cd "$JOB_WS" && flock "$STATE/store.lock" sh -c "$wrapped") || say "testbed-agent: pnpm fetch failed, the job installs what it can" >&2
+    fetch_dir=$DATA/jobs/$JOB_ID/.fetch
+    mkdir -p "$fetch_dir"
+    for f in pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs .pnpmfile.cjs .npmrc; do
+      [ ! -f "$JOB_WS/$f" ] || cp "$JOB_WS/$f" "$fetch_dir/"
+    done
+    (cd "$fetch_dir" && flock "$STATE/store.lock" sh -c "$wrapped") || say "testbed-agent: pnpm fetch failed, the job installs what it can" >&2
+    rm -rf "$fetch_dir"
   fi
 
   docker network create --label "$LABEL=$JOB_ID" "tb-$JOB_ID" >/dev/null || exit 75
@@ -424,15 +450,25 @@ EOF
     done
   fi
 
-  inner="cd /work && { [ -d node_modules ] || pnpm install --offline --frozen-lockfile --store-dir /pnpm-store --package-import-method clone-or-copy; } && {$NL$command_text$NL}"
+  # Uniwind Pro (ADR 0310 d11) downloads its licensed build in its postinstall, against a monthly CI quota; it reuses
+  # a checksum-verified tarball from UNIWIND_CACHE_DIR, kept in the box's pnpm cache so one download serves every job.
+  # Prefer offline, not offline only: a package or metadata entry the store lacks is fetched instead of failing the job.
+  # The store is mounted writable for that (pnpm's store is made for concurrent installs); testbed-image.yml reports
+  # whether a read-only mount could serve an install at all. Integrity checks stay on, so a file one job left changed
+  # in the shared store fails the next job's install against the lockfile's hashes.
+  # A repository can narrow the install with pnpm flags in .testbed/install-args (core leaves out the two Uniwind Pro
+  # members, whose licensed download has a monthly quota); the words are the repository's own, like its command.
+  inner="cd /work && { $REGISTRY_AUTH; } && { [ -d node_modules ] || pnpm install --prefer-offline --frozen-lockfile --store-dir /pnpm-store --package-import-method clone-or-copy \$(cat .testbed/install-args 2>/dev/null); } && {$NL$command_text$NL}"
   wrap "sh -c $(sq "$inner")" || {
     say "unhealthy: grants"
     exit 75
   }
   set -- --rm --init --name "tb-$JOB_ID" --label "$LABEL=$JOB_ID" --network "tb-$JOB_ID" \
-    -v "$JOB_WS:/work" -v "$STORE:/pnpm-store:ro" -v "$DATA/turbo-cache:/turbo-cache" \
+    -v "$JOB_WS:/work" -v "$STORE:/pnpm-store" -v "$PNPM_CACHE:/pnpm-cache" -v "$DATA/turbo-cache:/turbo-cache" \
     -v /var/run/docker.sock:/var/run/docker.sock --group-add "$(stat -c %g /var/run/docker.sock 2>/dev/null || echo 0)" \
-    -e TURBO_CACHE_DIR=/turbo-cache -e "TESTBED_JOB=$JOB_ID"
+    -e TURBO_CACHE_DIR=/turbo-cache -e PNPM_CONFIG_CACHE_DIR=/pnpm-cache -e PNPM_CONFIG_VERIFY_STORE_INTEGRITY=true \
+    -e UNIWIND_CACHE_DIR=/pnpm-cache/uniwind \
+    -e CI=true -e "TESTBED_JOB=$JOB_ID"
   [ "$postgres" = 0 ] || set -- "$@" -e "TESTBED_POSTGRES_HOST=tb-$JOB_ID-pg"
   [ -z "${INFISICAL_TOKEN:-}" ] || set -- "$@" -e INFISICAL_TOKEN -e INFISICAL_DOMAIN
   JOB_RAN=1

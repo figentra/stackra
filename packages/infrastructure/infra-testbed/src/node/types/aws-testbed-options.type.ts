@@ -9,8 +9,12 @@
  */
 /** The account-specific inputs of `awsTestbed` that the plan does not carry. */
 export type AwsTestbedOptions = {
-  /** CIDRs allowed to reach port 22. The `stackra testbed` CLI swaps its own entry at run time, so changes to the live rules are ignored after creation. */
-  readonly allowedCidrs: readonly string[];
+  /**
+   * CIDRs allowed to reach port 22, only for the CLI's `--ssh-direct` fallback; absent or empty, no inbound rule exists
+   * and boxes are reached through SSM Session Manager (STA-1953). The CLI swaps its own entry at run time, so changes
+   * to the live rules are ignored after creation.
+   */
+  readonly allowedCidrs?: readonly string[];
   /** The core `pnpm-lock.yaml` the image's pnpm store is warmed from. */
   readonly lockfilePath: string;
   /** The VPC to use; the default VPC when absent. */
@@ -21,4 +25,10 @@ export type AwsTestbedOptions = {
   readonly tags?: Readonly<Record<string, string>>;
   /** `false` declares everything except the Auto Scaling groups: the launch template needs an AMI to exist. Default `true`. */
   readonly groups?: boolean;
+  /**
+   * The ARN of the permissions boundary set on every role the program creates (the box's and Image Builder's). The
+   * deploy role may create a role only with it (ADR 0484; the day-1 least-privilege bar), so it cannot mint an admin.
+   * Absent, the roles have none.
+   */
+  readonly permissionsBoundary?: string;
 };

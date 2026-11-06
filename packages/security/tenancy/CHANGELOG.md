@@ -1,5 +1,424 @@
 # @stackra/tenancy
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/scope@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/scheduler@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/scheduler@0.14.4
+  - @stackra/scope@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/console@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/scheduler@0.14.3
+  - @stackra/scope@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/ui@0.14.2
+  - @stackra/console@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/scheduler@0.14.2
+  - @stackra/scope@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/scheduler@0.14.1
+  - @stackra/scope@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/scheduler@0.14.0
+  - @stackra/scope@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/scheduler@0.13.0
+  - @stackra/scope@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/scheduler@0.12.0
+  - @stackra/scope@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/console@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/scheduler@0.11.1
+  - @stackra/scope@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/scheduler@0.11.0
+  - @stackra/scope@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/scheduler@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/scope@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [be4a198]
+- Updated dependencies [9bb5d55]
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [681d01a]
+- Updated dependencies [f9c825d]
+  - @stackra/console@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/ui@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/scheduler@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/scope@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+  - @stackra/database@0.8.0
+  - @stackra/container@0.8.0
+  - @stackra/scheduler@0.8.0
+  - @stackra/scope@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/ui@0.8.0
+  - @stackra/console@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/scheduler@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/console@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/scope@0.7.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 1f5bf76: Four more tenancy kit blocks in `@stackra/tenancy/react`: `TenantPicker` (choose an organisation, by default from the
+  signed-in person's memberships), `MemberPicker` (choose a member, from the host's search), `OrganizationPage` (read and
+  save the organisation's profile, list its legal entities and domains) and `MembersPage` (list members, change a role,
+  remove a member, invite, and list and revoke invitations, with the host's words for the last-owner and external-role
+  refusals). The pages talk to the server through two new client ports in the new `@stackra/tenancy/contracts` entry,
+  `TenantProfile` and `TenantMembers`, with memory drivers in `./testing`; the root entry adds the `LastOwnerRefusedError`
+  and `ExternalRoleNotAllowedError` refusals. Every word comes from the host in `labels`. The showcase lists the four
+  under Blocks.
+
+### Patch Changes
+
+- @stackra/actions@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/console@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/scheduler@0.7.0
+  - @stackra/scope@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/console@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/scheduler@0.6.1
+  - @stackra/scope@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- c64a55d: `TenantMenu`, the tenancy kit's membership switcher (ADR 0504), in `@stackra/tenancy/react` (a menu behind a
+  button) and in the new `@stackra/tenancy/native` entry (a list for the app's own sheet). It reads the container's
+  `TenantSwitcher` through `useTenant` and `useTenantSwitcher`, takes every word from the host in `labels`, and reports
+  `onSwitched` (and `onError` on native).
+
+### Patch Changes
+
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [2256bf6]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [fb29d41]
+- Updated dependencies [4fcb66d]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/console@0.6.0
+  - @stackra/database@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/scheduler@0.6.0
+  - @stackra/scope@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4fa949b]
+  - @stackra/database@0.5.1
+  - @stackra/scheduler@0.5.1
+  - @stackra/scope@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/model@0.5.1
+  - @stackra/console@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- 104d9f4: `@stackra/tenancy/node` exports `TENANCY_ENTITIES`, the committed entity list of its `ApprovalBinding` model, which a
+  hosting service's generated registrations import (STA-1874).
+- @stackra/actions@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/console@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/scheduler@0.5.0
+  - @stackra/scope@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+- dedaa81: Add the approval binding store for the approval stage (STA-1724, ADR 0509): the `ApprovalBinding` model and its first
+  migration (`tenancy.approval_bindings`, `BelongsToTenant` with the forced tenant policy, insert-only with UPDATE revoked),
+  `PostgresApprovalBindingStoreDriver` (insert, read by approval id, prune; no update) behind `@stackra/actions`'
+  `ApprovalBindingStore` port, and `PruneApprovalBindingsAction`, the daily job that deletes a binding 24 hours plus `AUDIT_HOT_RETENTION` (397 days)
+  after its `expiresAt`. The prune takes `PruneApprovalBindingsInput` and returns `PruneApprovalBindingsOutput` (`deleted`), so tenancy
+  depends on `@stackra/validation` and `zod` (STA-1884).
+
+### Patch Changes
+
+- 1856ee0: Add `ApprovalBindingPermissions` with `prune = Permission.L4.system()` (`tenancy.approval_binding.prune`), which clears
+  gen's `permission_unknown` for `PruneApprovalBindingsAction` (STA-1890, ADR 0513).
+- a7eaed4: `CallIsolationDriver` takes the `ScopeTree` and resolves `app.tenant_id` from the call's scope for `job` and `system`
+  actors (STA-1823, ADR 0495 note of 2026-11-01): the tenant is `tenantOf(tree, scope)`, a branch resolves to its parent
+  tenant, and a scope the tree does not show is refused with the new `TenantScopeUnresolvedError`
+  (`tenant_scope_unresolved`) instead of running with an empty tenant. Any other actor keeps its own `scopeId` and a scope
+  of another tenant is refused with the new `TenantScopeMismatchError` (`tenant_scope_mismatch`). The constructor gains a
+  third `ScopeTree` argument; `asTenant` supplies an empty tree and runs a platform call as a staff user.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [3ce01cf]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [ef987d9]
+- Updated dependencies [a8c358a]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [36dbd49]
+- Updated dependencies [2bbc0e8]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/scope@0.4.0
+  - @stackra/console@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/scheduler@0.4.0
+  - @stackra/errors@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

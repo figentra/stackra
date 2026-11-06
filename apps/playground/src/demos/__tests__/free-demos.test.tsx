@@ -97,9 +97,12 @@ describe("web free demos", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("has a demo for every free web example of the registry", () => {
+  it("has a demo for every free web example of @stackra/ui", () => {
+    // Module kit blocks (ADR 0504) are documented by their showcase JSON on the docs pages (ADR 0521), not by
+    // playground demos; a kit demo that exists is still rendered by the cases below.
     const missing = COMPONENTS.filter(
-      ({ tier, platforms }) => tier === "free" && platforms.includes("react"),
+      ({ tier, platforms, packageName }) =>
+        tier === "free" && platforms.includes("react") && packageName === "@stackra/ui",
     )
       .flatMap((entry) =>
         entry.examples

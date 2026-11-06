@@ -8,11 +8,11 @@ A skill teaches an agent **how**: patterns, gotchas and the order to decide thin
 
 ## Three kinds, and where each lives
 
-| Kind                                | Lives in                                                                                                    | Managed by                                                             | Edit it?                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------- |
-| Spec engine commands                | Figentra Flow's `flow-*` skills, rendered into `.agents/skills/flow-*` and projected into `.claude/skills/` | `pnpm spec:sync` (`figentra-flow sync`), recorded in `.flow/lock.json` | No. Override in `.flow/overrides/` |
-| Upstream skills the repository uses | `.agents/skills/<upstream-name>`                                                                            | `npx skills add`, `update`, `remove`, pinned in `skills-lock.json`     | No. Never in place                 |
-| House skills                        | `.agents/skills/<category>-<name>`                                                                          | A normal change                                                        | Yes                                |
+| Kind                                | Lives in                                                                                                    | Managed by                                                         | Edit it?                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| Spec engine commands                | Figentra Flow's `flow-*` skills, rendered into `.agents/skills/flow-*` and projected into `.claude/skills/` | `pnpm spec:sync` (`fflow sync`), recorded in `.flow/lock.json`     | No. Override in `.flow/overrides/` |
+| Upstream skills the repository uses | `.agents/skills/<upstream-name>`                                                                            | `npx skills add`, `update`, `remove`, pinned in `skills-lock.json` | No. Never in place                 |
+| House skills                        | `.agents/skills/<category>-<name>`                                                                          | A normal change                                                    | Yes                                |
 
 ### The spec engine
 

@@ -16,6 +16,7 @@ export { TenantListCommand } from "#node/commands/tenant-list.command";
 export { BelongsToTenantMacro } from "#node/database/macros/belongs-to-tenant.macro";
 export { CallIsolationDriver } from "#node/drivers/call-isolation.driver";
 export { PostgresApprovalBindingStoreDriver } from "#node/drivers/postgres-approval-binding-store.driver";
+export { TENANCY_ENTITIES } from "#node/entities.gen";
 export { ApprovalBinding } from "#node/models/approval-binding.model";
 export { TenantIsolationService } from "#node/services/tenant-isolation.service";
 export { BelongsToTenantOrPlatform } from "#node/traits/belongs-to-tenant-or-platform.trait";

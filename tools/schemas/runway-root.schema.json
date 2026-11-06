@@ -50,7 +50,7 @@
             "version": {
               "type": "string",
               "minLength": 1,
-              "description": "The semver range of released base manifests the edition is built against.",
+              "description": "Not read yet (STA-339). The semver range of released base manifests the edition is built against.",
               "examples": ["^1.0.0"]
             }
           }
@@ -68,7 +68,8 @@
           "required": ["contributes"],
           "properties": {
             "contributes": {
-              "$ref": "#/$defs/contribution"
+              "$ref": "#/$defs/contribution",
+              "description": "A declarative ops contribution: the package that carries it, or the package with its panels, resources and widgets over registered blocks. No component, entry or script (app-shells 16.7)."
             }
           }
         }
@@ -113,14 +114,19 @@
           "type": "object",
           "description": "AWS accounts, Pulumi state, ECR and cost controls.",
           "properties": {
+            "account": {
+              "type": "boolean",
+              "default": false,
+              "description": "Opt-in (ADR 0524): figentra/infra vends the product's one AWS account only when true, in the regions of its me and eu environments."
+            },
             "region": {
               "type": "string",
-              "description": "The one region (ADR 0186). A tenant's region is immutable (ADR 0210 d4).",
+              "description": "Deprecated: use `environments.<env>.region` (ADR 0524); `runway validate` warns for one release. The one region (ADR 0186).",
               "examples": ["me-central-1"]
             },
             "accounts": {
               "type": "object",
-              "description": "Account role → account id or `ref:` (shared, nonprod, prod).",
+              "description": "Deprecated: the three accounts (shared, nonprod, prod) no longer match ADR 0524; a product has one AWS account holding all its regions, which figentra/infra resolves as `ref:aws.account`. `runway validate` warns for one release. Account role → account id or `ref:`.",
               "additionalProperties": {
                 "$ref": "#/$defs/value"
               }
@@ -131,11 +137,29 @@
             },
             "ecr": {
               "type": "object",
-              "description": "Image registry: the owning account and the scan, SBOM and signing tools."
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Image registry: the owning account and the scan, SBOM and signing tools."
             },
             "budgets": {
               "type": "object",
-              "description": "Cost alerts: percentage thresholds and the point non-production stops."
+              "description": "Cost alerts: the monthly cap, percentage thresholds and the point non-production stops.",
+              "properties": {
+                "monthlyUsd": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/$defs/value"
+                      }
+                    }
+                  ],
+                  "default": 300,
+                  "description": "The monthly budget in US dollars figentra/infra sets on the product's one account; the thresholds are percentages of it. Deprecated: a record per account role (`nonprod`, `prod`, each a number or `ref:`), the three-account layout; `runway validate` warns for one release."
+                }
+              }
             },
             "requiredTags": {
               "type": "array",
@@ -165,9 +189,24 @@
                 ]
               }
             },
+            "project": {
+              "type": "boolean",
+              "default": false,
+              "description": "Opt-in (ADR 0524): figentra/infra vends the product's one GCP project only when true. An environment in `ksa` needs it."
+            },
+            "apis": {
+              "type": "array",
+              "description": "The Google services figentra/infra enables in the product's project.",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+\\.googleapis\\.com$"
+              },
+              "examples": [["aiplatform.googleapis.com"]]
+            },
             "state": {
               "type": "object",
-              "description": "Pulumi state for the GCP stacks."
+              "description": "Not read yet (Runway plan PR 16, STA-2001). Pulumi state for the GCP stacks."
             }
           }
         },
@@ -183,7 +222,7 @@
         },
         "cloudflare": {
           "type": "object",
-          "description": "Cloudflare account and DNS zones (ADR 0175).",
+          "description": "Cloudflare account, DNS zones (ADR 0175) and the non-Worker DNS records figentra/infra writes.",
           "properties": {
             "accountId": {
               "$ref": "#/$defs/value",
@@ -191,16 +230,147 @@
             },
             "zones": {
               "type": "object",
-              "description": "Zone name → zone id or `ref:`. Member runways name hosts under these zones.",
+              "description": "Zone name → zone id or `ref:`, or an object with the id and, for the one root runway that owns the zone, its plan and policy (ADR 0519). Member runways name hosts under these zones.",
               "additionalProperties": {
-                "$ref": "#/$defs/value"
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/value"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["id"],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/$defs/value",
+                        "description": "Zone id or `ref:`."
+                      },
+                      "owner": {
+                        "type": "boolean",
+                        "description": "True in exactly one root runway per zone; every other repository only reads the id. An owner states its plan."
+                      },
+                      "plan": {
+                        "enum": ["free", "pro"],
+                        "description": "The Cloudflare plan, which decides what the policy may ask for."
+                      },
+                      "policy": {
+                        "enum": ["baseline", "strict"],
+                        "description": "Zone preset, set by the owner only: baseline (SSL strict, TLS 1.3, HSTS, DNSSEC, CAA), or strict (plus bot protection, needs plan: pro)."
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "records": {
+              "type": "array",
+              "description": "Non-Worker DNS records (verification TXT, MX, CAA). Worker hosts stay in wrangler and Runway (ADR 0519). Each `name` is a full host name under a `zones` entry.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "type", "content"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^(?:[a-z0-9_*-]+\\.)+[a-z]{2,}$",
+                    "description": "The full host name, lower case (`_dmarc.pay.figentra.com`)."
+                  },
+                  "type": {
+                    "enum": ["A", "AAAA", "CNAME", "TXT", "MX", "CAA", "NS", "SRV"],
+                    "description": "The record type."
+                  },
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The record's value, as Cloudflare stores it."
+                  },
+                  "proxied": {
+                    "type": "boolean",
+                    "description": "Through Cloudflare's proxy; only A, AAAA and CNAME."
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "Required for MX."
+                  }
+                }
               }
             }
           }
         },
         "github": {
           "type": "object",
-          "description": "GitHub org, repository and deployment environments with their reviewers (ADR 0170 d6)."
+          "additionalProperties": false,
+          "properties": {
+            "org": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$"
+            },
+            "repo": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]+$"
+            },
+            "visibility": {
+              "enum": ["private", "public", "internal"]
+            },
+            "variables": {
+              "type": "object",
+              "propertyNames": {
+                "pattern": "^(?!GITHUB_)[A-Z][A-Z0-9_]*$"
+              },
+              "additionalProperties": {
+                "type": ["string", "number", "boolean"]
+              }
+            },
+            "environments": {
+              "type": "object",
+              "propertyNames": {
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reviewers": {
+                    "type": "array",
+                    "maxItems": 6,
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9-]+(?:/[A-Za-z0-9._-]+)?$"
+                    }
+                  },
+                  "branches": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "tags": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "variables": {
+                    "type": "object",
+                    "propertyNames": {
+                      "pattern": "^(?!GITHUB_)[A-Z][A-Z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": ["string", "number", "boolean"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": ["org", "repo"],
+          "description": "The GitHub repository and its environments (ADR 0468). Closed: a misspelt key fails. infra-github reads it."
         },
         "infisical": {
           "type": "object",
@@ -315,18 +485,590 @@
     },
     "targets": {
       "type": "object",
-      "description": "Provider shape per destination, selected by `environments.<env>.destinations.*`.",
+      "description": "Provider settings per destination, selected by `environments.<env>.destinations.*`. The destinations Runway knows are closed (a misspelt key fails); another destination name stays open. Each provider still checks its own settings.",
+      "properties": {
+        "encore-cloud": {
+          "type": "object",
+          "description": "Encore Cloud: the cloud of the linked account.",
+          "additionalProperties": false,
+          "properties": {
+            "cloud": {
+              "enum": ["aws", "gcp"]
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "cloudflare-workers": {
+          "type": "object",
+          "description": "Cloudflare Workers.",
+          "additionalProperties": false,
+          "properties": {
+            "compatibilityDate": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "defaults": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cache": {
+                  "type": "boolean"
+                },
+                "compatibilityDate": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "compatibilityFlags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "customDomains": {
+                  "type": "array",
+                  "minItems": 1,
+                  "description": "Hosts served as Workers Custom Domains, rendered as wrangler `routes` with `custom_domain: true` (ADR 0519).",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$"
+                  }
+                },
+                "keepVars": {
+                  "type": "boolean"
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cpuMs"],
+                  "properties": {
+                    "cpuMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                },
+                "observability": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "headSamplingRate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "invocationLogs": {
+                      "type": "boolean"
+                    },
+                    "issues": {
+                      "type": "boolean"
+                    },
+                    "logs": {
+                      "type": "boolean"
+                    },
+                    "redactQueryString": {
+                      "type": "boolean"
+                    },
+                    "traces": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "previewUrls": {
+                  "type": "boolean"
+                },
+                "rollout": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  }
+                },
+                "uploadSourceMaps": {
+                  "type": "boolean"
+                },
+                "workersDev": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "observability": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["headSamplingRate"],
+              "properties": {
+                "headSamplingRate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "members": {
+              "type": "object",
+              "description": "Worker members; the provider checks each.",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "aws-ecs": {
+          "type": "object",
+          "description": "AWS ECS (self-hosted fallback).",
+          "additionalProperties": false,
+          "properties": {
+            "compute": {
+              "enum": ["fargate", "ec2"]
+            },
+            "cloudfront": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["enabled"],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "images": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["arch"],
+              "properties": {
+                "arch": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "enum": ["amd64", "arm64"]
+                  }
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "compose": {
+          "type": "object",
+          "description": "Docker Compose.",
+          "additionalProperties": false,
+          "properties": {
+            "bundled": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "registry": {
+              "type": "string",
+              "minLength": 1
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "helm": {
+          "type": "object",
+          "description": "Helm.",
+          "additionalProperties": false,
+          "properties": {
+            "namespace": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ingressClass": {
+              "type": "string",
+              "minLength": 1
+            },
+            "storageClass": {
+              "type": "string",
+              "minLength": 1
+            },
+            "zarf": {
+              "type": "boolean"
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "eas": {
+          "type": "object",
+          "description": "Expo Application Services.",
+          "additionalProperties": false,
+          "properties": {
+            "buildTrigger": {
+              "type": "string",
+              "minLength": 1
+            },
+            "monthlyBuildCap": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "credentials": {
+              "type": "string",
+              "minLength": 1
+            },
+            "submit": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "ios": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "android": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "ota": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "rollout": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["startPercent"],
+                  "properties": {
+                    "startPercent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "endPercent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "stepHours": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                },
+                "gate": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["crashFreeSessions"],
+                  "properties": {
+                    "crashFreeSessions": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  }
+                },
+                "rollback": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "storeRollout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["startPercent"],
+              "properties": {
+                "startPercent": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              }
+            },
+            "minimumVersion": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["gate"],
+              "properties": {
+                "gate": {
+                  "type": "boolean"
+                },
+                "supportedStoreVersions": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "electron-release": {
+          "type": "object",
+          "description": "Electron releases.",
+          "additionalProperties": false,
+          "properties": {
+            "feed": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["bucket", "publicOrigin"],
+              "properties": {
+                "bucket": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "publicOrigin": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            },
+            "rollout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["startPercent"],
+              "properties": {
+                "startPercent": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "endPercent": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "stepHours": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              }
+            },
+            "signing": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mac": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "windows": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "linux": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "runners": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mac": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "windows": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "linux": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "mintlify": {
+          "type": "object",
+          "description": "The docs site.",
+          "additionalProperties": false,
+          "properties": {
+            "deployOn": {
+              "enum": ["pull-request", "merge-to-main", "promote"]
+            },
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "branch": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pushDeploy": {
+              "type": "boolean"
+            },
+            "adminKey": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "description": "The admin key's secret NAME."
+            },
+            "smoke": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["pages"],
+              "properties": {
+                "pages": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "npm": {
+          "type": "object",
+          "description": "Package publishing to the Stackra registry.",
+          "additionalProperties": false,
+          "properties": {
+            "access": {
+              "enum": ["public", "restricted"]
+            },
+            "provenance": {
+              "type": "boolean"
+            },
+            "trustedPublisher": {
+              "type": "string",
+              "pattern": "\\.ya?ml$"
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        }
+      },
       "propertyNames": {
         "$ref": "#/$defs/destination"
       },
       "additionalProperties": {
         "type": "object",
-        "description": "Settings of that destination (cloud, compute, registry, signing, rollout)."
+        "description": "Settings of another destination."
       }
     },
     "edge": {
       "type": "object",
-      "description": "The edge in front of every public host: proxying, WAF, bot mode, per-IP rate limit, TLS, the API host and the analytics proxy path (ADR 0175, ADR 0237 layer 1)."
+      "additionalProperties": false,
+      "properties": {
+        "proxy": {
+          "enum": ["all", "none"]
+        },
+        "waf": {
+          "enum": ["managed", "off"]
+        },
+        "bots": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "enum": ["off", "likely-automated-challenge"]
+            }
+          }
+        },
+        "rateLimit": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "perIp": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requests": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "periodSeconds": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": ["requests", "periodSeconds"]
+            }
+          }
+        },
+        "tls": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minVersion": {
+              "enum": ["1.0", "1.1", "1.2", "1.3"]
+            },
+            "hsts": {
+              "type": "boolean"
+            }
+          }
+        },
+        "apiHost": {
+          "type": "string",
+          "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "analyticsProxy": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      },
+      "description": "The edge (ADR 0175). Closed: a misspelt key fails. infra-cloudflare reads it with its own defaults."
     },
     "secrets": {
       "type": "object",
@@ -362,14 +1104,395 @@
     },
     "release": {
       "type": "object",
-      "description": "Release policy: the promotion unit, gates, strategy, rollback, records, build order and on-prem upgrades (ADR 0170)."
+      "additionalProperties": false,
+      "properties": {
+        "buildOrder": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "promote": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "unit": {
+              "enum": ["sha", "digest"]
+            }
+          },
+          "required": ["unit"]
+        },
+        "gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "health": {
+              "type": "string",
+              "minLength": 1
+            },
+            "smoke": {
+              "type": "string",
+              "minLength": 1
+            },
+            "errorWatchMinutes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "rollback": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "withinMinutes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "strategy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "minLength": 1
+            },
+            "healthGate": {
+              "type": "boolean"
+            },
+            "autoRollback": {
+              "type": "boolean"
+            }
+          }
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "onPrem": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "backup": {
+              "type": "string",
+              "minLength": 1
+            },
+            "migrationsAsJob": {
+              "type": "boolean"
+            },
+            "preflight": {
+              "type": "boolean"
+            },
+            "upgrades": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "windows": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "avoid": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "local": {
+                        "type": "string",
+                        "pattern": "^\\d{2}:\\d{2}-\\d{2}:\\d{2}$"
+                      },
+                      "days": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["local", "days"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "termStart": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "firstDays": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 1
+                              },
+                              {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["firstDays", "source"]
+                      }
+                    },
+                    "required": ["termStart"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "description": "The release policy. Closed: a misspelt key fails. Only `buildOrder` is read today."
     },
     "observability": {
       "type": "object",
-      "description": "Observability defaults: log retention, heartbeats and when SLOs start (ADR 0184)."
+      "additionalProperties": false,
+      "properties": {
+        "logs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hotDays": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "coldMonths": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "coldStore": {
+              "enum": ["s3"]
+            }
+          }
+        },
+        "heartbeats": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "crons": {
+              "type": "boolean"
+            },
+            "relays": {
+              "type": "boolean"
+            },
+            "workers": {
+              "type": "boolean"
+            }
+          }
+        },
+        "slos": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "startAt": {
+              "enum": ["first-paying-tenant"]
+            }
+          }
+        },
+        "statusPage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "subdomain": {
+              "type": "string",
+              "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+            },
+            "companyName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "companyUrl": {
+              "type": "string",
+              "pattern": "^https://\\S+$"
+            },
+            "timezone": {
+              "type": "string",
+              "minLength": 1
+            },
+            "customDomain": {
+              "type": "string",
+              "minLength": 1
+            },
+            "published": {
+              "type": "boolean"
+            },
+            "environments": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "enum": ["dev", "preview", "staging", "production"]
+              }
+            }
+          },
+          "required": [
+            "subdomain",
+            "companyName",
+            "companyUrl",
+            "timezone",
+            "published",
+            "environments"
+          ]
+        },
+        "uptime": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https://\\S+$"
+              },
+              "environment": {
+                "enum": ["dev", "preview", "staging", "production"]
+              },
+              "checkFrequencySeconds": {
+                "type": "integer",
+                "minimum": 30
+              },
+              "expectedStatusCodes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 599
+                }
+              }
+            },
+            "required": ["name", "url"]
+          }
+        },
+        "alerts": {
+          "type": "object",
+          "description": "The alarms figentra/infra sets in the product's account (the design of 2026-11-06). Every key is optional and takes infra-observability's default; `enabled: false` turns one off.",
+          "additionalProperties": false,
+          "properties": {
+            "environments": {
+              "type": "array",
+              "minItems": 1,
+              "description": "The environments alarmed; staging and production by default.",
+              "items": {
+                "enum": ["dev", "preview", "staging", "production"]
+              }
+            },
+            "errorRate": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when 5xx responses exceed `threshold` % (default 2, 5m, critical)."
+            },
+            "latencyP95": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when p95 latency exceeds `threshold` ms (default 1000, 10m, warning)."
+            },
+            "dbCpu": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when database CPU exceeds `threshold` % (default 80, 15m, warning)."
+            },
+            "dbConnections": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when database connections exceed `threshold` % of the maximum (default 80, 10m, warning)."
+            },
+            "dbFreeStorage": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when free database storage falls below `threshold` % (default 20, 15m, critical)."
+            },
+            "cacheMemory": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when cache memory exceeds `threshold` % (default 80, 15m, warning)."
+            },
+            "cacheEvictions": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when cache evictions exceed `threshold` per minute (default 0, 15m, warning)."
+            },
+            "budget": {
+              "type": "object",
+              "description": "Budget notifications at these percentages of `providers.aws.budgets.monthlyUsd` (default 80 forecast, 100 actual).",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "forecastPercent": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "actualPercent": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        },
+        "notify": {
+          "type": "object",
+          "description": "Where each severity goes. A route is `oncall` (Better Stack), `email:<address>`, `slack:<channel id>` (AWS Chatbot needs the id) or `linear:<team key>`. Critical pages on-call by default.",
+          "additionalProperties": false,
+          "properties": {
+            "critical": {
+              "$ref": "#/$defs/routes"
+            },
+            "warning": {
+              "$ref": "#/$defs/routes"
+            },
+            "info": {
+              "$ref": "#/$defs/routes"
+            }
+          }
+        }
+      },
+      "description": "Observability (ADR 0184). Closed: a misspelt key fails. infra-observability reads it with its own defaults."
     }
   },
   "$defs": {
+    "alert": {
+      "type": "object",
+      "description": "One metric alert; its direction against the threshold is fixed per alert.",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0
+        },
+        "window": {
+          "type": "string",
+          "pattern": "^[0-9]+m$",
+          "examples": ["5m"]
+        },
+        "severity": {
+          "enum": ["critical", "warning", "info"]
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:oncall|email:[^\\s@]+@[^\\s@]+\\.[^\\s@]+|slack:[A-Z0-9]{9,12}|linear:[A-Z][A-Z0-9]{1,9})$"
+      }
+    },
     "region": {
       "type": "object",
       "description": "One data region: the cloud and cloud region that serve it (ADR 0354 d4, ADR 0353).",
@@ -464,12 +1587,12 @@
           "properties": {
             "metric": {
               "type": "string",
-              "description": "Metric that drives scaling.",
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Metric that drives scaling.",
               "examples": ["cpu"]
             },
             "target": {
               "type": "number",
-              "description": "Target value of the metric, in percent for cpu."
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Target value of the metric, in percent for cpu."
             }
           }
         }
@@ -541,32 +1664,64 @@
           "$ref": "#/$defs/resources/properties/cpu"
         },
         "memory": {
-          "$ref": "#/$defs/resources/properties/memory"
+          "$ref": "#/$defs/resources/properties/memory",
+          "description": "Not read yet (Runway plan PR 12, STA-2001). Memory per instance, in Mi or Gi."
         },
         "instances": {
-          "$ref": "#/$defs/resources/properties/instances"
+          "type": "object",
+          "description": "Instance count bounds.",
+          "required": ["min", "max"],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Fewest instances kept running."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Most instances scaling may add."
+            }
+          }
         },
         "scaling": {
-          "$ref": "#/$defs/resources/properties/scaling"
+          "$ref": "#/$defs/resources/properties/scaling",
+          "description": "Not read yet (Runway plan PR 12, STA-2001). Autoscaling rule."
         },
         "workers": {
           "type": "object",
-          "description": "Background work (queues, crons, the outbox relay) of this group's members.",
+          "description": "Not read yet (Runway plan PR 12, STA-2001). Background work (queues, crons, the outbox relay) of this group's members.",
           "additionalProperties": false,
           "required": ["split"],
           "properties": {
             "split": {
               "type": "boolean",
-              "description": "Run background work in its own process, which scales apart from request handling."
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Run background work in its own process, which scales apart from request handling."
             },
             "cpu": {
-              "$ref": "#/$defs/resources/properties/cpu"
+              "$ref": "#/$defs/resources/properties/cpu",
+              "description": "Not read yet (Runway plan PR 12, STA-2001). vCPUs per instance."
             },
             "memory": {
-              "$ref": "#/$defs/resources/properties/memory"
+              "$ref": "#/$defs/resources/properties/memory",
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Memory per instance, in Mi or Gi."
             },
             "instances": {
-              "$ref": "#/$defs/resources/properties/instances"
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Instance count bounds.",
+              "type": "object",
+              "required": ["min", "max"],
+              "properties": {
+                "min": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Not read yet (Runway plan PR 12, STA-2001). Fewest instances kept running."
+                },
+                "max": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Most instances scaling may add."
+                }
+              }
             }
           }
         }
@@ -611,7 +1766,7 @@
             },
             "from": {
               "type": "string",
-              "description": "Environment variable holding the lane number.",
+              "description": "Not read yet (Runway plan PR 8, STA-2001). Environment variable holding the lane number.",
               "examples": ["STACKRA_LANE"]
             },
             "repos": {
@@ -651,7 +1806,7 @@
         },
         "proxy": {
           "type": "object",
-          "description": "Dev only: routes by Host to member dev ports; needed only for `*.localhost` or https."
+          "description": "Not read yet (Runway plan PR 8, STA-2001). Dev only: routes by Host to member dev ports; needed only for `*.localhost` or https."
         },
         "encore": {
           "type": "object",
@@ -660,7 +1815,7 @@
         "ttl": {
           "type": "string",
           "pattern": "^[0-9]+[hd]$",
-          "description": "Preview only: how long a per-pull-request environment lives.",
+          "description": "Not read yet (Runway plan PR 16, STA-2001). Preview only: how long a per-pull-request environment lives.",
           "examples": ["7d"]
         },
         "data": {
@@ -680,6 +1835,10 @@
             }
           }
         },
+        "tier": {
+          "enum": ["staging", "launch", "growth"],
+          "description": "The size the environment runs at, from the finance tiers (the cost plan of 2026-11-06): its compute, database, cache and NAT defaults (`TIER_SIZES`). Production defaults to `launch`, every other environment to `staging`; the `shared` keys below override it."
+        },
         "shared": {
           "type": "object",
           "description": "Resources shared by every member: ONE database server per environment (ADR 0238 d1), the cache cluster, the queue provider, networking and bucket defaults.",
@@ -687,15 +1846,56 @@
           "properties": {
             "network": {
               "type": "object",
-              "description": "VPC and load balancer."
+              "description": "VPC and load balancer.",
+              "properties": {
+                "natGateways": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "NAT gateways for outbound internet; the tier's count when absent."
+                }
+              }
             },
             "database": {
               "type": "object",
-              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling."
+              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling. The typed keys override the tier; Encore Cloud applies them from its dashboard, and `runway plan` reports drift.",
+              "properties": {
+                "class": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "An RDS instance class (db.t4g.medium), or a Cloud SQL tier on ksa.",
+                  "examples": ["db.t4g.medium"]
+                },
+                "multiAz": {
+                  "type": "boolean",
+                  "description": "Whether a standby runs in a second zone."
+                },
+                "storageGb": {
+                  "type": "integer",
+                  "minimum": 20,
+                  "description": "Allocated storage in GB (RDS starts at 20)."
+                }
+              }
             },
             "cache": {
               "type": "object",
-              "description": "The cache cluster: engine, node type and replicas."
+              "description": "The cache cluster: engine, node type and replicas. The typed keys override the tier. In `me`, `runway validate` refuses a t4g or m6g node class, which me-central-1 does not offer.",
+              "properties": {
+                "mode": {
+                  "enum": ["serverless", "nodes"],
+                  "description": "Valkey serverless, or fixed nodes of one class."
+                },
+                "class": {
+                  "type": "string",
+                  "pattern": "^cache\\.[a-z0-9]+\\.[a-z0-9]+$",
+                  "description": "The node class with `mode: nodes`.",
+                  "examples": ["cache.m7g.large"]
+                },
+                "nodes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "The node count with `mode: nodes`."
+                }
+              }
             },
             "queues": {
               "type": "object",
@@ -748,6 +1948,10 @@
         "topology": {
           "$ref": "#/$defs/topology"
         },
+        "region": {
+          "enum": ["me", "eu", "ksa"],
+          "description": "The tenant region this environment lives in (OS 0001): `me` (AWS me-central-1), `eu` (AWS eu-central-1) or `ksa` (GCP me-central2). Required on staging and production of a product runway (`runway validate`). figentra/infra places the environment in that region of the product's one account (`ref:aws.account`, ADR 0524). Distinct from `regions`, the deploy order across the root `regions` entries."
+        },
         "regions": {
           "type": "array",
           "description": "The regions this environment deploys to, by key of the root `regions`, in release order (a release rolls region by region).",
@@ -766,12 +1970,12 @@
             },
             "pattern": {
               "type": "string",
-              "description": "Host pattern; `${member}` and `${pr}` are expanded.",
+              "description": "Not read yet (Runway plan PR 16, STA-2001). Host pattern; `${member}` and `${pr}` are expanded.",
               "examples": ["${member}-pr-${pr}.preview", "${member}.staging"]
             },
             "tenantDomains": {
               "type": "string",
-              "description": "How tenant custom domains are served.",
+              "description": "Not read yet (Runway plan PR 16, STA-2001). How tenant custom domains are served.",
               "examples": ["cloudflare-for-saas"]
             }
           }
@@ -786,7 +1990,7 @@
             },
             "gate": {
               "type": "string",
-              "description": "Post-deploy gate (DP24).",
+              "description": "Deprecated: an alias of `release.gate`. Not read yet (Runway plan PR 13, STA-2001). Post-deploy gate (DP24).",
               "examples": ["health"]
             },
             "approval": {
@@ -818,7 +2022,8 @@
           }
         },
         "cloud": {
-          "$ref": "#/$defs/cloud"
+          "$ref": "#/$defs/cloud",
+          "description": "Deprecated (ADR 0524): an environment's `region` fixes its cloud, and the product's one account or project is `providers.aws.account` or `providers.gcp.project`; `runway validate` warns for one release."
         },
         "dedicated": {
           "type": "object",
@@ -960,25 +2165,29 @@
           "required": ["package"],
           "properties": {
             "package": {
-              "$ref": "#/$defs/packageName"
+              "$ref": "#/$defs/packageName",
+              "description": "The package that carries the contribution."
             },
             "panels": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "The panels it contributes."
             },
             "resources": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "The resources it contributes."
             },
             "widgets": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "The widgets it contributes."
             }
           }
         }
@@ -992,7 +2201,8 @@
       "properties": {
         "key": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_-]*$"
+          "pattern": "^[a-z][a-z0-9_-]*$",
+          "description": "The entry's key."
         },
         "block": {
           "type": "string",
@@ -1001,7 +2211,8 @@
           "examples": ["os/table"]
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "description": "The entry's title."
         },
         "props": {
           "type": "object",
@@ -1025,7 +2236,8 @@
         "entitlement": {
           "type": "string",
           "minLength": 1,
-          "examples": ["entitlement:academorix:white-label"]
+          "examples": ["entitlement:academorix:white-label"],
+          "description": "Not read yet (STA-2002). The entitlement that turns white-labelling on for a tenant."
         },
         "modes": {
           "type": "array",
@@ -1157,6 +2369,9 @@
             },
             "owner": {
               "type": "string"
+            },
+            "slug": {
+              "type": "string"
             }
           }
         },
@@ -1219,10 +2434,6 @@
           "additionalProperties": {
             "enum": ["small", "medium", "large"]
           }
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1
         }
       }
     },
@@ -1245,6 +2456,16 @@
         "health": {
           "type": "string",
           "pattern": "^/"
+        },
+        "command": {
+          "type": "array",
+          "description": "The container's arguments, replacing the image's default command.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"]]
         },
         "expose": {
           "enum": ["internal", "public"],
@@ -1274,6 +2495,22 @@
             "$ref": "#/$defs/secretName"
           },
           "uniqueItems": true
+        },
+        "aliases": {
+          "type": "object",
+          "description": "The name the image reads, mapped to a variable of a resource it uses (ADR 0493 d4).",
+          "propertyNames": {
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "examples": [
+            {
+              "ZITADEL_DATABASE_POSTGRES_DSN": "MAIN_DB_URL"
+            }
+          ]
         },
         "size": {
           "type": "object",

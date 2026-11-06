@@ -20,7 +20,9 @@ const generated = existsSync(url) ? (await import(url.href)).default : {};
 export default {
   ...generated,
   ...library({
+    contracts: "src/contracts/index.ts",
     index: "src/core/index.ts",
+    native: "src/native/index.ts",
     node: "src/node/index.ts",
     react: "src/react/index.ts",
     testing: "src/testing/index.ts",

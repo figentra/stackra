@@ -21,6 +21,7 @@ import { join } from "node:path";
 import { buildConfig } from "@stackra/config";
 import { RunwayEnvironment } from "@stackra/runway";
 import {
+  cloudflareAccountEnv,
   deployProduct,
   EdgeKvConfig,
   GooglePlayConsoleDriver,
@@ -32,6 +33,7 @@ import type { MobileStoreAccount, ProductBuild } from "@stackra/runway/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { deployFact } from "#node/product/functions/deploy-fact.function";
+import { proveApproval } from "#node/runway-deploy/functions/prove-approval.function";
 import type { CliContext } from "#node/types/cli-context.type";
 
 /** A comma list; a list with no item counts as missing. */
@@ -42,6 +44,32 @@ function list(value: string | undefined): string[] | undefined {
       .map((item) => item.trim())
       .filter((item) => item !== "") ?? [];
   return items.length === 0 ? undefined : items;
+}
+
+/** `name=value` pairs of a comma list. */
+function pairs(value: string | undefined): [string, string][] {
+  return (list(value) ?? []).flatMap((item) => {
+    const at = item.indexOf("=");
+    return at < 1
+      ? []
+      : [[item.slice(0, at).trim(), item.slice(at + 1).trim()] as [string, string]];
+  });
+}
+
+/**
+ * The wrangler KV writer, run with the Cloudflare account the runway names: a literal id is set, a `ref:` id leaves
+ * the job's `CLOUDFLARE_ACCOUNT_ID` in place, and an unresolved one refuses (STA-2124).
+ */
+function edgeKv(
+  namespace: string,
+  accountId: string | number | boolean | undefined,
+): WranglerEdgeKvDriver {
+  const kv = new WranglerEdgeKvDriver(
+    buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
+  );
+  const env = cloudflareAccountEnv(accountId);
+  if (env !== undefined) kv.env = env;
+  return kv;
 }
 
 /**
@@ -121,23 +149,36 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
       return [app, accounts];
     }),
   );
+  // Public values the app-link files publish: `STACKRA_APPLE_TEAMS=figentra=ABCDE12345,...` and
+  // `STACKRA_ANDROID_CERTIFICATES=staff=AA:BB|CC:DD,...` (fingerprints separated by `|`).
+  const appleTeams = pairs(process.env["STACKRA_APPLE_TEAMS"]);
+  const androidCertificates = pairs(process.env["STACKRA_ANDROID_CERTIFICATES"]);
+  const appLinks = {
+    ...(appleTeams.length === 0 ? {} : { appleTeams: Object.fromEntries(appleTeams) }),
+    ...(androidCertificates.length === 0
+      ? {}
+      : {
+          androidCertificates: Object.fromEntries(
+            androidCertificates.map(([app, prints]) => [app, prints.split("|")]),
+          ),
+        }),
+  };
+  const accountId = root.providers?.cloudflare?.accountId;
   const region = deployFact(values, "region", "STACKRA_REGION");
   const deploy = await deployProduct({
     repository: cwd,
     environment: environment as RunwayEnvironment,
-    approved: values["approved"] === true,
+    // The job's OIDC token proves the approval, never the `--approved` flag (STA-2100).
+    approved: !dryRun && (await proveApproval(root, environment, "deploys")),
     ...(namespace === undefined || dryRun || mobileOnly
       ? {}
-      : {
-          kv: new WranglerEdgeKvDriver(
-            buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
-          ),
-        }),
+      : { kv: edgeKv(namespace, accountId) }),
     assets: { bucket: bucket ?? "", origin: origin ?? "" },
     served: served ?? [],
     ...(canaryScopes === undefined ? {} : { canaryScopes }),
     firstRelease: values["first-release"] === true || (dryRun && canaryScopes === undefined),
     ...(region === undefined ? {} : { region }),
+    ...(Object.keys(appLinks).length === 0 ? {} : { appLinks }),
     stores,
     surfacesOnly: values["surfaces-only"] === true,
     mobileOnly,

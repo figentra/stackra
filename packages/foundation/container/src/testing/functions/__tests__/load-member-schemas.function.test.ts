@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { loadMemberSchemas } from "#testing/functions/load-member-schemas.function";
+import { markMemberSchemasLoaded } from "#testing/functions/mark-member-schemas-loaded.function";
 
 /** What the fake schema files record, in load order. */
 const LOADED = "__stackraLoadedSchemas";
@@ -45,6 +46,13 @@ describe(loadMemberSchemas, () => {
     await loadMemberSchemas(root);
     await loadMemberSchemas(root);
     expect(Reflect.get(globalThis, LOADED)).toEqual(["catalogue.ts", "orders.ts"]);
+  });
+
+  it("imports nothing for a root the generated setup marked as loaded (STA-2032)", async () => {
+    const root = memberWith(["orders.ts"]);
+    markMemberSchemasLoaded(root);
+    await loadMemberSchemas(root);
+    expect(Reflect.get(globalThis, LOADED)).toBeUndefined();
   });
 
   it("loads nothing for a member that has not run gen", async () => {

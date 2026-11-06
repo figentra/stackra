@@ -7,7 +7,7 @@ What Claude Code reads in this repository. Most of it is projected from [`.agent
 | Path            | Holds                                                                                        | Edit here?                                                |
 | --------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `settings.json` | permissions (allow, ask, deny), enabled plugins and the hook wiring to `.agents/hooks/*.mjs` | yes                                                       |
-| `launch.json`   | the dev-server launch configuration (the docs site on port 3333)                             | yes                                                       |
+| `launch.json`   | the dev servers Claude's preview tools start, generated from the runways by `stackra gen`    | no: change the runway, then `pnpm gen:workspace`          |
 | `commands/`     | slash commands: `/sync` (agents sync and check) and `/verify` (the repo gate)                | yes                                                       |
 | `agents/`       | subagents generated from `.agents/agents/*.md` with Claude's frontmatter and model tier      | no: `guard-paths` refuses it; edit `.agents/agents`       |
 | `hooks/`        | symlinks to `.agents/hooks/*`                                                                | no: edit `.agents/hooks`                                  |

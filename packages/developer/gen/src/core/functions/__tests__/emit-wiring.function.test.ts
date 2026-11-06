@@ -26,6 +26,7 @@ import { emitWiring } from "#core/functions/emit-wiring.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { INBOX_IR, PLAIN_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 
 const service = (deps: readonly { name: string; from: string }[]) => ({
@@ -41,6 +42,22 @@ const service = (deps: readonly { name: string; from: string }[]) => ({
   refusals: [],
   statics: {},
   traits: [],
+});
+
+const billingClass = (name: string, kind: string, extra: object = {}) => ({
+  name,
+  kind,
+  module: "billing",
+  file: `src/modules/billing/x/${name}.ts`,
+  importPath: `#modules/billing/x/${name}`,
+  options: {},
+  deps: [],
+  facets: [],
+  methods: [],
+  refusals: [],
+  statics: {},
+  traits: [],
+  ...extra,
 });
 
 describe("emitWiring", () => {
@@ -336,6 +353,120 @@ describe("emitWiring", () => {
     };
     expect(emitWiring(ir)).toContain(
       '    { module: "billing", kind: "projection", provide: InvoiceBook, deps: [] },',
+    );
+  });
+
+  it("binds a Menu, Shortcut, Store, Bridge and ExtensionPoint, a Bridge per request (STA-2055)", () => {
+    const ir = {
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        billingClass("MainMenu", "menu"),
+        billingClass("SaveShortcut", "shortcut"),
+        billingClass("CartStore", "store"),
+        billingClass("PrintBridge", "bridge"),
+        billingClass("ScanBridge", "bridge", { lifetime: "singleton" }),
+        billingClass("BillingPoint", "extension_point"),
+      ],
+    } as MemberIR;
+    const content = emitWiring(ir);
+    for (const [name, kind] of [
+      ["MainMenu", "menu"],
+      ["SaveShortcut", "shortcut"],
+      ["CartStore", "store"],
+      ["BillingPoint", "extension_point"],
+    ])
+      expect(content).toContain(
+        `    { module: "billing", kind: "${kind}", provide: ${name}, deps: [] },`,
+      );
+    expect(content).toContain(
+      '    { module: "billing", kind: "bridge", provide: PrintBridge, lifetime: Lifetime.Request, deps: [] },',
+    );
+    expect(content).toContain(
+      '    { module: "billing", kind: "bridge", provide: ScanBridge, lifetime: Lifetime.Singleton, deps: [] },',
+    );
+  });
+
+  it("keeps a config override's base key and writes no second row (STA-2055)", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const emitOver = (manifest: MemberIR["dependencies"][number]["manifest"] = kit): string =>
+      emitWiring({
+        ...COMMERCE_IR,
+        member: "web",
+        classes: [
+          ...COMMERCE_IR.classes.filter((candidate) => candidate.kind !== "config"),
+          {
+            name: "LoyaltyKitConfig",
+            kind: "config",
+            module: "orders",
+            file: "src/config/loyalty-kit.config.ts",
+            importPath: "#config/loyalty-kit.config",
+            options: {
+              schema: {
+                $class: "WebLoyaltyOptions",
+                from: "#config/web-loyalty-options.schema",
+                kind: "schema",
+              },
+            },
+            base: { name: "LoyaltyKitConfig", from: "@acme/loyalty-kit", own: false },
+            deps: [],
+            facets: [],
+            methods: [],
+            refusals: [],
+            statics: {},
+            traits: [],
+          },
+          {
+            name: "RewardsService",
+            kind: "service",
+            module: "orders",
+            file: "src/modules/orders/services/rewards.service.ts",
+            importPath: "#modules/orders/services/rewards.service",
+            options: {},
+            deps: [
+              { class: { name: "LoyaltyKitConfig", from: "@acme/loyalty-kit" } },
+              { class: { name: "LoyaltyLedger", from: "@acme/loyalty-kit" } },
+            ],
+            facets: [],
+            methods: [],
+            refusals: [],
+            statics: {},
+            traits: [],
+          },
+        ],
+        shapes: [
+          ...COMMERCE_IR.shapes,
+          {
+            name: "WebLoyaltyOptions",
+            kind: "schema",
+            module: "orders",
+            file: "src/config/web-loyalty-options.schema.ts",
+            importPath: "#config/web-loyalty-options.schema",
+            fields: [
+              {
+                name: "hostLedger",
+                optional: false,
+                nullable: false,
+                type: { kind: "driver_name", port: "LoyaltyLedger", values: ["memory"] },
+                rules: [],
+              },
+            ],
+            relations: [],
+          },
+        ],
+        dependencies: [{ package: "@acme/loyalty-kit", manifest }],
+      });
+    const content = emitOver();
+    expect(content.match(/key: "loyalty_kit"/g)).toHaveLength(1);
+    expect(content).not.toContain("web.loyalty_kit");
+    expect(content).toMatch(
+      /key: "loyalty_kit", provide: BaseLoyaltyKitConfig, override: LoyaltyKitConfig/,
+    );
+    // US3 scenario 2 / FR-007: the override's driver field selects under the base's key.
+    expect(content).toContain('selectedBy: "config:loyalty_kit.hostLedger"');
+    // EC-01: a base manifest with no `config` section derives the key from the base's member.
+    expect(emitOver({ member: kit.member, package: kit.package, version: kit.version })).toMatch(
+      /key: "loyalty_kit", provide: BaseLoyaltyKitConfig, override: LoyaltyKitConfig/,
     );
   });
 
@@ -758,5 +889,44 @@ describe("emitWiring's defaults for a package's own tests", () => {
     const content = emitWiring(hidden);
     expect(content).not.toContain("CloudSecretVaultDriver");
     expect(content).not.toContain('"cloud":');
+  });
+});
+
+describe("emitWiring and the cross-app relay (STA-1910)", () => {
+  it("binds a consumer's inbox route over RelayInboxService and its generated inbox config", () => {
+    const wiring = emitWiring(INBOX_IR);
+    expect(wiring).toContain(
+      '    { module: "billing", kind: "controller", provide: InboundEventsController, deps: [RelayInboxService] },',
+    );
+    expect(wiring).toContain(
+      '    { key: "outbox.relay_inbox", provide: BaseRelayInboxConfig, override: RelayInboxConfig },',
+    );
+    expect(wiring).toContain(
+      'import { InboundEventsController, RelayInboxConfig } from "#stackra/inbox";',
+    );
+    expect(wiring).toContain(
+      "provide: RelayInboxService, deps: [InboxVerifier, BaseRelayInboxConfig] },",
+    );
+    expect(wiring).not.toContain("CrossAppFanOut");
+  });
+
+  it("binds a producer's fan-out, relay, generated relay config and the Postgres deliveries", () => {
+    const wiring = emitWiring(PRODUCER_IR);
+    expect(wiring).toContain(
+      '    { key: "outbox.events_relay", provide: BaseEventsRelayConfig, override: EventsRelayConfig },',
+    );
+    expect(wiring).toContain(
+      "provide: CrossAppFanOut, deps: [SubscriberSource, DeliveryDriver] },",
+    );
+    expect(wiring).toContain(
+      "provide: CrossAppRelayService, deps: [DeliveryDriver, SubscriberSource, EventSigner] },",
+    );
+    expect(wiring).toMatch(/key: "outbox\.DeliveryDriver",\n {6}default: "postgres",/);
+    expect(wiring).not.toContain("InboundEventsController");
+  });
+
+  it("adds nothing for a service with neither", () => {
+    const wiring = emitWiring(PLAIN_IR);
+    expect(wiring).not.toMatch(/CrossApp|RelayInbox|EventsRelayConfig|default: "postgres"/);
   });
 });

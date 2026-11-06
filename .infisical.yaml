@@ -1,4 +1,4 @@
-# Agents and developers read figentra-agents dev /agents (ADR 0512); CI never reads this file, it uses OIDC.
+# Agents and developers read agents dev /agents (ADR 0512); CI never reads this file, it uses OIDC.
 general:
   domain: https://eu.infisical.com
 secrets-management:

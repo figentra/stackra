@@ -1,14 +1,24 @@
 /**
  * Stackra file contract:
- * Purpose: `runTestbed(request, deps, io)`, every `stackra testbed` verb: `run` (claim a slot, prepare the job
- *          directory, rsync into it, run the command under the box's lock, retry on exit 75, 73 and a lost light box,
- *          scale the group when every slot stays busy, dispatch the GitHub fallback), `status`, `unlock`, `ip`, `ssh`,
- *          `sync`, `scale` and `image`. It replaces the Mac script `ci-box`.
- * Boundary: starts only `aws`, `ssh`, `rsync` and `gh`, through `deps`, without a shell; the only text a box shell
- *           sees is single-quoted. It never reads, prints or passes a secret value (the key is a file path), and it
- *           never runs a job on the Mac.
+ * Purpose: `runTestbed(request, deps, io)`, every `stackra testbed` verb: `run` (look at every enabled region, pick a
+ *          free slot or a group to raise with `pickTestbedSlot`, claim it, prepare the job directory, rsync into it,
+ *          run the command detached under the box's lock and follow its log (reattaching after a dropped connection),
+ *          retry on exit 75, 73 and a lost light box, dispatch the GitHub
+ *          fallback; `--json` prints one result line), `status` (every region, also `--json`), `unlock`, `ip`, `ssh`,
+ *          `sync`, `scale` and `image`. It replaces the Mac script `ci-box`. A box is reached by SSH through SSM
+ *          Session Manager (`ProxyCommand`, `AWS-StartSSHSession`, the instance id), so the security group needs no
+ *          inbound rule; `--ssh-direct` reaches the public IP and swaps this machine's address into the allowlist.
+ *          Every box carries its region, and the SSM proxy and each `aws` call for it use that region. Without the
+ *          Session Manager plugin SSM reaches no box, so a verb that needs one says why and `run` exits 75 at once
+ *          instead of waiting on boxes that are healthy; `status` shows why a box did not answer. When no enabled
+ *          region answers (this machine's AWS access), `run` exits 75 at once with AWS's reason.
+ * Boundary: starts only `aws`, `ssh`, `rsync` and `gh`, through `deps`, without a shell; every caller word a box shell
+ *           sees is single-quoted. It calls `aws` only in an enabled region (`settings.regions`). It never reads,
+ *           prints or passes a secret value (the key is a file path), and it never runs a job on the Mac. The job's
+ *           own output goes wherever `deps.stream` writes (the command points it at stderr under `--json`).
  * Runtime: node
- * Governing contract: ADR 0484 (the testbed); the agent contract in the testbed spec; ADR 0282 (decision 3).
+ * Governing contract: ADR 0484 (the testbed); the agent contract in the testbed spec; ADR 0282 (decision 3); STA-1953
+ *                     (SSM access); the testbed regions contract (STA-2042).
  */
 import { resolve } from "node:path";
 
@@ -16,6 +26,8 @@ import { TESTBED_CLI_DEFAULTS } from "#node/constants/testbed-cli-defaults.const
 import { TESTBED_EXIT } from "#node/constants/testbed-exit.constant";
 import { TESTBED_POLL_MS } from "#node/constants/testbed-poll-ms.constant";
 import { TESTBED_PRESETS } from "#node/constants/testbed-presets.constant";
+import { TESTBED_REATTACH_MS } from "#node/constants/testbed-reattach-ms.constant";
+import { TESTBED_REATTACH_TRIES } from "#node/constants/testbed-reattach-tries.constant";
 import { TESTBED_RSYNC_EXCLUDES } from "#node/constants/testbed-rsync-excludes.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { claimTestbedSlot } from "#node/functions/claim-testbed-slot.function";
@@ -23,14 +35,19 @@ import { classifyTestbedCommand } from "#node/functions/classify-testbed-command
 import { decideTestbedFallback } from "#node/functions/decide-testbed-fallback.function";
 import { orderTestbedBoxes } from "#node/functions/order-testbed-boxes.function";
 import { parseTestbedBoxes } from "#node/functions/parse-testbed-boxes.function";
+import { pickTestbedSlot } from "#node/functions/pick-testbed-slot.function";
 import { refusesTestbedCommand } from "#node/functions/refuses-testbed-command.function";
 import { releaseTestbedClaim } from "#node/functions/release-testbed-claim.function";
-import { shouldScaleTestbed } from "#node/functions/should-scale-testbed.function";
+import { summarizeTestbedRegion } from "#node/functions/summarize-testbed-region.function";
 import { testbedProject } from "#node/functions/testbed-project.function";
 import type { CliIo } from "#node/types/cli-io.type";
 import type { TestbedBox } from "#node/types/testbed-box.type";
+import type { TestbedBoxState } from "#node/types/testbed-box-state.type";
 import type { TestbedDeps } from "#node/types/testbed-deps.type";
+import type { TestbedGroupCounts } from "#node/types/testbed-group-counts.type";
+import type { TestbedRegionState } from "#node/types/testbed-region-state.type";
 import type { TestbedRequest } from "#node/types/testbed-request.type";
+import type { TestbedSlotPick } from "#node/types/testbed-slot-pick.type";
 import type { ToolOutput } from "#node/types/tool-output.type";
 
 const NOT_STARTED: ToolOutput = { code: 127, stdout: "", stderr: "cannot start" };
@@ -38,8 +55,21 @@ const NOT_STARTED: ToolOutput = { code: 127, stdout: "", stderr: "cannot start" 
 /** `value` as one single-quoted word for the box's shell. */
 const quote = (value: string): string => `'${value.replaceAll("'", `'\\''`)}'`;
 
-/** A group's desired, maximum and minimum counts, or `undefined` when the group cannot be read. */
-type GroupCounts = { readonly desired: number; readonly max: number; readonly min: number };
+/** The result of one `run`: the exit code, and where and how long when a job ran. */
+type RunResult = {
+  readonly code: number;
+  readonly region?: string;
+  readonly box?: string;
+  readonly slot?: string;
+  readonly waitSeconds: number;
+  readonly runSeconds: number;
+};
+
+/** Whether a box of group `group` has a slot of kind `kind` (a heavy box has both, a light box only light). */
+const hostsSlot = (group: string, kind: string): boolean => group === "heavy" || group === kind;
+
+/** Whole seconds in `milliseconds`. */
+const seconds = (milliseconds: number): number => Math.floor(milliseconds / 1000);
 
 /**
  * Runs one `stackra testbed` call and resolves with its exit code.
@@ -57,19 +87,16 @@ export async function runTestbed(
 ): Promise<number> {
   const { settings } = request;
   const say = (text: string): void => io.err(`stackra testbed: ${text}\n`);
-  let allowlisted = false;
 
-  const aws = async (args: readonly string[]): Promise<ToolOutput> =>
-    (await deps.exec("aws", [
-      "--profile",
-      settings.profile,
-      "--region",
-      settings.region,
-      ...args,
-    ])) ?? NOT_STARTED;
+  // Every call names its region: an enabled one (`settings.regions`) or the region of a box found there.
+  const aws = async (region: string, args: readonly string[]): Promise<ToolOutput> =>
+    (await deps.exec("aws", ["--profile", settings.profile, "--region", region, ...args])) ??
+    NOT_STARTED;
 
-  const listBoxes = async (): Promise<readonly TestbedBox[]> => {
-    const out = await aws([
+  // One region's running boxes, or `undefined` when its call failed (the region is unreachable; `awsError` says why).
+  let awsError = "";
+  const describe = async (region: string): Promise<readonly TestbedBox[] | undefined> => {
+    const out = await aws(region, [
       "ec2",
       "describe-instances",
       "--filters",
@@ -80,17 +107,28 @@ export async function runTestbed(
       "--output",
       "json",
     ]);
-    return out.code === 0 ? parseTestbedBoxes(out.stdout) : [];
+    if (out.code === 0) return parseTestbedBoxes(out.stdout, region);
+    awsError = out.stderr.trim().split("\n").pop()?.trim() ?? "";
+    return undefined;
   };
 
-  // The SSH allowlist is this Mac's public IP; when it changes, swap the rule (once per run, one region).
-  const allowMe = async (): Promise<void> => {
-    if (allowlisted) return;
-    allowlisted = true;
+  // The running boxes of the enabled regions in region order, each region's oldest first; a region that does not
+  // answer has none.
+  const listBoxes = async (): Promise<readonly TestbedBox[]> =>
+    (await Promise.all(settings.regions.map(describe))).flatMap((boxes) => boxes ?? []);
+
+  // A box is reached through SSM Session Manager by its instance id, so no inbound port 22 and no allowlist; a Mac
+  // behind WARP has no stable public IP (STA-1953). `--ssh-direct` keeps the public-IP path and its allowlist.
+  const direct = settings.sshDirect === true;
+
+  // The SSH allowlist is this Mac's public IP; when it changes, swap the rule (once per region per run). The promise
+  // is kept so boxes looked at in parallel all wait for the swap.
+  const allowlisted = new Map<string, Promise<void>>();
+  const swapAllowlist = async (region: string): Promise<void> => {
     const ip = await deps.publicIp();
     if (ip === undefined) return;
     const me = `${ip}/32`;
-    const current = await aws([
+    const current = await aws(region, [
       "ec2",
       "describe-security-groups",
       "--group-names",
@@ -103,7 +141,7 @@ export async function runTestbed(
     const ranges = current.stdout.split(/\s+/).filter(Boolean);
     if (ranges.includes(me)) return;
     const rule = (verb: string, cidr: string): Promise<ToolOutput> =>
-      aws([
+      aws(region, [
         "ec2",
         `${verb}-security-group-ingress`,
         "--group-name",
@@ -117,29 +155,102 @@ export async function runTestbed(
       ]);
     await rule("authorize", me);
     for (const range of ranges) await rule("revoke", range);
-    say(`SSH allowlist now ${me}`);
+    say(`SSH allowlist now ${me} (${region})`);
+  };
+  const allowMe = (region: string): Promise<void> => {
+    if (!direct) return Promise.resolve();
+    const done = allowlisted.get(region) ?? swapAllowlist(region);
+    allowlisted.set(region, done);
+    return done;
   };
 
-  const sshArgs = [
+  // The SSM proxy of a box runs in the box's own region.
+  const proxy = (box: TestbedBox): string =>
+    `aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p --profile ${settings.profile} --region ${box.region}`;
+  const sshArgs = (box: TestbedBox): readonly string[] => [
     "-o",
     "StrictHostKeyChecking=accept-new",
     "-o",
     "ConnectTimeout=15",
+    // A dead SSM session is noticed in two minutes instead of hanging until the job's timeout.
+    "-o",
+    "ServerAliveInterval=30",
+    "-o",
+    "ServerAliveCountMax=4",
+    ...(direct ? [] : ["-o", `ProxyCommand=${proxy(box)}`]),
     "-i",
     settings.key,
   ];
-  const target = (box: TestbedBox): string => `${settings.user}@${box.ip}`;
+  // Without the plugin every SSM ssh fails as if each box were down: on 2026-11-04 every run waited on "no healthy
+  // testbed box" while both boxes were healthy, because the plugin was on PATH only in a mise-activated shell.
+  let plugin: Promise<string | undefined> | undefined;
+  const ssmMissing = (): Promise<string | undefined> =>
+    direct ? Promise.resolve(undefined) : (plugin ??= deps.ssmPlugin());
+  const needSsm = async (): Promise<boolean> => {
+    const missing = await ssmMissing();
+    if (missing !== undefined) say(missing);
+    return missing === undefined;
+  };
+
+  const target = (box: TestbedBox): string => `${settings.user}@${direct ? box.ip : box.id}`;
   const remote = async (box: TestbedBox, command: string): Promise<ToolOutput> => {
-    await allowMe();
-    return (await deps.exec("ssh", [...sshArgs, target(box), command])) ?? NOT_STARTED;
+    await allowMe(box.region);
+    return (await deps.exec("ssh", [...sshArgs(box), target(box), command])) ?? NOT_STARTED;
   };
   const remoteStream = async (box: TestbedBox, command?: string): Promise<number> => {
-    await allowMe();
+    await allowMe(box.region);
     return deps.stream("ssh", [
-      ...sshArgs,
+      ...sshArgs(box),
       target(box),
       ...(command === undefined ? [] : [command]),
     ]);
+  };
+
+  // The job runs detached on the box (its own session, HUP ignored), writing its log and exit code to files, and the
+  // Mac follows the log. A long job's SSH-over-SSM stream can break ("Bad packet length ... Connection corrupted",
+  // 2026-11-04, after 23 minutes): the job keeps running, the Mac reattaches up to TESTBED_REATTACH_TRIES times, and
+  // the exit code comes from the file. Exit 255 still means the box was lost: the job never started or never answered.
+  const runDetached = async (
+    box: TestbedBox,
+    id: string,
+    slot: string,
+    agent: string,
+  ): Promise<number> => {
+    const f = `/tmp/testbed-${id}`;
+    const start =
+      `f=${f}; : >>"$f.log"; setsid nohup sh -c '"$@" >>"$0.log" 2>&1; echo $? >"$0.rc"' "$f" ${agent}` +
+      ` </dev/null >/dev/null 2>&1 & echo $! >"$f.pid"`;
+    // Waits for the job's pid (30 s, then 255: it never started), follows the log until the job exits, then exits with
+    // its code; no code file means the job was killed on the box.
+    const follow = (lines: string): string =>
+      `f=${f}; n=0; until [ -s "$f.pid" ]; do n=$((n+1)); [ $n -le 30 ] || exit 255; sleep 1; done; p=$(cat "$f.pid");` +
+      ` tail -n ${lines} -f --pid="$p" "$f.log"; while kill -0 "$p" 2>/dev/null; do sleep 1; done;` +
+      ` [ -s "$f.rc" ] || { echo "testbed job ended without an exit code" >&2; exit 1; };` +
+      ` rc=$(cat "$f.rc"); rm -f "$f.log" "$f.rc" "$f.pid"; exit "$rc"`;
+    // Ctrl-C or a caller's SIGTERM stops the job on the box, as closing the old attached session did.
+    const stop: { done?: Promise<ToolOutput> } = {};
+    const off = deps.onInterrupt(() => {
+      stop.done ??= remote(box, `f=${f}; [ -e "$f.rc" ] || testbed-agent job stop ${slot}`);
+    });
+    try {
+      let code = await remoteStream(box, `${start}; ${follow("+1")}`);
+      for (
+        let tries = 0;
+        code === 255 && stop.done === undefined && tries < TESTBED_REATTACH_TRIES;
+        tries += 1
+      ) {
+        say(
+          `lost the connection to ${box.id} (${box.region}); the job keeps running there, reattaching`,
+        );
+        await deps.sleep(TESTBED_REATTACH_MS);
+        code = await remoteStream(box, follow("50"));
+      }
+      if (stop.done === undefined) return code;
+      await stop.done;
+      return 130;
+    } finally {
+      off();
+    }
   };
 
   const pickBox = async (): Promise<TestbedBox | undefined> => {
@@ -155,8 +266,8 @@ export async function runTestbed(
     return box;
   };
 
-  const counts = async (slot: string): Promise<GroupCounts | undefined> => {
-    const out = await aws([
+  const counts = async (region: string, slot: string): Promise<TestbedGroupCounts | undefined> => {
+    const out = await aws(region, [
       "autoscaling",
       "describe-auto-scaling-groups",
       "--auto-scaling-group-names",
@@ -174,8 +285,8 @@ export async function runTestbed(
     return { desired, max, min };
   };
 
-  const setDesired = (slot: string, desired: number): Promise<ToolOutput> =>
-    aws([
+  const setDesired = (region: string, slot: string, desired: number): Promise<ToolOutput> =>
+    aws(region, [
       "autoscaling",
       "set-desired-capacity",
       "--auto-scaling-group-name",
@@ -183,6 +294,41 @@ export async function runTestbed(
       "--desired-capacity",
       String(desired),
     ]);
+
+  // One look at every enabled region, in parallel: its boxes with their health and the state of the `kinds` slots
+  // they host, and the counts of the `kinds` groups. A region whose boxes cannot be listed is unreachable.
+  const survey = (kinds: readonly string[]): Promise<readonly TestbedRegionState[]> =>
+    Promise.all(
+      settings.regions.map(async (region): Promise<TestbedRegionState> => {
+        const listed = await describe(region);
+        if (listed === undefined) return { region, reachable: false, boxes: [], groups: {} };
+        const look = async (box: TestbedBox): Promise<TestbedBoxState> => {
+          const hosted = kinds.filter((kind) => hostsSlot(box.group, kind));
+          const [health, slots] = await Promise.all([
+            remote(box, "testbed-agent health"),
+            Promise.all(hosted.map((kind) => remote(box, `testbed-agent slot ${kind}`))),
+          ]);
+          const healthy = health.code === 0;
+          const state = (index: number): "free" | "busy" =>
+            slots[index]?.stdout.trim() === "free" ? "free" : "busy";
+          return {
+            ...box,
+            healthy,
+            slots: healthy ? Object.fromEntries(hosted.map((kind, i) => [kind, state(i)])) : {},
+          };
+        };
+        const [boxes, groups] = await Promise.all([
+          Promise.all(listed.map(look)),
+          Promise.all(kinds.map((kind) => counts(region, kind))),
+        ]);
+        return {
+          region,
+          reachable: true,
+          boxes,
+          groups: Object.fromEntries(kinds.map((kind, i) => [kind, groups[i]])),
+        };
+      }),
+    );
 
   // The fallback runs a preset on GitHub; the workflow takes the preset and the ref, never a command.
   const dispatch = async (preset: string): Promise<number> => {
@@ -200,8 +346,9 @@ export async function runTestbed(
     return code;
   };
 
-  // Wait for a box whose slot is free (never pile onto box 1). The Mac-side claim stops parallel callers
-  // picking the same free slot while the first one is still syncing.
+  // Wait for a slot (never pile onto a busy one): look at every enabled region, let `pickTestbedSlot` choose, and raise
+  // a group when it says so. The Mac-side claim stops parallel callers picking the same free slot while the first one
+  // is still syncing.
   const acquire = async (
     slot: string,
     skip: Set<string>,
@@ -209,18 +356,38 @@ export async function runTestbed(
     let said = false;
     let busySince: number | undefined;
     for (;;) {
-      const boxes = await listBoxes();
-      for (const box of orderTestbedBoxes(boxes, slot, skip)) {
-        const name = `${box.id}-${slot}`;
-        if (!claimTestbedSlot(deps.claimRoot, name, deps.pid, deps.isAlive)) continue;
-        const out = await remote(box, `testbed-agent slot ${slot}`);
-        if (out.stdout.trim() === "free") return { box, number: boxes.indexOf(box) + 1 };
-        releaseTestbedClaim(deps.claimRoot, name);
+      const seen = await survey([slot]);
+      const numbered = seen.flatMap((state) => state.boxes);
+      // A slot another caller holds, or that answered busy once claimed, is busy for the rest of this look.
+      const taken = new Set<string>();
+      let view: readonly TestbedRegionState[];
+      let step: TestbedSlotPick;
+      for (;;) {
+        view = seen.map((state) => ({
+          ...state,
+          boxes: state.boxes.map((box) => ({
+            ...box,
+            healthy: box.healthy && !skip.has(box.id),
+            slots: taken.has(`${box.id}-${slot}`) ? { ...box.slots, [slot]: "busy" } : box.slots,
+          })),
+        }));
+        step = pickTestbedSlot(view, { slot, busySince, now: deps.now() });
+        if (step.action !== "run") break;
+        const name = `${step.box.id}-${slot}`;
+        if (claimTestbedSlot(deps.claimRoot, name, deps.pid, deps.isAlive)) {
+          const out = await remote(step.box, `testbed-agent slot ${slot}`);
+          if (out.stdout.trim() === "free") {
+            const { box } = step;
+            return { box, number: numbered.findIndex((other) => other.id === box.id) + 1 };
+          }
+          releaseTestbedClaim(deps.claimRoot, name);
+        }
+        taken.add(name);
       }
-      let healthy = 0;
-      for (const box of orderTestbedBoxes(boxes, slot, new Set())) {
-        if ((await remote(box, "testbed-agent health")).code === 0) healthy += 1;
-      }
+      const healthy = view
+        .filter((state) => state.reachable)
+        .flatMap((state) => orderTestbedBoxes(state.boxes, slot, new Set()))
+        .filter((box) => box.healthy).length;
       const preset = request.preset;
       if (
         preset !== undefined &&
@@ -228,25 +395,31 @@ export async function runTestbed(
       ) {
         return { exit: await dispatch(preset) };
       }
-      if (healthy === 0) {
-        if (request.noWait) {
-          say("no healthy testbed box");
-          return { exit: TESTBED_EXIT.unhealthy };
-        }
-        if (!said) say("no healthy testbed box, waiting");
-      } else {
-        if (!said) say("every box busy, waiting");
-        busySince ??= deps.now();
-        const group = await counts(slot);
-        if (
-          group !== undefined &&
-          shouldScaleTestbed({ busySince, now: deps.now(), desired: group.desired, max: group.max })
-        ) {
-          await setDesired(slot, group.desired + 1);
-          busySince = deps.now();
-          say(`every ${slot} slot busy: raised the ${slot} group to ${group.desired + 1}`);
-        }
+      // No region answering is this machine's AWS access (a bad or expired profile), not a busy fleet: waiting cannot
+      // fix it, so exit 75 now and say why, instead of waiting until the caller's own timeout. The fallback above
+      // needs no AWS, so it still goes first.
+      if (seen.every((state) => !state.reachable)) {
+        say(
+          `no enabled region answers (${awsError || "no reason given"}); check the AWS profile ${settings.profile}`,
+        );
+        return { exit: TESTBED_EXIT.unhealthy };
       }
+      if (healthy > 0) busySince ??= deps.now();
+      if (step.action === "scale") {
+        // A group at 0 (its minimum since ADR 0516) has no box to answer: start one instead of waiting for none.
+        const raised = await setDesired(step.region, slot, step.desired);
+        say(
+          raised.code === 0
+            ? `${step.desired === 1 ? `no ${slot} box running` : `every ${slot} slot busy`}: raised the ${slot} group to ${step.desired} in ${step.region}`
+            : `cannot raise the ${slot} group in ${step.region}`,
+        );
+        if (healthy > 0) busySince = deps.now();
+      }
+      if (request.noWait) {
+        say(healthy === 0 ? "no healthy testbed box" : "every testbed slot busy");
+        return { exit: healthy === 0 ? TESTBED_EXIT.unhealthy : TESTBED_EXIT.busy };
+      }
+      if (!said) say(healthy === 0 ? "no healthy testbed box, waiting" : "every box busy, waiting");
       said = true;
       skip.clear();
       await deps.sleep(TESTBED_POLL_MS);
@@ -267,7 +440,7 @@ export async function runTestbed(
       "-az",
       "--delete",
       "-e",
-      `ssh -o StrictHostKeyChecking=accept-new -i ${settings.key}`,
+      `ssh -o StrictHostKeyChecking=accept-new${direct ? "" : ` -o 'ProxyCommand=${proxy(box)}'`} -i ${settings.key}`,
       ...TESTBED_RSYNC_EXCLUDES.flatMap((pattern) => ["--exclude", pattern]),
       `${directory}/`,
       `${target(box)}:${path}/`,
@@ -278,7 +451,7 @@ export async function runTestbed(
   const jobId = (attempt: number): string =>
     `j${deps.now().toString(36)}${deps.pid.toString(36)}${attempt}`;
 
-  const run = async (): Promise<number> => {
+  const run = async (): Promise<RunResult> => {
     const [who, dir, command] = request.args;
     if (
       who === undefined ||
@@ -297,29 +470,51 @@ export async function runTestbed(
     // ci-box and this command exist only on the Mac: a nested call waits forever on the box holding its lock.
     if (refusesTestbedCommand(command)) {
       say("the command must not call ci-box or stackra testbed; run it from the Mac instead");
-      return 2;
+      return { code: 2, waitSeconds: 0, runSeconds: 0 };
     }
     const slot = request.onDemand ? "heavy" : classifyTestbedCommand(command);
+    if (!(await needSsm())) {
+      return { code: TESTBED_EXIT.unhealthy, slot, waitSeconds: 0, runSeconds: 0 };
+    }
     const directory = resolve(request.cwd, dir);
     const project = testbedProject(directory);
     const skip = new Set<string>();
+    const startedAt = deps.now();
     let retried = false;
     for (let attempt = 1; ; attempt += 1) {
       const got = await acquire(slot, skip);
-      if ("exit" in got) return got.exit;
+      if ("exit" in got) {
+        return {
+          code: got.exit,
+          slot,
+          waitSeconds: seconds(deps.now() - startedAt),
+          runSeconds: 0,
+        };
+      }
       const { box } = got;
+      const acquiredAt = deps.now();
+      const done = (code: number): RunResult => ({
+        code,
+        region: box.region,
+        box: box.id,
+        slot,
+        waitSeconds: seconds(acquiredAt - startedAt),
+        runSeconds: seconds(deps.now() - acquiredAt),
+      });
       try {
-        say(`box ${got.number}${slot === "light" ? " (light slot)" : ""}`);
+        say(`box ${got.number} (${box.region})${slot === "light" ? " (light slot)" : ""}`);
         const id = jobId(attempt);
         const synced = await prepareAndSync(box, id, project, directory);
         if (synced.code === TESTBED_EXIT.unhealthy) {
           skip.add(box.id);
           continue;
         }
-        if (synced.code !== 0) return synced.code;
-        const code = await remoteStream(
+        if (synced.code !== 0) return done(synced.code);
+        const code = await runDetached(
           box,
-          `testbed-agent job run ${quote(id)} ${slot} ${quote(who)} ${quote(project)} -- ${quote(command)}`,
+          id,
+          slot,
+          `testbed-agent job run ${quote(id)} ${slot} ${quote(who)} ${quote(project)}${request.postgres ? " --postgres" : ""} -- ${quote(command)}`,
         );
         if (code === TESTBED_EXIT.unhealthy) {
           skip.add(box.id);
@@ -336,7 +531,7 @@ export async function runTestbed(
           say("lost the box (spot reclaim?); retrying once on another box");
           continue;
         }
-        return code;
+        return done(code);
       } finally {
         releaseTestbedClaim(deps.claimRoot, `${box.id}-${slot}`);
       }
@@ -345,20 +540,59 @@ export async function runTestbed(
 
   switch (request.verb) {
     case "run": {
-      return run();
+      const result = await run();
+      if (request.json) {
+        // The one machine-readable line; the job's own output went to stderr.
+        io.out(
+          `${JSON.stringify({
+            region: result.region ?? null,
+            box: result.box ?? null,
+            slot: result.slot ?? null,
+            waitSeconds: result.waitSeconds,
+            runSeconds: result.runSeconds,
+            exitCode: result.code,
+          })}\n`,
+        );
+      }
+      return result.code;
     }
     case "status": {
-      const boxes = await listBoxes();
-      if (boxes.length === 0) io.out("no running testbed box\n");
-      for (const [index, box] of boxes.entries()) {
-        const out = await remote(box, "testbed-agent status");
+      await needSsm();
+      const states = await survey(["heavy", "light"]);
+      if (request.json) {
         io.out(
-          `box ${index + 1} ${box.id} ${box.group}: ${out.code === 0 ? out.stdout.trim() : "unreachable"}\n`,
+          `${JSON.stringify({ regions: states.map((state) => summarizeTestbedRegion(state)) })}\n`,
         );
+        return 0;
+      }
+      if (states.every((state) => state.boxes.length === 0)) io.out("no running testbed box\n");
+      let number = 0;
+      for (const state of states) {
+        if (!state.reachable) {
+          io.out(`${state.region}: unreachable\n`);
+          continue;
+        }
+        const summary = summarizeTestbedRegion(state);
+        const slots = (kind: "heavy" | "light"): string =>
+          `${kind} ${summary[kind].free}/${summary[kind].total} free (+${summary[kind].startable} startable)`;
+        const desired = (kind: string): string =>
+          `${kind} ${state.groups[kind]?.desired ?? "?"}/${state.groups[kind]?.max ?? "?"}`;
+        io.out(
+          `${state.region}: ${slots("heavy")}, ${slots("light")}; desired ${desired("heavy")}, ${desired("light")}\n`,
+        );
+        for (const box of state.boxes) {
+          number += 1;
+          const out = await remote(box, "testbed-agent status");
+          const why = out.stderr.trim().split("\n").pop()?.trim();
+          io.out(
+            `box ${number} ${box.id} ${box.group} (${box.region}): ${out.code === 0 ? out.stdout.trim() : `unreachable${why ? ` (${why})` : ""}`}\n`,
+          );
+        }
       }
       return 0;
     }
     case "unlock": {
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       return remoteStream(box, `testbed-agent job stop ${request.slot ?? "heavy"}`);
@@ -370,6 +604,7 @@ export async function runTestbed(
       return 0;
     }
     case "ssh": {
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       return remoteStream(box, request.args.length > 0 ? request.args.join(" ") : undefined);
@@ -378,6 +613,7 @@ export async function runTestbed(
       const [dir, ...extra] = request.args;
       if (dir === undefined || extra.length > 0)
         throw new CliUsageError("sync takes one directory");
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       const directory = resolve(request.cwd, dir);
@@ -392,31 +628,39 @@ export async function runTestbed(
       return synced.code;
     }
     case "scale": {
+      // The region of the box `--box` names, else the first enabled one (`--region` narrowed the list to one).
+      const named = request.box === undefined ? undefined : await pickBox();
+      if (request.box !== undefined && named === undefined) return 1;
+      const region = named?.region ?? settings.regions[0] ?? settings.region;
       const slots = request.slot === undefined ? ["heavy", "light"] : [request.slot];
       let code = 0;
       for (const slot of slots) {
-        const group = await counts(slot);
+        const group = await counts(region, slot);
         if (group === undefined) {
-          say(`cannot read the ${slot} group`);
+          say(`cannot read the ${slot} group in ${region}`);
           code = 1;
           continue;
         }
         if (request.slot !== undefined) {
           if (group.desired >= group.max) {
-            say(`the ${slot} group is at its maximum (${group.max})`);
+            say(`the ${slot} group is at its maximum (${group.max}) in ${region}`);
             return 1;
           }
-          const raised = await setDesired(slot, group.desired + 1);
+          const raised = await setDesired(region, slot, group.desired + 1);
           if (raised.code !== 0) return raised.code;
-          io.out(`${slot}: desired ${group.desired + 1} (min ${group.min}, max ${group.max})\n`);
+          io.out(
+            `${slot}: desired ${group.desired + 1} (min ${group.min}, max ${group.max}) in ${region}\n`,
+          );
           continue;
         }
-        io.out(`${slot}: desired ${group.desired} (min ${group.min}, max ${group.max})\n`);
+        io.out(
+          `${slot}: desired ${group.desired} (min ${group.min}, max ${group.max}) in ${region}\n`,
+        );
       }
       return code;
     }
     case "image": {
-      const out = await aws([
+      const out = await aws(settings.region, [
         "ssm",
         "get-parameter",
         "--name",

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/navigation (router-aware links and hooks, the breadcrumb
- *          trail, the root error boundary, and the React Router 7 adapters: the data-route builders of a
+ *          trail, the root error boundary, the `ModuleMenu` Sidebar of the declared module menus, and the React Router 7 adapters: the data-route builders of a
  *          client-rendered app and the framework-mode route module bindings; the old `./router` entry is folded here)
  *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `Outlet` and `RouteForm` are React Router's own, re-exported so
@@ -20,6 +20,9 @@ export { Link } from "#react/link/link";
 export type { LinkProps } from "#react/link/link.props";
 export { useLocaleHref } from "#react/locale-href/use-locale-href";
 export { useMenu } from "#react/menu/use-menu";
+export { useMenus } from "#react/menu/use-menus";
+export { ModuleMenu } from "#react/module-menu/module-menu";
+export type { ModuleMenuProps } from "#react/module-menu/module-menu.props";
 export { NavLink } from "#react/nav-link/nav-link";
 export type { NavLinkProps } from "#react/nav-link/nav-link.props";
 export type { NavigateOptions } from "#react/navigate/navigate-options.type";

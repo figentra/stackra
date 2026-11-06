@@ -8,7 +8,8 @@
  *          (decisions 3 and 5); STA-1371.
  */
 import type { RichTextNode } from "@stackra/ui/contracts";
-import { RichTextEditor, useCatalogueText } from "@stackra/ui/react";
+import { useCatalogueText } from "@stackra/ui/react";
+import { RichTextEditor } from "@stackra/ui/rich-text";
 import { MESSAGES } from "#src/constants/messages.constant";
 import { RICH_TEXT_EDITOR_KEYS } from "#src/demos/free/rich-text-editor/rich-text-editor-keys.constant";
 

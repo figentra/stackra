@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0206 (decision 2); ADR 0241 (decision 2); ADR 0327 (decision 3).
  */
-import type { Email } from "@stackra/contracts";
+import { AssuranceLevel, Enum, type Email } from "@stackra/contracts";
 import { publicId, url } from "@stackra/validation";
 import { z } from "zod";
 import type { ZodType } from "zod";
@@ -32,4 +32,5 @@ export const SESSION_USER_SCHEMA = z.object({
       roles: z.array(z.string().min(1)).min(1),
     }),
   ),
+  assurance: z.enum(Enum.values(AssuranceLevel)).exactOptional(),
 });

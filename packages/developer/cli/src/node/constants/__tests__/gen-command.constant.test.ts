@@ -46,7 +46,7 @@ const context = (values: CliContext["values"] = {}, io = captureIo().io): CliCon
 });
 
 const member = (path: string, config: boolean) => {
-  mkdirSync(join(root, path), { recursive: true });
+  mkdirSync(join(root, path, "node_modules"), { recursive: true });
   writeFileSync(join(root, path, "package.json"), "{}");
   if (config)
     writeFileSync(join(root, path, "stackra.config.ts"), "export default definePackage({});\n");
@@ -72,6 +72,20 @@ describe("GEN_COMMAND", () => {
     await expect(GEN_COMMAND.run(context({ manifests: true, check: true }))).rejects.toThrow(
       CliUsageError,
     );
+  });
+
+  it("skips a workspace member that a filtered install left out", async () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
+    member("apps/web", true);
+    mkdirSync(join(root, "apps/playground"), { recursive: true });
+    writeFileSync(join(root, "apps/playground/package.json"), "{}");
+    writeFileSync(join(root, "apps/playground/stackra.config.ts"), "export default {};\n");
+    const { io, output } = captureIo();
+    expect(await GEN_COMMAND.run(context({}, io))).toBe(0);
+    expect(new Set(gen.mock.calls.map(([path]) => path))).toEqual(
+      new Set([join(root, "apps/web")]),
+    );
+    expect(output()).toContain("gen: skipped apps/playground: not installed\n");
   });
 
   it("reruns the refused members and the client consumers until a round writes nothing", async () => {

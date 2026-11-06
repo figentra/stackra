@@ -1,5 +1,425 @@
 # @stackra/database
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/actions@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/testing@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/cache@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/actions@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/testing@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/cache@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/console@0.14.3
+  - @stackra/testing@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/cache@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/console@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/cache@0.14.2
+  - @stackra/testing@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/testing@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/cache@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/testing@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/cache@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/testing@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/cache@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/testing@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/cache@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/console@0.11.1
+  - @stackra/testing@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/cache@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/testing@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/cache@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- aea9b1d: `registerEntities` keeps one schema per schema-qualified table. A service that hosts a package's models (gen's
+  `#stackra/entities/hosted/…`) and also loads that package's own entity list (`registerEntities(TENANCY_ENTITIES)` in
+  its `node` entry) registered the table twice, and MikroORM refused to start ("Duplicate table names are not allowed").
+  Every test of pay's two services failed on `tenancy.approval_bindings`, and a server would not boot (STA-2116).
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/cache@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/testing@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [be4a198]
+- Updated dependencies [9bb5d55]
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [f9c825d]
+  - @stackra/console@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/cache@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/testing@0.9.0
+
+## 0.8.0
+
+### Minor Changes
+
+- 928dcc0: A service's generated `boot` now calls `connectVisibilityFilter(container)` beside the hold registry and sequence time
+  zone, so reads AND the bound `VisibilityFilter`'s conditions, `UserStamps` take the running call's actor, and
+  `callTimeZone()` reads the call's time zone; until now nothing outside tests connected it, so record visibility, user
+  stamps and the call time zone were all off (STA-2044). The database testing plugin connects the compiled app the same
+  way on every compile, and the memory database runs the `StampSubscriber`, so unit tests see what production does.
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/console@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/cache@0.8.0
+  - @stackra/testing@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/actions@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/console@0.7.1
+  - @stackra/testing@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/cache@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/actions@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/console@0.7.0
+  - @stackra/testing@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/cache@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/console@0.6.1
+  - @stackra/testing@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/cache@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- fb29d41: `@stackra/database/testing`'s `snapshotKey` resolves `@electric-sql/pglite` when it is first called, not when the module
+  is imported, so a member without the optional PGlite peer can import `./testing` (STA-1950). A test now refuses any
+  peer resolved or required at module level, which the import mocks cannot see.
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [2256bf6]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [4fcb66d]
+  - @stackra/console@0.6.0
+  - @stackra/cache@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/testing@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/validation@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- 4fa949b: `@stackra/database/testing` loads its optional Testcontainers peers (`@testcontainers/postgresql`, `testcontainers`)
+  only when `usePostgres()` starts a container, so a member without them can import `./testing` and run its unit tests
+  (STA-1950). Before this, every unit test that loaded a factory failed with "Cannot find package
+  '@testcontainers/postgresql'".
+- @stackra/actions@0.5.1
+  - @stackra/model@0.5.1
+  - @stackra/console@0.5.1
+  - @stackra/testing@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/validation@0.5.1
+  - @stackra/cache@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/actions@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/console@0.5.0
+  - @stackra/testing@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/cache@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+- 3df2c07: The console command `db:seed` is now `seed-pack:status` (`SeedPackStatusCommand`): it reports a seed pack's stored
+  records, and `stackra db seed` is the one that runs seeders (STA-1852). The `./node` export test lists
+  `readMigratedSchema`.
+- 1c22c33: `stackra db seed` runs a service's seeders: gen writes `.stackra/entry/seed.ts` (boot, direct database url, no relay loop), `runSeeders` runs `minimal` then the profile, each seeder built by the container in its own transaction with a seed ledger row, skipping a seeder whose source is unchanged (`--again` re-runs). Production refuses `demo`, `test` and `--again` without `--allow-production` and records who ran it. `stackra seed-pack` runs the same step after its records. A service's `boot` takes `url` and `relay` options.
+
+### Patch Changes
+
+- 4f3f1ed: `checkMigrations` loads PGlite and its extensions on first use, like the memory driver, so importing
+  `@stackra/database/testing` no longer needs the optional PGlite peers (STA-1853).
+- e070131: `MemoryDatabaseDriver` starts each instance from a PGlite snapshot built once per migrations set and kept in a temp file, instead of running initdb, the extensions and the migrations every time (STA-1685). Every instance still gets its own fresh database.
+- d675b4d: `@stackra/database/node` exports `readMigratedSchema(files, schemas)`: it replays compiled migration steps on an
+  in-memory PGlite with the approved extensions and reads back the tables, columns (type and nullability), indexes and
+  foreign keys of the given schemas as plain data (`MigratedSchema`). It is what `stackra db diff` compares the models
+  with. It needs the optional peer `@electric-sql/pglite`, and `@electric-sql/pglite-pgvector` for `vector`, and says so
+  when they are missing.
+- 2d6bb63: The testing module's `.seed(...)` takes each seeder from the container when the wiring binds it, so a seeder that injects a service (a settings pack, a repository) gets it; an unwired seeder is still built without arguments.
+- 7dc74f6: The testing tier publishes an event a model records after its last flush, such as the first event recorded on the row
+  `insert` returned: at commit it takes what every model the transaction holds recorded, not only the changed ones.
+- d9bf3c2: The testing entry loads its optional peers (`@faker-js/faker`, `@electric-sql/pglite`,
+  `@electric-sql/pglite-pgvector`, `@mikro-orm/pglite`) on first use, not on import, so a service without them can load
+  `@stackra/database/testing`. A test that needs one that is missing gets an error naming all four.
+- 90f55b1: A model's recorded events reach the testing app after commit (STA-1740). `MemoryDatabaseDriver` and `usePostgres()`
+  connect `RecordedEventsSubscriber`, which takes each flushed model's recorded events and, once the outermost
+  transaction commits, hands them to the new `commitEvents` of `@stackra/events/testing`: an integration event to the
+  app's outbox, any other on its bus, so `run()` results and `app.events.published()` hold them. A rollback publishes
+  nothing, and a released savepoint's events wait for the transaction around it. `@stackra/database` takes
+  `@stackra/events` as an optional peer for its testing entry.
+- 688cf0c: `drainOutbox()` delivers each event as the production inbox receives it once `@stackra/database`'s testing entry is
+  loaded: on its own, in a new transaction, as the actor of the call that wrote it, in that call's scope (through the
+  app's `CallIsolation`, or `withScope` without one), so listener tests over tenant-owned rows need no wrapper.
+  `commitEvents(events, call)` records the call's actor, id and scope; `deliverEventsIn` registers the delivery scope
+  (STA-1789).
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [ef987d9]
+- Updated dependencies [a8c358a]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [90f55b1]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [2bbc0e8]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/console@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/cache@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/testing@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

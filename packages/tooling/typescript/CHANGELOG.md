@@ -1,5 +1,91 @@
 # @stackra/typescript-config
 
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+No changes in this release.
+
+## 0.10.0
+
+No changes in this release.
+
+## 0.9.0
+
+No changes in this release.
+
+## 0.8.0
+
+No changes in this release.
+
+## 0.7.1
+
+No changes in this release.
+
+## 0.7.0
+
+No changes in this release.
+
+## 0.6.1
+
+No changes in this release.
+
+## 0.6.0
+
+### Patch Changes
+
+- f0478cd: A service's generated entity schema lists the `"~defaults"` marker the schemas file adds as a non-persisted property,
+  which `EntitySchema<T>` requires (TS2741 in `.stackra/gen/entities`); a package's committed entity list does not, since
+  its model type has no such key. The `service` preset turns `declaration` off (a service publishes no `.d.ts`, and the
+  entity schema types name `EntityCtor` from @mikro-orm/core, which a service cannot name: TS2883), and is tested to keep
+  `.stackra/encore` out of the typecheck (STA-1894, STA-1880).
+
+## 0.5.1
+
+No changes in this release.
+
+## 0.5.0
+
+No changes in this release.
+
+## 0.4.0
+
+No changes in this release.
+
 ## 0.3.0
 
 ### Minor Changes

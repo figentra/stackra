@@ -11,11 +11,10 @@ import { ListingRecord } from "#core/records/listing.record";
 import type { Built } from "#core/types/built.type";
 import type { Display } from "#core/types/display.type";
 import type { DisplayNode } from "#core/types/display-node.type";
-import type { ElementOf } from "#core/types/element-of.type";
 import type { KpiBuilder } from "#core/types/kpi-builder.type";
+import type { ListDisplayOptions } from "#core/types/list-display-options.type";
 import type { ListPath } from "#core/types/list-path.type";
 import type { MetricPath } from "#core/types/metric-path.type";
-import type { Path } from "#core/types/path.type";
 
 /** Builds a widget's display over query output `O`. */
 export class DisplayRecord<O> implements Display<O> {
@@ -40,14 +39,7 @@ export class DisplayRecord<O> implements Display<O> {
   }
 
   /** The rows of a list field. */
-  list<K extends ListPath<O>>(
-    path: K,
-    options: {
-      readonly primary: Path<ElementOf<NonNullable<O[K]>>>;
-      readonly secondary?: Path<ElementOf<NonNullable<O[K]>>>;
-      readonly meta?: Path<ElementOf<NonNullable<O[K]>>>;
-    },
-  ): ListingRecord {
+  list<K extends ListPath<O>>(path: K, options: ListDisplayOptions<O, K>): ListingRecord {
     return new ListingRecord((flags) => WidgetDisplay.list({ path, ...options, ...flags }));
   }
 

@@ -1,8 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: hold `bot-gh.mjs` to its contract: the commands that would print or store the token are refused, merges go
- *          only through `pnpm pr:merge`, the reviewer identity only reads and comments, git runs as the bot with a
- *          token-free credential setup, and gh reads retry on transient errors.
+ *          only through `pnpm pr:merge`, git runs as the bot with a token-free credential setup, and gh reads retry on transient errors.
  * Boundary: pure functions plus child processes against a fake `gh` in a temp directory; no network, no token.
  * Runtime: node
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0230 (reviewer
@@ -14,7 +13,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr, reviewerAllows } from "../bot-gh.mjs";
+import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr } from "../bot-gh.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
 test("STA-214: credential helpers leak too; merges go only through pnpm pr:merge", () => {
@@ -50,7 +49,7 @@ test("STA-208: the wrappers refuse commands that print or store the token", () =
   for (const [tool, args] of [
     ["gh", ["auth", "token"]],
     ["gh", ["auth", "status", "--show-token"]],
-    ["review", ["auth", "login", "--with-token"]],
+    ["gh", ["auth", "login", "--with-token"]],
     ["git", ["credential", "fill"]],
     ["git", ["-C", "../os", "-c", "x=y", "credential", "fill"]],
   ])
@@ -62,36 +61,6 @@ test("STA-208: the wrappers refuse commands that print or store the token", () =
     ["git", ["push", "origin", "HEAD"]],
   ])
     assert.equal(leaksToken(tool, args), false, args.join(" "));
-});
-
-test("the reviewer identity may only read a PR and comment or review on it", () => {
-  const allowed = [
-    ["pr", "comment", "5"],
-    ["pr", "review", "5", "--approve"],
-    ["pr", "diff", "5"],
-    ["api", "repos/x/y/pulls/5"],
-    ["api", "-i", "/installation/repositories", "--jq", ".repositories[].full_name"],
-  ];
-  for (const args of allowed) assert.ok(reviewerAllows(args), args.join(" "));
-  const denied = [
-    ["pr", "merge", "5"],
-    ["pr", "edit", "5"],
-    ["api", "-X", "PATCH", "repos/x/y"],
-    ["api", "--method=POST", "x"],
-    ["api", "-XPOST", "x"],
-    ["api", "repos/x/y/issues/5/comments", "-f", "body=hi"],
-    ["api", "graphql", "-Fquery=mutation"],
-    ["api", "repos/x/y", "--raw-field=a=b"],
-    ["api", "repos/x/y", "--input", "f.json"],
-    ["api", "-iX", "DELETE", "repos/x/y/issues/comments/1"],
-    ["api", "-if", "query=mutation{x}", "graphql"],
-    ["api", "repos/x/y", "-iF", "body=@f"],
-    ["api", "repos/x/y", "--field=a=b"],
-    ["pr", "comment", "5", "--edit-last"],
-    ["pr", "comment", "5", "--delete-last"],
-    ["repo", "edit"],
-  ];
-  for (const args of denied) assert.ok(!reviewerAllows(args), args.join(" "));
 });
 
 test("git runs as the bot with a token-free, non-persisted credential setup", () => {

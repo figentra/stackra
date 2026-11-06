@@ -35,7 +35,8 @@ import { rollbackMessage } from "#node/functions/rollback-message.function";
 import { workflowDispatches } from "#node/functions/workflow-dispatches.function";
 
 /** How to call the binary; the error of a bad command. */
-const USAGE = "usage: pnpm runway plan [env] | deploy <target> | promote <sha> [--dry-run]";
+const USAGE =
+  "usage: pnpm runway plan [env] | deploy <target> | promote <sha> [--dry-run] | secrets sync <env> [--dry-run] | drift [env]";
 
 /**
  * Runs one `runway` command.

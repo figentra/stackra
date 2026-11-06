@@ -13,6 +13,7 @@ export { SyntaxRole } from "#contracts/enums/syntax-role.enum";
 export { MaterialMode } from "#contracts/enums/material-mode.enum";
 export { MaterialElevation } from "#contracts/enums/material-elevation.enum";
 export { MaterialFamily } from "#contracts/enums/material-family.enum";
+export { BlueprintRole } from "#contracts/enums/blueprint-role.enum";
 export { MaterialRole } from "#contracts/enums/material-role.enum";
 export { MaterialTintSource } from "#contracts/enums/material-tint-source.enum";
 export { VibrancyRole } from "#contracts/enums/vibrancy-role.enum";

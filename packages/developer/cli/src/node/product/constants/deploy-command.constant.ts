@@ -1,26 +1,37 @@
 /**
  * Stackra file contract:
- * Purpose: `DEPLOY_COMMAND`, `stackra deploy --product --env <environment> [--dry-run] [--surfaces-only|--mobile-only]
- *          [--approved] [--first-release] [--assets-bucket <b>] [--assets-origin <url>] [--kv-namespace <id>] [--served <lines>]
- *          [--canary-scopes <ids>] [--region <r>]`: deploys a built product (`runDeployProduct`).
- * Boundary: data plus dispatch; only the product mode exists, so `--product` is required.
+ * Purpose: `DEPLOY_COMMAND`. Two modes:
+ *          - `stackra deploy --env <environment> [--kind <k,…>] [--member <key,…>] [--sha <sha>] [--dry-run]
+ *            [--approved]` ships a commit to the environment's runway targets (`runRunwayDeploy`, STA-1921, STA-1969);
+ *            in a product repository its web and mobile kinds run the product publish below with the same flags, so
+ *            one command ships everything (STA-1972);
+ *          - `stackra deploy --product --env <environment> [--dry-run] [--surfaces-only|--mobile-only] [--approved]
+ *            [--first-release] [--assets-bucket <b>] [--assets-origin <url>] [--kv-namespace <id>] [--served <lines>]
+ *            [--canary-scopes <ids>] [--region <r>]` deploys a built product only (`runDeployProduct`); kept as the
+ *            alias products' CI already calls.
+ * Boundary: data plus dispatch.
  * Runtime: node
- * Governing contract: ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decision 7); ADR 0170; ADR 0482.
+ * Governing contract: ADR 0352 (decision 1); ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decision 7); ADR 0170;
+ *                     ADR 0482.
  */
-import { CliUsageError } from "#node/errors/cli-usage.error";
 import { runDeployProduct } from "#node/product/functions/run-deploy-product.function";
+import { runRunwayDeploy } from "#node/runway-deploy/functions/run-runway-deploy.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
 /** The `stackra deploy` command definition. */
 export const DEPLOY_COMMAND: CliCommand = {
   name: "deploy",
   summary:
-    "Deploy a built product to an environment: its surfaces to the edge, its mobile builds to the stores",
+    "Deploy a commit to an environment's runway targets, or (--product) a built product's surfaces and mobile builds",
   usage:
-    "stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--surfaces-only|--mobile-only] [--approved] [--first-release] [--assets-bucket <bucket>] [--assets-origin <url>] [--kv-namespace <id>] [--served <surface@major,…>] [--canary-scopes <id,…>] [--region <region>]",
+    "stackra deploy --env <dev|preview|staging|production> [--kind <kind,…>] [--member <key,…>] [--sha <sha>] [--dry-run] [--approved] [the --product publish flags below, for a product's web and mobile]\n" +
+    "       stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--surfaces-only|--mobile-only] [--approved] [--first-release] [--assets-bucket <bucket>] [--assets-origin <url>] [--kv-namespace <id>] [--served <surface@major,…>] [--canary-scopes <id,…>] [--region <region>]",
   options: {
     product: { type: "boolean" },
     env: { type: "string" },
+    kind: { type: "string" },
+    member: { type: "string" },
+    sha: { type: "string" },
     "dry-run": { type: "boolean" },
     "surfaces-only": { type: "boolean" },
     "mobile-only": { type: "boolean" },
@@ -34,10 +45,8 @@ export const DEPLOY_COMMAND: CliCommand = {
     region: { type: "string" },
   },
   async run(context) {
-    if (context.values["product"] !== true)
-      throw new CliUsageError(
-        "stackra deploy deploys a product: pass --product at the product root",
-      );
-    return runDeployProduct(context);
+    return context.values["product"] === true
+      ? runDeployProduct(context)
+      : runRunwayDeploy(context);
   },
 };

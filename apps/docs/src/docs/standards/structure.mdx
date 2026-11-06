@@ -52,31 +52,31 @@ Every member authors `stackra.config.ts` and one root module, `src/<name>.module
 
 A module is `src/modules/<key>/` in a service and `src/node/` in a package. Each kind suffix has one home group; a group folder appears with its first file. The validator's `kind-path` check of these tables is planned (STA-338).
 
-| Group                  | Suffixes                                                                     | Holds                                                   | Source       |
-| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- | ------------ |
-| (root)                 | `.module`, `.settings`                                                       | the module file, its one settings group and `README.md` | ADR 0294 d13 |
-| `models/`              | `.model`, `.state-machine`, `.bucket`, `.projection`                         | persisted models                                        | ADR 0294 d13 |
-| `actions/`             | `.action`                                                                    | write operations                                        | ADR 0294 d13 |
-| `queries/`             | `.query`                                                                     | read operations                                         | ADR 0294 d13 |
-| `schemas/`             | `.schema`, `.change`                                                         | shapes shared by two files; dated response changes      | ADR 0294 d13 |
-| `enums/`               | `.enum`                                                                      | `Enum.of` enums                                         | ADR 0294 d13 |
-| `errors/`              | `.error`                                                                     | Refusal classes                                         | ADR 0294 d13 |
-| `events/`              | `.event`, `.change`                                                          | events and their versions                               | ADR 0294 d13 |
-| `listeners/`           | `.listener`                                                                  | event handlers                                          | ADR 0294 d13 |
-| `workflows/`           | `.workflow`, `.signal`                                                       | durable runs and the signals they wait for              | ADR 0294 d13 |
-| `access/`              | `.permissions`, `.policy`, `.role`, `.entitlement`, `.precondition`, `.flag` | who may do what, and when                               | ADR 0294 d13 |
-| `services/`            | `.service`, `.repository`                                                    | services; a repository only for named reads             | ADR 0294 d13 |
-| `drivers/`             | `.driver`                                                                    | port implementations                                    | ADR 0294 d13 |
-| `extensions/`          | `.extension-point`, `.extension`, `.interceptor`                             | extension points and wraps                              | ADR 0294 d13 |
-| `raw/`                 | `.controller`                                                                | raw endpoints, in a service only (ADR 0130 decision 3)  | ADR 0294 d13 |
-| `resources/<model>/`   | `.resource`, `.widget`, `.document`, `.notification`, `.mail`                | one model's admin surface                               | ADR 0294 d13 |
-| `database/migrations/` | `.migration`                                                                 | `NNNN-<name>.migration.ts`, numbered per module         | ADR 0294 d13 |
-| `database/factories/`  | `.factory`                                                                   | `<model>.factory.ts`                                    | ADR 0294 d13 |
-| `database/seeders/`    | `.seeder`                                                                    | minimal, demo and test seeders                          | ADR 0294 d13 |
-| `ai/`                  | `.prompt`, `.skill`, `.facts`                                                | prompts, skills and facts                               | ADR 0294 d13 |
-| `functions/`           | `.function`                                                                  | plain functions                                         | ADR 0294 d13 |
-| `constants/`           | `.constant`                                                                  | module-level constants                                  | ADR 0294 d13 |
-| `types/`               | `.type`                                                                      | types two or more files import                          | ADR 0294 d13 |
+| Group                  | Suffixes                                                                                            | Holds                                                   | Source       |
+| ---------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------ |
+| (root)                 | `.module`, `.settings`                                                                              | the module file, its one settings group and `README.md` | ADR 0294 d13 |
+| `models/`              | `.model`, `.state-machine`, `.bucket`, `.projection`                                                | persisted models                                        | ADR 0294 d13 |
+| `actions/`             | `.action`                                                                                           | write operations                                        | ADR 0294 d13 |
+| `queries/`             | `.query`                                                                                            | read operations                                         | ADR 0294 d13 |
+| `schemas/`             | `.schema`, `.change`                                                                                | shapes shared by two files; dated response changes      | ADR 0294 d13 |
+| `enums/`               | `.enum`                                                                                             | `Enum.of` enums                                         | ADR 0294 d13 |
+| `errors/`              | `.error`                                                                                            | Refusal classes                                         | ADR 0294 d13 |
+| `events/`              | `.event`, `.change`                                                                                 | events and their versions                               | ADR 0294 d13 |
+| `listeners/`           | `.listener`                                                                                         | event handlers                                          | ADR 0294 d13 |
+| `workflows/`           | `.workflow`, `.signal`                                                                              | durable runs and the signals they wait for              | ADR 0294 d13 |
+| `access/`              | `.permissions`, `.policy`, `.role`, `.entitlement`, `.precondition`, `.approval-condition`, `.flag` | who may do what, and when                               | ADR 0294 d13 |
+| `services/`            | `.service`, `.repository`                                                                           | services; a repository only for named reads             | ADR 0294 d13 |
+| `drivers/`             | `.driver`                                                                                           | port implementations                                    | ADR 0294 d13 |
+| `extensions/`          | `.extension-point`, `.extension`, `.interceptor`                                                    | extension points and wraps                              | ADR 0294 d13 |
+| `raw/`                 | `.controller`                                                                                       | raw endpoints, in a service only (ADR 0130 decision 3)  | ADR 0294 d13 |
+| `resources/<model>/`   | `.resource`, `.widget`, `.document`, `.notification`, `.mail`                                       | one model's admin surface                               | ADR 0294 d13 |
+| `database/migrations/` | `.migration`                                                                                        | `NNNN-<name>.migration.ts`, numbered per module         | ADR 0294 d13 |
+| `database/factories/`  | `.factory`                                                                                          | `<model>.factory.ts`                                    | ADR 0294 d13 |
+| `database/seeders/`    | `.seeder`                                                                                           | minimal, demo and test seeders                          | ADR 0294 d13 |
+| `ai/`                  | `.prompt`, `.skill`, `.facts`                                                                       | prompts, skills and facts                               | ADR 0294 d13 |
+| `functions/`           | `.function`                                                                                         | plain functions                                         | ADR 0294 d13 |
+| `constants/`           | `.constant`                                                                                         | module-level constants                                  | ADR 0294 d13 |
+| `types/`               | `.type`                                                                                             | types two or more files import                          | ADR 0294 d13 |
 
 ## App groups (programming model v3)
 

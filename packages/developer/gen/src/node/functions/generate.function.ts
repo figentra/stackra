@@ -29,6 +29,9 @@
  *           leftover one.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
+ *           A member that declares a resource has each tree read through `loader` before the manifest is built
+ *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -47,6 +50,7 @@ import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.con
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
+import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -55,8 +59,10 @@ import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
 import { hasIntTests } from "#node/functions/has-int-tests.function";
+import { readResourceTrees } from "#node/functions/read-resource-trees.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
+import type { ModuleLoader } from "#node/types/module-loader.type";
 
 /** The committed manifest at the member root. */
 const MANIFEST_FILE = "stackra.manifest.json";
@@ -143,18 +149,28 @@ function write(root: string, files: readonly GeneratedFile[], check: boolean): s
   return changed;
 }
 
+/** The merged `Blueprint` augmentation `compileMigrations` writes for a service's own macros. */
+const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
+
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
- * unless `check`, so the runner never applies a stale file. `--check` reports them as changed.
+ * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
  */
-function staleMigrations(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
+function staleMigrations(
+  root: string,
+  files: readonly GeneratedFile[],
+  check: boolean,
+  compiled: boolean,
+): string[] {
   const dir = join(root, MIGRATIONS_DIR);
-  if (!existsSync(dir)) return [];
   const kept = new Set(files.map((file) => file.path));
-  const stale = readdirSync(dir)
+  const stale = (existsSync(dir) ? readdirSync(dir) : [])
     .filter((name) => name.endsWith(".sql"))
     .map((name) => `${MIGRATIONS_DIR}/${name}`)
     .filter((path) => !kept.has(path));
+  if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))
+    stale.push(BLUEPRINT_FILE);
   if (!check) for (const path of stale) rmSync(join(root, path));
   return stale;
 }
@@ -164,7 +180,7 @@ function staleMigrations(root: string, files: readonly GeneratedFile[], check: b
  *
  * @param root - the member root.
  * @param options - `check` compares instead of writing; `backend` picks the TypeScript host; `pass: "manifests"`
- *                  writes the manifest alone.
+ *                  writes the manifest alone; `loader` imports the member's resource classes (`stackra gen` passes one).
  * @throws Error when package.json, tsconfig.json or a dependency manifest cannot be read.
  * @example
  * const { errors, changed } = await generate("packages/commerce/loyalty-kit", { check: true });
@@ -175,6 +191,7 @@ export async function generate(
     readonly check?: boolean;
     readonly backend?: "tsgo" | "ts6";
     readonly pass?: "manifests";
+    readonly loader?: ModuleLoader;
   } = {},
 ): Promise<GenerateResult> {
   // A docs app has no classes to discover: its run assembles the Mintlify site (ADR 0002, 2026-10-27 amendment).
@@ -182,14 +199,27 @@ export async function generate(
     return options.pass === "manifests"
       ? { errors: [], files: [], changed: [] }
       : generateDocsSite(root, options.check === undefined ? {} : { check: options.check });
-  const discover = () =>
-    discoverMember(root, options.backend === undefined ? {} : { backend: options.backend });
+  // The resource trees are read once, from the first discovery; a rediscovery after writing clients keeps them.
+  let trees: Awaited<ReturnType<typeof readResourceTrees>>["trees"];
+  const discover = async () => {
+    const found = await discoverMember(
+      root,
+      options.backend === undefined ? {} : { backend: options.backend },
+    );
+    return trees === undefined ? found : { ...found, resourceTrees: trees };
+  };
   const manifestPath = join(root, MANIFEST_FILE);
   const previous = existsSync(manifestPath)
     ? (JSON.parse(readFileSync(manifestPath, "utf8")) as StackraManifest)
     : undefined;
   const check = options.check === true;
   let ir = await discover();
+  const read = await readResourceTrees(root, ir, options.loader);
+  if (read.errors.length > 0) return { errors: read.errors, files: [], changed: [] };
+  if (read.trees !== undefined) {
+    trees = read.trees;
+    ir = { ...ir, resourceTrees: trees };
+  }
   let result = generateMember(
     ir,
     previous,
@@ -336,14 +366,22 @@ export async function generate(
   }
   if (errors.length > 0) return { errors, files: [], changed: partial };
   result = { ...result, files };
+  // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
+  const warnings = options.pass === undefined ? checkSubscriptions(ir) : [];
   return {
     errors: [],
     files: result.files,
+    ...(warnings.length > 0 ? { warnings } : {}),
     changed: [
       ...new Set([
         ...partial,
         ...write(root, result.files, check),
-        ...staleMigrations(root, result.files, check),
+        ...staleMigrations(
+          root,
+          result.files,
+          check,
+          ir.layout === "service" && options.pass === undefined,
+        ),
       ]),
     ],
   };

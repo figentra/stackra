@@ -1,6 +1,6 @@
 ---
 title: "0511 — Cross-repo service contracts and cross-app events"
-description: "Proposed · 2026-11-01"
+description: "Accepted · 2026-11-06"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0511, cross-repo service contracts and cross-app events: the `@figentra/<service>-contract` packages that carry a producer's committed manifest and OpenAPI document to consumers in other repositories, the `contract` kind, release and trusted publishing per producer repository, prerelease builds for branches, the first contracts from the OS handover, and the transport of integration events that cross apps (HTTP push from the producer's outbox to idempotent consumer inboxes, with a broker driver deferred). Boundary: decision text only; the gen changes, the registry rows, the kind's schema and the relay are built by their own issues. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0260, 0453, 0141, 0349, 0294, 0142. */}
@@ -17,6 +17,9 @@ description: "Proposed · 2026-11-01"
   [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule R10),
   [0142](/adr/0142-cross-service-transport-through-drivers) and
   [0227](/adr/0227-rejected-and-deferred-technologies-refreshed).
+
+Accepted by the owner 2026-11-06.
+
 </Note>
 
 ## Context
@@ -109,6 +112,30 @@ apps is decided here too, and phase 1 ships only the clients.
 15. **Gen refuses a remote listener until the relay ships.** A listener on an event of a service with no sibling folder, that is
     contract-only, is refused with `client_event_remote_transport`. The refusal names the event and the service. The refusal
     is lifted when the relay of decision 12 ships.
+
+## Amendment of 2026-11-02 (owner, STA-1910)
+
+The owner approved the relay's plan (STA-1910) on 2026-11-02. It settles what decisions 11 to 13 leave open:
+
+16. **A producer key is the relay's sender identity.** Each producer service signs every delivery with its own Ed25519
+    key. The private key is read from the secret store by name (`STACKRA_EVENTS_SIGNING_KEY` by default), never from
+    code or a file. Its public key and key id are listed per environment in the producer's `runway.yaml` (`events.keys`),
+    and gen copies them into the `relay` section of the producer's `stackra.manifest.json`, so the contract a consumer
+    pins carries them. This adds a section to decision 1's manifest; the package still holds only its three items. A
+    consumer's inbox accepts only a key that the pinned contract lists for its environment, and sets `producer` (decision 11) to that contract's service. The manifest lists at most the current and the next key, so a rotation needs no
+    simultaneous deploy. STA-1792's workload identity later replaces this key, through the inbox's verifier only.
+17. **Subscribers come from the producer's runway, through one seam.** The producer's `runway.yaml` lists per environment
+    each consumer's inbox origin and the events it takes (`events.subscribers`). The relay reads them only through a
+    `SubscriberSource`, so a later source (the Control Plane) needs no relay change. Gen writes the consumer names and
+    events, without origins, into the manifest's `relay` section, and a consumer's gen warns
+    (`client_event_unsubscribed`) when the producer contract it pins does not list it for an event it listens to.
+18. **The inbox is one generated route.** A consumer service with a listener on a contract-only producer's event gets one
+    raw route, `POST /events/inbox`, outside session authentication. It verifies the signature before it reads the body,
+    then hands the envelope to the service's inbox (decision 13). A service without such a listener gets no route.
+19. **The envelope keeps today's field names.** The cross-app envelope is the code's `EventEnvelope` (`id`, `type`,
+    `occurredAt`, `scope`, `meta`, `data`) plus `envelopeVersion` and `producer`. The names of
+    [0141](/adr/0141-integration-event-names-and-envelope) decision 2 that [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)'s
+    2026-11-01 note names are not renamed here.
 
 ## Consequences
 

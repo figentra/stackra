@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://static.stackra.figentra.com/schemas/runway/app.json
+# Stackra file contract:
+# Purpose: the playground's dev port (ADR 0296 decision 1). It is a dev tool and is never deployed, so it has no other
+#          environment; `stackra gen` writes its `.claude/launch.json` and VS Code `dev: playground` entries from it.
+# Boundary: no root fact and no secret. The `dev` script (`vite --port 3710 --strictPort`) listens on this port.
+# Governing contract: ADR 0296, ADR 0295 (amendment of 2026-11-03), STA-2081
+$schema: "@stackra/runway/schema/app.json"
+version: 3
+
+environments:
+  dev:
+    port: 3710

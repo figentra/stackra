@@ -43,7 +43,7 @@ describe("@stackra/oxlint-config presets", () => {
     expect(text).toContain('"feature-flags/no-plan-targeting": "error"');
   });
 
-  it("base.jsonc turns on every rule @stackra/coding-standard registers, at error", () => {
+  it("base.jsonc turns on every rule @stackra/coding-standard registers, at error (no-raw-env at warn)", () => {
     const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
     const plugin = readFileSync(
       join(
@@ -62,7 +62,13 @@ describe("@stackra/oxlint-config presets", () => {
     const registered = [...plugin.matchAll(/^ {4}"([a-z-]+)": [A-Z_]+_RULE,$/gm)].map(
       (match) => match[1],
     );
-    const enabled = [...text.matchAll(/"stackra\/([a-z-]+)": "error"/g)].map((match) => match[1]);
+    const enabled = [...text.matchAll(/"stackra\/([a-z-]+)": "(?:error|warn)"/g)].map(
+      (match) => match[1],
+    );
+    // The one warn: no-raw-env, until the raw env reads are migrated (ADR 0173 amendment 2026-11-04).
+    expect([...text.matchAll(/"stackra\/([a-z-]+)": "warn"/g)].map((match) => match[1])).toEqual([
+      "no-raw-env",
+    ]);
     expect(registered.length).toBeGreaterThan(0);
     expect([...enabled].sort()).toEqual([...registered].sort());
   });
@@ -116,7 +122,12 @@ describe("@stackra/oxlint-config presets", () => {
     const text = readFileSync(join(root, "src", "base.jsonc"), "utf8");
     expect(text).toContain('"categories": { "correctness": "error", "suspicious": "error" }');
     for (const preset of ["base", "node", "boundaries", "decorators", "react"])
-      expect(readFileSync(join(root, "src", `${preset}.jsonc`), "utf8")).not.toMatch(/"warn"/);
+      expect(
+        readFileSync(join(root, "src", `${preset}.jsonc`), "utf8").replace(
+          '"stackra/no-raw-env": "warn"',
+          "",
+        ),
+      ).not.toMatch(/"warn"/);
     expect(text).toContain(
       '"unicorn/no-array-sort": ["error", { "allowExpressionStatement": true }]',
     );

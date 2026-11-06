@@ -29,7 +29,11 @@ const AUDIT_SETTLE_MS = 30_000;
 /** Resolves after `ms`, without keeping the process alive. */
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms).unref?.();
+    // Node's timer unrefs; a DOM timer is a number, so the lookup is by shape.
+    const timer: unknown = setTimeout(resolve, ms);
+    if (typeof timer === "object" && timer !== null && "unref" in timer) {
+      (timer as { unref: () => void }).unref();
+    }
   });
 }
 
@@ -63,6 +67,8 @@ interface Outcome {
   readonly data?: unknown;
   /** The error to render, when the run failed. */
   readonly error?: unknown;
+  /** The handler returned its own exit code, which a failed checklist row does not override. */
+  readonly coded?: boolean;
 }
 
 /** Runs `entry` with `values`, building `io` around the run's abort signal. */
@@ -118,6 +124,7 @@ export async function runCommand(
     else if (typeof result === "number")
       outcome = {
         code: Number.isInteger(result) && result >= 0 && result <= 255 ? result : EXIT_CODE.failure,
+        coded: true,
       };
     else outcome = { code: EXIT_CODE.success, ...(result === undefined ? {} : { data: result }) };
   } catch (error) {

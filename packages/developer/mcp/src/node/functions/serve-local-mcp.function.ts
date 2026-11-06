@@ -71,10 +71,22 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
     )
     .catch(() => []);
 
+  const commandTools = new Map((options.tools ?? []).map((tool) => [tool.name, tool]));
+
   const callTool = async (params: unknown): Promise<unknown> => {
     const { name, arguments: args } = (params ?? {}) as { name?: unknown; arguments?: unknown };
     if (typeof name !== "string")
       throw new McpProtocolError(-32_602, "tools/call needs a tool name");
+    const fromCommand = commandTools.get(name);
+    if (fromCommand !== undefined) {
+      // The command's own --json document is the structured result; its exit code decides isError.
+      const { document, exitCode } = await fromCommand.invoke(args ?? {});
+      return {
+        content: [{ type: "text", text: JSON.stringify(document, null, 2) }],
+        structuredContent: document,
+        isError: exitCode !== 0,
+      };
+    }
     if (name.startsWith(ENCORE)) {
       const peer = await upstream;
       if (peer === null)
@@ -148,10 +160,18 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
         case "tools/list": {
           return {
             tools: [
-              ...Object.entries(LOCAL_TOOLS).map(([name, tool]) => ({
-                name,
+              ...Object.entries(LOCAL_TOOLS)
+                .filter(([name]) => !commandTools.has(name))
+                .map(([name, tool]) => ({
+                  name,
+                  description: tool.description,
+                  inputSchema: z.toJSONSchema(tool.input, { io: "input" }),
+                  annotations: { readOnlyHint: tool.readOnly },
+                })),
+              ...[...commandTools.values()].map((tool) => ({
+                name: tool.name,
                 description: tool.description,
-                inputSchema: z.toJSONSchema(tool.input, { io: "input" }),
+                inputSchema: tool.inputSchema,
                 annotations: { readOnlyHint: tool.readOnly },
               })),
               ...(await upstreamTools).map((tool) => ({ ...tool, name: `${ENCORE}${tool.name}` })),

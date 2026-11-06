@@ -9,6 +9,7 @@
  */
 // @covers sta-1730:FR-018 sta-1730:FR-021 sta-1730:SC-003
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
+import { TextRendererDriver } from "#core/drivers/text-renderer.driver";
 import { createOutput } from "#core/functions/create-output.function";
 import type { ConsoleMode } from "#core/types/console-mode.type";
 import { memoryText } from "#testing/functions/memory-text.function";
@@ -30,14 +31,15 @@ const setup = (mode: Partial<ConsoleMode> = {}) => {
   const stdout = memoryText();
   const stderr = memoryText();
   const data: unknown[] = [];
-  const output = createOutput({
-    mode: { ...PLAIN, ...mode },
+  const decided = { ...PLAIN, ...mode };
+  const renderer = new TextRendererDriver({
+    mode: decided,
     theme: STACKRA_THEME,
     version: "1.0.0",
     stdout,
     stderr,
-    onJson: (value) => data.push(value),
   });
+  const output = createOutput({ mode: decided, renderer, onJson: (value) => data.push(value) });
   return { output, stdout, stderr, data };
 };
 
@@ -49,7 +51,7 @@ describe("createOutput", () => {
     output.warn("three");
     output.error("four");
     expect(stdout.text()).toBe("  ● one\n  ✓ two\n");
-    expect(stderr.text()).toBe("  ▲ three\n  ✕ four\n");
+    expect(stderr.text()).toBe("  ⚠ three\n  ✗ four\n");
   });
 
   it("fills key-value lines with dots to the width", () => {

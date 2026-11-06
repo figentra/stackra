@@ -283,6 +283,19 @@ test("a product repository keeps its own names, licence and publish settings (AD
   assert.deepEqual(packageNameFindings(checkMember({ ...member, stackra: false })), []);
 });
 
+test("a docs package sits at docs/ with no tier, turbo or tsconfig, and is UNLICENSED (ADR 0514)", () => {
+  const pkg = { name: "@figentra/pay-docs", description: "Pay docs.", stackra: { kind: "docs" } };
+  assert.deepEqual(checkMember({ dir: "docs", pkg, stackra: false }), []);
+  assert.deepEqual(checkMember({ dir: "apps/docs", pkg, stackra: false }), [
+    "a docs package lives at docs/, not apps/docs/ (ADR 0514)",
+  ]);
+  const files = ["README.md", "AGENTS.md", "CHANGELOG.md", "content"];
+  assert.deepEqual(
+    checkMemberFiles({ dir: "docs", pkg, files, agents: "# A\n\n## PII\n", stackra: false }),
+    [],
+  );
+});
+
 test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are static assets", () => {
   const good = {
     "@stackra/source": "./src/a/index.ts",
@@ -388,7 +401,6 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/docs/src/docs.json",
       ".claude/settings.json",
       ".changeset/config.json",
-      ".specify/integration.json",
       "assets/landing/index.json",
       "services/billing/assets/seeds/plans/price-levels.json",
       "assets/seeds/credits.json",
@@ -445,7 +457,7 @@ test("checkRunwaySchemas: each shipped runway schema is a byte copy of its tools
   );
   assert.match(
     checkRunwaySchemas((p) => files[p])[0] ?? "",
-    /: run `cp tools\/schemas\/runway-root\.schema\.json packages\/developer\/runway\/schema\/root\.json`$/,
+    /: make both the zod-derived text, editing tools\/schemas\/runway-root\.schema\.json and running `cp tools\/schemas\/runway-root\.schema\.json packages\/developer\/runway\/schema\/root\.json` \(ADR 0400 decision 7\)$/,
   );
 });
 
@@ -475,6 +487,7 @@ type Issue = { readonly path: string; readonly message: string };
 /** A stand-in for the built @stackra/runway entry: records its calls and refuses documents with `bad: true`. */
 function stubRunway(
   placement: readonly { readonly code: string; readonly message: string }[] = [],
+  requires: readonly Issue[] = [],
 ) {
   class RunwayInvalidError extends Error {
     readonly issues: readonly Issue[];
@@ -502,11 +515,15 @@ function stubRunway(
       calls.push(["checkPlacement", (root as { readonly project?: string }).project, services]);
       return placement;
     },
+    checkRequires(root: unknown, service: unknown) {
+      calls.push(["checkRequires", (root as { readonly project?: string }).project, service]);
+      return requires;
+    },
   };
   return { calls, runway };
 }
 
-test("checkRunwayFiles: each file is parsed for its kind; only the root reaches checkPlacement", () => {
+test("checkRunwayFiles: each file is parsed for its kind; the root reaches checkPlacement, each service checkRequires", () => {
   const files: Record<string, string> = {
     "runway.yaml": "version: 3\nproject: acme\nenvironments: {}\n",
     "apps/docs/runway.yaml": "version: 3\nenvironments: {}\n",
@@ -525,7 +542,28 @@ test("checkRunwayFiles: each file is parsed for its kind; only the root reaches 
     ["checkPlacement", "acme", ["commerce"]],
     ["parseRunway", "app", "apps/docs/runway.yaml"],
     ["parseRunway", "service", "services/commerce/runway.yaml"],
+    ["checkRequires", "acme", { version: 3, environments: {} }],
   ]);
+});
+
+test("checkRunwayFiles: an unserved requirement names the service file and its requires path", () => {
+  const files: Record<string, string> = {
+    "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+    "runway.yaml": "version: 3\nproject: acme\n",
+  };
+  const { runway } = stubRunway(
+    [],
+    [{ path: "requires.cache", message: "No driver serves this valkey requirement" }],
+  );
+  assert.deepEqual(
+    checkRunwayFiles({
+      files: Object.keys(files),
+      read: (p) => files[p] ?? "",
+      runway,
+      services: ["commerce"],
+    }),
+    ["services/commerce/runway.yaml: requires.cache: No driver serves this valkey requirement"],
+  );
 });
 
 test("checkRunwayFiles: schema issues name file and path; placement issues name the code", () => {
@@ -605,7 +643,6 @@ test("isRepoOwnedYaml: skips generated and vendored YAML", () => {
   for (const p of [
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
-    ".specify/a.yml",
     ".agents/skills/x/a.yml",
     ".agents/reference/a.yml",
     "a.json",

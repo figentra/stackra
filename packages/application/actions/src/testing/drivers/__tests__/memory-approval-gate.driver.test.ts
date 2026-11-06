@@ -74,14 +74,19 @@ const user = (id: `usr_${string}`, realm: Realm = Realm.Staff): Actor => ({
 });
 const requester = user("usr_requester");
 
-const approverOf = (id: `usr_${string}`, extra: Partial<MemoryApprover> = {}): MemoryApprover => ({
-  actor: user(id),
-  realm: Realm.Staff,
-  permissions: [PERMISSION],
-  assurance: AssuranceLevel.Aal2,
-  steppedUp: true,
-  ...extra,
-});
+/** `undefined` removes an optional field. */
+const approverOf = (
+  id: `usr_${string}`,
+  extra: { [K in keyof MemoryApprover]?: MemoryApprover[K] | undefined } = {},
+): MemoryApprover =>
+  ({
+    actor: user(id),
+    realm: Realm.Staff,
+    permissions: [PERMISSION],
+    assurance: AssuranceLevel.Aal2,
+    steppedUp: true,
+    ...extra,
+  }) as MemoryApprover; // reason: an override of undefined drops an optional field, which exactOptionalPropertyTypes refuses
 
 function setup(options: { cap?: number } = {}) {
   const clock = new TestClock();

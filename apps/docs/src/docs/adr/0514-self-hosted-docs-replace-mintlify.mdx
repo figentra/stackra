@@ -1,0 +1,107 @@
+---
+title: "0514 — Self-hosted open-source docs: Fumadocs on a Cloudflare Worker replaces Mintlify"
+description: "Accepted, amended by 0521 · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0514, the owner's decision that every Figentra docs site is self-hosted Fumadocs on a Cloudflare Worker with static assets, deployed through Runway; each repository writes its docs in `docs/`, each product release publishes a `@figentra/<product>-docs` package, the API reference comes from the ADR 0511 contract packages, and the docs.figentra.com hub depends on every docs package. Boundary: decision text only; the hub, the Runway provider and the per-repository migrations are built by their own issues. Runtime: documentation. Governing contract: ADR template; ADR 0002, 0039, 0165, 0284, 0289, 0299, 0453, 0468, 0511. */}
+
+<Note>
+  Extended 2026-11-02 (STA-2024) by [0521](/adr/0521-design-system-docs-on-fumadocs-ai-first) for
+  the Stackra site of decision 9: it holds the design-system docs, serves `llms.txt` and
+  `llms-full.txt` at docs.stackra.figentra.com with no gap during the move, offers the page actions
+  for assistants, answers Ask AI through Tamo's gateway and serves the docs over `stackra mcp`.
+</Note>
+
+<Note>
+  Accepted 2026-11-02 (STA-1920), recording the owner's decision of that date. It supersedes
+  [0002](/adr/0002-docs-on-mintlify) and [0299](/adr/0299-docs-runway), and replaces the Mintlify
+  target of [0039](/adr/0039-openapi-mintlify-and-oauth-guide).
+</Note>
+
+## Context
+
+Every docs site is on Mintlify ([0002](/adr/0002-docs-on-mintlify), [0299](/adr/0299-docs-runway)): Stackra core's
+`apps/docs` at docs.stackra.figentra.com, and each product's own `apps/docs`. Mintlify is a hosted product. It ships no
+self-hosted export, so its build sits outside our Workers and its deploy needs its own Runway provider, branch and
+GitHub app. It also gives each repository its own site, while Figentra's readers want one place with a tab per product.
+The product repositories are private, so a hub that checked them out at build time would need read access to all of
+them, and would publish whatever sat on their main branch rather than what was released.
+
+## Decision
+
+1. **Fumadocs, self-hosted and open source.** Every Figentra docs site is built with Fumadocs and served by a Cloudflare
+   Worker with static assets ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker)). Fumadocs runs on
+   Vite with React Router 7, prerendered to static files, because Next.js is rejected
+   ([0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)). This replaces Mintlify everywhere:
+   Stackra core, Figentra and every product.
+2. **Runway deploys every site.** A docs site is deployed through Runway, by its Cloudflare Workers provider
+   ([0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing)), never by a direct Cloudflare
+   call. Dev and staging deploys run without the owner; production waits on the owner's Environment approval
+   ([0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)).
+3. **Each repository writes its docs in its own `docs/`.** The pages sit in `docs/` at the repository root and are
+   reviewed in the same pull request as the code they describe.
+4. **Each product release publishes a docs package.** The product's existing Release also publishes
+   `@figentra/<product>-docs`: the MDX pages of `docs/` plus their navigation. It goes to our own registry
+   ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)), never to
+   npmjs.
+5. **The API reference is generated.** It comes from the `openapi.json` already inside the product's contract packages,
+   `@figentra/<service-package>-contract` ([0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events)). Nobody
+   writes API reference pages by hand.
+6. **One hub at docs.figentra.com.** The hub is a new app member of the Figentra platform repository (figentra/figentra),
+   shaped like the member behind docs.stackra.figentra.com (`stackra.kind` `package`, tier `app`), and its root runway
+   sends it to the `docs` destination on `cloudflare-workers`. It depends on every product docs package
+   through its catalog. Its product switcher has one tab per product: os, pay, billing, invoicing, commerce, tamo,
+   organza and each product that follows.
+7. **A release rebuilds the hub through one bump pull request.** A product release opens the hub's bump pull request in
+   figentra/figentra, or updates it in place when one is open, moving that product's catalog pin. Its per-pull-request
+   preview shows the new docs before merge. When it merges, the hub's normal deploy on main rebuilds it and Runway
+   deploys it. Main is the only source of what is deployed: the hub never builds a version that is not in its
+   lockfile, and a release never dispatches another repository's deploy.
+8. **Packages, not a cross-repository checkout.** The hub reads released packages, so its docs match the released code,
+   and it needs no read access to the private product repositories.
+9. **Stackra and Flow keep their own sites.** Their readers are different. Stackra's stays at docs.stackra.figentra.com,
+   and Flow's is open source. Both move to Fumadocs under decisions 1 to 3, and either can become a hub tab later.
+10. **A docs package has its own kind, `docs`.** The repository-root `docs/` is the member `@figentra/<product>-docs`,
+    and its `package.json` carries `"stackra": { "kind": "docs" }`. Its `content/` holds the MDX pages, a Fumadocs
+    `meta.json` per folder for the navigation, and the assets those pages use; beside it sit only the member files
+    (`package.json`, README, AGENTS, CHANGELOG): no code, no tier, no TypeScript or
+    Vitest preset. `stackra.kind` gets a seventh value, `docs`, as
+    [0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events) added `contract` (amending decision 11 of
+    [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)). A content-only
+    package takes this kind; an app that serves docs, like the hub, stays a `package` of tier `app`. New pages use
+    Fumadocs components directly. The Mintlify component names already in the pages (`Note`, `Warning`, `Tip`, `Card`,
+    `CardGroup`, `Tabs`, `Steps`) are mapped onto Fumadocs components by the sites as a transitional bridge for the
+    migration, removed once no published docs package uses them.
+
+## Consequences
+
+- Mintlify leaves every repository: the `mint` tasks, the `mintlify` Runway provider, the deploy branches, the Mintlify
+  GitHub app and the "Mintlify Deployment" checks. Gen's docs-site target (the 2026-10-27 note on 0002) stops writing a
+  Mintlify site. Core's own pages move from `apps/docs/src/docs` to `docs/`, and the tools that name the old path
+  (`pnpm adr:reserve`, the ADR links) move with them in the same pull request.
+- The checks of 0299 stay, run on the Fumadocs build: the build, broken links, accessibility, and a smoke test after
+  each deploy.
+- Each product's Release grows one package, and its CI builds the docs on every pull request that touches `docs/`.
+- The hub is one more member, deployed like any Worker; its content changes only when a bump pull request merges. The
+  bump pull requests are routine: they take Flow's bot-approval path once it is live, and until then they go in the
+  owner's merge batch.
+- Rolling back a product's docs is rolling back its docs package version in the hub.
+
+## Enforcement
+
+planned — `StackraKind.Docs` in `STACKRA_MANIFEST_SCHEMA` (`packages/developer/repo-checks`), released before any
+product docs package; the Runway Cloudflare Workers provider (STA-1921, stackra#227) as the only deploy path; the hub member and its
+release's bump pull request; one migration pull request per repository under STA-1920 that adds `docs/`, adds the docs package to
+the Release, moves the Mintlify content and removes Mintlify and its checks; a `FORBIDDEN_DEPENDENCIES` row for `mint`
+and `mintlify` in `@stackra/repo-checks` once the last repository has moved. Until then nothing checks this rule.
+
+## Supersedes and sources
+
+Supersedes: [0002](/adr/0002-docs-on-mintlify), [0299](/adr/0299-docs-runway). Replaces the Mintlify target of
+[0039](/adr/0039-openapi-mintlify-and-oauth-guide). Builds on [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs),
+[0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker),
+[0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing),
+[0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine),
+[0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) and
+[0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events). Sources: the owner's decision of 2026-11-02,
+Linear STA-1920; the number was reserved by stackra#225.

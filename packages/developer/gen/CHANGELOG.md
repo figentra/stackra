@@ -1,5 +1,391 @@
 # @stackra/gen
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/money@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/support@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/money@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/support@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/money@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/support@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/money@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/money@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/support@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/money@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/support@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/money@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/support@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/money@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/support@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/money@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/support@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/money@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/support@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- e57b9a1: `stackra gen` writes an `env` section into `stackra.manifest.json` (ADR 0173 amendment 2026-11-04, STA-2104): one
+  row per environment name the member's configuration classes declare (`Config({ env })` names and `@Secret` fields),
+  with its kind (`secret`, `public`, `config`), type, rules, refused prefixes and environments; a service adds its
+  hosted packages' rows, an app only their public rows, and each gets the Infisical path `/runtime/<member>`. `@Secret` takes an optional second
+  argument, `{ refuse, environments }`, read by gen. `StackraManifest` types the section.
+
+### Patch Changes
+
+- 05da3d4: An action is never advertised to MCP clients as read-only, even at L0 or L1; only a query at L0 or L1 is.
+- 242ebe4: The migration compiler's macro recorder and two tests typecheck again under `exactOptionalPropertyTypes`.
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/support@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- 3db6529: The docs-site target can now write a Fumadocs site. `emitDocsSite(input, "fumadocs")` prerenders the site to static files with Vite and React Router. It writes the pages under `content/`, the navigation as a page tree in `app/site.json`, the site shell, `llms.txt`, `llms-full.txt` and `_redirects` under `public/`, and a transitional map for the Mintlify component names. It refuses a redirect from a page's own path (`docs_redirect_shadows_page`), a redirect to nowhere (`docs_redirect_target_missing`) and an unmapped, unimported component (`docs_component_unknown`). `DocsConfig` gains `redirects`. Mintlify stays the default until a docs app switches (STA-2026). For a docs member whose generated site is Fumadocs, `stackra dev` and `build` run React Router, and they name `pnpm install` when the site's dependencies are missing. `stackra lint` builds the site, then checks every internal link, image and anchor in it, and exits 1 naming each broken link by page.
+- c19ca9c: Gen records each record `Policy<Model>` in a manifest `policies` section (class, model, module, file and the model's
+  `modelFile`, own then hosted with `from`, written only when there is one), writes `registerPolicies([...])` in
+  `#stackra/registrations` from it, and a service's boot calls `connectPolicies(container)`. Until now nothing paired a
+  model with its policy, so `ctx.authorize(record)` ran no policy and a caller holding a permission could act on another
+  principal's record, such as another customer's loyalty account (STA-2045).
+- 502cba1: A service's generated Encore app gains its service declaration and its endpoints. Every service gets
+  `.stackra/encore/<member>/encore.service.ts` (`export default new Service("<member>")`), and a service with an own
+  action or query that has an endpoint gets `.stackra/encore/<member>/api.ts`: one `api()` per such entry, with its
+  derived method and path, typed by its input and output schemas, running the call through
+  `ActionPipeline.execute` inside `app.handlers.run`.
+  
+  The actor comes only from Encore's verified auth data (`getAuthData()` of `~encore/auth`, `{ userID, actor }`). An
+  endpoint is `auth: true` unless its call lists `ActorKind.Anonymous` in `actors`; that one is `auth: false` and runs as
+  an anonymous actor when no session is presented. The auth handler that returns the auth data comes with the generated
+  gateway; until then `encore build` refuses the `auth: true` endpoints. A hosted package's entry, and one whose schema
+  the member does not declare, get no endpoint yet. Gen now refuses a route whose path parameter is no field of the
+  input (`endpoint_param_unbound`), since Encore binds path parameters from the input.
+
+### Patch Changes
+
+- b210fc8: A service that runs `@stackra/outbox` now connects the outbox writer as the native-write watcher in its generated
+  `boot` (`connectNativeWriteWatcher`), so a native `CrudService` write (increment, soft or archive delete, restore,
+  repath, purge) reaches the change log, and search indexes, segments and `@ConsumesChanges` consumers no longer keep
+  stale or deleted rows (STA-2047).
+- e80a99b: `stackra gen --check` locks permissions, roles, config keys, schema names, endpoints and reports (`identity_changed` unless `@Renamed` names the old identity), and accepts an integration event version bump; `@Renamed` may mark a report class.
+- c00ae11: Migrations apply after the modules they depend on and after the owner of each macro they call (ai after tenancy); a migration that imports anything but `@stackra/database` or `#stackra/migrations` is refused (`migration_import_forbidden`); a service's own macros are merged into `Blueprint` through the generated `.stackra/gen/blueprint.ts`.
+- 94354cc: The generated public SDKs: the TypeScript client now requests the base URL plus the endpoint path, so a base URL with a
+  path prefix (`https://example.com/api`) keeps it, as the Python and PHP clients already did; a host-only base URL
+  requests the same URL as before. Every write in the TypeScript, Python and PHP clients now sends an `Idempotency-Key`:
+  the caller's when passed, else a UUID v4 generated once per call before the request (`crypto.randomUUID()`,
+  `uuid.uuid4()`, `random_bytes`), so a retry around the request replays one call. A `GET` sends none. A TypeScript
+  runtime without Web Crypto passes `idempotencyKey` on writes.
+- dbe1e9d: Gen writes `.stackra/gen/ui.ts` (`#stackra/ui`) for a member that declares `@stackra/ui`: it re-exports `Component`
+  from `@stackra/ui/native` on an app that renders only on iOS and Android, and from `@stackra/ui/react` otherwise. A
+  class component (`class Greeting extends Component<GreetingProps>`) now type-checks; the class-components compiler
+  still removes the import before a bundle loads it. The `.` entry exports the emitter as `emitUiFacade`.
+- b174a17: `stackra db diff` reports pivots, search columns and partial indexes faithfully. `expectedSchema` now expects each
+  many-to-many relation's pivot table, named by `pivotTable` or `<table>_<field>`, with the two `varchar(33)` keys the
+  ORM names (`<owner>_id` and `<target>_id`, or `<table>_1_id` and `<table>_2_id` for a self-reference), the owner's
+  `tenant_id` and their same-module foreign keys, so a migrated pivot is no longer `undeclared_table`. A `@Searchable`
+  model expects `search_text` and `search_filters`; `diffSchemas` tolerates the search vectors and `__v<n>` shadows only
+  on such a table and reports search columns on any other table as `undeclared_column`. A partial index's predicate
+  compares as Postgres renders it (multi-word and array casts, quoted identifiers, `<>`, `= ANY`, `<> ALL`, `~~` and
+  `between` folded), so a correct partial index is no longer `index_shape`.
+  
+  `ManyToManyOptions` documents the pivot name the ORM uses without the option, `<table>_<field>`.
+- 2ae4f65: `sort_not_indexed` and `filter_not_indexed` now judge the resource trees gen reads in this run, not the committed
+  `stackra.manifest.json`. A sortable column, default sort, tiebreak key or filter on a path no index leads with is
+  refused in the run that adds it, including a first run with no committed manifest; a tree only the committed manifest
+  still holds is no longer judged. `checkTableIndexes(ir, manifest)` takes the manifest this run derives.
+- f9c825d: gen binds Menu, Shortcut, Store, Bridge (request-scoped) and ExtensionPoint classes; a config override keeps its base's key. The container's binding kinds gain `shortcut` and `extension_point`.
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/money@0.9.0
+  - @stackra/support@0.9.0
+
+## 0.8.0
+
+### Patch Changes
+
+- 928dcc0: A service's generated `boot` now calls `connectVisibilityFilter(container)` beside the hold registry and sequence time
+  zone, so reads AND the bound `VisibilityFilter`'s conditions, `UserStamps` take the running call's actor, and
+  `callTimeZone()` reads the call's time zone; until now nothing outside tests connected it, so record visibility, user
+  stamps and the call time zone were all off (STA-2044). The database testing plugin connects the compiled app the same
+  way on every compile, and the memory database runs the `StampSubscriber`, so unit tests see what production does.
+- 7dd35b3: A member's generated Vitest setup imports each generated schemas file statically and calls the new
+  `markMemberSchemasLoaded()` from `@stackra/container/testing`, instead of awaiting `loadMemberSchemas()`. In a
+  consumer, `@stackra/container` sits in node_modules, which Vitest leaves to Node, so the schemas loaded through Node:
+  with no `#` imports-map fallback and no legacy decorators, every unit test failed at import (STA-2032).
+- @stackra/money@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/contracts@0.8.0
+  - @stackra/support@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- 448c52f: Gen writes `.stackra/gen/i18n.ts` before it loads a member's resource classes, so a resource that takes its labels
+  from `#stackra/i18n` loads on a clean checkout instead of being refused as `resource_unloadable` (STA-1947).
+  
+  The shared walk over a host's dependency manifests is renamed `dependencyContributionsOf` (was `contributionsOf`), so
+  it no longer shares a name with `@stackra/navigation/testing`'s `contributionsOf`.
+- @stackra/money@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/support@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/money@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/support@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/money@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/support@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- 71bbf08: An app that hosts `@stackra/panel` now composes the panel resources its dependencies record: its route tables register
+  the trees on native as well as the browser, and gen writes `#stackra/resources` (`Resources` and `resourceList`), each
+  resource's route constants with the operation refs its consumed services' clients export. One resource key from two
+  classes is refused (`resource_duplicate`). A page whose operation no consumed service's client exports gets no route
+  and is listed with its reason in `unboundOperations`; a `true` list or get waits on STA-1971. The walk over the dependencies' manifests is the shared `contributionsOf` step (STA-1947).
+- 99750d4: A package records the `Route` and `Menu` classes of its `react` and `native` entries in its manifest (`ui.routes`, with
+  the page beside each route, and `ui.menus`), and an app's route tables list them on the runtime their entry serves,
+  imported from `<package>/<entry>`, so no app hand-writes a `register()`. Every menu, the app's own and its packages',
+  is registered under its key through the new `registerMenus` of `@stackra/navigation`, and `useMenus(kind?)` lists them
+  for a shell. One route or menu key from two owners is refused (`route_duplicate`, `menu_duplicate`) (STA-1947).
+- e15d9c3: Gen records every panel resource in the manifest's `ui.resources`, under `<module>.<model>`: the tree its builder
+  members return, with its owning `module`, its `class` and, in a package, the `from` a host imports it from. Action
+  and query classes in the tree are written as their locked keys, and a service or app also lists its hosted packages'
+  resources. `generate` takes a `loader` to run the resource classes; `stackra gen` passes one on Vite's module runner,
+  and a run without one refuses a member that declares a resource (`resource_loader_missing`). New refusals:
+  `resource_unloadable`, `builder_impure`, `resource_operation_unknown` and `resource_duplicate` (STA-1947). The loyalty
+  kit's manifest now records its `LoyaltyAccountResource`.
+- e250d4f: Gen writes one `registerActions([...])` in each member's `#stackra/registrations`, a row per action and query with its
+  locked key, permission, risk, effects and input schema, so the pipeline validates input and checks the permission of
+  every call. `IamAccessControlDriver` now refuses a call with no registered permission instead of letting it through,
+  and lets an anonymous caller past `require` and `authorize` only for a class whose `actors` list `anonymous`; the
+  manifest marks such a call `anonymous: true` and its OpenAPI operation takes no security. `stackra validate` lists
+  every anonymous-callable call, and a test pins today's five (STA-2025).
+
+### Patch Changes
+
+- f0478cd: A service's generated entity schema lists the `"~defaults"` marker the schemas file adds as a non-persisted property,
+  which `EntitySchema<T>` requires (TS2741 in `.stackra/gen/entities`); a package's committed entity list does not, since
+  its model type has no such key. The `service` preset turns `declaration` off (a service publishes no `.d.ts`, and the
+  entity schema types name `EntityCtor` from @mikro-orm/core, which a service cannot name: TS2883), and is tested to keep
+  `.stackra/encore` out of the typecheck (STA-1894, STA-1880).
+- 0090b9c: A `?:` field whose `@Field(zod)` hatch already ends in `.optional()` compiles to `.exactOptional()` instead of
+  `.optional().exactOptional()`. The latter's output admits `undefined`, which `?:` under `exactOptionalPropertyTypes`
+  does not, so the schema's `$Check` failed with TS2344 in every consumer that wrote such a hatch (STA-2022).
+- b98f7ea: Gen recognises a package's migration macros whichever peer-variant copy of `@stackra/database` they extend: a macro is a
+  class whose chain reaches the `Macro` kind base and that implements `apply`, no longer `instanceof` the member's own
+  copy, which silently dropped them (`t.belongsToTenant is not a function`). A migration that calls a blueprint method no
+  macro supplied now names the macros gen collected in its `migration_compile_failed` message (STA-2006).
+- @stackra/money@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/support@0.6.0
+
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/money@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/support@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/money@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/support@0.5.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 0b660e0: The schemas file now augments each shape that has initializers with `declare module "<its import path>"`, naming them in
+  the type-only `~defaults` brand (STA-1694), so `CallInput` can make the defaulted fields optional. Regenerate to pick it
+  up.
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+- 1c22c33: `stackra db seed` runs a service's seeders: gen writes `.stackra/entry/seed.ts` (boot, direct database url, no relay loop), `runSeeders` runs `minimal` then the profile, each seeder built by the container in its own transaction with a seed ledger row, skipping a seeder whose source is unchanged (`--again` re-runs). Production refuses `demo`, `test` and `--again` without `--allow-production` and records who ran it. `stackra seed-pack` runs the same step after its records. A service's `boot` takes `url` and `relay` options.
+- c9cf778: Add the approval stage gen refusals (STA-1724, ADR 0509): `approval_not_constant`, `approval_on_query`,
+  `approval_window_too_long`, `approval_actor_not_allowed`, `approval_credential_input`,
+  `approval_condition_dependency` and `approval_condition_reads_unmarked`, and the `approval_condition` kind
+  (`access/<name>.approval-condition.ts`).
+- aa21e6b: Gen reads a consumed service from a sibling folder or from a dependency whose `package.json` has `stackra.kind`
+  `contract` (a producer's published `stackra.manifest.json`, OpenAPI and lang, no source) and whose manifest `member` is
+  the service, never by matching a dependency's member name, which could pick a package's manifest for a service of the
+  same name. A contract package is never hosted. Its client and lang are generated; a listener of its events is refused
+  with `client_event_remote_transport` until the event-transport ADR. `StackraKind` gains `contract` (a new kind, so
+  skills is minor); `stackra add` does not offer it; repo-checks asks a contract package only for its kind and manifest.
+
+### Patch Changes
+
+- b99d4af: Gen's output now typechecks in consumers. The generated member module aliases a dependency's module class that shares
+  the member's own name (`PaymentsModule as StackraPaymentsModule`); a model that writes its own `[OptionalProps]` gets no
+  generated one that would redeclare it (TS2717); and a client leaves out an enum's schema constant nothing reads
+  (TS6133 under `noUnusedLocals`).
+- b531c97: A generated schema's `X$Check` leaves out its driver-name fields on both sides: `DriverName<Port>` widens to every
+  registered driver name when the port has no `~key` brand, so a shape with one failed `Same<>` (TS2344). The `X$`
+  schema still validates the field with `z.enum` of the driver names gen found.
+- 0cf32d7: A service with a database gets `.stackra/gen/encore-sqldb.d.ts`, the `encore.dev/storage/sqldb` types its boot's
+  import of the generated Encore database file needs, so the service typechecks without `encore.dev` installed (TS2307,
+  STA-1795). The Encore app under `.stackra/encore` keeps the real types.
+- 457b107: A package with nothing to export yet gets an empty `.` entry (`export {};`), so its build makes an empty
+  `dist/index.mjs` instead of tsdown falling back to `src/index.ts` and failing (STA-1753).
+- 4561f10: A service now registers its hosted packages' permission sets and module roles at boot, not only its own. Manifest permission entries carry `module`, `member` and `file`, and a new `roles` section lists each module role with its key, so the host can import and register them. Regenerate committed manifests.
+- 823d985: A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the generated unit
+  config narrowed to the integration tier with `intTier`, which `stackra test --tier int` runs; no member authors a
+  `vitest.int.config.ts`.
+- d675b4d: `@stackra/gen/node` exports `checkMigrationDrift(root)`: it compiles a service's migrations, replays them through the
+  member's own `@stackra/database/node`, builds the schema its models declare and returns their differences. The `.`
+  entry exports the pure parts: `expectedSchema` (tables, columns, nullability, `@Index` indexes under their `idx_`
+  names, `fk_` foreign keys), the field-to-Postgres type map `postgresTypeOf` with `postgresTypeAgrees`, `diffSchemas`
+  and `formatSchemaDifference`. A class facet now records its constant arguments after the first as `rest`, so
+  `@Index(["a"], { unique: true })` keeps its `unique` and `where`.
+- ca7d004: The wiring file also writes `interface PortRegistry` (port key to `typeof <Port>`) beside `DriverRegistry`, so
+  `DriverName<Port>` narrows without a brand on the port. A hand-written `~key` brand that is not `<member>.<Port>` is
+  refused with `port_key_mismatch`.
+- 1856ee0: The generated entry imports `registerPermissions` from `@stackra/container`, so a member that declares permissions but no
+  roles no longer imports `@stackra/iam`; `registerRoles` still comes from iam (STA-1890, ADR 0513).
+- d0b1ef3: The generated registrations call `registerPermissions` for every `Permission` static (`.system()` and `.restricted()` ones included) and then `registerRoles` for every module role, so a real boot knows which permissions are system-only or restricted and what each module role holds. `Permission.Lx.restricted()` statics are now read into the manifest too.
+- 3400ff6: Gen's `registrations.ts` no longer imports an Integration that has no Connection: it was imported and never read, which
+  failed a consumer's `noUnusedLocals` (TS6133).
+- 13b7dff: A service's full run refuses `queue_unprovisioned` when an environment in its `runway.yaml` has no `queues.<name>`
+  entry for a queue its job actions run on, `default` aside (STA-1727). A member with no runway file or no environment
+  is not refused.
+  
+  **Upgrading:** a product whose services run job actions on a named queue must add that queue under every environment
+  its `runway.yaml` declares, `environments.dev` and `environments.preview` included, before `stackra gen` passes on
+  this release:
+  
+  ```yaml
+  environments:
+    dev:
+      queues:
+        invoices:
+          visibilityTimeoutSeconds: 300
+    preview:
+      queues:
+        invoices:
+          visibilityTimeoutSeconds: 300
+  ```
+- dbb60dc: A settings section (a schema-typed field with no initializer) is emitted `.prefault(() => ({}))` in `#stackra/schemas`,
+  so a group with no stored value for a section reads that section's field defaults instead of throwing a ZodError. A
+  wrong-typed stored value is still refused. Run `stackra gen` to regenerate.
+- bb08f25: `MemoryDimensionValuesDriver` is the `memory` candidate of `DimensionValues`: a consuming service projects the values the owning service's events make live (`project`, `retire`); nothing is live until projected. Gen binds the workflow node's `ServiceAckService`, `AutomationService` and `ChecklistService` where a member injects them and registers their model partners, as it does `RuleSetService`.
+- 5f63e58: `Integration({ key })` takes an optional written key of two snake_case parts (`connectors.stripe`), for an Integration
+  whose key stored data already names (STA-1739). Gen's manifest uses it in place of the derived
+  `<module>.<snake(class)>`, refuses a malformed one (`integration_key_invalid`) and still refuses two Integrations with
+  one key (`identity_collision`). Without `key`, nothing changes.
+- Updated dependencies [9c8d108]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [58c7da9]
+  - @stackra/contracts@0.4.0
+  - @stackra/support@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/money@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

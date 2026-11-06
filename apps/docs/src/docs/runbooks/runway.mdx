@@ -7,9 +7,10 @@ icon: "plane-takeoff"
 <Note>
   Status: partly built (STA-72). The runway check in `pnpm validate`, core's `runway.yaml`, the
   `cloudflare-workers`, `npm` and `mintlify` provider workflows, the supply-chain checks and `pnpm
-  runway` are written; none has run yet (testing pass STA-597). The secrets and vars sync is
-  designed here and not built (STA-606). Everything that needs the generated Encore app waits for
-  gen: the Encore deploy spike (STA-136), the staging deploy, images and generated CI pipelines.
+  runway` are written; none has run yet (testing pass STA-597). The secret sync writes service
+  secrets into Encore (`pnpm runway secrets sync`, STA-606); vars and EAS (STA-2009) are not built.
+  Everything that needs the generated Encore app waits for gen: the Encore deploy spike (STA-136),
+  the staging deploy, images and generated CI pipelines.
 </Note>
 
 Runway is the deploy layer of Stackra: the runway files say what each member needs and where it runs ([0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)), and public reusable workflows in this repository deploy it ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)). Promotion, rollback and records follow [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted); secrets follow [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets).
@@ -24,7 +25,38 @@ Runway is the deploy layer of Stackra: the runway files say what each member nee
 
 `pnpm validate` reads every one of them, checks it against the version 3 schema of its kind with `@stackra/runway`, and checks that a grouped topology places each service member exactly once (`checkRunwayFiles`). A `runway.yaml` anywhere else is a finding. The check uses the built package: the Quality Gate builds before it validates, and a local `pnpm validate` before a build prints a notice instead.
 
-Core's root runway declares only `dev` and `production`: Stackra deploys only its own infrastructure, the static Worker, the docs and the npm packages ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 1). The docs member has its runway ([0299](/adr/0299-docs-runway) decision 6); `workers/static` gets one with gen, when its hand-written `wrangler.jsonc` goes ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) decision 8).
+Core's root runway declares only `dev` and `production`: Stackra deploys only its own infrastructure, the static Worker, the docs and the npm packages ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 1). The docs member has its runway ([0299](/adr/0299-docs-runway) decision 6); `apps/playground`, `apps/mobile` and `workers/static` have one for their dev port only (STA-2081), and `workers/static` gets the rest with gen, when its hand-written `wrangler.jsonc` goes ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) decision 8).
+
+## Local servers for Claude and VS Code
+
+The runways are the one list of what runs locally. `stackra gen` at the workspace root (`pnpm gen:workspace`) writes it
+twice: Claude Code's `.claude/launch.json`, which the desktop app's preview tools read, and one `dev: <name>` task per
+server in `.vscode/tasks.json` (Tasks: Run Task). Both files are committed, because a Claude session opens in a fresh
+worktree before any gen has run ([0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries),
+amendment of 2026-11-03). Never edit the generated entries: change the runway and run gen.
+
+| Source                                                                         | Server          | Command                                                                                 | Port                              |
+| ------------------------------------------------------------------------------ | --------------- | --------------------------------------------------------------------------------------- | --------------------------------- |
+| each `surfaces.<key>` of the root runway (`ops` aside)                         | `surface-<key>` | `stackra build --product --surfaces-only`, then `stackra preview serve --surface <key>` | 4173 plus its place in `surfaces` |
+| `apps/<name>/runway.yaml` with `environments.dev.port` (or `mobile.metroPort`) | `<name>`        | build what the member imports, then its `dev` script                                    | the runway's                      |
+| `workers/<name>/runway.yaml` with `environments.dev.port`                      | `worker-<name>` | build the Worker and what it imports (`wrangler dev` serves `dist/`), then `dev`        | the runway's                      |
+
+- Each command runs through `sh -c` and builds first, so it starts on a clean checkout after `pnpm install`. In core a
+  surface also builds `@stackra/cli`; a product runs its installed `stackra`.
+- The port is stable: it comes from the runway, and a surface keeps its port while new surfaces are added at the end of
+  `surfaces`. The member's `dev` script must listen on its runway port; gen passes no port to it. Worktree lanes
+  (`environments.dev.lanes`) are not applied: the file holds lane 0.
+- A member without a dev port in its runway is not listed: services (their Encore dev command waits for gen) and
+  `apps/console` today.
+- `stackra validate --repository` refuses a generated file that differs from what gen writes (parsed JSON, so oxfmt's
+  layout never counts) and two servers on one port; `stackra gen --check` fails on a stale file. In `.vscode/tasks.json`
+  gen owns only the `dev: …` tasks and keeps the others and the comment lines at the top.
+- OpenCode has no dev-server list to write; its agents start these servers with the same commands, through `pnpm`.
+- Vitest needs nothing here: the recommended `vitest.explorer` extension finds each member's `vitest.config.ts`, which
+  imports the `.stackra/vitest.config` gen already writes.
+- Later: a surface serves a production build through the local edge today. When `stackra dev --surface <key>` runs
+  without an OS checkout (gen writes the bundle-mode Vite config, [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells)
+  decision 6), the `surface-<key>` entries switch to it with the same name and port, and nothing else changes for Claude.
 
 ## Provider workflows
 
@@ -83,7 +115,16 @@ pnpm runway promote <sha>
 
 ## Secrets and vars sync
 
-The sync is designed here and built in STA-606, once its targets exist.
+`pnpm runway secrets sync <env>` is the secret half of this design (STA-606). It prints each member's secret names,
+the Infisical folder that holds them and who writes them, then, in a CI deploy job only, reads every service's values
+and writes each into the Encore Cloud environment (`environments.<env>.encore.environment`, else the runway environment's
+name) with `encore secret set`, the value on stdin. `--dry-run` prints the names and reads nothing; outside CI the sync
+refuses to read. Every value is read before anything is written, and an Encore secret is app-wide, so two services that
+name one secret must hold one value. A Worker's secrets are set by the Workers provider at deploy, through the same
+reader (`readMemberSecrets` in `@stackra/runway/node`, STA-1990). A mobile app's wait for STA-2009, and vars and drift
+are not built yet. When the root runway says `secrets.sync: on-deploy`, `stackra deploy --env <env>` runs the same sync
+inside its deploy lock before it ships anything, whenever the deploy includes services; a failed sync ships nothing,
+and `--dry-run` prints the sync's names with the plan.
 
 1. **Source.** Infisical holds every value ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)). Member runways name secrets; the root names the Infisical environment per runway environment (`providers.infisical.environments`) and the path (`secrets.defaultPath` in `providers.infisical.paths`). CI-only names are root `secrets.ci` and never reach a runtime.
 2. **Who reads.** The deploy job of each environment logs in with that environment's own Infisical identity over OIDC, trusted only for that environment's subject, so a staging job cannot read production.
@@ -107,26 +148,44 @@ which.
 
 ```yaml
 resources:
-  main-db:
+  identity-db:
     kind: postgres
     size:
-      production: large
+      production: medium
 workloads:
   zitadel:
     image: ghcr.io/zitadel/zitadel@sha256:<digest>
+    command: [start-from-init, --masterkeyFromEnv, --tlsMode, external]
     port: 8080
     health: /debug/healthz
     expose: public
-    uses: [main-db]
+    uses: [identity-db]
+    env:
+      ZITADEL_EXTERNALDOMAIN: login.<region>.<product-domain>
+      ZITADEL_EXTERNALPORT: "443"
+      ZITADEL_EXTERNALSECURE: "true"
+    aliases:
+      ZITADEL_DATABASE_POSTGRES_DSN: IDENTITY_DB_URL
     secrets: [ZITADEL_MASTERKEY]
+    size:
+      staging: medium
+      production: medium
     scale:
-      production: { min: 2, max: 4 }
+      production:
+        min: 2
+        max: 4
     reason: "Residency: KSA in-country tenants cannot use ZITADEL Cloud"
 environments:
   production:
     limits:
       monthly: 900
 ```
+
+This is self-hosted ZITADEL (ADR 0206 decision 4 as amended by 0493), planned in dev for about $75 a month and in
+staging for about $105. `command` replaces the image's default arguments. `aliases` hands the image a resource
+variable under the name it reads: here the database URL as `ZITADEL_DATABASE_POSTGRES_DSN`. An alias may name only a
+variable of a Postgres resource the workload uses. The owner puts `ZITADEL_MASTERKEY` (32 characters, fixed after the
+first start) into Infisical at `<env>:/workloads/zitadel/` before the first apply.
 
 A service member names what it uses in its own runway (`uses: [main-db]`). The plan prints each item's monthly
 estimate; dev ($150) and staging ($500) refuse a plan over their cap, production only warns until it has a `limits`.

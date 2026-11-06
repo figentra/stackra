@@ -63,19 +63,56 @@ Pass `container: () => Container.create(wirings)` to build commands with their c
 a command, never for the list, help or version. A member that runs gen gets its registry from `#stackra/commands`
 (STA-1731); a standalone app lists its classes.
 
+**Migration only:** `Command({ name, description, passthrough: true })` ports a command that still parses its own
+flags. It declares no fields, `io.rest` holds every token after its name raw, and routing, `--help` and errors stay the
+kernel's. It is a state to leave: a CLI pins its remaining list with `passthroughCommands(COMMANDS)` from
+`@stackra/console/testing` until that list is empty (ADR 0500 decision 7, STA-1966).
+
+`help <command>` (or `<command> --help`) prints a command's help and never runs it; an unknown name exits 2 with the
+closest names. Spaced words run a `:`-joined command, longest match first (`acme mcp sync` runs `mcp:sync`). A value option
+may come before the name in its separate-token form (`acme --box 2 ssh`) when every command that declares it takes a value;
+`requireCommand: true` makes an invocation that names no command a usage error (exit 2) instead of the list.
+`Command({ group, docs, examples })` sets the command's heading in the list and adds examples and a docs link to its
+help.
+
 Global options on every command: `-h/--help`, `-V/--version`, `-v/--verbose`, `-q/--quiet`, `-n/--no-interaction`,
 `--json`, `--ansi`/`--no-ansi`. Exit codes: 0, the handler's own 0 to 255, 1 (error), 2 (usage), 130 (SIGINT or a
 cancelled prompt), 143 (SIGTERM).
 
 ## Output, prompts, modes
 
-- `io.output`: `line`, `info`, `success`, `warn`, `error`, `title`, `keyValue`, `list`, `table`, `note`, `task`,
-  `spinner`, `progress`, `json`, `banner`.
+- `io.output`: `line`, `info`, `success`, `warn`, `error`, `title`, `keyValue`, `list`, `table`, `checklist`,
+  `tree`, `note`, `problem`, `present`, `task`, `spinner`, `progress`, `json`, `banner`.
+  - `table({ columns, rows, groupBy })`: a `status` column draws `✓ ok`, `⚠ warn` or `✗ fail` (a symbol and a word,
+    never colour alone), and the widest text column is cut with `…` to fit the width.
+  - `checklist({ rows })`: rows of `{ name, status, detail?, fix?, group? }` under their groups, each fix on its own
+    line, then "7 passed · 1 warning · 1 error". A failed row ends the run with exit 1 unless `handle` returns a code.
+  - `tree(nodes)`: one level of children, every level under `--verbose`.
+  - Under `--json` a table's or checklist's rows are the data, exactly as given (extra fields kept), unless the command
+    calls `io.output.json`. A non-zero exit without a thrown error writes `{ "ok": false, "data": ... }`.
+  - Data `handle` returns while writing nothing is presented by its shape: checklist rows, a table, key-value lines.
+- Errors: throw `new CommandError(message, { why, fix, docs, detail })`. Every failure renders as one boxed problem
+  (what, why, hint, fix command, docs link); the stack, causes and `detail` show only under `--verbose`, and the
+  `--json` error carries `why`, `fix` and `docs`.
+- Drivers: output goes through the `Renderer` port (`@stackra/console/contracts`). `TextRendererDriver` is the default;
+  pass `renderer: (context) => new MyRenderer(context)` in the ports (or `runCommandForTest`'s options) to swap it.
 - `io.prompt`: `text`, `password`, `confirm`, `select`, `multiselect`, `search`.
 - Plain text (no escape byte, no cursor movement) under `NO_COLOR`, `--no-ansi`, `TERM=dumb` or without a TTY. No
   prompts without a TTY, in CI, with `-n` or with `--json`: a prompt takes its default, or the run exits 2 naming the
   option that answers it. `--json` writes exactly one document, `{ ok, data }` or `{ ok: false, error: { code, message } }`.
+- `createConsole({ json: "bare" })` changes that for a CLI whose `--json` shape an ADR has frozen (testbed, ADR 0522): a run
+  with no error writes its data alone as one line, whatever the exit code; a failed run writes nothing to stdout; all human
+  output, `-v` echo included, goes to stderr. Every other CLI keeps the envelope.
 - Right-to-left text is measured by grapheme so it lines up; no isolate marks are written. On a terminal without bidi or Arabic shaping (`TERM_PROGRAM` claude-desktop, vscode, iTerm.app, Hyper, Tabby), right-to-left runs are written shaped and in visual order; `STACKRA_BIDI=visual|logical` overrides the choice, and pipes and `--json` always get logical text.
+
+## Child processes
+
+`io.process.run(command, args, options)` runs a child in the run's working directory. Its output is captured and shown only
+under `--verbose`, and a non-zero exit throws a `CommandError`. `{ interactive: true }` hands the child the terminal and is
+refused without one. `{ inherit: true }` shares the standard streams without a terminal: the output is live, not captured
+and not redacted. Under `--json` it writes to standard error and ignores standard input. An inherited or interactive
+child is refused while a secret option or argument of the run holds a value, because its output cannot be redacted.
+`onOutput` receives redacted chunks.
 
 ## Themes
 
@@ -108,7 +145,7 @@ writes a standalone TypeScript app with a `greet` command, its theme and its tes
 | Import                       | Holds                                                                      |
 | ---------------------------- | -------------------------------------------------------------------------- |
 | `@stackra/console`           | the Command kind, `@Argument`, `@Option`, `createConsole`, themes, errors  |
-| `@stackra/console/contracts` | leaf types: options, theme, prompt request and answer, `Prompter`, streams |
+| `@stackra/console/contracts` | leaf types and ports: `Renderer`, table, checklist, tree, problem, prompts |
 | `@stackra/console/node`      | `nodePorts()`, `terminalPrompter()`                                        |
 | `@stackra/console/testing`   | `runCommandForTest`, `scriptedPrompter`, `memoryText`, `manualSignals`     |
 | bin `stackra-console`        | `create`                                                                   |

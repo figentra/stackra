@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `testbedPlan`: two disks with the 200 GB XFS volume at `/data`, both deleted with the
  *          instance; `heavy` on-demand and spot only on `light`; one region; the owner's counts and instance types;
- *          the guard, idle and image numbers; grants only when a project id is given and no secret value anywhere;
+ *          the region's vCPU quotas and the refusal of a plan above them (ADR 0516); the guard, idle and image numbers; grants only when a project id is given and no secret value anywhere;
  *          bad input refused; the toolchain pins equal `mise.toml` and the catalogue.
  * Boundary: test only; reads `mise.toml` and `pnpm-workspace.yaml` at the repository root, calls no cloud.
  * Runtime: node (vitest)
@@ -40,22 +40,26 @@ describe("testbedPlan", () => {
     expect(plan.groups.heavy).toMatchObject({
       purchase: "on-demand",
       instanceTypes: ["c7i.2xlarge"],
-      min: 2,
-      max: 6,
+      min: 0,
+      max: 1,
     });
     expect(plan.groups.light).toMatchObject({
       purchase: "spot",
       instanceTypes: ["c7i.2xlarge", "c6i.2xlarge", "m7i.2xlarge"],
-      min: 1,
-      max: 4,
+      min: 0,
+      max: 1,
     });
     expect(plan.groups.heavy.name).toBe("stackra-testbed-heavy");
     expect(plan.groups.light.name).toBe("stackra-testbed-light");
   });
 
-  it("plans one region, eu-west-1 by default", () => {
+  it("plans one of the four regions, eu-west-1 by default and the only home (STA-2042)", () => {
     expect(plan.region).toBe("eu-west-1");
-    expect(testbedPlan({ region: "eu-central-1" }).region).toBe("eu-central-1");
+    expect(plan.home).toBe(true);
+    for (const region of ["eu-west-2", "eu-central-1", "us-east-1"]) {
+      expect(testbedPlan({ region })).toMatchObject({ region, home: false });
+    }
+    expect(() => testbedPlan({ region: "ap-south-1" })).toThrow();
   });
 
   it("carries the guard, idle and image numbers", () => {
@@ -67,11 +71,35 @@ describe("testbedPlan", () => {
       seedMaxAgeDays: 7,
     });
     expect(plan.idleMinutes).toBe(60);
-    expect(plan.image.schedule).toBe("cron(0 3 ? * SUN *)");
+    expect(plan.image).not.toHaveProperty("schedule");
     expect(plan.image.amiParameter).toBe("/imagebuilder/stackra-testbed/ami");
   });
 
-  it("grants figentra-ci paths to the core project, ids only", () => {
+  it("fits the region's vCPU quotas, 8 on-demand and 8 spot by default (ADR 0516)", () => {
+    expect(plan.quota).toEqual({ onDemandVcpus: 8, spotVcpus: 8 });
+    expect(
+      testbedPlan({ quota: { onDemandVcpus: 32, spotVcpus: 16 }, heavy: { max: 3 } }).quota,
+    ).toEqual({ onDemandVcpus: 32, spotVcpus: 16 });
+  });
+
+  it("refuses a plan above the on-demand or the spot vCPU quota (ADR 0516)", () => {
+    expect(() => testbedPlan({ heavy: { max: 2 } })).toThrow(/on-demand vCPU quota/);
+    expect(() => testbedPlan({ light: { max: 2 } })).toThrow(/spot vCPU quota/);
+    expect(() => testbedPlan({ quota: { onDemandVcpus: 4, spotVcpus: 8 } })).toThrow(
+      /on-demand vCPU quota/,
+    );
+  });
+
+  it("keeps room for the manual image build beside the heavy minimum (ADR 0516)", () => {
+    expect(() => testbedPlan({ heavy: { min: 1, max: 1 } })).toThrow(/image build/);
+    expect(() =>
+      testbedPlan({ quota: { onDemandVcpus: 16, spotVcpus: 8 }, heavy: { min: 1, max: 1 } }),
+    ).not.toThrow();
+    // Only the home region builds, so a member region may keep its heavy box up.
+    expect(() => testbedPlan({ region: "eu-west-2", heavy: { min: 1, max: 1 } })).not.toThrow();
+  });
+
+  it("grants figentra-ci paths to the core project and the registry path to every project, ids only", () => {
     expect(plan.secretGrants.projects.core).toEqual([
       { projectId: "proj-1", environment: "prod", path: "/ci" },
       { projectId: "proj-1", environment: "prod", path: "/ci/turbo" },
@@ -80,12 +108,15 @@ describe("testbedPlan", () => {
       testbedPlan({ identityId: "id-1", ciGateProjectId: "proj-1", turboProjectId: "proj-2" })
         .secretGrants.projects.core?.[1],
     ).toEqual({ projectId: "proj-2", environment: "prod", path: "/ci/turbo" });
+    expect(plan.secretGrants.projects["*"]).toEqual([
+      { projectId: "proj-1", environment: "prod", path: "/ci/registry" },
+    ]);
     expect(plan.secretGrants.identityName).toBe("gate");
     expect(testbedPlan().secretGrants.projects).toEqual({});
   });
 
   it("refuses spot for heavy, a minimum above the maximum and a bad region", () => {
-    expect(() => testbedPlan({ heavy: { min: 5, max: 2 } })).toThrow();
+    expect(() => testbedPlan({ heavy: { min: 2, max: 1 } })).toThrow();
     expect(() => testbedPlan({ region: "mars" })).toThrow();
     expect(() => testbedPlan({ spot: true } as never)).toThrow();
   });
@@ -95,6 +126,7 @@ describe("testbedPlan", () => {
     expect(mise).toContain(`node = "${TOOLCHAIN_PINS.node}"`);
     expect(mise).toContain(`pnpm = "${TOOLCHAIN_PINS.pnpm}"`);
     expect(mise).toContain(`"github:Infisical/cli" = "${TOOLCHAIN_PINS.infisical}"`);
+    expect(mise).toContain(`shfmt = "${TOOLCHAIN_PINS.shfmt}"`);
     expect(repoFile("pnpm-workspace.yaml")).toContain(
       `"@playwright/test": ${TOOLCHAIN_PINS.playwright}`,
     );

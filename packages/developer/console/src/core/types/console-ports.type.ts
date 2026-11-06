@@ -1,23 +1,28 @@
 /**
  * Stackra file contract:
  * Purpose: `ConsolePorts`, the side effects one run receives: the streams, whether they are terminals, the
- *          environment, the width, the signal source and the interactive prompter.
+ *          environment, the working directory, the width, the signal source, the interactive prompter, the renderer
+ *          and the process runner.
  * Boundary: a type only; `nodePorts()` binds them to the process and `./testing` to memory. In core, not contracts,
  *           because the prompter is drawn with core's `PromptPaint`.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-012, FR-020 to FR-023.
+ * Governing contract: STA-1730 spec FR-012, FR-020 to FR-023; STA-1966 spec FR-001, FR-007 and FR-029.
  */
+import type { Completions } from "#contracts/ports/completions.port";
+import type { ProcessRunner } from "#contracts/ports/process-runner.port";
+import type { Renderer } from "#contracts/ports/renderer.port";
 import type { Prompter } from "#contracts/types/prompter.type";
 import type { SignalSource } from "#contracts/types/signal-source.type";
 import type { WritableText } from "#contracts/types/writable-text.type";
 import type { PromptPaint } from "#core/types/prompt-paint.type";
+import type { RenderContext } from "#core/types/render-context.type";
 
 /** What a run may touch. */
 export interface ConsolePorts {
-  /** Standard output. */
+  /** The standard output stream. */
   readonly stdout: WritableText;
 
-  /** Standard error. */
+  /** The standard error stream. */
   readonly stderr: WritableText;
 
   /** Whether standard output is a terminal. */
@@ -26,8 +31,11 @@ export interface ConsolePorts {
   /** Whether standard input is a terminal. */
   readonly stdinIsTTY: boolean;
 
-  /** The environment. */
+  /** The environment variables of the run. */
   readonly env: Readonly<Record<string, string | undefined>>;
+
+  /** The directory commands work in (`io.cwd`). */
+  readonly cwd: string;
 
   /** The terminal width in columns, when known. */
   readonly columns?: number;
@@ -37,4 +45,13 @@ export interface ConsolePorts {
 
   /** Makes the prompter of an interactive run, drawn with the run's colours and symbols. */
   readonly prompter: (paint: PromptPaint) => Prompter;
+
+  /** Makes the run's renderer; the text driver when absent. */
+  readonly renderer?: (context: RenderContext) => Renderer;
+
+  /** Makes the run's process runner; without one, `io.process.run` refuses. */
+  readonly process?: () => ProcessRunner;
+
+  /** Makes the run's Tab completions; without one, `completion` and `complete` refuse. */
+  readonly completions?: () => Completions;
 }
