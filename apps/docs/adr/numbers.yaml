@@ -1581,3 +1581,8 @@
   slug: secrets-sops-and-cloud-kms-replace-infisical
   status: accepted
   issue: STA-2142
+"0526":
+  slug: repository-layout
+  status: reserved
+  owner: claude
+  issue: STA-2197
