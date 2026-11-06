@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `encoreDeployTree`: a repository with one generated service app gets a deploy commit on its
- *          source commit that carries the gitignored generated outputs, the member's `encore.app` and a tsconfig whose
+ * Purpose: unit tests of `encoreDeployTree`: a repository with one generated service app gets a parentless deploy
+ *          commit of its source tree that carries the gitignored generated outputs, the member's `encore.app` and a tsconfig whose
  *          `paths` mirror the member's `imports`, and the temporary checkout is gone after `dispose`; a repository
  *          with no generated app gets none; one with two is refused.
  * Boundary: test only; a temporary git repository and the real `git` (`runProgram`), nothing pushed.
@@ -69,7 +69,7 @@ afterEach(() => rmSync(repository, { recursive: true, force: true }));
 
 describe("encoreDeployTree", () => {
   /** The deploy commit carries what Encore needs and nothing of it reaches the working tree. */
-  it("commits the generated app, encore.app and the path map on the source commit", async () => {
+  it("commits the source tree with the generated app, encore.app and the path map, parentless", async () => {
     write(
       "services/shop/.stackra/encore/encore.app",
       '{ "id": "acme-x1", "lang": "typescript" }\n',
@@ -82,7 +82,9 @@ describe("encoreDeployTree", () => {
     const tree = await encoreDeployTree({ repository, sha, run: runProgram });
     expect(tree?.member).toBe("services/shop");
     const deploy = tree?.sha as string;
-    expect((await git("rev-parse", `${deploy}^`)).trim()).toBe(sha);
+    // Parentless, so a shallow checkout can push it; the message names the source commit.
+    expect((await git("rev-list", "--parents", "-n", "1", deploy)).trim()).toBe(deploy);
+    expect(await git("log", "-1", "--format=%s", deploy)).toContain(sha);
     const files = (await git("ls-tree", "-r", "--name-only", deploy)).split("\n");
     expect(files).toEqual(
       expect.arrayContaining([
