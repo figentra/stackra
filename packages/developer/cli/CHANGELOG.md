@@ -1,5 +1,21 @@
 # @stackra/cli
 
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [e36505c]
+  - @stackra/runway@0.12.0
+  - @stackra/mcp@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/gen@0.12.0
+  - @stackra/repo-checks@0.12.0
+  - @stackra/skills@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+
 ## 0.11.1
 
 ### Patch Changes

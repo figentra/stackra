@@ -1,5 +1,20 @@
 # @stackra/runway
 
+## 0.12.0
+
+### Minor Changes
+
+- e36505c: A product's root runway opts in to the cloud estate figentra/infra vends (ADR 0524): `providers.aws.account: true` for its one AWS account and `providers.gcp.project: true` for its one GCP project, both false by default, with `providers.gcp.apis` naming the `*.googleapis.com` services infra enables. An environment's `region` fixes its cloud (me and eu run in AWS, ksa in Google Cloud), so `runway validate` refuses a ksa environment without `providers.gcp.project: true` and warns on an AWS account no me or eu environment uses. An environment's `cloud` is deprecated and warns. Runway exports `unusedCloudOptIns`.
+
+### Patch Changes
+
+- @stackra/console@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/app@0.12.0
+
 ## 0.11.1
 
 ### Patch Changes
