@@ -8,7 +8,10 @@
  *          `sync`, `scale` and `image`. It replaces the Mac script `ci-box`. A box is reached by SSH through SSM
  *          Session Manager (`ProxyCommand`, `AWS-StartSSHSession`, the instance id), so the security group needs no
  *          inbound rule; `--ssh-direct` reaches the public IP and swaps this machine's address into the allowlist.
- *          Every box carries its region, and the SSM proxy and each `aws` call for it use that region.
+ *          Every box carries its region, and the SSM proxy and each `aws` call for it use that region. Without the
+ *          Session Manager plugin SSM reaches no box, so a verb that needs one says why and `run` exits 75 at once
+ *          instead of waiting on boxes that are healthy; `status` shows why a box did not answer. When no enabled
+ *          region answers (this machine's AWS access), `run` exits 75 at once with AWS's reason.
  * Boundary: starts only `aws`, `ssh`, `rsync` and `gh`, through `deps`, without a shell; every caller word a box shell
  *           sees is single-quoted. It calls `aws` only in an enabled region (`settings.regions`). It never reads,
  *           prints or passes a secret value (the key is a file path), and it never runs a job on the Mac. The job's
@@ -90,7 +93,8 @@ export async function runTestbed(
     (await deps.exec("aws", ["--profile", settings.profile, "--region", region, ...args])) ??
     NOT_STARTED;
 
-  // One region's running boxes, or `undefined` when its call failed (the region is unreachable).
+  // One region's running boxes, or `undefined` when its call failed (the region is unreachable; `awsError` says why).
+  let awsError = "";
   const describe = async (region: string): Promise<readonly TestbedBox[] | undefined> => {
     const out = await aws(region, [
       "ec2",
@@ -103,7 +107,9 @@ export async function runTestbed(
       "--output",
       "json",
     ]);
-    return out.code === 0 ? parseTestbedBoxes(out.stdout, region) : undefined;
+    if (out.code === 0) return parseTestbedBoxes(out.stdout, region);
+    awsError = out.stderr.trim().split("\n").pop()?.trim() ?? "";
+    return undefined;
   };
 
   // The running boxes of the enabled regions in region order, each region's oldest first; a region that does not
@@ -175,6 +181,17 @@ export async function runTestbed(
     "-i",
     settings.key,
   ];
+  // Without the plugin every SSM ssh fails as if each box were down: on 2026-11-04 every run waited on "no healthy
+  // testbed box" while both boxes were healthy, because the plugin was on PATH only in a mise-activated shell.
+  let plugin: Promise<string | undefined> | undefined;
+  const ssmMissing = (): Promise<string | undefined> =>
+    direct ? Promise.resolve(undefined) : (plugin ??= deps.ssmPlugin());
+  const needSsm = async (): Promise<boolean> => {
+    const missing = await ssmMissing();
+    if (missing !== undefined) say(missing);
+    return missing === undefined;
+  };
+
   const target = (box: TestbedBox): string => `${settings.user}@${direct ? box.ip : box.id}`;
   const remote = async (box: TestbedBox, command: string): Promise<ToolOutput> => {
     await allowMe(box.region);
@@ -378,6 +395,15 @@ export async function runTestbed(
       ) {
         return { exit: await dispatch(preset) };
       }
+      // No region answering is this machine's AWS access (a bad or expired profile), not a busy fleet: waiting cannot
+      // fix it, so exit 75 now and say why, instead of waiting until the caller's own timeout. The fallback above
+      // needs no AWS, so it still goes first.
+      if (seen.every((state) => !state.reachable)) {
+        say(
+          `no enabled region answers (${awsError || "no reason given"}); check the AWS profile ${settings.profile}`,
+        );
+        return { exit: TESTBED_EXIT.unhealthy };
+      }
       if (healthy > 0) busySince ??= deps.now();
       if (step.action === "scale") {
         // A group at 0 (its minimum since ADR 0516) has no box to answer: start one instead of waiting for none.
@@ -447,6 +473,9 @@ export async function runTestbed(
       return { code: 2, waitSeconds: 0, runSeconds: 0 };
     }
     const slot = request.onDemand ? "heavy" : classifyTestbedCommand(command);
+    if (!(await needSsm())) {
+      return { code: TESTBED_EXIT.unhealthy, slot, waitSeconds: 0, runSeconds: 0 };
+    }
     const directory = resolve(request.cwd, dir);
     const project = testbedProject(directory);
     const skip = new Set<string>();
@@ -528,6 +557,7 @@ export async function runTestbed(
       return result.code;
     }
     case "status": {
+      await needSsm();
       const states = await survey(["heavy", "light"]);
       if (request.json) {
         io.out(
@@ -553,14 +583,16 @@ export async function runTestbed(
         for (const box of state.boxes) {
           number += 1;
           const out = await remote(box, "testbed-agent status");
+          const why = out.stderr.trim().split("\n").pop()?.trim();
           io.out(
-            `box ${number} ${box.id} ${box.group} (${box.region}): ${out.code === 0 ? out.stdout.trim() : "unreachable"}\n`,
+            `box ${number} ${box.id} ${box.group} (${box.region}): ${out.code === 0 ? out.stdout.trim() : `unreachable${why ? ` (${why})` : ""}`}\n`,
           );
         }
       }
       return 0;
     }
     case "unlock": {
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       return remoteStream(box, `testbed-agent job stop ${request.slot ?? "heavy"}`);
@@ -572,6 +604,7 @@ export async function runTestbed(
       return 0;
     }
     case "ssh": {
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       return remoteStream(box, request.args.length > 0 ? request.args.join(" ") : undefined);
@@ -580,6 +613,7 @@ export async function runTestbed(
       const [dir, ...extra] = request.args;
       if (dir === undefined || extra.length > 0)
         throw new CliUsageError("sync takes one directory");
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       const directory = resolve(request.cwd, dir);

@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/skills/backend-author-an-action/SKILL.md
+file: skills/backend-author-an-action.md
+reason: "core's newer text, until the stackra preset carries it: ActorKind.Anonymous replaced the auth option (STA-2025, STA-2063); keeps the preset's turbo run line (STA-2129)"
+owner: figentra-usr
+review: 2027-02-01

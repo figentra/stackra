@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/http-conventions.md
+file: rules/http-conventions.md
+reason: "core's newer text, until the stackra preset carries it: ActorKind.Anonymous replaced the auth option (STA-2025, STA-2063); the preset still teaches auth: false"
+owner: figentra-usr
+review: 2027-02-01

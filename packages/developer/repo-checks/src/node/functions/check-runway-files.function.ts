@@ -3,7 +3,7 @@
  * Purpose: `checkRunwayFiles(input)`, ADR 0296 enforcement (STA-598): each runway file parses as YAML with no repeated key
  *          and passes `parseRunway` for its kind; the root also passes `checkPlacement` against the service keys, and each
  *          service runway passes `checkRequires` against the root (STA-2049); the root passes `checkDestinations`, when
- *          the runway build has it (O8, STA-2100).
+ *          the runway build has it (O8, STA-2100), and `checkEnvironmentRegion` (ADR 0524).
  * Boundary: pure apart from `read`; `runway` is the built `@stackra/runway` entry (or a fake). Errors other than
  *           `RunwayInvalidError` propagate.
  * Runtime: node
@@ -60,7 +60,11 @@ export function checkRunwayFiles(input: {
       for (const { code, message } of runway.checkPlacement(parsed, services))
         out.push(`${file}: ${message} (${code})`);
       // Owner decision O8: a destination or target block no driver serves is refused.
-      for (const { path, message } of runway.checkDestinations?.(parsed) ?? [])
+      for (const { path, message } of [
+        ...(runway.checkDestinations?.(parsed) ?? []),
+        // ADR 0524: a product's staging and production each name their tenant region.
+        ...(runway.checkEnvironmentRegion?.(parsed) ?? []),
+      ])
         out.push(`${file}: ${path}: ${message}`);
     }
   }

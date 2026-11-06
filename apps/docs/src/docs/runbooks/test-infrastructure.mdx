@@ -48,8 +48,8 @@ its exit code. The job runs detached on the box and the CLI follows its log: whe
 the job keeps running, the CLI reattaches up to three times, 10 s apart, and exits with the job's code. Ctrl-C stops
 the job on the box.
 
-The enabled regions are `TESTBED_CLI_DEFAULTS.regions` in `@stackra/cli`: eu-west-1, eu-west-2 and eu-central-1 (a
-region whose groups do not exist yet is skipped); us-east-1 joins once box 1 stops. `--regions a,b` or `STACKRA_TESTBED_REGIONS` overrides it for one machine, and `--region r` narrows it to one
+The enabled regions are `TESTBED_CLI_DEFAULTS.regions` in `@stackra/cli`: eu-west-1, eu-west-2, eu-central-1 and
+us-east-1 (a region whose groups do not exist yet is skipped). `--regions a,b` or `STACKRA_TESTBED_REGIONS` overrides it for one machine, and `--region r` narrows it to one
 region. The other verbs:
 
 | Verb                                 | Does                                                                                       |
@@ -64,8 +64,9 @@ For callers such as `fflow gate`:
 
 - **`run … --json`** streams the job's output to stderr and prints one line on stdout:
   `{"region","box","slot","waitSeconds","runSeconds","exitCode"}`.
-- **The exit code** is the job's own, or 2 (usage), 73 (no free slot, with `--no-wait`), 75 (no healthy box) or 124
-  (the 3-hour limit).
+- **The exit code** is the job's own, or 2 (usage), 73 (no free slot, with `--no-wait`), 75 (no healthy box, or no
+  enabled region answers: this machine's AWS access, said at once) or 124 (the 3-hour limit). Ctrl-C or SIGTERM
+  stops the job on the box and exits 130.
 - **`status --json`** gives each region's free, total and startable heavy and light slots, so the caller sizes its
   parallel jobs.
 
@@ -181,6 +182,10 @@ Repeat with `stackra-testbed-light`, and in each region that runs boxes (`--regi
   `infisical run`. No value touches a disk, a log or a command line.
 - Which project paths a job may read is `secretGrants` in `@stackra/infra-testbed`, reviewed like code. The identity's
   permissions in Infisical are the real limit.
+  Core gets `prod` `/ci` and `/ci/turbo`; every project, through the `*` key, gets `prod` `/ci/registry`, the registry
+  read token, so a product's install of `@figentra/*` works. pnpm 12 expands no variable in a repository's `.npmrc`, so
+  the agent hands the token to pnpm under both names (`FIGENTRA_REGISTRY_TOKEN`, and `STACKRA_REGISTRY_TOKEN` until the
+  registry move retires it) and points `PNPM_CONFIG_NPMRC_AUTH_FILE` at the repository's own `.npmrc`.
 - `ci-box put-env` and `~/.ci-env` are retired. A missing token is fixed in Infisical, by the owner. To rotate the
   identity's auth, see [Token rotation](/runbooks/token-rotation).
 

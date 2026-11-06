@@ -11,9 +11,11 @@
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
 # Secrets: the GitHub App id and key the version PR is pushed with (a PR pushed with GITHUB_TOKEN would not trigger
-#          the caller's gate). A caller that passes neither gets them from Infisical `prod` `/ci/release`
-#          (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC with the org variables
-#          INFISICAL_CI_IDENTITY_ID and INFISICAL_DEPLOY_PROJECT_ID, so no repository holds them (STA-1747).
+#          the caller's gate). A caller that passes neither gets them by name from Infisical `ci-production`
+#          `prod` `/ci/release` (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC as the production
+#          identity (variables INFISICAL_PRODUCTION_IDENTITY_ID and INFISICAL_PRODUCTION_PROJECT_ID), so no repository
+#          holds them (STA-1747) and the dev/staging deploy identity never reads them (Infisical plan K2). That
+#          identity trusts only its allow-listed environments (`release`, not `release-pr`).
 #          No registry token exists: per package the job exchanges its
 #          GitHub ID token (audience `npm:<registry host>`) at the registry's OIDC endpoint for a publish token bound to
 #          that one name (ADR 0453 decision 6, the workflow-run form), masks it and passes it as NODE_AUTH_TOKEN;
@@ -82,17 +84,32 @@ jobs:
       HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}
 
     steps:
-      # STA-1747: a caller that passes no App secrets gets them from Infisical; the action masks and exports both.
+      # STA-1747: a caller that passes no App secrets gets them from Infisical by name; the action masks and exports
+      # each (one name per call).
+      - name: Bot App id (Infisical OIDC)
+        if: env.HAS_APP_SECRETS != 'true'
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/release
+          secret-name: STACKRA_BOT_APP_ID
+          export-type: env
+
       - name: Bot App key (Infisical OIDC)
         if: env.HAS_APP_SECRETS != 'true'
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
           domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
+          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci/release
+          secret-name: STACKRA_BOT_PRIVATE_KEY
           export-type: env
 
       # Scoped to what this job needs; revoked when the job ends.
@@ -104,11 +121,15 @@ jobs:
           private-key: ${{ secrets.app-private-key || env.STACKRA_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+          permission-workflows: write
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the App
+          token: ${{ steps.bot.outputs.token }} # the checkout itself reads as the App
+          # changesets/action v2 pushes the version branch and tags through the GitHub API with its own `github-token`
+          # (push-with-git-cli is off), so no later step needs the checkout's git credentials (zizmor artipacked).
+          persist-credentials: false
           fetch-depth: 0 # changesets diffs against history and reads existing tags
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
@@ -136,13 +157,13 @@ jobs:
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
       - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
+        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
           domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci/turbo
           export-type: env
@@ -276,10 +297,10 @@ jobs:
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm install $INSTALL_ARGS
 
-      # `--ignore-npm-errors`: cyclonedx-npm shells out to `npm ls`, which reports the devDependency-only peer graphs
-      # of transitive tools as errors although pnpm installed fine. Pinned through npx: not a catalog dependency.
+      # pnpm's own `sbom` reads the pnpm lockfile and store; cyclonedx-npm shelled out to `npm ls`, which cannot read a
+      # pnpm tree and listed hundreds of false missing and invalid packages.
       - name: Generate SBOM (CycloneDX)
-        run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file sbom.cdx.json
+        run: pnpm sbom --sbom-format cyclonedx --out sbom.cdx.json
 
       # Keyless: the certificate names this workflow and repository, so a verifier pins both
       # (`cosign verify-blob --certificate-identity-regexp … --certificate-oidc-issuer https://token.actions.githubusercontent.com`).
