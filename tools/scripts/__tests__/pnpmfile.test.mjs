@@ -113,6 +113,7 @@ test("beforePacking drops both the imports map and the source condition in one p
 /** A Stackra library package whose `files` ships the manifest. */
 const library = {
   name: "@stackra/w",
+  exports: { ".": "./dist/index.mjs" },
   files: ["dist", "stackra.manifest.json"],
   stackra: { kind: "package", tier: "lib" },
 };
@@ -163,11 +164,14 @@ test("beforePacking refuses a Stackra package whose files leave the manifest out
   }
 });
 
-test("beforePacking asks no manifest of a tooling preset, another kind or a non-Stackra member", () => {
+test("beforePacking asks no manifest of a tooling preset, a code-less package, another kind or a non-Stackra member", () => {
   const dir = stackraMember(false);
+  const { exports: _exports, ...codeless } = library;
   try {
     for (const plain of [
       { ...library, stackra: { kind: "package", tier: "config" } },
+      { ...codeless, files: ["preset", "README.md"] }, // @stackra/flow-preset: preset files, no entry
+
       { ...library, stackra: { kind: "skill" } },
       { name: "@stackra/v", files: ["dist"] },
     ])
