@@ -1,5 +1,17 @@
 # @stackra/locking
 
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/database@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/cache@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes

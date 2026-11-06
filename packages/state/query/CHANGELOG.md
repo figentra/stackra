@@ -1,5 +1,21 @@
 # @stackra/query
 
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/storage@0.17.0
+  - @stackra/platform@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/devices@0.17.0
+  - @stackra/realtime@0.17.0
+  - @stackra/settings@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes
