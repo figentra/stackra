@@ -50,6 +50,7 @@ function lineOf(entry: SecretSyncEntry, source: string, encoreEnvironment: strin
  * @param input.log - receives each line, names only.
  * @param input.run - the command runner; `runProgram` by default.
  * @param input.ci - a test's answer to "is this a proved CI job"; by default the GitHub OIDC token answers it.
+ * @param input.fromEnv - read the values from the job's environment (the decrypted sops scope), not Infisical.
  * @throws RunwayUnresolvedError outside CI without `dryRun`, when a value is missing, when two services hold different
  *         values under one name, when the Encore app is not generated, or when a write fails; names only.
  * @example
@@ -63,13 +64,19 @@ export async function syncSecrets(input: {
   readonly log: (line: string) => void;
   readonly run?: CommandRunner | undefined;
   readonly ci?: boolean | undefined;
+  /** Read the values from the job's environment (the decrypted sops scope) instead of Infisical (ADR 0525). */
+  readonly fromEnv?: boolean | undefined;
+  /** The job's environment for `fromEnv`; a test replaces it. */
+  readonly env?: Readonly<Record<string, string | undefined>> | undefined;
 }): Promise<void> {
   const { environment, runways, log } = input;
   const run = input.run ?? runProgram;
   const plan = secretSyncPlan(environment, runways);
   const encoreEnvironment =
     runways.root.environments?.[environment]?.encore?.environment ?? environment;
-  const source = `infisical ${runways.root.providers.infisical?.environments?.[environment] ?? "(unmapped)"}`;
+  const source = input.fromEnv
+    ? "the job's environment (sops)"
+    : `infisical ${runways.root.providers.infisical?.environments?.[environment] ?? "(unmapped)"}`;
   if (plan.length === 0) log(`no member declares a secret for ${environment}`);
   for (const entry of plan) log(lineOf(entry, source, encoreEnvironment));
   const services = plan.filter((entry) => entry.writer === "encore");
@@ -78,7 +85,15 @@ export async function syncSecrets(input: {
   // Read every value first: a missing name fails before anything is written.
   const values = new Map<string, { readonly value: string; readonly member: string }>();
   for (const { member } of services) {
-    const read = await readMemberSecrets({ environment, member, runways, run, ci: input.ci });
+    const read = await readMemberSecrets({
+      environment,
+      member,
+      runways,
+      run,
+      ci: input.ci,
+      source: input.fromEnv ? "environment" : "infisical",
+      env: input.env,
+    });
     for (const [name, value] of read) {
       const held = values.get(name);
       if (held !== undefined && held.value !== value)

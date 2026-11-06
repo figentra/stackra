@@ -8,6 +8,11 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { costOf, evaluate, formatLine, parseBudget } from "../ai-spend.mjs";
 
 test("parseBudget reads the routing line and falls back to defaults", () => {
@@ -34,4 +39,16 @@ test("evaluate: ok, warn at 80%, over at the cap", () => {
 test("formatLine names the level", () => {
   const line = formatLine(evaluate({ today: 150, week: 300 }, { dailyUsd: 150, warnAt: 0.8 }));
   assert.match(line, /\$150\.00 of \$150 \(100%\).*OVER CAP/);
+});
+
+test("--context prints the OVER CAP line and still exits 0", () => {
+  const bin = mkdtempSync(join(tmpdir(), "ai-spend-"));
+  writeFileSync(join(bin, "opencode"), "#!/bin/sh\necho '{\"cost\": 1000000}'\n");
+  chmodSync(join(bin, "opencode"), 0o755);
+  const script = fileURLToPath(new URL("../ai-spend.mjs", import.meta.url));
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
+  const r = spawnSync(process.execPath, [script, "--context"], { encoding: "utf8", env });
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /OVER CAP/);
+  assert.equal(spawnSync(process.execPath, [script], { env }).status, 1);
 });

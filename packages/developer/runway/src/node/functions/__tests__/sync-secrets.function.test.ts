@@ -293,6 +293,41 @@ describe("syncSecrets", () => {
     expect(lines).toContain("set STRIPE_SECRET_KEY in encore staging-eu");
   });
 
+  it("reads the values from the job's environment with fromEnv, and never runs infisical", async () => {
+    const { run, calls } = recorder({});
+    const lines: string[] = [];
+    await syncSecrets({
+      environment: "staging",
+      runways: RUNWAYS,
+      repository: repository(true),
+      dryRun: false,
+      log: (line) => lines.push(line),
+      run,
+      ci: true,
+      fromEnv: true,
+      env: { ...CANARIES },
+    });
+    expect(calls.map((call) => call.command)).toEqual(["encore", "encore"]);
+    expect(calls.map((call) => call.input)).toEqual([
+      CANARIES.MAIL_TOKEN,
+      CANARIES.STRIPE_SECRET_KEY,
+    ]);
+    expectNoValue(lines.join("\n"));
+    await expect(
+      syncSecrets({
+        environment: "staging",
+        runways: RUNWAYS,
+        repository: repository(true),
+        dryRun: false,
+        log: () => {},
+        run,
+        ci: true,
+        fromEnv: true,
+        env: { MAIL_TOKEN: CANARIES.MAIL_TOKEN },
+      }),
+    ).rejects.toThrow(/lacks api's STRIPE_SECRET_KEY: decrypt the product's staging scope first/);
+  });
+
   it("reads nothing on a dry run, even outside CI", async () => {
     const { run, calls } = recorder(folders);
     const lines: string[] = [];
