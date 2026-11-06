@@ -46,6 +46,7 @@ const starter = (extra: Record<string, string | Uint8Array> = {}) =>
       ".github/workflows/ci.yml": "on: push\n",
       "package.json": '{"name":"acme-platform","scripts":{"dev":"stackra dev"}}',
       "pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+      ".infisical.yaml": "workspaceId: template-project\n",
       "pnpm-workspace.yaml":
         '# the catalogs\ncatalogs:\n  stackra:\n    "@stackra/cli": ^0.3.0 # the CLI\n    "@stackra/gen": ^0.3.0\n',
       "runway.yaml": "project: acme-platform\nproduct:\n  key: acme\nsurfaces: {}\n",
@@ -81,6 +82,8 @@ test("a profile writes only its paths, its overlays and never the starter's own 
   assert.equal(full.has("apps/docs/package.json"), true);
   // `**` keeps dotfiles too (path.matchesGlob alone skips them).
   assert.equal(full.has(".github/workflows/ci.yml"), true);
+  // The template's Infisical binding never rides along, even in a profile that takes every file.
+  assert.equal(full.has(".infisical.yaml"), false);
 });
 
 test("the rename list, the catalog pin and the registry line apply; binary files pass untouched", () => {
