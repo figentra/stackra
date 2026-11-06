@@ -1,6 +1,6 @@
 {
   "name": "@stackra/skills",
-  "version": "0.14.4",
+  "version": "0.15.0",
   "private": false,
   "description": "The agent-neutral source of Stackra's open conventions: skills and rules written once as Markdown with frontmatter, the parser of that format, and the loader the renderers and `stackra agents setup` read",
   "keywords": [

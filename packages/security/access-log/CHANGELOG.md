@@ -1,5 +1,28 @@
 # @stackra/access-log
 
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [0b0cf51]
+  - @stackra/outbox@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/tenancy@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/testing@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/queue@0.15.0
+  - @stackra/scheduler@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes

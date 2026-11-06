@@ -1,5 +1,21 @@
 # @stackra/analytics
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/privacy@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/consent@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/storage@0.15.0
+  - @stackra/platform@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes

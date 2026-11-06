@@ -1,5 +1,13 @@
 # @stackra/sandbox
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes

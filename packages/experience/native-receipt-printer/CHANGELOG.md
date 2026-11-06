@@ -1,5 +1,14 @@
 # @stackra/native-receipt-printer
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/peripherals@0.15.0
+  - @stackra/platform@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes

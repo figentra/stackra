@@ -1,5 +1,16 @@
 # @stackra/pricing
 
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/integrations@0.15.0
+  - @stackra/money@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/validation@0.15.0
+
 ## 0.14.4
 
 ### Patch Changes
