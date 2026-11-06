@@ -21,7 +21,7 @@
   workflow is read-only or empty, and a job asks only for what it needs.
 - No token is a repository secret: CI logs in to Infisical by GitHub OIDC for one step and reads `/ci` only
   ([ADR 0009](../../apps/docs/src/docs/adr/0009-secrets-two-mechanisms.mdx)). Build and PR jobs read `ci-build`
-  (`INFISICAL_GATE_*`, `INFISICAL_TURBO_*`); deploy jobs read `ci-deploy` (`INFISICAL_CI_IDENTITY_ID`,
+  (`INFISICAL_GATE_*`, the build identity; the TURBO pair held the same ids and is retired); deploy jobs read `ci-deploy` (`INFISICAL_CI_IDENTITY_ID`,
   `INFISICAL_DEPLOY_PROJECT_ID`) in a protected environment; no project id is written in a workflow
   ([ADR 0512](../../apps/docs/src/docs/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes.mdx)).
 - `stackra validate --repository` (rule `workflow-triggers`, STA-256) refuses a paid job (a macOS, Windows or larger

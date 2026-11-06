@@ -147,13 +147,13 @@ jobs:
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only). The
       # turbo-cache member's TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
       - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
+        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
           domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci/turbo
           export-type: env
