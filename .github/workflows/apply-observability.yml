@@ -11,11 +11,11 @@
 # Runtime: GitHub Actions
 # Governing contract: ADR 0171 (decisions 4, 6 and 8), ADR 0184, ADR 0185, ADR 0173, ADR 0019.
 # Owner: release-operations
-# Secrets: none in the repository. Infisical `prod` `/ci/observability` holds BETTERSTACK_UPTIME_API_TOKEN,
+# Secrets: none in the repository. The sops scope ci/deploy/observability holds BETTERSTACK_UPTIME_API_TOKEN,
 #          BETTERSTACK_TELEMETRY_API_TOKEN, PULUMI_CONFIG_PASSPHRASE and the credentials of the state backend (for an
-#          S3-compatible bucket, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY), read through GitHub OIDC with the
-#          deploy identity INFISICAL_CI_IDENTITY_ID in the project INFISICAL_DEPLOY_PROJECT_ID (org variables, ADR 0512). The
-#          tokens reach Pulumi as secret stack config through stdin on the runner, never a file in git or an argument.
+#          S3-compatible bucket, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY), decrypted by the job as itself in the
+#          `observability` environment (ADR 0525). The tokens reach Pulumi as secret stack config through stdin on the
+#          runner, never a file in git or an argument.
 name: Apply observability
 
 on:
@@ -52,13 +52,9 @@ jobs:
       name: observability
     permissions:
       contents: read # checkout
-      id-token: write # GitHub OIDC token, exchanged with Infisical for /ci/observability
+      id-token: write # GitHub OIDC token, exchanged with Google Cloud for ci/deploy/observability (ADR 0525)
     env:
       ENABLED: ${{ vars.OBSERVABILITY_ENABLED }}
-      # ADR 0512: the deploy identity and project; the identity trusts this environment's subject.
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-      INFISICAL_PROJECT_ID: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
-      INFISICAL_DOMAIN: https://eu.infisical.com
       # The state backend URL (s3://…, or https://api.pulumi.com): an identifier, not a credential.
       PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL }}
       # The CLI, pinned to the SDK version of the infra catalog and installed by mise (checksum-verified).
@@ -100,24 +96,16 @@ jobs:
       - name: Prerequisites
         if: env.ENABLED == 'true'
         run: |
-          [ -n "$INFISICAL_IDENTITY_ID" ] || {
-            echo "::error title=INFISICAL_CI_IDENTITY_ID::missing org variable"; exit 1; }
           [ -n "$PULUMI_BACKEND_URL" ] || {
             echo "::error title=PULUMI_BACKEND_URL::missing in the observability environment"; exit 1; }
           mise install "$PULUMI_TOOL"
 
       # Only this stack's dedicated path, so no other /ci value enters the job.
-      - name: Stack secrets (Infisical OIDC)
+      - name: Stack secrets (sops)
         if: env.ENABLED == 'true'
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: ${{ env.INFISICAL_DOMAIN }}
-          project-id: ${{ env.INFISICAL_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/observability
-          export-type: env
+          scope: ci/deploy/observability
 
       # The tokens go to `pulumi config set` through stdin; Pulumi encrypts them with the passphrase in the state.
       - name: Pulumi ${{ env.COMMAND }}
@@ -127,7 +115,7 @@ jobs:
           set -euo pipefail
           for name in BETTERSTACK_UPTIME_API_TOKEN BETTERSTACK_TELEMETRY_API_TOKEN PULUMI_CONFIG_PASSPHRASE; do
             [ -n "${!name:-}" ] || {
-              echo "::error title=$name::missing in Infisical prod /ci/observability"; exit 1; }
+              echo "::error title=$name::missing in the sops scope ci/deploy/observability"; exit 1; }
           done
           pulumi() { mise exec "$PULUMI_TOOL" -- pulumi --non-interactive "$@"; }
           pulumi login "$PULUMI_BACKEND_URL"

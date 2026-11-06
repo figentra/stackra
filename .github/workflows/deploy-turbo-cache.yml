@@ -11,12 +11,9 @@
 # Runtime: GitHub Actions
 # Governing contract: ADR 0026 (decision 2); ADR 0352; ADR 0289 (decision 2, RW11); ADR 0284 (decision 8); ADR 0173; ADR 0019.
 # Owner: release-operations
-# Secrets: none in the repository. CLOUDFLARE_API_TOKEN (ci-deploy `/ci`) comes from Infisical `prod`
-#          through GitHub OIDC with the deploy identity INFISICAL_CI_IDENTITY_ID (an org variable, not a secret), the
-#          one deploy-static.yml and deploy-docs.yml use; TURBO_TOKEN comes from ci-build `/ci/turbo` with the turbo
-#          variables, its one home (ADR 0512). Its trust names environment subjects, so this job runs in the `static`
-#          environment (main and schemas@* tags only), whose subject that identity already trusts: no new identity and
-#          no new trust. Without the identity id the job builds, prints a notice and deploys nothing.
+# Secrets: none in the repository. CLOUDFLARE_API_TOKEN comes from the sops scope ci/deploy and TURBO_TOKEN from
+#          ci/build/turbo with the turbo variables, its one home (ADR 0525). The job runs in the `static` environment
+#          (main and schemas@* tags only), the caller figentra/infra already grants those scopes to deploy-static.yml.
 name: Deploy turbo cache
 
 on:
@@ -44,7 +41,7 @@ permissions: {}
 jobs:
   # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
   # main only) holds no secret and grants nothing; the deploy job keeps the `static` environment, whose name the
-  # Infisical identity trusts (STA-1968).
+  # figentra/infra secret callers grant (STA-1968, ADR 0525).
   approve:
     name: Owner approval (production)
     if: github.ref == 'refs/heads/main'
@@ -68,11 +65,9 @@ jobs:
     with:
       member: turbo-cache
       package: "@figentra/worker-turbo-cache"
-      # Reused on purpose (see Secrets above): its name is in the OIDC subject INFISICAL_CI_IDENTITY_ID trusts.
+      # Reused on purpose (see Secrets above): its name is in the caller principal figentra/infra grants ci/deploy to.
       environment: static
       sha: ${{ inputs.sha }}
       # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
       # in are not installed; none of them is deployed here.
       install-args: --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
-      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-      infisical-project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
