@@ -1,5 +1,16 @@
 # @stackra/native-scale
 
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/peripherals@0.13.0
+  - @stackra/platform@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes
