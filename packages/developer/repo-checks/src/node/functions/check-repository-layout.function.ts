@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `checkRepositoryLayout(input)`, the `layout` rule: a repository's root holds only its template's entries,
  *          its member folders, `tools/` with a README and the entries it declares with a reason; never a root `src/`
- *          or another script folder; `apps/` only when declared; and no path uses the retired name `figentra-flow`.
+ *          or another script folder; `apps/` only when declared; and no path uses the retired name `figentra-flow` or a
+ *          name the repository bans in package.json `stackra.layout.banned`.
  * Boundary: pure; `layoutFindings` reads the repository.
  * Runtime: node
  * Governing contract: ADR 0526 (decisions 1 to 5); ADR 0528 (decision 2); ADR 0529 (decision 5).
@@ -53,8 +54,14 @@ export function checkRepositoryLayout(input: LayoutInput): string[] {
         `${name}: not in the ${input.preset} template; remove it or declare it in package.json stackra.layout.allow with the reason (ADR 0526 d4)`,
       );
   }
-  for (const path of input.paths)
-    if (RETIRED_FLOW_NAME.test(path) && !HISTORY.test(path))
+  const banned = input.banned.map((name) => name.toLowerCase());
+  for (const path of input.paths) {
+    if (HISTORY.test(path)) continue;
+    if (RETIRED_FLOW_NAME.test(path))
       out.push(`${path}: the name figentra-flow is retired; use flow or fflow (ADR 0529 d5)`);
+    const hit = banned.find((name) => path.toLowerCase().includes(name));
+    if (hit !== undefined)
+      out.push(`${path}: the name ${hit} is banned here (package.json stackra.layout.banned)`);
+  }
   return out;
 }

@@ -19,6 +19,7 @@ const BASE: LayoutInput = {
   preset: "stackra",
   members: ["services"],
   allow: {},
+  banned: [],
   toolsReadme: false,
 };
 
@@ -62,6 +63,12 @@ describe("checkRepositoryLayout", () => {
     const entries = BASE.entries.filter((name) => name !== "docs");
     expect(checkRepositoryLayout({ ...BASE, entries })).toHaveLength(1);
     expect(checkRepositoryLayout({ ...BASE, preset: "other" })).toHaveLength(1);
+  });
+
+  /** A repository's own banned names are refused in any case, outside the ADR registers. */
+  it("refuses a path with a name the repository bans", () => {
+    const paths = ["docs/Retired-Name/guide.md", "docs/adr/0001-retired-name.md", "docs/ok.md"];
+    expect(checkRepositoryLayout({ ...BASE, paths, banned: ["retired-name"] })).toHaveLength(1);
   });
 
   /** The retired name is refused outside the ADR registers. */
