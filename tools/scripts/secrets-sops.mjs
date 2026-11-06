@@ -27,13 +27,16 @@ export const NAME_RX = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
 
 /**
  * A scope is a folder of `figentra/secrets`; `.sops.yaml` picks its KMS key by path:
- * `agents`, `ci/<build|deploy|production|flow>[/<folder>…]` or `products/<product>/<dev|staging|production>`.
+ * `agents`, `ci/<build|deploy|production|flow|infra>[/<folder>…]` or `products/<product>/<dev|staging|production>`.
  */
 export const SCOPE_RX =
-  /^(?:agents|ci\/(?:build|deploy|production|flow)(?:\/[a-z0-9-]+)*|products\/[a-z0-9-]+\/(?:dev|staging|production))$/;
+  /^(?:agents|ci\/(?:build|deploy|production|flow|infra)(?:\/[a-z0-9-]+)*|products\/[a-z0-9-]+\/(?:dev|staging|production))$/;
 
-/** Scopes an agent never writes: the gate and the registry release keys (the owner's keeper rule, 2026-10-31). */
-export const AGENT_DENIED_SCOPES = [/^ci\/flow(?:\/|$)/, /(?:^|\/)registry(?:\/|$)/];
+/**
+ * Scopes an agent never writes: the gate and the registry release keys (the owner's keeper rule, 2026-10-31), and
+ * figentra/infra's App key, which applies every stack.
+ */
+export const AGENT_DENIED_SCOPES = [/^ci\/(?:flow|infra)(?:\/|$)/, /(?:^|\/)registry(?:\/|$)/];
 
 /** The secrets repository a write opens its pull request against. */
 export const SECRETS_REPO = "figentra/secrets";
@@ -56,7 +59,7 @@ export function checkTarget({ scope, name }, { agent = false } = {}) {
       "scope must be agents, ci/<build|deploy|production|flow>[/folder] or products/<product>/<dev|staging|production>",
     );
   if (agent && AGENT_DENIED_SCOPES.some((rx) => rx.test(scope)))
-    throw new Refusal("an agent never writes a gate or registry key; the owner runs it");
+    throw new Refusal("an agent never writes a gate, registry or infra key; the owner runs it");
   return { scope, name };
 }
 
