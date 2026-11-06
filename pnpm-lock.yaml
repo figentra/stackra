@@ -4405,7 +4405,7 @@ importers:
     devDependencies:
       '@figentra-oss/flow':
         specifier: 'catalog:'
-        version: 0.2.3
+        version: 0.6.3(@types/react@19.3.0)(cac@7.1.0)(commander@14.0.3)(react-devtools-core@6.1.5)(react@19.3.0)
 
   packages/developer/gen:
     dependencies:
