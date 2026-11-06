@@ -3,7 +3,9 @@
  * Purpose: `generateMember`, gen-core's whole output for one member as a pure function of what discovery read: the
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
- *          registrations, a service's boot and inbound webhook route, a service's Encore service declaration and its `api()` endpoints per action and query (STA-2063), its Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
+ *          registrations, a service's boot and inbound webhook route, the cross-app inbox (`#stackra/inbox` and its
+ *          Encore `api.raw` adapter, for a listener of a contract-only producer's event) and relay configuration
+ *          (`#stackra/events-relay`, for a runway `events` block; STA-1910), a service's Encore service declaration and its `api()` endpoints per action and query (STA-2063), its Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
  *          (CORS preflights and headers, STA-1385), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
@@ -75,6 +77,9 @@ import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.functi
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
+import { emitEncoreInbox } from "#core/functions/emit-encore-inbox.function";
+import { emitEventsRelay } from "#core/functions/emit-events-relay.function";
+import { emitInbox } from "#core/functions/emit-inbox.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 import { emitEncoreService } from "#core/functions/emit-encore-service.function";
 import { emitQueues } from "#core/functions/emit-queues.function";
@@ -257,6 +262,9 @@ export function generateMember(
     // Boot imports the generated Encore database file; its types stand in for encore.dev here (STA-1795).
     [".stackra/gen/encore-sqldb.d.ts", emitEncoreSqldbTypes(ir)],
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
+    // The cross-app relay (STA-1910): a consumer's inbox route and key table, a producer's relay configuration.
+    [".stackra/gen/inbox.ts", emitInbox(ir)],
+    [".stackra/gen/events-relay.ts", emitEventsRelay(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/client-tools.ts", clientTools.content],
@@ -277,6 +285,7 @@ export function generateMember(
     emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),
     emitEncoreHttp(ir),
+    emitEncoreInbox(ir),
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));

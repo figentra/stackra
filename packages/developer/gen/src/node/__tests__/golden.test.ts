@@ -64,6 +64,14 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "consumer", members: ["services/catalogue", "services/channels"] },
   { name: "i18n-packages", members: ["packages/customers"] },
   { name: "member-module-alias", members: ["services/payments"] },
+  // The cross-app relay (STA-1910): a listener of a contract-only producer's event gets the inbox; a runway `events`
+  // block makes the service a producer. The plain `consumer` and `service` fixtures stay byte-identical.
+  {
+    name: "cross-app-consumer",
+    base: "consumer",
+    members: ["services/catalogue", "services/channels"],
+  },
+  { name: "cross-app-producer", base: "service", members: ["services/shop"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-shim-authored", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-tool-reason", base: "package-drivers", members: ["packages/shop"] },

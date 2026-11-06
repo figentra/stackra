@@ -38,6 +38,8 @@
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
  *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
  *          `uiMenusOf`) (STA-1947).
+ *          A service with a runway `events` block gets the `relay` section: per environment, its public keys (current
+ *          first) and its subscribers with the events each takes, never an inbox origin (ADR 0511 d16 and d17).
  *          It lists each environment variable its configuration classes declare in `env` (`envOf`: name, kind, type,
  *          rules, the config that declares it; a host adds its packages' rows and the Infisical path), STA-2104.
  *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
@@ -1195,6 +1197,34 @@ export function buildManifest(ir: MemberIR): {
     ...(uiMenus.length > 0 ? { menus: uiMenus as unknown as Json } : {}),
   };
 
+  // A producer's cross-app relay facts from its runway `events` blocks: keys and subscribers, never origins (ADR 0511
+  // decisions 16 and 17).
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+  const relayEnvironments = Object.keys(ir.eventsRelay ?? {}).sort();
+  const relay: Entry | undefined =
+    relayEnvironments.length === 0
+      ? undefined
+      : {
+          keys: Object.fromEntries(
+            relayEnvironments.map((environment) => [
+              environment,
+              (ir.eventsRelay?.[environment]?.keys ?? []).map(({ id, publicKey }) => ({
+                id,
+                publicKey,
+              })),
+            ]),
+          ),
+          subscribers: Object.fromEntries(
+            relayEnvironments.map((environment) => [
+              environment,
+              (ir.eventsRelay?.[environment]?.subscribers ?? []).map(({ member, events }) => ({
+                member,
+                events: [...events],
+              })),
+            ]),
+          ),
+        };
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1221,6 +1251,7 @@ export function buildManifest(ir: MemberIR): {
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
     ...(policies.length > 0 ? { policies } : {}),
     ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
+    ...(relay !== undefined ? { relay } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };
