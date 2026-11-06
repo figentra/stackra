@@ -24,6 +24,28 @@
         "layout": [["lines"], ["district"], ["locality", "region"], ["country"]]
       },
       "from": "2000-01-01"
+    },
+    {
+      "key": "payments.byo_providers",
+      "value": [
+        {
+          "provider": "stripe",
+          "status": "live"
+        },
+        {
+          "provider": "checkout",
+          "status": "live"
+        },
+        {
+          "provider": "network-international",
+          "status": "live"
+        },
+        {
+          "provider": "telr",
+          "status": "live"
+        }
+      ],
+      "from": "2026-11-01"
     }
   ],
   "reviews": [],
