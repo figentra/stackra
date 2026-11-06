@@ -1,5 +1,25 @@
 # @stackra/cli
 
+## 0.14.1
+
+### Patch Changes
+
+- 470d710: `stackra testbed` is deprecated in favour of `testbed` from `@figentra/testbed` (ADR 0522): it keeps working for
+  one release, then goes (ADR 0522 step 8). Install `@figentra/testbed` and call `testbed`; the verbs, flags, exit codes
+  and `--json` lines are the same.
+  The preset's ci-steward and flow-gate command name `testbed run`.
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/mcp@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/gen@0.14.1
+  - @stackra/repo-checks@0.14.1
+  - @stackra/skills@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+
 ## 0.14.0
 
 ### Patch Changes
