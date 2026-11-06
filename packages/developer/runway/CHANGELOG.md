@@ -1,5 +1,25 @@
 # @stackra/runway
 
+## 0.16.0
+
+### Patch Changes
+
+- 89d4633: The Encore deploy commit has no parent: it holds the source tree with the generated app, and its message names the
+  source commit. Encore's remote refused the earlier deploy commit ("shallow update not allowed") because a CI checkout
+  at depth 1 ends on a shallow boundary, and the product's history is not Encore's to hold.
+- 08be546: `runway secrets sync` now carries the root runway's `secrets.gateway` names, the generated API gateway's
+  secrets (ADR 0237), into Encore as one more entry, `gateway`, whenever a service member makes an Encore app.
+  Before, only each member's own `secrets:` reached Encore, so a product whose only runtime secret is
+  GATEWAY_VISITOR_SIGNING_KEY synced nothing.
+- Updated dependencies [64cfc1d]
+- Updated dependencies [5bf8ad3]
+  - @stackra/app@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/console@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

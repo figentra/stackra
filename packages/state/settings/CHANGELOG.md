@@ -1,5 +1,24 @@
 # @stackra/settings
 
+## 0.16.0
+
+### Patch Changes
+
+- c6e4715: `#stackra/settings` keys a section's field `<section>.<name>`, so two sections of one module may share a field name
+  without a duplicate key (TS1117). `settingKeys` strips the section back off: each key keeps its `name` and its
+  `<module>.<section>.<name>` path, and files written by an older gen still work.
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/icons@0.16.0
+  - @stackra/ui@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/market-packs@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

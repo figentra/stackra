@@ -1,5 +1,22 @@
 # @stackra/app
 
+## 0.16.0
+
+### Patch Changes
+
+- 64cfc1d: `bootApp` binds the environment as the `SecretStore` port unless the caller overrides it, so a driver that reads a secret
+  by name (the cross-app event signer, STA-1910) resolves in a generated service.
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/navigation@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/csp@0.16.0
+  - @stackra/identity@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @stackra/repo-checks
 
+## 0.16.0
+
+### Minor Changes
+
+- 585f9de: `stackra validate --repository` checks the repository layout (ADR 0526): the root holds only its Flow preset's
+  template entries, its member folders, `tools/` with a README and the extras package.json `stackra.layout.allow`
+  declares with a reason; never a root `src/` or a `scripts/` or `bin/` folder, and no path named `figentra-flow`.
+- 33c88a5: The structure phase refuses a public id prefix that models of two different apps or services share (ADR 0135).
+  Each finding names both models and their files and suggests a prefix no member uses. Members hosting the same
+  package model keep its prefix; a clash inside one member stays gen's `prefix_duplicate`.
+
+### Patch Changes
+
+- 31378e6: The layout check allows the agent surfaces `fflow sync` renders for every preset (`.mcp.yaml`,
+  `opencode.jsonc`, `.opencode/`) in the neutral template too, so a neutral repository and a Stackra
+  product on Flow 0.6.4 pass.
+
 ## 0.15.0
 
 No changes in this release.

@@ -1,5 +1,39 @@
 # @stackra/gen
 
+## 0.16.0
+
+### Minor Changes
+
+- 64cfc1d: Cross-app events (ADR 0511 decisions 11 to 19, STA-1910). Gen lifts `client_event_remote_transport`: a listener of a
+  contract-only producer's event is registered like a sibling's and delivered through a generated inbox, never an
+  Encore subscription. Such a service gets `#stackra/inbox` (`InboundEventsController` on `POST /events/inbox` over
+  `RelayInboxService`, and `RelayInboxConfig` with the pinned producers' public keys and events), its Encore `api.raw`
+  adapter (`.stackra/encore/<member>/inbox.ts`, exposed, `auth: false`) and the boot's `RelayInboxService` connect. A
+  service whose `runway.yaml` has an `events` block gets the manifest's `relay` section (keys and subscribers per
+  environment, no origins), an `env` row for its signing key's secret name, `#stackra/events-relay`
+  (`EventsRelayConfig` picked by `STACKRA_ENVIRONMENT`), the wiring of `CrossAppFanOut`, `CrossAppRelayService` and
+  the Postgres `DeliveryDriver`, and the cross-app relay loop in its boot. The new warning `client_event_unsubscribed`
+  names a listener whose producer's contract does not list the service for that event; `GenerateResult.warnings`
+  carries it and `stackra gen` prints it. Members with neither keep the same output.
+
+### Patch Changes
+
+- 6ed8ab1: `stackra gen` refuses `module_key_collision` when a declared package's migrations need a module key that one of the
+  member's own modules with migrations also has, instead of resolving the need to that module and reporting a
+  cascade of `migration_cycle` errors. A member module that only shares a package's key stays allowed.
+- c6e4715: `#stackra/settings` keys a section's field `<section>.<name>`, so two sections of one module may share a field name
+  without a duplicate key (TS1117). `settingKeys` strips the section back off: each key keeps its `name` and its
+  `<module>.<section>.<name>` path, and files written by an older gen still work.
+- 5bf8ad3: Fixes from the os 0.14 typecheck. Gen reads a trait's enum, `Translated`, list and prefix-less `PublicId` fields by
+  their types instead of `json()`. A declared contract package wins over a same-named sibling service folder. A hatch
+  import named like an `X$` the schema file declares comes in aliased. In validation, `Fields`/`InputFields` stop
+  recursing on `Json`, drop every `~` brand key (a config's `~kind` and `~config`), and `Same` compares readonly arrays
+  at any list-view depth.
+- @stackra/errors@0.16.0
+  - @stackra/money@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

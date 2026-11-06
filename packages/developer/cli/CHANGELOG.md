@@ -1,5 +1,48 @@
 # @stackra/cli
 
+## 0.16.0
+
+### Minor Changes
+
+- 585f9de: `stackra validate --repository` checks the repository layout (ADR 0526): the root holds only its Flow preset's
+  template entries, its member folders, `tools/` with a README and the extras package.json `stackra.layout.allow`
+  declares with a reason; never a root `src/` or a `scripts/` or `bin/` folder, and no path named `figentra-flow`.
+
+### Patch Changes
+
+- e43a1a7: `stackra create` no longer copies the template's `.infisical.yaml` into a new app, so the app never binds
+  Figentra's Infisical project; it sets up its own secrets.
+- 64cfc1d: Cross-app events (ADR 0511 decisions 11 to 19, STA-1910). Gen lifts `client_event_remote_transport`: a listener of a
+  contract-only producer's event is registered like a sibling's and delivered through a generated inbox, never an
+  Encore subscription. Such a service gets `#stackra/inbox` (`InboundEventsController` on `POST /events/inbox` over
+  `RelayInboxService`, and `RelayInboxConfig` with the pinned producers' public keys and events), its Encore `api.raw`
+  adapter (`.stackra/encore/<member>/inbox.ts`, exposed, `auth: false`) and the boot's `RelayInboxService` connect. A
+  service whose `runway.yaml` has an `events` block gets the manifest's `relay` section (keys and subscribers per
+  environment, no origins), an `env` row for its signing key's secret name, `#stackra/events-relay`
+  (`EventsRelayConfig` picked by `STACKRA_ENVIRONMENT`), the wiring of `CrossAppFanOut`, `CrossAppRelayService` and
+  the Postgres `DeliveryDriver`, and the cross-app relay loop in its boot. The new warning `client_event_unsubscribed`
+  names a listener whose producer's contract does not list the service for that event; `GenerateResult.warnings`
+  carries it and `stackra gen` prints it. Members with neither keep the same output.
+- Updated dependencies [89d4633]
+- Updated dependencies [6ed8ab1]
+- Updated dependencies [585f9de]
+- Updated dependencies [31378e6]
+- Updated dependencies [33c88a5]
+- Updated dependencies [08be546]
+- Updated dependencies [c6e4715]
+- Updated dependencies [64cfc1d]
+- Updated dependencies [5bf8ad3]
+  - @stackra/runway@0.16.0
+  - @stackra/gen@0.16.0
+  - @stackra/repo-checks@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/mcp@0.16.0
+  - @stackra/console@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/skills@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

@@ -1,5 +1,30 @@
 # @stackra/notifications
 
+## 0.16.0
+
+### Minor Changes
+
+- cc4cc20: The Web Push VAPID contact is configuration now: `NotificationsConfig.webPushVapidSubject` (a `mailto:` or `https://`
+  URL set in the member runway's config), which `DevicePushTransportDriver` takes as an optional last constructor
+  argument. Until a host passes it, the driver still reads the `WEB_PUSH_VAPID_SUBJECT` secret.
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/clients@0.16.0
+  - @stackra/integrations@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/outbox@0.16.0
+  - @stackra/assets@0.16.0
+  - @stackra/money@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes
