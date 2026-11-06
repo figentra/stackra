@@ -1,5 +1,11 @@
 # @stackra/container
 
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/contracts@0.14.3
+
 ## 0.14.2
 
 ### Patch Changes

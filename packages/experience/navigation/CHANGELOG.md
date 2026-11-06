@@ -1,5 +1,25 @@
 # @stackra/navigation
 
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/clients@0.14.3
+  - @stackra/seo@0.14.3
+  - @stackra/icons@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/testing@0.14.3
+  - @stackra/platform@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/iam@0.14.3
+  - @stackra/feature-flags@0.14.3
+  - @stackra/settings@0.14.3
+
 ## 0.14.2
 
 ### Patch Changes

@@ -2369,6 +2369,9 @@
             },
             "owner": {
               "type": "string"
+            },
+            "slug": {
+              "type": "string"
             }
           }
         },

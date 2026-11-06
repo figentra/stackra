@@ -23,7 +23,14 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { SCOPE_RX, checkTarget, listNames, publish } from "../secrets-sops.mjs";
 import { main as put } from "../secrets-put.mjs";
-import { generateValue, main as generate } from "../secrets-generate.mjs";
+import {
+  ed25519Pair,
+  generateValue,
+  keyIdFor,
+  main as generate,
+  missingEntries,
+  vapidPair,
+} from "../secrets-generate.mjs";
 import { main as importMain } from "../secrets-import.mjs";
 import { main as migrate, plan, readInfisical, scopeFor } from "../secrets-migrate.mjs";
 import { buildCatalog, checkCatalog, declaredNames } from "../secrets-catalog.mjs";
@@ -41,7 +48,7 @@ const row = (path, name, value) => ({ project: "pay", env: "prod", path, name, v
  * A fake for every CLI the scripts call. sops "encrypts" to a fixed text that never holds the plaintext, and keeps the
  * plaintext in a map so `decrypt` can return it; `git add` snapshots the clone's files.
  */
-function fakeCli({ existing = [], failPush = false, failAuto = false } = {}) {
+function fakeCli({ existing = [], failPush = false, failAuto = false, seed = {} } = {}) {
   const calls = [];
   const stdins = [];
   const vault = new Map();
@@ -55,6 +62,7 @@ function fakeCli({ existing = [], failPush = false, failAuto = false } = {}) {
         mkdirSync(join(args[3], f, ".."), { recursive: true });
         writeFileSync(join(args[3], f), "old: ENC[x]\nsops:\n  kms: []\n");
       }
+      for (const [f, text] of Object.entries(seed)) writeFileSync(join(args[3], f), text);
       return { status: 0, stdout: "", stderr: "" };
     }
     if (command === "sops" && args[0] === "encrypt") {
@@ -271,6 +279,142 @@ test("generate: random, refused when it exists, replaced with --rotate", () => {
   assert.match(out.lines[1], /rotated/);
   const generated = JSON.parse(cli.stdins.at(-1)).EDGE_SIGNING_SECRET;
   assertNoLeak(generated, { lines: out.lines, cli, homeDir: h });
+});
+
+test("generate --missing: every generated catalog name with no file, one pull request, names only", () => {
+  const catalog = [
+    "GATEWAY_VISITOR_SIGNING_KEY:",
+    "  scopes: [products/pay/staging, products/pay/production]",
+    "  kind: generated",
+    "WEB_PUSH_VAPID_PUBLIC_KEY:",
+    "  scopes: [products/os/production]",
+    "  kind: generated",
+    "  generator: vapid",
+    "WEB_PUSH_VAPID_PRIVATE_KEY:",
+    "  scopes: [products/os/production]",
+    "  kind: generated",
+    "  generator: vapid",
+    "STRIPE_PLATFORM_SECRET_KEY:",
+    "  scopes: [products/pay/production]",
+    "  kind: human",
+    "",
+  ].join("\n");
+  const cli = fakeCli({
+    existing: ["products/pay/staging/GATEWAY_VISITOR_SIGNING_KEY.enc.yaml"],
+    seed: { "catalog.yaml": catalog },
+  });
+  const h = home();
+  const out = sink();
+  assert.equal(
+    generate(["--missing", "--dry-run"], { home: h, run: cli.run, env: AGENT, write: out.write }),
+    0,
+  );
+  assert.equal(cli.snapshots.length, 0, "a dry run writes nothing");
+  assert.equal(generate(["--missing"], { home: h, run: cli.run, env: AGENT, write: out.write }), 0);
+  assert.deepEqual(
+    Object.keys(cli.snapshots[0])
+      .filter((f) => f.endsWith(".enc.yaml"))
+      .toSorted(),
+    [
+      "products/os/production/WEB_PUSH_VAPID_PRIVATE_KEY.enc.yaml",
+      "products/os/production/WEB_PUSH_VAPID_PUBLIC_KEY.enc.yaml",
+      "products/pay/production/GATEWAY_VISITOR_SIGNING_KEY.enc.yaml",
+      "products/pay/staging/GATEWAY_VISITOR_SIGNING_KEY.enc.yaml",
+    ],
+  );
+  for (const stdin of cli.stdins)
+    for (const v of Object.values(JSON.parse(stdin)))
+      assertNoLeak(v, { lines: out.lines, cli, homeDir: h });
+});
+
+test("generate: a VAPID pair is the uncompressed P-256 point and its 32-byte scalar", () => {
+  const { publicKey, privateKey } = vapidPair();
+  const point = Buffer.from(publicKey.toString(), "base64url");
+  assert.equal(point.length, 65);
+  assert.equal(point[0], 4);
+  assert.equal(Buffer.from(privateKey.toString(), "base64url").length, 32);
+});
+
+test("generate: an ed25519 key is PKCS#8 for Web Crypto; only its public half and key id are returned", async () => {
+  const { privateKey, publicKey } = ed25519Pair();
+  const raw = Buffer.from(publicKey, "base64url");
+  assert.equal(raw.length, 32);
+  assert.match(publicKey, /^[A-Za-z0-9_-]+={0,2}$/);
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    Buffer.from(privateKey.toString(), "base64url"),
+    { name: "Ed25519" },
+    false,
+    ["sign"],
+  );
+  const pub = await crypto.subtle.importKey("raw", raw, { name: "Ed25519" }, false, ["verify"]);
+  const data = Buffer.from("event");
+  const sig = await crypto.subtle.sign("Ed25519", key, data);
+  assert.ok(await crypto.subtle.verify("Ed25519", pub, sig, data), "the pair matches");
+  assert.equal(
+    keyIdFor("products/invoicing/staging", undefined, new Date("2026-11-06")),
+    "invoicing-staging-202611",
+  );
+  const [entry] = missingEntries(
+    {
+      STACKRA_EVENTS_SIGNING_KEY: {
+        kind: "generated",
+        generator: "ed25519",
+        scopes: ["products/invoicing/staging"],
+      },
+    },
+    [],
+  );
+  assert.equal(entry.name, "STACKRA_EVENTS_SIGNING_KEY");
+  assert.ok(
+    !JSON.stringify(entry.public).includes(entry.value.toString()),
+    "the public part holds no private key",
+  );
+});
+
+test("import --tree: scope folders go to their scopes in one pull request; files and folders are removed", () => {
+  const h = home();
+  const a = canary();
+  const b = canary();
+  const inbox = join(h, "Secrets-inbox");
+  mkdirSync(join(inbox, "products/pay/staging"), { recursive: true });
+  mkdirSync(join(inbox, "products/os/production"), { recursive: true });
+  writeFileSync(join(inbox, "products/pay/staging/STRIPE_PLATFORM_SECRET_KEY"), a);
+  writeFileSync(join(inbox, "products/os/production/RESEND_API_KEY.txt"), `${b}\n`);
+  writeFileSync(join(inbox, "FLAT_TOKEN"), "left for the flat modes");
+  const cli = fakeCli();
+  const out = sink();
+  assert.equal(
+    importMain(["--tree"], { home: h, sopsRun: cli.run, env: OWNER, write: out.write }),
+    0,
+  );
+  assert.deepEqual(Object.keys(cli.snapshots[0]).toSorted(), [
+    "products/os/production/RESEND_API_KEY.enc.yaml",
+    "products/pay/staging/STRIPE_PLATFORM_SECRET_KEY.enc.yaml",
+  ]);
+  assert.equal(cli.calls.filter((c) => c[0] === "gh" && c[2] === "create").length, 1);
+  assert.deepEqual(
+    readdirSync(inbox).filter((f) => !f.startsWith(".")),
+    ["FLAT_TOKEN"],
+  );
+  for (const v of [a, b]) assertNoLeak(v, { lines: out.lines, cli, homeDir: h });
+});
+
+test("import --tree: a folder that is not a scope refuses the whole run", () => {
+  const h = home();
+  const inbox = join(h, "Secrets-inbox");
+  mkdirSync(join(inbox, "products/pay/prod"), { recursive: true });
+  mkdirSync(join(inbox, "ci/deploy"), { recursive: true });
+  writeFileSync(join(inbox, "products/pay/prod/X_KEY"), canary());
+  writeFileSync(join(inbox, "ci/deploy/Y_KEY"), canary());
+  const cli = fakeCli();
+  const out = sink();
+  assert.equal(
+    importMain(["--tree"], { home: h, sopsRun: cli.run, env: OWNER, write: out.write }),
+    1,
+  );
+  assert.equal(cli.calls.length, 0);
+  assert.ok(existsSync(join(inbox, "ci/deploy/Y_KEY")), "nothing deleted");
 });
 
 test("import --scope: inbox files go to sops in one pull request and are deleted", () => {

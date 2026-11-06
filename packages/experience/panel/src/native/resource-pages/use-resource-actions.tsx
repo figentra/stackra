@@ -24,14 +24,15 @@ import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";
 import { actionFormKeys } from "#core/functions/action-form-keys.function";
 import { actionLabelKey } from "#core/functions/action-label-key.function";
-import { idOf } from "#core/functions/id-of.function";
 import { placementsAt } from "#core/functions/placements-at.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
+import { resourceActionsAt } from "#core/functions/resource-actions-at.function";
 import type { PageRef } from "#core/types/page-ref.type";
 import type { ResourceRoutes } from "#core/types/resource-routes.type";
 import type { ResourceTree } from "#core/types/resource-tree.type";
 import { useActionRunner } from "#native/action-runner/use-action-runner";
 import { ActionInputModal } from "#native/resource-pages/action-input-modal";
+import type { PendingAction } from "#react/resource-pages/pending-action.type";
 import type { ResourceActions } from "#react/resource-pages/resource-actions.type";
 
 /** The resource page refs, read loosely (each exists only when the resource declares it). */
@@ -56,16 +57,7 @@ export function useResourceActions(
   const remove = tree.options?.operations.delete;
   const removeRef = typeof remove === "function" ? (remove as ActionRef) : undefined;
   const placed = tree.actions ?? [];
-  const [pending, setPending] = useState<
-    | {
-        readonly action: ActionRef;
-        readonly idKey: string | undefined;
-        readonly ids: readonly string[] | undefined;
-        readonly record: object | undefined;
-        readonly keys: readonly string[];
-      }
-    | undefined
-  >();
+  const [pending, setPending] = useState<PendingAction | undefined>();
 
   /** A button that runs `action` once per id in `ids`, or once with no record. */
   const runner = (
@@ -115,42 +107,29 @@ export function useResourceActions(
         />
       ),
     at(place, record) {
-      const ids = record === undefined ? undefined : [idOf(record)];
-      const out: ResourceAction[] = [];
-      const recordId = ids?.[0];
-      if (place === ActionPlace.Row && recordId !== undefined && pages.view !== undefined)
-        out.push(link("view", t(PANEL_KEYS.panel.resources.view), pages.view, recordId));
-      if (
-        (place === ActionPlace.Row || place === ActionPlace.View) &&
-        recordId !== undefined &&
-        pages.edit !== undefined
-      )
-        out.push(link("edit", t(PANEL_KEYS.panel.resources.edit), pages.edit, recordId));
-      if (
-        (place === ActionPlace.ListHeader || place === ActionPlace.Empty) &&
-        pages.create !== undefined &&
-        !placed.some((node) => node.kind === "create")
-      )
-        out.push(link("create", t(PANEL_KEYS.panel.resources.create), pages.create));
-      placementsAt(placed, place, (action) => idKey(action) !== undefined).forEach(
-        (node, index) => {
+      return resourceActionsAt<ResourceAction>({
+        place,
+        record,
+        pages,
+        placements: placed,
+        takesRecord: (action) => idKey(action) !== undefined,
+        link: (id, to, recordId) => link(id, t(PANEL_KEYS.panel.resources[id]), to, recordId),
+        placed: (node, index, ids) => {
           if (node.kind === "create" && pages.create !== undefined)
-            out.push(link("create", t(PANEL_KEYS.panel.resources.create), pages.create));
+            return [link("create", t(PANEL_KEYS.panel.resources.create), pages.create)];
           if (node.kind === "run")
-            out.push(runner(node.action as ActionRef, ids, `run_${index}`, record));
+            return [runner(node.action as ActionRef, ids, `run_${index}`, record)];
+          return [];
         },
-      );
-      if (
-        removeRef !== undefined &&
-        recordId !== undefined &&
-        (place === ActionPlace.Row || place === ActionPlace.View)
-      )
-        out.push({
-          ...runner(removeRef, ids, "delete"),
-          label: t(PANEL_KEYS.panel.resources.delete),
-          tone: "danger",
-        });
-      return out;
+        remove:
+          removeRef === undefined
+            ? undefined
+            : (ids) => ({
+                ...runner(removeRef, ids, "delete"),
+                label: t(PANEL_KEYS.panel.resources.delete),
+                tone: "danger",
+              }),
+      });
     },
     bulk(ids) {
       const out = placementsAt(

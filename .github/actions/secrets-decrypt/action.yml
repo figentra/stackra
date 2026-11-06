@@ -32,7 +32,8 @@ inputs:
   runway-version:
     description: >-
       The @stackra/runway version whose `secrets decrypt` runs (from the Stackra registry). Empty means the version of
-      packages/developer/runway at the same core ref as this action, so the two never drift.
+      packages/developer/runway at the same core ref as this action, so the two never drift; while that version is not
+      fully published (just after a version PR), the newest stable version that is, with a notice.
     required: false
     default: ""
 runs:
@@ -72,18 +73,49 @@ runs:
         RUNWAY_VERSION: ${{ inputs.runway-version }}
       run: |
         set -euo pipefail
+        # @stackra/* reads anonymously from the Stackra registry, so this needs no token before any secret exists.
+        registry=https://npm.stackra.figentra.com/
+        # A version is usable once runway and every @stackra/* package it pins are on the registry. The fixed group's
+        # release publishes them one at a time, so runway can be there before its dependencies.
+        usable() {
+          local deps dep
+          deps="$(npm view --registry "$registry" "@stackra/runway@$1" dependencies --json 2>/dev/null)" || return 1
+          [ -n "$deps" ] || return 1
+          for dep in $(jq -r 'to_entries[] | select(.key | startswith("@stackra/")) | "\(.key)@\(.value)"' <<<"$deps"); do
+            [ -n "$(npm view --registry "$registry" "$dep" version 2>/dev/null)" ] || return 1
+          done
+        }
         # A remote action is the whole repository at its ref, so the runway package beside it names the version that
-        # ref released; a version PR merged but not yet published fails the npx below, which an explicit input avoids.
+        # ref released. Right after a version PR merges, that version is not fully published yet: fall back to the
+        # newest stable version that is. An explicit `runway-version` input is used as given.
         if [ -z "$RUNWAY_VERSION" ]; then
-          RUNWAY_VERSION="$(jq -r .version "$GITHUB_ACTION_PATH/../../../packages/developer/runway/package.json")"
+          wanted="$(jq -r .version "$GITHUB_ACTION_PATH/../../../packages/developer/runway/package.json")"
+          if usable "$wanted"; then
+            RUNWAY_VERSION="$wanted"
+          else
+            for version in $(npm view --registry "$registry" @stackra/runway versions --json |
+              jq -r 'if type == "string" then [.] else . end | map(select(test("-") | not)) | reverse[]'); do
+              if usable "$version"; then
+                RUNWAY_VERSION="$version"
+                break
+              fi
+            done
+            if [ -z "$RUNWAY_VERSION" ]; then
+              echo "::error title=secrets-decrypt::no published @stackra/runway has all its @stackra dependencies"
+              exit 1
+            fi
+            echo "::notice title=secrets-decrypt::@stackra/runway $wanted is not fully published yet; using $RUNWAY_VERSION"
+          fi
         fi
         args=(secrets decrypt --scope "$SCOPE" --dir "$RUNNER_TEMP/secrets")
         if [ -n "$NAMES" ]; then args+=(--names "$NAMES"); fi
-        # @stackra/* reads anonymously from the Stackra registry, so this needs no token before any secret exists.
-        npx --yes --@stackra:registry=https://npm.stackra.figentra.com/ -p "@stackra/runway@$RUNWAY_VERSION" \
-          runway "${args[@]}"
+        npx --yes --@stackra:registry="$registry" -p "@stackra/runway@$RUNWAY_VERSION" runway "${args[@]}"
 
-    - name: Ciphertext cleanup
+    # The auth step writes its credentials file into the workspace (gha-creds-*.json), where a caller's format or
+    # secrets scan would find it. Nothing needs it after the decrypt, so it goes now, not at the end of the job.
+    - name: Ciphertext and credentials cleanup
       if: always()
       shell: bash
-      run: rm -rf "$RUNNER_TEMP/secrets"
+      run: |
+        rm -rf "$RUNNER_TEMP/secrets"
+        if [ -n "${GOOGLE_GHA_CREDS_PATH:-}" ]; then rm -f "$GOOGLE_GHA_CREDS_PATH"; fi

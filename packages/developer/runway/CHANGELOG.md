@@ -1,5 +1,24 @@
 # @stackra/runway
 
+## 0.14.3
+
+### Patch Changes
+
+- 3ccf74a: A dry-run product build records the mobile checkout's `pnpm install` instead of running it, as it records the EAS
+  builds: `stackra build --product --dry-run` stays a plan.
+- 64e4840: The mobile job builds on the environment's EAS channel: `environments.<env>.mobile.channel` from the root runway
+  picks the build profile and channel, and the app's `mobile.<app>.eas.channel` is the fallback. A staging deploy built
+  on the app's production channel before.
+  
+  `mobile.<app>.eas.slug` names the EAS project's slug when it is not `<project>-<app>`, so an app built under a
+  project created as `pay` (not `figentra-pay-pay`) passes EAS's slug check.
+- @stackra/console@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/app@0.14.3
+
 ## 0.14.2
 
 ### Patch Changes
