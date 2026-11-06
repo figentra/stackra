@@ -42,7 +42,7 @@ export interface EnvironmentSizes {
     /** The node count when `mode` is nodes, else null. */
     readonly nodes: number | null;
   };
-  /** Outbound internet. */
+  /** How the environment reaches the internet. */
   readonly network: {
     /** NAT gateways, one per zone at most. */
     readonly natGateways: number;
