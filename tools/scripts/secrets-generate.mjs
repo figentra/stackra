@@ -10,7 +10,8 @@
  * Governing contract: ADR 0525; ADR 0257; ADR 0480 (the vault keeper's generate, now writing sops).
  * Input: NAME, `--scope <scope>`, `--bytes <16..128>` (default 32), `--encoding base64url|hex` (default base64url),
  *   `--rotate`, `--actor <agent>`; or `--missing [--dry-run]`: every `kind: generated` catalog name with no file in
- *   one of its `scopes`, in one pull request (`generator: vapid` makes a Web Push key pair).
+ *   one of its `scopes`, in one pull request (`generator: vapid` makes a Web Push key pair; `generator: ed25519`
+ *   a signing key, printing only its public half and key id).
  * Output: one line with the name, the scope, "added" or "rotated" and the pull request URL; exit 1 on a refusal.
  * Secrets: the value exists only in this process and on sops' stdin; it is never printed, logged or on argv.
  */
@@ -60,11 +61,38 @@ export function vapidPair() {
 }
 
 /**
+ * An Ed25519 signing pair: the private key as PKCS#8 DER (Web Crypto `importKey("pkcs8", …, "Ed25519")`), the public
+ * key as its raw 32 bytes; both base64url. The public half is not secret.
+ */
+export function ed25519Pair() {
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+  return {
+    privateKey: Buffer.from(
+      privateKey.export({ format: "der", type: "pkcs8" }).toString("base64url"),
+      "utf8",
+    ),
+    publicKey: publicKey.export({ format: "jwk" }).x,
+  };
+}
+
+/** `<keyIdPrefix or the scope's product>-<env>-<yyyymm>`, kebab-case: the key id a producer's `events.keys` names. */
+export const keyIdFor = (scope, prefix, now = new Date()) => {
+  const parts = scope.split("/");
+  const owner = prefix ?? (parts[0] === "products" ? parts[1] : parts.slice(0, -1).join("-"));
+  return `${owner}-${parts.at(-1)}-${now.toISOString().slice(0, 7).replace("-", "")}`;
+};
+
+/**
  * The `kind: generated` values `catalog.yaml` asks for that have no file yet: `[{ scope, name, value }]`. An entry's
- * `scopes` say where it belongs; `bytes` and `encoding` shape a random value; `generator: vapid` makes the
+ * `scopes` say where it belongs; `bytes` and `encoding` shape a random value; `generator: ed25519` stores a signing
+ * key and returns its public half and key id in `public` (optional `keyIdPrefix`); `generator: vapid` makes the
  * `<PREFIX>_PUBLIC_KEY` and `<PREFIX>_PRIVATE_KEY` pair together. Never replaces an existing file.
  */
-export function missingEntries(catalog, files, make = { random: generateValue, vapid: vapidPair }) {
+export function missingEntries(
+  catalog,
+  files,
+  make = { random: generateValue, vapid: vapidPair, ed25519: ed25519Pair, now: () => new Date() },
+) {
   const have = new Set(files.map((f) => `${f.scope}/${f.name}`));
   const out = [];
   for (const [name, e] of Object.entries(catalog ?? {})) {
@@ -86,6 +114,15 @@ export function missingEntries(catalog, files, make = { random: generateValue, v
           { scope, name: pair[1], value: v.privateKey },
         );
         pair.forEach((n) => have.add(`${scope}/${n}`));
+      } else if (e.generator === "ed25519") {
+        const k = make.ed25519();
+        out.push({
+          scope,
+          name,
+          value: k.privateKey,
+          public: { key: k.publicKey, keyId: keyIdFor(scope, e.keyIdPrefix, make.now()) },
+        });
+        have.add(key);
       } else if (e.generator === undefined || e.generator === "random") {
         out.push({ scope, name, value: make.random(e.bytes ?? 32, e.encoding ?? "base64url") });
         have.add(key);
@@ -111,6 +148,7 @@ function generateMissing({ dryRun, actor, home, run = cliRunner, env, say }) {
   const entries = missingEntries(catalog, files).map((e) => ({
     ...checkTarget(e, { agent: isAgentRun(env) }),
     value: e.value,
+    public: e.public,
   }));
   if (!entries.length) {
     say("secrets-generate: nothing missing");
@@ -129,6 +167,8 @@ function generateMissing({ dryRun, actor, home, run = cliRunner, env, say }) {
   for (const e of entries) {
     audit(home, { actor, name: e.name, scope: e.scope, action: "generate", result: "ok" });
     say(`${e.name}  ${e.scope}  added  ${url}`);
+    // The public half only (not secret), for the producer's runway.yaml `events.keys`.
+    if (e.public) say(`  public key ${e.public.key}  key id ${e.public.keyId}`);
   }
   return 0;
 }

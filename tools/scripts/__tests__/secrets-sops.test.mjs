@@ -23,7 +23,14 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { SCOPE_RX, checkTarget, listNames, publish } from "../secrets-sops.mjs";
 import { main as put } from "../secrets-put.mjs";
-import { generateValue, main as generate, vapidPair } from "../secrets-generate.mjs";
+import {
+  ed25519Pair,
+  generateValue,
+  keyIdFor,
+  main as generate,
+  missingEntries,
+  vapidPair,
+} from "../secrets-generate.mjs";
 import { main as importMain } from "../secrets-import.mjs";
 import { main as migrate, plan, readInfisical, scopeFor } from "../secrets-migrate.mjs";
 import { buildCatalog, checkCatalog, declaredNames } from "../secrets-catalog.mjs";
@@ -326,6 +333,43 @@ test("generate: a VAPID pair is the uncompressed P-256 point and its 32-byte sca
   assert.equal(point.length, 65);
   assert.equal(point[0], 4);
   assert.equal(Buffer.from(privateKey.toString(), "base64url").length, 32);
+});
+
+test("generate: an ed25519 key is PKCS#8 for Web Crypto; only its public half and key id are returned", async () => {
+  const { privateKey, publicKey } = ed25519Pair();
+  const raw = Buffer.from(publicKey, "base64url");
+  assert.equal(raw.length, 32);
+  assert.match(publicKey, /^[A-Za-z0-9_-]+={0,2}$/);
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    Buffer.from(privateKey.toString(), "base64url"),
+    { name: "Ed25519" },
+    false,
+    ["sign"],
+  );
+  const pub = await crypto.subtle.importKey("raw", raw, { name: "Ed25519" }, false, ["verify"]);
+  const data = Buffer.from("event");
+  const sig = await crypto.subtle.sign("Ed25519", key, data);
+  assert.ok(await crypto.subtle.verify("Ed25519", pub, sig, data), "the pair matches");
+  assert.equal(
+    keyIdFor("products/invoicing/staging", undefined, new Date("2026-11-06")),
+    "invoicing-staging-202611",
+  );
+  const [entry] = missingEntries(
+    {
+      STACKRA_EVENTS_SIGNING_KEY: {
+        kind: "generated",
+        generator: "ed25519",
+        scopes: ["products/invoicing/staging"],
+      },
+    },
+    [],
+  );
+  assert.equal(entry.name, "STACKRA_EVENTS_SIGNING_KEY");
+  assert.ok(
+    !JSON.stringify(entry.public).includes(entry.value.toString()),
+    "the public part holds no private key",
+  );
 });
 
 test("import --tree: scope folders go to their scopes in one pull request; files and folders are removed", () => {
