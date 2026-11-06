@@ -3,7 +3,8 @@
  * Purpose: `useFlagCheck()`, whether a flag is on for the viewer, as a function `useMenu` and `useNavigation` filter
  *          entries with; a new function, and so a re-render, whenever the flag values change.
  * Boundary: internal; reads the container's `FlagReader` when it binds one, else each flag's declared default.
- * Runtime: isomorphic (platform-free: the native entry imports it too)
+ *           Platform-free: the native entry imports it too.
+ * Runtime: isomorphic
  * Governing contract: ADR 0214 (gate-filtered navigation); registry v3.1 (feature flags).
  */
 import { useContainer } from "@stackra/container/react";
