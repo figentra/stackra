@@ -16,6 +16,7 @@ import { RunwayEnvOrphansCommand } from "#node/commands/runway-env-orphans.comma
 import { RunwayPlanCommand } from "#node/commands/runway-plan.command";
 import { RunwayPromoteCommand } from "#node/commands/runway-promote.command";
 import { RunwayRollbackCommand } from "#node/commands/runway-rollback.command";
+import { RunwaySecretsDecryptCommand } from "#node/commands/runway-secrets-decrypt.command";
 import { RunwaySecretsSyncCommand } from "#node/commands/runway-secrets-sync.command";
 import { RunwayStatusCommand } from "#node/commands/runway-status.command";
 import { RunwayValidateCommand } from "#node/commands/runway-validate.command";
@@ -30,6 +31,7 @@ export const RUNWAY_COMMANDS: readonly CommandClass[] = Object.freeze([
   RunwayValidateCommand,
   RunwayDriftCommand,
   RunwaySecretsSyncCommand,
+  RunwaySecretsDecryptCommand,
   RunwayEnvCheckCommand,
   RunwayEnvOrphansCommand,
 ]);
