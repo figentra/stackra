@@ -12,7 +12,8 @@
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709) and
  *           `stackra db diff` compares models with the migrations (STA-1808); `db structure` and `db diff --write`
- *           are not built yet; infra is `stackra runway infra`, not a command here (ADR 0352).
+ *           are not built yet; infra is `stackra runway infra`, not a command here (ADR 0352); `runway` itself runs @stackra/runway's commands
+ *           (ADR 0529 decision 4, STA-2214).
  * Runtime: node
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows); ADR 0506;
  *                     STA-1966.
@@ -55,6 +56,7 @@ import { MobileOnboardCommand } from "#node/commands/mobile-onboard.command";
 import { OpsBootstrapOperatorCommand } from "#node/commands/ops-bootstrap-operator.command";
 import { PromoteCommand } from "#node/commands/promote.command";
 import { PublishCommand } from "#node/commands/publish.command";
+import { RunwayCommand } from "#node/commands/runway.command";
 import { SearchReindexCommand } from "#node/commands/search-reindex.command";
 import { SearchStatusCommand } from "#node/commands/search-status.command";
 import { SettingsApplyCommand } from "#node/commands/settings-apply.command";
@@ -109,6 +111,7 @@ export const COMMANDS: CliCommands = [
   AuditVerifyCommand,
   DEPLOY_COMMAND,
   PromoteCommand,
+  RunwayCommand,
   MobileOnboardCommand,
   SmokeCommand,
   PREVIEW_SERVE_COMMAND,
