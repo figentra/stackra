@@ -1,5 +1,23 @@
 # @stackra/search
 
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [6406843]
+- Updated dependencies [cc150d2]
+  - @stackra/settings@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/outbox@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes

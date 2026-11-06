@@ -1,5 +1,38 @@
 # @stackra/panel
 
+## 0.14.4
+
+### Patch Changes
+
+- 1f55b7a: `EntryFactory.list` and `Display.list` take named option types (`ListEntryOptions`, `ListDisplayOptions`) shared with
+  their records, and `WidgetDescriptorOptions` is derived from `WidgetDescriptor`. The shapes are unchanged.
+- Updated dependencies [cc150d2]
+  - @stackra/navigation@0.14.4
+  - @stackra/query@0.14.4
+  - @stackra/clients@0.14.4
+  - @stackra/experience@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/pricing@0.14.4
+  - @stackra/documents@0.14.4
+  - @stackra/access-log@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/money@0.14.4
+  - @stackra/data-transfer@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/filesystem@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/icons@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/entitlements@0.14.4
+  - @stackra/tenancy@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes

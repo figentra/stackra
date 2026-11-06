@@ -1,5 +1,39 @@
 # @stackra/loyalty-kit
 
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [1f55b7a]
+- Updated dependencies [6406843]
+- Updated dependencies [cc150d2]
+  - @stackra/panel@0.14.4
+  - @stackra/settings@0.14.4
+  - @stackra/search@0.14.4
+  - @stackra/integrations@0.14.4
+  - @stackra/experience@0.14.4
+  - @stackra/workflow@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/ledger@0.14.4
+  - @stackra/money@0.14.4
+  - @stackra/versioning@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/testing@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/outbox@0.14.4
+  - @stackra/queue@0.14.4
+  - @stackra/scheduler@0.14.4
+  - @stackra/tenancy@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes

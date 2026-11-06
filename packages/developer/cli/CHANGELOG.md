@@ -1,5 +1,23 @@
 # @stackra/cli
 
+## 0.14.4
+
+### Patch Changes
+
+- cc8dbb1: `stackra duplication` no longer counts committed generated files (`**/*.gen.ts`, such as `src/node/entities.gen.ts`)
+  in a member's source run.
+- Updated dependencies [fda1d53]
+  - @stackra/runway@0.14.4
+  - @stackra/mcp@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/gen@0.14.4
+  - @stackra/repo-checks@0.14.4
+  - @stackra/skills@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+
 ## 0.14.3
 
 ### Patch Changes
