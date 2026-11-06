@@ -92,6 +92,9 @@ export function productAccount(
     args.readOnly === true && reader !== undefined
       ? `${reader.path}${reader.name}`
       : `/${accessRoleName}`;
+  // The account's provider is not itself managed through the management provider (exactOptionalPropertyTypes: omit
+  // the key rather than set it to undefined).
+  const { provider: _managementProvider, ...management } = opts;
   const provider = new aws.Provider(
     name,
     {
@@ -104,10 +107,11 @@ export function productAccount(
         },
       ],
     },
-    { ...opts, provider: undefined },
+    management,
   );
+  // exactOptionalPropertyTypes: carry the parent only when there is one.
   const inAccount = {
-    parent: opts.parent,
+    ...(opts.parent !== undefined && { parent: opts.parent }),
     provider,
     dependsOn: region === undefined ? [] : [region],
   };
