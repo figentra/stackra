@@ -1,5 +1,22 @@
 # @stackra/cli
 
+## 0.11.1
+
+### Patch Changes
+
+- 6212377: `stackra testbed` enables us-east-1, last (eu-west-1, eu-west-2, eu-central-1, us-east-1): box 1, whose on-demand
+  quota it shared, is terminated (2026-11-06). As figentra/testbed#12.
+- @stackra/console@0.11.1
+  - @stackra/gen@0.11.1
+  - @stackra/mcp@0.11.1
+  - @stackra/repo-checks@0.11.1
+  - @stackra/runway@0.11.1
+  - @stackra/skills@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+
 ## 0.11.0
 
 ### Patch Changes

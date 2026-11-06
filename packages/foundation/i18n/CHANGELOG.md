@@ -1,5 +1,15 @@
 # @stackra/i18n
 
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/money@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+
 ## 0.11.0
 
 ### Patch Changes

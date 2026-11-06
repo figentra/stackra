@@ -1,5 +1,20 @@
 # @stackra/settings
 
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/icons@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/market-packs@0.11.1
+  - @stackra/validation@0.11.1
+
 ## 0.11.0
 
 ### Patch Changes
