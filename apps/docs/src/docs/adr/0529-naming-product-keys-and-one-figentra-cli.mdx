@@ -6,17 +6,17 @@ description: "Accepted, amended 2026-11-06 (decision 4: runway folds into stackr
 {/* Stackra file contract. Purpose: ADR 0529 (Accepted 2026-11-06, STA-2200), the owner's naming rules for products (one short lowercase key everywhere, figentra-<key> only where a name is global, no f- prefix except fflow), one figentra CLI that discovers product command groups from installed packages, the Flow package rename with a ban on the old name, and Pulumi's own file names. Boundary: decision text only; the CLI work is STA-2209 and the runway fold STA-2214, the rename STA-2106, the checks STA-2203 and STA-2212. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0083, 0171, 0231, 0500, 0526. */}
 
 <Note>
-  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that date (rows 10 to 14)
-  and the owner's CLI decision of the same day. It amends
-  [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decisions 1 and 3 (the `figentra` CLI hosts product
-  command groups; Flow's package folder is `packages/flow`) and extends
+  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that
+  date (rows 10 to 14) and the owner's CLI decision of the same day. It amends
+  [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decisions 1 and 3 (the `figentra`
+  CLI hosts product command groups; Flow's package folder is `packages/flow`) and extends
   [0231](/adr/0231-naming-and-casing-standard) with product keys.
 </Note>
 
 <Note>
-  Amended 2026-11-06 (STA-2214), the owner's decision "Fold into stackra": `runway` stops being its own command.
-  `stackra runway …` is the one public framework command; the `runway` binary stays as an alias for a transition
-  period, then goes. Decision 4 says so. This also amends
+  Amended 2026-11-06 (STA-2214), the owner's decision "Fold into stackra": `runway` stops being its
+  own command. `stackra runway …` is the one public framework command; the `runway` binary stays as
+  an alias for a transition period, then goes. Decision 4 says so. This also amends
   [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decision 1 (the `runway` CLI row).
 </Note>
 
