@@ -299,12 +299,28 @@ test("migrate: scopes map one to one, repeats merge or conflict, unmapped is rep
     row("/runtime/a", "DIFF", v),
     row("/runtime/b", "DIFF", Buffer.from("other")),
     row("/runtime/a", "EMPTY", Buffer.alloc(0)),
-    { project: "stackra", env: "prod", path: "/x", name: "LOST", value: v },
+    { project: "zz", env: "prod", path: "/x", name: "LOST", value: v },
+    { project: "stackra", env: "prod", path: "/ci", name: "BETTERSTACK_API_TOKEN", value: v },
+    {
+      project: "stackra",
+      env: "prod",
+      path: "/ci/registry",
+      name: "REGISTRY_ISSUER_TOKEN",
+      value: v,
+    },
+    { project: "stackra", env: "dev", path: "/ci", name: "BETTERSTACK_API_TOKEN", value: v },
+    { project: "ci-deploy", env: "prod", path: "/ci", name: "CLOUDFLARE_ACCOUNT_ID", value: v },
+    { project: "academorix-legacy", env: "prod", path: "/ci", name: "OLD", value: v },
   ]);
   assert.deepEqual(
-    r.entries.map((e) => e.name),
-    ["SAME"],
+    r.entries.map((e) => `${e.scope}/${e.name}`),
+    [
+      "products/pay/production/SAME",
+      "ci/deploy/BETTERSTACK_API_TOKEN",
+      "ci/production/registry/REGISTRY_ISSUER_TOKEN",
+    ],
   );
+  assert.equal(r.excluded.length, 3, "stackra dev copy, a Cloudflare id, academorix-legacy");
   assert.equal(r.conflicts.length, 1);
   assert.equal(r.empty.length, 1);
   assert.equal(r.unmapped.length, 1);

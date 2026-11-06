@@ -111,7 +111,15 @@ export const ROOT_RUNWAY_SCHEMA = z
             state: OPEN_OBJECT_SCHEMA.optional(),
             ecr: OPEN_OBJECT_SCHEMA.optional(),
             // Thresholds and the non-production stop stay open; the monthly cap is what figentra/infra budgets on.
-            budgets: z.looseObject({ monthlyUsd: z.number().positive().default(300) }).optional(),
+            // A number is the product's one account (ADR 0524); the per-role record (infra-aws's nonprod and prod) is
+            // the deprecated three-account layout, kept parsing for one release.
+            budgets: z
+              .looseObject({
+                monthlyUsd: z
+                  .union([z.number().positive(), z.record(z.string(), VALUE)])
+                  .default(300),
+              })
+              .optional(),
             requiredTags: z.array(z.string()).optional(),
           })
           .optional(),

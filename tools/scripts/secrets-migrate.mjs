@@ -10,8 +10,9 @@
  * Runtime: node
  * Governing contract: ADR 0525; ADR 0257 (nobody reads a value).
  * Input: `--plan` (default) or `--write`; `--domain <url>` (default https://eu.infisical.com).
- * Output: names, scopes and counts: per scope how many names, plus every unmapped source, conflict and empty value
- *   by name. Exit 1 when anything is unmapped or in conflict, so nothing is dropped silently.
+ * Output: names, scopes and counts: per scope how many names, plus every unmapped, excluded, conflicting and empty
+ *   source by name. Exit 1 when anything is unmapped or in conflict, so nothing is dropped silently; an exclusion is a
+ *   recorded decision (PLACED, NOT_SECRETS, excludedReason) and does not block.
  * Secrets: values exist only in this process and on sops' stdin; the token is sent in a header, never on argv.
  */
 import { homedir } from "node:os";
@@ -53,6 +54,27 @@ export function scopeFor(project, env, path) {
     : null;
 }
 
+/** Single sources the leader placed by hand (2026-11-06), keyed `<project>/<env>:<path> <NAME>`. */
+export const PLACED = {
+  "stackra/prod:/ci BETTERSTACK_API_TOKEN": "ci/deploy",
+  "stackra/prod:/ci/registry REGISTRY_ISSUER_TOKEN": "ci/production/registry",
+};
+/** Ids, not secrets (leader, 2026-11-06): figentra/infra keeps them as variables or stack config. */
+export const NOT_SECRETS = new Set([
+  "CLOUDFLARE_ACCOUNT_ID",
+  "CLOUDFLARE_ZONE_ID_ACADEMORIX",
+  "CLOUDFLARE_ZONE_ID_FIGENTRA",
+]);
+
+/** Why a source is left out on purpose, or null. Reported by name; never blocks a write. */
+export function excludedReason(r) {
+  if (NOT_SECRETS.has(r.name)) return "an id, not a secret: figentra/infra keeps it as a variable";
+  if (r.project === "academorix-legacy") return "stays in the owner's backup (Q13)";
+  if (r.project === "stackra")
+    return "old shared project: its other names are copies in agents and ci-*";
+  return null;
+}
+
 /**
  * Fold Infisical rows into sops entries. Two sources landing on one scope and name (two members of a product) merge
  * when their values match and conflict when they differ; a conflict writes neither. Returns names-only problems.
@@ -60,11 +82,14 @@ export function scopeFor(project, env, path) {
 export function plan(rows) {
   const byKey = new Map();
   const unmapped = [];
+  const excluded = [];
   const empty = [];
   for (const r of rows) {
-    const scope = scopeFor(r.project, r.env, r.path);
     const where = `${r.project}/${r.env}:${r.path} ${r.name}`;
-    if (!scope) unmapped.push(where);
+    const reason = PLACED[where] ? null : excludedReason(r);
+    const scope = reason ? null : (PLACED[where] ?? scopeFor(r.project, r.env, r.path));
+    if (reason) excluded.push(`${where} (${reason})`);
+    else if (!scope) unmapped.push(where);
     else if (r.value !== undefined && r.value.length === 0) empty.push(where);
     else {
       const key = `${scope}/${r.name}`;
@@ -84,7 +109,14 @@ export function plan(rows) {
     [...byKey.values()]
       .filter((e) => e[flag])
       .map((e) => `${e.scope}/${e.name}: ${e.from.join(" + ")}`);
-  return { entries, unmapped, empty, conflicts: list("conflict"), duplicates: list("duplicate") };
+  return {
+    entries,
+    unmapped,
+    excluded,
+    empty,
+    conflicts: list("conflict"),
+    duplicates: list("duplicate"),
+  };
 }
 
 /** The owner's Infisical user token, captured from the CLI. */
@@ -164,16 +196,17 @@ export async function main(
       throw new Refusal("--write reads every value under the owner's login; the owner runs it");
     const token = userToken(domain, run);
     const rows = await readInfisical({ domain, token, withValues: Boolean(o.write), fetchImpl });
-    const { entries, unmapped, empty, conflicts, duplicates } = plan(rows);
+    const { entries, unmapped, excluded, empty, conflicts, duplicates } = plan(rows);
     const scopes = Map.groupBy(entries, (e) => e.scope);
     for (const [scope, list] of [...scopes].toSorted(([a], [b]) => a.localeCompare(b)))
       say(`${scope}: ${list.length} name(s)`);
     for (const u of unmapped) say(`unmapped: ${u}`);
+    for (const x of excluded) say(`excluded: ${x}`);
     for (const e of empty) say(`empty, skipped: ${e}`);
     for (const c of conflicts) say(`conflict: ${c}`);
     for (const d of duplicates) say(`repeated, values compared at --write: ${d}`);
     say(
-      `${entries.length} to write, ${unmapped.length} unmapped, ${conflicts.length} in conflict, ${empty.length} empty`,
+      `${entries.length} to write, ${unmapped.length} unmapped, ${excluded.length} excluded, ${conflicts.length} in conflict, ${empty.length} empty`,
     );
     if (!o.write) return unmapped.length || conflicts.length ? 1 : 0;
     if (unmapped.length || conflicts.length)

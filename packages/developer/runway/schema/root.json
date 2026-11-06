@@ -144,10 +144,20 @@
               "description": "Cost alerts: the monthly cap, percentage thresholds and the point non-production stops.",
               "properties": {
                 "monthlyUsd": {
-                  "type": "number",
-                  "exclusiveMinimum": 0,
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/$defs/value"
+                      }
+                    }
+                  ],
                   "default": 300,
-                  "description": "The monthly budget in US dollars figentra/infra sets per account; the thresholds are percentages of it."
+                  "description": "The monthly budget in US dollars figentra/infra sets on the product's one account; the thresholds are percentages of it. Deprecated: a record per account role (`nonprod`, `prod`, each a number or `ref:`), the three-account layout; `runway validate` warns for one release."
                 }
               }
             },
@@ -1362,12 +1372,118 @@
             },
             "required": ["name", "url"]
           }
+        },
+        "alerts": {
+          "type": "object",
+          "description": "The alarms figentra/infra sets in the product's account (the design of 2026-11-06). Every key is optional and takes infra-observability's default; `enabled: false` turns one off.",
+          "additionalProperties": false,
+          "properties": {
+            "environments": {
+              "type": "array",
+              "minItems": 1,
+              "description": "The environments alarmed; staging and production by default.",
+              "items": {
+                "enum": ["dev", "preview", "staging", "production"]
+              }
+            },
+            "errorRate": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when 5xx responses exceed `threshold` % (default 2, 5m, critical)."
+            },
+            "latencyP95": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when p95 latency exceeds `threshold` ms (default 1000, 10m, warning)."
+            },
+            "dbCpu": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when database CPU exceeds `threshold` % (default 80, 15m, warning)."
+            },
+            "dbConnections": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when database connections exceed `threshold` % of the maximum (default 80, 10m, warning)."
+            },
+            "dbFreeStorage": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when free database storage falls below `threshold` % (default 20, 15m, critical)."
+            },
+            "cacheMemory": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when cache memory exceeds `threshold` % (default 80, 15m, warning)."
+            },
+            "cacheEvictions": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when cache evictions exceed `threshold` per minute (default 0, 15m, warning)."
+            },
+            "budget": {
+              "type": "object",
+              "description": "Budget notifications at these percentages of `providers.aws.budgets.monthlyUsd` (default 80 forecast, 100 actual).",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "forecastPercent": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "actualPercent": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        },
+        "notify": {
+          "type": "object",
+          "description": "Where each severity goes. A route is `oncall` (Better Stack), `email:<address>`, `slack:<channel id>` (AWS Chatbot needs the id) or `linear:<team key>`. Critical pages on-call by default.",
+          "additionalProperties": false,
+          "properties": {
+            "critical": {
+              "$ref": "#/$defs/routes"
+            },
+            "warning": {
+              "$ref": "#/$defs/routes"
+            },
+            "info": {
+              "$ref": "#/$defs/routes"
+            }
+          }
         }
       },
       "description": "Observability (ADR 0184). Closed: a misspelt key fails. infra-observability reads it with its own defaults."
     }
   },
   "$defs": {
+    "alert": {
+      "type": "object",
+      "description": "One metric alert; its direction against the threshold is fixed per alert.",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0
+        },
+        "window": {
+          "type": "string",
+          "pattern": "^[0-9]+m$",
+          "examples": ["5m"]
+        },
+        "severity": {
+          "enum": ["critical", "warning", "info"]
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:oncall|email:[^\\s@]+@[^\\s@]+\\.[^\\s@]+|slack:[A-Z0-9]{9,12}|linear:[A-Z][A-Z0-9]{1,9})$"
+      }
+    },
     "region": {
       "type": "object",
       "description": "One data region: the cloud and cloud region that serve it (ADR 0354 d4, ADR 0353).",
@@ -1710,6 +1826,10 @@
             }
           }
         },
+        "tier": {
+          "enum": ["staging", "launch", "growth"],
+          "description": "The size the environment runs at, from the finance tiers (the cost plan of 2026-11-06): its compute, database, cache and NAT defaults (`TIER_SIZES`). Production defaults to `launch`, every other environment to `staging`; the `shared` keys below override it."
+        },
         "shared": {
           "type": "object",
           "description": "Resources shared by every member: ONE database server per environment (ADR 0238 d1), the cache cluster, the queue provider, networking and bucket defaults.",
@@ -1717,15 +1837,56 @@
           "properties": {
             "network": {
               "type": "object",
-              "description": "VPC and load balancer."
+              "description": "VPC and load balancer.",
+              "properties": {
+                "natGateways": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "NAT gateways for outbound internet; the tier's count when absent."
+                }
+              }
             },
             "database": {
               "type": "object",
-              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling."
+              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling. The typed keys override the tier; Encore Cloud applies them from its dashboard, and `runway plan` reports drift.",
+              "properties": {
+                "class": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "An RDS instance class (db.t4g.medium), or a Cloud SQL tier on ksa.",
+                  "examples": ["db.t4g.medium"]
+                },
+                "multiAz": {
+                  "type": "boolean",
+                  "description": "Whether a standby runs in a second zone."
+                },
+                "storageGb": {
+                  "type": "integer",
+                  "minimum": 20,
+                  "description": "Allocated storage in GB (RDS starts at 20)."
+                }
+              }
             },
             "cache": {
               "type": "object",
-              "description": "The cache cluster: engine, node type and replicas."
+              "description": "The cache cluster: engine, node type and replicas. The typed keys override the tier. In `me`, `runway validate` refuses a t4g or m6g node class, which me-central-1 does not offer.",
+              "properties": {
+                "mode": {
+                  "enum": ["serverless", "nodes"],
+                  "description": "Valkey serverless, or fixed nodes of one class."
+                },
+                "class": {
+                  "type": "string",
+                  "pattern": "^cache\\.[a-z0-9]+\\.[a-z0-9]+$",
+                  "description": "The node class with `mode: nodes`.",
+                  "examples": ["cache.m7g.large"]
+                },
+                "nodes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "The node count with `mode: nodes`."
+                }
+              }
             },
             "queues": {
               "type": "object",

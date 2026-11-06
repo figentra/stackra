@@ -16,9 +16,12 @@
  */
 export { RunwayConfig } from "#config/runway.config";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
+export { TIER_SIZES } from "#core/constants/tier-sizes.constant";
 export { AppleCapability } from "#core/enums/apple-capability.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
+export { CacheMode } from "#core/enums/cache-mode.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
+export { EnvironmentTier } from "#core/enums/environment-tier.enum";
 export { GoogleProjectState } from "#core/enums/google-project-state.enum";
 export { OnboardStepState } from "#core/enums/onboard-step-state.enum";
 export { PreviewDatabaseSource } from "#core/enums/preview-database-source.enum";
@@ -42,6 +45,7 @@ export { checkDestinations } from "#core/functions/check-destinations.function";
 export { checkEnvironmentRegion } from "#core/functions/check-environment-region.function";
 export { deprecatedFields } from "#core/functions/deprecated-fields.function";
 export { checkHosts } from "#core/functions/check-hosts.function";
+export { environmentSizesOf } from "#core/functions/environment-sizes-of.function";
 export { surfaceHosts } from "#core/functions/surface-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
 export { checkRequires } from "#core/functions/check-requires.function";
@@ -84,6 +88,7 @@ export type { DeployResult } from "#core/types/deploy-result.type";
 export type { DeployStep } from "#core/types/deploy-step.type";
 export type { DeployTarget } from "#core/types/deploy-target.type";
 export type { DriftRow } from "#core/types/drift-row.type";
+export type { EnvironmentSizes } from "#core/types/environment-sizes.type";
 export type { WorkerDrift } from "#core/types/worker-drift.type";
 export type { DevPorts } from "#core/types/dev-ports.type";
 export type { EnvironmentCloud } from "#core/types/environment-cloud.type";
