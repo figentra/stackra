@@ -19,6 +19,14 @@
 lowercase keys without hyphens, so no valid pack can carry that key and every Market offers no provider. The ae, sa and
 eg packs list none either.
 
+### Sources
+
+- `packages/commerce/payments/src/node/drivers/market-pack-payment-defaults.driver.ts` (the key it reads)
+- `packages/foundation/market-packs/src/core/constants/market-pack-schema.constant.ts` (the key grammar)
+- `packages/foundation/market-packs/src/core/constants/base-pack-schemas.constant.ts`
+- ADR 0378; the owner's 2026-11-06 Pay suite answers (markets and providers); figentra/pay#61 (W1)
+- `pnpm turbo run test --filter=@stackra/market-packs` on Testbed
+
 ## Impact
 
 - **Apps touched**: none
