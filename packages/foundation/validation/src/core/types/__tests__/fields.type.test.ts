@@ -40,6 +40,13 @@ class EventView extends Schema {
   history: Json[] = [];
 }
 
+/** A config-like shape: its brands are public, as `Config`'s `~kind` and `~config` are. */
+class BrandedOptions extends Schema {
+  declare readonly "~config": { readonly schema: unknown };
+
+  retries = 3;
+}
+
 class CartView extends Schema {
   lines!: LineView[];
 
@@ -47,6 +54,11 @@ class CartView extends Schema {
 }
 
 describe("Fields", () => {
+  it("drops every public ~ brand, as a config override's check needs (STA-2215)", () => {
+    expectTypeOf<keyof Fields<BrandedOptions>>().toEqualTypeOf<"retries">();
+    expectTypeOf<keyof InputFields<BrandedOptions>>().toEqualTypeOf<"retries">();
+  });
+
   it("keeps a Json field as Json, without recursing into Json[] (TS2589, STA-2215)", () => {
     // Mutually assignable: a few levels of Json[] are unrolled, the rest stays Json.
     expectTypeOf<Fields<EventView>["payload"]>().toMatchTypeOf<Json>();

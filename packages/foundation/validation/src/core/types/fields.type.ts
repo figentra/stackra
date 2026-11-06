@@ -31,7 +31,8 @@ export type Fields<T> = {
   [
     K in keyof T as T[K] extends (...args: never[]) => unknown
       ? never
-      : K extends "~defaults"
+      : // `~defaults`, and a config's `~kind` and `~config` (STA-2215): type-only brands, never data.
+        K extends `~${string}`
         ? never
         : K
   ]: FieldValue<T[K]>;

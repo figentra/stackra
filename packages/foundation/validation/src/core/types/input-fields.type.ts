@@ -34,7 +34,8 @@ type Flat<T> = { [K in keyof T]: T[K] };
 /** The keys that are data: no methods and not the brand. */
 type DataKey<T, K extends keyof T> = T[K] extends (...args: never[]) => unknown
   ? never
-  : K extends "~defaults"
+  : // `~defaults`, and a config's `~kind` and `~config` (STA-2215): type-only brands, never data.
+    K extends `~${string}`
     ? never
     : K;
 
