@@ -6,7 +6,8 @@
  *          build output (`dist/`, `.stackra/`), the member's `encore.app` (copied from `.stackra/encore/encore.app`, so
  *          the member folder is the Encore app root, beside its package.json) and a `tsconfig.json` whose `paths`
  *          mirror the member's package.json `imports` (Encore's resolver does not read `imports`); the member's own
- *          tsconfig is kept as `tsconfig.member.json` and extended. It commits that as the deploy commit.
+ *          tsconfig is kept as `tsconfig.member.json` and extended. It commits that tree as the deploy commit, a
+ *          parentless commit whose message names the source commit, so a shallow CI checkout pushes it whole.
  * Boundary: reads the repository and writes only the temporary checkout (`git worktree add`), removed by `dispose`;
  *           runs `git` through the given runner. One service member per Encore app root: a repository with several
  *           generated service apps is refused until they share one root. A repository with none gets `undefined`, and
@@ -136,19 +137,22 @@ export async function encoreDeployTree(
     if (base !== undefined) added.push(join(member, "tsconfig.member.json"));
 
     await run("git", ["add", "--all", "--force", "--", ...added], { cwd: tree });
-    await run(
-      "git",
-      [
-        ...LINE_CHECKOUT_SETTINGS.gitIdentity,
-        "commit",
-        "--quiet",
-        "--no-verify",
-        "--message",
-        `runway: the Encore app of ${member} at ${sha}`,
-      ],
-      { cwd: tree },
-    );
-    const deploy = (await run("git", ["rev-parse", "HEAD"], { cwd: tree })).trim();
+    // A parentless commit: Encore's remote refuses a push that ends on a shallow clone's boundary ("shallow update
+    // not allowed", a CI checkout at depth 1), and the product's history is not Encore's to hold.
+    const files = (await run("git", ["write-tree"], { cwd: tree })).trim();
+    const deploy = (
+      await run(
+        "git",
+        [
+          ...LINE_CHECKOUT_SETTINGS.gitIdentity,
+          "commit-tree",
+          files,
+          "-m",
+          `runway: the Encore app of ${member} at ${sha}`,
+        ],
+        { cwd: tree },
+      )
+    ).trim();
     return { sha: deploy, member, dispose };
   } catch (error) {
     await dispose();
