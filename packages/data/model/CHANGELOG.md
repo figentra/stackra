@@ -1,5 +1,15 @@
 # @stackra/model
 
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/money@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+
 ## 0.14.2
 
 ### Patch Changes

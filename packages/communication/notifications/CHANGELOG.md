@@ -1,5 +1,23 @@
 # @stackra/notifications
 
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/clients@0.14.3
+  - @stackra/money@0.14.3
+  - @stackra/integrations@0.14.3
+  - @stackra/assets@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/outbox@0.14.3
+
 ## 0.14.2
 
 ### Patch Changes
