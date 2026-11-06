@@ -1,5 +1,174 @@
 # @stackra/cli
 
+## 0.14.1
+
+### Patch Changes
+
+- 470d710: `stackra testbed` is deprecated in favour of `testbed` from `@figentra/testbed` (ADR 0522): it keeps working for
+  one release, then goes (ADR 0522 step 8). Install `@figentra/testbed` and call `testbed`; the verbs, flags, exit codes
+  and `--json` lines are the same.
+  The preset's ci-steward and flow-gate command name `testbed run`.
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/mcp@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/gen@0.14.1
+  - @stackra/repo-checks@0.14.1
+  - @stackra/skills@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [54e05c6]
+  - @stackra/runway@0.14.0
+  - @stackra/mcp@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/gen@0.14.0
+  - @stackra/repo-checks@0.14.0
+  - @stackra/skills@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [dc4b3f0]
+- Updated dependencies [5d10209]
+- Updated dependencies [6e61084]
+  - @stackra/runway@0.13.0
+  - @stackra/mcp@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/gen@0.13.0
+  - @stackra/repo-checks@0.13.0
+  - @stackra/skills@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [e36505c]
+  - @stackra/runway@0.12.0
+  - @stackra/mcp@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/gen@0.12.0
+  - @stackra/repo-checks@0.12.0
+  - @stackra/skills@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- 6212377: `stackra testbed` enables us-east-1, last (eu-west-1, eu-west-2, eu-central-1, us-east-1): box 1, whose on-demand
+  quota it shared, is terminated (2026-11-06). As figentra/testbed#12.
+- @stackra/console@0.11.1
+  - @stackra/gen@0.11.1
+  - @stackra/mcp@0.11.1
+  - @stackra/repo-checks@0.11.1
+  - @stackra/runway@0.11.1
+  - @stackra/skills@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/repo-checks@0.11.0
+  - @stackra/mcp@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/gen@0.11.0
+  - @stackra/skills@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- 242ebe4: Approvals and "CI only" are proved, never asserted (STA-2099 item 4). `proveGithubJob` asks the GitHub
+  Actions runner for an OIDC token (audience `stackra-runway`), checks GitHub's RS256 signature, the issuer,
+  the expiry and the repository, and, for an approval, that the job runs in that runway environment or in a
+  GitHub environment `providers.github.environments` declares with reviewers. The deploy, promote and
+  product deploy commands prove an environment's `deploy.approval` with it; `--approved` is still parsed
+  and proves nothing. Reading runtime secrets from Infisical and `stackra mobile onboard --check|--live`
+  need the proof instead of `GITHUB_ACTIONS=true`. A job needs `permissions: id-token: write`.
+
+### Patch Changes
+
+- 4b92f14: `stackra gen` at a workspace root skips a member that a filtered install left out (no `node_modules`), by
+  name, instead of refusing every class it cannot resolve. The Quality Gate installs without the playground,
+  so `//#gen:workspace` died on 297 `kind_unregistered_base` refusals there.
+- a15cacf: A `ref:` Cloudflare account id in `runway.yaml` (`providers.cloudflare.accountId: ref:cloudflare.accountId`) no longer
+  reaches wrangler as the account. The deploy job resolves a `ref:`, so the product publish and the edge KV writer now
+  leave the job's `CLOUDFLARE_ACCOUNT_ID` in place, and refuse before any upload or KV write when the job has none
+  (`RunwayUnresolvedError` names the variable). A literal id is set as before. Runway exports the decision as
+  `cloudflareAccountEnv` (STA-2124).
+- c4348cd: Runway's child-process helper is `runProgram` (was `runCommand`, file `run-program.function.ts`): a Command is a
+  CLI command only (ADR 0294 d23), and `@stackra/console` exports `runCommand` (one symbol, one owner, d15). Behaviour
+  unchanged. The duplicate-exports allowance for `runCommand` is gone.
+- ff36aea: `stackra testbed run` runs the job detached on the box and follows its log, so a dropped SSH-over-SSM connection no
+  longer kills a long job: it reattaches up to three times and takes the exit code from the box. Ctrl-C stops the job on
+  the box. SSH keepalives notice a dead session in two minutes. `--postgres` asks the box for a throwaway Postgres. The default regions are eu-west-1, eu-west-2 and
+  eu-central-1; us-east-1 joins once box 1 stops.
+- f5fa82c: `stackra testbed run` no longer uploads a worktree's `.cache` (its pnpm store, about 7.5 GB); the box agent's seed
+  refresh leaves it out too.
+- 1c7ab2d: `stackra testbed run` exits 75 at once, with AWS's reason, when no enabled region answers (a bad or expired AWS
+  profile), instead of waiting until the caller's own timeout; the GitHub fallback still goes first. As figentra/testbed#14.
+- b503e30: `stackra testbed` finds the aws CLI's Session Manager plugin itself: on `PATH`, else the mise-installed copy
+  (`mise which`, then mise's install folder), whose folder it puts first on `PATH` for the `aws` and `ssh` it starts.
+  Without the plugin, `run` exits 75 at once and says why instead of waiting on "no healthy testbed box" while the boxes
+  are healthy (what every run outside a mise-activated shell did from 2026-11-04), and `status` names the reason a box
+  did not answer.
+- Updated dependencies [a15cacf]
+- Updated dependencies [4c0eead]
+- Updated dependencies [4749967]
+- Updated dependencies [f511762]
+- Updated dependencies [e57b9a1]
+- Updated dependencies [05da3d4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [ea40871]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [242ebe4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [c4348cd]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+  - @stackra/runway@0.10.0
+  - @stackra/gen@0.10.0
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/repo-checks@0.10.0
+  - @stackra/mcp@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/skills@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

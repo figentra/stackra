@@ -13,8 +13,8 @@
 # Governing contract: ADR 0453 (decisions 3, 9, 17, chores); ADR 0352; ADR 0284 (decision 8); ADR 0289 (RW3); ADR 0173; ADR 0019.
 # Owner: release-operations
 # Secrets: none in the repository. CLOUDFLARE_API_TOKEN from Infisical `prod` `/ci` and REGISTRY_SIGNING_KEY from
-#          Infisical `prod` `/ci/registry`, both through GitHub OIDC with the identity INFISICAL_REGISTRY_IDENTITY_ID (a
-#          `registry` environment variable, not a secret). Without the identity id the job builds, prints a notice and
+#          Infisical `prod` `/ci/registry`, both through GitHub OIDC as the production identity INFISICAL_PRODUCTION_IDENTITY_ID (an
+#          org variable with the same id the `registry` environment held, not a secret). Without the identity id the job builds, prints a notice and
 #          deploys nothing, so main stays green until the owner has run the runbook.
 name: Deploy registry
 
@@ -76,7 +76,7 @@ jobs:
       # The binding ids runway.yaml swaps in, and REGISTRY_READ_ONLY: empty is writable, `true` freezes publishes
       # during the Figentra Registry move (STA-1733) without an unfreezing redeploy.
       vars: REGISTRY_D1_DATABASE_ID REGISTRY_KV_NAMESPACE_ID REGISTRY_READ_ONLY
-      infisical-identity-id: ${{ vars.INFISICAL_REGISTRY_IDENTITY_ID }}
-      infisical-project-id: ${{ vars.INFISICAL_REGISTRY_PROJECT_ID }}
+      infisical-identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
+      infisical-project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
       secret-path: /ci/registry
       secret-name: REGISTRY_SIGNING_KEY

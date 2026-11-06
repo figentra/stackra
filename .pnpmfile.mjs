@@ -6,8 +6,9 @@
  *          names one and the published package does not need the map. A `dist` file that still imports a `#`
  *          specifier fails the pack instead of shipping a package that cannot resolve it. It also drops the repo-only
  *          `@stackra/source` export condition (it points into `src`, which a consumer never resolves) from `exports`.
- *          A Stackra package (a `stackra` field of kind `package`, any tier but `config`) packs only with its
- *          `stackra.manifest.json` on disk and in `files`: a host's gen reads it under `node_modules` (STA-1362).
+ *          A Stackra package (a `stackra` field of kind `package`, any tier but `config`, with a code entry) packs
+ *          only with its `stackra.manifest.json` on disk and in `files`: a host's gen reads it under `node_modules`
+ *          (STA-1362). A data-only package (no `exports`, no `main`) has no module, so gen writes none.
  * Boundary: rewrites the packed manifest only; the package.json on disk is unchanged. Installs are not hooked. It never
  *           generates the manifest: `stackra gen --manifests` writes it and it is committed (ADR 0294 decision 10).
  * Runtime: node
@@ -44,6 +45,8 @@ const MANIFEST_FILE = "stackra.manifest.json";
 function requireManifest(pkg, dir) {
   const { stackra } = pkg;
   if (!stackra || (stackra.kind ?? "package") !== "package" || stackra.tier === "config") return;
+  // A data-only package (no `exports`, no `main`, as flow-preset) has no module; gen writes none.
+  if (pkg.exports === undefined && pkg.main === undefined) return;
   if (!existsSync(join(dir, MANIFEST_FILE)))
     throw new Error(
       `${pkg.name}: no ${MANIFEST_FILE} to pack; run \`stackra gen --manifests\` for this member and commit it`,

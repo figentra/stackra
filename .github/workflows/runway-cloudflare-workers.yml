@@ -4,9 +4,11 @@
 #          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
 #          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
-#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml.
+#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml,
+#          deploy-env-sync.yml.
 # Secrets: none in the repository. CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from Infisical `/ci`, and the one `secret-name` from
-#          `secret-path`, through GitHub OIDC; the turbo values from `/ci/turbo` (TURBO_TOKEN among them). Without an
+#          `secret-path`, through GitHub OIDC; with `bot-app`, STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from
+#          `/ci/release`; the turbo values from `/ci/turbo` (TURBO_TOKEN among them). Without an
 #          identity id the job builds, prints a notice and deploys nothing.
 # Owner: release-operations
 name: Runway cloudflare-workers
@@ -66,6 +68,12 @@ on:
         description: The one secret read from `secret-path` (e.g. `REGISTRY_SIGNING_KEY`).
         type: string
         default: ""
+      bot-app:
+        description: >-
+          Also read the stackra-bot GitHub App's STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from `/ci/release`
+          (their one stored copy, ci-production; the production identity reads it) for a Worker that mints App tokens.
+        type: boolean
+        default: false
     outputs:
       sha:
         description: The deployed commit.
@@ -139,13 +147,13 @@ jobs:
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only). The
       # turbo-cache member's TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
       - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
+        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
           domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci/turbo
           export-type: env
@@ -192,6 +200,33 @@ jobs:
           env-slug: ${{ inputs.infisical-env }}
           secret-path: ${{ inputs.secret-path }}
           secret-name: ${{ inputs.secret-name }}
+          export-type: env
+
+      # The action reads one name per step, and the names stay literal so `runway env check` sees them (STA-2133).
+      - name: Bot App id (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != '' && inputs.bot-app
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ inputs.infisical-domain }}
+          project-id: ${{ inputs.infisical-project-id }}
+          env-slug: ${{ inputs.infisical-env }}
+          secret-path: /ci/release
+          secret-name: STACKRA_BOT_APP_ID
+          export-type: env
+
+      - name: Bot App key (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != '' && inputs.bot-app
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ inputs.infisical-domain }}
+          project-id: ${{ inputs.infisical-project-id }}
+          env-slug: ${{ inputs.infisical-env }}
+          secret-path: /ci/release
+          secret-name: STACKRA_BOT_PRIVATE_KEY
           export-type: env
 
       # Each named variable goes into the environment under its own name; a name that is not SCREAMING_SNAKE or a
