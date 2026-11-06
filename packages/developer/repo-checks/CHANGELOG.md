@@ -1,5 +1,12 @@
 # @stackra/repo-checks
 
+## 0.17.0
+
+### Patch Changes
+
+- a32f323: The layout check reads package.json `stackra.layout.banned`: a repository lists retired names, and any path carrying one
+  (in any case, outside `adr/` history) is a finding.
+
 ## 0.16.0
 
 ### Minor Changes

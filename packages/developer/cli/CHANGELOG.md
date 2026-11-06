@@ -1,5 +1,28 @@
 # @stackra/cli
 
+## 0.17.0
+
+### Minor Changes
+
+- 4c6bf13: `stackra runway <command>` runs every Runway command (ADR 0529 decision 4): the same options, exit codes and `--json`
+  output as the `runway` binary, which now prints a deprecation notice and stays only as an alias for one minor release.
+  `@stackra/runway/node` exports `RUNWAY_COMMANDS`.
+
+### Patch Changes
+
+- Updated dependencies [a32f323]
+- Updated dependencies [4c6bf13]
+  - @stackra/repo-checks@0.17.0
+  - @stackra/runway@0.17.0
+  - @stackra/mcp@0.17.0
+  - @stackra/console@0.17.0
+  - @stackra/gen@0.17.0
+  - @stackra/skills@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/support@0.17.0
+  - @stackra/validation@0.17.0
+
 ## 0.16.0
 
 ### Minor Changes
