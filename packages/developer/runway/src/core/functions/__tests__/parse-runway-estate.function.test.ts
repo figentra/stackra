@@ -58,6 +58,15 @@ const ksa = (gcp: Record<string, unknown>) =>
     providers: { gcp },
   });
 
+/** A product whose staging runs a `cls` cache node class in me. */
+const cache = (cls: string) =>
+  root({
+    environments: {
+      staging: { region: "me", shared: { cache: { mode: "nodes", class: cls } } },
+      production: { region: "me" },
+    },
+  });
+
 describe("the root runway's estate fields", () => {
   it("takes a region key per environment and refuses another", () => {
     expect(parseRunway("root", root()).environments.staging?.region).toBe("me");
@@ -150,6 +159,34 @@ describe("checkEnvironmentRegion", () => {
   });
 });
 
+describe("checkEnvironmentRegion and the UAE cache", () => {
+  it("refuses a t4g or m6g cache class in me and passes an m7g one", () => {
+    expect(
+      checkEnvironmentRegion(parseRunway("root", cache("cache.t4g.small"))).map(({ path }) => path),
+    ).toEqual(["environments.staging.shared.cache.class"]);
+    expect(checkEnvironmentRegion(parseRunway("root", cache("cache.m7g.large")))).toEqual([]);
+  });
+});
+
+describe("the observability alerts and routes", () => {
+  it("takes alert overrides and the four route forms, and refuses a Slack #name", () => {
+    const observability = {
+      alerts: { errorRate: { threshold: 5, window: "10m" }, budget: { forecastPercent: 70 } },
+      notify: {
+        critical: ["oncall", "email:ops@figentra.com", "slack:C07ABC1234"],
+        warning: ["linear:STA"],
+      },
+    };
+    expect(parseRunway("root", root({ observability })).observability).toEqual(observability);
+    expect(pathsOf(root({ observability: { notify: { critical: ["slack:#ops"] } } }))).toEqual([
+      "observability.notify.critical.0",
+    ]);
+    expect(pathsOf(root({ observability: { alerts: { dbCpu: { window: "15" } } } }))).toEqual([
+      "observability.alerts.dbCpu.window",
+    ]);
+  });
+});
+
 describe("deprecatedFields", () => {
   it("names providers.aws.region and providers.aws.accounts, and nothing else", () => {
     const old = root({
@@ -160,6 +197,17 @@ describe("deprecatedFields", () => {
       "providers.aws.accounts",
     ]);
     expect(deprecatedFields(parseRunway("root", root()))).toEqual([]);
+  });
+
+  it("takes a per-role monthly budget for one release and names it", () => {
+    const old = root({
+      providers: {
+        aws: { budgets: { monthlyUsd: { nonprod: "ref:aws.budgets.nonprod", prod: 2000 } } },
+      },
+    });
+    expect(deprecatedFields(parseRunway("root", old)).map(({ path }) => path)).toEqual([
+      "providers.aws.budgets.monthlyUsd",
+    ]);
   });
 
   it("names an environment's cloud", () => {
