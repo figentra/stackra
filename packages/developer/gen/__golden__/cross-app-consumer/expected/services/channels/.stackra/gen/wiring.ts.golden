@@ -69,6 +69,7 @@ export const wiring = {
     {
       port: InboxDriver,
       key: "outbox.InboxDriver",
+      default: "postgres",
       candidates: {
         "memory": () => import("@stackra/outbox").then((m) => m.MemoryInboxDriver),
         "postgres": () => import("@stackra/outbox/node").then((m) => m.PostgresInboxDriver),

@@ -633,6 +633,7 @@ export function emitWiring(ir: MemberIR): string {
   }
   // A producer's fan-out and cross-app relay, from its runway `events` blocks (ADR 0511 decision 12).
   const producer = ir.layout === "service" && ir.eventsRelay !== undefined;
+  const inbox = inboxProducersOf(ir).length > 0;
   if (producer)
     for (const service of CROSS_APP_PRODUCER)
       used.push({ module: ir.member, dep: { class: service } });
@@ -710,8 +711,11 @@ export function emitWiring(ir: MemberIR): string {
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
     );
     const system = systemDefaults.get(port.name);
-    // A producer's deliveries are Postgres rows beside its outbox (`outbox.deliveries`, STA-1910).
-    const forced = producer && key === "outbox.DeliveryDriver" ? "postgres" : undefined;
+    // A producer's deliveries and a consumer's inbox claims are Postgres rows beside the outbox (STA-1910).
+    const forced =
+      (producer && key === "outbox.DeliveryDriver") || (inbox && key === "outbox.InboxDriver")
+        ? "postgres"
+        : undefined;
     const fallback =
       forced !== undefined && candidates.some((candidate) => candidate.name === forced)
         ? forced

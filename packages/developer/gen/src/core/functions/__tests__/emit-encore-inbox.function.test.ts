@@ -27,6 +27,12 @@ describe(emitEncoreInbox, () => {
     expect(file?.content).toContain('import { answerHttp } from "./http";');
   });
 
+  it("answers 413 before it buffers a body over the cap", () => {
+    const content = emitEncoreInbox(INBOX_IR)?.content ?? "";
+    expect(content).toContain("const MAX_INBOX_BYTES = 1_048_576;");
+    expect(content).toContain("        resp.writeHead(413);");
+  });
+
   it("writes nothing for a service without the inbox", () => {
     expect(emitEncoreInbox(PRODUCER_IR)).toBeUndefined();
   });

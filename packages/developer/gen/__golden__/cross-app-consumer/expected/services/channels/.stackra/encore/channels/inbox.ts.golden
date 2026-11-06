@@ -11,12 +11,25 @@ import { api } from "encore.dev/api";
 
 import { answerHttp } from "./http";
 
+/** The largest delivery the inbox reads: one event envelope, with room to spare. */
+const MAX_INBOX_BYTES = 1_048_576;
+
 /** POST /events/inbox: one signed delivery from another app's relay (ADR 0511 decision 18). */
 export const eventsInbox = api.raw(
   { expose: true, auth: false, method: "POST", path: "/events/inbox" },
   async (req, resp) => {
     const chunks: Uint8Array[] = [];
-    for await (const chunk of req) chunks.push(chunk as Uint8Array);
+    let size = 0;
+    for await (const chunk of req) {
+      size += (chunk as Uint8Array).byteLength;
+      // The route has no session auth and reads before it verifies, so an oversized body stops here.
+      if (size > MAX_INBOX_BYTES) {
+        resp.writeHead(413);
+        resp.end();
+        return;
+      }
+      chunks.push(chunk as Uint8Array);
+    }
     const headers = new Headers();
     for (const [name, value] of Object.entries(req.headers))
       if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(" ") : value);
