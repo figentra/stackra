@@ -16,6 +16,7 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { FieldIR } from "#core/types/field-ir.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
+import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 
 /** A config class with `options`. */
 function config(
@@ -189,5 +190,24 @@ describe("envOf", () => {
   it("is the manifest's env section, absent when empty", () => {
     expect(buildManifest(member("package", [PAY_CONFIG], [OPTIONS])).manifest.env).toHaveLength(3);
     expect("env" in buildManifest(member("package", [])).manifest).toBe(false);
+  });
+});
+
+describe("envOf and a producer's signing key (STA-1910)", () => {
+  it("lists each signing key's secret name with the environments that name it", () => {
+    const rows = envOf(PRODUCER_IR).filter((row) => row["config"] === "outbox.events_relay");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        name: "PAY_EVENTS_SIGNING_KEY",
+        kind: "secret",
+        environments: ["prod"],
+      }),
+      expect.objectContaining({
+        name: "STACKRA_EVENTS_SIGNING_KEY",
+        kind: "secret",
+        environments: ["dev"],
+      }),
+    ]);
+    expect(envOf(INBOX_IR).some((row) => row["config"] === "outbox.events_relay")).toBe(false);
   });
 });

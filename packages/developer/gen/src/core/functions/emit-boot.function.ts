@@ -20,7 +20,9 @@
  *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
  *          `liveQueryRoutes` call per query with `cache.invalidateOn`, each route subscribed on the bus and sent through
  *          `RealtimeRelay` or `RealtimeBroadcaster`, when the service runs `@stackra/realtime`; STA-1445), then `relay.connect(container)` and
- *          the relay's `work` loop until the signal aborts. A signal already aborted when `boot` starts connects
+ *          the relay's `work` loop until the signal aborts, beside it the cross-app relay's (`CrossAppRelayService`, for
+ *          a producer with a runway `events` block) and, before them, `RelayInboxService#connect` for a service with the
+ *          cross-app inbox (STA-1910). A signal already aborted when `boot` starts connects
  *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
  *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`); nothing to connect means no file. The connection
@@ -38,6 +40,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
 import { traitSubscribers } from "#core/functions/trait-subscribers.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -176,9 +179,13 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     // hears of it through the watcher, or search, segments and change consumers keep stale rows (STA-2047).
     if (outbox) steps.push("  connectNativeWriteWatcher(container.get(OutboxWriterService));");
   }
+  // The cross-app relay (STA-1910): a producer with a runway `events` block delivers; a consumer of a contract-only
+  // producer's events has the inbox route, whose refusals log through the container.
+  const crossApp = outbox && ir.eventsRelay !== undefined;
+  const relayInbox = outbox && inboxProducersOf(ir).length > 0;
   if (outbox)
     imports.push(
-      'import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";',
+      `import { ${[...(crossApp ? ["CrossAppRelayService"] : []), "InboxService", "OutboxRelayService", "OutboxWriterService", ...(relayInbox ? ["RelayInboxService"] : [])].join(", ")} } from "@stackra/outbox/node";`,
     );
   if (segments) {
     imports.push('import { SegmentService } from "@stackra/segments/node";');
@@ -219,6 +226,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   }
   if (outbox)
     steps.push("  const inbox = container.get(InboxService);", "  inbox.connect(container);");
+  if (relayInbox) steps.push("  container.get(RelayInboxService).connect(container);");
   if (events)
     steps.push(
       "  const disconnect = (): void => {",
@@ -235,6 +243,13 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "    const relay = container.get(OutboxRelayService);",
       "    relay.connect(container);",
       "    void relay.work({ signal: options.signal });",
+      ...(crossApp
+        ? [
+            "    const crossApp = container.get(CrossAppRelayService);",
+            "    crossApp.connect(container);",
+            "    void crossApp.work({ signal: options.signal });",
+          ]
+        : []),
       "  }",
     );
 

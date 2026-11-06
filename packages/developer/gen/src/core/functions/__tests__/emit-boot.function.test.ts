@@ -19,6 +19,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { emitBoot } from "#core/functions/emit-boot.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { INBOX_IR, PLAIN_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
@@ -244,5 +245,34 @@ describe("emitBoot", () => {
     );
     // Without realtime the queries refresh nothing.
     expect(emitBoot(BILLING_IR, manifest)).not.toContain("LIVE_QUERIES");
+  });
+});
+
+describe("emitBoot and the cross-app relay (STA-1910)", () => {
+  it("starts the cross-app relay beside the outbox relay of a producer", () => {
+    const boot = emitBoot(PRODUCER_IR) ?? "";
+    expect(boot).toContain(
+      'import { CrossAppRelayService, InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";',
+    );
+    expect(boot).toContain(
+      [
+        "  if (options.relay !== false) {",
+        "    const relay = container.get(OutboxRelayService);",
+        "    relay.connect(container);",
+        "    void relay.work({ signal: options.signal });",
+        "    const crossApp = container.get(CrossAppRelayService);",
+        "    crossApp.connect(container);",
+        "    void crossApp.work({ signal: options.signal });",
+        "  }",
+      ].join("\n"),
+    );
+  });
+
+  it("connects the cross-app inbox of a consumer, and nothing for a service without either", () => {
+    const boot = emitBoot(INBOX_IR) ?? "";
+    expect(boot).toContain("  container.get(RelayInboxService).connect(container);");
+    expect(boot).not.toContain("CrossAppRelayService");
+    const plain = emitBoot(PLAIN_IR) ?? "";
+    expect(plain).not.toMatch(/CrossAppRelayService|RelayInboxService/);
   });
 });

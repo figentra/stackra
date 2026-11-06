@@ -26,6 +26,7 @@ import { emitWiring } from "#core/functions/emit-wiring.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { INBOX_IR, PLAIN_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 
 const service = (deps: readonly { name: string; from: string }[]) => ({
@@ -888,5 +889,44 @@ describe("emitWiring's defaults for a package's own tests", () => {
     const content = emitWiring(hidden);
     expect(content).not.toContain("CloudSecretVaultDriver");
     expect(content).not.toContain('"cloud":');
+  });
+});
+
+describe("emitWiring and the cross-app relay (STA-1910)", () => {
+  it("binds a consumer's inbox route over RelayInboxService and its generated inbox config", () => {
+    const wiring = emitWiring(INBOX_IR);
+    expect(wiring).toContain(
+      '    { module: "billing", kind: "controller", provide: InboundEventsController, deps: [RelayInboxService] },',
+    );
+    expect(wiring).toContain(
+      '    { key: "outbox.relay_inbox", provide: BaseRelayInboxConfig, override: RelayInboxConfig },',
+    );
+    expect(wiring).toContain(
+      'import { InboundEventsController, RelayInboxConfig } from "#stackra/inbox";',
+    );
+    expect(wiring).toContain(
+      "provide: RelayInboxService, deps: [InboxVerifier, BaseRelayInboxConfig] },",
+    );
+    expect(wiring).not.toContain("CrossAppFanOut");
+  });
+
+  it("binds a producer's fan-out, relay, generated relay config and the Postgres deliveries", () => {
+    const wiring = emitWiring(PRODUCER_IR);
+    expect(wiring).toContain(
+      '    { key: "outbox.events_relay", provide: BaseEventsRelayConfig, override: EventsRelayConfig },',
+    );
+    expect(wiring).toContain(
+      "provide: CrossAppFanOut, deps: [SubscriberSource, DeliveryDriver] },",
+    );
+    expect(wiring).toContain(
+      "provide: CrossAppRelayService, deps: [DeliveryDriver, SubscriberSource, EventSigner] },",
+    );
+    expect(wiring).toMatch(/key: "outbox\.DeliveryDriver",\n {6}default: "postgres",/);
+    expect(wiring).not.toContain("InboundEventsController");
+  });
+
+  it("adds nothing for a service with neither", () => {
+    const wiring = emitWiring(PLAIN_IR);
+    expect(wiring).not.toMatch(/CrossApp|RelayInbox|EventsRelayConfig|default: "postgres"/);
   });
 });

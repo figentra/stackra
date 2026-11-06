@@ -7,7 +7,8 @@
  *          environments of a secret, and the config key and class that declare it. A service also takes the rows of
  *          every hosted package and an app only their `public` rows, marked `from`; a worker takes none. Every row of a
  *          service, app or worker gets its Infisical path (`home: "/runtime/<member>"`); runway resolves the project
- *          (`<project>-runtime`, `-runtime-prod`).
+ *          (`<project>-runtime`, `-runtime-prod`). A producer with a runway `events` block also lists its signing
+ *          key's secret name, with the environments that name it (ADR 0511 decision 16).
  * Boundary: pure; names and rules only, never a default or a value, so ADR 0305 rule 34 holds. A host override of a
  *           package config adds no row (the package's row stands); an integration's or connection's `@Secret` is a
  *           tenant credential, not an environment variable, and adds none. Sorted by name, one row per name and
@@ -92,6 +93,26 @@ export function envOf(ir: MemberIR): Entry[] {
       });
     }
   }
+  // A producer's relay signing key, by the secret name each runway `events` block gives (ADR 0511 decision 16): a
+  // secret its runtime needs, as an `@Secret` field's is, though `EventsRelayConfig.signingKey` holds only the name.
+  const signingKeys = new Map<string, string[]>();
+  for (const [environment, events] of Object.entries(ir.eventsRelay ?? {}))
+    signingKeys.set(events.signingKey, [
+      ...(signingKeys.get(events.signingKey) ?? []),
+      environment,
+    ]);
+  for (const [name, environments] of signingKeys)
+    rows.push({
+      name,
+      kind: "secret",
+      type: "string",
+      required: true,
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      environments: environments.sort(),
+      config: "outbox.events_relay",
+      class: "EventsRelayConfig",
+      field: "signingKey",
+    });
   if (ir.layout !== "package") {
     // A service hosts its packages' modules, so it needs their names; an app's bundle takes only public values
     // (decision 3); a Worker runs no module container, so it declares its own names only.
