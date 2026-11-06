@@ -1596,3 +1596,8 @@
   status: reserved
   owner: claude
   issue: STA-2199
+"0529":
+  slug: naming-product-keys-and-one-figentra-cli
+  status: reserved
+  owner: claude
+  issue: STA-2200
