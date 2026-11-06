@@ -532,6 +532,15 @@
                     "minLength": 1
                   }
                 },
+                "customDomains": {
+                  "type": "array",
+                  "minItems": 1,
+                  "description": "Hosts served as Workers Custom Domains, rendered as wrangler `routes` with `custom_domain: true` (ADR 0519).",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$"
+                  }
+                },
                 "keepVars": {
                   "type": "boolean"
                 },
