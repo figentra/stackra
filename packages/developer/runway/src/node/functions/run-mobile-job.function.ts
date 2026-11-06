@@ -5,7 +5,8 @@
  *          store accounts, refuses a white-label build under the platform's Apple account until the 4.2.6 and 4.3
  *          checks are recorded as passed, writes the template checkout's Expo config with the capability flags applied
  *          (unused plugins, native modules, permission strings and entitlements left out, the Firebase config files
- *          copied in), writes its `eas.json` profiles with the product's exact toolchain pins, installs the
+ *          copied in), writes its `eas.json` profiles with the product's exact toolchain pins (the build profile and
+ *          channel are the environment's `mobile.channel`, else the app's `eas.channel`), installs the
  *          checkout's dependencies when it has none (EAS loads the config plugins from them), and starts the build
  *          through the `eas` provider on the app's EAS channel. With `line`, it first checks the app's template line
  *          out into `templateDir` (`checkoutLine`, a git checkout of the release) and commits the written config there,
@@ -138,9 +139,13 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
       message: "Name the commit checked out in templateDir, or pass line",
     });
   }
-  const channel = entry.eas?.channel;
+  // The environment's channel wins, so a staging build lands on `staging`, not on the app's production channel.
+  const channel = root.environments?.[request.environment]?.mobile?.channel ?? entry.eas?.channel;
   if (channel === undefined) {
-    issues.push({ path: `${at}.eas.channel`, message: "Name the EAS channel the app builds on" });
+    issues.push({
+      path: `${at}.eas.channel`,
+      message: `Name the EAS channel the app builds on, or environments.${request.environment}.mobile.channel`,
+    });
   }
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 

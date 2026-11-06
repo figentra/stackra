@@ -104,6 +104,17 @@ describe("expoConfigOf", () => {
     });
   });
 
+  it("takes the EAS project's own slug and owner when the app names them", () => {
+    const config = expoConfigOf(BASE, {
+      project: "commerce",
+      app: "shopper",
+      entry: { ...ENTRY, eas: { ...ENTRY.eas, slug: "shopper", owner: "figentra" } },
+      capabilities: CAPABILITIES,
+    });
+    expect(config["slug"]).toBe("shopper");
+    expect(config["owner"]).toBe("figentra");
+  });
+
   it("takes a white-label variant's identity over the entry's", () => {
     const config = expoConfigOf(BASE, {
       project: "commerce",

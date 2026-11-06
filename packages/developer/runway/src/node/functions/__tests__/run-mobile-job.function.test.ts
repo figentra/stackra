@@ -280,6 +280,26 @@ describe("runMobileJob", () => {
     expect(calls.some((call) => call.startsWith("pnpm "))).toBe(false);
   });
 
+  it("builds on the environment's mobile channel, falling back to the app's EAS channel", async () => {
+    writeFileSync(
+      join(repository, "runway.yaml"),
+      JSON.stringify({
+        version: 3,
+        project: "commerce",
+        environments: { staging: { mobile: { channel: "staging" } } },
+        mobile: { shopper: APP },
+      }),
+    );
+    await runMobileJob(request({ environment: "staging" }));
+    expect(calls.at(-1)).toContain("eas build --profile staging");
+    const eas = JSON.parse(readFileSync(join(templateDir, "eas.json"), "utf8"));
+    expect(eas.build.staging.channel).toBe("staging");
+
+    calls = [];
+    await runMobileJob(request());
+    expect(calls.at(-1)).toContain("eas build --profile production");
+  });
+
   it("refuses a job with neither a commit nor a line", async () => {
     const { sha: _, ...job } = request();
     expect(await issuePaths(runMobileJob(job))).toEqual(["sha"]);

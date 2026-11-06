@@ -90,6 +90,8 @@ export const MOBILE_APP_SCHEMA = z.strictObject({
       project: z.string().optional(),
       channel: z.string().optional(),
       owner: z.string().optional(),
+      // The EAS project's slug when it is not `<project>-<app>` (a project created under another name).
+      slug: z.string().optional(),
     })
     .optional(),
   google: z
