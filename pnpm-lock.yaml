@@ -9569,6 +9569,12 @@ importers:
 
   services/example:
     dependencies:
+      '@stackra/app':
+        specifier: workspace:*
+        version: link:../../packages/runtime/app
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../packages/developer/console
       '@stackra/container':
         specifier: workspace:*
         version: link:../../packages/foundation/container
@@ -9600,6 +9606,12 @@ importers:
 
   services/health:
     dependencies:
+      '@stackra/app':
+        specifier: workspace:*
+        version: link:../../packages/runtime/app
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../packages/developer/console
       '@stackra/container':
         specifier: workspace:*
         version: link:../../packages/foundation/container
@@ -9630,6 +9642,10 @@ importers:
         version: 7.0.2
 
   workers/edge:
+    dependencies:
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../packages/developer/console
     devDependencies:
       '@stackra/app':
         specifier: workspace:*
@@ -9672,6 +9688,10 @@ importers:
         version: 4.148.0(@types/node@26.6.4)
 
   workers/env-sync:
+    dependencies:
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../packages/developer/console
     devDependencies:
       '@stackra/cli':
         specifier: workspace:*
@@ -9708,6 +9728,10 @@ importers:
         version: 4.148.0(@types/node@26.6.4)
 
   workers/registry:
+    dependencies:
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../packages/developer/console
     devDependencies:
       '@stackra/cli':
         specifier: workspace:*
@@ -9747,6 +9771,10 @@ importers:
         version: 4.148.0(@types/node@26.6.4)
 
   workers/static:
+    dependencies:
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../packages/developer/console
     devDependencies:
       '@stackra/cli':
         specifier: workspace:*
@@ -9783,6 +9811,10 @@ importers:
         version: 4.148.0(@types/node@26.6.4)
 
   workers/turbo-cache:
+    dependencies:
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../packages/developer/console
     devDependencies:
       '@stackra/cli':
         specifier: workspace:*
