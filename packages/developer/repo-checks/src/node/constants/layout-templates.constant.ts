@@ -7,7 +7,10 @@
  * Governing contract: ADR 0526 (decision 4); ADR 0528 (decision 1).
  */
 
-/** What every template holds: the shared layout plus the files a pnpm workspace needs (ADR 0528 d1). */
+/**
+ * What every template holds: the shared layout, the agent surfaces `fflow sync` renders for every preset
+ * (`.mcp.yaml`, OpenCode's config and plugins) and the files a pnpm workspace needs (ADR 0528 d1).
+ */
 const NEUTRAL = [
   ".agents",
   ".changeset",
@@ -20,8 +23,10 @@ const NEUTRAL = [
   ".gitignore",
   ".gitleaks.toml",
   ".gitleaksignore",
+  ".mcp.yaml",
   ".node-version",
   ".npmrc",
+  ".opencode",
   ".oxfmtrc.jsonc",
   ".oxlintrc.jsonc",
   ".pnpmfile.mjs",
@@ -37,6 +42,7 @@ const NEUTRAL = [
   "knip.jsonc",
   "lefthook.yml",
   "mise.toml",
+  "opencode.jsonc",
   "osv-scanner.toml",
   "package.json",
   "pnpm-lock.yaml",
@@ -55,7 +61,6 @@ export const LAYOUT_TEMPLATES: Readonly<Record<string, readonly string[]>> = Obj
     ...NEUTRAL,
     ".easignore",
     ".markdownlint.yaml",
-    ".mcp.yaml",
     ".testbed",
     ".vscode",
     "NOTICE",

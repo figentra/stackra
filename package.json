@@ -91,11 +91,9 @@
         ".gitmodules": "the private .notes submodule",
         ".infisical.yaml": "Infisical stays until every workflow reads SOPS (ADR 0525, STA-2146)",
         ".notes": "the private owner-only notes submodule",
-        ".opencode": "OpenCode agent config beside .claude",
         "THIRD_PARTY_NOTICES.md": "the notices of code the published packages carry",
         "TRADEMARKS.md": "the Stackra trademark policy of the public framework",
-        "apps": "the published docs site and the console and mobile reference apps (ADR 0526 d2, d3)",
-        "opencode.jsonc": "OpenCode agent config beside .claude"
+        "apps": "the published docs site and the console and mobile reference apps (ADR 0526 d2, d3)"
       }
     }
   }
