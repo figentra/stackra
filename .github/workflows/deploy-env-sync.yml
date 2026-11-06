@@ -10,11 +10,11 @@
 # Runtime: GitHub Actions
 # Governing contract: ADR 0173 (amendment of 2026-11-04); ADR 0352; ADR 0468; ADR 0019; STA-2133 (SECRETS Q17).
 # Owner: release-operations
-# Secrets: none in the repository. As the production identity (INFISICAL_PRODUCTION_IDENTITY_ID, an org variable)
-#          from Infisical `ci-production` `prod`: CLOUDFLARE_API_TOKEN (`/ci`), INFISICAL_WEBHOOK_SECRET (`/ci/env-sync`)
-#          and the stackra-bot App's STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY (`/ci/release`, `bot-app`). Without
-#          the identity id the job builds, prints a notice and deploys nothing, so main stays green until SECRETS
-#          runbook step 2 is done.
+# Secrets: none in the repository. Decrypted by the provider job as itself in the `env-sync` environment (ADR 0525):
+#          CLOUDFLARE_API_TOKEN (ci/production), INFISICAL_WEBHOOK_SECRET (ci/production/env-sync) and the stackra-bot
+#          App's STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY (ci/production/release, `bot-app`).
+#          INFISICAL_WEBHOOK_SECRET was never stored, so this deploy fails at its decrypt until it is; the Worker
+#          answers Infisical's webhook and retires with Infisical (STA-2148).
 name: Deploy env-sync
 
 on:
@@ -71,8 +71,7 @@ jobs:
       # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
       # in are not installed; neither is deployed here.
       install-args: --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
-      infisical-identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
-      infisical-project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
-      secret-path: /ci/env-sync
+      scope: ci/production
+      secret-scope: ci/production/env-sync
       secret-name: INFISICAL_WEBHOOK_SECRET
       bot-app: true

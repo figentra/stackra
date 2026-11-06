@@ -6,9 +6,9 @@
 #          that site to the `docs-site` branch (one appended commit per run), which the Mintlify project builds (its
 #          Git settings: branch `docs-site`, root path `/`; the default `site-branch` input). Once it has
 #          deployed, the owner switches off the Mintlify GitHub-app deploy so a change is not deployed twice (STA-605).
-# Secrets: MINTLIFY_ADMIN_KEY from Infisical /ci (env prod) through GitHub OIDC inside the provider. The Mintlify
-#          project id is the non-secret repository variable MINTLIFY_PROJECT_ID. Until both the identity and that
-#          variable exist, the provider checks and deploys nothing.
+# Secrets: MINTLIFY_ADMIN_KEY from the sops scope ci/deploy, decrypted inside the provider (ADR 0525). The Mintlify
+#          project id is the non-secret repository variable MINTLIFY_PROJECT_ID; until it exists, the provider checks
+#          and deploys nothing.
 # Owner: release-operations
 
 name: Deploy docs
@@ -32,7 +32,7 @@ permissions: {}
 jobs:
   # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
   # main only) holds no secret and grants nothing; the deploy job keeps the `docs` environment, whose name the
-  # Infisical identity trusts (STA-1968).
+  # figentra/infra secret callers grant ci/deploy to (STA-1968, ADR 0525).
   approve:
     name: Owner approval (production)
     if: github.ref == 'refs/heads/main'
@@ -56,7 +56,7 @@ jobs:
     with:
       member: apps/docs
       package: "@figentra/docs"
-      # The `docs` environment (owner: main only, and an Infisical trust for its subject, STA-605).
+      # The `docs` environment (owner: main only; figentra/infra grants it ci/deploy, STA-605, ADR 0525).
       environment: docs
       # The docs scripts run `stackra` (@stackra/cli) and gen, so their workspace dependencies are installed and built.
       # turbo counts the root's workspace devDependency @stackra/commitlint-config in build-first's graph, so the
@@ -64,7 +64,5 @@ jobs:
       install-args: --frozen-lockfile --filter=@figentra/docs... --filter=stackra...
       build-first: "@stackra/cli..."
       mintlify-project-id: ${{ vars.MINTLIFY_PROJECT_ID }}
-      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-      infisical-project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
       site-url: https://docs.stackra.figentra.com
       smoke-pages: / /quickstart /runbooks/runway

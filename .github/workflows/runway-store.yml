@@ -16,8 +16,9 @@
 #           store tooling is core's (`tools/scripts/store.mjs`), checked out beside the product at `core-ref`.
 # Runtime: GitHub Actions
 # Secrets: the store root kit (ASC_API_*, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON, EXPO_TOKEN) and the review secrets come
-#          from Infisical prod:/ci/store over GitHub OIDC, only in a live run. Key files are written 0600 under
-#          RUNNER_TEMP and removed at the end; never printed. No repository secret.
+#          from the sops scope `scope` (ci/production/store), decrypted by the job as itself (ADR 0525), only in a
+#          live run. Key files are written 0600 under RUNNER_TEMP and removed at the end; never printed. No
+#          repository secret.
 # Governing contract: ADR 0480; ADR 0170 (deploy only commits of main); ADR 0019 (pinned actions, least permission).
 # Owner: release-operations
 name: Runway store
@@ -71,14 +72,10 @@ on:
         description: The ref of figentra/stackra whose store tooling runs.
         type: string
         default: main
-      infisical-identity-id:
-        description: The Infisical machine identity that reads /ci/store (a repository variable, not a secret).
+      scope:
+        description: The sops scope of the store keys, granted to the caller's `production` environment.
         type: string
-        default: ""
-      infisical-project-id:
-        description: The Infisical project (workspace) id, not a secret.
-        type: string
-        default: ""
+        default: ci/production/store
 
 permissions: {}
 
@@ -87,13 +84,13 @@ jobs:
     name: ${{ inputs.action }} ${{ inputs.app }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    # Runbook (release): `production` accepts only the protected main branch; the owner sets its reviewers. The Infisical
-    # identity trusts only `environment:production` in the OIDC subject, so no branch and no other environment obtains
-    # the keys. A dry run reads no secret and takes no environment.
+    # Runbook (release): `production` accepts only the protected main branch; the owner sets its reviewers.
+    # figentra/infra grants ci/production/store to the caller's `production` environment on main only, so no branch
+    # and no other environment obtains the keys. A dry run reads no secret and takes no environment.
     environment: ${{ inputs.live && 'production' || '' }}
     permissions:
       contents: read
-      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci/store
+      id-token: write # GitHub OIDC token: the sops decrypt of the store keys (ADR 0525)
     env:
       STORE_ENVIRONMENT: ${{ inputs.live && 'production' || '' }}
       MODE: ${{ inputs.live && '--live' || '--dry-run' }}
@@ -141,17 +138,11 @@ jobs:
           node .stackra/core/tools/scripts/store.mjs build --root . --app "$APP" \
             ${TEMPLATE_DIR:+--template "$TEMPLATE_DIR"} ${CAPTURES_DIR:+--captures "$CAPTURES_DIR"}
 
-      - name: Store keys (Infisical OIDC)
+      - name: Store keys (sops)
         if: inputs.live
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
         with:
-          method: oidc
-          identity-id: ${{ inputs.infisical-identity-id }}
-          domain: https://eu.infisical.com
-          project-id: ${{ inputs.infisical-project-id }}
-          env-slug: prod
-          secret-path: /ci/store
-          export-type: env
+          scope: ${{ inputs.scope }}
 
       # eas-cli reads the iOS key from EXPO_ASC_*, and the Play key from the template's eas.json, whose production submit
       # profile names `./.stackra/play-service-account.json` (gitignored in the template).

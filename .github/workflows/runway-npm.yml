@@ -11,11 +11,10 @@
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
 # Secrets: the GitHub App id and key the version PR is pushed with (a PR pushed with GITHUB_TOKEN would not trigger
-#          the caller's gate). A caller that passes neither gets them by name from Infisical `ci-production`
-#          `prod` `/ci/release` (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC as the production
-#          identity (variables INFISICAL_PRODUCTION_IDENTITY_ID and INFISICAL_PRODUCTION_PROJECT_ID), so no repository
-#          holds them (STA-1747) and the dev/staging deploy identity never reads them (Infisical plan K2). That
-#          identity trusts only its allow-listed environments (`release`, not `release-pr`).
+#          the caller's gate). A caller that passes neither gets them (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY)
+#          from the sops scope ci/production/release, decrypted by the job as itself (ADR 0525), so no repository
+#          holds them (STA-1747). figentra/infra grants that scope only to the callers in estate/secret-callers.mjs, on
+#          main only.
 #          No registry token exists: per package the job exchanges its
 #          GitHub ID token (audience `npm:<registry host>`) at the registry's OIDC endpoint for a publish token bound to
 #          that one name (ADR 0453 decision 6, the workflow-run form), masks it and passes it as NODE_AUTH_TOKEN;
@@ -52,10 +51,10 @@ on:
         default: https://npm.stackra.figentra.com/
     secrets:
       app-id:
-        description: The GitHub App id the version PR and the tags are pushed as; unset, it comes from Infisical.
+        description: The GitHub App id the version PR and tags are pushed as; unset, from ci/production/release.
         required: false
       app-private-key:
-        description: That App's private key; unset, it comes from Infisical.
+        description: That App's private key; unset, from ci/production/release (sops).
         required: false
     outputs:
       published:
@@ -84,33 +83,23 @@ jobs:
       HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}
 
     steps:
-      # STA-1747: a caller that passes no App secrets gets them from Infisical by name; the action masks and exports
-      # each (one name per call).
-      - name: Bot App id (Infisical OIDC)
+      # STA-1747: a caller that passes no App secrets gets them from the sops scope ci/production/release (ADR 0525),
+      # decrypted by the job as itself; the action masks and exports each.
+      - name: Toolchain for the decrypt (mise)
         if: env.HAS_APP_SECRETS != 'true'
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/release
-          secret-name: STACKRA_BOT_APP_ID
-          export-type: env
+          # Nothing is checked out yet, so the decrypt's node is named here (core's mise.toml pin).
+          mise_toml: |
+            [tools]
+            node = "24.22.0"
 
-      - name: Bot App key (Infisical OIDC)
+      - name: Bot App (sops)
         if: env.HAS_APP_SECRETS != 'true'
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_PRODUCTION_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_PRODUCTION_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/release
-          secret-name: STACKRA_BOT_PRIVATE_KEY
-          export-type: env
+          scope: ci/production/release
+          names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
 
       # Scoped to what this job needs; revoked when the job ends.
       - name: App token
@@ -155,18 +144,11 @@ jobs:
           pnpm install $INSTALL_ARGS
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525).
+      - name: Turborepo remote cache (sops)
+        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       # Only what is published is built; each package's dist must exist before it is packed.
       - name: Build

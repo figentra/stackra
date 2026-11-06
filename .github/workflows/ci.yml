@@ -8,11 +8,10 @@
 #          build run for the members the change affects (turbo `--affected` against the base commit).
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
-# Secrets: UNIWIND_AUTH_TOKEN (the Uniwind Pro CI/CD licence token) from Infisical /ci (env prod) through GitHub
-#          OIDC, in the Mobile apps job only: the gate installs without the two members that use Uniwind Pro, whose
+# Secrets: UNIWIND_AUTH_TOKEN (the Uniwind Pro CI/CD licence token) from the sops scope ci/build, decrypted by the
+#          Mobile apps job as itself (ADR 0525): the gate installs without the two members that use Uniwind Pro, whose
 #          postinstall downloads the licensed build against a monthly quota (ADR 0310 decision 11; no HeroUI Pro, ADR
-#          0469). No repository secret; the Infisical identity id is the non-secret repository variable
-#          INFISICAL_GATE_IDENTITY_ID.
+#          0469). The gate decrypts ci/build/turbo. No repository secret.
 name: CI
 
 on:
@@ -25,7 +24,7 @@ on:
   workflow_dispatch:
 
 # ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job holds an OIDC token for the
-# sops decrypt of ci/build/turbo (ADR 0525), and the Mobile apps job one for its Infisical licence step (ADR 0310).
+# sops decrypt of ci/build/turbo (ADR 0525), and the Mobile apps job one for its licence token from ci/build (ADR 0310).
 permissions:
   contents: read
 
@@ -196,11 +195,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # ADR 0310: GitHub OIDC token, exchanged with Infisical for the licence token only
-    env:
-      # Non-secret id of the Infisical machine identity that may read UNIWIND_AUTH_TOKEN in /ci
-      # (ADR 0310 decisions 9 and 11).
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+      id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build scope only
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -215,26 +210,14 @@ jobs:
 
       # Without the licensed build, the playground and the mobile app cannot typecheck or build; stop here with the
       # reason instead of failing later on missing types.
-      - name: Licensed UI prerequisites
-        if: env.INFISICAL_IDENTITY_ID == ''
-        run: >-
-          echo "::error title=Uniwind Pro token unavailable::Repository variable INFISICAL_GATE_IDENTITY_ID is not set.
-          The install needs UNIWIND_AUTH_TOKEN from Infisical /ci (ADR 0310 decision 11)." && exit 1
-
-      # Exchanges this job's OIDC token for Infisical access and exports only UNIWIND_AUTH_TOKEN into the environment
-      # of later steps; the Uniwind Pro postinstall reads it (ADR 0310 decision 11). The secret-name filter keeps every
-      # other /ci value out.
-      - name: Uniwind Pro token (Infisical OIDC)
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # Exports only UNIWIND_AUTH_TOKEN from the sops scope ci/build into later steps; the Uniwind Pro postinstall reads
+      # it (ADR 0310 decision 11, ADR 0525). The names filter keeps every other ci/build value out. A fork pull request
+      # has no OIDC token, so this fails there, as the Infisical step did.
+      - name: Uniwind Pro token (sops)
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci
-          secret-name: UNIWIND_AUTH_TOKEN
-          export-type: env
+          scope: ci/build
+          names: UNIWIND_AUTH_TOKEN
 
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.

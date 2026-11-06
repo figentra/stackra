@@ -6,10 +6,11 @@
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
 #          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml,
 #          deploy-env-sync.yml.
-# Secrets: none in the repository. CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from Infisical `/ci`, and the one `secret-name` from
-#          `secret-path`, through GitHub OIDC; with `bot-app`, STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from
-#          `/ci/release`; the turbo values from `/ci/turbo` (TURBO_TOKEN among them). Without an
-#          identity id the job builds, prints a notice and deploys nothing.
+# Secrets: none in the repository. The job decrypts figentra/secrets scopes as itself (ADR 0525, the shared
+#          secrets-decrypt action; figentra/infra estate/secret-callers.mjs grants each caller environment its scopes):
+#          CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from `scope`, the `secret-name`s
+#          from `secret-scope`, with `bot-app` STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from `<scope>/release`,
+#          and the turbo values from ci/build/turbo (TURBO_TOKEN among them).
 # Owner: release-operations
 name: Runway cloudflare-workers
 
@@ -26,7 +27,7 @@ on:
         required: true
       environment:
         description: >-
-          The GitHub environment the job runs in. Its name is in the OIDC subject the Infisical identity trusts,
+          The GitHub environment the job runs in. Its name is in the caller principal figentra/infra grants scopes to,
           and its protection decides which refs may deploy.
         type: string
         required: true
@@ -44,34 +45,22 @@ on:
           entry reads as ids or vars; each is exported under its own name. Values only, never a secret.
         type: string
         default: ""
-      infisical-identity-id:
-        description: The Infisical machine identity id (a variable, not a secret). Empty skips the deploy.
+      scope:
+        description: The figentra/secrets scope holding CLOUDFLARE_API_TOKEN (`ci/deploy`, or `ci/production`).
         type: string
-        default: ""
-      infisical-project-id:
-        description: The Infisical project (workspace) id, not a secret.
-        type: string
-        default: ""
-      infisical-domain:
-        description: The Infisical instance.
-        type: string
-        default: https://eu.infisical.com
-      infisical-env:
-        description: The Infisical environment that holds `/ci`.
-        type: string
-        default: prod
-      secret-path:
-        description: An Infisical path holding one more secret the member sets (e.g. `/ci/registry`). Empty reads none.
+        default: ci/deploy
+      secret-scope:
+        description: A scope holding the member's own secrets (e.g. `ci/production/registry`). Empty reads none.
         type: string
         default: ""
       secret-name:
-        description: The one secret read from `secret-path` (e.g. `REGISTRY_SIGNING_KEY`).
+        description: The names read from `secret-scope`, comma-separated (e.g. `REGISTRY_SIGNING_KEY`).
         type: string
         default: ""
       bot-app:
         description: >-
-          Also read the stackra-bot GitHub App's STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from `/ci/release`
-          (their one stored copy, ci-production; the production identity reads it) for a Worker that mints App tokens.
+          Also read the stackra-bot GitHub App's STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from
+          `<scope>/release`, for a Worker that mints App tokens.
         type: boolean
         default: false
     outputs:
@@ -95,12 +84,10 @@ jobs:
     environment: ${{ inputs.environment }}
     permissions:
       contents: read # checkout
-      id-token: write # GitHub OIDC token, exchanged with Infisical for read access
+      id-token: write # GitHub OIDC token: the secrets-decrypt sign-in to Google Cloud (ADR 0525)
     outputs:
       sha: ${{ steps.commit.outputs.sha }}
       deployed: ${{ steps.deploy.outcome == 'success' }}
-    env:
-      INFISICAL_IDENTITY_ID: ${{ inputs.infisical-identity-id }}
 
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment. Full history
@@ -144,19 +131,12 @@ jobs:
           pnpm install $INSTALL_ARGS
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only). The
-      # turbo-cache member's TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525). The turbo-cache member's
+      # TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
+      - name: Turborepo remote cache (sops)
+        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       # Tests run on the box, not here (STA-2064). This builds the member's dependencies and the CLI that runs the
       # deploy, then the member's own gen with `--only`: a plain `gen` would wait on the root //#gen:workspace, which
@@ -168,71 +148,32 @@ jobs:
           pnpm turbo run build --filter="$PACKAGE^..." --filter=@stackra/cli...
           pnpm turbo run gen --filter="$PACKAGE" --only
 
-      - name: Deploy prerequisites missing
-        if: env.INFISICAL_IDENTITY_ID == ''
-        run: >-
-          echo "::notice title=Deploy skipped::No Infisical identity id was passed (infisical-identity-id).
-          Built, nothing deployed."
-
-      # Exchanges this job's OIDC token for Infisical access and exports only CLOUDFLARE_API_TOKEN; the secret-name
-      # filter keeps every other /ci value out of the job.
-      - name: Cloudflare token (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # Only CLOUDFLARE_API_TOKEN from the scope, so no other value of it enters the job.
+      - name: Cloudflare token (sops)
+        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: ${{ inputs.infisical-domain }}
-          project-id: ${{ inputs.infisical-project-id }}
-          env-slug: ${{ inputs.infisical-env }}
-          secret-path: /ci
-          secret-name: CLOUDFLARE_API_TOKEN
-          export-type: env
+          scope: ${{ inputs.scope }}
+          names: CLOUDFLARE_API_TOKEN
 
-      - name: Member secret (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != '' && inputs.secret-path != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      - name: Member secret (sops)
+        if: inputs.secret-scope != ''
+        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: ${{ inputs.infisical-domain }}
-          project-id: ${{ inputs.infisical-project-id }}
-          env-slug: ${{ inputs.infisical-env }}
-          secret-path: ${{ inputs.secret-path }}
-          secret-name: ${{ inputs.secret-name }}
-          export-type: env
+          scope: ${{ inputs.secret-scope }}
+          names: ${{ inputs.secret-name }}
 
-      # The action reads one name per step, and the names stay literal so `runway env check` sees them (STA-2133).
-      - name: Bot App id (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != '' && inputs.bot-app
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # The names stay literal so `runway env check` sees them (STA-2133).
+      - name: Bot App (sops)
+        if: inputs.bot-app
+        uses: figentra/stackra/.github/actions/secrets-decrypt@520b56ac9a826eda9f7755f35a68dde3deec3915 # main
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: ${{ inputs.infisical-domain }}
-          project-id: ${{ inputs.infisical-project-id }}
-          env-slug: ${{ inputs.infisical-env }}
-          secret-path: /ci/release
-          secret-name: STACKRA_BOT_APP_ID
-          export-type: env
-
-      - name: Bot App key (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != '' && inputs.bot-app
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
-        with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: ${{ inputs.infisical-domain }}
-          project-id: ${{ inputs.infisical-project-id }}
-          env-slug: ${{ inputs.infisical-env }}
-          secret-path: /ci/release
-          secret-name: STACKRA_BOT_PRIVATE_KEY
-          export-type: env
+          scope: ${{ inputs.scope }}/release
+          names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
 
       # Each named variable goes into the environment under its own name; a name that is not SCREAMING_SNAKE or a
       # value holding a newline is refused, so nothing can add another variable to the job.
       - name: Variables
-        if: env.INFISICAL_IDENTITY_ID != '' && inputs.vars != ''
+        if: inputs.vars != ''
         env:
           NAMES: ${{ inputs.vars }}
           VARIABLES: ${{ toJSON(vars) }}
@@ -249,7 +190,6 @@ jobs:
       # up. `--kind web` keeps the docs target (Mintlify) out of a Worker deploy.
       - name: Deploy (Runway)
         id: deploy
-        if: env.INFISICAL_IDENTITY_ID != ''
         env:
           MEMBER: ${{ inputs.member }}
           SHA: ${{ steps.commit.outputs.sha }}
