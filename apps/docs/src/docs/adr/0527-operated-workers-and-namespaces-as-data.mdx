@@ -1,0 +1,52 @@
+---
+title: "0527 — Operated Workers live in figentra; registry scopes are data, not code"
+description: "Accepted · 2026-11-06"
+---
+
+{/* Stackra file contract. Purpose: ADR 0527 (Accepted 2026-11-06, STA-2198), the owner's decision that every Cloudflare Worker Figentra operates (registry, static, turbo-cache, edge) lives in figentra/figentra, that core keeps no operated infrastructure, and that the registry, static and turbo-cache Workers serve any npm scope from a namespaces table in D1. Boundary: decision text only; the design is STA-2204, the build STA-2206 and the move STA-2111 and STA-2207. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0026, 0074, 0453, 0526. */}
+
+<Note>
+  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that date (rows 6 to 8).
+  It amends [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  (the registry's scope rules, decision 10, become rows in D1, and the Worker lives in figentra/figentra) and
+  [0026](/adr/0026-turborepo-remote-cache-on-r2) (where the cache Worker lives). Each Worker's boundary
+  and capabilities get a short ADR of their own when the design (STA-2204) is agreed.
+</Note>
+
+## Context
+
+The Workers that serve the npm registry, static assets, the Turborepo remote cache and the edge were built in core's
+`workers/` folder. A move to figentra/figentra started on 2026-11-04 and was not finished, so two registry Workers
+exist. Core is the public framework: operated infrastructure in it mixes what a customer can read with what only
+Figentra runs. Each Worker also knows its scopes (`@stackra`, `@stackra-pro`, `@figentra`) in code, so adding a scope
+means a code change and a deploy.
+
+## Decision
+
+1. **figentra/figentra owns every Figentra-operated Worker**: registry, static, turbo-cache and edge. Core keeps no
+   operated infrastructure; `workers/` is deleted from core once the move lands, with one registry left.
+2. **Namespaces are data.** The registry, static and turbo-cache Workers serve any scope from one namespaces table in
+   D1. A row holds the scope's owner, visibility, licence rules, publish trust (OIDC rows naming the repositories and
+   workflows that may publish), storage prefix and cache policy. Adding a namespace is one row and no deploy.
+3. **Consumers read addresses, not constants.** The templates and Runway take the registry URL, the turbo cache URL
+   and the static host from the namespace data, never from a value written into a repository.
+4. **One short ADR per Worker** records its boundary and capabilities (what it serves, what it never does, who may
+   write). They live in core with the other decisions; each Worker's README links to its ADR.
+5. **Empty member folders go**, per [0526](/adr/0526-repository-layout) decision 6: `services/` in figentra/figentra
+   is removed until it holds a service.
+
+## Consequences
+
+- A new product scope costs a row, not a release of three Workers.
+- Core's CI and Runway lose their Worker deploy jobs; figentra/figentra's gain them.
+- The D1 table becomes a trust boundary: who may write a row is part of the design (STA-2204).
+
+## Enforcement
+
+`planned — the layout check (STA-2203) refuses a workers/ folder in core, and the Workers refuse a scope with no
+namespaces row (STA-2206)`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0453 and 0026. Source: stackra-notes
+`src/plans/repo-standards-2026-11-06/DECISIONS.md`, rows 6 to 8.

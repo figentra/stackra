@@ -1,0 +1,59 @@
+---
+title: "0530 — Where work runs: CI, build, deploy, runtime, and what is committed"
+description: "Accepted · 2026-11-06"
+---
+
+{/* Stackra file contract. Purpose: ADR 0530 (Accepted 2026-11-06, STA-2201), the owner's rule for when each kind of work runs (CI time, build time, deploy time, runtime) and what is committed, plus two rejections: no Go code generation or concurrency base class, and no pulling a whole catalogue into JSON at build. Boundary: decision text only. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0158, 0517, 0526. */}
+
+<Note>
+  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that date (rows 15 to 17).
+  Decisions 2 and 3 are rejections; each carries its revival trigger.
+</Note>
+
+## Context
+
+Work was landing in whichever phase was convenient: values derivable from source were committed and drifted, per
+environment values were baked at build, and checks that cross repositories ran at runtime. Two proposals were also on
+the table: generate Go for concurrency (or add a `@Concurrency` base class), and pull a whole product catalogue into
+JSON at build time, as Gatsby does. Infrastructure snapshots of each repository's runway file, committed in the infra
+repository at a pinned commit, were questioned and kept: a product repository must not change cloud resources by
+itself, and an infra pull request shows the estate change and its preview first.
+
+## Decision
+
+1. **Each kind of work has one phase.**
+   - **CI time**: anything that checks or decides (validate, layout, drift, contracts diff, secrets decrypt, plans and
+     previews) and anything that crosses repositories.
+   - **Build time**: anything derivable from source (gen, manifests, OpenAPI, settings keys, import maps, static pages
+     from published content).
+   - **Deploy time**: anything per environment (secrets sync, config layers, cache addresses, migrations).
+   - **Runtime**: only what is per request or per tenant (tenant config, entitlements, live data).
+   - **Committed**: only what a reviewer must see change (manifests, lockfiles, infrastructure snapshots), never what
+     CI can recompute cheaply. The infra repository's runway snapshots stay.
+2. **Rejected: Go code generation and a `@Concurrency` base class.** Encore.ts already runs request I/O on its Rust
+   runtime with multiple threads; our TypeScript is async on Node. Parallel work uses what exists: queues, workflows
+   (durable steps), cron and the outbox relay. CPU-heavy work (images, PDFs, imports) goes to a queue worker. Go stays
+   an option per service on Encore when a hotspot is measured.
+3. **Rejected: the whole catalogue as JSON at build.** It does not scale to multi-tenant commerce, where every product
+   change would be a rebuild. Marketing and landing pages are static at publish; storefront pages render at the edge
+   from cached API reads with stale-while-revalidate and an on-demand purge on change events. Gatsby's browser, SSR
+   and node files map to our subpath entries (`./browser`, `./server`, `./worker`, STA-2091), which are more general.
+
+## Consequences
+
+- A value found in the wrong phase is a bug with an obvious fix: move it.
+- Committed generated files are limited to what reviewers read; the rest is rebuilt in CI.
+
+## Enforcement
+
+`planned — reviewed against this page`; the existing drift checks of [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client)
+cover committed gen output. No single check covers decision 1.
+
+## Revival trigger
+
+Decision 2: a measured CPU hotspot in a service that a queue worker cannot absorb. Decision 3: a site whose catalogue
+is fixed at publish and small enough to rebuild on each change.
+
+## Supersedes and sources
+
+`Supersedes: none`. Source: stackra-notes `src/plans/repo-standards-2026-11-06/DECISIONS.md`, rows 15 to 17.
