@@ -70,6 +70,7 @@ describe("@stackra/runway/node", () => {
       "PREVIEW_SERVE_SETTINGS",
       "PRODUCT_BUILD_SETTINGS",
       "PlaywrightSmokeDriver",
+      "RUNWAY_COMMANDS",
       "SCREENSHOT_CAPTURE_DEFAULTS",
       "SentryApiProjectsDriver",
       "WranglerEdgeKvDriver",

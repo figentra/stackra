@@ -13,6 +13,7 @@ import { passthroughCommands } from "@stackra/console/testing";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { RunwayCommand } from "#node/commands/runway.command";
 import { COMMANDS } from "#node/constants/commands.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";
@@ -165,7 +166,8 @@ describe("COMMANDS on the console", () => {
   });
 
   it("still has these commands on passthrough; the list only goes down (ADR 0500 decision 7)", () => {
-    const classes = COMMANDS.map((command) =>
+    // `stackra runway` mounts Runway's own console (ADR 0529 decision 4): a passthrough by design, not a legacy command.
+    const classes = COMMANDS.filter((command) => command !== RunwayCommand).map((command) =>
       typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
     );
     // 23 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
