@@ -1615,3 +1615,8 @@
   status: proposed
   owner: claude
   issue: STA-2220
+"0532":
+  slug: infrastructure-ownership
+  status: reserved
+  owner: claude
+  issue: STA-2104
