@@ -3,7 +3,8 @@
  * Purpose: `RunwaySecretsDecryptCommand`, `runway secrets decrypt --scope <scope> [--dir <dir>] [--names A,B]`
  *          (`runway secrets:decrypt`): one figentra/secrets scope's values, decrypted with the job's own Cloud KMS
  *          identity from the ciphertext the shared action downloaded (`decryptScope`), masked and exported into the
- *          job's `GITHUB_ENV` (`exportToGithubEnv`) for the steps after it. * Boundary: prints names and a count, never a value; refuses to run where there is no `GITHUB_ENV`. Which job may
+ *          job's `GITHUB_ENV` (`exportToGithubEnv`) for the steps after it.
+ * Boundary: prints names and a count, never a value; refuses to run where there is no `GITHUB_ENV`. Which job may
  *           decrypt a scope is Cloud KMS's, pinned per repository, environment and workflow by figentra/infra.
  * Runtime: node
  * Governing contract: ADR 0525 (CI decrypts in place); ADR 0257; ADR 0506 (decision 8).

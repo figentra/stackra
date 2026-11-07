@@ -3,9 +3,9 @@
  * Purpose: integration tests of `ChecklistService` on real Postgres: with every workflow migration applied and the
  *          generated entities registered, a checklist is seeded, a step is completed once and the view reads it back,
  *          so the ORM's tables (`workflow.checklists`, `workflow.checklist_progresses`) are the migrations' tables,
- *          tenant expand column included.
- * Boundary: integration tier (`.int`): needs Docker for Testcontainers. Each call runs in the scope's session, as an
- *           action would.
+ *          tenant expand column included, and filled from the call's isolation.
+ * Boundary: integration tier (`.int`): needs Docker for Testcontainers. Each call runs in the scope's isolation (its
+ *           scope settings and the tenant it resolves to, through `CallIsolation`), as an action would.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0182 (integration tier); ADR 0424 (decisions 1 and 2); ADR 0294 (decision 20).
  */
@@ -14,6 +14,7 @@ import type { Actor, ScopeRef } from "@stackra/contracts";
 import { compileMigration, CrudService, registerModelPartners } from "@stackra/database";
 import { usePostgres } from "@stackra/database/testing";
 import { BelongsToTenantMacro } from "@stackra/tenancy/node";
+import { asTenant } from "@stackra/tenancy/testing";
 import { describe, expect, it } from "@stackra/testing";
 
 import { SeedResult } from "#core/index";
@@ -79,9 +80,9 @@ const TEMPLATE = {
   ],
 };
 
-/** Runs `work` with a fresh service in the scope's session. */
+/** Runs `work` with a fresh service in the scope's isolation: the scope is its own tenant's node. */
 const inScope = <T>(work: (checklists: ChecklistService) => Promise<T>): Promise<T> =>
-  postgres.database.withScope(SCOPE, () => work(new ChecklistService(new ProgressRepository())));
+  asTenant(SCOPE.id, () => work(new ChecklistService(new ProgressRepository())), { scope: SCOPE });
 
 describe(ChecklistService, () => {
   it("seeds, completes a step once and reads the progress back from the migrated tables", async () => {
@@ -103,13 +104,12 @@ describe(ChecklistService, () => {
     expect(view.done).toBe(1);
     expect(view.complete).toBe(false);
 
-    const { database } = postgres;
-    const rows = await database.withScope(SCOPE, () =>
-      database
+    const rows = await inScope(() =>
+      postgres.database
         .em()
         .execute('select step, owner_id, tenant_id from "workflow"."checklist_progresses"'),
     );
-    // a scope session with no tenant call leaves the expand column null
-    expect(rows).toEqual([{ step: "connect_payments", owner_id: SCOPE.id, tenant_id: null }]);
+    // the isolation set the tenant, so the expand column's default stored it
+    expect(rows).toEqual([{ step: "connect_payments", owner_id: SCOPE.id, tenant_id: SCOPE.id }]);
   });
 });
