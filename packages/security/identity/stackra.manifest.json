@@ -21,6 +21,7 @@
       "permission": "identity.operator.bootstrap",
       "risk": "L4",
       "actors": ["service", "user"],
+      "idempotency": "optional",
       "area": "platform",
       "endpoint": {
         "method": "POST",
@@ -45,6 +46,7 @@
       "permission": "identity.account_deletion.cancel",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/account-deletions/cancel",
@@ -91,6 +93,7 @@
       "permission": "identity.passkey.confirm",
       "risk": "L4",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/passkeys/:passkeyId/confirm",
@@ -114,6 +117,7 @@
       "permission": "identity.account_deletion.request",
       "risk": "L4",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/account-deletions/request",
@@ -137,6 +141,7 @@
       "permission": "identity.session.end_all",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/sessions/end-all",
@@ -160,6 +165,7 @@
       "permission": "identity.session.end",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/sessions/:sessionId/end",
@@ -183,6 +189,7 @@
       "permission": "identity.session.end_user",
       "risk": "L3",
       "actors": ["user", "service"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/sessions/end-user",
@@ -230,6 +237,7 @@
       "permission": "identity.passkey.register",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/passkeys/register",

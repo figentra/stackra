@@ -44,6 +44,7 @@ describe("@stackra/gen", () => {
       "blockKey",
       "buildManifest",
       "checkApproval",
+      "checkCallShape",
       "checkEncryptedFields",
       "checkIdentityLock",
       "checkModelScope",

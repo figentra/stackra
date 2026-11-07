@@ -52,6 +52,7 @@
       "permission": "loyalty_kit.loyalty_account.redeem",
       "risk": "L3",
       "actors": ["user", "service"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/loyalty/redemptions/:reference/confirm",
@@ -73,22 +74,8 @@
       "file": "src/node/actions/earn-visit.action.ts",
       "permission": "loyalty_kit.loyalty_account.stamp",
       "risk": "L3",
-      "actors": ["user", "service"],
-      "endpoint": {
-        "method": "POST",
-        "path": "/loyalty/visits",
-        "derived": false
-      },
-      "tool": {
-        "name": "loyalty_kit_points_earn_visit",
-        "default": true,
-        "hints": {
-          "readOnlyHint": false,
-          "destructiveHint": false,
-          "idempotentHint": false,
-          "openWorldHint": false
-        }
-      },
+      "actors": ["service"],
+      "idempotency": "optional",
       "input": {
         "$ref": "#/schemas/loyalty_kit.EarnVisitInput"
       },
@@ -105,6 +92,7 @@
       "permission": "loyalty_kit.loyalty_account.enroll",
       "risk": "L2",
       "actors": ["user", "agent", "service"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/loyalty/accounts/:accountId",
@@ -116,7 +104,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         }
       },
@@ -165,6 +153,7 @@
       "permission": "loyalty_kit.loyalty_account.freeze",
       "risk": "L2",
       "actors": ["user", "agent"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/loyalty/accounts/:accountId/freeze",
@@ -176,7 +165,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         }
       },

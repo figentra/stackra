@@ -223,9 +223,19 @@ function read(options: ActionOptions) {
       `Action({ effects }) lists distinct Effect tags (${options.key}), got ${JSON.stringify(effects)}`,
     );
   const approval = readApproval(options);
-  if (options.stepUp !== undefined && !Enum.values(AssuranceLevel).includes(options.stepUp))
+  const stepUp: unknown = options.stepUp;
+  const exempt =
+    typeof stepUp === "object" &&
+    stepUp !== null &&
+    Object.keys(stepUp).length === 1 &&
+    (stepUp as { exempt?: unknown }).exempt === "first-factor-enrolment";
+  if (
+    stepUp !== undefined &&
+    !exempt &&
+    !Enum.values(AssuranceLevel).includes(stepUp as AssuranceLevel)
+  )
     throw new RangeError(
-      `Action({ stepUp }) takes an AssuranceLevel, got ${JSON.stringify(options.stepUp)}`,
+      `Action({ stepUp }) takes an AssuranceLevel or { exempt: "first-factor-enrolment" }, got ${JSON.stringify(stepUp)}`,
     );
   if (options.structural !== undefined && typeof options.structural !== "boolean")
     throw new TypeError(

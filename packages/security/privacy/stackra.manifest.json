@@ -63,6 +63,7 @@
       "permission": "privacy.hold.place",
       "risk": "L2",
       "actors": ["user", "service"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/holds/place",
@@ -109,6 +110,7 @@
       "permission": "privacy.hold.release",
       "risk": "L4",
       "actors": ["user", "service"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/holds/:holdId/release",
