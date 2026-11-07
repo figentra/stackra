@@ -437,7 +437,9 @@ describe("parseRunway", () => {
     ).toEqual(["environments.dev.destinations"]);
     expect(issuePaths(root({ project: "acme_platform" }))).toEqual(["project"]);
     // ADR 0525: an old `providers.infisical` block is an open provider now; `deprecatedFields` warns on it.
-    expect(root({ providers: { infisical: { domain: "http://infisical.local" } } })).not.toThrow();
+    expect(() =>
+      root({ providers: { infisical: { domain: "http://infisical.local" } } }),
+    ).not.toThrow();
     expect(
       parseRunway("root", {
         ...ROOT,

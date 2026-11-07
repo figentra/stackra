@@ -137,7 +137,7 @@ Not pinned (no mise backend carries them; `mise.toml` says so): `opencode`, `enc
   <Step title="AWS and Bedrock (owner)">
     Choose the AWS account. Create the profile named `bedrock`, then `aws sso login` with
     `AWS_PROFILE=bedrock`; OpenCode bills Bedrock through it. Create the monthly AWS Budget for
-    Bedrock. The daily agent cap is $150 ([Agents](/agents/index)).
+    Bedrock. The daily agent cap is $150 ([Agents](/agents)).
   </Step>
   <Step title="Cloudflare (owner)">
     Create the scoped API token and put it with `pnpm secrets:put CLOUDFLARE_API_TOKEN --scope
