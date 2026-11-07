@@ -1,5 +1,21 @@
 # @stackra/infra-gcp
 
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [e105174]
+- Updated dependencies [c239773]
+- Updated dependencies [7a83de3]
+- Updated dependencies [1f33c82]
+  - @stackra/config@0.19.0
+  - @stackra/runway@0.19.0
+  - @stackra/contracts@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @stackra/state
 
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/config@0.19.0
+  - @stackra/contracts@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

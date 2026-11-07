@@ -1,5 +1,21 @@
 # @stackra/experience
 
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/clients@0.19.0
+  - @stackra/documents@0.19.0
+  - @stackra/icons@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/support@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -1,5 +1,70 @@
 # @stackra/database
 
+## 0.19.0
+
+### Patch Changes
+
+- b59aa22: The `postgres` cache driver's tables now ship as a migration: `database.0005_create_cache_tables` makes
+  `cache.entries` and `cache.set_members` (unlogged, "C"-collated keys, sweep indexes) with `if not exists`, so it adopts
+  tables a service made earlier from `postgresCacheTables("cache")` and keeps their rows. They are platform tables, with
+  no `tenant_id` and no row-level security: each key already carries its `CacheNamespace` prefix and the driver runs
+  outside the caller's transaction. The driver never creates a table; a missing one rejects the call.
+- 12f25aa: Migration `database.0006_add_isolation_scope` adds `isolation_scope_id` to `sequence_counters`, `sequence_blocks`,
+  `sequence_voids` and `projection_rows`: a nullable, indexed public-id column that every insert fills from
+  `app.tenant_id` (`defaultSetting`), and no policy change. `scope_id` stays the key it was, since a sequence or a
+  projection row may sit at a node below the isolation's. This is the expand step; a backfill and the contract step
+  (NOT NULL, equality with the setting as the one permissive policy) follow (tenancy audit 2026-11-07, gap D).
+- e5f5432: An `equals` or `equalsOrUnset` row-level-security policy on a `uuid` column now decodes a public-id setting
+  (`scp_…`, as `withTenant` writes it) to the UUID it encodes, so a tenant table compiled with `publicIds: "uuid"` no
+  longer raises on every query; a raw UUID setting is still cast as it is, and text columns are unchanged.
+- 40fda23: `Database.withScope` puts the enclosing scope settings back when it runs inside a running transaction. A released
+  savepoint keeps a `set_config(…, true)` until the outer transaction ends, so a nested call used to leave
+  `app.scope_id`, `app.scope_path` and `app.scope_paths` on the inner scope for the rest of the caller's transaction. The
+  nested call's writes are flushed before the settings go back, so they still land in its own scope.
+- dd9427a: `assertRowSecurity` now audits every table, not only those holding the owner column: a table without it fails unless
+  `PLATFORM_TABLES` (the migration ledger, the action store, cache and lock tables) or the new `platform` option names it
+  with a reason. An owned table must have exactly one permissive policy, `pol_<table>_<column>`, the `FOR ALL` owner
+  equality, and only restrictive policies named after their column beside it (ADR 0347 decision 5). The probe seeds a
+  row of each owner itself, so the cross-owner read always runs, and also checks that an unset setting sees no row and
+  the owner sees its own. gen's generated tenant-isolation test passes the service's `Model.global` tables and
+  `MODEL_SCOPE_EXEMPTIONS` as `platform`. A table under a scope-path policy with no `tenant_id` now fails the audit.
+- 4a23af8: `assertRowSecurity` now treats a table in the expand step of the scope-path migration as a warning until 0.20, not a failure. That is a table with a nullable owner column, no `pol_<table>_<column>` policy yet, and its permissive `scope_path` policy still in place. The warning reads "(a) ancestor scope_path table in the expand step, awaiting backfill and the contract step". It is a failure under `strict: true` or `STACKRA_GEN_STRICT=1`. A NOT NULL owner column, or a table without that `scope_path` policy, still gets every hard check.
+- fc845f4: `assertRowSecurity` stages its every-table check like gen's tenancy checks. Until 0.20, an unlisted table without the owner column is a warning, not a failure. `assertRowSecurity` now returns these warnings. Each one names the table's group, read from the catalogue:
+  
+  - an ancestor `scope_path` table awaiting the contract step;
+  - a `scope_id` table whose policy reads the owner setting;
+  - a system table with no row-level security, awaiting its ADR decision;
+  - otherwise, unclassified.
+  
+  With `strict: true` or `STACKRA_GEN_STRICT=1`, these tables fail the audit as they will from 0.20. Every other finding still fails at once: the policy shape of an owned table, the probe's checks, a listed table that holds the column, and a listing with no reason.
+  
+  gen's tenant-isolation test now prints each warning and passes when the audit returns only warnings.
+- d2b3d22: A column can default to a transaction setting: `.defaultSetting("app.x")` writes
+  `default nullif(current_setting('app.x', true), '')`, so a writer that names no value stores the call's setting and
+  rows that predate the column stay null (refused on a `uuid` column for now). `t.belongsToTenant({ expand: true })` uses
+  it for the expand step of an existing table: a nullable, indexed `tenant_id` filled from `app.tenant_id`, and no
+  policy, so the table keeps the one it has until the contract step makes the tenant equality its one permissive policy
+  (ADR 0347 decision 1; tenancy audit 2026-11-07, gap D).
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/actions@0.19.0
+  - @stackra/cache@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/contracts@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/testing@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes
