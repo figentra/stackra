@@ -854,6 +854,8 @@ export class ActionPipeline {
     input: unknown,
   ): Promise<{ readonly held: string } | { readonly replay: unknown } | undefined> {
     const policy = call.options.idempotency ?? Idempotency.Optional;
+    // its output must never be kept (a credential): a sent key is ignored, so nothing is stored or replayed
+    if (policy === Idempotency.Never) return undefined;
     const sent = call.request.idempotencyKey;
     if (sent === undefined && policy === Idempotency.Required)
       throw IdempotencyKeyRequiredError.create();
