@@ -192,8 +192,11 @@ export async function generate(
     readonly backend?: "tsgo" | "ts6";
     readonly pass?: "manifests";
     readonly loader?: ModuleLoader;
+    /** The staged checks refuse instead of warning; default `STACKRA_GEN_STRICT=1` (STAGED_REFUSAL_CODES). */
+    readonly strict?: boolean;
   } = {},
 ): Promise<GenerateResult> {
+  const strict = options.strict ?? process.env["STACKRA_GEN_STRICT"] === "1";
   // A docs app has no classes to discover: its run assembles the Mintlify site (ADR 0002, 2026-10-27 amendment).
   if (existsSync(join(root, DOCS_CONFIG_FILE)))
     return options.pass === "manifests"
@@ -223,19 +226,21 @@ export async function generate(
   let result = generateMember(
     ir,
     previous,
-    options.pass === undefined ? {} : { pass: options.pass },
+    options.pass === undefined ? { strict } : { pass: options.pass, strict },
   );
   const partial: string[] = [];
   if (result.errors.length > 0 && !check && options.pass === undefined) {
-    const clients = generateMember(ir, previous, { pass: "clients" });
+    const clients = generateMember(ir, previous, { pass: "clients", strict });
     if (clients.errors.length === 0) partial.push(...write(root, clients.files, false));
     if (partial.length > 0) {
       ir = await discover();
-      result = generateMember(ir, previous);
+      result = generateMember(ir, previous, { strict });
     }
     // Still refused: the manifest alone, when only workspace services still to come stand in its way.
     const manifest =
-      result.errors.length > 0 ? generateMember(ir, previous, { pass: "manifests" }) : undefined;
+      result.errors.length > 0
+        ? generateMember(ir, previous, { pass: "manifests", strict })
+        : undefined;
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }
   // A warning of the full pass prints beside the outcome and never blocks it (STA-340).
