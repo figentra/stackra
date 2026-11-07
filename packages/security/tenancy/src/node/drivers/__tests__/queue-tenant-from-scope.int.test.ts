@@ -8,7 +8,8 @@
  *          stamped as the scheduler's system actor in the branch likewise (the actor names the branch id, which is no
  *          tenant); tenant B's scope sees only B's; the pipeline lists only A's rows for a user of A in scope A; and the
  *          negative cases refuse: a user of A in B's scope, in the root scope above every tenant, or in a scope the tree
- *          does not show such as A's own id with the root's path, and an agent of A in those scopes (`tenant_scope_mismatch`; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
+ *          does not show such as A's own id with the root's path, and an agent or a service of A in those scopes, and a
+ *          service of B calling for a user of A (`tenant_scope_mismatch`; a service calling for a user of A lists A's rows; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
  *          root and sees no tenant row), a job whose scope the tree does not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
  *          runs), and a pushed scope that is not a `ScopeRef` (`scope_not_platform_written`). A last test states why the
  *          driver reads the tree from the path's root: the branch's own scope session cannot see its tenant.
@@ -245,7 +246,7 @@ class SurveyTicketsAction extends Action({
 /** Lists the caller's tickets. */
 class ListTicketsQuery extends Query({
   key: "ticket.list_all",
-  actors: [ActorKind.User, ActorKind.Agent],
+  actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
 }) {
   async handle(): Promise<string[]> {
     return visible();
@@ -451,6 +452,54 @@ describe("an agent's tenant on Postgres", () => {
         await expect(list(agent, at)).rejects.toSatisfy((error: unknown) =>
           isRefusal(error, TenantScopeMismatchError),
         );
+  });
+});
+
+describe("a service's tenant on Postgres", () => {
+  const user = tenantActor(TENANT_A as PublicId<"scp">);
+  const id = "svc_01j9z3k4m5n6p7q8r9s0t1v2w5";
+  /** A service of A calling for its user, and one with no tenant of its own calling for that user. */
+  const services: readonly Actor[] = [
+    { kind: ActorKind.Service, id, scopeId: TENANT_A, onBehalfOf: user },
+    { kind: ActorKind.Service, id, onBehalfOf: user },
+  ];
+
+  it("runs a service calling for a user of A in A: A's rows and none of B's", async () => {
+    for (const service of services) {
+      expect(await list(service, SCOPE_A)).toEqual([A1, A2]);
+      expect(await list(service, BRANCH)).toEqual([A1, A2]);
+    }
+    expect(await list(services[1] as Actor)).toEqual([A1, A2]);
+  });
+
+  it("refuses a service of B calling for a user of A, and one calling for A in B's scope", async () => {
+    const mismatched: Actor = { kind: ActorKind.Service, id, scopeId: TENANT_B, onBehalfOf: user };
+    await expect(list(mismatched, SCOPE_A)).rejects.toSatisfy((error: unknown) =>
+      isRefusal(error, TenantScopeMismatchError),
+    );
+    await expect(list(services[1] as Actor, SCOPE_B)).rejects.toSatisfy((error: unknown) =>
+      isRefusal(error, TenantScopeMismatchError),
+    );
+  });
+
+  it("refuses a service of A in a scope the tree does not show or in the root scope above every tenant", async () => {
+    const refused: readonly ScopeRef[] = [
+      { id: TENANT_A, path: ROOT.path },
+      { id: TENANT_A, path: "nowhere" },
+      NOWHERE,
+      ROOT,
+    ];
+    for (const service of services)
+      for (const at of refused)
+        await expect(list(service, at)).rejects.toSatisfy((error: unknown) =>
+          isRefusal(error, TenantScopeMismatchError),
+        );
+  });
+
+  it("keeps a service with no tenant and no user a platform call, which sees no tenant row", async () => {
+    const platform: Actor = { kind: ActorKind.Service, id };
+    expect(await list(platform)).toEqual([]);
+    expect(await list(platform, ROOT)).toEqual([]);
   });
 });
 

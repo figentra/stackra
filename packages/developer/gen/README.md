@@ -664,10 +664,11 @@ over the call's container inside `app.handlers.run`: the bearer token is verifie
 `JsonWebKeys`) and mapped to its actor by `actorOf` of `@stackra/identity`, so a user's token and a service account's
 token go through the same handler (ADR 0209, amendment of 2026-11-07). A service that declares `@stackra/app` binds
 `JsonWebKeys` to `oidc` with `BearerConfig` by default; with no `ServicePrincipals` driver bound, every service token
-is refused and user tokens still pass. Every failure is `APIError.unauthenticated` with no detail; until the forwarded
-user token is verified, a `Stackra-On-Behalf-Of` header is refused too, never ignored. An issuer outage stays its own
-error. Still waiting: the rest of `CallOptions`, and refusal kinds mapped to `APIError` in the endpoints (a refusal
-there surfaces as Encore's default error).
+is refused and user tokens still pass. A service bearer with the user's own token in `Stackra-On-Behalf-Of` is that
+service acting for the user (`onBehalfOf`), in the user's tenant; a forward beside a user bearer, of a service token,
+or for another tenant than the service's is refused. Every failure is `APIError.unauthenticated` with no detail. An
+issuer outage stays its own error. Still waiting: the rest of `CallOptions`, and refusal kinds mapped to `APIError` in
+the endpoints (a refusal there surfaces as Encore's default error).
 
 The full `CallOptions` of an endpoint come in two parts and nothing else: the verified facts from the credential
 (`actor`, then `scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the
