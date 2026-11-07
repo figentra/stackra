@@ -64,7 +64,7 @@ This repository has no runtime secret (`runway.yaml`: "core has no runtime secre
 | `ci-build`  | `prod` | `/ci`                 | `UNIWIND_AUTH_TOKEN` (install licence, every CI job)                                                                                                                                                                   |
 | `ci-build`  | `prod` | `/ci/turbo`           | `TURBO_TOKEN`, `TURBO_REMOTE_CACHE_SIGNATURE_KEY`, `TURBO_API`, `TURBO_TEAM` (`deploy-turbo-cache.yml` sets the token on the Worker as `TURBO_CACHE_TOKEN`)                                                            |
 | `ci-build`  | `prod` | `/ci/registry`        | `STACKRA_REGISTRY_TOKEN` (the `@figentra` read token)                                                                                                                                                                  |
-| `ci-deploy` | `prod` | `/ci`                 | `CLOUDFLARE_API_TOKEN` (Worker deploys), `MINTLIFY_ADMIN_KEY` (docs deploy)                                                                                                                                            |
+| `ci-deploy` | `prod` | `/ci`                 | `CLOUDFLARE_API_TOKEN` (Worker deploys, the docs site among them)                                                                                                                                                      |
 | `ci-deploy` | `prod` | `/ci/release`         | `STACKRA_BOT_APP_ID`, `STACKRA_BOT_PRIVATE_KEY` (`runway-npm.yml`)                                                                                                                                                     |
 | `ci-deploy` | `prod` | `/ci/store`           | `ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`, `ASC_API_PRIVATE_KEY`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `EXPO_TOKEN`                                                                                                         |
 | `ci-deploy` | `prod` | `/ci/observability`   | `BETTERSTACK_UPTIME_API_TOKEN`, `BETTERSTACK_TELEMETRY_API_TOKEN`, `PULUMI_CONFIG_PASSPHRASE`, the state backend keys                                                                                                  |
@@ -88,7 +88,7 @@ Apple and Google store credentials live in EAS credentials, not in Infisical.
 
 ### GitHub repository variables (not secrets)
 
-`INFISICAL_CI_IDENTITY_ID`, `INFISICAL_GATE_IDENTITY_ID` and `INFISICAL_REGISTRY_IDENTITY_ID` (the Infisical machine identities), `MINTLIFY_PROJECT_ID`, `REGISTRY_D1_DATABASE_ID` and `REGISTRY_KV_NAMESPACE_ID`. This repository deploys no console, so it has no public build-time keys; a product names its own (`VITE_SENTRY_DSN` and the like).
+`INFISICAL_CI_IDENTITY_ID`, `INFISICAL_GATE_IDENTITY_ID` and `INFISICAL_REGISTRY_IDENTITY_ID` (the Infisical machine identities), `REGISTRY_D1_DATABASE_ID` and `REGISTRY_KV_NAMESPACE_ID`. This repository deploys no console, so it has no public build-time keys; a product names its own (`VITE_SENTRY_DSN` and the like).
 
 Repository **secrets** are empty except two GitHub App credentials that cannot come through Infisical OIDC before the job has a token: `STACKRA_BOT_APP_ID` and `STACKRA_BOT_PRIVATE_KEY` (the release App, `release.yml`), and `LINEAR_AGENT_CLIENT_ID`, `LINEAR_AGENT_CLIENT_SECRET` and `LINEAR_API_KEY` (`linear-sync.yml`).
 

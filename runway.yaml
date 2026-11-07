@@ -61,9 +61,6 @@ providers:
     environments:
       dev: dev
       production: prod
-  # The deploy reads the repository variable MINTLIFY_PROJECT_ID until the stacks repository holds it.
-  mintlify:
-    project: ref:mintlify.project
   # Better Stack runs uptime, on-call and the status page (ADR 0185). The account and its API tokens are the owner's
   # (STA-1574); the tokens live in Infisical `prod` `/ci/observability`, read by apply-observability.yml. Named, so
   # the plan declares Better Stack resources; it has no public id to state here.
@@ -173,6 +170,14 @@ targets:
       docs:
         path: apps/docs
         preset: public-site
+        # The custom domain is the only public URL. The hostname's old CNAME to Mintlify must be removed before the
+        # first deploy, or Cloudflare refuses to attach it. Logs keep one request in ten.
+        customDomains: [docs.stackra.figentra.com]
+        workersDev: false
+        previewUrls: false
+        observability:
+          logs: true
+          headSamplingRate: 0.1
         smoke:
           - url: https://docs.stackra.figentra.com/
           - url: https://docs.stackra.figentra.com/llms.txt
@@ -200,7 +205,6 @@ secrets:
     # the owner replaces the broad token's value in `/ci` with it (STA-1991). A first deploy of a new Worker is the owner's.
     - CLOUDFLARE_API_TOKEN
     - CLOUDFLARE_API_TOKEN_READ
-    - MINTLIFY_ADMIN_KEY
     - UNIWIND_AUTH_TOKEN
     # From ci-build `/ci/turbo` (STA-1393, ADR 0512): ci.yml and release.yml export them for turbo;
     # deploy-turbo-cache.yml sets TURBO_TOKEN as the Worker's TURBO_CACHE_TOKEN.
@@ -246,4 +250,4 @@ release:
     withinMinutes: 15
   # Every deploy job runs in a GitHub environment, so GitHub records each deployment.
   records: [github-deployments]
-  buildOrder: [npm, cloudflare-workers, mintlify]
+  buildOrder: [npm, cloudflare-workers]
