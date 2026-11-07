@@ -22,7 +22,8 @@
     "@stackra/validation": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
     "@figentra/pay-contract": "1.2.0",
-    "@stackra/database": "workspace:*"
+    "@stackra/database": "workspace:*",
+    "encore.dev": "1.58.8"
   },
   "imports": {
     "#config/*": [

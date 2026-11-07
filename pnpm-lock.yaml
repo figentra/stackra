@@ -234,6 +234,9 @@ catalogs:
     asn1js:
       specifier: 3.1.0
       version: 3.1.0
+    encore.dev:
+      specifier: 1.58.8
+      version: 1.58.8
     ink:
       specifier: 8.0.0
       version: 8.0.0
@@ -9572,6 +9575,9 @@ importers:
       '@stackra/container':
         specifier: workspace:*
         version: link:../../packages/foundation/container
+      encore.dev:
+        specifier: 'catalog:'
+        version: 1.58.8
     devDependencies:
       '@stackra/cli':
         specifier: workspace:*
@@ -9603,6 +9609,9 @@ importers:
       '@stackra/container':
         specifier: workspace:*
         version: link:../../packages/foundation/container
+      encore.dev:
+        specifier: 'catalog:'
+        version: 1.58.8
     devDependencies:
       '@stackra/cli':
         specifier: workspace:*
@@ -16381,6 +16390,10 @@ packages:
   encodeurl@2.0.0:
     resolution: {integrity: sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg==}
     engines: {node: '>= 0.8'}
+
+  encore.dev@1.58.8:
+    resolution: {integrity: sha512-tay5Hh+26vbZI1NXnIPzWErMnvspBUiFIro2LUHuiEvlQK+S9GhBV6qHWbX0A5mQhmXw3GijDplsxF7HX9hWLA==}
+    engines: {node: '>=18.0.0'}
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -31359,6 +31372,8 @@ snapshots:
   encodeurl@1.0.2: {}
 
   encodeurl@2.0.0: {}
+
+  encore.dev@1.58.8: {}
 
   end-of-stream@1.4.5:
     dependencies:

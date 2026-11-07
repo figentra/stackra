@@ -241,6 +241,8 @@ function exampleService(main: boolean): string {
   pkg["dependencies"] = {
     "@stackra/container": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
+    // Its generated Encore files import it (STA-2194).
+    "encore.dev": "catalog:",
   };
   writeFileSync(path, JSON.stringify(pkg));
   return root;
