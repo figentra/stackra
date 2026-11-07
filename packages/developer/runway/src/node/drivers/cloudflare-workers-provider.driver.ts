@@ -9,11 +9,12 @@
  *          failure; a member with Durable Object migrations goes out through `wrangler deploy` at 100% instead. Current reads the commit back from `wrangler deployments list`, verify adds each
  *          member's smoke checks (retried while a new version or a new domain's certificate comes up), and rollback returns every member to the version recorded for a commit.
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
- *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
+ *           with the job's `CLOUDFLARE_API_TOKEN` (decrypted from sops in CI) or the owner's session. Ids, vars and
  *           secrets are read by name from `env`; a secret value goes to wrangler only in a 0600 file in a fresh temporary
  *           folder, removed right after the upload (wrangler can't open /dev/stdin when it is a socket, as on Linux
- *           runners), never as an argument or a log line. When `runways` is set, the secret values are read from Infisical
- *           (`readMemberSecrets`, in CI) before anything ships, instead of from `env` (ADR 0173). Agents and tests
+ *           runners), never as an argument or a log line. When `runways` is set, the member's declared secrets are read
+ *           from `env`, where the secrets-decrypt action put its sops scope (`readMemberSecrets`, in a proved CI job),
+ *           before anything ships (ADR 0525). Agents and tests
  *           never apply against a real account (ADR 0352 decision 6).
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
@@ -99,7 +100,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** The environment ids, vars and secrets are read from; a test replaces it. */
   env: Readonly<Record<string, string | undefined>> = process.env;
 
-  /** The root and member runways; when set, secrets are read from Infisical, not `env` (STA-606). */
+  /** The root and member runways; when set, the declared secrets are read in a proved CI job (STA-606). */
   runways?: DeployRunways;
 
   /** A test's answer to "is this a proved CI job"; unset, the job's GitHub OIDC token proves it (STA-2100). */
@@ -194,8 +195,8 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         environment: target.environment,
         member: basename(member.path),
         runways: this.runways,
-        run: this.run,
         ci: this.ci,
+        env: this.env,
       });
       secrets.set(key, read);
     }
@@ -218,7 +219,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         const migrating = migrates(deployed);
         // The secrets ride the version in a private temporary file: never an argument, removed right after.
         const folder =
-          Object.keys(member.secrets).length === 0 ? undefined : await mkdtemp(join(tmpdir(), "runway-secrets-"));
+          Object.keys(member.secrets).length === 0
+            ? undefined
+            : await mkdtemp(join(tmpdir(), "runway-secrets-"));
         let output: string;
         try {
           const file = folder === undefined ? undefined : join(folder, "secrets.json");
@@ -531,7 +534,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         .filter((name) => (this.env[name] ?? "") === "")
         .map((name) => ({
           path: `${SETTINGS_PATH}.members.${key}.secrets`,
-          message: `Set ${name} in the deploy job's environment (Infisical over OIDC in CI)`,
+          message: `Set ${name} in the deploy job's environment (.github/actions/secrets-decrypt in CI)`,
         })),
       ...member.smoke
         .flatMap((smoke) => (smoke.bearer === undefined ? [] : [smoke.bearer]))

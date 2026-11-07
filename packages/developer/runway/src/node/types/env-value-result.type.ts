@@ -18,7 +18,7 @@ export type EnvValueResult = {
   /** The checked variable name. */
   readonly name: string;
 
-  /** Where the value lives, as `<infisical environment>:<path>`. */
+  /** Where the value lives: the sops scope (`products/acme/staging`). */
   readonly where: string;
   /** The broken rule, or `undefined` when the value passes. */
   readonly failure?: string;

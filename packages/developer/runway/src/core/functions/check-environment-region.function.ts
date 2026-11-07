@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `checkEnvironmentRegion(root)`, the region check of a product's parsed root runway: its staging and
  *          production each name `region` (`me`, `eu` or `ksa`), since figentra/infra places the environment in that
- *          region of the product's one account (`ref:aws.account`) and picks its Infisical project from it (ADR 0524);
+ *          region of the product's one account (`ref:aws.account`) (ADR 0524);
  *          any environment in `ksa`, which runs in Google Cloud, needs the product's GCP project
  *          (`providers.gcp.project: true`); and an environment in `me` names no t4g or m6g cache node class, which the
  *          UAE region (me-central-1) does not offer.

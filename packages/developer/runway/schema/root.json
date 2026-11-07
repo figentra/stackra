@@ -372,44 +372,6 @@
           "required": ["org", "repo"],
           "description": "The GitHub repository and its environments (ADR 0468). Closed: a misspelt key fails. infra-github reads it."
         },
-        "infisical": {
-          "type": "object",
-          "description": "The secret store (ADR 0173).",
-          "properties": {
-            "domain": {
-              "type": "string",
-              "pattern": "^https://",
-              "description": "Infisical instance URL.",
-              "examples": ["https://eu.infisical.com"]
-            },
-            "workspace": {
-              "$ref": "#/$defs/value",
-              "description": "Infisical project id or `ref:`."
-            },
-            "environments": {
-              "type": "object",
-              "description": "Runway environment → Infisical environment slug.",
-              "propertyNames": {
-                "$ref": "#/$defs/envName"
-              },
-              "additionalProperties": {
-                "type": "string",
-                "description": "Infisical environment slug.",
-                "examples": ["prod"]
-              }
-            },
-            "paths": {
-              "type": "object",
-              "description": "Named secret folders (runtime, ci, agents). A member may name `path: ci`.",
-              "additionalProperties": {
-                "type": "string",
-                "pattern": "^/",
-                "description": "Folder path in the Infisical project.",
-                "examples": ["/runtime"]
-              }
-            }
-          }
-        },
         "npm": {
           "type": "object",
           "description": "Where the repository's packages publish (ADR 0453 decision 6); the release workflow's `registry` input carries it.",
@@ -1072,17 +1034,16 @@
     },
     "secrets": {
       "type": "object",
-      "description": "Vault defaults. Secret NAMES are declared by members (ADR 0168 d5, 0173, 0257).",
+      "description": "Secret defaults. Secret NAMES are declared by members (ADR 0168 d5, 0257); values live in figentra/secrets as sops files, scope `products/<project>/<env>` (ADR 0525).",
       "additionalProperties": false,
       "properties": {
         "sync": {
           "enum": ["on-deploy"],
-          "description": "When runway copies Infisical values into the runtimes (Encore, Workers, EAS, compose, Kubernetes)."
+          "description": "When runway copies the values the deploy job decrypted (.github/actions/secrets-decrypt) into the runtimes (Encore, Workers, EAS, compose, Kubernetes)."
         },
         "defaultPath": {
           "type": "string",
-          "description": "The `providers.infisical.paths` key a member secret uses unless it names another.",
-          "examples": ["runtime"]
+          "description": "Deprecated and ignored (ADR 0525): it named a `providers.infisical.paths` key. `runway validate` warns for one release; remove it."
         },
         "ci": {
           "type": "array",

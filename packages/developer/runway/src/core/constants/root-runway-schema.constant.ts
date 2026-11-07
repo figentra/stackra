@@ -14,7 +14,8 @@
  *           yet say "Not read yet (<reader>)" in the JSON Schema, and repo-checks' `RUNWAY_UNREAD_FIELDS` holds them to
  *           it (STA-2001); `environments.*.deploy.gate` is a deprecated alias of `release.gate`, and
  *           `providers.aws.region`, `providers.aws.accounts` and `environments.<env>.cloud` are deprecated by
- *           `environments.<env>.region` (ADR 0524), which `runway validate` warns about for one release.
+ *           `environments.<env>.region` (ADR 0524), which `runway validate` warns about for one release; so are
+ *           `providers.infisical` (now untyped, an open provider) and `secrets.defaultPath`, replaced by sops (ADR 0525).
  *           `providers.aws.account` and `providers.gcp.project` are the opt-ins figentra/infra vends a product's one
  *           account and one project from (both default false), and `providers.gcp.apis` the services it enables.
  * Runtime: isomorphic
@@ -153,19 +154,8 @@ export const ROOT_RUNWAY_SCHEMA = z
           })
           .optional(),
         github: GITHUB_SECTION_SCHEMA.optional(),
-        infisical: z
-          .looseObject({
-            domain: z
-              .string()
-              .regex(/^https:\/\//, "Expected an https:// URL")
-              .optional(),
-            workspace: VALUE.optional(),
-            environments: z.partialRecord(ENVIRONMENT, z.string()).optional(),
-            paths: z
-              .record(z.string(), z.string().regex(/^\//, "Expected a path starting with /"))
-              .optional(),
-          })
-          .optional(),
+        // ADR 0525: `infisical` is no longer typed; an old block passes as an open provider and `runway validate`
+        // warns (`deprecatedFields`).
         // ADR 0453: the one place a repository sets where its packages publish; the release workflow passes it on.
         npm: z
           .looseObject({
@@ -196,6 +186,7 @@ export const ROOT_RUNWAY_SCHEMA = z
     secrets: z
       .strictObject({
         sync: z.enum(["on-deploy"]).optional(),
+        // Deprecated and ignored (ADR 0525): it named a `providers.infisical.paths` key.
         defaultPath: z.string().optional(),
         ci: SECRET_NAMES_SCHEMA.optional(),
         gateway: SECRET_NAMES_SCHEMA.optional(),

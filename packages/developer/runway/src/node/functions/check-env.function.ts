@@ -2,19 +2,18 @@
  * Stackra file contract:
  * Purpose: `checkEnv(root)`, the names-only environment check (`runway env check`, ADR 0173 amendment 2026-11-04,
  *          decision 4). It collects every declared name: the `env` rows of each deployable member's committed
- *          `stackra.manifest.json` (gen), each member runway's `secrets:` and each workflow Infisical step's
- *          `secret-name:`. Errors: a declared name with no Infisical home (the root runway names no `project`, no
- *          runtime path for a member runway's secrets, or a `secret-name` with no `secret-path`). Warnings: a raw
- *          read (`process.env.X`, `import.meta.env.X`) of a name nothing declares, a member runway secret no code
- *          declares, and a workflow step that exports a whole `secret-path` without naming its secrets.
- * Boundary: reads files only: no login, no Infisical call, never a value. Homes follow the Infisical plan of
- *           2026-11-04: `<project>-runtime` (dev, staging) and `<project>-runtime-prod` (production) at
- *           `/runtime/<member>`; a workflow name's project is its step's (an org variable), so its home is its path.
- *           Raw reads are scanned under `apps`, `packages`, `services` and `workers`, skipping the paths
- *           `stackra/no-raw-env` exempts and the names the platform sets (`NODE_ENV`, `CI`, `GITHUB_*`, Vite's
- *           `DEV`/`PROD`/`MODE`).
+ *          `stackra.manifest.json` (gen), each member runway's `secrets:` and the `names:` of each workflow step that
+ *          uses the `secrets-decrypt` action. Errors: a declared name with no sops scope (the root runway names no
+ *          `project`, so `products/<project>/<env>` cannot be named). Warnings: a raw read (`process.env.X`,
+ *          `import.meta.env.X`) of a name nothing declares, a member runway secret no code declares, and a
+ *          `secrets-decrypt` step that decrypts its whole `scope` without naming what it reads.
+ * Boundary: reads files only: no login, no decrypt, never a value. Scopes follow figentra/secrets (ADR 0525): a
+ *           product's runtime names live in `products/<project>/<dev|staging|production>` (a preview reads dev's), and
+ *           a workflow name's scope is its step's `scope`. Raw reads are scanned under `apps`, `packages`, `services`
+ *           and `workers`, skipping the paths `stackra/no-raw-env` exempts and the names the platform sets
+ *           (`NODE_ENV`, `CI`, `GITHUB_*`, Vite's `DEV`/`PROD`/`MODE`).
  * Runtime: node
- * Governing contract: ADR 0173 (amendment 2026-11-04); ADR 0512 as amended; STA-2104.
+ * Governing contract: ADR 0525 (sops scopes); ADR 0173 amendment 2026-11-04 (names declared once); STA-2104.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -70,20 +69,22 @@ function sources(root: string, dir: string): string[] {
   return out;
 }
 
-/** Each `{ secret-name?, secret-path? }` block anywhere in a parsed workflow or action. */
-function infisicalSteps(node: unknown, out: { name?: string; path?: string }[] = []): typeof out {
-  if (Array.isArray(node)) for (const item of node) infisicalSteps(item, out);
+/** A literal secret name; an expression such as `${{ inputs.names }}` is not one. */
+const SECRET_NAME = /^[A-Z][A-Z0-9_]*$/;
+
+/** The `with:` of each step anywhere in a parsed workflow or action that uses the `secrets-decrypt` action. */
+function decryptSteps(node: unknown, out: { names?: string; scope?: string }[] = []): typeof out {
+  if (Array.isArray(node)) for (const item of node) decryptSteps(item, out);
   else if (typeof node === "object" && node !== null) {
     const record = node as Record<string, unknown>;
-    if ("secret-name" in record || "secret-path" in record) {
-      const name = record["secret-name"];
-      const path = record["secret-path"];
+    if (typeof record["uses"] === "string" && record["uses"].includes("secrets-decrypt")) {
+      const given = (record["with"] ?? {}) as Record<string, unknown>;
       out.push({
-        ...(typeof name === "string" ? { name } : {}),
-        ...(typeof path === "string" ? { path } : {}),
+        ...(typeof given["names"] === "string" ? { names: given["names"] } : {}),
+        ...(typeof given["scope"] === "string" ? { scope: given["scope"] } : {}),
       });
     }
-    for (const value of Object.values(record)) infisicalSteps(value, out);
+    for (const value of Object.values(record)) decryptSteps(value, out);
   }
   return out;
 }
@@ -120,23 +121,23 @@ export function checkEnv(root: string): EnvFinding[] {
           name: row.name,
           where,
           message:
-            "has no Infisical home: the root runway.yaml names no `project`, so `<project>-runtime` cannot be named",
+            "has no sops scope: the root runway.yaml names no `project`, so `products/<project>/<env>` cannot be named",
         });
     }
   }
 
-  // Member runway secrets: their home is the runtime path the root runway gives them.
+  // Member runway secrets: their scope is the product's scope of the environment.
   for (const environment of Object.keys(runways.root.environments ?? {}))
     for (const entry of secretSyncPlan(environment, runways))
       for (const name of entry.names) {
         declared.add(name);
         const where = `${entry.folder}/runway.yaml`;
-        if (entry.path === null)
+        if (entry.scope === null)
           findings.push({
             level: "error",
             name,
             where,
-            message: `has no Infisical home in ${environment}: set \`secrets.defaultPath\` and its \`providers.infisical.paths\` entry in the root runway.yaml`,
+            message: `has no sops scope in ${environment}: name the \`project\` in the root runway.yaml`,
           });
         else if (!codeNames.has(name) && entry.writer === "encore")
           findings.push({
@@ -148,7 +149,7 @@ export function checkEnv(root: string): EnvFinding[] {
           });
       }
 
-  // Workflow Infisical steps.
+  // Workflow secrets-decrypt steps.
   for (const dir of [".github/workflows", ".github/actions"]) {
     const files = existsSync(join(root, dir))
       ? readdirSync(join(root, dir), { recursive: true, encoding: "utf8" }).filter((file) =>
@@ -163,27 +164,15 @@ export function checkEnv(root: string): EnvFinding[] {
       } catch {
         continue; // actionlint reports a workflow that does not parse
       }
-      for (const step of infisicalSteps(parsed)) {
-        const names = (step.name ?? "")
-          .split(",")
-          .map((name) => name.trim())
-          .filter((name) => name !== "");
-        for (const name of names) declared.add(name);
-        if (names.length > 0 && step.path === undefined)
-          for (const name of names)
-            findings.push({
-              level: "error",
-              name,
-              where,
-              message: "has no Infisical home: give its step a `secret-path`",
-            });
-        if (names.length === 0 && step.path !== undefined)
+      for (const step of decryptSteps(parsed)) {
+        for (const name of (step.names ?? "").split(","))
+          if (SECRET_NAME.test(name.trim())) declared.add(name.trim());
+        if ((step.names ?? "").trim() === "" && step.scope !== undefined)
           findings.push({
             level: "warning",
-            name: step.path,
+            name: step.scope,
             where,
-            message:
-              "exports every secret in the path: name what the step reads with `secret-name`",
+            message: "decrypts every secret in the scope: name what the step reads with `names`",
           });
       }
     }

@@ -27,7 +27,7 @@
     },
     "secrets": {
       "type": "array",
-      "description": "Every @Secret of src/config/*, by NAME; gen fails on a missing one. Values live in Infisical (ADR 0173).",
+      "description": "Every @Secret of src/config/*, by NAME; gen fails on a missing one. Values live in figentra/secrets as sops files (ADR 0525).",
       "items": { "$ref": "#/$defs/secretName" },
       "uniqueItems": true
     },

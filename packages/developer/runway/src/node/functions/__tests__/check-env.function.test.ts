@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `checkEnv` and `runway env check`: a repository whose names all have homes passes; a missing
- *          root `project`, a member secret with no runtime path and a workflow `secret-name` with no `secret-path` are
- *          errors; a raw read of an undeclared name, an export-all step and a deploy secret no code declares are
- *          warnings; platform names, declared names and exempt files are not reported.
+ * Purpose: unit tests of `checkEnv` and `runway env check`: a repository whose names all have a sops scope passes,
+ *          and a secrets-decrypt step's `names` count as declared; a missing root `project` is an error for the
+ *          manifest's names and the member runway's secrets; a raw read of an undeclared name, a decrypt-all step and
+ *          a deploy secret no code declares are warnings; platform names, declared names and exempt files are not
+ *          reported.
  * Boundary: test only; builds repositories in a temporary folder.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0173 (amendment 2026-11-04, decision 4); STA-2104.
+ * Governing contract: ADR 0022 (test placement); ADR 0525; ADR 0173 (amendment 2026-11-04, decision 4); STA-2104.
  */
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -25,11 +26,6 @@ const ROOT = [
   "  github:",
   "    org: acme",
   "    repo: platform",
-  "  infisical:",
-  "    paths:",
-  "      runtime: /runtime",
-  "secrets:",
-  "  defaultPath: runtime",
   "environments:",
   "  staging:",
   "    destinations:",
@@ -56,7 +52,7 @@ const MANIFEST = JSON.stringify({
   member: "api",
   package: "@acme/service-api",
   version: "1.0.0",
-  env: [{ name: "STRIPE_SECRET_KEY", kind: "secret", home: "/runtime/api" }],
+  env: [{ name: "STRIPE_SECRET_KEY", kind: "secret" }],
 });
 
 const API = {
@@ -65,9 +61,12 @@ const API = {
 };
 
 describe("checkEnv", () => {
-  it("passes when every declared name has a home and nothing is read raw", () => {
+  it("passes when every declared name has a scope and nothing is read raw", () => {
     const root = repository({
       ...API,
+      ".github/workflows/deploy.yml":
+        "jobs:\n  a:\n    steps:\n      - uses: ./.github/actions/secrets-decrypt\n        with:\n          scope: ci/deploy\n          names: EXPO_TOKEN\n",
+      "services/api/src/expo.ts": "const token = process.env.EXPO_TOKEN;\n",
       "services/api/src/boot.ts": "const config = hydrateEnv(ApiConfig, process.env);\n",
       "services/api/src/core/__tests__/a.test.ts": "process.env.UNDECLARED_IN_TEST;\n",
       "services/api/src/api.config.ts": "process.env.UNDECLARED_IN_CONFIG;\n",
@@ -80,36 +79,28 @@ describe("checkEnv", () => {
     expect(checkEnv(root)).toEqual([]);
   });
 
-  it("refuses a declared name with no home: no project, no runtime path, a step with no secret-path", () => {
-    const root = repository({
-      ...API,
-      "runway.yaml": ROOT.replace("project: acme\n", "").replace(
-        "  defaultPath: runtime\n",
-        "  ci: []\n",
-      ),
-      ".github/workflows/deploy.yml":
-        "jobs:\n  a:\n    steps:\n      - uses: Infisical/secrets-action@x\n        with:\n          secret-name: EXPO_TOKEN\n",
-    });
+  it("refuses a declared name with no sops scope: the root names no project", () => {
+    const root = repository({ ...API, "runway.yaml": ROOT.replace("project: acme\n", "") });
     const errors = checkEnv(root).filter((finding) => finding.level === "error");
     expect(errors.map((finding) => [finding.name, finding.where])).toEqual([
       ["STRIPE_SECRET_KEY", "services/api/stackra.manifest.json"],
       ["STRIPE_SECRET_KEY", "services/api/runway.yaml"],
-      ["EXPO_TOKEN", ".github/workflows/deploy.yml"],
     ]);
+    expect(errors.every((finding) => finding.message.includes("sops scope"))).toBe(true);
   });
 
-  it("warns on a raw undeclared read, an export-all step and a deploy secret no code declares", () => {
+  it("warns on a raw undeclared read, a decrypt-all step and a deploy secret no code declares", () => {
     const root = repository({
       "services/api/runway.yaml": "version: 3\nsecrets: [RESEND_API_KEY]\n",
       "services/api/src/a.ts":
         'const a = process.env.STACKRA_LANE; const b = process.env["ACME_KEY"];\n',
       ".github/workflows/ci.yml":
-        "jobs:\n  a:\n    steps:\n      - uses: Infisical/secrets-action@x\n        with:\n          secret-path: /ci/turbo\n",
+        "jobs:\n  a:\n    steps:\n      - uses: figentra/stackra/.github/actions/secrets-decrypt@x\n        with:\n          scope: ci/build/turbo\n",
     });
     const findings = checkEnv(root);
     expect(findings.every((finding) => finding.level === "warning")).toBe(true);
     expect(findings.map((finding) => finding.name).toSorted()).toEqual(
-      ["/ci/turbo", "ACME_KEY", "RESEND_API_KEY", "STACKRA_LANE"].toSorted(),
+      ["ci/build/turbo", "ACME_KEY", "RESEND_API_KEY", "STACKRA_LANE"].toSorted(),
     );
   });
 });

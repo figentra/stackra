@@ -7,7 +7,8 @@
  *          `providers.gcp.project` are opt-ins that default to false, and `providers.gcp.apis` takes only unique
  *          `*.googleapis.com` names. `checkEnvironmentRegion` asks a product's staging and production for a region,
  *          asks a ksa environment for the GCP project, and skips a runway without `product`; `deprecatedFields` names
- *          `providers.aws.region`, `providers.aws.accounts` and an environment's `cloud`; `unusedCloudOptIns` names an
+ *          `providers.aws.region`, `providers.aws.accounts`, an environment's `cloud`, `providers.infisical` and
+ *          `secrets.defaultPath`; `unusedCloudOptIns` names an
  *          AWS account no me or eu environment uses.
  * Boundary: test only; plain objects through `parseRunway` and the three checks.
  * Runtime: node (vitest)
@@ -197,6 +198,19 @@ describe("deprecatedFields", () => {
       "providers.aws.accounts",
     ]);
     expect(deprecatedFields(parseRunway("root", root()))).toEqual([]);
+  });
+
+  it("accepts providers.infisical and secrets.defaultPath for one release and names both (ADR 0525)", () => {
+    const old = root({
+      providers: {
+        infisical: { workspace: "ref:infisical.workspace", paths: { runtime: "/runtime" } },
+      },
+      secrets: { defaultPath: "runtime" },
+    });
+    expect(deprecatedFields(parseRunway("root", old)).map(({ path }) => path)).toEqual([
+      "providers.infisical",
+      "secrets.defaultPath",
+    ]);
   });
 
   it("takes a per-role monthly budget for one release and names it", () => {

@@ -3,11 +3,11 @@
  * Purpose: `runwayProviders(root, cwd, members)`, the providers `stackra deploy` and `stackra promote` ship through:
  *          `encore-cloud` (only when the root runway names an Encore app), `eas`, `mintlify` and `cloudflare-workers`
  *          (limited to `members` when any are named). With `secrets.sync: on-deploy` the Workers provider gets the
- *          repository's runways (`readRunways`), so a Worker's secrets come from Infisical, not this process's
- *          environment (ADR 0173).
+ *          repository's runways (`readRunways`), so a Worker's declared secrets are read, in a proved CI job, from the
+ *          sops scope the secrets-decrypt action put in this process's environment (ADR 0525).
  * Boundary: builds the providers and reads the runway files; changes nothing.
  * Runtime: node
- * Governing contract: ADR 0352 (decisions 1 and 3); ADR 0173; STA-606; STA-607.
+ * Governing contract: ADR 0352 (decisions 1 and 3); ADR 0525; STA-606; STA-607.
  */
 import { buildConfig } from "@stackra/config";
 import { RunwayConfig } from "@stackra/runway";
@@ -43,7 +43,7 @@ export function runwayProviders(
     Object.assign(new CloudflareWorkersProviderDriver(), {
       root: cwd,
       only: [...members],
-      // ADR 0173: with the sync on, a Worker's secrets come from Infisical, not this process's environment.
+      // ADR 0525: with the sync on, a Worker's declared secrets are read in a proved CI job from the decrypted scope.
       ...(root.secrets?.sync === "on-deploy" ? { runways: readRunways(cwd) } : {}),
     }),
   ];
