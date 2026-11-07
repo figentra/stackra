@@ -9,6 +9,7 @@
     "category:application",
     "runtime:isomorphic",
     "runtime:node",
+    "runtime:react-native",
     "runtime:worker",
   ],
 }

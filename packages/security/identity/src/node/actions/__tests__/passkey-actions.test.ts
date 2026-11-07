@@ -9,10 +9,13 @@
  * Governing contract: ADR 0022; ADR 0462; ADR 0206 (decision 8); STA-1538.
  */
 import { fakeActionContext } from "@stackra/actions/testing";
+import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
-import { ActorKind, ApiArea } from "@stackra/contracts";
+import { ActorKind, ApiArea, AssuranceLevel } from "@stackra/contracts";
 import { UnauthenticatedError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
+
+import { IdentityConfig } from "#config/identity.config";
 
 import { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 import { ChallengePasskeyAction } from "#node/actions/challenge-passkey.action";
@@ -26,10 +29,27 @@ import { VerifyPasskeyInput } from "#node/schemas/verify-passkey-input.schema";
 
 const CREDENTIAL = { id: "c_1", rawId: "c_1", type: "public-key", response: {} } as const;
 
-/** A provider holding the fake context's actor as `rana`. */
-async function setup() {
+/** Each key with its value's type, nested, so two answers compare by shape only. */
+function shape(value: unknown): unknown {
+  return typeof value === "object" && value !== null
+    ? Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, shape(inner)]))
+    : typeof value;
+}
+
+const CONFIG = buildConfig(IdentityConfig);
+
+/** A provider holding the fake context's actor as `rana`, signed in `minutesAgo` at `level` (a fresh password). */
+async function setup(level: AssuranceLevel = AssuranceLevel.Aal1, minutesAgo = 1) {
   const idp = new MemoryIdpAdminDriver();
-  const ctx = fakeActionContext();
+  const base = fakeActionContext();
+  const ctx = fakeActionContext({
+    actor: base.actor,
+    assurance: {
+      amr: ["pwd"],
+      authTime: new Date(base.now().getTime() - minutesAgo * 60_000),
+      level,
+    },
+  });
   const userId = await idp.createUser({
     organizationId: "org_1",
     username: "rana",
@@ -39,6 +59,18 @@ async function setup() {
     stackraUserId: ctx.actor.id,
   });
   return { idp, ctx, userId };
+}
+
+/** Registers then confirms a passkey for the context's user. */
+async function enrol(idp: MemoryIdpAdminDriver, ctx: ReturnType<typeof fakeActionContext>) {
+  const { passkeyId } = await new RegisterPasskeyAction(idp).handle(
+    RegisterPasskeyInput.create({}),
+    ctx,
+  );
+  return new ConfirmPasskeyAction(idp, CONFIG).handle(
+    ConfirmPasskeyInput.create({ passkeyId, name: "Laptop", credential: CREDENTIAL }),
+    ctx,
+  );
 }
 
 describe("passkey actions", () => {
@@ -69,19 +101,61 @@ describe("passkey actions", () => {
     expect(verified.sessionToken).not.toBe("");
   });
 
+  it("answers an unknown login the same shape as a known one, and never verifies it", async () => {
+    const { idp } = await setup();
+    const challenge = new ChallengePasskeyAction(idp);
+    const known = await challenge.handle(ChallengePasskeyInput.create({ loginName: "rana" }));
+    const unknown = await challenge.handle(ChallengePasskeyInput.create({ loginName: "nobody" }));
+    expect(shape(unknown)).toEqual(shape(known));
+    expect(unknown.sessionId.length).toBe(known.sessionId.length);
+    expect(unknown.options.challenge.length).toBe(known.options.challenge.length);
+    await expect(
+      new VerifyPasskeyAction(idp).handle(
+        VerifyPasskeyInput.create({ sessionId: unknown.sessionId, credential: CREDENTIAL }),
+      ),
+    ).rejects.toBeInstanceOf(UnauthenticatedError);
+  });
+
   it("registers and confirms a passkey on the caller's own provider user", async () => {
     const { idp, ctx, userId } = await setup();
     const { passkeyId } = await new RegisterPasskeyAction(idp).handle(
       RegisterPasskeyInput.create({}),
       ctx,
     );
-    const confirmed = await new ConfirmPasskeyAction(idp).handle(
+    const confirmed = await new ConfirmPasskeyAction(idp, CONFIG).handle(
       ConfirmPasskeyInput.create({ passkeyId, name: "iPhone", credential: CREDENTIAL }),
       ctx,
     );
     expect(confirmed.passkeyId).toBe(passkeyId);
     expect(idp.passkeys.get(passkeyId)).toEqual({ userId, name: "iPhone" });
-    expect(ctx.recorded.audit).toEqual({ passkeyId });
+    expect(ctx.recorded.audit).toEqual({ passkeyId, firstFactor: true });
+  });
+
+  it("enrols the first passkey from a fresh one-factor sign-in, without AAL2 (STA-340)", async () => {
+    const { idp, ctx } = await setup(AssuranceLevel.Aal1, 1);
+    await expect(enrol(idp, ctx)).resolves.toBeDefined();
+    expect(ctx.recorded.audit).toMatchObject({ firstFactor: true });
+  });
+
+  it("refuses a second strong factor without AAL2, and keeps it with AAL2", async () => {
+    const { idp, ctx, userId } = await setup(AssuranceLevel.Aal1, 1);
+    idp.authMethods.set(userId, ["pwd", "hwk"]);
+    await expect(enrol(idp, ctx)).rejects.toMatchObject({ code: "step_up_required" });
+    const stepped = await setup(AssuranceLevel.Aal2, 1);
+    stepped.idp.authMethods.set(stepped.userId, ["pwd", "hwk"]);
+    await expect(enrol(stepped.idp, stepped.ctx)).resolves.toBeDefined();
+    expect(stepped.ctx.recorded.audit).toMatchObject({ firstFactor: false });
+  });
+
+  it("refuses even the first passkey from a stale sign-in", async () => {
+    const { idp, ctx } = await setup(AssuranceLevel.Aal1, CONFIG.stepUpMaxAgeMinutes + 1);
+    await expect(enrol(idp, ctx)).rejects.toMatchObject({ code: "step_up_required" });
+  });
+
+  it("asks the pipeline for no step-up, only the first-factor enrolment exemption", () => {
+    expect(kindOf(ConfirmPasskeyAction)?.options).toMatchObject({
+      stepUp: { exempt: "first-factor-enrolment" },
+    });
   });
 
   it("refuses a caller the provider does not know", async () => {

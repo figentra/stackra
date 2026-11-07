@@ -1,27 +1,28 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: move secret values a human dropped into ~/Secrets-inbox/ into Infisical without any value ever reaching
- *   stdout, stderr, argv, the audit log or the caller (`pnpm secrets:import`, ADR 0257). Verifies by SHA-256 read-back
- *   inside this process, deletes the inbox file on success, keeps it on failure.
- * Boundary: the inbox, the Infisical CLI and the audit line only; no value leaves this process.
+ * Purpose: move secret values a human dropped into ~/Secrets-inbox/ into `figentra/secrets` as SOPS files (ADR 0525)
+ *   without any value ever reaching stdout, stderr, argv, the audit log or the caller (`pnpm secrets:import`,
+ *   ADR 0257). The files go through one self-merging pull request; each inbox file is deleted once it is open, and
+ *   kept on a refusal.
+ * Boundary: the inbox, `secrets-sops.mjs` (sops on stdin, git and gh) and the audit line only; no value leaves this
+ *   process.
  * Runtime: node
- * Governing contract: ADR 0257 (secret manager agent and the secrets inbox).
- * Input: files directly in $HOME/Secrets-inbox/ (file name = secret name, one extension stripped); optional
- *   `<NAME>.target.yaml` sidecar with `project` / `env` / `path`; flags --project --env --path --name --dry-run --list
- *   --confirm --actor. `/agents` is the agents project; any other target names its project (ADR 0512).
- * Output: one line per secret NAME with the target and a value-free result; exit 1 when any secret failed.
- * Secrets: reads values; never prints, logs or passes one on argv. The Infisical CLI's stdout/stderr are captured
- *   and only classified into fixed messages. Safe for any caller: hooks cannot tell agents apart, so the script is
- *   the boundary.
+ * Governing contract: ADR 0257 (secret manager agent and the secrets inbox); ADR 0525 (SOPS replaces Infisical).
+ * Input: files directly in $HOME/Secrets-inbox/ (file name = secret name, one extension stripped) with `--scope`, or
+ *   scope-shaped folders under it with `--tree`; flags --scope --tree --name --dry-run --list --actor.
+ * Output: one line per secret NAME with its scope and a value-free result; exit 1 when any secret failed.
+ * Secrets: reads values; never prints, logs or passes one on argv. sops gets each value on stdin. Safe for any
+ *   caller: hooks cannot tell agents apart, so the script is the boundary, and an agent never writes a gate,
+ *   registry or infra scope (`AGENT_DENIED_SCOPES`).
  *
  * Usage:
- *   pnpm secrets:import --list                       # inbox file NAMES, nothing else
- *   pnpm secrets:import --dry-run [FILE…]            # validate, reach Infisical, would-overwrite; prod: prints a token
- *   pnpm secrets:import [FILE…] [--project P --env e --path p --name N] [--confirm <token>] [--actor <agent>]
+ *   pnpm secrets:import --scope <scope> [FILE…] [--name N]   # into figentra/secrets, names only in the output
+ *   pnpm secrets:import --tree [--dry-run]                   # every <scope>/<NAME> folder file, one pull request
+ *   pnpm secrets:import --list                               # inbox file NAMES, nothing else
+ *   pnpm secrets:import --scope <scope> --dry-run [FILE…]    # validate names and scope, write nothing
  */
-import { spawnSync } from "node:child_process";
-import { createHash, createHmac, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import {
   appendFileSync,
   chmodSync,
@@ -31,69 +32,29 @@ import {
   fstatSync,
   lstatSync,
   mkdirSync,
-  mkdtempSync,
   openSync,
   readFileSync,
   readSync,
   readdirSync,
+  rmdirSync,
   rmSync,
   unlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { parse as parseYaml } from "yaml";
+import {
+  NAME_RX,
+  Refusal,
+  checkTarget as checkSopsTarget,
+  isAgentRun,
+  publish as publishSops,
+} from "./secrets-sops.mjs";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const MAX_BYTES = 64 * 1024;
-export const TOKEN_TTL_MS = 30 * 60 * 1000;
-const NAME_RX = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
-export const ENVS = ["dev", "staging", "prod"];
-// The vault layout (rules/secrets.md): /agents and /ci, plus sub-folders.
-const PATH_RX = /^\/(?:agents|ci|runtime|box)(?:\/[a-z0-9-]+)*$/;
 const SIDECAR = ".target.yaml";
-/** The projects a write may target (ADR 0512, one project per reader): slug → Infisical project id, not a secret. */
-export const PROJECTS = {
-  agents: "c008ea1e-c997-4d15-90b2-9eb75dcb0896",
-  "ci-build": "0f940219-c073-4071-a1bf-1eacc725201a",
-  "ci-deploy": "f9f11e24-e2e1-45bb-aa89-d98d14887fdd",
-  registry: "6c1f114a-1247-407a-8ad5-51057c602f1a",
-  flow: "86c297d4-ce42-4e94-b4b3-810a715812f2",
-  stackra: "dd4724f4-7b9a-46ae-a899-b34af2d626b2",
-  // One runtime project per product (`/runtime/<member>`); the slug is the product key.
-  academorix: "b4a65c75-0127-4f73-baf6-3dd638a5e620",
-  billing: "7898394a-7f4d-4ef5-95de-03badaf0ea69",
-  commerce: "0aa24cb1-ba4f-4e8d-b0d3-9e4c5ddd3de0",
-  invoicing: "28649a4f-9b29-4924-a590-ab63c603d812",
-  juristra: "dbe78769-862b-4885-b4f2-d869538cab92",
-  jute: "a0dbbbcf-84de-485e-b591-eb4e8d8cf4eb",
-  mezzora: "c92ac0dd-01a6-489d-b323-75ed0bcc3d8d",
-  organza: "8ed3df61-f708-4cc6-8d1c-d6b91989307c",
-  os: "7871f337-a3f8-48df-a169-12ebc8c98d59",
-  pay: "8edd11a5-fcd8-456f-9589-261db1302386",
-  tamo: "90e28980-14fe-431f-85d8-75186bb1f43e",
-  velora: "3c19ec55-1611-4b6c-96e5-e65dd1b3fda9",
-};
-export const isProd = (env) => /^prod(uction)?$/i.test(env);
-/** Paths an agent never writes: the gate and registry (release) keys (the owner's keeper rule of 2026-10-31). */
-export const AGENT_DENIED_PATHS = ["/ci/gate", "/ci/registry"];
-/** True when an agent runs the script (Claude Code, OpenCode or a Stackra agent run). */
-export const isAgentRun = (env) =>
-  Boolean(env.CLAUDECODE || env.OPENCODE || env.AI_AGENT || env.STACKRA_AGENT);
-/** An agent's target: never production and never a gate or release key; returns it or throws a Refusal. */
-export function checkAgentTarget(t) {
-  if (isProd(t.env))
-    throw new Refusal("an agent never imports a production value; the owner runs it");
-  if (AGENT_DENIED_PATHS.some((p) => t.path === p || t.path.startsWith(`${p}/`)))
-    throw new Refusal("an agent never imports a gate or release key; the owner runs it");
-  return t;
-}
 const sha256 = (data) => createHash("sha256").update(data).digest("hex");
-
-/** An error whose message is a fixed, value-free string. */
-class Refusal extends Error {}
 
 const NOT_A_DIRECTORY = "inbox is not a real directory";
 
@@ -119,42 +80,8 @@ export function scanInbox(inbox) {
   return { entries, problems };
 }
 
-/** `<NAME>.target.yaml` → { project?, env?, path? }. Throws a Refusal on a bad sidecar. */
-export function readSidecar(inbox, name) {
-  const p = join(inbox, name + SIDECAR);
-  const st = lstatSync(p, { throwIfNoEntry: false });
-  if (!st) return {};
-  if (!st.isFile()) throw new Refusal("sidecar is not a regular file");
-  let data;
-  try {
-    data = parseYaml(readFileSync(p, "utf8")) ?? {};
-  } catch {
-    throw new Refusal("sidecar is not valid YAML");
-  }
-  const extra = Object.keys(data).filter((k) => !["project", "env", "path"].includes(k));
-  if (extra.length) throw new Refusal(`sidecar has unknown keys: ${extra.join(", ")}`);
-  return data;
-}
-
-/** Check a resolved target; returns it or throws a Refusal. */
-export function checkTarget({ name, env, path, project }) {
-  if (!NAME_RX.test(name)) throw new Refusal("name is not SCREAMING_SNAKE");
-  if (!ENVS.includes(env)) throw new Refusal(`env must be one of ${ENVS.join(", ")}`);
-  if (!PATH_RX.test(path))
-    throw new Refusal("path must be /agents, /ci, /runtime or /box (or a sub-folder)");
-  // `/agents` lives in the agents project; any other path exists in several projects, so it must say which.
-  project ??= /^\/agents(?:\/|$)/.test(path) ? "agents" : undefined;
-  if (!project)
-    throw new Refusal(
-      "a non-/agents target names its project (--project or the sidecar's project)",
-    );
-  if (!Object.hasOwn(PROJECTS, project))
-    throw new Refusal(`project must be one of ${Object.keys(PROJECTS).join(", ")}`);
-  return { name, env, path, project };
-}
-
 /** Raw bytes → { value, hash }: UTF-8, no NUL, one trailing newline stripped (editors add it), not empty. */
-function toValue(buf) {
+export function toValue(buf) {
   let text;
   try {
     text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
@@ -165,18 +92,6 @@ function toValue(buf) {
   const value = Buffer.from(text.replace(/\r?\n$/, ""), "utf8");
   if (value.length === 0) throw new Refusal("empty");
   return { value, hash: sha256(value) };
-}
-
-/** Drain a stream (any async iterable of bytes) with the same cap as a file. */
-async function readStream(stream) {
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of stream) {
-    size += chunk.length;
-    if (size > MAX_BYTES) throw new Refusal(`larger than ${MAX_BYTES} bytes`);
-    chunks.push(Buffer.from(chunk));
-  }
-  return toValue(Buffer.concat(chunks));
 }
 
 /**
@@ -201,75 +116,8 @@ export function readValue(file) {
   }
 }
 
-/** Default runner: the Infisical CLI with every byte of output captured, never inherited. */
-export function cliRunner(args) {
-  const r = spawnSync("infisical", args, {
-    cwd: ROOT,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-    maxBuffer: 4 * MAX_BYTES,
-  });
-  return { status: r.error ? 127 : r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
-}
-
-/** Map a failed CLI call to a fixed message. The CLI's own text is inspected, never repeated. */
-function cliFailure(what, r) {
-  if (r.status === 127) return new Refusal(`${what}: infisical CLI not found (mise install)`);
-  const err = `${r.stderr}\n${r.stdout}`;
-  if (/log ?in|authenticat|unauthori[sz]ed|expired/i.test(err))
-    return new Refusal(`${what}: not logged in to Infisical (run \`infisical login\`)`);
-  if (/dial|timeout|connection|network|no such host/i.test(err))
-    return new Refusal(`${what}: Infisical unreachable`);
-  if (/folder|path/i.test(err)) return new Refusal(`${what}: the folder does not exist`);
-  return new Refusal(`${what}: infisical exited ${r.status}`);
-}
-
-const scope = (t) => [
-  `--projectId=${PROJECTS[t.project]}`,
-  `--env=${t.env}`,
-  `--path=${t.path}`,
-  "--silent",
-];
-
-/** SHA-256 of the stored value, or null when the secret does not exist. Proves Infisical is reachable. */
-export function remoteHash(t, runner) {
-  const r = runner([
-    "secrets",
-    "get",
-    t.name,
-    ...scope(t),
-    "--output=json",
-    "--expand=false",
-    "--include-imports=false",
-    "--secret-overriding=false",
-  ]);
-  if (r.status !== 0) throw cliFailure("read", r);
-  let rows;
-  try {
-    rows = JSON.parse(r.stdout);
-  } catch {
-    throw new Refusal("read: unexpected infisical output");
-  }
-  const row = (Array.isArray(rows) ? rows : [rows]).find(
-    (x) => (x?.secretKey ?? x?.key) === t.name,
-  );
-  const value = row?.secretValue ?? row?.value;
-  if (value === undefined || value === "*not found*" || row?.type === "*not found*") return null;
-  return sha256(Buffer.from(String(value), "utf8"));
-}
-
-/**
- * The pinned CLI (0.44.2, mise.toml) documents `NAME=@/path/to/file` in `secrets set --help`; check the
- * installed one does too before writing, so an older CLI fails here instead of storing the literal path.
- */
-export function checkFileSyntax(runner) {
-  const r = runner(["secrets", "set", "--help"]);
-  if (r.status !== 0 || !/=@/.test(`${r.stdout}${r.stderr}`))
-    throw new Refusal("this infisical CLI does not support NAME=@file; mise install (0.44.2)");
-}
-
-const TEMP_PREFIX = ".import-";
-let liveTemp;
+/** The prefix of a temp dir a value write leaves in the inbox (vault-keeper's Infisical write). */
+export const TEMP_PREFIX = ".import-";
 
 /** Remove temp dirs a killed run left behind (dot-entries, so --list and imports skip them). */
 export function cleanStaleTemps(inbox) {
@@ -279,67 +127,17 @@ export function cleanStaleTemps(inbox) {
     if (f.startsWith(TEMP_PREFIX)) rmSync(join(inbox, f), { recursive: true, force: true });
 }
 
-/**
- * Write through `NAME=@file` so the value is never on argv. The 0600 temp file lives in a dot-dir inside
- * the inbox (already hook-guarded, never synced), is removed at once, on a signal, or at the next start.
- */
-export function writeSecret(t, value, runner, inbox) {
-  mkdirSync(inbox, { recursive: true, mode: 0o700 });
-  const dir = mkdtempSync(join(inbox, TEMP_PREFIX));
-  liveTemp = dir;
-  try {
-    const file = join(dir, "value");
-    writeFileSync(file, value, { mode: 0o600 });
-    const r = runner(["secrets", "set", `${t.name}=@${file}`, ...scope(t), "--type=shared"]);
-    if (r.status !== 0) throw cliFailure("write", r);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-    liveTemp = undefined;
-  }
-}
-
-// --- production confirmation ------------------------------------------------------------------------
 /** ~/.stackra, created or tightened to 0700. */
-function stateDir(home) {
+export function stateDir(home) {
   const dir = join(home, ".stackra");
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   chmodSync(dir, 0o700);
   return dir;
 }
 
-/** Per-machine HMAC key, so a token reveals nothing about the value hash it binds. */
-function confirmKey(home) {
-  const p = join(stateDir(home), "secrets-confirm.key");
-  if (!existsSync(p)) writeFileSync(p, randomBytes(32), { mode: 0o600, flag: "wx" });
-  return readFileSync(p);
-}
-
-/** One-time token binding name, project, env, path, value hash and issue time. */
-export function confirmToken(home, t, hash, now = Date.now()) {
-  const issued = Math.floor(now / 1000).toString(36);
-  const mac = createHmac("sha256", confirmKey(home))
-    .update([t.name, t.project, t.env, t.path, hash, issued].join("\n"))
-    .digest("hex")
-    .slice(0, 20);
-  return `${issued}-${mac}`;
-}
-
-/** null when the token is valid and unused, else a value-free reason. */
-export function checkConfirm(home, token, t, hash, now = Date.now()) {
-  if (!token) return "production write needs --confirm <token> from a dry run the owner approved";
-  const issuedMs = parseInt(token.split("-")[0], 36) * 1000;
-  if (!(now - issuedMs >= 0 && now - issuedMs <= TOKEN_TTL_MS))
-    return "confirm token expired; run the dry run again";
-  if (confirmToken(home, t, hash, issuedMs) !== token)
-    return "confirm token does not match this name, project, env, path and file";
-  if (auditLines(home).some((l) => l.confirm === token && l.action === "confirm-used"))
-    return "confirm token already used";
-  return null;
-}
-
 // --- audit ------------------------------------------------------------------------------------------
 const auditPath = (home) => join(home, ".stackra", "secrets-audit.log");
-function auditLines(home) {
+export function auditLines(home) {
   if (!existsSync(auditPath(home))) return [];
   return readFileSync(auditPath(home), "utf8")
     .split("\n")
@@ -353,7 +151,7 @@ function auditLines(home) {
     });
 }
 /** Append-only, names only. */
-function audit(home, entry) {
+export function audit(home, entry) {
   stateDir(home);
   appendFileSync(
     auditPath(home),
@@ -364,84 +162,11 @@ function audit(home, entry) {
   );
 }
 
-/**
- * The import core: production confirmation, write, read-back verification. Returns the hash that was
- * there before (null = new). Throws a Refusal; never returns or prints the value.
- */
-function store(t, { value, hash }, { confirm, bindHash, home, runner, now, actor, inbox }) {
-  if (isProd(t.env)) {
-    // A generated value has no hash before its dry run; vault-keeper binds the token to the operation instead.
-    const why = checkConfirm(home, confirm, t, bindHash ?? hash, now());
-    if (why) throw new Refusal(why);
-    // Spend the token before anything can fail or crash, so it can never be replayed.
-    audit(home, { actor, name: t.name, env: t.env, path: t.path, action: "confirm-used", confirm });
-  }
-  const before = remoteHash(t, runner);
-  if (before !== hash) {
-    checkFileSyntax(runner);
-    writeSecret(t, value, runner, inbox);
-  }
-  if (remoteHash(t, runner) !== hash) throw new Refusal("read-back hash does not match");
-  return before;
-}
-
-/**
- * Programmatic entry (a future local request page, vault-keeper): stream a value straight into Infisical.
- * Returns only { name, ok, reason }; the reason is a fixed, value-free string. `bindHash` replaces the value hash
- * the production token is checked against (a generated value is unknown at its dry run).
- */
-export async function importSecret({
-  name,
-  project,
-  env = "dev",
-  path = "/agents",
-  valueStream,
-  actor = "unknown",
-  confirm,
-  bindHash,
-  home = homedir(),
-  runner = cliRunner,
-  now = Date.now,
-}) {
-  const label = NAME_RX.test(String(name)) ? name : "(invalid name)";
-  const inbox = join(home, "Secrets-inbox");
-  try {
-    // The temp value file goes inside the inbox: refuse one that is a symlink or not a folder.
-    const st = lstatSync(inbox, { throwIfNoEntry: false });
-    if (st && (st.isSymbolicLink() || !st.isDirectory()))
-      throw new Refusal("inbox is not a real directory");
-    cleanStaleTemps(inbox);
-    const t = checkTarget({ name, env, path, project });
-    store(t, await readStream(valueStream), { confirm, bindHash, home, runner, now, actor, inbox });
-    audit(home, { actor, name, project: t.project, env, path, action: "import", result: "ok" });
-    return { name: label, ok: true };
-  } catch (error) {
-    if (!(error instanceof Refusal)) throw error;
-    audit(home, {
-      actor,
-      name: label,
-      project,
-      env,
-      path,
-      action: "import",
-      result: "refused",
-      reason: error.message,
-    });
-    return { name: label, ok: false, reason: error.message };
-  }
-}
-
 // --- main -------------------------------------------------------------------------------------------
 /** Runs the command; returns the exit code. `home` decides the inbox and the audit log (tests pass a temp dir). */
 export function main(
   argv,
-  {
-    home = homedir(),
-    runner = cliRunner,
-    now = Date.now,
-    write = (s) => process.stdout.write(s),
-    env = process.env,
-  } = {},
+  { home = homedir(), write = (s) => process.stdout.write(s), env = process.env, sopsRun } = {},
 ) {
   // Strip control characters: a crafted file name must not drive the terminal.
   // oxlint-disable-next-line no-control-regex -- matching control characters is the point
@@ -454,12 +179,10 @@ export function main(
       options: {
         "dry-run": { type: "boolean" },
         list: { type: "boolean" },
-        project: { type: "string" },
-        env: { type: "string" },
-        path: { type: "string" },
         name: { type: "string" },
-        confirm: { type: "string" },
         actor: { type: "string" },
+        scope: { type: "string" },
+        tree: { type: "boolean" },
       },
     });
   } catch {
@@ -471,6 +194,8 @@ export function main(
   const actor = o.actor ?? process.env.STACKRA_AGENT ?? "unknown";
   const inbox = join(home, "Secrets-inbox");
   cleanStaleTemps(inbox);
+  if (o.tree)
+    return importTree(inbox, { dryRun: o["dry-run"], actor, home, say, run: sopsRun, env });
   const { entries, problems } = scanInbox(inbox);
 
   if (o.list) {
@@ -485,6 +210,10 @@ export function main(
       count: entries.length,
     });
     return refused ? 1 : 0;
+  }
+  if (o.scope === undefined) {
+    say("secrets-import: --scope <scope> or --tree is required (figentra/secrets, ADR 0525)");
+    return 2;
   }
 
   const refused = (f) => problems.some((p) => p.file === f);
@@ -503,93 +232,175 @@ export function main(
   }
   const shown = problems.filter((p) => !positionals.length || positionals.includes(p.file));
   for (const p of shown) say(`${p.file}  refused: ${p.error}`);
-  let failed = shown.length;
+  const failed = shown.length;
   if (!picked.length && !failed) say("secrets-import: inbox is empty");
 
+  return importToSops(picked, {
+    scope: o.scope,
+    name: o.name,
+    dryRun: o["dry-run"],
+    actor,
+    home,
+    inbox,
+    say,
+    run: sopsRun,
+    env,
+    failed,
+  });
+}
+
+/**
+ * `--scope`: the picked inbox files go to `figentra/secrets` in one self-merging pull request (ADR 0525). The inbox
+ * file and its sidecar are deleted only after the pull request is open. Returns the exit code.
+ */
+function importToSops(
+  picked,
+  { scope: toScope, name, dryRun, actor, home, inbox, say, run, env, failed },
+) {
+  const entries = [];
   for (const e of picked) {
     if (e.missing) {
-      // Only a NAME was typed; it is safe to repeat only when it looks like one.
       say(`${NAME_RX.test(e.missing) ? e.missing : "(file)"}  refused: not in the inbox`);
       failed++;
       continue;
     }
-    let t = { name: o.name ?? e.name, env: "dev", path: "/agents" };
-    const action = o["dry-run"] ? "dry-run" : "import";
     try {
-      const side = readSidecar(inbox, e.name);
-      t = checkTarget({
-        name: t.name,
-        env: o.env ?? side.env ?? t.env,
-        path: o.path ?? side.path ?? t.path,
-        project: o.project ?? side.project,
+      const t = checkSopsTarget(
+        { scope: toScope, name: name ?? e.name },
+        { agent: isAgentRun(env) },
+      );
+      entries.push({
+        ...t,
+        value: readValue(join(inbox, e.file)).value,
+        file: e.file,
+        stem: e.name,
       });
-      if (isAgentRun(env)) checkAgentTarget(t);
-      const read = readValue(join(inbox, e.file));
-      const label = `${t.name}  ${t.project}/${t.env}:${t.path}`;
-      if (o["dry-run"]) {
-        const before = remoteHash(t, runner);
-        say(
-          `${label}  ok  would-overwrite: ${before === null ? "no" : before === read.hash ? "no (identical)" : "yes"}`,
-        );
-        if (isProd(t.env)) {
-          const token = confirmToken(home, t, read.hash, now());
-          say(`  production: ask the owner; on yes re-run with --confirm ${token} (valid 30 min)`);
-        }
-        audit(home, {
-          actor,
-          name: t.name,
-          project: t.project,
-          env: t.env,
-          path: t.path,
-          action,
-          result: "ok",
-        });
-        continue;
-      }
-      const before = store(t, read, { confirm: o.confirm, home, runner, now, actor, inbox });
-      audit(home, {
-        actor,
-        name: t.name,
-        project: t.project,
-        env: t.env,
-        path: t.path,
-        action,
-        result: "ok",
-      });
-      unlinkSync(join(inbox, e.file));
-      rmSync(join(inbox, e.name + SIDECAR), { force: true });
-      const how = before === null ? "" : before === read.hash ? " (unchanged)" : " (overwritten)";
-      say(`${label}  imported${how}; inbox file deleted`);
     } catch (error) {
       if (!(error instanceof Refusal)) throw error;
       failed++;
-      say(`${t.name}  ${t.project ?? "?"}/${t.env}:${t.path}  refused: ${error.message}`);
+      say(`${NAME_RX.test(e.name) ? e.name : "(file)"}  ${toScope}  refused: ${error.message}`);
+    }
+  }
+  if (dryRun) {
+    for (const e of entries) say(`${e.name}  ${e.scope}  ok (dry run, nothing written)`);
+    return failed ? 1 : 0;
+  }
+  if (!entries.length) return failed ? 1 : 0;
+  try {
+    const { written, url } = publishSops(entries, { actor, run });
+    for (const [i, e] of entries.entries()) {
+      unlinkSync(join(inbox, e.file));
+      rmSync(join(inbox, e.stem + SIDECAR), { force: true });
+      audit(home, { actor, name: e.name, scope: e.scope, action: "import-sops", result: "ok" });
+      say(
+        `${e.name}  ${e.scope}  ${written[i].replaced ? "replaced" : "added"}; inbox file deleted  ${url}`,
+      );
+    }
+  } catch (error) {
+    if (!(error instanceof Refusal)) throw error;
+    failed += entries.length;
+    for (const e of entries) {
       audit(home, {
         actor,
-        name: t.name,
-        project: t.project,
-        env: t.env,
-        path: t.path,
-        action,
+        name: e.name,
+        scope: e.scope,
+        action: "import-sops",
         result: "refused",
         reason: error.message,
       });
+      say(`${e.name}  ${e.scope}  refused: ${error.message}`);
     }
   }
   return failed ? 1 : 0;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  // Remove the temp dir if a signal interrupts a write, then exit with the signal's code.
-  for (const [sig, code] of [
-    ["SIGINT", 130],
-    ["SIGTERM", 143],
-  ])
-    // oxlint-disable-next-line no-loop-func -- reason: the handler must read the live `liveTemp` when the signal arrives
-    process.once(sig, () => {
-      if (liveTemp) rmSync(liveTemp, { recursive: true, force: true });
-      process.exit(code);
+/**
+ * The inbox's scope-shaped folders (`--tree`): `<scope>/<NAME>[.ext]` → `{ file, name, scope }`, and value-free
+ * problems. Files directly in the inbox belong to the flat modes and are skipped. Never opens a file.
+ */
+export function scanTree(inbox) {
+  const entries = [];
+  const problems = [];
+  const st = lstatSync(inbox, { throwIfNoEntry: false });
+  if (!st || st.isSymbolicLink() || !st.isDirectory())
+    return { entries, problems: [{ file: inbox, error: NOT_A_DIRECTORY }] };
+  const walk = (rel, depth) => {
+    for (const f of readdirSync(join(inbox, rel)).toSorted()) {
+      if (f.startsWith(".") || f.endsWith(SIDECAR)) continue;
+      const file = rel ? `${rel}/${f}` : f;
+      const s = lstatSync(join(inbox, file));
+      if (s.isSymbolicLink()) problems.push({ file, error: "symlink refused" });
+      else if (s.isDirectory()) {
+        if (depth < 6) walk(file, depth + 1);
+        else problems.push({ file, error: "folders nested too deep" });
+      } else if (!rel) continue;
+      else if (!s.isFile()) problems.push({ file, error: "not a regular file" });
+      else if (s.size > MAX_BYTES) problems.push({ file, error: `larger than ${MAX_BYTES} bytes` });
+      else entries.push({ file, name: f.replace(/\.[^.]*$/, ""), scope: rel });
+    }
+  };
+  walk("", 0);
+  return { entries, problems };
+}
+
+/**
+ * `--tree`: every file under a scope-shaped folder goes to that scope, all in one pull request. Each file is deleted
+ * once the pull request is open, then any folder left empty. Returns the exit code; prints names and scopes only.
+ */
+function importTree(inbox, { dryRun, actor, home, say, run, env }) {
+  const { entries: found, problems } = scanTree(inbox);
+  let failed = problems.length;
+  for (const p of problems) say(`${p.file}  refused: ${p.error}`);
+  const entries = [];
+  for (const e of found)
+    try {
+      const t = checkSopsTarget({ scope: e.scope, name: e.name }, { agent: isAgentRun(env) });
+      entries.push({ ...t, file: e.file, value: readValue(join(inbox, e.file)).value });
+    } catch (error) {
+      if (!(error instanceof Refusal)) throw error;
+      failed++;
+      say(`${NAME_RX.test(e.name) ? e.name : "(file)"}  (folder)  refused: ${error.message}`);
+    }
+  if (!found.length && !failed) say("secrets-import: no scope folders in the inbox");
+  if (dryRun) for (const e of entries) say(`${e.name}  ${e.scope}  ok (dry run, nothing written)`);
+  if (failed && !dryRun) say("secrets-import: nothing written; fix the refusals first");
+  if (dryRun || failed) return failed ? 1 : 0;
+  if (!entries.length) return 0;
+  try {
+    const { written, url } = publishSops(entries, {
+      actor,
+      run,
+      title: `secrets: import ${entries.length} names from the inbox tree`,
     });
+    for (const [i, e] of entries.entries()) {
+      unlinkSync(join(inbox, e.file));
+      audit(home, { actor, name: e.name, scope: e.scope, action: "import-tree", result: "ok" });
+      say(`${e.name}  ${e.scope}  ${written[i].replaced ? "replaced" : "added"}  ${url}`);
+    }
+    for (const dir of [...new Set(entries.map((e) => e.scope))].toSorted().toReversed())
+      for (let d = dir; d && d !== "."; d = dirname(d)) {
+        if (readdirSync(join(inbox, d)).length) break;
+        rmdirSync(join(inbox, d));
+      }
+    say(`secrets-import: ${entries.length} imported; inbox files deleted`);
+    return 0;
+  } catch (error) {
+    if (!(error instanceof Refusal)) throw error;
+    for (const e of entries)
+      audit(home, {
+        actor,
+        name: e.name,
+        scope: e.scope,
+        action: "import-tree",
+        result: "refused",
+        reason: error.message,
+      });
+    say(`secrets-import: refused: ${error.message} (nothing deleted)`);
+    return 1;
+  }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     process.exitCode = main(process.argv.slice(2));
   } catch {

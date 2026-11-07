@@ -15,12 +15,18 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import { z } from "zod";
 
+import type { StandInProps as Props } from "#core/__tests__/stand-in-props.fixture";
 import { RelationManager } from "#react/resource-pages/relation-manager";
 
-const spies = vi.hoisted(() => ({ useQuery: vi.fn(), run: vi.fn() }));
+const spies = vi.hoisted(() => ({
+  can: vi.fn((permission?: string) => permission !== "orders.order.refund"),
+  useQuery: vi.fn(),
+  run: vi.fn(),
+}));
 
 vi.mock("@stackra/clients/react", () => ({ useQuery: spies.useQuery }));
 vi.mock("#react/action-runner/use-action-runner", () => ({ useActionRunner: () => spies.run }));
+vi.mock("#react/action-runner/use-can", () => ({ useCan: () => spies.can }));
 vi.mock("@stackra/navigation/react", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("#react/resource-pages/action-input-modal", async () => {
   const { createElement } = await import("react");
@@ -51,8 +57,6 @@ vi.mock("@stackra/i18n/react", () => ({
 vi.mock("@stackra/ui/react", async (importOriginal) => {
   const { createElement } = await import("react");
   const { useCollection } = await importOriginal<{ readonly useCollection: unknown }>();
-  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
-  type Props = Record<string, any>;
   return {
     useCollection,
     Section: (props: Props) => createElement("section", null, props.title, props.children),

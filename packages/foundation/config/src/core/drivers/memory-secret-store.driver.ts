@@ -4,7 +4,7 @@
  *          the secrets a test sets (`set(name, value)`) and nothing else.
  * Boundary: values live in a private map on the instance; there is still no way to list them, so the port's blind
  *           read holds. Starts empty, so a secret a test did not set reads as missing. A deployment binds its target's
- *           store (Encore secrets, the Worker's bindings, Infisical).
+ *           store (Encore secrets, the Worker's bindings, AWS Secrets Manager).
  * Runtime: isomorphic
  * Governing contract: ADR 0173 (nobody reads a value; secrets by name); ADR 0266 (memory drivers first); ADR 0269.
  */

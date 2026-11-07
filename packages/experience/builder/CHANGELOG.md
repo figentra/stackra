@@ -1,5 +1,245 @@
 # @stackra/builder
 
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/rules@0.18.1
+  - @stackra/workflow@0.18.1
+  - @stackra/collaboration@0.18.1
+  - @stackra/experience@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/rules@0.18.0
+  - @stackra/workflow@0.18.0
+  - @stackra/collaboration@0.18.0
+  - @stackra/experience@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/rules@0.17.2
+  - @stackra/workflow@0.17.2
+  - @stackra/collaboration@0.17.2
+  - @stackra/experience@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/rules@0.17.1
+  - @stackra/workflow@0.17.1
+  - @stackra/collaboration@0.17.1
+  - @stackra/experience@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/rules@0.17.0
+  - @stackra/collaboration@0.17.0
+  - @stackra/experience@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/workflow@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/rules@0.16.0
+  - @stackra/collaboration@0.16.0
+  - @stackra/experience@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/workflow@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/experience@0.15.0
+  - @stackra/collaboration@0.15.0
+  - @stackra/workflow@0.15.0
+  - @stackra/rules@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/rules@0.14.4
+  - @stackra/experience@0.14.4
+  - @stackra/workflow@0.14.4
+  - @stackra/collaboration@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/rules@0.14.3
+  - @stackra/collaboration@0.14.3
+  - @stackra/experience@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/workflow@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/rules@0.14.2
+  - @stackra/collaboration@0.14.2
+  - @stackra/experience@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/workflow@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/rules@0.14.1
+  - @stackra/collaboration@0.14.1
+  - @stackra/experience@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/workflow@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/rules@0.14.0
+  - @stackra/collaboration@0.14.0
+  - @stackra/experience@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/workflow@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/rules@0.13.0
+  - @stackra/collaboration@0.13.0
+  - @stackra/experience@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/workflow@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/rules@0.12.0
+  - @stackra/collaboration@0.12.0
+  - @stackra/experience@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/workflow@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/rules@0.11.1
+  - @stackra/collaboration@0.11.1
+  - @stackra/experience@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/workflow@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/rules@0.11.0
+  - @stackra/collaboration@0.11.0
+  - @stackra/experience@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/workflow@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/collaboration@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/workflow@0.10.0
+  - @stackra/rules@0.10.0
+  - @stackra/experience@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/rules@0.9.0
+  - @stackra/collaboration@0.9.0
+  - @stackra/experience@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/workflow@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

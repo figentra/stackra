@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/naming-and-casing.md
+file: rules/naming-and-casing.md
+reason: "core's newer text, until the stackra preset carries it: the gen checks kind_class_name and identity_changed are automated (STA-2068)"
+owner: figentra-usr
+review: 2027-02-01

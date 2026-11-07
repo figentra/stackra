@@ -65,11 +65,20 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "consumer", members: ["services/catalogue", "services/channels"] },
   { name: "i18n-packages", members: ["packages/customers"] },
   { name: "member-module-alias", members: ["services/payments"] },
+  // The cross-app relay (STA-1910): a listener of a contract-only producer's event gets the inbox; a runway `events`
+  // block makes the service a producer. The plain `consumer` and `service` fixtures stay byte-identical.
+  {
+    name: "cross-app-consumer",
+    base: "consumer",
+    members: ["services/catalogue", "services/channels"],
+  },
+  { name: "cross-app-producer", base: "service", members: ["services/shop"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-shim-authored", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-tool-reason", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-encore-stray", base: "service", members: ["services/shop"] },
   { name: "refusal-encore-missing", base: "service", members: ["services/shop"] },
+  { name: "refusal-identity-changed", base: "service", members: ["services/shop"] },
   { name: "refusal-docs-misplaced", base: "docs", members: ["apps/handbook"] },
   { name: "refusal-docs-config", base: "docs", members: ["apps/handbook"] },
   // The producer is not generated, so it has no manifest: `client_service_unknown`, manifest still written.

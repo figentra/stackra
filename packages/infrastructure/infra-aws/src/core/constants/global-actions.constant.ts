@@ -1,0 +1,65 @@
+/**
+ * Stackra file contract:
+ * Purpose: `GLOBAL_ACTIONS`, the IAM actions a region-lock SCP leaves alone: global services (IAM, Organizations, STS,
+ *          Route 53, CloudFront, WAF, billing, support) and the few regional reads the console needs everywhere.
+ * Boundary: internal to `regionLock`; a call a lock refuses that a global service needs is added here, in the same
+ *           change as the reason.
+ * Runtime: isomorphic
+ * Governing contract: ADR 0172 (decision 2: regions per account), ADR 0524 (the organization's SCPs).
+ */
+
+/** Actions outside every region lock. */
+export const GLOBAL_ACTIONS: readonly string[] = [
+  "a4b:*",
+  "access-analyzer:*",
+  "account:*",
+  "acm:*",
+  "aws-marketplace:*",
+  "aws-marketplace-management:*",
+  "aws-portal:*",
+  "billing:*",
+  "budgets:*",
+  "ce:*",
+  "chime:*",
+  "cloudfront:*",
+  "config:*",
+  "cur:*",
+  "directconnect:*",
+  "ec2:DescribeRegions",
+  "ec2:DescribeTransitGateways",
+  "ec2:DescribeVpnGateways",
+  "fms:*",
+  "freetier:*",
+  "globalaccelerator:*",
+  "health:*",
+  "iam:*",
+  "identitystore:*",
+  "importexport:*",
+  "invoicing:*",
+  "kms:*",
+  "networkmanager:*",
+  "notifications:*",
+  "organizations:*",
+  "payments:*",
+  "pricing:*",
+  "route53:*",
+  "route53domains:*",
+  "route53-recovery-cluster:*",
+  "route53-recovery-control-config:*",
+  "route53-recovery-readiness:*",
+  "s3:GetAccountPublic*",
+  "s3:ListAllMyBuckets",
+  "s3:ListMultiRegionAccessPoints",
+  "s3:PutAccountPublic*",
+  "servicequotas:*",
+  "shield:*",
+  "sso:*",
+  "sts:*",
+  "support:*",
+  "tax:*",
+  "trustedadvisor:*",
+  "waf-regional:*",
+  "waf:*",
+  "wafv2:*",
+  "wellarchitected:*",
+];

@@ -69,7 +69,7 @@ coreutils, so they run on a Linux box.
 
 | Input                 | Pin                                                                      |
 | --------------------- | ------------------------------------------------------------------------ |
-| Base image            | `ubuntu:24.04` (tag; pin a digest after the first build)                 |
+| Base image            | `ubuntu:24.04`, pinned by digest `sha256:fe815609…` (2026-11-04)         |
 | Node, pnpm, Infisical | `mise.toml` values, through `TOOLCHAIN_PINS`                             |
 | Playwright            | `pnpm-workspace.yaml` catalogue value: Chromium, Firefox and WebKit      |
 | mise                  | `TOOLCHAIN_PINS.mise` (confirm against the mise releases on first build) |

@@ -152,6 +152,13 @@ function issuePaths(run: () => unknown): string[] {
   throw new Error("expected a RunwayInvalidError");
 }
 
+/** The issue paths of a service runway whose staging environment has the given `events` block. */
+function refused(events: unknown): string[] {
+  return issuePaths(() =>
+    parseRunway("service", { version: 3, environments: { staging: { events } } }),
+  );
+}
+
 /** Parses an app runway whose dev environment has the given vars. */
 function parseVars(vars: Record<string, unknown>): unknown {
   return parseRunway("app", { version: 3, environments: { dev: { vars } } });
@@ -429,9 +436,10 @@ describe("parseRunway", () => {
       issuePaths(root({ environments: { dev: { destinations: { workers: "compose" } } } })),
     ).toEqual(["environments.dev.destinations"]);
     expect(issuePaths(root({ project: "acme_platform" }))).toEqual(["project"]);
+    // ADR 0525: an old `providers.infisical` block is an open provider now; `deprecatedFields` warns on it.
     expect(
       issuePaths(root({ providers: { infisical: { domain: "http://infisical.local" } } })),
-    ).toEqual(["providers.infisical.domain"]);
+    ).toEqual([]);
     expect(
       parseRunway("root", {
         ...ROOT,
@@ -469,6 +477,47 @@ describe("parseRunway", () => {
     expect(
       issuePaths(() => parseRunway("app", { ...CONSOLE, health: { expects: "200" } })),
     ).toEqual(["health.expects"]);
+  });
+
+  // @covers sta-1910:FR-012 @covers sta-1910:FR-015
+  it("reads a producer's cross-app events block: a secret name, public keys and subscribers", () => {
+    const events = {
+      keys: [{ id: "pay-dev-1", publicKey: "MCowBQYDK2VwAyEA" }],
+      subscribers: [
+        {
+          member: "billing",
+          inbox: "http://localhost:4012",
+          events: ["payments.payment.captured.v1", "payments.payment.failed.v1"],
+        },
+      ],
+    };
+    const service = parseRunway("service", { version: 3, environments: { dev: { events } } });
+    expect(service.environments.dev?.events?.signingKey).toBe("STACKRA_EVENTS_SIGNING_KEY");
+    expect(service.environments.dev?.events?.subscribers[0]?.member).toBe("billing");
+    expect(refused({ ...events, signingKey: "sk-live-value" })).toEqual([
+      "environments.staging.events.signingKey",
+    ]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], inbox: "http://billing.example.com" }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.inbox"]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], inbox: "https://billing.example.com/events" }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.inbox"]);
+    expect(
+      refused({
+        ...events,
+        subscribers: [{ ...events.subscribers[0], events: ["payments.payment.captured"] }],
+      }),
+    ).toEqual(["environments.staging.events.subscribers.0.events.0"]);
+    expect(refused({ ...events, keys: [...events.keys, ...events.keys] })).toEqual([
+      "environments.staging.events.keys",
+    ]);
   });
 
   it("refuses each key STA-2028 removed, naming the block it was in", () => {

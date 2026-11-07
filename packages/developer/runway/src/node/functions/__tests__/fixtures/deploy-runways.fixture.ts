@@ -12,13 +12,7 @@ import type { DeployRunways } from "#node/types/deploy-runways.type";
 export const ROOT_RUNWAY = {
   version: 3,
   project: "acme",
-  providers: {
-    github: { org: "acme", repo: "platform" },
-    infisical: {
-      environments: { production: "prod" },
-      paths: { runtime: "/runtime", ci: "/ci" },
-    },
-  },
+  providers: { github: { org: "acme", repo: "platform" } },
   environments: {
     production: { destinations: { web: "cloudflare-workers", docs: "mintlify" } },
   },
@@ -27,7 +21,7 @@ export const ROOT_RUNWAY = {
     mintlify: { workflows: { docs: "deploy-docs.yml" } },
     npm: { workflows: { packages: "release.yml" } },
   },
-  secrets: { sync: "on-deploy", defaultPath: "runtime", ci: ["CLOUDFLARE_API_TOKEN"] },
+  secrets: { sync: "on-deploy", ci: ["CLOUDFLARE_API_TOKEN"] },
   release: { buildOrder: ["npm", "cloudflare-workers", "encore-cloud", "mintlify"] },
 };
 

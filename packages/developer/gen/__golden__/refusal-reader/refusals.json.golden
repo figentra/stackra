@@ -91,6 +91,12 @@
   },
   {
     "member": "packages/shop",
+    "code": "idempotency_missing",
+    "file": "src/node/actions/untyped.action.ts",
+    "subject": "UntypedAction"
+  },
+  {
+    "member": "packages/shop",
     "code": "kind_class_name",
     "file": "src/core/schemas/two.schema.ts",
     "subject": "One"

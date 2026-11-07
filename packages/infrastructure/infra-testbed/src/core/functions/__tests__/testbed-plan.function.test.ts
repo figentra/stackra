@@ -99,7 +99,7 @@ describe("testbedPlan", () => {
     expect(() => testbedPlan({ region: "eu-west-2", heavy: { min: 1, max: 1 } })).not.toThrow();
   });
 
-  it("grants figentra-ci paths to the core project, ids only", () => {
+  it("grants figentra-ci paths to the core project and the registry path to every project, ids only", () => {
     expect(plan.secretGrants.projects.core).toEqual([
       { projectId: "proj-1", environment: "prod", path: "/ci" },
       { projectId: "proj-1", environment: "prod", path: "/ci/turbo" },
@@ -108,6 +108,9 @@ describe("testbedPlan", () => {
       testbedPlan({ identityId: "id-1", ciGateProjectId: "proj-1", turboProjectId: "proj-2" })
         .secretGrants.projects.core?.[1],
     ).toEqual({ projectId: "proj-2", environment: "prod", path: "/ci/turbo" });
+    expect(plan.secretGrants.projects["*"]).toEqual([
+      { projectId: "proj-1", environment: "prod", path: "/ci/registry" },
+    ]);
     expect(plan.secretGrants.identityName).toBe("gate");
     expect(testbedPlan().secretGrants.projects).toEqual({});
   });
@@ -122,7 +125,6 @@ describe("testbedPlan", () => {
     const mise = repoFile("mise.toml");
     expect(mise).toContain(`node = "${TOOLCHAIN_PINS.node}"`);
     expect(mise).toContain(`pnpm = "${TOOLCHAIN_PINS.pnpm}"`);
-    expect(mise).toContain(`"github:Infisical/cli" = "${TOOLCHAIN_PINS.infisical}"`);
     expect(mise).toContain(`shfmt = "${TOOLCHAIN_PINS.shfmt}"`);
     expect(repoFile("pnpm-workspace.yaml")).toContain(
       `"@playwright/test": ${TOOLCHAIN_PINS.playwright}`,

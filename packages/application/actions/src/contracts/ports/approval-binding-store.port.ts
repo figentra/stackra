@@ -16,7 +16,7 @@ import { Port } from "@stackra/contracts";
 import type { ApprovalBinding } from "#contracts/types/approval-binding.type";
 
 /**
- * Stores bindings.
+ * Stores approval bindings, one per approval id in the current tenant.
  *
  * @example
  * export class PostgresApprovalBindingStoreDriver extends Driver(ApprovalBindingStore) {

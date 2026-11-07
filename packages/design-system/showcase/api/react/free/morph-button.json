@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "662134f42b1ea7fb",
+    "hash": "2cec9a8da0b3671c",
     "propsFiles": ["ui/src/react/morph-button/morph-button.props.ts"]
   },
   "importLine": "import { MorphButton } from \"@stackra/ui/react\";",
@@ -162,6 +162,13 @@
           "type": "boolean"
         },
         {
+          "description": "True to stretch the button to the full width of its container.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
           "default": "default",
           "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
           "name": "shape",
@@ -175,13 +182,6 @@
           "required": false,
           "source": "stackra",
           "type": "ShortcutAction"
-        },
-        {
-          "description": "True to stretch the button to the full width of its container.",
-          "name": "isFullWidth",
-          "required": false,
-          "source": "stackra",
-          "type": "boolean"
         },
         {
           "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",

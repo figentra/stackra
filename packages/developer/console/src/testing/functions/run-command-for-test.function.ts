@@ -63,7 +63,12 @@ export async function runCommandForTest(
   if (options.audit !== undefined) ports.set(CommandAudit, options.audit);
   if (options.breakGlass !== undefined) ports.set(OperatorBreakGlass, options.breakGlass);
   const container = ports.size === 0 ? options.container : withPorts(options.container, ports);
-  const config = container === undefined ? base : { ...base, container };
+  const config: ConsoleConfig = {
+    ...base,
+    ...(container === undefined ? {} : { container }),
+    ...(options.json === undefined ? {} : { json: options.json }),
+    ...(options.requireCommand === undefined ? {} : { requireCommand: options.requireCommand }),
+  };
   const stdout = memoryText();
   const stderr = memoryText();
   const signals = manualSignals();

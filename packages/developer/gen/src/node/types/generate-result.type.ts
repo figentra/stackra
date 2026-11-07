@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `GenerateResult`, what one `generate` run did: its refusals, its warnings, every file it produced, and
- *          the paths it wrote or, in a check run, found stale.
+ * Purpose: `GenerateResult`, what one `generate` run did: its refusals, every file it produced, the paths it
+ *          wrote or, in a check run, found stale, and its warnings.
  * Boundary: a type only. When `errors` is not empty, `files` is empty and `changed` lists only the client files and
  *           manifest a refused run may still write (never in a check run).
  * Runtime: node
@@ -23,4 +23,10 @@ export interface GenerateResult {
 
   /** The paths written (a write run) or that differ from disk (a check run). */
   readonly changed: readonly string[];
+
+  /**
+   * What gen notes without refusing, such as `client_event_unsubscribed` (STA-1910); absent when none. A run with
+   * warnings still writes.
+   */
+  readonly warnings?: readonly GenError[];
 }

@@ -38,6 +38,7 @@
       "permission": "shop.order.cancel",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/orders/:orderId/cancel",
@@ -49,7 +50,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         }
       },
@@ -145,6 +146,18 @@
       "key": "shop",
       "class": "ShopConfig",
       "from": "@golden/shop"
+    }
+  ],
+  "env": [
+    {
+      "name": "STACKRA_SHOP_GATEWAY",
+      "kind": "config",
+      "type": "enum",
+      "values": ["manual", "stripe"],
+      "required": false,
+      "config": "shop",
+      "class": "ShopConfig",
+      "field": "gateway"
     }
   ],
   "services": [

@@ -13,8 +13,8 @@ Repository tooling that is not a workspace member: it has no `package.json`, no 
 - Scripts are plain Node 24 `.mjs` (ESM), mostly dependency-free so they run before `pnpm install`; relative imports
   keep their `.mjs` extension ([ADR 0006](../apps/docs/src/docs/adr/0006-naming-exports-and-imports.mdx)).
 - Each script opens with a docblock that states its purpose, inputs and secrets handling.
-- A script that needs a token reads it from the environment, injected by `infisical run`; it never reads a file or
-  prints a secret.
+- A script that needs a token reads it from the environment, injected by `tools/scripts/secrets-exec.mjs` (the
+  `agents` scope of figentra/secrets, decrypted by sops in memory); it never reads a file or prints a secret.
 - Tests sit in `scripts/__tests__/` and run with `node --test` in `pnpm validate`.
 - Schemas are the source of truth for runway (root, app, service), `stackra.lock.yaml`, `.mcp.yaml` and
   `.github/branch-protection.json`. Each keeps its `https://static.stackra.figentra.com/schemas/` `$id` for later hosting; until then

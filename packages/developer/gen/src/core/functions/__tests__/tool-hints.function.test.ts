@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `toolHints`: read-only from L0 and L1, destructive from L4 or `irreversible`, idempotent for a
- *          query or a declared idempotency, open-world from `external_communication`.
+ * Purpose: unit tests of `toolHints`: read-only for a query at L0 or L1, destructive from L4 or
+ *          `irreversible`, idempotent for a query or a declared idempotency, open-world from `external_communication`.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0099 (decision 3).
@@ -18,6 +18,15 @@ describe("toolHints", () => {
       idempotentHint: true,
       openWorldHint: false,
     });
+  });
+
+  it("never marks an action as read-only, even at L0 or L1", () => {
+    expect(
+      toolHints({ kind: "action", risk: "L1", effects: [], idempotent: false }).readOnlyHint,
+    ).toBe(false);
+    expect(
+      toolHints({ kind: "action", risk: "L0", effects: [], idempotent: false }).readOnlyHint,
+    ).toBe(false);
   });
 
   it("marks L4 or an irreversible effect as destructive", () => {

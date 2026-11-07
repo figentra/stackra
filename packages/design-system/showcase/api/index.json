@@ -77,6 +77,11 @@
     "propsCount": 11,
     "react": true
   },
+  "free/autocomplete": {
+    "partsCount": 1,
+    "propsCount": 56,
+    "react": true
+  },
   "free/avatar": {
     "native": true,
     "partsCount": 1,
@@ -296,10 +301,20 @@
     "propsCount": 21,
     "react": true
   },
+  "free/color-field": {
+    "partsCount": 1,
+    "propsCount": 48,
+    "react": true
+  },
   "free/color-picker": {
     "native": true,
     "partsCount": 1,
     "propsCount": 13,
+    "react": true
+  },
+  "free/color-swatch": {
+    "partsCount": 1,
+    "propsCount": 16,
     "react": true
   },
   "free/column-chooser": {
@@ -563,6 +578,11 @@
     "propsCount": 17,
     "react": true
   },
+  "free/flag": {
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
   "free/flip-card": {
     "native": true,
     "partsCount": 1,
@@ -810,6 +830,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 5,
+    "react": true
+  },
+  "free/marker-map": {
+    "partsCount": 1,
+    "propsCount": 7,
     "react": true
   },
   "free/marquee": {

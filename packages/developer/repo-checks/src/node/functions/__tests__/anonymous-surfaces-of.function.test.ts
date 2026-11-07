@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `anonymousSurfacesOf`: a member's own anonymous-callable calls are listed by their locked keys
  *          (from `anonymous: true` or an older manifest's `actors`), a hosted row is left to its owner; and the
- *          committed manifests of this repository list exactly today's five, so a new one fails here and is reviewed.
+ *          committed manifests of this repository list exactly the five in REVIEWED_ANONYMOUS_SURFACES, so a new one
+ *          fails here until it is reviewed and recorded, and a removed one leaves no stale record.
  * Boundary: test only; the last case reads the repository's committed `stackra.manifest.json` files.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-2025.
@@ -13,6 +14,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "@stackra/testing";
 
+import { REVIEWED_ANONYMOUS_SURFACES } from "#node/constants/reviewed-anonymous-surfaces.constant";
 import { anonymousSurfacesOf } from "#node/functions/anonymous-surfaces-of.function";
 
 /** The repository root. */
@@ -33,7 +35,7 @@ describe("anonymousSurfacesOf", () => {
     expect(anonymousSurfacesOf({})).toEqual([]);
   });
 
-  it("finds exactly today's five anonymous-callable calls in this repository", () => {
+  it("finds exactly the five reviewed anonymous-callable calls in this repository", () => {
     const manifests = ["packages", "services", "apps"].flatMap((top) =>
       (top === "packages"
         ? readdirSync(join(ROOT, top), { withFileTypes: true })
@@ -52,12 +54,8 @@ describe("anonymousSurfacesOf", () => {
       .flatMap((file) => anonymousSurfacesOf(JSON.parse(readFileSync(file, "utf8"))))
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds
       .sort();
-    expect(keys).toEqual([
-      "achievements.award.verify@1",
-      "analytics.analytics_batch.ingest@1",
-      "consent.consent_snapshot.issue@1",
-      "identity.passkey.challenge@1",
-      "identity.passkey.verify@1",
-    ]);
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts a copy of the keys, built here
+    expect(keys).toEqual(Object.keys(REVIEWED_ANONYMOUS_SURFACES).sort());
+    expect(keys).toHaveLength(5);
   });
 });

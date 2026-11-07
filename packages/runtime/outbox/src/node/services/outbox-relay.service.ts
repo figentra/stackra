@@ -10,7 +10,9 @@
  *          (`consumeMany` with the run coalesced, or `consume` one by one), saving the cursor after the run; a failed
  *          consumer retries from its cursor after the same backoff and stalls (logged, nothing dropped) after its last
  *          attempt, while every other consumer moves on. An event is published at its current version and then at
- *          each older version a live `Change` still serves (ADR 0141, stackra-403), all under the same id.
+ *          each older version a live `Change` still serves (ADR 0141, stackra-403), all under the same id; when the
+ *          container binds `CrossAppFanOut`, each of those versions is then written as a delivery to every subscriber
+ *          in another app that takes it (ADR 0511 decision 12), and a failure there fails the message.
  * Boundary: a platform service over the `OutboxDriver` and `EventPublisher` ports, @stackra/locking's `Locks`, the
  *           `Database` and the `Clock`; `connect(container)` gives it the container its change consumers and logger are
  *           resolved from (the runtime and a test call it, as they call `EventBus.connect`). Delivery is at least once:
@@ -31,7 +33,7 @@ import type { Resolver } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { ActorKind, backoffDelay, Duration, Logger } from "@stackra/contracts";
+import { ActorKind, backoffDelay, Logger } from "@stackra/contracts";
 import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
@@ -55,8 +57,10 @@ import type {
 import { CHANGE_CONSUMERS } from "#core/constants/change-consumers.constant";
 import { coalesceChanges } from "#core/functions/coalesce-changes.function";
 import { olderEnvelopes } from "#core/functions/older-envelopes.function";
+import { pauseFor } from "#core/functions/pause-for.function";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
+import { CrossAppFanOut } from "#node/services/cross-app-fan-out.service";
 
 /** A run of one model's changes in one scope by one actor, consecutive in the log. */
 interface Run {
@@ -367,10 +371,15 @@ export class OutboxRelayService extends Service {
       : this.database.withScope(scope ?? [], work);
   }
 
-  /** Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141). */
+  /**
+   * Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141), then, when
+   * the container binds the cross-app fan-out, writes their deliveries to other apps (ADR 0511 decision 12).
+   */
   private async publish(envelope: EventEnvelope, now: Date): Promise<void> {
-    await this.publisher.publish(envelope);
-    for (const older of olderEnvelopes(envelope, now)) await this.publisher.publish(older);
+    const envelopes = [envelope, ...olderEnvelopes(envelope, now)];
+    for (const each of envelopes) await this.publisher.publish(each);
+    if (this.resolver?.has(CrossAppFanOut) === true)
+      await this.resolver.get(CrossAppFanOut).fanOut(envelopes, now);
   }
 
   /** The wire form of an event message. */
@@ -395,19 +404,7 @@ export class OutboxRelayService extends Service {
 
   /** Resolves after the poll interval, or at once when `signal` aborts. */
   private pause(signal: AbortSignal): Promise<void> {
-    return new Promise((resolve) => {
-      if (signal.aborted) {
-        resolve();
-        return;
-      }
-      const done = () => {
-        clearTimeout(timer);
-        signal.removeEventListener("abort", done);
-        resolve();
-      };
-      const timer = setTimeout(done, Duration.toMilliseconds(OUTBOX_DEFAULTS.pollInterval));
-      signal.addEventListener("abort", done, { once: true });
-    });
+    return pauseFor(signal, OUTBOX_DEFAULTS.pollInterval);
   }
 
   /** The bound logger, when there is one. */

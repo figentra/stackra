@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: `runGen(root, options, io)`, one gen run over one member as the CLI prints it: every warning and refusal
- *          in gen's two-line form, then the files written, or with `check` the files that are stale;
- *          `pass: "manifests"` runs gen's manifest pass alone. It resolves true when the member is clean: no refusal,
- *          and with `check` nothing stale. A warning never changes the outcome (STA-340).
+ * Purpose: `runGen(root, options, io)`, one gen run over one member as the CLI prints it: every refusal in gen's
+ *          two-line form and each warning (`warning: `, never a failure), then the files written, or with `check` the files that are stale; `pass: "manifests"` runs
+ *          gen's manifest pass alone. It resolves true when the member is clean: no refusal, and with `check` nothing
+ *          stale.
  * Boundary: gen writes only under the member root and, on a refusal, nothing but the client files and manifest it
  *           lists; a check writes nothing. Gen gets `loadWithVite` as its module loader, so a member's resource trees
  *           are recorded (STA-1947).
@@ -44,15 +44,16 @@ export async function runGen(
   const where = relative(options.base ?? process.cwd(), root) || ".";
   const {
     errors,
-    warnings = [],
     changed,
+    warnings = [],
   } = await generate(root, {
     ...(options.check === undefined ? {} : { check: options.check }),
     ...(options.backend === undefined ? {} : { backend: options.backend }),
     ...(options.pass === undefined ? {} : { pass: options.pass }),
     loader: loadWithVite,
   });
-  for (const error of [...warnings, ...errors]) io.err(`${where}/${formatGenError(error)}\n`);
+  for (const error of errors) io.err(`${where}/${formatGenError(error)}\n`);
+  for (const warning of warnings) io.err(`warning: ${where}/${formatGenError(warning)}\n`);
   if (errors.length > 0) {
     // A refused run may still have written its clients and manifest, which the next round resolves against.
     for (const path of changed) io.out(`wrote ${where}/${path}\n`);

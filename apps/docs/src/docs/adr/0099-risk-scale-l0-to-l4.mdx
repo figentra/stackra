@@ -1,6 +1,6 @@
 ---
 title: "0099 — One action risk scale, L0 to L4, with derived MCP hints and effect tags; change risk is R0 to R3"
-description: "Accepted, amended by 0268, 0294, 0360, 0513 · 2026-10-19"
+description: "Accepted, amended by 0268, 0294, 0360, 0513 · 2026-10-19; write floor enforced 2026-11-04"
 ---
 
 <Note>
@@ -74,8 +74,18 @@ SDLC plan has a separate scale for how risky a code change is, which must not be
 
 ## Enforcement
 
-Planned: the gen validation pass rejects an action without a level, a destructive or `irreversible` action marked below L4,
-and a hand-written MCP hint. Nothing checks this today.
+Enforced (STA-2096, owner decision 2026-11-04): gen refuses an action whose permission is L0 or L1 with
+`action_risk_below_write`, because every write is at least L2 and ADR 0360 decision 3 lets an agent run L0 and L1
+without approval. A query keeps L0 or L1 unless it names an action's static, in which case it carries that level; give
+it its own read permission to keep it below L2. The levels a write takes: L2 for a reversible write; L3 for money, tax
+and payments (charges, refunds, tax documents, ledger, cash, receivables, balances, settlements and prices); L4 for
+deleting people data and for deletes for good (prunes and purges past retention), for keys and access (keys,
+invitations, roles, sessions, publishable keys, support access) and for bulk or external sends to customers (customer
+messages, notification sends, manual sends, webhook sends). The panel confirms every action from L2 up, and the `@read`
+role selector no longer selects a write.
+
+Planned: the gen validation pass rejects an action without a level, a destructive or `irreversible` action marked below
+L4, and a hand-written MCP hint.
 
 ## Supersedes and sources
 

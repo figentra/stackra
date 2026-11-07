@@ -80,6 +80,26 @@ describe("generate on a docs app", () => {
     expect(existsSync(join(root, ".stackra/site/assets/shot.png"))).toBe(false);
   });
 
+  it("builds a Fumadocs site for an app that depends on fumadocs-ui, and keeps its build output (STA-2026)", async () => {
+    const root = writeDocsMember({
+      "package.json": JSON.stringify({
+        name: "@acme/handbook",
+        version: "0.0.1",
+        type: "module",
+        dependencies: { "fumadocs-ui": "16.17.9" },
+      }),
+    });
+    const first = await generate(root);
+    expect(first.errors).toEqual([]);
+    expect(existsSync(join(root, ".stackra/site/docs.json"))).toBe(false);
+    expect(existsSync(join(root, ".stackra/site/app/site.json"))).toBe(true);
+    expect(existsSync(join(root, ".stackra/site/react-router.config.ts"))).toBe(true);
+    mkdirSync(join(root, ".stackra/site/build/client"), { recursive: true });
+    writeFileSync(join(root, ".stackra/site/build/client/index.html"), "<html></html>");
+    expect((await generate(root)).changed).toEqual([]);
+    expect(existsSync(join(root, ".stackra/site/build/client/index.html"))).toBe(true);
+  });
+
   it("writes nothing in the manifest pass or a check run", async () => {
     const root = writeDocsMember({});
     expect(await generate(root, { pass: "manifests" })).toEqual({

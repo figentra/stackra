@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `useActionRunner`: an L2 action asks first and sends nothing when declined; a confirmed run resolves
- *          done with the answer and toasts the success text; an action with no risk runs at once; a refusal resolves
- *          refused after a danger toast.
+ *          done with the answer and toasts the success text; an action with no risk runs at once; a spec's own
+ *          confirmation asks with its words even for an action that declares none; a refusal resolves refused after a
+ *          danger toast.
  * Boundary: unit tier, jsdom; the confirmation and the toast are spies, translation returns the key, the transport is the
  *           client fake.
  * Runtime: node (vitest)
@@ -130,6 +131,32 @@ describe("useActionRunner", () => {
     });
     expect(ui.confirm).not.toHaveBeenCalled();
     expect(ui.toast).toHaveBeenCalledWith("panel::actions.done", { tone: "success" });
+  });
+
+  it("asks with a spec's own words, even for an action that declares none", async () => {
+    const fake = fakeClient((client) => client.on(ArchiveAction).returns({}));
+    ui.confirm.mockResolvedValue(true);
+    const run = await runnerOf(fake);
+    await expect(
+      run(
+        ArchiveAction,
+        { productId: "prd_1" },
+        {
+          confirm: {
+            title: "Archive this product?",
+            description: "It leaves the shop.",
+            tone: "danger",
+          },
+        },
+      ),
+    ).resolves.toMatchObject({ status: "done" });
+    expect(ui.confirm).toHaveBeenCalledWith({
+      title: "Archive this product?",
+      description: "It leaves the shop.",
+      confirmLabel: "panel::actions.confirm",
+      cancelLabel: "panel::actions.cancel",
+      tone: "danger",
+    });
   });
 
   it("resolves a refusal after a danger toast", async () => {

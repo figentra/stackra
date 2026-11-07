@@ -13,7 +13,7 @@ export interface Painter {
   readonly colour: (text: string, hex: string) => string;
   /** `text` in bold. */
   readonly bold: (text: string) => string;
-  /** `text` dimmed. */
+  /** `text` in a dim colour. */
   readonly dim: (text: string) => string;
   /** `text` in the theme's accent. */
   readonly accent: (text: string) => string;

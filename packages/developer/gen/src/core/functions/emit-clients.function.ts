@@ -13,8 +13,9 @@
  * Boundary: pure. The client is a class, so it is its own DI token (`emitWiring` binds it with the `ClientTransport`
  *           the topology picks); a consumer never imports the producer's source. A consumed service without a manifest,
  *           a client imported under another name, or an event the producer does not publish as an integration event
- *           (`client_event_unknown`), is a refusal, so nothing is written; so is a listener of an event of a service that came from a
- *           `contract` package, which has no cross-app transport yet (`client_event_remote_transport`, STA-1820); its client still emits. An event is subscribed to by importing its
+ *           (`client_event_unknown`), is a refusal, so nothing is written. A listener of an event of a service that came from a
+ *           `contract` package is registered like a sibling's and delivered through the generated inbox (ADR 0511
+ *           decision 18, STA-1910). An event is subscribed to by importing its
  *           class; there is no wire-name subscription. In the manifest pass the services of the same workspace are
  *           `pending` and skipped, so a cycle between services never blocks a manifest.
  * Runtime: isomorphic
@@ -342,18 +343,6 @@ export function emitClients(
           subject: listener.subject,
           message: `the ${service} service publishes no integration event \`${listener.name}\``,
           fix: `import an integration event the ${service} service declares, or run \`stackra gen\` in it first`,
-        });
-    // A service read from a contract package lives in another app: its events have no transport until the event ADR.
-    if (ir.services?.find((candidate) => candidate.member === service)?.package !== undefined)
-      for (const listener of subscribed.get(service) ?? [])
-        errors.push({
-          code: "client_event_remote_transport",
-          file: listener.file,
-          line: 0,
-          column: 0,
-          subject: listener.subject,
-          message: `the ${service} service is consumed from a contract package, so its event \`${listener.name}\` has no transport to this app yet`,
-          fix: "cross-app events follow the event-transport ADR; call the service through its client until then, or host the listener beside the producer",
         });
     if (manifest === undefined) {
       errors.push({

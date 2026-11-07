@@ -35,6 +35,7 @@ describe("edgeWorker", () => {
       script: "figentra-edge",
       namespaces: { edge: {}, "edge-eu": { jurisdiction: "eu" } },
       routes: { "figentra.com": ["*.shop.figentra.com/*", "console.mezzora.figentra.com/*"] },
+      exclusions: { "figentra.com": ["api.figentra.com/*"] },
       rollout: [
         { version: "v-new", percent: 10 },
         { version: "v-old", percent: 90 },
@@ -63,7 +64,12 @@ describe("edgeWorker", () => {
         jurisdiction: "eu",
       },
     });
-    expect(declaredAs(declared, "cloudflare:index/workersRoute:WorkersRoute")).toHaveLength(2);
+    expect(declaredAs(declared, "cloudflare:index/workersRoute:WorkersRoute")).toHaveLength(3);
+    expect(
+      inputsByName(declared, "cloudflare:index/workersRoute:WorkersRoute")[
+        "figentra-edge-figentra.com-exclusion-0"
+      ],
+    ).toEqual({ zoneId: "zone-com", pattern: "api.figentra.com/*" });
     expect(
       declaredAs(declared, "cloudflare:index/workersDeployment:WorkersDeployment")[0]?.inputs,
     ).toEqual({

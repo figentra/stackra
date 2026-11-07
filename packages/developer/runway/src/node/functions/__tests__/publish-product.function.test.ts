@@ -3,8 +3,9 @@
  * Purpose: unit tests of `publishProduct` (with `readBundles`, `uploadBundle` and `bundleSurfaces`): a publish
  *          uploads every bundle file under `<product>/<surface>/<version>/` with immutable headers, then writes the
  *          platform rows and the `canary:` row with the scopes and start; a first release writes `release:` instead;
- *          an unserved target, a missing bundle, two bundle versions, missing canary scopes and a missing ops review
- *          are refused before any upload or write.
+ *          the ops contributions bundle publishes beside them; an unserved target, a missing bundle, two bundle
+ *          versions, missing canary scopes, a missing or unserved ops bundle and a missing ops review are refused
+ *          before any upload or write.
  * Boundary: test only; runs in a temporary folder with a fake command runner and an in-memory KV writer, so nothing
  *           reaches wrangler, R2 or Workers KV.
  * Runtime: node (vitest)
@@ -18,9 +19,14 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { publishProduct } from "#node/functions/publish-product.function";
 import { MemoryEdgeKv } from "#node/functions/__tests__/fixtures/memory-edge-kv.fixture";
-import { PRODUCT_ROOT, writeBundle } from "#node/functions/__tests__/fixtures/product-root.fixture";
+import {
+  PRODUCT_ROOT,
+  writeBundle,
+  writeOpsBundle,
+} from "#node/functions/__tests__/fixtures/product-root.fixture";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { ProductPublishRequest } from "#node/types/product-publish-request.type";
 
@@ -68,8 +74,14 @@ beforeEach(() => {
   calls = [];
   kv = new MemoryEdgeKv();
   repository = mkdtempSync(join(tmpdir(), "stackra-publish-"));
-  writeFileSync(join(repository, "runway.yaml"), JSON.stringify(PRODUCT_ROOT));
+  const { ops: _ops, ...surfaces } = PRODUCT_ROOT.surfaces;
+  writeRunway({ ...PRODUCT_ROOT, surfaces });
 });
+
+/** Writes the product's root runway. */
+function writeRunway(root: unknown): void {
+  writeFileSync(join(repository, "runway.yaml"), JSON.stringify(root));
+}
 
 afterEach(() => {
   rmSync(repository, { recursive: true, force: true });
@@ -127,10 +139,12 @@ describe("publishProduct", () => {
 
   it("runs wrangler uploads with the Cloudflare account the runway names", async () => {
     writeBundle(repository, "console", "1.3.0");
+    const { ops: _ops, ...surfaces } = PRODUCT_ROOT.surfaces;
     writeFileSync(
       join(repository, "runway.yaml"),
       JSON.stringify({
         ...PRODUCT_ROOT,
+        surfaces,
         providers: {
           ...(PRODUCT_ROOT as { providers?: object }).providers,
           cloudflare: { accountId: "acct-1" },
@@ -139,6 +153,40 @@ describe("publishProduct", () => {
     );
     await publishProduct(request());
     expect(calls[0]?.[2]).toEqual({ env: { CLOUDFLARE_ACCOUNT_ID: "acct-1" } });
+  });
+
+  // @covers sta-2124:FR-004 sta-2124:AC-005
+  it("leaves the job's CLOUDFLARE_ACCOUNT_ID alone for a ref: account, and refuses before any upload or write without it", async () => {
+    writeBundle(repository, "console", "1.3.0");
+    const { ops: _ops, ...surfaces } = PRODUCT_ROOT.surfaces;
+    writeFileSync(
+      join(repository, "runway.yaml"),
+      JSON.stringify({
+        ...PRODUCT_ROOT,
+        surfaces,
+        providers: {
+          ...(PRODUCT_ROOT as { providers?: object }).providers,
+          cloudflare: { accountId: "ref:cloudflare.accountId" },
+        },
+      }),
+    );
+    const saved = process.env["CLOUDFLARE_ACCOUNT_ID"];
+    try {
+      process.env["CLOUDFLARE_ACCOUNT_ID"] = "acct-1";
+      await publishProduct(request());
+      expect(calls[0]?.[2]).toEqual({});
+      calls = [];
+      kv = new MemoryEdgeKv();
+      Reflect.deleteProperty(process.env, "CLOUDFLARE_ACCOUNT_ID");
+      await expect(publishProduct(request())).rejects.toThrow(RunwayUnresolvedError);
+      expect(calls).toEqual([]);
+      expect(kv.calls).toEqual([]);
+      // A dry run uploads and writes nothing, so it previews without the job's variable.
+      await expect(publishProduct(request({ dryRun: true }))).resolves.toBeDefined();
+    } finally {
+      if (saved === undefined) Reflect.deleteProperty(process.env, "CLOUDFLARE_ACCOUNT_ID");
+      else process.env["CLOUDFLARE_ACCOUNT_ID"] = saved;
+    }
   });
 
   it("writes the release pointer directly on a first release", async () => {
@@ -179,7 +227,45 @@ describe("publishProduct", () => {
     expect(kv.calls).toEqual([]);
   });
 
+  it("publishes the ops contributions bundle beside the others", async () => {
+    writeRunway(PRODUCT_ROOT);
+    writeBundle(repository, "console", "1.3.0");
+    writeOpsBundle(repository, "1.3.0");
+    const result = await publishProduct(request({ served: ["console@3", "ops@1"] }));
+    expect(result.uploaded).toEqual(
+      expect.arrayContaining([
+        "mezzora/ops/1.3.0/bundle.manifest.json",
+        "mezzora/ops/1.3.0/ops.contributions.json",
+      ]),
+    );
+    const base = "https://assets.test/mezzora/ops/1.3.0/";
+    expect(Object.keys(result.canaries)).toEqual(["console", "ops"]);
+    expect(kv.json("canary:mezzora:ops")).toEqual({
+      version: "1.3.0",
+      url: `${base}ops.contributions.json`,
+      base,
+      targets: "ops@1",
+      modulepreload: [],
+      css: [],
+      scopes: ["scp_internal", "scp_demo"],
+      since: NOW.toISOString(),
+    });
+  });
+
+  it("refuses a missing ops bundle and one the edge does not serve, before any upload or write", async () => {
+    writeRunway(PRODUCT_ROOT);
+    writeBundle(repository, "console", "1.3.0");
+    expect(await issuePaths(publishProduct(request({ served: ["console@3", "ops@1"] })))).toEqual([
+      "dist/bundles/ops",
+    ]);
+    writeOpsBundle(repository, "1.3.0");
+    expect(await issuePaths(publishProduct(request()))).toEqual(["surfaces.ops"]);
+    expect(calls).toEqual([]);
+    expect(kv.calls).toEqual([]);
+  });
+
   it("refuses an ops contribution without a second reviewer", async () => {
+    writeRunway(PRODUCT_ROOT);
     writeBundle(repository, "console", "1.3.0");
     expect(
       await issuePaths(

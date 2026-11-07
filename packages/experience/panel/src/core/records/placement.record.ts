@@ -8,11 +8,12 @@
 import type { ActionPlace } from "#core/enums/action-place.enum";
 import type { ResourcePage } from "#core/enums/resource-page.enum";
 import { DraftRecord } from "#core/records/draft.record";
+import type { ActionButtonSpec } from "#core/types/action-button-spec.type";
 import type { PlacementBuilder } from "#core/types/placement-builder.type";
 import type { PlacementNode } from "#core/types/placement-node.type";
 
-/** The flags a placement records. */
-interface PlacementFlags {
+/** The flags a placement records, its button look among them. */
+interface PlacementFlags extends Omit<ActionButtonSpec, "action" | "place"> {
   readonly bulk?: boolean;
   readonly places?: readonly ActionPlace[];
   readonly after?: ResourcePage;
@@ -49,5 +50,10 @@ export class PlacementRecord
   // oxlint-disable-next-line unicorn/no-thenable -- reason: the template's grammar (`a.create().then(ResourcePage.View)`); a placement is never awaited
   then(page: ResourcePage): this {
     return this.set({ after: page });
+  }
+
+  /** Sets the button's look. */
+  with(look: Omit<ActionButtonSpec, "action" | "place">): this {
+    return this.set(look);
   }
 }

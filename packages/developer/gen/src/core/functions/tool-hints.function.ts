@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `toolHints`, the MCP tool annotations of an action or query, derived and never hand-written:
- *          `readOnlyHint` for L0 and L1, `destructiveHint` for L4 or the `irreversible` tag, `idempotentHint` when the
- *          action declares idempotency (a query is always idempotent), `openWorldHint` for the
+ *          `readOnlyHint` for a query at L0 or L1 (an action always writes), `destructiveHint` for L4
+ *          or the `irreversible` tag, `idempotentHint` when the action declares idempotency (a query is always idempotent), `openWorldHint` for the
  *          `external_communication` tag.
  * Boundary: pure; the risk comes from the action's permission, the tags from its `effects` option.
  * Runtime: isomorphic
@@ -24,7 +24,8 @@ export function toolHints(tool: {
   readonly effects: readonly string[];
   readonly idempotent: boolean;
 }): ToolHints {
-  const readOnly = tool.risk === "L0" || tool.risk === "L1";
+  // An action at L1 still writes: the hint must never let an MCP client skip its confirmation.
+  const readOnly = tool.kind === "query" && (tool.risk === "L0" || tool.risk === "L1");
   return {
     readOnlyHint: readOnly,
     destructiveHint: tool.risk === "L4" || tool.effects.includes("irreversible"),

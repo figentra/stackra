@@ -10,6 +10,7 @@
  */
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { OBSERVABILITY_SCHEMA } from "#core/constants/observability-schema.constant";
 import { HeartbeatKind } from "#core/enums/heartbeat-kind.enum";
 import { SliKind } from "#core/enums/sli-kind.enum";
 import type { ObservabilityPlan } from "#core/types/observability-plan.type";
@@ -61,6 +62,9 @@ const PLAN: ObservabilityPlan = {
     },
   ],
   statusPage: null,
+  // The section's defaults: the stack does not read alerts or routes yet.
+  alerts: OBSERVABILITY_SCHEMA.parse({}).alerts,
+  notify: OBSERVABILITY_SCHEMA.parse({}).notify,
 };
 
 describe("observabilityStack", () => {
