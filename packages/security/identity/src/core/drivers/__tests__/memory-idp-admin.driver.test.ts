@@ -182,4 +182,14 @@ describe(MemoryIdpAdminDriver, () => {
       new MemoryIdpAdminDriver().startPasskeyRegistration("idp_9"),
     ).rejects.toBeInstanceOf(UnauthenticatedError);
   });
+
+  /** Like the provider: a key on the first install only, the same target after. */
+  it("installs the claims action once and repoints it after", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    const first = await idp.installClaimsAction({ endpoint: "https://a.example/claims" });
+    expect(first.signingKey).toEqual(expect.any(String));
+    const again = await idp.installClaimsAction({ endpoint: "https://b.example/claims" });
+    expect(again).toEqual({ targetId: first.targetId });
+    expect(idp.claimsAction?.endpoint).toBe("https://b.example/claims");
+  });
 });

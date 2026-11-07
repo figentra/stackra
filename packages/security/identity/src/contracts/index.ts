@@ -52,6 +52,8 @@ export type { AppApprovalRequester } from "#contracts/types/app-approval-request
 export type { AppleCredential } from "#contracts/types/apple-credential.type";
 export type { AppleSignInResult } from "#contracts/types/apple-sign-in-result.type";
 export type { AutomationPrincipalInput } from "#contracts/types/automation-principal-input.type";
+export type { ClaimsActionInput } from "#contracts/types/claims-action-input.type";
+export type { ClaimsActionInstall } from "#contracts/types/claims-action-install.type";
 export type { DeviceAuthorization } from "#contracts/types/device-authorization.type";
 export type { AccountSession } from "#contracts/types/account-session.type";
 export type { DeviceTokenResult } from "#contracts/types/device-token-result.type";
