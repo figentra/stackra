@@ -191,17 +191,6 @@
       }
     },
     {
-      "port": "VaultWriter",
-      "key": "runway.VaultWriter",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryVaultWriterDriver",
-          "from": "@stackra/runway/node"
-        }
-      }
-    },
-    {
       "port": "SentryProjects",
       "key": "runway.SentryProjects",
       "candidates": ["memory", "sentry_api_projects"],
@@ -212,6 +201,17 @@
         },
         "sentry_api_projects": {
           "class": "SentryApiProjectsDriver",
+          "from": "@stackra/runway/node"
+        }
+      }
+    },
+    {
+      "port": "VaultWriter",
+      "key": "runway.VaultWriter",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryVaultWriterDriver",
           "from": "@stackra/runway/node"
         }
       }
