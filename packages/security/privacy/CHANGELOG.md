@@ -1,5 +1,27 @@
 # @stackra/privacy
 
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/scheduler@0.18.1
+  - @stackra/workflow@0.18.1
+  - @stackra/iam@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/data-transfer@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/filesystem@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/search@0.18.1
+  - @stackra/testing@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/outbox@0.18.1
+  - @stackra/queue@0.18.1
+
 ## 0.18.0
 
 ### Patch Changes
