@@ -53,7 +53,7 @@ describe("pipelinePorts", () => {
             package: "@stackra/workflow",
             version: "0.20.0",
             events: [{ name: "workflow.service.acked.v1", kind: "integration" }],
-          } as MemberIR["dependencies"][number]["manifest"],
+          } as unknown as MemberIR["dependencies"][number]["manifest"],
         },
       ],
     };
