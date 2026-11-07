@@ -885,6 +885,31 @@
       }
     },
     {
+      "port": "StepUpCheck",
+      "key": "actions.StepUpCheck",
+      "candidates": ["identity"],
+      "classes": {
+        "identity": {
+          "class": "IdentityStepUpCheckDriver",
+          "from": "@stackra/identity/node",
+          "deps": [
+            {
+              "class": {
+                "name": "IdentityConfig",
+                "from": "@stackra/identity"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "AccountSecurity",
       "key": "identity.AccountSecurity",
       "candidates": ["memory"],
