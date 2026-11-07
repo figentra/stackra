@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `stackra deploy` without `--product`: it refuses a missing environment or an unknown kind,
  *          prints each target's plan on a dry run (with the Worker members `--member` names), and hands Runway's
- *          `deploy()` the commit, every provider and the kind filter, then reports each record. With
- *          `secrets.sync: on-deploy` it syncs the secrets first when services ship, and stops if the sync fails.
+ *          `deploy()` the commit, every provider and the kind filter, then reports each record; named Worker members
+ *          skip the product publish. With `secrets.sync: on-deploy` it syncs the secrets first when services ship
+ *          (from the job's environment with `--from-env`), and stops if the sync fails.
  * Boundary: test only; Runway's `readRunway`, `readRunways`, `syncSecrets` and `deploy` are mocked, nothing is
  *           deployed.
  * Runtime: node (vitest)
@@ -208,6 +209,20 @@ describe("runRunwayDeploy", () => {
     });
   });
 
+  it("ships named Worker members through deploy() without the product publish or its facts, in a product repository", async () => {
+    // Core's root runway has surfaces; its Worker deploys (registry, static, …) still need no product facts.
+    vi.mocked(readRunway).mockReturnValue({
+      ...ROOT,
+      surfaces: { console: { shell: "os/console@3", host: "console.acme" } },
+    } as unknown as RootRunway);
+    expect(await run({ env: "production", kind: "web", member: "registry", sha: SHA }).code).toBe(
+      0,
+    );
+    expect(runDeployProduct).not.toHaveBeenCalled();
+    expect(probeHosts).not.toHaveBeenCalled();
+    expect(vi.mocked(deploy).mock.calls[0]?.[4]).toEqual(["web"]);
+  });
+
   it("stops before deploy() when the product publish fails", async () => {
     vi.mocked(readRunway).mockReturnValue({
       ...ROOT,
@@ -274,6 +289,14 @@ describe("runRunwayDeploy", () => {
       vi.mocked(syncSecrets).mockClear();
       expect(await run({ env: "production", kind: "web", sha: SHA }).code).toBe(0);
       expect(syncSecrets).not.toHaveBeenCalled();
+    });
+
+    it("reads the values from the job's environment with --from-env, else from Infisical", async () => {
+      expect(await run({ env: "production", sha: SHA, "from-env": true }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({ fromEnv: true });
+      vi.mocked(syncSecrets).mockClear();
+      expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).not.toHaveProperty("fromEnv");
     });
 
     it("ships nothing when the sync fails", async () => {

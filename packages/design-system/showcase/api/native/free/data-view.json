@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "58a51dbf34128007",
+    "hash": "ad4b0fbe67d37d8e",
     "propsFiles": ["ui/src/native/data-view/data-view.props.ts"]
   },
   "importLine": "import { DataView } from \"@stackra/ui/native\";",
@@ -108,7 +108,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The export dialog's options; given, the toolbar has Export. The counts default to the engine's.",

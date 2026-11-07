@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "949185609e9ba0e7",
+    "hash": "16fce9a210dcdebf",
     "propsFiles": ["ui/src/react/tree-view/tree-view.props.ts"]
   },
   "importLine": "import { TreeView } from \"@stackra/ui/react\";",
@@ -88,7 +88,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",

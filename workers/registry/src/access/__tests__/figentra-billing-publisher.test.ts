@@ -63,6 +63,7 @@ describe("migration 0009: figentra/billing publishes @figentra", () => {
       "figentra/billing",
       "figentra/brand",
       "figentra/commerce",
+      "figentra/figentra",
       "figentra/invoicing",
       "figentra/os",
       "figentra/pay",

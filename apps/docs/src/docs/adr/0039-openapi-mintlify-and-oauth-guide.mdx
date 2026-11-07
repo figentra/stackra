@@ -1,11 +1,13 @@
 ---
 title: "0039 — OpenAPI to Mintlify API reference, and an OAuth developer guide"
-description: "Proposed, amended by 0514 · 2026-10-19"
+description: "Proposed; its Mintlify target superseded by 0514 · 2026-10-19"
 ---
 
 <Note>
-  Amended by [0514](/adr/0514-self-hosted-docs-replace-mintlify): the API reference is generated
-  from the `openapi.json` in the ADR 0511 contract packages and rendered by Fumadocs, not Mintlify.
+  Superseded in part by [0514](/adr/0514-self-hosted-docs-replace-mintlify): every Mintlify
+  reference here (decision 2, the `mint broken-links` check) is replaced. The API reference is
+  generated from the `openapi.json` in the ADR 0511 contract packages and rendered by Fumadocs on a
+  Worker; Mintlify is retired (STA-2026). Decisions 1, 3 and 4 stand.
 </Note>
 
 <Note>
@@ -20,7 +22,7 @@ External developers and OAuth apps need an API reference that matches the code. 
 ## Decision
 
 1. **An OpenAPI document is generated from the Encore endpoints**, not written by hand.
-2. **The Mintlify API reference is built from that document** in `apps/docs`.
+2. ~~**The Mintlify API reference is built from that document** in `apps/docs`.~~ Superseded by 0514: Fumadocs renders it.
 3. **An OAuth developer guide** covers registering an app, scopes, the authorisation flow and tokens, and is written with the OAuth-apps feature.
 4. The generator and whether the document is committed or built: TODO.
 
@@ -30,8 +32,8 @@ External developers and OAuth apps need an API reference that matches the code. 
 
 ## Enforcement
 
-Planned — CI step that regenerates the OpenAPI document and fails on a diff; `mint broken-links` already checks the docs pages.
+Planned — CI step that regenerates the OpenAPI document and fails on a diff. (`mint broken-links` checked the pages until 0514 retired Mintlify; the Fumadocs build fails on a page that does not render.)
 
 ## Supersedes and sources
 
-Supersedes: none. Sources: owner decisions in chat, 2026-10-19.
+Supersedes: none. Superseded in part by 0514 (its Mintlify target). Sources: owner decisions in chat, 2026-10-19.

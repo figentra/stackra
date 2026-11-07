@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `VALIDATE_COMMAND`, `stackra validate`: the check phases a product calls `validate` (config, structure, docs,
  *          catalogues, spec), and with `--repository` the repository-shape gate `pnpm validate` runs (was
- *          `tools/scripts/validate-repository.mjs`): the config, catalogue and structure checks of @stackra/repo-checks,
+ *          `tools/scripts/validate-repository.mjs`): the config, layout (ADR 0526), catalogue and structure checks of @stackra/repo-checks,
  *          the package cycles, the Expo native dependencies, the duplicate exports, the `any` ratchet and the
  *          architecture map drift, the Python placement (ADR 0492 decision 7), the package entity lists (STA-1793), the lang
  *          catalogue exports (STA-1798), the launch files' drift from the runways (STA-2081) and the
@@ -15,6 +15,7 @@
 import {
   catalogueFindings,
   configFindings,
+  layoutFindings,
   readRepoContext,
   structureFindings,
 } from "@stackra/repo-checks/node";
@@ -52,6 +53,7 @@ export const VALIDATE_COMMAND: CliCommand = {
     const repo = readRepoContext(root);
     const findings = [
       ...configFindings(repo),
+      ...layoutFindings(repo),
       ...catalogueFindings(repo),
       ...(await structureFindings(repo, {
         ci: Boolean(process.env["CI"]),

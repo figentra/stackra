@@ -9,8 +9,9 @@
  *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
  *          brought to exactly the listed ones; a user is created with and found by its `stackra_user_id` metadata, and an email's Stackra id is read from
  *          its one user's metadata (none on no user or no metadata, an error on two users);
- *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey`, and turn a
- *          refusal or an unknown login or user into `UnauthenticatedError`, while a 403 stays an `Error`.
+ *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey` (sign-in keeps
+ *          only the challenge, relying party and user verification), answer an unknown login a decoy that never
+ *          verifies, and turn a refusal or an unknown user into `UnauthenticatedError`, while a 403 stays an `Error`.
  * Boundary: test only; a scripted global fetch records each request and answers from a queue.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543; STA-1580;
@@ -413,7 +414,12 @@ describe(ZitadelIdpAdminDriver, () => {
   });
 
   it("signs in with a passkey through a v2 session and its webAuthN check", async () => {
-    const publicKey = { challenge: "ch", rpId: "id.acme.example", userVerification: "required" };
+    const options = { challenge: "ch", rpId: "id.acme.example", userVerification: "required" };
+    const publicKey = {
+      ...options,
+      timeout: 60_000,
+      allowCredentials: [{ id: "cred_1", type: "public-key" }],
+    };
     const credential = {
       id: "c",
       rawId: "c",
@@ -434,7 +440,7 @@ describe(ZitadelIdpAdminDriver, () => {
     ]);
     expect(await idp.startPasskeySignIn("rana@acme.example")).toEqual({
       sessionId: "s_1",
-      options: publicKey,
+      options,
     });
     expect(JSON.parse(sent[0]?.body ?? "")).toEqual({
       checks: { user: { loginName: "rana@acme.example" } },
@@ -461,9 +467,20 @@ describe(ZitadelIdpAdminDriver, () => {
     );
   });
 
-  it("refuses a passkey sign-in for an unknown login", async () => {
-    const { idp } = driverWith([[404, { message: "not found" }]]);
-    await expect(idp.startPasskeySignIn("nobody")).rejects.toBeInstanceOf(UnauthenticatedError);
+  it("answers an unknown login a decoy of the same shape that never verifies", async () => {
+    const credential = { id: "c", rawId: "c", type: "public-key", response: {} } as const;
+    const { idp, sent } = driverWith([
+      [404, { message: "not found" }],
+      [404, { message: "not found" }],
+    ]);
+    const decoy = await idp.startPasskeySignIn("nobody");
+    expect(decoy.sessionId).toMatch(/^\d{18}$/);
+    expect(Object.keys(decoy.options).sort()).toEqual(["challenge", "rpId", "userVerification"]);
+    expect(decoy.options).toMatchObject({ rpId: "id.acme.example", userVerification: "required" });
+    expect(sent[0]?.url).toBe("https://id.acme.example/v2/sessions");
+    await expect(idp.finishPasskeySignIn(decoy.sessionId, credential)).rejects.toBeInstanceOf(
+      UnauthenticatedError,
+    );
   });
 
   it("treats a 403 on a passkey call as a bug, not a refusal", async () => {

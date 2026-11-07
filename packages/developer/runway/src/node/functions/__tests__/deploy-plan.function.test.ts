@@ -37,6 +37,29 @@ describe("deployPlan", () => {
     );
   });
 
+  it("syncs the names a member's manifest declares for the environment beside its runway secrets (STA-2104)", () => {
+    const [web] = MEMBERS;
+    if (web === undefined) throw new Error("fixture has no member");
+    const p = deployPlan("production", {
+      root: ROOT_RUNWAY,
+      members: [
+        {
+          ...web,
+          env: [
+            { name: "SENTRY_AUTH" },
+            { name: "API_ORIGIN" },
+            { name: "STAGING_ONLY", environments: ["staging"] },
+            { name: "VITE_API_ORIGIN", kind: "public" },
+          ],
+        },
+      ],
+    });
+    expect(p.sync.filter((entry) => entry.kind === "secret").map((entry) => entry.name)).toEqual([
+      "SENTRY_AUTH",
+      "API_ORIGIN",
+    ]);
+  });
+
   it("reads the repository's own runway: every caller workflow exists, and production deploys the static Worker and the docs", () => {
     const repo = repositoryRoot();
     const runways = readRunways(repo);
@@ -44,10 +67,8 @@ describe("deployPlan", () => {
     for (const { workflows } of p.steps)
       for (const file of Object.values(workflows))
         expect(existsSync(join(repo, ".github/workflows", file)), file).toBe(true);
-    expect(p.steps.filter((s) => s.destination).map((s) => s.target)).toEqual([
-      "cloudflare-workers",
-      "mintlify",
-    ]);
+    // The docs are a Cloudflare Worker since the Fumadocs move (ADR 0514, STA-2026): no Mintlify target is left.
+    expect(p.steps.filter((s) => s.destination).map((s) => s.target)).toEqual(["cloudflare-workers"]);
     expect(new Set(runways.members.map((m) => m.member))).toEqual(
       new Set([
         "console",
@@ -57,6 +78,7 @@ describe("deployPlan", () => {
         "example",
         "health",
         "edge",
+        "env-sync",
         "registry",
         "static",
         "turbo-cache",

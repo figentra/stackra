@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `bootApp`: each configuration class is built and bound under its base (a host override
  *          answers for both), the wiring is bound as `AppWiring`, the bound `ErrorReporter` is picked over the console
- *          fallback, given overrides win over the built configuration, an invalid configuration fails boot, and the
+ *          fallback, the environment answers the SecretStore port, given overrides win over the built configuration, an invalid configuration fails boot, and the
  *          roots option boots only the given modules.
  * Boundary: test only; boots real containers over small wirings.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 and 8); ADR 0294 (decision 19).
  */
 import { buildConfig, ConfigInvalidError } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { Driver, Module, Service } from "@stackra/container";
 import { ErrorReporter } from "@stackra/errors/contracts";
 import { I18nConfig, Locale } from "@stackra/i18n";
@@ -52,6 +53,19 @@ describe("bootApp", () => {
     expect(container.get(I18nConfig)).toBeInstanceOf(SiteI18nConfig);
     expect(container.get(I18nConfig).locales).toEqual([Locale.En, Locale.Ar]);
     expect(container.get(SiteI18nConfig)).toBe(container.get(I18nConfig));
+  });
+
+  it("binds the environment as the SecretStore port, unless the caller overrides it", async () => {
+    const { container } = await bootApp({ member: "web" }, { env: { SIGNING_KEY: "k1" } });
+    expect(container.get(SecretStore).get("SIGNING_KEY")).toBe("k1");
+    const given = Object.assign(Object.create(SecretStore.prototype) as SecretStore, {
+      get: () => "given",
+    });
+    const booted = await bootApp(
+      { member: "web" },
+      { env: {}, overrides: new Map([[SecretStore, given]]) },
+    );
+    expect(booted.container.get(SecretStore)).toBe(given);
   });
 
   it("binds the wiring as AppWiring", async () => {

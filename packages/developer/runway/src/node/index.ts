@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/runway until `stackra gen` writes the entry barrels
- *          (STA-339): the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
+ *          (STA-339): `RUNWAY_COMMANDS`, which `stackra runway` runs (ADR 0529 decision 4, STA-2214), the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
  *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
  *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316, `cloudflare-workers`, STA-1921) with the command runner they share (ADR 0352 decision 3),
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
@@ -53,6 +53,7 @@ export { MemoryVaultWriterDriver } from "#node/drivers/memory-vault-writer.drive
 export { EdgeKvConfig } from "#node/config/edge-kv.config";
 export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
+export { RUNWAY_COMMANDS } from "#node/constants/runway-commands.constant";
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
 export { LAUNCH_CHECK_DEFAULTS } from "#node/constants/launch-check-defaults.constant";
@@ -68,6 +69,7 @@ export { capabilityConfig } from "#node/functions/capability-config.function";
 export { checkoutLine } from "#node/functions/checkout-line.function";
 export { checkOpsReview } from "#node/functions/check-ops-review.function";
 export { checkShellCompatibility } from "#node/functions/check-shell-compatibility.function";
+export { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 export { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";

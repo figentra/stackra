@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "63033a9453bb1be9",
+    "hash": "d031eab9673558b4",
     "propsFiles": ["ui/src/native/tree-select/tree-select.props.ts"]
   },
   "importLine": "import { TreeSelect } from \"@stackra/ui/native\";",
@@ -37,7 +37,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\""
         },
         {
           "description": "With `multiple`: ticking a row ticks every row under it, and a partly ticked row shows a dash. Defaults to true.",

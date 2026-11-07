@@ -47,6 +47,25 @@ describe("readRunways", () => {
     ]);
   });
 
+  it("adds the names a member's committed manifest declares, with their environments (STA-2104)", () => {
+    put("runway.yaml", "version: 3\nproject: acme\n");
+    put("services/api/runway.yaml", "secrets: []\n");
+    put(
+      "services/api/stackra.manifest.json",
+      JSON.stringify({
+        env: [
+          { name: "API_ORIGIN", kind: "config" },
+          { name: "STRIPE_SECRET_KEY", environments: ["production"] },
+        ],
+      }),
+    );
+
+    expect(readRunways(repository).members[0]?.env).toEqual([
+      { name: "API_ORIGIN", kind: "config" },
+      { name: "STRIPE_SECRET_KEY", environments: ["production"] },
+    ]);
+  });
+
   it("fails without a root runway", () => {
     put("services/api/runway.yaml", "secrets: []\n");
 

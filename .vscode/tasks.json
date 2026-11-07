@@ -7,15 +7,23 @@
       "detail": "Full gate: format, lint, typecheck, test, build, validate, boundaries, knip",
       "type": "shell",
       "command": "pnpm verify",
-      "group": { "kind": "build", "isDefault": true },
-      "problemMatcher": ["$tsc"]
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
     },
     {
       "label": "test",
       "detail": "Every member's vitest suite",
       "type": "shell",
       "command": "pnpm test",
-      "group": { "kind": "test", "isDefault": true },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     {
@@ -42,14 +50,6 @@
       "problemMatcher": []
     },
     {
-      "label": "dev: docs",
-      "detail": "Start docs on http://localhost:3333 (written by stackra gen from the runways)",
-      "type": "shell",
-      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/docs^... && exec pnpm --filter @figentra/docs run dev",
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
       "label": "dev: mobile",
       "detail": "Start mobile on http://localhost:8081 (written by stackra gen from the runways)",
       "type": "shell",
@@ -62,6 +62,14 @@
       "detail": "Start playground on http://localhost:3710 (written by stackra gen from the runways)",
       "type": "shell",
       "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/playground^... && exec pnpm --filter @figentra/playground run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: worker-docs",
+      "detail": "Start worker-docs on http://localhost:3333 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/docs... && exec pnpm --filter @figentra/docs run dev",
       "isBackground": true,
       "problemMatcher": []
     },

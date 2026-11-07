@@ -153,6 +153,13 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   (`client_event_unknown`); `emitRegistrations` writes `registerListeners`, the consumed events' wire names into
   `registerEventNames` (imported from @stackra/events, below @stackra/actions, so a package below the outbox needs no
   outbox dependency, STA-1387) and `registerRelays`. Never add a subscription by wire name.
+- Cross-app events (ADR 0511 d11-19, STA-1910): a listener of a contract-only producer's event is registered like a
+  sibling's and never gets an Encore subscription; `inboxProducersOf` is the one place that finds those producers, and
+  only it decides whether a service gets `#stackra/inbox`, its Encore `api.raw` adapter and the `RelayInboxService`
+  bindings. A runway `events` block (`readRunwayEvents`, through `yamlValue`, since gen does not depend on
+  `@stackra/runway`) makes a producer: the manifest `relay` section (never an origin), `#stackra/events-relay` and the
+  cross-app relay loop. A member with neither keeps byte-identical output. `client_event_unsubscribed` is a warning
+  (`GenerateResult.warnings`), never a refusal.
 - Change consumers (data-layer gap cdc2): a service's `@ConsumesChanges(Model)` or `([A, B])` facet carries the
   models as class values; `emitRegistrations` writes one `registerChangeConsumers` row per model and service. Never
   emit a pair for a facet whose argument is not a class value.

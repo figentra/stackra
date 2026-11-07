@@ -3,8 +3,8 @@
 #          --preset <name> --ref <ref>` dispatches this workflow to run one named preset (verify, e2e, integration) on
 #          a GitHub-hosted runner for a pushed ref. Inputs are a preset name and a ref, never a command. Advisory only,
 #          never a required check (ADR 0166 CI2).
-# Secrets: the /ci/turbo values from Infisical through GitHub OIDC, as the Quality Gate reads them (STA-1393), and
-#          UNIWIND_AUTH_TOKEN for the e2e preset only (ADR 0310). No repository secret.
+# Secrets: the ci/build/turbo values, as the Quality Gate reads them (STA-1393), and UNIWIND_AUTH_TOKEN from ci/build
+#          for the e2e preset only (ADR 0310), both decrypted by the job as itself (ADR 0525). No repository secret.
 #          verify and integration install without the two Uniwind Pro apps, as the gate and a box do (#425): the
 #          licensed download has a monthly quota. e2e needs the playground, so it installs everything.
 # Owner: release-operations
@@ -34,9 +34,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
-      id-token: write # Infisical OIDC for the licence and turbo tokens only
-    env:
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+      id-token: write # GitHub OIDC for the sops decrypt of the licence and turbo tokens only (ADR 0525)
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -49,30 +47,17 @@ jobs:
         with:
           install_args: node pnpm
 
-      - name: Uniwind Pro token (Infisical OIDC)
+      - name: Uniwind Pro token (sops)
         if: inputs.preset == 'e2e'
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci
-          secret-name: UNIWIND_AUTH_TOKEN
-          export-type: env
+          scope: ci/build
+          names: UNIWIND_AUTH_TOKEN
 
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      - name: Turborepo remote cache (sops)
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.

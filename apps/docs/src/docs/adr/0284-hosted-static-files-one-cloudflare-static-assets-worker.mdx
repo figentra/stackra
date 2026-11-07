@@ -1,7 +1,15 @@
 ---
 title: "0284 — Hosted static files: one Cloudflare static-assets Worker member at static.stackra.figentra.com"
-description: "Accepted · 2026-10-22"
+description: "Accepted, amended 2026-11-05 (figentra-static) · 2026-10-22"
 ---
+
+<Note>
+  Decisions 2, 6 and 7 amended by the owner on 2026-11-05 (STA-2111, "Amendment 2026-11-05 (owner
+  decision): figentra-static" below). The Worker becomes `figentra-static` on `static.figentra.com`
+  for every product and scope, and its member moves to figentra/figentra.
+  `static.stackra.figentra.com` stays a permanent alias, so every published `$schema` URL keeps
+  working. This supersedes the 2026-10-31 recommendation that the static Worker stay in core.
+</Note>
 
 <Note>
   Builds on [0175](/adr/0175-edge-domains-and-tls) (Cloudflare proxies every public hostname; the
@@ -106,6 +114,34 @@ Worker (a bucket to manage and no atomic deploy, for a few hundred kilobytes).
   token through OIDC.
 - `gitleaks` scans for a committed token. planned — the `static` environment's branch and tag restriction is applied by
   the Pulumi GitHub provider (0171 decision 8); the immutability of `schemas@*` tags by a GitHub tag ruleset.
+
+## Amendment 2026-11-05 (owner decision): figentra-static
+
+The owner decided on 2026-11-05 that Figentra runs one host for its static files, for every product and scope, as it
+does for its registry (0453, amendment of STA-1733). The 2026-10-31 recommendation (STA-1733 plan, "The other Workers")
+kept this Worker in core because about 100 files across 9 repositories name its URLs. That recommendation is
+superseded: those URLs keep working through the alias. STA-2111.
+
+- **Decision 2 (one Worker, one host), as amended.** The Worker is `figentra-static`, built by `workers/static`
+  (`@figentra/worker-static`) in figentra/figentra, moved there with its history. Its primary host is
+  `static.figentra.com`. `static.stackra.figentra.com` is a second Custom Domain on the same Worker, permanently, so
+  no `$schema` URL ever breaks. Both hosts serve the same files. It serves the Stackra schemas and, under their own
+  path segments, Figentra's and the products' static assets and schemas.
+- **Decision 3 (paths from `$id`), as amended.** A schema's `$id` may name either host, and each published copy keeps
+  the host its `$id` names. Existing Stackra schemas keep `static.stackra.figentra.com`, and new schemas from any
+  product name `static.figentra.com`. The sources are `tools/schemas/*.schema.json` and the `schemas@*` tags of
+  figentra/figentra and of each repository its deploy checks out (Stackra core). Each repository's tags move only its
+  own `v<major>` copies, and all repositories share one name space.
+- **Decision 6 (deploy), as amended.** `figentra/figentra` `.github/workflows/deploy-static.yml` deploys, by the owner's
+  dispatch only. That repository is private, so its environments cannot require a reviewer, and the dispatch is the
+  approval. A push only builds. A custom domain that another Worker holds moves only on a dispatch with the dry run off,
+  because `wrangler deploy` in CI takes such a domain on its own. A schema change or a `schemas@*` tag in core reaches
+  the hosts on the next dispatch. Core's `deploy-static.yml` runs by hand only, as the rollback path, until
+  `stackra-static` is deleted.
+- **Decision 7 (credentials), as amended.** `CLOUDFLARE_API_TOKEN` from Infisical `ci-deploy` prod `/ci`, through the
+  `figentra-ci-deploy` identity trusting figentra/figentra's GitHub environment `workers`.
+
+Unchanged: one assets-only Worker, the `_headers` rules, immutable `schemas@*` tags and the page for people.
 
 ## Supersedes and sources
 

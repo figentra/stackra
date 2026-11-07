@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "6ebfabe540ccc326",
+    "hash": "e9be5a324c7a3050",
     "propsFiles": [
       "ui/src/react/field/field-combo-box.props.ts",
       "ui/src/react/field/field-select.props.ts",
@@ -101,13 +101,6 @@
           "type": "boolean"
         },
         {
-          "description": "The field's path in the schema form, such as `lines.0.quantity`.",
-          "name": "name",
-          "required": true,
-          "source": "stackra",
-          "type": "string"
-        },
-        {
           "description": "Text shown while the field is empty; it hints at what to pick and never replaces the label.",
           "name": "placeholder",
           "required": false,
@@ -117,20 +110,6 @@
         {
           "description": "True to fill the width of the parent instead of the width of the content.",
           "name": "isFullWidth",
-          "required": false,
-          "source": "stackra",
-          "type": "boolean"
-        },
-        {
-          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
-          "name": "isRequired",
-          "required": false,
-          "source": "stackra",
-          "type": "boolean"
-        },
-        {
-          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
-          "name": "isReadOnly",
           "required": false,
           "source": "stackra",
           "type": "boolean"
@@ -162,6 +141,27 @@
           "required": false,
           "source": "stackra",
           "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The field's path in the schema form, such as `lines.0.quantity`.",
+          "name": "name",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "The choices, such as the rows of a search.",
@@ -459,13 +459,6 @@
           "type": "ReactNode"
         },
         {
-          "description": "The field's path in the schema form, such as `lines.0.quantity`.",
-          "name": "name",
-          "required": true,
-          "source": "stackra",
-          "type": "string"
-        },
-        {
           "description": "Text shown while nothing is chosen; it hints at what to pick and never replaces the label.",
           "name": "placeholder",
           "required": false,
@@ -492,6 +485,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "The field's path in the schema form, such as `lines.0.quantity`.",
+          "name": "name",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "The choices, in order.",

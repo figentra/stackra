@@ -16,8 +16,11 @@ import { Command, type CommandIo } from "@stackra/console";
 import { RunwayKind } from "#core/enums/runway-kind.enum";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { checkDestinations } from "#core/functions/check-destinations.function";
+import { checkEnvironmentRegion } from "#core/functions/check-environment-region.function";
 import { checkPlacement } from "#core/functions/check-placement.function";
 import { checkRequires } from "#core/functions/check-requires.function";
+import { deprecatedFields } from "#core/functions/deprecated-fields.function";
+import { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
 import type { RootRunway } from "#core/types/root-runway.type";
 import type { ServiceRunway } from "#core/types/service-runway.type";
 import { readRunway } from "#node/functions/read-runway.function";
@@ -27,6 +30,7 @@ import { repositoryRoot } from "#node/functions/repository-root.function";
 /** Validates every runway file. */
 export class RunwayValidateCommand extends Command({
   name: "validate",
+  bin: true,
   description: "Check every runway file against its schema, the placement and the drivers",
   examples: ["runway validate", "runway validate --json"],
 }) {
@@ -61,8 +65,16 @@ export class RunwayValidateCommand extends Command({
         .map(({ member }) => member);
       for (const { code, message } of checkPlacement(parsedRoot, keys))
         findings.push(`runway.yaml: ${message} (${code})`);
-      for (const { path, message } of checkDestinations(parsedRoot))
+      for (const { path, message } of [
+        ...checkDestinations(parsedRoot),
+        ...checkEnvironmentRegion(parsedRoot),
+      ])
         findings.push(`runway.yaml: ${path}: ${message}`);
+      for (const { path, message } of [
+        ...deprecatedFields(parsedRoot),
+        ...unusedCloudOptIns(parsedRoot),
+      ])
+        io.output.warn(`runway.yaml: ${path}: ${message}`);
       for (const [file, service] of services)
         for (const { path, message } of checkRequires(parsedRoot, service))
           findings.push(`${file}: ${path}: ${message}`);

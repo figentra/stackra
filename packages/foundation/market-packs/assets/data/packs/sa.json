@@ -31,6 +31,32 @@
         "layout": [["lines"], ["district"], ["locality", "postalCode"], ["country"]]
       },
       "from": "2000-01-01"
+    },
+    {
+      "key": "payments.byo_providers",
+      "value": [
+        {
+          "provider": "hyperpay",
+          "status": "live"
+        },
+        {
+          "provider": "moyasar",
+          "status": "live"
+        },
+        {
+          "provider": "stc-pay",
+          "status": "live"
+        },
+        {
+          "provider": "tabby",
+          "status": "live"
+        },
+        {
+          "provider": "tamara",
+          "status": "live"
+        }
+      ],
+      "from": "2026-11-01"
     }
   ],
   "reviews": [],

@@ -98,6 +98,12 @@ export interface MemberIR {
    */
   readonly packages?: readonly string[];
 
+  /**
+   * The package names of `dependencies` alone, without `devDependencies`: a member hosts console commands only from
+   * these, since its console runs where dev tooling is not installed. Absent in an IR built by hand.
+   */
+  readonly runtimePackages?: readonly string[];
+
   /** The workspace and `@stackra/*` dependencies that commit a manifest, in package.json order. */
   readonly dependencies: readonly {
     readonly package: string;
@@ -116,6 +122,26 @@ export interface MemberIR {
     readonly package?: string;
     readonly manifest: StackraManifest;
   }[];
+
+  /**
+   * The `events` block of each environment of a service's `runway.yaml` that has one (ADR 0511 decisions 16 and 17):
+   * the signing key's secret name, the public keys (current first) and the subscribers in other apps. Absent when no
+   * environment has one, and in an IR built by hand.
+   */
+  readonly eventsRelay?: Readonly<
+    Record<
+      string,
+      {
+        readonly signingKey: string;
+        readonly keys: readonly { readonly id: string; readonly publicKey: string }[];
+        readonly subscribers: readonly {
+          readonly member: string;
+          readonly inbox: string;
+          readonly events: readonly string[];
+        }[];
+      }
+    >
+  >;
 
   /**
    * The committed manifests of every other service beside the member that publishes an integration event, with the

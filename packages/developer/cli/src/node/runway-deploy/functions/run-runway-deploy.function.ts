@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `runRunwayDeploy(context)`, the run of `stackra deploy --env <environment> [--kind <kind,…>]
- *          [--member <key,…>] [--sha <sha>] [--dry-run]` at a repository root: reads the root `runway.yaml` and ships
+ *          [--member <key,…>] [--sha <sha>] [--from-env] [--dry-run]` at a repository root: reads the root `runway.yaml` and ships
  *          the commit (the checked-out `HEAD` unless `--sha`) to every target of the environment through Runway's
  *          `deploy()` and its providers (`encore-cloud`, `eas`, `mintlify`, `cloudflare-workers`). `--kind` keeps the
  *          targets of those kinds, `--member` the named Worker members. A dry run prints each target's plan. An
@@ -10,8 +10,10 @@
  *          of an environment runs at a time on a host (`withDeployLock` over `fileDeployLock`). In a product
  *          repository (a root runway with `surfaces` or `mobile`), the web and mobile kinds ship through the
  *          product publish (`runDeployProduct`, the former `--product` path, which stays as an alias) inside the
- *          same lock, and the other kinds through `deploy()`. A runway with `secrets.sync: on-deploy` syncs the
- *          services' secrets from Infisical into Encore (`syncSecrets`) first, inside the lock, whenever the deploy
+ *          same lock, and the other kinds through `deploy()`; with `--member` the named Worker members ship through
+ *          the Workers provider and the product publish does not run. A runway with `secrets.sync: on-deploy` syncs the
+ *          services' secrets into Encore (`syncSecrets`; from the job's environment, a decrypted sops scope, with
+ *          `--from-env`, else from Infisical) first, inside the lock, whenever the deploy
  *          ships services, and then the Workers provider reads a Worker's secrets from Infisical too; a dry run prints
  *          the sync's names and writers.
  * Boundary: the CLI picks the providers and prints; every change is a provider's. Logins are each provider CLI's own
@@ -86,17 +88,23 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
     throw new CliUsageError(`unknown --kind ${unknown.join(", ")}: one of ${known.join(", ")}`);
 
   const root = readRunway(join(cwd, "runway.yaml"), "root");
-  const providers = runwayProviders(root, cwd, list(values["member"]));
+  const members = list(values["member"]);
+  const providers = runwayProviders(root, cwd, members);
   const sha =
     typeof values["sha"] === "string"
       ? values["sha"]
       : (await runProgram("git", ["rev-parse", "HEAD"], { cwd })).trim();
   // A product's web surfaces and mobile apps ship through the product publish (edge KV, R2, EAS submit), not a
-  // Runway provider; every other kind goes through `deploy()` (STA-1972).
-  const productKinds = [
-    ...(root.surfaces === undefined ? [] : [DeployKind.Web]),
-    ...(root.mobile === undefined ? [] : [DeployKind.Mobile]),
-  ].filter((kind) => kinds === undefined || kinds.includes(kind));
+  // Runway provider; every other kind goes through `deploy()` (STA-1972). `--member` names Worker members, which ship
+  // through the Workers provider, so it never starts the product publish nor asks for its facts.
+  const productKinds = (
+    members !== undefined
+      ? []
+      : [
+          ...(root.surfaces === undefined ? [] : [DeployKind.Web]),
+          ...(root.mobile === undefined ? [] : [DeployKind.Mobile]),
+        ]
+  ).filter((kind) => kinds === undefined || kinds.includes(kind));
   const only = (kinds ?? (Object.values(DeployKind) as string[])).filter(
     (kind) => !(productKinds as string[]).includes(kind),
   ) as DeployKind[];
@@ -110,6 +118,8 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
           repository: cwd,
           dryRun,
           log: (line) => io.out(`${line}\n`),
+          // ADR 0525: the values come from the job's environment (a decrypted sops scope), not Infisical.
+          ...(values["from-env"] === true ? { fromEnv: true } : {}),
         })
       : Promise.resolve();
 

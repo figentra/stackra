@@ -44,6 +44,21 @@ describe("renderWranglerConfig", () => {
     expect(renderWranglerConfig({ name: "api" }, {})).toEqual({ name: "api" });
   });
 
+  it("renders custom domains as wrangler routes, and refuses routes the code facts already hold", () => {
+    expect(
+      renderWranglerConfig(
+        { name: "env-sync" },
+        { customDomains: ["env-sync.stackra.figentra.com"] },
+      ),
+    ).toEqual({
+      name: "env-sync",
+      routes: [{ pattern: "env-sync.stackra.figentra.com", custom_domain: true }],
+    });
+    expect(() =>
+      renderWranglerConfig({ routes: [] }, { customDomains: ["env-sync.stackra.figentra.com"] }),
+    ).toThrow(RunwayInvalidError);
+  });
+
   it("refuses a key both homes hold", () => {
     expect(() => renderWranglerConfig({ workers_dev: true }, { workersDev: false })).toThrow(
       RunwayInvalidError,
