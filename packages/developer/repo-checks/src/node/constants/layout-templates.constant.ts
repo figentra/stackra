@@ -36,10 +36,13 @@ const NEUTRAL = [
   "LICENSE",
   "README.md",
   "SECURITY.md",
+  // The repo's current state and its agent index (master plan 2026-11-07, Phase 0 steps 1 and 8).
+  "STATE.md",
   "cspell.config.yaml",
   "docs",
   "flow.config.json",
   "knip.jsonc",
+  "llms.txt",
   "lefthook.yml",
   "mise.toml",
   "opencode.jsonc",

@@ -58,6 +58,19 @@ const ID_MATCHES: ReadonlySet<RowLevelSecurityOptions["match"]> = new Set([
   "equalsOrUnset",
 ]);
 
+/**
+ * The `uuid` a setting value names: a public id (`scp_` and 26 Crockford base32 characters, as `withTenant` writes it)
+ * is decoded to the UUID its body encodes, which is what a public-id column stores under `publicIds: "uuid"`; any other
+ * value is cast as it is. The 130 bits are 26 five-bit groups, the top 2 always zero, so bits 3 to 130 are the UUID.
+ * The subquery reads no row, so Postgres runs it once per statement and the equality stays indexable.
+ */
+function uuidOf(value: string): string {
+  const bits = `(select string_agg((strpos('0123456789abcdefghjkmnpqrstvwxyz', c) - 1)::bit(5)::text, '' order by n) from unnest(string_to_array(split_part(${value}, '_', 2), null)) with ordinality as body(c, n))`;
+  const half = (from: number) =>
+    `lpad(to_hex(substr(${bits}, ${from}, 64)::bit(64)::bigint), 16, '0')`;
+  return `(case when strpos(${value}, '_') > 0 then ${half(3)} || ${half(67)} else ${value} end)::uuid`;
+}
+
 /** A declared row-level-security policy. */
 interface PolicySeed {
   readonly column: string;
@@ -664,11 +677,17 @@ export class BlueprintRecord {
     // seq-scans, and a policy cannot OR-expand a list of unknown length; '' or unset gives an empty array (no rows).
     // `equalsOrUnset` also lets a session with the setting unset see the rows whose column is null (a nullable scope
     // column: platform rows); a scoped session still sees only its own. `is not distinct from` is `=` with null = null.
+    // A `uuid` column compares with the UUID a public-id setting encodes (`publicIds: "uuid"`): a plain cast of
+    // `scp_…` would raise on every statement.
+    const value =
+      column.type === "uuid"
+        ? uuidOf(`nullif(${setting}, '')`)
+        : `nullif(${setting}, '')::${column.type}`;
     const check =
       options.match === "equals"
-        ? `${quoteIdentifier(name)} = nullif(${setting}, '')::${column.type}`
+        ? `${quoteIdentifier(name)} = ${value}`
         : options.match === "equalsOrUnset"
-          ? `${quoteIdentifier(name)} is not distinct from nullif(${setting}, '')::${column.type}`
+          ? `${quoteIdentifier(name)} is not distinct from ${value}`
           : `${quoteIdentifier(name)} ? array(select (granted || '.*')::lquery from ${granted})`;
     const policy = quoteIdentifier(constraintName("pol", this.table, [name]));
     const statements: CompiledStatement[] = [

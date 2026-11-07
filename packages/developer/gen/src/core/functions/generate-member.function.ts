@@ -29,7 +29,7 @@
  *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
  *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
- *           `model_tenancy_missing`, stackra-258) or a site-cached query that reads its caller
+ *           `model_tenancy_missing`, stackra-258; a package's warns until 0.20) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path
@@ -89,6 +89,7 @@ import { emitEncoreService } from "#core/functions/emit-encore-service.function"
 import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
+import { STAGED_REFUSAL_CODES } from "#core/constants/staged-refusal-codes.constant";
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { emitI18n } from "#core/functions/emit-i18n.function";
@@ -140,7 +141,7 @@ const json = formatJson;
 export function generateMember(
   authored: MemberIR,
   previous?: StackraManifest,
-  options: { readonly pass?: "manifests" | "clients" } = {},
+  options: { readonly pass?: "manifests" | "clients"; readonly strict?: boolean } = {},
 ): {
   readonly files: readonly GeneratedFile[];
   readonly errors: readonly GenError[];
@@ -214,6 +215,10 @@ export function generateMember(
   // An app's client tools, from its routes, resources, placements, theming, tours and anchors (ADR 0490).
   const clientTools = emitClientTools(ir);
   all.push(...clientTools.errors);
+  // The staged checks warn until gen runs strict (0.19 warns, 0.20 refuses; STAGED_REFUSAL_CODES).
+  if (options.strict !== true)
+    for (const [index, error] of all.entries())
+      if (STAGED_REFUSAL_CODES.has(error.code)) all[index] = { ...error, severity: "warning" };
   // A warning prints and never stops writing (STA-340); only the refusals below block.
   const warnings = all.filter((error) => error.severity === "warning");
   const refusals = all.filter((error) => error.severity !== "warning");

@@ -40,7 +40,7 @@ import type { ScopeRef } from "@stackra/contracts";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { deleteFilters } from "#core/functions/delete-filters.function";
-import { scopeSettings } from "#core/functions/scope-settings.function";
+import { runInScope } from "#core/functions/run-in-scope.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { StampSubscriber } from "#core/orm/stamp.subscriber";
 import { Database } from "#core/ports/database.port";
@@ -135,20 +135,12 @@ export class MemoryDatabaseDriver extends Driver(Database) {
   }
 
   /**
-   * Implements `Database.withScope`, documented there.
+   * Implements `Database.withScope`, documented there, through `runInScope`.
    *
    * @throws TypeError for a scope path that is not an `ltree` path.
    */
   withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T> {
-    const settings = scopeSettings(scopes);
-    return this.transaction(async () => {
-      // raw-sql: set_config is how a transaction carries the scope the row-level-security policies compare with
-      await this.em().execute(
-        `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
-        settings.flat(),
-      );
-      return work();
-    });
+    return runInScope(this, scopes, work);
   }
 
   /** See `Database.close`; the in-memory database is gone afterwards. */

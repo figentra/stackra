@@ -1,5 +1,5 @@
 # Stackra file contract:
-# Purpose: the one CI step that replaces every Infisical login (ADR 0525, P4): it signs in to Google Cloud as the job
+# Purpose: the one CI step that reads secrets (ADR 0525, P4): it signs in to Google Cloud as the job
 #          itself (direct Workload Identity Federation through figentra/infra's `callers` provider, no service account),
 #          copies one scope's ciphertext (`<NAME>.enc.yaml` under the flat prefix `<scope with . for />/`, published
 #          by figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts

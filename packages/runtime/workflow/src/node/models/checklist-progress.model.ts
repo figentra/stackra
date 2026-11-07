@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ChecklistProgress`, one completed checklist step: the checklist, the step, whose progress it is (the scope's
  *          id for a scope step, the user's id for a user step) and who completed it.
- * Boundary: data only. Key `workflow.checklist_progress`, table `workflow.checklist_progress`, under forced row-level
+ * Boundary: data only. Key `workflow.checklist_progress`, table `workflow.checklist_progresses`, under forced row-level
  *           security on `scope_path`. One row per checklist, step and owner; a step is never un-done. Rows are added
  *           through `ChecklistService.complete`, never with `new`.
  * Runtime: node

@@ -7,7 +7,8 @@
  *          Pushed with `{ scope: A }` or `{ scope: branch }` and no origin, the job sees only tenant A's rows; a job
  *          stamped as the scheduler's system actor in the branch likewise (the actor names the branch id, which is no
  *          tenant); tenant B's scope sees only B's; the pipeline lists only A's rows for a user of A in scope A; and the
- *          negative cases refuse: a user of A in B's scope (`tenant_scope_mismatch`), a job whose scope the tree does
+ *          negative cases refuse: a user of A in B's scope or in the root scope above every tenant
+ *          (`tenant_scope_mismatch`; a platform user lists there and sees no tenant row), a job whose scope the tree does
  *          not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
  *          runs), and a pushed scope that is not a `ScopeRef` (`scope_not_platform_written`). A last test states why the
  *          driver reads the tree from the path's root: the branch's own scope session cannot see its tenant.
@@ -26,7 +27,7 @@ import { Action, ActionPipeline, Query } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { AccessControl, CallIsolation, UnitOfWork } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
-import { ActorKind, Clock } from "@stackra/contracts";
+import { ActorKind, Clock, Realm } from "@stackra/contracts";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 import { compileMigration, Extension, Migration } from "@stackra/database";
 import type { Blueprint, SchemaBuilder } from "@stackra/database";
@@ -382,6 +383,18 @@ describe("a user's tenant on Postgres", () => {
       (error: unknown) => isRefusal(error, TenantScopeMismatchError),
     );
   });
+
+  it("refuses a user of A in the root scope, above every tenant, and lets a platform user list there", async () => {
+    await expect(list(tenantActor(TENANT_A as PublicId<"scp">), ROOT)).rejects.toSatisfy(
+      (error: unknown) => isRefusal(error, TenantScopeMismatchError),
+    );
+    const staff: Actor = {
+      kind: ActorKind.User,
+      id: "usr_00000000000000000000000000",
+      realm: Realm.Staff,
+    };
+    expect(await list(staff, ROOT)).toEqual([]);
+  });
 });
 
 describe("why the tree is read from the root of the scope's path", () => {
@@ -419,17 +432,18 @@ describe("a refusal inside a held transaction", () => {
       [tenantActor(TENANT_A as PublicId<"scp">), SCOPE_B],
       [tenantActor(TENANT_B as PublicId<"scp">), BRANCH],
     ];
-    await database.transaction(async () => {
-      // the caller's own scope session, which stays set until the outer transaction ends
-      await database.withScope(BRANCH, async () => {});
-      const before = await scopeSettings();
-      expect(before).toEqual([BRANCH.id, BRANCH.path, BRANCH.path]);
-      for (const [who, at] of refusals) {
-        await expect(
-          isolationOf().run(who, at, async () => "ran", { readOnly: false }),
-        ).rejects.toBeDefined();
-        expect(await scopeSettings()).toEqual(before);
-      }
-    });
+    await database.transaction(() =>
+      // the caller's own scope session, inside a held transaction so each refusal runs in a savepoint
+      database.withScope(BRANCH, async () => {
+        const before = await scopeSettings();
+        expect(before).toEqual([BRANCH.id, BRANCH.path, BRANCH.path]);
+        for (const [who, at] of refusals) {
+          await expect(
+            isolationOf().run(who, at, async () => "ran", { readOnly: false }),
+          ).rejects.toBeDefined();
+          expect(await scopeSettings()).toEqual(before);
+        }
+      }),
+    );
   });
 });

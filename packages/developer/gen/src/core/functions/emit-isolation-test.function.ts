@@ -6,8 +6,9 @@
  *          column is under forced row-level security with its policy, the service role does not bypass it, and the
  *          two-owner probe sees and moves nothing.
  * Boundary: pure. Written only for a service that runs `@stackra/database`, `@stackra/tenancy` and `@stackra/testing`
- *           and has an owned model. It lives in `.stackra/` as all generated output does, so the integration task must
- *           include `.stackra/tests/**` to run it; the unit config leaves `.int.test.ts` out.
+ *           and has an owned model of its own or hosts a package that has one (its manifest's `models`). It lives in
+ *           `.stackra/` as all generated output does, so the integration task must include `.stackra/tests/**` to run
+ *           it; the unit config leaves `.int.test.ts` out.
  * Runtime: isomorphic
  * Governing contract: ADR 0239 (decision 1); ADR 0182 (integration tier); ADR 0295 (generated output in `.stackra/`).
  */
@@ -16,7 +17,8 @@ import { generatedHeader } from "#core/functions/generated-header.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /**
- * The isolation test of a service, or undefined when it has no owned model or misses a package it needs.
+ * The isolation test of a service, or undefined when neither it nor a package it hosts has an owned model, or it misses
+ * a package it needs.
  *
  * @example
  * emitIsolationTest(serviceIr); // "...await assertRowSecurity(postgres.database, tenantIsolationOptions());..."
@@ -28,11 +30,19 @@ export function emitIsolationTest(ir: MemberIR): string | undefined {
     !["@stackra/database", "@stackra/tenancy", "@stackra/testing"].every((name) =>
       packages.includes(name),
     ) ||
-    !ir.classes.some(
+    (!ir.classes.some(
       (declared) =>
         declared.kind === "model" &&
         declared.traits.some((trait) => SCOPE_OWNER_TRAITS.includes(trait.name)),
-    )
+    ) &&
+      // The hosted packages' migrations build into the same database, so their owned tables need the test too.
+      !ir.dependencies.some(
+        ({ manifest }) =>
+          manifest.kind !== "app" &&
+          (manifest.models ?? []).some((model) =>
+            model.traits.some((trait) => SCOPE_OWNER_TRAITS.includes(trait)),
+          ),
+      ))
   )
     return undefined;
   return [

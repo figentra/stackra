@@ -14,7 +14,11 @@
  *           not show, or shows at another path than the reference carries, is refused (`TenantScopeUnresolvedError`),
  *           and a scope above every tenant keeps no tenant. An agent whose tenant differs from its human's is refused. Any other actor keeps its own `scopeId`,
  *           and when that tenant and the scope's tenant are both known and differ the call is refused
- *           (`TenantScopeMismatchError`), never settled by picking one. A platform actor (no `scopeId`) with no scope
+ *           (`TenantScopeMismatchError`), never settled by picking one; a user with a tenant whose scope the tree
+ *           shows above every tenant is refused the same way. Several granted scopes are one session, so they must
+ *           all resolve alike (one tenant, all above every tenant, or all unknown to the tree) and are then treated as
+ *           the first; scopes that span tenants are refused (`TenantScopeMismatchError`). A platform actor (no
+ *           `scopeId`) with no scope
  *           runs with `app.tenant_id = ''`, which matches no tenant row, and no scope runs with no granted path. The
  *           tree is read in a scope session over the root label of the scope's path, because its row security shows a
  *           session only its own subtree, which hides a branch's tenant ancestor; that read touches `scope_nodes` only
@@ -78,7 +82,8 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    *
    * @throws TypeError when `actor.scopeId` is not a tenant id or a scope path is not an `ltree` path.
    * @throws TenantScopeUnresolvedError when a job or system actor's scope is not in the scope tree.
-   * @throws TenantScopeMismatchError when another actor's tenant and its scope's tenant are both known and differ.
+   * @throws TenantScopeMismatchError when another actor's tenant and its scope's tenant are both known and differ, or
+   *         several scopes span tenants.
    * @throws TenantSwitchRefusedError when a transaction is already running for another tenant than the call's.
    */
   async run<T>(
@@ -107,7 +112,8 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    *
    * @throws TenantScopeUnresolvedError when a job or system actor's scope is not in the scope tree.
    * @throws TenantScopeMismatchError when a tenant the actor claims (its own, or the one it acts for) and its scope's
-   *         tenant are both known and differ, or an agent and the human it acts for are in different tenants.
+   *         tenant are both known and differ, an agent and the human it acts for are in different tenants, or a user
+   *         with a tenant acts in a scope above every tenant, or several scopes do not all resolve alike.
    */
   private async actorIn(
     actor: Actor,
@@ -119,11 +125,31 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
       if (own !== undefined && human !== undefined && own !== human)
         throw TenantScopeMismatchError.create();
     }
-    // Several granted scopes name no one tenant, so they derive nothing; no scope is a platform or own-tenant call.
-    if (scope === undefined || !("path" in scope)) return actor;
-    const resolved = await this.resolve(scope);
+    // No scope is a platform or own-tenant call.
+    const scopes = scope === undefined ? [] : "path" in scope ? [scope] : scope;
+    const [first] = scopes;
+    if (first === undefined) return actor;
+    // one read at a time: each is a savepoint on the call's one connection
+    const answers: Resolved[] = [];
+    for (const one of scopes) answers.push(await this.resolve(one));
+    // Several granted scopes are one session: paths in two tenants, or in a tenant and above every tenant, would
+    // read both through the ancestor policies (ADR 0239 decision 1), so they must all resolve alike.
+    if (
+      new Set(answers.map((answer) => (answer === undefined ? UNRESOLVED : answer.tenant))).size > 1
+    )
+      throw TenantScopeMismatchError.create();
+    const [resolved] = answers;
     if (actor.kind === ActorKind.Job || actor.kind === ActorKind.System)
-      return unitActor(actor, scope, resolved);
+      return unitActor(actor, first, resolved);
+    // A tenant user in a scope above every tenant would keep its tenant while its scope paths cover other tenants'
+    // rows; a platform user (no `scopeId`) stays a platform call (ADR 0239 decision 1).
+    if (
+      actor.kind === ActorKind.User &&
+      actor.scopeId !== undefined &&
+      resolved !== undefined &&
+      resolved.tenant === undefined
+    )
+      throw TenantScopeMismatchError.create();
     if (
       actor.scopeId !== undefined &&
       resolved?.tenant !== undefined &&
@@ -141,12 +167,10 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    * root-label scope settings it needs never outlive it: inside a running transaction a released savepoint would keep
    * them until the outer transaction ends, and a caller that catches a later refusal would read the whole tree.
    */
-  private async resolve(
-    scope: ScopeRef,
-  ): Promise<{ readonly tenant: PublicId<"scp"> | undefined } | undefined> {
+  private async resolve(scope: ScopeRef): Promise<Resolved> {
     // The root label grants the whole tree for this one read of `scope_nodes`.
     const root = { id: scope.id, path: scope.path.split(".")[0] ?? scope.path };
-    let answer: { readonly tenant: PublicId<"scp"> | undefined } | undefined;
+    let answer: Resolved;
     let read = false;
     try {
       await this.database.withScope(root, async () => {
@@ -162,6 +186,12 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
     return answer;
   }
 }
+
+/** What `resolve` answers: the scope's tenant (`undefined` above every tenant), or `undefined` for an unknown scope. */
+type Resolved = { readonly tenant: PublicId<"scp"> | undefined } | undefined;
+
+/** Marks an unknown scope among several, so it never counts as the same tenant as a known one. */
+const UNRESOLVED = Symbol("a scope the tree does not show");
 
 /** Thrown inside the tree read to roll its savepoint back; never leaves `resolve`. */
 const ROLL_BACK = Symbol("roll back the tree read");
@@ -182,11 +212,7 @@ function claimedTenants(actor: Actor): readonly string[] {
  * @throws TenantScopeUnresolvedError when the tree does not show the scope.
  * @throws TenantScopeMismatchError when a claimed tenant differs from the scope's.
  */
-function unitActor(
-  actor: Actor,
-  scope: ScopeRef,
-  resolved: { readonly tenant: PublicId<"scp"> | undefined } | undefined,
-): Actor {
+function unitActor(actor: Actor, scope: ScopeRef, resolved: Resolved): Actor {
   if (resolved === undefined) throw TenantScopeUnresolvedError.create();
   const { tenant } = resolved;
   for (const claimed of claimedTenants(actor))
