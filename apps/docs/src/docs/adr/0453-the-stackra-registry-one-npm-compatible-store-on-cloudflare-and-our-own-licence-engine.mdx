@@ -389,6 +389,14 @@ On 2026-11-06 figentra/figentra became a trusted publisher of `@figentra` too (m
 `0011_figentra_figentra.sql`; 0007 was never applied), so its release workflow publishes `@figentra/cli`
 ([0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decisions 1 to 3). Linear STA-1861.
 
+On 2026-11-07 figentra/notify (`release`) joined them (migration `0012_figentra_notify.sql`), so its release
+workflow publishes `@figentra/notify-service-{notifications,messaging,realtime-presence}-contract`, the contracts of
+the three services that moved from figentra/os to Figentra Notify. Linear STA-2176.
+
+On 2026-11-07 figentra/geo (`release`) joined them (migration `0013_figentra_geo.sql`), so its release workflow
+publishes `@figentra/geo-service-{places,routing}-contract`, the contracts of the two services that moved from
+figentra/os to Figentra Geo. Linear STA-2168.
+
 ## Supersedes and sources
 
 Supersedes: [0177](/adr/0177-package-distribution-npmjs-and-keygen) decisions 1 to 3 and decisions 1 to 3 of its

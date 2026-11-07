@@ -68,7 +68,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
 | `apps/console`                                             | `@figentra/console` — Vite web app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                                    | `tier:app`     |
 | `apps/mobile`                                              | `@figentra/mobile` — Expo app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                                         | `tier:app`     |
-| `apps/docs`                                                | `@figentra/docs` — Mintlify; pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts`                                                   | `tier:app`     |
+| `apps/docs`                                                | `@figentra/docs` — Fumadocs (ADR 0514); pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts`                                                   | `tier:app`     |
 | `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, connectors, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300)                                                                       | `tier:config`  |
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294)                                               | `tier:service` |
@@ -901,7 +901,7 @@ Stackra follows a strict tiered structure enforced by Tiers and boundaries.
 stackra/
 ├── apps/                    # tier:app
 │   ├── console/            # Vite web app (minimal entry)
-│   ├── docs/               # Mintlify documentation
+│   ├── docs/               # Fumadocs documentation site
 │   └── mobile/             # Expo SDK 57 app
 ├── packages/               # tier:lib
 │   ├── application/        # Actions, AI, IR, registry
@@ -963,7 +963,7 @@ new code in the v3 shape where the member already allows it.
   `definePackage` or `defineWorker` call, static data only), `runway.yaml` when it needs runtime resources (ADR 0296),
   `src/**` and `assets/**`
 - The root module is optional. `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package) is written only when it states something gen cannot derive; a member with none is one module keyed by its folder name (ADR 0305, ADR 0294 2026-10-23 item 14)
-- Exempt from `stackra.config.ts` and the root module: the docs app (`apps/docs`, Mintlify, no TypeScript runtime) and
+- Exempt from `stackra.config.ts` and the root module: the docs app (`apps/docs`, Fumadocs, no TypeScript runtime) and
   the `tier:config` presets in `packages/tooling/` (tool configuration, no module); the planned `member-root` check
   (STA-339) skips them
 - Nobody writes `main.ts`, an entry barrel or a tool config: gen writes the runtime entries to `.stackra/entry/<target>.ts`
@@ -997,14 +997,14 @@ new code in the v3 shape where the member already allows it.
 
 ##### Apps (<name>)
 
-- Console: Vite web app; Docs: Mintlify documentation site; Mobile: Expo React Native app
+- Console: Vite web app; Docs: Fumadocs documentation site (ADR 0514); Mobile: Expo React Native app
 - App groups (ADR 0294 decision 14, ADR 0305): `src/<key>.module.ts` (optional), `config/`, `routes/<name>/`,
   `components/<name>/`, `blocks/<name>/`, `panels/`, `menus/`, `shortcuts/`, `documents/`, `stores/`, `flags/`,
   `analytics/`, `bridges/`, `hooks/` (two or more importers), `schemas/`, `errors/`, `enums/`,
   `types/`, `styles/`
 - Overrides of any package or service live in one tree, `src/overrides/<owner>/`, which mirrors the owner's paths (ADR 0306)
 - No hand-written native code in an app: Swift and Kotlin live only in Expo module packages, one package per hardware or OS capability, behind a TypeScript port with a mock driver (ADR 0478)
-- Docs (`apps/docs`) has its own layout (ADR 0002, 2026-10-27 amendment): pages in `src/docs/`, `assets/` and `snippets/` in `src/`, the site in `src/config/docs.config.ts`; gen assembles the Mintlify site into `.stackra/site/`
+- Docs (`apps/docs`) has its own layout (ADR 0002, 2026-10-27 amendment): pages in `src/docs/`, `assets/` and `snippets/` in `src/`, the site in `src/config/docs.config.ts`; gen assembles the Fumadocs site into `.stackra/site/`
 
 ##### Workers (<name>)
 

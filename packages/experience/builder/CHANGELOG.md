@@ -1,5 +1,18 @@
 # @stackra/builder
 
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/rules@0.18.0
+  - @stackra/workflow@0.18.0
+  - @stackra/collaboration@0.18.0
+  - @stackra/experience@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/validation@0.18.0
+
 ## 0.17.2
 
 ### Patch Changes

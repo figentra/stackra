@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0173 (nobody reads a value); ADR 0512; STA-606.
  */
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -28,6 +28,7 @@ const RUNWAYS: DeployRunways = {
   root: {
     environments: { staging: { encore: { environment: "staging-eu" } }, production: {} },
     providers: {
+      encore: { app: "acme-x1" },
       github: { org: "acme", repo: "platform" },
       infisical: {
         workspace: "ws-1234",
@@ -64,9 +65,19 @@ function recorder(folders: Readonly<Record<string, Record<string, string>>>): {
     readonly input?: string;
   }[];
 } {
-  const calls: { command: string; args: readonly string[]; input?: string }[] = [];
+  const calls: { command: string; args: readonly string[]; input?: string; app?: string }[] = [];
   const run: CommandRunner = async (command, args, options) => {
-    calls.push({ command, args, ...(options.input === undefined ? {} : { input: options.input }) });
+    // An Encore write records the encore.app of its working directory, which the sync removes afterwards.
+    const app =
+      command === "encore" && options.cwd !== undefined
+        ? readFileSync(join(options.cwd, "encore.app"), "utf8")
+        : undefined;
+    calls.push({
+      command,
+      args,
+      ...(options.input === undefined ? {} : { input: options.input }),
+      ...(app === undefined ? {} : { app }),
+    });
     if (command !== "infisical") return "";
     const path = args[args.indexOf("--path") + 1] ?? "";
     return JSON.stringify(
@@ -320,16 +331,16 @@ describe("syncSecrets", () => {
     });
     const writes = calls.filter((call) => call.command === "encore");
     expect(writes).toEqual([
-      {
+      expect.objectContaining({
         command: "encore",
         args: ["secret", "set", "--env", "staging-eu", "MAIL_TOKEN"],
         input: CANARIES.MAIL_TOKEN,
-      },
-      {
+      }),
+      expect.objectContaining({
         command: "encore",
         args: ["secret", "set", "--env", "staging-eu", "STRIPE_SECRET_KEY"],
         input: CANARIES.STRIPE_SECRET_KEY,
-      },
+      }),
     ]);
     for (const { args } of calls) expectNoValue(args.join(" "));
     expectNoValue(lines.join("\n"));
@@ -459,13 +470,31 @@ describe("syncSecrets", () => {
     expect((thrown as Error).cause).toBeUndefined();
   });
 
-  it("refuses to write before the Encore app is generated", async () => {
+  it("writes from a folder that names the runway's Encore app, whatever the generated layout", async () => {
+    const { run, calls } = recorder(folders);
+    await syncSecrets({
+      environment: "staging",
+      runways: RUNWAYS,
+      repository: repository(false),
+      dryRun: false,
+      log: () => undefined,
+      run,
+      ci: true,
+    });
+    const writes = calls.filter((call) => call.command === "encore");
+    expect(writes.length).toBeGreaterThan(0);
+    for (const write of writes)
+      expect(JSON.parse(write.app ?? "{}")).toMatchObject({ id: "acme-x1" });
+  });
+
+  it("refuses to write without an Encore app id in the root runway", async () => {
     const { run } = recorder(folders);
+    const { encore: _, ...providers } = RUNWAYS.root.providers;
     expect(
       await rejection(
         syncSecrets({
           environment: "staging",
-          runways: RUNWAYS,
+          runways: { ...RUNWAYS, root: { ...RUNWAYS.root, providers } },
           repository: repository(false),
           dryRun: false,
           log: () => undefined,
@@ -473,6 +502,6 @@ describe("syncSecrets", () => {
           ci: true,
         }),
       ),
-    ).toMatch(/run `stackra gen` first/);
+    ).toMatch(/providers\.encore\.app/);
   });
 });

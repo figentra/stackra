@@ -344,6 +344,13 @@ catalogs:
     wrangler: 4.148.0
   # Documentation site (apps/docs).
   docs:
+    # The Fumadocs site gen writes for apps/docs (ADR 0514, STA-2026; owner-approved 2026-11-02). MIT. 16.17.9
+    # (2026-10-28) is the newest fumadocs-core and fumadocs-ui past the minimum release age; fumadocs-mdx 15.4.10 is the
+    # release that peers on it. Keep core and ui equal.
+    fumadocs-core: 16.17.9
+    fumadocs-ui: 16.17.9
+    fumadocs-mdx: 15.4.10
+    # The scaffold's Mintlify docs template only (tools/scaffold); core's own docs no longer use it.
     mint: 4.2.985
     # Overrides only (see `overrides`): mint's connectivity probe, on fetch instead of got.
     is-online: 12.0.2

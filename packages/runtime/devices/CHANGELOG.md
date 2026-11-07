@@ -1,5 +1,19 @@
 # @stackra/devices
 
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/iam@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/storage@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/transport@0.18.0
+  - @stackra/validation@0.18.0
+
 ## 0.17.2
 
 ### Patch Changes

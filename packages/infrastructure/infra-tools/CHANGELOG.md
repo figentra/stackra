@@ -1,5 +1,14 @@
 # @stackra/infra-tools
 
+## 0.18.0
+
+### Patch Changes
+
+- Updated dependencies [15cd10c]
+- Updated dependencies [dbf1c33]
+  - @stackra/runway@0.18.0
+  - @stackra/contracts@0.18.0
+
 ## 0.17.2
 
 ### Patch Changes

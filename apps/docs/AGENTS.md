@@ -10,7 +10,8 @@ Runtime: none
 Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373; STA-1575.
 -->
 
-Mintlify documentation site. Tier tag `tier:app`.
+Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, React Router prerenders it, and the
+`stackra-docs` Cloudflare Worker serves it at docs.stackra.figentra.com. Tier tag `tier:app`.
 
 ## Where code goes
 
@@ -23,8 +24,8 @@ Mintlify documentation site. Tier tag `tier:app`.
   `customers/packages.mdx` is a snapshot of every package's `package.json` (`stackra.summary`, `exports`): update its
   row when a package is added, renamed or gains an entry. `/licensing` redirects to `customers/install` (the registry
   points `npm login` there).
-- Never write `docs.json`, `llms.txt` or `api-reference/`: gen writes them into `.stackra/site/`, which is never edited
-  or committed.
+- Never write the site, `llms.txt` or the API reference: gen writes them into `.stackra/site/`, which is never edited
+  or committed. Moved paths go in `redirects` of `src/config/docs.config.ts`.
 - A new page is an `.mdx` under `src/docs/` plus an entry in a group of `src/config/docs.config.ts`; a new ADR needs no
   entry (the `{ folder: "adr" }` group lists it). Every media file in `src/assets` is referenced by a page (the brand
   kit by `src/docs/brand.mdx`).
@@ -51,8 +52,8 @@ Mintlify documentation site. Tier tag `tier:app`.
 ## Rules that fail the build
 
 - gen's refusals (`docs_source_misplaced`, `docs_page_unlisted`, `docs_page_missing`, `docs_asset_unreferenced`, …);
-  `pnpm build` (`mint validate`) fails on warnings; `pnpm lint` (`mint broken-links`, `mint a11y`) fails on dead links
-  and accessibility errors.
+  `pnpm build` (React Router's prerender) fails on a page that does not render; `pnpm lint` builds the site the same
+  way.
 - Versions only from catalogs; `turbo.jsonc` extends `//` with one tier tag.
 
 ## Tasks
