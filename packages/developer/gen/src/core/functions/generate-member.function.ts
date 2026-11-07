@@ -78,6 +78,7 @@ import { emitIsolationTest } from "#core/functions/emit-isolation-test.function"
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitClientTools } from "#core/functions/emit-client-tools.function";
 import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
+import { emitEncoreAuth } from "#core/functions/emit-encore-auth.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
@@ -296,9 +297,12 @@ export function generateMember(
     [".stackra/tests/tenant-isolation.int.test.ts", emitIsolationTest(ir)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
+  // One auth handler and gateway per Encore app (a service is one), written beside the endpoints that read it.
+  const encoreApi = emitEncoreApi(ir, manifest);
   for (const encore of [
     emitEncoreService(ir),
-    emitEncoreApi(ir, manifest),
+    encoreApi,
+    emitEncoreAuth(ir, encoreApi !== undefined),
     emitEncoreCronJobs(ir, manifest),
     emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),
