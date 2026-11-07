@@ -1,5 +1,26 @@
 # @stackra/runway
 
+## 0.18.0
+
+### Patch Changes
+
+- 15cd10c: The Encore deploy commit holds every service member as one Encore app at the repository root (STA-2194): it rewrites
+  each member's `#` imports to relative paths through the member's own package.json map (Encore resolves neither
+  `imports` nor a per-member tsconfig), drops the members' `__tests__` folders and writes `encore.app` at the root. A
+  product with several services (billing, pay, commerce, os) now deploys as one app, and the members' apps must name one
+  Encore app id.
+  Each service declares `encore.dev`, which Encore Cloud installs from the service's package.json.
+- dbf1c33: The secret sync writes Encore secrets from a temporary folder holding only `encore.app` with the root runway's
+  `providers.encore.app`, instead of `<repo>/.stackra/encore`, which gen never writes (the generated app sits under each
+  service member, and the deploy commit roots it at the repository). tamo's staging sync failed with ".stackra/encore
+  does not exist". A runway without an Encore app id is refused before anything is written (STA-2193).
+- @stackra/app@0.18.0
+  - @stackra/console@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/validation@0.18.0
+
 ## 0.17.2
 
 ### Patch Changes
