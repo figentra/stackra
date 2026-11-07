@@ -47,7 +47,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `runProgram`, `CommandRunner`                                                                                                                               | how a provider runs its CLI, with no shell                                                                                                                             |
 | `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                                                                             |
 | `./node`    | `onboardMobile(request)`, `MobileOnboardRequest`, `MobileOnboard`, `OnboardStep`, `easJsonOf`, `toolVersionOf`                                              | mobile onboarding (ADR 0482): ids, EAS, Apple, Google, Firebase, Sentry, signing, push, stores; see below                                                              |
-| `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…`, `InfisicalVaultWriter…` drivers, and a `Memory…` driver of each | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
+| `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…` drivers, and a `Memory…` driver of each (`MemoryVaultWriter…` only for `VaultWriter`) | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
 | `./node`    | `checkoutLine(request)`, `shellReleaseOf`, `LINE_CHECKOUT_SETTINGS`, `LineSource`, `LineCheckout`, `ShellManifest`                                          | the template line step: a line's highest release from the registry (or a local checkout) into a folder (ADR 0481)                                                      |
 | `./node`    | `dryRunCommand(options)`, `DryRunEdgeKvDriver`                                                                                                              | dry runs: every command and KV write recorded, local outputs still written                                                                                             |
 | `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`                                                 | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check                                                                 |
@@ -217,8 +217,9 @@ on the edge, and the app id pattern check of ADR 0439 decision 6.
 `blocked`: `identity` (fills absent ids from `mobileIdsOf`), `eas-project`, `eas-profiles`, `apple-bundle`,
 `apple-app-record`, `google-project`, `firebase`, `analytics-link`, `sentry`, `signing`, `push`, `store-keys`,
 `play-app`. Every external call goes through a port; `dryRun` reads only and writes nothing. It writes `runway.yaml`
-(comments kept) and the Firebase config files. The FCM key it creates goes straight to `VaultWriter` and EAS and is
-never returned. `stackra mobile onboard` is the command; the runbook is `runbooks/mobile-onboarding`.
+(comments kept) and the Firebase config files. The FCM key it creates goes straight to EAS, its one reader, and is
+never returned or stored elsewhere; a missing root-kit name comes back as a manual step with its
+`pnpm secrets:put <NAME> --scope ci/production/store` command. `stackra mobile onboard` is the command; the runbook is `runbooks/mobile-onboarding`.
 
 ```ts
 import { MemoryAppleDeveloperDriver, onboardMobile /* , … */ } from "@stackra/runway/node";
@@ -233,7 +234,6 @@ const result = await onboardMobile({
   google,
   firebase,
   sentry,
-  vault,
 });
 result.steps.filter((step) => step.state === "manual");
 ```

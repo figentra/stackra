@@ -386,8 +386,7 @@
       "environments": ["prod"],
       "config": "outbox.events_relay",
       "class": "EventsRelayConfig",
-      "field": "signingKey",
-      "home": "/runtime/shop"
+      "field": "signingKey"
     },
     {
       "name": "STACKRA_EVENTS_SIGNING_KEY",
@@ -397,8 +396,7 @@
       "environments": ["dev"],
       "config": "outbox.events_relay",
       "class": "EventsRelayConfig",
-      "field": "signingKey",
-      "home": "/runtime/shop"
+      "field": "signingKey"
     },
     {
       "name": "STACKRA_SHOP_GATEWAY",
@@ -408,8 +406,7 @@
       "required": false,
       "config": "shop",
       "class": "ShopConfig",
-      "field": "gateway",
-      "home": "/runtime/shop"
+      "field": "gateway"
     }
   ],
   "relay": {
