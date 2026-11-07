@@ -85,7 +85,12 @@ async function readDocsConfig(root: string): Promise<DocsSiteInput["config"] | G
       `the class ${DOCS_CONFIG_FILE} exports has no \`name\` or \`navigation\``,
       "extend DocsConfig from @stackra/gen and set `name`, `colors` and `navigation`",
     );
-  return { ...config, apiReference: config.apiReference ?? [], raw: config.raw ?? {} };
+  return {
+    ...config,
+    apiReference: config.apiReference ?? [],
+    redirects: config.redirects ?? [],
+    raw: config.raw ?? {},
+  };
 }
 
 /**
