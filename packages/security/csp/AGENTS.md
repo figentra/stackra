@@ -25,8 +25,13 @@ The Content Security Policy baseline, its configuration, nonces and the React no
   and never adds a keyword. Widening the baseline is a security change: it changes `csp-baseline.constant.test.ts`
   and needs review.
 - Every added source passes `CSP_SOURCE_PATTERN` twice: the schema at boot, `cspSource` per response.
-- `securityHeaders` is on by default: nosniff, the opener policy and `X-Frame-Options: DENY` have no switch, and the
-  referrer policies and permissions allowances the schema accepts never loosen the baseline.
+- `securityHeaders` is on by default: nosniff and the opener policy have no switch, and the referrer policies and
+  permissions allowances the schema accepts never loosen the baseline. `X-Frame-Options: DENY` goes everywhere
+  `frame-ancestors` stays `'none'`.
+- Framing (STA-2562, ADR 0334 rule 12): `frameAncestors` maps an exact path or a `/*` prefix to `self` and https
+  origins, or to `"request"` for framers the runtime resolves per request (`CspAdditions.frameAncestors`). Every framer
+  passes `frameAncestorOrigin`: one origin, no wildcard, no exception, because a payment page framed by any site is a
+  clickjacking risk. An unmatched path, or a `"request"` path with nothing resolved, stays `'none'`.
 - A nonce is minted once per request by `createNonce` (Web Crypto) and never cached, reused or derived.
 - `useNonce` returns `undefined` outside a provider on purpose: the browser has no nonce after hydration.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
