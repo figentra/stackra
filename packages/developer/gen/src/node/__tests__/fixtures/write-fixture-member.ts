@@ -98,7 +98,10 @@ export function writeFixtureMember(name: string, files: Readonly<Record<string, 
           "vitest-config",
         ]
           .map((name) => [`@stackra/${name}`, "workspace:*"])
-          .concat([["zod", "catalog:"]]),
+          .concat([
+            ["zod", "catalog:"],
+            ["encore.dev", "catalog:"],
+          ]),
       ),
       imports: Object.fromEntries(
         folders.map((folder) => [

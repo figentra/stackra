@@ -317,7 +317,8 @@ export function generateMember(
     );
   }
   // Every other generated file is held to the same rule: the wiring's driver entries (`@stackra/content/node`), the
-  // test setup's testing subpaths, the tool configs (STA-1296).
+  // test setup's testing subpaths, the tool configs (STA-1296), and the Encore files' `encore.dev`, which Encore Cloud
+  // installs from the service's own package.json (STA-2194).
   const elsewhere = undeclaredPackages(
     ir,
     files.filter(
@@ -326,6 +327,7 @@ export function generateMember(
         !file.path.startsWith(".stackra/gen/schemas/"),
     ),
     "generated_dependency_missing",
+    ["encore.dev"],
   );
   if (elsewhere.length > 0) return { files: [], errors: elsewhere, manifest };
   // The member's part of the system graph, read by the repo step (ADR 0452).

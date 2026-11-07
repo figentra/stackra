@@ -23,6 +23,7 @@
     "@stackra/vitest-config": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/database": "workspace:*",
+    "encore.dev": "catalog:",
     "zod": "catalog:",
     "@stackra/payments": "workspace:*"
   },
