@@ -3,13 +3,16 @@
  * Purpose: `generateDocsSite`, the docs-site run of `generate` for a docs app (a member with
  *          `src/config/docs.config.ts`): it imports the config, takes the one exported class and reads the fields of a
  *          new instance, lists `src/` (reading the pages and snippets), reads the committed manifests of the
- *          `apiReference` services, calls the pure `emitDocsSite`, and writes the Mintlify root into `.stackra/site/`:
+ *          `apiReference` services, calls the pure `emitDocsSite`, and writes the site into `.stackra/site/`
+ *          (Fumadocs for a docs app that depends on `fumadocs-ui`, ADR 0514 and STA-2026, else the Mintlify root):
  *          changed files written, assets copied, and files the run no longer produces removed. A check run reports the
  *          refusals only: the site is gitignored, so nothing in it can be stale.
  * Boundary: writes only under `<member>/.stackra/site/`, never into `src/`; a refused run writes nothing. Dotfiles
- *           (`.DS_Store`) are skipped, and the site's dot folders (Mintlify's caches) are never removed.
+ *           (`.DS_Store`) are skipped, and the site's dot folders (Mintlify's caches, React Router's types) and the
+ *           Fumadocs `build/` output are never removed.
  * Runtime: node
- * Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decision 5); ADR 0294 (decision 22); STA-1316.
+ * Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decision 5); ADR 0294 (decision 22); STA-1316;
+ *                     ADR 0514; STA-2026.
  */
 import {
   copyFileSync,
@@ -105,7 +108,13 @@ export async function generateDocsSite(
     /\.mdx?$/.test(path) ? { path, content: readFileSync(join(src, path), "utf8") } : { path },
   );
   const services = readServiceManifests(root, config.apiReference);
-  const site = emitDocsSite({ config, files, services });
+  // A docs app that depends on `fumadocs-ui` is built as a Fumadocs site (ADR 0514, STA-2026); any other keeps Mintlify.
+  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+    readonly dependencies?: Readonly<Record<string, string>>;
+    readonly devDependencies?: Readonly<Record<string, string>>;
+  };
+  const fumadocs = "fumadocs-ui" in { ...manifest.dependencies, ...manifest.devDependencies };
+  const site = emitDocsSite({ config, files, services }, fumadocs ? "fumadocs" : "mintlify");
   if (site.errors.length > 0) return { errors: site.errors, files: [], changed: [] };
   const generated = site.files.map((file) => ({
     path: `${DOCS_SITE_DIR}/${file.path}`,
@@ -134,7 +143,8 @@ export async function generateDocsSite(
     ...site.files.map((file) => file.path),
     ...site.copies.map((copy) => copy.to),
   ]);
-  for (const stale of walk(out).filter((path) => !kept.has(path))) {
+  // The Fumadocs `build/` output is React Router's, never gen's to prune.
+  for (const stale of walk(out).filter((path) => !kept.has(path) && !path.startsWith("build/"))) {
     rmSync(join(out, stale));
     changed.push(`${DOCS_SITE_DIR}/${stale}`);
   }

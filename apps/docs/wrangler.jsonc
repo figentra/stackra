@@ -1,0 +1,31 @@
+// Stackra file contract:
+// Purpose: the Cloudflare Worker `stackra-docs` that serves the Stackra docs site at docs.stackra.figentra.com
+//          (ADR 0514 decisions 1 and 9, STA-2026). Assets only: no Worker script; Cloudflare serves the site
+//          `stackra build` prerenders into .stackra/site/build/client and applies its generated `_redirects`.
+// Owner: release-operations · Secrets: forbidden — CI passes CLOUDFLARE_API_TOKEN in the environment.
+// Carve-out (ADR 0284 decision 8, research R9 of STA-2026): the operational keys sit here, as workers/static has them,
+// until ADR 0519's renderer writes them from the runway preset.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "stackra-docs",
+  // Figentra Technologies L.L.C. An account id is an identifier, not a credential; the API token grants access.
+  "account_id": "d861f9ac9df28b7f0b1298cc0c89bc9d",
+  // Pinned: bumped on purpose, never set to "today" on every release.
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./.stackra/site/build/client",
+    // An unknown path returns status 404 with the prerendered 404.html.
+    "not_found_handling": "404-page",
+    // `/adr/0001-x` serves adr/0001-x/index.html with no redirect, and `/adr/0001-x/` redirects to it: the paths
+    // Mintlify served stay as they were (research R4).
+    "html_handling": "drop-trailing-slash",
+  },
+  // Workers Logs: assets-only, so few lines are written; one request in ten keeps the billed volume low.
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
+  // A Custom Domain: Cloudflare creates the DNS record and the certificate. The hostname's old CNAME to Mintlify must
+  // be gone first, or Cloudflare refuses to attach it.
+  "routes": [{ "pattern": "docs.stackra.figentra.com", "custom_domain": true }],
+  // The custom domain is the only public URL: no *.workers.dev address and no preview URLs.
+  "workers_dev": false,
+  "preview_urls": false,
+}

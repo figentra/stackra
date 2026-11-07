@@ -110,7 +110,8 @@ environments:
   production:
     destinations:
       web: cloudflare-workers
-      docs: mintlify
+      # The Fumadocs site on a Worker (ADR 0514, STA-2026); Mintlify is retired.
+      docs: cloudflare-workers
     domains:
       zone: figentra.com
       pattern: "${member}.stackra"
@@ -168,24 +169,19 @@ targets:
         smoke:
           - url: https://turbo.stackra.figentra.com/v8/artifacts/status
             bearer: TURBO_TOKEN
+      # ADR 0514, STA-2026: the Fumadocs site, assets only (apps/docs/wrangler.jsonc). llms.txt is the agent index.
+      docs:
+        path: apps/docs
+        preset: public-site
+        smoke:
+          - url: https://docs.stackra.figentra.com/
+          - url: https://docs.stackra.figentra.com/llms.txt
     workflows:
+      docs: deploy-docs.yml
       static: deploy-static.yml
       registry: deploy-registry.yml
       # stackra-turbo-cache (ADR 0026), turbo.stackra.figentra.com; runs in the `static` environment.
       turbo-cache: deploy-turbo-cache.yml
-  # The reusable provider is .github/workflows/runway-mintlify.yml (ADR 0299).
-  mintlify:
-    deployOn: merge-to-main
-    checks: [validate, broken-links, a11y]
-    # The deploy branch the generated site (apps/docs/.stackra/site) is published to, one commit per deploy with a
-    # `Source: <sha>` trailer (CI appends; runway-mintlify.yml `site-branch` defaults to this name) (ADR 0002, 2026-10-27 amendment). Only CI writes it; the owner points the Mintlify
-    # GitHub app at this branch, monorepo path at the root.
-    branch: docs-site
-    # The owner switches the Mintlify GitHub-app deploy off after the first CI deploy (STA-605).
-    pushDeploy: false
-    adminKey: MINTLIFY_ADMIN_KEY
-    workflows:
-      docs: deploy-docs.yml
   # The reusable provider is .github/workflows/runway-npm.yml. The registry's trusted publisher row names the calling
   # workflow, so it names release.yml; publishing is a GitHub OIDC exchange, with no token (ADR 0453 decision 6).
   npm:
