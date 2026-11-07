@@ -75,6 +75,11 @@
       },
       "area": "public",
       "anonymous": true,
+      "endpoint": {
+        "method": "POST",
+        "path": "/public/passkeys/challenge",
+        "derived": true
+      },
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "#/schemas/identity.ChallengePasskeyInput"
@@ -266,6 +271,11 @@
       },
       "area": "public",
       "anonymous": true,
+      "endpoint": {
+        "method": "POST",
+        "path": "/public/passkeys/verify",
+        "derived": true
+      },
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "#/schemas/identity.VerifyPasskeyInput"
