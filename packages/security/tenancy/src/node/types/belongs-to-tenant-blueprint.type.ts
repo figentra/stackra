@@ -14,8 +14,13 @@ declare module "@stackra/database" {
     /**
      * The `BelongsToTenant` trait's column on a table being created: `tenant_id varchar(33) not null`, indexed, and
      * forced row-level security with the equality policy `pol_<table>_tenant_id` on `app.tenant_id`. With
-     * `nullable: true`, the nullable column of `BelongsToTenantOrPlatform`: NULL rows are the platform's.
+     * `nullable: true`, the nullable column of `BelongsToTenantOrPlatform`: NULL rows are the platform's. With
+     * `expand: true`, the expand step of an existing table: the nullable column only, filled from `app.tenant_id` by
+     * default, and no policy until the contract step.
      */
-    belongsToTenant: (options?: { readonly nullable?: boolean }) => ColumnGroup;
+    belongsToTenant: (options?: {
+      readonly nullable?: boolean;
+      readonly expand?: boolean;
+    }) => ColumnGroup;
   }
 }

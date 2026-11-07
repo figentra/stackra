@@ -5,7 +5,8 @@
  *          policy `pol_<table>_tenant_id` on `app.tenant_id`; on an existing table the compiler refuses it (a backfill
  *          migration instead); a second policy on the same table is refused. The nullable form writes a nullable
  *          column under the `equalsOrUnset` match, so NULL rows are the platform call's, for reads and writes
- *          (@stackra/database's `equalsOrUnset`, STA-1300; STA-1312).
+ *          (@stackra/database's `equalsOrUnset`, STA-1300; STA-1312). The expand form adds only a nullable column
+ *          defaulting to `app.tenant_id` to an existing table, beside the policy it already has.
  * Boundary: test only; pure compilation through @stackra/database, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0239; ADR 0159 as amended by ADR 0305; ADR 0231.
@@ -21,12 +22,13 @@ function compiled(
   creating: boolean,
   extra: (t: Blueprint) => void = () => undefined,
   nullable = false,
+  expand = false,
 ): string {
   class TicketsMigration extends Migration {
     up(schema: SchemaBuilder): void {
       const define = (t: Blueprint) => {
         if (creating) t.hasPublicId("tkt");
-        t.belongsToTenant({ nullable });
+        t.belongsToTenant({ nullable, expand });
         extra(t);
       };
       if (creating) schema.create("tickets", define);
@@ -88,5 +90,30 @@ describe(BelongsToTenantMacro, () => {
 
   it("adds the nullable form to an existing table, whose rows become the platform's", () => {
     expect(compiled(false, undefined, true)).toContain('"pol_tickets_tenant_id"');
+  });
+
+  it("adds the expand form to an existing table: a nullable column filled from the call, and no policy", () => {
+    const sql = compiled(false, undefined, false, true);
+    expect(sql).toContain(
+      `alter table "support"."tickets" add column "tenant_id" varchar(33) default nullif(current_setting('app.tenant_id', true), '')::varchar(33) null`,
+    );
+    expect(sql).toContain("until backfilled");
+    expect(sql).toContain('create index concurrently "idx_tickets_tenant_id"');
+    expect(sql).not.toContain("policy");
+    expect(sql).not.toContain("row level security");
+  });
+
+  it("keeps the expand form beside a policy the same blueprint declares", () => {
+    const sql = compiled(
+      true,
+      (t) => {
+        t.scopePath().notNull().comment("The row's scope path.");
+        t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+      },
+      false,
+      true,
+    );
+    expect(sql).toContain('"pol_tickets_scope_path"');
+    expect(sql).not.toContain('"pol_tickets_tenant_id"');
   });
 });

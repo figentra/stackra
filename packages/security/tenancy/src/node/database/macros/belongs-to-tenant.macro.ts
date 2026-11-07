@@ -6,7 +6,10 @@
  *          `tenant_id = current_setting('app.tenant_id')`. `t.belongsToTenant({ nullable: true })` is the form of
  *          `BelongsToTenantOrPlatform`: a nullable column whose NULL rows are the platform's, under the policy
  *          `tenant_id IS NOT DISTINCT FROM nullif(current_setting('app.tenant_id'), '')`, so a platform call (no tenant)
- *          sees and writes only the NULL rows and a tenant call only its own.
+ *          sees and writes only the NULL rows and a tenant call only its own. `t.belongsToTenant({ expand: true })` is
+ *          the expand step that makes an existing table tenant-owned: the nullable column, filled from `app.tenant_id`
+ *          by default so every writer stores the call's tenant, and no policy: the table keeps the one it has until
+ *          the contract step (NOT NULL, this equality as its one permissive policy; ADR 0347 decision 1).
  * Boundary: a `Macro` (ADR 0159 as amended by ADR 0305), installed by name as `t.belongsToTenant`. It states the
  *           column's nullability and comment itself, so the bare call compiles. Equality only, no tree logic (ADR
  *           0239): an organisation reads its children through read models. A blueprint takes one policy, so the table
@@ -41,11 +44,25 @@ export class BelongsToTenantMacro extends Macro {
    * Writes the column and the policy on `t`.
    *
    * @param t - the blueprint of the tenant-owned table being created.
-   * @param options - `nullable: true` for a table whose NULL rows are the platform's (`BelongsToTenantOrPlatform`).
+   * @param options - `nullable: true` for a table whose NULL rows are the platform's (`BelongsToTenantOrPlatform`);
+   *                  `expand: true` for the column alone on an existing table.
    * @returns the tenant column.
    */
-  apply(t: Blueprint, options: { readonly nullable?: boolean } = {}): ColumnGroup {
+  apply(
+    t: Blueprint,
+    options: { readonly nullable?: boolean; readonly expand?: boolean } = {},
+  ): ColumnGroup {
     const link = t.link("tenant_id");
+    // A second permissive policy would OR with the table's own and widen it, so the expand step adds none.
+    if (options.expand === true)
+      return t.group(
+        link
+          .nullable()
+          .defaultSetting(TENANT_ID_SETTING)
+          .comment(
+            "The owning tenant: its scope node's public id, filled from the call's tenant; null on an older row until backfilled.",
+          ),
+      );
     const column =
       options.nullable === true
         ? link

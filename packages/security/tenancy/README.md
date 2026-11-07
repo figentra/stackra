@@ -109,6 +109,14 @@ The policy is `tenant_id IS NOT DISTINCT FROM nullif(current_setting('app.tenant
 (`withTenant` with no tenant) reads and writes only the NULL rows, a tenant call only its own. The macro compiles it
 through @stackra/database's `equalsOrUnset` policy match (STA-1300).
 
+## An existing table: the expand form
+
+A table that already has rows and its own policy (the scope-path tables) becomes tenant-owned in two releases. The
+expand step, `t.belongsToTenant({ expand: true })` in `schema.table(...)`, adds a nullable, indexed `tenant_id` that
+every insert fills from `app.tenant_id` (a column default), and no policy: a second permissive policy would OR with the
+table's own and widen it. Older rows stay null until a backfill job sets them. The contract step then makes the column
+NOT NULL and the tenant equality the one permissive policy, any other policy restrictive (ADR 0347 decision 1).
+
 ## Tenant tokens
 
 An anonymous call (an iCal feed, a public link) has no credential to carry a tenant, and the record it opens sits in a
