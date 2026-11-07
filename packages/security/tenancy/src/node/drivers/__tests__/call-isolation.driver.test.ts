@@ -8,7 +8,8 @@
  *          parent tenant, a scheduler actor named by the branch included), a scope the tree does not show or shows at
  *          another path is refused and never run with an empty tenant, a scope above every tenant keeps the actor's own
  *          id, any other actor keeps its own tenant and is refused (`TenantScopeMismatchError`) when the scope's
- *          tenant differs, and the tree is read in a session over the path's root label.
+ *          tenant differs or a user's scope sits above every tenant, and the tree is read in a session over the path's
+ *          root label.
  * Boundary: test only; a fake `Database` and a fake `TenantIsolationService` record the calls, so no database runs,
  *           and a `MemoryScopeTreeDriver` holds the tree. The real settings are proven on Postgres in
  *           `call-isolation.driver.int.test.ts`.
@@ -304,6 +305,20 @@ describe("the tenant of a call", () => {
     const service: Actor = { kind: ActorKind.Service, id: "svc_commerce", scopeId: ID_A };
     await expect(run(driver, service, tenantB)).rejects.toBeInstanceOf(TenantScopeMismatchError);
     expect(withTenant).not.toHaveBeenCalled();
+  });
+
+  it("refuses a user of a tenant in a scope above every tenant, and runs a platform user there", async () => {
+    const refused = setUp();
+    const work = vi.fn(async () => "ran");
+    await expect(
+      refused.driver.run(userOfA, platformScope, work, { readOnly: false }),
+    ).rejects.toBeInstanceOf(TenantScopeMismatchError);
+    expect(work).not.toHaveBeenCalled();
+    expect(refused.withTenant).not.toHaveBeenCalled();
+    expect(refused.transaction).not.toHaveBeenCalled();
+    const platform = setUp();
+    await expect(run(platform.driver, staff, platformScope)).resolves.toBe("ran");
+    expect(platform.withTenant.mock.calls[0]?.[0]).toBe(staff);
   });
 
   it("never derives a tenant for a user with none, so a staff user stays a platform call", async () => {
