@@ -770,7 +770,8 @@ export function emitWiring(ir: MemberIR): string {
     for (const facet of declared.facets.filter((candidate) => candidate.name === "Replaces"))
       if (isClassValue(facet.options))
         replaceLines.push(
-          `    { provide: ${ref({ name: facet.options.$class, from: facet.options.from })}, override: ${ref(own(declared))} },`,
+          // the override is built from this row, so it carries the constructor tokens a binding row would (STA-2569)
+          `    { provide: ${ref({ name: facet.options.$class, from: facet.options.from })}, override: ${ref(own(declared))}, deps: ${list(depsOf(declared).map(token))} },`,
         );
     const partner = declared.partner;
     if (partner === undefined || declared.kind === "driver") continue;
