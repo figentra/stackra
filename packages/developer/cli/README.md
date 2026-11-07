@@ -55,14 +55,14 @@ and `yaml`.
 | `stackra ls [section]`                                    | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)                                                  |
 | `stackra mcp`                                             | the local developer MCP over stdio; its tools run these commands in-process                                                               |
 | `stackra mcp sync`                                        | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                                                                            |
-| `stackra mcp exec [--env] [--path] --`                    | start an MCP server with its secrets, expanded by its own shell under `infisical run`                                                     |
+| `stackra mcp exec --`                                     | start an MCP server with its secrets, decrypted by `sops exec-env` from the figentra/secrets clone, expanded by its own shell              |
 | `stackra agents sync`                                     | write the project's generated agent files (`.mcp.json`)                                                                                   |
 | `stackra agents check`                                    | fail when `.mcp.json` drifted from `.mcp.yaml`                                                                                            |
 | `stackra add <kind> <name>[@version]`                     | install a registry skill, agent, MCP server, plugin or package (see below)                                                                |
 | `stackra publish [--dry-run]`                             | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                                   |
 | `stackra testbed <verb>`                                  | the shared test boxes: `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale`, `image` (below)                                           |
 | `stackra consumer-gate --core --checkout --product --out` | run a consumer product's services against a core tree: link or pack core, gen, typecheck, test; summaries under `--out` (below)           |
-| `stackra doctor`                                          | fresh-machine checklist: toolchain, install, Infisical login, CLIs, agent sync                                                            |
+| `stackra doctor`                                          | fresh-machine checklist: toolchain, install, CLIs, agent sync, sops with its Google login                                                 |
 | `stackra eas-preflight check\|record`                     | before a local EAS build: clean tree, deployed sha, free disk; `record` logs the build id                                                 |
 | `stackra structure [--write-docs]`                        | print or write the generated repository structure standards page                                                                          |
 | `stackra architecture-map [--check]`                      | write the docs architecture map (archify), or fail when it drifted                                                                        |
@@ -277,8 +277,8 @@ last rebuild (`searchStatus` of `@stackra/search/node`). Both connect with `dire
 (STA-1586) calls the environment's own `identity.operator.bootstrap@1` (`POST /platform/operators/bootstrap`); it opens
 no database connection. The origin is `https://<edge.apiHost>.<environments.<env>.domains.zone>` from the root
 `runway.yaml`, or `--api`; the environment is `--env`, else `STACKRA_ENVIRONMENT`, else `dev`. The credential is the
-environment's bootstrap token in `STACKRA_OPS_TOKEN`, sent as a bearer token and never printed (run it under
-`infisical run`; the deploys runbook says how the owner mints it). The action finds the user by email, gives the role
+environment's bootstrap token in `STACKRA_OPS_TOKEN`, sent as a bearer token and never printed (the owner starts
+it with the token in its environment; the deploys runbook says how the owner mints it). The action finds the user by email, gives the role
 (`owner` by default) at the platform node unless held, and audits the call. It prints `granted`, `already holds`
 (nothing written) or `would grant` (`--dry-run`) and exits 0; no user with the email, an error status or an unreachable
 origin exits 1.

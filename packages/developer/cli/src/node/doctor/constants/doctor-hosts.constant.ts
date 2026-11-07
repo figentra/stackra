@@ -34,7 +34,12 @@ export const DOCTOR_HOSTS: Readonly<Partial<Record<DoctorNeed | "base", readonly
     "s3.eu-west-1.amazonaws.com",
     "api.cloudflare.com",
   ],
-  infisical: ["eu.infisical.com", "app.infisical.com"],
-  agents: ["api.anthropic.com", "claude.ai", "api.linear.app"],
+  agents: [
+    "api.anthropic.com",
+    "claude.ai",
+    "api.linear.app",
+    "cloudkms.googleapis.com",
+    "oauth2.googleapis.com",
+  ],
   mobile: ["api.expo.dev", "expo.dev"],
 };

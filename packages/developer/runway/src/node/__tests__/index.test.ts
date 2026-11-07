@@ -51,7 +51,6 @@ describe("@stackra/runway/node", () => {
       "FirebaseManagementDriver",
       "GoogleCloudDriver",
       "GooglePlayConsoleDriver",
-      "InfisicalVaultWriterDriver",
       "LAUNCH_CHECK_DEFAULTS",
       "LINE_CHECKOUT_SETTINGS",
       "LocalEdgeKvDriver",

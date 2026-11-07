@@ -42,14 +42,13 @@ const MANIFEST = JSON.stringify({
   package: "@acme/service-api",
   version: "1.0.0",
   env: [
-    { name: "API_ORIGIN", kind: "config", type: "url", required: true, home: "/runtime/api" },
+    { name: "API_ORIGIN", kind: "config", type: "url", required: true },
     {
       name: "STRIPE_SECRET_KEY",
       kind: "secret",
       type: "string",
       required: true,
       refuse: { staging: ["sk_live_"], production: ["sk_test_"] },
-      home: "/runtime/api",
     },
   ],
 });

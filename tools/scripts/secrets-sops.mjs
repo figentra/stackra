@@ -18,6 +18,10 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** Core's root, where `mise.toml` pins sops and age. */
+const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
 /** An error whose message is a fixed, value-free string, safe to print. */
 export class Refusal extends Error {}
@@ -68,14 +72,31 @@ export function checkTarget({ scope, name }, { agent = false } = {}) {
  * value reaches sops.
  */
 export function cliRunner(command, args, { cwd, input } = {}) {
-  const r = spawnSync(command, args, {
+  const options = {
     cwd,
     input,
     encoding: "utf8",
     stdio: ["pipe", "pipe", "pipe"],
     maxBuffer: 1024 * 1024,
-  });
+  };
+  let r = spawnSync(command, args, options);
+  // An agent's shell does not activate mise, so a pinned tool (sops) is often off PATH: ask mise for core's pin.
+  if (r.error?.code === "ENOENT") {
+    const bin = miseWhich(command);
+    if (bin) r = spawnSync(bin, args, options);
+  }
   return { status: r.error ? 127 : r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
+}
+
+/** The path of `command` as core's `mise.toml` pins it, or null when mise or the pin is missing. */
+export function miseWhich(command, { spawn = spawnSync, root = REPO_ROOT } = {}) {
+  const r = spawn("mise", ["which", command], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const bin = r.status === 0 ? String(r.stdout ?? "").trim() : "";
+  return bin || null;
 }
 
 /** Map a failed CLI call to a fixed message; the CLI's own text is inspected, never repeated. */
@@ -116,8 +137,8 @@ export function encryptValue({ scope, name, value }, { cwd, run = cliRunner }) {
 }
 
 /**
- * Decrypt one secret file into its value, in memory. Only `secrets-exec.mjs` (scope `agents`, for MCP servers) and
- * CI jobs call this; nothing prints the result.
+ * Decrypt one secret file into its value, in memory. Only `secrets-exec.mjs` (scope `agents`, for the root scripts
+ * that need a token and MCP servers) and CI jobs call this; nothing prints the result.
  */
 export function decryptFile(file, name, { cwd, run = cliRunner }) {
   const r = run("sops", ["decrypt", "--output-type", "json", file], { cwd });

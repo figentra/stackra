@@ -4,7 +4,7 @@
 
 One line per script. Each file's docblock is the full contract; the tests are in `__tests__/` (fixtures in
 `__tests__/__fixtures__/`) and run with `node --test` in `pnpm validate`. Commands marked † run through
-`infisical run --env=dev --path=/agents` for their token.
+`secrets-exec.mjs`, which decrypts only the names they need from the `agents` scope of figentra/secrets (ADR 0525).
 
 The internal-operations scripts (agent sync, AI spend, the GitHub bots, `pr:merge`, Linear, delegate, guard port,
 secrets import, brand pull) move to the private `figentra` CLI (`@figentra/cli`, ADR 0500) once it is published;
@@ -18,7 +18,8 @@ until then they run from here and the root `package.json` aliases call them (STA
 | `spec-linear.mjs`      | `pnpm spec:linear` †                               | a shim for `fflow linear` (ADR 0503): a spec's Linear issue and one sub-issue per task                                                                                |
 | `linear.mjs`           | `pnpm linear <command>` †                          | the Linear client: `start`, `review`, `done`, `comment`, `link`, `create`, `mine`, `open`, `digest`, `check-pr`                                                               |
 | `bot-token.mjs`        | `pnpm bot:token` †                                 | mints a GitHub App token for `stackra-bot`; the network layer (30 s connect timeout, retries) of bot-gh, pr-merge, linear                               |
-| `mcp.sh`               | `.mcp.yaml`                                        | launches an MCP server with its secrets injected from the vault, never from `.mcp.json`                                                                                       |
+| `mcp.sh`               | `.mcp.yaml`                                        | launches an MCP server through `secrets-exec.mjs` with only the secrets it names, never from `.mcp.json`                                                                      |
+| `secrets-exec.mjs`     | the † scripts, `mcp.sh`                            | runs one command with the named `agents` secrets of figentra/secrets in its environment, decrypted by sops in memory; prints none                                          |
 | `agents-sync.mjs`      | `pnpm agents:sync`, `pnpm agents:check`            | projects `.agents/` into `.claude/` and `.opencode/`, renders the `AGENTS.md` rules block, the gitignored `.mcp.json` and the constitution                                    |
 | `ai-spend.mjs`         | `pnpm ai:spend`                                    | today's and the 7-day OpenCode spend against the daily cap                                                                                                                    |
 | `bot-gh.mjs`           | `pnpm bot:gh`, `pnpm bot:git` †                    | runs `gh` or `git` as `stackra-bot` (`bot:review` and the `stackra-reviewer` App are retired, ADR 0523 decision 6) |

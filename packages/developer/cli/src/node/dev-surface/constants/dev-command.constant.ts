@@ -59,7 +59,7 @@ export const DEV_COMMAND: CliCommand = {
   ...MEMBER_DEV,
   summary:
     "Generate, then serve the member (--target picks an app target; --surface runs a product surface in its shell)",
-  usage: `${MEMBER_DEV.usage}\n       stackra dev --surface <surface> [--os <checkout>] [--shell <version>] [--shell-origin <url>] [--api <url>]\n       stackra dev --mobile <app> --os <checkout> [--device <udid>]\n       stackra dev --product --os <checkout> [--device <udid>]\n       any of these with --tunnel: this machine's Cloudflare Tunnel runs beside it (CLOUDFLARE_TUNNEL_TOKEN, through infisical run)`,
+  usage: `${MEMBER_DEV.usage}\n       stackra dev --surface <surface> [--os <checkout>] [--shell <version>] [--shell-origin <url>] [--api <url>]\n       stackra dev --mobile <app> --os <checkout> [--device <udid>]\n       stackra dev --product --os <checkout> [--device <udid>]\n       any of these with --tunnel: this machine's Cloudflare Tunnel runs beside it (CLOUDFLARE_TUNNEL_TOKEN from the agents scope of figentra/secrets)`,
   options: {
     ...MEMBER_DEV.options,
     surface: { type: "string" },

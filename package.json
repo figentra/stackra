@@ -36,8 +36,8 @@
     "changeset:version": "changeset version && pnpm install --lockfile-only && turbo run gen:workspace gen --output-logs=errors-only",
     "secrets:scan": "gitleaks git . --config .gitleaks.toml --no-banner --redact",
     "delegate": "node tools/scripts/delegate.mjs",
-    "linear": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/linear.mjs",
-    "spec:linear": "infisical run --env=dev --path=/agents --silent -- fflow linear",
+    "linear": "node tools/scripts/secrets-exec.mjs --names LINEAR_AGENT_TOKEN,LINEAR_AGENT_CLIENT_ID,LINEAR_AGENT_CLIENT_SECRET,LINEAR_API_KEY -- node tools/scripts/linear.mjs",
+    "spec:linear": "node tools/scripts/secrets-exec.mjs --names LINEAR_AGENT_TOKEN,LINEAR_AGENT_CLIENT_ID,LINEAR_AGENT_CLIENT_SECRET,LINEAR_API_KEY -- fflow linear",
     "ai:spend": "node tools/scripts/ai-spend.mjs",
     "doctor": "node packages/developer/cli/dist/stackra.mjs doctor",
     "eas:preflight": "node packages/developer/cli/dist/stackra.mjs eas-preflight",
@@ -54,13 +54,12 @@
     "secrets:catalog": "node tools/scripts/secrets-catalog.mjs",
     "secrets:age-init": "node tools/scripts/secrets-age-init.mjs",
     "store": "node tools/scripts/store.mjs",
-    "vault": "node tools/scripts/vault-keeper.mjs",
     "runway": "node packages/developer/runway/dist/runway.mjs",
-    "bot:token": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-token.mjs",
-    "bot:gh": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs gh",
-    "bot:git": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs git",
-    "pr:merge": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/pr-merge.mjs",
-    "adr:reserve": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/adr-reserve.mjs"
+    "bot:token": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/bot-token.mjs",
+    "bot:gh": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/bot-gh.mjs gh",
+    "bot:git": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/bot-gh.mjs git",
+    "pr:merge": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/pr-merge.mjs",
+    "adr:reserve": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/adr-reserve.mjs"
   },
   "devDependencies": {
     "@changesets/changelog-git": "catalog:release",
@@ -89,7 +88,6 @@
     "layout": {
       "allow": {
         ".gitmodules": "the private .notes submodule",
-        ".infisical.yaml": "Infisical stays until every workflow reads SOPS (ADR 0525, STA-2146)",
         ".notes": "the private owner-only notes submodule",
         "THIRD_PARTY_NOTICES.md": "the notices of code the published packages carry",
         "TRADEMARKS.md": "the Stackra trademark policy of the public framework",

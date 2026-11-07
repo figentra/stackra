@@ -266,8 +266,7 @@
       "required": false,
       "config": "shop",
       "class": "ShopConfig",
-      "field": "gateway",
-      "home": "/runtime/shop"
+      "field": "gateway"
     }
   ],
   "schemas": {

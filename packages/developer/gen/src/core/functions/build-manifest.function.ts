@@ -43,7 +43,7 @@
  *          A service with a runway `events` block gets the `relay` section: per environment, its public keys (current
  *          first) and its subscribers with the events each takes, never an inbox origin (ADR 0511 d16 and d17).
  *          It lists each environment variable its configuration classes declare in `env` (`envOf`: name, kind, type,
- *          rules, the config that declares it; a host adds its packages' rows and the Infisical path), STA-2104.
+ *          rules, the config that declares it; a host adds its packages' rows), STA-2104.
  *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
  *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets

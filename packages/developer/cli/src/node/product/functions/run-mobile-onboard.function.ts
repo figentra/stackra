@@ -20,14 +20,12 @@ import {
   FirebaseManagementDriver,
   GoogleCloudDriver,
   GooglePlayConsoleDriver,
-  InfisicalVaultWriterDriver,
   MemoryAppleDeveloperDriver,
   MemoryExpoProjectsDriver,
   MemoryFirebaseDriver,
   MemoryGoogleCloudDriver,
   MemoryPlayConsoleDriver,
   MemorySentryProjectsDriver,
-  MemoryVaultWriterDriver,
   onboardMobile,
   proveGithubJob,
   readRunway,
@@ -79,7 +77,6 @@ export async function runMobileOnboard(
         google: new GoogleCloudDriver(),
         firebase: new FirebaseManagementDriver(),
         sentry: new SentryApiProjectsDriver(),
-        vault: new InfisicalVaultWriterDriver(),
       }
     : {
         apple: new MemoryAppleDeveloperDriver(),
@@ -88,7 +85,6 @@ export async function runMobileOnboard(
         google: new MemoryGoogleCloudDriver(),
         firebase: new MemoryFirebaseDriver(),
         sentry: new MemorySentryProjectsDriver(),
-        vault: new MemoryVaultWriterDriver(),
       };
   return onboardMobile({ repository: cwd, app, dryRun: !live, ...ports });
 }
