@@ -19,9 +19,8 @@
  *           `schema_migrations` bookkeeping. shortcut: PGlite is one connection, so a `requiresNew` transaction runs
  *           on the same session as the one around it; a test that needs true parallel sessions uses `usePostgres`.
  *           pgvector comes from PGlite's own extension package (`@electric-sql/pglite-pgvector`, the release paired with
- *           the catalog's PGlite). shortcut: no PostGIS here (PGlite's PostGIS package needs PGlite 0.5.9 or later);
- *           a member with geography columns tests them in the integration tier (`usePostgres`) until the catalog
- *           moves.
+ *           the catalog's PGlite); PostGIS from `@electric-sql/pglite-postgis` when the member installs it (a member
+ *           with geography columns does, ADR 0314).
  * Runtime: node
  * Governing contract: ADR 0266 (one option, one driver, memory first); ADR 0014; ADR 0097; ADR 0159; ADR 0160
  *                     (decision 2: the approved extensions); ADR 0269 (decision 3); gap db19
@@ -84,7 +83,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
 
   /** The MikroORM instance on PGlite. */
   get orm(): MikroORM {
-    const { orm, extensions } = loadPglitePeers();
+    const { orm } = loadPglitePeers();
     this.instance ??= new orm.MikroORM({
       // PGlite reads an in-memory data directory from the database name.
       dbName: "memory://",
@@ -101,9 +100,14 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       ensureDatabase: false,
       // A member with migrations starts each instance from the shared snapshot; one without creates its schema.
       // reason: PGlite's Extensions and the ORM driver's option type come from separately versioned packages
-      driverOptions: (existsSync(join(process.cwd(), MIGRATIONS_FOLDER))
-        ? { pglite: () => this.startFromSnapshot() }
-        : { extensions }) as never,
+      // Always this package's PGlite: the ORM driver pins its own older PGlite, which cannot load the extension
+      // bundles paired with the catalog's (pgvector, PostGIS).
+      driverOptions: {
+        pglite: () =>
+          existsSync(join(process.cwd(), MIGRATIONS_FOLDER))
+            ? this.startFromSnapshot()
+            : this.startEmpty(),
+      } as never,
       // Kysely opens PGlite's one connection on the first query and awaits this before running it.
       onCreateConnection: () => this.prepare(),
     });
@@ -176,6 +180,13 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     return this.pglite;
   }
 
+  /** A fresh, empty PGlite of this instance's own with the approved extensions (a member with no migrations). */
+  private startEmpty(): Promise<PGlite> {
+    const { PGlite, extensions } = loadPglitePeers();
+    this.pglite ??= PGlite.create({ extensions });
+    return this.pglite;
+  }
+
   /** Creates the extensions and the entity schema once (a member with no migrations), on PGlite itself. */
   private prepare(): Promise<void> {
     this.prepared ??= (async () => {
@@ -183,7 +194,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       const connection = this.orm.em.getConnection() as unknown as PgliteConnection;
       const pglite = await connection.getNativeClient();
       // raw-sql: extensions are DDL the schema owns, not a query a model makes
-      await pglite.exec(extensionsSql());
+      await pglite.exec(extensionsSql(Object.keys(loadPglitePeers().extensions)));
       await pglite.exec(await this.orm.schema.getCreateSchemaSQL());
     })();
     return this.prepared;

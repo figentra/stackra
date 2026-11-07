@@ -1,5 +1,22 @@
 # @stackra/app
 
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [cc87438]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/identity@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/navigation@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/csp@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Minor Changes

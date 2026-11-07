@@ -11,11 +11,16 @@ import { jwksKeySource } from "@stackra/app";
 import type { JsonWebKeys } from "@stackra/app/contracts";
 
 import { handleRequest } from "#src/http/handle-request";
+import { originFrameAncestorResolver } from "#src/http/origin-frame-ancestor-resolver";
 import type { EdgeEnv } from "#src/interfaces/edge-env.interface";
+import type { FrameAncestorResolver } from "#src/interfaces/frame-ancestor-resolver.interface";
 import { readSettings } from "#src/settings/read-settings";
 
 /** The key source of this isolate, rebuilt only when the issuer or cache time changes. */
 let source: { readonly id: string; readonly keys: JsonWebKeys["find"] } | null = null;
+
+/** The frame-ancestor resolver of this isolate, with its cache; rebuilt only when the origin or cache time changes. */
+let framers: { readonly id: string; readonly resolver: FrameAncestorResolver } | null = null;
 
 /** The Worker entry: builds `EdgeDeps` from the environment and hands each request to `handleRequest`. */
 export default {
@@ -25,13 +30,20 @@ export default {
     const id = `${settings.issuer} ${settings.keysSeconds}`;
     if (source?.id !== id)
       source = { id, keys: jwksKeySource(settings.issuer, settings.keysSeconds) };
-    return handleRequest(request, {
+    const base = {
       settings,
       secret: env.EDGE_SIGNING_SECRET,
       keys: source.keys,
       fetcher: fetch,
       now: () => new Date(),
       requestId: () => crypto.randomUUID(),
-    });
+    };
+    const framersId = `${settings.origin} ${settings.frameAncestorsSeconds}`;
+    if (framers?.id !== framersId)
+      framers = {
+        id: framersId,
+        resolver: originFrameAncestorResolver(base, settings.frameAncestorsSeconds),
+      };
+    return handleRequest(request, { ...base, frameAncestors: framers.resolver });
   },
 };

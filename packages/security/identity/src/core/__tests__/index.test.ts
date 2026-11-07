@@ -78,6 +78,7 @@ describe("@stackra/identity", () => {
       "actorOf",
       "assuranceOf",
       "checkPublishableKey",
+      "claimsActionResponse",
       "externalSignIn",
       "hashApiKey",
       "isOriginAllowed",

@@ -209,6 +209,21 @@ export class BlueprintRecord {
     return this.add(new ColumnRecord(name, "tsvector"));
   }
 
+  /** Implements `Blueprint.point`, documented there. */
+  point(name: string): ColumnDefinition {
+    return this.geography(name, "Point");
+  }
+
+  /** Implements `Blueprint.polygon`, documented there. */
+  polygon(name: string): ColumnDefinition {
+    return this.geography(name, "Polygon");
+  }
+
+  /** Implements `Blueprint.line`, documented there. */
+  line(name: string): ColumnDefinition {
+    return this.geography(name, "LineString");
+  }
+
   /**
    * Implements `Blueprint.enum`, documented there.
    *
@@ -513,6 +528,14 @@ export class BlueprintRecord {
         throw new TypeError(
           `${index.name(this.table)}: a unique index of a partitioned table includes ${partition}`,
         );
+  }
+
+  /** A WGS 84 `geography` column of `shape` with its GiST index, online on an existing table (ADR 0314). */
+  private geography(name: string, shape: "Point" | "Polygon" | "LineString"): ColumnDefinition {
+    const column = this.add(new ColumnRecord(name, `geography(${shape},4326)`));
+    const index = this.index([column.name]).using("gist");
+    if (!this.creating) index.concurrently();
+    return column;
   }
 
   /** Adds `column`, refusing a repeated name. */

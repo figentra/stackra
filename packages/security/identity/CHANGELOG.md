@@ -1,5 +1,47 @@
 # @stackra/identity
 
+## 0.20.0
+
+### Minor Changes
+
+- cc87438: `actorOf(claims, principals)` turns a verified access token into the call's `Actor` (ADR 0209 decision 3,
+  service-to-service calls). A token whose subject is a service account is the `service` actor of its principal, found
+  through the new `ServicePrincipals` port (`bySubject`, answering a `ServicePrincipal`: a `svc_` id, the
+  `<product>.<member>` key and the tenant), whatever other claims it carries. Any other token is a `user` actor read from
+  `urn:stackra:user_id`, the new `urn:stackra:realm` claim (`IDENTITY_CLAIMS.realm`) and the membership matching the
+  token's scope path. An unknown subject, a missing or mistyped claim, or a scope path outside the memberships is
+  refused `unauthenticated`. `MemoryServicePrincipalsDriver` serves tests.
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/clients@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/queue@0.20.0
+  - @stackra/scheduler@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/privacy@0.20.0
+  - @stackra/scope@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/query@0.20.0
+  - @stackra/storage@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/transport@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
 ## 0.19.0
 
 ### Minor Changes

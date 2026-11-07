@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the `IdpAdmin` port: run-time administration of the identity provider: create human and machine users,
  *          deactivate and remove a user, list a user's live sessions, end one session or every session of a user, run the OAuth device flow, and set
- *          an organisation's login policy; read which authentication methods a user has enrolled (as RFC 8176 `amr`
+ *          an organisation's login policy; install the claims action that adds the Stackra claims to tokens; read which authentication methods a user has enrolled (as RFC 8176 `amr`
  *          codes, so `assuranceOf` turns them into the MFA level the security page's enrolment list needs); find the
  *          provider's user of a Stackra user id, and the Stackra user id of an email (the operator bootstrap); and the server half of passkeys (the sign-in challenge and its check
  *          on a provider session, the registration options and their check).
@@ -19,6 +19,8 @@
  */
 import { Port } from "@stackra/contracts";
 
+import type { ClaimsActionInput } from "#contracts/types/claims-action-input.type";
+import type { ClaimsActionInstall } from "#contracts/types/claims-action-install.type";
 import type { DeviceAuthorization } from "#contracts/types/device-authorization.type";
 import type { DeviceTokenResult } from "#contracts/types/device-token-result.type";
 import type { IdpMachineCredential } from "#contracts/types/idp-machine-credential.type";
@@ -95,6 +97,15 @@ export abstract class IdpAdmin extends Port {
    * the organisation offers exactly those afterwards.
    */
   abstract setLoginPolicy(organizationId: string, policy: LoginPolicy): Promise<void>;
+
+  /**
+   * Makes the provider add the Stackra claims (`IDENTITY_CLAIMS`) to every token and userinfo answer by calling
+   * `input.endpoint`, which answers with `claimsActionResponse`. Safe to run on every deploy: the first run creates the
+   * call and answers its signing key once; a later run points it at `input.endpoint` and answers no key.
+   *
+   * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
+   */
+  abstract installClaimsAction(input: ClaimsActionInput): Promise<ClaimsActionInstall>;
 
   /**
    * The provider's user id of the Stackra user `stackraUserId` (`usr_…`), or `undefined` when the provider has none.

@@ -1,5 +1,16 @@
 # @stackra/i18n
 
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+  - @stackra/validation@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
 ## 0.19.0
 
 ### Patch Changes

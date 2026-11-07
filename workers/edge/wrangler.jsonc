@@ -28,6 +28,12 @@
     "EDGE_OIDC_KEYS_SECONDS": 3600,
     // Clock skew allowed on a token's exp and nbf.
     "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+    // "<product>.<surface>" -> @stackra/csp CspConfig values (extraConnectSrc, frameAncestors, reportOnly, ...); a
+    // surface not listed gets the baseline, frame-ancestors 'none'. Interim until runway emits Workers config.
+    // Pay's checkout, for one: { "pay.checkout": { "frameAncestors": { "/c/*": "request" } } }.
+    "EDGE_CSP": "{}",
+    // How long the owning product's answer for one "request" path's framers is kept in the isolate.
+    "EDGE_FRAME_ANCESTORS_SECONDS": 60,
   },
   // No route or custom domain yet: the owner decides which hosts this Worker fronts and adds them here.
   "routes": [],

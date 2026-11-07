@@ -67,10 +67,13 @@ catalog:
   # through @testcontainers/postgresql.
   testcontainers: 12.2.1
   # @stackra/database ./testing memory driver (ADR 0266): Postgres in WASM and its MikroORM driver; bump the latter with core. Apache-2.0 / MIT.
-  "@electric-sql/pglite": 0.5.8
+  "@electric-sql/pglite": 0.5.15
   "@mikro-orm/pglite": 7.2.5
   # pgvector for the PGlite memory driver (stackra-284); its peer is the PGlite above. Apache-2.0.
-  "@electric-sql/pglite-pgvector": 0.0.9
+  "@electric-sql/pglite-pgvector": 0.0.16
+  # PostGIS for the PGlite memory driver and db diff (ADR 0314, STA-1432); its peer is the PGlite above. Apache-2.0 AND
+  # GPL-2.0-or-later (PostGIS itself, as in every Postgres that runs it); test tier only, never in a server bundle.
+  "@electric-sql/pglite-postgis": 0.2.15
   # The server-state cache of @stackra/query (ADR 0079 decision 1); the React adapter is ours. MIT, no dependencies.
   "@tanstack/query-core": 5.104.1
   # AI SDK core for @stackra/ai (ADR 0155, 0100; owner R-67 decide()). Apache-2.0; providers and the MCP gateway live in the ai service.
