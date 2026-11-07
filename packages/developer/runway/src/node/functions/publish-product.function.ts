@@ -4,7 +4,8 @@
  *          ops second-reviewer gate, reads every web surface's built bundle and the `ops` contributions bundle
  *          `buildProduct` writes, refuses one whose `targets` the edge does not serve, builds the platform `host:` and
  *          `wellknown:` rows, then uploads each bundle to the asset store and writes the rows, and for each surface
- *          either the `release:` pointer (a first release) or the `canary:` row with the canary scopes (D6), and
+ *          either the `release:` pointer (a first release, or dev and staging without canary scopes) or the
+ *          `canary:` row with the canary scopes (D6; production must name them), and
  *          answers what it wrote.
  * Boundary: every check runs before the first upload or write, so a refused publish changes nothing. Writes through
  *           the `EdgeKvWriter` port and uploads with wrangler only. Bundles upload before any pointer moves. Runway
@@ -67,11 +68,14 @@ export async function publishProduct(
         message: `The bundle targets ${bundle.manifest.targets}, which the edge does not serve (${request.served.join(", ") || "none"})`,
       });
   const scopes = request.canaryScopes ?? [];
-  if (request.firstRelease !== true && bundles.length > 0 && scopes.length === 0)
+  // D6 stages a release for real tenants: only production must name canary scopes; dev and staging without them release.
+  const direct =
+    request.firstRelease === true || (request.environment !== "production" && scopes.length === 0);
+  if (!direct && bundles.length > 0 && scopes.length === 0)
     issues.push({
       path: "canaryScopes",
       message:
-        "Name the internal and demo scopes the release goes to first (D6), or mark a first release",
+        "Name the internal and demo scopes a production release goes to first (D6), or mark a first release",
     });
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
@@ -96,7 +100,7 @@ export async function publishProduct(
   const since = (request.now ?? new Date()).toISOString();
   for (const bundle of bundles) {
     const release = releaseOf(bundle, product, request.assets.origin);
-    if (request.firstRelease === true) {
+    if (direct) {
       releases[bundle.surface] = release;
       await put(`${EdgeKvPrefix.Release}:${product}:${bundle.surface}`, release);
     } else {
