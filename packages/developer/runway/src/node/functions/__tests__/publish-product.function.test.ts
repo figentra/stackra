@@ -219,12 +219,27 @@ describe("publishProduct", () => {
     ]);
   });
 
-  it("refuses a release with no canary scopes", async () => {
+  it("refuses a production release with no canary scopes", async () => {
     writeBundle(repository, "console", "1.3.0");
     expect(await issuePaths(publishProduct(request({ canaryScopes: [] })))).toEqual([
       "canaryScopes",
     ]);
     expect(kv.calls).toEqual([]);
+  });
+
+  /** D6 stages releases for real tenants; a dev or staging edge has none to protect. */
+  it("writes the release pointer directly in staging with no canary scopes", async () => {
+    const { ops: _ops, ...surfaces } = PRODUCT_ROOT.surfaces;
+    writeRunway({
+      ...PRODUCT_ROOT,
+      surfaces,
+      environments: { ...PRODUCT_ROOT.environments, staging: PRODUCT_ROOT.environments.production },
+    });
+    writeBundle(repository, "console", "1.3.0");
+    const result = await publishProduct(request({ environment: "staging", canaryScopes: [] }));
+    expect(result.canaries).toEqual({});
+    expect(kv.json("release:mezzora:console")).toEqual(result.releases["console"]);
+    expect(kv.rows.has("canary:mezzora:console")).toBe(false);
   });
 
   it("publishes the ops contributions bundle beside the others", async () => {
