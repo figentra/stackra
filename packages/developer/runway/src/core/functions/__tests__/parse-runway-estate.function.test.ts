@@ -224,6 +224,22 @@ describe("deprecatedFields", () => {
     ]);
   });
 
+  it("names every Mintlify block and destination for one release (ADR 0514)", () => {
+    const old = root({
+      providers: { mintlify: { project: "ref:mintlify.project" } },
+      targets: { mintlify: { deployOn: "merge-to-main" } },
+      environments: {
+        staging: { region: "me" },
+        production: { region: "me", destinations: { docs: "mintlify" } },
+      },
+    });
+    expect(deprecatedFields(parseRunway("root", old)).map(({ path }) => path)).toEqual([
+      "providers.mintlify",
+      "targets.mintlify",
+      "environments.production.destinations.docs",
+    ]);
+  });
+
   it("names an environment's cloud", () => {
     const old = root({
       environments: {
