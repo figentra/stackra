@@ -4,7 +4,8 @@
  *          users and their client secret through the management API, sessions (listed and ended) through the v2 session service, the
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
  *          management API (added the first time, updated after, then its external providers and second factors brought
- *          to exactly the listed ones); a user's enrolled authentication methods through the
+ *          to exactly the listed ones); the claims action as an Actions v2 target and its `preuserinfo` and
+ *          `preaccesstoken` executions; a user's enrolled authentication methods through the
  *          v2 user service, mapped to RFC 8176 `amr` codes; a Stackra user's provider user through the v2 user search on
  *          the `stackra_user_id` metadata `createUser` writes, and an email's Stackra user through the v2 user search on
  *          the email and that user's metadata; and passkeys: sign-in as a v2 session with a `webAuthN`
@@ -26,6 +27,8 @@ import { UnauthenticatedError } from "@stackra/errors";
 import type { IdpAdminConfig } from "#config/idp-admin.config";
 import { DeviceTokenStatus, IdpAdmin, IdpSecondFactor } from "#contracts/index";
 import type {
+  ClaimsActionInput,
+  ClaimsActionInstall,
   DeviceAuthorization,
   DeviceTokenResult,
   IdpMachineCredential,
@@ -54,6 +57,12 @@ const UNKNOWN: readonly number[] = [404];
 
 /** The statuses ZITADEL answers a refused passkey check with. */
 const REFUSED: readonly number[] = [400, 404, 412];
+
+/** The claims action's target name: an install finds its own target by it. */
+const CLAIMS_TARGET = "stackra-claims";
+
+/** The functions the claims action runs on: the userinfo answer and the access token. */
+const CLAIMS_FUNCTIONS: readonly string[] = ["preuserinfo", "preaccesstoken"];
 
 /** How many sessions one search reads. */
 const PAGE = 100;
@@ -478,6 +487,56 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       REFUSED,
     );
     refuseOn(status, REFUSED);
+  }
+
+  /**
+   * See `IdpAdmin.installClaimsAction`: the Actions v2 target named `stackra-claims` (a `restCall` that fails the
+   * token when the endpoint fails), created with its signing key the first time and pointed at the endpoint after,
+   * then the `preuserinfo` and `preaccesstoken` function executions set to it.
+   */
+  async installClaimsAction(input: ClaimsActionInput): Promise<ClaimsActionInstall> {
+    const target = {
+      name: CLAIMS_TARGET,
+      endpoint: input.endpoint,
+      timeout: `${input.timeoutSeconds ?? 10}s`,
+      restCall: { interruptOnError: true },
+    };
+    const { body: found } = await this.call({
+      method: "POST",
+      path: "/v2/actions/targets/search",
+      json: {
+        filters: [
+          { targetNameFilter: { targetName: CLAIMS_TARGET, method: "TEXT_FILTER_METHOD_EQUALS" } },
+        ],
+      },
+    });
+    const existing = (found as { result?: readonly { id?: unknown }[] }).result?.[0]?.id;
+    let installed: ClaimsActionInstall;
+    if (typeof existing === "string" && existing !== "") {
+      await this.call({
+        method: "POST",
+        path: `/v2/actions/targets/${encodeURIComponent(existing)}`,
+        json: target,
+      });
+      installed = { targetId: existing };
+    } else {
+      const { body } = await this.call({
+        method: "POST",
+        path: "/v2/actions/targets",
+        json: target,
+      });
+      const { id, signingKey } = body as { id?: unknown; signingKey?: unknown };
+      if (typeof id !== "string" || typeof signingKey !== "string")
+        throw new Error("ZITADEL created the claims target without an id or signing key");
+      installed = { targetId: id, signingKey };
+    }
+    for (const name of CLAIMS_FUNCTIONS)
+      await this.call({
+        method: "PUT",
+        path: "/v2/actions/executions",
+        json: { condition: { function: { name } }, targets: [installed.targetId] },
+      });
+    return installed;
   }
 
   /** See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after. */
