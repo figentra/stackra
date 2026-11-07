@@ -153,7 +153,15 @@
         "*.extend.ts",
         "runway.yaml",
       ],
-      "outputs": [".stackra/**", "stackra.manifest.json", "src/node/entities.gen.ts"],
+      // the gitignored root shims too (ROOT_VITEST_SHIM, the Expo shim): a cache hit that restored only .stackra/
+      // left `vitest run` with no config in a member that has no authored one (@stackra/console)
+      "outputs": [
+        ".stackra/**",
+        "stackra.manifest.json",
+        "src/node/entities.gen.ts",
+        "vitest.config.ts",
+        "app.config.ts",
+      ],
     },
     "format": {
       "description": "Rewrite files in place with oxfmt. Never cached: its job is to mutate the tree.",
