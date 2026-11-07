@@ -136,6 +136,20 @@ describe("systemDriverDefaults", () => {
     );
   });
 
+  it("binds the issuer's JsonWebKeys with BearerConfig in a service that declares @stackra/app, and nowhere else", () => {
+    const keys = ["JsonWebKeys", "oidc"];
+    const rows = systemDriverDefaults({ ...COMMERCE_IR, packages: ["@stackra/app"] });
+    expect(rows.map(({ port, driver }) => [port.name, driver])).toContainEqual(keys);
+    expect(rows.find(({ port }) => port.name === "JsonWebKeys")?.config).toEqual({
+      name: "BearerConfig",
+      from: "@stackra/app",
+    });
+    expect(pairs({ ...COMMERCE_IR, packages: [] })).not.toContainEqual(keys);
+    expect(
+      pairs({ ...WEB_APP_IR, targets: ["web"], packages: ["@stackra/app"] }),
+    ).not.toContainEqual(keys);
+  });
+
   it("gives a package, and a host without the port's package, none", () => {
     expect(systemDriverDefaults({ ...LOYALTY_KIT_IR, packages: DECLARED })).toEqual([]);
     expect(pairs({ ...WEB_APP_IR, targets: ["ios"], packages: ["@stackra/platform"] })).toEqual([
