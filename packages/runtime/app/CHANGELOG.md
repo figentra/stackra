@@ -1,5 +1,19 @@
 # @stackra/app
 
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/identity@0.17.2
+  - @stackra/navigation@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/csp@0.17.2
+
 ## 0.17.1
 
 ### Patch Changes
