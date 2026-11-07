@@ -186,8 +186,15 @@ describe(compileMigration, () => {
       'create index "idx_orders_workspace_id_status" on "orders"."orders" ("workspace_id", "status")',
     );
     expect(step?.sql).toContain('alter table "orders"."orders" force row level security');
-    expect(step?.sql).toContain(
-      `create policy "pol_orders_workspace_id" on "orders"."orders" using ("workspace_id" = nullif(current_setting('app.workspace_id', true), '')::uuid) with check ("workspace_id" = nullif(current_setting('app.workspace_id', true), '')::uuid)`,
+    // A uuid column decodes a public-id setting and casts any other value; the int test runs it on Postgres.
+    const policy = step?.sql.find((sql) =>
+      sql.startsWith('create policy "pol_orders_workspace_id"'),
+    );
+    expect(policy).toContain(
+      `using ("workspace_id" = (case when strpos(nullif(current_setting('app.workspace_id', true), ''), '_') > 0 then `,
+    );
+    expect(policy).toContain(
+      `else nullif(current_setting('app.workspace_id', true), '') end)::uuid) with check ("workspace_id" = (case`,
     );
     expect(step?.sql).toContain(
       'alter table "orders"."order_lines" add constraint "fk_order_lines_order_id" foreign key ("order_id") references "orders"."orders" ("id") on delete cascade',
