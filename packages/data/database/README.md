@@ -789,7 +789,9 @@ named, with its reason, in `PLATFORM_TABLES` (the framework's: the migration led
 `rate_limit_buckets`, `cache.entries` and `set_members`, `locking.lock_tokens`) or in the caller's `platform` map; any
 other is returned as a warning naming its group (an ancestor `scope_path` table awaiting the contract step, a
 `scope_id` table whose policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or
-unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. A listed table that holds
+unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. So is a table in the expand
+step of the scope-path migration: a nullable `column`, no `pol_<table>_<column>` yet, and a permissive policy on
+`scope_path`. A NOT NULL `column`, or a table without that `scope_path` policy, takes the hard checks below. A listed table that holds
 `column` is always a gap. A table with it has row-level security enabled and
 forced, exactly one permissive policy, `pol_<table>_<column>`, `FOR ALL` and testing `column` against `setting`, and
 only restrictive policies beside it, each named `pol_<table>_<column>` after one of its columns. `role` is neither a
