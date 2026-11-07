@@ -23,7 +23,7 @@ interface AuthParams {
 /** The caller of every call, user or service, from its verified bearer token. */
 export const auth = authHandler<AuthParams, CallAuthData>((params) =>
   app.handlers
-    .run((container) => container.get(CallAuthenticator).authenticate(params))
+    .run((container) => new CallAuthenticator(container).authenticate(params))
     .catch((error: unknown) => {
       if (isRefusal(error, BearerTokenInvalidError))
         throw APIError.unauthenticated("unauthenticated");
