@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the third migration of the collaboration package (`collaboration.0003_add_tenancy`): the expand step that
- *          gives `comment_threads`, `comments`, `comment_revisions` and `comment_mentions` their owning tenant.
+ * Purpose: the second migration of the segments package (`segments.0002_add_segments_tenancy`): the expand step that gives
+ *          `segments` and `segment_memberships` their owning tenant.
  * Boundary: a frozen snapshot, never edited once on main: it imports only @stackra/database and every name is a
  *           literal. `belongsToTenant({ expand: true })` (@stackra/tenancy) adds a nullable `tenant_id`, indexed online
  *           and filled from the call's `app.tenant_id` by default, and no policy: each table keeps its scope-path
@@ -15,19 +15,13 @@
 import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database";
 
 /** Adds the tenant column to the scope-path tables. */
-export class AddTenancyMigration extends Migration {
+export class AddSegmentsTenancyMigration extends Migration {
   /** One nullable tenant column per table, beside its scope-path policy. */
   up(schema: SchemaBuilder): void {
-    schema.table("comment_threads", (t: Blueprint) => {
+    schema.table("segments", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
-    schema.table("comments", (t: Blueprint) => {
-      t.belongsToTenant({ expand: true });
-    });
-    schema.table("comment_revisions", (t: Blueprint) => {
-      t.belongsToTenant({ expand: true });
-    });
-    schema.table("comment_mentions", (t: Blueprint) => {
+    schema.table("segment_memberships", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
   }

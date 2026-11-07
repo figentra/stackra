@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `AddTenancyMigration`: `rule_sets` gains a nullable `tenant_id` defaulting to `app.tenant_id`,
- *          indexed online, and no policy changes.
+ * Purpose: tests of `AddCollaborationTenancyMigration`: `comment_threads`, `comments`, `comment_revisions` and
+ *          `comment_mentions` each gain a nullable `tenant_id` defaulting to `app.tenant_id`, indexed online, and no
+ *          policy changes.
  * Boundary: test only; pure compilation through @stackra/database with the tenancy macro, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0347 (decision 1); ADR 0159 (as amended).
@@ -10,13 +11,13 @@ import { compileMigration } from "@stackra/database";
 import { BelongsToTenantMacro } from "@stackra/tenancy/node";
 import { describe, expect, it } from "@stackra/testing";
 
-import { AddTenancyMigration } from "#node/database/migrations/0004-add-tenancy.migration";
+import { AddCollaborationTenancyMigration } from "#node/database/migrations/0003-add-collaboration-tenancy.migration";
 
-const TABLES = ["rule_sets"];
+const TABLES = ["comment_threads", "comments", "comment_revisions", "comment_mentions"];
 
-describe("AddTenancyMigration", () => {
-  const sql = compileMigration(AddTenancyMigration, {
-    schema: "rules",
+describe("AddCollaborationTenancyMigration", () => {
+  const sql = compileMigration(AddCollaborationTenancyMigration, {
+    schema: "collaboration",
     macros: [BelongsToTenantMacro],
   })
     .steps.flatMap((step) => step.sql)
@@ -25,10 +26,10 @@ describe("AddTenancyMigration", () => {
   it("adds a nullable column filled from the call's tenant to each table, indexed online", () => {
     for (const table of TABLES) {
       expect(sql).toContain(
-        `alter table "rules"."${table}" add column "tenant_id" varchar(33) default nullif(current_setting('app.tenant_id', true), '')::varchar(33) null`,
+        `alter table "collaboration"."${table}" add column "tenant_id" varchar(33) default nullif(current_setting('app.tenant_id', true), '')::varchar(33) null`,
       );
       expect(sql).toContain(
-        `create index concurrently "idx_${table}_tenant_id" on "rules"."${table}"`,
+        `create index concurrently "idx_${table}_tenant_id" on "collaboration"."${table}"`,
       );
     }
   });

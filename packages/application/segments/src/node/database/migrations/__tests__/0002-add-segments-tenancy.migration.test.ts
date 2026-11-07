@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `AddTenancyMigration`: `vector_items` and `queries` each gain a nullable `tenant_id`
+ * Purpose: tests of `AddSegmentsTenancyMigration`: `segments` and `segment_memberships` each gain a nullable `tenant_id`
  *          defaulting to `app.tenant_id`, indexed online, and no policy changes.
  * Boundary: test only; pure compilation through @stackra/database with the tenancy macro, no database.
  * Runtime: node (vitest)
@@ -10,13 +10,13 @@ import { compileMigration } from "@stackra/database";
 import { BelongsToTenantMacro } from "@stackra/tenancy/node";
 import { describe, expect, it } from "@stackra/testing";
 
-import { AddTenancyMigration } from "#node/database/migrations/0008-add-tenancy.migration";
+import { AddSegmentsTenancyMigration } from "#node/database/migrations/0002-add-segments-tenancy.migration";
 
-const TABLES = ["vector_items", "queries"];
+const TABLES = ["segments", "segment_memberships"];
 
-describe("AddTenancyMigration", () => {
-  const sql = compileMigration(AddTenancyMigration, {
-    schema: "search",
+describe("AddSegmentsTenancyMigration", () => {
+  const sql = compileMigration(AddSegmentsTenancyMigration, {
+    schema: "segments",
     macros: [BelongsToTenantMacro],
   })
     .steps.flatMap((step) => step.sql)
@@ -25,10 +25,10 @@ describe("AddTenancyMigration", () => {
   it("adds a nullable column filled from the call's tenant to each table, indexed online", () => {
     for (const table of TABLES) {
       expect(sql).toContain(
-        `alter table "search"."${table}" add column "tenant_id" varchar(33) default nullif(current_setting('app.tenant_id', true), '')::varchar(33) null`,
+        `alter table "segments"."${table}" add column "tenant_id" varchar(33) default nullif(current_setting('app.tenant_id', true), '')::varchar(33) null`,
       );
       expect(sql).toContain(
-        `create index concurrently "idx_${table}_tenant_id" on "search"."${table}"`,
+        `create index concurrently "idx_${table}_tenant_id" on "segments"."${table}"`,
       );
     }
   });

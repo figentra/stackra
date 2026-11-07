@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `AddTenancyMigration`: `award_kinds` and `awards` each gain a nullable `tenant_id` defaulting
+ * Purpose: tests of `AddAchievementsTenancyMigration`: `award_kinds` and `awards` each gain a nullable `tenant_id` defaulting
  *          to `app.tenant_id`, indexed online, and no policy changes.
  * Boundary: test only; pure compilation through @stackra/database with the tenancy macro, no database.
  * Runtime: node (vitest)
@@ -10,12 +10,12 @@ import { compileMigration } from "@stackra/database";
 import { BelongsToTenantMacro } from "@stackra/tenancy/node";
 import { describe, expect, it } from "@stackra/testing";
 
-import { AddTenancyMigration } from "#node/database/migrations/0003-add-tenancy.migration";
+import { AddAchievementsTenancyMigration } from "#node/database/migrations/0003-add-achievements-tenancy.migration";
 
 const TABLES = ["award_kinds", "awards"];
 
-describe("AddTenancyMigration", () => {
-  const sql = compileMigration(AddTenancyMigration, {
+describe("AddAchievementsTenancyMigration", () => {
+  const sql = compileMigration(AddAchievementsTenancyMigration, {
     schema: "achievements",
     macros: [BelongsToTenantMacro],
   })
