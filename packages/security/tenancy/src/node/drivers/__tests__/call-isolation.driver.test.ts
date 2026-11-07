@@ -8,8 +8,8 @@
  *          parent tenant, a scheduler actor named by the branch included), a scope the tree does not show or shows at
  *          another path is refused and never run with an empty tenant, a scope above every tenant keeps the actor's own
  *          id, any other actor keeps its own tenant and is refused (`TenantScopeMismatchError`) when the scope's
- *          tenant differs or a user's scope sits above every tenant or is unknown to the tree (a platform user stays a
- *          platform call there), several granted scopes that span tenants are
+ *          tenant differs or a user's or agent's scope sits above every tenant or is unknown to the tree (a platform user
+ *          or agent stays a platform call there), several granted scopes that span tenants are
  *          refused while several within one tenant run in it, and the tree is read in a session over the path's root
  *          label.
  * Boundary: test only; a fake `Database` and a fake `TenantIsolationService` record the calls, so no database runs,
@@ -63,6 +63,10 @@ const userOfA: Actor = {
   scopeId: ID_A,
 };
 const staff: Actor = { kind: ActorKind.User, id: userOfA.id, realm: Realm.Staff };
+
+/** An agent of tenant A acting for its user, and one that carries only that user's tenant. */
+const agentOfA: Actor = { kind: ActorKind.Agent, id: "agt_1", scopeId: ID_A, onBehalfOf: userOfA };
+const agentForA: Actor = { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: userOfA };
 
 /** A recording database and tenant service; `running` says whether a transaction is already open. */
 function setUp(running = false, held = "") {
@@ -384,6 +388,50 @@ describe("the tenant of a call", () => {
     expect(withTenant.mock.calls[0]?.[0]).toBe(staff);
   });
 
+  it("refuses an agent of a tenant whose scope the tree does not show or sits above every tenant, before any setting", async () => {
+    const cases: readonly (ScopeRef | readonly ScopeRef[])[] = [
+      unknown,
+      { id: ID_A, path: platformScope.path },
+      { id: ID_UNKNOWN, path: "nowhere" },
+      [unknown, { id: ID_A, path: platformScope.path }],
+      platformScope,
+    ];
+    // an agent with a tenant of its own, and one that carries only its human's (Tamo's background agent)
+    for (const agent of [agentOfA, agentForA])
+      for (const at of cases) {
+        const { driver, withTenant, withScope, transaction } = setUp();
+        const work = vi.fn(async () => "ran");
+        await expect(driver.run(agent, at, work, { readOnly: false })).rejects.toBeInstanceOf(
+          TenantScopeMismatchError,
+        );
+        expect(work).not.toHaveBeenCalled();
+        expect(withTenant).not.toHaveBeenCalled();
+        expect(transaction).not.toHaveBeenCalled();
+        // the only scope sessions are the tree reads over the root label, never the call's own
+        expect(withScope.mock.calls.map(([granted]) => granted)).not.toContain(at);
+      }
+    for (const agent of [agentOfA, agentForA]) {
+      const known = setUp();
+      await expect(run(known.driver, agent, branch)).resolves.toBe("ran");
+      expect(known.withTenant.mock.calls[0]?.[0]).toBe(agent);
+    }
+  });
+
+  it("refuses an agent that carries only its human's tenant in another tenant's scope", async () => {
+    const { driver, withTenant } = setUp();
+    await expect(run(driver, agentForA, tenantB)).rejects.toBeInstanceOf(TenantScopeMismatchError);
+    expect(withTenant).not.toHaveBeenCalled();
+  });
+
+  it("keeps an agent with no tenant, acting for a platform user, a platform call", async () => {
+    const platformAgent: Actor = { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: staff };
+    for (const at of [unknown, platformScope]) {
+      const { driver, withTenant } = setUp();
+      await expect(run(driver, platformAgent, at)).resolves.toBe("ran");
+      expect(withTenant.mock.calls[0]?.[0]).toBe(platformAgent);
+    }
+  });
+
   it("compares a running transaction's tenant with the resolved one, not with the actor's own id", async () => {
     const sameTenant = setUp(true, ID_A);
     await expect(
@@ -397,5 +445,15 @@ describe("the tenant of a call", () => {
     await expect(
       run(other.driver, { kind: ActorKind.Job, id: actor.id }, branch),
     ).rejects.toBeInstanceOf(TenantSwitchRefusedError);
+  });
+
+  it("compares a running transaction's tenant with the human's for an agent with none of its own", async () => {
+    const held = setUp(true, ID_A);
+    await expect(run(held.driver, agentForA, scope)).resolves.toBe("ran");
+    expect(held.withTenant.mock.calls[0]?.[0]).toBe(agentForA);
+    const other = setUp(true, ID_B);
+    await expect(run(other.driver, agentForA, undefined)).rejects.toBeInstanceOf(
+      TenantSwitchRefusedError,
+    );
   });
 });

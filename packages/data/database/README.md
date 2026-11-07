@@ -783,12 +783,26 @@ running call's actor, id and scope, and `drainOutbox()` delivers each one as the
 that actor in that scope through the app's `CallIsolation` (`withScope` without one), the platform for an event with no
 actor (`deliverInIsolation`, STA-1789). The testing entry needs `@stackra/events` for this, an optional peer.
 
-`assertRowSecurity(database, { column, setting, role, probe })` checks a migrated database: every table holding
-`column` has row-level security enabled and forced with the policy `pol_<table>_<column>`, `role` is neither a
-superuser nor BYPASSRLS (created `NOLOGIN NOBYPASSRLS` when missing), and a probe as `role` with `setting` at
-`probe[0]` sees no other owner's row and cannot move one to `probe[1]`, inside a rolled-back transaction. It throws
-one error listing every gap (stackra-258). `@stackra/tenancy/testing`'s `tenantIsolationOptions()` gives the tenant
-form; gen writes a service's `.stackra/tests/tenant-isolation.int.test.ts` with both.
+`assertRowSecurity(database, { column, setting, role, probe, platform })` audits a migrated database (ADR 0347 d5).
+It walks every table of every non-system schema (an extension's own tables aside). A table without `column` must be
+named, with its reason, in `PLATFORM_TABLES` (the framework's: the migration ledger, `database.idempotency_keys` and
+`rate_limit_buckets`, `cache.entries` and `set_members`, `locking.lock_tokens`) or in the caller's `platform` map; any
+other is returned as a warning naming its group (an ancestor `scope_path` table awaiting the contract step, a
+`scope_id` table whose policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or
+unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. So is a table in the expand
+step of the scope-path migration: a nullable `column`, no `pol_<table>_<column>` yet, and a permissive policy on
+`scope_path`. A NOT NULL `column`, or a table without that `scope_path` policy, takes the hard checks below. A listed table that holds
+`column` is always a gap. A table with it has row-level security enabled and
+forced, exactly one permissive policy, `pol_<table>_<column>`, `FOR ALL` and testing `column` against `setting`, and
+only restrictive policies beside it, each named `pol_<table>_<column>` after one of its columns. `role` is neither a
+superuser nor BYPASSRLS (created `NOLOGIN NOBYPASSRLS` when missing, and granted the owned tables each call). Then,
+per owned table and inside a rolled-back transaction, it seeds a row of `probe[0]` and of `probe[1]` itself (dropping
+the table's checks and its non-key NOT NULLs there and skipping foreign keys, so only a key needs a value: a string,
+number, UUID or instant), and as `role` proves a session with `setting` unset sees no row, a session at `probe[0]`
+sees its own row and not the other, and cannot move its row to `probe[1]`. A table it cannot seed is a gap. It throws
+one error listing every gap (stackra-258), and otherwise returns the warnings. `@stackra/tenancy/testing`'s `tenantIsolationOptions()` gives the tenant
+form; gen writes a service's `.stackra/tests/tenant-isolation.int.test.ts` with both, listing the service's global
+models' tables and gen's `MODEL_SCOPE_EXEMPTIONS` as `platform` and prints each warning.
 
 ```ts
 import { createTestingModule } from "@stackra/container/testing";

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `TenantIsolationService`, the application layer of tenant isolation: `withTenant(actor, work)` runs `work`
- *          in a transaction whose `app.tenant_id` is the verified caller's tenant, which every tenant-owned table's
+ *          in a transaction whose `app.tenant_id` is the verified caller's tenant (an agent with none acts in its
+ *          human's), which every tenant-owned table's
  *          generated policy compares with, and makes that tenant the one new `BelongsToTenant` rows take.
  * Boundary: a platform service over the `Database` port. The tenant comes from the `Actor` the pipeline built from the
  *           verified credential (ADR 0098), never from a body, a query or a client header. A caller with no tenant (a
@@ -18,6 +19,7 @@ import { Service } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 
+import { actingTenant } from "#core/functions/acting-tenant.function";
 import { isTenantId } from "#core/index";
 import { ACTIVE_TENANT } from "#node/constants/active-tenant.constant";
 import { TENANT_ID_SETTING } from "#node/constants/tenant-id-setting.constant";
@@ -56,14 +58,14 @@ export class TenantIsolationService extends Service {
   }
 
   /**
-   * Runs `work` in a transaction (a savepoint inside one) with `app.tenant_id` set to `actor.scopeId`, `''` when the
-   * actor acts in no tenant. Inside a running transaction the enclosing tenant is back once `work` ends: put back after
+   * Runs `work` in a transaction (a savepoint inside one) with `app.tenant_id` set to the actor's tenant (`actingTenant`:
+   * its own `scopeId`, or for an agent with none the tenant of the human it acts for), `''` when it acts in no tenant. Inside a running transaction the enclosing tenant is back once `work` ends: put back after
    * it returns (its writes flushed first), and by the savepoint's rollback when it throws.
    *
-   * @throws TypeError when `actor.scopeId` is set but is not a tenant id (`scp_…`), a wiring error.
+   * @throws TypeError when the actor's tenant is set but is not a tenant id (`scp_…`), a wiring error.
    */
   withTenant<T>(actor: Actor, work: () => Promise<T>): Promise<T> {
-    const { scopeId: tenantId } = actor;
+    const tenantId = actingTenant(actor);
     if (tenantId !== undefined && !isTenantId(tenantId))
       throw new TypeError(`"${tenantId}" is not a tenant id: the public id of a scope node`);
     const nested = this.database.em().isInTransaction();

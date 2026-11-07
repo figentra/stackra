@@ -15,7 +15,7 @@ import { Migration, type SchemaBuilder } from "@stackra/database";
 
 /** Renames the checklist progress table to its model's name. */
 export class RenameChecklistProgressMigration extends Migration {
-  /** One rename. */
+  /** Renames the table in one step, keeping its rows, indexes and policy. */
   up(schema: SchemaBuilder): void {
     // raw-sql: the blueprint has no table rename; the statement states its inverse
     schema.sql('alter table "workflow"."checklist_progress" rename to "checklist_progresses"', {

@@ -2,18 +2,23 @@
  * Stackra file contract:
  * Purpose: `emitIsolationTest`, a service's generated row-security test
  *          (`.stackra/tests/tenant-isolation.int.test.ts`): one Postgres with the service's compiled migrations
- *          (`.stackra/migrations`), then `assertRowSecurity` with `tenantIsolationOptions()`: every table with the owner
- *          column is under forced row-level security with its policy, the service role does not bypass it, and the
- *          two-owner probe sees and moves nothing.
+ *          (`.stackra/migrations`), then `assertRowSecurity` with `tenantIsolationOptions()` and, as `platform`, the
+ *          tables of the service's `Model.global` models and `MODEL_SCOPE_EXEMPTIONS`: every other table holds the
+ *          owner column under forced row-level security with its one permissive policy, the service role does not
+ *          bypass it, and the two-owner probe sees and moves nothing. It prints each warning the audit returns (an
+ *          unlisted table without `tenant_id`, until 0.20) and passes with only warnings.
  * Boundary: pure. Written only for a service that runs `@stackra/database`, `@stackra/tenancy` and `@stackra/testing`
  *           and has an owned model of its own or hosts a package that has one (its manifest's `models`). It lives in
  *           `.stackra/` as all generated output does, so the integration task must include `.stackra/tests/**` to run
  *           it; the unit config leaves `.int.test.ts` out.
  * Runtime: isomorphic
- * Governing contract: ADR 0239 (decision 1); ADR 0182 (integration tier); ADR 0295 (generated output in `.stackra/`).
+ * Governing contract: ADR 0239 (decision 1); ADR 0347 (decision 5); ADR 0182 (integration tier); ADR 0295
+ *                     (generated output in `.stackra/`).
  */
+import { MODEL_SCOPE_EXEMPTIONS } from "#core/constants/model-scope-exemptions.constant";
 import { SCOPE_OWNER_TRAITS } from "#core/constants/scope-owner-traits.constant";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { tableName } from "#core/functions/table-name.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /**
@@ -21,7 +26,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * a package it needs.
  *
  * @example
- * emitIsolationTest(serviceIr); // "...await assertRowSecurity(postgres.database, tenantIsolationOptions());..."
+ * emitIsolationTest(serviceIr); // "...const warnings = await assertRowSecurity(postgres.database, {..."
  */
 export function emitIsolationTest(ir: MemberIR): string | undefined {
   const packages = ir.packages ?? [];
@@ -45,6 +50,16 @@ export function emitIsolationTest(ir: MemberIR): string | undefined {
       ))
   )
     return undefined;
+  // The tables that hold no owner column by design: the service's global models and the ADR-named exemptions.
+  const platform: [string, string][] = [
+    ...ir.classes
+      .filter((declared) => declared.kind === "model" && declared.global === true)
+      .map((declared): [string, string] => [
+        tableName(declared.module, declared.name),
+        "Model.global (ADR 0210)",
+      ]),
+    ...MODEL_SCOPE_EXEMPTIONS,
+  ];
   return [
     generatedHeader({
       from: "the models under src/ and .stackra/migrations",
@@ -63,7 +78,16 @@ export function emitIsolationTest(ir: MemberIR): string | undefined {
     "",
     'describe("row-level security", () => {',
     '  it("isolates every owned table", async () => {',
-    "    await assertRowSecurity(postgres.database, tenantIsolationOptions());",
+    "    const warnings = await assertRowSecurity(postgres.database, {",
+    "      ...tenantIsolationOptions(),",
+    "      platform: new Map([",
+    ...platform.map(
+      ([table, reason]) => `        [${JSON.stringify(table)}, ${JSON.stringify(reason)}],`,
+    ),
+    "      ]),",
+    "    });",
+    // Until 0.20 a table without tenant_id is a warning, printed so the service sees what is left.
+    "    for (const warning of warnings) console.warn(`row-level security: ${warning}`);",
     "  });",
     "});",
     "",
