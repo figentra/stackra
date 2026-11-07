@@ -162,10 +162,10 @@ test("an app.* set_config is exempt in the allow list, a testing helper and a te
   );
 });
 
-test("the shipped allow list is the isolation driver, TenantIsolationService, the database drivers and the iam snapshot store", () => {
+test("the shipped allow list is the isolation driver, TenantIsolationService, withScope, the replica replay and the iam snapshot store", () => {
   assert.deepEqual(Object.keys(SESSION_SETTING_ALLOWED).sort(), [
+    "packages/data/database/src/core/functions/run-in-scope.function.ts",
     "packages/data/database/src/node/drivers/postgres-database.driver.ts",
-    "packages/data/database/src/testing/drivers/memory-database.driver.ts",
     "packages/security/iam/src/node/drivers/postgres-policy-snapshot-store.driver.ts",
     "packages/security/tenancy/src/node/drivers/call-isolation.driver.ts",
     "packages/security/tenancy/src/node/services/tenant-isolation.service.ts",
