@@ -21,7 +21,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { SCOPE_RX, checkTarget, publish } from "../secrets-sops.mjs";
+import { SCOPE_RX, checkTarget, miseWhich, publish } from "../secrets-sops.mjs";
 import { main as put } from "../secrets-put.mjs";
 import {
   ed25519Pair,
@@ -624,4 +624,16 @@ test("age-init: the owner's only; prints the public key, never the private one",
     1,
     "refuses to overwrite",
   );
+});
+
+/** A spawn stand-in that answers every call with `out`. */
+const fakeSpawn = (out) => () => out;
+
+test("miseWhich returns the pinned path, or null when mise or the pin is missing", () => {
+  assert.equal(
+    miseWhich("sops", { spawn: fakeSpawn({ status: 0, stdout: "/m/sops\n" }) }),
+    "/m/sops",
+  );
+  assert.equal(miseWhich("sops", { spawn: fakeSpawn({ status: 1, stdout: "" }) }), null);
+  assert.equal(miseWhich("sops", { spawn: fakeSpawn({ status: 0, stdout: "" }) }), null);
 });
