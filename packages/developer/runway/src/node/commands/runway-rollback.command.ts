@@ -28,6 +28,12 @@ export class RunwayRollbackCommand extends Command({
   @Option({ description: "Print the gh commands and dispatch nothing" })
   dryRun = false;
 
+  /** The git and gh runner at the repository root; a test replaces it. */
+  connect: typeof runwayIo = runwayIo;
+
+  /** The dispatcher; a test replaces it. */
+  dispatch: typeof runRunway = runRunway;
+
   /**
    * Rolls back and resolves with 0.
    *
@@ -35,14 +41,14 @@ export class RunwayRollbackCommand extends Command({
    * @throws Error when the commit is not on origin/main.
    */
   handle(io: CommandIo): number {
-    const run = runwayIo(repositoryRoot(io.cwd), (line) => io.output.line(line));
+    const run = this.connect(repositoryRoot(io.cwd), (line) => io.output.line(line));
     run.git(["fetch", "--quiet", "origin", "main"]);
     if (run.git(["rev-parse", "origin/main"]) === run.git(["rev-parse", `${this.sha}^{commit}`]))
       throw new UsageError(
         `${this.sha} is the head of origin/main`,
         "A rollback names an earlier commit; ship the head with promote",
       );
-    runRunway(["promote", this.sha, ...(this.dryRun ? ["--dry-run"] : [])], run);
+    this.dispatch(["promote", this.sha, ...(this.dryRun ? ["--dry-run"] : [])], run);
     return 0;
   }
 }
