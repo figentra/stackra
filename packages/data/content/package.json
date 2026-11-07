@@ -85,6 +85,7 @@
     "@stackra/entitlements": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
