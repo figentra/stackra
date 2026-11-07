@@ -25,7 +25,7 @@ const HOST: HostEntry = { product: "pay", surface: "checkout", realm: "public", 
 /** A resolver over an origin that answers with `answer`; `asked` holds what reached it; `clock` moves time. */
 function resolver(answer: () => Promise<Response>) {
   const asked: Request[] = [];
-  const clock = { now: new Date("2026-11-07T00:00:00Z") };
+  const clock = { now: new Date() };
   let id = 0;
   const resolve = originFrameAncestorResolver(
     {
