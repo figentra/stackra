@@ -384,6 +384,15 @@ Their tables come from `database.0002_create_action_store_tables`; each call com
 claim holds before the action's unit of work starts. Selecting them in runway (`config.actions.stores`) needs
 `@stackra/actions` to list `postgres` among its store driver names.
 
+## Cache tables on Postgres
+
+`database.0005_create_cache_tables` makes the two unlogged tables of `@stackra/cache`'s `postgres` driver in its
+default schema, `cache.entries` and `cache.set_members` (this package hosts them because `@stackra/cache` cannot
+depend on it). Every statement is `if not exists`, so it adopts tables a service made earlier from
+`postgresCacheTables("cache")` and keeps their rows. They are platform tables: no `tenant_id` and no row-level
+security, because each key already carries its `CacheNamespace` prefix and the driver runs outside the caller's
+transaction. The driver never creates a table; a missing one rejects each call.
+
 ## Seed runner
 
 `stackra seed-pack <product>` calls `seedState` and `applySeed` from this entry (ADR 0396). They keep the seed ledger,

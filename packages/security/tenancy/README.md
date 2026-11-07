@@ -89,7 +89,8 @@ with no actor runs as a platform call (`''`, no tenant row). A `job` or `system`
 tenant of that scope, which the platform wrote (a branch resolves to its parent tenant; ADR 0495, note of 2026-11-01), so
 a job pushed with `{ scope }` and no origin reads its tenant's rows; a scope the `ScopeTree` does not show is refused
 (`tenant_scope_unresolved`). Any other actor stays in its own tenant, and a scope of another tenant is refused
-(`tenant_scope_mismatch`); neither tenant is ever picked for it. Every `app.*` setting is `set_config(..., true)`, so it ends
+(`tenant_scope_mismatch`); neither tenant is ever picked for it. A user with a tenant is refused the same way in a
+scope above every tenant or one the tree does not show, such as its own id with the path `platform`. Every `app.*` setting is `set_config(..., true)`, so it ends
 with the transaction; `pnpm validate` refuses a session-level one.
 
 `withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.scopeId`, or `''` for a

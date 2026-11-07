@@ -7,9 +7,9 @@
  *          Pushed with `{ scope: A }` or `{ scope: branch }` and no origin, the job sees only tenant A's rows; a job
  *          stamped as the scheduler's system actor in the branch likewise (the actor names the branch id, which is no
  *          tenant); tenant B's scope sees only B's; the pipeline lists only A's rows for a user of A in scope A; and the
- *          negative cases refuse: a user of A in B's scope or in the root scope above every tenant
- *          (`tenant_scope_mismatch`; a platform user lists there and sees no tenant row), a job whose scope the tree does
- *          not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
+ *          negative cases refuse: a user of A in B's scope, in the root scope above every tenant, or in a scope the tree
+ *          does not show such as A's own id with the root's path (`tenant_scope_mismatch`; a platform user lists in the
+ *          root and sees no tenant row), a job whose scope the tree does not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
  *          runs), and a pushed scope that is not a `ScopeRef` (`scope_not_platform_written`). A last test states why the
  *          driver reads the tree from the path's root: the branch's own scope session cannot see its tenant.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The container's user is a superuser, which row
@@ -382,6 +382,18 @@ describe("a user's tenant on Postgres", () => {
     await expect(list(tenantActor(TENANT_A as PublicId<"scp">), SCOPE_B)).rejects.toSatisfy(
       (error: unknown) => isRefusal(error, TenantScopeMismatchError),
     );
+  });
+
+  it("refuses a user of A in a scope the tree does not show, such as A's own id with the root's path", async () => {
+    const user = tenantActor(TENANT_A as PublicId<"scp">);
+    const forged: readonly ScopeRef[] = [
+      { id: TENANT_A, path: ROOT.path },
+      { id: TENANT_A, path: "nowhere" },
+    ];
+    for (const at of forged)
+      await expect(list(user, at)).rejects.toSatisfy((error: unknown) =>
+        isRefusal(error, TenantScopeMismatchError),
+      );
   });
 
   it("refuses a user of A in the root scope, above every tenant, and lets a platform user list there", async () => {
