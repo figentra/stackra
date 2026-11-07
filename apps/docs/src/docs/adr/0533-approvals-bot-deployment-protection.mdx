@@ -45,9 +45,15 @@ production.
    | package releases (registry, core and any npm release)                                   | floor | the environment (`release`, `registry`)                                                                                                       |
    | changes to `policy/approvals.yaml`                                                      | floor | the commit touches the file                                                                                                                   |
 
-4. **The owner is reached where he is.** For a floor item the bot:
-   - @-mentions the owner on the pull request or commit, which reaches GitHub Mobile;
-   - posts a Slack message with **Approve** and **Reject** buttons.
+4. **The owner is reached where he is, through a notification port with two drivers** (owner decision, 2026-11-07:
+   Figentra Notify is the one notification path, so the bot's floor items, reminders and digests go through it too):
+   - `notify`: Figentra Notify, once it is live;
+   - `direct`: GitHub Mobile, through the pending deployment itself and an @-mention of the owner on the pull request
+     or commit, plus a Slack incoming webhook carrying **Approve** and **Reject** buttons.
+
+   The bot sends through `notify` while Notify answers its health check, and falls back to `direct` otherwise. The
+   owner's approvals never depend on our own stack being up. The bot ships with `direct` only; `notify` is added once
+   Notify is live.
 
    A button lands on the bot's callback. The bot then:
    - verifies the Slack signature;
