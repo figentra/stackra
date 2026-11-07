@@ -187,6 +187,30 @@
       ]
     },
     {
+      "class": "CallAuthenticator",
+      "from": "@stackra/app/server",
+      "deps": [
+        {
+          "class": {
+            "name": "BearerConfig",
+            "from": "@stackra/app"
+          }
+        },
+        {
+          "class": {
+            "name": "JsonWebKeys",
+            "from": "@stackra/app/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "ServicePrincipals",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
       "class": "CsrfGuard",
       "from": "@stackra/app/server",
       "deps": [
