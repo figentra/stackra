@@ -8,7 +8,9 @@
  *          the web, the desktop renderer and in a service or worker each takes `memory` (STA-1535, STA-1536). The
  *          phone ports `AppLock`, `Passkeys`, `LiveActivities`, `DeviceSearchIndex`, `IncomingShare` and `AppIcon` take
  *          `expo` on an Expo app, each with the config class its drivers read. A service that declares
- *          `@stackra/identity` binds the actions pipeline's `StepUpCheck` to identity's `identity` driver (STA-340).
+ *          `@stackra/identity` binds the actions pipeline's `StepUpCheck` to identity's `identity` driver (STA-340), and one
+ *          that declares `@stackra/app` binds `JsonWebKeys` to its `oidc` driver with `BearerConfig`, the generated
+ *          auth handler's key source (STA-2558).
  * Boundary: pure. A package's own wiring is left to its test default; a host that does not declare the port's package
  *           gets none. One wiring serves every runtime of an app, so an app with both a browser and a native target
  *           takes `memory` in its wiring and asks for the `native` rows again for its native entry's `nativeWiring`.
@@ -68,6 +70,14 @@ const SYSTEM_PORTS: readonly SystemPort[] = [
     package: "@stackra/identity",
     port: { name: "StepUpCheck", from: "@stackra/actions/contracts" },
     server: "identity",
+  },
+  // The generated auth handler's keys: the issuer's JWKS (`oidc`, read through `BearerConfig`) in any service that
+  // declares @stackra/app, so `CallAuthenticator` resolves with no host configuration (STA-2558).
+  {
+    package: "@stackra/app",
+    port: { name: "JsonWebKeys", from: "@stackra/app/contracts" },
+    config: { name: "BearerConfig", from: "@stackra/app" },
+    server: "oidc",
   },
 ];
 

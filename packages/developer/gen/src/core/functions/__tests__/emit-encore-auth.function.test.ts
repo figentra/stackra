@@ -22,7 +22,7 @@ describe(emitEncoreAuth, () => {
     expect(content).toContain('onBehalfOf?: Header<"Stackra-On-Behalf-Of">;');
     expect(content).toContain("authHandler<AuthParams, CallAuthData>((params) =>");
     expect(content).toContain(
-      ".run((container) => container.get(CallAuthenticator).authenticate(params))",
+      ".run((container) => new CallAuthenticator(container).authenticate(params))",
     );
     expect(content).toContain("if (isRefusal(error, BearerTokenInvalidError))");
     expect(content).toContain('throw APIError.unauthenticated("unauthenticated");');

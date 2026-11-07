@@ -385,7 +385,7 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 | `.stackra/gen/webhooks.ts`                                                | service                                               | `InboundWebhooksController` on `/webhooks/<module>/<name>/:connectionId`, raw body and decoded query to `WebhookReceiver`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `.stackra/gen/inbox.ts` | service with a listener of a contract-only producer's event | `InboundEventsController` on `/events/inbox` (raw body to `RelayInboxService`), `RelayInboxConfig` with the pinned producers' keys and events |
 | `.stackra/encore/<member>/inbox.ts` | the same service | the `api.raw` `POST /events/inbox` adapter (exposed, `auth: false`) through `answerHttp` |
-| `.stackra/encore/<member>/auth.ts` | a service with `api.ts` | the app's one `authHandler` (`CallAuthenticator`, users and services alike) and `Gateway` |
+| `.stackra/encore/<member>/auth.ts` | a service with `api.ts`, exactly when it is written | the app's one `authHandler` for the typed endpoints only, and `Gateway`; `CallAuthenticator` is the single authenticator (users and services alike), which raw endpoints call through their helper after the guards (STA-2577); with the typed endpoints gone, this file goes too |
 | `.stackra/gen/events-relay.ts` | service whose `runway.yaml` has an `events` block | `EventsRelayConfig` with every environment's block, the running one picked by `STACKRA_ENVIRONMENT` |
 | `.stackra/gen/clients/<service>.ts`                                       | a client consumer                                     | the producer's enums, shapes, refusals and integration events, one `remoteAction`/`remoteQuery` per call, `<Service>Client`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `.stackra/gen/settings.ts`                                                | members with a settings class and `@stackra/settings` | `Settings = settingKeys({...})`: one key per setting field of each settings class, by module (stackra-209); `Settings.pick([...])` forms compile in `#stackra/schemas`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -659,13 +659,15 @@ refuses a route whose parameter is no field of the input (`endpoint_param_unboun
 Beside `api.ts`, the same service gets `.stackra/encore/<member>/auth.ts` (wp-114, STA-2558): the app's one
 `authHandler`, which returns that auth data, and its one `Gateway`. A service is its own Encore app, so this is written
 once per app, and only when `api.ts` is: every endpoint, an anonymous one too, reads the auth data. The handler reads
-the `Authorization` and `Stackra-On-Behalf-Of` headers and runs `CallAuthenticator` of `@stackra/app/server` inside
-`app.handlers.run`: the bearer token is verified against JWKS (`BearerConfig`, `JsonWebKeys`) and mapped to its actor by
-`actorOf` of `@stackra/identity`, so a user's token and a service account's token go through the same handler (ADR 0209,
-amendment of 2026-11-07). Every failure is `APIError.unauthenticated` with no detail; until the forwarded user token
-is verified, a `Stackra-On-Behalf-Of` header is refused too, never ignored. An issuer outage stays its own error.
-Still waiting: the rest of `CallOptions`, and refusal kinds mapped to `APIError` in the endpoints (a refusal there
-surfaces as Encore's default error).
+the `Authorization` and `Stackra-On-Behalf-Of` headers and runs a `CallAuthenticator` of `@stackra/app/server`, built
+over the call's container inside `app.handlers.run`: the bearer token is verified against JWKS (`BearerConfig`,
+`JsonWebKeys`) and mapped to its actor by `actorOf` of `@stackra/identity`, so a user's token and a service account's
+token go through the same handler (ADR 0209, amendment of 2026-11-07). A service that declares `@stackra/app` binds
+`JsonWebKeys` to `oidc` with `BearerConfig` by default; with no `ServicePrincipals` driver bound, every service token
+is refused and user tokens still pass. Every failure is `APIError.unauthenticated` with no detail; until the forwarded
+user token is verified, a `Stackra-On-Behalf-Of` header is refused too, never ignored. An issuer outage stays its own
+error. Still waiting: the rest of `CallOptions`, and refusal kinds mapped to `APIError` in the endpoints (a refusal
+there surfaces as Encore's default error).
 
 The full `CallOptions` of an endpoint come in two parts and nothing else: the verified facts from the credential
 (`actor`, then `scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the

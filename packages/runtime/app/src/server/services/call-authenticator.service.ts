@@ -1,25 +1,29 @@
 /**
  * Stackra file contract:
- * Purpose: `CallAuthenticator`, the authentication of one inbound API call for the generated Encore auth handler:
- *          the `Authorization: Bearer` token verified by `verifyBearerToken` under `BearerConfig` and the bound
- *          `JsonWebKeys`, then mapped to its `Actor` by @stackra/identity's `actorOf`: a user, or the service whose
- *          ZITADEL service account signed it (ADR 0209 decision 3).
- * Boundary: every failure is one `BearerTokenInvalidError` (`unauthenticated`) with no detail: no or a non-bearer
- *           header, a bad signature, expiry, issuer or audience, an unknown service subject, malformed claims, and any
- *           `Stackra-On-Behalf-Of` header until the forwarded user token is verified (the next step of STA-2558). Never
+ * Purpose: `CallAuthenticator`, the authentication of one inbound API call: the `Authorization: Bearer` token verified
+ *          by `verifyBearerToken` under `BearerConfig` and the bound `JsonWebKeys`, then mapped to its `Actor` by
+ *          @stackra/identity's `actorOf`: a user, or the service whose ZITADEL service account signed it (ADR 0209
+ *          decision 3). It is the one place that reads `Authorization` and `Stackra-On-Behalf-Of`: the generated Encore
+ *          `authHandler` (typed endpoints) and the raw-endpoint helper (STA-2577, after its guards) both call it, and
+ *          the forwarded user token (`onBehalfOf`, the next step of STA-2558) is verified here only.
+ * Boundary: built per call over the call's container, like `ActionPipeline`, so no host binds it. `ServicePrincipals`
+ *           is resolved only when the host binds a driver; with none, every service token is refused (401, never a
+ *           500) and user tokens still pass. Every failure is one `BearerTokenInvalidError` (`unauthenticated`) with no
+ *           detail: no or a non-bearer header, a bad signature, expiry, issuer or audience, an unknown service subject,
+ *           malformed claims, and any `Stackra-On-Behalf-Of` header until the forwarded token is verified. Never
  *           Anonymous. An issuer or principal store that cannot be reached throws its own error (an outage, not a bad
  *           token). The token is never logged or put in an error.
  * Runtime: node
  * Governing contract: ADR 0209 (decision 3 and its 2026-11-07 amendment, point 5: one auth handler); ADR 0206
  *                     (decision 8: tokens verified by JWKS); ADR 0098 (the actor from the credential).
  */
-import { Service } from "@stackra/container";
+import type { Container } from "@stackra/container";
 import { isRefusal, UnauthenticatedError } from "@stackra/errors";
-import { actorOf } from "@stackra/identity";
-import type { ServicePrincipals } from "@stackra/identity/contracts";
+import { actorOf, MemoryServicePrincipalsDriver } from "@stackra/identity";
+import { ServicePrincipals } from "@stackra/identity/contracts";
 
-import type { BearerConfig } from "#config/bearer.config";
-import type { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
+import { BearerConfig } from "#config/bearer.config";
+import { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
 import { verifyBearerToken } from "#core/functions/verify-bearer-token.function";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 import type { CallAuthData } from "#server/types/call-auth-data.type";
@@ -34,29 +38,19 @@ const BEARER = /^bearer +(\S+)$/i;
  * @example
  * // the generated .stackra/encore/<member>/auth.ts
  * authHandler<AuthParams, CallAuthData>((params) =>
- *   app.handlers.run((container) => container.get(CallAuthenticator).authenticate(params)),
+ *   app.handlers.run((container) => new CallAuthenticator(container).authenticate(params)),
  * );
  */
-export class CallAuthenticator extends Service {
-  /** The issuer, audience and leeway. */
-  private readonly config: BearerConfig;
-
-  /** The issuer's public keys. */
-  private readonly keys: JsonWebKeys;
-
-  /** The service principals by token subject. */
-  private readonly principals: ServicePrincipals;
+// oxlint-disable-next-line stackra/base-matches-suffix -- reason: built per call over the call's container, like ActionPipeline, never a container service
+export class CallAuthenticator {
+  /** The call's container. */
+  private readonly container: Pick<Container, "get" | "has">;
 
   /**
-   * @param config - the bearer-token settings.
-   * @param keys - the bound key source.
-   * @param principals - the bound service principals.
+   * @param container - the call's request container.
    */
-  constructor(config: BearerConfig, keys: JsonWebKeys, principals: ServicePrincipals) {
-    super();
-    this.config = config;
-    this.keys = keys;
-    this.principals = principals;
+  constructor(container: Pick<Container, "get" | "has">) {
+    this.container = container;
   }
 
   /**
@@ -69,16 +63,22 @@ export class CallAuthenticator extends Service {
     if (credentials.onBehalfOf !== undefined) throw BearerTokenInvalidError.create();
     const token = BEARER.exec(credentials.authorization?.trim() ?? "")?.[1];
     if (token === undefined) throw BearerTokenInvalidError.create();
+    const config = this.container.get(BearerConfig);
+    const keys = this.container.get(JsonWebKeys);
     const claims = await verifyBearerToken(token, {
-      issuer: this.config.issuer,
-      audience: this.config.audience,
-      leewaySeconds: this.config.leewaySeconds,
+      issuer: config.issuer,
+      audience: config.audience,
+      leewaySeconds: config.leewaySeconds,
       now: new Date(),
-      keys: (kid) => this.keys.find(kid),
+      keys: (kid) => keys.find(kid),
     });
     if (claims === undefined) throw BearerTokenInvalidError.create();
+    // No bound driver knows no service: an empty store refuses every service token.
+    const principals = this.container.has(ServicePrincipals)
+      ? this.container.get(ServicePrincipals)
+      : new MemoryServicePrincipalsDriver();
     try {
-      const actor = await actorOf(claims, this.principals);
+      const actor = await actorOf(claims, principals);
       return { userID: actor.id, actor };
     } catch (error) {
       if (isRefusal(error, UnauthenticatedError)) throw BearerTokenInvalidError.create();

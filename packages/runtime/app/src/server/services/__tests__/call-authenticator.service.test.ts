@@ -1,24 +1,33 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `CallAuthenticator`: a valid user token is the user actor and a valid service account token
- *          the service actor of its principal, each with Encore's `userID`; no token, a non-bearer scheme, an expired
- *          token, a wrong audience, an unknown service subject, malformed claims and any `Stackra-On-Behalf-Of` header
- *          are each one `BearerTokenInvalidError`, and the refusal never carries the token; a key source that cannot
- *          reach the issuer throws its own error.
- * Boundary: test only; a real Web Crypto RS256 key pair, the memory key and principal drivers and `buildConfig`.
+ * Purpose: unit tests of `CallAuthenticator`, booted through `createApp` the way a host is: a valid user token is the
+ *          user actor and a valid service account token the service actor of its principal, each with Encore's
+ *          `userID`; with no `ServicePrincipals` driver bound, a user token still passes and every service token is
+ *          refused (never a 500); no token, a non-bearer scheme, an expired token, a wrong audience, an unknown
+ *          service subject, malformed claims and any `Stackra-On-Behalf-Of` header are each one
+ *          `BearerTokenInvalidError`, and the refusal never carries the token; a key source that cannot reach the
+ *          issuer throws its own error.
+ * Boundary: test only; a real Web Crypto RS256 key pair, a host wiring with the memory key and principal drivers, and
+ *           the bearer settings from the environment.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0209 (decision 3 and its 2026-11-07 amendment); ADR 0206 (decision 8).
  */
-import { buildConfig } from "@stackra/config";
+import { Module } from "@stackra/container";
+import type { Wiring } from "@stackra/container";
 import { ActorKind, Realm } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { IDENTITY_CLAIMS, MemoryServicePrincipalsDriver } from "@stackra/identity";
-import { describe, expect, it } from "@stackra/testing";
+import { ServicePrincipals } from "@stackra/identity/contracts";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { BearerConfig } from "#config/bearer.config";
+import { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
 import { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.driver";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
+import { createApp } from "#server/functions/create-app.function";
 import { CallAuthenticator } from "#server/services/call-authenticator.service";
+import type { CallAuthData } from "#server/types/call-auth-data.type";
 import type { CallCredentials } from "#server/types/call-credentials.type";
 
 const ISSUER = "https://auth.example.test";
@@ -70,26 +79,76 @@ const userClaims = {
 };
 const serviceClaims = { ...base, sub: MACHINE_SUBJECT, client_id: "ship" };
 
-/** An authenticator over one key and one service principal. */
-async function setup(): Promise<{
-  authenticator: CallAuthenticator;
-  keys: MemoryJsonWebKeysDriver;
-}> {
-  const config = buildConfig(BearerConfig, {
-    env: { STACKRA_BEARER_ISSUER: ISSUER, STACKRA_BEARER_AUDIENCE: AUDIENCE },
-  });
-  const keys = new MemoryJsonWebKeysDriver();
-  keys.keys = [{ ...(await crypto.subtle.exportKey("jwk", pair.publicKey)), kid: "k1" }];
-  const principals = new MemoryServicePrincipalsDriver().seed({
-    [MACHINE_SUBJECT]: { id: SERVICE_ID, key: "ship.shipping", scopeId: SERVICE_SCOPE_ID },
-  });
-  return { authenticator: new CallAuthenticator(config, keys, principals), keys };
+const publicKey = { ...(await crypto.subtle.exportKey("jwk", pair.publicKey)), kid: "k1" };
+
+/** The issuer's one key. */
+class TestKeys extends MemoryJsonWebKeysDriver {
+  override keys = [publicKey];
+}
+
+/** An issuer that cannot be reached. */
+class UnreachableKeys extends MemoryJsonWebKeysDriver {
+  override find(): Promise<JsonWebKey | null> {
+    return Promise.reject(new Error("issuer unreachable"));
+  }
+}
+
+/** The one service principal the host knows. */
+class SeededPrincipals extends MemoryServicePrincipalsDriver {
+  constructor() {
+    super();
+    this.seed({
+      [MACHINE_SUBJECT]: { id: SERVICE_ID, key: "ship.shipping", scopeId: SERVICE_SCOPE_ID },
+    });
+  }
+}
+
+class ShopModule extends Module({}) {}
+
+/**
+ * Authenticates `credentials` in a host booted by `createApp`, its keys from `keys` and, unless `principals` is
+ * false, its service principals from `SeededPrincipals`; with false, no `ServicePrincipals` driver is bound.
+ */
+async function authenticate(
+  credentials: CallCredentials,
+  {
+    keys = TestKeys,
+    principals = true,
+  }: { keys?: typeof MemoryJsonWebKeysDriver; principals?: boolean } = {},
+): Promise<CallAuthData> {
+  vi.stubEnv("STACKRA_BEARER_ISSUER", ISSUER);
+  vi.stubEnv("STACKRA_BEARER_AUDIENCE", AUDIENCE);
+  const wiring: Wiring = {
+    member: "shop",
+    root: ShopModule,
+    modules: { shop: { exports: [], dependsOn: [], type: ShopModule } },
+    config: [{ key: "app.bearer", provide: BearerConfig }],
+    drivers: [
+      { port: JsonWebKeys, key: "app.JsonWebKeys", candidates: { memory: async () => keys } },
+      ...(principals
+        ? [
+            {
+              port: ServicePrincipals,
+              key: "identity.ServicePrincipals",
+              candidates: { memory: async () => SeededPrincipals },
+            },
+          ]
+        : []),
+    ],
+  };
+  const app = await createApp(ShopModule, { wiring });
+  try {
+    return await app.handlers.run((container) =>
+      new CallAuthenticator(container).authenticate(credentials),
+    );
+  } finally {
+    await app.close();
+  }
 }
 
 /** Expects one refusal that names no part of the presented credentials. */
 async function refuses(credentials: CallCredentials): Promise<void> {
-  const { authenticator } = await setup();
-  const refusal = await authenticator.authenticate(credentials).then(
+  const refusal = await authenticate(credentials).then(
     () => undefined,
     (error: unknown) => error,
   );
@@ -102,19 +161,19 @@ async function refuses(credentials: CallCredentials): Promise<void> {
 const bearer = async (claims: Record<string, unknown>) => `Bearer ${await token(claims)}`;
 
 describe(CallAuthenticator, () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("authenticates a user token as its user actor", async () => {
-    const { authenticator } = await setup();
-    expect(await authenticator.authenticate({ authorization: await bearer(userClaims) })).toEqual({
+    expect(await authenticate({ authorization: await bearer(userClaims) })).toEqual({
       userID: USER_ID,
       actor: { kind: ActorKind.User, id: USER_ID, realm: Realm.Customer },
     });
   });
 
   it("authenticates a service account token as its principal's service actor", async () => {
-    const { authenticator } = await setup();
-    expect(
-      await authenticator.authenticate({ authorization: await bearer(serviceClaims) }),
-    ).toEqual({
+    expect(await authenticate({ authorization: await bearer(serviceClaims) })).toEqual({
       userID: SERVICE_ID,
       actor: { kind: ActorKind.Service, id: SERVICE_ID, scopeId: SERVICE_SCOPE_ID },
     });
@@ -151,11 +210,23 @@ describe(CallAuthenticator, () => {
     });
   });
 
+  it("with no ServicePrincipals driver bound, passes a user token and refuses every service token", async () => {
+    expect(
+      await authenticate({ authorization: await bearer(userClaims) }, { principals: false }),
+    ).toMatchObject({ userID: USER_ID });
+    const refusal = await authenticate(
+      { authorization: await bearer(serviceClaims) },
+      { principals: false },
+    ).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(isRefusal(refusal, BearerTokenInvalidError)).toBe(true);
+  });
+
   it("lets an unreachable issuer fail as an outage, not a refusal", async () => {
-    const { authenticator, keys } = await setup();
-    keys.find = () => Promise.reject(new Error("issuer unreachable"));
     await expect(
-      authenticator.authenticate({ authorization: await bearer(userClaims) }),
+      authenticate({ authorization: await bearer(userClaims) }, { keys: UnreachableKeys }),
     ).rejects.toThrow("issuer unreachable");
   });
 });

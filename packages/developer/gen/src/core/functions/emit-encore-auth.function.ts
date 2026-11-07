@@ -2,13 +2,18 @@
  * Stackra file contract:
  * Purpose: `emitEncoreAuth`, a service's Encore auth handler and gateway (`.stackra/encore/<member>/auth.ts`): one
  *          `authHandler` that reads the `Authorization` and `Stackra-On-Behalf-Of` headers and answers the
- *          `{ userID, actor }` the endpoints read through `getAuthData()`, by `CallAuthenticator` of `@stackra/app/server`
- *          inside `app.handlers.run`, and the app's one `Gateway` over it. User calls and service calls go through the
- *          same handler (ADR 0209, amendment of 2026-11-07, point 5).
- * Boundary: pure; written for a service whose `api.ts` is written (the caller passes that), since every endpoint, an
- *           anonymous one too, reads the auth data; a service is its own Encore app, so this is the app's one handler.
- *           The `BearerTokenInvalidError` refusal becomes `APIError.unauthenticated` with no detail; any other error
- *           (an issuer outage) propagates as it is. It names no member code and no header value.
+ *          `{ userID, actor }` the endpoints read through `getAuthData()`, by a `CallAuthenticator` of
+ *          `@stackra/app/server` built over the call's container inside `app.handlers.run`, and the app's one `Gateway`
+ *          over it. User calls and service calls go through the same handler (ADR 0209, amendment of 2026-11-07, point
+ *          5).
+ * Boundary: pure; written exactly when the service's `api.ts` is (the caller passes that): the auth handler serves
+ *           the typed endpoints only, every one of them, an anonymous one too, reading the auth data.
+ *           `CallAuthenticator` is the single authenticator: raw endpoints call it through their helper after the
+ *           guards (STA-2577), and once STA-2577 removes the typed endpoints this file goes with them, so no JWT is
+ *           verified twice. A service is its own Encore app, so this is the app's one handler. The
+ *           `BearerTokenInvalidError` refusal becomes `APIError.unauthenticated` with no detail (on an `auth: false`
+ *           endpoint Encore then runs the call unauthenticated); any other error (an issuer outage) propagates as it
+ *           is. It names no member code and no header value.
  * Runtime: isomorphic
  * Governing contract: ADR 0209 (decision 3 and its 2026-11-07 amendment); ADR 0091 (decision 2) and 0124 (Encore is
  *                     generated); ADR 0098 (the actor from the credential); STA-2558 (wp-114).
@@ -58,7 +63,7 @@ export function emitEncoreAuth(ir: MemberIR, hasEndpoints: boolean): GeneratedFi
       "/** The caller of every call, user or service, from its verified bearer token. */",
       "export const auth = authHandler<AuthParams, CallAuthData>((params) =>",
       "  app.handlers",
-      "    .run((container) => container.get(CallAuthenticator).authenticate(params))",
+      "    .run((container) => new CallAuthenticator(container).authenticate(params))",
       "    .catch((error: unknown) => {",
       "      if (isRefusal(error, BearerTokenInvalidError))",
       '        throw APIError.unauthenticated("unauthenticated");',
