@@ -61,6 +61,18 @@ async function setup(level: AssuranceLevel = AssuranceLevel.Aal1, minutesAgo = 1
   return { idp, ctx, userId };
 }
 
+/** Registers then confirms a passkey for the context's user. */
+async function enrol(idp: MemoryIdpAdminDriver, ctx: ReturnType<typeof fakeActionContext>) {
+  const { passkeyId } = await new RegisterPasskeyAction(idp).handle(
+    RegisterPasskeyInput.create({}),
+    ctx,
+  );
+  return new ConfirmPasskeyAction(idp, CONFIG).handle(
+    ConfirmPasskeyInput.create({ passkeyId, name: "Laptop", credential: CREDENTIAL }),
+    ctx,
+  );
+}
+
 describe("passkey actions", () => {
   it("keeps sign-in anonymous and public, registration the user's, and none a tool", () => {
     for (const kind of [ChallengePasskeyAction, VerifyPasskeyAction]) {
@@ -118,18 +130,6 @@ describe("passkey actions", () => {
     expect(idp.passkeys.get(passkeyId)).toEqual({ userId, name: "iPhone" });
     expect(ctx.recorded.audit).toEqual({ passkeyId, firstFactor: true });
   });
-
-  /** Registers then confirms a passkey for the context's user. */
-  async function enrol(idp: MemoryIdpAdminDriver, ctx: ReturnType<typeof fakeActionContext>) {
-    const { passkeyId } = await new RegisterPasskeyAction(idp).handle(
-      RegisterPasskeyInput.create({}),
-      ctx,
-    );
-    return new ConfirmPasskeyAction(idp, CONFIG).handle(
-      ConfirmPasskeyInput.create({ passkeyId, name: "Laptop", credential: CREDENTIAL }),
-      ctx,
-    );
-  }
 
   it("enrols the first passkey from a fresh one-factor sign-in, without AAL2 (STA-340)", async () => {
     const { idp, ctx } = await setup(AssuranceLevel.Aal1, 1);
