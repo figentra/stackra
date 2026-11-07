@@ -2,6 +2,11 @@
 
 # @figentra/worker-env-sync
 
+> **Retired (ADR 0525, STA-2146).** The Worker answers Infisical's webhook, and Infisical is leaving. Its deploy
+> (`deploy-env-sync.yml`), core's `runway-env-sync.yml` and the root runway's `env-sync` member are gone; runtime values
+> now sync at deploy from each product's sops scope. Deleting the deployed Worker is on the P6 owner checklist. The
+> text below describes it as it was.
+
 Stackra's environment-sync webhook: one Cloudflare Worker (`stackra-env-sync`) that takes Infisical's webhook when a
 value changes and dispatches the `env-sync` workflow of the repository that owns the changed project
 ([ADR 0173](../../apps/docs/src/docs/adr/0173-secrets-infisical-is-the-source-of-production-secrets.mdx), amendment of
