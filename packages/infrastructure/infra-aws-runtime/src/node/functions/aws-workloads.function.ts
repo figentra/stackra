@@ -9,7 +9,7 @@
  *          with a target group that checks the workload's health path.
  * Boundary: declares resources only, inside the Pulumi program that calls it; only the owner applies them. No secret
  *           value is created or read: each secret, its own and those of the resources it uses, is an SSM parameter
- *           the Infisical sync fills (`workloadParameter`). Tasks get no public address. The shared workload security
+ *           the secrets sync fills (`workloadParameter`). Tasks get no public address. The shared workload security
  *           group comes from `awsRuntime`, which also lets the databases admit it. A container health command is not
  *           added (images such as ZITADEL's have no shell); the load balancer checks public workloads.
  * Runtime: node

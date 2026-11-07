@@ -21,15 +21,7 @@
       // reusable runway-smoke workflow runs them in the product repository that calls it, where @stackra/cli and
       // @stackra/runway's optional Playwright peer are installed (STA-265). sips: macOS's image tool, which
       // tools/scripts/brand-pull.mjs runs on the owner's Mac.
-      "ignoreBinaries": [
-        "opencode",
-        "infisical",
-        "specify",
-        "wrangler",
-        "playwright",
-        "stackra",
-        "sips",
-      ],
+      "ignoreBinaries": ["opencode", "specify", "wrangler", "playwright", "stackra", "sips"],
     },
     "packages/tooling/*": {
       // Config packages export presets by subpath (package.json exports, which knip reads as entries); the only TS

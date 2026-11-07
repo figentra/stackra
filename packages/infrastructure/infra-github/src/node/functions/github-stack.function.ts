@@ -6,8 +6,8 @@
  *          default `repo:<org>/<repo>:environment:<env>` (opt-in, `oidcTemplate`), each deployment environment with
  *          its reviewers, deploy refs and variables, the repository variables, and every committed ruleset and the
  *          branch protection (opt-in, `rules`).
- * Boundary: runs inside a Pulumi program. Creates no Actions secret and reads no secret value: CI reads secrets from
- *           Infisical over OIDC (ADR 0173), so GitHub holds variables (ids) only. The repository is protected and
+ * Boundary: runs inside a Pulumi program. Creates no Actions secret and reads no secret value: CI decrypts secrets
+ *           from sops over OIDC (ADR 0525), so GitHub holds variables (ids) only. The repository is protected and
  *           retained on delete, so neither `pulumi destroy` nor a removed resource deletes it; the owner imports an
  *           existing repository once before the first `up`. The provider's token comes from the environment
  *           (`GITHUB_TOKEN`), never from this code. Agents run `pulumi preview` at most; `up` is the owner's.

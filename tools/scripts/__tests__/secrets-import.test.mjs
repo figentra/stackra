@@ -53,7 +53,7 @@ const auditLog = (home) => {
   return existsSync(p) ? readFileSync(p, "utf8") : "";
 };
 
-test("without --scope or --tree nothing is read or written: Infisical is no longer a target", () => {
+test("without --scope or --tree nothing is read or written: sops is the only target", () => {
   const { home, inbox } = setup();
   const v = canary();
   writeFileSync(join(inbox, "STACKRA_TEST_KEY"), v);

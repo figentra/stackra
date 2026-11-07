@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: the one SOPS writer and reader for `figentra/secrets` (ADR 0525), shared by `secrets:put`,
- *   `secrets:generate`, `secrets:migrate`, `secrets:import --scope`, `secrets:catalog` and `secrets-exec.mjs`.
+ *   `secrets:generate`, `secrets:import --scope`, `secrets:catalog` and `secrets-exec.mjs`.
  *   One file per secret, `<scope>/<NAME>.enc.yaml`, so a writer needs only KMS Encrypter: it never decrypts, and so
  *   it never sees, any other value (a shared file would make every writer a reader, because sops recomputes its MAC
  *   over every plaintext value).
  * Boundary: the sops, git and gh CLIs, always with output captured and classified into fixed messages; a temporary
  *   clone of `figentra/secrets`; a pull request there that merges itself behind the policy gate (ADR 0523).
  * Runtime: node
- * Governing contract: ADR 0525 (SOPS and Cloud KMS replace Infisical); ADR 0257 (nobody reads a value); ADR 0267.
+ * Governing contract: ADR 0525 (SOPS and Cloud KMS); ADR 0257 (nobody reads a value); ADR 0267.
  * Input: `{ scope, name, value }` entries; the value is a Buffer that lives only in this process.
  * Output: names, scopes, file paths and the pull request URL; never a value, a hash or ciphertext.
  * Secrets: a value goes to sops on stdin only, never on argv, in a file or in a log. Plaintext never touches disk.

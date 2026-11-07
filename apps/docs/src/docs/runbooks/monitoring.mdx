@@ -41,23 +41,23 @@ other Workers: logs from inside, uptime monitors from outside.
   </Step>
   <Step title="Sentry (STA-28)">
     Not needed for this stack yet: core has no app that names a Sentry project. When one does, add
-    `providers.sentry.org` to `runway.yaml` and a Sentry token to the same Infisical path.
+    `providers.sentry.org` to `runway.yaml` and a Sentry token to the same sops scope.
   </Step>
   <Step title="Pulumi state">
     Pick the state backend (an S3-compatible bucket such as R2, or Pulumi Cloud) and a passphrase
     for the stack's secrets.
   </Step>
-  <Step title="Infisical">
-    In `prod` `/ci/observability`, set `BETTERSTACK_UPTIME_API_TOKEN`,
-    `BETTERSTACK_TELEMETRY_API_TOKEN`, `PULUMI_CONFIG_PASSPHRASE` and the backend's credentials (for
-    a bucket, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`; for Pulumi Cloud,
-    `PULUMI_ACCESS_TOKEN`). Create a machine identity that trusts the GitHub OIDC subject of the
-    `observability` environment and may read only that path.
+  <Step title="Secrets">
+    In the sops scope `ci/deploy/observability` (`pnpm secrets:put <NAME> --scope
+    ci/deploy/observability`), set `BETTERSTACK_UPTIME_API_TOKEN`, `BETTERSTACK_TELEMETRY_API_TOKEN`,
+    `PULUMI_CONFIG_PASSPHRASE` and the backend's credentials (for a bucket, `AWS_ACCESS_KEY_ID` and
+    `AWS_SECRET_ACCESS_KEY`; for Pulumi Cloud, `PULUMI_ACCESS_TOKEN`). In `figentra/infra`, grant the
+    GitHub OIDC subject of the `observability` environment that scope only.
   </Step>
   <Step title="GitHub">
     Create the `observability` environment, limited to `main`, with the owner as required reviewer.
-    Set its variable `PULUMI_BACKEND_URL` (the job reads Infisical with the org variables
-    `INFISICAL_CI_IDENTITY_ID` and `INFISICAL_DEPLOY_PROJECT_ID`, ADR 0512), then the repository
+    Set its variable `PULUMI_BACKEND_URL` (the job decrypts its scope with the shared
+    `secrets-decrypt` action, ADR 0525), then the repository
     variable `OBSERVABILITY_ENABLED` to `true`.
   </Step>
   <Step title="Status page host">

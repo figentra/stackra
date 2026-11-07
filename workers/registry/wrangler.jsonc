@@ -2,8 +2,8 @@
 // Purpose: the Cloudflare Worker `stackra-registry`, the Stackra npm registry at npm.stackra.figentra.com (ADR 0453):
 //          its script (dist/main.mjs, built by tsdown), the R2, D1 and KV bindings, the custom domain and every limit
 //          as a Worker var (ADR 0453 decision 19).
-// Owner: release-operations · Secrets: REGISTRY_SIGNING_KEY is a Worker secret set by CI from Infisical `prod`
-//        `/ci/registry` (ADR 0173); CI passes CLOUDFLARE_API_TOKEN from Infisical in the environment. No secret is in this file.
+// Owner: release-operations · Secrets: REGISTRY_SIGNING_KEY is a Worker secret set by CI from the sops scope
+//        `ci/production/registry` (ADR 0525); CI passes CLOUDFLARE_API_TOKEN from sops in the environment. No secret is in this file.
 // Deploy: CI only, .github/workflows/deploy-registry.yml (runbook in README.md).
 // Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
 // Code facts only (ADR 0519 decision 1): the compatibility date, observability, the custom domain, workers_dev and
