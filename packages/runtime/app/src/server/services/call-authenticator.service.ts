@@ -10,12 +10,11 @@
  * Boundary: built per call over the call's container, like `ActionPipeline`, so no host binds it. `ServicePrincipals`
  *           is resolved only when the host binds a driver; with none, every service token is refused (401, never a
  *           500) and user tokens still pass. The forwarded token is verified like the bearer (same issuer, audience
- *           and leeway, never extended or refreshed), counts only beside a service bearer, must map to a user, and a
- *           service bound to a tenant may forward only a user whose `scopeId` is that tenant; only the derived user
- *           actor travels, never the token. Every failure is one `BearerTokenInvalidError` (`unauthenticated`) with
+ *           and leeway, never extended or refreshed), counts only beside a service bearer, must map to a user; whether a
+ *           tenant-bound service may call for that user is `CallIsolationDriver`'s check through the scope tree. Only
+ *           the derived user actor travels, never the token. Every failure is one `BearerTokenInvalidError` (`unauthenticated`) with
  *           no detail: no or a non-bearer header, a bad signature, expiry, issuer or audience on either token, an
- *           unknown service subject, malformed claims, a forward beside a user bearer, a forwarded service token, or a
- *           forward for another tenant. Never Anonymous. An issuer or principal store that cannot be reached throws
+ *           unknown service subject, malformed claims, a forward beside a user bearer, or a forwarded service token. Never Anonymous. An issuer or principal store that cannot be reached throws
  *           its own error (an outage, not a bad token). No token is ever logged or put in an error.
  * Runtime: node
  * Governing contract: ADR 0209 (decision 3 and its 2026-11-07 amendment, point 5: one auth handler); ADR 0206
@@ -75,13 +74,8 @@ export class CallAuthenticator {
     if (caller.kind !== ActorKind.Service) throw BearerTokenInvalidError.create();
     const user = await this.actorOfToken(credentials.onBehalfOf.trim());
     if (user.kind !== ActorKind.User) throw BearerTokenInvalidError.create();
-    // Condition 3: a service bound to a tenant calls only for a user of that tenant.
-    if (
-      caller.scopeId !== undefined &&
-      user.scopeId !== undefined &&
-      caller.scopeId !== user.scopeId
-    )
-      throw BearerTokenInvalidError.create();
+    // Condition 3 (a service bound to a tenant calls only for a user of that tenant) needs the scope tree, where a
+    // branch stands for its tenant: CallIsolationDriver owns it.
     // Only the derived user travels, never the forwarded token (condition 4).
     return { userID: caller.id, actor: { ...caller, onBehalfOf: user } };
   }

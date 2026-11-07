@@ -7,8 +7,8 @@
  *          user (`onBehalfOf`), in the user's tenant, and nothing it answers carries the forwarded token; no token, a
  *          non-bearer scheme, an expired token, a wrong audience, an unknown service subject and malformed claims are
  *          each one `BearerTokenInvalidError`, and so are an expired forward, a forward for another audience, a
- *          forward for another tenant than the service's, a forwarded service token, a forward with no service bearer
- *          and a forward beside a user bearer; no refusal carries a token; a key source that cannot reach the issuer
+ *          forwarded service token, a forward with no service bearer and a forward beside a user bearer; a forward for
+ *          another scope than the principal's passes here, since only `CallIsolationDriver` reads the tree; no refusal carries a token; a key source that cannot reach the issuer
  *          throws its own error.
  * Boundary: test only; a real Web Crypto RS256 key pair, a host wiring with the memory key and principal drivers, and
  *           the bearer settings from the environment.
@@ -255,10 +255,15 @@ describe(CallAuthenticator, () => {
     });
   });
 
-  it("refuses a forward for another tenant than the service principal's", async () => {
-    await refuses({
+  it("leaves a forward for another scope than the principal's to CallIsolation, which reads the tree", async () => {
+    // a branch of the principal's tenant has its own id, so only the scope tree can tell it from another tenant
+    const answer = await authenticate({
       authorization: await bearer(serviceClaims),
       onBehalfOf: await token(scopedUser(OTHER_SCOPE_ID)),
+    });
+    expect(answer.actor).toMatchObject({
+      scopeId: SERVICE_SCOPE_ID,
+      onBehalfOf: { id: USER_ID, scopeId: OTHER_SCOPE_ID },
     });
   });
 
