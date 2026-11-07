@@ -26,7 +26,7 @@ const OWNED: MemberIR = {
 /** A service with no owned model of its own that hosts one package model with `traits`. */
 const hosting = (traits: readonly string[], kind?: string): MemberIR => ({
   ...COMMERCE_IR,
-  packages: OWNED.packages,
+  packages: ["@stackra/database", "@stackra/tenancy", "@stackra/testing"],
   dependencies: [
     {
       package: "@stackra/tenancy",
