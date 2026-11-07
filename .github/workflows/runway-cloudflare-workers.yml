@@ -4,8 +4,7 @@
 #          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
 #          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
-#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml,
-#          deploy-env-sync.yml.
+#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml.
 # Secrets: none in the repository. The job decrypts figentra/secrets scopes as itself (ADR 0525, the shared
 #          secrets-decrypt action; figentra/infra estate/secret-callers.mjs grants each caller environment its scopes):
 #          CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from `scope`, the `secret-name`s

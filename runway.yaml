@@ -54,9 +54,6 @@ providers:
       observability:
         branches: [main]
         reviewers: [figentra-usr]
-      # deploy-env-sync.yml (STA-2133): the Infisical → runtime env sync; main only, no reviewer.
-      env-sync:
-        branches: [main]
   infisical:
     # Infisical Cloud EU. Core has no runtime project (ADR 0512): CI reads ci-build and ci-deploy through
     # the org variables, agents read agents through .infisical.yaml.
@@ -171,22 +168,11 @@ targets:
         smoke:
           - url: https://turbo.stackra.figentra.com/v8/artifacts/status
             bearer: TURBO_TOKEN
-      # ADR 0173 amendment of 2026-11-04 (decision 6), STA-2133: Infisical's webhook at
-      # env-sync.stackra.figentra.com. /readyz is 503 until every secret binds and the App key reads.
-      env-sync:
-        path: workers/env-sync
-        preset: api
-        customDomains: [env-sync.stackra.figentra.com]
-        secrets: [INFISICAL_WEBHOOK_SECRET, STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY]
-        smoke:
-          - url: https://env-sync.stackra.figentra.com/readyz
     workflows:
       static: deploy-static.yml
       registry: deploy-registry.yml
       # stackra-turbo-cache (ADR 0026), turbo.stackra.figentra.com; runs in the `static` environment.
       turbo-cache: deploy-turbo-cache.yml
-      # stackra-env-sync; runs in the `env-sync` environment as the production identity (STA-2133).
-      env-sync: deploy-env-sync.yml
   # The reusable provider is .github/workflows/runway-mintlify.yml (ADR 0299).
   mintlify:
     deployOn: merge-to-main

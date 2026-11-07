@@ -28,7 +28,6 @@ rules:
       - ci.yml:76
       - ci.yml:227
       - deploy-docs.yml:55
-      - deploy-env-sync.yml:64
       - deploy-registry.yml:65
       - deploy-static.yml:62
       - deploy-turbo-cache.yml:64
