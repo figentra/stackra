@@ -62,7 +62,7 @@ and `yaml`.
 | `stackra publish [--dry-run]`                             | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                                   |
 | `stackra testbed <verb>`                                  | the shared test boxes: `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale`, `image` (below)                                           |
 | `stackra consumer-gate --core --checkout --product --out` | run a consumer product's services against a core tree: link or pack core, gen, typecheck, test; summaries under `--out` (below)           |
-| `stackra doctor`                                          | fresh-machine checklist: toolchain, install, Infisical login, CLIs, agent sync                                                            |
+| `stackra doctor`                                          | fresh-machine checklist: toolchain, install, CLIs, agent sync, sops with its Google login                                                 |
 | `stackra eas-preflight check\|record`                     | before a local EAS build: clean tree, deployed sha, free disk; `record` logs the build id                                                 |
 | `stackra structure [--write-docs]`                        | print or write the generated repository structure standards page                                                                          |
 | `stackra architecture-map [--check]`                      | write the docs architecture map (archify), or fail when it drifted                                                                        |

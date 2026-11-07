@@ -116,8 +116,8 @@ export function encryptValue({ scope, name, value }, { cwd, run = cliRunner }) {
 }
 
 /**
- * Decrypt one secret file into its value, in memory. Only `secrets-exec.mjs` (scope `agents`, for MCP servers) and
- * CI jobs call this; nothing prints the result.
+ * Decrypt one secret file into its value, in memory. Only `secrets-exec.mjs` (scope `agents`, for the root scripts
+ * that need a token and MCP servers) and CI jobs call this; nothing prints the result.
  */
 export function decryptFile(file, name, { cwd, run = cliRunner }) {
   const r = run("sops", ["decrypt", "--output-type", "json", file], { cwd });

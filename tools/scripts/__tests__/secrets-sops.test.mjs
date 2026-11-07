@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: hold the SOPS secrets scripts to their contract (ADR 0525): `secrets-sops.mjs` (publish, scopes, names),
- *          `secrets-put`, `secrets-generate`, `secrets-import --scope`, `secrets-migrate`, `secrets-catalog`,
- *          `secrets-exec` and `secrets-age-init`. Every path asserts that no canary value reaches the output, the
- *          audit log, any CLI's argv or a written file.
+ *          `secrets-put`, `secrets-generate`, `secrets-import --scope`, `secrets-migrate`, `secrets-catalog`
+ *          and `secrets-age-init` (`secrets-exec` has its own file). Every path asserts that no canary value reaches
+ *          the output, the audit log, any CLI's argv or a written file.
  * Boundary: a throwaway HOME and a fake sops, git, gh and age-keygen runner; no real repository, key or vault.
  * Runtime: node
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy); ADR 0525; ADR 0257.
@@ -21,7 +21,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { SCOPE_RX, checkTarget, listNames, publish } from "../secrets-sops.mjs";
+import { SCOPE_RX, checkTarget, publish } from "../secrets-sops.mjs";
 import { main as put } from "../secrets-put.mjs";
 import {
   ed25519Pair,
@@ -34,7 +34,6 @@ import {
 import { main as importMain } from "../secrets-import.mjs";
 import { main as migrate, plan, readInfisical, scopeFor } from "../secrets-migrate.mjs";
 import { buildCatalog, checkCatalog, declaredNames } from "../secrets-catalog.mjs";
-import { agentVars, expandArg } from "../secrets-exec.mjs";
 import { main as ageInit } from "../secrets-age-init.mjs";
 
 const canary = () => `fake-${randomBytes(12).toString("hex")}`;
@@ -610,26 +609,6 @@ test("catalog: names from files, kept fields survive, gaps are named", () => {
     [...declaredNames({ secrets: { ci: ["A_B"], x: { C_D: 1 } }, other: { secrets: ["E"] } })],
     ["A_B", "C_D", "E"],
   );
-});
-
-test("exec: only agents files are decrypted, and $VAR expands from them", () => {
-  const dir = home();
-  const cli = fakeCli();
-  const v = canary();
-  mkdirSync(join(dir, "agents"));
-  mkdirSync(join(dir, "ci", "deploy"), { recursive: true });
-  cli.vault.set("c9", JSON.stringify({ CONTEXT7_API_KEY: v }));
-  writeFileSync(join(dir, "agents", "CONTEXT7_API_KEY.enc.yaml"), "ENC: c9\nsops:\n");
-  writeFileSync(join(dir, "ci", "deploy", "TURBO_TOKEN.enc.yaml"), "ENC: c10\nsops:\n");
-  assert.deepEqual(
-    listNames(dir).map((x) => x.name),
-    ["CONTEXT7_API_KEY", "TURBO_TOKEN"],
-  );
-  const vars = agentVars(dir, { run: cli.run });
-  assert.deepEqual(Object.keys(vars), ["CONTEXT7_API_KEY"]);
-  assert.equal(expandArg("x-token:$CONTEXT7_API_KEY", vars), `x-token:${v}`);
-  assert.equal(expandArg("${CONTEXT7_API_KEY}/$MISSING", vars), `${v}/$MISSING`);
-  assert.ok(!cli.calls.some((c) => c.join(" ").includes("ci/deploy")), "no other scope decrypted");
 });
 
 test("age-init: the owner's only; prints the public key, never the private one", () => {

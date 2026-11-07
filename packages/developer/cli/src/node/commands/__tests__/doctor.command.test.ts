@@ -17,7 +17,7 @@ import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 
 vi.mock("#node/doctor/functions/doctor-checks.function", () => ({ doctorChecks: vi.fn() }));
 vi.mock("#node/doctor/functions/read-doctor-workspace.function", () => ({
-  readDoctorWorkspace: () => ({ manifests: [], scripts: {}, infisical: false, devPorts: [] }),
+  readDoctorWorkspace: () => ({ manifests: [], scripts: {}, devPorts: [] }),
 }));
 
 const ok: DoctorResult = { name: "mise installed", status: "ok" };
