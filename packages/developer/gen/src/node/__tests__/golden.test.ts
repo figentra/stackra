@@ -73,6 +73,9 @@ const FIXTURES: readonly GoldenFixture[] = [
     members: ["services/catalogue", "services/channels"],
   },
   { name: "cross-app-producer", base: "service", members: ["services/shop"] },
+  // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): its event is in the
+  // manifest, none of its models or permissions.
+  { name: "contracts-only-host", base: "service", members: ["services/shop"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-shim-authored", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-tool-reason", base: "package-drivers", members: ["packages/shop"] },

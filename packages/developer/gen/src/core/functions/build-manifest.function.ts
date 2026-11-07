@@ -1105,6 +1105,15 @@ export function buildManifest(ir: MemberIR): {
         }
     }
 
+  // A contracts-only dependency adds just its contracts events, from its `./contracts` entry (STA-2567).
+  if (ir.layout !== "package")
+    for (const dependency of ir.contractsDependencies ?? [])
+      for (const item of (dependency.manifest.events ?? []) as unknown as readonly Entry[])
+        eventEntries.push({
+          ...(rehome(item, dependency.package) as Entry),
+          from: dependency.package,
+        });
+
   // Each record policy with the model it judges, own then hosted (`from`), so a host registers its packages' policies
   // too; the base's type argument is gone at runtime, so this is where the pair is kept (ADR 0132 as amended,
   // STA-2045). Written only when there is one, so a member without policies keeps its manifest.

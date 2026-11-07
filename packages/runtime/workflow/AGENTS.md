@@ -12,7 +12,7 @@ Durable workflows: the `Workflow` and `Signal` kind bases, `@Step`, `Run<W>` and
 `WorkflowRunner` driver behind `ctx.run` and `ctx.signal`), the `WorkflowJournal` port with memory and Postgres
 journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151, 0152, 0292). Member at
 `packages/runtime/workflow` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./node`,
-`./testing`.
+`./contracts`, `./testing`.
 
 ## Where code goes
 
@@ -36,8 +36,13 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 
 - `src/{core,node,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
-- There is no `./contracts`: the template imports `StepStatus` and `WorkflowRunStatus` from `.`, and the journal port
-  and records name them, so the port sits in `src/core/ports/` beside the engine (one symbol, one entry).
+- `./contracts` holds only the cross-service ack contract: `ServiceAcked`, `KeptRecords` and their schemas
+  (`src/contracts/`, a leaf that imports nothing of `core` or `node`); `.` re-exports them. A product service that
+  sends the ack imports it from `@stackra/workflow/contracts` and nothing else, so gen hosts it contracts-only: the
+  event and its wire name `workflow.service.acked.v1`, none of the runs, automations, checklists or migrations
+  (STA-2567). Any other import of `@stackra/workflow` in that service makes gen host all of it. The template imports
+  `StepStatus` and `WorkflowRunStatus` from `.`, and the journal port and records name them, so the port sits in
+  `src/core/ports/` beside the engine (one symbol, one entry).
 - `WorkflowConfig$` mirrors `WorkflowEngineOptions` by hand until gen compiles this package's schemas; change both.
 - `WORKFLOW_JOURNALS` names each journal driver by its file prefix (`postgres`, `memory`).
 

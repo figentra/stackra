@@ -111,6 +111,16 @@ export interface MemberIR {
   }[];
 
   /**
+   * The dependencies the member imports only through their `./contracts` entry, each with the part of its manifest a
+   * host carries (its contracts events). They are hosted contracts-only: no model, migration or action (STA-2567).
+   * Absent when none, and in an IR built by hand.
+   */
+  readonly contractsDependencies?: readonly {
+    readonly package: string;
+    readonly manifest: StackraManifest;
+  }[];
+
+  /**
    * The committed manifests of the services the member injects a generated client of (`#stackra/clients/<service>`),
    * found beside the member, with the folder each sits in (absent in an IR built by hand: the service key is used).
    * Absent in an IR built by hand. A service with no folder came from a contract package (STA-1820).

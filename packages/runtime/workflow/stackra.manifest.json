@@ -14,6 +14,17 @@
   "actions": [],
   "events": [
     {
+      "name": "workflow.service.acked.v1",
+      "module": "workflow",
+      "class": "ServiceAcked",
+      "file": "src/contracts/events/service-acked.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "#/schemas/workflow.ServiceAcked"
+      }
+    },
+    {
       "name": "workflow.automation_paused",
       "module": "workflow",
       "class": "AutomationPaused",
@@ -41,17 +52,6 @@
       "kind": "domain",
       "fields": {
         "$ref": "#/schemas/workflow.ChecklistStepCompleted"
-      }
-    },
-    {
-      "name": "workflow.service.acked.v1",
-      "module": "workflow",
-      "class": "ServiceAcked",
-      "file": "src/core/events/service-acked.event.ts",
-      "kind": "integration",
-      "version": 1,
-      "fields": {
-        "$ref": "#/schemas/workflow.ServiceAcked"
       }
     },
     {
@@ -742,6 +742,21 @@
         "cancelled"
       ]
     },
+    "workflow.ServiceAcked": {
+      "type": "object",
+      "required": ["subject", "service"],
+      "properties": {
+        "kept": {
+          "description": "@Field(zod): described by its zod schema"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        }
+      }
+    },
     "workflow.AutomationPaused": {
       "type": "object",
       "required": ["automationId", "key", "reason", "blocks"],
@@ -796,21 +811,6 @@
         },
         "userId": {
           "type": ["string", "null"]
-        }
-      }
-    },
-    "workflow.ServiceAcked": {
-      "type": "object",
-      "required": ["subject", "service"],
-      "properties": {
-        "kept": {
-          "description": "@Field(zod): described by its zod schema"
-        },
-        "subject": {
-          "type": "string"
-        },
-        "service": {
-          "type": "string"
         }
       }
     },

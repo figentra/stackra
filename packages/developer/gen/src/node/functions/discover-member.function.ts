@@ -38,6 +38,7 @@ import type { SlotIR } from "#core/types/slot-ir.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
 import { createSourceReader } from "#node/functions/create-source-reader.function";
 import { openHost } from "#node/functions/open-host.function";
+import { contractsOnlyManifest } from "#core/functions/contracts-only-manifest.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
 import { readAnchors } from "#node/functions/read-anchors.function";
@@ -113,7 +114,30 @@ export async function discoverMember(
       enums.push(...reader.enums(file));
       files.push(reader.exports(file));
     }
-    const dependencies = readDependencyManifests(facts.root, facts.dependencies);
+    // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): it leaves the
+    // declared packages, so nothing of it (models, migrations, wiring) is hosted, and its events are carried.
+    const importedBy = reader.packageImports();
+    const contractsOnly = new Set(
+      facts.dependencies.filter((name) => {
+        const specifiers = importedBy.get(name);
+        return (
+          specifiers !== undefined &&
+          specifiers.size > 0 &&
+          [...specifiers].every((from) => from === `${name}/contracts`)
+        );
+      }),
+    );
+    const contractsDependencies = readDependencyManifests(facts.root, [...contractsOnly]).map(
+      (dependency) => ({
+        package: dependency.package,
+        manifest: contractsOnlyManifest(dependency.manifest),
+      }),
+    );
+    const declaredPackages = facts.dependencies.filter((name) => !contractsOnly.has(name));
+    const runtimeDeclared = (facts.runtimeDependencies ?? []).filter(
+      (name) => !contractsOnly.has(name),
+    );
+    const dependencies = readDependencyManifests(facts.root, declaredPackages);
     // A service is consumed by an injected client, by a listener of one of its events, or by any file importing it.
     const clientImports = reader.clientImports();
     const consumed = [
@@ -127,7 +151,7 @@ export async function discoverMember(
     const catalogues = readCatalogues(facts.root);
     // The lang its runtime packages ship, found like their manifests, and the keys its files use (STA-1298). A
     // devDependency's lang never reaches the runtime, so it is neither merged nor a clash (STA-1309).
-    const shippedCatalogues = readPackageCatalogues(facts.root, facts.runtimeDependencies ?? []);
+    const shippedCatalogues = readPackageCatalogues(facts.root, runtimeDeclared);
     const i18nReferences = readI18nReferences(facts.root);
     // The anchors its components declare, which an app's client tools point at (ADR 0490).
     const { anchors, references: anchorReferences } = readAnchors(facts.root);
@@ -235,9 +259,10 @@ export async function discoverMember(
       files,
       ...(slots.length > 0 ? { slots } : {}),
       ...(fills.length > 0 ? { fills } : {}),
-      packages: facts.dependencies,
-      runtimePackages: facts.runtimeDependencies ?? [],
+      packages: declaredPackages,
+      runtimePackages: runtimeDeclared,
       dependencies,
+      ...(contractsDependencies.length > 0 ? { contractsDependencies } : {}),
       ...(services.length > 0 ? { services } : {}),
       ...(eventsRelay !== undefined ? { eventsRelay } : {}),
       ...(publishers.length > 0 ? { publishers } : {}),

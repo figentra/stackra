@@ -40,6 +40,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `@stackra/ai/contracts` only when the app declares it. A tool never calls a server action (L0, screen only).
 
 - The committed `stackra.manifest.json` is the IR; a dependency is described by its manifest, never its `.d.ts`.
+- A dependency the member imports only through its `./contracts` entry is hosted contracts-only (STA-2567, ADR 0294
+  amendment 2026-11-07): it leaves `packages`, `runtimePackages` and `dependencies`, so no model, migration, wiring or
+  action of it is hosted, and `contractsDependencies` carries just its `src/contracts/` integration events into the
+  manifest. `discoverMember` decides it from `reader.packageImports()`; a dynamic `import()` is not seen.
 - Output is deterministic: files sorted by path, stable key order. Every refusal has a snake_case code, a position and
   a fix; when there is one, nothing is written. A warning (`GenError.severity: "warning"`) has the same shape but never
   blocks writing: `generateMember` and `generate` return it in `warnings`, and `stackra gen` (and `--check`) prints it

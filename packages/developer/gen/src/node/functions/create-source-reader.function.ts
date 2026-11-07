@@ -2909,6 +2909,21 @@ export function createSourceReader(
           .map(([service, file]) => ({ service, file }))
       );
     },
+    packageImports: () => {
+      const found = new Map<string, Set<string>>();
+      for (const path of all.map((file) => file.fileName ?? "").filter(isOwn))
+        for (const statement of byPath.get(path)?.statements ?? []) {
+          // shortcut: a dynamic `import()` is not seen; static imports and `export … from` count.
+          const kind = host.kind(statement);
+          if (kind !== "ImportDeclaration" && kind !== "ExportDeclaration") continue;
+          const from = statement.moduleSpecifier?.text;
+          if (from === undefined || from.startsWith(".") || from.startsWith("#")) continue;
+          const parts = from.split("/");
+          const pkg = from.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? from);
+          found.set(pkg, (found.get(pkg) ?? new Set()).add(from));
+        }
+      return found;
+    },
     classes: (file) =>
       classNodes(file)
         .map(readClass)
