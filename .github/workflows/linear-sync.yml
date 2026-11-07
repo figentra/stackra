@@ -8,8 +8,8 @@
 #          release.yml passes today), given only to this job in the `linear-sync` environment (main only, no reviewer),
 #          mint a read-only installation token for the figentra org, so the reconcile
 #          reads every repo in tools/scripts/linear-reconcile.repos.yaml. Without a token the job uses github.token,
-#          reads this repo only and lists the others as skipped. STA-1827 moves the key to Infisical prod `/ci/release`
-#          for release.yml and this file together (STA-1747).
+#          reads this repo only and lists the others as skipped. STA-1827 moves the key to the sops scope
+#          `ci/production/release` for release.yml and this file together (STA-1747, ADR 0525).
 name: Linear sync
 
 on:
