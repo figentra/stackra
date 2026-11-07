@@ -140,6 +140,12 @@ targets:
       static:
         path: workers/static
         preset: public-site
+        customDomains: [static.stackra.figentra.com]
+        workersDev: false
+        previewUrls: false
+        observability:
+          logs: true
+          headSamplingRate: 0.1
         smoke:
           - url: https://static.stackra.figentra.com/schemas/index.json
       # ADR 0453. The ids are the `registry` environment's variables, swapped for the zero placeholders of
@@ -154,6 +160,13 @@ targets:
         # Empty is writable; `true` freezes publishes (STA-1733).
         vars: [REGISTRY_READ_ONLY]
         secrets: [REGISTRY_SIGNING_KEY]
+        customDomains: [npm.stackra.figentra.com]
+        workersDev: false
+        previewUrls: false
+        # Every request is kept so an install failure can be traced (STA-1573).
+        observability:
+          logs: true
+          headSamplingRate: 1
         smoke:
           - url: https://npm.stackra.figentra.com/-/ping
           - url: https://npm.stackra.figentra.com/-/npm/v1/keys
@@ -163,6 +176,12 @@ targets:
         preset: cache
         secrets:
           TURBO_CACHE_TOKEN: TURBO_TOKEN
+        customDomains: [turbo.stackra.figentra.com]
+        workersDev: false
+        previewUrls: false
+        observability:
+          logs: true
+          headSamplingRate: 0.1
         smoke:
           - url: https://turbo.stackra.figentra.com/v8/artifacts/status
             bearer: TURBO_TOKEN
