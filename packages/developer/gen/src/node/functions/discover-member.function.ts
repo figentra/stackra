@@ -72,6 +72,24 @@ function withDrivers(type: TypeDesc, names: ReadonlyMap<string, readonly string[
   }
 }
 
+/** The ports of every `DriverName<Port>` in a type. */
+function driverPortsOf(type: TypeDesc): readonly string[] {
+  switch (type.kind) {
+    case "driver_name": {
+      return [type.port];
+    }
+    case "array": {
+      return driverPortsOf(type.element);
+    }
+    case "record": {
+      return driverPortsOf(type.value);
+    }
+    default: {
+      return [];
+    }
+  }
+}
+
 /** The root module path of a layout, relative to `src/`. */
 function rootModulePath(layout: MemberIR["layout"], member: string): string {
   const stem = member.replaceAll("_", "-");
@@ -115,18 +133,30 @@ export async function discoverMember(
       files.push(reader.exports(file));
     }
     // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): it leaves the
-    // declared packages, so nothing of it (models, migrations, wiring) is hosted, and its events are carried.
+    // declared packages, so nothing of it (models, migrations, wiring) is hosted, and its events are carried. A
+    // package one of whose driver ports the member injects or names in a `DriverName<Port>` field stays hosted, or no
+    // driver of it would bind the port or fill the field.
     const importedBy = reader.packageImports();
-    const contractsOnly = new Set(
-      facts.dependencies.filter((name) => {
-        const specifiers = importedBy.get(name);
-        return (
-          specifiers !== undefined &&
-          specifiers.size > 0 &&
-          [...specifiers].every((from) => from === `${name}/contracts`)
-        );
-      }),
+    const ports = new Set([
+      ...classes.flatMap((declared) => declared.deps.map((dep) => dep.class.name)),
+      ...shapes.flatMap((shape) => shape.fields.flatMap((field) => driverPortsOf(field.type))),
+    ]);
+    const contractsImported = facts.dependencies.filter((name) => {
+      const specifiers = importedBy.get(name);
+      return (
+        specifiers !== undefined &&
+        specifiers.size > 0 &&
+        [...specifiers].every((from) => from === `${name}/contracts`)
+      );
+    });
+    const portHosts = new Set(
+      readDependencyManifests(facts.root, contractsImported)
+        .filter((dependency) =>
+          (dependency.manifest.drivers ?? []).some((driver) => ports.has(driver.port)),
+        )
+        .map((dependency) => dependency.package),
     );
+    const contractsOnly = new Set(contractsImported.filter((name) => !portHosts.has(name)));
     const contractsDependencies = readDependencyManifests(facts.root, [...contractsOnly]).map(
       (dependency) => ({
         package: dependency.package,
