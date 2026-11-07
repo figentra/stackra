@@ -1,1 +1,1 @@
---filter=!@figentra/mobile --filter=!@figentra/playground --no-frozen-lockfile
+--filter=!@figentra/mobile --filter=!@figentra/playground

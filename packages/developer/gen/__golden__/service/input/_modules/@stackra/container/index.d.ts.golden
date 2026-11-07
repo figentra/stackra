@@ -1,9 +1,0 @@
-export declare abstract class Service {}
-export declare const Lifetime: ((value: unknown) => ClassDecorator) & { readonly Request: unknown };
-export type Named<T, N extends string> = T & { readonly __named?: N };
-export declare class Container {
-  private constructor();
-}
-export declare class DiscoveryService extends Service {
-  constructor(container: Container);
-}
