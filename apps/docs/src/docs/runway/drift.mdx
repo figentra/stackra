@@ -1,0 +1,50 @@
+---
+title: "runway drift"
+description: "Lists where each Cloudflare Worker's live settings differ from what runway.yaml renders."
+---
+
+Lists where each Cloudflare Worker's live settings differ from what runway.yaml renders.
+
+```bash
+stackra runway drift [environment] [--json]
+```
+
+| Argument or option | Kind     | Meaning                                       |
+| ------------------ | -------- | --------------------------------------------- |
+| `environment`      | argument | The runway environment; default `production`. |
+
+## What it does
+
+Read-only Cloudflare API GETs with `CLOUDFLARE_API_TOKEN_READ`, for each Worker member of
+`targets.cloudflare-workers`. It never applies anything.
+
+## What it prints
+
+Each Worker setting that differs from the rendered config.
+
+## Exit codes
+
+| Code | Means                                                                                    |
+| ---- | ---------------------------------------------------------------------------------------- |
+| 0    | No Worker drifted.                                                                       |
+| 1    | A Worker drifted (a finding: the nightly drift run fails), or the read token is missing. |
+| 2    | Usage error.                                                                             |
+
+## Where it runs
+
+In CI, the nightly `runway-drift.yml` decrypts the read token from the sops scope `ci/deploy`. Locally only with that
+token in the environment.
+
+## Examples
+
+```bash
+stackra runway drift
+stackra runway drift staging
+```
+
+## See also
+
+[0519](/adr/0519-worker-settings-come-from-runway-presets),
+[0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).
