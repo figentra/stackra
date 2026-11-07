@@ -446,4 +446,14 @@ describe("the tenant of a call", () => {
       run(other.driver, { kind: ActorKind.Job, id: actor.id }, branch),
     ).rejects.toBeInstanceOf(TenantSwitchRefusedError);
   });
+
+  it("compares a running transaction's tenant with the human's for an agent with none of its own", async () => {
+    const held = setUp(true, ID_A);
+    await expect(run(held.driver, agentForA, scope)).resolves.toBe("ran");
+    expect(held.withTenant.mock.calls[0]?.[0]).toBe(agentForA);
+    const other = setUp(true, ID_B);
+    await expect(run(other.driver, agentForA, undefined)).rejects.toBeInstanceOf(
+      TenantSwitchRefusedError,
+    );
+  });
 });
