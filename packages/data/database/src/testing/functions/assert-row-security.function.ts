@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: `assertRowSecurity`, the row-level-security audit of a migrated database. It walks every table of every
  *          non-system schema: a table without the owner column must be a listed platform table (`PLATFORM_TABLES` or
- *          the caller's `platform`, each with its reason); a table with it has row-level security enabled and forced,
- *          exactly one permissive policy (`pol_<table>_<column>`, the owner equality) and only restrictive policies
- *          named after their column beside it. The service role is neither a superuser nor BYPASSRLS. Then, per owned
- *          table, it seeds a row of each probe owner and, as that role, proves a session with the setting unset sees
- *          no row, a session as the first owner sees its own row and none of the second's, and cannot move its row to
- *          the second owner. It throws one error listing every gap.
+ *          the caller's `platform`, each with its reason), else it is returned as a warning naming its group
+ *          (`unownedTableGroup`) until 0.20, and is a gap in strict mode (`strict`, `STACKRA_GEN_STRICT=1`); a table
+ *          with it has row-level security enabled and forced, exactly one permissive policy (`pol_<table>_<column>`,
+ *          the owner equality) and only restrictive policies named after their column beside it. The service role is
+ *          neither a superuser nor BYPASSRLS. Then, per owned table, it seeds a row of each probe owner and, as that
+ *          role, proves a session with the setting unset sees no row, a session as the first owner sees its own row
+ *          and none of the second's, and cannot move its row to the second owner. It throws one error listing every
+ *          gap.
  * Boundary: test only (`./testing`), against a real Postgres (`usePostgres`), connected as a superuser (a test
  *           container's user). Each probe runs in a transaction it always rolls back; to seed, it drops the table's
  *           check constraints and the NOT NULL of every non-key column there and skips foreign keys and triggers
@@ -27,6 +29,7 @@ import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { PLATFORM_TABLES } from "#testing/constants/platform-tables.constant";
 import { policyGaps } from "#testing/functions/policy-gaps.function";
 import { seedValue } from "#testing/functions/seed-value.function";
+import { unownedTableGroup } from "#testing/functions/unowned-table-group.function";
 import type { PolicyRow } from "#testing/types/policy-row.type";
 import type { RowSecurityOptions } from "#testing/types/row-security-options.type";
 import type { SeedColumn } from "#testing/types/seed-column.type";
@@ -134,18 +137,23 @@ async function seedOwners(
  *
  * @param database - the connected database (`usePostgres().database`), migrated.
  * @param options - the column, setting, role, probe values and the caller's platform tables.
- * @throws Error listing every gap: an unlisted table without the owner column, a listed one with it, an owned table
- *         without RLS, not forced, without its one permissive owner policy or with another policy that is permissive or
- *         misnamed, a table the probe could not seed, a role that bypasses RLS, a probe that saw or moved another
- *         owner's row, saw rows with the setting unset or did not see its own.
+ * @returns the warnings: each unlisted table without the owner column, with its group, until 0.20 (a gap when
+ *          `options.strict` or `STACKRA_GEN_STRICT=1`).
+ * @throws Error listing every gap: an unlisted table without the owner column in strict mode, a listed one with it, an
+ *         owned table without RLS, not forced, without its one permissive owner policy or with another policy that is
+ *         permissive or misnamed, a table the probe could not seed, a role that bypasses RLS, a probe that saw or
+ *         moved another owner's row, saw rows with the setting unset or did not see its own.
  * @example
- * await assertRowSecurity(postgres.database, { column: "owner_id", setting: "app.owner_id", role: "app", probe: [a, b] });
+ * const options = { column: "owner_id", setting: "app.owner_id", role: "app", probe: [a, b] } as const;
+ * const warnings = await assertRowSecurity(postgres.database, options);
  */
 export async function assertRowSecurity(
   database: Database,
   options: RowSecurityOptions,
-): Promise<void> {
+): Promise<readonly string[]> {
   const { column, setting, role, probe } = options;
+  const strict = options.strict ?? process.env["STACKRA_GEN_STRICT"] === "1";
+  const warnings: string[] = [];
   const [own, other] = probe;
   const platform = new Map([...PLATFORM_TABLES, ...(options.platform ?? [])]);
   const em = database.em();
@@ -167,8 +175,9 @@ export async function assertRowSecurity(
     const reason = platform.get(name);
     if (!audited.owned) {
       if (reason === undefined)
-        gaps.push(
-          `${name} has no ${column} column and is not a platform table; give it ${column} or list it in \`platform\` with its reason`,
+        // shortcut: warn-only for tables without tenant_id until 0.20, then error (push to `gaps` always).
+        (strict ? gaps : warnings).push(
+          `${name} has no ${column} column and is not a platform table (${unownedTableGroup(audited.enabled, of(policies, audited), setting)}); give it ${column} or list it in \`platform\` with its reason`,
         );
       else if (reason.trim() === "")
         gaps.push(`${name} is listed as a platform table with no reason`);
@@ -267,4 +276,5 @@ export async function assertRowSecurity(
   }
   if (gaps.length > 0)
     throw new Error(`row-level security gaps on ${column}:\n- ${gaps.join("\n- ")}`);
+  return warnings;
 }

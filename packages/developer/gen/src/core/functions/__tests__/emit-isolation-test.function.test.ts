@@ -60,12 +60,13 @@ describe("emitIsolationTest", () => {
     );
     expect(test).toContain(
       [
-        "    await assertRowSecurity(postgres.database, {",
+        "    const warnings = await assertRowSecurity(postgres.database, {",
         "      ...tenantIsolationOptions(),",
         "      platform: new Map([",
         '        ["achievements.award_verifications", "ADR 0368 decision 5"],',
         "      ]),",
         "    });",
+        "    for (const warning of warnings) console.warn(`row-level security: ${warning}`);",
       ].join("\n"),
     );
   });

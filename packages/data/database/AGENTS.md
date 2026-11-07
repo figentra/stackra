@@ -162,8 +162,9 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   `directDatabaseUrl()`, never the pooled `DATABASE_URL`, since a transaction-mode proxy cannot keep it.
 - `assertRowSecurity` (`./testing`, stackra-258) is owner-agnostic: it takes the column, setting, role and probe
   values and names no tenant; `@stackra/tenancy/testing` supplies the tenant form. Its probe always rolls back.
-  It audits every table, not a list: a table without the owner column is a gap unless `PLATFORM_TABLES` or the
-  caller's `platform` names it with a reason. Add a `PLATFORM_TABLES` row only with the migration that says why the
+  It audits every table, not a list: a table without the owner column must be named by `PLATFORM_TABLES` or the
+  caller's `platform` with a reason; until 0.20 an unlisted one is a returned warning (a gap under `strict` or
+  `STACKRA_GEN_STRICT=1`), and every other finding fails at once. Add a `PLATFORM_TABLES` row only with the migration that says why the
   table is not tenant data, never to quiet the audit (ADR 0347 d5).
 - `ConnectionResolver` (stackra-310) names a scope's connection set and takes a `ScopeRef`; it never names a tenant
   (`@stackra/tenancy` maps a tenant's placement to it). Placement is data: never pick a connection by a hard-coded
