@@ -1,20 +1,21 @@
 /**
  * Stackra file contract:
  * Purpose: `encoreDeployTree(request)`, the commit an Encore Cloud push ships. Encore builds the tree it receives, and
- *          the generated app is gitignored, so the source commit alone has no app. On top of the source commit, in a
- *          temporary checkout, it adds the service member's generated outputs (`.stackra/`), every workspace package's
- *          build output (`dist/`, `.stackra/`), the member's `encore.app` (copied from `.stackra/encore/encore.app`, so
- *          the member folder is the Encore app root, beside its package.json) and a `tsconfig.json` whose `paths`
- *          mirror the member's package.json `imports` (Encore's resolver does not read `imports`); the member's own
- *          tsconfig is kept as `tsconfig.member.json` and extended. It commits that tree as the deploy commit, a
- *          parentless commit whose message names the source commit, so a shallow CI checkout pushes it whole.
+ *          the generated app is gitignored, so the source commit alone has no app. The repository root is the Encore
+ *          app root, holding every service member of the product as one app (Pub/Sub topics and subscriptions only
+ *          work inside one app, and a relay imports its producers' topics). In a temporary checkout of the source
+ *          commit it adds each service member's generated outputs (`.stackra/`) and every workspace package's build
+ *          output (`dist/`, `.stackra/`), rewrites each service member's `#` imports (package.json `imports`) to
+ *          relative paths through that member's own map, since Encore resolves neither `imports` nor a per-member
+ *          tsconfig, drops the members' `__tests__` folders (Encore parses every TypeScript file under the root),
+ *          writes the generated `encore.app` at the root, and commits that tree as the deploy commit: a parentless
+ *          commit whose message names the source commit, so a shallow CI checkout pushes it whole.
  * Boundary: reads the repository and writes only the temporary checkout (`git worktree add`), removed by `dispose`;
- *           runs `git` through the given runner. One service member per Encore app root: a repository with several
- *           generated service apps is refused until they share one root. A repository with none gets `undefined`, and
- *           the caller pushes the source commit as it is.
+ *           runs `git` through the given runner. A repository with no generated service app gets `undefined`, and the
+ *           caller pushes the source commit as it is.
  * Runtime: node
  * Governing contract: ADR 0091 (decision 2: the generated Encore app), ADR 0289 (decision 5: Encore Cloud), ADR 0233
- *                     (package.json imports), STA-136, STA-2155.
+ *                     (package.json imports), STA-136, STA-2155, STA-2194.
  */
 import {
   copyFileSync,
@@ -23,14 +24,15 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
-  renameSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
 import { workspacePackages } from "#node/functions/workspace-packages.function";
 import type { EncoreDeployTree } from "#node/types/encore-deploy-tree.type";
@@ -39,8 +41,14 @@ import type { EncoreDeployTreeRequest } from "#node/types/encore-deploy-tree-req
 /** The generated Encore app file of a service member, from the member root. */
 const GENERATED_APP = join(".stackra", "encore", "encore.app");
 
-/** The build outputs a deploy tree carries from each workspace package and the service member. */
+/** The build outputs a deploy tree carries from each workspace package and service member. */
 const OUTPUTS = ["dist", ".stackra"] as const;
+
+/** The folders of a service member whose TypeScript files may import through `#` aliases. */
+const SOURCES = ["src", ".stackra"] as const;
+
+/** A static, re-exported, side-effect or dynamic import of a `#` alias: lead, quote, specifier. */
+const ALIAS_IMPORT = /(from\s+|import\s*\(\s*|import\s+)(["'])(#[^"']+)\2/g;
 
 /** The service members with a generated Encore app, relative to the repository. */
 function serviceApps(repository: string): string[] {
@@ -52,43 +60,102 @@ function serviceApps(repository: string): string[] {
     .toSorted();
 }
 
-/** The `paths` of a tsconfig that mirrors a package.json `imports` map. */
-function pathsOf(imports: unknown): Record<string, string[]> {
-  const paths: Record<string, string[]> = {};
-  if (typeof imports !== "object" || imports === null) return paths;
-  for (const [key, target] of Object.entries(imports)) {
-    const targets = (Array.isArray(target) ? target : [target]).filter(
-      (value): value is string => typeof value === "string",
-    );
-    if (key.startsWith("#") && targets.length > 0) paths[key] = targets;
+/** The file a `#` specifier names through `imports`, the member's package.json map, or `undefined`. */
+function aliasTarget(
+  root: string,
+  imports: Record<string, unknown>,
+  spec: string,
+): string | undefined {
+  for (const [key, value] of Object.entries(imports)) {
+    const prefix = key.endsWith("*") ? key.slice(0, -1) : undefined;
+    if (prefix === undefined ? spec !== key : !spec.startsWith(prefix)) continue;
+    const rest = prefix === undefined ? "" : spec.slice(prefix.length);
+    for (const target of Array.isArray(value) ? value : [value]) {
+      if (typeof target !== "string") continue;
+      const path = join(root, target.replace("*", rest));
+      if (existsSync(path) && statSync(path).isFile()) return path;
+    }
   }
-  return paths;
+  return undefined;
 }
 
 /**
- * Builds the deploy commit of the repository's one generated service app.
+ * Rewrites the `#` imports of every TypeScript file under the member's sources to relative paths, in place, and drops
+ * its `__tests__` folders. Returns the specifiers no target was found for.
+ */
+function rewriteMember(root: string): string[] {
+  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Record<
+    string,
+    unknown
+  >;
+  const imports =
+    typeof manifest["imports"] === "object" && manifest["imports"] !== null
+      ? (manifest["imports"] as Record<string, unknown>)
+      : {};
+  const unresolved: string[] = [];
+  const walk = (folder: string): void => {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      const path = join(folder, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "__tests__") rmSync(path, { recursive: true, force: true });
+        else if (entry.name !== "node_modules") walk(path);
+        continue;
+      }
+      if (!/\.tsx?$/.test(entry.name)) continue;
+      const text = readFileSync(path, "utf8");
+      const next = text.replace(ALIAS_IMPORT, (all, lead: string, quote: string, spec: string) => {
+        const target = aliasTarget(root, imports, spec);
+        if (target === undefined) {
+          unresolved.push(`${relative(root, path)}: ${spec}`);
+          return all;
+        }
+        let rel = relative(dirname(path), target)
+          .replace(/\.tsx?$/, "")
+          .replace(/\/index$/, "");
+        if (!rel.startsWith(".")) rel = `./${rel}`;
+        return `${lead}${quote}${rel}${quote}`;
+      });
+      if (next !== text) writeFileSync(path, next);
+    }
+  };
+  for (const source of SOURCES) if (existsSync(join(root, source))) walk(join(root, source));
+  return unresolved;
+}
+
+/**
+ * Builds the deploy commit of the repository's generated Encore app: every service member in one app at the root.
  *
  * @param request - the repository, the source commit and the command runner.
  * @returns the deploy tree, or `undefined` when the repository has no generated service app.
- * @throws RunwayInvalidError when more than one service member has a generated Encore app.
+ * @throws RunwayInvalidError when the service members' generated apps name different Encore app ids.
+ * @throws RunwayUnresolvedError when a `#` import resolves through no member's map, before anything is committed.
  * @example
  * const tree = await encoreDeployTree({ repository: ".", sha, run: runProgram });
- * if (tree !== undefined) await run("git", ["push", "encore://acme", `+${tree.sha}:refs/heads/staging`], {});
+ * if (tree !== undefined) await run("git", ["push", "encore://acme", `+${tree.sha}:refs/heads/main`], {});
  */
 export async function encoreDeployTree(
   request: EncoreDeployTreeRequest,
 ): Promise<EncoreDeployTree | undefined> {
   const { repository, sha, run } = request;
-  const apps = serviceApps(repository);
-  if (apps.length === 0) return undefined;
-  if (apps.length > 1)
+  const members = serviceApps(repository);
+  if (members.length === 0) return undefined;
+  const ids = new Set(
+    members.map(
+      (member) =>
+        (
+          JSON.parse(readFileSync(join(repository, member, GENERATED_APP), "utf8")) as {
+            id?: unknown;
+          }
+        ).id,
+    ),
+  );
+  if (ids.size > 1)
     throw new RunwayInvalidError("runway.yaml", [
       {
         path: "providers.encore.app",
-        message: `One Encore app root per push: ${apps.join(", ")} each have a generated app; deploy them as one app first`,
+        message: `The service members' generated apps name different Encore app ids (${[...ids].join(", ")}): run stackra gen`,
       },
     ]);
-  const member = apps[0] as string;
 
   const tree = mkdtempSync(join(tmpdir(), "stackra-encore-"));
   await run("git", ["worktree", "add", "--detach", tree, sha], { cwd: repository });
@@ -99,7 +166,7 @@ export async function encoreDeployTree(
   try {
     const added: string[] = [];
     const folders = [
-      member,
+      ...members,
       ...[...workspacePackages(repository).values()].map((pkg) => relative(repository, pkg.dir)),
     ];
     for (const folder of new Set(folders))
@@ -113,30 +180,19 @@ export async function encoreDeployTree(
         added.push(join(folder, output));
       }
 
-    const root = join(tree, member);
-    copyFileSync(join(root, GENERATED_APP), join(root, "encore.app"));
-    const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Record<
-      string,
-      unknown
-    >;
-    const base = existsSync(join(root, "tsconfig.json")) ? "./tsconfig.member.json" : undefined;
-    if (base !== undefined)
-      renameSync(join(root, "tsconfig.json"), join(root, "tsconfig.member.json"));
-    writeFileSync(
-      join(root, "tsconfig.json"),
-      `${JSON.stringify(
-        {
-          ...(base === undefined ? {} : { extends: base }),
-          compilerOptions: { baseUrl: ".", paths: pathsOf(manifest["imports"]) },
-        },
-        null,
-        2,
-      )}\n`,
+    const unresolved = members.flatMap((member) =>
+      rewriteMember(join(tree, member)).map((line) => `${member}/${line}`),
     );
-    added.push(join(member, "encore.app"), join(member, "tsconfig.json"));
-    if (base !== undefined) added.push(join(member, "tsconfig.member.json"));
+    if (unresolved.length > 0)
+      throw new RunwayUnresolvedError(
+        `${unresolved.length} \`#\` import(s) resolve through no package.json imports entry: ${unresolved.slice(0, 5).join("; ")}`,
+      );
+    copyFileSync(join(tree, members[0] as string, GENERATED_APP), join(tree, "encore.app"));
 
-    await run("git", ["add", "--all", "--force", "--", ...added], { cwd: tree });
+    // The members' folders whole: rewritten sources, dropped tests and the copied outputs.
+    await run("git", ["add", "--all", "--force", "--", ...members, ...added, "encore.app"], {
+      cwd: tree,
+    });
     // A parentless commit: Encore's remote refuses a push that ends on a shallow clone's boundary ("shallow update
     // not allowed", a CI checkout at depth 1), and the product's history is not Encore's to hold.
     const files = (await run("git", ["write-tree"], { cwd: tree })).trim();
@@ -148,12 +204,12 @@ export async function encoreDeployTree(
           "commit-tree",
           files,
           "-m",
-          `runway: the Encore app of ${member} at ${sha}`,
+          `runway: the Encore app of ${members.join(", ")} at ${sha}`,
         ],
         { cwd: tree },
       )
     ).trim();
-    return { sha: deploy, member, dispose };
+    return { sha: deploy, members, dispose };
   } catch (error) {
     await dispose();
     throw error;
