@@ -386,11 +386,12 @@ describe("a user's tenant on Postgres", () => {
 
   it("refuses a user of A in a scope the tree does not show, such as A's own id with the root's path", async () => {
     const user = tenantActor(TENANT_A as PublicId<"scp">);
-    for (const forged of [
+    const forged: readonly ScopeRef[] = [
       { id: TENANT_A, path: ROOT.path },
       { id: TENANT_A, path: "nowhere" },
-    ])
-      await expect(list(user, forged)).rejects.toSatisfy((error: unknown) =>
+    ];
+    for (const at of forged)
+      await expect(list(user, at)).rejects.toSatisfy((error: unknown) =>
         isRefusal(error, TenantScopeMismatchError),
       );
   });
