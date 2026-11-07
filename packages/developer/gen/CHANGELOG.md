@@ -1,5 +1,27 @@
 # @stackra/gen
 
+## 0.20.0
+
+### Minor Changes
+
+- 6623da1: A dependency a member imports only through its `./contracts` entry is hosted contracts-only: gen carries its
+  `src/contracts/` integration events (so the outbox and topic emitters know their wire names) and hosts none of its
+  models, migrations, actions, drivers, roles or permissions. A dependency imported any other way is hosted whole, as
+  before (STA-2567).
+- 667a3b5: Every `registerActions` row now carries its output class, so the action pipeline can leave `@ShownOnce` fields out of
+  the idempotency store. The new warning `secret_output_kept` names an action that is not `Idempotency.Never` and returns a
+  secret-named output field (`signingSecret`, `apiKey`, `accessToken`) with neither `@ShownOnce` nor `@Hidden`.
+
+### Patch Changes
+
+- a7b7e58: `@Replaces(Port)` now builds the replacement with its constructor dependencies: gen writes the replacement's
+  constructor tokens on each `replaces` row (`deps`), and the container passes them, as it does for any driver. Before,
+  the replacement was built with none and its injected fields were silently undefined.
+- @stackra/money@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
 ## 0.19.0
 
 ### Minor Changes

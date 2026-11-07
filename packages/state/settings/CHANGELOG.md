@@ -1,5 +1,24 @@
 # @stackra/settings
 
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/icons@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Patch Changes

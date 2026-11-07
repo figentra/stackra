@@ -1,5 +1,15 @@
 # @stackra/storage
 
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Patch Changes

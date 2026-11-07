@@ -1,5 +1,32 @@
 # @stackra/runway
 
+## 0.20.0
+
+### Minor Changes
+
+- 3b48b0f: `runway evidence` judges `rollout` per target. A production Workers member with more than one traffic step and no
+  Durable Object migration is `true`; a migrating or single-step member, and every other declared target, is `false`; an
+  unknown is `null`. `rolloutDetail` adds `steps` and `floorReason`; `release.strategy` is no longer read.
+  
+  Every Worker now moves production traffic in `[10, 50, 100]` steps by default. The `public-site`, `internal-tool` and
+  `cache` presets stay at one step, and a member can name its own. A Worker that was never deployed moves at once, since
+  there is no version to split with.
+
+### Patch Changes
+
+- 671c9fd: The `encore-cloud` driver's verify polls `<origin>/readyz` with backoff (5 s, doubling to 60 s) while Encore Cloud
+  builds the pushed commit, instead of reading it once right after the push. A 404 ("application not found"), a 5xx or
+  no answer counts as still building until `encore.readyTimeoutMinutes` (15 by default) passes; then verify reports down
+  with the last answer. A first deploy no longer fails verify before Encore has built it.
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/app@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Minor Changes

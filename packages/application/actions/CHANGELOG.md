@@ -1,5 +1,27 @@
 # @stackra/actions
 
+## 0.20.0
+
+### Minor Changes
+
+- 667a3b5: The idempotency step never keeps a `@ShownOnce` output field: it is left out before `IdempotencyStore.complete`, and a
+  replay answers without it and with `secretOmitted: true`, so the client knows to rotate if it lost the first response.
+  `ActionRegistration` takes the `output` class for this. `Action({ idempotencyTtl })` shortens how long a key and its
+  output are kept; a window longer than 24 hours is ignored.
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/cache@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Minor Changes
