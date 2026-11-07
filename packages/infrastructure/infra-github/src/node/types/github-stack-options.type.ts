@@ -11,7 +11,7 @@
 export type GithubStackOptions = {
   /**
    * Pin the repository's OIDC subject template to GitHub's default. Off by default: a repository may use immutable
-   * subjects or a custom template that its cloud roles and Infisical identities already trust.
+   * subjects or a custom template that its cloud roles already trust.
    */
   readonly oidcTemplate?: boolean;
   /** Apply the committed rulesets and branch protection. Off by default: where a tool renders them (Flow), it owns them. */

@@ -38,8 +38,8 @@ const PLAN: GithubPlan = {
   repo: "acme-platform",
   visibility: "public",
   variables: {
-    INFISICAL_DOMAIN: "https://eu.infisical.com",
-    INFISICAL_PROJECT_ID: "ref:infisical.workspace",
+    STACKRA_SAMPLE_URL: "https://example.com",
+    STACKRA_SAMPLE_ID: "ref:ids.workspace",
   },
   environments: [
     { name: "preview", teams: [], users: [], branches: [], tags: [], variables: {} },
@@ -144,7 +144,7 @@ beforeAll(async () => {
     "production",
     false,
   );
-  pulumi.runtime.setAllConfig({ "infra:infisical": JSON.stringify({ workspace: "ws-123" }) });
+  pulumi.runtime.setAllConfig({ "infra:ids": JSON.stringify({ workspace: "ws-123" }) });
   stack = githubStack(PLAN, RULES, undefined, { oidcTemplate: true, rules: true });
   // Provider, repository, OIDC template, 2 variables, 3 environments, 3 deploy policies, 1 environment variable,
   // 1 ruleset and 1 branch protection: 14 registrations, some after the team and user lookups.
@@ -182,12 +182,12 @@ describe("githubStack", () => {
   });
 
   it("sets the repository variables, resolving refs from the stack config", () => {
-    expect(resource("ActionsVariable", "acme-platform-INFISICAL_DOMAIN").inputs).toMatchObject({
-      variableName: "INFISICAL_DOMAIN",
-      value: "https://eu.infisical.com",
+    expect(resource("ActionsVariable", "acme-platform-STACKRA_SAMPLE_URL").inputs).toMatchObject({
+      variableName: "STACKRA_SAMPLE_URL",
+      value: "https://example.com",
     });
-    expect(resource("ActionsVariable", "acme-platform-INFISICAL_PROJECT_ID").inputs).toMatchObject({
-      variableName: "INFISICAL_PROJECT_ID",
+    expect(resource("ActionsVariable", "acme-platform-STACKRA_SAMPLE_ID").inputs).toMatchObject({
+      variableName: "STACKRA_SAMPLE_ID",
       value: "ws-123",
     });
   });
@@ -277,7 +277,7 @@ describe("githubStack", () => {
         {
           ...PLAN,
           repo: "acme-missing",
-          variables: { INFISICAL_PROJECT_ID: "ref:missing.workspace" },
+          variables: { STACKRA_SAMPLE_ID: "ref:missing.workspace" },
         },
         { rulesets: [] },
       ),

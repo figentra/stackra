@@ -38,7 +38,7 @@ providers:
     repo: stackra
     visibility: private # the default; public turns on secret scanning and push protection
     variables:
-      INFISICAL_CI_IDENTITY_ID: ref:infisical.ciIdentity # public ids only; never a secret name
+      CLOUDFLARE_ACCOUNT_ID: ref:cloudflare.accountId # public ids only; never a secret name
     environments:
       production:
         reviewers: [figentra/owners, akouta] # a user login or <org>/<team-slug>, six at most
@@ -51,8 +51,8 @@ environments:
 
 One GitHub environment exists per runway environment that deploys (never `dev`) and per environment the block names.
 A pull-request preview may deploy from any ref, everything else from `main` unless the block names its branches or tags.
-An environment promoted behind `deploy.approval: github-environment` names who approves. The Infisical domain and project
-from `providers.infisical` become repository variables; the root runway's `secrets.ci` names are carried as names only.
+An environment promoted behind `deploy.approval: github-environment` names who approves. The root runway's `secrets.ci` names
+are carried as names only.
 
 ## Using it
 
@@ -82,7 +82,7 @@ unset one fails the program before any resource is planned.
 | --------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Repository            | squash merges only, the commit messages kept, branches deleted on merge; protected and retained on delete         |
 | Security              | secret scanning and push protection, on a public repository                                                       |
-| OIDC subject template | GitHub's default `repo:<org>/<repo>:environment:<env>`, which the cloud roles and the Infisical CI identity trust |
+| OIDC subject template | GitHub's default `repo:<org>/<repo>:environment:<env>`, which the cloud and KMS roles trust                       |
 | Environments          | reviewers (teams and users), custom deploy branch and tag policies, and each one's variables                      |
 | Actions variables     | the repository's and each environment's; no Actions secret is ever created                                        |
 | Rulesets              | every committed `.github/rulesets/*.json`, in file name order                                                     |

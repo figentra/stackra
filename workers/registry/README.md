@@ -106,8 +106,8 @@ licence is 409. Every call writes an `audit_events` row (`licence.<action>`, the
 
 ### Issuer tokens
 
-The owner makes one per caller (OS billing), stores its value in Infisical `os` `prod` `/runtime/licensing` (the OS licensing service reads it, ADR 0512;
-migration 0002's "`/registry`" means the issuer token's Infisical home) as
+The owner makes one per caller (OS billing), stores its value in the sops scope `products/os/production` (the OS licensing service reads it, ADR 0525;
+migration 0002's "`/registry`" means the issuer token's old vault home) as
 `REGISTRY_ISSUER_TOKEN` (the name `@stackra/licensing`'s `IssuerConfig` reads) and inserts only its hash:
 `INSERT INTO issuer_tokens (hash, label, created_at) VALUES ('<sha256 hex>', 'os-billing', '<now>')`, through the
 migration CI job or the Cloudflare dashboard. Rotate by inserting the new hash, then setting `revoked_at` on the old row.
@@ -160,7 +160,7 @@ Every limit is a Worker var in `wrangler.jsonc` (`src/settings/read-settings.ts`
 | `REGISTRY_OIDC_AUDIENCES`         | —                              | `""` (only `npm:<REGISTRY_HOST>`)             |
 | `REGISTRY_READ_ONLY`              | —                              | `""` (`"true"`: every write answers 503)      |
 
-Secret: `REGISTRY_SIGNING_KEY`, the PKCS#8 PEM of the ECDSA P-256 key (Infisical `prod` `/ci/registry`). To rotate, move
+Secret: `REGISTRY_SIGNING_KEY`, the PKCS#8 PEM of the ECDSA P-256 key (sops scope `ci/production/registry`). To rotate, move
 the old key's SPKI (base64, from `/-/npm/v1/keys`) into `REGISTRY_RETIRED_KEYS` with its `expires`, then set the new
 secret.
 
@@ -240,16 +240,16 @@ pnpm exec wrangler kv namespace create stackra-registry-cache   # prints id
 Put the two ids into the GitHub environment `registry` (Settings, Environments) as **variables**, not secrets, and
 never into `wrangler.jsonc` (it keeps the zero ids; CI substitutes them on the runner):
 
-| Variable                         | Value                                       |
-| -------------------------------- | ------------------------------------------- |
-| `REGISTRY_D1_DATABASE_ID`        | the D1 uuid                                 |
-| `REGISTRY_KV_NAMESPACE_ID`       | the KV namespace id (32 hex)                |
-| `INFISICAL_REGISTRY_IDENTITY_ID` | the Infisical machine identity the job uses |
+| Variable                   | Value                        |
+| -------------------------- | ---------------------------- |
+| `REGISTRY_D1_DATABASE_ID`  | the D1 uuid                  |
+| `REGISTRY_KV_NAMESPACE_ID` | the KV namespace id (32 hex) |
 
-Restrict the `registry` environment to `main`. The Infisical identity trusts GitHub OIDC for the subject in the
-repository's immutable form, `repo:figentra@314302700/stackra@1425140001:environment:registry` (the plain
-`repo:figentra/stackra:...` form is refused), and reads `prod` `/ci` (`CLOUDFLARE_API_TOKEN`) and `prod` `/ci/registry`
-(`REGISTRY_SIGNING_KEY`). The Cloudflare token in `/ci` needs D1, Workers R2 Storage, Workers KV Storage and Workers
+Restrict the `registry` environment to `main`. The job decrypts its secrets as itself with the shared
+`secrets-decrypt` action (ADR 0525): `figentra/infra` grants the GitHub OIDC subject in the repository's immutable
+form, `repo:figentra@314302700/stackra@1425140001:environment:registry` (the plain `repo:figentra/stackra:...` form is
+refused), the sops scopes `ci/production` (`CLOUDFLARE_API_TOKEN`) and `ci/production/registry`
+(`REGISTRY_SIGNING_KEY`). The Cloudflare token in `ci/production` needs D1, Workers R2 Storage, Workers KV Storage and Workers
 Scripts edit on the account, and Workers Routes edit on the `figentra.com` zone. The custom domain
 `npm.stackra.figentra.com` had to leave the npflared `npm-registry` Worker first (decision 17); that one-off move is
 done, and the workflow no longer carries its detach step.
@@ -261,21 +261,19 @@ straight into the secrets inbox:
 
 ```sh
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ~/Secrets-inbox/REGISTRY_SIGNING_KEY.pem
-printf 'project: registry\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_SIGNING_KEY.target.yaml
-pnpm secrets:import --dry-run   # then the import with the printed --confirm token
+pnpm secrets:import --scope ci/production/registry --dry-run   # then again without --dry-run
 ```
 
 ### 3. Issuer token
 
 One per licence API caller (OS billing). Make the value, keep only its SHA-256 hex for D1, and import the value to
-Infisical `os` `prod` `/runtime/licensing` as `REGISTRY_ISSUER_TOKEN` the same way (never `registry`: the deploy
-identity must not read it):
+the sops scope `products/os/production` as `REGISTRY_ISSUER_TOKEN` the same way (never `ci/production/registry`: the
+deploy job must not read it):
 
 ```sh
 openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN
-printf 'project: os\nenv: prod\npath: /runtime/licensing\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN.target.yaml
 shasum -a 256 < ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN | cut -d' ' -f1   # the hash, safe to show
-pnpm secrets:import --dry-run   # then the import with the printed --confirm token
+pnpm secrets:import --scope products/os/production --dry-run   # then again without --dry-run
 ```
 
 After the first deploy (step 4 creates the tables), insert the hash:
@@ -293,7 +291,7 @@ reads the `registry` entry of the root `runway.yaml`: it builds the member, puts
 `wrangler.jsonc` (restored afterwards), applies the migrations (`wrangler d1 migrations apply stackra-registry
 --remote`), deploys with the commit as the message and `REGISTRY_READ_ONLY`, sets `REGISTRY_SIGNING_KEY` through stdin,
 and retries `/-/ping` and `/-/npm/v1/keys` for up to ten minutes until each answers 200 (the keys route only does once
-the signing key is readable). Without `INFISICAL_REGISTRY_IDENTITY_ID` it tests and deploys nothing. Check by hand too:
+the signing key is readable). Check by hand too:
 
 ```sh
 curl -fsS https://npm.stackra.figentra.com/-/ping

@@ -6,7 +6,7 @@
  *          file exists; it never opens it.
  * Boundary: pure; reads no file.
  * Runtime: node
- * Governing contract: ADR 0525 (SOPS and Cloud KMS replace Infisical); ADR 0027.
+ * Governing contract: ADR 0525 (SOPS and Cloud KMS); ADR 0027.
  */
 import { join } from "node:path";
 

@@ -8,7 +8,7 @@
  * Boundary: the inbox, `secrets-sops.mjs` (sops on stdin, git and gh) and the audit line only; no value leaves this
  *   process.
  * Runtime: node
- * Governing contract: ADR 0257 (secret manager agent and the secrets inbox); ADR 0525 (SOPS replaces Infisical).
+ * Governing contract: ADR 0257 (secret manager agent and the secrets inbox); ADR 0525 (SOPS and Cloud KMS).
  * Input: files directly in $HOME/Secrets-inbox/ (file name = secret name, one extension stripped) with `--scope`, or
  *   scope-shaped folders under it with `--tree`; flags --scope --tree --name --dry-run --list --actor.
  * Output: one line per secret NAME with its scope and a value-free result; exit 1 when any secret failed.
@@ -116,7 +116,7 @@ export function readValue(file) {
   }
 }
 
-/** The prefix of a temp dir a value write leaves in the inbox (vault-keeper's Infisical write). */
+/** The prefix of a temp dir a value write leaves in the inbox (the retired vault-keeper's write). */
 export const TEMP_PREFIX = ".import-";
 
 /** Remove temp dirs a killed run left behind (dot-entries, so --list and imports skip them). */

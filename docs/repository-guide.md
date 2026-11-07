@@ -89,7 +89,8 @@ The rules in full, and what enforces each one, are in [`AGENTS.md`](../AGENTS.md
 | `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)   |
 | `pnpm pr:merge <n>`                          | the only way an agent merges: green gate and an `AI-REVIEW: PASS` for the head's diff |
 
-`pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from Infisical. One line per
+`pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from sops through
+`tools/scripts/secrets-exec.mjs`. One line per
 script: [`tools/scripts`](../tools/scripts).
 
 ## How work flows

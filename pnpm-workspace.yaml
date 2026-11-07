@@ -313,7 +313,7 @@ catalogs:
   desktop:
     electron: 44.9.1
   # Deploy CLIs. wrangler builds and deploys the Cloudflare Workers members (workers/static, ADR 0284); CI runs
-  # `wrangler deploy` with a token from Infisical /ci, never from a file.
+  # `wrangler deploy` with a token the sops decrypt step puts in its environment, never from a file.
   # Pulumi providers for the infra-* packages (ADR 0171, ADR 0352); each pinned to a release at least two weeks old.
   infra:
     "@pulumi/aws": 7.50.0
