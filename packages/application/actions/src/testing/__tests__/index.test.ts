@@ -28,6 +28,7 @@ describe("@stackra/actions/testing", () => {
       "ACTIONS_TESTING_PLUGIN",
       "ApproverRefusedError",
       "MemoryAccessControlDriver",
+      "MemoryStepUpCheckDriver",
       "MemoryActorStatusCheckDriver",
       "MemoryApprovalBindingStoreDriver",
       "MemoryApprovalGateDriver",
