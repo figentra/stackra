@@ -34,6 +34,9 @@ The Content Security Policy baseline, its configuration, nonces and the React no
   clickjacking risk. An unmatched path, or a `"request"` path with nothing resolved, stays `'none'`. While `reportOnly`,
   `X-Frame-Options: DENY` stays everywhere (a report-only `frame-ancestors` protects nothing). `frameAncestorOrigin` is
   exported so a host refuses a stored framer at write time with the header's own rule.
+- Third-party scripts (STA-2562 audit item c): `thirdPartyScripts` maps an exact https origin to a `ConsentCategory`
+  code. `necessary` always loads (a payment SDK); any other loads only when `CspAdditions.consent` grants it, so without
+  consent only `necessary` scripts run. No wildcard, scheme or host pattern; an unlisted script never loads.
 - A nonce is minted once per request by `createNonce` (Web Crypto) and never cached, reused or derived.
 - `useNonce` returns `undefined` outside a provider on purpose: the browser has no nonce after hydration.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

@@ -4,13 +4,16 @@
  *          request's nonce on `script-src` and `style-src`, the runtime's and the configuration's origins on
  *          `connect-src`, the configuration's `frame-src` and `img-src` additions, and the path's `frame-ancestors`.
  * Boundary: additions only, each checked by `cspSource`; a fixed directive never changes, and a source appears once
- *           per directive. `frame-ancestors` is `'none'` unless the path's entry allows framers (`frameAncestors`). Pure: no clock, environment or request read. The header name is `cspHeaderName`'s.
+ *           per directive. `frame-ancestors` is `'none'` unless the path's entry allows framers (`frameAncestors`).
+ *           `script-src` adds only the configured third-party origins the viewer's consent allows (`allowedScripts`).
+ *           Pure: no clock, environment or request read. The header name is `cspHeaderName`'s.
  * Runtime: isomorphic
  * Governing contract: ADR 0237 (edge headers); ADR 0251 (desktop hardening).
  */
 import type { CspConfig } from "#config/csp.config";
 import { CSP_BASELINE } from "#core/constants/csp-baseline.constant";
 import { CSP_NONCE_PATTERN } from "#core/constants/csp-nonce-pattern.constant";
+import { allowedScripts } from "#core/functions/allowed-scripts.function";
 import { cspSource } from "#core/functions/csp-source.function";
 import { frameAncestors } from "#core/functions/frame-ancestors.function";
 import type { CspAdditions } from "#core/types/csp-additions.type";
@@ -33,7 +36,7 @@ export function contentSecurityPolicy(config: CspConfig, additions: CspAdditions
   }
   const nonceSources = nonce === undefined ? [] : [`'nonce-${nonce}'`];
   const added: Partial<Record<keyof typeof CSP_BASELINE, readonly string[]>> = {
-    "script-src": nonceSources,
+    "script-src": [...nonceSources, ...allowedScripts(config, additions.consent)],
     "style-src": nonceSources,
     "connect-src": [...(additions.connect ?? []), ...config.extraConnectSrc].map(cspSource),
     "frame-src": config.extraFrameSrc.map(cspSource),
