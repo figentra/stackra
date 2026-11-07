@@ -247,8 +247,19 @@
       // Pages are MDX; gen reads stackra.config.ts and src/config/docs.config.ts; scripts/ holds the system-map writer.
       "entry": ["stackra.config.ts", "src/config/docs.config.ts", "scripts/**/*.ts"],
       "project": ["src/**/*.ts", "scripts/**/*.ts"],
-      // `stackra dev` and `stackra lint` run the member's own `mint` (cli resolve-tool), so no script names it.
-      "ignoreDependencies": ["mint"],
+      // The Fumadocs site gen writes into .stackra/site imports these, and `stackra build` runs react-router and
+      // wrangler from them (cli resolve-tool); no authored file names them (ADR 0514, STA-2026).
+      "ignoreDependencies": [
+        "fumadocs-core",
+        "fumadocs-mdx",
+        "fumadocs-ui",
+        "react-dom",
+        "react-router",
+        "@react-router/dev",
+        "@tailwindcss/vite",
+        "tailwindcss",
+        "wrangler",
+      ],
     },
   },
   // `mint`: Swift's Mint runner, a fallback in lefthook's generated hooks.
