@@ -20,20 +20,8 @@
     {
       "port": "SecretStore",
       "key": "config.SecretStore",
-      "candidates": ["infisical", "memory", "aws_secrets_manager"],
+      "candidates": ["memory", "aws_secrets_manager"],
       "classes": {
-        "infisical": {
-          "class": "InfisicalSecretStoreDriver",
-          "from": "@stackra/config",
-          "deps": [
-            {
-              "class": {
-                "name": "InfisicalConfig",
-                "from": "@stackra/config"
-              }
-            }
-          ]
-        },
         "memory": {
           "class": "MemorySecretStoreDriver",
           "from": "@stackra/config"
@@ -65,32 +53,8 @@
       "key": "config.aws_secrets_manager",
       "class": "AwsSecretsManagerConfig",
       "from": "@stackra/config"
-    },
-    {
-      "key": "config.infisical",
-      "class": "InfisicalConfig",
-      "from": "@stackra/config"
     }
   ],
-  "env": [
-    {
-      "name": "INFISICAL_CLIENT_ID",
-      "kind": "secret",
-      "type": "string",
-      "required": false,
-      "config": "config.infisical",
-      "class": "InfisicalConfig",
-      "field": "clientId"
-    },
-    {
-      "name": "INFISICAL_CLIENT_SECRET",
-      "kind": "secret",
-      "type": "string",
-      "required": false,
-      "config": "config.infisical",
-      "class": "InfisicalConfig",
-      "field": "clientSecret"
-    }
-  ],
+  "env": [],
   "schemas": {}
 }

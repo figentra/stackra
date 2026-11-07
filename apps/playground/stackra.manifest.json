@@ -1835,20 +1835,8 @@
     {
       "port": "SecretStore",
       "key": "config.SecretStore",
-      "candidates": ["infisical", "memory", "aws_secrets_manager"],
+      "candidates": ["memory", "aws_secrets_manager"],
       "classes": {
-        "infisical": {
-          "class": "InfisicalSecretStoreDriver",
-          "from": "@stackra/config",
-          "deps": [
-            {
-              "class": {
-                "name": "InfisicalConfig",
-                "from": "@stackra/config"
-              }
-            }
-          ]
-        },
         "memory": {
           "class": "MemorySecretStoreDriver",
           "from": "@stackra/config"

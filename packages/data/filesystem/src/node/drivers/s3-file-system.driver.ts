@@ -6,7 +6,7 @@
  *          is a multipart upload in 8 MiB parts and a streamed read is the GET body as a web stream, so a large export or
  *          import never sits in memory whole.
  * Boundary: holds no credential: the AWS SDK reads its default chain (`AWS_ACCESS_KEY_ID` and
- *           `AWS_SECRET_ACCESS_KEY`, which runway syncs from Infisical, or an instance role). Every key passes
+ *           `AWS_SECRET_ACCESS_KEY`, which runway syncs from SOPS, or an instance role). Every key passes
  *           `normalizePath`. A missing object is a `FileNotFoundError`; any other store error is rethrown as it is. Every
  *           part but the last is exactly `PART_SIZE` (R2 needs equal parts; S3 needs at least 5 MiB), a stream shorter
  *           than one part is one PUT, and a failed upload is aborted so no part is left billed or visible. Uploads are
