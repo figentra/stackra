@@ -55,6 +55,5 @@
       "from": "@stackra/config"
     }
   ],
-  "env": [],
   "schemas": {}
 }

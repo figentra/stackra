@@ -546,7 +546,7 @@
     },
     "actions.Idempotency": {
       "type": "string",
-      "enum": ["optional", "required", "derived"]
+      "enum": ["optional", "required", "derived", "never"]
     },
     "actions.OfflineMode": {
       "type": "string",
