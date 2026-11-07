@@ -1,6 +1,6 @@
 ---
 title: "0533 — The approvals bot: a deterministic deployment protection rule with an owner-only floor"
-description: "Accepted · 2026-11-07"
+description: "Accepted · 2026-11-07, amended 2026-11-07"
 ---
 
 ## Context
@@ -91,6 +91,14 @@ Planned:
 - the bot itself, which fails closed.
 
 Until the bot is live, the existing required reviewers enforce everything.
+
+## Amendment 2026-11-07: link buttons
+
+Decision 4 checks a Slack signature. The `direct` driver posts through a Slack incoming webhook, whose buttons are
+plain links, so no Slack request reaches the bot to sign. With an incoming webhook, a link is gated by the GitHub
+sign-in (the owner's user id checked) plus the signed, single-use, 24-hour token bound to one item and one decision.
+Slack request signing becomes the upgrade path if a Slack app with interactive buttons is installed later (leader,
+2026-11-07; infra#58).
 
 ## Supersedes and sources
 
