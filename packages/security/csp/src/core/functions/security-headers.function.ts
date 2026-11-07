@@ -6,7 +6,8 @@
  *          for browsers that ignore `frame-ancestors`, on every path that allows no framer.
  * Boundary: pure: reads the configuration and the request's path and resolved framers only. On by default (owner
  *           round 3 #34): a host tunes HSTS, the referrer policy and the allowed features, and can never drop
- *           `nosniff` or the opener policy; the frame refusal goes only where `frameAncestors` allows a framer.
+ *           `nosniff` or the opener policy; the frame refusal goes only where `frameAncestors` allows a framer
+ *           and the policy enforces (a report-only `frame-ancestors` protects nothing).
  *           `preload` is printed only with `includeSubDomains` and at least a year of max-age, as the preload list
  *           requires. The policy header itself is `contentSecurityPolicy`'s.
  * Runtime: isomorphic
@@ -41,6 +42,7 @@ export function securityHeaders(
     | "referrerPolicy"
     | "permissionsAllow"
     | "frameAncestors"
+    | "reportOnly"
   >,
   additions: Pick<CspAdditions, "path" | "frameAncestors"> = {},
 ): Readonly<Record<string, string>> {
@@ -63,7 +65,9 @@ export function securityHeaders(
     "Permissions-Policy": permissions.join(", "),
     "Cross-Origin-Opener-Policy": "same-origin",
   };
-  // X-Frame-Options cannot name a framer, so a path that allows one leaves framing to frame-ancestors
-  if (frameAncestors(config, additions)[0] === "'none'") headers["X-Frame-Options"] = "DENY";
+  // X-Frame-Options cannot name a framer, so a path that allows one leaves framing to an enforced frame-ancestors;
+  // a report-only policy enforces nothing, so DENY stays until the policy enforces
+  const framed = frameAncestors(config, additions)[0] !== "'none'";
+  if (config.reportOnly || !framed) headers["X-Frame-Options"] = "DENY";
   return Object.freeze(headers);
 }

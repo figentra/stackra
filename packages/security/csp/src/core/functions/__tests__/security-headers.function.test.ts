@@ -74,4 +74,22 @@ describe("securityHeaders", () => {
     expect(securityHeaders(config, { path: "/settings" })["X-Frame-Options"]).toBe("DENY");
     expect(securityHeaders(config)["X-Frame-Options"]).toBe("DENY");
   });
+
+  it("keeps X-Frame-Options on a framed path while the policy is report-only", () => {
+    const config = buildConfig(CspConfig, {
+      values: {
+        reportOnly: true,
+        frameAncestors: { "/preview": ["https://console.pay.example"], "/c/*": "request" },
+      },
+    });
+    expect(securityHeaders(config, { path: "/preview" })["X-Frame-Options"]).toBe("DENY");
+    expect(
+      securityHeaders(config, { path: "/c/cs_01", frameAncestors: ["https://shop.example"] })[
+        "X-Frame-Options"
+      ],
+    ).toBe("DENY");
+    expect(() => securityHeaders(config, { path: "/c/cs_01", frameAncestors: ["*"] })).toThrow(
+      TypeError,
+    );
+  });
 });
