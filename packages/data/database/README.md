@@ -663,7 +663,7 @@ schema.create("parties", (t) => {
 
 ## Health check
 
-`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds `health`, `timeouts` and `pool`; the connection URL is the Encore database's, handed over by the generated boot. Bind it and
+`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. With `health.rowSecurity` (off by default; Runway turns it on for deployed environments) it also fails readiness, whatever `critical` says, when the connected role is or may become a superuser or BYPASSRLS role, or may become the owner of a table with row security, so a deploy whose runtime could bypass `FORCE ROW LEVEL SECURITY` never goes ready. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds `health`, `timeouts` and `pool`; the connection URL is the Encore database's, handed over by the generated boot. Bind it and
 `@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
 
 | Field      | Default | Meaning                                                                   |
