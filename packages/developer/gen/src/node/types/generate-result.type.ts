@@ -25,8 +25,8 @@ export interface GenerateResult {
   readonly changed: readonly string[];
 
   /**
-   * What gen notes without refusing, such as `client_event_unsubscribed` (STA-1910); absent when none. A run with
-   * warnings still writes.
+   * What gen notes without refusing (`severity: "warning"`), such as `client_event_unsubscribed` (STA-1910) and
+   * `action_without_workflow` (STA-340); absent when none. A run with warnings still writes.
    */
   readonly warnings?: readonly GenError[];
 }
