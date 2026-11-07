@@ -338,7 +338,7 @@ class RegisterEndpointAction extends Action({
 }) {
   registered = 0;
 
-  async handle(): Promise<RegisterEndpointOutput> {
+  async handle(): Promise<{ endpointId: string; signingSecret: string }> {
     this.registered += 1;
     return { endpointId: `whe_${this.registered}`, signingSecret: `whsec_${this.registered}` };
   }
