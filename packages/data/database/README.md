@@ -552,7 +552,7 @@ await database.transaction(() => seats.book(showId, seat), {
 
 | Option        | Effect                                                                                             | Inside a running transaction |
 | ------------- | -------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `requiresNew` | a transaction of its own that commits even if the caller's rolls back                              | starts one                   |
+| `requiresNew` | a transaction of its own, in the caller's scope and tenant, that commits even if the caller's rolls back | starts one |
 | `timeout`     | `set local statement_timeout`                                                                      | yes, until the outermost end |
 | `lockTimeout` | `set local lock_timeout`: a lock wait longer than this fails with `55P03`                          | yes, until the outermost end |
 | `isolation`   | `Isolation.ReadCommitted` (the default), `RepeatableRead` or `Serializable`                        | refused (`TypeError`)        |
