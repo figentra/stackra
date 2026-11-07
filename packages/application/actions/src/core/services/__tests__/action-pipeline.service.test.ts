@@ -1013,6 +1013,25 @@ describe(ActionPipeline, () => {
     expect(trail.entries[0]?.at).toEqual(NOW);
   });
 
+  it("gives an agent with no tenant of its own its human's tenant, and a platform agent none", async () => {
+    const { pipeline } = setup();
+    const background: Actor = { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: customer };
+    const platformAgent: Actor = {
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { kind: ActorKind.User, id: "usr_2", realm: Realm.Staff },
+    };
+    await expect(pipeline.execute(InspectAction, {}, { actor: background })).resolves.toMatchObject(
+      {
+        scopeId: "ten_1",
+      },
+    );
+    const output = (await pipeline.execute(InspectAction, {}, { actor: platformAgent })) as {
+      scopeId?: string;
+    };
+    expect(output.scopeId).toBeUndefined();
+  });
+
   it("builds the context: frozen clock, request facts, key, tenant, scope, period; logs a failed after-commit", async () => {
     const { pipeline, lines, access } = setup();
     const output = await pipeline.execute(

@@ -68,6 +68,7 @@
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
+  actingScopeId,
   ActorKind,
   type ApiArea,
   ApprovalSettingsSource,
@@ -387,6 +388,8 @@ export class ActionPipeline {
     const registration = ACTION_REGISTRY.get(type);
     const at = this.optional(Clock)?.now() ?? new Date();
     const { actor } = request;
+    // an agent with no tenant of its own acts in its human's (ADR 0360)
+    const scopeId = actingScopeId(actor);
     const descriptor: CallDescriptor = Object.freeze({
       callId: request.callId ?? globalThis.crypto.randomUUID(),
       type,
@@ -398,7 +401,7 @@ export class ActionPipeline {
         ? {}
         : { effects: Object.freeze([...(registration?.effects ?? options.effects ?? [])]) }),
       actor,
-      ...(actor.scopeId === undefined ? {} : { scopeId: actor.scopeId }),
+      ...(scopeId === undefined ? {} : { scopeId }),
       ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
       ...(request.sandbox === true ? { sandbox: true as const } : {}),
@@ -556,7 +559,7 @@ export class ActionPipeline {
     );
     const execute =
       declared === undefined ? ApprovalExecution.OnResubmit : ApprovalExecution.OnGrant;
-    const scopeId = descriptor.scopeId ?? descriptor.actor.scopeId;
+    const scopeId = descriptor.scopeId ?? actingScopeId(descriptor.actor);
     if (scopeId === undefined) throw ForbiddenError.create();
     call.state.parking = {
       binding: {
