@@ -22,7 +22,13 @@ non-public request.
 4. **Sign and forward.** The Worker sets the host's identity headers (no tenant header on a platform host), a new
    request id and the timestamp, and the HMAC of `signEdgeRequest` over them, the method, the path with query and the
    SHA-256 of the body, under `EDGE_SIGNING_SECRET`. It forwards to `EDGE_ORIGIN` with the same path, query, method and
-   body. The body is buffered once to hash it.
+5. **Security headers.** Every answer, the edge's own 404 and 401 included, leaves with `@stackra/csp`'s
+   `securityHeaders` and, unless the origin sent its own policy (only it knows its nonce), `contentSecurityPolicy` for
+   the host's surface (`EDGE_CSP["<product>.<surface>"]`, else the baseline). On a path whose `frameAncestors` entry is
+   `"request"` (Pay's `/c/*`), the edge asks the owning product, signed like a forwarded request,
+   `GET /.well-known/stackra/frame-ancestors?path=<path>` for `{ "origins": [...] }`, keeps the answer for
+   `EDGE_FRAME_ANCESTORS_SECONDS`, and fails closed: a timeout, a non-200, a bad body or an invalid origin is
+   `frame-ancestors 'none'` with `X-Frame-Options: DENY`.
 
 ## Settings
 
@@ -35,6 +41,8 @@ non-public request.
 | `EDGE_OIDC_AUDIENCE`        | the audience a token must name (the ZITADEL project id)                                |
 | `EDGE_OIDC_KEYS_SECONDS`    | key-set cache time (at least 60)                                                       |
 | `EDGE_TOKEN_LEEWAY_SECONDS` | clock skew on `exp` and `nbf`                                                          |
+| `EDGE_CSP` | JSON: `{ "<product>.<surface>": <CspConfig values> }`; a surface not listed gets the baseline |
+| `EDGE_FRAME_ANCESTORS_SECONDS` | how long a product's framers answer for one path is kept |
 
 `readSettings` throws on a missing or malformed var, so a misconfigured Worker fails every request. ZITADEL issues
 opaque access tokens unless the app's token type is set to JWT; set it to JWT for the edge to verify them.
@@ -42,7 +50,7 @@ opaque access tokens unless the app's token type is set to JWT; set it to JWT fo
 ## Not yet
 
 The host map is a var, an interim for ADR 0437's KV `host:<hostname>` rows written by the OS edge projector. Host
-status (suspended, setup), well-known files, the shell, landing pages, CSP and rate limits (decision 2 steps 2, 3, 5 to
+status (suspended, setup), well-known files, the shell, landing pages and rate limits (decision 2 steps 2, 3, 5 to
 7), per-tenant regional origins and the locked origin path (decision 5) are not here. The ADR places the production
 edge Worker in figentra/os; this one is the core reference and the signer for products that run without OS.
 

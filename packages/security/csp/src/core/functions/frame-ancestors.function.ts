@@ -11,6 +11,7 @@
  */
 import type { CspConfig } from "#config/csp.config";
 import { frameAncestorOrigin } from "#core/functions/frame-ancestor-origin.function";
+import { frameAncestorsEntry } from "#core/functions/frame-ancestors-entry.function";
 import type { CspAdditions } from "#core/types/csp-additions.type";
 
 /**
@@ -25,20 +26,7 @@ export function frameAncestors(
   additions: Pick<CspAdditions, "path" | "frameAncestors"> = {},
 ): readonly string[] {
   const { path, frameAncestors: resolved } = additions;
-  let entry =
-    path !== undefined && Object.hasOwn(config.frameAncestors, path)
-      ? config.frameAncestors[path]
-      : undefined;
-  if (path !== undefined && entry === undefined) {
-    let longest = -1;
-    for (const [key, value] of Object.entries(config.frameAncestors)) {
-      const prefix = key.slice(0, -1);
-      if (key.endsWith("/*") && path.startsWith(prefix) && prefix.length > longest) {
-        longest = prefix.length;
-        entry = value;
-      }
-    }
-  }
+  const entry = path === undefined ? undefined : frameAncestorsEntry(config, path);
   if (resolved !== undefined && entry !== "request") {
     throw new TypeError(`the path "${path ?? ""}" takes no per-request frame ancestors`);
   }
