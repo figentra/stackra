@@ -3,10 +3,10 @@
  * Purpose: `EncoreCloudProviderDriver`, the `encore-cloud` driver of the `RunwayProvider` port: an Encore Cloud
  *          environment deploys the commit its branch points to, so apply pushes to the branch on the app's
  *          `encore://<app>` remote, rollback force-pushes an earlier deploy, current reads the branch, and verify reads
- *          the branch and then the deployment's `GET <origin>/readyz`. The generated app is gitignored, so when the
+ *          the branch and then polls the deployment's `GET <origin>/readyz` while Encore builds. The generated app is gitignored, so when the
  *          working tree holds one, apply pushes its deploy commit (`encoreDeployTree`: the source commit plus the
  *          generated app) and records that commit as the deploy's reference; without one it pushes the commit as is.
- * Boundary: runs `git` through the given `CommandRunner` and one `GET` through `fetch`; the push credentials are the
+ * Boundary: runs `git` through the given `CommandRunner` and `GET`s through `fetch`; the push credentials are the
  *           job's Encore login. The branch and origin are runway data: `encore.branch` / `encore.origin` of the
  *           environment, `encore.regions.<region>.*` for one region, or a dedicated deployment's own `encore` block.
  *           Without an origin verify checks the branch only. `/readyz` is @stackra/app's readiness route (STA-1379):
@@ -45,6 +45,12 @@ const pushedOf = (record: DeployRecord): string =>
 /** The readiness route of every Stackra server app (@stackra/app `answerProbe`). */
 const READINESS_PATH = "/readyz";
 
+/** How long verify waits for `/readyz` while Encore builds, unless `encore.readyTimeoutMinutes` says otherwise. */
+const READY_TIMEOUT_MINUTES = 15;
+
+/** The first wait between `/readyz` polls; each wait doubles, up to the last. */
+const READY_POLL_MS = { first: 5000, last: 60_000 };
+
 /** `block[key]` when `block` is an object. */
 function fieldOf(block: unknown, key: string): unknown {
   return typeof block === "object" && block !== null
@@ -70,6 +76,15 @@ export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
 
   /** The HTTP client verify probes `/readyz` with; a test replaces it. */
   fetch: typeof globalThis.fetch = (input, init) => globalThis.fetch(input, init);
+
+  /** Waits between `/readyz` polls; a test replaces it. */
+  sleep: (ms: number) => Promise<void> = (ms) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+
+  /** The clock the poll's timeout reads; a test replaces it. */
+  now: () => number = () => Date.now();
 
   private readonly remote: string;
 
@@ -122,7 +137,11 @@ export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
     return { target: target.id, sha, reference: tree.sha };
   }
 
-  /** Up when the branch holds the record's commit and, when the target names an origin, `/readyz` answers 200. */
+  /**
+   * Up when the branch holds the record's commit and, when the target names an origin, `/readyz` answers 2xx. Encore
+   * Cloud builds after the push, so until then `/readyz` answers 404 ("application not found"), a 5xx or nothing:
+   * verify polls it with backoff for `encore.readyTimeoutMinutes` (15 by default) and reports the last answer.
+   */
   override async verify(target: DeployTarget, record: DeployRecord): Promise<HealthReport> {
     const now = await this.current(target);
     const pushed = pushedOf(record);
@@ -134,17 +153,15 @@ export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
     const origin = this.blockField(target, "origin");
     if (typeof origin !== "string" || origin === "") return { status: HealthStatus.Up };
     const url = `${origin.replace(/\/+$/, "")}${READINESS_PATH}`;
-    try {
-      const response = await this.fetch(url, { method: "GET" });
-      return response.ok
-        ? { status: HealthStatus.Up }
-        : { status: HealthStatus.Down, detail: `${url} answered ${response.status}` };
-    } catch (error) {
-      // A failing check reports down, it never throws (RunwayProvider).
-      return {
-        status: HealthStatus.Down,
-        detail: `${url} failed: ${error instanceof Error ? error.name : "error"}`,
-      };
+    const minutes = this.blockField(target, "readyTimeoutMinutes");
+    const deadline =
+      this.now() + (typeof minutes === "number" ? minutes : READY_TIMEOUT_MINUTES) * 60_000;
+    // shortcut: polls the app, not Encore's build status; read the deploy from Encore's API if it gains a public one.
+    for (let wait = READY_POLL_MS.first; ; wait = Math.min(wait * 2, READY_POLL_MS.last)) {
+      const detail = await this.probe(url);
+      if (detail === undefined) return { status: HealthStatus.Up };
+      if (this.now() + wait > deadline) return { status: HealthStatus.Down, detail };
+      await this.sleep(wait);
     }
   }
 
@@ -183,6 +200,16 @@ export class EncoreCloudProviderDriver extends Driver(RunwayProvider) {
         message: "Name the branch this Encore Cloud environment deploys from",
       },
     ]);
+  }
+
+  /** One `/readyz` read: `undefined` when it answers 2xx, else what went wrong. Never throws (RunwayProvider). */
+  private async probe(url: string): Promise<string | undefined> {
+    try {
+      const response = await this.fetch(url, { method: "GET" });
+      return response.ok ? undefined : `${url} answered ${response.status}`;
+    } catch (error) {
+      return `${url} failed: ${error instanceof Error ? error.name : "error"}`;
+    }
   }
 
   /** `key` of the target's region `encore` block, else of its `encore` block. */
