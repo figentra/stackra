@@ -165,6 +165,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runway/secrets-decrypt",
             "runway/env-check",
             "runway/env-orphans",
+            "runway/evidence",
           ],
         },
       ],

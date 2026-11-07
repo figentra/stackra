@@ -61,6 +61,7 @@ row 0 "status --help" status --help
 row 0 "drift --help" drift --help
 row 1 "secrets decrypt refused without GITHUB_ENV" secrets decrypt --scope ci/deploy
 row 1 "env orphans refused outside CI" env orphans production
+DIR="$scratch/repo" row 0 "evidence production" evidence production --target cloudflare-workers --sha "$HEAD_SHA"
 row 2 "unknown command" no-such-command
 
 echo "MATRIX_RC=$failed"
