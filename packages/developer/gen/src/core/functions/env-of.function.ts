@@ -5,10 +5,10 @@
  *          `@Secret` fields), with its kind (`secret`, `public` for a `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` name,
  *          `config` otherwise), its type and rules, whether it is required, the per-environment refused prefixes and
  *          environments of a secret, and the config key and class that declare it. A service also takes the rows of
- *          every hosted package and an app only their `public` rows, marked `from`; a worker takes none. Every row of a
- *          service, app or worker gets its Infisical path (`home: "/runtime/<member>"`); runway resolves the project
- *          (`<project>-runtime`, `-runtime-prod`). A producer with a runway `events` block also lists its signing
- *          key's secret name, with the environments that name it (ADR 0511 decision 16).
+ *          every hosted package and an app only their `public` rows, marked `from`; a worker takes none. A row names
+ *          no store location: runway reads a product's secrets from its sops scope `products/<project>/<env>` (ADR
+ *          0525). A producer with a runway `events` block also lists its signing key's secret name, with the
+ *          environments that name it (ADR 0511 decision 16).
  * Boundary: pure; names and rules only, never a default or a value, so ADR 0305 rule 34 holds. A host override of a
  *           package config adds no row (the package's row stands); an integration's or connection's `@Secret` is a
  *           tenant credential, not an environment variable, and adds none. Sorted by name, one row per name and
@@ -122,7 +122,6 @@ export function envOf(ir: MemberIR): Entry[] {
         if (ir.layout === "service" || row["kind"] === "public")
           rows.push({ ...row, from: row["from"] ?? dependency.package });
     }
-    for (const row of rows) row["home"] = `/runtime/${ir.member}`;
   }
   const seen = new Set<string>();
   return (

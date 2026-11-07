@@ -193,12 +193,8 @@
     {
       "port": "VaultWriter",
       "key": "runway.VaultWriter",
-      "candidates": ["infisical", "memory"],
+      "candidates": ["memory"],
       "classes": {
-        "infisical": {
-          "class": "InfisicalVaultWriterDriver",
-          "from": "@stackra/runway/node"
-        },
         "memory": {
           "class": "MemoryVaultWriterDriver",
           "from": "@stackra/runway/node"
