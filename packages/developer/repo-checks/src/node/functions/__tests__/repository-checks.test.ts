@@ -234,9 +234,9 @@ test("missing files, PII, license drift, manifest hygiene", () => {
 
 test("an @figentra-oss member keeps its own open-source LICENSE in a product repository", () => {
   const widget = { ...filesOk, licenseText: "MIT", rootLicense: "Proprietary", stackra: false };
-  const named = (name: string) => checkMemberFiles({ ...widget, pkg: { ...filesOk.pkg, name } });
-  assert.deepEqual(named("@figentra-oss/pay-widget"), []);
-  assert.deepEqual(named("@figentra/pay-sdk"), ["LICENSE differs from the root LICENSE"]);
+  const check = (name: string) => checkMemberFiles({ ...widget, pkg: { ...filesOk.pkg, name } });
+  assert.deepEqual(check("@figentra-oss/pay-widget"), []);
+  assert.deepEqual(check("@figentra/pay-sdk"), ["LICENSE differs from the root LICENSE"]);
 });
 
 test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {
