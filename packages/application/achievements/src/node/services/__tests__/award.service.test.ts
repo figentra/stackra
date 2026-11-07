@@ -4,11 +4,11 @@
  *          only the token's hash, and a refused grant writes nothing; `consider` grants each matched kind once (or once
  *          per period) and skips an unmatched kind or one with no published revision; a revoke records
  *          `AwardRevoked`, deletes the verification row and refuses a second revoke; a verify token resolves only its
- *          own award, in its scope, and nothing once revoked, unknown or malformed; a short code resolves however it is
- *          typed and only its hash is indexed; a lost race on the unique live-period index is refused as
- *          `period_taken`; a certificate carries the verify URL, its QR code and the short code, is rendered through
- *          @stackra/documents, and is refused for a revoked award; `awardsOf` reads the live awards.
- * Boundary: test only; the kind and rule set services, the database's scope session and the clock are in-test fakes, a
+ *          own award, in its scope's isolation as a system actor, and nothing once revoked, unknown or malformed; a
+ *          short code resolves however it is typed and only its hash is indexed; a lost race on the unique live-period
+ *          index is refused as `period_taken`; a certificate carries the verify URL, its QR code and the short code, is
+ *          rendered through @stackra/documents, and is refused for a revoked award; `awardsOf` reads the live awards.
+ * Boundary: test only; the kind and rule set services, the call isolation and the clock are in-test fakes, a
  *           fake `Database.current()` hands out an in-memory entity manager, and @stackra/rules evaluates for real.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0368 (decisions 2 to 7); ADR 0432 (decisions 2 to 4); OS ADR 0058
@@ -16,7 +16,9 @@
  */
 import { createHash } from "node:crypto";
 
-import type { Clock, PublicId, ScopeRef } from "@stackra/contracts";
+import type { CallIsolation } from "@stackra/actions/contracts";
+import { ActorKind } from "@stackra/contracts";
+import type { Actor, Clock, PublicId, ScopeRef } from "@stackra/contracts";
 import { Database, registerModelPartners, UniqueViolation } from "@stackra/database";
 import { DocumentFormat, type DocumentTemplate, PRINT_DOCUMENT_KIND } from "@stackra/documents";
 import { NotFoundError } from "@stackra/errors";
@@ -139,20 +141,27 @@ function setup(kinds: readonly AwardKind[], options: { readonly published?: bool
       return { number: 4, condition: TOP_SELLER, publishedAt: AT };
     }),
   };
-  const scopes: ScopeRef[] = [];
-  const database = {
-    withScope: vi.fn(async (scope: ScopeRef, work: () => Promise<unknown>) => {
-      scopes.push(scope);
-      return work();
-    }),
+  const runs: { actor: Actor; scope: unknown; readOnly: boolean }[] = [];
+  const isolation = {
+    run: vi.fn(
+      async (
+        actor: Actor,
+        scope: unknown,
+        work: () => Promise<unknown>,
+        { readOnly }: { readOnly: boolean },
+      ) => {
+        runs.push({ actor, scope, readOnly });
+        return work();
+      },
+    ),
   };
   const service = new AwardService(
     kindService as unknown as AwardKindService,
     ruleSets as unknown as RuleSetService,
-    database as unknown as Database,
+    isolation as unknown as CallIsolation,
     { now: () => AT } as unknown as Clock,
   );
-  return { service, awards, verifications, em, scopes };
+  return { service, awards, verifications, em, runs };
 }
 
 afterEach(() => {
@@ -267,9 +276,9 @@ describe(AwardService, () => {
     await expect(service.revoke(award.id, "again")).rejects.toBeInstanceOf(AwardRevokedError);
   });
 
-  it("resolves a verify token to its own award only, in the award's scope", async () => {
+  it("resolves a verify token to its own award only, in the award's scope and its tenant", async () => {
     const kind = kindOf();
-    const { service, scopes } = setup([kind]);
+    const { service, runs } = setup([kind]);
     const first = await service.grant(ACME, { kindId: kind.id, recipient: MEMBER }, "usr_1");
     const second = await service.grant(
       ACME,
@@ -286,7 +295,13 @@ describe(AwardService, () => {
       grantedAt: AT,
     });
     await expect(service.verify(second.verifyToken)).resolves.toMatchObject({ awardId: second.id });
-    expect(scopes).toEqual([ACME, ACME]);
+    // a system actor that claims no tenant, so the isolation takes the tenant the award's scope resolves to
+    const read = {
+      actor: { kind: ActorKind.System, id: "sys_award_verify" },
+      scope: ACME,
+      readOnly: true,
+    };
+    expect(runs).toEqual([read, read]);
     await expect(service.verify("A".repeat(43))).resolves.toBeNull();
     await expect(service.verify("not a token")).resolves.toBeNull();
   });

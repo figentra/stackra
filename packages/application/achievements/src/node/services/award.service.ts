@@ -9,10 +9,11 @@
  *           token and of the short code only) and flushes, so the outbox writes the event in the same transaction; two
  *           concurrent grants for one period meet the unique live-period index, and the loser is refused as
  *           `period_taken` (its transaction is aborted by Postgres, so the caller's unit of work rolls back); a revoke records `AwardRevoked` and
- *           deletes that row, so the token stops resolving. `verify` reads the unscoped index, then opens the award's
- *           scope session (`Database.withScope`) to read it: call it from its own public action, never inside another
- *           action's transaction (the settings would last for the rest of it). Criteria are evaluated only through
- *           `evaluate` of @stackra/rules with the clock's time; the consumer computes the facts (ADR 0331 decision 9).
+ *           deletes that row, so the token stops resolving. `verify` reads the unscoped index, then reads the award in
+ *           `CallIsolation` as the verify's system actor in the award's scope, so the session is that scope and the
+ *           tenant it resolves to (an anonymous caller has none): call it from its own public action. Criteria are
+ *           evaluated only through `evaluate` of @stackra/rules with the clock's time; the consumer computes the facts
+ *           (ADR 0331 decision 9).
  *           The verify URL's base is the consumer's setting, never a literal here.
  * Runtime: node
  * Governing contract: ADR 0368 (decisions 2 to 7); ADR 0432 (decisions 1 to 4); OS ADR 0058 (decision 1 and
@@ -22,8 +23,10 @@
 import { evaluate, type RuleFacts } from "@stackra/rules";
 import { createHash, randomBytes } from "node:crypto";
 
-import type { Clock, PublicId, ScopeRef } from "@stackra/contracts";
-import { CrudService, type Database, UniqueViolation } from "@stackra/database";
+import type { CallIsolation } from "@stackra/actions/contracts";
+import { ActorKind } from "@stackra/contracts";
+import type { Actor, Clock, PublicId, ScopeRef } from "@stackra/contracts";
+import { CrudService, UniqueViolation } from "@stackra/database";
 import {
   type DocumentFormat,
   type DocumentTemplate,
@@ -59,6 +62,12 @@ import type { AwardKindService } from "#node/services/award-kind.service";
 /** A verify token as `issue` writes it: 32 random bytes in base64url. */
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 
+/** The verify's reader: a system actor whose tenant `CallIsolation` resolves from the award's scope. */
+const VERIFIER: Actor = Object.freeze({
+  kind: ActorKind.System,
+  id: "sys_award_verify" as PublicId,
+});
+
 /** The index key of a verify token. */
 const hashOf = (token: string): string => createHash("sha256").update(token).digest("hex");
 
@@ -78,8 +87,8 @@ export class AwardService extends CrudService<Award> {
   /** Reads the kinds' published criteria. */
   private readonly ruleSets: RuleSetService;
 
-  /** Opens an award's scope session for a verify. */
-  private readonly database: Database;
+  /** Opens an award's isolation (its scope and tenant) for a verify. */
+  private readonly isolation: CallIsolation;
 
   /** The current time of an evaluation and a revoke. */
   private readonly clock: Clock;
@@ -87,14 +96,19 @@ export class AwardService extends CrudService<Award> {
   /**
    * @param kinds - the award kind service.
    * @param ruleSets - the rule set service of @stackra/rules.
-   * @param database - the connected database.
+   * @param isolation - the isolation port.
    * @param clock - the clock.
    */
-  constructor(kinds: AwardKindService, ruleSets: RuleSetService, database: Database, clock: Clock) {
+  constructor(
+    kinds: AwardKindService,
+    ruleSets: RuleSetService,
+    isolation: CallIsolation,
+    clock: Clock,
+  ) {
     super();
     this.kinds = kinds;
     this.ruleSets = ruleSets;
-    this.database = database;
+    this.isolation = isolation;
     this.clock = clock;
   }
 
@@ -354,20 +368,26 @@ export class AwardService extends CrudService<Award> {
   ): Promise<VerifiedAward | null> {
     const index = await this.em().findOne(AwardVerification, where);
     if (index === null) return null;
-    return this.database.withScope({ id: index.scopeId, path: index.scopePath }, async () => {
-      const award = await this.findOne({ id: index.awardId, revokedAt: null });
-      if (award === null || !owns(award)) return null;
-      const kind = await this.kinds.findOneOrFail({ id: award.kindId });
-      return {
-        awardId: award.id,
-        kindId: kind.id,
-        kindName: kind.name,
-        level: award.level,
-        period: award.period,
-        recipient: { model: award.recipientModel, id: award.recipientId },
-        grantedAt: award.createdAt,
-      };
-    });
+    const scope = { id: index.scopeId, path: index.scopePath };
+    return this.isolation.run(
+      VERIFIER,
+      scope,
+      async () => {
+        const award = await this.findOne({ id: index.awardId, revokedAt: null });
+        if (award === null || !owns(award)) return null;
+        const kind = await this.kinds.findOneOrFail({ id: award.kindId });
+        return {
+          awardId: award.id,
+          kindId: kind.id,
+          kindName: kind.name,
+          level: award.level,
+          period: award.period,
+          recipient: { model: award.recipientModel, id: award.recipientId },
+          grantedAt: award.createdAt,
+        };
+      },
+      { readOnly: true },
+    );
   }
 
   /** `recipient`'s live awards of `kind`. */
