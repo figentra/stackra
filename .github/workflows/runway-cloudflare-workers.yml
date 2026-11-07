@@ -4,7 +4,7 @@
 #          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
 #          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
-#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml.
+#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml, deploy-docs.yml.
 # Secrets: none in the repository. The job decrypts figentra/secrets scopes as itself (ADR 0525, the shared
 #          secrets-decrypt action; figentra/infra estate/secret-callers.mjs grants each caller environment its scopes):
 #          CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from `scope`, the `secret-name`s
@@ -186,7 +186,7 @@ jobs:
 
       # Runway checks every id, secret and bearer before anything ships, then builds, migrates, deploys with the commit
       # as the message and its secrets on stdin, and retries the smoke checks while a new domain's certificate comes
-      # up. `--kind web` keeps the docs target (Mintlify) out of a Worker deploy.
+      # up. `--kind web` with `--member` ships only the named Worker member (the docs site is the `docs` member).
       - name: Deploy (Runway)
         id: deploy
         env:

@@ -1,14 +1,12 @@
 # Stackra file contract:
-# Purpose: deploy apps/docs (docs.stackra.figentra.com) to Mintlify through Runway's `mintlify` provider,
-#          runway-mintlify.yml (ADR 0299): on a push to main that touches the docs, or by hand, after `stackra build`
-#          (gen assembles apps/docs/.stackra/site from src/docs and src/config/docs.config.ts, then `mint validate`)
-#          and `stackra lint` (`mint broken-links`, `mint a11y`), ADR 0002 2026-10-27 amendment, then publishes
-#          that site to the `docs-site` branch (one appended commit per run), which the Mintlify project builds (its
-#          Git settings: branch `docs-site`, root path `/`; the default `site-branch` input). Once it has
-#          deployed, the owner switches off the Mintlify GitHub-app deploy so a change is not deployed twice (STA-605).
-# Secrets: MINTLIFY_ADMIN_KEY from the sops scope ci/deploy, decrypted inside the provider (ADR 0525). The Mintlify
-#          project id is the non-secret repository variable MINTLIFY_PROJECT_ID; until it exists, the provider checks
-#          and deploys nothing.
+# Purpose: deploy apps/docs (the `stackra-docs` Cloudflare Worker, docs.stackra.figentra.com), the `docs` member of
+#          runway.yaml, through Runway's `cloudflare-workers` provider (runway-cloudflare-workers.yml, ADR 0514,
+#          STA-2026). The provider builds the member (`stackra build`: gen assembles the Fumadocs site in
+#          apps/docs/.stackra/site, React Router prerenders it into build/client, with llms.txt and _redirects) and
+#          uploads those assets as the Worker. Runs on main only, never on a pull request; by hand (or
+#          `pnpm runway promote <sha>`) it redeploys a given commit of main. The deployment message is the commit.
+# Secrets: CLOUDFLARE_API_TOKEN comes from the sops scope ci/deploy, decrypted by the provider job as itself (ADR 0525).
+#          No repository secret holds it (ADR 0019 D2).
 # Owner: release-operations
 
 name: Deploy docs
@@ -16,12 +14,21 @@ name: Deploy docs
 on:
   push:
     branches: [main]
+    # Only what changes the site: the member, the gen renderer that writes it, this caller and its provider.
     paths:
       - "apps/docs/**"
+      - "packages/developer/gen/src/core/templates/docs-site/**"
+      - "packages/developer/gen/src/core/functions/emit-docs-site.function.ts"
       - ".github/workflows/deploy-docs.yml"
-      - ".github/workflows/runway-mintlify.yml"
+      - ".github/workflows/runway-cloudflare-workers.yml"
   workflow_dispatch:
+    inputs:
+      sha:
+        description: A commit of main to deploy (promote or roll back); empty deploys the branch head
+        type: string
+        default: ""
 
+# One deploy at a time, in order: a newer run waits instead of cancelling one that is mid-upload.
 concurrency:
   group: deploy-docs
   cancel-in-progress: false
@@ -31,8 +38,8 @@ permissions: {}
 
 jobs:
   # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
-  # main only) holds no secret and grants nothing; the deploy job keeps the `docs` environment, whose name the
-  # figentra/infra secret callers grant ci/deploy to (STA-1968, ADR 0525).
+  # main only) holds no secret and grants nothing; the deploy job keeps the `docs` environment, whose name
+  # figentra/infra's secret callers grant ci/deploy to (STA-1968, ADR 0525).
   approve:
     name: Owner approval (production)
     if: github.ref == 'refs/heads/main'
@@ -47,22 +54,20 @@ jobs:
   deploy:
     name: Deploy docs.stackra.figentra.com
     needs: approve
-    # Mintlify builds main; a dispatch from another branch would deploy main under that branch's checks.
+    # workflow_dispatch can name any branch; only main deploys. The provider also refuses a commit that is not on main.
     if: github.ref == 'refs/heads/main'
     permissions:
-      contents: write # the provider's `publish` job pushes the generated `docs-site` branch; its other jobs ask for read
+      contents: read
       id-token: write
-    uses: ./.github/workflows/runway-mintlify.yml
+    uses: ./.github/workflows/runway-cloudflare-workers.yml
     with:
-      member: apps/docs
+      member: docs
       package: "@figentra/docs"
-      # The `docs` environment (owner: main only; figentra/infra grants it ci/deploy, STA-605, ADR 0525).
+      # The `docs` environment (owner: main only) puts its name into the OIDC subject, so figentra/infra grants this
+      # job ci/deploy and nothing else.
       environment: docs
-      # The docs scripts run `stackra` (@stackra/cli) and gen, so their workspace dependencies are installed and built.
-      # turbo counts the root's workspace devDependency @stackra/commitlint-config in build-first's graph, so the
-      # install selects the root (`stackra...`) as well, or that member builds without its typescript-config preset.
+      sha: ${{ inputs.sha }}
+      # The docs build runs `stackra` (@stackra/cli) and gen, so their workspace dependencies are installed. turbo
+      # counts the root's workspace devDependency @stackra/commitlint-config, so the root (`stackra...`) is selected
+      # too, or that member builds without its typescript-config preset.
       install-args: --frozen-lockfile --filter=@figentra/docs... --filter=stackra...
-      build-first: "@stackra/cli..."
-      mintlify-project-id: ${{ vars.MINTLIFY_PROJECT_ID }}
-      site-url: https://docs.stackra.figentra.com
-      smoke-pages: / /quickstart /runbooks/runway
