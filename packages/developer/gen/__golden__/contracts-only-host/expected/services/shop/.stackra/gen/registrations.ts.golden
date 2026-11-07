@@ -16,6 +16,7 @@ import { CancelOrderAction } from "#node/actions/cancel-order.action";
 import { OrderPaid } from "#node/events/order-paid.event";
 import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.listener";
 import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";
+import { CancelOrderOutput } from "#node/schemas/cancel-order-output.schema";
 import { registerActions } from "@stackra/actions";
 import { registerPermissions } from "@stackra/container";
 import { registerEventNames, registerListeners } from "@stackra/events";
@@ -35,5 +36,5 @@ registerPermissions([
 ]);
 
 registerActions([
-  { type: CancelOrderAction, key: "shop.order.cancel@1", permission: "shop.order.cancel", risk: "L2", input: CancelOrderInput },
+  { type: CancelOrderAction, key: "shop.order.cancel@1", permission: "shop.order.cancel", risk: "L2", input: CancelOrderInput, output: CancelOrderOutput },
 ]);
