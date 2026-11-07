@@ -19,7 +19,7 @@
       "class": "RecomputeSegmentsAction",
       "file": "src/node/actions/recompute-segments.action.ts",
       "permission": "segments.segment.recompute",
-      "risk": "L1",
+      "risk": "L2",
       "actors": ["job"],
       "job": {
         "timeout": "15m",
@@ -61,7 +61,7 @@
   "permissions": [
     {
       "key": "segments.segment.recompute",
-      "risk": "L1",
+      "risk": "L2",
       "class": "SegmentPermissions",
       "module": "segments",
       "member": "recompute",

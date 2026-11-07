@@ -19,7 +19,7 @@
       "class": "DeliverWebhookAction",
       "file": "src/node/actions/deliver-webhook.action.ts",
       "permission": "webhooks.webhook_delivery.send",
-      "risk": "L1",
+      "risk": "L4",
       "actors": ["job"],
       "job": {
         "retries": 80,
@@ -38,7 +38,7 @@
   "permissions": [
     {
       "key": "webhooks.webhook_delivery.send",
-      "risk": "L1",
+      "risk": "L4",
       "class": "WebhookDeliveryPermissions",
       "module": "webhooks",
       "member": "send",
