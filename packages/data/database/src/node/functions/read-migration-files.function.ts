@@ -27,6 +27,9 @@ const TIMEOUT_HEADER = /^(?:--.*\n)*?-- stackra:timeout=(\w+)(?:\n|$)/;
  * @example
  * readMigrationFiles(".stackra/migrations")[0]?.name; // "0001_database_0001_create_sequence_tables"
  */
+/** A whole comment line written for a linter: `-- squawk-ignore …` or `-- lint: …`. */
+const LINT_LINE = /^-- (?:squawk-ignore|lint:)[^\n]*\n/gm;
+
 export function readMigrationFiles(directory: string): readonly MigrationFile[] {
   if (!existsSync(directory)) throw new Error(`${directory} does not exist: run stackra gen first`);
   const files = readdirSync(directory)
@@ -43,7 +46,8 @@ export function readMigrationFiles(directory: string): readonly MigrationFile[] 
         transactional: !sql.startsWith("-- stackra:transactional=false"),
         timeout: TIMEOUT_HEADER.exec(sql)?.[1],
         sql,
-        checksum: createHash("sha256").update(sql).digest("hex"),
+        // lint comments (a squawk ignore and its reason) never change what runs, so a frozen file keeps its checksum
+        checksum: createHash("sha256").update(sql.replaceAll(LINT_LINE, "")).digest("hex"),
         inverse: existsSync(down) ? readFileSync(down, "utf8") : undefined,
       };
     })

@@ -64,4 +64,19 @@ describe("readMigrationFiles", () => {
     const root = makeFolder({ "0001_a.up.sql": "select 1", "0001_b.up.sql": "select 2" });
     expect(() => readMigrationFiles(root)).toThrow("share sequence 1");
   });
+
+  it("leaves lint comment lines out of the checksum, so adding a squawk ignore keeps a frozen file's", () => {
+    const statement = 'alter table "t" add column "x" varchar(33) default 1 null';
+    const [plain] = readMigrationFiles(makeFolder({ "0001_a.up.sql": `${statement};\n` }));
+    const [linted] = readMigrationFiles(
+      makeFolder({
+        "0001_a.up.sql": `-- lint: no rewrite.\n-- squawk-ignore adding-field-with-default\n${statement};\n`,
+      }),
+    );
+    expect(linted?.checksum).toBe(plain?.checksum);
+    const [changed] = readMigrationFiles(
+      makeFolder({ "0001_a.up.sql": `-- a note\n${statement};\n` }),
+    );
+    expect(changed?.checksum).not.toBe(plain?.checksum);
+  });
 });

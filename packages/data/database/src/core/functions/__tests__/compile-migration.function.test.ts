@@ -554,7 +554,9 @@ describe(compileMigration, () => {
     }
     const [step] = compileMigration(AddWorkspaceMigration, { schema: "plans" }).steps;
     expect(step?.sql).toContain(
-      `alter table "plans"."plans" add column "workspace_id" varchar(33) default nullif(current_setting('app.workspace_id', true), '')::varchar(33) null`,
+      "-- lint: current_setting() is STABLE, so Postgres 11+ adds this column without rewriting the table.\n" +
+        "-- squawk-ignore adding-field-with-default\n" +
+        `alter table "plans"."plans" add column "workspace_id" varchar(33) default nullif(current_setting('app.workspace_id', true), '')::varchar(33) null`,
     );
     expect(() =>
       compileMigration(AddWorkspaceMigration, { schema: "plans", publicIds: "uuid" }),
