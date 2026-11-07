@@ -30,6 +30,7 @@ import { repositoryRoot } from "#node/functions/repository-root.function";
 /** Validates every runway file. */
 export class RunwayValidateCommand extends Command({
   name: "validate",
+  bin: true,
   description: "Check every runway file against its schema, the placement and the drivers",
   examples: ["runway validate", "runway validate --json"],
 }) {

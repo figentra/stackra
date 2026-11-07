@@ -18,6 +18,7 @@ import { cliVersion } from "#node/functions/cli-version.function";
 /** `stackra runway <command>`: Runway's commands under the framework command. */
 export class RunwayCommand extends Command({
   name: "runway",
+  bin: true,
   description:
     "Runway's commands: plan, deploy, promote, rollback, status, validate, drift, secrets, env (`stackra runway help [command]`)",
   examples: [

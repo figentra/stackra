@@ -59,90 +59,6 @@
   "models": [],
   "drivers": [
     {
-      "port": "Renderer",
-      "key": "console.Renderer",
-      "candidates": ["text", "ink"],
-      "classes": {
-        "text": {
-          "class": "TextRendererDriver",
-          "from": "@stackra/console",
-          "deps": [
-            {
-              "class": {
-                "name": "RenderContext",
-                "from": "@stackra/console"
-              }
-            }
-          ]
-        },
-        "ink": {
-          "class": "InkRendererDriver",
-          "from": "@stackra/console/node",
-          "deps": [
-            {
-              "class": {
-                "name": "RenderContext",
-                "from": "@stackra/console"
-              }
-            }
-          ]
-        }
-      },
-      "from": "@stackra/console"
-    },
-    {
-      "port": "ProcessRunner",
-      "key": "console.ProcessRunner",
-      "candidates": ["node", "memory"],
-      "classes": {
-        "node": {
-          "class": "NodeProcessRunnerDriver",
-          "from": "@stackra/console/node"
-        },
-        "memory": {
-          "class": "MemoryProcessRunnerDriver",
-          "from": "@stackra/console/testing"
-        }
-      },
-      "from": "@stackra/console"
-    },
-    {
-      "port": "Completions",
-      "key": "console.Completions",
-      "candidates": ["tab"],
-      "classes": {
-        "tab": {
-          "class": "TabCompletionsDriver",
-          "from": "@stackra/console/node"
-        }
-      },
-      "from": "@stackra/console"
-    },
-    {
-      "port": "CommandAudit",
-      "key": "console.CommandAudit",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryCommandAuditDriver",
-          "from": "@stackra/console/testing"
-        }
-      },
-      "from": "@stackra/console"
-    },
-    {
-      "port": "OperatorBreakGlass",
-      "key": "console.OperatorBreakGlass",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryOperatorBreakGlassDriver",
-          "from": "@stackra/console/testing"
-        }
-      },
-      "from": "@stackra/console"
-    },
-    {
       "port": "EdgeNonceStore",
       "key": "app.EdgeNonceStore",
       "candidates": ["memory"],
@@ -198,18 +114,5 @@
   "passes": [],
   "entitlements": [],
   "roles": [],
-  "commands": [
-    {
-      "name": "runway",
-      "aliases": [],
-      "hidden": false,
-      "audit": false,
-      "bin": false,
-      "class": "RunwayCommand",
-      "file": "src/node/commands/runway.command.ts",
-      "entry": "node",
-      "from": "@stackra/cli"
-    }
-  ],
   "schemas": {}
 }

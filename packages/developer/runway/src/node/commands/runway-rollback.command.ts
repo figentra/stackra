@@ -16,6 +16,7 @@ import { runwayIo } from "#node/functions/runway-io.function";
 /** Ships an earlier commit of main to production. */
 export class RunwayRollbackCommand extends Command({
   name: "rollback",
+  bin: true,
   description: "Return production to an earlier commit of origin/main",
   examples: ["runway rollback <sha> --dry-run"],
 }) {

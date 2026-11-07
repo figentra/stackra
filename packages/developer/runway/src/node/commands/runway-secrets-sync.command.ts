@@ -19,6 +19,7 @@ import { syncSecrets } from "#node/functions/sync-secrets.function";
 /** Syncs an environment's member secrets. */
 export class RunwaySecretsSyncCommand extends Command({
   name: "secrets:sync",
+  bin: true,
   aliases: ["env:sync"],
   description:
     "Sync an environment's declared names from Infisical into the runtimes (CI only); `env sync` is the same command",

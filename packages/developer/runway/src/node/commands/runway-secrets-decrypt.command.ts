@@ -19,6 +19,7 @@ import { exportToGithubEnv } from "#node/functions/export-to-github-env.function
 /** Decrypts one scope into the job's environment. */
 export class RunwaySecretsDecryptCommand extends Command({
   name: "secrets:decrypt",
+  bin: true,
   description:
     "Decrypt one figentra/secrets scope into this GitHub Actions job's environment (masked; never printed)",
   examples: [

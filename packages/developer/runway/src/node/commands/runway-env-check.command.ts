@@ -21,6 +21,7 @@ import { repositoryRoot } from "#node/functions/repository-root.function";
 /** Checks the repository's environment names, or one environment's values in CI. */
 export class RunwayEnvCheckCommand extends Command({
   name: "env:check",
+  bin: true,
   description:
     "Check that every environment name is declared and has an Infisical home; --values checks an environment's values in CI",
   examples: ["runway env check", "runway env check --values --env staging --project-id <id>"],

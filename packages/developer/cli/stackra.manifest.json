@@ -260,7 +260,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayCommand",
       "file": "src/node/commands/runway.command.ts",
       "entry": "node"

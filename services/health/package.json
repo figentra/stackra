@@ -48,8 +48,6 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@stackra/app": "workspace:*",
-    "@stackra/console": "workspace:*",
     "@stackra/container": "workspace:*"
   },
   "devDependencies": {

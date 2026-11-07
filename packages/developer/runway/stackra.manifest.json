@@ -257,7 +257,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayDeployCommand",
       "file": "src/node/commands/runway-deploy.command.ts",
       "entry": "node"
@@ -267,7 +267,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayDriftCommand",
       "file": "src/node/commands/runway-drift.command.ts",
       "entry": "node"
@@ -277,7 +277,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayEnvCheckCommand",
       "file": "src/node/commands/runway-env-check.command.ts",
       "entry": "node"
@@ -287,7 +287,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayEnvOrphansCommand",
       "file": "src/node/commands/runway-env-orphans.command.ts",
       "entry": "node"
@@ -297,7 +297,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayPlanCommand",
       "file": "src/node/commands/runway-plan.command.ts",
       "entry": "node"
@@ -307,7 +307,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayPromoteCommand",
       "file": "src/node/commands/runway-promote.command.ts",
       "entry": "node"
@@ -317,7 +317,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayRollbackCommand",
       "file": "src/node/commands/runway-rollback.command.ts",
       "entry": "node"
@@ -327,7 +327,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwaySecretsDecryptCommand",
       "file": "src/node/commands/runway-secrets-decrypt.command.ts",
       "entry": "node"
@@ -337,7 +337,7 @@
       "aliases": ["env:sync"],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwaySecretsSyncCommand",
       "file": "src/node/commands/runway-secrets-sync.command.ts",
       "entry": "node"
@@ -347,7 +347,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayStatusCommand",
       "file": "src/node/commands/runway-status.command.ts",
       "entry": "node"
@@ -357,7 +357,7 @@
       "aliases": [],
       "hidden": false,
       "audit": false,
-      "bin": false,
+      "bin": true,
       "class": "RunwayValidateCommand",
       "file": "src/node/commands/runway-validate.command.ts",
       "entry": "node"
