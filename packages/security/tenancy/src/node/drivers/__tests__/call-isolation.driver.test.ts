@@ -8,8 +8,9 @@
  *          parent tenant, a scheduler actor named by the branch included), a scope the tree does not show or shows at
  *          another path is refused and never run with an empty tenant, a scope above every tenant keeps the actor's own
  *          id, any other actor keeps its own tenant and is refused (`TenantScopeMismatchError`) when the scope's
- *          tenant differs or a user's scope sits above every tenant, and the tree is read in a session over the path's
- *          root label.
+ *          tenant differs or a user's scope sits above every tenant, several granted scopes that span tenants are
+ *          refused while several within one tenant run in it, and the tree is read in a session over the path's root
+ *          label.
  * Boundary: test only; a fake `Database` and a fake `TenantIsolationService` record the calls, so no database runs,
  *           and a `MemoryScopeTreeDriver` holds the tree. The real settings are proven on Postgres in
  *           `call-isolation.driver.int.test.ts`.
@@ -262,10 +263,34 @@ describe("the tenant of a call", () => {
     expect(withTenant).not.toHaveBeenCalled();
   });
 
-  it("derives no tenant from several granted scopes or from none", async () => {
-    const several = setUp();
-    await run(several.driver, actor, [scope, tenantB]);
-    expect(several.withTenant.mock.calls[0]?.[0]).toBe(actor);
+  it("refuses several granted scopes that span tenants, or a tenant and above every tenant, for any actor", async () => {
+    const spans: readonly (readonly ScopeRef[])[] = [
+      [scope, tenantB],
+      [branch, tenantB],
+      [scope, platformScope],
+      [scope, unknown],
+    ];
+    for (const at of spans)
+      for (const who of [actor, userOfA, staff]) {
+        const { driver, withTenant, transaction } = setUp();
+        await expect(run(driver, who, at)).rejects.toBeInstanceOf(TenantScopeMismatchError);
+        expect(withTenant).not.toHaveBeenCalled();
+        expect(transaction).not.toHaveBeenCalled();
+      }
+  });
+
+  it("runs several granted scopes within one tenant in that tenant, and derives none from no scope", async () => {
+    const user = setUp();
+    await expect(run(user.driver, userOfA, [scope, branch])).resolves.toBe("ran");
+    expect(user.withTenant.mock.calls[0]?.[0]).toBe(userOfA);
+    expect(user.withScope.mock.calls.at(-1)?.[0]).toEqual([scope, branch]);
+    const job = setUp();
+    await run(job.driver, { kind: ActorKind.Job, id: actor.id }, [branch, scope]);
+    expect(tenantOfRun(job.withTenant)).toBe(ID_A);
+    const other = setUp();
+    await expect(run(other.driver, userOfA, [tenantB])).rejects.toBeInstanceOf(
+      TenantScopeMismatchError,
+    );
     const none = setUp();
     await run(none.driver, actor, undefined);
     expect(none.withTenant.mock.calls[0]?.[0]).toBe(actor);
