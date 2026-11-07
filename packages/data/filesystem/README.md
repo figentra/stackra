@@ -103,7 +103,7 @@ config:
 ```
 
 No credential is configuration. The S3 driver uses the AWS SDK's default chain (`AWS_ACCESS_KEY_ID` and
-`AWS_SECRET_ACCESS_KEY`, which runway syncs from Infisical, or an instance role). The GCS driver reads Application
+`AWS_SECRET_ACCESS_KEY`, which runway syncs from SOPS, or an instance role). The GCS driver reads Application
 Default Credentials (workload identity on GCP) and takes only `gcs.bucket` and an optional `gcs.projectId`. The Encore driver imports no
 `encore.dev`: the generated Encore app declares the bucket and binds `EncoreBucket`.
 

@@ -95,7 +95,7 @@ export class ResendIntegration extends Integration({
     eventType: { path: "type" },
   },
 }) {
-  @Secret("RESEND_API_KEY") // a platform secret: Infisical, synced by runway
+  @Secret("RESEND_API_KEY") // a platform secret: SOPS, synced by runway
   apiKey!: string;
 }
 
