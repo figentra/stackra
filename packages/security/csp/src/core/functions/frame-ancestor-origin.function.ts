@@ -4,7 +4,8 @@
  *          and an origin prints as itself once it is proven to be exactly one origin.
  * Boundary: refuses (TypeError, naming the source) anything but `self` or one origin: a wildcard, a path, a default
  *           port written out, a non-http scheme, and `http:` beyond localhost. It checks static configuration and a
- *           per-request resolver's output alike. Internal: not exported from the entry.
+ *           per-request resolver's output alike. Exported, so a host refuses a stored framer (a merchant's embed origin)
+ *           at write time with the same rule the header uses.
  * Runtime: isomorphic
  * Governing contract: ADR 0237 (edge headers); ADR 0334 rule 12.
  */

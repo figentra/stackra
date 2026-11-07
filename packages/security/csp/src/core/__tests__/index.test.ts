@@ -19,6 +19,7 @@ describe("@stackra/csp", () => {
       "contentSecurityPolicy",
       "createNonce",
       "cspHeaderName",
+      "frameAncestorOrigin",
       "securityHeaders",
     ]);
   });

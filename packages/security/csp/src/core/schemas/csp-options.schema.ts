@@ -42,7 +42,9 @@ export class CspOptions extends Schema {
   /**
    * Who may frame which path: `self` or https origins (`{ "/preview": ["https://console.pay.example"] }`), or
    * `"request"` for framers a per-request resolver passes (`{ "/c/*": "request" }`). A key is an exact path or a
-   * `/*` prefix. Every other path, and a `"request"` path with nothing resolved, stays `frame-ancestors 'none'`.
+   * `/*` prefix, which matches below the slash only (`/c/*` takes `/c/cs_1`, not `/c`). Every other path, and a
+   * `"request"` path with nothing resolved, stays `frame-ancestors 'none'`. While `reportOnly`, `X-Frame-Options: DENY`
+   * stays on every path, framed ones included, since a report-only policy enforces nothing.
    */
   // reason: a record keyed by path whose value is a list or the "request" literal; the shipped schema checks both
   @Field(CSP_OPTIONS_SCHEMA.shape.frameAncestors)
