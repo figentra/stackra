@@ -172,7 +172,7 @@ describe("emitWiring", () => {
       ],
     };
     const content = emitWiring(ir);
-    expect(content).toContain("    { provide: BasePolicy, override: OrderPolicy },");
+    expect(content).toContain("    { provide: BasePolicy, override: OrderPolicy, deps: [");
     expect(content).toContain('    { class: OrderPolicy, partner: "orders.order" },');
     expect(content).toContain(
       '    loyalty_kit: { exports: [], dependsOn: [], from: "@acme/loyalty-kit", type: LoyaltyKitModule },',
