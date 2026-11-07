@@ -1,5 +1,12 @@
 # @stackra/transport
 
+## 0.20.0
+
+### Patch Changes
+
+- @stackra/errors@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Patch Changes

@@ -1,5 +1,33 @@
 # @stackra/database
 
+## 0.20.0
+
+### Patch Changes
+
+- 80d121b: `usePostgres()` uses the integration-tier image as it is when Docker already has it under its tag (built before, or
+  preloaded), and otherwise builds it with the process's `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` passed as build
+  arguments, so its `apt-get` reaches the mirrors on a machine whose only way out is a proxy (a testbed job, STA-2572).
+- 19a9222: A `requiresNew` transaction now runs in the caller's scope and tenant. It opens on another connection, which had none
+  of the caller's transaction-local `app.*` settings, so under forced row-level security its insert was refused or its
+  `tenant_id` default wrote NULL. `runTransaction` now reads those settings from the running transaction before it opens
+  the new one and sets them first inside it, as `onReplica` already did for a replica (both share one helper now). This
+  also fixes `CrudService` `insert` and `update` with `requiresNew` and the webhook delivery attempts written that way
+  under row-level security. With no transaction running, nothing changes (STA-2565).
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/cache@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Patch Changes

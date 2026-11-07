@@ -1,5 +1,18 @@
 # @stackra/validation
 
+## 0.20.0
+
+### Minor Changes
+
+- 667a3b5: `@ShownOnce` marks an output field the caller sees once (a signing secret, a new API key). It records `true`, like
+  `@Hidden`, and the field still goes out in the first response; `ShownOnce.members(Class)` lists the marked fields.
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+  - @stackra/container@0.20.0
+  - @stackra/contracts@0.20.0
+
 ## 0.19.0
 
 ### Patch Changes
