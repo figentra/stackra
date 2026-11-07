@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `STAGED_REFUSAL_CODES`, the refusals 0.19 reports as warnings so products can fix them before 0.20 makes
  *          them block: `action_risk_below_write` (STA-2096), `idempotency_missing`, `query_above_l1` and
- *          `step_up_missing` (STA-340).
+ *          `step_up_missing` (STA-340), `model_tenancy_migration_missing` (tenancy audit 2026-11-07).
  * Boundary: data only. `generateMember` downgrades these codes unless it runs strict (`STACKRA_GEN_STRICT=1`); every
  *           other refusal blocks as before. 0.20 empties this set, so they block everywhere.
  * Runtime: isomorphic
@@ -14,6 +14,7 @@
 export const STAGED_REFUSAL_CODES: ReadonlySet<string> = new Set([
   "action_risk_below_write",
   "idempotency_missing",
+  "model_tenancy_migration_missing",
   "query_above_l1",
   "step_up_missing",
 ]);

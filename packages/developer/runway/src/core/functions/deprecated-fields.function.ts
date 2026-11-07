@@ -4,13 +4,18 @@
  *          `providers.aws.region` and `providers.aws.accounts` (the three-account layout that no longer matches ADR
  *          0524), a per-role `providers.aws.budgets.monthlyUsd` and an environment's `cloud` give way to
  *          `environments.<env>.region` and the product's one account; `providers.infisical` and `secrets.defaultPath`
- *          give way to the sops scopes of figentra/secrets and are ignored (ADR 0525).
+ *          give way to the sops scopes of figentra/secrets and are ignored (ADR 0525); `providers.mintlify`,
+ *          `targets.mintlify` and a `mintlify` destination give way to the Fumadocs site on a Worker (ADR 0514).
  * Boundary: pure; `runway validate` prints each as a warning and still passes. The fields stay accepted for one release.
  * Runtime: isomorphic
- * Governing contract: ADR 0524; ADR 0525; STA-2104.
+ * Governing contract: ADR 0514; ADR 0524; ADR 0525; STA-2104.
  */
 import type { RootRunway } from "#core/types/root-runway.type";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
+
+/** Why each Mintlify field goes, and what replaces it. */
+const MINTLIFY =
+  "Deprecated: Mintlify is retired (ADR 0514); the docs app is a Fumadocs site on a Worker: set its destination to `cloudflare-workers`, list it under `targets.cloudflare-workers.members` and remove the Mintlify blocks; removed in the next release";
 
 /**
  * Every deprecated field `root` sets, `[]` when none.
@@ -52,12 +57,20 @@ export function deprecatedFields(root: RootRunway): RunwayIssue[] {
       message:
         "Deprecated and ignored: it named a providers.infisical path; a product's secrets live in products/<project>/<env> (ADR 0525); remove it",
     });
-  for (const [name, environment] of Object.entries(root.environments))
+  if (root.providers?.["mintlify"] !== undefined)
+    found.push({ path: "providers.mintlify", message: MINTLIFY });
+  if (root.targets?.mintlify !== undefined)
+    found.push({ path: "targets.mintlify", message: MINTLIFY });
+  for (const [name, environment] of Object.entries(root.environments)) {
     if (environment?.cloud !== undefined)
       found.push({
         path: `environments.${name}.cloud`,
         message:
           "Deprecated: the environment's `region` fixes its cloud, and the product's one account or project is `providers.aws.account` or `providers.gcp.project`; removed in the next release",
       });
+    for (const [kind, destination] of Object.entries(environment?.destinations ?? {}))
+      if (destination === "mintlify")
+        found.push({ path: `environments.${name}.destinations.${kind}`, message: MINTLIFY });
+  }
   return found;
 }

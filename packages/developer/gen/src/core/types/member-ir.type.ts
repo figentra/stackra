@@ -213,6 +213,18 @@ export interface MemberIR {
   }[];
 
   /**
+   * Every `schema.create`/`schema.table` block of the member's own migrations, in apply order, with its table, module
+   * and file and whether it calls `t.belongsToTenant(...)`; `checkModelScope` refuses an owned model whose table never
+   * does (`model_tenancy_migration_missing`). Absent when none.
+   */
+  readonly migrationTables?: readonly {
+    readonly file: string;
+    readonly module: string;
+    readonly table: string;
+    readonly ownerColumn: boolean;
+  }[];
+
+  /**
    * Every `I18n.<namespace>.<path>` chain in the member's own files that import `#stackra/i18n`, as path segments
    * with its place; a key no merged catalogue ships is refused (`i18n_key_missing`). Absent when none (STA-1298).
    */
