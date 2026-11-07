@@ -28,6 +28,8 @@ export interface DeployRunways {
       >
     >;
     readonly providers: {
+      /** The Encore Cloud app the secrets sync writes into (`encore secret set` runs in a folder naming it). */
+      readonly encore?: { readonly app?: string };
       readonly github: { readonly org: string; readonly repo: string };
       readonly infisical?: {
         readonly domain?: string;
