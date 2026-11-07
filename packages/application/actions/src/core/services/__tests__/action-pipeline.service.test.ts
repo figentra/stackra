@@ -307,6 +307,20 @@ class SendMessageAction extends Action({
   }
 }
 
+/** Hands out a secret: its output must never land in the idempotency store. */
+class PickupSecretAction extends Action({
+  key: "secret.pickup",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Never,
+}) {
+  picked = 0;
+
+  async handle(): Promise<{ token: string }> {
+    this.picked += 1;
+    return { token: `token-${this.picked}` };
+  }
+}
+
 class InspectAction extends Action({
   key: "order.inspect",
   actors: [ActorKind.User, ActorKind.Agent],
@@ -763,6 +777,35 @@ describe(ActionPipeline, () => {
       orderId: "ord_1",
       key: "k1",
     });
+  });
+
+  it("never stores or replays the output of an Idempotency.Never action, even with a key", async () => {
+    const claimed: string[] = [];
+    class Recording extends MemoryIdempotencyStoreDriver {
+      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
+        claimed.push(args[0]);
+        return super.claim(...args);
+      }
+    }
+    const action = new PickupSecretAction();
+    const { pipeline } = setup([
+      [IdempotencyStore, new Recording(new FixedClock())],
+      [PickupSecretAction, action],
+    ]);
+    const first = await pipeline.execute(
+      PickupSecretAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    const again = await pipeline.execute(
+      PickupSecretAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    expect(first).toEqual({ token: "token-1" });
+    expect(again).toEqual({ token: "token-2" });
+    expect(action.picked).toBe(2);
+    expect(claimed).toEqual([]);
   });
 
   it("derives a key without one, then applies the action's own rate limit", async () => {

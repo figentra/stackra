@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: integration tests of `ChecklistService` on real Postgres: with every workflow migration applied and the
  *          generated entities registered, a checklist is seeded, a step is completed once and the view reads it back,
- *          so the ORM's tables (`workflow.checklists`, `workflow.checklist_progresses`) are the migrations' tables.
+ *          so the ORM's tables (`workflow.checklists`, `workflow.checklist_progresses`) are the migrations' tables,
+ *          tenant expand column included.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. Each call runs in the scope's session, as an
  *           action would.
  * Runtime: node (vitest)
@@ -12,6 +13,7 @@ import { ActorKind, Realm } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
 import { compileMigration, CrudService, registerModelPartners } from "@stackra/database";
 import { usePostgres } from "@stackra/database/testing";
+import { BelongsToTenantMacro } from "@stackra/tenancy/node";
 import { describe, expect, it } from "@stackra/testing";
 
 import { SeedResult } from "#core/index";
@@ -24,6 +26,7 @@ import { CreateChecklistsMigration } from "#node/database/migrations/0006-create
 import { AddRunAutomationAndCancelMigration } from "#node/database/migrations/0007-add-run-automation-and-cancel.migration";
 import { AddServiceAckKeptMigration } from "#node/database/migrations/0008-add-service-ack-kept.migration";
 import { RenameChecklistProgressMigration } from "#node/database/migrations/0009-rename-checklist-progress.migration";
+import { AddTenancyMigration } from "#node/database/migrations/0010-add-tenancy.migration";
 import { WORKFLOW_ENTITIES } from "#node/entities.gen";
 import { Checklist } from "#node/models/checklist.model";
 import { ChecklistProgress } from "#node/models/checklist-progress.model";
@@ -49,8 +52,13 @@ const postgres = usePostgres({
     AddRunAutomationAndCancelMigration,
     AddServiceAckKeptMigration,
     RenameChecklistProgressMigration,
+    AddTenancyMigration,
   ].map((migration, index) =>
-    compileMigration(migration, { schema: "workflow", createsSchema: index === 0 }),
+    compileMigration(migration, {
+      schema: "workflow",
+      createsSchema: index === 0,
+      macros: [BelongsToTenantMacro],
+    }),
   ),
 });
 
@@ -97,8 +105,11 @@ describe(ChecklistService, () => {
 
     const { database } = postgres;
     const rows = await database.withScope(SCOPE, () =>
-      database.em().execute('select step, owner_id from "workflow"."checklist_progresses"'),
+      database
+        .em()
+        .execute('select step, owner_id, tenant_id from "workflow"."checklist_progresses"'),
     );
-    expect(rows).toEqual([{ step: "connect_payments", owner_id: SCOPE.id }]);
+    // a scope session with no tenant call leaves the expand column null
+    expect(rows).toEqual([{ step: "connect_payments", owner_id: SCOPE.id, tenant_id: null }]);
   });
 });

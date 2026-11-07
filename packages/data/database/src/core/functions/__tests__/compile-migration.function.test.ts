@@ -541,6 +541,36 @@ describe(compileMigration, () => {
     );
   });
 
+  it("defaults a column to a setting, null while it is unset, and refuses one on a uuid column", () => {
+    class AddWorkspaceMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("plans", (t: Blueprint) => {
+          t.link("workspace_id")
+            .nullable()
+            .defaultSetting("app.workspace_id")
+            .comment("The workspace.");
+        });
+      }
+    }
+    const [step] = compileMigration(AddWorkspaceMigration, { schema: "plans" }).steps;
+    expect(step?.sql).toContain(
+      `alter table "plans"."plans" add column "workspace_id" varchar(33) default nullif(current_setting('app.workspace_id', true), '')::varchar(33) null`,
+    );
+    expect(() =>
+      compileMigration(AddWorkspaceMigration, { schema: "plans", publicIds: "uuid" }),
+    ).toThrow("workspace_id is uuid, so it takes no setting default");
+    class BadSettingMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("plans", (t: Blueprint) => {
+          t.link("workspace_id").nullable().defaultSetting("workspace").comment("The workspace.");
+        });
+      }
+    }
+    expect(() => compileMigration(BadSettingMigration, { schema: "plans" })).toThrow(
+      '"workspace" is not a custom setting',
+    );
+  });
+
   it("creates an ICU collation in the module schema and collates a text column by it", () => {
     class CreatePartiesMigration extends Migration {
       up(schema: SchemaBuilder): void {

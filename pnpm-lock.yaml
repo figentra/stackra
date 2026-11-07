@@ -1362,6 +1362,9 @@ importers:
       '@stackra/rules':
         specifier: workspace:*
         version: link:../rules
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -1757,6 +1760,9 @@ importers:
       '@stackra/support':
         specifier: workspace:*
         version: link:../../foundation/support
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/ui':
         specifier: workspace:*
         version: link:../../design-system/ui
@@ -1863,6 +1869,9 @@ importers:
       '@stackra/scheduler':
         specifier: workspace:*
         version: link:../../runtime/scheduler
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -2994,6 +3003,9 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../model
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -3657,6 +3669,9 @@ importers:
       '@stackra/settings':
         specifier: workspace:*
         version: link:../../state/settings
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -5038,6 +5053,9 @@ importers:
       '@stackra/realtime':
         specifier: workspace:*
         version: link:../../runtime/realtime
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/transport':
         specifier: workspace:*
         version: link:../../foundation/transport
@@ -8105,6 +8123,9 @@ importers:
       '@stackra/rules':
         specifier: workspace:*
         version: link:../../application/rules
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation

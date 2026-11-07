@@ -48,6 +48,7 @@ interface Seen {
   readonly method: string;
   readonly url: URL;
   readonly authorization: string | null;
+  readonly idempotencyKey: string | null;
   readonly body: Record<string, unknown> | null;
 }
 
@@ -71,6 +72,7 @@ function fakeHub(options: { leak?: boolean } = {}) {
         method: request.method,
         url,
         authorization: request.headers.get("authorization"),
+        idempotencyKey: request.headers.get("idempotency-key"),
         body,
       });
       if (request.method === "POST" && url.pathname === "/device-pairings") {
@@ -174,6 +176,9 @@ describe("HttpDevicePairingDriver", () => {
     expect(pickups).toHaveLength(1);
     expect(pickups[0]?.method).toBe("POST");
     expect(pickups[0]?.url.search).toBe("");
+    // the hub must never keep the answer that carries the token, so the pickup sends no Idempotency-Key
+    expect(pickups[0]?.idempotencyKey).toBeNull();
+    expect(hub.seen[0]?.idempotencyKey).not.toBeNull();
     expect(pickups[0]?.body).toEqual({ secret });
 
     // a later check finds no secret kept and asks for no second pickup

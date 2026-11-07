@@ -108,6 +108,7 @@
     "@stackra/outbox": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/rules": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

@@ -14,10 +14,11 @@
  *           not show, or shows at another path than the reference carries, is refused (`TenantScopeUnresolvedError`),
  *           and a scope above every tenant keeps no tenant. An agent whose tenant differs from its human's is refused. Any other actor keeps its own `scopeId`,
  *           and when that tenant and the scope's tenant are both known and differ the call is refused
- *           (`TenantScopeMismatchError`), never settled by picking one; a user with a tenant whose scope the tree
- *           shows above every tenant is refused the same way. Several granted scopes are one session, so they must
- *           all resolve alike (one tenant, all above every tenant, or all unknown to the tree) and are then treated as
- *           the first; scopes that span tenants are refused (`TenantScopeMismatchError`). A platform actor (no
+ *           (`TenantScopeMismatchError`), never settled by picking one; a user or an agent with a tenant (an agent's
+ *           own, or else its human's) whose scope the tree shows above every tenant, or does not show at that path, is
+ *           refused the same way. Several granted scopes
+ *           are one session, so they must all resolve alike (one tenant, all above every tenant, or all unknown to
+ *           the tree) and are then treated as the first; scopes that span tenants are refused (`TenantScopeMismatchError`). A platform actor (no
  *           `scopeId`) with no scope
  *           runs with `app.tenant_id = ''`, which matches no tenant row, and no scope runs with no granted path. The
  *           tree is read in a scope session over the root label of the scope's path, because its row security shows a
@@ -82,8 +83,9 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    *
    * @throws TypeError when `actor.scopeId` is not a tenant id or a scope path is not an `ltree` path.
    * @throws TenantScopeUnresolvedError when a job or system actor's scope is not in the scope tree.
-   * @throws TenantScopeMismatchError when another actor's tenant and its scope's tenant are both known and differ, or
-   *         several scopes span tenants.
+   * @throws TenantScopeMismatchError when another actor's tenant and its scope's tenant are both known and differ, a
+   *         user or agent with a tenant acts in a scope above every tenant or one the tree does not show, or several
+   *         scopes span tenants.
    * @throws TenantSwitchRefusedError when a transaction is already running for another tenant than the call's.
    */
   async run<T>(
@@ -113,7 +115,8 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    * @throws TenantScopeUnresolvedError when a job or system actor's scope is not in the scope tree.
    * @throws TenantScopeMismatchError when a tenant the actor claims (its own, or the one it acts for) and its scope's
    *         tenant are both known and differ, an agent and the human it acts for are in different tenants, or a user
-   *         with a tenant acts in a scope above every tenant, or several scopes do not all resolve alike.
+   *         or agent with a tenant acts in a scope above every tenant or one the tree does not show, or several scopes
+   *         do not all resolve alike.
    */
   private async actorIn(
     actor: Actor,
@@ -141,20 +144,18 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
     const [resolved] = answers;
     if (actor.kind === ActorKind.Job || actor.kind === ActorKind.System)
       return unitActor(actor, first, resolved);
-    // A tenant user in a scope above every tenant would keep its tenant while its scope paths cover other tenants'
-    // rows; a platform user (no `scopeId`) stays a platform call (ADR 0239 decision 1).
+    // An agent claims its own tenant or, with none, the one of the human it acts for (ADR 0360).
+    const claimed = actor.kind === ActorKind.Agent ? claimedTenants(actor)[0] : actor.scopeId;
+    // A tenant user or agent in a scope above every tenant, or in one the tree does not show (a forged path such as
+    // its own id with `platform`), would keep its tenant while its scope paths cover other tenants' rows: its scope
+    // must be shown inside a tenant. A platform user or agent (no tenant) stays a platform call (ADR 0239 decision 1).
     if (
-      actor.kind === ActorKind.User &&
-      actor.scopeId !== undefined &&
-      resolved !== undefined &&
-      resolved.tenant === undefined
+      (actor.kind === ActorKind.User || actor.kind === ActorKind.Agent) &&
+      claimed !== undefined &&
+      resolved?.tenant === undefined
     )
       throw TenantScopeMismatchError.create();
-    if (
-      actor.scopeId !== undefined &&
-      resolved?.tenant !== undefined &&
-      resolved.tenant !== actor.scopeId
-    )
+    if (claimed !== undefined && resolved?.tenant !== undefined && resolved.tenant !== claimed)
       throw TenantScopeMismatchError.create();
     return actor;
   }

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `emitIsolationTest`: a service with an owned model, its own or a hosted package's, and the
- *          database, tenancy and testing packages gets the row-security test over its compiled migrations; otherwise
- *          no file.
+ *          database, tenancy and testing packages gets the row-security test over its compiled migrations, with its
+ *          global models' tables and the ADR exemptions as platform tables; otherwise no file.
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0239 (decision 1); ADR 0182.
@@ -59,7 +59,35 @@ describe("emitIsolationTest", () => {
       'const postgres = usePostgres({ migrationsDirectory: fileURLToPath(new URL("../migrations", import.meta.url)) });',
     );
     expect(test).toContain(
-      "    await assertRowSecurity(postgres.database, tenantIsolationOptions());",
+      [
+        "    await assertRowSecurity(postgres.database, {",
+        "      ...tenantIsolationOptions(),",
+        "      platform: new Map([",
+        '        ["achievements.award_verifications", "ADR 0368 decision 5"],',
+        "      ]),",
+        "    });",
+      ].join("\n"),
+    );
+  });
+
+  it("lists a global model's table as a platform table", () => {
+    const withGlobal: MemberIR = {
+      ...OWNED,
+      classes: [
+        ...OWNED.classes,
+        ...COMMERCE_IR.classes
+          .filter((declared) => declared.kind === "model")
+          .slice(0, 1)
+          .map((declared) => ({
+            ...declared,
+            name: "Currency",
+            traits: [],
+            global: true as const,
+          })),
+      ],
+    };
+    expect(emitIsolationTest(withGlobal)).toContain(
+      '        ["orders.currencies", "Model.global (ADR 0210)"],',
     );
   });
 

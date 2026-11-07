@@ -115,6 +115,7 @@
     "@stackra/model": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/support": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

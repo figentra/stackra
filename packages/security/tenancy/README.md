@@ -89,7 +89,9 @@ with no actor runs as a platform call (`''`, no tenant row). A `job` or `system`
 tenant of that scope, which the platform wrote (a branch resolves to its parent tenant; ADR 0495, note of 2026-11-01), so
 a job pushed with `{ scope }` and no origin reads its tenant's rows; a scope the `ScopeTree` does not show is refused
 (`tenant_scope_unresolved`). Any other actor stays in its own tenant, and a scope of another tenant is refused
-(`tenant_scope_mismatch`); neither tenant is ever picked for it. Every `app.*` setting is `set_config(..., true)`, so it ends
+(`tenant_scope_mismatch`); neither tenant is ever picked for it. A user with a tenant is refused the same way in a
+scope above every tenant or one the tree does not show, such as its own id with the path `platform`, and so is an agent
+with a tenant (its own, or else that of the human it acts for); a platform user or agent stays a platform call. Every `app.*` setting is `set_config(..., true)`, so it ends
 with the transaction; `pnpm validate` refuses a session-level one.
 
 `withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.scopeId`, or `''` for a
@@ -108,6 +110,14 @@ A table whose rows belong to a tenant or to the platform (an inbound message on 
 The policy is `tenant_id IS NOT DISTINCT FROM nullif(current_setting('app.tenant_id'), '')`: a platform call
 (`withTenant` with no tenant) reads and writes only the NULL rows, a tenant call only its own. The macro compiles it
 through @stackra/database's `equalsOrUnset` policy match (STA-1300).
+
+## An existing table: the expand form
+
+A table that already has rows and its own policy (the scope-path tables) becomes tenant-owned in two releases. The
+expand step, `t.belongsToTenant({ expand: true })` in `schema.table(...)`, adds a nullable, indexed `tenant_id` that
+every insert fills from `app.tenant_id` (a column default), and no policy: a second permissive policy would OR with the
+table's own and widen it. Older rows stay null until a backfill job sets them. The contract step then makes the column
+NOT NULL and the tenant equality the one permissive policy, any other policy restrictive (ADR 0347 decision 1).
 
 ## Tenant tokens
 

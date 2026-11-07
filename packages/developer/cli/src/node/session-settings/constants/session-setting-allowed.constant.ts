@@ -13,10 +13,11 @@ export const SESSION_SETTING_ALLOWED: Readonly<Record<string, string>> = Object.
     "the isolation driver: scope and tenant settings, transaction-local, in one transaction (ADR 0495 decision 1)",
   "packages/security/tenancy/src/node/services/tenant-isolation.service.ts":
     "withTenant: the one place app.tenant_id is written, transaction-local (ADR 0239 decision 1)",
+  // withScope lives in @stackra/database, which cannot depend on tenancy, so it cannot move into the isolation driver
+  "packages/data/database/src/core/functions/run-in-scope.function.ts":
+    "withScope for both database drivers: the app.scope_* settings, transaction-local, and the enclosing ones put back after a nested call",
   "packages/data/database/src/node/drivers/postgres-database.driver.ts":
-    "withScope and onReplica: the app.scope_* settings and their replay on a replica, transaction-local",
-  "packages/data/database/src/testing/drivers/memory-database.driver.ts":
-    "the in-memory twin of withScope, which records the same settings",
+    "onReplica: the withScope settings replayed in the replica's transaction, transaction-local",
   // its tenant is a `PLATFORM` partition string and its argument is a scope id, not an actor, so it cannot call
   // `withTenant`, and iam must not depend on tenancy; it sets the tenant transaction-locally in a transaction of its own
   "packages/security/iam/src/node/drivers/postgres-policy-snapshot-store.driver.ts":
