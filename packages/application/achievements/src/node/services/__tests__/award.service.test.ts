@@ -4,10 +4,11 @@
  *          only the token's hash, and a refused grant writes nothing; `consider` grants each matched kind once (or once
  *          per period) and skips an unmatched kind or one with no published revision; a revoke records
  *          `AwardRevoked`, deletes the verification row and refuses a second revoke; a verify token resolves only its
- *          own award, in its scope's isolation as a system actor, and nothing once revoked, unknown or malformed; a
- *          short code resolves however it is typed and only its hash is indexed; a lost race on the unique live-period
- *          index is refused as `period_taken`; a certificate carries the verify URL, its QR code and the short code, is
- *          rendered through @stackra/documents, and is refused for a revoked award; `awardsOf` reads the live awards.
+ *          own award, in its scope's isolation as a system actor, and nothing once revoked, unknown, malformed or out
+ *          of the scope tree; a short code resolves however it is typed and only its hash is indexed; a lost race on
+ *          the unique live-period index is refused as `period_taken`; a certificate carries the verify URL, its QR
+ *          code and the short code, is rendered through @stackra/documents, and is refused for a revoked award;
+ *          `awardsOf` reads the live awards.
  * Boundary: test only; the kind and rule set services, the call isolation and the clock are in-test fakes, a
  *           fake `Database.current()` hands out an in-memory entity manager, and @stackra/rules evaluates for real.
  * Runtime: node (vitest)
@@ -26,6 +27,7 @@ import { takeRecordedEvents } from "@stackra/events";
 import { type Condition, Rules } from "@stackra/rules";
 import { type FactField, FieldType, Operator } from "@stackra/rules/contracts";
 import type { RuleSetService } from "@stackra/rules/node";
+import { TenantScopeUnresolvedError } from "@stackra/tenancy";
 import { afterAll, afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -161,7 +163,7 @@ function setup(kinds: readonly AwardKind[], options: { readonly published?: bool
     isolation as unknown as CallIsolation,
     { now: () => AT } as unknown as Clock,
   );
-  return { service, awards, verifications, em, runs };
+  return { service, awards, verifications, em, runs, isolation };
 }
 
 afterEach(() => {
@@ -304,6 +306,18 @@ describe(AwardService, () => {
     expect(runs).toEqual([read, read]);
     await expect(service.verify("A".repeat(43))).resolves.toBeNull();
     await expect(service.verify("not a token")).resolves.toBeNull();
+  });
+
+  it("verifies an award whose scope the tree no longer shows as not found, and rethrows other errors", async () => {
+    const kind = kindOf();
+    const { service, isolation } = setup([kind]);
+    const award = await service.grant(ACME, { kindId: kind.id, recipient: MEMBER }, "usr_1");
+    isolation.run.mockRejectedValueOnce(TenantScopeUnresolvedError.create());
+    await expect(service.verify(award.verifyToken)).resolves.toBeNull();
+    isolation.run.mockRejectedValueOnce(TenantScopeUnresolvedError.create());
+    await expect(service.verifyCode(award.verifyCode ?? "")).resolves.toBeNull();
+    isolation.run.mockRejectedValueOnce(new Error("connection lost"));
+    await expect(service.verify(award.verifyToken)).rejects.toThrow("connection lost");
   });
 
   it("builds a certificate with the verify URL and its QR code, and refuses a revoked award", async () => {
