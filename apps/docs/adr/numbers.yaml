@@ -1617,6 +1617,6 @@
   issue: STA-2220
 "0532":
   slug: infrastructure-ownership
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-2104
