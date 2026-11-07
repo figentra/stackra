@@ -18,6 +18,7 @@ import { runwayIo } from "#node/functions/runway-io.function";
 /** Dispatches the production callers for a commit of main. */
 export class RunwayPromoteCommand extends Command({
   name: "promote",
+  bin: true,
   description: "Dispatch the production caller workflows for a commit of origin/main",
   examples: ["runway promote <sha> --dry-run"],
 }) {

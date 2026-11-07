@@ -17,6 +17,7 @@ import { runwayIo } from "#node/functions/runway-io.function";
 /** Dispatches a target's caller workflows for the head of main. */
 export class RunwayDeployCommand extends Command({
   name: "deploy",
+  bin: true,
   description: "Dispatch a target's caller workflows for the head of origin/main",
   examples: ["runway deploy cloudflare-workers --dry-run"],
 }) {

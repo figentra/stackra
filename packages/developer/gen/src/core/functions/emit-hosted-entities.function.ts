@@ -135,7 +135,7 @@ export function emitHostedEntities(ir: MemberIR): GeneratedFile[] {
     const view: MemberIR = { ...ir, shapes, classes };
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const module of [...new Set(shapes.map((shape) => shape.module))].sort()) {
-      const content = emitEntities(view, module);
+      const content = emitEntities(view, module, true);
       if (content !== undefined)
         files.push({
           path: `.stackra/gen/entities/hosted/${manifest.member}/${module}.ts`,

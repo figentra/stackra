@@ -232,6 +232,7 @@ export async function discoverMember(
       ...(slots.length > 0 ? { slots } : {}),
       ...(fills.length > 0 ? { fills } : {}),
       packages: facts.dependencies,
+      runtimePackages: facts.runtimeDependencies ?? [],
       dependencies,
       ...(services.length > 0 ? { services } : {}),
       ...(eventsRelay !== undefined ? { eventsRelay } : {}),

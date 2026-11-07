@@ -49,9 +49,6 @@
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist .turbo .wrangler"
   },
-  "dependencies": {
-    "@stackra/console": "workspace:*"
-  },
   "devDependencies": {
     "@stackra/app": "workspace:*",
     "@stackra/cli": "workspace:*",

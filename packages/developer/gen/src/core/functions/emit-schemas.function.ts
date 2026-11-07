@@ -297,14 +297,17 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
   // A `@Hidden` field never goes out on the wire: no `X$` key, and `X$Check` omits it like a relation (stackra-260).
   const wire = shape.fields.filter((field) => field.hidden !== true);
   const hidden = shape.fields.filter((field) => field.hidden === true).map((field) => field.name);
-  const body = wire.map((field) => {
-    const expression = fieldOf(context, field, shape);
-    // A shape not declared yet (this one, or a later one in a cycle) is read through a getter, which zod 4 infers and
-    // evaluates only when parsing; `z.lazy` inside the object initializer is TS7022 (implicit any, STA-1683).
-    return LAZY.test(expression)
-      ? `  get ${field.name}() {\n    return ${expression.replaceAll(LAZY_ALL, "$1")};\n  },`
-      : `  ${field.name}: ${expression},`;
-  });
+  // Built only where it is emitted: a package base's override reads `BaseX$.shape`, so a hatch's import would go
+  // unused (TS6133, STA-2215 follow-up).
+  const bodyOf = (): string[] =>
+    wire.map((field) => {
+      const expression = fieldOf(context, field, shape);
+      // A shape not declared yet (this one, or a later one in a cycle) is read through a getter, which zod 4 infers and
+      // evaluates only when parsing; `z.lazy` inside the object initializer is TS7022 (implicit any, STA-1683).
+      return LAZY.test(expression)
+        ? `  get ${field.name}() {\n    return ${expression.replaceAll(LAZY_ALL, "$1")};\n  },`
+        : `  ${field.name}: ${expression},`;
+    });
   const base = shape.base;
   if (base?.kind === "package") {
     const alias = `Base${base.name}$`;
@@ -320,7 +323,7 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
       /^z\.lazy\(\(\) => (.*)\)$/,
       "$1",
     );
-    lines.push(`export const ${shape.name}$ = ${parent}.extend({`, ...body, "});");
+    lines.push(`export const ${shape.name}$ = ${parent}.extend({`, ...bodyOf(), "});");
   } else if (base?.kind === "remote") {
     // A consumed shape carries its schema as a static (`remoteShape` of @stackra/clients, STA-1363).
     const alias = `Remote${base.name}`;
@@ -336,8 +339,12 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
           : base.derive?.helper === "PartialType"
             ? ".partial()"
             : "";
-    lines.push(`export const ${shape.name}$ = ${alias}.schema${derived}.extend({`, ...body, "});");
-  } else lines.push(`export const ${shape.name}$ = z.object({`, ...body, "});");
+    lines.push(
+      `export const ${shape.name}$ = ${alias}.schema${derived}.extend({`,
+      ...bodyOf(),
+      "});",
+    );
+  } else lines.push(`export const ${shape.name}$ = z.object({`, ...bodyOf(), "});");
   context.declared.add(shape.name);
   // A driver-name field is `z.enum` of the names gen found, while `DriverName<P>` widens to every registered name
   // unless the port carries a `~key` brand: the check leaves it out on both sides (STA-1805).

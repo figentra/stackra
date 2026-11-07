@@ -98,6 +98,12 @@ export interface MemberIR {
    */
   readonly packages?: readonly string[];
 
+  /**
+   * The package names of `dependencies` alone, without `devDependencies`: a member hosts console commands only from
+   * these, since its console runs where dev tooling is not installed. Absent in an IR built by hand.
+   */
+  readonly runtimePackages?: readonly string[];
+
   /** The workspace and `@stackra/*` dependencies that commit a manifest, in package.json order. */
   readonly dependencies: readonly {
     readonly package: string;

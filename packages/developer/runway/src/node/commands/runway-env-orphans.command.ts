@@ -15,6 +15,7 @@ import { repositoryRoot } from "#node/functions/repository-root.function";
 /** Warns on Infisical names nothing declares. */
 export class RunwayEnvOrphansCommand extends Command({
   name: "env:orphans",
+  bin: true,
   description:
     "Warn on Infisical names in an environment's runtime homes that no code declares (CI only)",
   examples: ["runway env orphans staging --project-id <id>"],
