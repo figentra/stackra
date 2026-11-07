@@ -7,7 +7,8 @@
  *           The connection comes from the member's runway and config, never from an argument.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2 as amended 2026-10-24: `stackra db migrate` is a release step); ADR 0282
- *                     (decision 3); ADR 0352 (infra is `stackra runway infra`, not a CLI command); ADR 0506; STA-1966.
+ *                     (decision 3); ADR 0352 (amended 2026-11-07: infra is figentra/infra's Pulumi stacks, never a CLI command); ADR 0506;
+ *                     STA-1966.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
 import { Str } from "@stackra/validation";
