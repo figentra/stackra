@@ -1,5 +1,103 @@
 # @stackra/cli
 
+## 0.19.0
+
+### Minor Changes
+
+- bac874e: The last Infisical uses in the developer packages move to sops and figentra/secrets (ADR 0525).
+  
+  - `stackra mcp exec -- <argv>` decrypts each `$NAME` the command names with `sops exec-env` from the `agents` scope of
+    the local figentra/secrets clone (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`), one nested call per secret,
+    instead of `infisical run`. Its `--env` and `--path` flags are gone; `McpExecOptions` is now `{ secretsDir? }`.
+  - Mobile onboarding no longer writes the FCM key to a vault: it goes only to EAS, its one reader, and running the
+    `push` step again replaces a lost key. `InfisicalVaultWriterDriver` is removed, and `MobileOnboardRequest` has no
+    `vault` port. A missing root-kit name prints `pnpm secrets:put <NAME> --scope ci/production/store` as its owner step.
+  - gen's `env` manifest rows no longer carry `home` (the Infisical folder `/runtime/<member>`), and the field is gone
+    from the `StackraManifest` type; runway already ignored it. Products regenerate their manifests after the release.
+  - `stackra dev --tunnel` names the sops way to start with `CLOUDFLARE_TUNNEL_TOKEN`, and the service template's
+    `runway.yaml` header names figentra/secrets.
+- 1f33c82: Runway no longer reads Infisical (ADR 0525). The secret sync (`runway secrets sync`, and `stackra deploy` with
+  `secrets.sync: on-deploy`) and the Workers provider read every declared secret from the job's environment, where
+  `.github/actions/secrets-decrypt` put the product's sops scope. `--from-env` is still accepted on both commands but does
+  nothing and prints a deprecation note; it goes in the next minor release.
+  
+  - A product's runtime secrets live in the scope `products/<project>/<dev|staging|production>`; a preview reads dev's.
+    `deployPlan` gives `secretScope` in place of `infisicalEnvironment`, and a `SecretSyncEntry` gives `scope` in place
+    of `path`. The secret entries of `deployPlan(...).sync` no longer carry a `path`.
+  - `providers.infisical` is no longer typed in the root schema, and `secrets.defaultPath` is ignored. A runway.yaml that
+    still has either passes validation, and `runway validate` warns on each for one release: remove them.
+  - `runway env check` checks each name against the sops scope of its environment, and counts the `names:` of a
+    `secrets-decrypt` step as declared, in place of Infisical `secret-name:` steps. Names only, no login.
+  - `runway env check --values --env <env>` reads the values from the job's environment and checks only that
+    environment; `--project-id` is gone.
+  - `runway env orphans <env> [--dir <d>]` lists the scope's names from its ciphertext file names, decrypting nothing;
+    `--project-id` is gone.
+  - `readMemberSecrets` takes `env` and no longer takes `source` or `run`. `syncSecrets` no longer takes `fromEnv`.
+  - infra-github still sets the `INFISICAL_DOMAIN` and `INFISICAL_PROJECT_ID` variables from an untyped
+    `providers.infisical` block while CI logins need them.
+
+### Patch Changes
+
+- 4069d77: The docs link check treats an HTML file under `assets/` (a brand email template with placeholder links) as a file the
+  site serves, not a page: a link may point at it, and its own links are not checked.
+- e105174: The infrastructure and developer packages describe sops and figentra/secrets instead of Infisical (ADR 0525).
+  
+  - `@stackra/infra-aws-runtime`: the RDS Proxy login secret's description names the vault, not Infisical, so the next
+    apply updates that description in place. The docs name the vault and runway's secrets sync.
+  - `@stackra/infra-tools`: the tools-stack secrets sync is the vault's (`secretsSync` keeps its shape: `source`,
+    `principal`, `externalId`); the missing external id error names the secrets sync.
+  - `@stackra/infra-github`, `@stackra/infra-cloudflare`, `@stackra/infra-identity`, `@stackra/infra-observability`,
+    `@stackra/runway`, `@stackra/mcp`, `@stackra/cli`, `@stackra/fiscal`, `@stackra/licensing`: docs and comments only.
+    `githubPlan` still turns `providers.infisical` into the `INFISICAL_*` CI variables until plan phase P6.
+- 5d6448a: `stackra doctor` no longer checks for the Infisical CLI and login (ADR 0525). A workspace whose root scripts run
+  `secrets-exec.mjs` is checked for the sops CLI, the Google Application Default Credentials file sops decrypts with
+  (its presence only; the credential is never read) and a `figentra/secrets` clone with an `agents` folder. The
+  `infisical` doctor need and the `DoctorWorkspace.infisical` field are gone. The testbed's toolchain test no longer
+  expects the Infisical CLI in `mise.toml`; the boxes keep their own pin until they read sops.
+- afd7846: Gen has warnings: a `GenError` with `severity: "warning"` prints as `<at> warning <code> ...` with its fix, never stops
+  gen writing, and comes back in `warnings` from `generateMember` and `generate`; `stackra gen` and `stackra gen --check`
+  print it and exit 0, while an error still exits 1. ADR 0101's checks run in the full pass as the new exported
+  `checkActionFirst`: `action_without_workflow` warns an action that takes another service's client, a sibling module's
+  service or `ConnectionStore` and starts no workflow, and `workflow_without_action` refuses a controller, command or
+  listener that takes a workflow or `WorkflowRunner`, or starts a workflow itself. The source reader records the
+  workflows a class starts as `DeclaredClass.workflows` (STA-340).
+- 41dcbf6: `stackra testbed` defaults to the `figentra` AWS profile, which replaces the old `academorix` profile name for the same
+  account. The key file keeps its live name; `STACKRA_TESTBED_AWS_PROFILE` still overrides the profile.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [2933e48]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [e105174]
+- Updated dependencies [ee00741]
+- Updated dependencies [5830168]
+- Updated dependencies [ef04935]
+- Updated dependencies [1cc3bd3]
+- Updated dependencies [afd7846]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [b800ae4]
+- Updated dependencies [3aaf758]
+- Updated dependencies [619099f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [fc845f4]
+- Updated dependencies [c239773]
+- Updated dependencies [414586e]
+- Updated dependencies [7a83de3]
+- Updated dependencies [1f33c82]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/gen@0.19.0
+  - @stackra/runway@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/mcp@0.19.0
+  - @stackra/repo-checks@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/skills@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/support@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes
