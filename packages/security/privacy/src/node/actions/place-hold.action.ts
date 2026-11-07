@@ -10,7 +10,7 @@
  * Governing contract: ADR 0134 (2026-10-24 amendment: holds); ADR 0189 (decision 4); ADR 0294 (decisions 16 and 21);
  *                     data-layer gap gov20 (stackra-332).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind, mintPublicId } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 
@@ -32,6 +32,7 @@ const PARTITION = "coalesce(nullif(current_setting('app.tenant_id', true), ''), 
 export class PlaceHoldAction extends Action({
   key: "hold.place",
   actors: [ActorKind.User, ActorKind.Service],
+  idempotency: Idempotency.Optional,
   // reason: an agent never places or lifts a legal hold
   tool: false,
 }) {

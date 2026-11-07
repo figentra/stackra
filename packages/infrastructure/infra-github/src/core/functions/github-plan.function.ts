@@ -62,10 +62,15 @@ export function githubPlan(root: RootRunway): GithubPlan {
     return variables ?? {};
   };
 
-  const infisical = root.providers?.infisical;
+  // shortcut: Runway no longer types `providers.infisical` (ADR 0525), but the CI logins still read these variables
+  // until every workflow decrypts sops; drop this when Infisical is deleted (plan phase P6).
+  const infisical = (root.providers?.["infisical"] ?? {}) as {
+    readonly domain?: unknown;
+    readonly workspace?: unknown;
+  };
   const variables = {
-    ...(infisical?.domain === undefined ? {} : { INFISICAL_DOMAIN: infisical.domain }),
-    ...(infisical?.workspace === undefined
+    ...(typeof infisical.domain === "string" ? { INFISICAL_DOMAIN: infisical.domain } : {}),
+    ...(infisical.workspace === undefined
       ? {}
       : { INFISICAL_PROJECT_ID: String(infisical.workspace) }),
     ...checked(github.variables, "root.providers.github.variables"),

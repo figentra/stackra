@@ -39,6 +39,7 @@ export { checkEncryptedFields } from "#core/functions/check-encrypted-fields.fun
 export { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 export { checkModelScope } from "#core/functions/check-model-scope.function";
 export { checkApproval } from "#core/functions/check-approval.function";
+export { checkCallShape } from "#core/functions/check-call-shape.function";
 export { checkQueryCache } from "#core/functions/check-query-cache.function";
 export { checkSurfaces } from "#core/functions/check-surfaces.function";
 export { compareManifests } from "#core/functions/compare-manifests.function";

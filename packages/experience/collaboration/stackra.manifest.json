@@ -21,6 +21,7 @@
       "permission": "collaboration.room.publish",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/rooms/publish",

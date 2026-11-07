@@ -16,7 +16,9 @@
  *          host's wiring knows its configs without guessing from a name (STA-1308). It reports the identity checks it
  *          can see: `identity_collision`, `override_duplicate`, `permission_unknown`, `identity_missing`,
  *          `action_risk_below_write` (an action whose permission is L0 or L1, STA-2096), the public id prefix checks
- *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
+ *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, the call-shape refusals
+ *          of `checkCallShape` (`query_above_l1`, `query_precondition`, `action_cache`, `step_up_missing`,
+ *          `idempotency_missing`), `effect_unknown`,
  *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
@@ -41,7 +43,7 @@
  *          A service with a runway `events` block gets the `relay` section: per environment, its public keys (current
  *          first) and its subscribers with the events each takes, never an inbox origin (ADR 0511 d16 and d17).
  *          It lists each environment variable its configuration classes declare in `env` (`envOf`: name, kind, type,
- *          rules, the config that declares it; a host adds its packages' rows and the Infisical path), STA-2104.
+ *          rules, the config that declares it; a host adds its packages' rows), STA-2104.
  *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
  *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
@@ -71,6 +73,7 @@ import { REPLICA_PAGE_SCHEMA } from "#core/constants/replica-page-schema.constan
 import { actionKey } from "#core/functions/action-key.function";
 import { additionsOf } from "#core/functions/additions-of.function";
 import { blockKey } from "#core/functions/block-key.function";
+import { checkCallShape } from "#core/functions/check-call-shape.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
@@ -422,6 +425,9 @@ export function buildManifest(ir: MemberIR): {
         `${kind} a user can perform says \`tool: false\` without a reason`,
         "add a `// reason: <why an agent may not call it>` line above `tool: false`",
       );
+    errors.push(
+      ...checkCallShape(declared, { risk, routed: endpoint !== undefined, tool: toolEnabled }),
+    );
     const writtenEffects = Array.isArray(declared.options["effects"])
       ? declared.options["effects"].map(String)
       : [];

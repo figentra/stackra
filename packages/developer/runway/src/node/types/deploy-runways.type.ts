@@ -14,7 +14,7 @@ type Workflows = Readonly<Record<string, string>>;
 export interface DeployRunways {
   /** The root `runway.yaml`. */
   readonly root: {
-    /** The repository's project key (`pay`); its runtime Infisical projects are `<project>-runtime(-prod)`. */
+    /** The repository's project key (`pay`); its runtime secrets are the sops scopes `products/<project>/<env>`. */
     readonly project?: string;
     readonly environments?: Readonly<
       Record<
@@ -31,18 +31,11 @@ export interface DeployRunways {
       /** The Encore Cloud app the secrets sync writes into (`encore secret set` runs in a folder naming it). */
       readonly encore?: { readonly app?: string };
       readonly github: { readonly org: string; readonly repo: string };
-      readonly infisical?: {
-        readonly domain?: string;
-        readonly workspace?: string;
-        readonly environments?: Readonly<Record<string, string>>;
-        readonly paths?: Readonly<Record<string, string>>;
-      };
     };
     /** The mobile apps, by app member folder name. */
     readonly mobile?: Readonly<Record<string, unknown>>;
     readonly targets?: Readonly<Record<string, { readonly workflows?: Workflows } | undefined>>;
     readonly secrets?: {
-      readonly defaultPath?: string;
       readonly ci?: readonly string[];
       /** The generated API gateway's runtime secret names (ADR 0237). */
       readonly gateway?: readonly string[];

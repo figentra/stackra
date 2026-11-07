@@ -21,6 +21,7 @@
       "permission": "catalogue.catalogue.publish",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/catalogues/publish",
@@ -32,7 +33,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         }
       },

@@ -20,7 +20,7 @@ import { MEMBERS, ROOT_RUNWAY } from "./fixtures/deploy-runways.fixture";
 describe("deployPlan", () => {
   it("lists build-order targets with their workflows, the CI names and the names to sync, never a value", () => {
     const p = deployPlan("production", { root: ROOT_RUNWAY, members: MEMBERS });
-    expect(p.infisicalEnvironment).toBe("prod");
+    expect(p.secretScope).toBe("products/acme/production");
     expect(p.steps.map(({ target, destination }) => [target, destination])).toEqual([
       ["npm", false],
       ["cloudflare-workers", true],
@@ -28,13 +28,24 @@ describe("deployPlan", () => {
     ]);
     expect(p.ci).toEqual(["CLOUDFLARE_API_TOKEN"]);
     expect(p.sync).toEqual([
-      { member: "web", kind: "secret", name: "SENTRY_AUTH", path: "/runtime/web" },
+      { member: "web", kind: "secret", name: "SENTRY_AUTH" },
       { member: "web", kind: "var", name: "VITE_API_ORIGIN" },
     ]);
     expect(JSON.stringify(p).includes("api.acme.example")).toBe(false);
     expect(() => deployPlan("staging", { root: ROOT_RUNWAY, members: [] })).toThrow(
       /no environment "staging"/,
     );
+  });
+
+  it("names the sops scope by environment: a preview reads dev's, and no project means no scope (ADR 0525)", () => {
+    const unnamed = {
+      providers: ROOT_RUNWAY.providers,
+      environments: { preview: {}, staging: {}, production: {} },
+    };
+    const root = { ...unnamed, project: "acme" };
+    expect(deployPlan("preview", { root, members: [] }).secretScope).toBe("products/acme/dev");
+    expect(deployPlan("staging", { root, members: [] }).secretScope).toBe("products/acme/staging");
+    expect(deployPlan("staging", { root: unnamed, members: [] }).secretScope).toBeNull();
   });
 
   it("syncs the names a member's manifest declares for the environment beside its runway secrets (STA-2104)", () => {
@@ -68,7 +79,9 @@ describe("deployPlan", () => {
       for (const file of Object.values(workflows))
         expect(existsSync(join(repo, ".github/workflows", file)), file).toBe(true);
     // The docs are a Cloudflare Worker since the Fumadocs move (ADR 0514, STA-2026): no Mintlify target is left.
-    expect(p.steps.filter((s) => s.destination).map((s) => s.target)).toEqual(["cloudflare-workers"]);
+    expect(p.steps.filter((s) => s.destination).map((s) => s.target)).toEqual([
+      "cloudflare-workers",
+    ]);
     expect(new Set(runways.members.map((m) => m.member))).toEqual(
       new Set([
         "console",

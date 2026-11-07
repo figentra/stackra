@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `envOf` and the `env` section of `buildManifest`: a package's config rows (config, public and
  *          secret kinds, type, required, rules, refused prefixes, environments), no row for a host override, and a
- *          service's own and hosted rows with the `/runtime/<member>` home.
+ *          service's own and hosted rows, none naming a store location.
  * Boundary: test only; runs on hand-built package and service IRs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0173 (amendment 2026-11-04, decision 2); STA-2104.
@@ -129,7 +129,7 @@ describe("envOf", () => {
     expect(envOf(member("service", [override]))).toEqual([]);
   });
 
-  it("gives a service its hosted packages' rows, marked from, and the runtime home", () => {
+  it("gives a service its hosted packages' rows, marked from, without a home (ADR 0525)", () => {
     const hosted: StackraManifest = {
       member: "pay",
       package: "@stackra/pay",
@@ -153,7 +153,6 @@ describe("envOf", () => {
         class: "PayConfig",
         field: "stripeKey",
         from: "@stackra/pay",
-        home: "/runtime/checkout",
       },
     ]);
   });

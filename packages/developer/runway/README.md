@@ -47,7 +47,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `runProgram`, `CommandRunner`                                                                                                                               | how a provider runs its CLI, with no shell                                                                                                                             |
 | `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                                                                             |
 | `./node`    | `onboardMobile(request)`, `MobileOnboardRequest`, `MobileOnboard`, `OnboardStep`, `easJsonOf`, `toolVersionOf`                                              | mobile onboarding (ADR 0482): ids, EAS, Apple, Google, Firebase, Sentry, signing, push, stores; see below                                                              |
-| `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…`, `InfisicalVaultWriter…` drivers, and a `Memory…` driver of each | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
+| `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…` drivers, and a `Memory…` driver of each (`MemoryVaultWriter…` only for `VaultWriter`) | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
 | `./node`    | `checkoutLine(request)`, `shellReleaseOf`, `LINE_CHECKOUT_SETTINGS`, `LineSource`, `LineCheckout`, `ShellManifest`                                          | the template line step: a line's highest release from the registry (or a local checkout) into a folder (ADR 0481)                                                      |
 | `./node`    | `dryRunCommand(options)`, `DryRunEdgeKvDriver`                                                                                                              | dry runs: every command and KV write recorded, local outputs still written                                                                                             |
 | `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`                                                 | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check                                                                 |
@@ -217,8 +217,9 @@ on the edge, and the app id pattern check of ADR 0439 decision 6.
 `blocked`: `identity` (fills absent ids from `mobileIdsOf`), `eas-project`, `eas-profiles`, `apple-bundle`,
 `apple-app-record`, `google-project`, `firebase`, `analytics-link`, `sentry`, `signing`, `push`, `store-keys`,
 `play-app`. Every external call goes through a port; `dryRun` reads only and writes nothing. It writes `runway.yaml`
-(comments kept) and the Firebase config files. The FCM key it creates goes straight to `VaultWriter` and EAS and is
-never returned. `stackra mobile onboard` is the command; the runbook is `runbooks/mobile-onboarding`.
+(comments kept) and the Firebase config files. The FCM key it creates goes straight to EAS, its one reader, and is
+never returned or stored elsewhere; a missing root-kit name comes back as a manual step with its
+`pnpm secrets:put <NAME> --scope ci/production/store` command. `stackra mobile onboard` is the command; the runbook is `runbooks/mobile-onboarding`.
 
 ```ts
 import { MemoryAppleDeveloperDriver, onboardMobile /* , … */ } from "@stackra/runway/node";
@@ -233,7 +234,6 @@ const result = await onboardMobile({
   google,
   firebase,
   sentry,
-  vault,
 });
 result.steps.filter((step) => step.state === "manual");
 ```
@@ -458,11 +458,11 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway status [env]`                        | What each GitHub environment runs, from GitHub's deployment records: commit, time, state                                                     | 0                        |
 | `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), a product's staging and production `region` and a ksa environment's GCP project (ADR 0524), service `requires`; deprecated fields and an unused AWS account opt-in warn | 0; 1 with each finding   |
 | `runway drift [env]`                         | Each Cloudflare Worker's live settings against what runway.yaml renders (read-only, `CLOUDFLARE_API_TOKEN_READ`)                            | 0; 1 when a Worker drifted |
-| `runway secrets sync <env> [--dry-run]` (alias `runway env sync`) | The member secrets of `env`, and the names each member's manifest declares (STA-2104), from Infisical into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves                 | 0                        |
+| `runway secrets sync <env> [--dry-run]` (alias `runway env sync`) | The member secrets of `env`, and the names each member's manifest declares (STA-2104), from the job's environment (the sops scope `products/<project>/<env>` that `.github/actions/secrets-decrypt` decrypted, ADR 0525) into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves. `--from-env` is accepted and ignored (deprecated) | 0                        |
 | `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |
-| `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, workflow `secret-name:`) has an Infisical home; a raw read of an undeclared name warns. Names only, no login | 1 on an error |
-| `runway env check --values --env <env> [--project-id <id>]` | CI only: each declared name of `<env>` (errors) and its sibling non-production environments (warnings) read from its Infisical home and checked against its rules; prints names, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
-| `runway env orphans <env> [--project-id <id>]` | CI only: warns on each name in `<env>`'s runtime homes that no code declares | 0 |
+| `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, the `names:` of a `secrets-decrypt` step) has a sops scope (`products/<project>/<dev\|staging\|production>`; a preview reads dev's); a raw read of an undeclared name warns. Names only, no login | 1 on an error |
+| `runway env check --values --env <env>` | CI only: each declared name of `<env>`, read from the job's environment after `secrets-decrypt`, checked against its rules; prints names, the scope, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
+| `runway env orphans <env> [--dir <d>]` | CI only: warns on each name in `<env>`'s sops scope (its ciphertext file names under `<d>`, default `.secrets`) that no code declares; decrypts nothing | 0 |
 
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
 by a flag or `GITHUB_ACTIONS`; a deploy job needs `permissions: id-token: write`. A destination is one of

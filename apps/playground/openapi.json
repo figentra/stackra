@@ -15,6 +15,7 @@
         "x-stackra-action": "identity.operator.bootstrap@1",
         "x-stackra-permission": "identity.operator.bootstrap",
         "x-stackra-risk": "L4",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden"],
         "requestBody": {
           "required": true,
@@ -51,6 +52,7 @@
         "x-stackra-action": "identity.account_deletion.cancel@1",
         "x-stackra-permission": "identity.account_deletion.cancel",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden"],
         "requestBody": {
           "required": true,
@@ -87,6 +89,7 @@
         "x-stackra-action": "identity.passkey.confirm@1",
         "x-stackra-permission": "identity.passkey.confirm",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["unauthenticated"],
         "parameters": [
           {
@@ -133,6 +136,7 @@
         "x-stackra-action": "identity.account_deletion.request@1",
         "x-stackra-permission": "identity.account_deletion.request",
         "x-stackra-risk": "L4",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden"],
         "requestBody": {
           "required": true,
@@ -169,6 +173,7 @@
         "x-stackra-action": "identity.session.end_all@1",
         "x-stackra-permission": "identity.session.end_all",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden", "unauthenticated"],
         "requestBody": {
           "required": true,
@@ -205,6 +210,7 @@
         "x-stackra-action": "identity.session.end@1",
         "x-stackra-permission": "identity.session.end",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden", "unauthenticated", "not_found"],
         "parameters": [
           {
@@ -251,6 +257,7 @@
         "x-stackra-action": "identity.session.end_user@1",
         "x-stackra-permission": "identity.session.end_user",
         "x-stackra-risk": "L3",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["not_found"],
         "requestBody": {
           "required": true,
@@ -287,6 +294,7 @@
         "x-stackra-action": "identity.passkey.register@1",
         "x-stackra-permission": "identity.passkey.register",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["unauthenticated"],
         "requestBody": {
           "required": true,

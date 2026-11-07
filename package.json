@@ -54,7 +54,6 @@
     "secrets:catalog": "node tools/scripts/secrets-catalog.mjs",
     "secrets:age-init": "node tools/scripts/secrets-age-init.mjs",
     "store": "node tools/scripts/store.mjs",
-    "vault": "node tools/scripts/vault-keeper.mjs",
     "runway": "node packages/developer/runway/dist/runway.mjs",
     "bot:token": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/bot-token.mjs",
     "bot:gh": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/bot-gh.mjs gh",

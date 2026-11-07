@@ -137,8 +137,6 @@ export type StackraManifest = {
     readonly config: string;
     readonly class: string;
     readonly field: string;
-    /** The Infisical path on a deployable member's row (`/runtime/<member>`). */
-    readonly home?: string;
     /** The package that contributes it, on a host's row. */
     readonly from?: string;
   }[];

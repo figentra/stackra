@@ -21,6 +21,7 @@
       "permission": "media.upload.create",
       "risk": "L2",
       "actors": ["user", "agent"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
         "path": "/uploads",
@@ -32,7 +33,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         }
       },

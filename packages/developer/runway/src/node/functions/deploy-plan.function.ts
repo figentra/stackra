@@ -3,13 +3,19 @@
  * Purpose: `deployPlan(env, runways)`, what a deploy of `env` does, from the runways (`runway plan`); a member's sync
  *          names are its runway secrets and the `secret` and `config` names its manifest declares (STA-2104). A
  *          `public` name is a build variable (EAS environment, Vite define, Worker var), never a server secret, so it
- *          is not in the secret sync; pushing it as a build variable is STA-2009's.
+ *          is not in the secret sync; pushing it as a build variable is STA-2009's. The secret values of `env` live
+ *          in one figentra/secrets scope, `products/<project>/<dev|staging|production>` (ADR 0525), and a preview
+ *          reads dev's.
  * Boundary: pure; names only, never a value (a member var's value is never copied).
  * Runtime: node
- * Governing contract: ADR 0170; ADR 0512 (`/runtime/<member>`); STA-268 (the secret sync is STA-606).
+ * Governing contract: ADR 0170; ADR 0525 (sops scopes); STA-268 (the secret sync is STA-606).
  */
 import type { DeployPlan } from "#node/types/deploy-plan.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
+
+/** The sops environment of a runway environment: figentra/secrets keeps dev, staging and production per product. */
+const sopsEnvironment = (env: string): string =>
+  env === "production" || env === "staging" ? env : "dev";
 
 /**
  * The deploy plan of `env`.
@@ -22,13 +28,12 @@ export function deployPlan(env: string, { root, members }: DeployRunways): Deplo
   const environment = root.environments?.[env];
   if (!environment) throw new Error(`runway.yaml has no environment "${env}"`);
   const destinations = new Set(Object.values(environment.destinations ?? {}));
-  const infisical = root.providers?.infisical ?? {};
-  const defaultPath = root.secrets?.defaultPath;
-  // ADR 0512: each member's runtime secrets sit in their own folder, `<runtime path>/<member>`.
-  const base = defaultPath === undefined ? undefined : infisical.paths?.[defaultPath];
   return {
     environment: env,
-    infisicalEnvironment: infisical.environments?.[env] ?? null,
+    secretScope:
+      root.project === undefined || root.project === ""
+        ? null
+        : `products/${root.project}/${sopsEnvironment(env)}`,
     steps: (root.release?.buildOrder ?? [])
       .filter((target) => root.targets?.[target])
       .map((target) => ({
@@ -47,12 +52,7 @@ export function deployPlan(env: string, { root, members }: DeployRunways): Deplo
         .map((row) => row.name);
       return [
         ...[...new Set([...(runway.secrets ?? []), ...(own.secrets ?? []), ...code])].map(
-          (name) => ({
-            member,
-            kind: "secret" as const,
-            name,
-            path: base === undefined ? null : `${base.replace(/\/$/, "")}/${member}`,
-          }),
+          (name) => ({ member, kind: "secret" as const, name }),
         ),
         ...Object.keys(own.vars ?? {}).map((name) => ({ member, kind: "var" as const, name })),
       ];

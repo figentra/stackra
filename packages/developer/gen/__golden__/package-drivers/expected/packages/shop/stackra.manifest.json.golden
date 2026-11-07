@@ -38,6 +38,7 @@
       "permission": "shop.order.cancel",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
         "path": "/orders/:orderId/cancel",
@@ -49,7 +50,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         }
       },

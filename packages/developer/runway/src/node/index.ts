@@ -17,7 +17,8 @@
  *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481), a product mobile app's local run (`prepareMobileDev`), and a product's build and deploy (`buildProduct`,
  *          `deployProduct`, `workspacePackages`).
  *          Mobile onboarding (`onboardMobile`, `easJsonOf`, `toolVersionOf`, and the real and memory drivers of its
- *          App Store Connect, Play, Expo, Google Cloud, Firebase, Sentry and Infisical ports, ADR 0482).
+ *          App Store Connect, Play, Expo, Google Cloud, Firebase and Sentry ports, ADR 0482; the vault port's
+ *          memory driver only, ADR 0525).
  *          The local edge for a built surface (`previewServe`, `LocalEdgeKvDriver`, `renderShellPage`, STA-1676).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
@@ -32,7 +33,6 @@ export { ExpoGraphqlProjectsDriver } from "#node/drivers/expo-graphql-projects.d
 export { FirebaseManagementDriver } from "#node/drivers/firebase-management.driver";
 export { GoogleCloudDriver } from "#node/drivers/google-cloud.driver";
 export { GooglePlayConsoleDriver } from "#node/drivers/google-play-console.driver";
-export { InfisicalVaultWriterDriver } from "#node/drivers/infisical-vault-writer.driver";
 export { SentryApiProjectsDriver } from "#node/drivers/sentry-api-projects.driver";
 export { ElectronSmokeDriver } from "#node/drivers/electron-smoke.driver";
 export { EncoreCloudProviderDriver } from "#node/drivers/encore-cloud-provider.driver";

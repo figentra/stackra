@@ -10,7 +10,7 @@
 /** Defaults of `stackra testbed` (the agent contract names them). */
 export const TESTBED_CLI_DEFAULTS = {
   /** The AWS CLI profile that reaches the testbed account. */
-  profile: "academorix",
+  profile: "figentra",
   /**
    * The enabled regions in the order a run tries them (STA-2042). A region whose groups do not exist yet has no box and
    * no group to raise, so it is skipped until its `up` has run. us-east-1 is last: it joined once box 1, whose

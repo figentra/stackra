@@ -15,6 +15,7 @@
         "x-stackra-action": "shop.order.cancel@1",
         "x-stackra-permission": "shop.order.cancel",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["order_not_cancellable"],
         "parameters": [
           {

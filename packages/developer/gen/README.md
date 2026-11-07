@@ -228,6 +228,13 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   as `toolOff`.
 - **Query permissions.** A query takes `<module>.<model>.read`, unless its Permissions class declares the verb of its
   key (`audit_record.search` with `static readonly search`): then it takes that one. A `permission` option wins.
+- **Call shape (STA-340).** `checkCallShape` refuses, from the manifest pass: a query whose permission is L2 or above
+  (`query_above_l1`; an unknown permission is `permission_unknown` only), a query with `preconditions`
+  (`query_precondition`), an action with `cache` (`action_cache`), an L3 or L4 action whose `actors` include `user`
+  with no `stepUp` (`step_up_missing`; the pipeline asks step-up of a user caller only, ADR 0406 as amended) and a
+  client write, an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`;
+  `Idempotency.Optional` written out is a declaration, ADR 0136 decision 3). A written `idempotency` also sets the
+  tool's `idempotentHint`.
 - **Write floor (STA-2096).** An action's permission is at least L2: gen refuses an action whose permission is L0 or
   L1 with `action_risk_below_write`, since ADR 0360 decision 3 lets an agent run L0 and L1 without approval. A query
   keeps L0 or L1 unless it names an action's static, which carries that level.

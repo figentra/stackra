@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `RunwayEnvCheckCommand`, `runway env check [--values --env <env> [--project-id <id>]]`
- *          (`runway env:check`): without `--values`, the names-only check (`checkEnv`) of the repository; with it, the
- *          CI-only value check (`checkEnvValues`) of `--env` (errors) and its sibling non-production environments
- *          (warnings). Exits 1 on an error; warnings pass.
+ * Purpose: `RunwayEnvCheckCommand`, `runway env check [--values --env <env>]` (`runway env:check`): without
+ *          `--values`, the names-only check (`checkEnv`) of the repository against the sops scopes (ADR 0525); with
+ *          it, the CI-only value check (`checkEnvValues`) of `--env`, read from the job's environment after the
+ *          secrets-decrypt action. Exits 1 on an error; warnings pass.
  * Boundary: names only. The names check needs no login; the value check runs only in a CI job its GitHub OIDC token
- *           proves, and prints each name, its home, pass or the broken rule, and at most a SHA-256 prefix, never a
+ *           proves, and prints each name, its scope, pass or the broken rule, and at most a SHA-256 prefix, never a
  *           value. The Quality Gate runs the names check on every pull request; a deploy job runs `--values`.
  * Runtime: node
- * Governing contract: ADR 0173 (amendment 2026-11-04, decision 4); STA-2104.
+ * Governing contract: ADR 0525; ADR 0173 (amendment 2026-11-04, decision 4); STA-2104.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
 import { Str } from "@stackra/validation";
@@ -23,11 +23,14 @@ export class RunwayEnvCheckCommand extends Command({
   name: "env:check",
   bin: true,
   description:
-    "Check that every environment name is declared and has an Infisical home; --values checks an environment's values in CI",
-  examples: ["runway env check", "runway env check --values --env staging --project-id <id>"],
+    "Check that every environment name is declared and has a sops scope; --values checks an environment's values in CI",
+  examples: ["runway env check", "runway env check --values --env staging"],
 }) {
   /** Check the values of `--env` (CI only). */
-  @Option({ description: "Check the values of --env in Infisical (CI only; never prints a value)" })
+  @Option({
+    description:
+      "Check the values of --env in this job's environment, after secrets-decrypt (CI only; never prints a value)",
+  })
   values = false;
 
   /** The environment whose values are checked. */
@@ -36,11 +39,6 @@ export class RunwayEnvCheckCommand extends Command({
   })
   @Str
   env?: string;
-
-  /** The runtime Infisical project id; `providers.infisical.workspace` by default. */
-  @Option({ description: "The Infisical project id of the environment's runtime project" })
-  @Str
-  projectId?: string;
 
   /** The names check; a test replaces it. */
   check: typeof checkEnv = checkEnv;
@@ -51,7 +49,7 @@ export class RunwayEnvCheckCommand extends Command({
   /**
    * Prints each finding and resolves with 1 when one is an error, else 0.
    *
-   * @throws RunwayUnresolvedError for `--values` without `--env`, outside a proved CI job, or with no project id.
+   * @throws RunwayUnresolvedError for `--values` without `--env`, or outside a proved CI job.
    */
   async handle(io: CommandIo): Promise<number> {
     const root = repositoryRoot(io.cwd);
@@ -68,11 +66,7 @@ export class RunwayEnvCheckCommand extends Command({
     }
     if (this.env === undefined)
       throw new RunwayUnresolvedError("--values needs --env <environment>");
-    const results = await this.checkValues({
-      root,
-      environment: this.env,
-      projectId: this.projectId,
-    });
+    const results = await this.checkValues({ root, environment: this.env });
     for (const { level, environment, name, where, failure, hash } of results) {
       const line = `${environment} ${name} (${where}) ${failure === undefined ? "pass" : `fail: ${failure}`}${hash === undefined ? "" : ` sha256:${hash}`}`;
       if (failure === undefined) io.output.line(line);

@@ -9,7 +9,7 @@
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0360 (decision 4: tools by default); ADR 0098; ADR 0492
  *                     (decision 5).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 
 import { SynonymPermissions } from "#core/access/synonym.permissions";
@@ -27,6 +27,7 @@ export class UpdateSynonymAction extends Action({
   key: "synonym.update",
   permission: SynonymPermissions.update,
   actors: [ActorKind.User, ActorKind.Agent],
+  idempotency: Idempotency.Optional,
 }) {
   /** Loads and changes the row. */
   private readonly synonyms: SynonymService;
