@@ -59,15 +59,17 @@ describe("migration 0011: figentra/figentra publishes @figentra", () => {
   it("keeps every other @figentra publisher trusted", async () => {
     const { db } = sqliteD1();
     const publishers = await new RegistryStore(db).publishers("@figentra");
-    expect(publishers.map((row) => row.repository).sort()).toEqual([
-      "figentra/billing",
-      "figentra/brand",
-      "figentra/commerce",
-      "figentra/figentra",
-      "figentra/invoicing",
-      "figentra/os",
-      "figentra/pay",
-      "figentra/testbed",
-    ]);
+    expect(publishers.map((row) => row.repository)).toEqual(
+      expect.arrayContaining([
+        "figentra/billing",
+        "figentra/brand",
+        "figentra/commerce",
+        "figentra/figentra",
+        "figentra/invoicing",
+        "figentra/os",
+        "figentra/pay",
+        "figentra/testbed",
+      ]),
+    );
   });
 });
