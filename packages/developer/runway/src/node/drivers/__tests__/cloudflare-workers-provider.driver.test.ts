@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `CloudflareWorkersProviderDriver`: the plan builds, migrates, uploads a version with its secrets and deploys it per
  *          member of the target's kind; apply refuses another checkout and unset values before anything ships, swaps
- *          the placeholder ids for the deploy and restores them (also on failure), sends secrets on stdin only and
+ *          the placeholder ids for the deploy and restores them (also on failure), sends secrets in a private file only and
  *          records each version; a secret can read another variable; current agrees only when every member serves one
  *          commit; verify retries the smoke checks (with a bearer); rollback uses the recorded versions; invalid
  *          settings name their runway.yaml path.
@@ -10,7 +10,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); ADR 0173; STA-1921.
  */
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -84,7 +84,10 @@ function repository(): string {
   return root;
 }
 
-/** A runner that records each command (with its input) and answers by the wrangler subcommand. */
+/** Every secrets file a fake run was handed, to prove each is private and gone afterwards. */
+const secretFiles: { path: string; mode: number }[] = [];
+
+/** A runner that records each command (with its secrets file's content) and answers by the wrangler subcommand. */
 function fakeRunner(
   root: string,
   answers: { head?: string; list?: string; deploy?: string } = {},
@@ -93,8 +96,12 @@ function fakeRunner(
   const configs: string[] = [];
   const run: CommandRunner = async (command, args, options) => {
     const where = (options.cwd ?? ".").replace(root, "<root>");
+    const at = args.indexOf("--secrets-file");
+    const file = at === -1 ? undefined : args[at + 1];
+    const shown = file === undefined ? args : args.map((arg, index) => (index === at + 1 ? "<secrets-file>" : arg));
+    if (file !== undefined) secretFiles.push({ path: file, mode: statSync(file).mode & 0o777 });
     calls.push(
-      `${where}$ ${[command, ...args].join(" ")}${options.input === undefined ? "" : ` <<< ${options.input}`}`,
+      `${where}$ ${[command, ...shown].join(" ")}${file === undefined ? "" : ` <<< ${readFileSync(file, "utf8")}`}`,
     );
     if (command === "git") return `${answers.head ?? SHA}\n`;
     const sub = args[2] === "versions" ? `versions ${args[3]}` : args[2];
@@ -138,7 +145,7 @@ describe("CloudflareWorkersProviderDriver", () => {
     ).toEqual([
       ".$ pnpm turbo run build --filter=./workers/registry",
       "workers/registry$ pnpm exec wrangler d1 migrations apply stackra-registry --remote",
-      `workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY:$REGISTRY_READ_ONLY --secrets-file /dev/stdin`,
+      `workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY:$REGISTRY_READ_ONLY --secrets-file <secrets-file>`,
       `workers/registry$ pnpm exec wrangler versions deploy $VERSION@100 --message ${SHA} --yes`,
       ".$ pnpm turbo run build --filter=./workers/static",
       `workers/static$ pnpm exec wrangler versions upload --message ${SHA}`,
@@ -158,12 +165,12 @@ describe("CloudflareWorkersProviderDriver", () => {
       .filter((step) => step.cwd?.endsWith("workers/registry"))
       .map((step) => step.args.join(" "));
     expect(steps.at(-1)).toBe(
-      `exec wrangler deploy --message ${SHA} --var REGISTRY_READ_ONLY:$REGISTRY_READ_ONLY --secrets-file /dev/stdin`,
+      `exec wrangler deploy --message ${SHA} --var REGISTRY_READ_ONLY:$REGISTRY_READ_ONLY --secrets-file <secrets-file>`,
     );
     expect(steps.some((step) => step.includes("versions"))).toBe(false);
   });
 
-  it("applies with the real ids, sends secrets on stdin, restores the config and records versions", async () => {
+  it("applies with the real ids, sends secrets in a private file, restores the config and records versions", async () => {
     const root = repository();
     const { run, calls, configs } = fakeRunner(root);
     const record = await workers(root, run).apply(WEB, SHA);
@@ -184,12 +191,18 @@ describe("CloudflareWorkersProviderDriver", () => {
     });
     expect(readFileSync(join(root, "workers/registry/wrangler.jsonc"), "utf8")).toBe(CONFIG);
     expect(calls).toContain(
-      `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file /dev/stdin <<< {"REGISTRY_SIGNING_KEY":"signing-key-value"}`,
+      `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file <secrets-file> <<< {"REGISTRY_SIGNING_KEY":"signing-key-value"}`,
     );
     expect(calls).toContain(
       `<root>/workers/registry$ pnpm exec wrangler versions deploy ${VERSION}@100 --message ${SHA} --yes`,
     );
     expect(calls.filter((call) => call.includes("signing-key-value"))).toHaveLength(1);
+    // The secrets file was readable only by its owner and is removed once the upload returns.
+    expect(secretFiles.length).toBeGreaterThan(0);
+    for (const { path, mode } of secretFiles) {
+      expect(mode).toBe(0o600);
+      expect(existsSync(path)).toBe(false);
+    }
   });
 
   it("smoke-tests the version at 0% by override and moves no traffic when it fails", async () => {
@@ -360,7 +373,7 @@ describe("CloudflareWorkersProviderDriver", () => {
 
     const record = await driver.apply(target, SHA);
     expect(calls).toContain(
-      `<root>/workers/turbo-cache$ pnpm exec wrangler versions upload --message ${SHA} --secrets-file /dev/stdin <<< {"TURBO_CACHE_TOKEN":"cache-token"}`,
+      `<root>/workers/turbo-cache$ pnpm exec wrangler versions upload --message ${SHA} --secrets-file <secrets-file> <<< {"TURBO_CACHE_TOKEN":"cache-token"}`,
     );
     expect(await driver.verify(target, record)).toEqual({ status: "up" });
     expect(seen).toEqual(Array.from({ length: 3 }, () => `${cache} Bearer cache-token`));
@@ -417,7 +430,7 @@ describe("CloudflareWorkersProviderDriver", () => {
       ],
     };
 
-    it("sends the Infisical value on stdin, not the environment's", async () => {
+    it("sends the Infisical value in the secrets file, not the environment's", async () => {
       const root = repository();
       const { run, calls } = fakeRunner(root);
       const answering: CommandRunner = async (command, args, options) =>
@@ -431,7 +444,7 @@ describe("CloudflareWorkersProviderDriver", () => {
       driver.ci = true;
       await driver.apply(WEB, SHA);
       expect(calls).toContain(
-        `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file /dev/stdin <<< {"REGISTRY_SIGNING_KEY":"infisical-value"}`,
+        `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file <secrets-file> <<< {"REGISTRY_SIGNING_KEY":"infisical-value"}`,
       );
     });
 
