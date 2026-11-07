@@ -46,6 +46,7 @@ import { snakeCase } from "@stackra/support";
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
+import { CONTAINER_BUILT } from "#core/constants/container-built.constant";
 import { PLATFORM_BINDINGS } from "#core/constants/platform-bindings.constant";
 import { SERVER_CONTRIBUTIONS } from "#core/constants/server-contributions.constant";
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
@@ -666,6 +667,8 @@ export function emitWiring(ir: MemberIR): string {
   const packageServices = dependencyServices(ir);
   // The array iterator reads the live length, so the links pushed below are walked too.
   for (const { module, dep } of used) {
+    // A class the container builds itself stays in `platform` only (STA-2553).
+    if (CONTAINER_BUILT.has(`${packageOf(dep.class.from)}#${dep.class.name}`)) continue;
     for (const next of link(dep)) used.push({ module, dep: next });
     const factory = dep.of;
     const deps: readonly (ClassRef | TokenRef)[] | undefined =
