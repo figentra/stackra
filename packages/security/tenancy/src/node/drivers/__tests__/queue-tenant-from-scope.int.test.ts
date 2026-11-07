@@ -8,7 +8,7 @@
  *          stamped as the scheduler's system actor in the branch likewise (the actor names the branch id, which is no
  *          tenant); tenant B's scope sees only B's; the pipeline lists only A's rows for a user of A in scope A; and the
  *          negative cases refuse: a user of A in B's scope, in the root scope above every tenant, or in a scope the tree
- *          does not show such as A's own id with the root's path, and an agent of A in those scopes (`tenant_scope_mismatch`; a platform user lists in the
+ *          does not show such as A's own id with the root's path, and an agent of A in those scopes (`tenant_scope_mismatch`; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
  *          root and sees no tenant row), a job whose scope the tree does not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
  *          runs), and a pushed scope that is not a `ScopeRef` (`scope_not_platform_written`). A last test states why the
  *          driver reads the tree from the path's root: the branch's own scope session cannot see its tenant.
@@ -419,6 +419,24 @@ describe("an agent's tenant on Postgres", () => {
 
   it("shows an agent of A in a branch of A only A's rows", async () => {
     expect(await list(agents[0] as Actor, BRANCH)).toEqual([A1, A2]);
+  });
+
+  it("runs a background agent with no tenant of its own in its owner's: A's rows and none of B's", async () => {
+    const background = agents[1] as Actor;
+    expect(await list(background, SCOPE_A)).toEqual([A1, A2]);
+    expect(await list(background, BRANCH)).toEqual([A1, A2]);
+    expect(await list(background)).toEqual([A1, A2]);
+  });
+
+  it("keeps an agent with no tenant anywhere a platform call, which sees no tenant row", async () => {
+    const staff: Actor = {
+      kind: ActorKind.User,
+      id: "usr_00000000000000000000000000",
+      realm: Realm.Staff,
+    };
+    const platformAgent: Actor = { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: staff };
+    expect(await list(platformAgent)).toEqual([]);
+    expect(await list(platformAgent, ROOT)).toEqual([]);
   });
 
   it("refuses an agent of A in a scope the tree does not show or in the root scope above every tenant", async () => {
