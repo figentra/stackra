@@ -8,7 +8,8 @@
  *          parent tenant, a scheduler actor named by the branch included), a scope the tree does not show or shows at
  *          another path is refused and never run with an empty tenant, a scope above every tenant keeps the actor's own
  *          id, any other actor keeps its own tenant and is refused (`TenantScopeMismatchError`) when the scope's
- *          tenant differs or a user's scope sits above every tenant, several granted scopes that span tenants are
+ *          tenant differs or a user's scope sits above every tenant or is unknown to the tree (a platform user stays a
+ *          platform call there), several granted scopes that span tenants are
  *          refused while several within one tenant run in it, and the tree is read in a session over the path's root
  *          label.
  * Boundary: test only; a fake `Database` and a fake `TenantIsolationService` record the calls, so no database runs,
@@ -352,10 +353,35 @@ describe("the tenant of a call", () => {
     expect(withTenant.mock.calls[0]?.[0]).toBe(staff);
   });
 
-  it("leaves a user in its own tenant when the tree does not show its scope, which only narrows what it reads", async () => {
+  it("refuses a user of a tenant whose scope the tree does not show, so a forged path above its tenant crosses nothing", async () => {
+    const cases: readonly (ScopeRef | readonly ScopeRef[])[] = [
+      unknown,
+      // tenant A's own id with the path of the platform root: the tree shows A elsewhere
+      { id: ID_A, path: platformScope.path },
+      // a path inside nothing the tree holds
+      { id: ID_UNKNOWN, path: "nowhere" },
+      // several scopes, all unknown to the tree
+      [unknown, { id: ID_A, path: platformScope.path }],
+    ];
+    for (const at of cases) {
+      const { driver, withTenant, transaction } = setUp();
+      const work = vi.fn(async () => "ran");
+      await expect(driver.run(userOfA, at, work, { readOnly: false })).rejects.toBeInstanceOf(
+        TenantScopeMismatchError,
+      );
+      expect(work).not.toHaveBeenCalled();
+      expect(withTenant).not.toHaveBeenCalled();
+      expect(transaction).not.toHaveBeenCalled();
+    }
+    const known = setUp();
+    await expect(run(known.driver, userOfA, scope)).resolves.toBe("ran");
+    expect(known.withTenant.mock.calls[0]?.[0]).toBe(userOfA);
+  });
+
+  it("keeps a platform user a platform call in a scope the tree does not show", async () => {
     const { driver, withTenant } = setUp();
-    await run(driver, userOfA, unknown);
-    expect(withTenant.mock.calls[0]?.[0]).toBe(userOfA);
+    await expect(run(driver, staff, unknown)).resolves.toBe("ran");
+    expect(withTenant.mock.calls[0]?.[0]).toBe(staff);
   });
 
   it("compares a running transaction's tenant with the resolved one, not with the actor's own id", async () => {
