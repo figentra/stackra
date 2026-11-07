@@ -90,7 +90,7 @@ members:
     src: 0.56
     tests: 0.75
   packages/data/data-maintenance:
-    src: 0
+    src: 2.07
     tests: 0
   packages/data/data-transfer:
     src: 1.05
@@ -321,7 +321,7 @@ members:
     src: 0
     tests: 3.56
   packages/security/identity:
-    src: 1.45
+    src: 1.6
     tests: 2.14
   packages/security/licensing:
     src: 0.9
