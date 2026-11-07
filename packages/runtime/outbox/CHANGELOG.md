@@ -1,5 +1,38 @@
 # @stackra/outbox
 
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d2b3d22]
+  - @stackra/actions@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/contracts@0.19.0
+  - @stackra/queue@0.19.0
+  - @stackra/locking@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/versioning@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

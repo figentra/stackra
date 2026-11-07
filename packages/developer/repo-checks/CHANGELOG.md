@@ -1,5 +1,17 @@
 # @stackra/repo-checks
 
+## 0.19.0
+
+### Patch Changes
+
+- b800ae4: An `@figentra-oss/*` member inside a product repository may carry its own open-source LICENSE instead of the root
+  licence, because the registry's `@figentra-oss` scope refuses the commercial licence.
+- 3aaf758: The neutral and stackra layouts allow a root `STATE.md` and `llms.txt`, which every repository now keeps (the repo's
+  current state and its agent index), so `stackra validate` stops reporting them.
+- 619099f: `checkYamlFlowMaps` reads every document of a multi-document YAML file, so a Maestro flow (its config, `---`, then
+  its commands) validates. A service's `assets/defaults/*.json` stays JSON: it is imported as a JSON module, which
+  takes no YAML and no comments.
+
 ## 0.18.1
 
 No changes in this release.

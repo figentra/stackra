@@ -1,5 +1,39 @@
 # @stackra/devices
 
+## 0.19.0
+
+### Minor Changes
+
+- e0298ce: Device pairing no longer takes the credential from the status poll. `HttpDevicePairingDriver.begin` mints a 256-bit
+  pairing secret, keeps it in the `secrets` area and sends it in the body of `POST /device-pairings`; `check` polls
+  `GET /device-pairings/:pairingId` for the state only and, once paired, picks the token up once from
+  `POST /device-pairings/:pairingId/pickup` with the secret in the body. A pickup the hub answers with 409 (not issued
+  yet) reads as pending; a wrong or spent secret is refused. New: `DEVICE_HUB_PATHS.pickup`,
+  `DEVICE_STORAGE_KEYS.pairingSecret`. Needs a hub that serves the pickup (figentra/os devices).
+
+### Patch Changes
+
+- 0921f1f: `Idempotency.Never`: an action whose output must never be kept (a credential) ignores a sent `Idempotency-Key`;
+  every call runs and nothing is stored in or replayed from the idempotency store. `HttpDevicePairingDriver` sends no
+  `Idempotency-Key` on the credential pickup (`hubSender(config, credential, { idempotencyKey: false })`), so the hub
+  never keeps the answer that carries the token.
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/actions@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/contracts@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/storage@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/transport@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes
