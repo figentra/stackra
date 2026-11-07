@@ -9,7 +9,7 @@
  *           are recorded (STA-1947).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 22 and 26: the committed manifest, `stackra gen --check`, refusals
- *                     print their fix); ADR 0295 (decision 5).
+ *                     print their fix); ADR 0295 (decision 5); ADR 0101 (Enforcement: gen warns).
  */
 import { relative } from "node:path";
 

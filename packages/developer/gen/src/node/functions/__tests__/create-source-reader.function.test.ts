@@ -22,7 +22,7 @@
  *          `Config({ schema })` options class, reading `this.<field>` spreads, `Object.freeze` constants and `I18n` keys
  *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
  *          `kind_base_name_reserved`, `partner_mismatch` for a same-stem kind (a Resource), `secret_name_missing` and
- *          each file's exported class names (STA-1306), `port_key_mismatch` for a port whose `~key` brand is not `<member>.<Port>` (STA-1810). A `@Classify(Class)` facet carries its data class's constant
+ *          each file's exported class names (STA-1306), the workflows a class body starts (`workflows`, ADR 0101), `port_key_mismatch` for a port whose `~key` brand is not `<member>.<Port>` (STA-1810). A `@Classify(Class)` facet carries its data class's constant
  *          effects as `options.dataClass` (STA-1251). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
  *          reads with its options, import and props record, and a non-constant fill is `slot_options_not_constant`
  *          (ADR 0438). A `PickType` of, or a form extending, a `remoteShape` of `#stackra/clients/<service>` reads as a
@@ -561,6 +561,11 @@ const TOOL_SOURCES: Readonly<Record<string, string>> = {
     "  actors: [ActorKind.User],",
     "}) {",
     "  async handle(): Promise<void> {}",
+    "",
+    "  private start(runner: { run(...args: unknown[]): unknown }): void {",
+    "    runner.run(HandOverWorkflow, {});",
+    "    runner.run(async () => {});",
+    "  }",
     "}",
     "",
   ].join("\n"),
@@ -573,6 +578,7 @@ describe("createSourceReader on tool reasons", async () => {
   const classes = reader.sources.flatMap((file) => reader.classes(file));
   host.close();
   const options = (name: string) => classes.find((declared) => declared.name === name)?.options;
+  const workflows = (name: string) => classes.find((declared) => declared.name === name)?.workflows;
 
   it("reads the `// reason:` line above `tool: false` as `toolReason`", () => {
     expect(options("OpenDrawerAction")).toMatchObject({
@@ -590,6 +596,11 @@ describe("createSourceReader on tool reasons", async () => {
 
   it("leaves `toolReason` out when no reason is written", () => {
     expect(options("CloseDrawerAction")?.["toolReason"]).toBeUndefined();
+  });
+
+  it("records the workflow classes a body passes first to `.run(`, and nothing else (ADR 0101)", () => {
+    expect(workflows("HandOverAction")).toEqual(["HandOverWorkflow"]);
+    expect(workflows("CloseDrawerAction")).toBeUndefined();
   });
 });
 

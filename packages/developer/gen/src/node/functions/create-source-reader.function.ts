@@ -5,7 +5,7 @@
  *          package class), its options as constants (a class thunk, `counts: () => Till`, as its class), its partner from the heritage type argument (`Point["slot"]`
  *          included; the value argument of `Driver(Port)`, `Widget.place` and `ModelAddition(Base)`, ADR 0336), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
  *          package reads as `replica`, ADR 0338; a listener's parameter is its event class, one from
- *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, a query's caller reads (`ctx.actor`, ...; STA-1445), statics and traits; each shape's fields from the declared
+ *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, the workflows it starts (`ctx.run(XWorkflow, ...)`, ADR 0101), a query's caller reads (`ctx.actor`, ...; STA-1445), statics and traits; each shape's fields from the declared
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
  *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
  *          source order; each file's exports; and the services any own file (tests included) imports from
@@ -2757,6 +2757,11 @@ export function createSourceReader(
         }
     }
 
+    // The workflows the body starts, `ctx.run(RefundWorkflow, input)`, for `checkActionFirst` (ADR 0101).
+    const workflows = new Set(
+      [...body.matchAll(/\.run\s*\(\s*([A-Z]\w*Workflow)\b/g)].map((match) => match[1] ?? ""),
+    );
+
     const statics: Record<string, string> = {};
     for (const member of members)
       if (
@@ -2798,6 +2803,7 @@ export function createSourceReader(
       ...(handle !== undefined ? { handle } : {}),
       refusals: [...refusals],
       ...(callerReads.size > 0 ? { callerReads: [...callerReads] } : {}),
+      ...(workflows.size > 0 ? { workflows: [...workflows] } : {}),
       statics,
       traits,
       ...(renamed !== undefined ? { renamed } : {}),

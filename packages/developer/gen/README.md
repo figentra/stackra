@@ -16,7 +16,8 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59);
                     STA-1363 (consumed services' lang, forms over remote shapes, `Settings.pick`, unresolved enum
                     cases); stackra-209 (the `#stackra/settings` keys and `Settings.pick` forms); STA-1365 (gen agrees with the
-                    base-matches-suffix lint, `I18nKey`, members off the container).
+                    base-matches-suffix lint, `I18nKey`, members off the container); ADR 0101 and STA-340 (gen
+                    warnings, the action-first checks).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -83,7 +84,15 @@ workspace `.pnpmfile.mjs` refuses to pack a Stackra package whose `stackra.manif
 `stackra gen --manifests` and commit it first. Every JSON file gen commits (`stackra.manifest.json`, `openapi.json`,
 the graphs) is written in oxfmt's shape by `formatJson` (short arrays on one line within 100 columns, objects broken),
 so `oxfmt --check` passes on it without a format step (stackra-247). Every refusal carries a
-snake_case code, a position and the fix; when there is one, nothing is written.
+snake_case code, a position and the fix; when there is one, nothing is written. A warning (`GenError.severity:
+"warning"`) carries the same and prints as `<at> warning <code> ...`, but never blocks writing: the full pass returns
+it in `warnings`, and `stackra gen` and `stackra gen --check` print it and exit 0 (STA-340).
+
+Action first (ADR 0101, STA-340; `checkActionFirst`, full pass only): `action_without_workflow` warns an action whose
+constructor takes another service's client (`#stackra/clients/<service>`), a sibling module's service or the
+integrations `ConnectionStore`, and whose body starts no workflow (`ctx.run(XWorkflow, ...)`, which the reader records
+as `DeclaredClass.workflows`). `workflow_without_action` refuses a controller, command or listener that takes a
+workflow class or `WorkflowRunner`, or starts a workflow itself.
 
 The quality-gate refusals (STA-1306) hold the conventions gen can see: a kind class's file suffix and name
 (`kind_suffix_mismatch`, `kind_unregistered_base`, `kind_class_name`, `kind_base_name_reserved`), module files and

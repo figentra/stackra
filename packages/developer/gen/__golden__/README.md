@@ -12,9 +12,10 @@ Governing contract: STA-1320 (freeze gen's interface); ADR 0294 (decisions 10 an
 
 These fixtures freeze what `stackra gen` writes and refuses. `src/node/__tests__/golden.test.ts` copies each
 fixture's `input/` to `.cache/golden/<fixture>/`, runs `generate` over its members in order, and compares every file
-the runs wrote or changed with `expected/`, and the refusals with `refusals.json`. A clean member is also run again
-with `check: true` and must report nothing stale. A change to the generated file set, a path, a file's content or a
-refusal code shows up as a diff here and needs a deliberate refresh.
+the runs wrote or changed with `expected/`, and the refusals and warnings with `refusals.json` (a warning never stops
+the files being written, STA-340). A clean member is also run again with `check: true` and must report nothing stale.
+A change to the generated file set, a path, a file's content or a refusal or warning code shows up as a diff here and
+needs a deliberate refresh.
 
 ## Layout
 
@@ -23,7 +24,7 @@ refusal code shows up as a diff here and needs a deliberate refresh.
 | `<fixture>/input/**.golden`          | the fixture workspace: `pnpm-workspace.yaml`, `runway.yaml` and each member's files            |
 | `<fixture>/input/_modules/**.golden` | written as `node_modules/` (stand-in kind bases and packages; git never tracks `node_modules`) |
 | `<fixture>/expected/**.golden`       | every file gen wrote or changed, at its path in the workspace                                  |
-| `<fixture>/refusals.json.golden`     | the refusals: member, code, file and subject (never the wording); `[]` when clean              |
+| `<fixture>/refusals.json.golden`     | the refusals and warnings (`severity`): member, code, file and subject; `[]` when clean        |
 
 Every file ends in `.golden` so tsc, oxlint, oxfmt, knip and the validator never read fixture code or generated output
 as repository code; the runner strips the suffix. Absolute paths are written as `<workspace>`. The nested
