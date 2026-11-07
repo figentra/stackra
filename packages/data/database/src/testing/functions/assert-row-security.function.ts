@@ -100,17 +100,22 @@ async function seedOwners(
   column: string,
   owners: readonly [string, string],
 ): Promise<string | undefined> {
+  // raw-sql: a savepoint, so a seed the table refuses rolls back without aborting the probe's transaction
   await tx.execute("savepoint stackra_seed");
   try {
+    // raw-sql: triggers off while the probe seeds its two owner rows, inside the savepoint
     await tx.execute("set local session_replication_role = replica");
+    // raw-sql: the catalogue's check constraints of the audited table, which the seed drops inside the savepoint
     const checks = (await tx.execute(
       "select conname from pg_constraint where conrelid = ?::regclass and contype = 'c'",
       [name],
     )) as { conname: string }[];
     for (const { conname } of checks)
+      // raw-sql: the seed relaxes the audited table inside the savepoint; names are quoted catalogue identifiers
       await tx.execute(`alter table ${name} drop constraint ${quoteIdentifier(conname)}`);
     for (const known of columns)
       if (known.notNull && !known.primary && !known.generated && known.name !== column)
+        // raw-sql: the seed relaxes the audited table inside the savepoint; names are quoted catalogue identifiers
         await tx.execute(
           `alter table ${name} alter column ${quoteIdentifier(known.name)} drop not null`,
         );
@@ -124,10 +129,13 @@ async function seedOwners(
     });
     const row = `(${["?", ...values].join(", ")})`;
     const into = [column, ...keys.map((key) => key.name)].map(quoteIdentifier).join(", ");
+    // raw-sql: one row per probe owner; names are quoted catalogue identifiers and the owners are parameters
     await tx.execute(`insert into ${name} (${into}) values ${row}, ${row}`, [...owners], "run");
+    // raw-sql: keeps the seeded rows for the probe
     await tx.execute("release savepoint stackra_seed");
     return undefined;
   } catch (error) {
+    // raw-sql: drops a seed the table refused, so the probe reports it instead of failing
     await tx.execute("rollback to savepoint stackra_seed");
     return String(error);
   }
@@ -219,10 +227,12 @@ export async function assertRowSecurity(
   }
 
   const quotedRole = quoteIdentifier(role);
+  // raw-sql: the probe role's flags from the catalogue: no superuser, no BYPASSRLS
   const [existing] = (await em.execute(
     "select rolsuper, rolbypassrls from pg_roles where rolname = ?",
     [role],
   )) as { rolsuper: boolean; rolbypassrls: boolean }[];
+  // raw-sql: the probe role, which row-level security applies to; the name is a quoted identifier
   if (existing === undefined) await em.execute(`create role ${quotedRole} nologin nobypassrls`);
   else {
     if (existing.rolsuper)
@@ -232,7 +242,9 @@ export async function assertRowSecurity(
   // Every call: a table made after an earlier call needs the rights too, or the probe fails on a missing grant.
   for (const schema of new Set(owned.map((audited) => audited.schema))) {
     const quoted = quoteIdentifier(schema);
+    // raw-sql: the probe role may use each audited schema
     await em.execute(`grant usage on schema ${quoted} to ${quotedRole}`);
+    // raw-sql: the probe role may read and write each audited table, so only the policy can refuse it
     await em.execute(
       `grant select, insert, update, delete on all tables in schema ${quoted} to ${quotedRole}`,
     );
@@ -252,14 +264,19 @@ export async function assertRowSecurity(
           gaps.push(
             `${label}: could not seed a row of each probe owner, so no cross-owner read ran: ${unseeded}`,
           );
+        // raw-sql: the probe reads as the role row-level security applies to
         await tx.execute(`set local role ${quotedRole}`);
+        // raw-sql: the policy's session setting, unset; the setting name is a parameter
         await tx.execute("select set_config(?, '', true)", [setting]);
+        // raw-sql: counts the rows the policy shows with the setting unset (it must show none)
         const [unset] = (await tx.execute(`select count(*)::int as count from ${name}`)) as {
           count: number;
         }[];
         if ((unset?.count ?? 0) > 0)
           gaps.push(`${label}: a probe with ${setting} unset saw ${unset?.count} rows`);
+        // raw-sql: the policy's session setting, set to one owner; both values are parameters
         await tx.execute("select set_config(?, ?, true)", [setting, own]);
+        // raw-sql: counts the rows the policy shows that owner, its own and any other owner's
         const [seen] = (await tx.execute(
           `select count(*) filter (where ${quotedColumn} is distinct from ?)::int as others,
              count(*) filter (where ${quotedColumn} = ?)::int as mine
@@ -273,7 +290,9 @@ export async function assertRowSecurity(
             `${label}: a probe as ${own} saw none of its own seeded rows, so the policy does not match ${setting}`,
           );
         try {
+          // raw-sql: a savepoint, so a write the policy refuses does not abort the probe's transaction
           await tx.execute("savepoint stackra_probe");
+          // raw-sql: tries to move one owner's rows to the other owner; the policy must refuse it
           const moved = (await tx.execute(
             `update ${name} set ${quotedColumn} = ? where ${quotedColumn} = ?`,
             [other, own],
@@ -283,6 +302,7 @@ export async function assertRowSecurity(
             gaps.push(`${label}: a probe as ${own} moved ${moved.affectedRows} rows to ${other}`);
         } catch {
           // The policy refused the write, as it must.
+          // raw-sql: undoes the refused write so the probe can finish
           await tx.execute("rollback to savepoint stackra_probe");
         }
         throw new ProbeDone();
