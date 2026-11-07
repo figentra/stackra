@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: `actorOf(claims, principals)`, the caller of an inbound call from its verified access token: a service
  *          account's token is the `service` actor of its principal (ADR 0209 decision 3), a user's token the `user`
- *          actor with its realm and the tenant the token was issued for.
+ *          actor with its realm and the scope the token was issued for (CallIsolation resolves its tenant).
  * Boundary: a pure mapping over claims the caller has already verified (`BearerTokenGuard`); the only read is
  *           `ServicePrincipals.bySubject`. The subject is looked up first, so a service account's token is never a
  *           user, whatever other claims it carries, and its id is always the principal's. A user token reads only
- *           `IDENTITY_CLAIMS`: the `usr_` id and the realm are required, and the tenant is the membership whose path is
- *           the token's scope path (absent with no scope path). Anything else is refused `unauthenticated`, never
- *           Anonymous.
+ *           `IDENTITY_CLAIMS`: the `usr_` id and the realm are required, and `scopeId` is the scope the token was
+ *           issued for (CallIsolation resolves its tenant): the membership whose path is the token's scope path,
+ *           absent with no scope path. Anything else is refused `unauthenticated`, never Anonymous.
  * Runtime: isomorphic
  * Governing contract: ADR 0209 (decision 3: service-to-service calls); ADR 0098 (decisions 6 and 7); ADR 0206
  *                     (decision 2); STA-2558.
