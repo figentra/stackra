@@ -42,6 +42,9 @@ const NOT_READY = 409;
 export class HttpDevicePairingDriver extends Driver(DevicePairing) {
   private readonly send: ReturnType<typeof hubSender>;
 
+  /** The pickup's sender: no `Idempotency-Key`, so the hub never keeps the answer that carries the token. */
+  private readonly sendPickup: ReturnType<typeof hubSender>;
+
   /** This install's id. */
   private readonly identity: DeviceIdentity;
 
@@ -63,6 +66,7 @@ export class HttpDevicePairingDriver extends Driver(DevicePairing) {
   ) {
     super();
     this.send = hubSender(config, credential);
+    this.sendPickup = hubSender(config, credential, { idempotencyKey: false });
     this.identity = identity;
     this.storage = storage;
   }
@@ -91,7 +95,7 @@ export class HttpDevicePairingDriver extends Driver(DevicePairing) {
       return { state: status.state, deviceId: status.deviceId };
     let picked: Response;
     try {
-      picked = await this.send(DEVICE_HUB_PATHS.pickup(pairing.pairingId), {
+      picked = await this.sendPickup(DEVICE_HUB_PATHS.pickup(pairing.pairingId), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ secret }),
