@@ -308,8 +308,15 @@ export async function generate(
     : migrations.files;
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
   let files = [...result.files, ...encore.files, ...migrationFiles];
-  // A member with an `.int.test.ts` gets the integration-tier config beside the unit one (`stackra test --tier int`).
-  if (files.some((file) => file.path === ".stackra/vitest.config.ts") && hasIntTests(root))
+  // A member with an `.int.test.ts`, its own or gen's, gets the integration-tier config beside the unit one
+  // (`stackra test --tier int`), so the generated tenant-isolation test runs with no authored int test beside it.
+  if (
+    files.some((file) => file.path === ".stackra/vitest.config.ts") &&
+    hasIntTests(
+      root,
+      files.map((file) => file.path),
+    )
+  )
     files.push(emitIntTierConfig(ir.package));
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
