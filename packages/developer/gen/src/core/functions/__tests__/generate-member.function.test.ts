@@ -42,6 +42,24 @@ const packageWithModels = (...modules: string[]) => ({
 });
 
 describe("generateMember", () => {
+  it("warns on a staged check in 0.19, and refuses it when run strict (STA-2096, STA-340)", () => {
+    const permissions = COMMERCE_IR.classes.find((item) => item.name === "OrderPermissions");
+    if (permissions === undefined) throw new Error("the fixture has no OrderPermissions");
+    const ir = {
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes.filter((item) => item.name !== permissions.name),
+        { ...permissions, statics: { ...permissions.statics, cancel: "Permission.L1" } },
+      ],
+    };
+    const staged = generateMember(ir);
+    expect(staged.errors.map((error) => error.code)).not.toContain("action_risk_below_write");
+    expect(staged.warnings?.map((warning) => warning.code)).toContain("action_risk_below_write");
+    expect(staged.files.length).toBeGreaterThan(0);
+    const strict = generateMember(ir, undefined, { strict: true });
+    expect(strict.errors.map((error) => error.code)).toContain("action_risk_below_write");
+  });
+
   it("writes every file of a service", () => {
     const { files, errors, manifest } = generateMember(COMMERCE_IR);
     expect(errors).toEqual([]);

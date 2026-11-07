@@ -89,6 +89,7 @@ import { emitEncoreService } from "#core/functions/emit-encore-service.function"
 import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
+import { STAGED_REFUSAL_CODES } from "#core/constants/staged-refusal-codes.constant";
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { emitI18n } from "#core/functions/emit-i18n.function";
@@ -140,7 +141,7 @@ const json = formatJson;
 export function generateMember(
   authored: MemberIR,
   previous?: StackraManifest,
-  options: { readonly pass?: "manifests" | "clients" } = {},
+  options: { readonly pass?: "manifests" | "clients"; readonly strict?: boolean } = {},
 ): {
   readonly files: readonly GeneratedFile[];
   readonly errors: readonly GenError[];
@@ -214,6 +215,10 @@ export function generateMember(
   // An app's client tools, from its routes, resources, placements, theming, tours and anchors (ADR 0490).
   const clientTools = emitClientTools(ir);
   all.push(...clientTools.errors);
+  // The staged checks warn until gen runs strict (0.19 warns, 0.20 refuses; STAGED_REFUSAL_CODES).
+  if (options.strict !== true)
+    for (const [index, error] of all.entries())
+      if (STAGED_REFUSAL_CODES.has(error.code)) all[index] = { ...error, severity: "warning" };
   // A warning prints and never stops writing (STA-340); only the refusals below block.
   const warnings = all.filter((error) => error.severity === "warning");
   const refusals = all.filter((error) => error.severity !== "warning");
