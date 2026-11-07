@@ -40,7 +40,13 @@ export class DatabaseConfigOptions extends Schema {
     timeout: Duration;
     /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
     critical: boolean;
-  } = { timeout: Duration.seconds(2), critical: true };
+    /**
+     * Whether readiness also fails when the connected role can bypass row-level security: a superuser, BYPASSRLS
+     * (its own or through a role it belongs to), or the owner of a table with row security. Runway turns it on for
+     * deployed environments.
+     */
+    rowSecurity: boolean;
+  } = { timeout: Duration.seconds(2), critical: true, rowSecurity: false };
 
   /** The timeouts every runtime session starts with; the boot hands them to `connect` as `DatabaseOptions.timeouts`. */
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
