@@ -37,6 +37,7 @@ production.
    | a product's **first** production deploy                                                 | floor | no earlier successful production deployment in the repository                                                                                 |
    | infra apply (`infra-apply`) whose plan only creates or updates                          | auto  | the preview JSON artifact, classified by `policy/check.mjs`: no delete or replace, no protected type, no policy-gate violation                |
    | infra apply with any delete or replace, or a policy-gate violation                      | floor | the same artifact                                                                                                                             |
+   | infra apply carrying the github or secrets stack                                        | floor | the same artifact names the stack as not previewed (see the second amendment)                                                                 |
    | deleting accounts, data or databases (destructive migrations included)                  | floor | the plan; gen's migration classification                                                                                                      |
    | IAM, organization or root changes (AWS IAM and Organizations, Identity Center, GCP IAM) | floor | the plan's resource types, even when they're only created                                                                                     |
    | DNS for live domains                                                                    | floor | Cloudflare DNS record changes on a zone the rules file marks live                                                                             |
@@ -99,6 +100,15 @@ plain links, so no Slack request reaches the bot to sign. With an incoming webho
 sign-in (the owner's user id checked) plus the signed, single-use, 24-hour token bound to one item and one decision.
 Slack request signing becomes the upgrade path if a Slack app with interactive buttons is installed later (leader,
 2026-11-07; infra#58).
+
+## Amendment 2026-11-07: the github and secrets stacks are floor
+
+The infra evidence comes from a read-only plan job outside `infra-apply` (`policy/evidence.mjs`, artifact
+`infra-evidence-infra-apply`), since the rule fires when the apply job is queued. The github and secrets stacks need
+the figentra-infra App's token, which only `infra-apply` holds, so the plan job lists them as not previewed, and a
+preview that fails is listed the same way; each is a floor reason. That is also their class: they change repository
+settings, environments, reviewers and secret-access grants, which is access control, and access control is floor with
+IAM. No read-only token is added to preview them outside the environment (2026-11-07; infra#58).
 
 ## Supersedes and sources
 
