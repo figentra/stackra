@@ -1,5 +1,18 @@
 # @stackra/ui
 
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/icons@0.18.0
+  - @stackra/tokens@0.18.0
+  - @stackra/shortcuts@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/validation@0.18.0
+
 ## 0.17.2
 
 ### Patch Changes

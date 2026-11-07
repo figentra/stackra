@@ -8,14 +8,17 @@
  * Boundary: names only in every line and every error; a value goes only to the runner's stdin. Every value is read
  *           before anything is written, so a missing name fails the sync with nothing changed. Encore secrets are
  *           app-wide: two services that name one secret must hold the same value, or nothing is written. The Encore
- *           environment is `environments.<env>.encore.environment`, else the runway environment's own name; the
- *           generated Encore app (`.stackra/encore`, `stackra gen`) is the working directory. Writes run only in CI
+ *           environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
+ *           writes run in a temporary folder holding only `encore.app` with the root runway's `providers.encore.app`, so
+ *           they reach the app whatever the generated layout (a service member's `.stackra/encore`, or the deploy
+ *           commit's root, STA-2193). Writes run only in CI
  *           (`readMemberSecrets` refuses elsewhere); a dry run reads nothing.
  * Runtime: node
  * Governing contract: ADR 0173; ADR 0512; ADR 0091 (the generated Encore app); runbooks/runway "Secrets and vars
  *                     sync"; STA-606; STA-2009; STA-1990.
  */
-import { existsSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
@@ -25,9 +28,6 @@ import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
 import type { SecretSyncEntry } from "#node/types/secret-sync-entry.type";
-
-/** Where `stackra gen` writes the Encore app, from the repository root (ADR 0091). */
-const ENCORE_APP = ".stackra/encore";
 
 /** The names-only line of one member's secrets. */
 function lineOf(entry: SecretSyncEntry, source: string, encoreEnvironment: string): string {
@@ -103,23 +103,30 @@ export async function syncSecrets(input: {
       values.set(name, { value, member: held?.member ?? member });
     }
   }
-  const cwd = join(input.repository, ENCORE_APP);
-  if (!existsSync(cwd))
+  const app = runways.root.providers.encore?.app;
+  if (app === undefined)
     throw new RunwayUnresolvedError(
-      `${ENCORE_APP} does not exist: run \`stackra gen\` first, so the Encore secrets go to the generated app`,
+      "Name the Encore app at providers.encore.app in the root runway: the Encore secrets are written into that app",
     );
-  for (const [name, { value }] of values) {
-    try {
-      await run("encore", ["secret", "set", "--env", encoreEnvironment, name], {
-        cwd,
-        input: value,
-      });
-    } catch {
-      // No `cause` and no stderr: the CLI's output is not ours to print next to a value.
-      throw new RunwayUnresolvedError(
-        `encore secret set ${name} in ${encoreEnvironment} failed: check the job's Encore login and that ${encoreEnvironment} is an environment of the app`,
-      );
+  // `encore secret set` finds its app through `encore.app` in its working directory; nothing else is needed there.
+  const cwd = mkdtempSync(join(tmpdir(), "runway-encore-secrets-"));
+  writeFileSync(join(cwd, "encore.app"), `${JSON.stringify({ id: app, lang: "typescript" })}\n`);
+  try {
+    for (const [name, { value }] of values) {
+      try {
+        await run("encore", ["secret", "set", "--env", encoreEnvironment, name], {
+          cwd,
+          input: value,
+        });
+      } catch {
+        // No `cause` and no stderr: the CLI's output is not ours to print next to a value.
+        throw new RunwayUnresolvedError(
+          `encore secret set ${name} in ${encoreEnvironment} failed: check the job's Encore login and that ${encoreEnvironment} is an environment of the app`,
+        );
+      }
+      log(`set ${name} in encore ${encoreEnvironment}`);
     }
-    log(`set ${name} in encore ${encoreEnvironment}`);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
   }
 }

@@ -1,5 +1,24 @@
 # @stackra/webhooks
 
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/scheduler@0.18.0
+  - @stackra/iam@0.18.0
+  - @stackra/integrations@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/support@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/queue@0.18.0
+
 ## 0.17.2
 
 ### Patch Changes
