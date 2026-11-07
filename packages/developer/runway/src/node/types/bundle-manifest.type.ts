@@ -28,5 +28,5 @@ export type BundleManifest = {
   /** The bare specifiers the shell's import map must resolve. */
   readonly imports: readonly string[];
   /** Each file to its SRI value, `sha384-<base64>`; absent in a bundle built before SRI (STA-2562). */
-  readonly integrity?: Readonly<Record<string, string>>;
+  readonly integrity?: Readonly<Record<string, string>> | undefined;
 };
