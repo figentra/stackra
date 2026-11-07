@@ -63,6 +63,7 @@ function recorder(folders: Readonly<Record<string, Record<string, string>>>): {
     readonly command: string;
     readonly args: readonly string[];
     readonly input?: string;
+    readonly app?: string;
   }[];
 } {
   const calls: { command: string; args: readonly string[]; input?: string; app?: string }[] = [];
