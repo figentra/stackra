@@ -1,5 +1,25 @@
 # @stackra/builder
 
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [bac874e]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d76d1ed]
+- Updated dependencies [6ec440d]
+- Updated dependencies [3833180]
+  - @stackra/contracts@0.19.0
+  - @stackra/workflow@0.19.0
+  - @stackra/collaboration@0.19.0
+  - @stackra/rules@0.19.0
+  - @stackra/experience@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

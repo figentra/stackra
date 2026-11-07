@@ -1,5 +1,44 @@
 # @stackra/mcp
 
+## 0.19.0
+
+### Minor Changes
+
+- bac874e: The last Infisical uses in the developer packages move to sops and figentra/secrets (ADR 0525).
+  
+  - `stackra mcp exec -- <argv>` decrypts each `$NAME` the command names with `sops exec-env` from the `agents` scope of
+    the local figentra/secrets clone (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`), one nested call per secret,
+    instead of `infisical run`. Its `--env` and `--path` flags are gone; `McpExecOptions` is now `{ secretsDir? }`.
+  - Mobile onboarding no longer writes the FCM key to a vault: it goes only to EAS, its one reader, and running the
+    `push` step again replaces a lost key. `InfisicalVaultWriterDriver` is removed, and `MobileOnboardRequest` has no
+    `vault` port. A missing root-kit name prints `pnpm secrets:put <NAME> --scope ci/production/store` as its owner step.
+  - gen's `env` manifest rows no longer carry `home` (the Infisical folder `/runtime/<member>`), and the field is gone
+    from the `StackraManifest` type; runway already ignored it. Products regenerate their manifests after the release.
+  - `stackra dev --tunnel` names the sops way to start with `CLOUDFLARE_TUNNEL_TOKEN`, and the service template's
+    `runway.yaml` header names figentra/secrets.
+
+### Patch Changes
+
+- e105174: The infrastructure and developer packages describe sops and figentra/secrets instead of Infisical (ADR 0525).
+  
+  - `@stackra/infra-aws-runtime`: the RDS Proxy login secret's description names the vault, not Infisical, so the next
+    apply updates that description in place. The docs name the vault and runway's secrets sync.
+  - `@stackra/infra-tools`: the tools-stack secrets sync is the vault's (`secretsSync` keeps its shape: `source`,
+    `principal`, `externalId`); the missing external id error names the secrets sync.
+  - `@stackra/infra-github`, `@stackra/infra-cloudflare`, `@stackra/infra-identity`, `@stackra/infra-observability`,
+    `@stackra/runway`, `@stackra/mcp`, `@stackra/cli`, `@stackra/fiscal`, `@stackra/licensing`: docs and comments only.
+    `githubPlan` still turns `providers.infisical` into the `INFISICAL_*` CI variables until plan phase P6.
+- Updated dependencies [58e3066]
+- Updated dependencies [2933e48]
+- Updated dependencies [bac874e]
+- Updated dependencies [e105174]
+- Updated dependencies [c239773]
+- Updated dependencies [414586e]
+- Updated dependencies [7a83de3]
+- Updated dependencies [1f33c82]
+  - @stackra/contracts@0.19.0
+  - @stackra/runway@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

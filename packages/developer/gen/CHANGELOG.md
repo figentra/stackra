@@ -1,5 +1,116 @@
 # @stackra/gen
 
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+- bac874e: The last Infisical uses in the developer packages move to sops and figentra/secrets (ADR 0525).
+  
+  - `stackra mcp exec -- <argv>` decrypts each `$NAME` the command names with `sops exec-env` from the `agents` scope of
+    the local figentra/secrets clone (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`), one nested call per secret,
+    instead of `infisical run`. Its `--env` and `--path` flags are gone; `McpExecOptions` is now `{ secretsDir? }`.
+  - Mobile onboarding no longer writes the FCM key to a vault: it goes only to EAS, its one reader, and running the
+    `push` step again replaces a lost key. `InfisicalVaultWriterDriver` is removed, and `MobileOnboardRequest` has no
+    `vault` port. A missing root-kit name prints `pnpm secrets:put <NAME> --scope ci/production/store` as its owner step.
+  - gen's `env` manifest rows no longer carry `home` (the Infisical folder `/runtime/<member>`), and the field is gone
+    from the `StackraManifest` type; runway already ignored it. Products regenerate their manifests after the release.
+  - `stackra dev --tunnel` names the sops way to start with `CLOUDFLARE_TUNNEL_TOKEN`, and the service template's
+    `runway.yaml` header names figentra/secrets.
+- 1cc3bd3: The write floor and the call-shape checks are staged. `action_risk_below_write`, `idempotency_missing`,
+  `query_above_l1` and `step_up_missing` print as warnings in 0.19 and gen still writes; with `STACKRA_GEN_STRICT=1`
+  they refuse, as they will everywhere from 0.20. Fix them in each product before 0.20.
+- afd7846: Gen has warnings: a `GenError` with `severity: "warning"` prints as `<at> warning <code> ...` with its fix, never stops
+  gen writing, and comes back in `warnings` from `generateMember` and `generate`; `stackra gen` and `stackra gen --check`
+  print it and exit 0, while an error still exits 1. ADR 0101's checks run in the full pass as the new exported
+  `checkActionFirst`: `action_without_workflow` warns an action that takes another service's client, a sibling module's
+  service or `ConnectionStore` and starts no workflow, and `workflow_without_action` refuses a controller, command or
+  listener that takes a workflow or `WorkflowRunner`, or starts a workflow itself. The source reader records the
+  workflows a class starts as `DeclaredClass.workflows` (STA-340).
+- 0da5f7a: Step-up works out of the box (STA-340). `@stackra/identity` ships `IdentityStepUpCheckDriver`, the `identity` driver of
+  the actions pipeline's `StepUpCheck` (`requireAssurance` with `IdentityConfig.stepUpMaxAgeMinutes`; a call without
+  assurance is refused). gen binds it by default in every service that declares `@stackra/identity`; a host without
+  identity binds none and its step-up actions still fail closed. `@stackra/actions/testing` adds
+  `MemoryStepUpCheckDriver`, picked by `.useDrivers("memory")`: a test passes `assurance` at the declared level to
+  `run`, and a call without it is refused `step_up_required`.
+- 0e0de4f: Gen refuses a misshapen call. `checkCallShape` runs once per action or query in the manifest pass and refuses a query
+  whose permission is L2 or above (`query_above_l1`), a query with `preconditions` (`query_precondition`), an action with
+  `cache` (`action_cache`), an L3 or L4 action a user can call with no `stepUp` (`step_up_missing`) and a client write,
+  an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`). Each refusal carries its
+  fix. Write `idempotency: Idempotency.Optional` on a client write that is safe to repeat: it is the default the
+  pipeline already applies, and it now also sets the tool's `idempotentHint`.
+  
+  The actions pipeline asks `StepUpCheck` only when the caller is a user. A service, job, system or agent call carries
+  no assurance, so an action that both users and services call can declare `stepUp` and its service callers keep
+  working; a user call with no `StepUpCheck` bound still fails closed (ADR 0406 as amended).
+  
+  `identity.operator.bootstrap`, `identity.session.end_user` and `privacy.hold.release` declare
+  `stepUp: AssuranceLevel.Aal2`, so a user call to them now needs a bound `StepUpCheck`. The client writes of identity,
+  privacy, access-log, loyalty-kit, data-maintenance, media and collaboration that declared no idempotency write
+  `Idempotency.Optional`; their manifests gain the `idempotency` entry and `idempotentHint: true`.
+- 0e0de4f: Step-up for the L3 and L4 user actions STA-2096 raised (STA-340):
+  
+  - `@stackra/actions`: `stepUp` also takes `{ exempt: "first-factor-enrolment" }`, for which the pipeline asks no
+    `StepUpCheck`; the action enforces its own rule.
+  - `@stackra/gen`: refuses the exemption on any action outside `FIRST_FACTOR_ENROLMENT_ACTIONS`
+    (`step_up_exemption_unlisted`).
+  - `@stackra/identity`: `identity.passkey.confirm` takes the exemption. A first strong factor needs a fresh sign-in;
+    once the user has one, a new passkey needs AAL2. Each enrolment is audited with `firstFactor`.
+  - `@stackra/loyalty-kit`: `points.redeem` and `points.confirm_redemption` need AAL2 from a user. `points.earn_visit` is
+    service-only and loses its `POST /loyalty/visits` endpoint: call it from the till or booking service.
+
+### Patch Changes
+
+- ee00741: A host's wiring no longer binds `DiscoveryService` (or `Container`), which the container builds itself: a service that
+  injects it only lists it among the `platform` classes. The binding gen wrote had `deps: [Container]`, whose constructor
+  is private, so the host's build failed with TS2322 (commerce stock).
+- 5830168: The generated tenant-isolation test now reaches the services it missed (tenancy audit 2026-11-07, section 6). gen
+  writes it for a service whose owned tables come only from the packages it hosts (their manifests' models with
+  `BelongsToTenant` or `BelongsToTenantOrPlatform`), not just for one with an owned model of its own. And gen writes
+  `.stackra/vitest.int.config.ts` when it emits an `.int.test.ts` under `.stackra/tests/`, so a member with no authored
+  int test can run gen's test through `stackra test --tier int`.
+- ef04935: `model_tenancy_missing` now checks packages too (tenancy audit 2026-11-07; ADR 0210 amendment). A package model that
+  is neither `BelongsToTenant`/`BelongsToTenantOrPlatform` nor `Model.global(...)` prints a warning in 0.19 and will be
+  refused from 0.20. A table an ADR names is skipped (today `achievements.award_verifications`, ADR 0368 decision 5).
+  The new staged check `model_tenancy_migration_missing` warns when an owned model's table is created or altered by the
+  member's migrations but none of them calls `t.belongsToTenant()`; it refuses under `STACKRA_GEN_STRICT=1` and from
+  0.20.
+- 0921f1f: `Idempotency.Never`: an action whose output must never be kept (a credential) ignores a sent `Idempotency-Key`;
+  every call runs and nothing is stored in or replayed from the idempotency store. `HttpDevicePairingDriver` sends no
+  `Idempotency-Key` on the credential pickup (`hubSender(config, credential, { idempotencyKey: false })`), so the hub
+  never keeps the answer that carries the token.
+- dd9427a: `assertRowSecurity` now audits every table, not only those holding the owner column: a table without it fails unless
+  `PLATFORM_TABLES` (the migration ledger, the action store, cache and lock tables) or the new `platform` option names it
+  with a reason. An owned table must have exactly one permissive policy, `pol_<table>_<column>`, the `FOR ALL` owner
+  equality, and only restrictive policies named after their column beside it (ADR 0347 decision 5). The probe seeds a
+  row of each owner itself, so the cross-owner read always runs, and also checks that an unset setting sees no row and
+  the owner sees its own. gen's generated tenant-isolation test passes the service's `Model.global` tables and
+  `MODEL_SCOPE_EXEMPTIONS` as `platform`. A table under a scope-path policy with no `tenant_id` now fails the audit.
+- fc845f4: `assertRowSecurity` stages its every-table check like gen's tenancy checks. Until 0.20, an unlisted table without the owner column is a warning, not a failure. `assertRowSecurity` now returns these warnings. Each one names the table's group, read from the catalogue:
+  
+  - an ancestor `scope_path` table awaiting the contract step;
+  - a `scope_id` table whose policy reads the owner setting;
+  - a system table with no row-level security, awaiting its ADR decision;
+  - otherwise, unclassified.
+  
+  With `strict: true` or `STACKRA_GEN_STRICT=1`, these tables fail the audit as they will from 0.20. Every other finding still fails at once: the policy shape of an owned table, the probe's checks, a listed table that holds the column, and a listing with no reason.
+  
+  gen's tenant-isolation test now prints each warning and passes when the audit returns only warnings.
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/support@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

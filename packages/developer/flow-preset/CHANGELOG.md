@@ -1,5 +1,11 @@
 # @stackra/flow-preset
 
+## 0.19.0
+
+### Patch Changes
+
+- 003094f: The spec template's example paths name `packages/flow`, not the retired `packages/figentra-flow`.
+
 ## 0.18.1
 
 No changes in this release.

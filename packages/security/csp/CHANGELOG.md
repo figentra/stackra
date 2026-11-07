@@ -1,5 +1,25 @@
 # @stackra/csp
 
+## 0.19.0
+
+### Minor Changes
+
+- 581af77: `CspConfig.frameAncestors` lets a path be framed: an exact path or a `/*` prefix maps to `self` and https origins, or
+  to `"request"` for framers the runtime resolves per request and passes as `CspAdditions.frameAncestors` with
+  `CspAdditions.path`. Every framer must be exactly one origin; a wildcard is refused in configuration and in a
+  resolver's output alike. Every other path keeps `frame-ancestors 'none'` and `X-Frame-Options: DENY`;
+  `securityHeaders` now takes the same additions and drops `X-Frame-Options` only where a framer is allowed.
+
+### Patch Changes
+
+- 3a894fa: While `reportOnly` is on, `securityHeaders` keeps `X-Frame-Options: DENY` on every path, framed ones included:
+  browsers never enforce `frame-ancestors` from a report-only header, so dropping it left a framed path open to every
+  site during a rollout. `frameAncestorOrigin` is now exported, so a host can refuse a stored framer (a merchant's embed
+  origin) at write time with the same rule the header uses.
+- Updated dependencies [cb26737]
+  - @stackra/config@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

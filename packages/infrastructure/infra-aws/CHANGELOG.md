@@ -1,5 +1,24 @@
 # @stackra/infra-aws
 
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [2933e48]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [e105174]
+- Updated dependencies [c239773]
+- Updated dependencies [414586e]
+- Updated dependencies [7a83de3]
+- Updated dependencies [1f33c82]
+  - @stackra/contracts@0.19.0
+  - @stackra/runway@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes
