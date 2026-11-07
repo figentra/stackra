@@ -12,7 +12,8 @@
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709) and
  *           `stackra db diff` compares models with the migrations (STA-1808); `db structure` and `db diff --write`
- *           are not built yet; infra is `stackra runway infra`, not a command here (ADR 0352); `runway` itself runs @stackra/runway's commands
+ *           are not built yet; infrastructure is figentra/infra's Pulumi stacks, never a command here or in Runway (ADR
+ *           0352 as amended 2026-11-07); `runway` itself runs @stackra/runway's commands
  *           (ADR 0529 decision 4, STA-2214).
  * Runtime: node
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows); ADR 0506;
