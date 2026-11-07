@@ -28,7 +28,7 @@
       "class": "CreateSynonymAction",
       "file": "src/node/actions/create-synonym.action.ts",
       "permission": "data_maintenance.synonym.create",
-      "risk": "L1",
+      "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
       "endpoint": {
@@ -269,7 +269,7 @@
       "class": "UpdateSynonymAction",
       "file": "src/node/actions/update-synonym.action.ts",
       "permission": "data_maintenance.synonym.update",
-      "risk": "L1",
+      "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
       "endpoint": {
@@ -401,7 +401,7 @@
     },
     {
       "key": "data_maintenance.synonym.create",
-      "risk": "L1",
+      "risk": "L2",
       "class": "SynonymPermissions",
       "module": "data_maintenance",
       "member": "create",
@@ -409,7 +409,7 @@
     },
     {
       "key": "data_maintenance.synonym.update",
-      "risk": "L1",
+      "risk": "L2",
       "class": "SynonymPermissions",
       "module": "data_maintenance",
       "member": "update",

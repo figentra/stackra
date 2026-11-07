@@ -96,7 +96,7 @@ export const LOYALTY_KIT_IR: MemberIR = {
       facets: [],
       methods: [],
       refusals: [],
-      statics: { redeem: "Permission.L1" },
+      statics: { redeem: "Permission.L3" },
       traits: [],
     },
     {

@@ -19,7 +19,7 @@
       "class": "RoomPublishAction",
       "file": "src/node/actions/room-publish.action.ts",
       "permission": "collaboration.room.publish",
-      "risk": "L1",
+      "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
       "endpoint": {
@@ -60,7 +60,7 @@
   "permissions": [
     {
       "key": "collaboration.room.publish",
-      "risk": "L1",
+      "risk": "L2",
       "class": "RoomPermissions",
       "module": "collaboration",
       "member": "publish",

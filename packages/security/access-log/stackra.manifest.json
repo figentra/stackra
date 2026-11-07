@@ -64,7 +64,7 @@
       "class": "PurgeAccessLogAction",
       "file": "src/node/actions/purge-access-log.action.ts",
       "permission": "access_log.access_log_entry.purge",
-      "risk": "L2",
+      "risk": "L4",
       "actors": ["system"],
       "job": {
         "unique": true,
@@ -129,7 +129,7 @@
   "permissions": [
     {
       "key": "access_log.access_log_entry.purge",
-      "risk": "L2",
+      "risk": "L4",
       "class": "AccessLogEntryPermissions",
       "module": "access_log",
       "member": "purge",

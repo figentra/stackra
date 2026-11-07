@@ -50,7 +50,7 @@
       "class": "ConfirmRedemptionAction",
       "file": "src/node/actions/confirm-redemption.action.ts",
       "permission": "loyalty_kit.loyalty_account.redeem",
-      "risk": "L1",
+      "risk": "L3",
       "actors": ["user", "service"],
       "idempotency": "optional",
       "endpoint": {
@@ -73,7 +73,7 @@
       "class": "EarnVisitAction",
       "file": "src/node/actions/earn-visit.action.ts",
       "permission": "loyalty_kit.loyalty_account.stamp",
-      "risk": "L1",
+      "risk": "L3",
       "actors": ["user", "service"],
       "idempotency": "optional",
       "endpoint": {
@@ -105,7 +105,7 @@
       "class": "EnrollMemberAction",
       "file": "src/node/actions/enroll-member.action.ts",
       "permission": "loyalty_kit.loyalty_account.enroll",
-      "risk": "L1",
+      "risk": "L2",
       "actors": ["user", "agent", "service"],
       "idempotency": "optional",
       "endpoint": {
@@ -138,7 +138,7 @@
       "class": "ExpirePointsAction",
       "file": "src/node/actions/expire-points.action.ts",
       "permission": "loyalty_kit.loyalty_account.expire",
-      "risk": "L2",
+      "risk": "L3",
       "actors": ["system"],
       "job": {
         "unique": true,
@@ -199,7 +199,7 @@
       "class": "RedeemPointsAction",
       "file": "src/node/actions/redeem-points.action.ts",
       "permission": "loyalty_kit.loyalty_account.redeem",
-      "risk": "L1",
+      "risk": "L3",
       "actors": ["user", "service"],
       "idempotency": "required",
       "rateLimit": {
@@ -427,7 +427,7 @@
     },
     {
       "key": "loyalty_kit.loyalty_account.enroll",
-      "risk": "L1",
+      "risk": "L2",
       "class": "LoyaltyAccountPermissions",
       "module": "loyalty_kit",
       "member": "enroll",
@@ -443,7 +443,7 @@
     },
     {
       "key": "loyalty_kit.loyalty_account.redeem",
-      "risk": "L1",
+      "risk": "L3",
       "class": "LoyaltyAccountPermissions",
       "module": "loyalty_kit",
       "member": "redeem",
@@ -451,7 +451,7 @@
     },
     {
       "key": "loyalty_kit.loyalty_account.expire",
-      "risk": "L2",
+      "risk": "L3",
       "class": "LoyaltyAccountPermissions",
       "module": "loyalty_kit",
       "member": "expire",
@@ -460,7 +460,7 @@
     },
     {
       "key": "loyalty_kit.loyalty_account.stamp",
-      "risk": "L1",
+      "risk": "L3",
       "class": "LoyaltyAccountPermissions",
       "module": "loyalty_kit",
       "member": "stamp",

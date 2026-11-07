@@ -235,6 +235,9 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   client write, an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`;
   `Idempotency.Optional` written out is a declaration, ADR 0136 decision 3). A written `idempotency` also sets the
   tool's `idempotentHint`.
+- **Write floor (STA-2096).** An action's permission is at least L2: gen refuses an action whose permission is L0 or
+  L1 with `action_risk_below_write`, since ADR 0360 decision 3 lets an agent run L0 and L1 without approval. A query
+  keeps L0 or L1 unless it names an action's static, which carries that level.
 - **Effect tags (ADR 0099 decision 2, ADR 0360 decision 10).** `effects: [...]` is copied into the entry and feeds the
   hints; a tag outside `EFFECT_TAGS` is `effect_unknown`.
 - **Listings (ADR 0355 decision 1, ADR 0308 rule 21).** An Integration's `roles` (plus `webhooks` when it receives

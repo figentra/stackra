@@ -19,7 +19,7 @@
       "class": "CreateUploadAction",
       "file": "src/node/actions/create-upload.action.ts",
       "permission": "media.upload.create",
-      "risk": "L1",
+      "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
       "endpoint": {
@@ -50,7 +50,7 @@
   "permissions": [
     {
       "key": "media.upload.create",
-      "risk": "L1",
+      "risk": "L2",
       "class": "UploadPermissions",
       "module": "media",
       "member": "create",
