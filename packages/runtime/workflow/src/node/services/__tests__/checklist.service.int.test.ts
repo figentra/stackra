@@ -2,9 +2,10 @@
  * Stackra file contract:
  * Purpose: integration tests of `ChecklistService` on real Postgres: with every workflow migration applied and the
  *          generated entities registered, a checklist is seeded, a step is completed once and the view reads it back,
- *          so the ORM's tables (`workflow.checklists`, `workflow.checklist_progresses`) are the migrations' tables.
- * Boundary: integration tier (`.int`): needs Docker for Testcontainers. Each call runs in the scope's session, as an
- *           action would.
+ *          so the ORM's tables (`workflow.checklists`, `workflow.checklist_progresses`) are the migrations' tables,
+ *          tenant expand column included, and filled from the call's isolation.
+ * Boundary: integration tier (`.int`): needs Docker for Testcontainers. Each call runs in the scope's isolation (its
+ *           scope settings and the tenant it resolves to, through `CallIsolation`), as an action would.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0182 (integration tier); ADR 0424 (decisions 1 and 2); ADR 0294 (decision 20).
  */
@@ -12,6 +13,8 @@ import { ActorKind, Realm } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
 import { compileMigration, CrudService, registerModelPartners } from "@stackra/database";
 import { usePostgres } from "@stackra/database/testing";
+import { BelongsToTenantMacro } from "@stackra/tenancy/node";
+import { asTenant } from "@stackra/tenancy/testing";
 import { describe, expect, it } from "@stackra/testing";
 
 import { SeedResult } from "#core/index";
@@ -24,6 +27,7 @@ import { CreateChecklistsMigration } from "#node/database/migrations/0006-create
 import { AddRunAutomationAndCancelMigration } from "#node/database/migrations/0007-add-run-automation-and-cancel.migration";
 import { AddServiceAckKeptMigration } from "#node/database/migrations/0008-add-service-ack-kept.migration";
 import { RenameChecklistProgressMigration } from "#node/database/migrations/0009-rename-checklist-progress.migration";
+import { AddTenancyMigration } from "#node/database/migrations/0010-add-tenancy.migration";
 import { WORKFLOW_ENTITIES } from "#node/entities.gen";
 import { Checklist } from "#node/models/checklist.model";
 import { ChecklistProgress } from "#node/models/checklist-progress.model";
@@ -49,8 +53,13 @@ const postgres = usePostgres({
     AddRunAutomationAndCancelMigration,
     AddServiceAckKeptMigration,
     RenameChecklistProgressMigration,
+    AddTenancyMigration,
   ].map((migration, index) =>
-    compileMigration(migration, { schema: "workflow", createsSchema: index === 0 }),
+    compileMigration(migration, {
+      schema: "workflow",
+      createsSchema: index === 0,
+      macros: [BelongsToTenantMacro],
+    }),
   ),
 });
 
@@ -71,9 +80,9 @@ const TEMPLATE = {
   ],
 };
 
-/** Runs `work` with a fresh service in the scope's session. */
+/** Runs `work` with a fresh service in the scope's isolation: the scope is its own tenant's node. */
 const inScope = <T>(work: (checklists: ChecklistService) => Promise<T>): Promise<T> =>
-  postgres.database.withScope(SCOPE, () => work(new ChecklistService(new ProgressRepository())));
+  asTenant(SCOPE.id, () => work(new ChecklistService(new ProgressRepository())), { scope: SCOPE });
 
 describe(ChecklistService, () => {
   it("seeds, completes a step once and reads the progress back from the migrated tables", async () => {
@@ -95,10 +104,12 @@ describe(ChecklistService, () => {
     expect(view.done).toBe(1);
     expect(view.complete).toBe(false);
 
-    const { database } = postgres;
-    const rows = await database.withScope(SCOPE, () =>
-      database.em().execute('select step, owner_id from "workflow"."checklist_progresses"'),
+    const rows = await inScope(() =>
+      postgres.database
+        .em()
+        .execute('select step, owner_id, tenant_id from "workflow"."checklist_progresses"'),
     );
-    expect(rows).toEqual([{ step: "connect_payments", owner_id: SCOPE.id }]);
+    // the isolation set the tenant, so the expand column's default stored it
+    expect(rows).toEqual([{ step: "connect_payments", owner_id: SCOPE.id, tenant_id: SCOPE.id }]);
   });
 });

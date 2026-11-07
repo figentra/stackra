@@ -126,6 +126,7 @@
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/realtime": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/transport": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

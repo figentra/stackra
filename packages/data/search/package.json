@@ -114,6 +114,7 @@
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/settings": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

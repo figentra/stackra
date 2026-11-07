@@ -486,7 +486,8 @@ export function buildManifest(ir: MemberIR): {
           effects,
           idempotent:
             declared.options["idempotency"] !== undefined &&
-            declared.options["idempotency"] !== false,
+            declared.options["idempotency"] !== false &&
+            declared.options["idempotency"] !== "never",
         }),
       };
     else if (toolReason !== undefined) entry["toolOff"] = toolReason;

@@ -40,6 +40,7 @@ describe("@stackra/identity/node", () => {
       "EndedSessionsOutput",
       "EraseDueAccountsAction",
       "EraseDueAccountsOutput",
+      "IdentityStepUpCheckDriver",
       "ListMySessionsQuery",
       "OperatorPermissions",
       "PasskeyPermissions",

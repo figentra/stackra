@@ -68,7 +68,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
 | `apps/console`                                             | `@figentra/console` — Vite web app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                                    | `tier:app`     |
 | `apps/mobile`                                              | `@figentra/mobile` — Expo app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                                         | `tier:app`     |
-| `apps/docs`                                                | `@figentra/docs` — Fumadocs (ADR 0514); pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts`                                                   | `tier:app`     |
+| `apps/docs`                                                | `@figentra/docs` — Fumadocs (ADR 0514); pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts`                                          | `tier:app`     |
 | `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, connectors, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300)                                                                       | `tier:config`  |
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294)                                               | `tier:service` |
@@ -128,8 +128,8 @@ repository or directory.
 - In this repository: `pnpm bot:gh -- …`, `pnpm bot:git -- push origin HEAD`, `pnpm pr:merge <n>`.
 - Anywhere else (another repository, `~/Projects/figentra`): `figentra bot gh …`,
   `figentra bot git push origin HEAD` and `figentra pr merge --admin [-R figentra/<repo>] <n>` from
-  `@figentra/cli`. Each mints the installation token in-process from Infisical `agents` dev `/agents`; none prints
-  it or puts it on argv.
+  `@figentra/cli`. Each mints the installation token in-process from the sops `agents` scope (`secrets-exec.mjs`); none
+  prints it or puts it on argv.
 - A merge-now (`--admin`) merge lands only where the repository's rulesets name stackra-bot as a bypass actor. Where
   GitHub refuses it, hand the pull request to the leader for the owner; never retry as the owner.
 - The bot has no `administration`, `environments`, `secrets` or `variables` permission. Rulesets, environments,

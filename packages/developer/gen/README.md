@@ -115,7 +115,8 @@ skipped. `model_tenancy_migration_missing` (staged: a warning until 0.20 or `STA
 whose table some own migration touches but none calls `t.belongsToTenant()`. The reader reads the traits of `Model.global(...)`
 and marks the class `global`, which the manifest's model records. Such a service with an owned model and
 `@stackra/testing` also gets `.stackra/tests/tenant-isolation.int.test.ts` (`emitIsolationTest`): its compiled
-migrations, then `assertRowSecurity(postgres.database, tenantIsolationOptions())`.
+migrations, then `assertRowSecurity` with `tenantIsolationOptions()` and, as `platform`, the tables of its
+`Model.global` models and of `MODEL_SCOPE_EXEMPTIONS`, so every other table without `tenant_id` fails it (ADR 0347 d5).
 
 The query cache (ADR 0305 rule 31, STA-1445): `site_cache_reads_caller` (`checkQueryCache`, full pass only) refuses a
 query cached `per: CacheScope.Site` whose `handle` reads its caller from its context (`ctx.actor`, `scopeId`, `scope`,

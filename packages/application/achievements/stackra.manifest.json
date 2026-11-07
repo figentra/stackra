@@ -508,8 +508,8 @@
         },
         {
           "class": {
-            "name": "Database",
-            "from": "@stackra/database"
+            "name": "CallIsolation",
+            "from": "@stackra/actions/contracts"
           }
         },
         {

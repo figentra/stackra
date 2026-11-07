@@ -408,6 +408,17 @@
           "from": "@stackra/actions/testing"
         }
       }
+    },
+    {
+      "port": "StepUpCheck",
+      "key": "actions.StepUpCheck",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryStepUpCheckDriver",
+          "from": "@stackra/actions/testing"
+        }
+      }
     }
   ],
   "integrations": [],
@@ -535,7 +546,7 @@
     },
     "actions.Idempotency": {
       "type": "string",
-      "enum": ["optional", "required", "derived"]
+      "enum": ["optional", "required", "derived", "never"]
     },
     "actions.OfflineMode": {
       "type": "string",

@@ -151,6 +151,22 @@ export class StackraDocsConfig extends DocsConfig {
             "runbooks/fresh-machine",
           ],
         },
+        {
+          group: "Runway commands",
+          pages: [
+            "runway/plan",
+            "runway/deploy",
+            "runway/promote",
+            "runway/rollback",
+            "runway/status",
+            "runway/validate",
+            "runway/drift",
+            "runway/secrets-sync",
+            "runway/secrets-decrypt",
+            "runway/env-check",
+            "runway/env-orphans",
+          ],
+        },
       ],
     },
     {

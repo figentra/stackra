@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/workspace-layout.md
+file: rules/workspace-layout.md
+reason: "core's newer text, until the stackra preset carries it: the docs app is Fumadocs, not Mintlify (ADR 0514, STA-2026)"
+owner: figentra-usr
+review: 2027-02-01

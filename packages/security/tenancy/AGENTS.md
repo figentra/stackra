@@ -47,7 +47,10 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   single scope the driver resolves the tenant through the `ScopeTree` first (STA-1823, ADR 0495 note of 2026-11-01): a
   `job` or `system` actor takes the tenant of its platform-written scope (`tenantOf`, a branch resolves to its parent
   tenant; a scope the tree does not show is refused, `TenantScopeUnresolvedError`); any other actor keeps its own
-  `scopeId` and is refused (`TenantScopeMismatchError`) when the scope's tenant differs. The tree is read in a session
+  `scopeId` and is refused (`TenantScopeMismatchError`) when the scope's tenant differs; a user with a tenant, or an agent
+  with one (its own, or else its human's), is also refused in a scope above every tenant or one the tree does not show
+  (never fail open on an unknown scope); a platform user or agent (no tenant) stays a platform call. An agent with no `scopeId` of its own runs in its
+  human's tenant (`actingTenant`, used by both `withTenant` and the driver). The tree is read in a session
   over the root label of the scope's path, because row security hides a branch's tenant ancestor from the branch's own.
   `TenantScopeOwnershipDriver` is the `ScopeOwnership` the inbox and the automation service use to distrust an actor
   whose tenant does not own the scope it comes with. `pnpm validate` refuses a session-level `app.*` setting

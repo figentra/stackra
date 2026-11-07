@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `Idempotency`, how an action treats the Idempotency-Key: honoured when sent, required from every caller,
- *          or derived from the call when none is sent.
+ *          derived from the call when none is sent, or never honoured (an output, such as a credential, that the
+ *          idempotency store must never keep).
  * Boundary: an enum (`Enum.of`) read by the pipeline's idempotency step and by gen (a client write with no declaration
  *           is a gen error, ADR 0136). Queries take no idempotency option.
  * Runtime: isomorphic
@@ -22,6 +23,8 @@ export const Idempotency = Enum.of({
   Required: "required",
   /** A sent key is honoured; without one the key is derived from the actor and the input, so a repeat replays. */
   Derived: "derived",
+  /** A sent key is ignored: every call runs and its output is never stored, for an output that must not be kept. */
+  Never: "never",
 });
 
 /** One of the values above. */

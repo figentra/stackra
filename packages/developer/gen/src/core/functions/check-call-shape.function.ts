@@ -99,7 +99,7 @@ export function checkCallShape(
     refuse(
       "idempotency_missing",
       `${declared.name} can be called by a client (${resolved.routed ? "it has an endpoint" : "it is a tool"}) but declares no \`idempotency\``,
-      "write `idempotency: Idempotency.Optional` (the default), `Idempotency.Required` or `Idempotency.Derived`",
+      "write `idempotency: Idempotency.Optional` (the default), `Idempotency.Required`, `Idempotency.Derived` or `Idempotency.Never`",
     );
   return errors;
 }
