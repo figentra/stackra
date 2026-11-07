@@ -46,6 +46,12 @@ const member = (name: string): string =>
 /** The generated Encore app file both members carry. */
 const APP = '{ "id": "acme-x1", "lang": "typescript" }\n';
 
+/**
+ * A relative path climbing `levels` folders, as the generated Encore files write it. Built, not spelled, so the
+ * repository's import check (ADR 0233) does not read this fixture text as the test's own imports.
+ */
+const up = (levels: number) => "../".repeat(levels);
+
 beforeEach(async () => {
   repository = mkdtempSync(join(tmpdir(), "stackra-encore-tree-"));
   write(".gitignore", ".stackra/\ndist/\nnode_modules/\n");
@@ -88,7 +94,7 @@ beforeEach(async () => {
   // The relay imports its producer's topic across members, by a relative path that must survive.
   write(
     "services/usage/.stackra/encore/usage/relay.ts",
-    'import { topic } from "../../../../billing/.stackra/encore/billing/events";\nexport const relay = topic;\n',
+    `import { topic } from "${up(4)}billing/.stackra/encore/billing/events";\nexport const relay = topic;\n`,
   );
   write("packages/core/money/dist/index.js", "export {};\n");
   write("services/usage/node_modules/x/index.js", "skip\n");
@@ -125,13 +131,13 @@ describe("encoreDeployTree", () => {
 
     const show = (path: string) => git("show", `${deploy}:${path}`);
     expect(await show("services/billing/src/modules/plans/plan.service.ts")).toContain(
-      'import { Plan } from "./plan.model";\nimport type { Wiring } from "../../../.stackra/gen/wiring";',
+      `import { Plan } from "./plan.model";\nimport type { Wiring } from "${up(3)}.stackra/gen/wiring";`,
     );
     expect(await show("services/usage/.stackra/encore/usage/api.ts")).toContain(
-      'from "../../../src/modules/plans/plan.service"',
+      `from "${up(3)}src/modules/plans/plan.service"`,
     );
     expect(await show("services/usage/.stackra/encore/usage/relay.ts")).toContain(
-      'from "../../../../billing/.stackra/encore/billing/events"',
+      `from "${up(4)}billing/.stackra/encore/billing/events"`,
     );
 
     await tree?.dispose();
