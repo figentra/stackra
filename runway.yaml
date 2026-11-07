@@ -54,6 +54,12 @@ providers:
       observability:
         branches: [main]
         reviewers: [figentra-usr]
+      # The production Workers deploys and the schema-tag deploys; declared as it is live, so infra's github stack
+      # plans it.
+      production:
+        branches: [main]
+        tags: ["schemas@*"]
+        reviewers: [figentra-usr]
   infisical:
     # Infisical Cloud EU. Core has no runtime project (ADR 0512): CI reads ci-build and ci-deploy through
     # the org variables, agents read agents through .infisical.yaml.
