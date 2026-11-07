@@ -4,7 +4,7 @@
  *          prints each target's plan on a dry run (with the Worker members `--member` names), and hands Runway's
  *          `deploy()` the commit, every provider and the kind filter, then reports each record; named Worker members
  *          skip the product publish. With `secrets.sync: on-deploy` it syncs the secrets first when services ship
- *          (from the job's environment with `--from-env`), and stops if the sync fails.
+ *          (from the job's environment; `--from-env` is accepted and ignored), and stops if the sync fails.
  * Boundary: test only; Runway's `readRunway`, `readRunways`, `syncSecrets` and `deploy` are mocked, nothing is
  *           deployed.
  * Runtime: node (vitest)
@@ -291,9 +291,9 @@ describe("runRunwayDeploy", () => {
       expect(syncSecrets).not.toHaveBeenCalled();
     });
 
-    it("reads the values from the job's environment with --from-env, else from Infisical", async () => {
+    it("still accepts the deprecated --from-env, and the sync reads the job's environment either way", async () => {
       expect(await run({ env: "production", sha: SHA, "from-env": true }).code).toBe(0);
-      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({ fromEnv: true });
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).not.toHaveProperty("fromEnv");
       vi.mocked(syncSecrets).mockClear();
       expect(await run({ env: "production", sha: SHA }).code).toBe(0);
       expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).not.toHaveProperty("fromEnv");

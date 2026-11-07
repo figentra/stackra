@@ -3,10 +3,11 @@
  * Purpose: `deprecatedFields(root)`, the deprecated fields a parsed root runway still sets, each with what replaces it:
  *          `providers.aws.region` and `providers.aws.accounts` (the three-account layout that no longer matches ADR
  *          0524), a per-role `providers.aws.budgets.monthlyUsd` and an environment's `cloud` give way to
- *          `environments.<env>.region` and the product's one account.
+ *          `environments.<env>.region` and the product's one account; `providers.infisical` and `secrets.defaultPath`
+ *          give way to the sops scopes of figentra/secrets and are ignored (ADR 0525).
  * Boundary: pure; `runway validate` prints each as a warning and still passes. The fields stay accepted for one release.
  * Runtime: isomorphic
- * Governing contract: ADR 0524; STA-2104.
+ * Governing contract: ADR 0524; ADR 0525; STA-2104.
  */
 import type { RootRunway } from "#core/types/root-runway.type";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
@@ -38,6 +39,18 @@ export function deprecatedFields(root: RootRunway): RunwayIssue[] {
       path: "providers.aws.accounts",
       message:
         "Deprecated: a product has one AWS account (`ref:aws.account`), and each environment names its `region`; removed in the next release",
+    });
+  if (root.providers?.["infisical"] !== undefined)
+    found.push({
+      path: "providers.infisical",
+      message:
+        "Deprecated and ignored: secret values come from sops scopes in figentra/secrets, decrypted by .github/actions/secrets-decrypt (ADR 0525); remove the block",
+    });
+  if (root.secrets?.defaultPath !== undefined)
+    found.push({
+      path: "secrets.defaultPath",
+      message:
+        "Deprecated and ignored: it named a providers.infisical path; a product's secrets live in products/<project>/<env> (ADR 0525); remove it",
     });
   for (const [name, environment] of Object.entries(root.environments))
     if (environment?.cloud !== undefined)

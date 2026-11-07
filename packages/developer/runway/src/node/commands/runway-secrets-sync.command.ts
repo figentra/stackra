@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `RunwaySecretsSyncCommand`, `runway secrets sync <env> [--dry-run] [--from-env]` (`runway secrets:sync`, alias
- *          `runway env sync`, ADR 0173 amendment 2026-11-04): the member secrets of `env`, and the names each member's
- *          manifest declares, from Infisical into the runtimes (`syncSecrets`). A real sync runs only in a GitHub
- *          Actions job its OIDC token proves (STA-2100); `--dry-run` prints the names and writers anywhere; `--from-env` reads
- *          the values from the job's environment, where `.github/actions/secrets-decrypt` put the product's sops scope
- *          (ADR 0525), instead of Infisical.
+ * Purpose: `RunwaySecretsSyncCommand`, `runway secrets sync <env> [--dry-run]` (`runway secrets:sync`, alias
+ *          `runway env sync`): the member secrets of `env`, and the names each member's manifest declares, from the
+ *          job's environment, where `.github/actions/secrets-decrypt` put the product's sops scope (ADR 0525), into
+ *          the runtimes (`syncSecrets`). A real sync runs only in a GitHub Actions job its OIDC token proves
+ *          (STA-2100); `--dry-run` prints the names and writers anywhere. `--from-env` is accepted and ignored: the
+ *          job's environment is the only source now (deprecated; removed in the next minor release).
  * Boundary: names only; values stay in memory inside `syncSecrets`.
  * Runtime: node
- * Governing contract: ADR 0173; ADR 0506 (decision 8); STA-606; STA-2100.
+ * Governing contract: ADR 0525; ADR 0506 (decision 8); STA-606; STA-2100.
  */
 import { Argument, Command, Option, type CommandIo } from "@stackra/console";
 
@@ -22,7 +22,7 @@ export class RunwaySecretsSyncCommand extends Command({
   bin: true,
   aliases: ["env:sync"],
   description:
-    "Sync an environment's declared names from Infisical into the runtimes (CI only); `env sync` is the same command",
+    "Sync an environment's declared names from the job's decrypted sops scope into the runtimes (CI only); `env sync` is the same command",
   examples: ["runway secrets sync staging --dry-run", "runway env sync staging --dry-run"],
 }) {
   /** The environment whose secrets sync. */
@@ -33,10 +33,9 @@ export class RunwaySecretsSyncCommand extends Command({
   @Option({ description: "Print the secret names and writers; read and write nothing" })
   dryRun = false;
 
-  /** Read the values from the job's environment, where the secrets-decrypt action put the sops scope. */
+  /** Deprecated and ignored: the job's environment is the only source (ADR 0525). */
   @Option({
-    description:
-      "Read the values from this job's environment (the product's sops scope, decrypted by .github/actions/secrets-decrypt) instead of Infisical",
+    description: "Deprecated, ignored: the values always come from this job's environment",
   })
   fromEnv = false;
 
@@ -50,12 +49,15 @@ export class RunwaySecretsSyncCommand extends Command({
    */
   async handle(io: CommandIo): Promise<number> {
     const root = repositoryRoot(io.cwd);
+    if (this.fromEnv)
+      io.output.warn(
+        "--from-env is deprecated and ignored: the job's environment is the only source",
+      );
     await this.sync({
       environment: this.environment,
       runways: readRunways(root),
       repository: root,
       dryRun: this.dryRun,
-      fromEnv: this.fromEnv,
       log: (line) => io.output.line(line),
     });
     return 0;

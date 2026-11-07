@@ -98,7 +98,10 @@ function fakeRunner(
     const where = (options.cwd ?? ".").replace(root, "<root>");
     const at = args.indexOf("--secrets-file");
     const file = at === -1 ? undefined : args[at + 1];
-    const shown = file === undefined ? args : args.map((arg, index) => (index === at + 1 ? "<secrets-file>" : arg));
+    const shown =
+      file === undefined
+        ? args
+        : args.map((arg, index) => (index === at + 1 ? "<secrets-file>" : arg));
     if (file !== undefined) secretFiles.push({ path: file, mode: statSync(file).mode & 0o777 });
     calls.push(
       `${where}$ ${[command, ...shown].join(" ")}${file === undefined ? "" : ` <<< ${readFileSync(file, "utf8")}`}`,
@@ -411,49 +414,42 @@ describe("CloudflareWorkersProviderDriver", () => {
     expect(() => driver.plan({ ...WEB, kind: "mobile" }, SHA)).toThrow(RunwayUnresolvedError);
   });
 
-  describe("with runways (secrets read from Infisical)", () => {
+  describe("with runways (declared secrets read from the decrypted sops scope)", () => {
     const RUNWAYS: DeployRunways = {
       root: {
+        project: "acme",
         environments: { production: {} },
-        providers: {
-          github: { org: "acme", repo: "platform" },
-          infisical: {
-            workspace: "ws-1",
-            environments: { production: "prod" },
-            paths: { runtime: "/runtime" },
-          },
-        },
-        secrets: { defaultPath: "runtime" },
+        providers: { github: { org: "acme", repo: "platform" } },
       },
       members: [
         { member: "registry", folder: "workers", runway: { secrets: ["REGISTRY_SIGNING_KEY"] } },
       ],
     };
 
-    it("sends the Infisical value in the secrets file, not the environment's", async () => {
+    it("sends the job environment's value in the secrets file", async () => {
       const root = repository();
       const { run, calls } = fakeRunner(root);
-      const answering: CommandRunner = async (command, args, options) =>
-        command === "infisical"
-          ? JSON.stringify([{ key: "REGISTRY_SIGNING_KEY", value: "infisical-value" }])
-          : run(command, args, options);
-      const driver = workers(root, answering, {
-        env: { REGISTRY_D1_DATABASE_ID: REAL_D1, REGISTRY_READ_ONLY: "" },
+      const driver = workers(root, run, {
+        env: {
+          REGISTRY_D1_DATABASE_ID: REAL_D1,
+          REGISTRY_READ_ONLY: "",
+          REGISTRY_SIGNING_KEY: "sops-value",
+        },
       });
       driver.runways = RUNWAYS;
       driver.ci = true;
       await driver.apply(WEB, SHA);
       expect(calls).toContain(
-        `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file <secrets-file> <<< {"REGISTRY_SIGNING_KEY":"infisical-value"}`,
+        `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file <secrets-file> <<< {"REGISTRY_SIGNING_KEY":"sops-value"}`,
       );
     });
 
-    it("ships nothing when Infisical lacks a secret", async () => {
+    it("ships nothing when the job's environment lacks a secret", async () => {
       const root = repository();
       const { run, calls } = fakeRunner(root);
-      const answering: CommandRunner = async (command, args, options) =>
-        command === "infisical" ? "[]" : run(command, args, options);
-      const driver = workers(root, answering);
+      const driver = workers(root, run, {
+        env: { REGISTRY_D1_DATABASE_ID: REAL_D1, REGISTRY_READ_ONLY: "" },
+      });
       driver.runways = RUNWAYS;
       driver.ci = true;
       await expect(driver.apply(WEB, SHA)).rejects.toThrow("REGISTRY_SIGNING_KEY");

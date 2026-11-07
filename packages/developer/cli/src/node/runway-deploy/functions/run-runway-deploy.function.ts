@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `runRunwayDeploy(context)`, the run of `stackra deploy --env <environment> [--kind <kind,…>]
- *          [--member <key,…>] [--sha <sha>] [--from-env] [--dry-run]` at a repository root: reads the root `runway.yaml` and ships
+ *          [--member <key,…>] [--sha <sha>] [--dry-run]` at a repository root: reads the root `runway.yaml` and ships
  *          the commit (the checked-out `HEAD` unless `--sha`) to every target of the environment through Runway's
  *          `deploy()` and its providers (`encore-cloud`, `eas`, `mintlify`, `cloudflare-workers`). `--kind` keeps the
  *          targets of those kinds, `--member` the named Worker members. A dry run prints each target's plan. An
@@ -12,15 +12,14 @@
  *          product publish (`runDeployProduct`, the former `--product` path, which stays as an alias) inside the
  *          same lock, and the other kinds through `deploy()`; with `--member` the named Worker members ship through
  *          the Workers provider and the product publish does not run. A runway with `secrets.sync: on-deploy` syncs the
- *          services' secrets into Encore (`syncSecrets`; from the job's environment, a decrypted sops scope, with
- *          `--from-env`, else from Infisical) first, inside the lock, whenever the deploy
- *          ships services, and then the Workers provider reads a Worker's secrets from Infisical too; a dry run prints
- *          the sync's names and writers.
+ *          services' secrets into Encore (`syncSecrets`, from the job's environment, where `.github/actions/
+ *          secrets-decrypt` put the product's sops scope) first, inside the lock, whenever the deploy ships services,
+ *          and the Workers provider reads a Worker's declared secrets the same way; a dry run prints the sync's names
+ *          and writers. `--from-env` is accepted and ignored (deprecated): the job's environment is the only source.
  * Boundary: the CLI picks the providers and prints; every change is a provider's. Logins are each provider CLI's own
- *           (OIDC in CI), and Worker ids and vars are read by the provider from this process's environment (its
- *           secrets too, unless the runway syncs on deploy).
+ *           (OIDC in CI), and Worker ids, vars and secrets are read by the provider from this process's environment.
  * Runtime: node
- * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0173; STA-1921; STA-606.
+ * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0525; STA-1921; STA-606.
  */
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -87,6 +86,10 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
   if (unknown.length > 0)
     throw new CliUsageError(`unknown --kind ${unknown.join(", ")}: one of ${known.join(", ")}`);
 
+  if (values["from-env"] === true)
+    io.err(
+      "--from-env is deprecated and ignored: the secret sync always reads the job's environment\n",
+    );
   const root = readRunway(join(cwd, "runway.yaml"), "root");
   const members = list(values["member"]);
   const providers = runwayProviders(root, cwd, members);
@@ -118,8 +121,6 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
           repository: cwd,
           dryRun,
           log: (line) => io.out(`${line}\n`),
-          // ADR 0525: the values come from the job's environment (a decrypted sops scope), not Infisical.
-          ...(values["from-env"] === true ? { fromEnv: true } : {}),
         })
       : Promise.resolve();
 
