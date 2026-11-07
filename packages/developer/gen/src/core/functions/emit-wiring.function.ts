@@ -17,6 +17,7 @@
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
  *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds,
+ *          the pipeline's own ports for what a service declares (`pipelinePorts`, STA-2573),
  *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504), and the
  *          cross-app relay (STA-1910): a consumer of a contract-only producer's events gets the inbox route
  *          (`InboundEventsController` over `RelayInboxService`) and its `outbox.relay_inbox` override from
@@ -56,6 +57,7 @@ import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
+import { pipelinePorts } from "#core/functions/pipeline-ports.function";
 import { portKey } from "#core/functions/port-key.function";
 import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
 import { moduleDependsOn } from "#core/functions/module-depends-on.function";
@@ -655,6 +657,8 @@ export function emitWiring(ir: MemberIR): string {
     }
     // The pipeline resolves ReplicaReads optionally, so a replica query's port is reached here (STA-1504).
     for (const dep of replicaReadsPorts(ir)) used.push({ module: ir.member, dep });
+    // The ports the pipeline itself requires for what the service declares, injected or not (STA-2573).
+    for (const dep of pipelinePorts(ir)) used.push({ module: ir.member, dep });
   }
   // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
   const systemDefaults = new Map<string, string>();
