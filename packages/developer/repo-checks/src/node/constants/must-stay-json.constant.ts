@@ -34,6 +34,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
   ],
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
   [
+    /^services\/[\w-]+\/assets\/defaults\/[\w-]+\.json$/,
+    'a service\'s shipped defaults are imported as JSON modules (`with { type: "json" }`), which take no YAML and no comments',
+  ],
+  [
     /(^|\/)expo-module\.config\.json$/,
     "Expo autolinking reads this fixed name as strict JSON (ADR 0478)",
   ],
