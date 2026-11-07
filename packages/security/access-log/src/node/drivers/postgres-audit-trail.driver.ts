@@ -17,6 +17,7 @@
  */
 import { AuditTrail, type AuditEntry } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
+import { actingScopeId } from "@stackra/contracts";
 import type { Logger } from "@stackra/contracts";
 import { UniqueViolation } from "@stackra/database";
 import type { Repository } from "@stackra/database";
@@ -64,7 +65,7 @@ export class PostgresAuditTrailDriver extends Driver(AuditTrail) {
    */
   async record(entry: AuditEntry): Promise<void> {
     const { actor, callId, key } = entry.call;
-    if (actor.scopeId === undefined) {
+    if (actingScopeId(actor) === undefined) {
       this.logger.warn(AUDIT_WRITE_SKIPPED, { callId, key });
       return;
     }

@@ -18,7 +18,14 @@
  */
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
 import { type AnyClass, Driver, kindOf } from "@stackra/container";
-import { type Actor, ActorKind, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
+import {
+  actingScopeId,
+  type Actor,
+  ActorKind,
+  Enum,
+  type PublicId,
+  type ScopeRef,
+} from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { RuleFacts } from "@stackra/rules";
 import type { ScopeTree } from "@stackra/scope/contracts";
@@ -148,7 +155,7 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    */
   private async scopeOf(call: CallDescriptor): Promise<ScopeRef | undefined> {
     if (call.scope !== undefined) return call.scope;
-    const id = call.actor.scopeId;
+    const id = actingScopeId(call.actor);
     if (id === undefined) return undefined;
     const node = await this.tree.node(id as PublicId<"scp">);
     if (node === undefined) throw ForbiddenError.create();

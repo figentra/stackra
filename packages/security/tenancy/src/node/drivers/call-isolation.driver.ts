@@ -12,7 +12,7 @@
  *           actor (or one it acts for) names that differs from the scope's is refused, as is any claimed tenant when
  *           the scope is above every tenant; the scheduler's stamp, whose `scopeId` is the scope's own id, claims none; a scope the tree does
  *           not show, or shows at another path than the reference carries, is refused (`TenantScopeUnresolvedError`),
- *           and a scope above every tenant keeps no tenant. An agent whose tenant differs from its human's is refused, and an agent with none runs in its human's (`actingTenant`). Any other actor keeps its own `scopeId`,
+ *           and a scope above every tenant keeps no tenant. An agent whose tenant differs from its human's is refused, and an agent with none runs in its human's (`actingScopeId`). Any other actor keeps its own `scopeId`,
  *           and when that tenant and the scope's tenant are both known and differ the call is refused
  *           (`TenantScopeMismatchError`), never settled by picking one; a user or an agent with a tenant (an agent's
  *           own, or else its human's) whose scope the tree shows above every tenant, or does not show at that path, is
@@ -38,7 +38,7 @@
  */
 import { CallIsolation } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
-import { ActorKind } from "@stackra/contracts";
+import { actingScopeId, ActorKind, claimedScopeIds } from "@stackra/contracts";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import type { ScopeTree } from "@stackra/scope/contracts";
@@ -46,8 +46,6 @@ import type { ScopeTree } from "@stackra/scope/contracts";
 import { TenantScopeMismatchError } from "#core/errors/tenant-scope-mismatch.error";
 import { TenantScopeUnresolvedError } from "#core/errors/tenant-scope-unresolved.error";
 import { TenantSwitchRefusedError } from "#core/errors/tenant-switch-refused.error";
-import { actingTenant } from "#core/functions/acting-tenant.function";
-import { claimedTenants } from "#core/functions/claimed-tenants.function";
 import { tenantOf } from "#core/functions/tenant-of.function";
 import type { TenantIsolationService } from "#node/services/tenant-isolation.service";
 
@@ -107,7 +105,7 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
     // cannot become read-only.
     const tenant = await this.actorIn(actor, scope);
     const held = await this.isolation.currentTenant();
-    if (held !== "" && held !== (actingTenant(tenant) ?? ""))
+    if (held !== "" && held !== (actingScopeId(tenant) ?? ""))
       throw TenantSwitchRefusedError.create();
     return isolate(tenant);
   }
@@ -148,7 +146,7 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
     if (actor.kind === ActorKind.Job || actor.kind === ActorKind.System)
       return unitActor(actor, first, resolved);
     // An agent claims its own tenant or, with none, the one of the human it acts for (ADR 0360), and runs in it.
-    const claimed = actingTenant(actor);
+    const claimed = actingScopeId(actor);
     // A tenant user or agent in a scope above every tenant, or in one the tree does not show (a forged path such as
     // its own id with `platform`), would keep its tenant while its scope paths cover other tenants' rows: its scope
     // must be shown inside a tenant. A platform user or agent (no tenant) stays a platform call (ADR 0239 decision 1).
@@ -211,7 +209,7 @@ const ROLL_BACK = Symbol("roll back the tree read");
 function unitActor(actor: Actor, scope: ScopeRef, resolved: Resolved): Actor {
   if (resolved === undefined) throw TenantScopeUnresolvedError.create();
   const { tenant } = resolved;
-  for (const claimed of claimedTenants(actor))
+  for (const claimed of claimedScopeIds(actor))
     if (claimed !== scope.id && claimed !== tenant) throw TenantScopeMismatchError.create();
   return tenant === undefined || tenant === actor.scopeId
     ? actor

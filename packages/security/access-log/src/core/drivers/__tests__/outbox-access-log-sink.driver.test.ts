@@ -70,6 +70,28 @@ describe(OutboxAccessLogSinkDriver, () => {
     expect(record?.meta.id).toMatch(/^evt_[0-9a-hjkmnp-tv-z]{26}$/);
   });
 
+  it("stamps an agent with no tenant of its own with its human's tenant, and a platform agent with none", async () => {
+    const outbox = new Outbox();
+    const sink = new OutboxAccessLogSinkDriver(outbox);
+    const write = (actor: Actor) =>
+      sink.write({
+        callId: "call_3",
+        actor,
+        target: "Wallets.view",
+        classification: DataClassification.Financial,
+        subjects: ["usr_1"],
+        at: AT,
+      });
+    await write({ kind: ActorKind.Agent, id: "agt_1", onBehalfOf: STAFF });
+    await write({
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { kind: ActorKind.User, id: "usr_staff", realm: Realm.Platform },
+    });
+    expect(outbox.written[0]?.meta).toMatchObject({ scopeId: "ten_1" });
+    expect(outbox.written[1]?.meta).not.toHaveProperty("scopeId");
+  });
+
   it("writes no tenant for a platform actor, and rejects when the outbox fails", async () => {
     const outbox = new Outbox();
     const sink = new OutboxAccessLogSinkDriver(outbox);

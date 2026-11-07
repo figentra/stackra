@@ -12,6 +12,7 @@
  * Governing contract: ADR 0212 (decisions 1, 3, 4 and 5); ADR 0141; ADR 0294 (decision 16); ADR 0409; STA-821.
  */
 import { Driver } from "@stackra/container";
+import { actingScopeId } from "@stackra/contracts";
 import type { EventOutbox } from "@stackra/events/contracts";
 
 import { AccessLogSink } from "#contracts/ports/access-log-sink.port";
@@ -49,13 +50,14 @@ export class OutboxAccessLogSinkDriver extends Driver(AccessLogSink) {
       subjects: [...record.subjects],
       at: record.at.toISOString(),
     });
+    const scopeId = actingScopeId(record.actor);
     await this.outbox.write([
       {
         event,
         meta: {
           id: mintAccessEventId(),
           occurredAt: record.at,
-          ...(record.actor.scopeId === undefined ? {} : { scopeId: record.actor.scopeId }),
+          ...(scopeId === undefined ? {} : { scopeId }),
           actor: record.actor,
           correlationId: record.callId,
         },
