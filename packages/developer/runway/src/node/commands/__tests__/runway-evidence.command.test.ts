@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: unit tests of `RunwayEvidenceCommand` on the console, in a temporary repository: it writes
  *          `runway-evidence-<environment>-<member>.json` (or without the member) with the repo from
- *          `providers.github`, gives the same evidence as the `--json` data, and refuses a missing target or a short
- *          sha with exit 2 before writing anything.
+ *          `providers.github`, gives the same evidence as the `--json` data, reads the Worker's wrangler config for
+ *          migrations, and refuses a missing target or a short sha with exit 2 before writing anything.
  * Boundary: test only; no network, git or gh runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0533 (decision 3); STA-2104.
  */
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -19,10 +19,12 @@ import { RunwayEvidenceCommand } from "#node/commands/runway-evidence.command";
 
 const SHA = "d".repeat(40);
 
-/** A repository whose root runway names its GitHub repo and an all-at-once release. */
-function repository(): string {
+/** A repository whose root runway names its GitHub repo and a `docs` Worker, with that Worker's wrangler config. */
+function repository(wrangler = '{ "name": "docs" }'): string {
   const folder = mkdtempSync(join(tmpdir(), "runway-evidence-"));
   writeFileSync(join(folder, "pnpm-workspace.yaml"), "packages: []\n");
+  mkdirSync(join(folder, "apps/docs"), { recursive: true });
+  writeFileSync(join(folder, "apps/docs/wrangler.jsonc"), wrangler);
   writeFileSync(
     join(folder, "runway.yaml"),
     [
@@ -36,6 +38,11 @@ function repository(): string {
       "  production:",
       "    destinations:",
       "      web: cloudflare-workers",
+      "targets:",
+      "  cloudflare-workers:",
+      "    members:",
+      "      docs:",
+      "        path: apps/docs",
       "release:",
       "  strategy:",
       "    kind: all-at-once",
@@ -68,10 +75,27 @@ describe(RunwayEvidenceCommand, () => {
       repo: "acme/platform",
       sha: SHA,
       member: "docs",
-      rollout: false,
+      rollout: true,
       destructive: null,
     });
     expect((result.json as { data: unknown }).data).toEqual(written);
+  });
+
+  /** A Worker that ships Durable Object migrations goes out at 100%, so it is floor. */
+  it("reads the member's wrangler config for migrations", async () => {
+    const cwd = repository('{ "name": "docs", "migrations": [{ "tag": "v1" }] }');
+
+    await run(
+      ["production", "--target", "cloudflare-workers", "--member", "docs", "--sha", SHA],
+      cwd,
+    );
+
+    expect(
+      JSON.parse(readFileSync(join(cwd, "runway-evidence-production-docs.json"), "utf8")),
+    ).toMatchObject({
+      rollout: false,
+      rolloutDetail: { floorReason: "durable-object-migrations" },
+    });
   });
 
   /** Without a member the file is named for the environment only. */

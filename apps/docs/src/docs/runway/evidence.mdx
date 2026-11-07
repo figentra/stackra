@@ -21,10 +21,23 @@ stackra runway evidence <environment> --target <target> --sha <sha> [--member <m
 
 Reads the root runway and writes `runway-evidence-<environment>[-<member>].json` in the working folder: the
 `runway.evidence/v1` record the approvals bot reads ([0533](/adr/0533-approvals-bot-deployment-protection)). It holds
-the repo, environment, commit, target and member; `rollout`, true only when `release.strategy.kind` is gradual
-(`canary`, `staged`, `rolling`) and `autoRollback` is set; and `destructive`, which stays `null` until gen classifies
+the repo, environment, commit, target and member; `rollout`; and `destructive`, which stays `null` until gen classifies
 migrations. The bot treats any `null` as the owner's to approve, and ignores a file whose commit is not the
 deployment's.
+
+`rollout` is judged per target:
+
+| Target and member                                                                              | `rollout` | `floorReason`               |
+| ---------------------------------------------------------------------------------------------- | --------- | --------------------------- |
+| A Workers member whose production settings move traffic in more than one step                  | `true`    | `null`                      |
+| A Workers member whose `wrangler.jsonc` has `migrations` (it ships at 100%)                    | `false`   | `durable-object-migrations` |
+| A Workers member with one step (`public-site`, `internal-tool`, `cache`), or not in production | `false`   | `single-step`               |
+| Another declared target (`encore-cloud`, `eas`, ...)                                           | `false`   | `no-rollout-primitive`      |
+| An undeclared target, no `--member` for Workers, or no `wrangler.jsonc` to read                | `null`    | `undeclared`                |
+
+Every Worker steps through `[10, 50, 100]` in production by default; the driver smokes each step and puts the previous
+version back on a failure. `rolloutDetail` carries the kind, the steps and the reason for the owner's message; the bot
+decides on `rollout` only. `release.strategy` in the root runway is descriptive and no longer read.
 
 ## What it prints
 

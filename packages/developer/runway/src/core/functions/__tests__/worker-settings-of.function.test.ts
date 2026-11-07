@@ -18,10 +18,20 @@ const target = (extra: Record<string, unknown>) =>
   });
 
 describe("workerSettingsOf", () => {
+  /** A site, a tool and a cache ship at once unless the member names steps. */
+  it("keeps the public-site, internal-tool and cache presets at one step", () => {
+    for (const preset of ["public-site", "internal-tool", "cache"])
+      expect(workerSettingsOf(target({ preset }), "w").rollout).toEqual([100]);
+    expect(workerSettingsOf(target({ preset: "cache", rollout: [25, 100] }), "w").rollout).toEqual([
+      25, 100,
+    ]);
+  });
+
   it("gives a member with no preset the base and the root's compatibility date", () => {
     const settings = workerSettingsOf(target({}), "w");
     expect(settings.compatibilityDate).toBe("2026-10-01");
     expect(settings.workersDev).toBe(false);
+    expect(settings.rollout).toEqual([10, 50, 100]);
     expect(settings.observability).toEqual({
       logs: true,
       invocationLogs: true,

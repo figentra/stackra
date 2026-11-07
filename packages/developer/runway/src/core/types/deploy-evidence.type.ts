@@ -28,14 +28,24 @@ export type DeployEvidence = {
   /** The member the job ships, or `null` for the whole target. */
   readonly member: string | null;
 
-  /** Whether the release rolls out gradually with automatic rollback; `null` when the runway does not say. */
+  /** Whether this target and member roll out gradually with automatic rollback; `null` when unknown. */
   readonly rollout: boolean | null;
 
-  /** The root runway's `release.strategy`, as declared. */
+  /** How the target ships, for the owner's reasons; the bot decides on `rollout` only. */
   readonly rolloutDetail: {
-    readonly kind: string | null;
+    /** `staged` for a Workers member with traffic steps, else `all-at-once`; `null` when unknown. */
+    readonly kind: "staged" | "all-at-once" | null;
     readonly healthGate: boolean | null;
     readonly autoRollback: boolean | null;
+    /** The production traffic steps of a Workers member (`[10, 50, 100]`); `null` off Workers. */
+    readonly steps: readonly number[] | null;
+    /** Why `rollout` is not `true`, or `null` when it is. */
+    readonly floorReason:
+      | "durable-object-migrations"
+      | "single-step"
+      | "no-rollout-primitive"
+      | "undeclared"
+      | null;
   };
 
   /** Whether the deploy carries a destructive migration; `null` until gen classifies migrations. */
