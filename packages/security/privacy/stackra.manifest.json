@@ -41,7 +41,7 @@
       "class": "ExportSubjectDataAction",
       "file": "src/node/actions/export-subject-data.action.ts",
       "permission": "privacy.subject.export",
-      "risk": "L1",
+      "risk": "L2",
       "actors": ["system"],
       "job": {
         "timeout": "10m",
@@ -203,7 +203,7 @@
     },
     {
       "key": "privacy.subject.export",
-      "risk": "L1",
+      "risk": "L2",
       "class": "SubjectPermissions",
       "module": "privacy",
       "member": "export",

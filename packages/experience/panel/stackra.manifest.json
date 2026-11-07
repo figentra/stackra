@@ -25,7 +25,7 @@
   "permissions": [
     {
       "key": "panel.view.share",
-      "risk": "L1",
+      "risk": "L2",
       "class": "ViewPermissions",
       "module": "panel",
       "member": "share",

@@ -4,7 +4,7 @@
  *          Inline `handle`, one transaction, reachable over HTTP, as an MCP tool, from the intent router and through a
  *          host's generated client.
  * Boundary: the action is the contract: key, input and output (the types of `handle`, schemas in `schemas/`),
- *           permission, actors and its surfaces; its risk is the permission's (L1), and `AccountService` does the
+ *           permission, actors and its surfaces; its risk is the permission's (L2), and `AccountService` does the
  *           work. The key's aggregate (`account`) is not the model's, so the permission is named. The sample's path is
  *           kept, so `endpoint` is written. `tool: true` exposes it as `loyalty_kit_account_enroll`; `intent: true`
  *           takes its phrases from `loyalty_kit::actions.account.enroll.intents` in every locale.

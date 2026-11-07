@@ -21,6 +21,6 @@ export class SubjectPermissions extends Permissions {
   /** Erase one subject's personal data; destructive and without undo, held only by the platform. */
   static readonly erase = Permission.L4.system();
 
-  /** Export one subject's personal data (the DSAR copy); a read, held only by the platform. */
-  static readonly export = Permission.L1.system();
+  /** Export one subject's personal data (the DSAR copy); it writes the copy, so L2, held only by the platform. */
+  static readonly export = Permission.L2.system();
 }

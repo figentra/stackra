@@ -66,7 +66,7 @@
       "class": "ChallengePasskeyAction",
       "file": "src/node/actions/challenge-passkey.action.ts",
       "permission": "identity.passkey.challenge",
-      "risk": "L0",
+      "risk": "L2",
       "actors": ["anonymous"],
       "rateLimit": {
         "perMinute": 10
@@ -89,7 +89,7 @@
       "class": "ConfirmPasskeyAction",
       "file": "src/node/actions/confirm-passkey.action.ts",
       "permission": "identity.passkey.confirm",
-      "risk": "L2",
+      "risk": "L4",
       "actors": ["user"],
       "endpoint": {
         "method": "PUT",
@@ -251,7 +251,7 @@
       "class": "VerifyPasskeyAction",
       "file": "src/node/actions/verify-passkey.action.ts",
       "permission": "identity.passkey.verify",
-      "risk": "L0",
+      "risk": "L4",
       "actors": ["anonymous"],
       "rateLimit": {
         "perMinute": 10
@@ -425,7 +425,7 @@
     },
     {
       "key": "identity.passkey.challenge",
-      "risk": "L0",
+      "risk": "L2",
       "class": "PasskeyPermissions",
       "module": "identity",
       "member": "challenge",
@@ -433,7 +433,7 @@
     },
     {
       "key": "identity.passkey.verify",
-      "risk": "L0",
+      "risk": "L4",
       "class": "PasskeyPermissions",
       "module": "identity",
       "member": "verify",
@@ -449,7 +449,7 @@
     },
     {
       "key": "identity.passkey.confirm",
-      "risk": "L2",
+      "risk": "L4",
       "class": "PasskeyPermissions",
       "module": "identity",
       "member": "confirm",

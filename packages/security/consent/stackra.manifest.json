@@ -19,7 +19,7 @@
       "class": "IssueConsentSnapshotAction",
       "file": "src/node/actions/issue-consent-snapshot.action.ts",
       "permission": "consent.consent_snapshot.issue",
-      "risk": "L0",
+      "risk": "L2",
       "actors": ["anonymous", "user"],
       "idempotency": "optional",
       "area": "public",
@@ -42,7 +42,7 @@
   "permissions": [
     {
       "key": "consent.consent_snapshot.issue",
-      "risk": "L0",
+      "risk": "L2",
       "class": "ConsentSnapshotPermissions",
       "module": "consent",
       "member": "issue",

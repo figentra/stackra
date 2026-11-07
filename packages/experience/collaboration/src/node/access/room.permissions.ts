@@ -17,5 +17,5 @@ import { Permission, Permissions } from "@stackra/iam";
  */
 export class RoomPermissions extends Permissions {
   /** Relay a message into a room as one of its members; a write, but the room token already gated who joins. */
-  static readonly publish = Permission.L1;
+  static readonly publish = Permission.L2;
 }

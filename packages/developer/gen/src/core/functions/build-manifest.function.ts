@@ -2,39 +2,39 @@
  * Stackra file contract:
  * Purpose: `buildManifest`, the derivation of a member's `stackra.manifest.json` from what discovery read: every
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
- *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module graph, the facets, and the JSON
- *          Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's output, ADR 0338, and the package
- *          input and output of a generated search or report query, STA-1459); a service or app also lists what its hosted packages contribute, marked
- *          `from`; each Integration's key, connection, webhook path and egress entry (a `{field}` host kept as data);
- *          each sequence's key; an app's block and route
- *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
- *          the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix records the
- *          package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry and
- *          constructor tokens (`classes`; the entry is the folder's own for `src/desktop` and the like, and an
- *          abstract or internal driver is no candidate) and the config class that selects one (`config`), which a host's wiring
- *          reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a host's wiring
- *          knows its configs without guessing from a name (STA-1308). It reports the identity checks it can see:
- *          `identity_collision`,
- *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
+ *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module
+ *          graph, the facets, and the JSON Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's
+ *          output, ADR 0338, and the package input and output of a generated search or report query, STA-1459); a
+ *          service or app also lists what its hosted packages contribute, marked `from`; each Integration's key,
+ *          connection, webhook path and egress entry (a `{field}` host kept as data); each sequence's key; an app's
+ *          block and route keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles
+ *          and listing; the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix
+ *          records the package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry
+ *          and constructor tokens (`classes`; the entry is the folder's own for `src/desktop` and the like, and an
+ *          abstract or internal driver is no candidate) and the config class that selects one (`config`), which a
+ *          host's wiring reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a
+ *          host's wiring knows its configs without guessing from a name (STA-1308). It reports the identity checks it
+ *          can see: `identity_collision`, `override_duplicate`, `permission_unknown`, `identity_missing`,
+ *          `action_risk_below_write` (an action whose permission is L0 or L1, STA-2096), the public id prefix checks
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
  *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
- *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as
- *          action keys) in `agents` and each wallet pass kind in `passes`; and each entitlement in `entitlements`
- *          with its derived key, kind, counted model, `where` filter and the action and query keys it gates (STA-903).
- *          It lists each shell slot the member declares in `slots` (key, const, entry, surface, cardinality, props) and
- *          each fill whose slot resolves in `fills` (slot key, const, entry, surface, props), for the OS registry
- *          (ADR 0438, stackra-03). It lists in `surfaces` each surface a shell dependency's slots sit on, with the
- *          shell line the member targets there (`targets: "console@3"`, from that shell's major) and the shell
- *          package, for the extension-bundle build and the registry's compatibility check (ADR 0436, stackra-04).
- *          It lists each model addition in `additions` (`additionsOf`: base key, side table, wire key, fields) with
- *          `addition_base_source`, `addition_target_missing` and `addition_key_collision` (ADR 0336, stackra-64).
- *          It lists each `Report` in `reports` (`reportsOf`: key, source, dimensions, measures, permission, generated
- *          query key) with its refusals (ADR 0470, stackra-389).
- *          It lists each console `Command` in `commands` (`commandsOf`, own then hosted, `from`) with `kind_path`,
- *          `command_collision` and `identity_missing` (ADR 0506, STA-1731).
- *          It lists each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
+ *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists
+ *          each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as action
+ *          keys) in `agents` and each wallet pass kind in `passes`; and each entitlement in `entitlements` with its
+ *          derived key, kind, counted model, `where` filter and the action and query keys it gates (STA-903). It lists
+ *          each shell slot the member declares in `slots` (key, const, entry, surface, cardinality, props) and each
+ *          fill whose slot resolves in `fills` (slot key, const, entry, surface, props), for the OS registry (ADR 0438,
+ *          stackra-03). It lists in `surfaces` each surface a shell dependency's slots sit on, with the shell line the
+ *          member targets there (`targets: "console@3"`, from that shell's major) and the shell package, for the
+ *          extension-bundle build and the registry's compatibility check (ADR 0436, stackra-04). It lists each model
+ *          addition in `additions` (`additionsOf`: base key, side table, wire key, fields) with `addition_base_source`,
+ *          `addition_target_missing` and `addition_key_collision` (ADR 0336, stackra-64). It lists each `Report` in
+ *          `reports` (`reportsOf`: key, source, dimensions, measures, permission, generated query key) with its
+ *          refusals (ADR 0470, stackra-389). It lists each console `Command` in `commands` (`commandsOf`, own then
+ *          hosted, `from`) with `kind_path`, `command_collision` and `identity_missing` (ADR 0506, STA-1731). It lists
+ *          each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
  *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
  *          `uiMenusOf`) (STA-1947).
@@ -49,12 +49,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
  *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
- *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys); ADR 0360 (decisions 4 and 10: user
- *                     actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099 (decisions
- *                     2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR 0308 (rule
- *                     21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home); owner decisions
- *                     2026-10-26 round 3 (query verbs, hosted prefixes; STA-1283); STA-1296 (each permission names its
- *                     Permissions class).
+ *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys); ADR 0360 (decisions 4 and 10:
+ *                     user actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099
+ *                     (decisions 2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR
+ *                     0308 (rule 21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home); owner
+ *                     decisions 2026-10-26 round 3 (query verbs, hosted prefixes; STA-1283); STA-1296 (each permission
+ *                     names its Permissions class).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
@@ -367,7 +367,15 @@ export function buildManifest(ir: MemberIR): {
         declared,
         "permission_unknown",
         `permission \`${permission}\` is declared by no Permissions class`,
-        `add \`static readonly ${permission.split(".").pop() ?? verb} = Permission.L1;\` to the module's Permissions class`,
+        `add \`static readonly ${permission.split(".").pop() ?? verb} = Permission.${kind === "action" ? "L2" : "L0"};\` to the module's Permissions class`,
+      );
+    // Owner decision 2026-11-04 (STA-2096): every write is at least L2, so no agent runs one unapproved (ADR 0360 d3).
+    if (kind === "action" && (risk === "L0" || risk === "L1"))
+      fail(
+        declared,
+        "action_risk_below_write",
+        `action uses \`${permission}\` at ${risk}, but an action writes, so its permission is at least L2`,
+        "raise the static to `Permission.L2` (L3 for money, L4 for access, deletion or customer sends); a query that shares it and must stay a read takes its own read permission",
       );
     const actors = Array.isArray(declared.options["actors"])
       ? declared.options["actors"].map(String)
@@ -440,7 +448,7 @@ export function buildManifest(ir: MemberIR): {
       class: declared.name,
       file: declared.file,
       permission,
-      risk: risk ?? (kind === "query" ? "L0" : "L1"),
+      risk: risk ?? (kind === "query" ? "L0" : "L2"),
     };
     if (actors !== undefined) entry["actors"] = actors;
     if (effects.length > 0) entry["effects"] = effects;

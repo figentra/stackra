@@ -19,7 +19,7 @@
       "class": "IngestAnalyticsBatchAction",
       "file": "src/node/actions/ingest-analytics-batch.action.ts",
       "permission": "analytics.analytics_batch.ingest",
-      "risk": "L0",
+      "risk": "L2",
       "actors": ["anonymous", "user"],
       "idempotency": "optional",
       "area": "public",
@@ -54,7 +54,7 @@
   "permissions": [
     {
       "key": "analytics.analytics_batch.ingest",
-      "risk": "L0",
+      "risk": "L2",
       "class": "AnalyticsBatchPermissions",
       "module": "analytics",
       "member": "ingest",
