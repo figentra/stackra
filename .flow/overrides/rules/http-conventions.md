@@ -45,7 +45,7 @@ class (ADR 0308).
 | Any other query name                   | `GET /xs/<name-kebab>`      |
 
 `endpoint: { method, path }` overrides the route and `endpoint: false` removes it. An action whose actors include
-neither a user nor an agent gets no public endpoint. Each path parameter (`:xId`) is a field of the input, which Encore
+no user, agent or anonymous caller gets no public endpoint; an anonymous-only one is public (`auth: false`, STA-2578). Each path parameter (`:xId`) is a field of the input, which Encore
 binds it from, or gen refuses the call (`endpoint_param_unbound`).
 
 ```typescript

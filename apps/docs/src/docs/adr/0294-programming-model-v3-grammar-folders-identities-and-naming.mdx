@@ -428,7 +428,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Any other query name                            | `GET /xs/<name-kebab>`      |
 
     `endpoint: { method, path }` overrides the route, and `endpoint: false` removes it. An action whose actors include
-    neither a user nor an agent gets no public endpoint.
+    neither a user nor an agent gets no public endpoint. (Amended 2026-11-08, STA-2578: an anonymous caller counts too, so an
+    anonymous-only action or query gets its route, served with `auth: false`; only a call whose actors include no user,
+    agent or anonymous caller, such as a system-only job, has none.)
 
 22. **The manifest lock.** `stackra.manifest.json` records every identity. A changed identity fails `stackra gen --check`
     unless the class or field carries `@Renamed(old)`. Gen also fails when a derived i18n key is missing in any locale;

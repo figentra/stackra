@@ -76,6 +76,8 @@ const FIXTURES: readonly GoldenFixture[] = [
   // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): its event is in the
   // manifest, none of its models or permissions.
   { name: "contracts-only-host", base: "service", members: ["services/shop"] },
+  // An anonymous-only action still gets its route, served with `auth: false` (STA-2578).
+  { name: "anonymous-route", base: "service", members: ["services/shop"] },
   // The pipeline's own ports are bound from what the service declares, not from a constructor (STA-2573): its
   // integration event reaches EventOutbox, its idempotent action IdempotencyStore.
   { name: "pipeline-ports", base: "service", members: ["services/shop"] },
