@@ -20,6 +20,7 @@ describe("@stackra/csp", () => {
       "createNonce",
       "cspHeaderName",
       "frameAncestorOrigin",
+      "frameAncestorsEntry",
       "securityHeaders",
     ]);
   });

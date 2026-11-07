@@ -9703,9 +9703,15 @@ importers:
       '@stackra/cli':
         specifier: workspace:*
         version: link:../../packages/developer/cli
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../packages/foundation/config
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../packages/foundation/contracts
+      '@stackra/csp':
+        specifier: workspace:*
+        version: link:../../packages/security/csp
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../packages/tooling/tsdown

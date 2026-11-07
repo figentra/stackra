@@ -13,6 +13,7 @@ export { contentSecurityPolicy } from "#core/functions/content-security-policy.f
 export { createNonce } from "#core/functions/create-nonce.function";
 export { cspHeaderName } from "#core/functions/csp-header-name.function";
 export { frameAncestorOrigin } from "#core/functions/frame-ancestor-origin.function";
+export { frameAncestorsEntry } from "#core/functions/frame-ancestors-entry.function";
 export { securityHeaders } from "#core/functions/security-headers.function";
 export type { CspAdditions } from "#core/types/csp-additions.type";
 export type { PermissionsFeature } from "#core/types/permissions-feature.type";
