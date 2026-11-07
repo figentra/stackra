@@ -1,5 +1,28 @@
 # @stackra/search
 
+## 0.21.0
+
+### Patch Changes
+
+- d3e77e0: `SearchHealthIndicatorDriver` no longer throws when `health.table` is empty. It builds, and every `check()` reports
+  `down` with "search health.table is not set", without searching. A deploy without the setting still fails `/readyz`,
+  and a testing container that binds every indicator (gen's wiring) compiles again; commerce catalogue and os parties
+  lost every module-booting test to the constructor error.
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/settings@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes

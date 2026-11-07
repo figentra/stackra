@@ -1,5 +1,19 @@
 # @stackra/fiscal
 
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/market-packs@0.21.0
+  - @stackra/testing@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes
