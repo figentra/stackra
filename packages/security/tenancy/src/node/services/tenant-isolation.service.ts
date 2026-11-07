@@ -7,7 +7,8 @@
  *           verified credential (ADR 0098), never from a body, a query or a client header. A caller with no tenant (a
  *           platform call) runs with `''`, which matches no tenant row, so cross-tenant reads exist only in an audited
  *           endpoint an ADR names (rule `tenancy`, point 5). It composes with `Database.withScope` (the scope settings)
- *           and sets nothing else; inside a running transaction it puts the enclosing tenant back when `work` ends.
+ *           and sets nothing else; inside a running transaction it puts the enclosing tenant back when `work` ends,
+ *           after flushing `work`'s writes, which belong to the inner tenant (as `Database.withScope` does).
  * Runtime: node
  * Governing contract: ADR 0239 (decision 1); ADR 0210 (decisions 3 and 7: one context, `withTenant`); ADR 0327
  *                     (decisions 8 and 9: isolation in the database); ADR 0160 (raw SQL in a service method);
@@ -57,7 +58,7 @@ export class TenantIsolationService extends Service {
   /**
    * Runs `work` in a transaction (a savepoint inside one) with `app.tenant_id` set to `actor.scopeId`, `''` when the
    * actor acts in no tenant. Inside a running transaction the enclosing tenant is back once `work` ends: put back after
-   * it returns, and by the savepoint's rollback when it throws.
+   * it returns (its writes flushed first), and by the savepoint's rollback when it throws.
    *
    * @throws TypeError when `actor.scopeId` is set but is not a tenant id (`scp_…`), a wiring error.
    */
@@ -69,7 +70,12 @@ export class TenantIsolationService extends Service {
     return this.database.transaction(async () => {
       const enclosing = nested ? await this.currentTenant() : undefined;
       await this.setTenant(tenantId ?? "");
-      const result = await ACTIVE_TENANT.run(tenantId, work);
+      const result = await ACTIVE_TENANT.run(tenantId, async () => {
+        const value = await work();
+        // the ORM flushes the savepoint after this returns, and its writes belong to the inner tenant
+        if (enclosing !== undefined) await this.database.em().flush();
+        return value;
+      });
       // a released savepoint keeps a set_config(…, true) until the outer transaction ends, so put the outer one back
       if (enclosing !== undefined) await this.setTenant(enclosing);
       return result;

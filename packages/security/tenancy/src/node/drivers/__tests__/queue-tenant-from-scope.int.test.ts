@@ -432,17 +432,18 @@ describe("a refusal inside a held transaction", () => {
       [tenantActor(TENANT_A as PublicId<"scp">), SCOPE_B],
       [tenantActor(TENANT_B as PublicId<"scp">), BRANCH],
     ];
-    await database.transaction(async () => {
-      // the caller's own scope session, which stays set until the outer transaction ends
-      await database.withScope(BRANCH, async () => {});
-      const before = await scopeSettings();
-      expect(before).toEqual([BRANCH.id, BRANCH.path, BRANCH.path]);
-      for (const [who, at] of refusals) {
-        await expect(
-          isolationOf().run(who, at, async () => "ran", { readOnly: false }),
-        ).rejects.toBeDefined();
-        expect(await scopeSettings()).toEqual(before);
-      }
-    });
+    await database.transaction(() =>
+      // the caller's own scope session, inside a held transaction so each refusal runs in a savepoint
+      database.withScope(BRANCH, async () => {
+        const before = await scopeSettings();
+        expect(before).toEqual([BRANCH.id, BRANCH.path, BRANCH.path]);
+        for (const [who, at] of refusals) {
+          await expect(
+            isolationOf().run(who, at, async () => "ran", { readOnly: false }),
+          ).rejects.toBeDefined();
+          expect(await scopeSettings()).toEqual(before);
+        }
+      }),
+    );
   });
 });

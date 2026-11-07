@@ -3,7 +3,8 @@
  * Purpose: integration tests of `TenantIsolationService.withTenant` on real Postgres over a pool of ONE connection, so
  *          every call shares one backend: after `withTenant(A)` returns or throws, the next transaction runs in no
  *          tenant and sees no tenant row; `withTenant(B)` then sees only B's rows; and a nested `withTenant` (a
- *          savepoint) puts the enclosing tenant back when it returns, throws or runs as the platform.
+ *          savepoint) puts the enclosing tenant back when it returns, throws or runs as the platform, while a write it
+ *          left unflushed lands as its own tenant.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The container's user is a superuser, which row
  *           security never restricts, so each read runs as `stackra_probe` (`set local role`), as `assertRowSecurity`
  *           does; the rows are seeded as the superuser. The single-connection driver is this file's own, on the
@@ -13,7 +14,7 @@
  */
 import { ActorKind } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
-import { compileMigration, Migration } from "@stackra/database";
+import { compileMigration, EntitySchema, Migration } from "@stackra/database";
 import type { Blueprint, SchemaBuilder } from "@stackra/database";
 import { PostgresDatabaseDriver } from "@stackra/database/node";
 import { usePostgres } from "@stackra/database/testing";
@@ -34,8 +35,28 @@ class CreateTicketsMigration extends Migration {
   }
 }
 
+/** A ticket row, written through the ORM so the savepoint's flush writes it. */
+class Ticket {
+  id!: string;
+
+  tenantId!: string;
+
+  title!: string;
+}
+
+const TicketSchema = new EntitySchema<Ticket>({
+  class: Ticket,
+  schema: "support",
+  tableName: "tickets",
+  properties: {
+    id: { type: "string", primary: true, columnType: "varchar(33)" },
+    tenantId: { type: "string", fieldName: "tenant_id", columnType: "varchar(33)" },
+    title: { type: "string", columnType: "varchar(63)" },
+  },
+});
+
 const postgres = usePostgres({
-  entities: [],
+  entities: [TicketSchema],
   migrations: [
     compileMigration(CreateTicketsMigration, {
       schema: "support",
@@ -52,6 +73,7 @@ const TENANT_A = "scp_01j9z3k4m5n6p7q8r9s0t1v2a1";
 const TENANT_B = "scp_01j9z3k4m5n6p7q8r9s0t1v2b1";
 const A1 = "tkt_01j9z3k4m5n6p7q8r9s0t1v2a1";
 const B1 = "tkt_01j9z3k4m5n6p7q8r9s0t1v2b1";
+const B2 = "tkt_01j9z3k4m5n6p7q8r9s0t1v2b2";
 
 /** A job acting in no tenant: a platform call. */
 const PLATFORM: Actor = { kind: ActorKind.Job, id: "job_01j9z3k4m5n6p7q8r9s0t1v2p1" };
@@ -84,14 +106,14 @@ beforeAll(async () => {
   const em = postgres.database.em();
   await em.execute(`create role ${ROLE} nologin nobypassrls`);
   await em.execute(`grant usage on schema "support" to ${ROLE}`);
-  await em.execute(`grant select on all tables in schema "support" to ${ROLE}`);
+  await em.execute(`grant select, insert on all tables in schema "support" to ${ROLE}`);
   await em.execute(
     'insert into "support"."tickets" (id, tenant_id, title) values (?, ?, ?), (?, ?, ?)',
     [A1, TENANT_A, "a", B1, TENANT_B, "b"],
   );
   state.database = await PostgresDatabaseDriver.connect({
     url: postgres.url,
-    entities: [],
+    entities: [TicketSchema],
     pool: { min: 0, max: 1 },
   });
   state.tenancy = new TenantIsolationService(state.database);
@@ -147,5 +169,21 @@ describe("withTenant on one pooled connection", () => {
     expect(seen.platform).toMatchObject({ ids: [], tenant: "" });
     expect(seen.afterPlatform).toMatchObject({ ids: [A1], tenant: TENANT_A });
     expect(await outside()).toMatchObject({ ids: [], tenant: "" });
+  });
+
+  it("writes a row a nested call left unflushed as the nested tenant, before the enclosing one is back", async () => {
+    const after = await tenancy().withTenant(tenantActor(TENANT_A), async () => {
+      await look();
+      await tenancy().withTenant(tenantActor(TENANT_B), async () => {
+        // left for the savepoint's flush, which must run as B: A's policy check refuses a B row
+        const em = single().em();
+        em.persist(em.create(Ticket, { id: B2, tenantId: TENANT_B, title: "b2" }));
+      });
+      return look();
+    });
+    expect(after).toMatchObject({ ids: [A1], tenant: TENANT_A });
+    expect(await tenancy().withTenant(tenantActor(TENANT_B), look)).toMatchObject({
+      ids: [B1, B2],
+    });
   });
 });
