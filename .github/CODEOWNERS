@@ -18,7 +18,6 @@
 /pnpm-workspace.yaml @figentra-usr
 **/.npmrc @figentra-usr
 /flow.config.json @figentra-usr
-/figentra-flow.config.json @figentra-usr
 /.flow/overrides/** @figentra-usr
 **/third-party.yml @figentra-usr
 **/.infisical.* @figentra-usr

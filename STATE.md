@@ -111,9 +111,6 @@ Authoritative documents, in order:
 - **Stale facts in overview docs:** `README.md` says the packages are at 0.3.0 (they are 0.18.1);
   `docs/repository-guide.md` calls the docs app "Mintlify" (Fumadocs since ADR 0514) and lists four config
   presets (there are five).
-- **Retired names still live:** `.github/CODEOWNERS` names `/figentra-flow.config.json` (the file is now
-  `flow.config.json`); the shipped Flow preset template
-  `packages/developer/flow-preset/preset/templates/spec-template.md` uses `packages/figentra-flow` paths.
 - **Agent guide size:** root `AGENTS.md` is 84 KB, about 68 KB of it rules that also exist, near-identical,
   in `.agents/rules/`, `.flow/overrides/rules/` and `packages/developer/flow-preset/preset/rules/`.
 - **Pending owner action:** the docs deploys (runs 42338715844, 42340327762) wait on the owner's production approval.
