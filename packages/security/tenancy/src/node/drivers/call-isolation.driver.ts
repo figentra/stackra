@@ -14,7 +14,8 @@
  *           not show, or shows at another path than the reference carries, is refused (`TenantScopeUnresolvedError`),
  *           and a scope above every tenant keeps no tenant. An agent whose tenant differs from its human's is refused. Any other actor keeps its own `scopeId`,
  *           and when that tenant and the scope's tenant are both known and differ the call is refused
- *           (`TenantScopeMismatchError`), never settled by picking one. A platform actor (no `scopeId`) with no scope
+ *           (`TenantScopeMismatchError`), never settled by picking one; a user with a tenant whose scope the tree
+ *           shows above every tenant is refused the same way. A platform actor (no `scopeId`) with no scope
  *           runs with `app.tenant_id = ''`, which matches no tenant row, and no scope runs with no granted path. The
  *           tree is read in a scope session over the root label of the scope's path, because its row security shows a
  *           session only its own subtree, which hides a branch's tenant ancestor; that read touches `scope_nodes` only
@@ -107,7 +108,8 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    *
    * @throws TenantScopeUnresolvedError when a job or system actor's scope is not in the scope tree.
    * @throws TenantScopeMismatchError when a tenant the actor claims (its own, or the one it acts for) and its scope's
-   *         tenant are both known and differ, or an agent and the human it acts for are in different tenants.
+   *         tenant are both known and differ, an agent and the human it acts for are in different tenants, or a user
+   *         with a tenant acts in a scope above every tenant.
    */
   private async actorIn(
     actor: Actor,
@@ -124,6 +126,15 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
     const resolved = await this.resolve(scope);
     if (actor.kind === ActorKind.Job || actor.kind === ActorKind.System)
       return unitActor(actor, scope, resolved);
+    // A tenant user in a scope above every tenant would keep its tenant while its scope paths cover other tenants'
+    // rows; a platform user (no `scopeId`) stays a platform call (ADR 0239 decision 1).
+    if (
+      actor.kind === ActorKind.User &&
+      actor.scopeId !== undefined &&
+      resolved !== undefined &&
+      resolved.tenant === undefined
+    )
+      throw TenantScopeMismatchError.create();
     if (
       actor.scopeId !== undefined &&
       resolved?.tenant !== undefined &&
