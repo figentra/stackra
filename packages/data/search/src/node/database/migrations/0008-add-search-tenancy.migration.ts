@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the third migration of the achievements package (`achievements.0003_add_tenancy`): the expand step that
- *          gives `award_kinds` and `awards` their owning tenant.
+ * Purpose: the eighth migration of the search package (`search.0008_add_search_tenancy`): the expand step that gives
+ *          `vector_items` and `queries` their owning tenant.
  * Boundary: a frozen snapshot, never edited once on main: it imports only @stackra/database and every name is a
  *           literal. `belongsToTenant({ expand: true })` (@stackra/tenancy) adds a nullable `tenant_id`, indexed online
  *           and filled from the call's `app.tenant_id` by default, and no policy: each table keeps its scope-path
@@ -15,13 +15,13 @@
 import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database";
 
 /** Adds the tenant column to the scope-path tables. */
-export class AddTenancyMigration extends Migration {
+export class AddSearchTenancyMigration extends Migration {
   /** One nullable tenant column per table, beside its scope-path policy. */
   up(schema: SchemaBuilder): void {
-    schema.table("award_kinds", (t: Blueprint) => {
+    schema.table("vector_items", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
-    schema.table("awards", (t: Blueprint) => {
+    schema.table("queries", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
   }

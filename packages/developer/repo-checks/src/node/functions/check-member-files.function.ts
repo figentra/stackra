@@ -40,7 +40,10 @@ export function checkMemberFiles(member: {
   if (files.includes("AGENTS.md") && !/^## PII/m.test(agents ?? ""))
     out.push('AGENTS.md has no "## PII" section');
   if (unlicensed && files.includes("LICENSE")) out.push("LICENSE must not exist (ADR 0195)");
-  if (!unlicensed && files.includes("LICENSE") && licenseText !== rootLicense)
+  // An @figentra-oss/* member (a public SDK or widget inside a private product repository) carries its own open-source
+  // LICENSE: the registry's @figentra-oss scope refuses the commercial licence (0005_figentra_oss.sql).
+  const ownLicence = pkg.name?.startsWith("@figentra-oss/") === true;
+  if (!unlicensed && !ownLicence && files.includes("LICENSE") && licenseText !== rootLicense)
     out.push("LICENSE differs from the root LICENSE");
   if (!pkg.description?.trim()) out.push("package.json has no description");
   if (!stackra) return out;

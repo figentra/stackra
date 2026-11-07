@@ -1615,3 +1615,13 @@
   status: proposed
   owner: claude
   issue: STA-2220
+"0532":
+  slug: infrastructure-ownership
+  status: accepted
+  owner: claude
+  issue: STA-2104
+"0533":
+  slug: approvals-bot-deployment-protection
+  status: accepted
+  owner: claude
+  issue: STA-2563

@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: the second migration of the segments package (`segments.0002_add_tenancy`): the expand step that gives
- *          `segments` and `segment_memberships` their owning tenant.
+ * Purpose: the fourth migration of the rules package (`rules.0004_add_rules_tenancy`): the expand step that gives `rule_sets`
+ *          its owning tenant.
  * Boundary: a frozen snapshot, never edited once on main: it imports only @stackra/database and every name is a
  *           literal. `belongsToTenant({ expand: true })` (@stackra/tenancy) adds a nullable `tenant_id`, indexed online
- *           and filled from the call's `app.tenant_id` by default, and no policy: each table keeps its scope-path
+ *           and filled from the call's `app.tenant_id` by default, and no policy: the table keeps its scope-path
  *           policy, so no session reads a row more or less. Older rows stay null until a backfill job sets them; the
  *           contract step (NOT NULL, the tenant equality as the one permissive policy and the scope path restrictive)
  *           follows in a later release. No `down()`: gen derives the dev inverse.
@@ -14,14 +14,11 @@
  */
 import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database";
 
-/** Adds the tenant column to the scope-path tables. */
-export class AddTenancyMigration extends Migration {
+/** Adds the tenant column to the scope-path table. */
+export class AddRulesTenancyMigration extends Migration {
   /** One nullable tenant column per table, beside its scope-path policy. */
   up(schema: SchemaBuilder): void {
-    schema.table("segments", (t: Blueprint) => {
-      t.belongsToTenant({ expand: true });
-    });
-    schema.table("segment_memberships", (t: Blueprint) => {
+    schema.table("rule_sets", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
   }

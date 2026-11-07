@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the fifth migration of the content package (`content.0005_add_tenancy`): the expand step that gives
- *          `custom_fields`, `custom_field_value_sets` and `revisions` their owning tenant.
+ * Purpose: the tenth migration of the workflow package (`workflow.0010_add_workflow_tenancy`): the expand step that gives
+ *          `automations`, `checklists` and `checklist_progresses` their owning tenant.
  * Boundary: a frozen snapshot, never edited once on main: it imports only @stackra/database and every name is a
  *           literal. `belongsToTenant({ expand: true })` (@stackra/tenancy) adds a nullable `tenant_id`, indexed online
  *           and filled from the call's `app.tenant_id` by default, and no policy: each table keeps its scope-path
@@ -15,16 +15,16 @@
 import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database";
 
 /** Adds the tenant column to the scope-path tables. */
-export class AddTenancyMigration extends Migration {
+export class AddWorkflowTenancyMigration extends Migration {
   /** One nullable tenant column per table, beside its scope-path policy. */
   up(schema: SchemaBuilder): void {
-    schema.table("custom_fields", (t: Blueprint) => {
+    schema.table("automations", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
-    schema.table("custom_field_value_sets", (t: Blueprint) => {
+    schema.table("checklists", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
-    schema.table("revisions", (t: Blueprint) => {
+    schema.table("checklist_progresses", (t: Blueprint) => {
       t.belongsToTenant({ expand: true });
     });
   }

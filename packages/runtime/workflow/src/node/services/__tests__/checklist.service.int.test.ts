@@ -27,7 +27,7 @@ import { CreateChecklistsMigration } from "#node/database/migrations/0006-create
 import { AddRunAutomationAndCancelMigration } from "#node/database/migrations/0007-add-run-automation-and-cancel.migration";
 import { AddServiceAckKeptMigration } from "#node/database/migrations/0008-add-service-ack-kept.migration";
 import { RenameChecklistProgressMigration } from "#node/database/migrations/0009-rename-checklist-progress.migration";
-import { AddTenancyMigration } from "#node/database/migrations/0010-add-tenancy.migration";
+import { AddWorkflowTenancyMigration } from "#node/database/migrations/0010-add-workflow-tenancy.migration";
 import { WORKFLOW_ENTITIES } from "#node/entities.gen";
 import { Checklist } from "#node/models/checklist.model";
 import { ChecklistProgress } from "#node/models/checklist-progress.model";
@@ -53,7 +53,7 @@ const postgres = usePostgres({
     AddRunAutomationAndCancelMigration,
     AddServiceAckKeptMigration,
     RenameChecklistProgressMigration,
-    AddTenancyMigration,
+    AddWorkflowTenancyMigration,
   ].map((migration, index) =>
     compileMigration(migration, {
       schema: "workflow",
