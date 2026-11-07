@@ -270,6 +270,10 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   lint when either changes. An abstract class is never `event_base_abstract` and its constructor is never read; a
   class without one inherits its chain's nearest. `usesContainer` false (a member declaring packages without
   `@stackra/container`) means no wiring, no member module and a container-free setup.
+- Shown-once output (STA-2568): `checkShownOnce` (core, full pass only) warns `secret_output_kept` when an action
+  that is not `Idempotency.Never` returns a secret-named output field with neither `@ShownOnce` nor `@Hidden`.
+  `registerActions` rows carry the output class, so the pipeline leaves `@ShownOnce` fields out of the idempotency
+  store.
 - The query cache (STA-1445): `checkQueryCache` (core, full pass only) is `site_cache_reads_caller`, over the
   reader's `DeclaredClass.callerReads` (a text scan of the class body for the `handle` context's caller fields) and
   the input shape's caller id fields. `registerCachedQueries` rows come from the manifest's query entries with

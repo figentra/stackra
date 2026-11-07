@@ -411,9 +411,10 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   // class that lists `ActorKind.Anonymous` skips the check in the access-control driver, never by a missing row.
   // shortcut: a hosted package's input class is not imported, since its manifest names the input schema but not the
   // file that declares it; its calls are permission-checked but not validated until the manifest carries that file.
-  const inputOf = (entry: Entry): string | undefined => {
+  // The output class rides along so the idempotency store leaves out its `@ShownOnce` fields (STA-2568).
+  const shapeOf = (entry: Entry, side: "input" | "output"): string | undefined => {
     if (typeof entry["from"] === "string") return undefined;
-    const shape = shapeOfRef(ir, entry["input"]);
+    const shape = shapeOfRef(ir, entry[side]);
     return shape === undefined ? undefined : ref({ name: shape.name, from: shape.importPath });
   };
   call(
@@ -422,12 +423,14 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     ((manifest.actions ?? []) as readonly Entry[]).map((entry) => {
       const type = classOf(entry);
       if (type === undefined) return undefined;
-      const input = inputOf(entry);
+      const input = shapeOf(entry, "input");
+      const output = shapeOf(entry, "output");
       const effects = entry["effects"];
       return (
         `{ type: ${type}, key: ${JSON.stringify(entry["key"])}, permission: ${JSON.stringify(entry["permission"])}, risk: ${JSON.stringify(entry["risk"])}` +
         `${Array.isArray(effects) && effects.length > 0 ? `, effects: ${JSON.stringify(effects)}` : ""}` +
-        `${input === undefined ? "" : `, input: ${input}`} }`
+        `${input === undefined ? "" : `, input: ${input}`}` +
+        `${output === undefined ? "" : `, output: ${output}`} }`
       );
     }),
   );

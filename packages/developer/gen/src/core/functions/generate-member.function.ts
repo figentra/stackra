@@ -61,6 +61,7 @@ import { checkApproval } from "#core/functions/check-approval.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
+import { checkShownOnce } from "#core/functions/check-shown-once.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkActionFirst } from "#core/functions/check-action-first.function";
@@ -198,6 +199,7 @@ export function generateMember(
     ...checkModelScope(ir),
     ...checkApproval(ir),
     ...checkQueryCache(ir),
+    ...checkShownOnce(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
     // This run's recorded trees, so an unindexed path is refused in the run that adds it (ADR 0307 rule 2).

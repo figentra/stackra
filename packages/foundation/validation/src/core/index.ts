@@ -27,6 +27,7 @@ export { SIGNER_PUBLIC_KEY_SCHEMA as SignerPublicKey$ } from "#core/constants/si
 export { Classified } from "#core/decorators/classified.decorator";
 export { Field } from "#core/decorators/field.decorator";
 export { Hidden } from "#core/decorators/hidden.decorator";
+export { ShownOnce } from "#core/decorators/shown-once.decorator";
 export { Int } from "#core/decorators/int.decorator";
 export { List } from "#core/decorators/list.decorator";
 export { Lowercase } from "#core/decorators/lowercase.decorator";

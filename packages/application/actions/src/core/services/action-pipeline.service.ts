@@ -162,6 +162,7 @@ import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
+import { keptOutput } from "#core/functions/kept-output.function";
 import { limitedSettingsReader } from "#core/functions/limited-settings-reader.function";
 import { mergeApprovalRequirements } from "#core/functions/merge-approval-requirements.function";
 import { periodOf } from "#core/functions/period-of.function";
@@ -197,6 +198,7 @@ interface Recorded {
   readonly interceptors: readonly AnyClass<Interceptor>[];
   readonly preconditions?: readonly AnyClass<Precondition>[];
   readonly idempotency?: Idempotency;
+  readonly idempotencyTtl?: Duration;
   readonly rateLimit?: ActionRateLimit;
   readonly offline?: OfflineOptions;
   readonly accepts?: ActionAccepts;
@@ -466,7 +468,10 @@ export class ActionPipeline {
       if (kind === "action")
         await this.optional(ReplicaReads)?.wrote(this.writerOf(descriptor), call.at);
       if (claim !== undefined)
-        await this.required(IdempotencyStore, "").complete(claim.held, output);
+        await this.required(IdempotencyStore, "").complete(
+          claim.held,
+          keptOutput(call.registration?.output, output),
+        );
       if (amount !== undefined && call.request.device?.sequence !== undefined)
         await this.required(OfflineCapStore, "").record(
           call.request.device.deviceId,
@@ -872,7 +877,13 @@ export class ActionPipeline {
     // a store outside the transaction would mark the key done before the outer commit, which may still fail
     if (call.state.joined && !store.joinsTransaction)
       throw IdempotencyStoreNotTransactionalError.create();
-    const earlier = await store.claim(scoped, fingerprint, IDEMPOTENCY_TTL);
+    const own = call.options.idempotencyTtl;
+    // an action may shorten the window, never lengthen it past the 24 hours of ADR 0136
+    const ttl =
+      own !== undefined && Duration.toMilliseconds(own) < Duration.toMilliseconds(IDEMPOTENCY_TTL)
+        ? own
+        : IDEMPOTENCY_TTL;
+    const earlier = await store.claim(scoped, fingerprint, ttl);
     if (earlier === undefined) return { held: scoped };
     if (!earlier.done || earlier.fingerprint !== fingerprint)
       throw IdempotencyKeyReusedError.create();

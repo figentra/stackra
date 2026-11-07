@@ -74,6 +74,7 @@ describe("@stackra/validation", () => {
       "Renamed",
       "Schema",
       "ScopeRef$",
+      "ShownOnce",
       "Signature$",
       "SignerPublicKey$",
       "Str",
