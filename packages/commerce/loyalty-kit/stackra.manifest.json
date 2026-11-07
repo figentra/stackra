@@ -74,23 +74,8 @@
       "file": "src/node/actions/earn-visit.action.ts",
       "permission": "loyalty_kit.loyalty_account.stamp",
       "risk": "L3",
-      "actors": ["user", "service"],
+      "actors": ["service"],
       "idempotency": "optional",
-      "endpoint": {
-        "method": "POST",
-        "path": "/loyalty/visits",
-        "derived": false
-      },
-      "tool": {
-        "name": "loyalty_kit_points_earn_visit",
-        "default": true,
-        "hints": {
-          "readOnlyHint": false,
-          "destructiveHint": false,
-          "idempotentHint": true,
-          "openWorldHint": false
-        }
-      },
       "input": {
         "$ref": "#/schemas/loyalty_kit.EarnVisitInput"
       },
