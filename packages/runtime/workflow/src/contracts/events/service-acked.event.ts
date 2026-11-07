@@ -17,9 +17,9 @@ import { IntegrationEvent } from "@stackra/events";
 import { Field, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
-import { KEPT_RECORDS_SCHEMA } from "#core/constants/kept-records-schema.constant";
-import { SERVICE_ACKED_SCHEMA } from "#core/constants/service-acked-schema.constant";
-import type { KeptRecords } from "#core/types/kept-records.type";
+import { KEPT_RECORDS_SCHEMA } from "#contracts/constants/kept-records-schema.constant";
+import { SERVICE_ACKED_SCHEMA } from "#contracts/constants/service-acked-schema.constant";
+import type { KeptRecords } from "#contracts/types/kept-records.type";
 
 /**
  * One service's ack.

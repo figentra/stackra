@@ -684,6 +684,16 @@ Decision 16's Extension point row reads `Binding: yes`. The owner injects its po
 binding for it, as it does for a Menu, Shortcut, Store (a singleton) and Bridge (request-scoped, ADR 0251). A config
 override keeps its base's key (decision 20), so a host's wiring holds one row per config token.
 
+## Amendment 2026-11-07: a contracts-only dependency is not hosted (STA-2567)
+
+Decision 15 makes `./contracts` the leaf entry. A member that imports a package only through that entry
+(`@stackra/x/contracts`, at least one import and no import of any other entry, `export … from` included) is hosted
+contracts-only: gen carries the package's integration events from `src/contracts/`, so the outbox and topic emitters
+know their wire names, and hosts none of its models, entities, migrations, actions, drivers, roles or permissions.
+A package the member imports nothing from, or imports any other entry of, is hosted whole as before. The first user is
+`@stackra/workflow/contracts` (`ServiceAcked`, wire name `workflow.service.acked.v1`), which a product service sends
+without hosting the workflow engine.
+
 ## Amendment 2026-10-27: showcase routes read their words from the registry
 
 **Context.** The playground's route classes (`apps/playground/src/routes/<name>/<name>.route.ts`) carry static `title`

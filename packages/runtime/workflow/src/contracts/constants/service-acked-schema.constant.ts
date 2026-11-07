@@ -8,7 +8,7 @@
  */
 import { z } from "zod";
 
-import { KEPT_RECORDS_SCHEMA } from "#core/constants/kept-records-schema.constant";
+import { KEPT_RECORDS_SCHEMA } from "#contracts/constants/kept-records-schema.constant";
 
 /** The shipped `ServiceAcked$`. */
 export const SERVICE_ACKED_SCHEMA = z.object({

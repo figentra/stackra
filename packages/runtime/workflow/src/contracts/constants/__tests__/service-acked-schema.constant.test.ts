@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { SERVICE_ACKED_SCHEMA } from "#core/constants/service-acked-schema.constant";
+import { SERVICE_ACKED_SCHEMA } from "#contracts/constants/service-acked-schema.constant";
 
 const ACK = { subject: "era_1", service: "commerce" };
 
