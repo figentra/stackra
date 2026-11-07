@@ -1,5 +1,16 @@
 # @stackra/state-machine
 
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/model@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/validation@0.18.0
+
 ## 0.17.2
 
 ### Patch Changes
