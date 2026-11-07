@@ -408,6 +408,17 @@
           "from": "@stackra/actions/testing"
         }
       }
+    },
+    {
+      "port": "StepUpCheck",
+      "key": "actions.StepUpCheck",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryStepUpCheckDriver",
+          "from": "@stackra/actions/testing"
+        }
+      }
     }
   ],
   "integrations": [],
