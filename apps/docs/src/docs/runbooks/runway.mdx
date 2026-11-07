@@ -6,11 +6,11 @@ icon: "plane-takeoff"
 
 <Note>
   Status: partly built (STA-72). The runway check in `pnpm validate`, core's `runway.yaml`, the
-  `cloudflare-workers`, `npm` and `mintlify` provider workflows, the supply-chain checks and `pnpm
-  runway` are written; none has run yet (testing pass STA-597). The secret sync writes service
-  secrets into Encore (`pnpm runway secrets sync`, STA-606); vars and EAS (STA-2009) are not built.
-  Everything that needs the generated Encore app waits for gen: the Encore deploy spike (STA-136),
-  the staging deploy, images and generated CI pipelines.
+  `cloudflare-workers` and `npm` provider workflows (the `mintlify` one is retired, ADR 0514), the
+  supply-chain checks and `pnpm runway` are written; none has run yet (testing pass STA-597). The
+  secret sync writes service secrets into Encore (`pnpm runway secrets sync`, STA-606); vars and EAS
+  (STA-2009) are not built. Everything that needs the generated Encore app waits for gen: the Encore
+  deploy spike (STA-136), the staging deploy, images and generated CI pipelines.
 </Note>
 
 Runway is the deploy layer of Stackra: the runway files say what each member needs and where it runs ([0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)), and public reusable workflows in this repository deploy it ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)). Promotion, rollback and records follow [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted); secrets follow [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets).
@@ -62,11 +62,10 @@ amendment of 2026-11-03). Never edit the generated entries: change the runway an
 
 Each provider is a `workflow_call` workflow in `.github/workflows/`. Its job takes its GitHub environment from an input, so the environment's protection, its OIDC subject and GitHub's deployment record apply to every deploy. Each job reads one credential per step from Infisical `/ci` over GitHub OIDC, and without an identity id it builds, checks, prints a notice and deploys nothing.
 
-| Provider                        | Caller here         | Does                                                                                                                                                                                  |
-| ------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runway-cloudflare-workers.yml` | `deploy-static.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                                                           |
-| `runway-npm.yml`                | `release.yml`       | Trivy scan of the lockfile, version PR or trusted publish with provenance, the OP2 bootstrap token on request, a cosign-signed SBOM on each new release                               |
-| `runway-mintlify.yml`           | `deploy-docs.yml`   | `mint validate`, `broken-links` and `a11y`, publishes `.stackra/site` to the `docs-site` branch (`site-branch` input), a Mintlify update polled to its end, a smoke test of the pages |
+| Provider                        | Caller here                            | Does                                                                                                                                                    |
+| ------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runway-cloudflare-workers.yml` | `deploy-static.yml`, `deploy-docs.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                             |
+| `runway-npm.yml`                | `release.yml`                          | Trivy scan of the lockfile, version PR or trusted publish with provenance, the OP2 bootstrap token on request, a cosign-signed SBOM on each new release |
 
 npm checks the calling workflow, not the reusable one, so each package's trusted publisher names `release.yml`.
 
@@ -110,7 +109,7 @@ pnpm runway promote <sha>
 
 - `plan [env]` prints, as JSON, each target in build order with its caller workflows, the CI secret names the jobs read and the member secret and var names a deploy syncs. Names only.
 - `deploy <target>` needs a clean checkout at the head of `origin/main`; it prints that SHA and dispatches each caller workflow of the target.
-- `promote <sha>` needs a commit on `origin/main`; it dispatches every production caller that takes a `sha` input. That is also the rollback: promote the last good release's SHA. A caller with a `message` input (`deploy-static.yml`) gets `rollback to <sha>`, which `wrangler deploy --message` records on Cloudflare beside GitHub's deployment record; the script prints it as `record: rollback to <sha>`. A caller that only builds the head of main (Mintlify) is listed as skipped.
+- `promote <sha>` needs a commit on `origin/main`; it dispatches every production caller that takes a `sha` input. That is also the rollback: promote the last good release's SHA. A caller with a `message` input (`deploy-static.yml`) gets `rollback to <sha>`, which `wrangler deploy --message` records on Cloudflare beside GitHub's deployment record; the script prints it as `record: rollback to <sha>`. A caller with no `sha` input is listed as skipped.
 - `--dry-run` prints the `gh` commands instead of running them. An agent's `deploy` or `promote` without it asks the owner (the guard's `runway-deploy` rule).
 
 ## Secrets and vars sync
@@ -220,7 +219,7 @@ Agents cannot do these (STA-605):
 
 1. Restrict the `static` environment to `main` and `schemas@*` tags, and add the required reviewers `runway.yaml` lists for `static`, `registry` and `release` (`figentra-usr` until a second maintainer joins).
 2. Create the `docs` environment (main only), and add Infisical OIDC trusts for the `docs` and `release` environments.
-3. Put `MINTLIFY_ADMIN_KEY` into Infisical `/ci` through the [secrets inbox](/runbooks/secrets#the-secrets-inbox), set the repository variable `MINTLIFY_PROJECT_ID`, and switch off the Mintlify GitHub-app deploy after the first CI deploy. In the Mintlify dashboard (Git settings) set the branch to `docs-site` and the root path to `/`; CI creates the branch on its first publish, so run the deploy once before saving the setting.
+3. Before the first docs Worker deploy (ADR 0514), remove the docs.stackra.figentra.com CNAME that points at Mintlify, so Cloudflare can attach the `stackra-docs` custom domain; then cancel the Mintlify project.
 4. Apply `.github/rulesets/release-tags.json` to the `release-tags` ruleset.
 5. After the merge, tag `runway-v1` on the merge commit.
 6. The first npm publish (OP2): a 7-day publish-only token as `NPM_BOOTSTRAP_TOKEN` in `/ci`, dispatch `release.yml` with `bootstrap`, add a trusted publisher naming `release.yml` for each package, revoke the token.
