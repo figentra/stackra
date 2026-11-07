@@ -12,6 +12,6 @@ export interface CallCredentials {
   /** The `Authorization` header as sent (`Bearer <token>`); absent when none was sent. */
   readonly authorization?: string;
 
-  /** The `Stackra-On-Behalf-Of` header as sent: the user's own token a service forwards; absent when none. */
+  /** The `Stackra-On-Behalf-Of` header as sent: the user's own access token (the bare JWT) a service forwards. */
   readonly onBehalfOf?: string;
 }

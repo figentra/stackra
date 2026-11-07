@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `TenantIsolationService`: `withTenant` runs the work in a transaction after one parameterised
  *          `set_config('app.tenant_id', …, true)` with the actor's tenant, or `''` for an actor with none; new
- *          `BelongsToTenant` rows inside take that tenant; an agent sets its own tenant, else its human's (a
- *          platform agent `''`); the work's result and refusal pass through; a tenant id that
+ *          `BelongsToTenant` rows inside take that tenant; an agent or a service sets its own tenant, else its user's
+ *          (a platform agent `''`, a job acting for a user `''`); the work's result and refusal pass through; a tenant id that
  *          is not a scope node's id is refused before any transaction opens; inside a running transaction the
  *          enclosing tenant is set back after the work, its writes flushed first, and at the top level nothing is.
  * Boundary: test only; a fake `Database` records the transaction and the statement, so no database runs.
@@ -106,7 +106,7 @@ describe(TenantIsolationService, () => {
     expect(restore).toBe(set + 2);
   });
 
-  it("sets an agent's own tenant, else its human's, and new rows take it; a platform agent sets ''", async () => {
+  it("sets an agent's or a service's own tenant, else its user's, and new rows take it; a platform agent sets ''", async () => {
     const human: Actor = {
       kind: ActorKind.User,
       id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
@@ -125,8 +125,10 @@ describe(TenantIsolationService, () => {
       ],
       // a background agent: no tenant of its own, acting for its owner in the tenant
       [{ kind: ActorKind.Agent, id: "agt_1", onBehalfOf: { ...human, scopeId: TENANT } }, TENANT],
-      // a service acting for a user keeps its own (none): only an agent takes its human's
-      [{ kind: ActorKind.Service, id: "svc_1", onBehalfOf: { ...human, scopeId: TENANT } }, ""],
+      // a service acting for a user with no tenant of its own takes the user's, as an agent does (ADR 0209, condition 3)
+      [{ kind: ActorKind.Service, id: "svc_1", onBehalfOf: { ...human, scopeId: TENANT } }, TENANT],
+      // a job acting for a user keeps its own (none)
+      [{ kind: ActorKind.Job, id: "job_1", onBehalfOf: { ...human, scopeId: TENANT } }, ""],
       [{ kind: ActorKind.Agent, id: "agt_1", onBehalfOf: human }, ""],
     ];
     for (const [agent, tenant] of cases) {

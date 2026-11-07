@@ -8,8 +8,9 @@
  *          parent tenant, a scheduler actor named by the branch included), a scope the tree does not show or shows at
  *          another path is refused and never run with an empty tenant, a scope above every tenant keeps the actor's own
  *          id, any other actor keeps its own tenant and is refused (`TenantScopeMismatchError`) when the scope's
- *          tenant differs or a user's or agent's scope sits above every tenant or is unknown to the tree (a platform user
- *          or agent stays a platform call there), several granted scopes that span tenants are
+ *          tenant differs or a user's, agent's or service's scope sits above every tenant or is unknown to the tree (a
+ *          platform user, agent or service stays a platform call there), a service whose own tenant differs from its
+ *          user's is refused and one with none runs in its user's, several granted scopes that span tenants are
  *          refused while several within one tenant run in it, and the tree is read in a session over the path's root
  *          label.
  * Boundary: test only; a fake `Database` and a fake `TenantIsolationService` record the calls, so no database runs,
@@ -67,6 +68,20 @@ const staff: Actor = { kind: ActorKind.User, id: userOfA.id, realm: Realm.Staff 
 /** An agent of tenant A acting for its user, and one that carries only that user's tenant. */
 const agentOfA: Actor = { kind: ActorKind.Agent, id: "agt_1", scopeId: ID_A, onBehalfOf: userOfA };
 const agentForA: Actor = { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: userOfA };
+
+/** A service principal of tenant A calling for its user, one with no tenant calling for that user, and one alone. */
+const serviceOfA: Actor = {
+  kind: ActorKind.Service,
+  id: "svc_01j9z3k4m5n6p7q8r9s0t1v2w5",
+  scopeId: ID_A,
+  onBehalfOf: userOfA,
+};
+const serviceForA: Actor = {
+  kind: ActorKind.Service,
+  id: "svc_01j9z3k4m5n6p7q8r9s0t1v2w5",
+  onBehalfOf: userOfA,
+};
+const platformService: Actor = { kind: ActorKind.Service, id: "svc_01j9z3k4m5n6p7q8r9s0t1v2w5" };
 
 /** A recording database and tenant service; `running` says whether a transaction is already open. */
 function setUp(running = false, held = "") {
@@ -430,6 +445,64 @@ describe("the tenant of a call", () => {
       await expect(run(driver, platformAgent, at)).resolves.toBe("ran");
       expect(withTenant.mock.calls[0]?.[0]).toBe(platformAgent);
     }
+  });
+
+  it("refuses a service whose own tenant differs from the user's it calls for, and runs one in the same tenant", async () => {
+    const refused = setUp();
+    await expect(
+      run(refused.driver, { ...serviceOfA, onBehalfOf: { ...userOfA, scopeId: ID_B } }, undefined),
+    ).rejects.toBeInstanceOf(TenantScopeMismatchError);
+    expect(refused.withTenant).not.toHaveBeenCalled();
+    for (const service of [serviceOfA, serviceForA]) {
+      const same = setUp();
+      await expect(run(same.driver, service, scope)).resolves.toBe("ran");
+      expect(same.withTenant.mock.calls[0]?.[0]).toBe(service);
+    }
+  });
+
+  it("refuses a service of a tenant whose scope the tree does not show or sits above every tenant, before any setting", async () => {
+    const cases: readonly (ScopeRef | readonly ScopeRef[])[] = [
+      unknown,
+      { id: ID_A, path: platformScope.path },
+      { id: ID_UNKNOWN, path: "nowhere" },
+      [unknown, { id: ID_A, path: platformScope.path }],
+      platformScope,
+    ];
+    // a service with a tenant of its own, one that carries only its user's, and one of A alone
+    const services: readonly Actor[] = [
+      serviceOfA,
+      serviceForA,
+      { kind: ActorKind.Service, id: platformService.id, scopeId: ID_A },
+    ];
+    for (const service of services)
+      for (const at of cases) {
+        const { driver, withTenant, withScope, transaction } = setUp();
+        const work = vi.fn(async () => "ran");
+        await expect(driver.run(service, at, work, { readOnly: false })).rejects.toBeInstanceOf(
+          TenantScopeMismatchError,
+        );
+        expect(work).not.toHaveBeenCalled();
+        expect(withTenant).not.toHaveBeenCalled();
+        expect(transaction).not.toHaveBeenCalled();
+        expect(withScope.mock.calls.map(([granted]) => granted)).not.toContain(at);
+      }
+  });
+
+  it("refuses a service that carries only its user's tenant in another tenant's scope", async () => {
+    const { driver, withTenant } = setUp();
+    await expect(run(driver, serviceForA, tenantB)).rejects.toBeInstanceOf(
+      TenantScopeMismatchError,
+    );
+    expect(withTenant).not.toHaveBeenCalled();
+  });
+
+  it("keeps a service with no tenant and no user, or calling for a platform user, a platform call", async () => {
+    for (const service of [platformService, { ...platformService, onBehalfOf: staff }])
+      for (const at of [undefined, unknown, platformScope]) {
+        const { driver, withTenant } = setUp();
+        await expect(run(driver, service, at)).resolves.toBe("ran");
+        expect(withTenant.mock.calls[0]?.[0]).toBe(service);
+      }
   });
 
   it("compares a running transaction's tenant with the resolved one, not with the actor's own id", async () => {
