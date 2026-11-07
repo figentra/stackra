@@ -29,7 +29,7 @@ import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { deleteFilters } from "#core/functions/delete-filters.function";
 import { poolConfig } from "#core/functions/pool-config.function";
-import { scopeSettings } from "#core/functions/scope-settings.function";
+import { runInScope } from "#core/functions/run-in-scope.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
 import { runTransaction } from "#core/functions/run-transaction.function";
 import { EntityResultCacheAdapter } from "#core/orm/entity-result-cache.adapter";
@@ -113,20 +113,12 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   }
 
   /**
-   * Implements `Database.withScope`, documented there.
+   * Implements `Database.withScope`, documented there, through `runInScope`.
    *
    * @throws TypeError for a scope path that is not an `ltree` path.
    */
   withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T> {
-    const settings = scopeSettings(scopes);
-    return this.transaction(async () => {
-      // raw-sql: set_config is how a transaction carries the scope the row-level-security policies compare with
-      await this.em().execute(
-        `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
-        settings.flat(),
-      );
-      return work();
-    });
+    return runInScope(this, scopes, work);
   }
 
   /**
