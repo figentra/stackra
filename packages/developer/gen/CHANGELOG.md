@@ -1,5 +1,18 @@
 # @stackra/gen
 
+## 0.18.1
+
+### Patch Changes
+
+- 2a7bc6d: A service that hosts a package with a searchable model (`@stackra/loyalty-kit`'s `LoyaltyAccount`) now derives
+  that model's `Search<Model>Query` into its own `#stackra/search` and imports it from there. The package's own copy
+  lives in its unpublished `.stackra/gen`, so the host's registrations used to import a class the package does not
+  export (TS2305).
+- @stackra/money@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/support@0.18.1
+
 ## 0.18.0
 
 ### Minor Changes

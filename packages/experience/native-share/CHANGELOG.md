@@ -1,5 +1,16 @@
 # @stackra/native-share
 
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/media@0.18.1
+  - @stackra/filesystem@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/validation@0.18.1
+
 ## 0.18.0
 
 ### Patch Changes

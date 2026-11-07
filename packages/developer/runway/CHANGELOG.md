@@ -1,5 +1,19 @@
 # @stackra/runway
 
+## 0.18.1
+
+### Patch Changes
+
+- baee3a3: The Cloudflare Workers provider hands secrets to `wrangler versions upload` in a 0600 file in a fresh temporary
+  folder, removed right after the upload, instead of `--secrets-file /dev/stdin`, which wrangler can't open when stdin
+  is a socket (Linux CI runners, ENXIO).
+- @stackra/app@0.18.1
+  - @stackra/console@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/validation@0.18.1
+
 ## 0.18.0
 
 ### Patch Changes
