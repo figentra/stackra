@@ -104,5 +104,5 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 | Failures      | `workflow.runs.error`, `workflow.steps.error` (jsonb) | The refusal code (`internal` otherwise) and message; never a stack or the step's input |
 | Documents     | `content.revisions.data`, `workflow.runs.input`       | Scope configuration; inputs may hold literal values (a phone, a text); never logged    |
 | Principal     | `workflow.automations.principal`, `publisher` (jsonb) | The actor kind and public id an automation runs as, and who published it               |
-| Progress      | `workflow.checklist_progress` (owner, completed by)   | A user's public id and the completing actor; read only by the scope's own sessions     |
+| Progress      | `workflow.checklist_progresses` (owner, completed by) | A user's public id and the completing actor; read only by the scope's own sessions     |
 | Held events   | `workflow.signals.payload` (jsonb)                    | A waitable trigger's occurrence, dropped after seven days untaken                      |
