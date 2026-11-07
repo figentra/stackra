@@ -1622,6 +1622,6 @@
   issue: STA-2104
 "0533":
   slug: approvals-bot-deployment-protection
-  status: proposed
+  status: accepted
   owner: claude
   issue: STA-2563
