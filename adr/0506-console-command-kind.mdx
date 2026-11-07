@@ -1,7 +1,17 @@
 ---
 title: "0506 — The Command kind, the console framework and the commands group"
-description: "Accepted · 2026-10-31"
+description: "Accepted · 2026-10-31 · amended 2026-11-02 (STA-1966) · amendment 2026-11-03 accepted (STA-2093)"
 ---
+
+<Note>
+  Amended 2026-11-03 (STA-2093), accepted by the owner the same day. `--json` may write the
+  command's data alone for an ADR-frozen CLI, a child process may share the standard streams, an
+  explicit `secret: false` is honoured, and an invocation may name no command or put a value option
+  before the name. It amends decision 7 and items 1, 3 and 4 of the 2026-11-02 amendment, and it
+  reads with [0522](/adr/0522-testbed-own-repo) decision 5, which it does not change. Read it with
+  [the amendment of 2026-11-03](#amendment-2026-11-03-frozen-json-shared-streams-routing-sta-2093)
+  below.
+</Note>
 
 <Note>
   Accepted 2026-10-31: the owner approved the spec stop of `@stackra/console` ("handle all, all
@@ -11,6 +21,14 @@ description: "Accepted · 2026-10-31"
   group tables, decisions 13 and 14, and the kind table, decision 16) and
   [0127](/adr/0127-package-categories-including-infrastructure) (its 2026-10-24 note, which folded
   `console` into `cli`).
+</Note>
+
+<Note>
+  Amended 2026-11-02 (owner decision, Linear STA-1966): `@stackra/console` is the one CLI engine of
+  `stackra`, `fflow` and `figentra`. Decision 5 gains its ports and drivers, decision 8 allows
+  Clack, Tab and Ink behind those ports, and Figentra Flow depends on the package. Read decisions 5,
+  7 and 8 with the [amendment of 2026-11-02](#amendment-2026-11-02-owner-decision-one-cli-engine)
+  below.
 </Note>
 
 ## Context
@@ -152,3 +170,130 @@ Sources: the owner's decision of 2026-10-31 on the `@stackra/console` spec (`.ag
 decisions taken at the spec stop) and its design (`plan.md`); the leader's approval of the class style and the optional
 gen; Linear STA-1730 (phase 1), STA-1731 (phase 2) and STA-1732 (the number reservation); the basalt port, Academorix
 spec 030.
+
+## Amendment 2026-11-02 (owner decision): one CLI engine
+
+The owner, 2026-11-02 (Linear STA-1966): "one package that all depend on, so we can guarantee the output and
+everything", and on `fflow` 0.2.3, "very bad error handling; show it in a table, highlight stuff". The spec is
+`.agents/specs/sta-1966-console-engine/` (approved by the leader 2026-11-02).
+
+1. **Ports and drivers (amends decision 5).** The engine reaches its side effects through four ports, abstract classes
+   in `src/contracts/ports/`, and a command or the kernel is unchanged when a driver is swapped:
+   - `Renderer`: banner, messages, title, key-value, list, table (with a status column), checklist (grouped rows of ok,
+     warn, fail, skip and info, with a summary line that sets the exit code), tree, box, problem (the error screen),
+     help, command list, task, spinner, progress and live view. Drivers: `text` (the default) and `ink`, for live parts
+     only, loaded by a dynamic import the first time a live part animates, with the `text` driver as its fallback.
+   - `Prompter`: drivers `clack` (the interactive default), `terminal`, `defaults` and `scripted`.
+   - `Completions`: bash, zsh and fish scripts and Tab answers from the registry. Driver: `tab`.
+   - `ProcessRunner`: child processes with their output captured; a failed step shows its last 20 lines, the whole
+     output only under `--verbose`; an interactive child inherits the terminal and is refused without one.
+2. **Dependencies (amends decision 8).** `@clack/prompts`, `@bomb.sh/tab` and `ink` (with `react` from the `frontend`
+   catalog) are allowed, pinned exactly in the catalog, and only behind the ports above (owner approval 2026-11-02,
+   STA-1966). The `terminal` prompter stays as a driver. No other third-party dependency is added without the owner.
+3. **Routing.** An argument vector routes to one intent (list, help, version, completion, run or unknown) before any
+   container exists. `--help`, `-h` and `help <cmd>` never run the command. An unknown command names up to three
+   closest commands and exits 2. Spaced names (`mcp sync`, `bot gh`) match the registered `:`-joined names, longest
+   first. `help` and `completion` are built in.
+4. **One error shape (amends decision 7).** Every failure renders as one boxed problem: what failed, why, the fix
+   command and a docs link; the cause chain and raw child output only under `--verbose`. The `--json` error gains
+   optional `why`, `fix` and `docs`. A run that ends with a non-zero code and no thrown error writes
+   `{ "ok": false, "data": ... }`, so a command can emit its data and set its exit code together.
+5. **Status is never colour alone.** A status cell always carries a symbol and a word (`✓ ok`, `⚠ warn`, `✗ fail`; in
+   ASCII `+ ok`, `! warn`, `x fail`).
+6. **One definition, three surfaces.** What `readCommand` reads (now with `group`, `docs`, `examples`, `tool` and a
+   field's `prompt` and `choices`) gives the parser, the help, the completions and, for a command with `tool: true`, a
+   local developer MCP tool: a JSON Schema of its fields and an invoke function that runs the same kernel with `--json`
+   and returns its data as structured content. `@stackra/mcp`'s local tools come from these definitions
+   ([0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) decision 5). A console command never
+   reaches the tenant MCP gateway of [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free).
+7. **Actions as commands.** An action or query opts in with a `command` option
+   ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) rule 28); gen adds it to
+   `#stackra/commands`, and `ActionCommand(ActionClass)` in `@stackra/actions/node` prompts for missing input fields from
+   the input schema, runs the one pipeline and presents the typed output. The actor is the signed-in CLI identity, never
+   a privileged operator by default; the operator and break-glass ports apply only where the action allows them, and
+   every refusal of the pipeline renders as a problem. `@stackra/console` never depends on `@stackra/actions`.
+8. **Every Figentra CLI depends on it.** `stackra`, `fflow` (Figentra Flow) and `figentra` run on `createConsole`.
+   This reverses the STA-1730 rule that Figentra Flow never depends on `@stackra/console`
+   (`.agents/specs/sta-1730-console/flow-visual-spec.md`); Flow is published on the Stackra registry, so its install
+   path is unchanged. The CLI layers of Flow and `figentra` move to TypeScript, because Node runs no decorators.
+
+Enforcement: the unit tests of `@stackra/console` (a snapshot of every renderer component with colour on and off, the
+routing table, completion golden files, one command giving equal data through the CLI, the local MCP and the test
+harness, and a module-load test that a non-live run never imports `ink`); `FORBIDDEN_DEPENDENCIES` is unchanged.
+
+## Amendment 2026-11-03: frozen JSON, shared streams, routing (STA-2093)
+
+The testbed of [0522](/adr/0522-testbed-own-repo) must print its frozen `--json` documents (decision 5) and stream a job's
+output to the terminal. The engine of 2026-11-02 could do neither: `--json` wrote the envelope, and a child was either
+captured or interactive. This amendment adds what the port needs, in four parts. Bare JSON, `inherit` and
+`requireCommand` are opt-in, so an existing command, test and `--json` document keeps its output. Three changes reach
+every console: `onOutput` receives redacted chunks (item 2), a child that shares the terminal is refused while the run
+holds a secret (item 2), and a value option may come before the command name (item 4). The spec is
+`.agents/specs/sta-1966-console-engine/`, where FR-007, FR-012, FR-015 and FR-028 each carry a dated note. The text
+describes the code of `packages/developer/console` as of the STA-2093 pull request.
+
+1. **Bare JSON (amends decision 7 and item 4 of the 2026-11-02 amendment).** `ConsoleConfig.json` is `"envelope"`
+   (the default, decision 7) or `"bare"`. Under `--json` with `"bare"`:
+   - a run that ends with an error writes nothing to stdout; the problem screen goes to stderr, and the exit code is the
+     error's, as before;
+   - a run that ends with no error writes its data alone, as one compact line, whatever the exit code. The data is the
+     first that is set, in this order: the value given to `io.output.json`; else the value the handler returned (an
+     object, an array or `null`, never an exit code); else the rows of a table or checklist. The intents that run no
+     command set it themselves: `--version` the object `{ name, version }`, the list the visible command structures,
+     help the command's structure, and `completion <shell>` the object `{ shell, script }`. An explicit `null` is
+     written as `null`; a run with no data writes nothing;
+   - human output (lines, tables, the problem screen, and the child output that `-v` echoes) goes to stderr, drawn as
+     without `--json`: no colour and no animation.
+
+   `bare` is for a CLI whose `--json` shape an ADR has frozen, and only testbed qualifies today (0522 decision 5). Every
+   other CLI keeps the envelope; [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decision 7 governs any
+   move of its output.
+
+2. **Shared standard streams (amends item 1 of the 2026-11-02 amendment).** `ProcessRunOptions.inherit` is
+   `boolean | "stderr"`.
+   - `inherit: true` shares the standard streams: the child's output is live, is not captured and is not redacted, and the
+     child is never refused for want of a terminal. Under `--json` the console turns it into `"stderr"`.
+   - `inherit: "stderr"` ignores standard input and sends both of the child's outputs to standard error.
+   - `io.process` refuses an inherited or interactive run with a `CommandError`, before the child starts, while a secret
+     option or argument of the run holds a non-empty value (each value of a list, and a number by its digits), because
+     the child's output cannot be redacted. The same values are redacted from captured output.
+   - `interactive` otherwise is unchanged: the child inherits the terminal and is refused without one (STA-1966
+     FR-028). With both set, `inherit: "stderr"` wins, so stdout stays clean.
+   - `onOutput` receives the redacted chunk. It received the raw chunk before.
+
+   Known limit: redaction runs per chunk, so a secret split across two chunks escapes into the `-v` echo and into
+   `onOutput`. The upgrade is to buffer whole lines before redaction.
+
+3. **`secret: false` (amends STA-1731 FR-016).** `isSecret` lets an explicit `secret` decide. `secret: false` keeps an option
+   or argument whose name ends in a `SECRET_FIELD_SUFFIXES` entry (`key`, `url`) out of the secret set. A field that declares
+   no `secret` is still judged by its name, and `secret: true` still holds. The secret set decides the password prompt, the
+   redacted tokens in an error and the redacted values in an audit entry, so `secret: false` changes all three for that
+   field.
+
+4. **Routing (amends item 3 of the 2026-11-02 amendment).**
+   - `ConsoleConfig.requireCommand` (default `false`). When `true`, an invocation that names no command and asks no help
+     (`help`, `--help`, `-h`) is a usage problem, "Name a command", and exits 2. `--version` is unchanged, and the default
+     still lists the commands.
+   - A registry value option may come before the command name in its separate-token form (`acme --box 2 ssh`). The console
+     decides this from the registry: a flag takes a value there only when every command that declares it gives it a value.
+     A flag that is boolean in any command takes none, so the next token is read as the name. `--box=2` is one token and was
+     always accepted. A value option at the very end of argv takes no value, and the parser reports it.
+
+5. **Consequences.**
+   - ADR 0522 decision 5 holds byte for byte. This amendment writes no testbed document: the `run` and `status` documents
+     come from testbed's own port, under its own frozen-interface tests.
+   - Routing changes in two ways. A value option before the name, which previously failed, now runs. And the token after
+     such a flag is now its value: `cli --out deploy ./dist` used to run `deploy` with `--out=./dist`, and now reads
+     `deploy` as the value and `./dist` as the name. Every other invocation routes as before.
+   - Whether other CLIs move their `--json` to the envelope is not decided here.
+
+6. **Enforcement.** The unit tests of this amendment are the bare, `requireCommand`, value-option and `secret` cases of
+   `packages/developer/console/src/core/functions/__tests__/` (`create-console`, `route`, `split-invocation`, `is-secret`
+   and `create-process`), and the `inherit: "stderr"` case of
+   `packages/developer/console/src/node/drivers/__tests__/node-process-runner.driver.test.ts`.
+   - planned — in testbed's port (its own change, in figentra/testbed): the frozen-interface tests that `run --json` and
+     `status --json` print the documents of [0522](/adr/0522-testbed-own-repo) decision 5.
+   - planned — buffered line redaction, the upgrade named in item 2.
+
+Sources: the engine design and build report of STA-2093 (Linear STA-2093, with the testbed move of STA-2073), checked
+against the code of the STA-2093 pull request. Accepted by the owner on 2026-11-03 (relayed by the leader session).

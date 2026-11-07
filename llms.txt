@@ -33,7 +33,7 @@
 - [Tenancy](/constitution/tenancy): Two-layer tenant isolation, where the tenant context comes from, the isolation tests every tenant-owned table needs, and the rules for the scope tree.
 - [Delegation](/constitution/delegation): Claude decides, executors get self-contained briefs, git writes stay with the dispatcher, and review is by gates.
 - [Architecture decisions](/adr): Why the repository looks the way it does.
-- [0001 — Monorepo layout, catalogs and tooling](/adr/0001-monorepo-layout): Accepted · 2026-10-19
+- [0001 — Monorepo layout, catalogs and tooling](/adr/0001-monorepo-layout): Accepted, amended by 0526 · 2026-10-19
 - [0002 — Documentation on Mintlify](/adr/0002-docs-on-mintlify): Superseded by 0514 · 2026-10-19 · amended 2026-10-27 (STA-1316)
 - [0003 — Tier dependency direction](/adr/0003-tier-dependency-direction): Accepted · 2026-10-19
 - [0004 — Package archetypes and layers](/adr/0004-package-archetypes-and-layers): Superseded by 0126 · 2026-10-19
@@ -58,7 +58,7 @@
 - [0023 — Stackra is a framework; products consume it](/adr/0023-stackra-is-a-framework): Accepted · 2026-10-19
 - [0024 — MIT license, with stated exclusions](/adr/0024-mit-license-with-exclusions): Accepted, amended by 0195, 0291, 0302 · 2026-10-19 · holder corrected 2026-10-30 (STA-1678)
 - [0025 — Packages publish to npm.figentra.com; every package builds to ESM dist](/adr/0025-packages-publish-to-private-registry): Superseded by 0177, decisions 1 and 2 amended by 0453 · 2026-10-20 · amended 2026-10-30 (STA-1656 and STA-1679)
-- [0026 — Turborepo remote cache self-hosted on Cloudflare R2](/adr/0026-turborepo-remote-cache-on-r2): Accepted · 2026-10-19
+- [0026 — Turborepo remote cache self-hosted on Cloudflare R2](/adr/0026-turborepo-remote-cache-on-r2): Accepted, amended 2026-11-05 (figentra-turbo-cache), amended by 0527 · 2026-10-19
 - [0027 — Every CLI the repo needs is pinned in mise](/adr/0027-cli-tools-pinned-in-mise): Accepted · 2026-10-19
 - [0028 — Package categories appear with their first package](/adr/0028-package-categories-appear-with-first-package): Accepted, amended by 0127 · 2026-10-19
 - [0029 — Encore.ts as one application under services/](/adr/0029-encore-ts-one-app): Superseded by 0075 · 2026-10-19
@@ -129,7 +129,7 @@
 - [0095 — @stackra/validation: Laravel-style decorators compiled to one Zod schema, plus an output serializer](/adr/0095-zod-inside-field-decorators): Accepted, amended by 0133, 0162, 0294, 0328, 0334 · 2026-10-19
 - [0096 — Trait naming grammar and the trait list](/adr/0096-trait-naming-grammar): Accepted, amended by 0133, 0162, 0225, 0270, 0294, 0314, 0321 · 2026-10-19
 - [0097 — @stackra/model and @stackra/database; gen emits MikroORM EntitySchema](/adr/0097-model-and-database-packages): Accepted, amended by 0133, 0159, 0161, 0162, 0328 and on 2026-10-29 (model ORM imports) · 2026-10-19
-- [0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor](/adr/0098-actions-are-the-unit): Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294, 0305 · 2026-10-19
+- [0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor](/adr/0098-actions-are-the-unit): Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294, 0305 · 2026-10-19 · amended 2026-11-02 (STA-1966)
 - [0099 — One action risk scale, L0 to L4, with derived MCP hints and effect tags; change risk is R0 to R3](/adr/0099-risk-scale-l0-to-l4): Accepted, amended by 0268, 0294, 0360, 0513 · 2026-10-19
 - [0100 — One free @stackra/ai: agents, tools, skills, MCP and A2A on AI SDK, every tool call an action](/adr/0100-ai-model-and-ownership): Accepted, amended by 0155, 0156, 0267, 0360 · 2026-10-19
 - [0101 — Every operation is an action; a workflow sits behind it only when the criteria hit](/adr/0101-action-first-workflow-behind-when-needed): Accepted, amended by 0265, 0294 · 2026-10-19
@@ -138,7 +138,7 @@
 - [0104 — Cross-module relations are @Link declarations, read through query.graph](/adr/0104-links-and-query-graph): Accepted, amended by 0268, 0294 · 2026-10-19
 - [0105 — @Crud generates a model's service methods and opt-in actions](/adr/0105-crud-generates-service-methods): Accepted, amended by 0294 · 2026-10-19
 - [0106 — Infisical Agent Vault, split by environment; the model never sees a secret](/adr/0106-infisical-agent-vault-per-environment): Superseded by 0267 · 2026-10-19
-- [0107 — Three homes for keys; tenant credentials live in @stackra/connections](/adr/0107-connections-store-and-three-key-homes): Accepted, amended by 0305, 0308 · 2026-10-19
+- [0107 — Three homes for keys; tenant credentials live in @stackra/connections](/adr/0107-connections-store-and-three-key-homes): Accepted, amended by 0305, 0308, 0525 · 2026-10-19
 - [0108 — Scoped settings: each service owns its values; the registry owns the schema](/adr/0108-scoped-settings): Accepted, amended by 0213, 0294, 0307 · 2026-10-19
 - [0109 — The registry: build manifests published by CI to a Postgres-backed registry service](/adr/0109-registry-manifests-published-by-ci): Accepted, amended by 0335, 0349 · 2026-10-19
 - [0110 — The experience service is server-driven UI at level L2: trees of registered coded components, no code over the wire](/adr/0110-experience-is-the-sdui-service-at-l2): Accepted, amended by 0139, 0154, 0164, 0294, 0306, 0307 · 2026-10-19
@@ -203,8 +203,8 @@
 - [0169 — Topology: runway.yaml packs logical services into deployables](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables): Accepted, amended by 0289, 0296 · 2026-10-20
 - [0170 — Deployment: what deploys where, and how a release is promoted](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted): Accepted, amended by 0289 and 0468 · 2026-10-20 · amended 2026-10-24 (STA-456) and 2026-10-28 (STA-1395)
 - [0171 — Infrastructure as code: Pulumi TypeScript packages owned by Stackra](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra): Accepted, amended by 0289, 0352, 0354 · 2026-10-20
-- [0172 — AWS accounts, primary region and cloud cost controls](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls): Accepted, amended by 0353, 0354, OS 0001 · 2026-10-20
-- [0173 — Secrets: Infisical is the source of production secrets, and runway syncs them](/adr/0173-secrets-infisical-is-the-source-of-production-secrets): Accepted, amended by 0267 · 2026-10-20
+- [0172 — AWS accounts, primary region and cloud cost controls](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls): Accepted, amended by 0353, 0354, 0524, OS 0001 · 2026-10-20
+- [0173 — Secrets: Infisical is the source of production secrets, and runway syncs them](/adr/0173-secrets-infisical-is-the-source-of-production-secrets): Superseded by 0525 · 2026-10-20
 - [0174 — Supply chain: images, signing, SBOM, dependency policy and rotation](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation): Accepted, amended by 0287 · 2026-10-20
 - [0175 — Edge, domains and TLS](/adr/0175-edge-domains-and-tls): Accepted, amended by 0290, 0453 · 2026-10-20
 - [0176 — The marketing site: a placeholder now, prerendered from the experience service later](/adr/0176-marketing-site-placeholder-then-prerendered-from-the-experience-service): Accepted · 2026-10-20
@@ -262,7 +262,7 @@
 - [0228 — Proposed ADRs settled](/adr/0228-proposed-adrs-settled): Accepted · 2026-10-20
 - [0229 — The constitution amended for the 2026-10-20 decisions](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): Accepted · 2026-10-20
 - [0230 — Reviews come from a separate reviewer identity, never the author](/adr/0230-reviewer-identity-separate-from-builder): Accepted, amended by 0285 · 2026-10-20 · amended 2026-10-21 (STA-208)
-- [0231 — Naming and casing standard](/adr/0231-naming-and-casing-standard): Accepted, amended by 0264, 0294, 0349 · 2026-10-20 · amended 2026-10-24 (STA-348)
+- [0231 — Naming and casing standard](/adr/0231-naming-and-casing-standard): Accepted, amended by 0264, 0294, 0349, 0529 · 2026-10-20 · amended 2026-10-24 (STA-348)
 - [0232 — @stackra/errors package](/adr/0232-stackra-errors-package): Accepted, amended by 0294, 0324, 0328 · 2026-10-20 · amended 2026-10-24 (STA-428)
 - [0233 — Imports use #subpath aliases only](/adr/0233-imports-use-subpath-aliases-only): Accepted, amended by 0294 · 2026-10-20 · amended 2026-10-27 (STA-1307)
 - [0234 — Module assets and storage](/adr/0234-module-assets-and-storage): Accepted, amended by 0263, 0264, 0294, 0305, 0306 · 2026-10-20 · amended 2026-10-24 (STA-456)
@@ -313,30 +313,30 @@
 - [0279 — Signup and first-run onboarding: hosted registration, an onboarding form and the checklist engine](/adr/0279-signup-and-first-run-onboarding): Accepted, amended by 0307 · 2026-10-21
 - [0280 — Sandbox to live promotion and the environment banner](/adr/0280-sandbox-to-live-promotion-and-environment-banner): Accepted, amended by 0359 · 2026-10-21
 - [0281 — Desktop surfaces: targets per app, desktop modes and overlay styles](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles): Accepted, amended by 0295, 0326, 0339, 0344 · 2026-10-22 · amended 2026-10-23 (STA-349) and 2026-10-24 (STA-428)
-- [0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Figentra Flow as the SDLC](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc): Accepted, amended by 0286, 0334, 0500, 0510 · 2026-10-22 · note 2026-10-30 (STA-1669, owner-approved 2026-10-30)
+- [0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Figentra Flow as the SDLC](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc): Accepted, amended by 0286, 0334, 0500, 0510 · 2026-10-22 · note 2026-10-30 (STA-1669, owner-approved 2026-10-30) · amended 2026-11-02 (STA-1966)
 - [0283 — A browser-extension agent connector is deferred](/adr/0283-browser-extension-agent-connector-deferred): Deferred · 2026-10-22 · amended 2026-10-24 (STA-469)
-- [0284 — Hosted static files: one Cloudflare static-assets Worker member at static.stackra.figentra.com](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker): Accepted · 2026-10-22
+- [0284 — Hosted static files: one Cloudflare static-assets Worker member at static.stackra.figentra.com](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker): Accepted, amended 2026-11-05 (figentra-static) · 2026-10-22
 - [0285 — An AI-REVIEW verdict binds to the pull request's patch id](/adr/0285-review-verdict-binds-to-the-patch-id): Accepted · 2026-10-22
 - [0286 — Figentra Flow as the SDLC: spike bar, approvals, evidence, distribution and licence](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution): Accepted, amended by 0510 · 2026-10-22
 - [0287 — Agent sandboxes and the remote runner: one system, one image, short-lived credentials](/adr/0287-agent-sandboxes-and-the-remote-runner): Accepted · 2026-10-22
 - [0288 — Merging: the queue fallback and the STA-302 prerequisite](/adr/0288-merging-the-queue-fallback-and-the-sta-302-order): Accepted · 2026-10-22
-- [0289 — Runway and environments: Workers, one Encore app, one preview host and publishing](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing): Accepted, amended by 0296, 0352 · 2026-10-22
-- [0290 — Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names](/adr/0290-dev-environment-and-cloudflare-services): Accepted, amended by 0453 · 2026-10-22
+- [0289 — Runway and environments: Workers, one Encore app, one preview host and publishing](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing): Accepted, amended by 0296, 0352, 0517 · 2026-10-22
+- [0290 — Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names](/adr/0290-dev-environment-and-cloudflare-services): Accepted, amended by 0453 and on 2026-11-05 (npflared retired) · 2026-10-22
 - [0291 — Porting and provenance: one assignment, one legal name, one vocabulary and fresh writing](/adr/0291-porting-provenance-and-the-third-party-reading-rule): Accepted, amended by 0302, 0340 · 2026-10-22 · holder corrected 2026-10-30 (STA-1678)
 - [0292 — Workflow engine drivers: a Postgres-journal default, a Temporal driver, and Trigger.dev to evaluate](/adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate): Accepted · 2026-10-22
 - [0293 — Agent permissions: allow, ask and deny tiers, one rule module, executors push their own branch](/adr/0293-agent-permission-tiers-and-executor-pushes): Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, STA-400), read with 0468
 - [0294 — Programming model v3: grammar, group folders, derived identities and naming](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479) · amended 2026-10-27 (showcase registry) · amended 2026-10-31 (STA-1730) · amended 2026-11-01 (STA-1874)
-- [0295 — Build and entry: stackra.config.ts, generated tool configs and entries](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): Accepted, amended by 0305, 0326, 0345 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428) · amended 2026-11-01 (STA-1874)
-- [0296 — Runway v3: member requires and root topology groups](/adr/0296-runway-v3-member-requires-and-root-topology-groups): Accepted, amended by 0335 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)
+- [0295 — Build and entry: stackra.config.ts, generated tool configs and entries](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): Accepted, amended by 0305, 0326, 0345 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428) · amended 2026-11-01 (STA-1874) and 2026-11-03 (STA-2081)
+- [0296 — Runway v3: member requires and root topology groups](/adr/0296-runway-v3-member-requires-and-root-topology-groups): Accepted, amended by 0335, 0517 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)
 - [0297 — Web runtime on Workers: prerender with a fixed site, cache data not HTML, locale paths without redirects, and Worker forwarding](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding): Accepted, amended by 0305, 0315, 0334 · 2026-10-22
 - [0298 — Consent and analytics: decline by default, Global Privacy Control refuses, and a bounded queue for events before a decision](/adr/0298-consent-and-analytics): Accepted · 2026-10-22 · amended 2026-10-29 (STA-1536)
 - [0299 — Docs runway: Mintlify deployed from CI behind the checks, with the runway shape of the other apps](/adr/0299-docs-runway): Superseded by 0514 · 2026-10-22 · amended 2026-10-24 (STA-406), 2026-10-27 (STA-1316)
 - [0300 — Five published tooling presets, and spell checking that the gate enforces](/adr/0300-published-tooling-presets-and-enforced-spell-checking): Accepted · 2026-10-22 · amended 2026-10-23 (STA-349), 2026-10-24 (STA-417)
 - [0301 — @stackra/seo: sitemaps, robots rules, structured data, canonical redirects and alternates](/adr/0301-stackra-seo-package): Accepted · 2026-10-22
-- [0302 — The Stackra Design System: a design-system category, @stackra/tokens, @stackra/ui and the playground](/adr/0302-stackra-design-system-tokens-ui-and-the-playground): Accepted, amended by 0303, 0340 · 2026-10-23 · amended 2026-10-24 (STA-469)
+- [0302 — The Stackra Design System: a design-system category, @stackra/tokens, @stackra/ui and the playground](/adr/0302-stackra-design-system-tokens-ui-and-the-playground): Accepted, amended by 0303, 0340, 0521 · 2026-10-23 · amended 2026-10-24 (STA-469)
 - [0303 — @stackra/ui component catalogue: router, React Aria, icons, forms, parity, wrapping and one props vocabulary](/adr/0303-stackra-ui-component-catalogue-decisions): Accepted · 2026-10-23
 - [0304 — @stackra/ui wave 2: the props vocabulary, spec ids, class merging and role colours](/adr/0304-stackra-ui-wave-2-props-vocabulary): Accepted · 2026-10-23
-- [0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components): Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-27 (STA-1306)
+- [0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components): Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-27 (STA-1306) · amended 2026-11-02 (STA-1966)
 - [0306 — Overrides: one tree under src/overrides, shadows by path, and five placement layers](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers): Accepted, amended by 0336 · 2026-10-23
 - [0307 — Panel v3.1: resource tables as server contracts, placements by input, metric widgets, typed slots, dashboards and settings](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards): Accepted, amended by 0326, 0334, 0336, 0350, 0359 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-30 (STA-1639)
 - [0308 — Integrations v3.1: the Integration describes the provider, the Connection holds one credential set, and webhooks route through the Integration](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks): Accepted, amended by 0348, 0355 · 2026-10-23
@@ -351,7 +351,7 @@
 - [0317 — @stackra/ui wave 6: the shell and routing props vocabulary, and @stackra/navigation](/adr/0317-stackra-ui-wave-6-shell-and-routing-props-vocabulary): Accepted · 2026-10-24 · amended 2026-10-28
 - [0318 — @stackra/ui wave 7: the resource index props vocabulary](/adr/0318-stackra-ui-wave-7-resource-index-props-vocabulary): Accepted · 2026-10-24
 - [0319 — Stackra brand: a steel-blue accent and glass buttons on the web](/adr/0319-stackra-brand-steel-blue-accent-and-glass-buttons): Accepted · 2026-10-24
-- [0320 — Stackra brand: the glass material and the showcase stage](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage): Accepted · 2026-10-24 · amendment accepted 2026-10-31 (STA-1371)
+- [0320 — Stackra brand: the glass material and the showcase stage](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage): Accepted, amended by 0521 · 2026-10-24 · amendment accepted 2026-10-31 (STA-1371)
 - [0321 — The trait inventory, the owning package of each trait, and Schedulable](/adr/0321-the-trait-inventory-owning-packages-and-schedulable): Accepted · 2026-10-24 · amended 2026-10-24 (STA-456)
 - [0322 — Generated constants instead of string literals](/adr/0322-generated-constants-instead-of-string-literals): Accepted · 2026-10-24
 - [0323 — Tenant vocabulary lives only in tenancy; other packages use the ScopeRef port](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port): Accepted, amended by 0327 · 2026-10-24 · amended 2026-10-24 (STA-348) and 2026-10-27 (STA-1307)
@@ -385,7 +385,7 @@
 - [0351 — IAM conditions on a dimension another service owns: declared dimensions and projections](/adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections): Accepted · 2026-10-24
 - [0352 — Runway is the one deployment tool: Pulumi is its infrastructure engine, gen is its build step](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step): Accepted, amended by 0354 · 2026-10-25
 - [0353 — Data residency: a region fixed at sign-up, a login directory that only routes, and copies within a jurisdiction](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction): Accepted · 2026-10-25
-- [0354 — Two clouds: AWS and GCP, and one AWS account per product-region](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region): Accepted · 2026-10-25
+- [0354 — Two clouds: AWS and GCP, and one AWS account per product-region](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region): Accepted, amended by 0524 · 2026-10-25
 - [0355 — Marketplace: one Integration with up to five roles, one app market, and open to any developer](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer): Accepted · 2026-10-25
 - [0356 — Choosing a provider per tenant and market: through the Connection, with a market default](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default): Accepted · 2026-10-25
 - [0357 — Payments architecture: ports, gateway drivers, a platform layer and a closed-loop wallet](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet): Accepted · 2026-10-25
@@ -471,7 +471,7 @@
 - [0437 — The edge Worker, its KV copy and the server checks](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks): Proposed · 2026-10-26
 - [0438 — The extension model: slots for shells, shadows for own code, rules and events toward the OS](/adr/0438-the-extension-model-slots-for-shells-shadows-for-own-code-rules-and-events-toward-the-os): Proposed · 2026-10-26
 - [0439 — Mobile apps from one OS template, with capability flags and managed or own store accounts](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags): Proposed · 2026-10-26
-- [0440 — Landing sites are experience documents rendered at the edge](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge): Proposed · 2026-10-26
+- [0440 — Landing sites are experience documents rendered at the edge](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge): Accepted · 2026-11-03
 - [0441 — Product repository layout: the assets tree, root runway surfaces and the brand kit in CI](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces): Proposed · 2026-10-26
 - [0442 — A native Android till for POS terminals, built from the commerce till template](/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template): Proposed · 2026-10-26
 - [0443 — Integration architecture: connectors, apps and extensions in one marketplace, and vendor drivers in OS integrations](/adr/0443-integration-architecture-connectors-apps-and-extensions-in-one-marketplace-and-vendor-drivers-in-os-integrations): Accepted · 2026-10-26
@@ -484,7 +484,7 @@
 - [0450 — AI: the page reader port, readable text and product hints, and an egress-bounded HTTP driver](/adr/0450-ai-page-reader-port-readable-text-product-hints-and-an-egress-bounded-http-driver): Proposed · 2026-10-27
 - [0451 — The login directory: an identity format and writer, and a Cloudflare Worker of its own](/adr/0451-the-login-directory-an-identity-format-and-writer-and-a-cloudflare-worker-of-its-own): Proposed · 2026-10-27
 - [0452 — The system graph: a member graph per gen run, a repo graph and one merge step](/adr/0452-the-system-graph-a-member-graph-per-gen-run-a-repo-graph-and-one-merge-step): Proposed · 2026-10-27
-- [0453 — The Stackra registry: one npm-compatible store on Cloudflare for packages, skills, agents, MCP servers and plugins, with our own licence engine](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine): Accepted, amended by 0461, 0514 · 2026-10-27
+- [0453 — The Stackra registry: one npm-compatible store on Cloudflare for packages, skills, agents, MCP servers and plugins, with our own licence engine](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine): Accepted, amended by 0461, 0514, 0522, 0527 · 2026-10-27
 - [0454 — Loyalty programme as scoped settings, a tier policy port, public balance events, and consent evidence](/adr/0454-loyalty-programme-as-scoped-settings-a-tier-policy-port-public-balance-events-and-consent-evidence): Proposed · 2026-10-27
 - [0455 — Rules pack defaults without a scope, registered fact sources, list floors, and sections without a base pack](/adr/0455-rules-pack-defaults-without-a-scope-registered-fact-sources-list-floors-and-sections-without-a-base-pack): Proposed · 2026-10-27
 - [0456 — Actions: the request origin, integration events without a model, and cascading replica changes](/adr/0456-actions-request-origin-integration-events-without-a-model-and-cascading-replica-changes): Proposed · 2026-10-27
@@ -512,7 +512,7 @@
 - [0481 — Template lines release as registry packages, and Runway checks them out by line](/adr/0481-template-lines-release-as-registry-packages-and-runway-checks-them-out): Proposed · 2026-10-29
 - [0482 — Mobile onboarding is a Runway step, and EAS owns signing](/adr/0482-mobile-onboarding-is-a-runway-step-and-eas-owns-signing): Proposed · 2026-10-30
 - [0483 — Analytics relay: apps send product analytics only to the analytics service, which fans out to PostHog and GA4](/adr/0483-analytics-relay-apps-send-product-analytics-only-to-the-analytics-service): Accepted · 2026-10-30
-- [0484 — The testbed: disposable, image-built test boxes, a container per job, and secrets from Infisical](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical): Accepted, amended by 0516 · 2026-10-30
+- [0484 — The testbed: disposable, image-built test boxes, a container per job, and secrets from Infisical](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical): Accepted, amended by 0516, 0522; amended 2026-11-03 (STA-2042) · 2026-10-30
 - [0485 — Analytics routing across the tenant tree: parties and organisation parents get detail, and connectors send from the integrations service](/adr/0485-analytics-routing-across-the-tenant-tree-parties-and-organisation-parents-get-detail-and-connectors-send-from-the-integrations-service): Accepted · 2026-10-30
 - [0490 — AI everywhere: client tools from frontend declarations, page context, personalisation as actions and tours as data](/adr/0490-ai-everywhere-client-tools-from-frontend-declarations-page-context-personalisation-as-actions-and-tours-as-data): Accepted · 2026-10-30
 - [0491 — Shopping assistant: shared cards on every surface, and the payer approves their own payment](/adr/0491-shopping-assistant-shared-cards-on-every-surface-and-the-payer-approves-their-own-payment): Accepted · 2026-10-30
@@ -521,22 +521,37 @@
 - [0494 — A credential data class for provider secrets](/adr/0494-credential-data-class-for-provider-secrets): Accepted · 2026-10-30
 - [0495 — Every call and background unit runs in a transaction-local isolation context; session-level settings are forbidden](/adr/0495-every-call-and-background-unit-runs-in-a-transaction-local-isolation-context): Proposed · 2026-10-31
 - [0496 — Settings is a foundation package, each module declares its own group, a device level, and every UI configuration is a runtime setting](/adr/0496-settings-is-a-foundation-package-each-module-declares-its-group-a-device-level-and-ui-config-is-dynamic): Accepted · 2026-10-31
-- [0500 — Four CLIs: stackra, runway, figentra-flow, figentra](/adr/0500-four-clis-stackra-runway-vellum-and-figentra): Accepted, amended 2026-10-31 (decision 12), amended by 0510 · 2026-10-31
+- [0500 — Four CLIs: stackra, runway, fflow, figentra](/adr/0500-four-clis-stackra-runway-vellum-and-figentra): Accepted, amended 2026-10-31 (decision 12), amended by 0510, 0522, 0526, 0529 (decision 1: runway folds into stackra) · 2026-10-31
 - [0501 — Tokens v2: one theme schema drives every visual value on web and native](/adr/0501-tokens-v2-one-theme-schema-drives-every-visual-value-on-web-and-native): Accepted · 2026-10-31
 - [0502 — Spec tiers and approval stops](/adr/0502-spec-tiers-and-approval-stops): Accepted · 2026-10-31
-- [0503 — Figentra Flow runs the development workflow](/adr/0503-figentra-flow-runs-the-development-workflow): Accepted · 2026-11-01
+- [0503 — Figentra Flow runs the development workflow](/adr/0503-figentra-flow-runs-the-development-workflow): Accepted, amended by 0522 · 2026-11-01
 - [0504 — Module UI kits: domain blocks live in their module, and gen aggregates them into the showcase](/adr/0504-module-ui-kits-domain-blocks-live-in-their-module-and-gen-aggregates-them-into-the-showcase): Accepted · 2026-10-31
 - [0505 — One data family: nine components on one engine, one column type, one filter model, one saved-views model](/adr/0505-one-data-family-nine-components-one-engine): Accepted · 2026-10-31
-- [0506 — The Command kind, the console framework and the commands group](/adr/0506-console-command-kind): Accepted · 2026-10-31
+- [0506 — The Command kind, the console framework and the commands group](/adr/0506-console-command-kind): Accepted · 2026-10-31 · amended 2026-11-02 (STA-1966) · amendment 2026-11-03 accepted (STA-2093)
 - [0507 — Ask Tamo: AI slots in the design system, filled by the AI module, branded Tamo](/adr/0507-ask-tamo-ai-slots-in-the-design-system): Accepted · 2026-10-31
 - [0508 — Every action is shortcut-aware: one action definition, scopes, hint modes, three settings layers](/adr/0508-every-action-is-shortcut-aware): Accepted · 2026-10-31
 - [0509 — The approval stage: a declared floor of distinct approvers, checked in core, executed as the requester](/adr/0509-the-approval-stage-a-declared-floor-of-distinct-approvers-checked-in-core-executed-as-the-requester): Proposed · 2026-10-31
 - [0510 — Figentra Flow replaces spec-kit](/adr/0510-flow-replaces-spec-kit): Accepted · 2026-11-01
-- [0511 — Cross-repo service contracts and cross-app events](/adr/0511-cross-repo-service-contracts-and-cross-app-events): Proposed · 2026-11-01
+- [0511 — Cross-repo service contracts and cross-app events](/adr/0511-cross-repo-service-contracts-and-cross-app-events): Accepted · 2026-11-06
 - [0512 — One Infisical layout: projects by reader, one agents vault, product runtimes](/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes): Proposed · 2026-11-01
 - [0513 — The permission vocabulary moves to @stackra/contracts and @stackra/container; iam keeps evaluation](/adr/0513-permission-vocabulary-moves-to-contracts-and-container): Accepted · 2026-11-01
-- [0514 — Self-hosted open-source docs: Fumadocs on a Cloudflare Worker replaces Mintlify](/adr/0514-self-hosted-docs-replace-mintlify): Accepted · 2026-11-02
+- [0514 — Self-hosted open-source docs: Fumadocs on a Cloudflare Worker replaces Mintlify](/adr/0514-self-hosted-docs-replace-mintlify): Accepted, amended by 0521 · 2026-11-02
 - [0516 — AWS quotas are fixed inputs: every footprint fits them, and no quota increase without the owner](/adr/0516-aws-quotas-are-fixed-inputs): Accepted · 2026-11-02
+- [0517 — Where services and their resources run](/adr/0517-where-services-and-their-resources-run): Accepted · 2026-11-02
+- [0518 — An owner-row policy lets a user read their own rows across tenants under row-level security](/adr/0518-owner-row-policy-own-rows-across-tenants): Accepted · 2026-11-02
+- [0519 — Worker settings come from runway presets; one owner per Cloudflare zone](/adr/0519-worker-settings-come-from-runway-presets): Accepted · 2026-11-02
+- [0520 — Stackra brand: a champagne core for the engine](/adr/0520-stackra-champagne-core-for-the-engine): Accepted · 2026-11-02
+- [0521 — Design-system docs on Fumadocs: generated component pages, the playground retired, AI-first docs](/adr/0521-design-system-docs-on-fumadocs-ai-first): Accepted · 2026-11-02
+- [0522 — The testbed moves to its own public repo](/adr/0522-testbed-own-repo): Accepted · 2026-11-03
+- [0523 — Humans approve policy, not instances: automated delivery end to end](/adr/0523-humans-approve-policy-not-instances): Accepted · 2026-11-03
+- [0524 — Cloud estate: one AWS Organization and a GCP project per product](/adr/0524-cloud-estate-aws-organization-and-gcp-projects): Accepted, amended 2026-11-06 (one AWS account per product); D4 superseded by 0525 · 2026-11-05
+- [0525 — Secrets: SOPS files in git, keyed by Google Cloud KMS, replace Infisical](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical): Accepted, amended 2026-11-06 (one file per secret) · 2026-11-06
+- [0526 — Repository layout: members only, docs at the root, one tools folder, checked against a template](/adr/0526-repository-layout): Accepted · 2026-11-06
+- [0527 — Operated Workers live in figentra; registry scopes are data, not code](/adr/0527-operated-workers-and-namespaces-as-data): Accepted · 2026-11-06
+- [0528 — Two templates named after Flow's presets: neutral and stackra](/adr/0528-neutral-and-stackra-templates): Accepted · 2026-11-06
+- [0529 — Naming: bare product keys, figentra-<key> only for global names, and one figentra CLI with product groups](/adr/0529-naming-product-keys-and-one-figentra-cli): Accepted, amended 2026-11-06 (decision 4: runway folds into stackra) · 2026-11-06
+- [0530 — Where work runs: CI, build, deploy, runtime, and what is committed](/adr/0530-where-work-runs): Accepted · 2026-11-06
+- [0531 — Figentra Pay as a hosted payment suite](/adr/0531-figentra-pay-hosted-payment-suite): Proposed · 2026-11-06
 - [ADR template](/adr/template): Copy this page, give it the next number, fill every section.
 - [Member standards](/standards/members): What every app, package and service must contain, and which check enforces each rule.
 - [Package standards](/standards/packages): The entries-first package shape, exports, barrels, and the provenance of copied code.
@@ -552,6 +567,7 @@
 - [Stackra setup runbook](/runbooks/setup): Every account, where each secret name lives, the ordered setup steps and which ones only the owner can do. Names only.
 - [Secrets](/runbooks/secrets): Two kinds of secret, two mechanisms: who sets a value, where it lives and how code or CI reads it.
 - [Token rotation after exposure](/runbooks/token-rotation): What to do when a token reaches an agent transcript, a log or a terminal, and the guard that keeps process listings from printing injected secrets.
+- [Cross-app event relay](/runbooks/cross-app-event-relay): How a producer sends its integration events to services in other apps, how a consumer gets its inbox, rotating the signing key, and reading and replaying dead deliveries.
 - [GitHub identities](/runbooks/github-identities): Which GitHub identity each actor uses, the bot commands that replace plain gh and git, and what the owner sets up.
 - [CI](/runbooks/ci): One required check that runs pnpm verify, how to reproduce it locally with zero secrets, and what to do when CI is down.
 - [Release](/runbooks/release): Changesets, the version-packages pull request, publishing to the Stackra registry through GitHub OIDC, prereleases, failures and recovery.
@@ -560,6 +576,7 @@
 - [Renovate](/runbooks/renovate): One shared dependency policy: one-day release age, SHA digests, no automerge, advisories bypass the wait.
 - [Deploys](/runbooks/deploys): Agents prepare, the owner runs every deploy: staging first, then production from the same commit, and roll back by redeploying a recorded release.
 - [Monitoring our Workers and the registry](/runbooks/monitoring): How npm.stackra.figentra.com, static.stackra.figentra.com and turbo.stackra.figentra.com are watched: Workers Logs, Better Stack uptime monitors and the status page, what the owner sets up first, and how the stack is applied from CI.
+- [Backups and the quarterly restore drill](/runbooks/restore-drill): Where an environment's backup and point-in-time recovery settings live in runway.yaml, what the infra packages provision from them, and the quarterly restore drill that proves the 15 minute and 4 hour objectives, with its record.
 - [Test infrastructure (the testbed)](/runbooks/test-infrastructure): The shared test boxes every builder session uses: how jobs run, the disk guard, replacing a box, rebuilding the image, secrets, the fallback, cost, and the migration from the old ci-box fleet.
 - [Runway](/runbooks/runway): How Stackra deploys: the runway files, the reusable provider workflows, the one deploy command, the secrets and vars sync, and what is not built yet.
 - [Upgrade](/runbooks/upgrade): Checklists for toolchain, Expo SDK and preset upgrades.
