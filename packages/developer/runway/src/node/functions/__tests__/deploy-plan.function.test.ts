@@ -67,10 +67,8 @@ describe("deployPlan", () => {
     for (const { workflows } of p.steps)
       for (const file of Object.values(workflows))
         expect(existsSync(join(repo, ".github/workflows", file)), file).toBe(true);
-    expect(p.steps.filter((s) => s.destination).map((s) => s.target)).toEqual([
-      "cloudflare-workers",
-      "mintlify",
-    ]);
+    // The docs are a Cloudflare Worker since the Fumadocs move (ADR 0514, STA-2026): no Mintlify target is left.
+    expect(p.steps.filter((s) => s.destination).map((s) => s.target)).toEqual(["cloudflare-workers"]);
     expect(new Set(runways.members.map((m) => m.member))).toEqual(
       new Set([
         "console",
