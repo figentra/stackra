@@ -20,7 +20,7 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 | The ORM naming strategy                                              | `src/core/orm/<name>.naming-strategy.ts`                                      |
 | A value class (`ColumnRef`, `MetricsReader`)                         | `src/core/values/<name>.value.ts`                                             |
 | An enum, a function, a constant, a type, a refusal                   | `src/core/{enums,functions,constants,types,errors}/`                          |
-| A migration of this package's own tables                             | `src/node/database/migrations/<NNNN>-<stem>.migration.ts` (schema `database`) |
+| A migration of this package's own tables                             | `src/node/database/migrations/<NNNN>-<stem>.migration.ts` (schema `database`; 0005 makes `cache`, for @stackra/cache) |
 | A test                                                               | `__tests__/<name>.<kind>.test.ts` beside it; Docker tests take `.int`         |
 
 ## Entries and barrels
@@ -77,6 +77,8 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
 - The Postgres action stores (`database.idempotency_keys`, `database.rate_limit_buckets`) and the seed ledger
   (`database.seed_records`) are this package's own tables, written only by their drivers and the seed runner (ADR 0396).
   No row-level security on them: an action-store key is already scoped, and product defaults are not tenant-owned.
+  The `postgres` cache driver's `cache.entries` and `cache.set_members` (migration 0005, hosted for @stackra/cache)
+  are platform tables too: each key carries its `CacheNamespace` prefix and the driver runs outside any transaction.
 - The migration runner (`migrate`, `rollback`) is the only writer of `schema_migrations` and
   `schema_migrations_history`. Keep `schema_migrations` in golang-migrate's `(version, dirty)` shape (Encore reads it);
   anything more goes in the history table. Every run holds the runner's advisory lock for its whole session.
