@@ -13,7 +13,7 @@ import type { CompiledStatement } from "#core/types/compiled-statement.type";
 
 /** The SQL types a blueprint writes, and so the ones a change converts between. */
 const SQL_TYPE =
-  /^(text|integer|bigint|boolean|timestamptz|uuid|jsonb|tsvector|ltree|varchar\([1-9]\d{0,7}\)|char\([1-9]\d{0,7}\)|numeric\([1-9]\d{0,3}, \d{1,4}\))$/;
+  /^(text|integer|bigint|boolean|timestamptz|uuid|jsonb|tsvector|ltree|geography\((Point|Polygon|LineString),4326\)|varchar\([1-9]\d{0,7}\)|char\([1-9]\d{0,7}\)|numeric\([1-9]\d{0,3}, \d{1,4}\))$/;
 
 /** Refuses a type the blueprint does not write. */
 function assertType(column: string, type: string): void {

@@ -18,6 +18,15 @@ import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
+/** A model field of the geo kind (ADR 0314). */
+const geo = (name: string, shape: "point" | "polygon" | "line", nullable: boolean) => ({
+  name,
+  optional: false,
+  nullable,
+  type: { kind: "geo" as const, shape },
+  rules: [],
+});
+
 describe("emitEntities", () => {
   const billing = emitEntities(BILLING_IR, "billing") ?? "";
 
@@ -116,5 +125,34 @@ describe("emitEntities", () => {
     const content = emitEntities(ir, "billing") ?? "";
     expect(content).toContain('import { TranslatedType } from "@stackra/model";');
     expect(content).toContain("    label: { type: TranslatedType, nullable: true },");
+  });
+
+  it("types a GeoPoint, GeoPolygon or GeoLine field with its geography column type (ADR 0314)", () => {
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      shapes: [
+        {
+          name: "Depot",
+          kind: "model",
+          module: "billing",
+          file: "src/modules/billing/models/depot.model.ts",
+          importPath: "#modules/billing/models/depot.model",
+          fields: [
+            geo("location", "point", false),
+            geo("area", "polygon", true),
+            geo("route", "line", true),
+          ],
+          relations: [],
+        },
+      ],
+      classes: [],
+    };
+    const content = emitEntities(ir, "billing") ?? "";
+    expect(content).toMatch(
+      /import \{ GeoLineType, GeoPointType, GeoPolygonType \} from "@stackra\/model";/,
+    );
+    expect(content).toContain("    location: { type: GeoPointType },");
+    expect(content).toContain("    area: { type: GeoPolygonType, nullable: true },");
+    expect(content).toContain("    route: { type: GeoLineType, nullable: true },");
   });
 });

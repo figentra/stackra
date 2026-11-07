@@ -705,6 +705,45 @@ describe(compileMigration, () => {
     );
   });
 
+  it("writes geography columns with their GiST indexes, online on an existing table", () => {
+    class CreateZonesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension(Extension.Postgis);
+        schema.create("zones", (t: Blueprint) => {
+          t.hasPublicId("zon");
+          t.polygon("area").notNull().comment("The zone's outer ring.");
+          t.point("depot").nullable().comment("Where its drivers start.");
+        });
+      }
+    }
+    class AddRoutesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("zones", (t: Blueprint) => {
+          t.line("route").nullable().comment("The usual run.");
+        });
+      }
+    }
+    const created = compileMigration(CreateZonesMigration, { schema: "places" })
+      .steps.flatMap((each) => each.sql)
+      .join("\n");
+    expect(created).toContain('create extension if not exists "postgis"');
+    expect(created).toContain('"area" geography(Polygon,4326) not null');
+    expect(created).toContain('"depot" geography(Point,4326) null');
+    expect(created).toContain(
+      'create index "idx_zones_area" on "places"."zones" using gist ("area")',
+    );
+    expect(created).toContain(
+      'create index "idx_zones_depot" on "places"."zones" using gist ("depot")',
+    );
+    const added = compileMigration(AddRoutesMigration, { schema: "places" })
+      .steps.flatMap((each) => each.sql)
+      .join("\n");
+    expect(added).toContain('"route" geography(LineString,4326) null');
+    expect(added).toContain(
+      'create index concurrently "idx_zones_route" on "places"."zones" using gist ("route")',
+    );
+  });
+
   it("writes the inherited policy: ancestor reads and writes, and a select-only policy for the paths above", () => {
     class CreateTemplatesMigration extends Migration {
       up(schema: SchemaBuilder): void {

@@ -41,6 +41,9 @@ export { constantTimeEqual } from "#core/functions/constant-time-equal.function"
 export { countryCode } from "#core/functions/country-code.function";
 export { duration } from "#core/functions/duration.function";
 export { e164 } from "#core/functions/e164.function";
+export { geoLine } from "#core/functions/geo-line.function";
+export { geoPoint } from "#core/functions/geo-point.function";
+export { geoPolygon } from "#core/functions/geo-polygon.function";
 export { gtin } from "#core/functions/gtin.function";
 export { gtinCheckDigit } from "#core/functions/gtin-check-digit.function";
 export { identifier } from "#core/functions/identifier.function";

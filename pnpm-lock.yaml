@@ -193,11 +193,14 @@ catalogs:
       specifier: 1.8.1
       version: 1.8.1
     '@electric-sql/pglite':
-      specifier: 0.5.8
-      version: 0.5.8
+      specifier: 0.5.15
+      version: 0.5.15
     '@electric-sql/pglite-pgvector':
-      specifier: 0.0.9
-      version: 0.0.9
+      specifier: 0.0.16
+      version: 0.0.16
+    '@electric-sql/pglite-postgis':
+      specifier: 0.2.15
+      version: 0.2.15
     '@faker-js/faker':
       specifier: 10.6.0
       version: 10.6.0
@@ -3231,10 +3234,13 @@ importers:
     devDependencies:
       '@electric-sql/pglite':
         specifier: 'catalog:'
-        version: 0.5.8
+        version: 0.5.15
       '@electric-sql/pglite-pgvector':
         specifier: 'catalog:'
-        version: 0.0.9(@electric-sql/pglite@0.5.8)
+        version: 0.0.16(@electric-sql/pglite@0.5.15)
+      '@electric-sql/pglite-postgis':
+        specifier: 'catalog:'
+        version: 0.2.15(@electric-sql/pglite@0.5.15)
       '@faker-js/faker':
         specifier: 'catalog:'
         version: 10.6.0
@@ -10963,10 +10969,18 @@ packages:
     resolution: {integrity: sha512-XQsZgjm2EcVUiZQf11UBJQfmZeEmOW8DpI1gsFeln6w0ae0ii4dMQEQ0kjl6DspdWX1aGY1/loyXnP0JS06e/A==}
     engines: {node: '>=0.8.0'}
 
-  '@electric-sql/pglite-pgvector@0.0.9':
-    resolution: {integrity: sha512-ue4iBW651gDQwBwn97Ekv1lYGPvXa1ymHbRbTCSL0Ib286PRDD1VDOwzwEoekZuO/wctMbTzKzlwdgDwYrqZ8A==}
+  '@electric-sql/pglite-pgvector@0.0.16':
+    resolution: {integrity: sha512-3usbMM/Zkn0h7wpSft1rsa8lcXz77Q+rGdTpm7UORwtISg4CSGprinmu5qnF23GE0FHLH0LxEyKoPPteHuZPIg==}
     peerDependencies:
-      '@electric-sql/pglite': 0.5.8
+      '@electric-sql/pglite': 0.5.15
+
+  '@electric-sql/pglite-postgis@0.2.15':
+    resolution: {integrity: sha512-SiRHnKPk6MDjbKmYPwOPGKBJteLoy4iPyfJVaBFj0EBM2IjQuoKAZh4zW1GxM2WXwCjO/JOq+C3OrJ1XDN8UlA==}
+    peerDependencies:
+      '@electric-sql/pglite': 0.5.15
+
+  '@electric-sql/pglite@0.5.15':
+    resolution: {integrity: sha512-ERZWgaRTxueGV4cvL1tfpAOzFCWTXoUtbCBqnf2FhHDVs/so9eAKaanvrwWF9Dntx7BYsmFQujVQ0/B4S8Mmiw==}
 
   '@electric-sql/pglite@0.5.8':
     resolution: {integrity: sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q==}
@@ -23500,9 +23514,15 @@ snapshots:
     dependencies:
       '@types/hammerjs': 2.0.46
 
-  '@electric-sql/pglite-pgvector@0.0.9(@electric-sql/pglite@0.5.8)':
+  '@electric-sql/pglite-pgvector@0.0.16(@electric-sql/pglite@0.5.15)':
     dependencies:
-      '@electric-sql/pglite': 0.5.8
+      '@electric-sql/pglite': 0.5.15
+
+  '@electric-sql/pglite-postgis@0.2.15(@electric-sql/pglite@0.5.15)':
+    dependencies:
+      '@electric-sql/pglite': 0.5.15
+
+  '@electric-sql/pglite@0.5.15': {}
 
   '@electric-sql/pglite@0.5.8': {}
 
