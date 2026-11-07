@@ -4,12 +4,13 @@
  *          writes the approvals bot's evidence for one deploy job (`deployEvidence`, ADR 0533) to
  *          `runway-evidence-<environment>[-<member>].json` in the working folder, the name the bot looks for in the
  *          run's artifacts, and gives it as the `--json` data.
- * Boundary: reads the runway files only; writes that one file and nothing else; no network and no value. The repo is
+ * Boundary: reads the runway files and, for a Workers member, its `wrangler.jsonc`; writes that one file and nothing
+ *           else; no network and no value. The repo is
  *           the root runway's `providers.github` unless `--repo` names it.
  * Runtime: node
  * Governing contract: ADR 0533 (decision 3); ADR 0352 (decision 6); ADR 0506 (decision 8); STA-2104.
  */
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { Argument, Command, Option, UsageError, type CommandIo } from "@stackra/console";
@@ -71,7 +72,8 @@ export class RunwayEvidenceCommand extends Command({
         "--sha must be a full commit SHA",
         "Pass the 40-character commit the job deploys",
       );
-    const runway = readRunway(join(repositoryRoot(io.cwd), "runway.yaml"), RunwayKind.Root);
+    const root = repositoryRoot(io.cwd);
+    const runway = readRunway(join(root, "runway.yaml"), RunwayKind.Root);
     const github = runway.providers?.github;
     const repo = this.repo ?? (github === undefined ? undefined : `${github.org}/${github.repo}`);
     if (repo === undefined)
@@ -85,6 +87,7 @@ export class RunwayEvidenceCommand extends Command({
       sha: this.sha,
       target: this.target,
       member: this.member,
+      migrates: this.migrates(root, runway.targets?.["cloudflare-workers"]?.members),
     });
     const name = `runway-evidence-${this.environment}${this.member === undefined ? "" : `-${this.member}`}.json`;
     writeFileSync(join(io.cwd, name), `${JSON.stringify(evidence, null, 2)}\n`);
@@ -92,5 +95,20 @@ export class RunwayEvidenceCommand extends Command({
       `${name}: rollout ${String(evidence.rollout)}, destructive ${String(evidence.destructive)}`,
     );
     return evidence;
+  }
+
+  /** Whether the Workers member's wrangler config ships Durable Object migrations; `undefined` without the file. */
+  private migrates(
+    root: string,
+    members: Readonly<Record<string, unknown>> | undefined,
+  ): boolean | undefined {
+    const member = this.member === undefined ? undefined : members?.[this.member];
+    const path =
+      typeof member === "object" && member !== null && "path" in member ? member.path : undefined;
+    if (typeof path !== "string") return undefined;
+    const config = join(root, path, "wrangler.jsonc");
+    if (!existsSync(config)) return undefined;
+    // shortcut: a commented-out "migrations" key also counts, which only errs toward floor; parse JSONC if it matters.
+    return /"migrations"\s*:/.test(readFileSync(config, "utf8"));
   }
 }

@@ -42,6 +42,8 @@ const WEB: DeployTarget = {
   destination: "cloudflare-workers",
   settings: {
     compatibilityDate: "2026-10-01",
+    // These tests ship at once; the stepped rollout has its own tests.
+    defaults: { rollout: [100] },
     members: {
       registry: {
         path: "workers/registry",
@@ -262,6 +264,37 @@ describe("CloudflareWorkersProviderDriver", () => {
     expect(migrating.calls.some((call) => call.includes("wrangler deploy"))).toBe(true);
   });
 
+  it("steps a member with no preset by default, and moves a never-deployed Worker at once", async () => {
+    const root = repository();
+    const plain = { ...WEB, settings: { members: { registry: { path: "workers/registry" } } } };
+    const stepped = fakeRunner(root);
+    const driver = workers(root, stepped.run);
+    driver.sleep = async () => {};
+    await driver.apply(plain, SHA);
+    expect(stepped.calls.filter((call) => call.includes("versions deploy"))).toHaveLength(3);
+
+    const first = fakeRunner(root);
+    const fresh = workers(root, async (command, args, options) => {
+      if (args.includes("deployments") && args.includes("status"))
+        throw new Error("This Worker does not exist on your account. [code: 10007]");
+      return first.run(command, args, options);
+    });
+    fresh.sleep = async () => {
+      throw new Error("a first deploy holds no step");
+    };
+    await fresh.apply(plain, SHA);
+    const moves = first.calls.filter((call) => call.includes("versions deploy"));
+    expect(moves).toHaveLength(1);
+    expect(moves[0]).toContain(`${VERSION}@100`);
+
+    // Any other status failure stops the deploy before traffic moves.
+    const broken = workers(root, async (command, args, options) => {
+      if (args.includes("deployments") && args.includes("status")) throw new Error("rate limited");
+      return fakeRunner(root).run(command, args, options);
+    });
+    await expect(broken.apply(plain, SHA)).rejects.toThrow("rate limited");
+  });
+
   it("puts the previous version back when a rollout step fails its smoke", async () => {
     const root = repository();
     const gradual = {
@@ -353,6 +386,7 @@ describe("CloudflareWorkersProviderDriver", () => {
     const target: DeployTarget = {
       ...WEB,
       settings: {
+        defaults: { rollout: [100] },
         members: {
           "turbo-cache": {
             path: "workers/turbo-cache",

@@ -413,14 +413,19 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     key: string,
     cwd: string,
     version: string,
-    steps: readonly number[],
+    planned: readonly number[],
     sha: string,
     check: (() => Promise<string | undefined>) | undefined,
   ): Promise<void> {
+    let steps = planned;
     let before: string | undefined;
-    if (steps.length > 1 || steps[0] !== 100) {
+    if (planned.length > 1 || planned[0] !== 100) {
+      // A Worker that was never deployed has no status (code 10007); any other failure stops the deploy.
       const status = await this.run("pnpm", [...WRANGLER, "deployments", "status", "--json"], {
         cwd,
+      }).catch((error: unknown) => {
+        if (/10007|not found|does not exist/i.test(String(error))) return "{}";
+        throw error;
       });
       const served = (
         JSON.parse(status.slice(status.indexOf("{"))) as {
@@ -428,9 +433,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         }
       ).versions;
       before = served?.toSorted((a, b) => b.percentage - a.percentage)[0]?.version_id;
-      if (before === undefined)
-        throw new RunwayUnresolvedError("a gradual rollout needs a deployed version to split with");
     }
+    // A first deploy has no version to split with or go back to: it moves at once, as an all-at-once member does.
+    if (before === undefined) steps = [100];
     let moved = false;
     try {
       for (const [index, percent] of steps.entries()) {
