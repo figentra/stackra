@@ -13,7 +13,7 @@
  *                     (decision 1: `waitFor`).
  */
 import { Action, type ActionContext, Idempotency } from "@stackra/actions";
-import { ActorKind, HttpMethod } from "@stackra/contracts";
+import { ActorKind, AssuranceLevel, HttpMethod } from "@stackra/contracts";
 
 import { memberId } from "#core/functions/member-id.function";
 import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
@@ -33,6 +33,7 @@ export class ConfirmRedemptionAction extends Action({
   permission: LoyaltyAccountPermissions.redeem,
   actors: [ActorKind.User, ActorKind.Service],
   idempotency: Idempotency.Optional,
+  stepUp: AssuranceLevel.Aal2,
   endpoint: { method: HttpMethod.Put, path: "/loyalty/redemptions/:reference/confirm" },
   // reason: a confirmation is the host's, after its own step succeeded, not an agent's
   tool: false,

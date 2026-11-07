@@ -20,6 +20,7 @@
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea, AssuranceLevel, Duration } from "@stackra/contracts";
 
+import type { StepUpExemption } from "#contracts/types/step-up-exemption.type";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Idempotency } from "#core/enums/idempotency.enum";
@@ -104,9 +105,10 @@ export interface ActionOptions {
    * The assurance level the caller's last authentication must reach, recently enough (`StepUpCheck` decides); the
    * call is refused `step_up_required` otherwise. Asked of a user caller only: a service, job, system or agent call
    * carries no assurance (ADR 0406 as amended, STA-340). No step-up when absent. Gen refuses an L3 or L4 action a
-   * user can call without it (`step_up_missing`).
+   * user can call without it (`step_up_missing`). `{ exempt: "first-factor-enrolment" }` asks no step-up of the
+   * pipeline: the action enforces its own (STA-340), and gen allows it only on its listed enrolment actions.
    */
-  readonly stepUp?: AssuranceLevel;
+  readonly stepUp?: AssuranceLevel | StepUpExemption;
 
   /**
    * The statement timeout inside its unit of work (`set local statement_timeout`), for an action that is known to run

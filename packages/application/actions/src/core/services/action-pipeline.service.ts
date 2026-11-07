@@ -535,7 +535,7 @@ export class ActionPipeline {
     if (merged === undefined) return;
     // the approver's step-up floor: an action's own `stepUp`, and every L3 or L4 action, whatever the tenant's rule says
     const floor =
-      options.stepUp ??
+      (typeof options.stepUp === "string" ? options.stepUp : undefined) ??
       (descriptor.risk === "L3" || descriptor.risk === "L4" ? AssuranceLevel.Aal2 : undefined);
     const need =
       floor === undefined
@@ -715,8 +715,13 @@ export class ActionPipeline {
     if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
     // step-up asks a user only: a service, job, system or agent call carries no assurance (ADR 0406 as amended)
+    // `{ exempt: "first-factor-enrolment" }` is no level: that action enforces its own step-up (STA-340)
     const level =
-      kind === "action" && descriptor.actor.kind === ActorKind.User ? options.stepUp : undefined;
+      kind === "action" &&
+      descriptor.actor.kind === ActorKind.User &&
+      typeof options.stepUp === "string"
+        ? options.stepUp
+        : undefined;
     if (level !== undefined) {
       // an approved call stands on the assurance its binding recorded, measured at the request (ADR 0509, FR-016)
       const bound = await this.bindingOf(call);

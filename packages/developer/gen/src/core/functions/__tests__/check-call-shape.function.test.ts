@@ -61,6 +61,18 @@ describe("checkCallShape", () => {
     expect(codes(withOptions(QUERY, { ...QUERY.options, cache }), "L0")).toEqual([]);
   });
 
+  it("allows the first-factor enrolment exemption only on a listed action", () => {
+    const exempt = { exempt: "first-factor-enrolment" };
+    const passkey = withOptions(
+      { ...ACTION, module: "identity" },
+      { ...ACTION.options, key: "passkey.confirm", stepUp: exempt },
+    );
+    expect(codes(passkey, "L4")).toEqual([]);
+    expect(codes(withOptions(ACTION, { ...ACTION.options, stepUp: exempt }), "L4")).toEqual([
+      "step_up_exemption_unlisted",
+    ]);
+  });
+
   it("refuses an L3 or L4 action a user can call without stepUp, and passes a service-only one", () => {
     expect(codes(ACTION, "L3")).toEqual(["step_up_missing"]);
     expect(codes(ACTION, "L4")).toEqual(["step_up_missing"]);

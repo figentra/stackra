@@ -138,6 +138,11 @@ classes `step_up_required`.
   kind is `ActorKind.User`.
 - **FR-009**: `identity.operator.bootstrap`, `identity.session.end_user` and `privacy.hold.release` SHALL declare
   `stepUp: AssuranceLevel.Aal2`.
+- **FR-010**: An action MAY declare `stepUp: { exempt: "first-factor-enrolment" }` only IF its identity is in gen's
+  `FIRST_FACTOR_ENROLMENT_ACTIONS` (today `identity.passkey.confirm` alone); anywhere else gen SHALL refuse
+  `step_up_exemption_unlisted`. The pipeline SHALL ask no `StepUpCheck` for it, and the action SHALL enforce its own
+  rule: a user with no factor reaching AAL2 enrols from a sign-in within `stepUpMaxAgeMinutes`, a user who has one
+  needs AAL2, and every enrolment is audited with `firstFactor`.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
@@ -189,7 +194,11 @@ classes `step_up_required`.
 
 ## Amendments
 
-None.
+- 2026-11-07 (leader, after #458 raised four user actions to L3 and L4): `loyalty_kit.points.redeem` and
+  `loyalty_kit.points.confirm_redemption` declare `stepUp: AssuranceLevel.Aal2`; `loyalty_kit.points.earn_visit` becomes
+  service-only (no endpoint; no console or client called it); `identity.passkey.confirm` takes the first-factor
+  enrolment exemption (FR-010), because a user enrolling their first passkey has nothing to step up with. The exemption
+  is a listed identity in gen, never a general option.
 
 ## Status history
 

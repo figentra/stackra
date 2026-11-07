@@ -45,6 +45,18 @@ asked; an agent's approvals stay ADR 0360's, and an approved call still stands o
 L3 or L4 action whose actors include `User` and that declares no `stepUp` (`step_up_missing`), and the three actions
 declare `stepUp: AssuranceLevel.Aal2`.
 
+## Amendment 2026-11-07 (STA-340): the first-factor enrolment exemption
+
+**Context.** STA-2096 raised `identity.passkey.confirm` to L4, so this ADR asks AAL2 of the user who confirms a
+passkey. A user enrolling their first strong factor has nothing to step up with.
+
+**Decision.** One action may declare `stepUp: { exempt: "first-factor-enrolment" }`: those listed in gen's
+`FIRST_FACTOR_ENROLMENT_ACTIONS`, today `identity.passkey.confirm` alone; gen refuses it anywhere else
+(`step_up_exemption_unlisted`), and adding an entry is a reviewed gen change. The pipeline asks no `StepUpCheck` for
+it. The action decides instead: a user whose enrolled methods reach AAL2 must have stepped up to AAL2, and a user with
+none may enrol the first from a sign-in within `IdentityConfig.stepUpMaxAgeMinutes`; it audits every enrolment with
+`firstFactor`.
+
 ## Enforcement
 
 `packages/application/actions/src/core/services/__tests__/action-pipeline.service.test.ts` (step-up order, refusal,
