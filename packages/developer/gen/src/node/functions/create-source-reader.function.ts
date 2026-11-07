@@ -1845,6 +1845,7 @@ export function createSourceReader(
         ? { secret: { name: secretName, ...secretOptionsOf(secret?.args[1]) } }
         : {}),
       ...(decorators.some((use) => use.name === "Hidden") ? { hidden: true as const } : {}),
+      ...(decorators.some((use) => use.name === "ShownOnce") ? { shownOnce: true as const } : {}),
     };
     if (!quiet && type.kind !== "hatch")
       checkRules(field, declaration.name ?? declaration, subject);

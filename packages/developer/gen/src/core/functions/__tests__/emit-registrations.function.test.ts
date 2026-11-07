@@ -532,12 +532,14 @@ describe("emitRegistrations of actions and queries (STA-2025)", () => {
     .split("\n")
     .filter((line) => line.startsWith("  { type: ") && line.includes(" risk: "));
 
-  it("registers every action and query with its locked key, permission, risk and input class", () => {
+  it("registers every action and query with its locked key, permission, risk and input and output classes", () => {
     expect(content).toMatch(/import \{[^}]*registerActions[^}]*\} from "@stackra\/actions";/);
     expect(content).toContain(
       '  { type: CancelOrderAction, key: "orders.order.cancel@1", permission: "orders.order.cancel", risk: "L2"',
     );
-    expect(content).toMatch(/\{ type: CancelOrderAction, [^}]*input: CancelOrderInput \}/);
+    expect(content).toMatch(
+      /\{ type: CancelOrderAction, [^}]*input: CancelOrderInput, output: CancelOrderOutput \}/,
+    );
     expect(content).toContain('{ type: ListOrdersQuery, key: "orders.order.list@1"');
     expect(rows).toHaveLength(manifest.actions?.length ?? -1);
   });

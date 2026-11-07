@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `ActionPipeline`: the fixed order of the steps; the actor check and fail-closed permission;
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
- *          failure); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
+ *          failure, a shorter window, a @ShownOnce output field never kept); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
  *          with its back-off details and a `rate_limited` usage event, the default per-scope and per-hashed-address
  *          buckets of an action with no `rateLimit`); the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
@@ -73,7 +73,7 @@ import type { RecordedEvent } from "@stackra/events/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
 import { describe, expect, it, onTestFinished } from "@stackra/testing";
 import { vi } from "vitest";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { registerSchemas, Schema, ShownOnce } from "@stackra/validation";
 import { z } from "zod";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
@@ -318,6 +318,29 @@ class PickupSecretAction extends Action({
   async handle(): Promise<{ token: string }> {
     this.picked += 1;
     return { token: `token-${this.picked}` };
+  }
+}
+
+/** A registered endpoint's output: the signing secret is shown once. */
+class RegisterEndpointOutput extends Schema {
+  @ShownOnce
+  signingSecret!: string;
+
+  endpointId!: string;
+}
+
+/** Registers a webhook endpoint once per key: a retry replays the endpoint without its secret. */
+class RegisterEndpointAction extends Action({
+  key: "endpoint.register",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Required,
+  idempotencyTtl: Duration.minutes(10),
+}) {
+  registered = 0;
+
+  async handle(): Promise<{ endpointId: string; signingSecret: string }> {
+    this.registered += 1;
+    return { endpointId: `whe_${this.registered}`, signingSecret: `whsec_${this.registered}` };
   }
 }
 
@@ -806,6 +829,55 @@ describe(ActionPipeline, () => {
     expect(again).toEqual({ token: "token-2" });
     expect(action.picked).toBe(2);
     expect(claimed).toEqual([]);
+  });
+
+  it("never keeps a @ShownOnce output field: the replay omits it and says so", async () => {
+    onTestFinished(() => {
+      ACTION_REGISTRY.delete(RegisterEndpointAction);
+    });
+    registerActions([
+      {
+        type: RegisterEndpointAction,
+        key: "webhooks.endpoint.register@1",
+        // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes these registrations
+        permission: "webhooks.endpoint.register",
+        risk: "L2",
+        output: RegisterEndpointOutput,
+      },
+    ]);
+    const stored: { output: unknown; ttl?: unknown }[] = [];
+    class Recording extends MemoryIdempotencyStoreDriver {
+      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
+        stored.push({ output: undefined, ttl: args[2] });
+        return super.claim(...args);
+      }
+
+      override async complete(key: string, output: unknown) {
+        stored.push({ output });
+        return super.complete(key, output);
+      }
+    }
+    const action = new RegisterEndpointAction();
+    const { pipeline } = setup([
+      [IdempotencyStore, new Recording(new FixedClock())],
+      [RegisterEndpointAction, action],
+    ]);
+    const first = await pipeline.execute(
+      RegisterEndpointAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    const again = await pipeline.execute(
+      RegisterEndpointAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    expect(first).toEqual({ endpointId: "whe_1", signingSecret: "whsec_1" });
+    expect(again).toEqual({ endpointId: "whe_1", secretOmitted: true });
+    expect(action.registered).toBe(1);
+    expect(stored[0]?.ttl).toEqual(Duration.minutes(10));
+    expect(stored[1]?.output).toEqual({ endpointId: "whe_1", secretOmitted: true });
+    expect(JSON.stringify(stored)).not.toContain("whsec_");
   });
 
   it("derives a key without one, then applies the action's own rate limit", async () => {

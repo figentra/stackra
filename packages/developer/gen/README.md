@@ -118,6 +118,11 @@ and marks the class `global`, which the manifest's model records. Such a service
 migrations, then `assertRowSecurity` with `tenantIsolationOptions()` and, as `platform`, the tables of its
 `Model.global` models and of `MODEL_SCOPE_EXEMPTIONS`, so every other table without `tenant_id` fails it (ADR 0347 d5).
 
+Shown-once output (STA-2568): `secret_output_kept` (`checkShownOnce`, full pass only) warns when an action that is not
+`Idempotency.Never` returns an output field named like a secret (`signingSecret`, `apiKey`, `accessToken`) that is
+neither `@ShownOnce` nor `@Hidden`: the idempotency store would keep it for a replay. Every `registerActions` row
+carries its output class, so the pipeline drops `@ShownOnce` fields before it stores the output.
+
 The query cache (ADR 0305 rule 31, STA-1445): `site_cache_reads_caller` (`checkQueryCache`, full pass only) refuses a
 query cached `per: CacheScope.Site` whose `handle` reads its caller from its context (`ctx.actor`, `scopeId`, `scope`,
 `authorize`, `deviceId`, `assurance`, `client`, or a destructuring of them; the reader records them as

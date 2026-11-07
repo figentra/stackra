@@ -60,6 +60,12 @@ export interface ActionOptions {
   /** The Idempotency-Key policy; `Idempotency.Optional` when absent. */
   readonly idempotency?: Idempotency;
 
+  /**
+   * How long a key and its kept output last, when shorter than the 24 hours of ADR 0136 (a longer one is ignored).
+   * An output field marked `@ShownOnce` is never kept, whatever the window.
+   */
+  readonly idempotencyTtl?: Duration;
+
   /** The action's own token bucket, on top of the area's. */
   readonly rateLimit?: ActionRateLimit;
 
