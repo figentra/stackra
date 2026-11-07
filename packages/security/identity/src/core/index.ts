@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/identity (the configuration with its shipped schema, the flows
- *          and statuses, the session service, the session drivers, the claims mapping, the `ClientSession`,
+ *          and statuses, the session service, the session drivers, the claims mappings (`sessionUserOf`, and `actorOf`
+ *          for a call's actor, user or service), the `ClientSession`,
  *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys and
- *          their verification by hash, automation principals in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
+ *          their verification by hash, automation and service principals in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
  *          matching and QR, sign-in and step-up) with its memory driver and events, the login directory writer with its
  *          configuration and memory driver, the passkeys memory driver with the client halves of a passkey sign-in and
@@ -35,6 +36,7 @@ export { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-reso
 export { MemoryLoginDirectoryStoreDriver } from "#core/drivers/memory-login-directory-store.driver";
 export { MemoryPasskeysDriver } from "#core/drivers/memory-passkeys.driver";
 export { MemorySessionStoreDriver } from "#core/drivers/memory-session-store.driver";
+export { MemoryServicePrincipalsDriver } from "#core/drivers/memory-service-principals.driver";
 export { MemoryStaffPinStoreDriver } from "#core/drivers/memory-staff-pin-store.driver";
 export { MemoryVerificationDriver } from "#core/drivers/memory-verification.driver";
 export { PkceSessionStoreDriver } from "#core/drivers/pkce-session-store.driver";
@@ -65,6 +67,7 @@ export { AccountDeletionStarted } from "#core/events/account-deletion-started.ev
 export { AppApprovalApproved } from "#core/events/app-approval-approved.event";
 export { AppApprovalDenied } from "#core/events/app-approval-denied.event";
 export { AppApprovalRequested } from "#core/events/app-approval-requested.event";
+export { actorOf } from "#core/functions/actor-of.function";
 export { assuranceOf } from "#core/functions/assurance-of.function";
 export { checkPublishableKey } from "#core/functions/check-publishable-key.function";
 export { hashApiKey } from "#core/functions/hash-api-key.function";

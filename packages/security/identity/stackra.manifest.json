@@ -765,6 +765,17 @@
       }
     },
     {
+      "port": "ServicePrincipals",
+      "key": "identity.ServicePrincipals",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryServicePrincipalsDriver",
+          "from": "@stackra/identity"
+        }
+      }
+    },
+    {
       "port": "StaffPinStore",
       "key": "identity.StaffPinStore",
       "candidates": ["memory", "storage"],

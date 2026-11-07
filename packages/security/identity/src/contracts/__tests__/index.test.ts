@@ -36,6 +36,7 @@ describe("@stackra/identity/contracts", () => {
       "OperatorBootstrapOutcome",
       "PasskeyRefusal",
       "Passkeys",
+      "ServicePrincipals",
       "SessionStore",
       "SignInBrowser",
       "StaffPinStore",
