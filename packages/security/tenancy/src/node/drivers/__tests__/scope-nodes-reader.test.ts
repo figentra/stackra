@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: proves `scope.scope_nodes` is a platform table with one reader outside its owner (ADR 0239, amendment of
- *          2026-11-07, decision P1): no source file under `packages/` names the table, its model, its service or its
- *          Postgres driver, except the scope package that owns it and `CallIsolationDriver`; and the `ScopeTree` port,
- *          which that driver reads through, has exactly the consumers the amendment names, so a new one fails here
- *          until the ADR names it.
+ *          2026-11-07, item 2 and its allowed system readers): no source file under `packages/` names the table, its
+ *          model, its service or its Postgres driver, except the scope package that owns it and `CallIsolationDriver`;
+ *          the `ScopeTree` port, which that driver reads through, has exactly the readers the amendment names, so a new
+ *          one fails here until the ADR names it; and no file in an `actions/`, `queries/` or `listeners/` folder names
+ *          the port, except the one exception the amendment names.
  * Boundary: test only; reads the repository's `packages/` sources with node:fs (no `node_modules`, `dist`, `.stackra`,
  *           `__tests__` or `*.test.*` file), never a database.
  * Runtime: node (vitest)
@@ -25,10 +26,14 @@ const SOURCE = /\.(?:ts|tsx|mts|mjs|sql)$/;
 const TABLE = /\bscope_nodes\b|\bScopeNodeModel\b|\bScopeNodeService\b|\bPostgresScopeTreeDriver\b/;
 const PORT = /\bScopeTree\b/;
 
-/** The `ScopeTree` consumers outside the owner the amendment names (decision P1); proposed to move behind the driver. */
+/** The bootstrap-operator action, the amendment's one named exception to "never in an action" (TODO in the ADR). */
+const EXCEPTION = "packages/security/identity/src/node/actions/bootstrap-operator.action.ts";
+const CALL_UNIT = /\/(?:actions|queries|listeners)\//;
+
+/** The isolation driver and the allowed system readers of the `ScopeTree` port outside the owner (the amendment's table). */
 const PORT_CONSUMERS = [
   "packages/security/iam/src/core/drivers/iam-access-control.driver.ts",
-  "packages/security/identity/src/node/actions/bootstrap-operator.action.ts",
+  EXCEPTION,
   "packages/security/tenancy/src/core/drivers/region-guard.driver.ts",
   "packages/security/tenancy/src/core/drivers/tenancy-cron-scopes.driver.ts",
   "packages/security/tenancy/src/core/drivers/tenant-placement-connection-resolver.driver.ts",
@@ -71,5 +76,12 @@ describe("scope.scope_nodes readers", () => {
 
   it("is read through the ScopeTree port only by the consumers the ADR names", () => {
     expect(namingFiles(files, PORT)).toEqual([...PORT_CONSUMERS].sort());
+  });
+
+  it("is never taken by an action, a query or a listener, except the named exception", () => {
+    const units = files.filter(
+      (file) => CALL_UNIT.test(file) && PORT.test(readFileSync(join(REPO, file), "utf8")),
+    );
+    expect(units).toEqual([EXCEPTION]);
   });
 });
