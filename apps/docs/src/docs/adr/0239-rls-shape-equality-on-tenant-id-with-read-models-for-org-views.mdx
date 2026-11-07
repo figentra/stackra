@@ -1,7 +1,16 @@
 ---
 title: "0239 — RLS shape: equality on tenant_id, with read models for organisation views"
-description: "Accepted, amended by 0347 · 2026-10-20"
+description: "Accepted, amended by 0347 · 2026-10-20 · amended 2026-11-07 (STA-2561)"
 ---
+
+<Note>
+  Amended 2026-11-07 (STA-2561), in the section "Amendment 2026-11-07: platform tables and system
+  readers" below: equality on the tenant stays the one permissive policy and scope narrowing is a
+  restrictive layer (owner decision 12); `scope.scope_nodes` is a platform table read only by the
+  isolation driver; the `@stackra/database` tables use `isolation_scope_id`; the row-security audit
+  has three groups; system tables and the other audit gaps have proposed dispositions. Proposed 0411
+  is superseded.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-470) by
@@ -43,3 +52,125 @@ planned — the RLS catalogue audit: every table with `tenant_id` has enable, fo
 ## Supersedes and sources
 
 Supersedes: none. Builds on: [0014](/adr/0014-data-ownership-and-orm), [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle), [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region). Sources: owner RLS answer (`stackra-decisions-2026-10-19.md` L931, 2026-10-20); gap analysis P0-4 (B-05).
+
+## Amendment 2026-11-07: platform tables and system readers (STA-2561)
+
+The tenancy audit of 2026-11-07 found three kinds of table that decision 1 does not cover yet: tables that isolate rows
+by `scope_path` ancestor logic, tables in `@stackra/database` that cannot name a tenant, and system tables with no
+row-level security. This section records the owner's decision 12 (audit gap D), the leader's decisions of the same day,
+and a proposed answer for each other gap. Decisions 1 to 4 above stand.
+
+Rows marked **Decided** are in force. Rows marked **Proposed** are for the owner or the leader to confirm, and nothing
+may rely on them until then.
+
+### Decided
+
+1. **One permissive policy (owner decision 12, audit gap D).** Equality on the tenant is the only permissive policy of
+   a business table. Narrowing by scope path is a restrictive layer inside one tenant
+   ([0347](/adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies)
+   decision 2). Organisation views are read models (decision 2). No policy reads the tree across tenants. The 22 tables
+   with an `ancestor` policy take the tenant equality at their contract step and keep `scope_path` only as a
+   restrictive policy or a query predicate.
+2. **`scope.scope_nodes` is a platform table.** Its one reader outside the scope package is the isolation driver
+   (`CallIsolationDriver`, `@stackra/tenancy`). That driver reads one node and its tenant, in a savepoint it always
+   rolls back. No other package names the table, its model, its service or its Postgres driver. The scope package
+   still owns and writes it (0327 decision 3). The audit lists it as a platform table at its contract step, with this
+   reason.
+3. **The `@stackra/database` tables carry `isolation_scope_id`.**
+   [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) keeps the word
+   "tenant" out of `@stackra/database`, so `sequence_counters`, `sequence_blocks`, `sequence_voids` and
+   `projection_rows` name their tenant column `isolation_scope_id` (migration `database.0006_add_isolation_scope`,
+   stackra#669). At the contract step it becomes NOT NULL, with one permissive policy
+   `pol_<table>_isolation_scope_id`: equality with `app.tenant_id`. `scope_id` stays the caller's sub-scope, part of
+   each table's key. The audit treats these four tables as group (b) by name; they get no platform entry. Precedent:
+   core's `packages/commerce/payments` keeps the tenant in `scope_id` against `app.tenant_id` with `equalsOrUnset`.
+4. **Tenant and TenantMove are a named exception.** The Figentra OS tenancy tables for tenants and tenant moves span
+   tenants by nature, so they have no tenant equality policy. They are read and written only by the tenancy service.
+   The exception covers no other table of that service.
+5. **Proposed ADR [0411](/adr/0411-scope-subtree-move-re-paths-the-node-table-and-each-service-re-paths-its-own-rows-on-scope-moved)
+   is superseded.** It relied on an ancestor policy to carry an organisation's grants across a move, which item 1
+   removes. A scope move, if still needed, is proposed again on top of item 1.
+6. **Search takes the platform form.** At their contract step, `search.vector_items` and `search.queries` take the
+   platform form of gap C: a nullable `tenant_id`, where a tenant session reads its own rows and the NULL rows, and a
+   platform session writes only NULL rows. `scope_path` stays a restrictive narrowing.
+7. **The row-security audit has three groups.** `assertRowSecurity` (`@stackra/database/testing`, stackra#661,
+   #662 and #668) names why a table without the owner column waits:
+
+   | Group | Table shape                                                         | Until it is fixed                     |
+   | ----- | ------------------------------------------------------------------- | ------------------------------------- |
+   | (a)   | an `ancestor` `scope_path` policy                                   | the contract step adds the owner      |
+   | (b)   | equality on `scope_id` or `isolation_scope_id` with `app.tenant_id` | stays, named by table (item 3)        |
+   | (c)   | a system table with no row-level security                           | the disposition below, once confirmed |
+
+   In 0.19 the audit warns. From 0.20 every unlisted table in any group is an error.
+
+### Proposed: group (c) system tables
+
+Each disposition is **proposed, for the owner or leader to confirm**. "Platform list" means a row in the audit's
+`PLATFORM_TABLES` with the reason given. "Tenant form" means a `tenant_id` column through the macro. "Platform form"
+means the nullable form of gap C.
+
+| Table                               | Evidence (migration comment, audit)                                                      | Proposed disposition                                                                       |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `outbox.messages`                   | Holds each event's `data` and `meta`; the relay reads every scope's messages.            | Platform form. The relay claims ids only (gap A) and loads the payload in `CallIsolation`. |
+| `outbox.inbox`                      | Event ids only; "an id names no record and holds no customer data".                      | Platform list: received event ids, no tenant data.                                         |
+| `outbox.deliveries`                 | Holds the event `envelope`; read by the cross-app relay across scopes.                   | Platform form, as `outbox.messages`.                                                       |
+| `queue.jobs`                        | Holds the job `input`; workers read every scope's jobs.                                  | Platform form. Workers claim ids only (gap A); platform jobs keep NULL.                    |
+| `queue.job_batches`                 | Counts only (`total`, `done`, `failed`), keyed by batch id.                              | Platform list: batch counters, no tenant data.                                             |
+| `scheduler.schedules`               | Per-scope schedules with an `input`; one runner reads every scope each tick.             | Platform form: a tenant's schedules carry its id, platform crons keep NULL.                |
+| `scheduler.watermarks`              | The last tick per cron or schedule key.                                                  | Platform list: tick bookkeeping, no tenant data.                                           |
+| `workflow.runs`                     | Holds the run's `input` and `origin`; the worker advances every scope's runs.            | Platform form. The worker claims ids only (gap A).                                         |
+| `workflow.steps`                    | Holds step `result`, `error` and `progress`.                                             | Platform form, set from its run.                                                           |
+| `workflow.signals`                  | Holds the signal `payload`.                                                              | Platform form, set from its run.                                                           |
+| `workflow.service_ack_sets`         | Service names expected and acked per subject; "platform data like the journal".          | Platform list: service acks, no tenant payload.                                            |
+| `webhooks.webhook_endpoints`        | A scope's receivers; the scope is data (an open item for the owner's data review).       | Tenant form, NOT NULL. Delivery runs in the event's tenant; by-id methods narrow to it.    |
+| `webhooks.webhook_deliveries`       | One row per attempt, written by the delivery job; the scope is data (open item).         | Tenant form, NOT NULL, set from its endpoint.                                              |
+| `settings.stored_settings`          | Platform and product defaults, and tenant and user rows; the cascade reads above a node. | Platform form (gap C). User rows key by `(tenant_id, user_id)`.                            |
+| `settings.stored_setting_revisions` | Revisions per holder; the scheduler reads due revisions across holders.                  | Platform form, as `stored_settings`.                                                       |
+| `rules.condition_fields`            | "A platform table: no scope column"; the registry of fields a condition may test.        | Platform list, and `Model.global` on its model.                                            |
+| `search.indexes`                    | Counts and a resume cursor per model and scope; `scope_key` uses `-` for platform-wide.  | Platform form; NULL replaces the `-` sentinel.                                             |
+| `database.seed_records`             | Product defaults only; "a tenant's own values ... are never written here".               | Platform list: product seed ledger, no tenant data.                                        |
+
+The audit also counts the outbox's `changes`, `change_cursors`, `device_sequences`, `offline_cap_uses` and
+`replica_changes` in group (c). Their dispositions follow in a later amendment.
+
+### Proposed: the other gaps
+
+Each row is **proposed, for the owner or leader to confirm**, except where it points to a decided item above.
+
+| Gap                               | Proposed decision                                                                                                                                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A. Cross-tenant system workers    | A table that holds a tenant payload carries a tenant column. A worker claims rows through one named role or a SECURITY DEFINER function that returns ids only, then loads each payload inside `CallIsolation`.                                    |
+| B. Pre-tenant lookup indexes      | A lookup read before the tenant is known is `Model.global` and holds only a hash or id plus the tenant id. Only the resolver reads it, each read writes an audit event, and gen allowlists it by name.                                            |
+| C. Split platform and tenant rows | One form: a nullable `tenant_id`. A tenant session reads its rows plus NULL rows; a platform session writes only NULL rows. It replaces NULL `scope_id` with `equalsOrUnset`, the `-` sentinel and the unused trait. Decided for search (item 6). |
+| D. Organisation reads             | Decided: item 1.                                                                                                                                                                                                                                  |
+| E. Platform personal data         | A global table may hold personal data only with a class on every field, `@Retention`, an erasure path, and an ADR entry naming it.                                                                                                                |
+| F. Tenant purge                   | Every service with a global table that holds a tenant column ships a tenant-purge listener for it.                                                                                                                                                |
+| G. Tenant source in listeners     | A listener takes its tenant from the verified envelope (`ctx`), never from the event payload or a request body.                                                                                                                                   |
+| H. Isolation coverage             | The generated isolation test covers every table in the service's schemas, package tables included, seeds rows for two tenants, and runs in a committed int task.                                                                                  |
+| I. Unique keys                    | A unique key leads with the tenant column, unless its value is platform-minted and random.                                                                                                                                                        |
+| J. Database role                  | Infra provisions the runtime role as non-owner, non-superuser and NOBYPASSRLS, and a deploy check refuses any other. The audit already refuses a superuser or BYPASSRLS service role.                                                             |
+| K. Rule text                      | The tenancy rule's point 2 (`tenant_id uuid`) and point 3 (`scope_path` tables) are amended to match decision 4, item 1 and the `varchar(33)` public id, through the rule's fflow override.                                                       |
+| L. Credentials and encryption     | Secret fields use the Credential class ([0494](/adr/0494-credential-data-class-for-provider-secrets)) in every repository, and sealed tenant data uses `HasEncryptedFields({ scope: "tenantId" })`.                                               |
+
+### Open item for the leader
+
+Nine source files take the `ScopeTree` port, through which the isolation driver reads the node table: the isolation
+driver itself, five other tenancy drivers and `tenantOf`, IAM's access-control driver, and identity's
+`bootstrap-operator` action. Item 2 names one reader, so these consumers are either moved behind the tenant the
+isolation driver has already resolved, or named here as allowed readers. The check below pins today's list, so a new
+consumer fails until this section names it.
+
+### Enforcement
+
+- `packages/security/tenancy/src/node/drivers/__tests__/scope-nodes-reader.test.ts`: outside the scope package, only
+  the isolation driver names `scope_nodes`, `ScopeNodeModel`, `ScopeNodeService` or `PostgresScopeTreeDriver`, and the
+  `ScopeTree` port has exactly the consumers listed in the open item.
+- `packages/data/database/src/testing/functions/assert-row-security.function.ts` and `unowned-table-group.function.ts`:
+  the three groups of item 7, warnings until 0.20 (`strict`, `STACKRA_GEN_STRICT=1`).
+- planned: the contract migrations of items 1, 3 and 6, and a `PLATFORM_TABLES` row for each confirmed platform-list
+  table, each with its reason.
+
+Supersedes: Proposed [0411](/adr/0411-scope-subtree-move-re-paths-the-node-table-and-each-service-re-paths-its-own-rows-on-scope-moved).
+Sources: tenancy audit 2026-11-07 (sections 2, 3 and 6); master plan 2026-11-07, owner decision 12; leader decisions
+of 2026-11-07; STA-2561.
