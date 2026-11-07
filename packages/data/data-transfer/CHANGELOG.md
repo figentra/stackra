@@ -1,5 +1,16 @@
 # @stackra/data-transfer
 
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/filesystem@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/outbox@0.17.2
+
 ## 0.17.1
 
 ### Patch Changes

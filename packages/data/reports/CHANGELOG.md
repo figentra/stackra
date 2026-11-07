@@ -1,5 +1,18 @@
 # @stackra/reports
 
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/iam@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/validation@0.17.2
+
 ## 0.17.1
 
 ### Patch Changes

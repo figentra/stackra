@@ -1,5 +1,23 @@
 # @stackra/data-maintenance
 
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/scheduler@0.17.2
+  - @stackra/tenancy@0.17.2
+  - @stackra/iam@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/search@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/outbox@0.17.2
+  - @stackra/queue@0.17.2
+
 ## 0.17.1
 
 ### Patch Changes

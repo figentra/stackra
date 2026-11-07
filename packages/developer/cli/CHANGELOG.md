@@ -1,5 +1,29 @@
 # @stackra/cli
 
+## 0.17.2
+
+### Patch Changes
+
+- ff88313: `stackra deploy` takes `--from-env`: the secret sync it runs before services ship reads the job's environment (a
+  decrypted sops scope, ADR 0525) instead of Infisical. And `--member` now always ships the named Worker members
+  through the Workers provider: in a repository whose root runway has `surfaces` (core), a Worker deploy no longer runs
+  the product publish or asks for `--assets-bucket`, `--assets-origin`, `--kv-namespace` and `--served`.
+- 2da4d9d: Fixes from typechecking os on 0.17.1. Runway's eleven commands and `stackra runway` are `bin` commands, so no member
+  hosts them (their classes are not exported from `@stackra/runway/node`), and gen hosts console commands only from a
+  member's runtime `dependencies`, never its devDependencies. A hosted package's entities carry no `~defaults` marker its
+  published types lack, and a package-base override no longer imports a field hatch it does not use.
+- Updated dependencies [2da4d9d]
+  - @stackra/gen@0.17.2
+  - @stackra/runway@0.17.2
+  - @stackra/mcp@0.17.2
+  - @stackra/console@0.17.2
+  - @stackra/repo-checks@0.17.2
+  - @stackra/skills@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/validation@0.17.2
+
 ## 0.17.1
 
 ### Patch Changes

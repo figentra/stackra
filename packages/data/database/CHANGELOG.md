@@ -1,5 +1,21 @@
 # @stackra/database
 
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/actions@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/console@0.17.2
+  - @stackra/testing@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/cache@0.17.2
+
 ## 0.17.1
 
 ### Patch Changes
