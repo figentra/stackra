@@ -119,6 +119,11 @@ function zodOf(
       use(imports, "@stackra/validation", "json");
       return "json()";
     }
+    case "geo": {
+      const builder = { point: "geoPoint", polygon: "geoPolygon", line: "geoLine" }[type.shape];
+      use(imports, "@stackra/validation", builder);
+      return `${builder}()`;
+    }
     case "duration": {
       use(imports, "@stackra/validation", "duration");
       return "z.string().transform(duration)";

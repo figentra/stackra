@@ -191,6 +191,54 @@ describe("jsonSchemaOf", () => {
     expect(schema.properties["label"]).toEqual({ type: "string" });
   });
 
+  it("describes a point as latitude and longitude in range, and areas and lines as lists of them (ADR 0314)", () => {
+    const placed: ShapeIR = {
+      name: "Placed",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/placed.schema.ts",
+      importPath: "#modules/orders/schemas/placed.schema",
+      fields: [
+        {
+          name: "door",
+          optional: false,
+          nullable: false,
+          type: { kind: "geo", shape: "point" },
+          rules: [],
+        },
+        {
+          name: "area",
+          optional: false,
+          nullable: true,
+          type: { kind: "geo", shape: "polygon" },
+          rules: [],
+        },
+        {
+          name: "route",
+          optional: false,
+          nullable: false,
+          type: { kind: "geo", shape: "line" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const schema = jsonSchemaOf(placed, COMMERCE_IR.shapes) as {
+      properties: Record<string, { type?: unknown; minItems?: number; items?: unknown }>;
+    };
+    const point = {
+      type: "object",
+      required: ["latitude", "longitude"],
+      properties: {
+        latitude: { type: "number", minimum: -90, maximum: 90 },
+        longitude: { type: "number", minimum: -180, maximum: 180 },
+      },
+    };
+    expect(schema.properties["door"]).toEqual(point);
+    expect(schema.properties["route"]).toEqual({ type: "array", items: point, minItems: 2 });
+    expect(JSON.stringify(schema.properties["area"])).toContain('"minItems":3');
+  });
+
   it("references a package's shipped schema instead of describing it again (STA-1290)", () => {
     const site: ShapeIR = {
       name: "Site",

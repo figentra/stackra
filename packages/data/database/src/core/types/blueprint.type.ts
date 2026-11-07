@@ -67,6 +67,18 @@ export interface Blueprint {
   /** A `tsvector`, a full-text document for a GIN index; @stackra/search's `t.searchable(...)` macro writes them. */
   tsvector: (name: string) => ColumnDefinition;
 
+  /**
+   * A `GeoPoint` field: `geography(Point,4326)` (WGS 84) with the GiST index `idx_<table>_<column>`, built online on an
+   * existing table (ADR 0314). The database needs `Extension.Postgis`.
+   */
+  point: (name: string) => ColumnDefinition;
+
+  /** A `GeoPolygon` field: `geography(Polygon,4326)` with its GiST index, as `point` (ADR 0314). */
+  polygon: (name: string) => ColumnDefinition;
+
+  /** A `GeoLine` field: `geography(LineString,4326)` with its GiST index, as `point` (ADR 0314). */
+  line: (name: string) => ColumnDefinition;
+
   /** `text` limited to `values` by the check constraint `ck_<table>_<column>`. */
   enum: (name: string, values: readonly string[]) => ColumnDefinition;
 

@@ -120,6 +120,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "catalog:",
     "@electric-sql/pglite-pgvector": "catalog:",
+    "@electric-sql/pglite-postgis": "catalog:",
     "@faker-js/faker": "catalog:",
     "@mikro-orm/pglite": "catalog:",
     "@stackra/events": "workspace:*",
@@ -140,6 +141,7 @@
   "peerDependencies": {
     "@electric-sql/pglite": "catalog:",
     "@electric-sql/pglite-pgvector": "catalog:",
+    "@electric-sql/pglite-postgis": "catalog:",
     "@faker-js/faker": "catalog:",
     "@mikro-orm/pglite": "catalog:",
     "@stackra/events": "workspace:*",
@@ -152,6 +154,9 @@
       "optional": true
     },
     "@electric-sql/pglite-pgvector": {
+      "optional": true
+    },
+    "@electric-sql/pglite-postgis": {
       "optional": true
     },
     "@faker-js/faker": {

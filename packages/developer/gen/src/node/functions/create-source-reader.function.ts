@@ -1367,6 +1367,9 @@ export function createSourceReader(
       }
       if (name === "Money") return { kind: "money" };
       if (name === "Json") return { kind: "json" };
+      if (name === "GeoPoint") return { kind: "geo", shape: "point" };
+      if (name === "GeoPolygon") return { kind: "geo", shape: "polygon" };
+      if (name === "GeoLine") return { kind: "geo", shape: "line" };
       if (name === "Duration") return { kind: "duration" };
       if (name === "Url") return { kind: "brand", brand: "url" };
       if (name === "Email") return { kind: "brand", brand: "email" };
