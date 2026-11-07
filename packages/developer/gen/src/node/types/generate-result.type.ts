@@ -15,9 +15,6 @@ export interface GenerateResult {
   /** The refusals; when there is one, nothing was written but the client files and manifest listed in `changed`. */
   readonly errors: readonly GenError[];
 
-  /** The full pass's warnings (`severity: "warning"`), which never block writing; absent when none was reported. */
-  readonly warnings?: readonly GenError[];
-
   /** Every file the run produced. */
   readonly files: readonly GeneratedFile[];
 
