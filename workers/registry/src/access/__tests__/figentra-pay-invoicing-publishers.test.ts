@@ -76,9 +76,11 @@ describe("migration 0008: figentra/pay and figentra/invoicing publish @figentra"
       "figentra/billing",
       "figentra/brand",
       "figentra/commerce",
+      "figentra/figentra",
       "figentra/invoicing",
       "figentra/os",
       "figentra/pay",
+      "figentra/testbed",
     ]);
   });
 });

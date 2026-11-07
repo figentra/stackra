@@ -114,14 +114,19 @@
           "type": "object",
           "description": "AWS accounts, Pulumi state, ECR and cost controls.",
           "properties": {
+            "account": {
+              "type": "boolean",
+              "default": false,
+              "description": "Opt-in (ADR 0524): figentra/infra vends the product's one AWS account only when true, in the regions of its me and eu environments."
+            },
             "region": {
               "type": "string",
-              "description": "The one region (ADR 0186). A tenant's region is immutable (ADR 0210 d4).",
+              "description": "Deprecated: use `environments.<env>.region` (ADR 0524); `runway validate` warns for one release. The one region (ADR 0186).",
               "examples": ["me-central-1"]
             },
             "accounts": {
               "type": "object",
-              "description": "Account role → account id or `ref:` (shared, nonprod, prod).",
+              "description": "Deprecated: the three accounts (shared, nonprod, prod) no longer match ADR 0524; a product has one AWS account holding all its regions, which figentra/infra resolves as `ref:aws.account`. `runway validate` warns for one release. Account role → account id or `ref:`.",
               "additionalProperties": {
                 "$ref": "#/$defs/value"
               }
@@ -136,7 +141,25 @@
             },
             "budgets": {
               "type": "object",
-              "description": "Cost alerts: percentage thresholds and the point non-production stops."
+              "description": "Cost alerts: the monthly cap, percentage thresholds and the point non-production stops.",
+              "properties": {
+                "monthlyUsd": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/$defs/value"
+                      }
+                    }
+                  ],
+                  "default": 300,
+                  "description": "The monthly budget in US dollars figentra/infra sets on the product's one account; the thresholds are percentages of it. Deprecated: a record per account role (`nonprod`, `prod`, each a number or `ref:`), the three-account layout; `runway validate` warns for one release."
+                }
+              }
             },
             "requiredTags": {
               "type": "array",
@@ -166,6 +189,21 @@
                 ]
               }
             },
+            "project": {
+              "type": "boolean",
+              "default": false,
+              "description": "Opt-in (ADR 0524): figentra/infra vends the product's one GCP project only when true. An environment in `ksa` needs it."
+            },
+            "apis": {
+              "type": "array",
+              "description": "The Google services figentra/infra enables in the product's project.",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+\\.googleapis\\.com$"
+              },
+              "examples": [["aiplatform.googleapis.com"]]
+            },
             "state": {
               "type": "object",
               "description": "Not read yet (Runway plan PR 16, STA-2001). Pulumi state for the GCP stacks."
@@ -184,7 +222,7 @@
         },
         "cloudflare": {
           "type": "object",
-          "description": "Cloudflare account and DNS zones (ADR 0175).",
+          "description": "Cloudflare account, DNS zones (ADR 0175) and the non-Worker DNS records figentra/infra writes.",
           "properties": {
             "accountId": {
               "$ref": "#/$defs/value",
@@ -192,9 +230,71 @@
             },
             "zones": {
               "type": "object",
-              "description": "Zone name → zone id or `ref:`. Member runways name hosts under these zones.",
+              "description": "Zone name → zone id or `ref:`, or an object with the id and, for the one root runway that owns the zone, its plan and policy (ADR 0519). Member runways name hosts under these zones.",
               "additionalProperties": {
-                "$ref": "#/$defs/value"
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/value"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["id"],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/$defs/value",
+                        "description": "Zone id or `ref:`."
+                      },
+                      "owner": {
+                        "type": "boolean",
+                        "description": "True in exactly one root runway per zone; every other repository only reads the id. An owner states its plan."
+                      },
+                      "plan": {
+                        "enum": ["free", "pro"],
+                        "description": "The Cloudflare plan, which decides what the policy may ask for."
+                      },
+                      "policy": {
+                        "enum": ["baseline", "strict"],
+                        "description": "Zone preset, set by the owner only: baseline (SSL strict, TLS 1.3, HSTS, DNSSEC, CAA), or strict (plus bot protection, needs plan: pro)."
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "records": {
+              "type": "array",
+              "description": "Non-Worker DNS records (verification TXT, MX, CAA). Worker hosts stay in wrangler and Runway (ADR 0519). Each `name` is a full host name under a `zones` entry.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "type", "content"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^(?:[a-z0-9_*-]+\\.)+[a-z]{2,}$",
+                    "description": "The full host name, lower case (`_dmarc.pay.figentra.com`)."
+                  },
+                  "type": {
+                    "enum": ["A", "AAAA", "CNAME", "TXT", "MX", "CAA", "NS", "SRV"],
+                    "description": "The record type."
+                  },
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The record's value, as Cloudflare stores it."
+                  },
+                  "proxied": {
+                    "type": "boolean",
+                    "description": "Through Cloudflare's proxy; only A, AAAA and CNAME."
+                  },
+                  "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "Required for MX."
+                  }
+                }
               }
             }
           }
@@ -413,6 +513,93 @@
             "compatibilityDate": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "defaults": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cache": {
+                  "type": "boolean"
+                },
+                "compatibilityDate": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "compatibilityFlags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "customDomains": {
+                  "type": "array",
+                  "minItems": 1,
+                  "description": "Hosts served as Workers Custom Domains, rendered as wrangler `routes` with `custom_domain: true` (ADR 0519).",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$"
+                  }
+                },
+                "keepVars": {
+                  "type": "boolean"
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cpuMs"],
+                  "properties": {
+                    "cpuMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                },
+                "observability": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "headSamplingRate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "invocationLogs": {
+                      "type": "boolean"
+                    },
+                    "issues": {
+                      "type": "boolean"
+                    },
+                    "logs": {
+                      "type": "boolean"
+                    },
+                    "redactQueryString": {
+                      "type": "boolean"
+                    },
+                    "traces": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "previewUrls": {
+                  "type": "boolean"
+                },
+                "rollout": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  }
+                },
+                "uploadSourceMaps": {
+                  "type": "boolean"
+                },
+                "workersDev": {
+                  "type": "boolean"
+                }
+              }
             },
             "observability": {
               "type": "object",
@@ -1194,12 +1381,118 @@
             },
             "required": ["name", "url"]
           }
+        },
+        "alerts": {
+          "type": "object",
+          "description": "The alarms figentra/infra sets in the product's account (the design of 2026-11-06). Every key is optional and takes infra-observability's default; `enabled: false` turns one off.",
+          "additionalProperties": false,
+          "properties": {
+            "environments": {
+              "type": "array",
+              "minItems": 1,
+              "description": "The environments alarmed; staging and production by default.",
+              "items": {
+                "enum": ["dev", "preview", "staging", "production"]
+              }
+            },
+            "errorRate": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when 5xx responses exceed `threshold` % (default 2, 5m, critical)."
+            },
+            "latencyP95": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when p95 latency exceeds `threshold` ms (default 1000, 10m, warning)."
+            },
+            "dbCpu": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when database CPU exceeds `threshold` % (default 80, 15m, warning)."
+            },
+            "dbConnections": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when database connections exceed `threshold` % of the maximum (default 80, 10m, warning)."
+            },
+            "dbFreeStorage": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when free database storage falls below `threshold` % (default 20, 15m, critical)."
+            },
+            "cacheMemory": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when cache memory exceeds `threshold` % (default 80, 15m, warning)."
+            },
+            "cacheEvictions": {
+              "$ref": "#/$defs/alert",
+              "description": "Fires when cache evictions exceed `threshold` per minute (default 0, 15m, warning)."
+            },
+            "budget": {
+              "type": "object",
+              "description": "Budget notifications at these percentages of `providers.aws.budgets.monthlyUsd` (default 80 forecast, 100 actual).",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "forecastPercent": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "actualPercent": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        },
+        "notify": {
+          "type": "object",
+          "description": "Where each severity goes. A route is `oncall` (Better Stack), `email:<address>`, `slack:<channel id>` (AWS Chatbot needs the id) or `linear:<team key>`. Critical pages on-call by default.",
+          "additionalProperties": false,
+          "properties": {
+            "critical": {
+              "$ref": "#/$defs/routes"
+            },
+            "warning": {
+              "$ref": "#/$defs/routes"
+            },
+            "info": {
+              "$ref": "#/$defs/routes"
+            }
+          }
         }
       },
       "description": "Observability (ADR 0184). Closed: a misspelt key fails. infra-observability reads it with its own defaults."
     }
   },
   "$defs": {
+    "alert": {
+      "type": "object",
+      "description": "One metric alert; its direction against the threshold is fixed per alert.",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0
+        },
+        "window": {
+          "type": "string",
+          "pattern": "^[0-9]+m$",
+          "examples": ["5m"]
+        },
+        "severity": {
+          "enum": ["critical", "warning", "info"]
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:oncall|email:[^\\s@]+@[^\\s@]+\\.[^\\s@]+|slack:[A-Z0-9]{9,12}|linear:[A-Z][A-Z0-9]{1,9})$"
+      }
+    },
     "region": {
       "type": "object",
       "description": "One data region: the cloud and cloud region that serve it (ADR 0354 d4, ADR 0353).",
@@ -1542,6 +1835,10 @@
             }
           }
         },
+        "tier": {
+          "enum": ["staging", "launch", "growth"],
+          "description": "The size the environment runs at, from the finance tiers (the cost plan of 2026-11-06): its compute, database, cache and NAT defaults (`TIER_SIZES`). Production defaults to `launch`, every other environment to `staging`; the `shared` keys below override it."
+        },
         "shared": {
           "type": "object",
           "description": "Resources shared by every member: ONE database server per environment (ADR 0238 d1), the cache cluster, the queue provider, networking and bucket defaults.",
@@ -1549,15 +1846,56 @@
           "properties": {
             "network": {
               "type": "object",
-              "description": "VPC and load balancer."
+              "description": "VPC and load balancer.",
+              "properties": {
+                "natGateways": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "NAT gateways for outbound internet; the tier's count when absent."
+                }
+              }
             },
             "database": {
               "type": "object",
-              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling."
+              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling. The typed keys override the tier; Encore Cloud applies them from its dashboard, and `runway plan` reports drift.",
+              "properties": {
+                "class": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "An RDS instance class (db.t4g.medium), or a Cloud SQL tier on ksa.",
+                  "examples": ["db.t4g.medium"]
+                },
+                "multiAz": {
+                  "type": "boolean",
+                  "description": "Whether a standby runs in a second zone."
+                },
+                "storageGb": {
+                  "type": "integer",
+                  "minimum": 20,
+                  "description": "Allocated storage in GB (RDS starts at 20)."
+                }
+              }
             },
             "cache": {
               "type": "object",
-              "description": "The cache cluster: engine, node type and replicas."
+              "description": "The cache cluster: engine, node type and replicas. The typed keys override the tier. In `me`, `runway validate` refuses a t4g or m6g node class, which me-central-1 does not offer.",
+              "properties": {
+                "mode": {
+                  "enum": ["serverless", "nodes"],
+                  "description": "Valkey serverless, or fixed nodes of one class."
+                },
+                "class": {
+                  "type": "string",
+                  "pattern": "^cache\\.[a-z0-9]+\\.[a-z0-9]+$",
+                  "description": "The node class with `mode: nodes`.",
+                  "examples": ["cache.m7g.large"]
+                },
+                "nodes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "The node count with `mode: nodes`."
+                }
+              }
             },
             "queues": {
               "type": "object",
@@ -1609,6 +1947,10 @@
         },
         "topology": {
           "$ref": "#/$defs/topology"
+        },
+        "region": {
+          "enum": ["me", "eu", "ksa"],
+          "description": "The tenant region this environment lives in (OS 0001): `me` (AWS me-central-1), `eu` (AWS eu-central-1) or `ksa` (GCP me-central2). Required on staging and production of a product runway (`runway validate`). figentra/infra places the environment in that region of the product's one account (`ref:aws.account`, ADR 0524). Distinct from `regions`, the deploy order across the root `regions` entries."
         },
         "regions": {
           "type": "array",
@@ -1680,7 +2022,8 @@
           }
         },
         "cloud": {
-          "$ref": "#/$defs/cloud"
+          "$ref": "#/$defs/cloud",
+          "description": "Deprecated (ADR 0524): an environment's `region` fixes its cloud, and the product's one account or project is `providers.aws.account` or `providers.gcp.project`; `runway validate` warns for one release."
         },
         "dedicated": {
           "type": "object",
@@ -2026,6 +2369,9 @@
             },
             "owner": {
               "type": "string"
+            },
+            "slug": {
+              "type": "string"
             }
           }
         },
@@ -2111,6 +2457,16 @@
           "type": "string",
           "pattern": "^/"
         },
+        "command": {
+          "type": "array",
+          "description": "The container's arguments, replacing the image's default command.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"]]
+        },
         "expose": {
           "enum": ["internal", "public"],
           "description": "public puts an ALB behind Cloudflare in front; internal is service discovery only."
@@ -2139,6 +2495,22 @@
             "$ref": "#/$defs/secretName"
           },
           "uniqueItems": true
+        },
+        "aliases": {
+          "type": "object",
+          "description": "The name the image reads, mapped to a variable of a resource it uses (ADR 0493 d4).",
+          "propertyNames": {
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "examples": [
+            {
+              "ZITADEL_DATABASE_POSTGRES_DSN": "MAIN_DB_URL"
+            }
+          ]
         },
         "size": {
           "type": "object",

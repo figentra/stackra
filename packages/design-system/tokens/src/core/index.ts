@@ -10,6 +10,7 @@ export { TokensConfig } from "#config/tokens.config";
 export { CHART_RAMP } from "#core/constants/chart-ramp.constant";
 export { FONT_FAMILY_VARIABLES } from "#core/constants/font-family-variables.constant";
 export { MATERIAL_MODES } from "#core/constants/material-modes.constant";
+export { FAMILY_BLUEPRINT } from "#core/constants/family-blueprint.constant";
 export { MATERIAL_FAMILY_ROLES } from "#core/constants/material-family-roles.constant";
 export { GLASS_CLEAR_DIM_FLOORS } from "#core/constants/glass-clear-dim-floors.constant";
 export { materialRoleLevel } from "#core/functions/material-role-level.function";

@@ -26,6 +26,13 @@ import { VerifyPasskeyInput } from "#node/schemas/verify-passkey-input.schema";
 
 const CREDENTIAL = { id: "c_1", rawId: "c_1", type: "public-key", response: {} } as const;
 
+/** Each key with its value's type, nested, so two answers compare by shape only. */
+function shape(value: unknown): unknown {
+  return typeof value === "object" && value !== null
+    ? Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, shape(inner)]))
+    : typeof value;
+}
+
 /** A provider holding the fake context's actor as `rana`. */
 async function setup() {
   const idp = new MemoryIdpAdminDriver();
@@ -67,6 +74,21 @@ describe("passkey actions", () => {
     );
     expect(verified.sessionId).toBe(challenge.sessionId);
     expect(verified.sessionToken).not.toBe("");
+  });
+
+  it("answers an unknown login the same shape as a known one, and never verifies it", async () => {
+    const { idp } = await setup();
+    const challenge = new ChallengePasskeyAction(idp);
+    const known = await challenge.handle(ChallengePasskeyInput.create({ loginName: "rana" }));
+    const unknown = await challenge.handle(ChallengePasskeyInput.create({ loginName: "nobody" }));
+    expect(shape(unknown)).toEqual(shape(known));
+    expect(unknown.sessionId.length).toBe(known.sessionId.length);
+    expect(unknown.options.challenge.length).toBe(known.options.challenge.length);
+    await expect(
+      new VerifyPasskeyAction(idp).handle(
+        VerifyPasskeyInput.create({ sessionId: unknown.sessionId, credential: CREDENTIAL }),
+      ),
+    ).rejects.toBeInstanceOf(UnauthenticatedError);
   });
 
   it("registers and confirms a passkey on the caller's own provider user", async () => {

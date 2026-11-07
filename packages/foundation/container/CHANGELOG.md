@@ -1,5 +1,120 @@
 # @stackra/container
 
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/contracts@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/contracts@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/contracts@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/contracts@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/contracts@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/contracts@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/contracts@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/contracts@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- 896c8a3: The kind registry and the permission registry live on `globalThis` under `Symbol.for` keys, so two installed copies of
+  `@stackra/container` (a React peer variant, or a second version) share them. A member that pins React for React Native
+  got a second container copy beside `@stackra/console`'s, and `stackra gen` crashed with "`@str` may mark … AddCommand
+  is of no kind".
+- @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/contracts@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/contracts@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/contracts@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/contracts@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/contracts@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/contracts@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- f9c825d: gen binds Menu, Shortcut, Store, Bridge (request-scoped) and ExtensionPoint classes; a config override keeps its base's key. The container's binding kinds gain `shortcut` and `extension_point`.
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

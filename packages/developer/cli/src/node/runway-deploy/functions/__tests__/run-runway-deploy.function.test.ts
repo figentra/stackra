@@ -2,15 +2,18 @@
  * Stackra file contract:
  * Purpose: unit tests of `stackra deploy` without `--product`: it refuses a missing environment or an unknown kind,
  *          prints each target's plan on a dry run (with the Worker members `--member` names), and hands Runway's
- *          `deploy()` the commit, every provider and the kind filter, then reports each record.
- * Boundary: test only; Runway's `readRunway` and `deploy` are mocked, nothing is deployed.
+ *          `deploy()` the commit, every provider and the kind filter, then reports each record; named Worker members
+ *          skip the product publish. With `secrets.sync: on-deploy` it syncs the secrets first when services ship
+ *          (from the job's environment with `--from-env`), and stops if the sync fails.
+ * Boundary: test only; Runway's `readRunway`, `readRunways`, `syncSecrets` and `deploy` are mocked, nothing is
+ *           deployed.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); STA-1921.
+ * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); STA-1921; STA-606.
  */
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { deploy } from "@stackra/runway";
 import type { RootRunway } from "@stackra/runway";
-import { readRunway } from "@stackra/runway/node";
+import { proveGithubJob, readRunway, readRunways, syncSecrets } from "@stackra/runway/node";
 import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -28,6 +31,9 @@ vi.mock("@stackra/runway", async (original) => ({
 vi.mock("@stackra/runway/node", async (original) => ({
   ...(await original<Record<string, unknown>>()),
   readRunway: vi.fn(),
+  readRunways: vi.fn(),
+  syncSecrets: vi.fn(),
+  proveGithubJob: vi.fn(),
 }));
 
 vi.mock("#node/doctor/functions/probe-hosts.function", () => ({ probeHosts: vi.fn() }));
@@ -67,6 +73,14 @@ beforeEach(() => {
   vi.mocked(probeHosts).mockReset().mockResolvedValue([]);
   vi.mocked(runDeployProduct).mockReset().mockResolvedValue(0);
   vi.mocked(readRunway).mockReset().mockReturnValue(ROOT);
+  vi.mocked(readRunways)
+    .mockReset()
+    .mockReturnValue({ root: ROOT, members: [] } as never);
+  vi.mocked(syncSecrets).mockReset().mockResolvedValue();
+  // As on a workstation: no OIDC token proves an approval.
+  vi.mocked(proveGithubJob)
+    .mockReset()
+    .mockRejectedValue(new Error("no GitHub OIDC token can be requested here"));
   vi.mocked(deploy)
     .mockReset()
     .mockResolvedValue([
@@ -98,7 +112,8 @@ describe("runRunwayDeploy", () => {
       [
         "production/web → cloudflare-workers",
         "  .$ pnpm turbo run build --filter=./workers/static",
-        `  workers/static$ pnpm exec wrangler deploy --message ${SHA}`,
+        `  workers/static$ pnpm exec wrangler versions upload --message ${SHA}`,
+        `  workers/static$ pnpm exec wrangler versions deploy $VERSION@100 --message ${SHA} --yes`,
         "",
       ].join("\n"),
     );
@@ -130,7 +145,7 @@ describe("runRunwayDeploy", () => {
     ]);
   });
 
-  it("refuses an environment whose runway declares an approval unless --approved is passed", async () => {
+  it("refuses an environment whose runway declares an approval unless the job's OIDC token proves it", async () => {
     const gated = {
       ...ROOT,
       environments: {
@@ -144,8 +159,16 @@ describe("runRunwayDeploy", () => {
     await expect(run({ env: "production", sha: SHA }).code).rejects.toThrow(
       "production deploys only after its approval (github-environment)",
     );
+    // `--approved` alone proves nothing.
+    await expect(run({ env: "production", sha: SHA, approved: true }).code).rejects.toThrow(
+      "no GitHub OIDC token can be requested here",
+    );
     expect(deploy).not.toHaveBeenCalled();
-    expect(await run({ env: "production", sha: SHA, approved: true }).code).toBe(0);
+    vi.mocked(proveGithubJob).mockResolvedValueOnce({ repository: "figentra/stackra" });
+    expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+    expect(vi.mocked(proveGithubJob).mock.calls.at(-1)?.[0]).toMatchObject({
+      environment: "production",
+    });
     expect(deploy).toHaveBeenCalledTimes(1);
   });
 
@@ -186,6 +209,20 @@ describe("runRunwayDeploy", () => {
     });
   });
 
+  it("ships named Worker members through deploy() without the product publish or its facts, in a product repository", async () => {
+    // Core's root runway has surfaces; its Worker deploys (registry, static, …) still need no product facts.
+    vi.mocked(readRunway).mockReturnValue({
+      ...ROOT,
+      surfaces: { console: { shell: "os/console@3", host: "console.acme" } },
+    } as unknown as RootRunway);
+    expect(await run({ env: "production", kind: "web", member: "registry", sha: SHA }).code).toBe(
+      0,
+    );
+    expect(runDeployProduct).not.toHaveBeenCalled();
+    expect(probeHosts).not.toHaveBeenCalled();
+    expect(vi.mocked(deploy).mock.calls[0]?.[4]).toEqual(["web"]);
+  });
+
   it("stops before deploy() when the product publish fails", async () => {
     vi.mocked(readRunway).mockReturnValue({
       ...ROOT,
@@ -224,5 +261,53 @@ describe("runRunwayDeploy", () => {
     vi.mocked(readRunway).mockReturnValue(gated);
     expect(await run({ env: "production", sha: SHA, "dry-run": true }).code).toBe(0);
     expect(deploy).not.toHaveBeenCalled();
+  });
+
+  describe("with secrets.sync: on-deploy", () => {
+    beforeEach(() => {
+      vi.mocked(readRunway).mockReturnValue({
+        ...ROOT,
+        secrets: { sync: "on-deploy" },
+      } as RootRunway);
+    });
+
+    it("syncs the secrets before deploy() when services ship", async () => {
+      expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({
+        environment: "production",
+        repository: ".",
+        dryRun: false,
+      });
+      expect(vi.mocked(syncSecrets).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(deploy).mock.invocationCallOrder[0] ?? 0,
+      );
+    });
+
+    it("prints the sync's names on a dry run, and skips it when no services ship", async () => {
+      expect(await run({ env: "production", sha: SHA, "dry-run": true }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({ dryRun: true });
+      vi.mocked(syncSecrets).mockClear();
+      expect(await run({ env: "production", kind: "web", sha: SHA }).code).toBe(0);
+      expect(syncSecrets).not.toHaveBeenCalled();
+    });
+
+    it("reads the values from the job's environment with --from-env, else from Infisical", async () => {
+      expect(await run({ env: "production", sha: SHA, "from-env": true }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({ fromEnv: true });
+      vi.mocked(syncSecrets).mockClear();
+      expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).not.toHaveProperty("fromEnv");
+    });
+
+    it("ships nothing when the sync fails", async () => {
+      vi.mocked(syncSecrets).mockRejectedValue(new Error("STRIPE_SECRET_KEY is missing"));
+      await expect(run({ env: "production", sha: SHA }).code).rejects.toThrow("STRIPE_SECRET_KEY");
+      expect(deploy).not.toHaveBeenCalled();
+    });
+  });
+
+  it("syncs no secrets when the runway does not ask for it", async () => {
+    expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+    expect(syncSecrets).not.toHaveBeenCalled();
   });
 });

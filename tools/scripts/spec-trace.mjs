@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: `node tools/scripts/spec-trace.mjs …`, kept for the docs that name it: the trace is `figentra-flow trace`;
+ * Purpose: `node tools/scripts/spec-trace.mjs …`, kept for the docs that name it: the trace is `fflow trace`;
  *   this re-exports it and runs it when called directly.
  * Boundary: no logic of its own; Figentra Flow (@figentra-oss/flow) holds it and its tests.
  * Runtime: node

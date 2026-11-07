@@ -3,7 +3,8 @@
  * Purpose: unit tests of `emitSearchQueries`: one `Search<Model>Query extends SearchQuery(<Model>)` per own
  *          `@Searchable` model, nothing for a member without `@stackra/search` or without a searchable model, and a
  *          hand-written `Search<Model>Query` takes the generated one's place; `searchQueriesOf` declares each generated
- *          query with the key, actors and constructor tokens of `SearchQuery` (STA-1459).
+ *          query with the key, actors and constructor tokens of `SearchQuery` (STA-1459); a service derives its hosted
+ *          packages' searchable models too, since a package never publishes its generated query.
  * Boundary: test only; pure IR in, file text out.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0221 (decision 6).
@@ -60,6 +61,38 @@ describe("emitSearchQueries", () => {
       ],
     };
     expect(emitSearchQueries(authored)).toBeUndefined();
+  });
+
+  it("derives the search query of a hosted package's searchable model, which the package does not publish", () => {
+    const hosting: MemberIR = {
+      ...SEARCHING,
+      dependencies: [
+        ...SEARCHING.dependencies,
+        {
+          package: "@acme/loyalty-kit",
+          manifest: {
+            member: "loyalty-kit",
+            package: "@acme/loyalty-kit",
+            models: [
+              {
+                key: "loyalty_kit.loyalty_account",
+                class: "LoyaltyAccount",
+                file: "src/node/models/loyalty-account.model.ts",
+                searchable: true,
+              },
+              { key: "loyalty_kit.tier", class: "Tier", file: "src/node/models/tier.model.ts" },
+            ],
+          },
+        },
+      ],
+    } as MemberIR;
+    const text = emitSearchQueries(hosting) ?? "";
+    expect(text).toContain('import { LoyaltyAccount } from "@acme/loyalty-kit/node";');
+    expect(text).toContain(
+      "export class SearchLoyaltyAccountQuery extends SearchQuery(LoyaltyAccount) {}",
+    );
+    expect(text).toContain("export class SearchInvoiceQuery extends SearchQuery(Invoice) {}");
+    expect(text).not.toContain("SearchTierQuery");
   });
 });
 

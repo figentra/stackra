@@ -3,11 +3,12 @@
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
  *          (the bound legal-hold registry and sequence time zone, the database at the url the Encore database provides with the
  *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts and pool with `DATABASE_POOL_MAX` over its max (ADR 0473), and the hold, stamp, append-only (stackra-256) and outbox writer
- *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
+ *          subscribers (stackra-250) and the writer as the native-write watcher (STA-2047), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
  *          (stackra-262); the live queries' refresh subscribed on the bus with realtime declared (STA-1445); each
- *          step only when its package is used; no file for a package, an app or a service with nothing to connect.
+ *          step only when its package is used; the record policies first when the manifest lists one (STA-2045); no
+ *          file for a package, an app or a service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4); ADR 0238; ADR 0473.
@@ -18,6 +19,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { emitBoot } from "#core/functions/emit-boot.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { INBOX_IR, PLAIN_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
@@ -29,7 +31,7 @@ describe("emitBoot", () => {
       'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     expect(boot).toContain(
-      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectNativeWriteWatcher, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
     // The service program never reaches `.stackra/encore` (STA-1652).
     expect(boot).not.toContain("../encore/");
@@ -66,6 +68,8 @@ describe("emitBoot", () => {
         "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
         "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), container.get(OutboxWriterService)],",
         "  });",
+        // Native CrudService writes reach the change log through the writer (STA-2047).
+        "  connectNativeWriteWatcher(container.get(OutboxWriterService));",
         "  container.get(SegmentService).connect(container);",
         "  const bus = container.get(EventBus);",
         "  bus.connect(container);",
@@ -93,6 +97,7 @@ describe("emitBoot", () => {
       "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()],",
     );
     expect(boot).not.toContain("Outbox");
+    expect(boot).not.toContain("connectNativeWriteWatcher");
     expect(boot).not.toContain("SegmentService");
     expect(boot).not.toContain("EventBus");
   });
@@ -181,6 +186,20 @@ describe("emitBoot", () => {
     expect(emitBoot({ ...COMMERCE_IR, classes: [] })).toBeUndefined();
   });
 
+  it("connects the record policies first when the manifest lists one, and only then (STA-2045)", () => {
+    const manifest = {
+      policies: [{ class: "OrderPolicy", model: "Order", module: "orders", file: "x.ts" }],
+    } as unknown as StackraManifest;
+    const boot = emitBoot(COMMERCE_IR, manifest) ?? "";
+    expect(boot).toContain('import { connectPolicies } from "@stackra/iam";');
+    expect(boot).toContain("  if (options.signal.aborted) return;\n  connectPolicies(container);");
+    expect(emitBoot(COMMERCE_IR)).not.toContain("connectPolicies");
+    // A service with nothing else to connect still connects its policies.
+    expect(emitBoot({ ...COMMERCE_IR, classes: [] }, manifest)).toContain(
+      "connectPolicies(container);",
+    );
+  });
+
   it("subscribes each live query's refresh routes on the bus when the service runs realtime (STA-1445)", () => {
     const manifest = {
       actions: [
@@ -226,5 +245,34 @@ describe("emitBoot", () => {
     );
     // Without realtime the queries refresh nothing.
     expect(emitBoot(BILLING_IR, manifest)).not.toContain("LIVE_QUERIES");
+  });
+});
+
+describe("emitBoot and the cross-app relay (STA-1910)", () => {
+  it("starts the cross-app relay beside the outbox relay of a producer", () => {
+    const boot = emitBoot(PRODUCER_IR) ?? "";
+    expect(boot).toContain(
+      'import { CrossAppRelayService, InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";',
+    );
+    expect(boot).toContain(
+      [
+        "  if (options.relay !== false) {",
+        "    const relay = container.get(OutboxRelayService);",
+        "    relay.connect(container);",
+        "    void relay.work({ signal: options.signal });",
+        "    const crossApp = container.get(CrossAppRelayService);",
+        "    crossApp.connect(container);",
+        "    void crossApp.work({ signal: options.signal });",
+        "  }",
+      ].join("\n"),
+    );
+  });
+
+  it("connects the cross-app inbox of a consumer, and nothing for a service without either", () => {
+    const boot = emitBoot(INBOX_IR) ?? "";
+    expect(boot).toContain("  container.get(RelayInboxService).connect(container);");
+    expect(boot).not.toContain("CrossAppRelayService");
+    const plain = emitBoot(PLAIN_IR) ?? "";
+    expect(plain).not.toMatch(/CrossAppRelayService|RelayInboxService/);
   });
 });

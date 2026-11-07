@@ -6,7 +6,7 @@
  *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a
  *          config's schema, merged package sections marked `from`, and the checks `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
- *          `prefix_duplicate`; `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
+ *          `prefix_duplicate`; `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound` (STA-2063),
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
  *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308); the `agents`,
@@ -25,6 +25,7 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import {
   CONNECTOR_PACKAGES,
   connectorPackage,
@@ -843,6 +844,27 @@ describe("buildManifest", () => {
       expect(codesOf(withClasses(unknown))).toContain("effect_unknown CancelOrderAction");
     });
 
+    it("refuses a route whose path parameter is no field of the input (endpoint_param_unbound, STA-2063)", () => {
+      // CancelOrderInput declares orderId, so PUT /orders/:orderId/cancel binds.
+      expect(codesOf(withClasses(cancel))).not.toContain(
+        "endpoint_param_unbound CancelOrderAction",
+      );
+      const renamed = {
+        ...cancel,
+        options: { ...cancel.options, endpoint: { method: "PUT", path: "/orders/:id/cancel" } },
+      };
+      expect(codesOf(withClasses(renamed))).toContain("endpoint_param_unbound CancelOrderAction");
+      const get = {
+        ...declared("ListOrdersQuery"),
+        name: "GetOrderQuery",
+        options: { key: "order.get" },
+      };
+      // GET /orders/:orderId with ListOrdersInput, then with no input at all.
+      expect(codesOf(withClasses(cancel, get))).toContain("endpoint_param_unbound GetOrderQuery");
+      const bare = { ...get, handle: { output: "ListOrdersOutput" } };
+      expect(codesOf(withClasses(cancel, bare))).toContain("endpoint_param_unbound GetOrderQuery");
+    });
+
     it("records an Integration's roles and listing, and refuses an unknown role", () => {
       const stripe = BILLING_IR.classes.find((item) => item.name === "StripeIntegration");
       if (stripe === undefined) throw new Error("no StripeIntegration fixture");
@@ -1002,5 +1024,24 @@ describe("buildManifest's package config section (STA-1308)", () => {
 
   it("writes no config section for a service", () => {
     expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("config");
+  });
+});
+
+describe("buildManifest's relay section (STA-1910)", () => {
+  it("lists the keys and subscribers of each runway environment, without origins", () => {
+    expect(buildManifest(PRODUCER_IR).manifest.relay).toEqual({
+      keys: {
+        dev: [{ id: "pay-dev-1", publicKey: "cGF5LWRldi1wdWJsaWM" }],
+        prod: [{ id: "pay-prod-1", publicKey: "cGF5LXByb2QtcHVibGlj" }],
+      },
+      subscribers: {
+        dev: [{ member: "billing", events: ["payments.payment.captured.v1"] }],
+        prod: [],
+      },
+    });
+  });
+
+  it("is absent when no environment has an events block", () => {
+    expect("relay" in buildManifest(INBOX_IR).manifest).toBe(false);
   });
 });

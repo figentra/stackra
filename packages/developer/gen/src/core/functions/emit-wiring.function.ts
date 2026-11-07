@@ -17,7 +17,11 @@
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
  *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds,
- *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504). A host's
+ *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504), and the
+ *          cross-app relay (STA-1910): a consumer of a contract-only producer's events gets the inbox route
+ *          (`InboundEventsController` over `RelayInboxService`) and its `outbox.relay_inbox` override from
+ *          `#stackra/inbox`; a producer with a runway `events` block gets `CrossAppFanOut`, `CrossAppRelayService`,
+ *          the `outbox.events_relay` override from `#stackra/events-relay` and the Postgres `DeliveryDriver`. A host's
  *          follow-the-system ports (`systemDriverDefaults`) are listed with their config rows and default to the
  *          driver of its runtime (STA-1535, STA-1536); a web-and-native app also gets `nativeWiring`, whose defaults are
  *          the native drivers, for its native entry.
@@ -53,8 +57,10 @@ import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
+import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { systemDriverDefaults } from "#core/functions/system-driver-defaults.function";
+import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -68,6 +74,9 @@ const LIFETIMES: Readonly<Record<string, string>> = {
   singleton: "Lifetime.Singleton",
   transient: "Lifetime.Transient",
 };
+
+/** The printed lifetime a kind takes when the class carries no `@Lifetime`: a bridge serves one request (ADR 0251). */
+const KIND_LIFETIMES: Readonly<Record<string, string>> = { bridge: "Lifetime.Request" };
 
 /** The one dependency gen gives an Integration that declares no constructor (ADR 0308). */
 const INTEGRATION_RUNTIME: TokenRef = {
@@ -83,6 +92,40 @@ function depsOf(declared: DeclaredClass): readonly TokenRef[] {
   if (declared.kind === "integration") return [INTEGRATION_RUNTIME];
   if (declared.kind === "agent") return [AGENT_RUNTIME];
   return declared.deps;
+}
+
+/** The cross-app inbox service a consumer's inbox route takes (ADR 0511 decision 18, STA-1910). */
+const RELAY_INBOX: ClassRef = { name: "RelayInboxService", from: "@stackra/outbox/node" };
+
+/** The producer services that fan events out to other apps and deliver them (ADR 0511 decision 12, STA-1910). */
+const CROSS_APP_PRODUCER: readonly ClassRef[] = [
+  { name: "CrossAppFanOut", from: "@stackra/outbox/node" },
+  { name: "CrossAppRelayService", from: "@stackra/outbox/node" },
+];
+
+/**
+ * The generated config overrides of the cross-app relay, by config class of `@stackra/outbox`: the consumer's inbox
+ * table (`#stackra/inbox`) and the producer's runway `events` blocks (`#stackra/events-relay`).
+ */
+function relayConfigs(ir: MemberIR): { readonly key: string; readonly override: ClassRef }[] {
+  return [
+    ...(inboxProducersOf(ir).length > 0
+      ? [
+          {
+            key: "outbox.relay_inbox",
+            override: { name: "RelayInboxConfig", from: "#stackra/inbox" },
+          },
+        ]
+      : []),
+    ...(ir.layout === "service" && ir.eventsRelay !== undefined
+      ? [
+          {
+            key: "outbox.events_relay",
+            override: { name: "EventsRelayConfig", from: "#stackra/events-relay" },
+          },
+        ]
+      : []),
+  ];
 }
 
 /** The one dependency of a generated service client: the transport driver the topology picks (ADR 0260 d6). */
@@ -345,20 +388,23 @@ export function emitWiring(ir: MemberIR): string {
   const lines: string[] = [];
   const root = rootModuleOf(ir);
   const rootName = root === undefined ? undefined : ref(root);
+  // A config override keeps its plain name and its base is `Base<Name>` (ADR 0305), so both are named before a
+  // binding that injects the base can take the plain name.
+  for (const declared of ir.classes)
+    if (declared.kind === "config" && declared.base !== undefined && !declared.base.own) {
+      ref(own(declared));
+      ref(declared.base, "Base");
+    }
+  // The cross-app relay's generated overrides take the plain names too (STA-1910).
+  const relayConfigLines = relayConfigs(ir).map(({ key, override }) => {
+    const name = ref(override);
+    return `    { key: ${JSON.stringify(key)}, provide: ${ref({ name: override.name, from: "@stackra/outbox" }, "Base")}, override: ${name} },`;
+  });
 
   // Modules, own then each dependency's, in dependency order.
-  const moduleOf = new Map(ir.classes.map((declared) => [declared.name, declared.module]));
   const edges = new Map<string, string[]>();
   for (const key of ir.modules) {
-    const dependsOn = new Set<string>();
-    for (const declared of ir.classes.filter((candidate) => candidate.module === key))
-      for (const dep of declared.deps) {
-        const target = moduleOf.get(dep.class.name);
-        if (target !== undefined && target !== key && dep.class.from.startsWith("#"))
-          dependsOn.add(target);
-      }
-    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-    edges.set(key, [...dependsOn].sort());
+    edges.set(key, moduleDependsOn(ir, key));
   }
   const moduleLines: string[] = [];
   for (const key of topological(ir.modules, edges)) {
@@ -414,7 +460,10 @@ export function emitWiring(ir: MemberIR): string {
         !platform.includes(ref(dep.class))
       )
         platform.push(ref(dep.class));
-    const lifetime = declared.lifetime === undefined ? undefined : LIFETIMES[declared.lifetime];
+    const lifetime =
+      declared.lifetime === undefined
+        ? KIND_LIFETIMES[declared.kind]
+        : LIFETIMES[declared.lifetime];
     if (lifetime !== undefined) use("@stackra/container", "Lifetime");
     bindingLines.push(
       `    { module: ${JSON.stringify(declared.module)}, kind: ${JSON.stringify(declared.kind)}, provide: ${ref(own(declared))}` +
@@ -422,14 +471,26 @@ export function emitWiring(ir: MemberIR): string {
     );
   }
 
+  // A config class's key: an override keeps its base's key (ADR 0294 decision 20), read from the base package's
+  // manifest, else derived from the base's own member.
+  const packageConfigs = dependencyConfigs(ir);
+  const memberOf = (from: string): string =>
+    ir.dependencies.find(
+      (candidate) => from === candidate.package || from.startsWith(`${candidate.package}/`),
+    )?.manifest.member ?? snakeCase(from.replace(/^@[^/]+\//, "").split("/")[0] ?? from);
+  const configKeyFor = (declared: (typeof ir.classes)[number]): string => {
+    if (declared.base === undefined || declared.base.own)
+      return configKeyOf(declared.name, ir.member);
+    const { name, from } = declared.base;
+    const member = memberOf(from);
+    return packageConfigs.get(`${member}#${name}`) ?? configKeyOf(name, member);
+  };
+
   // Config classes and their host overrides.
   const configLines: string[] = [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
     const override = declared.base !== undefined && !declared.base.own;
-    const key = configKeyOf(
-      override && declared.base !== undefined ? declared.base.name : declared.name,
-      ir.member,
-    );
+    const key = configKeyFor(declared);
     const provide =
       override && declared.base !== undefined ? ref(declared.base, "Base") : ref(own(declared));
     const schema = declared.options["schema"];
@@ -441,6 +502,8 @@ export function emitWiring(ir: MemberIR): string {
         `${typeof env === "object" && env !== null ? `, env: ${JSON.stringify(env)}` : ""} },`,
     );
   }
+
+  configLines.push(...relayConfigLines);
 
   // Drivers per port: the member's own, then (in the worklist below) each declared package's table of a port the
   // member's bindings reach, read from that package's manifest (STA-1297). And the config fields that select them.
@@ -479,7 +542,7 @@ export function emitWiring(ir: MemberIR): string {
     const shape = isClassValue(schema)
       ? ir.shapes.find((candidate) => candidate.name === schema.$class)
       : undefined;
-    const key = configKeyOf(declared.name, ir.member);
+    const key = configKeyFor(declared);
     for (const field of shape?.fields ?? []) {
       const selector =
         field.type.kind === "driver_name"
@@ -507,11 +570,6 @@ export function emitWiring(ir: MemberIR): string {
 
   // The declared packages' driver tables by port key, and the member of each package (STA-1297).
   const packageTables = dependencyDriverTables(ir);
-  const packageConfigs = dependencyConfigs(ir);
-  const memberOf = (from: string): string =>
-    ir.dependencies.find(
-      (candidate) => from === candidate.package || from.startsWith(`${candidate.package}/`),
-    )?.manifest.member ?? snakeCase(from.replace(/^@[^/]+\//, "").split("/")[0] ?? from);
   const configKeys = new Set(configLines.map((line) => /key: "([^"]+)"/.exec(line)?.[1]));
   const linked = new Set<string>();
   /** The tokens `dep` brings: its package's driver table and a package config row (STA-1297). */
@@ -564,6 +622,21 @@ export function emitWiring(ir: MemberIR): string {
     );
     used.push({ module: ir.member, dep: receiver });
   }
+  // The cross-app inbox route of a consumer of a contract-only producer (ADR 0511 decision 18).
+  if (inboxProducersOf(ir).length > 0) {
+    const inbox: TokenRef = { class: RELAY_INBOX };
+    const route = ref({ name: "InboundEventsController", from: "#stackra/inbox" });
+    bindingLines.push(
+      `    { module: ${JSON.stringify(ir.member)}, kind: "controller", provide: ${route}, deps: [${token(inbox)}] },`,
+    );
+    used.push({ module: ir.member, dep: inbox });
+  }
+  // A producer's fan-out and cross-app relay, from its runway `events` blocks (ADR 0511 decision 12).
+  const producer = ir.layout === "service" && ir.eventsRelay !== undefined;
+  const inbox = inboxProducersOf(ir).length > 0;
+  if (producer)
+    for (const service of CROSS_APP_PRODUCER)
+      used.push({ module: ir.member, dep: { class: service } });
   const contributedConfigs: { readonly key: string; readonly provide: ClassRef }[] = [];
   // A service's request guards and health indicators, from each declared package (STA-1385), with their config rows.
   if (ir.layout === "service") {
@@ -638,18 +711,25 @@ export function emitWiring(ir: MemberIR): string {
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
     );
     const system = systemDefaults.get(port.name);
+    // A producer's deliveries and a consumer's inbox claims are Postgres rows beside the outbox (STA-1910).
+    const forced =
+      (producer && key === "outbox.DeliveryDriver") || (inbox && key === "outbox.InboxDriver")
+        ? "postgres"
+        : undefined;
     const fallback =
-      system !== undefined && candidates.some((candidate) => candidate.name === system)
-        ? system
-        : ir.layout !== "package" || candidates.length < 2
-          ? undefined
-          : candidates.some((candidate) => candidate.name === "memory")
-            ? "memory"
-            : testing.length === 1
-              ? testing[0]?.name
-              : candidates.filter((candidate) => candidate.testDefault === true).length === 1
-                ? candidates.find((candidate) => candidate.testDefault === true)?.name
-                : undefined;
+      forced !== undefined && candidates.some((candidate) => candidate.name === forced)
+        ? forced
+        : system !== undefined && candidates.some((candidate) => candidate.name === system)
+          ? system
+          : ir.layout !== "package" || candidates.length < 2
+            ? undefined
+            : candidates.some((candidate) => candidate.name === "memory")
+              ? "memory"
+              : testing.length === 1
+                ? testing[0]?.name
+                : candidates.filter((candidate) => candidate.testDefault === true).length === 1
+                  ? candidates.find((candidate) => candidate.testDefault === true)?.name
+                  : undefined;
     const deps = candidates
       .filter((candidate) => candidate.deps.length > 0)
       .map((candidate) => `${JSON.stringify(candidate.name)}: ${list(candidate.deps.map(token))}`);

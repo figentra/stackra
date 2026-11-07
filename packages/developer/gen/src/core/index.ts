@@ -4,7 +4,7 @@
  *          the shape compiler, wiring, the member module, entries, the entity files, registrations, boot, the inbound
  *          webhook route, a service's HTTP adapter (`emitEncoreHttp`, STA-1385) and Encore database (`emitEncoreDatabase`, stackra-250), prefixes, an app's route tables and
  *          blocks (with `registerResources` and the resource label keys), the generated service clients, the setting keys
- *          (`#stackra/settings`, stackra-209), the tool configs,
+ *          (`#stackra/settings`, stackra-209), the class-component facade (`#stackra/ui`, STA-2069), the tool configs,
  *          the openapi projection, the docs-site target and its `DocsConfig` base, the public id prefix registry and
  *          `stackra db diff`'s expected schema, comparison and type map (STA-1808), the IR types, the surface targets and the extension bundle's modulepreload list), until `stackra gen` writes the
  *          entry barrels (STA-339).
@@ -75,6 +75,7 @@ export { emitSchemas } from "#core/functions/emit-schemas.function";
 export { emitSdks } from "#core/functions/emit-sdks.function";
 export { emitSettings } from "#core/functions/emit-settings.function";
 export { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
+export { emitUiFacade } from "#core/functions/emit-ui-facade.function";
 export { emitWebhooks } from "#core/functions/emit-webhooks.function";
 export { emitWiring } from "#core/functions/emit-wiring.function";
 export { eventName } from "#core/functions/event-name.function";

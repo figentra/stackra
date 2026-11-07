@@ -7,7 +7,8 @@
  *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, the anchors its components declare and refer to (`readAnchors`, STA-1631), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port, the writes that skip the unit of work (`readNativeWrites`, stackra-262) and the
  *          `t.searchable` literals of its migrations (`readSearchableColumns`, data-layer gap se10) and an app's static
- *          `defineApp` data and icon sets (`readAppDefinition`): the
+ *          `defineApp` data and icon sets (`readAppDefinition`), and a service's runway `events` blocks
+ *          (`readRunwayEvents`, ADR 0511 d16 and d17): the
  *          `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig, dependency manifest or catalogue throws. The program is always closed.
@@ -46,6 +47,7 @@ import { readNativeWrites } from "#node/functions/read-native-writes.function";
 import { readSearchableColumns } from "#node/functions/read-searchable-columns.function";
 import { readPackageCatalogues } from "#node/functions/read-package-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
+import { readRunwayEvents } from "#node/functions/read-runway-events.function";
 import { readServiceCatalogues } from "#node/functions/read-service-catalogues.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 
@@ -137,6 +139,8 @@ export async function discoverMember(
         ? readPublisherManifests(facts.root)
         : [];
     const services = readServiceManifests(facts.root, consumed, facts.dependencies);
+    // A producer's cross-app relay: the `events` block of each runway environment (ADR 0511 d16, d17).
+    const eventsRelay = facts.layout === "service" ? readRunwayEvents(facts.root) : undefined;
     // The lang of each service it consumes through a client, after its packages' (STA-1363).
     const packageCatalogues = [
       ...shippedCatalogues,
@@ -228,8 +232,10 @@ export async function discoverMember(
       ...(slots.length > 0 ? { slots } : {}),
       ...(fills.length > 0 ? { fills } : {}),
       packages: facts.dependencies,
+      runtimePackages: facts.runtimeDependencies ?? [],
       dependencies,
       ...(services.length > 0 ? { services } : {}),
+      ...(eventsRelay !== undefined ? { eventsRelay } : {}),
       ...(publishers.length > 0 ? { publishers } : {}),
       ...(workspaceServices.length > 0 ? { workspaceServices } : {}),
       ...(clientImports.length > 0 ? { clientImports } : {}),

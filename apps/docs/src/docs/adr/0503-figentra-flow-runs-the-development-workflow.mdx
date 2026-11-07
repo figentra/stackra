@@ -22,6 +22,15 @@ description: "Accepted, amended by 0522 · 2026-11-01"
   verify on a CI box, and the rest of this decision stands.
 </Note>
 
+<Note>
+  Amended 2026-11-04 (STA-2097) to match [0523](/adr/0523-humans-approve-policy-not-instances):
+  decision 4's one required check is today the repository's CI gate (`Quality Gate` in core,
+  `verify` in figentra/flow). `fflow/gate` joins it once the owner pins it in the ruleset to the
+  Figentra Flow App's integration id (5555587). Humans approve policy, not instances. Read decisions
+  4 and 5 with the [amendment of
+  2026-11-04](#amendment-2026-11-04-the-required-check-today-sta-2097) below.
+</Note>
+
 ## Context
 
 Work moved by hand: sessions made worktrees wherever they liked (inside repositories, beside them, in scratch folders),
@@ -63,11 +72,32 @@ work lived in a hand-kept file. Figentra Flow already holds the spec logic (ADR 
 ## Enforcement
 
 - figentra/flow: `figentra-flow start`, `clean`, `guard`, `gate`, `land`, `status`, `release`, `ship`, with their tests.
-- GitHub branch protection: `figentra-flow/gate` required on `main` (step 6 of the rollout).
+- GitHub ruleset on `main`: `Quality Gate` required today (`.github/rulesets/main.json`); `fflow/gate`, pinned to
+  the Figentra Flow App (integration id 5555587), joins when the owner applies it (amendment of 2026-11-04).
 - planned: core's `.agents/hooks/_rules.mjs` worktree rule, applied by the owner.
 - planned (STA-1729, the sessions phase): `figentra-flow status` lists sessions; the spec gate reads `**Session**`. The
   session cap and the rule that a peer message is never approval are process rules until then.
 
+## Amendment 2026-11-04: the required check today (STA-2097)
+
+Decision 4 named the gate's status (`figentra-flow/gate`, now `fflow/gate`) the sole required check on `main`.
+[0523](/adr/0523-humans-approve-policy-not-instances) changed who approves and which checks a merge waits on, and
+this amendment brings decisions 4 and 5 in line with it:
+
+1. **The CI gate is the required check today.** The one required status check on `main` is the repository's CI gate:
+   `Quality Gate` in core (`.github/rulesets/main.json`), `verify` in figentra/flow. Its workflow stays on; switching
+   per-PR workflows off waits until `fflow/gate` is required.
+2. **`fflow/gate` joins once it is pinned.** The owner adds `fflow/gate` to the ruleset pinned to the Figentra Flow
+   App's integration id (5555587), so only that App's verdict, posted by a CI job running main's copy, can satisfy it
+   (0523 decisions 5 and 6). Until then the gate posts its status and nothing requires it. "The gate bot's token" in
+   decision 4 reads as the Figentra Flow App.
+3. **Humans approve policy, not instances** (0523 decision 1). No person approves a single merge: a PR lands when its
+   required checks pass, through the merger lane of 0523 decision 3, and decision 5's `land` reads the same required
+   checks instead of `fflow/gate` alone.
+
+The rest of decisions 4 and 5 (branch protection on, squash merges) stands.
+
 ## Supersedes and sources
 
-`Supersedes: none`. Amends 0282 and 0502. Sources: STA-1729; owner direction 2026-10-31 (`vellum-complete` plan).
+`Supersedes: none`. Amends 0282 and 0502. Sources: STA-1729; STA-2097 (the amendment of 2026-11-04); owner
+direction 2026-10-31 (`vellum-complete` plan).

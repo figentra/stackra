@@ -3,7 +3,8 @@
  * Purpose: unit tests of the root runway's `resources`, `workloads` and `limits` and the service runway's `uses`
  *          (ADR 0493): a Postgres resource sized per environment and a public workload pinned by digest pass; a reserved
  *          kind (kafka), an engine on a non-Postgres kind, a workload without a reason or with a tagged image, an
- *          inverted scale, and a `uses` naming no resource are refused with their paths.
+ *          inverted scale, an empty command, an alias that is not SCREAMING_SNAKE, and a `uses` naming no resource are
+ *          refused with their paths.
  * Boundary: test only; plain objects through `parseRunway`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 1, 3 and 5); spec sta-1640.
@@ -99,6 +100,29 @@ describe("root runway resources and workloads", () => {
         root({ workloads: { zitadel: { ...zitadel, scale: { production: { min: 5, max: 2 } } } } }),
       ),
     ).toContain("workloads.zitadel.scale.production.min");
+  });
+
+  // @covers sta-1640:FR-002
+  it("takes a workload's arguments and the names it reads resource variables under", () => {
+    const zitadel = (root({}) as { workloads: { zitadel: Record<string, unknown> } }).workloads
+      .zitadel;
+    const command = ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"];
+    const aliases = { ZITADEL_DATABASE_POSTGRES_DSN: "MAIN_DB_URL" };
+
+    const parsed = parseRunway(
+      "root",
+      root({ workloads: { zitadel: { ...zitadel, command, aliases } } }),
+    );
+    expect(parsed.workloads?.["zitadel"]).toMatchObject({ command, aliases });
+
+    expect(pathsOf(root({ workloads: { zitadel: { ...zitadel, command: [] } } }))).toContain(
+      "workloads.zitadel.command",
+    );
+    expect(
+      pathsOf(
+        root({ workloads: { zitadel: { ...zitadel, aliases: { dsn: "MAIN_DB_URL" } } } }),
+      ).some((path) => path.startsWith("workloads.zitadel.aliases")),
+    ).toBe(true);
   });
 
   // @covers sta-1640:FR-003

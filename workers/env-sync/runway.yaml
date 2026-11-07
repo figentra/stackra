@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://static.stackra.figentra.com/schemas/runway/app.json
+# Stackra file contract:
+# Purpose: the env-sync member's runway (ADR 0296). Where it ships is the root runway's
+#          (`targets.cloudflare-workers.members.env-sync`, production, deploy-env-sync.yml; STA-2133).
+#          Its three Worker secrets (INFISICAL_WEBHOOK_SECRET, and the stackra-bot App's STACKRA_BOT_APP_ID and
+#          STACKRA_BOT_PRIVATE_KEY, SECRETS Q17, STA-2133) are not listed under `secrets:`:
+#          core has no runtime project (ADR 0512), so, as with the registry's REGISTRY_SIGNING_KEY, its deploy
+#          workflow declares them with `secret-name:` and a `secret-path:` in ci-deploy (ADR 0173 amendment of
+#          2026-11-04, decisions 1 and 3), and `runway env check` sees them there.
+# Boundary: no root fact and no secret value, names only. No dev port: `stackra gen` writes launch entries only for a
+#           member runway with one, so this file changes no generated file.
+# Governing contract: ADR 0296, ADR 0352, ADR 0173 (amendment of 2026-11-04); STA-2104
+$schema: "@stackra/runway/schema/app.json"
+version: 3
+
+environments: {}

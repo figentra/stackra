@@ -7,7 +7,11 @@
  *           zone's entry point for its phase, so a zone whose phase entry point was made by hand imports it first.
  *           Per-area and per-plan application limits are the service pipeline's (ADR 0217 decision 2).
  * Runtime: node
- * Governing contract: ADR 0175 (decision 1), ADR 0217 (decisions 2 and 3), ADR 0237 (layer 1), ADR 0290 (decision 13),
+ *
+ *          With a zone `policy` (ADR 0519 decision 6) it also sets SSL Full (strict), TLS 1.3 and Automatic HTTPS
+ *          Rewrites, forces HSTS, turns DNSSEC on and adds CAA records for Cloudflare's CAs; `strict` also turns the
+ *          bot protection on and is refused on the Free plan. The DS record at the registrar is the owner's.
+ * Governing contract: ADR 0519 (decisions 5 and 6), ADR 0175 (decision 1), ADR 0217 (decisions 2 and 3), ADR 0237 (layer 1), ADR 0290 (decision 13),
  *                     ADR 0325 (rule 24: a Cloudflare Cache Rule bypasses the cache on API hosts), ADR 0402 (per-shopper
  *                     limits share the zone's rate-limit entry point).
  */
@@ -18,6 +22,7 @@ import { MANAGED_RULESET_IDS } from "#core/constants/managed-ruleset-ids.constan
 import { BotMode } from "#core/enums/bot-mode.enum";
 import { WafMode } from "#core/enums/waf-mode.enum";
 import { ZonePlan } from "#core/enums/zone-plan.enum";
+import { ZonePolicy } from "#core/enums/zone-policy.enum";
 import { rateLimitFor } from "#core/functions/rate-limit-for.function";
 import type { EdgePolicy } from "#core/types/edge-policy.type";
 import type { ShopperLimitRule } from "#core/types/shopper-limit-rule.type";
@@ -36,6 +41,9 @@ const HSTS = {
   },
 };
 
+/** The CAs Cloudflare issues Universal SSL from; CAA names exactly these (ADR 0519 decision 6). */
+const CAS = ["digicert.com", "letsencrypt.org", "pki.goog", "ssl.com", "sectigo.com"];
+
 /**
  * The edge resources of the zone `name`.
  *
@@ -50,12 +58,18 @@ export function zoneEdge(args: {
   readonly plan: ZonePlan;
   readonly edge: EdgePolicy;
   readonly shopperRules?: readonly ShopperLimitRule[] | undefined;
+  /** The zone preset of the owning root runway; without it the zone keeps the edge's own settings only. */
+  readonly policy?: ZonePolicy | undefined;
 }): {
   settings: cloudflare.ZoneSetting[];
   rulesets: cloudflare.Ruleset[];
   bots: cloudflare.BotManagement | undefined;
+  dnssec: cloudflare.ZoneDnssec | undefined;
+  caa: cloudflare.DnsRecord[];
 } {
-  const { name, zoneId, plan, edge, shopperRules = [] } = args;
+  const { name, zoneId, plan, edge, shopperRules = [], policy } = args;
+  if (policy === ZonePolicy.Strict && plan === ZonePlan.Free)
+    throw new Error(`${name}: the strict zone policy needs the Pro plan (ADR 0519 decision 5)`);
   const setting = (id: string, value: unknown) =>
     new cloudflare.ZoneSetting(`${name}-${id.replaceAll("_", "-")}`, {
       zoneId,
@@ -65,7 +79,14 @@ export function zoneEdge(args: {
   const settings = [
     setting("min_tls_version", edge.tls.minVersion),
     setting("always_use_https", "on"),
-    ...(edge.tls.hsts ? [setting("security_header", HSTS)] : []),
+    ...(edge.tls.hsts || policy !== undefined ? [setting("security_header", HSTS)] : []),
+    ...(policy === undefined
+      ? []
+      : [
+          setting("ssl", "strict"),
+          setting("tls_1_3", "on"),
+          setting("automatic_https_rewrites", "on"),
+        ]),
   ];
 
   const rulesets: cloudflare.Ruleset[] = [];
@@ -116,7 +137,7 @@ export function zoneEdge(args: {
     });
 
   const bots =
-    edge.bots.mode === BotMode.Off
+    edge.bots.mode === BotMode.Off && policy !== ZonePolicy.Strict
       ? undefined
       : new cloudflare.BotManagement(
           `${name}-bots`,
@@ -129,5 +150,20 @@ export function zoneEdge(args: {
                 sbfmVerifiedBots: "allow",
               },
         );
-  return { settings, rulesets, bots };
+  const dnssec =
+    policy === undefined ? undefined : new cloudflare.ZoneDnssec(`${name}-dnssec`, { zoneId });
+  const caa =
+    policy === undefined
+      ? []
+      : CAS.map(
+          (ca) =>
+            new cloudflare.DnsRecord(`${name}-caa-${ca.replaceAll(".", "-")}`, {
+              zoneId,
+              name,
+              type: "CAA",
+              ttl: 1,
+              data: { flags: 0, tag: "issue", value: ca },
+            }),
+        );
+  return { settings, rulesets, bots, dnssec, caa };
 }

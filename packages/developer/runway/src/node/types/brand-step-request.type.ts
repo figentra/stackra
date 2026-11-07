@@ -28,6 +28,6 @@ export type BrandStepRequest = {
   };
   /** The kit's binary; `BRAND_STEP_SETTINGS.command` when absent. */
   readonly command?: string;
-  /** The command runner; `runCommand` when absent. */
+  /** The command runner; `runProgram` when absent. */
   readonly run?: CommandRunner;
 };

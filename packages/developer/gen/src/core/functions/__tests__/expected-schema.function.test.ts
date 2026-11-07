@@ -3,10 +3,12 @@
  * Purpose: unit tests of `expectedSchema`: a model gives its table in its module's schema with data and trait columns,
  *          nullability and mapped types, a `Money` as two columns, an unmapped field with no type, relation columns and
  *          the same-module foreign key (a link has none), an `@Index` under its derived name with `unique` and
- *          `where`, a base model's fields and indexes, and no table for an abstract model; a side table has its id.
+ *          `where`, a base model's fields and indexes, and no table for an abstract model; a side table has its id;
+ *          an `m:n` relation gives its pivot (derived or named, a self-reference, a cross-module target, the owner's
+ *          tenant column, through a base model, one table per name); `@Searchable` gives the search columns.
  * Boundary: test only; pure IR in, schema out.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 28); ADR 0231; STA-1808.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 28); ADR 0231; STA-1808; STA-2071.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -245,6 +247,199 @@ describe("expectedSchema", () => {
     expect(schema.columns.map((column) => [column.table, column.name, column.type])).toEqual([
       ["invoice_extras", "id", "varchar(33)"],
       ["invoice_extras", "memo", "text"],
+    ]);
+  });
+
+  // @covers sta-2071:FR-001
+  // @covers sta-2071:FR-002
+  // @covers sta-2071:FR-003
+  it("expects a derived and a named pivot with the ORM's keys and same-module foreign keys", () => {
+    const schema = expectedSchema(
+      member([
+        {
+          name: "Product",
+          fields: [ID],
+          relations: [
+            relation("collections", "m:n", { target: { name: "ProductCollection", from: "#p" } }),
+            relation("tags", "m:n", {
+              target: { name: "Tag", from: "#t" },
+              options: { pivotTable: "product_tag_items" },
+            }),
+          ],
+        },
+      ]),
+    );
+
+    expect(
+      schema.columns
+        .filter((column) => column.table !== "products")
+        .map((column) => [column.table, column.name, column.type, column.nullable]),
+    ).toEqual([
+      ["products_collections", "product_id", "varchar(33)", false],
+      ["products_collections", "product_collection_id", "varchar(33)", false],
+      ["product_tag_items", "product_id", "varchar(33)", false],
+      ["product_tag_items", "tag_id", "varchar(33)", false],
+    ]);
+    expect(schema.foreignKeys).toEqual([
+      {
+        schema: "billing",
+        table: "products_collections",
+        name: "fk_products_collections_product_id",
+        columns: ["product_id"],
+        referencedSchema: "billing",
+        referencedTable: "products",
+      },
+      {
+        schema: "billing",
+        table: "products_collections",
+        name: "fk_products_collections_product_collection_id",
+        columns: ["product_collection_id"],
+        referencedSchema: "billing",
+        referencedTable: "product_collections",
+      },
+      {
+        schema: "billing",
+        table: "product_tag_items",
+        name: "fk_product_tag_items_product_id",
+        columns: ["product_id"],
+        referencedSchema: "billing",
+        referencedTable: "products",
+      },
+      {
+        schema: "billing",
+        table: "product_tag_items",
+        name: "fk_product_tag_items_tag_id",
+        columns: ["tag_id"],
+        referencedSchema: "billing",
+        referencedTable: "tags",
+      },
+    ]);
+  });
+
+  // @covers sta-2071:FR-002
+  it("numbers the keys of a self-referencing pivot, both to the owner table", () => {
+    const schema = expectedSchema(
+      member([
+        {
+          name: "Product",
+          fields: [ID],
+          relations: [relation("related", "m:n", { target: { name: "Product", from: "#p" } })],
+        },
+      ]),
+    );
+
+    expect(
+      schema.foreignKeys.map((key) => [key.table, key.columns.join(), key.referencedTable]),
+    ).toEqual([
+      ["products_related", "products_1_id", "products"],
+      ["products_related", "products_2_id", "products"],
+    ]);
+  });
+
+  // @covers sta-2071:FR-003
+  // @covers sta-2071:FR-004
+  it("gives a cross-module target no foreign key and a tenant owner's pivot its tenant column", () => {
+    const schema = expectedSchema(
+      member([
+        {
+          name: "Invoice",
+          fields: [ID, field("tenantId", { kind: "public_id", prefix: "scp" })],
+          relations: [relation("labels", "m:n", { targetModule: "catalog" })],
+        },
+        {
+          name: "Receipt",
+          fields: [ID],
+          relations: [relation("labels", "m:n", { targetModule: undefined })],
+        },
+      ]),
+    );
+
+    expect(
+      schema.columns
+        .filter((column) => column.table.endsWith("_labels"))
+        .map((column) => [column.table, column.name, column.type, column.nullable]),
+    ).toEqual([
+      ["invoices_labels", "invoice_id", "varchar(33)", false],
+      ["invoices_labels", "customer_id", "varchar(33)", false],
+      ["invoices_labels", "tenant_id", "varchar(33)", false],
+      ["receipts_labels", "receipt_id", "varchar(33)", false],
+      ["receipts_labels", "customer_id", "varchar(33)", false],
+    ]);
+    expect(schema.foreignKeys.map((key) => key.name)).toEqual([
+      "fk_invoices_labels_invoice_id",
+      "fk_receipts_labels_receipt_id",
+    ]);
+  });
+
+  // @covers sta-2071:FR-001
+  it("gives an m:n of an own base model the concrete model's pivot, and an abstract model none", () => {
+    const schema = expectedSchema(
+      member([
+        {
+          name: "Document",
+          fields: [ID],
+          relations: [relation("attachments", "m:n")],
+          abstract: true,
+        },
+        { name: "Invoice", fields: [], base: "Document" },
+      ]),
+    );
+
+    expect(
+      schema.columns
+        .filter((column) => column.table !== "invoices")
+        .map((column) => `${column.table}.${column.name}`),
+    ).toEqual(["invoices_attachments.invoice_id", "invoices_attachments.customer_id"]);
+  });
+
+  // @covers sta-2071:FR-001
+  it("gives two relations that name one pivot one table with no duplicate column or key", () => {
+    const shared = { options: { pivotTable: "customer_links" } };
+    const schema = expectedSchema(
+      member([
+        { name: "Invoice", fields: [ID], relations: [relation("customers", "m:n", shared)] },
+        { name: "Receipt", fields: [ID], relations: [relation("customers", "m:n", shared)] },
+        { name: "Payment", fields: [ID], relations: [relation("payers", "m:n", shared)] },
+      ]),
+    );
+
+    expect(
+      schema.columns
+        .filter((column) => column.table === "customer_links")
+        .map((column) => column.name),
+    ).toEqual(["invoice_id", "customer_id", "receipt_id", "payment_id"]);
+    expect(
+      schema.foreignKeys.filter((key) => key.name === "fk_customer_links_customer_id"),
+    ).toHaveLength(1);
+  });
+
+  // @covers sta-2071:FR-005
+  it("expects search_text and search_filters for @Searchable on the class or an own base model", () => {
+    const searchable: FacetUse = {
+      name: "Searchable",
+      kind: "searchable",
+      target: "class",
+      options: { text: ["number"] },
+      from: "@stackra/search",
+    };
+    const schema = expectedSchema(
+      member([
+        { name: "Invoice", fields: [ID], facets: [searchable] },
+        { name: "Document", fields: [ID], facets: [searchable], abstract: true },
+        { name: "Receipt", fields: [], base: "Document" },
+        { name: "Payment", fields: [ID] },
+      ]),
+    );
+
+    expect(
+      schema.columns
+        .filter((column) => column.name.startsWith("search_"))
+        .map((column) => [column.table, column.name, column.type, column.nullable]),
+    ).toEqual([
+      ["invoices", "search_text", "text", true],
+      ["invoices", "search_filters", "jsonb", true],
+      ["receipts", "search_text", "text", true],
+      ["receipts", "search_filters", "jsonb", true],
     ]);
   });
 });

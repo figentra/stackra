@@ -3,11 +3,14 @@
  * Purpose: `generateMember`, gen-core's whole output for one member as a pure function of what discovery read: the
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
- *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
+ *          registrations, a service's boot and inbound webhook route, the cross-app inbox (`#stackra/inbox` and its
+ *          Encore `api.raw` adapter, for a listener of a contract-only producer's event) and relay configuration
+ *          (`#stackra/events-relay`, for a runway `events` block; STA-1910), a service's Encore service declaration and its `api()` endpoints per action and query (STA-2063), its Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
  *          (CORS preflights and headers, STA-1385), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
- *          (the setting keys of its settings classes, stackra-209), `#stackra/reports` (one query per report,
+ *          (the setting keys of its settings classes, stackra-209), `#stackra/ui` (the class components' `Component`
+ *          base, STA-2069), `#stackra/reports` (one query per report,
  *          ADR 0470), `#stackra/commands` and `.stackra/entry/console.ts` (the console commands, ADR 0506, STA-1731),
  *          `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
  *          kinds of generated query are declared beside the authored ones, so each gets its manifest entry, endpoint,
@@ -29,7 +32,7 @@
  *           `model_tenancy_missing`, stackra-258) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
- *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
+ *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
  *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) on the full pass only. An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
@@ -69,11 +72,16 @@ import { emitEncoreSqldbTypes } from "#core/functions/emit-encore-sqldb-types.fu
 import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitClientTools } from "#core/functions/emit-client-tools.function";
+import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
+import { emitEncoreInbox } from "#core/functions/emit-encore-inbox.function";
+import { emitEventsRelay } from "#core/functions/emit-events-relay.function";
+import { emitInbox } from "#core/functions/emit-inbox.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
+import { emitEncoreService } from "#core/functions/emit-encore-service.function";
 import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
@@ -96,6 +104,7 @@ import { emitExpoConfig } from "#core/functions/emit-expo-config.function";
 import { emitSdks } from "#core/functions/emit-sdks.function";
 import { emitSettings } from "#core/functions/emit-settings.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
+import { emitUiFacade } from "#core/functions/emit-ui-facade.function";
 import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
 import { usesContainer } from "#core/functions/uses-container.function";
@@ -185,7 +194,8 @@ export function generateMember(
     ...checkQueryCache(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
-    ...checkTableIndexes(ir, previous),
+    // This run's recorded trees, so an unindexed path is refused in the run that adds it (ADR 0307 rule 2).
+    ...checkTableIndexes(ir, manifest),
     // One panel resource key recorded by two classes across the host's dependencies (STA-1947).
     ...(ir.layout === "app" ? hostResourcesOf(ir).errors : []),
     // One route or menu key two owners ship, or the app's own too (STA-1947).
@@ -252,11 +262,16 @@ export function generateMember(
     // Boot imports the generated Encore database file; its types stand in for encore.dev here (STA-1795).
     [".stackra/gen/encore-sqldb.d.ts", emitEncoreSqldbTypes(ir)],
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
+    // The cross-app relay (STA-1910): a consumer's inbox route and key table, a producer's relay configuration.
+    [".stackra/gen/inbox.ts", emitInbox(ir)],
+    [".stackra/gen/events-relay.ts", emitEventsRelay(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/client-tools.ts", clientTools.content],
     [".stackra/gen/queues.ts", emitQueues(ir, manifest)],
     [".stackra/gen/settings.ts", emitSettings(ir)],
+    // The class components' `Component` base, for a member that declares `@stackra/ui` (STA-2069).
+    [".stackra/gen/ui.ts", emitUiFacade(ir)],
     [".stackra/gen/commands.ts", emitCommands(ir, manifest)],
     [".stackra/gen/reports.ts", emitReports(authored)],
     [".stackra/gen/search.ts", emitSearchQueries(authored)],
@@ -264,10 +279,13 @@ export function generateMember(
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [
+    emitEncoreService(ir),
+    emitEncoreApi(ir, manifest),
     emitEncoreCronJobs(ir, manifest),
     emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),
     emitEncoreHttp(ir),
+    emitEncoreInbox(ir),
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
@@ -299,7 +317,8 @@ export function generateMember(
     );
   }
   // Every other generated file is held to the same rule: the wiring's driver entries (`@stackra/content/node`), the
-  // test setup's testing subpaths, the tool configs (STA-1296).
+  // test setup's testing subpaths, the tool configs (STA-1296), and the Encore files' `encore.dev`, which Encore Cloud
+  // installs from the service's own package.json (STA-2194).
   const elsewhere = undeclaredPackages(
     ir,
     files.filter(
@@ -308,6 +327,7 @@ export function generateMember(
         !file.path.startsWith(".stackra/gen/schemas/"),
     ),
     "generated_dependency_missing",
+    ["encore.dev"],
   );
   if (elsewhere.length > 0) return { files: [], errors: elsewhere, manifest };
   // The member's part of the system graph, read by the repo step (ADR 0452).

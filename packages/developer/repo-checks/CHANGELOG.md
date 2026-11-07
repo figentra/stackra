@@ -1,5 +1,126 @@
 # @stackra/repo-checks
 
+## 0.18.1
+
+No changes in this release.
+
+## 0.18.0
+
+No changes in this release.
+
+## 0.17.2
+
+No changes in this release.
+
+## 0.17.1
+
+No changes in this release.
+
+## 0.17.0
+
+### Patch Changes
+
+- a32f323: The layout check reads package.json `stackra.layout.banned`: a repository lists retired names, and any path carrying one
+  (in any case, outside `adr/` history) is a finding.
+
+## 0.16.0
+
+### Minor Changes
+
+- 585f9de: `stackra validate --repository` checks the repository layout (ADR 0526): the root holds only its Flow preset's
+  template entries, its member folders, `tools/` with a README and the extras package.json `stackra.layout.allow`
+  declares with a reason; never a root `src/` or a `scripts/` or `bin/` folder, and no path named `figentra-flow`.
+- 33c88a5: The structure phase refuses a public id prefix that models of two different apps or services share (ADR 0135).
+  Each finding names both models and their files and suggests a prefix no member uses. Members hosting the same
+  package model keep its prefix; a clash inside one member stays gen's `prefix_duplicate`.
+
+### Patch Changes
+
+- 31378e6: The layout check allows the agent surfaces `fflow sync` renders for every preset (`.mcp.yaml`,
+  `opencode.jsonc`, `.opencode/`) in the neutral template too, so a neutral repository and a Stackra
+  product on Flow 0.6.4 pass.
+
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+### Minor Changes
+
+- 46951df: The root runway carries the estate figentra/infra derives from (ADR 0524): `environments.<env>.region` (`me`, `eu` or
+  `ksa`), which `runway validate` and `stackra validate --repository` require on a product's staging and production;
+  `providers.aws.budgets.monthlyUsd` (default 300) beside the open thresholds; and `providers.cloudflare.records`, the
+  non-Worker DNS records (verification TXT, MX, CAA) under a declared zone, an MX with its priority and only A, AAAA and
+  CNAME proxied. `providers.aws.region` and `providers.aws.accounts` are deprecated: `runway validate` warns, and they go
+  in the next release. Runway exports `checkEnvironmentRegion`, `deprecatedFields` and `RegionKey`.
+
+## 0.10.0
+
+### Minor Changes
+
+- 242ebe4: `checkDestinations(root)` refuses a destination or target block no driver serves (owner decision O8):
+  destinations must be `encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`, and target blocks one of
+  those, `npm` or `electron-release` (the desktop feed origin builds read). `stackra validate` runs it on the
+  root runway. Core's dev environment drops its `compose`, `vite-dev`, `expo-dev` and `mint-dev` lines.
+- 0d65e3f: The `cloudflare-workers` provider now renders each Worker's wrangler config from `runway.yaml` before it deploys
+  (ADR 0519, STA-1989): the member's `wrangler.jsonc` stays the code facts, and the merged operational settings (the
+  base, the preset, `defaults`, the member and its `environments.<environment>` entry) are added in wrangler's keys.
+  `renderWranglerConfig` is exported from `@stackra/runway`, and a member may now set `environments`. `stackra
+  validate` refuses an operational key (`compatibility_date`, `workers_dev`, `observability`, `routes` and the rest) in
+  a new member's `wrangler.jsonc`; the four existing Workers are listed until they deploy through the provider.
+
+## 0.9.0
+
+### Minor Changes
+
+- ca1614e: `checkRequires(root, service)` reports each `valkey` entry of a service runway's `requires` that no environment's cache driver serves, at `requires.<name>`; `stackra validate` (`checkRunwayFiles`) now runs it for every service runway against the root (STA-2049).
+- cbbe4e3: Add the `docs` registry kind (STA-1920, ADR 0514 decision 10). `StackraKind.Docs` is a product's content-only docs
+  package, `@figentra/<product>-docs`: MDX pages and their Fumadocs `meta.json` in `content/`, plus assets, with no code.
+  `STACKRA_MANIFEST_SCHEMA` accepts `{ "kind": "docs" }` with nothing more. `pnpm validate` places a docs package at the
+  repository's `docs/`, asks for no tier, turbo.jsonc or tsconfig, requires `content/`, and treats it as UNLICENSED like
+  an app. `stackra add` never installs one: the docs hub depends on it.
+- 75e94ff: `stackra validate --repository` refuses a paid job (a macOS, Windows or larger runner, also through `strategy.matrix`; `eas build`; a device farm run) on a branch push, pull request or merge queue trigger, and, in a job with no `environment:`, a deploy credential in its env or a deploy variable or secret read in a step's env, `with:` or `run:` (rule `workflow-triggers`, `checkWorkflowTriggers`; STA-256, ADR 0166, 0167).
+
+### Patch Changes
+
+- 2aeaec8: `writeDevFacts(root, lane)` in `@stackra/runway/node` writes `.stackra/dev/ports.json`, the file `readDevFacts` reads: each member runway's dev url, port, host, https, TLS files and Electron dev ports with the lane offset applied. `stackra dev` calls it before the member tool starts (lane from `STACKRA_LANE`, default 0). The app runway's `environments.<env>.desktop.devtools` is now read, so it leaves `RUNWAY_UNREAD_FIELDS` and its "Not read yet" schema note.
+- 93bb1e7: `buildProduct` writes a product's `surfaces.ops.contributes` as a declarative `ops` bundle (the contributions file and its manifest, targeting `ops@1`), and `publishProduct` uploads it and writes its canary or release row like any surface. The root runway schema no longer marks `surfaces.ops.contributes` and its fields "Not read yet", and the list of runway fields not yet read drops them.
+- da0af20: The runway schema copy check now says to put the zod-derived text in the canonical `tools/schemas` file and copy it
+  to runway's `schema/`, instead of only `cp`, which overwrote a correct copy with a stale canonical file.
+
 ## 0.8.0
 
 ### Patch Changes

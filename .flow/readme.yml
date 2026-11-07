@@ -1,4 +1,4 @@
-# The README's data (STA-1879): `figentra-flow readme` renders README.md from this file through the preset's
+# The README's data (STA-1879): `fflow readme` renders README.md from this file through the preset's
 # readme-template. Edit here, never README.md.
 name: Stackra
 repo: figentra/stackra

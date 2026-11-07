@@ -3,21 +3,19 @@
  * Purpose: unit tests of the secret sync (STA-606): `secretSyncPlan` gives each member its names, Infisical folder and
  *          writer; `readMemberSecrets` reads only in CI, returns only the declared names and fails on a missing one;
  *          `syncSecrets` writes each service secret into Encore with the value on stdin, reads everything before it
- *          writes, refuses one name with two values, and its dry run reads nothing; `runRunwaySecrets` parses
- *          `sync <env> [--dry-run]`. Canary values prove no value reaches an argument, a printed line or an error.
+ *          writes, refuses one name with two values, and its dry run reads nothing. Canary values prove no value reaches an argument, a printed line or an error.
  * Boundary: test only; a recording command runner stands in for infisical and encore, and a temporary folder for the
  *           repository. Nothing reaches a real vault or app.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0173 (nobody reads a value); ADR 0512; STA-606.
  */
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { readMemberSecrets } from "#node/functions/read-member-secrets.function";
-import { runRunwaySecrets } from "#node/functions/run-runway-secrets.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 import { syncSecrets } from "#node/functions/sync-secrets.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
@@ -30,6 +28,7 @@ const RUNWAYS: DeployRunways = {
   root: {
     environments: { staging: { encore: { environment: "staging-eu" } }, production: {} },
     providers: {
+      encore: { app: "acme-x1" },
       github: { org: "acme", repo: "platform" },
       infisical: {
         workspace: "ws-1234",
@@ -66,9 +65,19 @@ function recorder(folders: Readonly<Record<string, Record<string, string>>>): {
     readonly input?: string;
   }[];
 } {
-  const calls: { command: string; args: readonly string[]; input?: string }[] = [];
+  const calls: { command: string; args: readonly string[]; input?: string; app?: string }[] = [];
   const run: CommandRunner = async (command, args, options) => {
-    calls.push({ command, args, ...(options.input === undefined ? {} : { input: options.input }) });
+    // An Encore write records the encore.app of its working directory, which the sync removes afterwards.
+    const app =
+      command === "encore" && options.cwd !== undefined
+        ? readFileSync(join(options.cwd, "encore.app"), "utf8")
+        : undefined;
+    calls.push({
+      command,
+      args,
+      ...(options.input === undefined ? {} : { input: options.input }),
+      ...(app === undefined ? {} : { app }),
+    });
     if (command !== "infisical") return "";
     const path = args[args.indexOf("--path") + 1] ?? "";
     return JSON.stringify(
@@ -149,6 +158,53 @@ describe("secretSyncPlan", () => {
   });
 });
 
+describe("secretSyncPlan gateway", () => {
+  const withGateway: DeployRunways = {
+    ...RUNWAYS,
+    root: {
+      ...RUNWAYS.root,
+      secrets: { defaultPath: "runtime", gateway: ["GATEWAY_VISITOR_SIGNING_KEY"] },
+    },
+  };
+
+  it("adds the generated gateway's names as one Encore entry when a service makes an Encore app", () => {
+    expect(secretSyncPlan("staging", withGateway).at(-1)).toEqual({
+      member: "gateway",
+      folder: ".stackra/encore (generated API gateway)",
+      names: ["GATEWAY_VISITOR_SIGNING_KEY"],
+      path: "/runtime/gateway",
+      writer: "encore",
+    });
+  });
+
+  it("adds no gateway entry without a service member", () => {
+    const noServices: DeployRunways = {
+      ...withGateway,
+      members: withGateway.members.filter(({ folder }) => folder !== "services"),
+    };
+    expect(secretSyncPlan("staging", noServices).some(({ member }) => member === "gateway")).toBe(
+      false,
+    );
+  });
+
+  it("syncs the gateway's names into Encore with fromEnv, the value on stdin", async () => {
+    const { run, calls } = recorder({});
+    await syncSecrets({
+      environment: "staging",
+      runways: withGateway,
+      repository: repository(true),
+      dryRun: false,
+      log: () => {},
+      run,
+      ci: true,
+      fromEnv: true,
+      env: { ...CANARIES, GATEWAY_VISITOR_SIGNING_KEY: "canary-gateway-5d1e" },
+    });
+    const gatewayCall = calls.find((call) => call.args.includes("GATEWAY_VISITOR_SIGNING_KEY"));
+    expect(gatewayCall?.input).toBe("canary-gateway-5d1e");
+  });
+});
+
 describe("readMemberSecrets", () => {
   it("reads only the declared names of the member's folder, in CI, with no value in an argument", async () => {
     const { run, calls } = recorder({
@@ -193,6 +249,25 @@ describe("readMemberSecrets", () => {
         }),
       ),
     ).toMatch(/only in a CI deploy job/);
+    expect(calls).toEqual([]);
+  });
+
+  /** GITHUB_ACTIONS=true is not proof: without the runner's OIDC token nothing is read. */
+  it("refuses a self-asserted CI job (GITHUB_ACTIONS=true and no OIDC token)", async () => {
+    const { run, calls } = recorder({});
+    const before = { ...process.env };
+    process.env["GITHUB_ACTIONS"] = "true";
+    Reflect.deleteProperty(process.env, "ACTIONS_ID_TOKEN_REQUEST_URL");
+    Reflect.deleteProperty(process.env, "ACTIONS_ID_TOKEN_REQUEST_TOKEN");
+    try {
+      expect(
+        await rejection(
+          readMemberSecrets({ environment: "staging", member: "api", runways: RUNWAYS, run }),
+        ),
+      ).toMatch(/no GitHub OIDC token can be requested here/);
+    } finally {
+      process.env = before;
+    }
     expect(calls).toEqual([]);
   });
 
@@ -256,16 +331,16 @@ describe("syncSecrets", () => {
     });
     const writes = calls.filter((call) => call.command === "encore");
     expect(writes).toEqual([
-      {
+      expect.objectContaining({
         command: "encore",
         args: ["secret", "set", "--env", "staging-eu", "MAIL_TOKEN"],
         input: CANARIES.MAIL_TOKEN,
-      },
-      {
+      }),
+      expect.objectContaining({
         command: "encore",
         args: ["secret", "set", "--env", "staging-eu", "STRIPE_SECRET_KEY"],
         input: CANARIES.STRIPE_SECRET_KEY,
-      },
+      }),
     ]);
     for (const { args } of calls) expectNoValue(args.join(" "));
     expectNoValue(lines.join("\n"));
@@ -274,6 +349,41 @@ describe("syncSecrets", () => {
     );
     expect(lines).toContain("eas apps/field: SENTRY_DSN, not synced yet (STA-2009)");
     expect(lines).toContain("set STRIPE_SECRET_KEY in encore staging-eu");
+  });
+
+  it("reads the values from the job's environment with fromEnv, and never runs infisical", async () => {
+    const { run, calls } = recorder({});
+    const lines: string[] = [];
+    await syncSecrets({
+      environment: "staging",
+      runways: RUNWAYS,
+      repository: repository(true),
+      dryRun: false,
+      log: (line) => lines.push(line),
+      run,
+      ci: true,
+      fromEnv: true,
+      env: { ...CANARIES },
+    });
+    expect(calls.map((call) => call.command)).toEqual(["encore", "encore"]);
+    expect(calls.map((call) => call.input)).toEqual([
+      CANARIES.MAIL_TOKEN,
+      CANARIES.STRIPE_SECRET_KEY,
+    ]);
+    expectNoValue(lines.join("\n"));
+    await expect(
+      syncSecrets({
+        environment: "staging",
+        runways: RUNWAYS,
+        repository: repository(true),
+        dryRun: false,
+        log: () => {},
+        run,
+        ci: true,
+        fromEnv: true,
+        env: { MAIL_TOKEN: CANARIES.MAIL_TOKEN },
+      }),
+    ).rejects.toThrow(/lacks api's STRIPE_SECRET_KEY: decrypt the product's staging scope first/);
   });
 
   it("reads nothing on a dry run, even outside CI", async () => {
@@ -360,13 +470,31 @@ describe("syncSecrets", () => {
     expect((thrown as Error).cause).toBeUndefined();
   });
 
-  it("refuses to write before the Encore app is generated", async () => {
+  it("writes from a folder that names the runway's Encore app, whatever the generated layout", async () => {
+    const { run, calls } = recorder(folders);
+    await syncSecrets({
+      environment: "staging",
+      runways: RUNWAYS,
+      repository: repository(false),
+      dryRun: false,
+      log: () => undefined,
+      run,
+      ci: true,
+    });
+    const writes = calls.filter((call) => call.command === "encore");
+    expect(writes.length).toBeGreaterThan(0);
+    for (const write of writes)
+      expect(JSON.parse(write.app ?? "{}")).toMatchObject({ id: "acme-x1" });
+  });
+
+  it("refuses to write without an Encore app id in the root runway", async () => {
     const { run } = recorder(folders);
+    const { encore: _, ...providers } = RUNWAYS.root.providers;
     expect(
       await rejection(
         syncSecrets({
           environment: "staging",
-          runways: RUNWAYS,
+          runways: { ...RUNWAYS, root: { ...RUNWAYS.root, providers } },
           repository: repository(false),
           dryRun: false,
           log: () => undefined,
@@ -374,17 +502,6 @@ describe("syncSecrets", () => {
           ci: true,
         }),
       ),
-    ).toMatch(/run `stackra gen` first/);
-  });
-});
-
-describe("runRunwaySecrets", () => {
-  it("takes sync <env> [--dry-run] and nothing else", async () => {
-    await expect(
-      runRunwaySecrets(["list"], { root: repository(false), log: () => undefined }),
-    ).rejects.toThrow(/usage: pnpm runway secrets sync <env>/);
-    await expect(
-      runRunwaySecrets(["sync"], { root: repository(false), log: () => undefined }),
-    ).rejects.toThrow(/usage/);
+    ).toMatch(/providers\.encore\.app/);
   });
 });

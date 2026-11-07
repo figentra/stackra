@@ -218,7 +218,7 @@ now receives the session's `providerRef`, because both cloud terminal APIs cance
 | `adyen`  | `own-key` (API key, merchant account, live URL prefix)              | checkout, capture, tokens, pre_auth, incremental_auth, terminal, terminal_tips, disputes | `checkout`: Checkout API payment link; `capture`/`void`/`refund`: modifications on the PSP reference; `charge`: stored payment method with the recurring processing model from `initiator`; `authorize`/`increment`: pre-authorisation and amount update; terminals: cloud Terminal API payment, transaction status and abort by the session; `Idempotency-Key` from the reference |
 | `paypal` | `own-key` (REST client id and secret)                               | checkout, capture, tokens, disputes                                                      | `checkout`: Orders v2 order, approve link as the session url; `lookup`: get order; `capture`/`void`: capture or void the authorization; `charge`: vault payment token; `refund`: refund the capture; disputes: Disputes API; `PayPal-Request-Id` from the reference                                                                                                                |
 
-Availability is pack data: each provider joins `payments.byo-providers` as `planned` and is flipped to live per pack
+Availability is pack data: each provider joins `payments.byo_providers` as `planned` and is flipped to live per pack
 (`MarketPackPaymentDefaultsDriver` already reads only live entries). Readers stay server-driven (ADR 0378 decision 1):
 `CardTerminal` in `@stackra/peripherals` only records which Square or Adyen reader a till uses, so no peripheral
 driver is needed for them.

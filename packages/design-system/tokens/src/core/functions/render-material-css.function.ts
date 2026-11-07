@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `renderMaterialCss(theme)`: the glass-system part of the web stylesheet (ADR 0320 as amended 2026-10-31):
  *          - the family blocks: `:root` and `[data-family="front"|"studio"]` map every material role to a level
- *            (`--material-role-<role>-fill`, `-filter`, `-edge`, `-rim`, `-specular`, `-depth`, `-elevation`), the
+ *            (`--material-role-<role>-fill`, `-filter`, `-edge`, `-rim`, `-specular`, `-depth`, `-elevation`) and
+ *            set the family's blueprint roles (`--blueprint-<role>`, ADR 0501 section 9 as amended 2026-11-03), the
  *            theme's own family on `:root`;
  *          - the classes, in the components layer: `.material-ultra-thin`, `.material-glass`, `.material-glass-clear`
  *            (and `.material-glass-clear-label`, the label floor), one `.material-role-<role>` per role, the scrolled
@@ -18,10 +19,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0320 (decisions 1, 4 and 7 as amended 2026-10-31); ADR 0501 (tokens v2, the materials block).
  */
+import { BlueprintRole } from "#contracts/enums/blueprint-role.enum";
 import { MaterialFamily } from "#contracts/enums/material-family.enum";
 import type { MaterialLevel } from "#contracts/enums/material-level.enum";
 import { MaterialRole } from "#contracts/enums/material-role.enum";
 import type { Theme } from "#contracts/types/theme.type";
+import { FAMILY_BLUEPRINT } from "#core/constants/family-blueprint.constant";
 import { materialRoleLevel } from "#core/functions/material-role-level.function";
 
 /** The parts of one material, as `--material-<owner>-<part>`. */
@@ -108,7 +111,10 @@ function roleVariables(name: string, role: MaterialRole, level: MaterialLevel | 
   );
 }
 
-/** The role map of `family`, as declarations: every role, then the scrolled nav bar (glass in every family). */
+/**
+ * The role map of `family`, as declarations: every role, then the scrolled nav bar (glass in every family), then the
+ * family's blueprint roles.
+ */
 function familyDeclarations(theme: Theme, family: MaterialFamily): string[] {
   return [
     ...MaterialRole.flatMap((role) =>
@@ -121,6 +127,7 @@ function familyDeclarations(theme: Theme, family: MaterialFamily): string[] {
         ? "glass"
         : materialRoleLevel(theme.materials, family, "nav-bar"),
     ),
+    ...BlueprintRole.map((role) => `  --blueprint-${role}: ${FAMILY_BLUEPRINT[family][role]};`),
   ];
 }
 

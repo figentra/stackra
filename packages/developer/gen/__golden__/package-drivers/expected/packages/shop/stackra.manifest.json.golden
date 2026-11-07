@@ -148,6 +148,18 @@
       "from": "@golden/shop"
     }
   ],
+  "env": [
+    {
+      "name": "STACKRA_SHOP_GATEWAY",
+      "kind": "config",
+      "type": "enum",
+      "values": ["manual", "stripe"],
+      "required": false,
+      "config": "shop",
+      "class": "ShopConfig",
+      "field": "gateway"
+    }
+  ],
   "services": [
     {
       "class": "ShopService",

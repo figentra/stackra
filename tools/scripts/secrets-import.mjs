@@ -15,7 +15,12 @@
  *   and only classified into fixed messages. Safe for any caller: hooks cannot tell agents apart, so the script is
  *   the boundary.
  *
+ * With `--scope <scope>` the files go to `figentra/secrets` as SOPS files instead (ADR 0525), through one
+ *   self-merging pull request; Infisical stays the default until every workflow reads sops (STA-2146).
+ *
  * Usage:
+ *   pnpm secrets:import --scope <scope> [FILE…]       # into figentra/secrets (sops), names only in the output
+ *   pnpm secrets:import --tree [--dry-run]           # every <scope>/<NAME> folder file, one pull request
  *   pnpm secrets:import --list                       # inbox file NAMES, nothing else
  *   pnpm secrets:import --dry-run [FILE…]            # validate, reach Infisical, would-overwrite; prod: prints a token
  *   pnpm secrets:import [FILE…] [--project P --env e --path p --name N] [--confirm <token>] [--actor <agent>]
@@ -36,6 +41,7 @@ import {
   readFileSync,
   readSync,
   readdirSync,
+  rmdirSync,
   rmSync,
   unlinkSync,
   writeFileSync,
@@ -45,11 +51,17 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { parse as parseYaml } from "yaml";
+import {
+  NAME_RX,
+  Refusal,
+  checkTarget as checkSopsTarget,
+  isAgentRun as isAgentRunSops,
+  publish as publishSops,
+} from "./secrets-sops.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const MAX_BYTES = 64 * 1024;
 export const TOKEN_TTL_MS = 30 * 60 * 1000;
-const NAME_RX = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
 export const ENVS = ["dev", "staging", "prod"];
 // The vault layout (rules/secrets.md): /agents and /ci, plus sub-folders.
 const PATH_RX = /^\/(?:agents|ci|runtime|box)(?:\/[a-z0-9-]+)*$/;
@@ -80,8 +92,7 @@ export const isProd = (env) => /^prod(uction)?$/i.test(env);
 /** Paths an agent never writes: the gate and registry (release) keys (the owner's keeper rule of 2026-10-31). */
 export const AGENT_DENIED_PATHS = ["/ci/gate", "/ci/registry"];
 /** True when an agent runs the script (Claude Code, OpenCode or a Stackra agent run). */
-export const isAgentRun = (env) =>
-  Boolean(env.CLAUDECODE || env.OPENCODE || env.AI_AGENT || env.STACKRA_AGENT);
+export const isAgentRun = isAgentRunSops;
 /** An agent's target: never production and never a gate or release key; returns it or throws a Refusal. */
 export function checkAgentTarget(t) {
   if (isProd(t.env))
@@ -91,9 +102,6 @@ export function checkAgentTarget(t) {
   return t;
 }
 const sha256 = (data) => createHash("sha256").update(data).digest("hex");
-
-/** An error whose message is a fixed, value-free string. */
-class Refusal extends Error {}
 
 const NOT_A_DIRECTORY = "inbox is not a real directory";
 
@@ -353,7 +361,7 @@ function auditLines(home) {
     });
 }
 /** Append-only, names only. */
-function audit(home, entry) {
+export function audit(home, entry) {
   stateDir(home);
   appendFileSync(
     auditPath(home),
@@ -441,6 +449,7 @@ export function main(
     now = Date.now,
     write = (s) => process.stdout.write(s),
     env = process.env,
+    sopsRun,
   } = {},
 ) {
   // Strip control characters: a crafted file name must not drive the terminal.
@@ -460,6 +469,8 @@ export function main(
         name: { type: "string" },
         confirm: { type: "string" },
         actor: { type: "string" },
+        scope: { type: "string" },
+        tree: { type: "boolean" },
       },
     });
   } catch {
@@ -471,6 +482,8 @@ export function main(
   const actor = o.actor ?? process.env.STACKRA_AGENT ?? "unknown";
   const inbox = join(home, "Secrets-inbox");
   cleanStaleTemps(inbox);
+  if (o.tree)
+    return importTree(inbox, { dryRun: o["dry-run"], actor, home, say, run: sopsRun, env });
   const { entries, problems } = scanInbox(inbox);
 
   if (o.list) {
@@ -505,6 +518,20 @@ export function main(
   for (const p of shown) say(`${p.file}  refused: ${p.error}`);
   let failed = shown.length;
   if (!picked.length && !failed) say("secrets-import: inbox is empty");
+
+  if (o.scope !== undefined)
+    return importToSops(picked, {
+      scope: o.scope,
+      name: o.name,
+      dryRun: o["dry-run"],
+      actor,
+      home,
+      inbox,
+      say,
+      run: sopsRun,
+      env,
+      failed,
+    });
 
   for (const e of picked) {
     if (e.missing) {
@@ -577,6 +604,157 @@ export function main(
     }
   }
   return failed ? 1 : 0;
+}
+
+/**
+ * `--scope`: the picked inbox files go to `figentra/secrets` in one self-merging pull request (ADR 0525). The inbox
+ * file and its sidecar are deleted only after the pull request is open. Returns the exit code.
+ */
+function importToSops(
+  picked,
+  { scope: toScope, name, dryRun, actor, home, inbox, say, run, env, failed },
+) {
+  const entries = [];
+  for (const e of picked) {
+    if (e.missing) {
+      say(`${NAME_RX.test(e.missing) ? e.missing : "(file)"}  refused: not in the inbox`);
+      failed++;
+      continue;
+    }
+    try {
+      const t = checkSopsTarget(
+        { scope: toScope, name: name ?? e.name },
+        { agent: isAgentRunSops(env) },
+      );
+      entries.push({
+        ...t,
+        value: readValue(join(inbox, e.file)).value,
+        file: e.file,
+        stem: e.name,
+      });
+    } catch (error) {
+      if (!(error instanceof Refusal)) throw error;
+      failed++;
+      say(`${NAME_RX.test(e.name) ? e.name : "(file)"}  ${toScope}  refused: ${error.message}`);
+    }
+  }
+  if (dryRun) {
+    for (const e of entries) say(`${e.name}  ${e.scope}  ok (dry run, nothing written)`);
+    return failed ? 1 : 0;
+  }
+  if (!entries.length) return failed ? 1 : 0;
+  try {
+    const { written, url } = publishSops(entries, { actor, run });
+    for (const [i, e] of entries.entries()) {
+      unlinkSync(join(inbox, e.file));
+      rmSync(join(inbox, e.stem + SIDECAR), { force: true });
+      audit(home, { actor, name: e.name, scope: e.scope, action: "import-sops", result: "ok" });
+      say(
+        `${e.name}  ${e.scope}  ${written[i].replaced ? "replaced" : "added"}; inbox file deleted  ${url}`,
+      );
+    }
+  } catch (error) {
+    if (!(error instanceof Refusal)) throw error;
+    failed += entries.length;
+    for (const e of entries) {
+      audit(home, {
+        actor,
+        name: e.name,
+        scope: e.scope,
+        action: "import-sops",
+        result: "refused",
+        reason: error.message,
+      });
+      say(`${e.name}  ${e.scope}  refused: ${error.message}`);
+    }
+  }
+  return failed ? 1 : 0;
+}
+
+/**
+ * The inbox's scope-shaped folders (`--tree`): `<scope>/<NAME>[.ext]` → `{ file, name, scope }`, and value-free
+ * problems. Files directly in the inbox belong to the flat modes and are skipped. Never opens a file.
+ */
+export function scanTree(inbox) {
+  const entries = [];
+  const problems = [];
+  const st = lstatSync(inbox, { throwIfNoEntry: false });
+  if (!st || st.isSymbolicLink() || !st.isDirectory())
+    return { entries, problems: [{ file: inbox, error: NOT_A_DIRECTORY }] };
+  const walk = (rel, depth) => {
+    for (const f of readdirSync(join(inbox, rel)).toSorted()) {
+      if (f.startsWith(".") || f.endsWith(SIDECAR)) continue;
+      const file = rel ? `${rel}/${f}` : f;
+      const s = lstatSync(join(inbox, file));
+      if (s.isSymbolicLink()) problems.push({ file, error: "symlink refused" });
+      else if (s.isDirectory()) {
+        if (depth < 6) walk(file, depth + 1);
+        else problems.push({ file, error: "folders nested too deep" });
+      } else if (!rel) continue;
+      else if (!s.isFile()) problems.push({ file, error: "not a regular file" });
+      else if (s.size > MAX_BYTES) problems.push({ file, error: `larger than ${MAX_BYTES} bytes` });
+      else entries.push({ file, name: f.replace(/\.[^.]*$/, ""), scope: rel });
+    }
+  };
+  walk("", 0);
+  return { entries, problems };
+}
+
+/**
+ * `--tree`: every file under a scope-shaped folder goes to that scope, all in one pull request. Each file is deleted
+ * once the pull request is open, then any folder left empty. Returns the exit code; prints names and scopes only.
+ */
+function importTree(inbox, { dryRun, actor, home, say, run, env }) {
+  const { entries: found, problems } = scanTree(inbox);
+  let failed = problems.length;
+  for (const p of problems) say(`${p.file}  refused: ${p.error}`);
+  const entries = [];
+  for (const e of found)
+    try {
+      const t = checkSopsTarget({ scope: e.scope, name: e.name }, { agent: isAgentRunSops(env) });
+      entries.push({ ...t, file: e.file, value: readValue(join(inbox, e.file)).value });
+    } catch (error) {
+      if (!(error instanceof Refusal)) throw error;
+      failed++;
+      say(`${NAME_RX.test(e.name) ? e.name : "(file)"}  (folder)  refused: ${error.message}`);
+    }
+  if (!found.length && !failed) say("secrets-import: no scope folders in the inbox");
+  if (dryRun) for (const e of entries) say(`${e.name}  ${e.scope}  ok (dry run, nothing written)`);
+  if (failed && !dryRun) say("secrets-import: nothing written; fix the refusals first");
+  if (dryRun || failed) return failed ? 1 : 0;
+  if (!entries.length) return 0;
+  try {
+    const { written, url } = publishSops(entries, {
+      actor,
+      run,
+      title: `secrets: import ${entries.length} names from the inbox tree`,
+    });
+    for (const [i, e] of entries.entries()) {
+      unlinkSync(join(inbox, e.file));
+      audit(home, { actor, name: e.name, scope: e.scope, action: "import-tree", result: "ok" });
+      say(`${e.name}  ${e.scope}  ${written[i].replaced ? "replaced" : "added"}  ${url}`);
+    }
+    for (const dir of [...new Set(entries.map((e) => e.scope))].toSorted().toReversed())
+      for (let d = dir; d && d !== "."; d = dirname(d)) {
+        if (readdirSync(join(inbox, d)).length) break;
+        rmdirSync(join(inbox, d));
+      }
+    say(`secrets-import: ${entries.length} imported; inbox files deleted`);
+    return 0;
+  } catch (error) {
+    if (!(error instanceof Refusal)) throw error;
+    for (const e of entries)
+      audit(home, {
+        actor,
+        name: e.name,
+        scope: e.scope,
+        action: "import-tree",
+        result: "refused",
+        reason: error.message,
+      });
+    say(`secrets-import: refused: ${error.message} (nothing deleted)`);
+    return 1;
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -7,7 +7,8 @@
  *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class` (never for a `#stackra/clients/*`
  *          client, which is a class token before its file exists), each with a position and a fix; a
  *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
- *          (a trait's public id fields stay public ids, STA-1720; `[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
+ *          (a trait's public id fields stay public ids, STA-1720; its list, prefix-less id, Translated and enum fields keep
+ *          their types, STA-2215; `[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
  *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
  *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
  *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338); a
@@ -345,6 +346,14 @@ const MODEL_STAND_IN: Readonly<Record<string, string>> = {
     "export declare function HasTypedId<const P extends string>(prefix: P): Trait<{ id: PublicId<P> }>;",
     'export declare const BelongsToTenant: Trait<{ tenantId: PublicId<"scp"> }>;',
     'export declare const BelongsToTenantOrPlatform: Trait<{ ownerId: PublicId<"scp"> | null }>;',
+    // Made-up traits of the kinds STA-2215 found read as json: a list, a prefix-less nullable id, Translated, an enum.
+    'export declare class Translated { private readonly "~translated": true; }',
+    "export declare const Labelled: Trait<{ labels: string[] }>;",
+    "export declare const Stamped: Trait<{ stampedBy: PublicId | null }>;",
+    "export declare const Titled: Trait<{ title: Translated }>;",
+    'export declare const Phase: { readonly Draft: "draft"; readonly Live: "live" };',
+    "export type Phase = (typeof Phase)[keyof typeof Phase];",
+    "export declare const Phased: Trait<{ phase: Phase }>;",
     "export declare const OptionalProps: unique symbol;",
     "// A symbol-keyed trait member: the checker names it `__@OptionalProps@<id>`, which must never become a field.",
     'export declare const Timestamps: Trait<{ createdAt: Date; updatedAt: Date; [OptionalProps]?: "createdAt" }>;',
@@ -361,6 +370,12 @@ const MODEL_STAND_IN: Readonly<Record<string, string>> = {
 /** Three models: a one-to-many with its inverse, a link, a getter and a relation with no decorator. */
 const MODEL_SOURCES: Readonly<Record<string, string>> = {
   ...MODEL_STAND_IN,
+  "src/node/models/gizmo.model.ts": [
+    'import { HasPublicId, Labelled, Model, Phased, Stamped, Titled } from "@stackra/model";',
+    "",
+    'export class Gizmo extends Model.with(HasPublicId("gzm"), Labelled, Stamped, Titled, Phased) {}',
+    "",
+  ].join("\n"),
   "src/node/models/order.model.ts": [
     'import { Collection, HasPublicId, Model, OneToMany, Timestamps } from "@stackra/model";',
     'import { OrderLine } from "#node/models/order-line.model";',
@@ -435,6 +450,22 @@ describe("createSourceReader on models", async () => {
     expect(typeOf("ownerId")).toMatchObject({
       nullable: true,
       type: { kind: "public_id", prefix: "scp" },
+    });
+  });
+
+  it("reads a trait's list, prefix-less id, Translated and enum fields by their types, never json (STA-2215)", () => {
+    const fields = shapes.find((shape) => shape.name === "Gizmo")?.fields ?? [];
+    const typeOf = (name: string) => fields.find((field) => field.name === name);
+    expect(typeOf("labels")?.type).toEqual({ kind: "array", element: { kind: "string" } });
+    expect(typeOf("stampedBy")).toMatchObject({
+      nullable: true,
+      type: { kind: "public_id", prefix: "" },
+    });
+    expect(typeOf("title")?.type).toEqual({ kind: "translated", form: "value" });
+    expect(typeOf("phase")?.type).toMatchObject({
+      kind: "enum",
+      name: "Phase",
+      values: ["draft", "live"],
     });
   });
 

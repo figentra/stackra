@@ -586,6 +586,71 @@ describe("emitSchemas", () => {
     );
   });
 
+  it("aliases a hatch's import of an X$ this file declares itself, as an override's field reuses its base (STA-2215)", () => {
+    const options: ShapeIR = {
+      name: "GizmoOptions",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/gizmo-options.schema.ts",
+      importPath: "#modules/orders/schemas/gizmo-options.schema",
+      fields: [
+        {
+          name: "mode",
+          optional: false,
+          nullable: false,
+          type: {
+            kind: "hatch",
+            source: "GizmoOptions$.shape.mode",
+            imports: [["GizmoOptions$", "@acme/gizmos"]],
+          },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [options], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toMatch(
+      /import \{[^}]*GizmoOptions\$ as HatchGizmoOptions\$[^}]*\} from "@acme\/gizmos";/,
+    );
+    expect(content).toContain("  mode: HatchGizmoOptions$.shape.mode,");
+    expect(content).toContain("export const GizmoOptions$ = z.object({");
+  });
+
+  it("imports no hatch for a package base's override, whose fields read BaseX$.shape (TS6133)", () => {
+    const override: ShapeIR = {
+      name: "GizmoOptions",
+      kind: "config",
+      module: "orders",
+      file: "src/config/gizmo-options.config.ts",
+      importPath: "#config/gizmo-options.config",
+      base: { kind: "package", name: "GizmoOptions", from: "@acme/gizmos" },
+      fields: [
+        {
+          name: "mode",
+          optional: false,
+          nullable: false,
+          type: {
+            kind: "hatch",
+            source: "GizmoOptions$.shape.mode",
+            imports: [["GizmoOptions$", "@acme/gizmos"]],
+          },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [override], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("export const GizmoOptions$ = BaseGizmoOptions$.extend({");
+    expect(content).toContain("  mode: BaseGizmoOptions$.shape.mode,");
+    expect(content).not.toContain("HatchGizmoOptions$");
+  });
+
   it("imports what a hatch's source uses and applies nullable once (STA-1293)", () => {
     const variant: ShapeIR = {
       name: "VariantInput",

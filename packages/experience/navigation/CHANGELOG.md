@@ -1,5 +1,387 @@
 # @stackra/navigation
 
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/iam@0.18.1
+  - @stackra/clients@0.18.1
+  - @stackra/seo@0.18.1
+  - @stackra/icons@0.18.1
+  - @stackra/ui@0.18.1
+  - @stackra/testing@0.18.1
+  - @stackra/platform@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/i18n@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/feature-flags@0.18.1
+  - @stackra/settings@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/iam@0.18.0
+  - @stackra/clients@0.18.0
+  - @stackra/seo@0.18.0
+  - @stackra/icons@0.18.0
+  - @stackra/ui@0.18.0
+  - @stackra/testing@0.18.0
+  - @stackra/platform@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/feature-flags@0.18.0
+  - @stackra/settings@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/iam@0.17.2
+  - @stackra/clients@0.17.2
+  - @stackra/seo@0.17.2
+  - @stackra/icons@0.17.2
+  - @stackra/ui@0.17.2
+  - @stackra/testing@0.17.2
+  - @stackra/platform@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/feature-flags@0.17.2
+  - @stackra/settings@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/settings@0.17.1
+  - @stackra/iam@0.17.1
+  - @stackra/clients@0.17.1
+  - @stackra/seo@0.17.1
+  - @stackra/icons@0.17.1
+  - @stackra/ui@0.17.1
+  - @stackra/testing@0.17.1
+  - @stackra/platform@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/feature-flags@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/clients@0.17.0
+  - @stackra/seo@0.17.0
+  - @stackra/icons@0.17.0
+  - @stackra/ui@0.17.0
+  - @stackra/testing@0.17.0
+  - @stackra/platform@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/i18n@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/iam@0.17.0
+  - @stackra/feature-flags@0.17.0
+  - @stackra/settings@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [c6e4715]
+- Updated dependencies [5bf8ad3]
+  - @stackra/settings@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/clients@0.16.0
+  - @stackra/seo@0.16.0
+  - @stackra/icons@0.16.0
+  - @stackra/ui@0.16.0
+  - @stackra/platform@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/feature-flags@0.16.0
+  - @stackra/testing@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/iam@0.15.0
+  - @stackra/clients@0.15.0
+  - @stackra/seo@0.15.0
+  - @stackra/icons@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/testing@0.15.0
+  - @stackra/platform@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/feature-flags@0.15.0
+  - @stackra/settings@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- cc150d2: The native `SettingsForm`, `useMenu`, `useMenus` and the menu flag check now share their logic with the web entry
+  (`useSettingsForm`, `useMenuResolverWith`, `useMenuFrom`) instead of keeping copies. Behaviour and exports are unchanged.
+- Updated dependencies [6406843]
+- Updated dependencies [cc150d2]
+  - @stackra/settings@0.14.4
+  - @stackra/clients@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/seo@0.14.4
+  - @stackra/icons@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/testing@0.14.4
+  - @stackra/platform@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/feature-flags@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/clients@0.14.3
+  - @stackra/seo@0.14.3
+  - @stackra/icons@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/testing@0.14.3
+  - @stackra/platform@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/iam@0.14.3
+  - @stackra/feature-flags@0.14.3
+  - @stackra/settings@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/clients@0.14.2
+  - @stackra/seo@0.14.2
+  - @stackra/icons@0.14.2
+  - @stackra/ui@0.14.2
+  - @stackra/platform@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/feature-flags@0.14.2
+  - @stackra/settings@0.14.2
+  - @stackra/testing@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/clients@0.14.1
+  - @stackra/seo@0.14.1
+  - @stackra/icons@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/testing@0.14.1
+  - @stackra/platform@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/iam@0.14.1
+  - @stackra/feature-flags@0.14.1
+  - @stackra/settings@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/clients@0.14.0
+  - @stackra/seo@0.14.0
+  - @stackra/icons@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/testing@0.14.0
+  - @stackra/platform@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/iam@0.14.0
+  - @stackra/feature-flags@0.14.0
+  - @stackra/settings@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/clients@0.13.0
+  - @stackra/seo@0.13.0
+  - @stackra/icons@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/testing@0.13.0
+  - @stackra/platform@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/iam@0.13.0
+  - @stackra/feature-flags@0.13.0
+  - @stackra/settings@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/clients@0.12.0
+  - @stackra/seo@0.12.0
+  - @stackra/icons@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/testing@0.12.0
+  - @stackra/platform@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/iam@0.12.0
+  - @stackra/feature-flags@0.12.0
+  - @stackra/settings@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/clients@0.11.1
+  - @stackra/seo@0.11.1
+  - @stackra/icons@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/testing@0.11.1
+  - @stackra/platform@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/iam@0.11.1
+  - @stackra/feature-flags@0.11.1
+  - @stackra/settings@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/clients@0.11.0
+  - @stackra/seo@0.11.0
+  - @stackra/icons@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/testing@0.11.0
+  - @stackra/platform@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/iam@0.11.0
+  - @stackra/feature-flags@0.11.0
+  - @stackra/settings@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/clients@0.10.0
+  - @stackra/seo@0.10.0
+  - @stackra/icons@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/platform@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/feature-flags@0.10.0
+  - @stackra/settings@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/iam@0.10.0
+  - @stackra/testing@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- 681d01a: `ModuleMenu`, the navigation kit's module menu (ADR 0504), on the web and on native. It draws every declared
+  navigation menu (`Menu({ kind: MenuKind.Navigation })`, collected into the menu registry) in registry order: on the web
+  as `@stackra/ui`'s Sidebar, with each place's href in the visitor's locale mount and the place under the current path
+  marked current; on native as `@stackra/ui`'s NavigationList, each place opening its app path through the
+  `RouterProvider` that `ReactNavigationProvider` binds. `items` replaces the declared menus. The native entry gains
+  `useMenu` and `useMenus`, at parity with the web hooks. The showcase lists ModuleMenu under Blocks.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [681d01a]
+- Updated dependencies [2e43c48]
+- Updated dependencies [681d01a]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/clients@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/ui@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/seo@0.9.0
+  - @stackra/icons@0.9.0
+  - @stackra/platform@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/feature-flags@0.9.0
+  - @stackra/settings@0.9.0
+  - @stackra/testing@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

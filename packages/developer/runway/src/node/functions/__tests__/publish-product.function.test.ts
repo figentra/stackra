@@ -19,6 +19,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { publishProduct } from "#node/functions/publish-product.function";
 import { MemoryEdgeKv } from "#node/functions/__tests__/fixtures/memory-edge-kv.fixture";
 import {
@@ -152,6 +153,40 @@ describe("publishProduct", () => {
     );
     await publishProduct(request());
     expect(calls[0]?.[2]).toEqual({ env: { CLOUDFLARE_ACCOUNT_ID: "acct-1" } });
+  });
+
+  // @covers sta-2124:FR-004 sta-2124:AC-005
+  it("leaves the job's CLOUDFLARE_ACCOUNT_ID alone for a ref: account, and refuses before any upload or write without it", async () => {
+    writeBundle(repository, "console", "1.3.0");
+    const { ops: _ops, ...surfaces } = PRODUCT_ROOT.surfaces;
+    writeFileSync(
+      join(repository, "runway.yaml"),
+      JSON.stringify({
+        ...PRODUCT_ROOT,
+        surfaces,
+        providers: {
+          ...(PRODUCT_ROOT as { providers?: object }).providers,
+          cloudflare: { accountId: "ref:cloudflare.accountId" },
+        },
+      }),
+    );
+    const saved = process.env["CLOUDFLARE_ACCOUNT_ID"];
+    try {
+      process.env["CLOUDFLARE_ACCOUNT_ID"] = "acct-1";
+      await publishProduct(request());
+      expect(calls[0]?.[2]).toEqual({});
+      calls = [];
+      kv = new MemoryEdgeKv();
+      Reflect.deleteProperty(process.env, "CLOUDFLARE_ACCOUNT_ID");
+      await expect(publishProduct(request())).rejects.toThrow(RunwayUnresolvedError);
+      expect(calls).toEqual([]);
+      expect(kv.calls).toEqual([]);
+      // A dry run uploads and writes nothing, so it previews without the job's variable.
+      await expect(publishProduct(request({ dryRun: true }))).resolves.toBeDefined();
+    } finally {
+      if (saved === undefined) Reflect.deleteProperty(process.env, "CLOUDFLARE_ACCOUNT_ID");
+      else process.env["CLOUDFLARE_ACCOUNT_ID"] = saved;
+    }
   });
 
   it("writes the release pointer directly on a first release", async () => {

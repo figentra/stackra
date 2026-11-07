@@ -1,5 +1,343 @@
 # @stackra/notifications
 
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/clients@0.18.1
+  - @stackra/integrations@0.18.1
+  - @stackra/money@0.18.1
+  - @stackra/assets@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/i18n@0.18.1
+  - @stackra/support@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/outbox@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/clients@0.18.0
+  - @stackra/integrations@0.18.0
+  - @stackra/money@0.18.0
+  - @stackra/assets@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/support@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/outbox@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/clients@0.17.2
+  - @stackra/integrations@0.17.2
+  - @stackra/money@0.17.2
+  - @stackra/assets@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/outbox@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/integrations@0.17.1
+  - @stackra/clients@0.17.1
+  - @stackra/money@0.17.1
+  - @stackra/assets@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/outbox@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/clients@0.17.0
+  - @stackra/money@0.17.0
+  - @stackra/integrations@0.17.0
+  - @stackra/assets@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/i18n@0.17.0
+  - @stackra/support@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/outbox@0.17.0
+
+## 0.16.0
+
+### Minor Changes
+
+- cc4cc20: The Web Push VAPID contact is configuration now: `NotificationsConfig.webPushVapidSubject` (a `mailto:` or `https://`
+  URL set in the member runway's config), which `DevicePushTransportDriver` takes as an optional last constructor
+  argument. Until a host passes it, the driver still reads the `WEB_PUSH_VAPID_SUBJECT` secret.
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/clients@0.16.0
+  - @stackra/integrations@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/outbox@0.16.0
+  - @stackra/assets@0.16.0
+  - @stackra/money@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [0b0cf51]
+  - @stackra/outbox@0.15.0
+  - @stackra/integrations@0.15.0
+  - @stackra/clients@0.15.0
+  - @stackra/money@0.15.0
+  - @stackra/assets@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/clients@0.14.4
+  - @stackra/integrations@0.14.4
+  - @stackra/money@0.14.4
+  - @stackra/assets@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/outbox@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/clients@0.14.3
+  - @stackra/money@0.14.3
+  - @stackra/integrations@0.14.3
+  - @stackra/assets@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/outbox@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/clients@0.14.2
+  - @stackra/money@0.14.2
+  - @stackra/integrations@0.14.2
+  - @stackra/assets@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/clients@0.14.1
+  - @stackra/money@0.14.1
+  - @stackra/integrations@0.14.1
+  - @stackra/assets@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/outbox@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/clients@0.14.0
+  - @stackra/money@0.14.0
+  - @stackra/integrations@0.14.0
+  - @stackra/assets@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/outbox@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/clients@0.13.0
+  - @stackra/money@0.13.0
+  - @stackra/integrations@0.13.0
+  - @stackra/assets@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/outbox@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/clients@0.12.0
+  - @stackra/money@0.12.0
+  - @stackra/integrations@0.12.0
+  - @stackra/assets@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/outbox@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/clients@0.11.1
+  - @stackra/money@0.11.1
+  - @stackra/integrations@0.11.1
+  - @stackra/assets@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/outbox@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/clients@0.11.0
+  - @stackra/money@0.11.0
+  - @stackra/integrations@0.11.0
+  - @stackra/assets@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/outbox@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/clients@0.10.0
+  - @stackra/integrations@0.10.0
+  - @stackra/assets@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/outbox@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/support@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [681d01a]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/clients@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/integrations@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/outbox@0.9.0
+  - @stackra/money@0.9.0
+  - @stackra/assets@0.9.0
+  - @stackra/support@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

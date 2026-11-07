@@ -1,5 +1,87 @@
 # @stackra/contracts
 
+## 0.18.1
+
+No changes in this release.
+
+## 0.18.0
+
+No changes in this release.
+
+## 0.17.2
+
+No changes in this release.
+
+## 0.17.1
+
+No changes in this release.
+
+## 0.17.0
+
+No changes in this release.
+
+## 0.16.0
+
+No changes in this release.
+
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+No changes in this release.
+
+## 0.10.0
+
+### Minor Changes
+
+- e57b9a1: `stackra gen` writes an `env` section into `stackra.manifest.json` (ADR 0173 amendment 2026-11-04, STA-2104): one
+  row per environment name the member's configuration classes declare (`Config({ env })` names and `@Secret` fields),
+  with its kind (`secret`, `public`, `config`), type, rules, refused prefixes and environments; a service adds its
+  hosted packages' rows, an app only their public rows, and each gets the Infisical path `/runtime/<member>`. `@Secret` takes an optional second
+  argument, `{ refuse, environments }`, read by gen. `StackraManifest` types the section.
+
+## 0.9.0
+
+### Minor Changes
+
+- 2e43c48: `StackraManifest` gains an optional `relay` section: a producer's public keys and the consumers it delivers to, per
+  environment (ADR 0511, amendment of 2026-11-02, STA-1910). Gen writes it for a service that delivers events to another
+  app; a consumer's inbox verifies deliveries with those keys.
+
 ## 0.8.0
 
 No changes in this release.

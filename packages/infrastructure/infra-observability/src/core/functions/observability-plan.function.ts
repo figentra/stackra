@@ -5,7 +5,8 @@
  *          `telemetry.sentryProject`, the service keys and the jobs that send heartbeats): the OTLP destination and its
  *          log retention, one heartbeat per deployed environment and job, one Sentry project per app that names one,
  *          availability and latency indicators for every service, one uptime monitor per public URL the runway lists,
- *          and the public status page when the runway declares one.
+ *          the public status page when the runway declares one, and the alerts and notification routes with their
+ *          defaults applied.
  * Boundary: pure: parsed runways in, a plan out. Reports every failure at once. Reads no file, resolves no `ref:` and
  *           calls no cloud; `observabilityStack` (`./node`) declares the plan's resources.
  * Runtime: isomorphic
@@ -216,5 +217,7 @@ export function observabilityPlan(
             published: page.published,
             environments: page.environments,
           },
+    alerts: policy.alerts,
+    notify: policy.notify,
   };
 }

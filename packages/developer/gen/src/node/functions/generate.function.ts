@@ -29,6 +29,7 @@
  *           leftover one.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
  *           A member that declares a resource has each tree read through `loader` before the manifest is built
  *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
  * Runtime: node
@@ -49,6 +50,7 @@ import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.con
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
+import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -147,18 +149,28 @@ function write(root: string, files: readonly GeneratedFile[], check: boolean): s
   return changed;
 }
 
+/** The merged `Blueprint` augmentation `compileMigrations` writes for a service's own macros. */
+const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
+
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
- * unless `check`, so the runner never applies a stale file. `--check` reports them as changed.
+ * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
  */
-function staleMigrations(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
+function staleMigrations(
+  root: string,
+  files: readonly GeneratedFile[],
+  check: boolean,
+  compiled: boolean,
+): string[] {
   const dir = join(root, MIGRATIONS_DIR);
-  if (!existsSync(dir)) return [];
   const kept = new Set(files.map((file) => file.path));
-  const stale = readdirSync(dir)
+  const stale = (existsSync(dir) ? readdirSync(dir) : [])
     .filter((name) => name.endsWith(".sql"))
     .map((name) => `${MIGRATIONS_DIR}/${name}`)
     .filter((path) => !kept.has(path));
+  if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))
+    stale.push(BLUEPRINT_FILE);
   if (!check) for (const path of stale) rmSync(join(root, path));
   return stale;
 }
@@ -354,14 +366,22 @@ export async function generate(
   }
   if (errors.length > 0) return { errors, files: [], changed: partial };
   result = { ...result, files };
+  // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
+  const warnings = options.pass === undefined ? checkSubscriptions(ir) : [];
   return {
     errors: [],
     files: result.files,
+    ...(warnings.length > 0 ? { warnings } : {}),
     changed: [
       ...new Set([
         ...partial,
         ...write(root, result.files, check),
-        ...staleMigrations(root, result.files, check),
+        ...staleMigrations(
+          root,
+          result.files,
+          check,
+          ir.layout === "service" && options.pass === undefined,
+        ),
       ]),
     ],
   };

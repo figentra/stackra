@@ -15,7 +15,7 @@ another login.
 | Actor                              | Identity                    | How                                                                                  |
 | ---------------------------------- | --------------------------- | ------------------------------------------------------------------------------------ |
 | Builder agents and the coordinator | `stackra-bot` (GitHub App)  | `pnpm bot:gh -- <gh args>`, `pnpm bot:git -- <git args>`, `pnpm pr:merge <n>`        |
-| Reviewer agents                    | `stackra-reviewer` (App)    | `pnpm bot:review -- pr view\|diff\|checks\|comment\|review`, GET `api`               |
+| Reviewer agents                    | `stackra-bot` (GitHub App)  | `pnpm bot:gh -- pr view\|diff\|comment`: an advisory review (ADR 0523 decision 6)    |
 | OpenCode executors                 | none                        | no `gh`, no network `git`, no bot wrapper; the lead commits and pushes               |
 | The owner (`figentra-usr`)         | the owner's own `gh` login  | the owner's own terminal only                                                        |
 | The owner's approval               | the owner, in the GitHub UI | web or mobile app, signed in with 2FA: an APPROVED review ending in `owner-approval` |
@@ -46,7 +46,6 @@ installation ids already in Infisical cover it:
 - `pnpm pr:merge -R figentra/os 3`
 - `pnpm bot:git -- -C ~/Projects/figentra-os push origin HEAD`. pnpm runs scripts from the stackra root, so name the
   directory with `-C`.
-- `pnpm bot:review -- pr diff 3 -R figentra/os`
 
 ## What the guards deny
 
@@ -93,7 +92,7 @@ quotes too), and every `sh -c` or `eval` string. It denies:
   rewrites the owner's gh config. Inline the query (`bot-gh.mjs` refuses these as well). A query held in a shell variable cannot be seen by the
   hook, but `bot-gh.mjs` receives the expanded arguments and refuses the merge mutation there (defence in depth);
 - anything that could print or store a token: `pnpm bot:token`, a `$GH_TOKEN` or `$GITHUB_TOKEN` reference,
-  `pnpm bot:gh -- auth ...`, `pnpm bot:review -- auth ...`, and `git credential fill|approve|reject` or a
+  `pnpm bot:gh -- auth ...`, and `git credential fill|approve|reject` or a
   `git credential-<helper>` (`credential-osxkeychain get` included), bare or through `pnpm bot:git`; they answer
   with the owner's token. `bot-gh.mjs` refuses `gh auth`, `git credential` and `git credential-*` itself as well.
 
@@ -129,7 +128,7 @@ user, or on the EC2 agent host, where the owner's login does not exist.
    `main` as on stackra.
 3. **App permissions are enough, nothing to change.** `stackra-bot` holds contents, pull requests, issues, actions
    and workflows: write, and checks and statuses: read. That covers push, PR, squash merge and branch delete.
-   `stackra-reviewer` holds pull requests: write and contents: read. The bot cannot read classic branch protection
+   (`stackra-reviewer` is retired, ADR 0523 decision 6.) The bot cannot read classic branch protection
    (administration: read is not granted), and does not need to.
 4. **Private notes repo.** `figentra/stackra-notes` is in neither installation, so an agent cannot fetch or push it.
    Add it to the `stackra-bot` installation (organization Settings, GitHub Apps, stackra-bot, Repository access), and

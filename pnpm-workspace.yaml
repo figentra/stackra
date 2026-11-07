@@ -30,13 +30,16 @@ catalog:
   # Figentra Flow, the spec gates and the development workflow (ADR 0503), from the Figentra registry's open
   # @figentra-oss scope (.npmrc). It replaces tools/scripts' spec-gate, spec-trace, spec-parse, spec-linear and
   # speckit-sync, which remain as thin shims for the hooks, setup-plan.sh and the docs that name them.
-  "@figentra-oss/flow": 0.2.3
+  "@figentra-oss/flow": 0.6.5
   # YAML reader for repo-owned config (.agents/models.yaml, .mcp.yaml) read by tools/scripts.
   yaml: 2.9.1
   # HTTP client for tools/scripts' GitHub and Linear calls: an Agent with a 30 s connect timeout (STA-302).
   undici: 8.12.2
   # Runtime schemas: @stackra/validation, config and money, and the X$ schemas gen emits (ADR 0095).
   zod: 4.6.7
+  # The Encore runtime a service's generated Encore files import, at the Encore CLI version the products pin; gen
+  # refuses a service that does not declare it (STA-2194).
+  encore.dev: 1.58.8
   # Apple Wallet pass signing in @stackra/integrations (stackra-41): PKCS#7 detached signatures over the pass manifest.
   # pkijs 3.x and its asn1js 3.x peer; BSD-3-Clause. Bump the pair together.
   asn1js: 3.1.0
@@ -341,6 +344,13 @@ catalogs:
     wrangler: 4.148.0
   # Documentation site (apps/docs).
   docs:
+    # The Fumadocs site gen writes for apps/docs (ADR 0514, STA-2026; owner-approved 2026-11-02). MIT. 16.17.9
+    # (2026-10-28) is the newest fumadocs-core and fumadocs-ui past the minimum release age; fumadocs-mdx 15.4.10 is the
+    # release that peers on it. Keep core and ui equal.
+    fumadocs-core: 16.17.9
+    fumadocs-ui: 16.17.9
+    fumadocs-mdx: 15.4.10
+    # The scaffold's Mintlify docs template only (tools/scaffold); core's own docs no longer use it.
     mint: 4.2.985
     # Overrides only (see `overrides`): mint's connectivity probe, on fetch instead of got.
     is-online: 12.0.2
@@ -442,7 +452,7 @@ allowBuilds:
   "@shopify/react-native-skia": true
 
 minimumReleaseAgeExclude:
-  - "@figentra-oss/flow@0.2.3"
+  - "@figentra-oss/flow@0.6.5"
   - "@turbo/darwin-64@2.11.7"
   - "@turbo/darwin-arm64@2.11.7"
   - "@turbo/linux-64@2.11.7"

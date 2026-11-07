@@ -2,13 +2,17 @@
  * Stackra file contract:
  * Purpose: `runTestbed(request, deps, io)`, every `stackra testbed` verb: `run` (look at every enabled region, pick a
  *          free slot or a group to raise with `pickTestbedSlot`, claim it, prepare the job directory, rsync into it,
- *          run the command under the box's lock, retry on exit 75, 73 and a lost light box, dispatch the GitHub
+ *          run the command detached under the box's lock and follow its log (reattaching after a dropped connection),
+ *          retry on exit 75, 73 and a lost light box, dispatch the GitHub
  *          fallback; `--json` prints one result line), `status` (every region, also `--json`), `unlock`, `ip`, `ssh`,
  *          `sync`, `scale` and `image`. It replaces the Mac script `ci-box`. A box is reached by SSH through SSM
  *          Session Manager (`ProxyCommand`, `AWS-StartSSHSession`, the instance id), so the security group needs no
  *          inbound rule; `--ssh-direct` reaches the public IP and swaps this machine's address into the allowlist.
- *          Every box carries its region, and the SSM proxy and each `aws` call for it use that region.
- * Boundary: starts only `aws`, `ssh`, `rsync` and `gh`, through `deps`, without a shell; the only text a box shell
+ *          Every box carries its region, and the SSM proxy and each `aws` call for it use that region. Without the
+ *          Session Manager plugin SSM reaches no box, so a verb that needs one says why and `run` exits 75 at once
+ *          instead of waiting on boxes that are healthy; `status` shows why a box did not answer. When no enabled
+ *          region answers (this machine's AWS access), `run` exits 75 at once with AWS's reason.
+ * Boundary: starts only `aws`, `ssh`, `rsync` and `gh`, through `deps`, without a shell; every caller word a box shell
  *           sees is single-quoted. It calls `aws` only in an enabled region (`settings.regions`). It never reads,
  *           prints or passes a secret value (the key is a file path), and it never runs a job on the Mac. The job's
  *           own output goes wherever `deps.stream` writes (the command points it at stderr under `--json`).
@@ -22,6 +26,8 @@ import { TESTBED_CLI_DEFAULTS } from "#node/constants/testbed-cli-defaults.const
 import { TESTBED_EXIT } from "#node/constants/testbed-exit.constant";
 import { TESTBED_POLL_MS } from "#node/constants/testbed-poll-ms.constant";
 import { TESTBED_PRESETS } from "#node/constants/testbed-presets.constant";
+import { TESTBED_REATTACH_MS } from "#node/constants/testbed-reattach-ms.constant";
+import { TESTBED_REATTACH_TRIES } from "#node/constants/testbed-reattach-tries.constant";
 import { TESTBED_RSYNC_EXCLUDES } from "#node/constants/testbed-rsync-excludes.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { claimTestbedSlot } from "#node/functions/claim-testbed-slot.function";
@@ -87,7 +93,8 @@ export async function runTestbed(
     (await deps.exec("aws", ["--profile", settings.profile, "--region", region, ...args])) ??
     NOT_STARTED;
 
-  // One region's running boxes, or `undefined` when its call failed (the region is unreachable).
+  // One region's running boxes, or `undefined` when its call failed (the region is unreachable; `awsError` says why).
+  let awsError = "";
   const describe = async (region: string): Promise<readonly TestbedBox[] | undefined> => {
     const out = await aws(region, [
       "ec2",
@@ -100,7 +107,9 @@ export async function runTestbed(
       "--output",
       "json",
     ]);
-    return out.code === 0 ? parseTestbedBoxes(out.stdout, region) : undefined;
+    if (out.code === 0) return parseTestbedBoxes(out.stdout, region);
+    awsError = out.stderr.trim().split("\n").pop()?.trim() ?? "";
+    return undefined;
   };
 
   // The running boxes of the enabled regions in region order, each region's oldest first; a region that does not
@@ -163,10 +172,26 @@ export async function runTestbed(
     "StrictHostKeyChecking=accept-new",
     "-o",
     "ConnectTimeout=15",
+    // A dead SSM session is noticed in two minutes instead of hanging until the job's timeout.
+    "-o",
+    "ServerAliveInterval=30",
+    "-o",
+    "ServerAliveCountMax=4",
     ...(direct ? [] : ["-o", `ProxyCommand=${proxy(box)}`]),
     "-i",
     settings.key,
   ];
+  // Without the plugin every SSM ssh fails as if each box were down: on 2026-11-04 every run waited on "no healthy
+  // testbed box" while both boxes were healthy, because the plugin was on PATH only in a mise-activated shell.
+  let plugin: Promise<string | undefined> | undefined;
+  const ssmMissing = (): Promise<string | undefined> =>
+    direct ? Promise.resolve(undefined) : (plugin ??= deps.ssmPlugin());
+  const needSsm = async (): Promise<boolean> => {
+    const missing = await ssmMissing();
+    if (missing !== undefined) say(missing);
+    return missing === undefined;
+  };
+
   const target = (box: TestbedBox): string => `${settings.user}@${direct ? box.ip : box.id}`;
   const remote = async (box: TestbedBox, command: string): Promise<ToolOutput> => {
     await allowMe(box.region);
@@ -179,6 +204,53 @@ export async function runTestbed(
       target(box),
       ...(command === undefined ? [] : [command]),
     ]);
+  };
+
+  // The job runs detached on the box (its own session, HUP ignored), writing its log and exit code to files, and the
+  // Mac follows the log. A long job's SSH-over-SSM stream can break ("Bad packet length ... Connection corrupted",
+  // 2026-11-04, after 23 minutes): the job keeps running, the Mac reattaches up to TESTBED_REATTACH_TRIES times, and
+  // the exit code comes from the file. Exit 255 still means the box was lost: the job never started or never answered.
+  const runDetached = async (
+    box: TestbedBox,
+    id: string,
+    slot: string,
+    agent: string,
+  ): Promise<number> => {
+    const f = `/tmp/testbed-${id}`;
+    const start =
+      `f=${f}; : >>"$f.log"; setsid nohup sh -c '"$@" >>"$0.log" 2>&1; echo $? >"$0.rc"' "$f" ${agent}` +
+      ` </dev/null >/dev/null 2>&1 & echo $! >"$f.pid"`;
+    // Waits for the job's pid (30 s, then 255: it never started), follows the log until the job exits, then exits with
+    // its code; no code file means the job was killed on the box.
+    const follow = (lines: string): string =>
+      `f=${f}; n=0; until [ -s "$f.pid" ]; do n=$((n+1)); [ $n -le 30 ] || exit 255; sleep 1; done; p=$(cat "$f.pid");` +
+      ` tail -n ${lines} -f --pid="$p" "$f.log"; while kill -0 "$p" 2>/dev/null; do sleep 1; done;` +
+      ` [ -s "$f.rc" ] || { echo "testbed job ended without an exit code" >&2; exit 1; };` +
+      ` rc=$(cat "$f.rc"); rm -f "$f.log" "$f.rc" "$f.pid"; exit "$rc"`;
+    // Ctrl-C or a caller's SIGTERM stops the job on the box, as closing the old attached session did.
+    const stop: { done?: Promise<ToolOutput> } = {};
+    const off = deps.onInterrupt(() => {
+      stop.done ??= remote(box, `f=${f}; [ -e "$f.rc" ] || testbed-agent job stop ${slot}`);
+    });
+    try {
+      let code = await remoteStream(box, `${start}; ${follow("+1")}`);
+      for (
+        let tries = 0;
+        code === 255 && stop.done === undefined && tries < TESTBED_REATTACH_TRIES;
+        tries += 1
+      ) {
+        say(
+          `lost the connection to ${box.id} (${box.region}); the job keeps running there, reattaching`,
+        );
+        await deps.sleep(TESTBED_REATTACH_MS);
+        code = await remoteStream(box, follow("50"));
+      }
+      if (stop.done === undefined) return code;
+      await stop.done;
+      return 130;
+    } finally {
+      off();
+    }
   };
 
   const pickBox = async (): Promise<TestbedBox | undefined> => {
@@ -323,6 +395,15 @@ export async function runTestbed(
       ) {
         return { exit: await dispatch(preset) };
       }
+      // No region answering is this machine's AWS access (a bad or expired profile), not a busy fleet: waiting cannot
+      // fix it, so exit 75 now and say why, instead of waiting until the caller's own timeout. The fallback above
+      // needs no AWS, so it still goes first.
+      if (seen.every((state) => !state.reachable)) {
+        say(
+          `no enabled region answers (${awsError || "no reason given"}); check the AWS profile ${settings.profile}`,
+        );
+        return { exit: TESTBED_EXIT.unhealthy };
+      }
       if (healthy > 0) busySince ??= deps.now();
       if (step.action === "scale") {
         // A group at 0 (its minimum since ADR 0516) has no box to answer: start one instead of waiting for none.
@@ -392,6 +473,9 @@ export async function runTestbed(
       return { code: 2, waitSeconds: 0, runSeconds: 0 };
     }
     const slot = request.onDemand ? "heavy" : classifyTestbedCommand(command);
+    if (!(await needSsm())) {
+      return { code: TESTBED_EXIT.unhealthy, slot, waitSeconds: 0, runSeconds: 0 };
+    }
     const directory = resolve(request.cwd, dir);
     const project = testbedProject(directory);
     const skip = new Set<string>();
@@ -426,9 +510,11 @@ export async function runTestbed(
           continue;
         }
         if (synced.code !== 0) return done(synced.code);
-        const code = await remoteStream(
+        const code = await runDetached(
           box,
-          `testbed-agent job run ${quote(id)} ${slot} ${quote(who)} ${quote(project)} -- ${quote(command)}`,
+          id,
+          slot,
+          `testbed-agent job run ${quote(id)} ${slot} ${quote(who)} ${quote(project)}${request.postgres ? " --postgres" : ""} -- ${quote(command)}`,
         );
         if (code === TESTBED_EXIT.unhealthy) {
           skip.add(box.id);
@@ -471,6 +557,7 @@ export async function runTestbed(
       return result.code;
     }
     case "status": {
+      await needSsm();
       const states = await survey(["heavy", "light"]);
       if (request.json) {
         io.out(
@@ -496,14 +583,16 @@ export async function runTestbed(
         for (const box of state.boxes) {
           number += 1;
           const out = await remote(box, "testbed-agent status");
+          const why = out.stderr.trim().split("\n").pop()?.trim();
           io.out(
-            `box ${number} ${box.id} ${box.group} (${box.region}): ${out.code === 0 ? out.stdout.trim() : "unreachable"}\n`,
+            `box ${number} ${box.id} ${box.group} (${box.region}): ${out.code === 0 ? out.stdout.trim() : `unreachable${why ? ` (${why})` : ""}`}\n`,
           );
         }
       }
       return 0;
     }
     case "unlock": {
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       return remoteStream(box, `testbed-agent job stop ${request.slot ?? "heavy"}`);
@@ -515,6 +604,7 @@ export async function runTestbed(
       return 0;
     }
     case "ssh": {
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       return remoteStream(box, request.args.length > 0 ? request.args.join(" ") : undefined);
@@ -523,6 +613,7 @@ export async function runTestbed(
       const [dir, ...extra] = request.args;
       if (dir === undefined || extra.length > 0)
         throw new CliUsageError("sync takes one directory");
+      if (!(await needSsm())) return TESTBED_EXIT.unhealthy;
       const box = await pickBox();
       if (box === undefined) return 1;
       const directory = resolve(request.cwd, dir);
