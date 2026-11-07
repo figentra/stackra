@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: hold the SOPS secrets scripts to their contract (ADR 0525): `secrets-sops.mjs` (publish, scopes, names),
- *          `secrets-put`, `secrets-generate`, `secrets-import --scope`, `secrets-migrate`, `secrets-catalog`
+ *          `secrets-put`, `secrets-generate`, `secrets-import --scope`, `secrets-catalog`
  *          and `secrets-age-init` (`secrets-exec` has its own file). Every path asserts that no canary value reaches
  *          the output, the audit log, any CLI's argv or a written file.
  * Boundary: a throwaway HOME and a fake sops, git, gh and age-keygen runner; no real repository, key or vault.
@@ -32,7 +32,6 @@ import {
   vapidPair,
 } from "../secrets-generate.mjs";
 import { main as importMain } from "../secrets-import.mjs";
-import { main as migrate, plan, readInfisical, scopeFor } from "../secrets-migrate.mjs";
 import { buildCatalog, checkCatalog, declaredNames } from "../secrets-catalog.mjs";
 import { main as ageInit } from "../secrets-age-init.mjs";
 
@@ -40,8 +39,6 @@ const canary = () => `fake-${randomBytes(12).toString("hex")}`;
 const home = () => mkdtempSync(join(tmpdir(), "secrets-sops-test-"));
 const AGENT = { STACKRA_AGENT: "test-agent" };
 const OWNER = {};
-/** One Infisical row of the pay project's prod environment. */
-const row = (path, name, value) => ({ project: "pay", env: "prod", path, name, value });
 
 /**
  * A fake for every CLI the scripts call. sops "encrypts" to a fixed text that never holds the plaintext, and keeps the
@@ -440,142 +437,6 @@ test("import --scope: inbox files go to sops in one pull request and are deleted
     [],
   );
   for (const v of [a, b]) assertNoLeak(v, { lines: out.lines, cli, homeDir: h });
-});
-
-test("migrate: scopes map one to one, repeats merge or conflict, unmapped is reported", () => {
-  assert.equal(scopeFor("agents", "dev", "/agents"), "agents");
-  assert.equal(scopeFor("ci-production", "prod", "/ci/release"), "ci/production/release");
-  assert.equal(scopeFor("ci-production", "dev", "/ci"), null);
-  assert.equal(scopeFor("flow", "prod", "/ci/gate"), "ci/flow/gate");
-  assert.equal(scopeFor("pay", "prod", "/runtime/payments"), "products/pay/production");
-  assert.equal(scopeFor("stackra", "prod", "/runtime"), null);
-  const v = Buffer.from(canary());
-  const r = plan([
-    row("/runtime/a", "SAME", v),
-    row("/runtime/b", "SAME", v),
-    row("/runtime/a", "DIFF", v),
-    row("/runtime/b", "DIFF", Buffer.from("other")),
-    row("/runtime/a", "EMPTY", Buffer.alloc(0)),
-    { project: "zz", env: "prod", path: "/x", name: "LOST", value: v },
-    { project: "stackra", env: "prod", path: "/ci", name: "BETTERSTACK_API_TOKEN", value: v },
-    {
-      project: "stackra",
-      env: "prod",
-      path: "/ci/registry",
-      name: "REGISTRY_ISSUER_TOKEN",
-      value: v,
-    },
-    { project: "stackra", env: "dev", path: "/ci", name: "BETTERSTACK_API_TOKEN", value: v },
-    { project: "ci-deploy", env: "prod", path: "/ci", name: "CLOUDFLARE_ACCOUNT_ID", value: v },
-    { project: "academorix-legacy", env: "prod", path: "/ci", name: "OLD", value: v },
-  ]);
-  assert.deepEqual(
-    r.entries.map((e) => `${e.scope}/${e.name}`),
-    [
-      "products/pay/production/SAME",
-      "ci/deploy/BETTERSTACK_API_TOKEN",
-      "ci/production/registry/REGISTRY_ISSUER_TOKEN",
-    ],
-  );
-  assert.equal(r.excluded.length, 3, "stackra dev copy, a Cloudflare id, academorix-legacy");
-  assert.equal(r.conflicts.length, 1);
-  assert.equal(r.empty.length, 1);
-  assert.equal(r.unmapped.length, 1);
-  assert.ok(!JSON.stringify([r.conflicts, r.empty, r.unmapped]).includes(v.toString()));
-  const names = plan([row("/runtime/a", "X", undefined), row("/runtime/b", "X", undefined)]);
-  assert.equal(names.duplicates.length, 1, "a names-only repeat is not a conflict");
-  assert.equal(names.conflicts.length, 0);
-});
-
-test("migrate reads through a 429 and gives up after 6 retries", async () => {
-  let calls = 0;
-  const waits = [];
-  const limited = (n) => async (url) => {
-    calls += 1;
-    if (calls <= n) return { ok: false, status: 429, headers: new Headers({ "retry-after": "3" }) };
-    return {
-      ok: true,
-      json: async () =>
-        url.includes("/v1/projects")
-          ? {
-              projects: [
-                {
-                  id: "p",
-                  slug: "agents",
-                  type: "secret-manager",
-                  environments: [{ slug: "dev" }],
-                },
-              ],
-            }
-          : { secrets: [{ secretKey: "A_KEY", secretPath: "/agents" }] },
-    };
-  };
-  const sleep = async (ms) => void waits.push(ms);
-  const rows = await readInfisical({
-    domain: "d",
-    token: "t",
-    withValues: false,
-    fetchImpl: limited(2),
-    sleep,
-  });
-  assert.deepEqual(rows, [{ project: "agents", env: "dev", path: "/agents", name: "A_KEY" }]);
-  assert.deepEqual(waits, [3000, 3000]);
-  calls = 0;
-  await assert.rejects(
-    readInfisical({ domain: "d", token: "t", withValues: false, fetchImpl: limited(99), sleep }),
-    /429 on \/v1\/projects/,
-  );
-  assert.equal(calls, 7);
-});
-
-test("migrate --write: owner only, names and 8-hex prefixes only, one pull request", async () => {
-  const v = canary();
-  const cli = fakeCli();
-  const tokenRun = (command, args, opts) =>
-    command === "infisical"
-      ? { status: 0, stdout: "eyJfake.token.x\n", stderr: "" }
-      : cli.run(command, args, opts);
-  const fetchImpl = async (url) => ({
-    ok: true,
-    json: async () =>
-      url.includes("/v1/projects")
-        ? {
-            projects: [
-              {
-                id: "p1",
-                slug: "ci-deploy",
-                type: "secret-manager",
-                environments: [{ slug: "prod" }],
-              },
-            ],
-          }
-        : { secrets: [{ secretKey: "TURBO_TOKEN", secretPath: "/ci/turbo", secretValue: v }] },
-  });
-  const out = sink();
-  assert.equal(
-    await migrate(["--write"], {
-      run: tokenRun,
-      fetchImpl,
-      env: AGENT,
-      write: out.write,
-      home: home(),
-    }),
-    1,
-  );
-  assert.match(out.lines[0], /the owner runs it/);
-  const h = home();
-  assert.equal(
-    await migrate(["--write"], { run: tokenRun, fetchImpl, env: OWNER, write: out.write, home: h }),
-    0,
-  );
-  const files = cli.snapshots[0];
-  assert.deepEqual(Object.keys(files).toSorted(), [
-    "ci/deploy/turbo/TURBO_TOKEN.enc.yaml",
-    "migration/hashes.yaml",
-  ]);
-  assert.match(files["migration/hashes.yaml"], /ci\/deploy\/turbo\/TURBO_TOKEN: "?[0-9a-f]{8}"?\n/);
-  assert.ok(!JSON.stringify(cli.calls).includes("eyJfake"), "the token is never on argv");
-  assertNoLeak(v, { lines: out.lines, cli, homeDir: h });
 });
 
 test("catalog: names from files, kept fields survive, gaps are named", () => {

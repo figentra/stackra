@@ -59,16 +59,17 @@ The states: **Live** (serving customers), **In progress** (being built), **Plann
 ## Quick start
 
 ```bash
-mise install    # Node, pnpm, gitleaks, the Infisical CLI, uv and Maestro, pinned in mise.toml
+mise install    # Node, pnpm, gitleaks, sops, age, uv and Maestro, pinned in mise.toml
 pnpm install    # also installs the lefthook git hooks
 pnpm verify     # the full gate: what "done" means
 pnpm docs       # the documentation site on http://localhost:3333
 pnpm new <kind> <name>   # scaffold a member: service, package, tooling, app:console, app:mobile, app:desktop, app:docs
 ```
 
-Contributors with access to the Infisical vault also run `infisical login` (the workspace is the committed
-`.infisical.yaml`). The vault feeds `pnpm linear`, the bot commands and the MCP servers; secret values never live in
-a file ([ADR 0009](apps/docs/src/docs/adr/0009-secrets-two-mechanisms.mdx)). `pnpm doctor` checks a fresh machine and
+Contributors with access to the sops vault (`figentra/secrets`, keyed by Cloud KMS) keep its checkout at
+`~/.stackra/secrets`; `tools/scripts/secrets-exec.mjs` feeds `pnpm linear`, the bot commands and the MCP servers from
+it, and secret values never live in a file in this repository
+([ADR 0525](apps/docs/src/docs/adr/0525-secrets-sops-and-cloud-kms-replace-infisical.mdx)). `pnpm doctor` checks a fresh machine and
 says what is missing. Full steps: [quickstart](apps/docs/src/docs/quickstart.mdx) and
 [fresh machine](apps/docs/src/docs/runbooks/fresh-machine.mdx).
 

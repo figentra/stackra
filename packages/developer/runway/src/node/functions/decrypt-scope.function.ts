@@ -9,7 +9,7 @@
  *           are not read. Which job may decrypt which scope is Cloud KMS's (figentra/infra's Workload Identity pins),
  *           not this function's.
  * Runtime: node
- * Governing contract: ADR 0525 (SOPS and Cloud KMS replace Infisical; CI decrypts in place); ADR 0257; ADR 0267.
+ * Governing contract: ADR 0525 (SOPS and Cloud KMS; CI decrypts in place); ADR 0257; ADR 0267.
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";

@@ -8,7 +8,7 @@
  *           public names, ids or `ref:<path>`; never a secret value (ADR 0173).
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decision 2), ADR 0170 (decision 6: production behind a GitHub environment), ADR 0284
- *                     (decisions 6 and 7: the `static` environment and the `INFISICAL_CI_IDENTITY_ID` variable),
+ *                     (decisions 6 and 7: the `static` environment and the CI identity variable),
  *                     ADR 0231 (SCREAMING_SNAKE; `GITHUB_` is GitHub's).
  */
 import { Enum } from "@stackra/contracts";

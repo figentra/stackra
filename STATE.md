@@ -21,8 +21,7 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
   (`catalogMode: strict`).
 - Toolchain (`mise.toml`, `package.json`, catalogs): Node 24.22.0, pnpm 12.16.1, Turborepo 2.11.9,
   TypeScript 6.0.3 / 7.0.2, tsdown 0.23.1, vitest 5.0.5, oxlint 1.86.0, oxfmt 0.71.0, lefthook 2.2.1,
-  changesets 3.0.3, wrangler 4.148.0, gitleaks 8.30.1, sops 3.10.2, age 1.2.1, Infisical CLI 0.44.2 (still
-  pinned), Figentra Flow `@figentra-oss/flow` 0.6.5 (`fflow`, stackra preset).
+  changesets 3.0.3, wrangler 4.148.0, gitleaks 8.30.1, sops 3.10.2, age 1.2.1, Figentra Flow `@figentra-oss/flow` 0.6.5 (`fflow`, stackra preset).
 
 ## 3. Proven by a real run
 
@@ -58,13 +57,13 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
 - **Observability.** `apply-observability.yml` has never passed (run 42336073171 failed at "Pulumi up").
 - **Testbed image and fallback.** `testbed-image.yml` has never passed on main (it passed on a PR branch, run
   42330185147); `testbed-fallback.yml` has never passed.
-- **Workers without a deploy workflow run here:** `workers/edge` and `workers/env-sync`; the
-  `env-sync.stackra.figentra.com` host does not resolve.
+- **Workers without a deploy workflow run here:** `workers/edge` (`workers/env-sync` is removed: ADR 0525 retired
+  it).
 - **Docs deploy at head.** `deploy-docs.yml` runs 42338715844 (waiting on the owner's production approval) and
   42340327762 (pending, `1da9e657`); the docs site still serves the 2026-11-02 build.
 - **Programming model v3** (ADR 0294, 0295, 0296): declared as the target; no member is converted yet
   (STA-344) and its checks are planned (STA-338 to STA-340), per `AGENTS.md`.
-- **Secrets move to SOPS** (ADR 0525, accepted 2026-11-06): declared; Infisical is still wired (section 6).
+- **Secrets move to SOPS** (ADR 0525, accepted 2026-11-06): CI and workstations read sops; what is left is listed in section 6.
 - **Reference apps** `apps/console`, `apps/mobile`, `apps/playground` and services `example`, `health`: no
   deploy run on record for them in this repository.
 
@@ -78,7 +77,7 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
 | `apps/console`, `apps/mobile` | reference web (Vite) and Expo apps                                            |
 | `apps/playground`             | design-system playground                                                      |
 | `services/`                   | reference services `example`, `health`                                        |
-| `workers/`                    | Cloudflare Workers: `registry`, `static`, `turbo-cache`, `edge`, `env-sync`   |
+| `workers/`                    | Cloudflare Workers: `registry`, `static`, `turbo-cache`, `edge`               |
 | `tools/`                      | repository scripts, scaffold templates, schemas, consumer gate                |
 | `.agents/`                    | rules, agents, hooks, skills and Flow specs (`specs/`, 331 folders)           |
 | `.flow/`                      | Figentra Flow install: generated constitution, `lock.json`, `overrides/`      |
@@ -102,12 +101,13 @@ Authoritative documents, in order:
 - **Open pull requests: 23** (this one included), the oldest from 2026-11-02 (#280); one is the release PR (#619).
 - **Branches: 132** besides `main`: 24 with an open PR, 20 whose PR merged, 25 whose PR closed, 63 with no
   PR; 10 have no commit since before 2026-10-31. About 108 are candidates for deletion.
-- **Infisical references remaining:** `git grep -i -c infisical` counts 1905 lines in 416 files at `1da9e657`, though
-  ADR 0525 replaces Infisical. Live wiring, not only prose: `.infisical.yaml`; `flow.config.json`
-  (`secrets.kind: infisical`); `mise.toml` (Infisical CLI pin); `runway.yaml` (`providers.infisical`); the
-  `package.json` scripts `linear`, `spec:linear`, `bot:token`, `bot:gh`, `bot:git`, `pr:merge`, `adr:reserve`
-  (all `infisical run`); `.agents/rules/secrets.md` still describes Infisical as the dev/CI vault;
-  `apply-testbed.yml` reads Infisical.
+- **Infisical references remaining:** `git grep -i -c infisical` counts 1281 lines in 244 files after the
+  core stragglers pull request (1905 lines in 416 files at `1da9e657`); 123 files outside ADRs, CHANGELOGs and
+  `.agents/specs/`. Live wiring left: `runway.yaml` `providers.infisical` and the `INFISICAL_*` CI variables
+  `@stackra/infra-github` derives from it (plan phase P6); the testbed (`infra-testbed`, `apply-testbed.yml`,
+  `testbed-image.yml`, design pending). The rest is prose in Flow-rendered files (`.agents/`, `.claude/`, `.flow/`,
+  `AGENTS.md`, the flow preset) that resync after a Flow release, the agent hooks and settings (owner's yes), and
+  the runbooks `secrets`, `setup`, `runway`, `deploys`, `token-rotation` and `test-infrastructure`.
 - **Stale facts in overview docs:** `README.md` says the packages are at 0.3.0 (they are 0.18.1);
   `docs/repository-guide.md` calls the docs app "Mintlify" (Fumadocs since ADR 0514) and lists four config
   presets (there are five).

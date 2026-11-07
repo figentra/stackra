@@ -13,7 +13,7 @@ icon: "plane-takeoff"
   deploy spike (STA-136), the staging deploy, images and generated CI pipelines.
 </Note>
 
-Runway is the deploy layer of Stackra: the runway files say what each member needs and where it runs ([0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)), and public reusable workflows in this repository deploy it ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)). Promotion, rollback and records follow [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted); secrets follow [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets).
+Runway is the deploy layer of Stackra: the runway files say what each member needs and where it runs ([0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)), and public reusable workflows in this repository deploy it ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)). Promotion, rollback and records follow [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted); secrets follow [0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical).
 
 ## Runway files
 
@@ -60,12 +60,12 @@ amendment of 2026-11-03). Never edit the generated entries: change the runway an
 
 ## Provider workflows
 
-Each provider is a `workflow_call` workflow in `.github/workflows/`. Its job takes its GitHub environment from an input, so the environment's protection, its OIDC subject and GitHub's deployment record apply to every deploy. Each job reads one credential per step from Infisical `/ci` over GitHub OIDC, and without an identity id it builds, checks, prints a notice and deploys nothing.
+Each provider is a `workflow_call` workflow in `.github/workflows/`. Its job takes its GitHub environment from an input, so the environment's protection, its OIDC subject and GitHub's deployment record apply to every deploy. Each job decrypts the `figentra/secrets` scopes it needs with the shared `secrets-decrypt` action, signed in to Google Cloud as itself through GitHub OIDC, and takes only the names it uses from each. figentra/infra's `estate/secret-callers.mjs` grants each caller workflow, in its environment, its scopes; a job with no row is refused at the decrypt ([Secrets](/runbooks/secrets#reading-in-ci)).
 
-| Provider                        | Caller here                            | Does                                                                                                                                                    |
-| ------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runway-cloudflare-workers.yml` | `deploy-static.yml`, `deploy-docs.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                             |
-| `runway-npm.yml`                | `release.yml`                          | Trivy scan of the lockfile, version PR or trusted publish with provenance, the OP2 bootstrap token on request, a cosign-signed SBOM on each new release |
+| Provider                        | Caller here                            | Does                                                                                                                        |
+| ------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `runway-cloudflare-workers.yml` | `deploy-static.yml`, `deploy-docs.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt |
+| `runway-npm.yml`                | `release.yml`                          | Trivy scan of the lockfile, version PR or trusted publish with provenance, a cosign-signed SBOM on each new release         |
 
 npm checks the calling workflow, not the reusable one, so each package's trusted publisher names `release.yml`.
 
@@ -84,12 +84,10 @@ jobs:
       member: workers/edge
       package: "@acme/worker-edge"
       environment: production
-      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-      infisical-project-id: <workspace id>
-      smoke-url: https://edge.acme.example/healthz
+      scope: ci/deploy
 ```
 
-The calling job grants the permissions the provider's job asks for. zizmor fails any `uses:` that is not a full SHA.
+The calling job grants the permissions the provider's job asks for; `id-token: write` is the decrypt's sign-in. The caller workflow needs its row in figentra/infra's `estate/secret-callers.mjs` before its first run. zizmor fails any `uses:` that is not a full SHA.
 
 ## The deploy command
 
@@ -183,8 +181,9 @@ environments:
 This is self-hosted ZITADEL (ADR 0206 decision 4 as amended by 0493), planned in dev for about $75 a month and in
 staging for about $105. `command` replaces the image's default arguments. `aliases` hands the image a resource
 variable under the name it reads: here the database URL as `ZITADEL_DATABASE_POSTGRES_DSN`. An alias may name only a
-variable of a Postgres resource the workload uses. The owner puts `ZITADEL_MASTERKEY` (32 characters, fixed after the
-first start) into Infisical at `<env>:/workloads/zitadel/` before the first apply.
+variable of a Postgres resource the workload uses. `ZITADEL_MASTERKEY` (32 characters, fixed after the first start) goes
+into the product's `products/<product>/<env>` scope with `pnpm secrets:put` or `pnpm secrets:generate` before the first
+apply.
 
 A service member names what it uses in its own runway (`uses: [main-db]`). The plan prints each item's monthly
 estimate; dev ($150) and staging ($500) refuse a plan over their cap, production only warns until it has a `limits`.
@@ -218,10 +217,9 @@ tell the owner.
 Agents cannot do these (STA-605):
 
 1. Restrict the `static` environment to `main` and `schemas@*` tags, and add the required reviewers `runway.yaml` lists for `static`, `registry` and `release` (`figentra-usr` until a second maintainer joins).
-2. Create the `docs` environment (main only), and add Infisical OIDC trusts for the `docs` and `release` environments.
+2. Create the `docs` environment (main only). figentra/infra's `estate/secret-callers.mjs` already grants the `docs` and `release` callers their scopes.
 3. Before the first docs Worker deploy (ADR 0514), remove the docs.stackra.figentra.com CNAME that points at Mintlify, so Cloudflare can attach the `stackra-docs` custom domain; then cancel the Mintlify project.
 4. Apply `.github/rulesets/release-tags.json` to the `release-tags` ruleset.
 5. After the merge, tag `runway-v1` on the merge commit.
-6. The first npm publish (OP2): a 7-day publish-only token as `NPM_BOOTSTRAP_TOKEN` in `/ci`, dispatch `release.yml` with `bootstrap`, add a trusted publisher naming `release.yml` for each package, revoke the token.
 
 See also [Deploys](/runbooks/deploys), [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).

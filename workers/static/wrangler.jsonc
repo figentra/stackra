@@ -1,7 +1,7 @@
 // Stackra file contract:
 // Purpose: the Cloudflare Worker that serves Stackra's hosted static files (ADR 0284). Assets only: no Worker script;
 //          Cloudflare serves dist/site directly and applies its generated `_headers` file (CORS, immutable cache).
-// Owner: release-operations · Secrets: forbidden — CI passes CLOUDFLARE_API_TOKEN from Infisical /ci in the environment.
+// Owner: release-operations · Secrets: forbidden — CI passes CLOUDFLARE_API_TOKEN from sops ci/deploy in the environment.
 // Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
 // Code facts only (ADR 0519 decision 1): the compatibility date, observability, the custom domain, workers_dev and
 // preview URLs are runway.yaml's (`targets.cloudflare-workers.members.static`), rendered on deploy.

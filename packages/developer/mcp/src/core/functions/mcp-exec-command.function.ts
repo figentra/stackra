@@ -6,7 +6,7 @@
  * Boundary: builds the command; `execWithSecrets` (`./node`) runs it. No value passes through this process: sops
  *           decrypts each value into the child's environment and the child's shell expands them.
  * Runtime: isomorphic
- * Governing contract: ADR 0173; ADR 0257; ADR 0282 (decision 3); ADR 0525 (sops replaces Infisical).
+ * Governing contract: ADR 0173; ADR 0257; ADR 0282 (decision 3); ADR 0525 (sops and Cloud KMS).
  */
 import { secretNamesOf } from "#core/functions/secret-names-of.function";
 import { shellCommandLine } from "#core/functions/shell-command-line.function";

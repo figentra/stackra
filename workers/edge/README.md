@@ -28,7 +28,7 @@ non-public request.
 
 | Var / secret                | Meaning                                                                                |
 | --------------------------- | -------------------------------------------------------------------------------------- |
-| `EDGE_SIGNING_SECRET`       | Worker secret (Infisical, ADR 0173): the newest key of the API's `EdgeSigningKeys`     |
+| `EDGE_SIGNING_SECRET`       | Worker secret (sops, ADR 0525): the newest key of the API's `EdgeSigningKeys`          |
 | `EDGE_ORIGIN`               | `scheme://host[:port]` the requests go to                                              |
 | `EDGE_HOST_MAP`             | JSON: `{ "<host>": { "product", "surface", "realm", "scope"? } }`; `scope` is a tenant |
 | `EDGE_OIDC_ISSUER`          | the ZITADEL issuer, exactly the tokens' `iss`                                          |
@@ -50,7 +50,7 @@ edge Worker in figentra/os; this one is the core reference and the signer for pr
 
 - Add the hosts under `routes` in `wrangler.jsonc` (empty on purpose) and set `EDGE_ORIGIN`, `EDGE_HOST_MAP`,
   `EDGE_OIDC_ISSUER` and `EDGE_OIDC_AUDIENCE`.
-- Put `EDGE_SIGNING_SECRET` in Infisical and let CI set it as a Worker secret; give the API the same key through its
+- Put `EDGE_SIGNING_SECRET` in sops (`pnpm secrets:put`) and let CI set it as a Worker secret; give the API the same key through its
   `EdgeSigningKeys` driver.
 - Add a deploy workflow (as `deploy-registry.yml`); nobody runs `wrangler deploy` by hand.
 

@@ -637,6 +637,19 @@ test("checkYamlFlowMaps: names file and line of a flow mapping; allows block map
   );
 });
 
+test("checkJsonConfigs: a service's assets/defaults JSON stays JSON (imported as a JSON module)", () => {
+  assert.deepEqual(checkJsonConfigs(["services/notifications/assets/defaults/rule-sets.json"]), []);
+  assert.equal(checkJsonConfigs(["services/notifications/config.json"]).length, 1);
+});
+
+test("checkYamlFlowMaps: reads every document of a multi-document file (a Maestro flow)", () => {
+  const flow = "appId: com.figentra.os\n---\n- launchApp\n- tapOn:\n    text: Sign in\n";
+  assert.deepEqual(checkYamlFlowMaps("flow.yaml", flow), []);
+  assert.deepEqual(checkYamlFlowMaps("flow.yaml", "appId: x\n---\n- tapOn: { text: Go }\n"), [
+    "flow.yaml:3: flow mapping; write a block mapping (YAML standard, STA-299)",
+  ]);
+});
+
 test("isRepoOwnedYaml: skips generated and vendored YAML", () => {
   for (const p of ["lefthook.yml", ".github/workflows/ci.yml", ".agents/routing.yaml"])
     assert.equal(isRepoOwnedYaml(p), true);

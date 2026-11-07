@@ -29,4 +29,4 @@
 - [Rules](.agents/rules/README.md): the rule sources projected into AGENTS.md
 - [Specs](.agents/specs/): Figentra Flow specs, one folder per issue
 - [Workflows](.github/workflows/README.md): CI, release and deploy workflows
-- [Workers](workers/README.md): registry, static, turbo-cache, edge and env-sync Workers
+- [Workers](workers/README.md): registry, static, turbo-cache and edge Workers

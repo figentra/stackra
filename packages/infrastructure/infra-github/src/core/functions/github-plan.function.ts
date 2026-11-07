@@ -9,8 +9,8 @@
  *           resolves it. Reports every failure at once. Reads no file and calls no cloud.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decisions 2 and 4), ADR 0170 (decisions 5 and 6: production promotes behind a GitHub
- *                     environment the owner approves), ADR 0173 (decisions 5 and 6: CI reads Infisical over OIDC,
- *                     secret names in git and values never), ADR 0284 (decisions 6 and 7), ADR 0296 (decision 2).
+ *                     environment the owner approves), ADR 0173 (decisions 5 and 6: secret names in git and values
+ *                     never), ADR 0525 (CI decrypts sops over OIDC), ADR 0284 (decisions 6 and 7), ADR 0296 (decision 2).
  */
 import { Enum } from "@stackra/contracts";
 import { RunwayEnvironment } from "@stackra/runway";
@@ -55,7 +55,7 @@ export function githubPlan(root: RootRunway): GithubPlan {
         issues.push({
           path: `${path}.${name}`,
           message:
-            "A secret name: jobs read it from Infisical over OIDC, and GitHub holds no secret value",
+            "A secret name: jobs decrypt it from sops over OIDC, and GitHub holds no secret value",
         });
       }
     }
