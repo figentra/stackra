@@ -8,7 +8,7 @@
  * Runtime: node
  * Governing contract: ADR 0230 (reviewer identity separate from builder); STA-302 (network layer).
  * Input: STACKRA_BOT_APP_ID, STACKRA_BOT_INSTALLATION_ID, STACKRA_BOT_PRIVATE_KEY from the environment — injected by
- *   `infisical run --env=dev --path=/agents`, never from a file. (The reviewer app's STACKRA_REVIEWER_ names are
+ *   `secrets-exec.mjs` from the `agents` scope of figentra/secrets (ADR 0525), never from a file. (The reviewer app's STACKRA_REVIEWER_ names are
  *   retired with that App, ADR 0523 decision 6.)
  * Output: the token alone on stdout (for piping); errors on stderr, never containing a secret. Exit 1 on failure.
  * Network: the one layer bot-gh, pr-merge and linear call GitHub and Linear through (STA-302). fetch goes over an
@@ -164,7 +164,10 @@ export async function mintToken(env = process.env, fetchImpl = netFetch, prefix 
     (n) => `${prefix}_${n}`,
   );
   const missing = [appId, installation, privateKey].filter((name) => !env[name]);
-  if (missing.length) throw new Error(`missing env: ${missing.join(", ")} (run under infisical)`);
+  if (missing.length)
+    throw new Error(
+      `missing env: ${missing.join(", ")} (run through pnpm bot:*, which decrypts them)`,
+    );
 
   let jwt;
   try {

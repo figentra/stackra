@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: hold `vault-keeper.mjs` to its contract (ADR 0480): the preflight lists every declared secret by NAME as
  *          present, missing or placeholder; generate and rotate write a random value blind, refuse the wrong one of
- *          the two, and need the owner's one-time token for prod; no value reaches the output or the runner's argv.
+ *          the two, and need the owner's one-time token for prod; `importSecret`, the Infisical import core moved
+ *          here from secrets-import (ADR 0525), streams a value in; no value reaches the output or the runner's argv.
  * Boundary: a throwaway HOME and an in-memory Infisical runner; the real vault is never touched.
  * Runtime: node
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0257; ADR 0480.
@@ -10,12 +11,20 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { stringify } from "yaml";
-import { STORE_KIT, ciHome, declared, main } from "../vault-keeper.mjs";
+import { STORE_KIT, ciHome, declared, importSecret, main } from "../vault-keeper.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const fixedNow = () => 1_800_000_000_000;
@@ -264,4 +273,62 @@ test("ciHome: build tokens live in ci-build, every other CI name in ci-deploy /c
     path: "/ci/registry",
   });
   assert.deepEqual(ciHome("MINTLIFY_ADMIN_KEY"), { project: "ci-deploy", path: "/ci" });
+});
+
+test("importSecret streams a value in and returns only { name, ok, reason }", async () => {
+  const home = mkdtempSync(join(tmpdir(), "vault-import-test-"));
+  const v = canary();
+  const fake = fakeInfisical();
+  const base = { home, runner: fake.runner, actor: "request-page" };
+  const ok = await importSecret({ ...base, name: "STREAMED_KEY", valueStream: Readable.from([v]) });
+  assert.deepEqual(ok, { name: "STREAMED_KEY", ok: true });
+  assert.equal(fake.store.get("dev:/agents:STREAMED_KEY"), v);
+
+  const prod = await importSecret({
+    ...base,
+    name: "PROD_STREAM",
+    project: "ci-deploy",
+    env: "prod",
+    path: "/ci",
+    valueStream: Readable.from([v]),
+  });
+  assert.equal(prod.ok, false);
+  assert.match(prod.reason, /needs --confirm/);
+
+  const big = await importSecret({
+    ...base,
+    name: "BIG_STREAM",
+    valueStream: Readable.from([Buffer.alloc(64 * 1024 + 1, 120)]),
+  });
+  assert.deepEqual(big, { name: "BIG_STREAM", ok: false, reason: "larger than 65536 bytes" });
+
+  const bad = await importSecret({ ...base, name: v, valueStream: Readable.from([v]) });
+  assert.deepEqual(bad, {
+    name: "(invalid name)",
+    ok: false,
+    reason: "name is not SCREAMING_SNAKE",
+  });
+  assert.ok(!JSON.stringify([ok, prod, big, bad]).includes(v), "value in a result");
+  assert.ok(!JSON.stringify(fake.calls).includes(v), "value on argv");
+  assert.ok(
+    !readFileSync(join(home, ".stackra", "secrets-audit.log"), "utf8").includes(v),
+    "value in the log",
+  );
+});
+
+test("importSecret refuses a symlinked inbox before creating its temp dir (STA-192)", async () => {
+  const home = mkdtempSync(join(tmpdir(), "vault-import-link-"));
+  const elsewhere = join(home, "elsewhere");
+  mkdirSync(elsewhere);
+  symlinkSync(elsewhere, join(home, "Secrets-inbox"));
+  const fake = fakeInfisical();
+  const r = await importSecret({
+    name: "LINKED_INBOX",
+    valueStream: Readable.from([canary()]),
+    home,
+    runner: fake.runner,
+  });
+  assert.deepEqual(r, { name: "LINKED_INBOX", ok: false, reason: "inbox is not a real directory" });
+  assert.deepEqual(readdirSync(elsewhere), []);
+  assert.equal(fake.calls.length, 0);
 });
