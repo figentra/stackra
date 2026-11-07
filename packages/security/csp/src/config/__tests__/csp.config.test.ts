@@ -43,6 +43,7 @@ describe("CspConfig", () => {
       hstsPreload: false,
       referrerPolicy: "strict-origin-when-cross-origin",
       permissionsAllow: {},
+      frameAncestors: {},
     });
   });
 

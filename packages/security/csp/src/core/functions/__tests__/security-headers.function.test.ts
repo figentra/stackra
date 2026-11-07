@@ -59,4 +59,19 @@ describe("securityHeaders", () => {
     const config = { ...buildConfig(CspConfig), permissionsAllow: { camera: ["a b"] } };
     expect(() => securityHeaders(config)).toThrow(TypeError);
   });
+
+  it("drops X-Frame-Options only where a framer is allowed", () => {
+    const config = buildConfig(CspConfig, {
+      values: {
+        frameAncestors: { "/preview": ["https://console.pay.example"], "/c/*": "request" },
+      },
+    });
+    expect(securityHeaders(config, { path: "/preview" })).not.toHaveProperty("X-Frame-Options");
+    expect(
+      securityHeaders(config, { path: "/c/cs_01", frameAncestors: ["https://shop.example"] }),
+    ).not.toHaveProperty("X-Frame-Options");
+    expect(securityHeaders(config, { path: "/c/cs_unknown" })["X-Frame-Options"]).toBe("DENY");
+    expect(securityHeaders(config, { path: "/settings" })["X-Frame-Options"]).toBe("DENY");
+    expect(securityHeaders(config)["X-Frame-Options"]).toBe("DENY");
+  });
 });
