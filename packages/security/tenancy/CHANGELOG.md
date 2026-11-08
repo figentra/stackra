@@ -1,5 +1,29 @@
 # @stackra/tenancy
 
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [93e358e]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [e5da198]
+  - @stackra/database@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/scheduler@0.26.0
+  - @stackra/scope@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/console@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes

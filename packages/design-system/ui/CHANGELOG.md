@@ -1,5 +1,22 @@
 # @stackra/ui
 
+## 0.26.0
+
+### Patch Changes
+
+- e5da198: The web `Button` takes `href` and `target`: with an `href` (and not disabled or loading) it renders an accessible
+  link, React Aria's `Link` with the button's HeroUI classes, the composition `PageActions` already uses, so it
+  navigates through the nearest `RouterProvider`. HeroUI v3's button has no `as` and dropped `href`, so
+  `<Button as="a" href>` rendered a button that went nowhere. Without `href` it is unchanged.
+- @stackra/icons@0.26.0
+  - @stackra/tokens@0.26.0
+  - @stackra/shortcuts@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/validation@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes

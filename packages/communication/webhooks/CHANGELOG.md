@@ -1,5 +1,51 @@
 # @stackra/webhooks
 
+## 0.26.0
+
+### Minor Changes
+
+- 031a1f7: `keyed_field_digest` takes four optional recipe fields, each defaulting to today's behaviour so existing recipes are
+  unchanged: `secretAt: "start" | "end"` (default `end`), `separator` (default nothing), `algorithm` now also `SHA-1`,
+  and `bodyFormat: "json" | "form"` (default `json`), where a form body is read as
+  `application/x-www-form-urlencoded` with its values percent-decoded. A missing value is an empty string.
+  `WebhookSchemeRecipe` gains the fields.
+- 9d0dd67: A new `labelled_field_hmac` signature scheme: a hex HMAC (SHA-256 or SHA-512) over each label followed by its body
+  field's value, in order, carried in a header or a query parameter and compared in constant time
+  (`verifyLabelledFieldHmac`). The recipe names the fields as `labelledFields: [{ label, path }]` and may set
+  `currencyDecimals: { path, currencyPath }`, which writes that amount with the minor-unit decimals of the ISO 4217
+  currency at `currencyPath` from `@stackra/money`'s table (3 for KWD, BHD and OMR, 0 for JPY). A missing field, or an
+  amount the currency cannot hold, does not verify. `WebhookSchemeRecipe` gains both fields.
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [ceceef3]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [031a1f7]
+- Updated dependencies [9d0dd67]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/integrations@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/scheduler@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
 ## 0.25.0
 
 ### Minor Changes

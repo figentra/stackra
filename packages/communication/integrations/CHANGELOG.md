@@ -1,5 +1,39 @@
 # @stackra/integrations
 
+## 0.26.0
+
+### Minor Changes
+
+- ceceef3: A managed client call can send a raw body with its own media type (`RequestOptions.body: { content, contentType }`,
+  a SOAP envelope) and read the answer as text (`text: true`); auth, retries, rate limits and the egress rule are
+  unchanged, and `fakeIntegrationApi` hands the raw body to the route as its text (STA-2617).
+
+### Patch Changes
+
+- 031a1f7: `keyed_field_digest` takes four optional recipe fields, each defaulting to today's behaviour so existing recipes are
+  unchanged: `secretAt: "start" | "end"` (default `end`), `separator` (default nothing), `algorithm` now also `SHA-1`,
+  and `bodyFormat: "json" | "form"` (default `json`), where a form body is read as
+  `application/x-www-form-urlencoded` with its values percent-decoded. A missing value is an empty string.
+  `WebhookSchemeRecipe` gains the fields.
+- 9d0dd67: A new `labelled_field_hmac` signature scheme: a hex HMAC (SHA-256 or SHA-512) over each label followed by its body
+  field's value, in order, carried in a header or a query parameter and compared in constant time
+  (`verifyLabelledFieldHmac`). The recipe names the fields as `labelledFields: [{ label, path }]` and may set
+  `currencyDecimals: { path, currencyPath }`, which writes that amount with the minor-unit decimals of the ISO 4217
+  currency at `currencyPath` from `@stackra/money`'s table (3 for KWD, BHD and OMR, 0 for JPY). A missing field, or an
+  amount the currency cannot hold, does not verify. `WebhookSchemeRecipe` gains both fields.
+- Updated dependencies [9cee75d]
+  - @stackra/actions@0.26.0
+  - @stackra/clients@0.26.0
+  - @stackra/data-transfer@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/market-packs@0.26.0
+  - @stackra/validation@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes

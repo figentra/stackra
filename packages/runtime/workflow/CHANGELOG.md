@@ -1,5 +1,36 @@
 # @stackra/workflow
 
+## 0.26.0
+
+### Minor Changes
+
+- 0341ef1: A failed step's retry no longer waits out its backoff in process. The run parks like a timed wait (the step waiting
+  with its next attempt's time and the failure it keeps), the caller answers at once with the output so far, and the
+  worker's tick runs the attempt when it is due. A backoff at or under the new config `workflow.retryInlineMax`
+  (default `"0s"`) still waits in process. A step that waits for a signal keeps waiting out its retry in process for now.
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/rules@0.26.0
+  - @stackra/content@0.26.0
+  - @stackra/locking@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+
 ## 0.25.0
 
 ### Minor Changes

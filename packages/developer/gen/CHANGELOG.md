@@ -1,5 +1,29 @@
 # @stackra/gen
 
+## 0.26.0
+
+### Patch Changes
+
+- ec00fd8: A generated Encore app can now be checked and built. Gen writes `.stackra/encore/package.json` (private, ES modules)
+  beside `encore.app`, since Encore reads the app root's `package.json` to start (`encore check` failed with "failed to
+  read package.json"). It also copies the compiled migrations under the Encore service and declares
+  `migrations: { path: "./migrations" }`, because Encore takes only a local relative migrations path in the object form.
+- 081989b: A Connection that extends another Connection (`class RegionalConnection extends BaseConnection`) is now paired with
+  the member's Integration of the same stem (`RegionalIntegration`), or inherits its base's integration when there is
+  none. Its Integration gets its `connection` in the manifest and `registerConnections` registers the pair; before, the
+  subclass had no partner and was skipped. Two same-stem Integrations in one member are `connection_partner_ambiguous`.
+  An Integration's connection is the one named after it, so a subclass that only inherits never displaces it.
+- b1603a7: Gen refuses every package a member's generated wiring needs through undeclared ones in one run, with the `package.json` lines to paste, instead of one layer per run.
+- 5c0aafc: The generated Vitest setup imports `@stackra/actions/testing` for a member on `@stackra/actions`, so a `useDrivers("memory")` test that only queues work finds the memory `AccessControl`.
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- @stackra/money@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/support@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes
