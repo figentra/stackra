@@ -176,6 +176,7 @@ tenant. Each table the audit names in core has this disposition and reason:
 | `search.indexes`                                                                | Platform form                                | A tenant's index state; NULL replaces the `-` sentinel.                     |
 | `webhooks.webhook_endpoints`, `webhooks.webhook_deliveries`                     | Tenant form (NOT NULL), `BelongsToTenant`    | A tenant's receivers and their attempts.                                    |
 | `payments.payment_records`                                                      | Group (b) by shape: `scope_id`, no migration | The tenant in `scope_id`, `equalsOrUnset` on `app.tenant_id`.               |
+| `identity.account_deletions`                                                    | Group (b) by shape: `scope_id`, no migration | The tenant in `scope_id`, `equalsOrUnset` on `app.tenant_id`.               |
 | `payments.connected_account_limits`, `payments.connected_account_limit_changes` | Group (b) by shape: `scope_id`, no migration | The tenant in `scope_id`, `equalsOrUnset` on `app.tenant_id`.               |
 
 1. **Group (b) by shape.** The audit owns a table by `scope_id` when its one permissive `pol_<table>_scope_id` is
