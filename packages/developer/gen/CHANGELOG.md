@@ -1,5 +1,57 @@
 # @stackra/gen
 
+## 0.21.0
+
+### Minor Changes
+
+- 2974e54: Subresource Integrity for extension bundles. The bundle build records a sha384 for every emitted file in
+  `bundle.manifest.json` (`integrity`). Runway refuses to publish a bundle whose file is missing or changed since the
+  build, carries each value by URL on the edge release, and the shell page pins every bundle URL with it: an
+  `integrity` attribute on each modulepreload and stylesheet link, and the import map's `integrity` block for the
+  chunks no link names. A bundle built before this has no `integrity` and renders as before.
+- ae9cb23: One generated Encore auth handler for user and service calls (ADR 0209, amendment of 2026-11-07, point 5).
+  `@stackra/app/server` adds `CallAuthenticator`: it reads `Authorization: Bearer`, verifies the token with
+  `verifyBearerToken` under `BearerConfig` and the bound `JsonWebKeys`, and maps it to its actor with
+  `@stackra/identity`'s `actorOf`, answering `{ userID, actor }` (`CallAuthData`). Every failure is one
+  `BearerTokenInvalidError`, with no detail and never the token; a `Stackra-On-Behalf-Of` header is refused until the
+  forwarded user token is verified. For a service with endpoints, `@stackra/gen` now writes
+  `.stackra/encore/<member>/auth.ts`: the app's one `authHandler` over those two headers, which runs `CallAuthenticator`
+  and answers `APIError.unauthenticated` on its refusal, and the app's one `Gateway`.
+- a785356: The geospatial field kit on PostGIS (ADR 0314, STA-1432):
+  
+  - `@stackra/contracts`: the `GeoPolygon` and `GeoLine` types beside `GeoPoint`.
+  - `@stackra/validation`: the `geoPoint()`, `geoPolygon()` and `geoLine()` schemas.
+  - `@stackra/model`: the `GeoPointType`, `GeoPolygonType` and `GeoLineType` column types (EWKT in, `ST_AsGeoJSON` out).
+  - `@stackra/database`: `t.point()`, `t.polygon()` and `t.line()` with default GiST indexes, the `areaCovers`,
+    `withinMetresOf` and `intersectsArea` conditions, the `HasLocation` trait, and PostGIS in the PGlite memory driver
+    and `db diff` when a member installs `@electric-sql/pglite-postgis`.
+  - `@stackra/gen`: the `geo` kind, mapped to `geography(<shape>,4326)` columns, entity column types and the schemas.
+
+### Patch Changes
+
+- d25a7a0: An action or query whose only actor is anonymous now gets its HTTP route, served with `auth: false`, instead of no
+  route at all. Only a call whose actors include no user, agent or anonymous caller (a system-only job) has none.
+- 9feea9d: A dependency whose port the member injects from its `./contracts` entry stays fully hosted, so the port's drivers are
+  wired. Before, a service that injected `FileSystem` from `@stackra/filesystem/contracts` and imported nothing else of
+  the package was hosted contracts-only and failed at boot with `No driver is bound to FileSystem`. Only a dependency
+  imported for its events and types goes contracts-only. The same holds for a port named in a `DriverName<Port>` config
+  field: `DriverName<LogReporter>` from `@stackra/logger/contracts` lists `console` and `otlp` again instead of an empty
+  enum.
+- 00a2477: A service's wiring now binds the ports the action pipeline itself requires for what the service declares, not only
+  the ports a constructor injects: `EventOutbox` for an integration event (own or hosted, which `ctx.publish` writes), a
+  `meter` or `analytics`; `IdempotencyStore` for an action that is not `Idempotency.Never`; `DeviceSequenceStore`,
+  `OfflineCapStore`, `ReviewItemSink` and `StepUpCheck` for `offline`, `offline.cap`, `accepts` and `stepUp`. Before, a
+  service that only published through `ctx.publish`, or only declared `idempotency`, threw "… is not bound".
+- 4242bbb: A tool's `idempotentHint` is set only when a repeat cannot run twice: a query, or an action whose `idempotency` is
+  `Idempotency.Required` or `Idempotency.Derived` (ADR 0099 amendment of 2026-11-08). `Optional` runs a call without a key
+  every time and `Never` ignores the key, so neither tells an MCP host that a retry is safe any more.
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/support@0.21.0
+
 ## 0.20.0
 
 ### Minor Changes
