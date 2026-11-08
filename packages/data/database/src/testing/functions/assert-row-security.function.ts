@@ -357,6 +357,9 @@ export async function assertRowSecurity(
         setting,
         tablePolicies,
         of(columns, audited).map((known) => known.name),
+        of(allPolicies, audited).some(
+          (policy) => policy.name === `pol_${audited.table}_system_access_update`,
+        ),
       ),
     );
   }

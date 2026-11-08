@@ -4,7 +4,8 @@
  *          the primary key, row-level-security policies and the `AppendOnly` revoke of `UPDATE`, installs the member's macros under their names, and
  *          compiles to SQL statements. A `platformTable` or `reviewedPolicy` declaration compiles to its marker line
  *          (`TABLE_DECLARATION_MARKERS`) first; a `systemAccess` one to its marker line, the system-access role, its
- *          column grants and its role-scoped policies last.
+ *          column grants and its role-scoped policies last. A platform-form table with `systemAccess` update columns
+ *          lets the role through its restrictive `_write_update`, so a claim with no tenant reaches tenant rows.
  * Boundary: internal. It enforces the migration safety rules it can see in one table: every column states its
  *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
@@ -958,8 +959,16 @@ export class BlueprintRecord {
         const write = quoteIdentifier(
           constraintName("pol", this.table, [seed.column, "write", command]),
         );
+        const own = this.policyMatch(seed).check;
+        // A restrictive policy binds every role, so a claim's lease UPDATE (and its FOR UPDATE) as the system-access
+        // role, with no tenant set, would reach only NULL rows; the role passes it. Its column grants still keep it to
+        // the lease, and it has no DELETE.
+        const lifted =
+          command === "update" && (this.systemGrant?.update.length ?? 0) > 0
+            ? `(${own}) or current_user = ${sqlLiteral(SYSTEM_ACCESS_ROLE)}`
+            : own;
         statements.push({
-          sql: `create policy ${write} on ${qualified} as restrictive for ${command} using (${this.policyMatch(seed).check})`,
+          sql: `create policy ${write} on ${qualified} as restrictive for ${command} using (${lifted})`,
           inverse: [`drop policy if exists ${write} on ${qualified}`],
         });
       }
