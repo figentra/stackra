@@ -1,5 +1,15 @@
 # @stackra/native-card-terminal
 
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/payments@0.25.0
+  - @stackra/peripherals@0.25.0
+  - @stackra/platform@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+
 ## 0.24.0
 
 ### Patch Changes

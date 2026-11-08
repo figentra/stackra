@@ -1,5 +1,16 @@
 # @stackra/runway
 
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/app@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/validation@0.25.0
+
 ## 0.24.0
 
 ### Patch Changes

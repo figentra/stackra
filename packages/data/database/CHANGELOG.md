@@ -1,5 +1,70 @@
 # @stackra/database
 
+## 0.25.0
+
+### Minor Changes
+
+- 8f8ddcf: System workers and pre-tenant routes can now find tenant rows before they know the tenant, through one narrow,
+  audited way in (ADR 0239 amendment, gap A).
+  
+  A migration gives a tenant table `t.systemAccess({ select, update, reason })`. This lets the new
+  `stackra_system_access` role read the `select` columns and write the `update` columns, and nothing else. The role
+  cannot log in, does not bypass row-level security, and no one is a member of it, so no session can become it. The
+  package then writes its lookup or claim with `schema.systemFunction({ name, args, returns, sql, reason })`. The
+  function runs as that role with a fixed search path, returns only the columns it declares (ids and the tenant id),
+  and only the service may call it. The worker then loads each row in that row's tenant.
+  
+  `assertRowSecurity`, and so every service's generated isolation test, refuses anything looser: a policy for anyone
+  but the role, a member of the role, a role that bypasses row-level security, a grant beyond the declared columns, or
+  a function that is not `SECURITY DEFINER`, does not pin its search path, or that anyone may call.
+  `stackra row-security-declarations` lists both declarations with their reasons for review.
+  
+  Deployment: the database user that runs migrations needs `CREATEROLE` the first time a migration uses either
+  declaration. A managed Postgres master user (RDS) has it; RUNWAY's deploy role must have it too.
+
+### Patch Changes
+
+- 1d7bbc1: The contract migrations (database 0007, achievements 0004, rules 0005, segments 0003, content 0006, collaboration
+  0004, workflow 0011 and webhooks 0003) now carry a reviewed squawk ignore, with its reason, above each `SET NOT NULL`
+  that the migration's pre-flight checked, so a product that hosts them lints clean. The runner hashes a migration
+  without its lint lines, so no checksum changes, and nothing runs differently.
+  
+  New contract steps can set NOT NULL without scanning the table under an exclusive lock:
+  `t.belongsToTenant({ contract: true, safeNotNull: true })`, or `t.change(column).notNull({ safe: true })`, adds a
+  `NOT VALID` check, then validates it, sets NOT NULL and drops the check in a later step. The released migrations keep
+  their form.
+- dc9da69: A blueprint that declares an index on a link column alone (`t.unique(["scope_id"])` beside `t.scopeId()`) no longer also
+  writes the column's own plain index. Both took the name `idx_<table>_<column>`, so the migration failed with "relation
+  already exists"; the declared index serves the column.
+- 3942ab1: Webhook endpoints and their delivery log now belong to a tenant (ADR 0239 amendment, group (c)).
+  
+  Migration `webhooks.0003` gives `webhook_endpoints` and `webhook_deliveries` a `tenant_id` column. It is required,
+  filled from the running tenant call by default, and indexed. Each table gets one row-level-security policy: a call sees
+  and writes only its own tenant's rows. Before, neither table had a policy; the endpoint service filtered by scope.
+  
+  Existing rows get their tenant in the same migration. An endpoint registered at a top-level tenant node takes that
+  node, and each delivery takes its endpoint's tenant. If any row is left without a tenant (an endpoint at the root, at a
+  product, or below a tenant), the migration refuses before changing anything and names each table's count. Delete or
+  re-register those endpoints, then migrate again.
+  
+  `WebhookEndpoint` and `WebhookDelivery` carry `BelongsToTenant`. Every read and write of these tables must now run in a
+  tenant call; the pipeline, the delivery job and the inbox already do. The package ships an int test tier (`test:int`).
+  
+  `CrudService` writes that use `requiresNew` (`insert`, `insertMany`, `upsert`, `update`) now carry the caller's scope
+  and tenant into their own transaction, as `Database.transaction` with `requiresNew` already did. Before, such a write
+  ran on a new connection with no tenant, so row security refused it on a tenant-owned table.
+- @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/testing@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/validation@0.25.0
+  - @stackra/cache@0.25.0
+
 ## 0.24.0
 
 ### Minor Changes

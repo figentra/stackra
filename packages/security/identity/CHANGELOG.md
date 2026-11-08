@@ -1,5 +1,39 @@
 # @stackra/identity
 
+## 0.25.0
+
+### Patch Changes
+
+- fd0e4a9: `verifyZitadelSignature` is exported from `@stackra/identity`, beside `claimsActionResponse`. A service that answers the
+  claims action (`IdpAdmin.installClaimsAction`) checks the `ZITADEL-Signature` header over the raw body with it before it
+  reads the body, without copying the HMAC check.
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/queue@0.25.0
+  - @stackra/scheduler@0.25.0
+  - @stackra/iam@0.25.0
+  - @stackra/privacy@0.25.0
+  - @stackra/scope@0.25.0
+  - @stackra/clients@0.25.0
+  - @stackra/query@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/storage@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/market-packs@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/transport@0.25.0
+  - @stackra/validation@0.25.0
+
 ## 0.24.0
 
 ### Patch Changes
