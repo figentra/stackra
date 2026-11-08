@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: integration tests of the expand form of `BelongsToTenantMacro` against `assertRowSecurity`: a table under
  *          an ancestor `scope_path` policy that `t.belongsToTenant({ expand: true })` gave a nullable `tenant_id`
- *          (the shape of #657) is a group (a) warning until 0.20 and a gap in strict mode; the same table with a
- *          NOT NULL `tenant_id`, or a nullable `tenant_id` without the `scope_path` policy, fails the hard checks.
+ *          (the shape of #657) fails the hard checks, now that every package table has its contract step; so does a
+ *          nullable `tenant_id` without the `scope_path` policy.
  * Boundary: test only; integration tier (Docker through `usePostgres`). Each test restores what it changes.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0182 (integration tier); ADR 0347 (decisions 1 and 5).
@@ -49,39 +49,16 @@ const postgres = usePostgres({
   ],
 });
 
-const EXPAND =
-  /^docs\.folders holds a nullable tenant_id with no pol_folders_tenant_id policy \(\(a\) ancestor scope_path table in the expand step, awaiting backfill and the contract step\)$/;
-
 describe("BelongsToTenantMacro expand step under assertRowSecurity", () => {
-  it("warns about the expand-step table as group (a)", async () => {
-    const warnings = await assertRowSecurity(postgres.database, {
+  it("takes the hard checks: every package table is contracted, so none is staged as a warning", async () => {
+    const audit = assertRowSecurity(postgres.database, {
       ...tenantIsolationOptions(),
       strict: false,
     });
-    expect(warnings).toEqual([expect.stringMatching(EXPAND)]);
-  });
-
-  it("fails it in strict mode", async () => {
-    await expect(
-      assertRowSecurity(postgres.database, { ...tenantIsolationOptions(), strict: true }),
-    ).rejects.toThrow(/docs\.folders holds a nullable tenant_id with no pol_folders_tenant_id/);
-  });
-
-  it("keeps the hard checks for a NOT NULL tenant_id", async () => {
-    const em = postgres.database.em();
-    await em.execute('alter table "docs"."folders" alter column "tenant_id" set not null');
-    try {
-      const audit = assertRowSecurity(postgres.database, {
-        ...tenantIsolationOptions(),
-        strict: false,
-      });
-      await expect(audit).rejects.toThrow(/docs\.folders has no policy pol_folders_tenant_id/);
-      await expect(audit).rejects.toThrow(
-        /docs\.folders: pol_folders_scope_path is a second permissive policy/,
-      );
-    } finally {
-      await em.execute('alter table "docs"."folders" alter column "tenant_id" drop not null');
-    }
+    await expect(audit).rejects.toThrow(/docs\.folders has no policy pol_folders_tenant_id/);
+    await expect(audit).rejects.toThrow(
+      /docs\.folders: pol_folders_scope_path is a second permissive policy/,
+    );
   });
 
   it("keeps the hard checks for a nullable tenant_id without the scope_path policy", async () => {

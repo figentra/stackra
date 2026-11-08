@@ -19,4 +19,5 @@ names each table's count. An environment that wrote rows in the expand step outs
 backfill (RUNWAY 4c) first, then migrates again. After this step, these tables are written only inside a tenant call.
 
 `t.belongsToTenant({ contract: true })` is the macro's form for that step: `SET NOT NULL` on the existing column and
-the equality policy. The packages ship an int test tier (`test:int`) for these migrations.
+the equality policy. `{ contract: true, nullable: true }` is the platform form's contract step: the column stays
+nullable under the `platform` policy, as search uses it. The packages ship an int test tier (`test:int`) for these migrations.

@@ -11,7 +11,10 @@
  *          by default so every writer stores the call's tenant, and no policy: the table keeps the one it has until
  *          the contract step. `t.belongsToTenant({ contract: true })` is that step: the column NOT NULL and this
  *          equality as the table's one permissive policy (ADR 0347 decision 1); the migration drops the old policy and
- *          refuses first while a row has no tenant (`schema.refuseNulls`).
+ *          refuses first while a row has no tenant (`schema.refuseNulls`). `{ contract: true, nullable: true }` is the
+ *          platform form's contract step (ADR 0239 amendment, gap C): the column stays nullable, a NULL row is the
+ *          platform's, which every tenant reads and only a platform session writes (@stackra/database's `platform`
+ *          match, with its restrictive `pol_<table>_tenant_id_write_update` and `_write_delete`).
  * Boundary: a `Macro` (ADR 0159 as amended by ADR 0305), installed by name as `t.belongsToTenant`. It states the
  *           column's nullability and comment itself, so the bare call compiles. Equality only, no tree logic (ADR
  *           0239): an organisation reads its children through read models. A blueprint takes one policy, so the table
@@ -49,7 +52,7 @@ export class BelongsToTenantMacro extends Macro {
    * @param options - `nullable: true` for a table whose NULL rows are the platform's (`BelongsToTenantOrPlatform`);
    *                  `expand: true` for the column alone on an existing table; `contract: true` for its contract step.
    * @returns the tenant column; none for the contract step, which changes the existing one.
-   * @throws TypeError for `contract` with `nullable` or `expand`.
+   * @throws TypeError for `contract` with `expand`.
    */
   apply(
     t: Blueprint,
@@ -60,13 +63,15 @@ export class BelongsToTenantMacro extends Macro {
     } = {},
   ): ColumnGroup {
     if (options.contract === true) {
-      // shortcut: the platform form's contract (a nullable tenant read with NULL rows) is not built; add it with search.
-      if (options.nullable === true || options.expand === true)
-        throw new TypeError(
-          "t.belongsToTenant({ contract: true }) takes neither nullable nor expand",
-        );
-      t.change("tenant_id").notNull();
-      t.rowLevelSecurity("tenant_id", { setting: TENANT_ID_SETTING, match: "equals" });
+      if (options.expand === true)
+        throw new TypeError("t.belongsToTenant({ contract: true }) does not take expand");
+      // The platform form keeps the column nullable: a NULL row is the platform's, read by every tenant.
+      if (options.nullable === true)
+        t.rowLevelSecurity("tenant_id", { setting: TENANT_ID_SETTING, match: "platform" });
+      else {
+        t.change("tenant_id").notNull();
+        t.rowLevelSecurity("tenant_id", { setting: TENANT_ID_SETTING, match: "equals" });
+      }
       return t.group();
     }
     const link = t.link("tenant_id");

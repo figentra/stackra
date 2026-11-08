@@ -29,7 +29,12 @@ type Operation =
   | { readonly blueprint: BlueprintRecord }
   | { readonly collation: string; readonly locale: string }
   | { readonly extension: Extension }
-  | { readonly column: string; readonly tables: readonly string[]; readonly remedy: string }
+  | {
+      readonly column: string;
+      readonly tables: readonly string[];
+      readonly remedy: string;
+      readonly where: string | undefined;
+    }
   | { readonly statement: string; readonly inverse: string | false };
 
 /** A statement that cannot run inside a transaction. */
@@ -55,12 +60,18 @@ function inverseOf(statements: readonly CompiledStatement[]): readonly string[] 
  */
 function refuseNullsSql(
   schema: string,
-  { column, tables, remedy }: { column: string; tables: readonly string[]; remedy: string },
+  {
+    column,
+    tables,
+    remedy,
+    where,
+  }: { column: string; tables: readonly string[]; remedy: string; where: string | undefined },
 ): string {
+  const also = where === undefined ? "" : ` and (${where})`;
   const counts = tables.map((table) => {
     const qualified = `${quoteIdentifier(schema)}.${quoteIdentifier(table)}`;
     return [
-      `  select count(*) into n from ${qualified} where ${quoteIdentifier(column)} is null;`,
+      `  select count(*) into n from ${qualified} where ${quoteIdentifier(column)} is null${also};`,
       `  if n > 0 then found := found || format('%s %s', ${sqlLiteral(`${schema}.${table}`)}, n); end if;`,
     ].join("\n");
   });
@@ -133,12 +144,19 @@ export class SchemaRecord implements SchemaBuilder {
    *
    * @throws TypeError for a column or table that is not snake_case, no table, or a blank remedy.
    */
-  refuseNulls(column: string, tables: readonly string[], remedy: string): void {
+  refuseNulls(
+    column: string,
+    tables: readonly string[],
+    remedy: string,
+    options: { readonly where?: string } = {},
+  ): void {
     quoteIdentifier(column);
     for (const table of tables) quoteIdentifier(table);
     if (tables.length === 0) throw new TypeError("schema.refuseNulls needs at least one table");
     if (remedy.trim() === "") throw new TypeError("schema.refuseNulls needs the remedy to name");
-    this.operations.push({ column, tables: [...tables], remedy });
+    if (options.where?.includes("$$") === true || options.where?.includes("\n") === true)
+      throw new TypeError("schema.refuseNulls takes a one-line where without $$");
+    this.operations.push({ column, tables: [...tables], remedy, where: options.where });
   }
 
   /**

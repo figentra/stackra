@@ -15,3 +15,11 @@ New migration API for a contract step: `schema.refuseNulls(column, tables, remed
 under), `restrictive: true` on `t.rowLevelSecurity` (an `AS RESTRICTIVE` policy that does not narrow a session with the
 setting unset), and a policy on a column an earlier migration wrote. `assertRowSecurity` audits these four tables by
 `isolation_scope_id` (group (b), by name), with every check and probe of a tenant table.
+
+The platform form of a nullable id column is the `platform` match of `t.rowLevelSecurity`. A tenant reads its own rows
+and the NULL rows and writes only its own. A session without a tenant reads and writes only the NULL rows. It comes
+with the restrictive `pol_<table>_<column>_write_update` and `_write_delete`. `exemptNull` leaves a column's NULL rows
+out of a restrictive narrowing, and `schema.refuseNulls(..., { where })` counts only the rows that also meet `where`.
+`assertRowSecurity` accepts and requires the two write policies on a platform-form table, and does not count its NULL
+rows against a probe. It no longer stages a table in the expand step as a warning: every package table now has its
+contract step, so such a table takes the hard checks.

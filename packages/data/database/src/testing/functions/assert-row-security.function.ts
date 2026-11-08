@@ -3,15 +3,15 @@
  * Purpose: `assertRowSecurity`, the row-level-security audit of a migrated database. It walks every table of every
  *          non-system schema: a table without the owner column must be a listed platform table (`PLATFORM_TABLES` or
  *          the caller's `platform`, each with its reason), else it is returned as a warning naming its group
- *          (`unownedTableGroup`) until 0.20, and is a gap in strict mode (`strict`, `STACKRA_GEN_STRICT=1`); so is a
- *          table in the expand step (a nullable owner column, no owner policy, a permissive `scope_path` policy). A
- *          table in `ISOLATION_SCOPE_TABLES` (group (b) by name) is audited by its own owner column,
- *          `isolation_scope_id`. Any other table with it has row-level security enabled and forced, exactly one
- *          permissive policy (`pol_<table>_<column>`, the owner equality) and only restrictive policies named after
- *          their column beside it. The service role is neither a superuser nor BYPASSRLS. Then, per owned table, it
- *          seeds a row of each probe owner and, as that role, proves a session with the setting unset sees no row, a
- *          session as the first owner sees its own row and none of the second's, and cannot move its row to the second
- *          owner. It throws one error listing every gap.
+ *          (`unownedTableGroup`) until 0.20, and is a gap in strict mode (`strict`, `STACKRA_GEN_STRICT=1`). A table in
+ *          `ISOLATION_SCOPE_TABLES` (group (b) by name) is audited by its own owner column, `isolation_scope_id`. Any
+ *          other table with it has row-level security enabled and forced, exactly one permissive policy
+ *          (`pol_<table>_<column>`, the owner equality, or the platform form with its two write policies) and only
+ *          restrictive policies named after their column beside it. The service role is neither a superuser nor
+ *          BYPASSRLS. Then, per owned table, it seeds a row of each probe owner and, as that role, proves a session with
+ *          the setting unset sees no owner's row, a session as the first owner sees its own row and none of the
+ *          second's (a platform-form table's NULL rows are the platform's, which every session reads), and cannot move
+ *          its row to the second owner. It throws one error listing every gap.
  * Boundary: test only (`./testing`), against a real Postgres (`usePostgres`), connected as a superuser (a test
  *           container's user). Each probe runs in a transaction it always rolls back; to seed, it drops the table's
  *           check constraints and the NOT NULL of every non-key column there and skips foreign keys and triggers
@@ -152,7 +152,7 @@ async function seedOwners(
  * @param database - the connected database (`usePostgres().database`), migrated.
  * @param options - the column, setting, role, probe values and the caller's platform tables.
  * @returns the warnings, until 0.20 (each a gap when `options.strict` or `STACKRA_GEN_STRICT=1`): each unlisted
- *          table without the owner column, with its group, and each table in the expand step.
+ *          table without the owner column, with its group.
  * @throws Error listing every gap: an unlisted table without the owner column in strict mode, a listed one with it, an
  *         owned table without RLS, not forced, without its one permissive owner policy or with another policy that is
  *         permissive or misnamed, a table the probe could not seed, a role that bypasses RLS, a probe that saw or
@@ -194,6 +194,8 @@ export async function assertRowSecurity(
   ) => rows.filter((row) => row.schema === owned.schema && row.table === owned.table);
 
   const owned: AuditedTable[] = [];
+  // The platform-form tables (ADR 0239 amendment, gap C): their NULL rows are the platform's, which every session reads.
+  const platformForm = new Set<AuditedTable>();
   for (const audited of tables) {
     const name = `${audited.schema}.${audited.table}`;
     const reason = platform.get(name);
@@ -210,22 +212,12 @@ export async function assertRowSecurity(
     if (reason !== undefined)
       gaps.push(`${name} is listed as a platform table but holds ${column}`);
     const tablePolicies = of(policies, audited);
-    // The expand step (ADR 0347 d1 migration): a nullable owner column, no owner policy yet, and the scope_path
-    // policy still the permissive one. Its probe would prove nothing, so it is staged like an unowned table.
-    const expanding =
-      of(columns, audited).some((known) => known.name === audited.column && !known.notNull) &&
-      !tablePolicies.some((policy) => policy.name === `pol_${audited.table}_${audited.column}`) &&
-      tablePolicies.some(
-        (policy) => policy.permissive && `${policy.using} ${policy.check}`.includes("scope_path"),
-      );
-    if (expanding) {
-      // shortcut: warn-only for tables without tenant_id until 0.20, then error (push to `gaps` always).
-      (strict ? gaps : warnings).push(
-        `${name} holds a nullable ${audited.column} with no pol_${audited.table}_${audited.column} policy ((a) ancestor scope_path table in the expand step, awaiting backfill and the contract step)`,
-      );
-      continue;
-    }
     owned.push(audited);
+    const owner = tablePolicies.find(
+      (policy) => policy.name === `pol_${audited.table}_${audited.column}`,
+    );
+    if (owner !== undefined && new RegExp(`\\b${audited.column}\\b\\)? IS NULL`).test(owner.using))
+      platformForm.add(audited);
     if (!audited.enabled) gaps.push(`${name} does not enable row-level security`);
     if (!audited.forced)
       gaps.push(`${name} does not force row-level security, so its owner role bypasses it`);
@@ -283,8 +275,10 @@ export async function assertRowSecurity(
         await tx.execute(`set local role ${quotedRole}`);
         // raw-sql: the policy's session setting, unset; the setting name is a parameter
         await tx.execute("select set_config(?, '', true)", [setting]);
-        // raw-sql: counts the rows the policy shows with the setting unset (it must show none)
-        const [unset] = (await tx.execute(`select count(*)::int as count from ${name}`)) as {
+        // raw-sql: counts the owners' rows the policy shows with the setting unset (none; a NULL row is no owner's)
+        const [unset] = (await tx.execute(
+          `select count(*)::int as count from ${name} where ${quotedColumn} is not null`,
+        )) as {
           count: number;
         }[];
         if ((unset?.count ?? 0) > 0)
@@ -293,7 +287,7 @@ export async function assertRowSecurity(
         await tx.execute("select set_config(?, ?, true)", [setting, own]);
         // raw-sql: counts the rows the policy shows that owner, its own and any other owner's
         const [seen] = (await tx.execute(
-          `select count(*) filter (where ${quotedColumn} is distinct from ?)::int as others,
+          `select count(*) filter (where ${quotedColumn} is distinct from ?${platformForm.has(audited) ? ` and ${quotedColumn} is not null` : ""})::int as others,
              count(*) filter (where ${quotedColumn} = ?)::int as mine
            from ${name}`,
           [own, own],

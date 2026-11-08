@@ -1071,6 +1071,82 @@ describe(compileMigration, () => {
       expect(() => compileMigration(BadMigration, { schema: "documents" })).toThrow(message);
     });
 
+    it("writes the platform match, the scope path exempting its NULL rows, and a narrowed pre-flight", () => {
+      class ContractNoticesMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["notices"], "Backfill first.", {
+            where: 'nlevel("scope_path") > 1',
+          });
+          schema.table("notices", (t: Blueprint) => {
+            t.dropRowLevelSecurity("scope_path", SCOPE_PATHS);
+            t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "platform" });
+            t.rowLevelSecurity("scope_path", {
+              ...SCOPE_PATHS,
+              restrictive: true,
+              exemptNull: "owner_id",
+            });
+          });
+        }
+      }
+      const sql =
+        compileMigration(ContractNoticesMigration, { schema: "docs" }).steps[0]?.sql ?? [];
+      const value = "nullif(current_setting('app.owner_id', true), '')::varchar(33)";
+      const own = `"owner_id" is not distinct from ${value}`;
+      expect(sql[0]).toContain(
+        `from "docs"."notices" where "owner_id" is null and (nlevel("scope_path") > 1);`,
+      );
+      expect(sql).toContain(
+        `create policy "pol_notices_owner_id" on "docs"."notices" using ("owner_id" = ${value} or "owner_id" is null) with check (${own})`,
+      );
+      expect(sql).toContain(
+        `create policy "pol_notices_owner_id_write_update" on "docs"."notices" as restrictive for update using (${own})`,
+      );
+      expect(sql).toContain(
+        `create policy "pol_notices_owner_id_write_delete" on "docs"."notices" as restrictive for delete using (${own})`,
+      );
+      const narrowed = `nullif(current_setting('app.scope_paths', true), '') is null or "owner_id" is null or ${paths}`;
+      expect(sql).toContain(
+        `create policy "pol_notices_scope_path" on "docs"."notices" as restrictive using (${narrowed}) with check (${narrowed})`,
+      );
+    });
+
+    it("refuses a restrictive platform match, exemptNull on a permissive policy, and a multi-line where", () => {
+      class RestrictivePlatformMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("notices", (t: Blueprint) =>
+            t.rowLevelSecurity("owner_id", {
+              setting: "app.owner_id",
+              match: "platform",
+              restrictive: true,
+            }),
+          );
+        }
+      }
+      class PermissiveExemptMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("notices", (t: Blueprint) =>
+            t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, exemptNull: "owner_id" }),
+          );
+        }
+      }
+      class MultiLineWhereMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["notices"], "Backfill first.", {
+            where: "true\nor true",
+          });
+        }
+      }
+      expect(() => compileMigration(RestrictivePlatformMigration, { schema: "docs" })).toThrow(
+        /never restrictive/,
+      );
+      expect(() => compileMigration(PermissiveExemptMigration, { schema: "docs" })).toThrow(
+        /restrictive policy only/,
+      );
+      expect(() => compileMigration(MultiLineWhereMigration, { schema: "docs" })).toThrow(
+        /one-line where/,
+      );
+    });
+
     it("refuses a drop on a table being created, and a pre-flight with no table or remedy", () => {
       class DropOnCreateMigration extends Migration {
         up(schema: SchemaBuilder): void {

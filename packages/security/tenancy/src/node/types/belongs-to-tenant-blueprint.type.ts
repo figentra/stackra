@@ -17,7 +17,9 @@ declare module "@stackra/database" {
      * `nullable: true`, the nullable column of `BelongsToTenantOrPlatform`: NULL rows are the platform's. With
      * `expand: true`, the expand step of an existing table: the nullable column only, filled from `app.tenant_id` by
      * default, and no policy until the contract step. With `contract: true`, that step: the column NOT NULL and the
-     * equality policy (the migration drops the table's old policy, after `schema.refuseNulls`).
+     * equality policy (the migration drops the table's old policy, after `schema.refuseNulls`). With `contract: true`
+     * and `nullable: true`, the platform form's contract: the column stays nullable, and its policy shows a tenant its
+     * rows and the platform's NULL rows, and lets it write only its own.
      */
     belongsToTenant: (options?: {
       readonly nullable?: boolean;

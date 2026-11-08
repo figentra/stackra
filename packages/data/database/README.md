@@ -259,6 +259,12 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
   granted path, so a template seeded at the platform or product node is read by every tenant below it and written by
   none of them (ADR 0412). `equalsOrUnset` is `equals` through `is not distinct from`: a nullable id column's null
   rows (platform rows) match a session with the setting unset; a scoped session sees only its own (STA-1300).
+- `platform` is the platform form of a nullable id column (ADR 0239 amendment, gap C): a session with the setting
+  reads its rows and the null rows (the platform's) and writes only its own; one with the setting unset reads and
+  writes only the null rows. It also writes the restrictive `pol_<table>_<column>_write_update` and `_write_delete`,
+  because the permissive `USING` would otherwise let a tenant update, delete or take over a platform row. A restrictive
+  policy's `exemptNull: column` leaves that column's null rows unnarrowed (the scope path of a platform-form table).
+  `schema.refuseNulls(..., { where })` counts only the null rows that also meet `where`.
 - A contract step swaps a table's policy: `schema.refuseNulls(column, tables, remedy)` first refuses the migration,
   before any change, while a row of `tables` holds a null `column`, naming each table's count and the remedy (the
   backfill); then `t.dropRowLevelSecurity(column, options)` drops the policy an earlier migration created with
@@ -798,14 +804,14 @@ named, with its reason, in `PLATFORM_TABLES` (the framework's: the migration led
 `rate_limit_buckets`, `cache.entries` and `set_members`, `locking.lock_tokens`) or in the caller's `platform` map; any
 other is returned as a warning naming its group (an ancestor `scope_path` table awaiting the contract step, a
 `scope_id` table whose policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or
-unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. So is a table in the expand
-step of the scope-path migration: a nullable `column`, no `pol_<table>_<column>` yet, and a permissive policy on
-`scope_path`. A NOT NULL `column`, or a table without that `scope_path` policy, takes the hard checks below. The
+unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. The
 tables in `ISOLATION_SCOPE_TABLES` (the sequence and projection tables, group (b) by name) are audited by their own
 owner column, `isolation_scope_id`, in place of `column`. A listed table that holds
 `column` is always a gap. A table with it has row-level security enabled and
 forced, exactly one permissive policy, `pol_<table>_<column>`, `FOR ALL` and testing `column` against `setting`, and
-only restrictive policies beside it, each named `pol_<table>_<column>` after one of its columns. `role` is neither a
+only restrictive policies beside it, each named `pol_<table>_<column>` after one of its columns. A platform-form owner
+policy (its `USING` also shows the null rows) also needs its restrictive `pol_<table>_<column>_write_update` and
+`_write_delete`, and its null rows, the platform's, count against no probe. `role` is neither a
 superuser nor BYPASSRLS (created `NOLOGIN NOBYPASSRLS` when missing, and granted the owned tables each call). Then,
 per owned table and inside a rolled-back transaction, it seeds a row of `probe[0]` and of `probe[1]` itself (dropping
 the table's checks and its non-key NOT NULLs there and skipping foreign keys, so only a key needs a value: a string,

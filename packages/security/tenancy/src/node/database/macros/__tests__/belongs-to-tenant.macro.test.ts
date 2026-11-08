@@ -7,7 +7,8 @@
  *          column under the `equalsOrUnset` match, so NULL rows are the platform call's, for reads and writes
  *          (@stackra/database's `equalsOrUnset`, STA-1300; STA-1312). The expand form adds only a nullable column
  *          defaulting to `app.tenant_id` to an existing table, beside the policy it already has. The contract form sets
- *          the existing column NOT NULL and writes the equality policy, and is refused with `nullable` or `expand`.
+ *          the existing column NOT NULL and writes the equality policy; with `nullable` it is the platform form's contract
+ *          (the column stays nullable, under the `platform` match); it is refused with `expand`.
  * Boundary: test only; pure compilation through @stackra/database, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0239; ADR 0159 as amended by ADR 0305; ADR 0231.
@@ -140,19 +141,43 @@ describe(BelongsToTenantMacro, () => {
     ]);
   });
 
-  it("refuses the contract form with nullable or expand", () => {
-    for (const options of [
-      { contract: true, nullable: true },
-      { contract: true, expand: true },
-    ]) {
-      class BadMigration extends Migration {
-        up(schema: SchemaBuilder): void {
-          schema.table("tickets", (t: Blueprint) => t.belongsToTenant(options));
-        }
+  it("writes the platform form's contract: the column stays nullable, under the platform match", () => {
+    class ContractNoticesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("tickets", (t: Blueprint) =>
+          t.belongsToTenant({ contract: true, nullable: true }),
+        );
       }
-      expect(() =>
-        compileMigration(BadMigration, { schema: "support", macros: [BelongsToTenantMacro] }),
-      ).toThrow(/takes neither nullable nor expand/);
     }
+    const sql = compileMigration(ContractNoticesMigration, {
+      schema: "support",
+      macros: [BelongsToTenantMacro],
+    }).steps.flatMap((step) => step.sql);
+    const own = `"tenant_id" is not distinct from nullif(current_setting('app.tenant_id', true), '')::varchar(33)`;
+    expect(sql).not.toContain(
+      'alter table "support"."tickets" alter column "tenant_id" set not null',
+    );
+    expect(sql).toContain(
+      `create policy "pol_tickets_tenant_id" on "support"."tickets" using ("tenant_id" = nullif(current_setting('app.tenant_id', true), '')::varchar(33) or "tenant_id" is null) with check (${own})`,
+    );
+    expect(sql).toContain(
+      `create policy "pol_tickets_tenant_id_write_update" on "support"."tickets" as restrictive for update using (${own})`,
+    );
+    expect(sql).toContain(
+      `create policy "pol_tickets_tenant_id_write_delete" on "support"."tickets" as restrictive for delete using (${own})`,
+    );
+  });
+
+  it("refuses the contract form with expand", () => {
+    class BadMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("tickets", (t: Blueprint) =>
+          t.belongsToTenant({ contract: true, expand: true }),
+        );
+      }
+    }
+    expect(() =>
+      compileMigration(BadMigration, { schema: "support", macros: [BelongsToTenantMacro] }),
+    ).toThrow(/does not take expand/);
   });
 });

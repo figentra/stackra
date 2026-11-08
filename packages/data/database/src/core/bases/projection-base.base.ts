@@ -6,8 +6,9 @@
  * Boundary: never extended directly: a projection extends `Projection<S>({ key })` (projection.base.ts), which records
  *           the key this base reads from the kind registry. The database is `Database.current()` and every call runs
  *           in the caller's transaction (a write opens one when there is none). Rows live in
- *           `database.projection_rows`, one version per write, under the forced ancestor policy on `app.scope_paths`,
- *           so no WHERE is added for isolation. A write older than the current version is skipped (`false`).
+ *           `database.projection_rows`, one version per write, under the forced equality of `isolation_scope_id` with
+ *           `app.tenant_id` and the restrictive scope path (`database.0007`), so no WHERE is added for isolation and a
+ *           write runs in a tenant call. A write older than the current version is skipped (`false`).
  * Runtime: node
  * Governing contract: ADR 0294 (decision 16); ADR 0305 (rules 5 and 10 to 13); ADR 0163 (decision 1: read models with
  *                     `asOf`); ADR 0327 (decisions 3 and 9); ADR 0160 (raw SQL with a reason).

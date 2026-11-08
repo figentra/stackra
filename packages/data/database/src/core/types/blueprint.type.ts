@@ -184,8 +184,11 @@ export interface Blueprint {
    * index (`scope_path` with `app.scope_paths`), and `inherited` is `ancestor` plus a select-only policy
    * `pol_<table>_<column>_inherited` that shows the rows on the path above a granted path, read only (a template seeded
    * at the platform or product node, seen by every tenant below it; ADR 0412). Otherwise an unset or `''` setting matches no row.
+   * `platform` is the platform form of a nullable id column (ADR 0239 amendment, gap C): a set session reads its rows and
+   * the null rows and writes only its own, a session with the setting unset reads and writes only the null rows, and
+   * the restrictive `pol_<table>_<column>_write_update` and `_write_delete` keep those commands on the session's rows.
    * `restrictive: true` writes it `AS RESTRICTIVE`: it narrows the one permissive policy, and an unset or `''` setting
-   * does not narrow (ADR 0347 d2 and d3). On a table being created the column is defined in the same blueprint; on an
+   * does not narrow (ADR 0347 d2 and d3); `exemptNull: column` leaves that column's null rows unnarrowed. On a table being created the column is defined in the same blueprint; on an
    * existing table it may be one an earlier migration wrote (a public id for an id match, `scope_path` for a path
    * match). A blueprint takes one permissive policy, as Postgres ORs them, and one policy per column. A business table
    * keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327 d8).

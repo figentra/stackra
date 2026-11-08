@@ -53,6 +53,7 @@ const SETTING = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 const MATCHES: readonly RowLevelSecurityOptions["match"][] = [
   "equals",
   "equalsOrUnset",
+  "platform",
   "ancestor",
   "inherited",
 ];
@@ -61,6 +62,13 @@ const MATCHES: readonly RowLevelSecurityOptions["match"][] = [
 const ID_MATCHES: ReadonlySet<RowLevelSecurityOptions["match"]> = new Set([
   "equals",
   "equalsOrUnset",
+  "platform",
+]);
+
+/** The matches that write more than one policy, so they are never restrictive and never dropped here. */
+const COMPOUND_MATCHES: ReadonlySet<RowLevelSecurityOptions["match"]> = new Set([
+  "inherited",
+  "platform",
 ]);
 
 /**
@@ -506,10 +514,13 @@ export class BlueprintRecord {
    */
   rowLevelSecurity(column: string, options: RowLevelSecurityOptions): void {
     checkPolicy(column, options);
-    if (options.restrictive === true && options.match === "inherited")
+    if (options.restrictive === true && COMPOUND_MATCHES.has(options.match))
       throw new TypeError(
-        `${this.table}.${column}: an inherited match widens reads, so it is never restrictive`,
+        `${this.table}.${column}: an ${options.match} match widens reads, so it is never restrictive`,
       );
+    if (options.exemptNull !== undefined && options.restrictive !== true)
+      throw new TypeError(`${this.table}.${column}: exemptNull is for a restrictive policy only`);
+    if (options.exemptNull !== undefined) quoteIdentifier(options.exemptNull);
     // Postgres ORs permissive policies, so a second one would widen what the first lets a session see.
     const permissive = this.policies.find((policy) => policy.options.restrictive !== true);
     if (options.restrictive !== true && permissive !== undefined)
@@ -535,8 +546,10 @@ export class BlueprintRecord {
         `${this.table} is created by this migration, so it has no policy to drop`,
       );
     checkPolicy(column, options);
-    if (options.match === "inherited")
-      throw new TypeError(`${this.table}.${column}: dropping an inherited policy is not supported`);
+    if (COMPOUND_MATCHES.has(options.match))
+      throw new TypeError(
+        `${this.table}.${column}: dropping an ${options.match} policy is not supported`,
+      );
     this.dropped.push({ column, options, table: options.table ?? this.table });
   }
 
@@ -770,6 +783,19 @@ export class BlueprintRecord {
         inverse: [`drop policy if exists ${policy} on ${qualified}`],
       },
     ];
+    if (seed.options.match === "platform")
+      // The permissive policy shows a tenant the platform's NULL rows, and its USING also picks the rows an UPDATE or a
+      // DELETE reaches, so these restrictive policies keep those two commands on the session's own rows: a tenant
+      // never changes, deletes or takes over a platform row, and a platform session changes only NULL rows.
+      for (const command of ["update", "delete"] as const) {
+        const write = quoteIdentifier(
+          constraintName("pol", this.table, [seed.column, "write", command]),
+        );
+        statements.push({
+          sql: `create policy ${write} on ${qualified} as restrictive for ${command} using (${this.policyMatch(seed).check})`,
+          inverse: [`drop policy if exists ${write} on ${qualified}`],
+        });
+      }
     if (seed.options.match === "inherited") {
       // Permissive policies OR per command, so a select-only policy widens reads and never writes: update, delete and
       // insert still pass only the policy above. `ltree @> ltree[]` is true when the row's path is an ancestor of, or
@@ -791,6 +817,17 @@ export class BlueprintRecord {
    * @throws TypeError when a table being created lacks the column, or a path match is on a column that is not `ltree`.
    */
   private createPolicySql(qualified: string, policy: string, seed: PolicySeed): string {
+    const { using, check } = this.policyMatch(seed);
+    const as = seed.options.restrictive === true ? " as restrictive" : "";
+    return `create policy ${policy} on ${qualified}${as} using (${using}) with check (${check})`;
+  }
+
+  /**
+   * The `USING` and `WITH CHECK` expressions of `seed`.
+   *
+   * @throws TypeError when a table being created lacks the column, or a path match is on a column that is not `ltree`.
+   */
+  private policyMatch(seed: PolicySeed): { readonly using: string; readonly check: string } {
     const { column: name, options } = seed;
     const type = this.policyColumnType(name, options);
     const setting = `current_setting(${sqlLiteral(options.setting)}, true)`;
@@ -799,21 +836,29 @@ export class BlueprintRecord {
     // seq-scans, and a policy cannot OR-expand a list of unknown length; '' or unset gives an empty array (no rows).
     // `equalsOrUnset` also lets a session with the setting unset see the rows whose column is null (a nullable scope
     // column: platform rows); a scoped session still sees only its own. `is not distinct from` is `=` with null = null.
+    // `platform` (ADR 0239 amendment, gap C) shows a set session its own rows and the NULL rows, and lets it write only
+    // its own: its rows, or the NULL rows for a session with the setting unset.
     // A `uuid` column compares with the UUID a public-id setting encodes (`publicIds: "uuid"`): a plain cast of
     // `scp_…` would raise on every statement.
     const value =
       type === "uuid" ? uuidOf(`nullif(${setting}, '')`) : `nullif(${setting}, '')::${type}`;
+    const column = quoteIdentifier(name);
+    const same = `${column} is not distinct from ${value}`;
+    if (options.match === "platform")
+      return { using: `${column} = ${value} or ${column} is null`, check: same };
     const match =
       options.match === "equals"
-        ? `${quoteIdentifier(name)} = ${value}`
+        ? `${column} = ${value}`
         : options.match === "equalsOrUnset"
-          ? `${quoteIdentifier(name)} is not distinct from ${value}`
-          : `${quoteIdentifier(name)} ? array(select (granted || '.*')::lquery from ${grantedPaths(options.setting)})`;
+          ? same
+          : `${column} ? array(select (granted || '.*')::lquery from ${grantedPaths(options.setting)})`;
+    if (options.restrictive !== true) return { using: match, check: match };
     // A restrictive policy narrows only a session the setting narrows (ADR 0347 d3): unset, it shows the whole tenant.
-    const check =
-      options.restrictive === true ? `nullif(${setting}, '') is null or ${match}` : match;
-    const as = options.restrictive === true ? " as restrictive" : "";
-    return `create policy ${policy} on ${qualified}${as} using (${check}) with check (${check})`;
+    // `exemptNull` leaves the rows whose column is null (the platform form's platform rows) to the permissive policy.
+    const exempt =
+      options.exemptNull === undefined ? "" : `${quoteIdentifier(options.exemptNull)} is null or `;
+    const narrowed = `nullif(${setting}, '') is null or ${exempt}${match}`;
+    return { using: narrowed, check: narrowed };
   }
 
   /**

@@ -2,7 +2,10 @@
  * Stackra file contract:
  * Purpose: `policyGaps`, the policy half of the row-level-security catalogue audit of one owned table: exactly one
  *          permissive policy, `pol_<table>_<column>`, `FOR ALL` and testing the owner column against its setting; every
- *          other policy restrictive and named `pol_<table>_<column>` after a column of the table.
+ *          other policy restrictive and named `pol_<table>_<column>` after a column of the table. A platform-form owner
+ *          policy (its `USING` also shows the owner column's null rows, ADR 0239 amendment gap C) needs its restrictive
+ *          `pol_<table>_<column>_write_update` (`FOR UPDATE`) and `_write_delete` (`FOR DELETE`), which are accepted
+ *          by those names.
  * Boundary: pure; `assertRowSecurity` reads the catalogue and passes the rows. A `FOR ALL` policy without its own
  *           `WITH CHECK` checks writes with its `USING`, as Postgres does. Whether a restrictive column is one the
  *           model lists in `rowScopes` is not known here (the catalogue holds no model).
@@ -43,8 +46,30 @@ export function policyGaps(
     gaps.push(
       `${name}: ${expected} is not the owner equality, a permissive FOR ALL policy testing ${column} against ${setting}`,
     );
+  // The platform form: the owner policy also shows the null rows, so its two write policies must keep UPDATE and
+  // DELETE on the session's own rows.
+  const writes = new Map([
+    [`${expected}_write_update`, "w"],
+    [`${expected}_write_delete`, "d"],
+  ]);
+  const platform =
+    equality !== undefined && new RegExp(`\\b${column}\\b\\)? IS NULL`).test(equality.using);
+  if (platform)
+    for (const [write, command] of writes) {
+      const found = policies.find((policy) => policy.name === write);
+      if (
+        found === undefined ||
+        found.permissive ||
+        found.command !== command ||
+        !tests(found.using)
+      )
+        gaps.push(
+          `${name}: ${expected} is the platform form, so it needs ${write}, a restrictive FOR ${command === "w" ? "UPDATE" : "DELETE"} policy testing ${column} against ${setting}`,
+        );
+    }
   for (const policy of policies) {
-    if (policy.name === expected) continue;
+    if (policy.name === expected || (platform && writes.has(policy.name) && !policy.permissive))
+      continue;
     if (policy.permissive)
       gaps.push(
         `${name}: ${policy.name} is a second permissive policy, which widens ${expected}; only a restrictive policy may narrow it`,
