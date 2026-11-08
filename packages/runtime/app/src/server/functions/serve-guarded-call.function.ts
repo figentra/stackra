@@ -66,11 +66,10 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
       { status: 413 },
     );
 
-  const guarded = new Request(request.url, {
-    method,
-    headers: request.headers,
-    ...(bytes.byteLength > 0 && method !== "GET" && method !== "HEAD" ? { body: bytes } : {}),
-  });
+  const init: RequestInit = { method, headers: request.headers };
+  if (bytes.byteLength > 0 && method !== "GET" && method !== "HEAD")
+    init.body = new Uint8Array(bytes);
+  const guarded = new Request(request.url, init);
   try {
     await options.guard(guarded);
   } catch (error) {

@@ -16,7 +16,8 @@ import { createHash } from "node:crypto";
 import { ActorKind } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { signEdgeRequest } from "#core/functions/sign-edge-request.function";

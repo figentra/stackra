@@ -110,6 +110,7 @@ describe("generateMember", () => {
       ".stackra/gen/queues.ts",
       ".stackra/gen/search.ts",
       ".stackra/encore/billing/encore.service.ts",
+      ".stackra/encore/billing/api.ts",
       ".stackra/encore/billing/cron.ts",
       ".stackra/encore/billing/database.ts",
       ".stackra/encore/billing/queues.ts",

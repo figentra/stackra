@@ -158,7 +158,7 @@ describe(emitEncoreApi, () => {
   it("lets only an anonymous entry run without a credential; Encore auth is off for all", () => {
     expect(content).toContain("export const ordersHealthCheckV1 = api.raw(");
     expect(content.match(/anonymous: true/g)).toHaveLength(1);
-    expect(content.match(/auth: false/g)).toHaveLength(
+    expect(content.match(/expose: true, auth: false/g)).toHaveLength(
       content.match(/= api\.raw\(/g)?.length ?? -1,
     );
     expect(content).not.toContain("auth: true");
