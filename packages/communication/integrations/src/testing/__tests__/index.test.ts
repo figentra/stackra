@@ -23,6 +23,7 @@ describe("@stackra/integrations/testing", () => {
       "MemoryFulfilmentProvider",
       "MemoryPayrollConnector",
       "fakeIntegrationApi",
+      "liveConnection",
       "makeConnection",
       "replayIntegrationApi",
       "runAccountingCase",
