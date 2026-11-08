@@ -16,8 +16,10 @@
  *           the container can build it as a wiring candidate; the ORM is made on first use, so entities registered
  *           after the driver was built are still in it. One database per instance, gone on `close`. Each migration
  *           file runs as the runner would run it (a transactional file in one transaction) without the
- *           `schema_migrations` bookkeeping. shortcut: PGlite is one connection, so a `requiresNew` transaction runs
- *           on the same session as the one around it; a test that needs true parallel sessions uses `usePostgres`.
+ *           `schema_migrations` bookkeeping. PGlite is one connection, so a second transaction would wait forever on
+ *           the one around it: a `requiresNew` transaction inside a running one is a savepoint here, which commits with
+ *           the caller under PGlite. The independent commit is proven only in `.int` tests on Postgres
+ *           (`usePostgres`), as is anything else that needs true parallel sessions.
  *           pgvector comes from PGlite's own extension package (`@electric-sql/pglite-pgvector`, the release paired with
  *           the catalog's PGlite); PostGIS from `@electric-sql/pglite-postgis` when the member installs it (a member
  *           with geography columns does, ADR 0314).
@@ -129,13 +131,21 @@ export class MemoryDatabaseDriver extends Driver(Database) {
   }
 
   /**
-   * Implements `Database.transaction`, documented there, through `runTransaction`.
+   * Implements `Database.transaction`, documented there, through `runTransaction`. Inside a running transaction,
+   * `requiresNew` is a savepoint that commits with the caller (PGlite has one connection); its timeouts still apply,
+   * and `isolation`, `readOnly` and `retry`, which a savepoint cannot take, are left to the transaction around it.
    *
    * @throws TypeError when `isolation`, `readOnly` or `retry` is asked inside a running transaction without
    *         `requiresNew`.
    */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
-    return runTransaction(this.em(), work, options);
+    const em = this.em();
+    if (options.requiresNew === true && em.isInTransaction())
+      return runTransaction(em, work, {
+        ...(options.timeout === undefined ? {} : { timeout: options.timeout }),
+        ...(options.lockTimeout === undefined ? {} : { lockTimeout: options.lockTimeout }),
+      });
+    return runTransaction(em, work, options);
   }
 
   /**
