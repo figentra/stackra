@@ -1,5 +1,43 @@
 # @stackra/identity
 
+## 0.21.0
+
+### Minor Changes
+
+- 1073d9c: `IdpAdmin.installClaimsAction({ endpoint, timeoutSeconds? })` makes the provider add the Stackra claims to every
+  token and userinfo answer. On ZITADEL it is an Actions v2 `restCall` target named `stackra-claims` that fails the token
+  when the endpoint fails, plus the `preuserinfo` and `preaccesstoken` function executions. The first install answers the
+  target's signing key once, and a later install repoints the target and answers none. `claimsActionResponse(claims)` is
+  the endpoint's answer: `append_claims` for every `IDENTITY_CLAIMS` name, the realm included. `StackraClaims` types its
+  input. The endpoint verifies each call with the existing `verifyZitadelSignature`.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/scheduler@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/clients@0.21.0
+  - @stackra/storage@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/market-packs@0.21.0
+  - @stackra/transport@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/queue@0.21.0
+  - @stackra/iam@0.21.0
+  - @stackra/privacy@0.21.0
+  - @stackra/scope@0.21.0
+  - @stackra/query@0.21.0
+  - @stackra/support@0.21.0
+
 ## 0.20.0
 
 ### Minor Changes

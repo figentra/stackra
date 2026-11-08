@@ -38,6 +38,9 @@ The Content Security Policy baseline, its configuration, nonces and the React no
   it is rendered (`dangerouslySetInnerHTML`), mailed or stored for rendering. It rebuilds the output from parsed parts
   against an allowlist (`RICH_TEXT_HTML_POLICY`), so widening the policy to a script, a style, an event handler or
   `style` is a security change that needs review. ProseMirror JSON needs no pass.
+- Third-party scripts (STA-2562 audit item c): `thirdPartyScripts` maps an exact https origin to a `ConsentCategory`
+  code. `necessary` always loads (a payment SDK); any other loads only when `CspAdditions.consent` grants it, so without
+  consent only `necessary` scripts run. No wildcard, scheme or host pattern; an unlisted script never loads.
 - A nonce is minted once per request by `createNonce` (Web Crypto) and never cached, reused or derived.
 - `useNonce` returns `undefined` outside a provider on purpose: the browser has no nonce after hydration.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

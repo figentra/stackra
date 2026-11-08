@@ -76,6 +76,7 @@ describe("generateMember", () => {
       ".stackra/gen/prefixes.ts",
       ".stackra/encore/commerce/encore.service.ts",
       ".stackra/encore/commerce/api.ts",
+      ".stackra/encore/commerce/auth.ts",
       ".stackra/encore/commerce/database.ts",
       ".stackra/encore/commerce/events.ts",
       ".stackra/entry/server.ts",

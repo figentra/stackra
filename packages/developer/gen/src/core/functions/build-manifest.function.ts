@@ -484,10 +484,7 @@ export function buildManifest(ir: MemberIR): {
           kind,
           risk: String(entry["risk"]),
           effects,
-          idempotent:
-            declared.options["idempotency"] !== undefined &&
-            declared.options["idempotency"] !== false &&
-            declared.options["idempotency"] !== "never",
+          idempotency: declared.options["idempotency"],
         }),
       };
     else if (toolReason !== undefined) entry["toolOff"] = toolReason;

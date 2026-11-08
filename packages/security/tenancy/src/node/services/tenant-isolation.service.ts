@@ -59,7 +59,7 @@ export class TenantIsolationService extends Service {
 
   /**
    * Runs `work` in a transaction (a savepoint inside one) with `app.tenant_id` set to the actor's tenant (`actingScopeId`:
-   * its own `scopeId`, or for an agent with none the tenant of the human it acts for), `''` when it acts in no tenant. Inside a running transaction the enclosing tenant is back once `work` ends: put back after
+   * its own `scopeId`, or for an agent or a service with none the tenant of the user it acts for), `''` when it acts in no tenant. Inside a running transaction the enclosing tenant is back once `work` ends: put back after
    * it returns (its writes flushed first), and by the savepoint's rollback when it throws.
    *
    * @throws TypeError when the actor's tenant is set but is not a tenant id (`scp_…`), a wiring error.

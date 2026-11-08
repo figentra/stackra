@@ -385,6 +385,7 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 | `.stackra/gen/webhooks.ts`                                                | service                                               | `InboundWebhooksController` on `/webhooks/<module>/<name>/:connectionId`, raw body and decoded query to `WebhookReceiver`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `.stackra/gen/inbox.ts` | service with a listener of a contract-only producer's event | `InboundEventsController` on `/events/inbox` (raw body to `RelayInboxService`), `RelayInboxConfig` with the pinned producers' keys and events |
 | `.stackra/encore/<member>/inbox.ts` | the same service | the `api.raw` `POST /events/inbox` adapter (exposed, `auth: false`) through `answerHttp` |
+| `.stackra/encore/<member>/auth.ts` | a service with `api.ts`, exactly when it is written | the app's one `authHandler` for the typed endpoints only, and `Gateway`; `CallAuthenticator` is the single authenticator (users and services alike), which raw endpoints call through their helper after the guards (STA-2577); with the typed endpoints gone, this file goes too |
 | `.stackra/gen/events-relay.ts` | service whose `runway.yaml` has an `events` block | `EventsRelayConfig` with every environment's block, the running one picked by `STACKRA_ENVIRONMENT` |
 | `.stackra/gen/clients/<service>.ts`                                       | a client consumer                                     | the producer's enums, shapes, refusals and integration events, one `remoteAction`/`remoteQuery` per call, `<Service>Client`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `.stackra/gen/settings.ts`                                                | members with a settings class and `@stackra/settings` | `Settings = settingKeys({...})`: one key per setting field of each settings class, by module (stackra-209); `Settings.pick([...])` forms compile in `#stackra/schemas`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -655,9 +656,19 @@ endpoint, a hosted package's entry (its manifest does not name the files of its 
 has), or one whose input or output schema is not a shape of the member (a generated search or report query's package
 shapes, a replica page). Encore binds each path parameter from the input field of that name, so the manifest build
 refuses a route whose parameter is no field of the input (`endpoint_param_unbound`), such as `x.get` with no `xId`.
-Waiting for the auth handler and gateway (wp-114): the handler that returns that auth data
-(until it lands, `encore build` refuses an `auth: true` endpoint), and the rest of `CallOptions`. A refusal surfaces as
-Encore's default error until refusal kinds map to `APIError`.
+Beside `api.ts`, the same service gets `.stackra/encore/<member>/auth.ts` (wp-114, STA-2558): the app's one
+`authHandler`, which returns that auth data, and its one `Gateway`. A service is its own Encore app, so this is written
+once per app, and only when `api.ts` is: every endpoint, an anonymous one too, reads the auth data. The handler reads
+the `Authorization` and `Stackra-On-Behalf-Of` headers and runs a `CallAuthenticator` of `@stackra/app/server`, built
+over the call's container inside `app.handlers.run`: the bearer token is verified against JWKS (`BearerConfig`,
+`JsonWebKeys`) and mapped to its actor by `actorOf` of `@stackra/identity`, so a user's token and a service account's
+token go through the same handler (ADR 0209, amendment of 2026-11-07). A service that declares `@stackra/app` binds
+`JsonWebKeys` to `oidc` with `BearerConfig` by default; with no `ServicePrincipals` driver bound, every service token
+is refused and user tokens still pass. A service bearer with the user's own token in `Stackra-On-Behalf-Of` is that
+service acting for the user (`onBehalfOf`), in the user's tenant; a forward beside a user bearer, of a service token,
+or for another tenant than the service's is refused. Every failure is `APIError.unauthenticated` with no detail. An
+issuer outage stays its own error. Still waiting: the rest of `CallOptions`, and refusal kinds mapped to `APIError` in
+the endpoints (a refusal there surfaces as Encore's default error).
 
 The full `CallOptions` of an endpoint come in two parts and nothing else: the verified facts from the credential
 (`actor`, then `scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the

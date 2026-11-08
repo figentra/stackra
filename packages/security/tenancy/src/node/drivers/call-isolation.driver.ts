@@ -12,10 +12,11 @@
  *           actor (or one it acts for) names that differs from the scope's is refused, as is any claimed tenant when
  *           the scope is above every tenant; the scheduler's stamp, whose `scopeId` is the scope's own id, claims none; a scope the tree does
  *           not show, or shows at another path than the reference carries, is refused (`TenantScopeUnresolvedError`),
- *           and a scope above every tenant keeps no tenant. An agent whose tenant differs from its human's is refused, and an agent with none runs in its human's (`actingScopeId`). Any other actor keeps its own `scopeId`,
+ *           and a scope above every tenant keeps no tenant. An agent or a service whose tenant differs from that of the user it acts for is refused, and one with none runs in
+ *           its user's (`actingScopeId`; ADR 0209's amendment of 2026-11-07, condition 3). Any other actor keeps its own `scopeId`,
  *           and when that tenant and the scope's tenant are both known and differ the call is refused
- *           (`TenantScopeMismatchError`), never settled by picking one; a user or an agent with a tenant (an agent's
- *           own, or else its human's) whose scope the tree shows above every tenant, or does not show at that path, is
+ *           (`TenantScopeMismatchError`), never settled by picking one; a user, an agent or a service with a tenant (an
+ *           agent's or a service's own, or else its user's) whose scope the tree shows above every tenant, or does not show at that path, is
  *           refused the same way. Several granted scopes
  *           are one session, so they must all resolve alike (one tenant, all above every tenant, or all unknown to
  *           the tree) and are then treated as the first; scopes that span tenants are refused (`TenantScopeMismatchError`). A platform actor (no
@@ -84,8 +85,8 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    * @throws TypeError when `actor.scopeId` is not a tenant id or a scope path is not an `ltree` path.
    * @throws TenantScopeUnresolvedError when a job or system actor's scope is not in the scope tree.
    * @throws TenantScopeMismatchError when another actor's tenant and its scope's tenant are both known and differ, a
-   *         user or agent with a tenant acts in a scope above every tenant or one the tree does not show, or several
-   *         scopes span tenants.
+   *         user, agent or service with a tenant acts in a scope above every tenant or one the tree does not show, or
+   *         several scopes span tenants.
    * @throws TenantSwitchRefusedError when a transaction is already running for another tenant than the call's.
    */
   async run<T>(
@@ -115,16 +116,17 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    *
    * @throws TenantScopeUnresolvedError when a job or system actor's scope is not in the scope tree.
    * @throws TenantScopeMismatchError when a tenant the actor claims (its own, or the one it acts for) and its scope's
-   *         tenant are both known and differ, an agent and the human it acts for are in different tenants, or a user
-   *         or agent with a tenant acts in a scope above every tenant or one the tree does not show, or several scopes
-   *         do not all resolve alike.
+   *         tenant are both known and differ, an agent or a service and the user it acts for are in different tenants,
+   *         or a user, agent or service with a tenant acts in a scope above every tenant or one the tree does not show,
+   *         or several scopes do not all resolve alike.
    */
   private async actorIn(
     actor: Actor,
     scope: ScopeRef | readonly ScopeRef[] | undefined,
   ): Promise<Actor> {
-    // An agent acts within the intersection of itself and the human: two tenants are no intersection (ADR 0360).
-    if (actor.kind === ActorKind.Agent) {
+    // An agent, or a service calling for a user, acts within the intersection of itself and the user: two tenants are
+    // no intersection (ADR 0360; ADR 0209's amendment of 2026-11-07, condition 3).
+    if (actor.kind === ActorKind.Agent || actor.kind === ActorKind.Service) {
       const [own, human] = [actor.scopeId, actor.onBehalfOf?.scopeId];
       if (own !== undefined && human !== undefined && own !== human)
         throw TenantScopeMismatchError.create();
@@ -145,13 +147,15 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
     const [resolved] = answers;
     if (actor.kind === ActorKind.Job || actor.kind === ActorKind.System)
       return unitActor(actor, first, resolved);
-    // An agent claims its own tenant or, with none, the one of the human it acts for (ADR 0360), and runs in it.
+    // An agent or a service claims its own tenant or, with none, the one of the user it acts for, and runs in it.
     const claimed = actingScopeId(actor);
-    // A tenant user or agent in a scope above every tenant, or in one the tree does not show (a forged path such as
-    // its own id with `platform`), would keep its tenant while its scope paths cover other tenants' rows: its scope
-    // must be shown inside a tenant. A platform user or agent (no tenant) stays a platform call (ADR 0239 decision 1).
+    // A tenant user, agent or service in a scope above every tenant, or in one the tree does not show (a forged path
+    // such as its own id with `platform`), would keep its tenant while its scope paths cover other tenants' rows: its
+    // scope must be shown inside a tenant. A platform one (no tenant) stays a platform call (ADR 0239 decision 1).
     if (
-      (actor.kind === ActorKind.User || actor.kind === ActorKind.Agent) &&
+      (actor.kind === ActorKind.User ||
+        actor.kind === ActorKind.Agent ||
+        actor.kind === ActorKind.Service) &&
       claimed !== undefined &&
       resolved?.tenant === undefined
     )

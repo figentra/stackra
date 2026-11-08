@@ -91,8 +91,10 @@ a job pushed with `{ scope }` and no origin reads its tenant's rows; a scope the
 (`tenant_scope_unresolved`). Any other actor stays in its own tenant, and a scope of another tenant is refused
 (`tenant_scope_mismatch`); neither tenant is ever picked for it. A user with a tenant is refused the same way in a
 scope above every tenant or one the tree does not show, such as its own id with the path `platform`, and so is an agent
-with a tenant (its own, or else that of the human it acts for); a platform user or agent stays a platform call. An agent with no tenant of its own runs in
-the tenant of the human it acts for: `withTenant` sets `app.tenant_id` to it. Every `app.*` setting is `set_config(..., true)`, so it ends
+or a service with a tenant (its own, or else that of the user it acts for); a platform user, agent or service stays a
+platform call. An agent or a service with no tenant of its own runs in the tenant of the user it acts for:
+`withTenant` sets `app.tenant_id` to it. One whose own tenant differs from that user's is refused (ADR 0209,
+amendment of 2026-11-07, condition 3). Every `app.*` setting is `set_config(..., true)`, so it ends
 with the transaction; `pnpm validate` refuses a session-level one.
 
 `withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.scopeId`, or `''` for a

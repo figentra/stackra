@@ -22,4 +22,7 @@ export interface CspAdditions {
 
   /** The framers a resolver found for this request, on a `"request"` path only; none (an unknown session) is `'none'`. */
   readonly frameAncestors?: readonly string[];
+
+  /** The viewer's granted consent categories (`ConsentCategory` codes); without them only `necessary` scripts load. */
+  readonly consent?: readonly string[];
 }

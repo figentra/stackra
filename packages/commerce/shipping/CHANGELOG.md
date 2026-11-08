@@ -1,5 +1,24 @@
 # @stackra/shipping
 
+## 0.21.0
+
+### Minor Changes
+
+- 9084225: `LabelGateway` gains an optional `findLabel(reference)`: the shipment the carrier booked for a `createLabel` reference,
+  or null when it booked none. A caller whose `createLabel` reply was lost asks it before buying again, so one reference
+  is never booked twice; a connector whose carrier cannot search by reference leaves it out.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/testing@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes
