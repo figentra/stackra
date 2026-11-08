@@ -474,6 +474,37 @@ export function emitWiring(ir: MemberIR): string {
     );
   }
 
+  // A hosted package module's actions and queries are its surface, so the host binds each one whether or not a class
+  // injects it (a test or a client calls it by class), with its constructor tokens from the manifest's `services`.
+  const hostedTokens: { readonly module: string; readonly dep: TokenRef }[] = [];
+  const hostedKeys: string[] = [];
+  const hostedServices = dependencyServices(ir);
+  for (const { package: name, manifest } of ir.dependencies) {
+    const entry = manifest.modules?.find((candidate) => candidate.key === manifest.member);
+    if (entry?.class === undefined || typeof entry["file"] !== "string" || manifest.kind === "app")
+      continue;
+    const key = dependencyKeys.get(manifest.member) ?? manifest.member;
+    const surface = Array.isArray(manifest["actions"]) ? (manifest["actions"] as unknown[]) : [];
+    for (const declared of surface) {
+      const { class: type, kind } = (declared ?? {}) as Record<string, unknown>;
+      if (typeof type !== "string" || (kind !== "action" && kind !== "query")) continue;
+      const services = Array.isArray(manifest["services"])
+        ? (manifest["services"] as unknown[])
+        : [];
+      const listed = services.find(
+        (candidate) => ((candidate ?? {}) as Record<string, unknown>)["class"] === type,
+      ) as Record<string, unknown> | undefined;
+      const tokens = hostedServices.get(`${name}#${type}`);
+      if (listed === undefined || typeof listed["from"] !== "string" || tokens === undefined)
+        continue;
+      bindingLines.push(
+        `    { module: ${JSON.stringify(key)}, kind: ${JSON.stringify(kind)}, provide: ${ref({ name: type, from: listed["from"] })}, deps: ${list(tokens.map(token))} },`,
+      );
+      for (const dep of tokens) hostedTokens.push({ module: key, dep });
+      hostedKeys.push(`:${listed["from"]}#${type}`);
+    }
+  }
+
   // A config class's key: an override keeps its base's key (ADR 0294 decision 20), read from the base package's
   // manifest, else derived from the base's own member.
   const packageConfigs = dependencyConfigs(ir);
@@ -624,6 +655,7 @@ export function emitWiring(ir: MemberIR): string {
       declared.kind === "driver"
     )
       for (const dep of depsOf(declared)) used.push({ module: declared.module, dep });
+  used.push(...hostedTokens);
   if (webhookIntegrations(ir).length > 0) {
     const receiver: TokenRef = { class: { name: "WebhookReceiver", from: "@stackra/webhooks" } };
     const route = ref({ name: "InboundWebhooksController", from: "#stackra/webhooks" });
@@ -674,7 +706,7 @@ export function emitWiring(ir: MemberIR): string {
     used.push({ module: ir.member, dep: { class: port } });
     if (config !== undefined) used.push({ module: ir.member, dep: { class: config } });
   }
-  const added = new Set<string>();
+  const added = new Set<string>(hostedKeys);
   const packageServices = dependencyServices(ir);
   // The array iterator reads the live length, so the links pushed below are walked too.
   for (const { module, dep } of used) {

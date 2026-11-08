@@ -223,6 +223,20 @@
       "from": "@stackra/devices"
     }
   ],
+  "services": [
+    {
+      "class": "DeviceAcknowledgedQuery",
+      "from": "@stackra/devices/node",
+      "deps": [
+        {
+          "class": {
+            "name": "DeviceSequenceStore",
+            "from": "@stackra/actions/contracts"
+          }
+        }
+      ]
+    }
+  ],
   "schemas": {
     "devices.CommandStatus": {
       "type": "string",

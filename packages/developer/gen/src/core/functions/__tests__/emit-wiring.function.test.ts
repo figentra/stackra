@@ -212,13 +212,11 @@ describe("emitWiring", () => {
 
   it("binds a package service the member injects, from the package's manifest (STA-1686)", () => {
     const kit = buildManifest(LOYALTY_KIT_IR).manifest;
-    expect(kit["services"]).toEqual([
-      {
-        class: "LoyaltyService",
-        from: "@acme/loyalty-kit",
-        deps: [{ class: { name: "LoyaltyLedger", from: "@acme/loyalty-kit/contracts" } }],
-      },
-    ]);
+    expect(kit["services"]).toContainEqual({
+      class: "LoyaltyService",
+      from: "@acme/loyalty-kit",
+      deps: [{ class: { name: "LoyaltyLedger", from: "@acme/loyalty-kit/contracts" } }],
+    });
     const content = emitWiring({
       ...COMMERCE_IR,
       packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
@@ -314,6 +312,48 @@ describe("emitWiring", () => {
     expect(content).toMatch(
       /\{ module: "orders", kind: "service", provide: LoyaltyKitExtensionPoint, deps: \[\] \},/,
     );
+  });
+
+  it("binds a hosted package module's actions, whether or not a class injects them", () => {
+    const enroll = {
+      name: "EnrollMemberAction",
+      kind: "action",
+      module: "loyalty_kit",
+      file: "src/node/actions/enroll-member.action.ts",
+      importPath: "#node/actions/enroll-member.action",
+      options: { key: "account.enroll" },
+      deps: [{ class: { name: "LoyaltyService", from: "#core/services/loyalty.service" } }],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    } as const;
+    const built = buildManifest({
+      ...LOYALTY_KIT_IR,
+      classes: [...LOYALTY_KIT_IR.classes, enroll],
+    }).manifest;
+    // The fixture's module is generated; a published kit names the file its module class lives in.
+    const kit = {
+      ...built,
+      modules: (built.modules ?? []).map((entry) => ({
+        ...entry,
+        class: entry.class ?? "LoyaltyKitModule",
+        file: entry["file"] ?? "src/node/loyalty-kit.module.ts",
+      })),
+    };
+    const services = (kit as Record<string, unknown>)["services"] as readonly { class: string }[];
+    expect(services.map((entry) => entry.class)).toContain("EnrollMemberAction");
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
+      dependencies: [{ package: "@acme/loyalty-kit", manifest: kit }],
+    });
+    expect(content).toMatch(
+      /\{ module: "loyalty_kit", kind: "action", provide: EnrollMemberAction, deps: \[LoyaltyService\] \},/,
+    );
+    // Its tokens are bound too, so the action can be built.
+    expect(content).toMatch(/provide: LoyaltyService, deps: \[LoyaltyLedger\]/);
   });
 
   it("adds the bindings no class declares", () => {

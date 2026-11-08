@@ -497,6 +497,18 @@
   "roles": [],
   "services": [
     {
+      "class": "VerifyAwardQuery",
+      "from": "@stackra/achievements/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AwardService",
+            "from": "@stackra/achievements/node"
+          }
+        }
+      ]
+    },
+    {
       "class": "AwardKindService",
       "from": "@stackra/achievements/node",
       "deps": [

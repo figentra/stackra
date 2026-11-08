@@ -567,6 +567,156 @@
   "roles": [],
   "services": [
     {
+      "class": "CreateSynonymAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "SynonymService",
+            "from": "@stackra/data-maintenance/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "DeleteSynonymAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "SynonymService",
+            "from": "@stackra/data-maintenance/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "MaintainChangeLogAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "ChangeFeed",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "OutboxConfig",
+            "from": "@stackra/outbox"
+          }
+        }
+      ]
+    },
+    {
+      "class": "MaintainPartitionsAction",
+      "from": "@stackra/data-maintenance/node"
+    },
+    {
+      "class": "PruneOutboxAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "OutboxDriver",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "InboxDriver",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "OutboxConfig",
+            "from": "@stackra/outbox"
+          }
+        }
+      ]
+    },
+    {
+      "class": "PruneRecordsAction",
+      "from": "@stackra/data-maintenance/node"
+    },
+    {
+      "class": "RecordSearchQueryAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "PostgresSearchQueryLogDriver",
+            "from": "@stackra/search/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ReindexSearchAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "Search",
+            "from": "@stackra/search"
+          }
+        },
+        {
+          "class": {
+            "name": "SearchIndexRegistry",
+            "from": "@stackra/search/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ReindexSemanticAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "Search",
+            "from": "@stackra/search"
+          }
+        },
+        {
+          "class": {
+            "name": "SemanticChangeService",
+            "from": "@stackra/search/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "RollUpTimeSeriesAction",
+      "from": "@stackra/data-maintenance/node"
+    },
+    {
+      "class": "UpdateSynonymAction",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "SynonymService",
+            "from": "@stackra/data-maintenance/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ListSynonymsQuery",
+      "from": "@stackra/data-maintenance/node",
+      "deps": [
+        {
+          "class": {
+            "name": "SynonymService",
+            "from": "@stackra/data-maintenance/node"
+          }
+        }
+      ]
+    },
+    {
       "class": "SynonymService",
       "from": "@stackra/data-maintenance/node",
       "partner": {

@@ -986,11 +986,15 @@ export function buildManifest(ir: MemberIR): {
   // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686), and the
   // model a `CrudService<M>` is typed against (`partner`), so the host registers the pair (ADR 0305 rule 5). Its
   // extension points too: its services inject them, so a host binds them alongside (`LoyaltyKitExtensionPoint`).
+  // Its actions and queries too: they are its module's surface, which a host that imports the module binds.
   const services: Entry[] = published
     ? ir.classes
         .filter(
           (candidate) =>
-            (candidate.kind === "service" || candidate.kind === "extension_point") &&
+            (candidate.kind === "service" ||
+              candidate.kind === "extension_point" ||
+              candidate.kind === "action" ||
+              candidate.kind === "query") &&
             candidate.abstract !== true,
         )
         .map((declared) => ({

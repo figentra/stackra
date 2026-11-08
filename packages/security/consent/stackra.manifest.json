@@ -282,6 +282,18 @@
           }
         }
       ]
+    },
+    {
+      "class": "IssueConsentSnapshotAction",
+      "from": "@stackra/consent/node",
+      "deps": [
+        {
+          "class": {
+            "name": "ConsentSnapshotIssuer",
+            "from": "@stackra/consent"
+          }
+        }
+      ]
     }
   ],
   "schemas": {

@@ -322,6 +322,18 @@
   "roles": [],
   "services": [
     {
+      "class": "RecomputeSegmentsAction",
+      "from": "@stackra/segments/node",
+      "deps": [
+        {
+          "class": {
+            "name": "SegmentService",
+            "from": "@stackra/segments/node"
+          }
+        }
+      ]
+    },
+    {
       "class": "SegmentMembershipService",
       "from": "@stackra/segments/node",
       "partner": {

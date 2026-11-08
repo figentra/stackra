@@ -276,6 +276,18 @@
           }
         }
       ]
+    },
+    {
+      "class": "CreateUploadAction",
+      "from": "@stackra/media/node",
+      "deps": [
+        {
+          "class": {
+            "name": "MediaLibrary",
+            "from": "@stackra/media"
+          }
+        }
+      ]
     }
   ],
   "schemas": {
