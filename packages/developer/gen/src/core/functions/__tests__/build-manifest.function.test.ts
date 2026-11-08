@@ -7,7 +7,8 @@
  *          schema, merged package sections marked `from`, and the checks `identity_collision`, `override_duplicate`,
  *          `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and `prefix_duplicate`;
  *          `event_name_prefixed` (STA-1255); the v3 tool default (L3 and L4 actions off) with `tool_reason_missing`,
- *          the public flag with `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound`
+ *          an action's `dataClass` with `data_class_unknown` (STA-2594), the public flag with
+ *          `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound`
  *          (STA-2063),
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
@@ -811,6 +812,19 @@ describe("buildManifest", () => {
     const withClasses = (...classes: DeclaredClass[]): MemberIR => ({
       ...COMMERCE_IR,
       classes: [...COMMERCE_IR.classes.filter((item) => item.name !== cancel.name), ...classes],
+    });
+
+    it("records an action's data class and refuses one gen cannot read (STA-2594)", () => {
+      const financial = { ...cancel, options: { ...cancel.options, dataClass: "financial" } };
+      const { errors: found } = buildManifest(withClasses(financial));
+      expect(found).toEqual([]);
+      expect(cancelEntryOf(withClasses(financial))?.["dataClass"]).toBe("financial");
+      expect(cancelEntryOf(withClasses(cancel))?.["dataClass"]).toBeUndefined();
+      const unread = {
+        ...cancel,
+        options: { ...cancel.options, dataClass: { $class: "LocalClass", from: "#node/x" } },
+      };
+      expect(codesOf(withClasses(unread))).toContain("data_class_unknown CancelOrderAction");
     });
 
     it("refuses `tool: false` on a user action without a reason, and records the reason", () => {

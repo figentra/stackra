@@ -16,7 +16,8 @@
  *          host's wiring knows its configs without guessing from a name (STA-1308). It reports the identity checks it
  *          can see: `identity_collision`, `override_duplicate`, `permission_unknown`, `identity_missing`,
  *          `action_risk_below_write` (an action whose permission is L0 or L1, STA-2096), the public id prefix checks
- *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, the call-shape refusals
+ *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `data_class_unknown` (an
+ *          action's or query's `dataClass`, recorded on its entry, STA-2594), the call-shape refusals
  *          of `checkCallShape` (`query_above_l1`, `query_precondition`, `action_cache`, `step_up_missing`,
  *          `idempotency_missing`), `effect_unknown`,
  *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
@@ -118,6 +119,9 @@ import type { TokenRef } from "#core/types/token-ref.type";
 
 /** A written Integration key: two snake_case parts joined by a dot (STA-1739). */
 const INTEGRATION_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
+/** A data class key, built in (`financial`) or a product's (`clinical_note`): snake_case, as `DataClass` checks. */
+const DATA_CLASS_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 
 /** A manifest entry under construction. */
 type Entry = { [key: string]: Json };
@@ -472,6 +476,17 @@ export function buildManifest(ir: MemberIR): {
     if (kind === "query" && typeof declared.options["riskReason"] === "string")
       entry["riskReason"] = declared.options["riskReason"];
     if (effects.length > 0) entry["effects"] = effects;
+    // The data class it handles, so the AI gateway routes a run in region by it (STA-2594).
+    const dataClass = declared.options["dataClass"];
+    if (typeof dataClass === "string" && DATA_CLASS_KEY.test(dataClass))
+      entry["dataClass"] = dataClass;
+    else if (dataClass !== undefined)
+      fail(
+        declared,
+        "data_class_unknown",
+        `\`dataClass\` names no data class gen can read`,
+        "use a `DataClassification` value or a `DataClass({ key })` class from an `access/` group",
+      );
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
