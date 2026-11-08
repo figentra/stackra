@@ -1,5 +1,18 @@
 # @stackra/locking
 
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [2df7162]
+  - @stackra/database@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/validation@0.24.0
+  - @stackra/cache@0.24.0
+
 ## 0.23.0
 
 ### Patch Changes

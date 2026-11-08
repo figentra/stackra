@@ -1,5 +1,28 @@
 # @stackra/actions
 
+## 0.24.0
+
+### Minor Changes
+
+- 35959f6: An action or a query can name the data class it handles: `dataClass: DataClassification.Financial`, or a product's
+  own `DataClass({ key })` class. Gen writes the key on the call's manifest entry (`dataClass`) and refuses a value it
+  cannot read with `data_class_unknown`; the catalogue manifest schema names the field. Tamo's gateway uses it to keep a
+  run in region by the most sensitive class among the tools it calls.
+
+### Patch Changes
+
+- f86dec4: The memory `AccessControl` refuses a restricted permission to a customer-realm user, as the policy decision point
+  does: a restricted permission counts only through an explicit grant (`grant(permission)` in a test). A test of a
+  staff-only read that is restricted now sees the shopper refused on memory drivers too.
+- @stackra/testing@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+  - @stackra/cache@0.24.0
+
 ## 0.23.0
 
 ### Minor Changes

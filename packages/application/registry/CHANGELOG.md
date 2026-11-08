@@ -1,5 +1,17 @@
 # @stackra/registry
 
+## 0.24.0
+
+### Patch Changes
+
+- 35959f6: An action or a query can name the data class it handles: `dataClass: DataClassification.Financial`, or a product's
+  own `DataClass({ key })` class. Gen writes the key on the call's manifest entry (`dataClass`) and refuses a value it
+  cannot read with `data_class_unknown`; the catalogue manifest schema names the field. Tamo's gateway uses it to keep a
+  run in region by the most sensitive class among the tools it calls.
+- @stackra/money@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/validation@0.24.0
+
 ## 0.23.0
 
 ### Patch Changes

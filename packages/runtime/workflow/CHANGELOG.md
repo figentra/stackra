@@ -1,5 +1,36 @@
 # @stackra/workflow
 
+## 0.24.0
+
+### Minor Changes
+
+- 2df7162: `ConditionField`, `ServiceAckSet` and `ScopeNode` now extend `Model.global(...)`. Their tables hold no tenant data by
+  design: a field registry, the service acks a workflow waits for, and the scope tree (read outside its package only
+  through the `ScopeTree` port). Gen no longer warns that these models are neither tenant-owned nor global. The
+  row-security audit lists their tables as platform tables. Nothing changes at run time.
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/rules@0.24.0
+  - @stackra/content@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/queue@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/locking@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+
 ## 0.23.0
 
 ### Minor Changes
