@@ -126,6 +126,10 @@ await this.resolver.write(
 );
 ```
 
+- A key's `scopes` (its class's, narrowed by `@Setting({ scopes })`) name the levels that may write it: the page's
+  level, or `user` for a user's own layer. Any other write is refused `setting_scope_refused` before anything is
+  written (`SettingScopeRefusedError`, one field error per path); break-glass does not lift it. `applyChange` (packs,
+  promotions) takes no page, so its caller checks the level.
 - Floors come from `SettingFloorSource`; the OS driver resolves the tenant's market pack and calls `settingFloorsOf`.
   A write that crosses a floor is refused `setting_below_floor`; a stored value or default that crosses a floor (a
   floor rose) reads as the floor, with `source: "floor"`, so the admin can tell the tenant.
