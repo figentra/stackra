@@ -73,6 +73,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   member with nothing to register (only enums, configs, or shapes whose `X$` the member ships), so an enum-only
   package needs no zod; the registrations and entry barrels read the same list. When a target starts importing a new platform package, expect members to need that
   dependency, and update the fixtures (`GENERATED_IMPORTS`, `writeFixtureMember`'s package.json) in the same change.
+- Transitive refusals: when `generated_dependency_missing` fires, `transitiveRefusals` adds every `@stackra/*` package
+  the undeclared ones' own manifests wire from (`ir.transitiveDependencies`, read by `readTransitiveDependencies` from
+  the real folder of the package that brought each in), plus one `package.json` hint of lines to paste. Those manifests
+  only discover what is missing; nothing is emitted from an undeclared package.
 - Client modules and permissions (STA-1296): `emitClients` writes a `moduleRef` class per manifest module and a
   `permissionsRef` class per Permissions class (the manifest's permission `class`, else derived from the key). Service
   keys match in snake or kebab case (`readServiceManifests`).
