@@ -201,9 +201,6 @@
     "react": {
       "optional": true
     },
-    "react-dom": {
-      "optional": true
-    },
     "react-native": {
       "optional": true
     },

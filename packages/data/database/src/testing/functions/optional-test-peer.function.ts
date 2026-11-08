@@ -7,10 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0314; STA-1432.
  */
-import { createRequire } from "node:module";
-
-/** `require` rooted at this package, so the peer resolves as `@stackra/database` declares it. */
-const nodeRequire = createRequire(import.meta.url);
+import { testPeerRequire } from "#testing/functions/test-peer-require.function";
 
 /**
  * Loads `name`, or nothing when it is not installed.
@@ -20,7 +17,7 @@ const nodeRequire = createRequire(import.meta.url);
  */
 export function optionalTestPeer<T>(name: string): T | undefined {
   try {
-    return nodeRequire(name) as T;
+    return testPeerRequire<T>(name);
   } catch (error) {
     const code = (error as { code?: string }).code;
     if (code !== "MODULE_NOT_FOUND" && code !== "ERR_MODULE_NOT_FOUND") throw error;
