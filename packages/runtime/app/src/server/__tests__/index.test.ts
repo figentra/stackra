@@ -30,6 +30,7 @@ describe("@stackra/app/server", () => {
       "CsrfTokenInvalidError",
       "EdgeHeaderGuard",
       "EdgeSignatureInvalidError",
+      "HttpConfig",
       "MemoryEdgeNonceStoreDriver",
       "MemoryEdgeSigningKeysDriver",
       "MemoryJsonWebKeysDriver",
@@ -41,6 +42,7 @@ describe("@stackra/app/server", () => {
       "apiCacheControl",
       "corsHeaders",
       "createApp",
+      "serveGuardedCall",
     ]);
   });
 

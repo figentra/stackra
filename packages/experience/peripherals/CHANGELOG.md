@@ -1,5 +1,16 @@
 # @stackra/peripherals
 
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/platform@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Patch Changes

@@ -1,5 +1,28 @@
 # @stackra/integrations
 
+## 0.22.0
+
+### Patch Changes
+
+- 41f3da5: `Integration({ auth: { type: AuthType.Basic } })` takes an empty password, as RFC 7617 allows: a provider whose API key is
+  the whole credential (Medusa, Stripe) sends `key:`. A user name is still required.
+- ae24e3c: `RequestOptions.bytes`: a managed client call can read the answer as raw bytes (a `Uint8Array`) instead of parsing it
+  as JSON, for a provider that returns a label PDF or an image. The call asks for any media type unless it sets
+  `accept`. A refusal's body is still read for the provider's code.
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/clients@0.22.0
+  - @stackra/data-transfer@0.22.0
+  - @stackra/money@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/market-packs@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Patch Changes

@@ -1,5 +1,30 @@
 # @stackra/database
 
+## 0.22.0
+
+### Patch Changes
+
+- b394912: `CrudService.lock` flushes the unit of work before its refreshing read. Locking one row twice in a transaction used to
+  drop a value assigned (and not yet flushed) since the first lock, so every invoicing document was numbered 1. An added
+  column whose default is a setting (`defaultSetting`) now carries `-- squawk-ignore adding-field-with-default` and its
+  reason in the compiled SQL (`current_setting()` is STABLE, so there is no table rewrite), which clears every host's squawk
+  on `database.0006_add_isolation_scope`. Lint comment lines are left out of a migration file's checksum, so adding
+  one keeps a frozen file valid; a row recorded under the old whole-file checksum (a file that already had a lint line) is
+  still accepted.
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/testing@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+  - @stackra/cache@0.22.0
+
 ## 0.21.0
 
 ### Minor Changes

@@ -18,7 +18,7 @@ import { CancelOrderAction } from "#node/actions/cancel-order.action";
 import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.listener";
 import { ShopModule as ImportedShopModule } from "#node/shop.module";
 import { ShopModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, OriginGuard } from "@stackra/app/server";
+import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import { DiscoveryService, Lifetime, named, type Wiring } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
 import { Database, DatabaseConfig } from "@stackra/database";
@@ -60,6 +60,7 @@ export const wiring = {
     { key: "shop", provide: ShopConfig, schema: ShopOptions, env: {"gateway":"STACKRA_SHOP_GATEWAY"} },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
+    { key: "app.http", provide: HttpConfig },
     { key: "database", provide: DatabaseConfig },
     { key: "queue", provide: QueueConfig },
   ],

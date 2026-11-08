@@ -15,7 +15,7 @@ import { SyncService } from "#core/services/sync.service";
 import { CatalogueClient } from "#stackra/clients/catalogue";
 import { InboundEventsController, RelayInboxConfig } from "#stackra/inbox";
 import { ChannelsModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, OriginGuard } from "@stackra/app/server";
+import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import { ClientTransport } from "@stackra/clients/contracts";
 import type { Wiring } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
@@ -54,6 +54,7 @@ export const wiring = {
     { key: "outbox.relay_inbox", provide: BaseRelayInboxConfig, override: RelayInboxConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
+    { key: "app.http", provide: HttpConfig },
     { key: "database", provide: DatabaseConfig },
     { key: "queue", provide: QueueConfig },
   ],

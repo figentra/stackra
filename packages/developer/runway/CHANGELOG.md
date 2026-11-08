@@ -1,5 +1,17 @@
 # @stackra/runway
 
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [940e198]
+  - @stackra/app@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @stackra/repo-checks
 
+## 0.22.0
+
+### Patch Changes
+
+- 157ddff: `checkouts.checkout_page.framers@1`, the edge's frame-ancestors callback for Figentra Pay's checkout (STA-2564), is a
+  reviewed anonymous surface: it answers only the checkout's configured public embed origins and fails closed.
+- 3a9a6be: `@stackra/integrations` is a peer of every library that uses its values (payments, webhooks, documents, notifications,
+  pricing, achievements, loyalty-kit), no longer a dependency. As a dependency, pnpm resolved a second copy in a product,
+  so a Connection's base and `makeConnection` came from different copies and every Stripe call failed with "StripeConnection
+  was not loaded by a ConnectionStore". `stackra validate` refuses the mistake (`hosted-peers`, `HOSTED_PEER_PACKAGES`).
+
 ## 0.21.0
 
 No changes in this release.

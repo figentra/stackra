@@ -19,7 +19,7 @@ import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.list
 import { ShopModule as ImportedShopModule } from "#node/shop.module";
 import { EventsRelayConfig } from "#stackra/events-relay";
 import { ShopModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, OriginGuard } from "@stackra/app/server";
+import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import { SecretStore } from "@stackra/config/contracts";
 import { DiscoveryService, Lifetime, named, type Wiring } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
@@ -71,6 +71,7 @@ export const wiring = {
     { key: "outbox.events_relay", provide: BaseEventsRelayConfig, override: EventsRelayConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
+    { key: "app.http", provide: HttpConfig },
     { key: "database", provide: DatabaseConfig },
     { key: "queue", provide: QueueConfig },
   ],
