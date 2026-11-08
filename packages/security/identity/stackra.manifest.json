@@ -70,6 +70,7 @@
       "permission": "identity.passkey.challenge",
       "risk": "L2",
       "actors": ["anonymous"],
+      "idempotency": "never",
       "rateLimit": {
         "perMinute": 10
       },
@@ -266,6 +267,7 @@
       "permission": "identity.passkey.verify",
       "risk": "L4",
       "actors": ["anonymous"],
+      "idempotency": "never",
       "rateLimit": {
         "perMinute": 10
       },
