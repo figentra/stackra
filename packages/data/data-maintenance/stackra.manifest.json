@@ -568,7 +568,11 @@
   "services": [
     {
       "class": "SynonymService",
-      "from": "@stackra/data-maintenance/node"
+      "from": "@stackra/data-maintenance/node",
+      "partner": {
+        "name": "Synonym",
+        "from": "@stackra/data-maintenance/node"
+      }
     }
   ],
   "schemas": {

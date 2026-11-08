@@ -445,11 +445,19 @@
             "from": "@stackra/actions"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "CustomField",
+        "from": "@stackra/content/node"
+      }
     },
     {
       "class": "RevisionService",
-      "from": "@stackra/content/node"
+      "from": "@stackra/content/node",
+      "partner": {
+        "name": "Revision",
+        "from": "@stackra/content/node"
+      }
     }
   ],
   "schemas": {

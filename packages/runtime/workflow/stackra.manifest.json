@@ -713,7 +713,11 @@
             "from": "@stackra/workflow"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "Automation",
+        "from": "@stackra/workflow/node"
+      }
     },
     {
       "class": "ChecklistService",
@@ -729,11 +733,19 @@
             "from": "@stackra/database"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "Checklist",
+        "from": "@stackra/workflow/node"
+      }
     },
     {
       "class": "ServiceAckService",
-      "from": "@stackra/workflow/node"
+      "from": "@stackra/workflow/node",
+      "partner": {
+        "name": "ServiceAckSet",
+        "from": "@stackra/workflow/node"
+      }
     }
   ],
   "schemas": {

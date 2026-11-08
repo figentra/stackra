@@ -506,7 +506,11 @@
             "from": "@stackra/rules/node"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "AwardKind",
+        "from": "@stackra/achievements/node"
+      }
     },
     {
       "class": "AwardService",
@@ -536,7 +540,11 @@
             "from": "@stackra/contracts"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "Award",
+        "from": "@stackra/achievements/node"
+      }
     }
   ],
   "schemas": {

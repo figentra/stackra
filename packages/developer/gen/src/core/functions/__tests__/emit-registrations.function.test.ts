@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitRegistrations`: the generated entity and schemas files loaded first, then one call per
  *          platform registration with a row each, from the locked identities: the hosted packages' entity lists, the
- *          model partners of each `CrudService<M>` (and of an injected platform one, `RuleSetService`), event wire names, jobs for the queue and the scheduler,
+ *          model partners of each `CrudService<M>` (and of each one its packages' manifests list with its model), event wire names, jobs for the queue and the scheduler,
  *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry),
  *          entitlements with the calls they gate (STA-903) and searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
  *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
@@ -48,27 +48,38 @@ describe("emitRegistrations", () => {
     expect(billing).not.toContain("InvoiceFactory");
   });
 
-  it("registers the model partner of a platform CrudService a class injects", () => {
-    const rules: DeclaredClass = {
-      name: "DunningRulesService",
-      kind: "service",
-      module: "billing",
-      file: "src/modules/billing/services/dunning-rules.service.ts",
-      importPath: "#modules/billing/services/dunning-rules.service",
-      options: {},
-      deps: [{ class: { name: "RuleSetService", from: "@stackra/rules/node" } }],
-      facets: [],
-      methods: [],
-      refusals: [],
-      statics: {},
-      traits: [],
-    };
+  it("registers the model partner of each CrudService a package's manifest lists with its model", () => {
     const content =
-      registrationsOf({ ...BILLING_IR, classes: [...BILLING_IR.classes, rules] }) ?? "";
+      registrationsOf({
+        ...BILLING_IR,
+        dependencies: [
+          ...BILLING_IR.dependencies,
+          {
+            package: "@stackra/scope",
+            manifest: {
+              member: "scope",
+              package: "@stackra/scope",
+              version: "0.1.0",
+              services: [
+                {
+                  class: "ScopeNodeService",
+                  from: "@stackra/scope/node",
+                  partner: { name: "ScopeNode", from: "@stackra/scope/node" },
+                },
+                { class: "ScopeTreeReader", from: "@stackra/scope/node" },
+              ],
+            },
+          },
+        ],
+      }) ?? "";
     expect(content).toContain(
-      "registerModelPartners([\n  [InvoiceService, Invoice],\n  [RuleSetService, RuleSet],\n]);",
+      "registerModelPartners([\n  [InvoiceService, Invoice],\n  [ScopeNodeService, ScopeNode],\n]);",
     );
-    expect(content).toMatch(/import \{[^}]*RuleSet[^}]*\} from "@stackra\/rules\/node";/);
+    expect(content).toMatch(
+      /import \{[^}]*\bScopeNodeService\b[^}]*\} from "@stackra\/scope\/node";/,
+    );
+    expect(content).toMatch(/import \{[^}]*\bScopeNode\b[^}]*\} from "@stackra\/scope\/node";/);
+    expect(content).not.toContain("ScopeTreeReader");
   });
 
   it("registers event names, jobs and outbound webhooks by their locked identities", () => {

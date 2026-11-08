@@ -4,7 +4,7 @@
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
  *          from the identities the manifest locked: the hosted packages' entities (the service's own files written from
  *          their manifests, STA-1667, or an older manifest's entity list), the model partners of each
- *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
+ *          `CrudService<M>` (and of every `CrudService<M>` its packages' manifests list with its model, `services[].partner`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
@@ -32,7 +32,6 @@ import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
-import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
@@ -143,18 +142,24 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }
   }
 
-  // A platform CrudService a class injects (`RuleSetService`) is typed against its package's model.
-  const injected = ir.classes.flatMap((declared) =>
-    declared.deps.filter((dep) => dep.of === undefined && dep.named === undefined),
-  );
-  const platformPartners = Object.entries(PLATFORM_PARTNERS).flatMap(([key, model]) => {
-    const [pkg = "", name = ""] = key.split("#");
-    const service = injected.find(
-      (dep) =>
-        dep.class.name === name && (dep.class.from === pkg || dep.class.from.startsWith(`${pkg}/`)),
-    );
-    return service === undefined ? [] : [`[${ref(service.class)}, ${ref(model)}]`];
-  });
+  // A package's `CrudService<M>` is typed against its own model; the base's type argument is gone at runtime, so its
+  // manifest keeps the pair (`services[].partner`) and a service registers it for every package it hosts. A package
+  // registers only its own.
+  const packagePartners = (ir.layout === "service" ? ir.dependencies : [])
+    .filter(({ manifest: dependency }) => dependency.kind !== "app")
+    .flatMap(({ manifest: dependency }) => {
+      const rows: unknown = dependency["services"];
+      return (Array.isArray(rows) ? rows : []).flatMap((row: unknown) => {
+        const service = classRefIn(row, "class");
+        const model =
+          typeof row === "object" && row !== null
+            ? classRefIn(Reflect.get(row, "partner"), "name")
+            : undefined;
+        return service === undefined || model === undefined
+          ? []
+          : [`[${ref(service)}, ${ref(model)}]`];
+      });
+    });
   call("registerModelPartners", "@stackra/database", [
     ...ir.classes
       .filter((declared) => declared.kind === "service" && declared.partner !== undefined)
@@ -163,7 +168,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
           ? undefined
           : `[${ref({ name: declared.name, from: declared.importPath })}, ${ref({ name: declared.partner.name, from: declared.partner.from })}]`,
       ),
-    ...platformPartners,
+    ...packagePartners,
   ]);
 
   const events = ((manifest.events ?? []) as readonly Entry[]).filter(
@@ -450,4 +455,15 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     runtime: "node",
   });
   return [header, ...loads, ...importLines(imports), "", ...calls].join("\n").replace(/\n+$/, "\n");
+}
+
+/**
+ * The class a manifest row names: its `nameKey` field (`class` on a service row, `name` on a partner) with its `from`,
+ * or `undefined` when the row names none.
+ */
+function classRefIn(row: unknown, nameKey: string): ClassRef | undefined {
+  if (typeof row !== "object" || row === null) return undefined;
+  const name: unknown = Reflect.get(row, nameKey);
+  const from: unknown = Reflect.get(row, "from");
+  return typeof name === "string" && typeof from === "string" ? { name, from } : undefined;
 }

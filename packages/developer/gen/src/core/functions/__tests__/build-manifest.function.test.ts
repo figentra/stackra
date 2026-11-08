@@ -946,6 +946,32 @@ describe("buildManifest", () => {
   });
 });
 
+describe("buildManifest's package services", () => {
+  it("records the model a CrudService<M> is typed against, so a host registers the pair", () => {
+    const ir: MemberIR = {
+      ...LOYALTY_KIT_IR,
+      classes: LOYALTY_KIT_IR.classes.map((candidate) =>
+        candidate.name === "LoyaltyService"
+          ? {
+              ...candidate,
+              partner: { name: "LoyaltyAccount", from: "#node/models/loyalty-account.model" },
+            }
+          : candidate,
+      ),
+    };
+    const services = buildManifest(ir).manifest["services"];
+    expect(services).toEqual([
+      expect.objectContaining({
+        class: "LoyaltyService",
+        partner: { name: "LoyaltyAccount", from: expect.stringMatching(/^@acme\/loyalty-kit/) },
+      }),
+    ]);
+    expect(buildManifest(LOYALTY_KIT_IR).manifest["services"]).toEqual([
+      expect.not.objectContaining({ partner: expect.anything() }),
+    ]);
+  });
+});
+
 describe("buildManifest's package drivers (STA-1297)", () => {
   it("records each candidate's class, entry and tokens, and the config class that selects one", () => {
     const ir: MemberIR = {
