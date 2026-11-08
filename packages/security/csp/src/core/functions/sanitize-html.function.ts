@@ -4,7 +4,9 @@
  *          back, everything else is dropped. A disallowed tag keeps its text; a script, style, template and the like
  *          lose their content too; comments, doctypes and processing instructions go; a link keeps an `href` only
  *          when it is http(s), mailto, relative or a fragment once entities and control characters are taken out.
- * Boundary: pure and isomorphic, no DOM. Safe by construction: the output is rebuilt from parsed parts, never copied, so
+ * Boundary: a floor holds under any policy: event handlers, `style`, `srcdoc`, `formaction` and the like are never kept,
+ *           script-capable elements always go with their content, and `base`, `meta`, `link`, `embed` and form
+ *           controls always go. Pure and isomorphic, no DOM. Safe by construction: the output is rebuilt from parsed parts, never copied, so
  *           markup the tokenizer does not recognise becomes escaped text, every attribute value is re-escaped, and
  *           every open tag is closed. Use it on any HTML from a client or a tenant before it is rendered, mailed or
  *           stored for rendering (`dangerouslySetInnerHTML`, an email body); ProseMirror JSON needs no pass.
@@ -20,6 +22,40 @@ const TOKEN =
 
 /** One attribute: its name and its double-quoted, single-quoted or bare value. */
 const ATTRIBUTE = /([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+
+/** The floor under any policy: elements dropped with their content, whatever a host allows. */
+const ALWAYS_DROPPED_WITH_CONTENT = new Set([
+  "script",
+  "style",
+  "template",
+  "noscript",
+  "iframe",
+  "object",
+  "svg",
+  "math",
+  "frameset",
+  "noembed",
+  "noframes",
+  "xmp",
+  "plaintext",
+  "textarea",
+  "title",
+]);
+
+/** The floor under any policy: tags dropped (their text kept), whatever a host allows. */
+const NEVER_TAGS = new Set(["base", "meta", "link", "embed", "frame", "form", "input", "button"]);
+
+/** The floor under any policy: attributes never kept, whatever a host allows (event handlers start with `on`). */
+const NEVER_ATTRIBUTES = new Set([
+  "style",
+  "srcdoc",
+  "formaction",
+  "action",
+  "xlink:href",
+  "background",
+  "dynsrc",
+  "lowsrc",
+]);
 
 /** Tags that never have content or a closing tag. */
 const VOID = new Set(["br", "hr"]);
@@ -71,7 +107,13 @@ const attributesOf = (source: string, allowed: readonly string[]): string => {
   const seen = new Set<string>();
   for (const match of source.matchAll(ATTRIBUTE)) {
     const name = (match[1] ?? "").toLowerCase();
-    if (!allowed.includes(name) || seen.has(name)) continue;
+    if (
+      !allowed.includes(name) ||
+      seen.has(name) ||
+      name.startsWith("on") ||
+      NEVER_ATTRIBUTES.has(name)
+    )
+      continue;
     const value = decode(match[2] ?? match[3] ?? match[4] ?? "");
     if (name === "href" && !isSafeHref(value)) continue;
     if (name === "dir" && !["ltr", "rtl", "auto"].includes(value.toLowerCase())) continue;
@@ -108,10 +150,11 @@ export function sanitizeHtml(html: string, policy: HtmlPolicy = RICH_TEXT_HTML_P
       if (dropping.depth === 0) dropping = undefined;
       continue;
     }
-    if (policy.dropWithContent.includes(tag)) {
+    if (policy.dropWithContent.includes(tag) || ALWAYS_DROPPED_WITH_CONTENT.has(tag)) {
       if (!closing) dropping = { tag, depth: 1 };
       continue;
     }
+    if (NEVER_TAGS.has(tag)) continue;
     const allowed = Object.hasOwn(policy.tags, tag) ? policy.tags[tag] : undefined;
     if (allowed === undefined) continue;
     if (closing) {

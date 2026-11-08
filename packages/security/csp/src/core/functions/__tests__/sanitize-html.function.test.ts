@@ -193,4 +193,27 @@ describe("sanitizeHtml", () => {
       }),
     ).toBe("<p>a b</p>");
   });
+
+  it("holds its floor under a reckless host policy", () => {
+    const reckless = {
+      tags: {
+        p: ["onclick", "style", "srcdoc", "formaction", "xlink:href", "title"],
+        script: ["src"],
+        iframe: ["src"],
+        base: ["href"],
+        meta: ["http-equiv", "content"],
+        form: ["action"],
+      },
+      dropWithContent: [],
+    };
+    expect(
+      sanitizeHtml(
+        '<base href="https://evil.example/"><meta http-equiv="refresh" content="0;url=https://evil.example">' +
+          '<p onclick="x()" style="a" srcdoc="b" formaction="c" xlink:href="d" title="kept">t</p>' +
+          '<script src="https://evil.example/x.js">x()</script><iframe src="https://evil.example">i</iframe>' +
+          '<form action="https://evil.example">f</form>',
+        reckless,
+      ),
+    ).toBe('<p title="kept">t</p>f');
+  });
 });
