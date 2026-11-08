@@ -56,6 +56,8 @@ export { AppApprovalRejectedError } from "#core/errors/app-approval-rejected.err
 export { GuardianshipMissingError } from "#core/errors/guardianship-missing.error";
 export { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
 export { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
+export { ServiceTokenRefusedError } from "#core/errors/service-token-refused.error";
+export { ServiceTokenUnavailableError } from "#core/errors/service-token-unavailable.error";
 export { SessionRevokedError } from "#core/errors/session-revoked.error";
 export { SignInCancelledError } from "#core/errors/sign-in-cancelled.error";
 export { StaffPinLockedError } from "#core/errors/staff-pin-locked.error";

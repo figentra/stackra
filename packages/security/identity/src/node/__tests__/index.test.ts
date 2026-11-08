@@ -48,6 +48,9 @@ describe("@stackra/identity/node", () => {
       "RegisterPasskeyAction",
       "RegisterPasskeyInput",
       "RegisterPasskeyOutput",
+      "ServiceTokensConfig",
+      "ServiceTokensConfig$",
+      "ServiceTokensOptions",
       "SessionLine",
       "SessionPermissions",
       "SessionsInput",
@@ -57,6 +60,7 @@ describe("@stackra/identity/node", () => {
       "VerifyPasskeyInput",
       "VerifyPasskeyOutput",
       "ZitadelAuthEventsService",
+      "ZitadelServiceTokensDriver",
     ]);
   });
 });

@@ -552,6 +552,20 @@
       "class": "IdpUserExistsError"
     },
     {
+      "code": "service_token_refused",
+      "kind": "internal",
+      "category": "internal",
+      "module": "identity",
+      "class": "ServiceTokenRefusedError"
+    },
+    {
+      "code": "service_token_unavailable",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "identity",
+      "class": "ServiceTokenUnavailableError"
+    },
+    {
       "code": "session_revoked",
       "kind": "unauthenticated",
       "category": "unauthenticated",
@@ -790,11 +804,35 @@
     {
       "port": "ServiceTokens",
       "key": "identity.ServiceTokens",
-      "candidates": ["memory"],
+      "candidates": ["memory", "zitadel"],
       "classes": {
         "memory": {
           "class": "MemoryServiceTokensDriver",
           "from": "@stackra/identity"
+        },
+        "zitadel": {
+          "class": "ZitadelServiceTokensDriver",
+          "from": "@stackra/identity/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ServiceTokensConfig",
+                "from": "@stackra/identity/node"
+              }
+            },
+            {
+              "class": {
+                "name": "SecretStore",
+                "from": "@stackra/config/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
         }
       }
     },
@@ -982,6 +1020,11 @@
       "key": "identity.login_directory",
       "class": "LoginDirectoryConfig",
       "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.service_tokens",
+      "class": "ServiceTokensConfig",
+      "from": "@stackra/identity/node"
     }
   ],
   "env": [
