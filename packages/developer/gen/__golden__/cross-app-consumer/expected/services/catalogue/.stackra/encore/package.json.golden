@@ -1,0 +1,5 @@
+{
+  "name": "@golden/service-catalogue-encore",
+  "private": true,
+  "type": "module"
+}
