@@ -4,13 +4,14 @@
  *          non-system schema: a table without the owner column must be a listed platform table (`PLATFORM_TABLES` or
  *          the caller's `platform`, each with its reason), else it is returned as a warning naming its group
  *          (`unownedTableGroup`) until 0.20, and is a gap in strict mode (`strict`, `STACKRA_GEN_STRICT=1`); so is a
- *          table in the expand step (a nullable owner column, no owner policy, a permissive `scope_path` policy). Any
- *          other table with it has row-level security enabled and forced, exactly one permissive policy
- *          (`pol_<table>_<column>`, the owner equality) and only restrictive policies named after their column beside
- *          it. The service role is neither a superuser nor BYPASSRLS. Then, per owned table, it seeds a row of each
- *          probe owner and, as that role, proves a session with the setting unset sees no row, a session as the first
- *          owner sees its own row and none of the second's, and cannot move its row to the second owner. It throws
- *          one error listing every gap.
+ *          table in the expand step (a nullable owner column, no owner policy, a permissive `scope_path` policy). A
+ *          table in `ISOLATION_SCOPE_TABLES` (group (b) by name) is audited by its own owner column,
+ *          `isolation_scope_id`. Any other table with it has row-level security enabled and forced, exactly one
+ *          permissive policy (`pol_<table>_<column>`, the owner equality) and only restrictive policies named after
+ *          their column beside it. The service role is neither a superuser nor BYPASSRLS. Then, per owned table, it
+ *          seeds a row of each probe owner and, as that role, proves a session with the setting unset sees no row, a
+ *          session as the first owner sees its own row and none of the second's, and cannot move its row to the second
+ *          owner. It throws one error listing every gap.
  * Boundary: test only (`./testing`), against a real Postgres (`usePostgres`), connected as a superuser (a test
  *           container's user). Each probe runs in a transaction it always rolls back; to seed, it drops the table's
  *           check constraints and the NOT NULL of every non-key column there and skips foreign keys and triggers
@@ -20,13 +21,15 @@
  *           usage and table rights on the owned tables' schemas on every call. Tenant vocabulary stays in
  *           @stackra/tenancy, which gives the column and setting (`tenantIsolationOptions`).
  * Runtime: node
- * Governing contract: ADR 0239 (decision 1); ADR 0347 (decision 5: the catalogue audit); ADR 0231
- *                     (`pol_<table>_<column>`); ADR 0327 (decision 8); `.agents/rules/tenancy.md` (point 7).
+ * Governing contract: ADR 0239 (decision 1; 2026-11-07 amendment, items 3 and 7); ADR 0347 (decision 5: the catalogue
+ *                     audit); ADR 0231 (`pol_<table>_<column>`); ADR 0327 (decision 8); `.agents/rules/tenancy.md`
+ *                     (point 7).
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 
 import type { Database } from "#core/ports/database.port";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { ISOLATION_SCOPE_TABLES } from "#testing/constants/isolation-scope-tables.constant";
 import { PLATFORM_TABLES } from "#testing/constants/platform-tables.constant";
 import { policyGaps } from "#testing/functions/policy-gaps.function";
 import { seedValue } from "#testing/functions/seed-value.function";
@@ -39,7 +42,10 @@ import type { SeedColumn } from "#testing/types/seed-column.type";
 interface AuditedTable {
   readonly schema: string;
   readonly table: string;
+  /** Whether it holds its owner column: the audit's, or its own in `ISOLATION_SCOPE_TABLES`. */
   readonly owned: boolean;
+  /** Its owner column. */
+  readonly column: string;
   readonly partition: boolean;
   readonly enabled: boolean;
   readonly forced: boolean;
@@ -62,8 +68,7 @@ class ProbeDone extends Error {}
 
 /** The tables of every schema the service owns: no system schema, no table an extension made. */
 const TABLES = `select n.nspname as schema, c.relname as "table", c.relispartition as partition,
-    c.relrowsecurity as enabled, c.relforcerowsecurity as forced,
-    exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = ? and not a.attisdropped) as owned
+    c.relrowsecurity as enabled, c.relforcerowsecurity as forced
   from pg_class c
   join pg_namespace n on n.oid = c.relnamespace
   where c.relkind in ('r', 'p') and n.nspname <> 'information_schema' and n.nspname not like 'pg\\_%'
@@ -167,12 +172,22 @@ export async function assertRowSecurity(
   const platform = new Map([...PLATFORM_TABLES, ...(options.platform ?? [])]);
   const em = database.em();
   const gaps: string[] = [];
-  const tables = (await em.execute(TABLES, [column])) as AuditedTable[];
   const policies = (await em.execute(POLICIES)) as (PolicyRow & {
     schema: string;
     table: string;
   })[];
   const columns = (await em.execute(COLUMNS)) as ColumnRow[];
+  // Group (b) by name: a table in ISOLATION_SCOPE_TABLES is owned through its own column, against the same setting.
+  const tables = ((await em.execute(TABLES)) as Omit<AuditedTable, "owned" | "column">[]).map(
+    (table): AuditedTable => {
+      const owner = ISOLATION_SCOPE_TABLES.get(`${table.schema}.${table.table}`) ?? column;
+      const owned = columns.some(
+        (known) =>
+          known.schema === table.schema && known.table === table.table && known.name === owner,
+      );
+      return { ...table, owned, column: owner };
+    },
+  );
   const of = <T extends { schema: string; table: string }>(
     rows: readonly T[],
     owned: AuditedTable,
@@ -186,7 +201,7 @@ export async function assertRowSecurity(
       if (reason === undefined)
         // shortcut: warn-only for tables without tenant_id until 0.20, then error (push to `gaps` always).
         (strict ? gaps : warnings).push(
-          `${name} has no ${column} column and is not a platform table (${unownedTableGroup(audited.enabled, of(policies, audited), setting)}); give it ${column} or list it in \`platform\` with its reason`,
+          `${name} has no ${audited.column} column and is not a platform table (${unownedTableGroup(audited.enabled, of(policies, audited), setting)}); give it ${audited.column} or list it in \`platform\` with its reason`,
         );
       else if (reason.trim() === "")
         gaps.push(`${name} is listed as a platform table with no reason`);
@@ -198,15 +213,15 @@ export async function assertRowSecurity(
     // The expand step (ADR 0347 d1 migration): a nullable owner column, no owner policy yet, and the scope_path
     // policy still the permissive one. Its probe would prove nothing, so it is staged like an unowned table.
     const expanding =
-      of(columns, audited).some((known) => known.name === column && !known.notNull) &&
-      !tablePolicies.some((policy) => policy.name === `pol_${audited.table}_${column}`) &&
+      of(columns, audited).some((known) => known.name === audited.column && !known.notNull) &&
+      !tablePolicies.some((policy) => policy.name === `pol_${audited.table}_${audited.column}`) &&
       tablePolicies.some(
         (policy) => policy.permissive && `${policy.using} ${policy.check}`.includes("scope_path"),
       );
     if (expanding) {
       // shortcut: warn-only for tables without tenant_id until 0.20, then error (push to `gaps` always).
       (strict ? gaps : warnings).push(
-        `${name} holds a nullable ${column} with no pol_${audited.table}_${column} policy ((a) ancestor scope_path table in the expand step, awaiting backfill and the contract step)`,
+        `${name} holds a nullable ${audited.column} with no pol_${audited.table}_${audited.column} policy ((a) ancestor scope_path table in the expand step, awaiting backfill and the contract step)`,
       );
       continue;
     }
@@ -218,7 +233,7 @@ export async function assertRowSecurity(
       ...policyGaps(
         name,
         audited.table,
-        column,
+        audited.column,
         setting,
         tablePolicies,
         of(columns, audited).map((known) => known.name),
@@ -250,8 +265,8 @@ export async function assertRowSecurity(
     );
   }
 
-  const quotedColumn = quoteIdentifier(column);
   for (const audited of owned) {
+    const quotedColumn = quoteIdentifier(audited.column);
     const label = `${audited.schema}.${audited.table}`;
     const name = `${quoteIdentifier(audited.schema)}.${quoteIdentifier(audited.table)}`;
     try {
@@ -259,7 +274,7 @@ export async function assertRowSecurity(
         // A partition gets its rows through its parent, whose seed lands in it when the key routes there.
         const unseeded = audited.partition
           ? undefined
-          : await seedOwners(tx, name, of(columns, audited), column, probe);
+          : await seedOwners(tx, name, of(columns, audited), audited.column, probe);
         if (unseeded !== undefined)
           gaps.push(
             `${label}: could not seed a row of each probe owner, so no cross-owner read ran: ${unseeded}`,

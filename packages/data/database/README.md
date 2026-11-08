@@ -251,11 +251,20 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
   `pol_<table>_<column>`. `equals` compares the column with `current_setting(setting, true)` (`@stackra/tenancy` uses
   it for its isolation column, ADR 0239); `ancestor` matches an `ltree` column at or below any of the setting's
   `|`-separated paths, through the GiST index. An unset or `''` setting matches no row, so a pooled connection that
-  ran an earlier scope sees nothing. A blueprint takes one `rowLevelSecurity` call: Postgres ORs permissive policies.
+  ran an earlier scope sees nothing. A blueprint takes one permissive policy, as Postgres ORs permissive policies, and
+  one policy per column. `restrictive: true` writes the policy `AS RESTRICTIVE`: it narrows the permissive one, and a
+  session with the setting unset is not narrowed (ADR 0347 d2 and d3). On an existing table (`schema.table`) the
+  column may be one an earlier migration wrote.
   `inherited` is `ancestor` plus a select-only policy `pol_<table>_<column>_inherited` for the rows on the path above a
   granted path, so a template seeded at the platform or product node is read by every tenant below it and written by
   none of them (ADR 0412). `equalsOrUnset` is `equals` through `is not distinct from`: a nullable id column's null
   rows (platform rows) match a session with the setting unset; a scoped session sees only its own (STA-1300).
+- A contract step swaps a table's policy: `schema.refuseNulls(column, tables, remedy)` first refuses the migration,
+  before any change, while a row of `tables` holds a null `column`, naming each table's count and the remedy (the
+  backfill); then `t.dropRowLevelSecurity(column, options)` drops the policy an earlier migration created with
+  `options` (`options.table` for a renamed table's original name), `t.change(column).notNull()` and the new policies
+  follow. `database.0007_contract_isolation_scope` is one: the sequence and projection tables take
+  `pol_<table>_isolation_scope_id` (equality with `app.tenant_id`) and keep the scope path restrictive.
 - `service.repath(from, to)` (every `CrudService` over a model with `scopePath`) moves a scope subtree's rows: each
   path at or below `from` takes `to` in place of that prefix, in one statement in the caller's transaction. A service
   calls it from its listener of `@stackra/scope`'s `ScopeMoved`, in a scope that reaches both paths (ADR 0411).
@@ -791,7 +800,9 @@ other is returned as a warning naming its group (an ancestor `scope_path` table 
 `scope_id` table whose policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or
 unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. So is a table in the expand
 step of the scope-path migration: a nullable `column`, no `pol_<table>_<column>` yet, and a permissive policy on
-`scope_path`. A NOT NULL `column`, or a table without that `scope_path` policy, takes the hard checks below. A listed table that holds
+`scope_path`. A NOT NULL `column`, or a table without that `scope_path` policy, takes the hard checks below. The
+tables in `ISOLATION_SCOPE_TABLES` (the sequence and projection tables, group (b) by name) are audited by their own
+owner column, `isolation_scope_id`, in place of `column`. A listed table that holds
 `column` is always a gap. A table with it has row-level security enabled and
 forced, exactly one permissive policy, `pol_<table>_<column>`, `FOR ALL` and testing `column` against `setting`, and
 only restrictive policies beside it, each named `pol_<table>_<column>` after one of its columns. `role` is neither a

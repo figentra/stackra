@@ -29,6 +29,7 @@ type Operation =
   | { readonly blueprint: BlueprintRecord }
   | { readonly collation: string; readonly locale: string }
   | { readonly extension: Extension }
+  | { readonly column: string; readonly tables: readonly string[]; readonly remedy: string }
   | { readonly statement: string; readonly inverse: string | false };
 
 /** A statement that cannot run inside a transaction. */
@@ -46,6 +47,36 @@ function inverseOf(statements: readonly CompiledStatement[]): readonly string[] 
     inverses.push(...inverse);
   }
   return inverses;
+}
+
+/**
+ * A `DO` block that counts the rows of each table whose `column` is null and raises one error naming every non-zero
+ * count and the remedy. It has no blank line, so a runner that splits a step on blank lines keeps it whole.
+ */
+function refuseNullsSql(
+  schema: string,
+  { column, tables, remedy }: { column: string; tables: readonly string[]; remedy: string },
+): string {
+  const counts = tables.map((table) => {
+    const qualified = `${quoteIdentifier(schema)}.${quoteIdentifier(table)}`;
+    return [
+      `  select count(*) into n from ${qualified} where ${quoteIdentifier(column)} is null;`,
+      `  if n > 0 then found := found || format('%s %s', ${sqlLiteral(`${schema}.${table}`)}, n); end if;`,
+    ].join("\n");
+  });
+  return [
+    "do $$",
+    "declare",
+    "  found text[] := '{}';",
+    "  n bigint;",
+    "begin",
+    ...counts,
+    "  if cardinality(found) > 0 then",
+    `    raise exception 'refused before any change: rows with a null %: %. %', ${sqlLiteral(column)}, array_to_string(found, ', '), ${sqlLiteral(remedy)};`,
+    "  end if;",
+    "end",
+    "$$",
+  ].join("\n");
 }
 
 /** The recorded schema changes of one migration. */
@@ -95,6 +126,19 @@ export class SchemaRecord implements SchemaBuilder {
         "schema.sql needs { inverse }: the statement that undoes it, or false when nothing can",
       );
     this.operations.push({ statement, inverse });
+  }
+
+  /**
+   * Implements `SchemaBuilder.refuseNulls`, documented there.
+   *
+   * @throws TypeError for a column or table that is not snake_case, no table, or a blank remedy.
+   */
+  refuseNulls(column: string, tables: readonly string[], remedy: string): void {
+    quoteIdentifier(column);
+    for (const table of tables) quoteIdentifier(table);
+    if (tables.length === 0) throw new TypeError("schema.refuseNulls needs at least one table");
+    if (remedy.trim() === "") throw new TypeError("schema.refuseNulls needs the remedy to name");
+    this.operations.push({ column, tables: [...tables], remedy });
   }
 
   /**
@@ -151,6 +195,10 @@ export class SchemaRecord implements SchemaBuilder {
           sql: `create extension if not exists ${quoteIdentifier(operation.extension)}`,
           inverse: [],
         });
+        continue;
+      }
+      if ("remedy" in operation) {
+        transactional.push({ sql: refuseNullsSql(schema, operation), inverse: [] });
         continue;
       }
       if ("blueprint" in operation) {

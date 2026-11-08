@@ -8,8 +8,11 @@
  *           `ltree` column at or below one of the setting's `|`-separated paths; `inherited` is `ancestor` for reads and
  *           writes, and also shows the rows on the path above a granted path (the platform or product node's seeded
  *           templates), read only. Each other match matches no row while the setting is unset or `''`.
+ *           `restrictive` makes the policy `AS RESTRICTIVE`, a narrowing inside the one permissive policy, which does
+ *           not narrow a session whose setting is unset or `''`.
  * Runtime: node
- * Governing contract: ADR 0239 (equality policy); ADR 0327 (decisions 3, 8 and 9); ADR 0412 (inherited rows);
+ * Governing contract: ADR 0239 (equality policy); ADR 0327 (decisions 3, 8 and 9); ADR 0347 (decisions 1 to 3:
+ *                     one permissive policy, restrictive narrowing); ADR 0412 (inherited rows);
  *                     `.agents/rules/tenancy.md`.
  */
 
@@ -24,4 +27,10 @@ export interface RowLevelSecurityOptions {
    * above the session's paths are read only to it.
    */
   readonly match: "equals" | "equalsOrUnset" | "ancestor" | "inherited";
+
+  /**
+   * A restrictive policy (`AS RESTRICTIVE`, ADR 0347 d2 and d3): it can only narrow what the table's one permissive
+   * policy shows, and a session with the setting unset or `''` is not narrowed. Not with `inherited`.
+   */
+  readonly restrictive?: boolean;
 }

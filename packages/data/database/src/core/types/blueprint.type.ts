@@ -184,9 +184,22 @@ export interface Blueprint {
    * index (`scope_path` with `app.scope_paths`), and `inherited` is `ancestor` plus a select-only policy
    * `pol_<table>_<column>_inherited` that shows the rows on the path above a granted path, read only (a template seeded
    * at the platform or product node, seen by every tenant below it; ADR 0412). Otherwise an unset or `''` setting matches no row.
-   * The column must be defined in the same blueprint, and a blueprint takes one `rowLevelSecurity` call, as Postgres
-   * ORs permissive policies. A business table keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327
-   * d8).
+   * `restrictive: true` writes it `AS RESTRICTIVE`: it narrows the one permissive policy, and an unset or `''` setting
+   * does not narrow (ADR 0347 d2 and d3). On a table being created the column is defined in the same blueprint; on an
+   * existing table it may be one an earlier migration wrote (a public id for an id match, `scope_path` for a path
+   * match). A blueprint takes one permissive policy, as Postgres ORs them, and one policy per column. A business table
+   * keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327 d8).
    */
   rowLevelSecurity: (column: string, options: RowLevelSecurityOptions) => void;
+
+  /**
+   * Drops the policy `pol_<table>_<column>` an earlier migration created with `options` (`schema.table` only), before
+   * this blueprint's policies, so a contract step can replace it: `t.dropRowLevelSecurity("scope_path", { setting:
+   * "app.scope_paths", match: "ancestor" })`. `options.table` names the table the policy was created under when the
+   * table was renamed since (a rename keeps the policy's name). The dev inverse creates it again from `options`.
+   */
+  dropRowLevelSecurity: (
+    column: string,
+    options: RowLevelSecurityOptions & { readonly table?: string },
+  ) => void;
 }

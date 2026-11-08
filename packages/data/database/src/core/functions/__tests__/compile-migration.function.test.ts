@@ -960,4 +960,142 @@ describe(compileMigration, () => {
       /takes the name t.string/,
     );
   });
+
+  describe("the contract step of an existing table (ADR 0347 d1 to d3)", () => {
+    /** The scope path's ancestor policy, as the table was created with it. */
+    const SCOPE_PATHS = { setting: "app.scope_paths", match: "ancestor" } as const;
+    const paths = `"scope_path" ? array(select (granted || '.*')::lquery from unnest(string_to_array(current_setting('app.scope_paths', true), '|')) as granted)`;
+
+    class ContractDocumentsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.refuseNulls("owner_id", ["documents", "folders"], "Backfill owner_id first.");
+        schema.table("documents", (t: Blueprint) => {
+          t.dropRowLevelSecurity("scope_path", SCOPE_PATHS);
+          t.change("owner_id").notNull();
+          t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "equals" });
+          t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, restrictive: true });
+        });
+      }
+    }
+    const [step] = compileMigration(ContractDocumentsMigration, { schema: "documents" }).steps;
+
+    it("refuses first, in one DO block that counts each table's nulls and undoes nothing", () => {
+      expect(step?.transactional).toBe(true);
+      const preflight = step?.sql[0] ?? "";
+      expect(preflight).toMatch(/^do \$\$\n/);
+      expect(preflight).toContain(
+        `select count(*) into n from "documents"."documents" where "owner_id" is null;`,
+      );
+      expect(preflight).toContain(`from "documents"."folders" where "owner_id" is null;`);
+      expect(preflight).toContain("'documents.folders'");
+      expect(preflight).toContain(
+        "raise exception 'refused before any change: rows with a null %: %. %', 'owner_id', array_to_string(found, ', '), 'Backfill owner_id first.';",
+      );
+      expect(preflight).not.toMatch(/\n\s*\n/);
+    });
+
+    it("sets NOT NULL, swaps the scope-path policy for the equality and makes the scope path restrictive", () => {
+      expect(step?.sql.slice(1)).toEqual([
+        'alter table "documents"."documents" alter column "owner_id" set not null',
+        'drop policy "pol_documents_scope_path" on "documents"."documents"',
+        'alter table "documents"."documents" enable row level security',
+        'alter table "documents"."documents" force row level security',
+        `create policy "pol_documents_owner_id" on "documents"."documents" using ("owner_id" = nullif(current_setting('app.owner_id', true), '')::varchar(33)) with check ("owner_id" = nullif(current_setting('app.owner_id', true), '')::varchar(33))`,
+        `create policy "pol_documents_scope_path" on "documents"."documents" as restrictive using (nullif(current_setting('app.scope_paths', true), '') is null or ${paths}) with check (nullif(current_setting('app.scope_paths', true), '') is null or ${paths})`,
+      ]);
+    });
+
+    it("derives the inverse: the old permissive policy back, row-level security left on", () => {
+      expect(step?.inverse).toEqual([
+        'drop policy if exists "pol_documents_scope_path" on "documents"."documents"',
+        'drop policy if exists "pol_documents_owner_id" on "documents"."documents"',
+        `create policy "pol_documents_scope_path" on "documents"."documents" using (${paths}) with check (${paths})`,
+        'alter table "documents"."documents" alter column "owner_id" drop not null',
+      ]);
+    });
+
+    it("drops a renamed table's policy by the name it was created under", () => {
+      class ContractProgressMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("checklist_progresses", (t: Blueprint) => {
+            t.dropRowLevelSecurity("scope_path", { ...SCOPE_PATHS, table: "checklist_progress" });
+          });
+        }
+      }
+      expect(
+        compileMigration(ContractProgressMigration, { schema: "workflow" }).steps[0]?.sql,
+      ).toEqual([
+        'drop policy "pol_checklist_progress_scope_path" on "workflow"."checklist_progresses"',
+      ]);
+    });
+
+    it.each([
+      [
+        "a second permissive policy",
+        (t: Blueprint) => {
+          t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "equals" });
+          t.rowLevelSecurity("scope_path", SCOPE_PATHS);
+        },
+        /a table takes one permissive policy/,
+      ],
+      [
+        "a second policy on one column",
+        (t: Blueprint) => {
+          t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, restrictive: true });
+          t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, restrictive: true });
+        },
+        /already has a policy on scope_path/,
+      ],
+      [
+        "a restrictive inherited match",
+        (t: Blueprint) =>
+          t.rowLevelSecurity("scope_path", {
+            setting: "app.scope_paths",
+            match: "inherited",
+            restrictive: true,
+          }),
+        /never restrictive/,
+      ],
+      [
+        "dropping an inherited policy",
+        (t: Blueprint) =>
+          t.dropRowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "inherited" }),
+        /not supported/,
+      ],
+    ])("refuses %s", (_name, define, message) => {
+      class BadMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("documents", define);
+        }
+      }
+      expect(() => compileMigration(BadMigration, { schema: "documents" })).toThrow(message);
+    });
+
+    it("refuses a drop on a table being created, and a pre-flight with no table or remedy", () => {
+      class DropOnCreateMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("documents", (t: Blueprint) =>
+            t.dropRowLevelSecurity("scope_path", SCOPE_PATHS),
+          );
+        }
+      }
+      class NoTablesMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", [], "Backfill first.");
+        }
+      }
+      class NoRemedyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["documents"], " ");
+        }
+      }
+      expect(() => compileMigration(DropOnCreateMigration, { schema: "documents" })).toThrow(
+        /has no policy to drop/,
+      );
+      expect(() => compileMigration(NoTablesMigration, { schema: "documents" })).toThrow(
+        /at least one table/,
+      );
+      expect(() => compileMigration(NoRemedyMigration, { schema: "documents" })).toThrow(/remedy/);
+    });
+  });
 });
