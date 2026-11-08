@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
- *          class, shape, enum, shell slot, slot fill and file export of its own sources (sorted by path), its dependency package names and the
+ *          class, shape, enum, shell slot, slot fill and file export of its own sources (sorted by path; a subclassed
+ *          connection paired with its same-stem integration by `pairSubclassConnections`), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
  *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, the anchors its components declare and refer to (`readAnchors`, STA-1631), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
@@ -29,6 +30,7 @@ import { GEN_REACHED_PORTS } from "#core/constants/gen-reached-ports.constant";
 import { driverName } from "#core/functions/driver-name.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
+import { pairSubclassConnections } from "#core/functions/pair-subclass-connections.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
@@ -119,20 +121,23 @@ export async function discoverMember(
       facts,
       options.includeTests === true ? { includeTests: true } : {},
     );
-    const classes: DeclaredClass[] = [];
+    const read: DeclaredClass[] = [];
     const shapes: ShapeIR[] = [];
     const enums: EnumIR[] = [];
     const files: FileExports[] = [];
     const slots: SlotIR[] = [];
     const fills: SlotFillIR[] = [];
     for (const file of reader.sources) {
-      classes.push(...reader.classes(file));
+      read.push(...reader.classes(file));
       slots.push(...reader.slots(file));
       fills.push(...reader.fills(file));
       shapes.push(...reader.shapes(file));
       enums.push(...reader.enums(file));
       files.push(reader.exports(file));
     }
+    // A subclassed connection takes its same-stem integration, else its base's, once every class is read.
+    const paired = pairSubclassConnections(read);
+    const classes = [...paired.classes];
     // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): it leaves the
     // declared packages, so nothing of it (models, migrations, wiring) is hosted, and its events are carried. A
     // package one of whose driver ports the member injects or names in a `DriverName<Port>` field stays hosted, or no
@@ -309,7 +314,7 @@ export async function discoverMember(
       ...(nativeWrites.length > 0 ? { nativeWrites } : {}),
       ...(searchableColumns.length > 0 ? { searchableColumns } : {}),
       ...(migrationTables.length > 0 ? { migrationTables } : {}),
-      errors: [...reader.errors, ...appDefinition.errors],
+      errors: [...reader.errors, ...paired.errors, ...appDefinition.errors],
     };
   } finally {
     host.close();

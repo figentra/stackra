@@ -76,6 +76,7 @@ import { additionsOf } from "#core/functions/additions-of.function";
 import { blockKey } from "#core/functions/block-key.function";
 import { checkCallShape } from "#core/functions/check-call-shape.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
+import { connectionOf } from "#core/functions/connection-of.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
@@ -666,9 +667,7 @@ export function buildManifest(ir: MemberIR): {
     const key =
       typeof written === "string" ? written : integrationKey(declared.module, declared.name);
     claim(`integration:${key}`, declared);
-    const connection = ir.classes.find(
-      (candidate) => candidate.kind === "connection" && candidate.partner?.name === declared.name,
-    );
+    const connection = connectionOf(ir.classes, declared.name);
     // The listing's roles (ADR 0355 d1): the declared ones, plus `webhooks` when the provider sends us events.
     const declaredRoles = Array.isArray(declared.options["roles"])
       ? declared.options["roles"].map(String)

@@ -2678,10 +2678,16 @@ export function createSourceReader(
     const options = optionsOf(optionsArgument);
     // A driver over the package's own base (`class EpsonReceiptPrinterDriver extends NetworkReceiptPrinterDriver`) takes
     // its port from the nearest base whose heritage names one, so it stays a candidate in the manifest.
+    // A connection over another connection (`class RegionalConnection extends BaseConnection`) inherits its base's
+    // integration here; `pairSubclassConnections` pairs it with a same-stem integration of the member when one exists.
+    const ownPartner = partnerOf(node, info.kind, heritage);
     const partner =
-      partnerOf(node, info.kind, heritage) ??
-      (info.kind === "driver" ? inheritedPartner(info.chain.slice(1)) : undefined);
-    checkPartner(node, info.kind, partner, options);
+      ownPartner ??
+      (info.kind === "driver" || info.kind === "connection"
+        ? inheritedPartner(info.chain.slice(1))
+        : undefined);
+    // An inherited connection partner was checked against its base's stem, not this class's.
+    checkPartner(node, info.kind, info.kind === "connection" ? ownPartner : partner, options);
 
     const members = node.members ?? [];
     // The container calls the nearest constructor the chain declares: the class's own, else its base's (STA-1365 item 5).
