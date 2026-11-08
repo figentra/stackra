@@ -24,7 +24,7 @@ describe("CustomField", () => {
       "translatable",
     ]);
     expect(traits[0]?.options).toEqual({ prefix: "cfd" });
-    expect(traits[2]?.options).toEqual({ fields: ["label"] });
+    expect(traits[3]?.options).toEqual({ fields: ["label"] });
   });
 
   it("mints a cfd id and defaults to an optional field with no rules", () => {
