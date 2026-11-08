@@ -1481,6 +1481,41 @@ describe(compileMigration, () => {
       );
     });
 
+    it("lets the role through a platform-form table's _write_update only with update columns", () => {
+      class PlatformClaimMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("messages", (t: Blueprint) => {
+            t.rowLevelSecurity("tenant_id", { setting: "app.tenant_id", match: "platform" });
+            t.systemAccess({
+              select: ["id", "tenant_id"],
+              update: ["leased_until"],
+              reason: "the relay claims",
+            });
+          });
+        }
+      }
+      class PlatformLookupMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("messages", (t: Blueprint) => {
+            t.rowLevelSecurity("tenant_id", { setting: "app.tenant_id", match: "platform" });
+            t.systemAccess({ select: ["id", "tenant_id"], reason: "a webhook finds the tenant" });
+          });
+        }
+      }
+      const own =
+        "\"tenant_id\" is not distinct from nullif(current_setting('app.tenant_id', true), '')::varchar(33)";
+      const policy = 'create policy "pol_messages_tenant_id_write_';
+      const on = 'on "outbox"."messages" as restrictive for';
+      const claims = sqlOf(PlatformClaimMigration);
+      expect(claims).toContain(
+        `${policy}update" ${on} update using ((${own}) or current_user = 'stackra_system_access');\n`,
+      );
+      expect(claims).toContain(`${policy}delete" ${on} delete using (${own});\n`);
+      const lookup = sqlOf(PlatformLookupMigration);
+      expect(lookup).toContain(`${policy}update" ${on} update using (${own});\n`);
+      expect(lookup).not.toContain("current_user = 'stackra_system_access'");
+    });
+
     it("refuses a system access without its reason or columns, on a platform table, or twice", () => {
       expect(refusal((t) => t.systemAccess({ select: ["id"], reason: "" }))).toThrow(/reason/);
       expect(refusal((t) => t.systemAccess({ select: ["id"], reason: "a\nb" }))).toThrow(
