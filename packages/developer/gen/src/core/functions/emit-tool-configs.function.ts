@@ -30,6 +30,10 @@ import type { GeneratedFile } from "#core/types/generated-file.type";
 import { usesContainer } from "#core/functions/uses-container.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
+/** A short string array on one line, as oxfmt writes it in JSON (`["a", "b"]`). */
+const inline = (items: readonly string[]): string =>
+  `[${items.map((item) => JSON.stringify(item)).join(", ")}]`;
+
 /**
  * The tool configs of `ir`.
  *
@@ -218,16 +222,16 @@ export function emitToolConfigs(
 
   // The member's program plus the entries gen writes; tests and the hand-written entries directly in `src/` (which no
   // barrel re-exports) ship no declarations.
-  const dtsTsconfig = `${JSON.stringify(
-    {
-      $comment: `${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus .stackra/entry.`,
-      extends: "./tsconfig.json",
-      include: ["src", ".stackra/entry"],
-      exclude: ["src/**/__tests__/**", "src/*.ts", "src/*.tsx"],
-    },
-    null,
-    2,
-  )}\n`;
+  // Written in oxfmt's layout, so a member's format check passes on the file as gen writes it.
+  const dtsTsconfig = [
+    "{",
+    `  "$comment": ${JSON.stringify(`${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus .stackra/entry.`)},`,
+    `  "extends": "./tsconfig.json",`,
+    `  "include": ${inline(["src", ".stackra/entry"])},`,
+    `  "exclude": ${inline(["src/**/__tests__/**", "src/*.ts", "src/*.tsx"])}`,
+    "}",
+    "",
+  ].join("\n");
 
   return [
     ...(entries.length > 0 ? [{ path: ".stackra/tsdown.config.ts", content: tsdown }] : []),
