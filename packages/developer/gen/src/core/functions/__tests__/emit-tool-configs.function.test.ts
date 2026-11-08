@@ -71,6 +71,10 @@ describe("emitToolConfigs", () => {
     ) as Record<string, unknown>;
     expect(tsconfig["extends"]).toBe("./tsconfig.json");
     expect(tsconfig["include"]).toEqual(["src", ".stackra/entry"]);
+    // oxfmt's layout, so the member's format check passes on the file as written.
+    expect(pkg.find((file) => file.path === "tsconfig.build.json")?.content).toContain(
+      '  "include": ["src", ".stackra/entry"],\n  "exclude": ["src/**/__tests__/**", "src/*.ts", "src/*.tsx"]\n}\n',
+    );
     expect(content("tsconfig.build.json")).toBe("");
   });
 
