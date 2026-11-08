@@ -1,0 +1,4 @@
+export declare abstract class RouteBase { protected readonly "~kind": "route"; }
+export declare function Route(options: { readonly path: string; readonly [option: string]: unknown }): abstract new () => RouteBase;
+export interface RouteRef<R> { readonly name: string; readonly "~route"?: R }
+export declare function routeRef<R>(name: string): RouteRef<R>;
