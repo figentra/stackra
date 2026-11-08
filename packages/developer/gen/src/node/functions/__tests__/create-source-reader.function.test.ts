@@ -604,6 +604,67 @@ describe("createSourceReader on tool reasons", async () => {
   });
 });
 
+/** Queries that read above L1 and say why: on the permission, on the key, and not at all. */
+const RISK_SOURCES: Readonly<Record<string, string>> = {
+  "src/node/queries/load-secret.query.ts": [
+    'import { Query } from "@stackra/actions";',
+    'import { ActorKind } from "@stackra/contracts";',
+    "",
+    "export class LoadSecretQuery extends Query({",
+    '  key: "secret.load",',
+    "  // reason: returns the connection's credentials to the owning service",
+    "  permission: SecretPermissions.resolve,",
+    "  actors: [ActorKind.Service],",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/queries/get-export.query.ts": [
+    'import { Query } from "@stackra/actions";',
+    "",
+    "export class GetExportQuery extends Query({",
+    '  key: "export.get", // reason: hands out the tenant\'s whole evidence',
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/queries/list-exports.query.ts": [
+    'import { Query } from "@stackra/actions";',
+    "",
+    "export class ListExportsQuery extends Query({",
+    '  key: "export.list",',
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on query risk reasons", async () => {
+  const root = writeFixtureMember("risk-reasons", RISK_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+  const options = (name: string) => classes.find((declared) => declared.name === name)?.options;
+
+  it("reads the `// reason:` above `permission` as `riskReason`", () => {
+    expect(options("LoadSecretQuery")?.["riskReason"]).toBe(
+      "returns the connection's credentials to the owning service",
+    );
+  });
+
+  it("reads a trailing `// reason:` on `key` for a derived permission", () => {
+    expect(options("GetExportQuery")?.["riskReason"]).toBe("hands out the tenant's whole evidence");
+  });
+
+  it("leaves `riskReason` out when none is written", () => {
+    expect(options("ListExportsQuery")?.["riskReason"]).toBeUndefined();
+  });
+});
+
 /** A driver over the package's own abstract base, which names the port (native-modules gate, 2026-10-29). */
 const BASE_DRIVER_SOURCES: Readonly<Record<string, string>> = {
   "src/contracts/ports/printer.port.ts": [

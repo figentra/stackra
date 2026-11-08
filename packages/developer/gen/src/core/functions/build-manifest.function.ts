@@ -469,6 +469,8 @@ export function buildManifest(ir: MemberIR): {
       risk: risk ?? (kind === "query" ? "L0" : "L2"),
     };
     if (actors !== undefined) entry["actors"] = actors;
+    if (kind === "query" && typeof declared.options["riskReason"] === "string")
+      entry["riskReason"] = declared.options["riskReason"];
     if (effects.length > 0) entry["effects"] = effects;
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
