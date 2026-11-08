@@ -1,5 +1,62 @@
 # @stackra/tenancy
 
+## 0.22.0
+
+### Minor Changes
+
+- 940e198: Calls from branch users now work, directly and through a service or an agent. A user's token is often issued for a
+  branch, so the user's `scopeId` is the branch's id, not the tenant's. `CallIsolationDriver` used to compare those ids
+  as they were, so a branch user was refused in its own tenant, and so was a service or an agent of the tenant acting
+  for that user. It now reads every scope a user, an agent or a service claims through the scope tree and compares
+  tenants: a branch counts as the tenant above it, and the call runs with that tenant set, never the branch id. A user
+  from another tenant's branch is still refused, and so is a claimed scope the tree does not show or one above every
+  tenant (`tenant_scope_mismatch`). A tree read that fails fails the call; it never lets the call through.
+  
+  `CallAuthenticator` no longer compares the service's and the user's scope ids itself, since it cannot see the tree;
+  `CallIsolationDriver` now owns that rule.
+
+### Patch Changes
+
+- 786848c: A branch user can now complete an action that needs approval. The isolation already ran a branch user's call as the
+  tenant above the branch, but the pipeline still labelled what the call wrote with the branch id, so the approval
+  binding was refused by the tenant's row policy and the request could not be parked.
+  
+  `CallIsolation.run` now hands its work the actor it runs as, with the tenant from the scope tree. The pipeline takes
+  that tenant as the call's `scopeId`, on the descriptor and on `ctx`, before any step inside the isolation runs. So the
+  approval binding and request, usage and analytics events, published events, audit entries and the query cache key
+  all carry the tenant. The branch the user acts from stays on the new `CallDescriptor.branchScopeId`, and the actor is
+  unchanged. With no isolation bound, nothing changes: `scopeId` and `branchScopeId` are both the actor's own claim.
+  
+  Rate limits and idempotency keys are now per tenant for a branch user: all branches of one tenant share the tenant's
+  buckets and keys, as tenant-level users already did.
+  
+  The access log and the Postgres audit trail now store a branch user's records in the tenant's chain, not under the
+  branch id. `AccessRecord` has an optional `scopeId`, which `AccessLogExplorer` fills from the call's context, and
+  `AccessLogService.record` takes it as an optional last argument.
+- 227dd7a: `runAsTenant(T, work)` now refuses a new `BelongsToTenant` row that `work` saves with a `tenantId` other than `T`.
+  Before, a model factory whose `definition()` set `tenantId` silently replaced the tenant `runAsTenant` gives, so a
+  test arranged its rows in a random tenant and failed far from the cause. The flush now throws, for example
+  `Member was created in runAsTenant(scp_A) with tenantId scp_X: does its factory definition() set tenantId? Leave it
+  to runAsTenant.` It catches every way of setting it: the factory definition, `create({ tenantId })` and a direct
+  insert through the entity manager. A `tenantId` equal to `T` is fine; a test that needs another tenant's row creates
+  it in `runAsTenant(B, …)`. Outside `runAsTenant`, and in production, nothing changes: the check lives in `./testing`.
+  
+  Fix these factories before taking this version, or their tests fail: OS scheduling-calendar `booking.factory.ts` and
+  `resource-record.factory.ts`, and OS tenancy `membership.factory.ts`.
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/scheduler@0.22.0
+  - @stackra/scope@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Minor Changes
