@@ -103,6 +103,7 @@ import { emitReports } from "#core/functions/emit-reports.function";
 import { emitSearchQueries } from "#core/functions/emit-search-queries.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { emitResources } from "#core/functions/emit-resources.function";
+import { emitPackageRoutes } from "#core/functions/emit-package-routes.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
@@ -307,7 +308,13 @@ export function generateMember(
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
-  files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
+  files.push(
+    ...clients.files,
+    ...emitRoutes(ir),
+    ...emitPackageRoutes(ir),
+    ...emitBlocks(ir),
+    ...expo.files,
+  );
   // The composed panel resources' route constants, for an app that hosts the panel (STA-1947).
   const resources = emitResources(ir);
   if (resources !== undefined) files.push(resources);
