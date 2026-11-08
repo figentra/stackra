@@ -953,7 +953,7 @@
     {
       "key": "identity.bff",
       "class": "BffConfig",
-      "from": "@stackra/identity"
+      "from": "@stackra/identity/node"
     },
     {
       "key": "identity",
@@ -1194,7 +1194,7 @@
         {
           "class": {
             "name": "BffConfig",
-            "from": "@stackra/identity"
+            "from": "@stackra/identity/node"
           }
         },
         {
