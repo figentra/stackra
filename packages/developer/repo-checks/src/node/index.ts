@@ -61,6 +61,7 @@ export { checkGitignore } from "#node/functions/check-gitignore.function";
 export { checkIgnoredGoldens } from "#node/functions/check-ignored-goldens.function";
 export { checkImports } from "#node/functions/check-imports.function";
 export { checkIosFormFactor } from "#node/functions/check-ios-form-factor.function";
+export { checkIsolationTier } from "#node/functions/check-isolation-tier.function";
 export { checkJsonConfigs } from "#node/functions/check-json-configs.function";
 export { checkMemberFiles } from "#node/functions/check-member-files.function";
 export { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
