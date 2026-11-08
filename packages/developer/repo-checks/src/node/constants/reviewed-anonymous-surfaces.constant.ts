@@ -8,7 +8,7 @@
  *           lists `ActorKind.Anonymous`, and removing that removes the call from the notice whatever this says.
  * Runtime: node
  * Governing contract: ADR 0082 (public calls); ADR 0098 (the pipeline); STA-2025; reviewed 2026-11-04 (STA-2100);
- *                     Pay's checkout calls reviewed 2026-11-07 (STA-2515).
+ *                     Pay's checkout calls reviewed 2026-11-07 (STA-2515); the checkout's framers 2026-11-08 (STA-2564).
  */
 
 /** Locked key to why an anonymous caller may make the call. */
@@ -19,6 +19,9 @@ export const REVIEWED_ANONYMOUS_SURFACES: Readonly<Record<string, string>> = Obj
   "analytics.analytics_batch.ingest@1":
     "the visitor analytics relay (ADR 0483): publishes only for a verified consent snapshot, keeps only deliveries " +
     "whose ids are the snapshot's subject, strips denyProperties, takes at most 100 deliveries and returns counts, never data",
+  "checkouts.checkout_page.framers@1":
+    "returns only the checkout's configured public embed origins, no tenant or payer data, fails closed (empty list) " +
+    "on any miss; the edge's frame-ancestors callback (STA-2564). Reviewed by the leader, 2026-11-08.",
   "checkouts.checkout_page.load@1":
     "Figentra Pay's hosted checkout page (STA-2515): accepts only a session's HMAC client token (key id, tenant, " +
     "region, purpose, expiry) and runs in that tenant with row security; read only, no personal data; the same " +
