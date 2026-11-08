@@ -115,6 +115,7 @@ describe("@stackra/gen", () => {
       "tableName",
       "toolHints",
       "toolName",
+      "unboundPorts",
       "webhookPath",
     ]);
   });

@@ -112,8 +112,11 @@ describe("discoverMember", async () => {
     });
     const service = declared("ShopService");
     expect(service?.deps).toEqual([
-      { class: { name: "Clock", from: "@stackra/contracts" } },
-      { class: { name: "PaymentGateway", from: "#contracts/ports/payment-gateway.port" } },
+      { class: { name: "Clock", from: "@stackra/contracts" }, port: true },
+      {
+        class: { name: "PaymentGateway", from: "#contracts/ports/payment-gateway.port" },
+        port: true,
+      },
       {
         class: { name: "PaymentGateway", from: "#contracts/ports/payment-gateway.port" },
         named: "fallback",

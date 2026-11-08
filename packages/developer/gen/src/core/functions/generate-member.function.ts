@@ -65,6 +65,7 @@ import { checkShownOnce } from "#core/functions/check-shown-once.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkActionFirst } from "#core/functions/check-action-first.function";
+import { unboundPorts } from "#core/functions/unbound-ports.function";
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
 import { checkTableIndexes } from "#core/functions/check-table-indexes.function";
 import { checkSurfaces } from "#core/functions/check-surfaces.function";
@@ -208,6 +209,8 @@ export function generateMember(
     ...checkTableIndexes(ir, manifest),
     // ADR 0101: an action crossing a boundary without a workflow warns; an adapter reaching a workflow refuses.
     ...checkActionFirst(ir),
+    // A port a constructor takes that no driver binds would fail every container-built test at boot.
+    ...unboundPorts(ir),
     // One panel resource key recorded by two classes across the host's dependencies (STA-1947).
     ...(ir.layout === "app" ? hostResourcesOf(ir).errors : []),
     // One route or menu key two owners ship, or the app's own too (STA-1947).
