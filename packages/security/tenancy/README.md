@@ -94,7 +94,10 @@ scope above every tenant or one the tree does not show, such as its own id with 
 or a service with a tenant (its own, or else that of the user it acts for); a platform user, agent or service stays a
 platform call. An agent or a service with no tenant of its own runs in the tenant of the user it acts for:
 `withTenant` sets `app.tenant_id` to it. One whose own tenant differs from that user's is refused (ADR 0209,
-amendment of 2026-11-07, condition 3). Every `app.*` setting is `set_config(..., true)`, so it ends
+amendment of 2026-11-07, condition 3). These tenants are compared through the scope tree: a user whose token was
+issued for a branch claims that branch's tenant, so branch staff work directly and through a service or an agent of
+their tenant, and `withTenant` gets the tenant, never the branch id. A claimed scope the tree does not show, or one
+above every tenant, is refused (`tenant_scope_mismatch`), and a tree read that fails fails the call. Every `app.*` setting is `set_config(..., true)`, so it ends
 with the transaction; `pnpm validate` refuses a session-level one.
 
 `withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.scopeId`, or `''` for a

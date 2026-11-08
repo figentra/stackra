@@ -9,7 +9,9 @@
  *          tenant); tenant B's scope sees only B's; the pipeline lists only A's rows for a user of A in scope A; and the
  *          negative cases refuse: a user of A in B's scope, in the root scope above every tenant, or in a scope the tree
  *          does not show such as A's own id with the root's path, and an agent or a service of A in those scopes, and a
- *          service of B calling for a user of A (`tenant_scope_mismatch`; a service calling for a user of A lists A's rows; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
+ *          service of B calling for a user of A, a branch user (directly, or through a service or an agent of A) of B's
+ *          branch, and a user whose scope the tree does not show (`tenant_scope_mismatch`; a branch user of A lists
+ *          A's rows, directly or through a service or an agent of A; a service calling for a user of A lists A's rows; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
  *          root and sees no tenant row), a job whose scope the tree does not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
  *          runs), and a pushed scope that is not a `ScopeRef` (`scope_not_platform_written`). A last test states why the
  *          driver reads the tree from the path's root: the branch's own scope session cannot see its tenant.
@@ -99,6 +101,7 @@ const TENANT_B = "scp_01j9z3k4m5n6p7q8r9s0t1v2b1";
 const SCOPE_A: ScopeRef = { id: TENANT_A, path: "platform.acme" };
 const SCOPE_B: ScopeRef = { id: TENANT_B, path: "platform.globex" };
 const BRANCH: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2a2", path: "platform.acme.riyadh" };
+const BRANCH_B: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2b2", path: "platform.globex.jeddah" };
 /** Well shaped, and in no tree. */
 const NOWHERE: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2ff", path: "platform.nowhere" };
 /** A's id with B's path: a reference that names one node and grants another's rows. */
@@ -204,6 +207,7 @@ beforeAll(async () => {
     [TENANT_A, "tenant", SCOPE_A.path, "Acme"],
     [TENANT_B, "tenant", SCOPE_B.path, "Globex"],
     [BRANCH.id, "branch", BRANCH.path, "Riyadh"],
+    [BRANCH_B.id, "branch", BRANCH_B.path, "Jeddah"],
   ];
   for (const [id, level, path, name] of nodes)
     await em.execute(
@@ -500,6 +504,55 @@ describe("a service's tenant on Postgres", () => {
     const platform: Actor = { kind: ActorKind.Service, id };
     expect(await list(platform)).toEqual([]);
     expect(await list(platform, ROOT)).toEqual([]);
+  });
+});
+
+/** A user of A whose token was issued for `branch`. */
+const branchUserOf = (branch: ScopeRef): Actor => ({
+  ...tenantActor(TENANT_A as PublicId<"scp">),
+  scopeId: branch.id,
+});
+/** A service and an agent of A, each calling for `user`. */
+const delegatesFor = (user: Actor): readonly Actor[] => [
+  {
+    kind: ActorKind.Service,
+    id: "svc_01j9z3k4m5n6p7q8r9s0t1v2w5",
+    scopeId: TENANT_A,
+    onBehalfOf: user,
+  },
+  { kind: ActorKind.Agent, id: "agt_1", scopeId: TENANT_A, onBehalfOf: user },
+];
+
+describe("a branch user's tenant on Postgres", () => {
+  const ofA = branchUserOf(BRANCH);
+  const ofB = branchUserOf(BRANCH_B);
+
+  it("runs a branch user of A in A, read through the tree: A's rows and none of B's", async () => {
+    expect(await list(ofA, BRANCH)).toEqual([A1, A2]);
+    expect(await list(ofA, SCOPE_A)).toEqual([A1, A2]);
+    await expect(list(ofA, SCOPE_B)).rejects.toSatisfy((error: unknown) =>
+      isRefusal(error, TenantScopeMismatchError),
+    );
+  });
+
+  it("runs a service or an agent of A for a branch user of A, and refuses one for a user of B's branch", async () => {
+    for (const delegate of delegatesFor(ofA)) {
+      expect(await list(delegate, BRANCH)).toEqual([A1, A2]);
+      expect(await list(delegate, SCOPE_A)).toEqual([A1, A2]);
+    }
+    for (const delegate of delegatesFor(ofB))
+      for (const at of [SCOPE_A, BRANCH, BRANCH_B])
+        await expect(list(delegate, at)).rejects.toSatisfy((error: unknown) =>
+          isRefusal(error, TenantScopeMismatchError),
+        );
+  });
+
+  it("refuses a user, or a service calling for one, whose scope the tree does not show", async () => {
+    const lost = branchUserOf(NOWHERE);
+    for (const who of [lost, ...delegatesFor(lost)])
+      await expect(list(who, SCOPE_A)).rejects.toSatisfy((error: unknown) =>
+        isRefusal(error, TenantScopeMismatchError),
+      );
   });
 });
 

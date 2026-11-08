@@ -10,7 +10,9 @@
  *          id, any other actor keeps its own tenant and is refused (`TenantScopeMismatchError`) when the scope's
  *          tenant differs or a user's, agent's or service's scope sits above every tenant or is unknown to the tree (a
  *          platform user, agent or service stays a platform call there), a service whose own tenant differs from its
- *          user's is refused and one with none runs in its user's, several granted scopes that span tenants are
+ *          user's is refused and one with none runs in its user's, a claimed scope is read through the tree (a branch
+ *          user of A runs in A, also through a service or agent of A; one of B's branch is refused; a claimed scope the
+ *          tree does not show or above every tenant is refused), a failing tree read fails the call before it runs, several granted scopes that span tenants are
  *          refused while several within one tenant run in it, and the tree is read in a session over the path's root
  *          label.
  * Boundary: test only; a fake `Database` and a fake `TenantIsolationService` record the calls, so no database runs,
@@ -38,20 +40,23 @@ const ID_B = "scp_01j9z3k4m5n6p7q8r9s0t1v2wb";
 const ID_BRANCH = "scp_01j9z3k4m5n6p7q8r9s0t1v2wc";
 const ID_PLATFORM = "scp_01j9z3k4m5n6p7q8r9s0t1v2wd";
 const ID_UNKNOWN = "scp_01j9z3k4m5n6p7q8r9s0t1v2we";
+const ID_BRANCH_B = "scp_01j9z3k4m5n6p7q8r9s0t1v2wf";
 
 const scope: ScopeRef = { id: ID_A, path: "platform.acme" };
 const branch: ScopeRef = { id: ID_BRANCH, path: "platform.acme.riyadh" };
 const tenantB: ScopeRef = { id: ID_B, path: "platform.globex" };
 const platformScope: ScopeRef = { id: ID_PLATFORM, path: "platform" };
 const unknown: ScopeRef = { id: ID_UNKNOWN, path: "platform.nowhere" };
+const branchOfB: ScopeRef = { id: ID_BRANCH_B, path: "platform.globex.jeddah" };
 
-/** The tree: the platform, tenants A and B under it, and a branch under A. */
+/** The tree: the platform, tenants A and B under it, and a branch under each. */
 const tree = () =>
   new MemoryScopeTreeDriver().seed([
     { ...platformScope, level: "platform", name: "Platform" },
     { ...scope, level: "tenant", name: "Acme" },
     { ...tenantB, level: "tenant", name: "Globex" },
     { ...branch, level: "branch", name: "Riyadh" },
+    { ...branchOfB, level: "branch", name: "Jeddah" },
   ]);
 
 const actor: Actor = { kind: ActorKind.Job, id: "job_01j9z3k4m5n6p7q8r9s0t1v2w3", scopeId: ID_A };
@@ -83,8 +88,14 @@ const serviceForA: Actor = {
 };
 const platformService: Actor = { kind: ActorKind.Service, id: "svc_01j9z3k4m5n6p7q8r9s0t1v2w5" };
 
+/** A service and an agent of tenant A, each calling for `user`. */
+const delegates = (user: Actor): readonly Actor[] => [
+  { ...serviceOfA, onBehalfOf: user },
+  { ...agentOfA, onBehalfOf: user },
+];
+
 /** A recording database and tenant service; `running` says whether a transaction is already open. */
-function setUp(running = false, held = "") {
+function setUp(running = false, held = "", scopeTree: MemoryScopeTreeDriver = tree()) {
   const steps: string[] = [];
   const withScope = vi.fn(async (_scopes: unknown, work: () => Promise<unknown>) => {
     steps.push("scope");
@@ -112,7 +123,7 @@ function setUp(running = false, held = "") {
     withScope,
     transaction,
     withTenant,
-    driver: new CallIsolationDriver(database, isolation, tree()),
+    driver: new CallIsolationDriver(database, isolation, scopeTree),
   };
 }
 
@@ -503,6 +514,76 @@ describe("the tenant of a call", () => {
         await expect(run(driver, service, at)).resolves.toBe("ran");
         expect(withTenant.mock.calls[0]?.[0]).toBe(service);
       }
+  });
+
+  it("reads a claimed branch as its tenant: a branch user of A runs in A, in A's scope or its branch", async () => {
+    const branchUser: Actor = { ...userOfA, scopeId: ID_BRANCH };
+    for (const at of [scope, branch]) {
+      const { driver, withTenant } = setUp();
+      await expect(run(driver, branchUser, at)).resolves.toBe("ran");
+      // the isolation runs as the tenant, never the branch id
+      expect(tenantOfRun(withTenant)).toBe(ID_A);
+    }
+    const other = setUp();
+    await expect(run(other.driver, branchUser, tenantB)).rejects.toBeInstanceOf(
+      TenantScopeMismatchError,
+    );
+  });
+
+  it("runs a tenant-bound service or agent for a branch user of its tenant, and refuses one of another tenant's branch", async () => {
+    const userOfBranchA: Actor = { ...userOfA, scopeId: ID_BRANCH };
+    const userOfBranchB: Actor = { ...userOfA, scopeId: ID_BRANCH_B };
+    for (const delegate of delegates(userOfBranchA))
+      for (const at of [scope, branch]) {
+        const { driver, withTenant } = setUp();
+        await expect(run(driver, delegate, at)).resolves.toBe("ran");
+        expect(tenantOfRun(withTenant)).toBe(ID_A);
+      }
+    for (const delegate of delegates(userOfBranchB))
+      for (const at of [scope, branch, branchOfB]) {
+        const { driver, withTenant } = setUp();
+        await expect(run(driver, delegate, at)).rejects.toBeInstanceOf(TenantScopeMismatchError);
+        expect(withTenant).not.toHaveBeenCalled();
+      }
+    // with no tenant of its own, the service or agent runs in the tenant of its user's branch
+    for (const delegate of [
+      { ...serviceForA, onBehalfOf: userOfBranchA },
+      { ...agentForA, onBehalfOf: userOfBranchA },
+    ]) {
+      const { driver, withTenant } = setUp();
+      await expect(run(driver, delegate, branch)).resolves.toBe("ran");
+      expect(tenantOfRun(withTenant)).toBe(ID_A);
+    }
+  });
+
+  it("refuses a claimed scope the tree does not show, or one above every tenant", async () => {
+    const claims: readonly Actor[] = [
+      { ...userOfA, scopeId: ID_UNKNOWN },
+      { ...userOfA, scopeId: ID_PLATFORM },
+      { ...serviceOfA, onBehalfOf: { ...userOfA, scopeId: ID_UNKNOWN } },
+      { ...serviceForA, onBehalfOf: { ...userOfA, scopeId: ID_UNKNOWN } },
+      { ...agentOfA, scopeId: ID_UNKNOWN },
+    ];
+    for (const who of claims) {
+      const { driver, withTenant, transaction } = setUp();
+      await expect(run(driver, who, scope)).rejects.toBeInstanceOf(TenantScopeMismatchError);
+      expect(withTenant).not.toHaveBeenCalled();
+      expect(transaction).not.toHaveBeenCalled();
+    }
+  });
+
+  it("fails the call when the tree read fails, never running it", async () => {
+    const broken = tree();
+    vi.spyOn(broken, "node").mockRejectedValue(new Error("tree unreachable"));
+    const { driver, withTenant } = setUp(false, "", broken);
+    for (const who of [userOfA, serviceOfA, agentForA]) {
+      const work = vi.fn(async () => "ran");
+      await expect(driver.run(who, scope, work, { readOnly: false })).rejects.toThrow(
+        "tree unreachable",
+      );
+      expect(work).not.toHaveBeenCalled();
+    }
+    expect(withTenant).not.toHaveBeenCalled();
   });
 
   it("compares a running transaction's tenant with the resolved one, not with the actor's own id", async () => {
