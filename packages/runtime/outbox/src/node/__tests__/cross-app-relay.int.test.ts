@@ -7,10 +7,11 @@
  *          producer does not publish answers 403, each dead-lettered by the producer with the status it was refused with.
  * Boundary: integration tier (`.int`): runs only where `TESTBED_POSTGRES_HOST` names a Postgres (the testbed's
  *           `--postgres`, user `postgres` with trust auth) and is skipped elsewhere. It creates a fresh database per run,
- *           applies the compiled 0002 and 0005 migrations as `usePostgres` does, and drops it after. Producer and consumer
+ *           applies the compiled outbox migrations as `usePostgres` does, and drops it after. Producer and consumer
  *           share that database (their tables differ), and the consumer's inbox route is a `node:http` server on an
- *           ephemeral port that hands the raw request to `RelayInboxService`. Keys are generated per run; locks are in
- *           memory; the clock is the system's.
+ *           ephemeral port that hands the raw request to `RelayInboxService`. Every outbox migration is applied (0006
+ *           too, so the lease is the system function's); the rows are the platform's (no tenant), run by the
+ *           superuser. Keys are generated per run; locks are in memory; the clock is the system's.
  * Runtime: node (vitest)
  * Governing contract: ADR 0511 (decisions 11 to 13, 16 to 18; AC-001, AC-002, AC-007); ADR 0182 (integration tier);
  *                     ADR 0022; ADR 0269.
@@ -21,7 +22,6 @@ import type { AddressInfo, Server } from "node:net";
 
 import { mintPublicId } from "@stackra/contracts";
 import type { Clock } from "@stackra/contracts";
-import { compileMigration } from "@stackra/database";
 import { PostgresDatabaseDriver } from "@stackra/database/node";
 import { EventBus, IntegrationEvent, Listener } from "@stackra/events";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
@@ -41,8 +41,7 @@ import { ConfigSubscriberSourceDriver } from "#core/drivers/config-subscriber-so
 import { ContractInboxVerifierDriver } from "#core/drivers/contract-inbox-verifier.driver";
 import { Ed25519EventSignerDriver } from "#core/drivers/ed25519-event-signer.driver";
 import { registerEventNames } from "#core/functions/register-event-names.function";
-import { CreateInboxMigration } from "#node/database/migrations/0002-create-inbox.migration";
-import { CreateDeliveriesMigration } from "#node/database/migrations/0005-create-deliveries.migration";
+import { outboxMigrations } from "#node/__tests__/fixtures/owner-postgres.fixture";
 import { PostgresDeliveryDriver } from "#node/drivers/postgres-delivery.driver";
 import { PostgresInboxDriver } from "#node/drivers/postgres-inbox.driver";
 import { CrossAppFanOut } from "#node/services/cross-app-fan-out.service";
@@ -123,10 +122,8 @@ describe.skipIf(HOST === undefined)("cross-app relay end to end", () => {
     await admin.orm.schema.execute(`create database "${DATABASE}"`, { wrap: false });
     const database = await PostgresDatabaseDriver.connect({ url: urlOf(DATABASE), entities: [] });
     state.database = database;
-    for (const migration of [
-      compileMigration(CreateInboxMigration, { schema: "outbox", createsSchema: true }),
-      compileMigration(CreateDeliveriesMigration, { schema: "outbox" }),
-    ])
+    // every outbox migration: 0006 puts the deliveries under row security and gives the relay its lease function
+    for (const migration of outboxMigrations())
       for (const step of migration.steps)
         await database.orm.schema.execute(step.sql.join(";\n"), { wrap: step.transactional });
 
@@ -206,11 +203,13 @@ describe.skipIf(HOST === undefined)("cross-app relay end to end", () => {
     await state.admin?.close();
   });
 
-  /** The stored deliveries of event `eventId`. */
+  /** The stored deliveries of event `eventId`, each claimed and then loaded (platform rows: no isolation needed). */
   async function deliveriesOf(eventId: string) {
-    return (await the("deliveries").list({ limit: 100 })).filter(
-      (delivery) => delivery.eventId === eventId,
+    const deliveries = the("deliveries");
+    const loaded = await Promise.all(
+      (await deliveries.list({ limit: 100 })).map((claim) => deliveries.load(claim.id)),
     );
+    return loaded.filter((delivery) => delivery?.eventId === eventId);
   }
 
   /** Whether the consumer's inbox recorded event `eventId`. */

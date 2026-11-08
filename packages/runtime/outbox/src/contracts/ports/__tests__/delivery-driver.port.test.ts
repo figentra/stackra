@@ -12,13 +12,18 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { DeliveryDriver } from "#contracts/ports/delivery-driver.port";
 import type { Delivery } from "#contracts/types/delivery.type";
+import type { DeliveryClaim } from "#contracts/types/delivery-claim.type";
 
 /** A store that keeps nothing. */
 class NullDeliveryDriver extends Driver(DeliveryDriver) {
   async write(): Promise<void> {}
 
-  async lease(): Promise<readonly Delivery[]> {
+  async lease(): Promise<readonly DeliveryClaim[]> {
     return [];
+  }
+
+  async load(): Promise<Delivery | undefined> {
+    return undefined;
   }
 
   async remove(): Promise<void> {}
@@ -27,7 +32,7 @@ class NullDeliveryDriver extends Driver(DeliveryDriver) {
 
   async deadLetter(): Promise<void> {}
 
-  async list(): Promise<readonly Delivery[]> {
+  async list(): Promise<readonly DeliveryClaim[]> {
     return [];
   }
 
@@ -43,9 +48,14 @@ describe("DeliveryDriver", () => {
     expect(driver).toBeInstanceOf(Port);
     await expect(driver.lease(new Date(), 10, new Date())).resolves.toEqual([]);
     await expect(driver.replay("dlv_1", new Date())).resolves.toBe(false);
+    await expect(driver.load("dlv_1")).resolves.toBeUndefined();
   });
 
   it("is keyed outbox.DeliveryDriver", () => {
     expectTypeOf<DeliveryDriver["~key"]>().toEqualTypeOf<"outbox.DeliveryDriver">();
+  });
+
+  it("claims ids, owners, subscribers and states, never an envelope", () => {
+    expectTypeOf<keyof DeliveryClaim>().toEqualTypeOf<"id" | "ownerId" | "subscriber" | "state">();
   });
 });

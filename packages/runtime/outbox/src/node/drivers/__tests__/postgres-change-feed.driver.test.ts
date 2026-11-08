@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `PostgresChangeFeedDriver`: `read` lists only entries older than the snapshot horizon, of the
- *          given models, after a parsed position, every value bound, and reads rows back into records; a bad position
- *          is refused; `positionAt` steps back one from the first entry at the instant, or takes the last one;
- *          `cursor` and `save` round-trip a cursor through one upsert; `maintain` makes tomorrow's partitions on and
- *          drops expired dated ones.
+ * Purpose: unit tests of `PostgresChangeFeedDriver`: `claim` calls `outbox.claim_changes` with the models and a
+ *          parsed position bound and reads back positions and owners; `load` reads the claimed positions back into
+ *          records; a bad position is refused; `positionAt` reads `outbox.change_position_at` and steps back one from
+ *          the first entry at the instant, or takes the last one; `cursor` and `save` round-trip a cursor through one
+ *          upsert; `maintain` makes tomorrow's partitions on, secures each new one with the log's policies and drops
+ *          expired dated ones; `expired` claims default-partition rows and `remove` deletes positions.
  * Boundary: test only; a stand-in entity manager records each statement and answers by statement, so no database
  *           runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -52,14 +53,39 @@ describe(PostgresChangeFeedDriver, () => {
     expect(new PostgresChangeFeedDriver({} as Database)).toBeInstanceOf(ChangeFeed);
   });
 
-  it("reads committed entries of the models after a position, every value bound", async () => {
+  it("claims committed entries of every owner after a position through the system function", async () => {
+    const { database, statements } = databaseWith(() => [
+      { tx: "812", seq: "40", tenant_id: "scp_acme" },
+      { tx: "812", seq: 41, tenant_id: null },
+    ]);
+    const claims = await new PostgresChangeFeedDriver(database).claim("812:39", ["Product"], 100);
+    const [claim] = statements;
+    expect(claim?.sql).toBe(
+      "select tx::text as tx, seq, tenant_id from outbox.claim_changes(?::xid8, ?::bigint, ?::jsonb, ?::integer)",
+    );
+    expect(claim?.params).toEqual(["812", "39", '["Product"]', 100]);
+    expect(claims).toEqual([{ position: "812:40", ownerId: "scp_acme" }, { position: "812:41" }]);
+  });
+
+  it("claims from the start without a position, nothing for no models, and refuses a foreign position", async () => {
+    const { database, statements } = databaseWith();
+    const feed = new PostgresChangeFeedDriver(database);
+    await feed.claim(undefined, ["Product"], 10);
+    expect(statements[0]?.params).toEqual([null, null, '["Product"]', 10]);
+    await expect(feed.claim(undefined, [], 10)).resolves.toEqual([]);
+    expect(statements).toHaveLength(1);
+    await expect(feed.claim("evt_A", ["Product"], 10)).rejects.toThrow(TypeError);
+    await expect(feed.load(["evt_A"])).rejects.toThrow(TypeError);
+  });
+
+  it("loads the claimed positions under the caller's row-level security, in log order", async () => {
     const { database, statements } = databaseWith(() => [ROW]);
-    const records = await new PostgresChangeFeedDriver(database).read("812:39", ["Product"], 100);
-    const [read] = statements;
-    expect(read?.sql).toContain("tx < pg_snapshot_xmin(pg_current_snapshot())");
-    expect(read?.sql).toContain("(tx, seq) > (?::xid8, ?::bigint)");
-    expect(read?.params).toEqual(['["Product"]', "812", "39", 100]);
-    expect(read?.sql.split("?")).toHaveLength(5);
+    const feed = new PostgresChangeFeedDriver(database);
+    const records = await feed.load(["812:40"]);
+    expect(statements[0]?.sql).toContain(
+      "join jsonb_to_recordset(?::jsonb) as p(tx text, seq bigint) on c.tx = p.tx::xid8 and c.seq = p.seq",
+    );
+    expect(statements[0]?.params).toEqual([JSON.stringify([{ tx: "812", seq: "40" }])]);
     expect(records).toEqual([
       {
         position: "812:40",
@@ -69,30 +95,44 @@ describe(PostgresChangeFeedDriver, () => {
         scope: { id: "scp_1", path: "platform.acme" },
       },
     ]);
-  });
-
-  it("reads from the start without a position, nothing for no models, and refuses a foreign position", async () => {
-    const { database, statements } = databaseWith();
-    const feed = new PostgresChangeFeedDriver(database);
-    await feed.read(undefined, ["Product"], 10);
-    expect(statements[0]?.sql).not.toContain("(tx, seq) >");
-    await expect(feed.read(undefined, [], 10)).resolves.toEqual([]);
+    await expect(feed.load([])).resolves.toEqual([]);
     expect(statements).toHaveLength(1);
-    await expect(feed.read("evt_A", ["Product"], 10)).rejects.toThrow(TypeError);
   });
 
-  it("positions just before the first entry at an instant, or after the last one", async () => {
-    const first = databaseWith((sql) =>
-      sql.includes("occurred_at >=") ? [{ tx: "9", seq: 5 }] : [],
-    );
+  it("positions just before the first entry at an instant, or after the last one, across owners", async () => {
+    const first = databaseWith(() => [
+      { tx: "9", seq: 5, latest: false },
+      { tx: "9", seq: "7", latest: true },
+    ]);
     await expect(new PostgresChangeFeedDriver(first.database).positionAt(NOON)).resolves.toBe(
       "9:4",
     );
-    const last = databaseWith((sql) => (sql.includes("desc") ? [{ tx: "9", seq: "7" }] : []));
+    expect(first.statements[0]?.sql).toBe(
+      "select tx::text as tx, seq, latest from outbox.change_position_at(?::timestamptz)",
+    );
+    const last = databaseWith(() => [{ tx: "9", seq: "7", latest: true }]);
     await expect(new PostgresChangeFeedDriver(last.database).positionAt(NOON)).resolves.toBe("9:7");
     await expect(
       new PostgresChangeFeedDriver(databaseWith().database).positionAt(NOON),
     ).resolves.toBeUndefined();
+  });
+
+  it("claims expired default-partition rows and removes positions under the caller's row-level security", async () => {
+    const { database, statements } = databaseWith((sql) =>
+      sql.includes("claim_expired_changes") ? [{ tx: "3", seq: "1", tenant_id: "scp_acme" }] : [],
+    );
+    const feed = new PostgresChangeFeedDriver(database);
+    await expect(feed.expired(NOON, 500)).resolves.toEqual([
+      { position: "3:1", ownerId: "scp_acme" },
+    ]);
+    expect(statements[0]?.params).toEqual([NOON, 500]);
+    await feed.remove(["3:1"]);
+    expect(statements[1]?.sql).toContain(
+      "delete from outbox.changes c using jsonb_to_recordset(?::jsonb)",
+    );
+    expect(statements[1]?.params).toEqual([JSON.stringify([{ tx: "3", seq: "1" }])]);
+    await feed.remove([]);
+    expect(statements).toHaveLength(2);
   });
 
   it("round-trips a cursor through one upsert", async () => {
@@ -140,6 +180,11 @@ describe(PostgresChangeFeedDriver, () => {
     expect(sql).toContain("alter table outbox.changes detach partition outbox.changes_p20261010");
     expect(sql).toContain("drop table outbox.changes_p20261010");
     expect(sql.some((text) => text.includes("changes_p20261024"))).toBe(false);
-    expect(sql).toContain("delete from outbox.changes_default where occurred_at < ?");
+    expect(
+      statements
+        .filter((statement) => statement.sql === "select outbox.secure_change_partition(?)")
+        .map((statement) => statement.params),
+    ).toEqual([["changes_p20261026"], ["changes_p20261027"], ["changes_p20261028"]]);
+    expect(sql.some((text) => text.includes("delete"))).toBe(false);
   });
 });
