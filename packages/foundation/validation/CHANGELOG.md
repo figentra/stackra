@@ -1,5 +1,12 @@
 # @stackra/validation
 
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes

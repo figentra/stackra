@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "246716163bcbcd7d",
+    "hash": "531bdcac5e1881cb",
     "propsFiles": ["ui/src/react/icon-button/icon-button.props.ts"]
   },
   "importLine": "import { IconButton } from \"@stackra/ui/react\";",
@@ -179,6 +179,20 @@
           "default": "keys:<binding>",
           "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
           "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The browsing context of the link (`_blank`); read only with `href`.",
+          "name": "target",
+          "required": false,
+          "source": "stackra",
+          "type": "HTMLAttributeAnchorTarget"
+        },
+        {
+          "description": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
+          "name": "href",
           "required": false,
           "source": "stackra",
           "type": "string"

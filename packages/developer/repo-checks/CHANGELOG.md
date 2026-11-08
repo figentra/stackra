@@ -1,5 +1,16 @@
 # @stackra/repo-checks
 
+## 0.26.0
+
+### Patch Changes
+
+- e9d32d7: `checkJsonConfigs` lets a test fixture under `__tests__/fixtures/` stay `.json`: it is a provider's own wire format, a
+  recorded API answer the test parses exactly as the provider sends it. Product repos no longer fail `json-configs` on
+  their connector fixtures.
+- 15b5fd2: `checkouts.checkout_page.choose_method@1` is a reviewed anonymous surface: it binds the payer's method choice to an
+  unguessable session id with a per-session rate limit, answers only the bound provider session's widget, and returns
+  no data beyond that session.
+
 ## 0.25.0
 
 ### Patch Changes

@@ -1,5 +1,27 @@
 # @stackra/analytics
 
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+  - @stackra/consent@0.26.0
+  - @stackra/privacy@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/storage@0.26.0
+  - @stackra/platform@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes

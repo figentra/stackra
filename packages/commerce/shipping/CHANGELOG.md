@@ -1,5 +1,22 @@
 # @stackra/shipping
 
+## 0.26.0
+
+### Minor Changes
+
+- a4d5848: `RateQuote.carrier` and `Shipment.carrier`, both optional: an aggregator connection (one account quoting and booking
+  many carriers) names the carrier that delivers, while the connection's `provider` stays the aggregator's. Direct
+  carriers leave it out (STA-2625).
+
+### Patch Changes
+
+- @stackra/money@0.26.0
+  - @stackra/testing@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes
