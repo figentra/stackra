@@ -25,6 +25,7 @@ import { dirname, join } from "node:path";
 import { kebabCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
+import { GEN_REACHED_PORTS } from "#core/constants/gen-reached-ports.constant";
 import { driverName } from "#core/functions/driver-name.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
@@ -135,11 +136,13 @@ export async function discoverMember(
     // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): it leaves the
     // declared packages, so nothing of it (models, migrations, wiring) is hosted, and its events are carried. A
     // package one of whose driver ports the member injects or names in a `DriverName<Port>` field stays hosted, or no
-    // driver of it would bind the port or fill the field.
+    // driver of it would bind the port or fill the field; so does one driving a port gen binds without injection.
     const importedBy = reader.packageImports();
     const ports = new Set([
       ...classes.flatMap((declared) => declared.deps.map((dep) => dep.class.name)),
       ...shapes.flatMap((shape) => shape.fields.flatMap((field) => driverPortsOf(field.type))),
+      // the ports gen binds without injection in a service or an app (STA-2584)
+      ...(facts.layout === "package" ? [] : GEN_REACHED_PORTS),
     ]);
     const contractsImported = facts.dependencies.filter((name) => {
       const specifiers = importedBy.get(name);

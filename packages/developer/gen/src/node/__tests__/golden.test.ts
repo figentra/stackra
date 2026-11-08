@@ -80,6 +80,9 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "contracts-port-host", base: "service", members: ["services/shop"] },
   // An anonymous-only action still gets its route, served with `auth: false` (STA-2578).
   { name: "anonymous-route", base: "service", members: ["services/shop"] },
+  // A package imported only through ./contracts that drives a port gen binds without injection stays hosted (STA-2584):
+  // the shop publishes OrderPaid, so its EventOutbox table comes from the outbox it reaches only by a type.
+  { name: "contracts-pipeline-port", base: "service", members: ["services/shop"] },
   // The pipeline's own ports are bound from what the service declares, not from a constructor (STA-2573): its
   // integration event reaches EventOutbox, its idempotent action IdempotencyStore.
   { name: "pipeline-ports", base: "service", members: ["services/shop"] },
