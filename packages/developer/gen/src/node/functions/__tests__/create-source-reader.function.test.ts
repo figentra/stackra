@@ -564,6 +564,7 @@ const TOOL_SOURCES: Readonly<Record<string, string>> = {
     "",
     "  private start(runner: { run(...args: unknown[]): unknown }): void {",
     "    runner.run(HandOverWorkflow, {});",
+    "    runner.run<Page<{ till: string }>>(CountTillWorkflow, {});",
     "    runner.run(async () => {});",
     "  }",
     "}",
@@ -598,8 +599,8 @@ describe("createSourceReader on tool reasons", async () => {
     expect(options("CloseDrawerAction")?.["toolReason"]).toBeUndefined();
   });
 
-  it("records the workflow classes a body passes first to `.run(`, and nothing else (ADR 0101)", () => {
-    expect(workflows("HandOverAction")).toEqual(["HandOverWorkflow"]);
+  it("records the workflow classes a body passes first to `.run(`, typed or not, and nothing else (ADR 0101)", () => {
+    expect(workflows("HandOverAction")).toEqual(["HandOverWorkflow", "CountTillWorkflow"]);
     expect(workflows("CloseDrawerAction")).toBeUndefined();
   });
 });
