@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: integration test of `CrudService.lock` on Postgres: locking a row, assigning a field and locking it again in
  *          one transaction keeps the assigned value (the second lock's refresh used to drop it), and the row is still
- *          held by that transaction (a `nowait` lock from another pooled backend fails).
+ *          held by that transaction (a `nowait` lock from another pooled backend fails); and a read after `update` or a
+ *          plain field set on a loaded row, in the same transaction, sees the change (the read flushes first).
  * Boundary: test only; a Testcontainers Postgres through `usePostgres`, run by `test:int`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-1239 (row locks).
@@ -53,6 +54,7 @@ const postgres = usePostgres({
 });
 
 const ID: PublicId<"cnt"> = "cnt_01ja0000000000000000000001";
+const SECOND: PublicId<"cnt"> = "cnt_01ja0000000000000000000002";
 
 describe("CrudService.lock on Postgres", () => {
   it("keeps a value assigned between two locks of one row in one transaction, and keeps the row held", async () => {
@@ -85,5 +87,34 @@ describe("CrudService.lock on Postgres", () => {
     expect(heldElsewhere).toBeDefined();
     const stored = await database.transaction(() => counters.findOneOrFail({ id: ID }));
     expect(stored.next).toBe(3);
+  });
+
+  it("reads a value set earlier in the same transaction, through update or a plain field set", async () => {
+    const { database } = postgres;
+    const counters = new CounterService();
+    await database.transaction(async () => {
+      counters.create({ id: SECOND, next: 10 });
+    });
+
+    const seen = await database.transaction(async () => {
+      await counters.update({ id: SECOND }, { next: 11 });
+      const afterUpdate = {
+        findOne: (await counters.findOne({ next: 11 }))?.id,
+        count: await counters.count({ next: 11 }),
+        sum: await counters.sum("next", { id: SECOND }),
+      };
+      const row = await counters.findOneOrFail({ id: SECOND });
+      row.next = 12;
+      const afterSet = {
+        find: (await counters.find({ next: 12 })).map((found) => found.id),
+        page: (await counters.page({ page: 1, perPage: 10 }, { where: { next: 12 } })).total,
+      };
+      return { afterUpdate, afterSet };
+    });
+
+    expect(seen).toEqual({
+      afterUpdate: { findOne: SECOND, count: 1, sum: 11 },
+      afterSet: { find: [SECOND], page: 1 },
+    });
   });
 });

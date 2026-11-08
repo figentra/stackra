@@ -8,7 +8,8 @@
  *           lists `ActorKind.Anonymous`, and removing that removes the call from the notice whatever this says.
  * Runtime: node
  * Governing contract: ADR 0082 (public calls); ADR 0098 (the pipeline); STA-2025; reviewed 2026-11-04 (STA-2100);
- *                     Pay's checkout calls reviewed 2026-11-07 (STA-2515); the checkout's framers 2026-11-08 (STA-2564).
+ *                     Pay's checkout calls reviewed 2026-11-07 (STA-2515); the checkout's framers 2026-11-08 (STA-2564);
+ *                     the checkout's method choice 2026-11-08.
  */
 
 /** Locked key to why an anonymous caller may make the call. */
@@ -19,6 +20,9 @@ export const REVIEWED_ANONYMOUS_SURFACES: Readonly<Record<string, string>> = Obj
   "analytics.analytics_batch.ingest@1":
     "the visitor analytics relay (ADR 0483): publishes only for a verified consent snapshot, keeps only deliveries " +
     "whose ids are the snapshot's subject, strips denyProperties, takes at most 100 deliveries and returns counts, never data",
+  "checkouts.checkout_page.choose_method@1":
+    "Binds the payer's method choice to an unguessable session id with a per-session rate limit; answers only the " +
+    "bound provider session's widget; no data beyond that session.",
   "checkouts.checkout_page.framers@1":
     "returns only the checkout's configured public embed origins, no tenant or payer data, fails closed (empty list) " +
     "on any miss; the edge's frame-ancestors callback (STA-2564). Reviewed by the leader, 2026-11-08.",

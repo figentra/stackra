@@ -132,6 +132,39 @@ class OpenAction extends Action({
   }
 }
 
+/** A support session a support agent asked to open in a tenant, shaped as OS access's model. */
+class SupportSession {
+  readonly supportPrincipalId: string;
+
+  constructor(supportPrincipalId: string) {
+    this.supportPrincipalId = supportPrincipalId;
+  }
+}
+
+class SupportSessionPermissions extends Permissions {
+  // L2 here, L3 in OS access: the approval and step-up steps of L3 are not what this proves.
+  static readonly approve = Permission.L2;
+}
+
+/** OS access's rule: the tenant's own staff approve, never a customer and never the agent the session is for. */
+class SupportSessionPolicy extends Policy<SupportSession> {
+  approve(actor: Actor, session: SupportSession): Decision {
+    const subject = actor.onBehalfOf ?? actor;
+    if (subject.realm !== Realm.Staff) return Decision.Deny;
+    return subject.id === session.supportPrincipalId ? Decision.Deny : Decision.Abstain;
+  }
+}
+
+class ApproveSupportSessionAction extends Action({
+  key: "support_session.approve",
+  actors: [ActorKind.User],
+}) {
+  async handle(input: { session: SupportSession }, ctx: ActionContext): Promise<string> {
+    await ctx.authorize(input.session);
+    return "approved";
+  }
+}
+
 /** A visitor with no session. */
 const visitor: Actor = {
   kind: ActorKind.Anonymous,
@@ -366,6 +399,54 @@ describe("IamAccessControlDriver", () => {
     await expect(
       pipeline.execute(CancelOrderAction, { order: mine } as never, { actor: stranger }),
     ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  /**
+   * The production path of a self-approval: the real driver runs the model's registered policy on
+   * `ctx.authorize(record)` through the real pipeline, so the agent cannot approve its own session and a customer
+   * cannot approve one at all, while another staff member can.
+   */
+  it("refuses a support agent approving its own session and a customer, through the real driver", async () => {
+    registerPermissions([
+      {
+        type: SupportSessionPermissions,
+        keys: { approve: "support_access.support_session.approve" },
+      },
+    ]);
+    registerPolicies([{ model: SupportSession, policy: SupportSessionPolicy }]);
+    registerActions([
+      {
+        type: ApproveSupportSessionAction,
+        key: "support_access.support_session.approve@1",
+        permission: "support_access.support_session.approve",
+      },
+    ]);
+    const agent: Actor = {
+      kind: ActorKind.User,
+      id: "usr_01j9z3k4m5n6p7q8r9s0t1v2s1",
+      realm: Realm.Staff,
+    };
+    const owner: Actor = { ...agent, id: "usr_01j9z3k4m5n6p7q8r9s0t1v2s2" };
+    const bindings = new Map<AnyClass, object>([
+      [ApproveSupportSessionAction, new ApproveSupportSessionAction()],
+      [SupportSessionPolicy, new SupportSessionPolicy()],
+    ]);
+    // Everyone holds the permission, so only the record policy can refuse.
+    const { resolver } = driverOver(
+      {
+        grants: [{ role: "approver", scope: ROOT }],
+        roles: { approver: ["support_access.support_session.approve"] },
+      },
+      bindings,
+    );
+    const pipeline = new ActionPipeline(resolver);
+    const session = new SupportSession(agent.id);
+    const approve = (actor: Actor) =>
+      pipeline.execute(ApproveSupportSessionAction, { session } as never, { actor });
+
+    await expect(approve(agent)).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(approve(customer)).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(approve(owner)).resolves.toBe("approved");
   });
 
   it("refuses an action the pipeline was never told about (STA-2025)", async () => {

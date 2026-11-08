@@ -1,5 +1,22 @@
 # @stackra/actions
 
+## 0.26.0
+
+### Patch Changes
+
+- 9cee75d: The memory `AccessControl` runs record policies: `ctx.authorize(record)` asks the record's policy, as
+  `IamAccessControlDriver` does, once `@stackra/iam`'s testing plugin has connected them through the new
+  `connectRecordPolicies`. A module's "refuses another customer" test now means it on memory drivers. The IAM driver's
+  policy helpers move into `decidePolicy`, `policyRowOf` and `isAnonymousCall`, shared by the driver and the plugin.
+- @stackra/testing@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+  - @stackra/cache@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes

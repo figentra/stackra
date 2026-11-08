@@ -83,6 +83,12 @@ export function readMemberFacts(root: string): MemberFacts {
       })
     : undefined;
 
+  const specifier = Object.entries({
+    ...manifest.dependencies,
+    ...manifest.devDependencies,
+  }).find(([name]) => name.startsWith("@stackra/"))?.[1];
+  const stackraSpecifier = typeof specifier === "string" ? specifier : undefined;
+
   return {
     root: absolute,
     member: folderKey(basename(absolute)),
@@ -96,6 +102,7 @@ export function readMemberFacts(root: string): MemberFacts {
       ...Object.keys(manifest.dependencies ?? {}),
       ...Object.keys(manifest.devDependencies ?? {}),
     ],
+    ...(stackraSpecifier !== undefined ? { stackraSpecifier } : {}),
     ...(manifest.dependencies !== undefined && Object.keys(manifest.dependencies).length > 0
       ? { runtimeDependencies: Object.keys(manifest.dependencies) }
       : {}),

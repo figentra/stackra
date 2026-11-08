@@ -43,6 +43,7 @@ import { createSourceReader } from "#node/functions/create-source-reader.functio
 import { openHost } from "#node/functions/open-host.function";
 import { contractsOnlyManifest } from "#core/functions/contracts-only-manifest.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
+import { readTransitiveDependencies } from "#node/functions/read-transitive-dependencies.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
 import { readAnchors } from "#node/functions/read-anchors.function";
 import { readAppDefinition } from "#node/functions/read-app-definition.function";
@@ -176,6 +177,8 @@ export async function discoverMember(
       (name) => !contractsOnly.has(name),
     );
     const dependencies = readDependencyManifests(facts.root, declaredPackages);
+    // The undeclared packages those wire from, so a refusal names the whole missing set at once.
+    const transitive = readTransitiveDependencies(facts.root, dependencies, facts.dependencies);
     // A service is consumed by an injected client, by a listener of one of its events, or by any file importing it.
     const clientImports = reader.clientImports();
     const consumed = [
@@ -301,6 +304,14 @@ export async function discoverMember(
       runtimePackages: runtimeDeclared,
       dependencies,
       ...(contractsDependencies.length > 0 ? { contractsDependencies } : {}),
+      ...(transitive.length > 0
+        ? {
+            transitiveDependencies: {
+              specifier: facts.stackraSpecifier ?? "catalog:stackra",
+              packages: transitive,
+            },
+          }
+        : {}),
       ...(services.length > 0 ? { services } : {}),
       ...(eventsRelay !== undefined ? { eventsRelay } : {}),
       ...(publishers.length > 0 ? { publishers } : {}),

@@ -98,6 +98,7 @@ describe("@stackra/actions", () => {
       "UsageRecorded",
       "approverRefusal",
       "connectExtensions",
+      "connectRecordPolicies",
       "isRawBody",
       "limitedSettingsReader",
       "mergeApprovalRequirements",
