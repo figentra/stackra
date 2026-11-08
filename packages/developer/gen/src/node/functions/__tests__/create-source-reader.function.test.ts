@@ -23,7 +23,7 @@
  *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
  *          `kind_base_name_reserved`, `partner_mismatch` for a same-stem kind (a Resource), `secret_name_missing` and
  *          each file's exported class names (STA-1306), the workflows a class body starts (`workflows`, ADR 0101), `port_key_mismatch` for a port whose `~key` brand is not `<member>.<Port>` (STA-1810). A `@Classify(Class)` facet carries its data class's constant
- *          effects as `options.dataClass` (STA-1251). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
+ *          effects as `options.dataClass` (STA-1251), and an action's `dataClass` reads as its key (STA-2594). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
  *          reads with its options, import and props record, and a non-constant fill is `slot_options_not_constant`
  *          (ADR 0438). A `PickType` of, or a form extending, a `remoteShape` of `#stackra/clients/<service>` reads as a
  *          `remote` base; `Settings.pick` of `#stackra/settings` is a schema kind; a renamed enum case in a default is
@@ -1536,6 +1536,36 @@ const DATA_CLASS_SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  "node_modules/@stackra/contracts/package.json": JSON.stringify({
+    name: "@stackra/contracts",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/contracts/index.d.ts":
+    'export declare const DataClassification: { readonly Financial: "financial" };\n',
+  "src/node/actions/add-case-note.action.ts": [
+    'import { Action } from "@stackra/actions";',
+    'import { ClinicalNoteDataClass } from "#node/models/clinical-note.data-class";',
+    "",
+    "export class AddCaseNoteAction extends Action({",
+    '  key: "case_note.add",',
+    "  dataClass: ClinicalNoteDataClass,",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/actions/refund-payment.action.ts": [
+    'import { Action } from "@stackra/actions";',
+    'import { DataClassification } from "@stackra/contracts";',
+    "",
+    "export class RefundPaymentAction extends Action({",
+    '  key: "payment.refund",',
+    "  dataClass: DataClassification.Financial,",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
 };
 
 describe("createSourceReader on data classes", async () => {
@@ -1554,6 +1584,14 @@ describe("createSourceReader on data classes", async () => {
       $class: "ClinicalNoteDataClass",
       dataClass: { key: "clinical_note", ai: "never" },
     });
+  });
+
+  it("reads an action's `dataClass` as its key: a product class's, or a built-in code (STA-2594)", () => {
+    const [note, refund] = ["AddCaseNoteAction", "RefundPaymentAction"].map(
+      (name) => classes.find((declared) => declared.name === name)?.options["dataClass"],
+    );
+    expect(note).toBe("clinical_note");
+    expect(refund).toBe("financial");
   });
 });
 

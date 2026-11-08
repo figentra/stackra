@@ -722,6 +722,11 @@ export function createSourceReader(
       // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does, and so does a
       // `tool: true` that makes an L3 or L4 action a tool. A trailing `// reason: …` counts too (owner decisions
       // 2026-10-26, round 3).
+      // A product's `DataClass` class is recorded as its key, as `@Classify` reads it (STA-2594).
+      if (name === "dataClass" && kind === "PropertyAssignment") {
+        const key = dataClassOf(property.initializer)?.["key"];
+        if (typeof key === "string") options["dataClass"] = key;
+      }
       if (name === "tool" && typeof value === "boolean") {
         const reason = /\/\/\s*reason:\s*(.+)/
           .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]

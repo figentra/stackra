@@ -32,6 +32,7 @@ import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
+import type { CallDataClass } from "#core/types/call-data-class.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { JobOptions } from "#core/types/job-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
@@ -71,6 +72,12 @@ export interface ActionOptions {
 
   /** The action's own token bucket, on top of the area's. */
   readonly rateLimit?: ActionRateLimit;
+
+  /**
+   * The data class it handles (`DataClassification.Financial`, or a product's `DataClass` class); gen records its key,
+   * and the AI gateway keeps a run that calls it in region when the tenant's policy says so. None when absent.
+   */
+  readonly dataClass?: CallDataClass;
 
   /** A route override, or `false` for no endpoint; derived from the key when absent. */
   readonly endpoint?: EndpointOptions | false;
