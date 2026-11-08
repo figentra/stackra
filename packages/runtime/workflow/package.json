@@ -113,6 +113,7 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/locking": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
