@@ -1,5 +1,13 @@
 # @stackra/devtools-kit
 
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/events@0.24.0
+
 ## 0.23.0
 
 ### Patch Changes

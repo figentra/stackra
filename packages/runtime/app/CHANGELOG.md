@@ -1,5 +1,20 @@
 # @stackra/app
 
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/clients@0.24.0
+  - @stackra/identity@0.24.0
+  - @stackra/navigation@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/validation@0.24.0
+  - @stackra/csp@0.24.0
+
 ## 0.23.0
 
 ### Minor Changes

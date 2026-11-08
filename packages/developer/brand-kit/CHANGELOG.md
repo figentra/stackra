@@ -1,5 +1,13 @@
 # @stackra/brand-kit
 
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/tokens@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/support@0.24.0
+
 ## 0.23.0
 
 ### Patch Changes

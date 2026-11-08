@@ -1,5 +1,28 @@
 # @stackra/achievements
 
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/rules@0.24.0
+  - @stackra/integrations@0.24.0
+  - @stackra/content@0.24.0
+  - @stackra/documents@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+
 ## 0.23.0
 
 ### Minor Changes
