@@ -692,6 +692,12 @@ export function createSourceReader(
       : NOT_CONSTANT;
   };
 
+  /** The `// reason: …` written above a property or trailing it, if any. */
+  const reasonOf = (property: TsNode): string | undefined =>
+    /\/\/\s*reason:\s*(.+)/
+      .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
+      ?.trim() || undefined;
+
   /** The options object of a call argument: its constant properties, non-constant ones left out. */
   const optionsOf = (node: TsNode | undefined): Record<string, unknown> => {
     if (node === undefined || host.kind(node) !== "ObjectLiteralExpression") return {};
@@ -723,10 +729,15 @@ export function createSourceReader(
       // `tool: true` that makes an L3 or L4 action a tool. A trailing `// reason: …` counts too (owner decisions
       // 2026-10-26, round 3).
       if (name === "tool" && typeof value === "boolean") {
-        const reason = /\/\/\s*reason:\s*(.+)/
-          .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
-          ?.trim();
+        const reason = reasonOf(property);
         if (reason) options["toolReason"] = reason;
+      }
+      // A query that reads above L1 (secrets, bulk personal data, a tenant's whole evidence) says why with a
+      // `// reason:` on its `permission`, or on its `key` when the permission is derived (leader, 2026-11-08).
+      if (name === "permission" || name === "key") {
+        const reason = reasonOf(property);
+        if (reason && (name === "permission" || options["riskReason"] === undefined))
+          options["riskReason"] = reason;
       }
     }
     return options;

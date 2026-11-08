@@ -44,6 +44,31 @@ describe("checkCallShape", () => {
     for (const risk of ["L0", "L1", undefined]) expect(codes(QUERY, risk)).toEqual([]);
   });
 
+  it("lets a query above L1 stand with a written reason, and refuses one without", () => {
+    const reasoned = withOptions(QUERY, {
+      ...QUERY.options,
+      riskReason: "hands out the tenant's whole evidence",
+    });
+    expect(codes(reasoned, "L3")).toEqual([]);
+    expect(codes(QUERY, "L2")).toEqual(["query_above_l1"]);
+  });
+
+  it("records a query's reason in the manifest", () => {
+    const reason = "reads raw provider payloads";
+    const built = buildManifest({
+      ...COMMERCE_IR,
+      classes: COMMERCE_IR.classes.map((declared) =>
+        declared === QUERY
+          ? withOptions(QUERY, { ...QUERY.options, riskReason: reason })
+          : declared,
+      ),
+    });
+    const entry = built.manifest.actions?.find(
+      (candidate) => candidate.class === "ListOrdersQuery",
+    );
+    expect((entry as Record<string, unknown> | undefined)?.["riskReason"]).toBe(reason);
+  });
+
   it("refuses a query with preconditions, and never an action", () => {
     const pre = [{ $class: "AcceptingOrdersPrecondition", from: "#p", kind: "precondition" }];
     expect(codes(withOptions(QUERY, { ...QUERY.options, preconditions: pre }), "L0")).toEqual([
