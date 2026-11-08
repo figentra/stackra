@@ -41,8 +41,20 @@ export interface WebhookSchemeRecipe {
   /** The body paths whose numbers are written with a fixed count of decimals before joining (`paymentAmount: 2`). */
   readonly decimals?: Readonly<Record<string, number>>;
 
-  /** The hash of an ordered-field HMAC or a keyed field digest. */
-  readonly algorithm?: "SHA-256" | "SHA-512";
+  /** The hash of an ordered- or labelled-field HMAC or a keyed field digest; `SHA-1` only for a provider that needs it. */
+  readonly algorithm?: "SHA-1" | "SHA-256" | "SHA-512";
+
+  /** Where a `keyed_field_digest` puts the secret among the joined values: `end` (the default) or `start`. */
+  readonly secretAt?: "start" | "end";
+
+  /** What a `keyed_field_digest` puts between the values and the secret (`":"`); nothing by default. */
+  readonly separator?: string;
+
+  /**
+   * How a `keyed_field_digest` reads its body: `json` (the default), or `form`, an `application/x-www-form-urlencoded`
+   * body whose percent-decoded values its paths name as plain keys.
+   */
+  readonly bodyFormat?: "json" | "form";
 
   /** The header that carries an encrypted body's hex IV (`x-initialization-vector`). */
   readonly ivHeader?: string;

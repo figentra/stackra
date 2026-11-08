@@ -128,13 +128,16 @@ describe("@stackra/integrations", () => {
       | "fields"
       | "decimals"
       | "algorithm"
+      | "secretAt"
+      | "separator"
+      | "bodyFormat"
       | "ivHeader"
       | "tagHeader"
       | "labelledFields"
       | "currencyDecimals"
     >();
     expectTypeOf<WebhookSchemeRecipe["algorithm"]>().toEqualTypeOf<
-      "SHA-256" | "SHA-512" | undefined
+      "SHA-1" | "SHA-256" | "SHA-512" | undefined
     >();
     // `Pass({ key })` returns a class of `PassBase`, so a consumer's declaration emit can name its base (STA-1220).
     expectTypeOf<InstanceType<ReturnType<typeof integrations.Pass>>>().toEqualTypeOf<PassBase>();

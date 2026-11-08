@@ -101,6 +101,11 @@ The regional schemes are built from each vendor's public documentation with fixt
 lists, header names) are OS integrations data (ADR 0443 decision 7), never constants here. For those schemes the event
 id is the payload's `eventId` path and the event occurred when it was received.
 
+`keyed_field_digest` takes four more `recipe` fields, each defaulting to the form above: `secretAt` (`end`, or
+`start` for the secret before the values), `separator` (nothing, or the text between the values and the secret, such as
+`":"`), `algorithm` (also `SHA-1`) and `bodyFormat` (`json`, or `form` for an `application/x-www-form-urlencoded` body,
+its values percent-decoded and its paths plain keys). A missing value is empty.
+
 ## Outbound: `webhook: true` integration events
 
 ```ts
