@@ -6,7 +6,8 @@
  *          declared `headers`, keeps to its rate limits, retries what is safe to retry, and turns every
  *          provider outcome into a value or a typed refusal.
  * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call or the
- *           Integration's `requestBody` asks; raw bytes out when the call asks (`bytes`). A
+ *           Integration's `requestBody` asks, or a raw body with its own media type when the call gives one (`body`);
+ *           raw bytes or text out when the call asks (`bytes`, `text`). A
  *           `{field}` placeholder in the base URL (a per-region host) is filled from the credential set and must
  *           resolve to an https origin, or an http one on an `.internal` host (the private tools namespace, STA-1653);
  *           a whole-URL `{field}` is filled the same way. A `GET`, `HEAD`, `PUT` or `DELETE`
@@ -227,14 +228,21 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     body: unknown,
     request: RequestOptions = {},
   ): Promise<unknown> {
+    if (request.body !== undefined && body !== undefined)
+      throw new TypeError("A call sends either its body or RequestOptions.body, not both");
     const url = urlOf(path, request.query);
     const form = request.form ?? declared.requestBody === "form";
+    const raw = request.body;
     const headers = new Headers(request.headers);
     for (const [header, value] of Object.entries(declared.headers ?? {}))
       if (!headers.has(header)) headers.set(header, resolve(value));
     if (!headers.has("accept"))
-      headers.set("accept", request.bytes === true ? "*/*" : "application/json");
-    if (body !== undefined)
+      headers.set(
+        "accept",
+        request.bytes === true || request.text === true ? "*/*" : "application/json",
+      );
+    if (raw !== undefined) headers.set("content-type", raw.contentType);
+    else if (body !== undefined)
       headers.set("content-type", form ? "application/x-www-form-urlencoded" : "application/json");
     const key = request.idempotencyKey;
     if (key !== undefined && idempotencyHeader !== undefined) headers.set(idempotencyHeader, key);
@@ -245,7 +253,11 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     const init: RequestInit = {
       method,
       headers,
-      ...(body === undefined ? {} : { body: form ? formOf(body) : JSON.stringify(body) }),
+      ...(raw !== undefined
+        ? { body: raw.content }
+        : body === undefined
+          ? {}
+          : { body: form ? formOf(body) : JSON.stringify(body) }),
       ...(request.signal === undefined ? {} : { signal: request.signal }),
     };
     for (let attempt = 1; ; attempt += 1) {
@@ -261,6 +273,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
       if (response?.ok === true) {
         if (request.bytes === true) return new Uint8Array(await response.arrayBuffer());
         const text = await response.text();
+        if (request.text === true) return text;
         return text === "" ? undefined : parsed(text);
       }
       if (response !== undefined && !isTransient(response.status)) {

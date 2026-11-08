@@ -156,6 +156,38 @@ describe("managedClient", () => {
     expect(headerOf(fetchMock, 0, "accept")).toBe("*/*");
   });
 
+  it("sends a raw body as given with its media type, and reads the answer as text", async () => {
+    const envelope = '<soap:Envelope><soap:Body><Track id="1&amp;2"/></soap:Body></soap:Envelope>';
+    const reply =
+      "<soap:Envelope><soap:Body><TrackResult>ok</TrackResult></soap:Body></soap:Envelope>";
+    const fetchMock = stubFetch(
+      () => new Response(reply, { status: 200, headers: { "content-type": "text/xml" } }),
+    );
+
+    const text = await clientOf(new MailIntegration()).post<string>("/Service.asmx", undefined, {
+      body: { content: envelope, contentType: "text/xml; charset=utf-8" },
+      text: true,
+    });
+
+    expect(text).toBe(reply);
+    expect(fetchMock.mock.calls[0]?.[1].body).toBe(envelope);
+    expect(headerOf(fetchMock, 0, "content-type")).toBe("text/xml; charset=utf-8");
+    expect(headerOf(fetchMock, 0, "accept")).toBe("*/*");
+    expect(headerOf(fetchMock, 0, "authorization")).toBe("Bearer platform-key");
+  });
+
+  it("refuses a call that gives both a body and a raw body", async () => {
+    stubFetch(() => json({}));
+
+    await expect(
+      clientOf(new MailIntegration()).post(
+        "/messages",
+        { a: 1 },
+        { body: { content: "<a/>", contentType: "text/xml" } },
+      ),
+    ).rejects.toThrow(TypeError);
+  });
+
   it("sends the connection's key before the platform's", async () => {
     const fetchMock = stubFetch(() => new Response(null, { status: 204 }));
     const integration = new MailIntegration();
