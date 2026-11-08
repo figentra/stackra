@@ -32,6 +32,7 @@ export const StoredSettingRevisionSchema = new EntitySchema<StoredSettingRevisio
     status: { enum: true, items: ["pending","scheduled","applied","rejected"] },
     effectiveAt: { type: "datetime" },
     decidedBy: { type: "string", nullable: true },
+    approvalRole: { type: "string", nullable: true },
     appliedAt: { type: "datetime", nullable: true },
     id: { type: "string", primary: true },
     createdAt: { type: "datetime" },

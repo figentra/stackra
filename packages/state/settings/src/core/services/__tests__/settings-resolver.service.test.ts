@@ -27,6 +27,7 @@ import { MemorySettingValueStoreDriver } from "#core/drivers/memory-setting-valu
 import { SettingScope } from "#core/enums/setting-scope.enum";
 import { SettingType } from "#core/enums/setting-type.enum";
 import { SettingBelowFloorError } from "#core/errors/setting-below-floor.error";
+import { SettingApproverRoleError } from "#core/errors/setting-approver-role.error";
 import { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
 import { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
 import { settingKeys } from "#core/functions/setting-keys.function";
@@ -40,6 +41,8 @@ class ReturnsSettings extends Settings({ scopes: [SettingScope.Platform, Setting
   guestRefunds = false;
 
   mode = "cash";
+
+  platformRouting = false;
 }
 
 registerSchemas([
@@ -49,6 +52,7 @@ registerSchemas([
       windowDays: z.number().int().min(0).default(7),
       guestRefunds: z.boolean().default(false),
       mode: z.string().default("cash"),
+      platformRouting: z.boolean().default(false),
     }),
   ],
 ]);
@@ -76,6 +80,14 @@ settingKeys({
       approval: true,
     },
     mode: { type: SettingType.String, default: "cash", scopes: CASCADE, label: label("mode") },
+    platformRouting: {
+      type: SettingType.Boolean,
+      default: false,
+      scopes: CASCADE,
+      label: label("platform_routing"),
+      live: true,
+      approval: { by: "owner" },
+    },
   },
 });
 const PAGE = settingsPage("returns", { scope: SettingScope.Product });
@@ -210,6 +222,43 @@ describe(SettingsResolver, () => {
       SettingRevisionClosedError,
     );
     expect((await resolver.get(ReturnsSettings, { scope: ACME })).guestRefunds).toBe(true);
+  });
+
+  it("holds an owner-only key for an owner: a non-owner admin is refused, the owner applies it", async () => {
+    const { values, resolver } = setup();
+    const pending = await resolver.write(PAGE, { platformRouting: true }, { scope: ACME }, LIVE);
+    expect(pending).toMatchObject({ status: SettingRevisionStatus.Pending, approvalRole: "owner" });
+    await expect(values.layers("returns", { scope: ACME })).resolves.toEqual([]);
+    const refused = resolver.approve(pending.id, "usr_admin", ["manager", "staff"]);
+    await expect(refused).rejects.toBeInstanceOf(SettingApproverRoleError);
+    await expect(refused).rejects.toMatchObject({ revision: pending.id, role: "owner" });
+    // no roles passed fails closed
+    await expect(resolver.approve(pending.id, "usr_admin")).rejects.toBeInstanceOf(
+      SettingApproverRoleError,
+    );
+    // the role is the control, so the owner may approve a change they wrote
+    const applied = await resolver.approve(pending.id, "usr_author", ["owner"]);
+    expect(applied).toMatchObject({
+      status: SettingRevisionStatus.Applied,
+      decidedBy: "usr_author",
+      approvalRole: "owner",
+    });
+    expect((await resolver.get(ReturnsSettings, { scope: ACME })).platformRouting).toBe(true);
+  });
+
+  it("lets a role-gated key govern a four-eyes key written beside it", async () => {
+    const { resolver } = setup();
+    const mixed = await resolver.write(
+      PAGE,
+      { guestRefunds: true, platformRouting: true },
+      { scope: ACME },
+      LIVE,
+    );
+    // a four-eyes key beside an owner-only key: the owner's approval is the stricter control
+    expect(mixed.approvalRole).toBe("owner");
+    await expect(resolver.approve(mixed.id, "usr_second", ["manager"])).rejects.toBeInstanceOf(
+      SettingApproverRoleError,
+    );
   });
 
   it("schedules a later write, rejects or applies it when due", async () => {

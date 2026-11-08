@@ -12,6 +12,7 @@
  *                     live-editable and essential, declared per field); ADR 0370 (decision 6: floors); ADR 0420
  *                     (decision 1: entitlement-gated settings).
  */
+import type { SettingApproval } from "#core/types/setting-approval.type";
 import type { SettingLevel } from "#core/types/setting-level.type";
 
 /** The options of one setting field. */
@@ -22,8 +23,11 @@ export interface SettingOptions {
   /** Whether a holder may lock the value for every holder below it. */
   readonly lockable?: boolean;
 
-  /** Whether a change waits for a second holder of `<module>.settings.approve`. */
-  readonly approval?: boolean;
+  /**
+   * Whether a change waits for approval: `true` for a second holder of `<module>.settings.approve` (four-eyes), or
+   * `{ by: role }` for someone holding that role (`{ by: SystemRole.Owner }`: only the owner may turn it on).
+   */
+  readonly approval?: boolean | SettingApproval;
 
   /** Whether clients receive the resolved value in the area bootstrap. */
   readonly client?: boolean;

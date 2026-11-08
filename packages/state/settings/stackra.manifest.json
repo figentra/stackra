@@ -30,6 +30,13 @@
       "class": "PromotionReleaseTooOldError"
     },
     {
+      "code": "setting_approver_role",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "settings",
+      "class": "SettingApproverRoleError"
+    },
+    {
       "code": "setting_below_floor",
       "kind": "validation",
       "category": "validation",
@@ -212,6 +219,14 @@
           },
           {
             "name": "decidedBy",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "approvalRole",
             "optional": false,
             "nullable": true,
             "type": {
@@ -645,6 +660,7 @@
         "status",
         "effectiveAt",
         "decidedBy",
+        "approvalRole",
         "appliedAt",
         "id",
         "createdAt",
@@ -703,6 +719,9 @@
           "format": "date-time"
         },
         "decidedBy": {
+          "type": ["string", "null"]
+        },
+        "approvalRole": {
           "type": ["string", "null"]
         },
         "appliedAt": {

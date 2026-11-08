@@ -27,6 +27,7 @@ import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.functi
 import { checkMemberFiles } from "#node/functions/check-member-files.function";
 import { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 import { checkRawSql } from "#node/functions/check-raw-sql.function";
+import { checkForkingPeers } from "#node/functions/check-forking-peers.function";
 import { checkHostedPeers } from "#node/functions/check-hosted-peers.function";
 import { checkMember } from "#node/functions/check-member.function";
 import { checkNativeModules } from "#node/functions/check-native-modules.function";
@@ -39,6 +40,7 @@ import { checkTestPlacement } from "#node/functions/check-test-placement.functio
 import { checkWranglerOperationalKeys } from "#node/functions/check-wrangler-operational-keys.function";
 import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
 import { checkWorkflowTriggers } from "#node/functions/check-workflow-triggers.function";
+import { checkMiseActionVersion } from "#node/functions/check-mise-action-version.function";
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
@@ -146,6 +148,15 @@ export async function structureFindings(
     checkWorkflowTriggers(
       files
         .filter((p) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(p))
+        .map((p): [string, string] => [p, text(p)]),
+    ),
+  );
+  report(
+    "mise-action-version",
+    "",
+    checkMiseActionVersion(
+      files
+        .filter((p) => /^\.github\/(?:workflows\/[^/]+|actions\/[^/]+\/action)\.ya?ml$/.test(p))
         .map((p): [string, string] => [p, text(p)]),
     ),
   );
@@ -285,6 +296,8 @@ export async function structureFindings(
           stackra: isStackraRepo,
         }),
       );
+    // A library's peers never fork its dependents' installs (FORKING_PEERS).
+    if (tierFor(dir) === "tier:lib") report("forking-peers", dir, checkForkingPeers(pkg));
     // A library takes the packages whose values carry an identity in the host as peers (HOSTED_PEER_PACKAGES).
     if (tierFor(dir) === "tier:lib")
       report(

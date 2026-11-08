@@ -14,6 +14,9 @@ export type DocsSite = {
   /** The refusals; when there is one, nothing is assembled. */
   readonly errors: readonly GenError[];
 
+  /** Findings that print but never block writing (a page not yet translated); absent when none. */
+  readonly warnings?: readonly GenError[];
+
   /** `docs.json`, `llms.txt`, the pages, the snippets and the API reference, sorted by path. */
   readonly files: readonly GeneratedFile[];
 

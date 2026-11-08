@@ -14,10 +14,11 @@ import type { CustomFieldValue } from "#core/index";
 import { CustomFieldValueSet } from "#node/models/custom-field-value-set.model";
 
 describe("CustomFieldValueSet", () => {
-  it("is a model with the cfv public id and the timestamps", () => {
+  it("is a model with the cfv public id, the tenant and the timestamps", () => {
     expect(new CustomFieldValueSet()).toBeInstanceOf(Model);
     expect(traitsOf(CustomFieldValueSet).map((trait) => trait.name)).toEqual([
       "has_public_id",
+      "belongs_to_tenant",
       "timestamps",
     ]);
     expect(traitsOf(CustomFieldValueSet)[0]?.options).toEqual({ prefix: "cfv" });

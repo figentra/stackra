@@ -94,7 +94,7 @@
       "file": "src/node/models/award-kind.model.ts",
       "table": "achievements.award_kinds",
       "publicId": "awk",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "achievements",
         "fields": [
@@ -198,6 +198,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "awk"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -311,7 +320,7 @@
       "file": "src/node/models/award.model.ts",
       "table": "achievements.awards",
       "publicId": "awd",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "achievements",
         "fields": [
@@ -437,6 +446,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "awd"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -595,6 +613,7 @@
         "certificateTemplate",
         "isActive",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -640,6 +659,10 @@
         "id": {
           "type": "string",
           "pattern": "^awk_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -713,6 +736,7 @@
         "revokedAt",
         "revokedReason",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -765,6 +789,10 @@
         "id": {
           "type": "string",
           "pattern": "^awd_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "createdAt": {
           "type": "string",

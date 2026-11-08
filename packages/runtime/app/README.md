@@ -206,6 +206,13 @@ names no action, so it forwards a first hop's bearer only, never a forwarded tok
 service alone (ADR 0209, amendment of 2026-11-07). The held token lives only in the call's async context, never on the
 actor, the context, a log, an error or an event, and is emptied when the call ends.
 
+Gen binds this by default in a service that declares `@stackra/app`, `@stackra/clients` and `@stackra/identity`:
+`ClientSession` takes `service` and `ServiceTokens` takes `zitadel` (`ZitadelServiceTokensDriver`), so no host wiring
+is needed. A deployment sets `identity.service_tokens.issuer`, the secret named by
+`identity.service_tokens.keySecret` (by default `IDENTITY_SERVICE_ACCOUNT_KEY`, the service account's ZITADEL key
+file) and `clients.audiences`. A producer module with no audience fails the call with a `TypeError` naming the module,
+before any token is asked for; nothing is ever sent unauthenticated.
+
 ### Edge Worker or in-process guard
 
 | Your API runs…                                    | Use                                                                                              |

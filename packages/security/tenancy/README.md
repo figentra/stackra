@@ -123,7 +123,19 @@ A table that already has rows and its own policy (the scope-path tables) becomes
 expand step, `t.belongsToTenant({ expand: true })` in `schema.table(...)`, adds a nullable, indexed `tenant_id` that
 every insert fills from `app.tenant_id` (a column default), and no policy: a second permissive policy would OR with the
 table's own and widen it. Older rows stay null until a backfill job sets them. The contract step then makes the column
-NOT NULL and the tenant equality the one permissive policy, any other policy restrictive (ADR 0347 decision 1).
+NOT NULL and the tenant equality the one permissive policy, any other policy restrictive (ADR 0347 decision 1):
+
+```typescript
+schema.refuseNulls("tenant_id", ["custom_fields"], "Backfill tenant_id in this environment first.");
+schema.table("custom_fields", (t: Blueprint) => {
+  t.dropRowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+  t.belongsToTenant({ contract: true }); // SET NOT NULL and pol_custom_fields_tenant_id
+  t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor", restrictive: true });
+});
+```
+
+`schema.refuseNulls` refuses the migration before any change while a row still has no tenant, naming each table's
+count, so an environment with expand-step rows runs the backfill first.
 
 ## Tenant tokens
 

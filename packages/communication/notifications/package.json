@@ -159,9 +159,6 @@
   "peerDependenciesMeta": {
     "react": {
       "optional": true
-    },
-    "react-dom": {
-      "optional": true
     }
   },
   "engines": {

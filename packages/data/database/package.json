@@ -139,42 +139,14 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
-    "@electric-sql/pglite": "catalog:",
-    "@electric-sql/pglite-pgvector": "catalog:",
-    "@electric-sql/pglite-postgis": "catalog:",
-    "@faker-js/faker": "catalog:",
-    "@mikro-orm/pglite": "catalog:",
     "@stackra/events": "workspace:*",
-    "@stackra/testing": "workspace:*",
-    "@testcontainers/postgresql": "catalog:",
-    "testcontainers": "catalog:"
+    "@stackra/testing": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@electric-sql/pglite": {
-      "optional": true
-    },
-    "@electric-sql/pglite-pgvector": {
-      "optional": true
-    },
-    "@electric-sql/pglite-postgis": {
-      "optional": true
-    },
-    "@faker-js/faker": {
-      "optional": true
-    },
-    "@mikro-orm/pglite": {
-      "optional": true
-    },
     "@stackra/events": {
       "optional": true
     },
     "@stackra/testing": {
-      "optional": true
-    },
-    "@testcontainers/postgresql": {
-      "optional": true
-    },
-    "testcontainers": {
       "optional": true
     }
   },

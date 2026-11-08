@@ -16,8 +16,11 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import type * as Testcontainers from "testcontainers";
+
 import { POSTGRES_TEST_IMAGE } from "#testing/constants/postgres-test-image.constant";
 import { proxyBuildArgs } from "#testing/functions/proxy-build-args.function";
+import { requireTestPeer } from "#testing/functions/require-test-peer.function";
 
 /** The build of this process, shared by every `usePostgres()` call. */
 let built: Promise<string> | undefined;
@@ -31,9 +34,9 @@ let built: Promise<string> | undefined;
  */
 export function buildPostgresTestImage(): Promise<string> {
   built ??= (async () => {
-    // An optional peer, loaded here so that importing `./testing` never needs it (STA-1950).
+    // A test-only package, loaded here from the member's devDependencies, so importing `./testing` never needs it.
     const { GenericContainer, ImageName, getContainerRuntimeClient } =
-      await import("testcontainers");
+      requireTestPeer<typeof Testcontainers>("testcontainers");
     const client = await getContainerRuntimeClient();
     if (await client.image.exists(ImageName.fromString(POSTGRES_TEST_IMAGE.tag))) {
       return POSTGRES_TEST_IMAGE.tag;

@@ -41,6 +41,7 @@ export const RuleSetSchema = new EntitySchema<RuleSet>({
     seedKey: { type: "string", nullable: true },
     seedVersion: { type: "string", nullable: true },
     id: { type: "string", primary: true },
+    tenantId: { type: "string" },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
   },

@@ -15,11 +15,12 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Int } from "@stackra/validation";
 
 /** An award. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Award extends Model.with(HasPublicId("awd"), Timestamps) {
+export class Award extends Model.with(HasPublicId("awd"), BelongsToTenant, Timestamps) {
   /** The criteria revision that matched; null for a grant by hand. */
   @Int
   ruleRevision!: number | null;
@@ -70,5 +71,5 @@ export class Award extends Model.with(HasPublicId("awd"), Timestamps) {
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Award {
   /** The trait timestamps, which the database fills in. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

@@ -5,7 +5,9 @@
  *          `llms.txt` in navigation order and an API reference tab from a service manifest; and each refusal
  *          (`docs_source_misplaced`, `docs_page_outside`, `docs_page_missing`, `docs_page_unlisted`,
  *          `docs_asset_missing`, `docs_asset_unreferenced`, `docs_owned_key`, `docs_service_unknown`) returns nothing
- *          to write.
+ *          to write; with `locales`, translations served under their locale with a page tree, font and interface
+ *          strings per locale, an untranslated page only warned, and an orphan translation, a page in a locale's
+ *          folder and malformed locales refused, while an empty `locales` leaves the site byte-identical.
  * Boundary: test only; plain inputs, no file system.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0002 (2026-10-27 amendment); STA-1316.
@@ -462,5 +464,192 @@ describe("emitDocsSite with the fumadocs renderer", () => {
         },
       }),
     ).toEqual(["docs_owned_key", "docs_redirect_shadows_page", "docs_redirect_target_missing"]);
+  });
+});
+
+/** A Fumadocs site in English and Arabic: the home page and the quickstart translated, the decisions not. */
+describe("emitDocsSite with locales", () => {
+  const LOCALES: NonNullable<DocsSiteInput["config"]["locales"]> = [
+    { code: "en", label: "English", default: true },
+    { code: "ar", label: "العربية", dir: "rtl", labels: { Guides: "الأدلة", Start: "البداية" } },
+  ];
+  const FILES_EN_AR: DocsSiteInput["files"] = [
+    { path: "config/docs.config.ts" },
+    { path: "docs/index.mdx", content: page("Introduction", "![hero](/assets/hero.png)") },
+    { path: "docs/index.ar.mdx", content: page("مقدمة", "اقرأ <bdi>RAGI2929</bdi> أولًا.") },
+    { path: "docs/quickstart.mdx", content: page("Quickstart") },
+    { path: "docs/quickstart.ar.mdx", content: page("البدء السريع") },
+    { path: "docs/adr/0001-layout.mdx", content: page("0001") },
+    { path: "docs/adr/index.mdx", content: page("Decisions") },
+    { path: "assets/hero.png" },
+    { path: "assets/logo/light.svg" },
+    { path: "assets/logo/dark.svg" },
+    { path: "assets/favicon.svg" },
+  ];
+  const site = (patch: Partial<DocsSiteInput["config"]> = {}, files = FILES_EN_AR) =>
+    emitDocsSite(
+      { config: { ...CONFIG, raw: {}, locales: LOCALES, ...patch }, files, services: [] },
+      "fumadocs",
+    );
+  const text = (result: ReturnType<typeof site>, path: string): string =>
+    result.files.find((file) => file.path === path)?.content ?? "";
+
+  /** An empty `locales` is the single-language site, byte for byte. */
+  it("keeps a single-language site byte-identical when locales is empty", () => {
+    const files = FILES_EN_AR.filter((file) => !file.path.includes(".ar."));
+    expect(site({ locales: [] }, files)).toEqual(
+      emitDocsSite({ config: { ...CONFIG, raw: {} }, files, services: [] }, "fumadocs"),
+    );
+  });
+
+  /** Translations become pages under their locale; the shell switches to the multi-language files. */
+  it("serves each translation under its locale, with the multi-language shell", () => {
+    const result = site();
+    expect(result.errors).toEqual([]);
+    expect(result.files.map((file) => file.path)).toEqual([
+      "app/app.css",
+      "app/components/footer.tsx",
+      "app/components/search.tsx",
+      "app/entry.server.tsx",
+      "app/lib/layout.tsx",
+      "app/lib/locale.ts",
+      "app/lib/source.ts",
+      "app/mdx-components.tsx",
+      "app/root.tsx",
+      "app/routes.ts",
+      "app/routes/not-found.tsx",
+      "app/routes/page.tsx",
+      "app/routes/search.ts",
+      "app/site.json",
+      "app/theme.css",
+      "content/adr/0001-layout.mdx",
+      "content/adr/index.mdx",
+      "content/ar/index.mdx",
+      "content/ar/quickstart.mdx",
+      "content/index.mdx",
+      "content/quickstart.mdx",
+      "public/_redirects",
+      "public/llms-full.txt",
+      "public/llms.txt",
+      "react-router.config.ts",
+      "tsconfig.json",
+      "vite.config.ts",
+    ]);
+    expect(text(result, "content/ar/index.mdx")).toContain("<bdi>RAGI2929</bdi>");
+    expect(text(result, "app/root.tsx")).toContain("dir={locale.dir}");
+    expect(text(result, "app/lib/layout.tsx")).toContain("i18n: true");
+    expect(text(result, "app/theme.css")).toContain(
+      'html[lang="ar"] body {\n  font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;',
+    );
+    // llms.txt stays the default locale's.
+    expect(text(result, "public/llms.txt")).not.toContain("/ar");
+  });
+
+  /** One tree per locale: translated pages under /ar with their own titles, the rest linking to English. */
+  it("writes the locales, a page tree per locale and every path to prerender", () => {
+    const json = JSON.parse(text(site(), "app/site.json"));
+    expect(Object.keys(json)).toEqual([
+      "name",
+      "description",
+      "logo",
+      "favicon",
+      "links",
+      "footer",
+      "layout",
+      "paths",
+      "tree",
+      "locales",
+      "trees",
+      "translations",
+    ]);
+    expect(json.paths).toEqual([
+      "/",
+      "/adr",
+      "/adr/0001-layout",
+      "/ar",
+      "/ar/quickstart",
+      "/quickstart",
+    ]);
+    expect(json.locales).toEqual([
+      { code: "en", label: "English", dir: "ltr", prefix: "", font: null },
+      {
+        code: "ar",
+        label: "العربية",
+        dir: "rtl",
+        prefix: "ar",
+        font: {
+          family: "IBM Plex Sans Arabic",
+          href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap",
+        },
+      },
+    ]);
+    expect(json.trees.en).toEqual(json.tree);
+    expect(json.trees.ar.children[0].name).toBe("الأدلة");
+    expect(json.trees.ar.children[0].children).toEqual([
+      { $id: "tab.0.0", type: "separator", name: "البداية" },
+      { type: "page", name: "مقدمة", url: "/ar" },
+      { type: "page", name: "البدء السريع", url: "/ar/quickstart" },
+      { $id: "tab.0.1", type: "separator", name: "Decisions" },
+      { type: "page", name: "Decisions", url: "/adr" },
+      { type: "page", name: "0001", url: "/adr/0001-layout" },
+    ]);
+    expect(json.translations.ar.toc).toBe("في هذه الصفحة");
+    expect(json.translations.en).toEqual({});
+  });
+
+  /** An untranslated default page is a warning, never a refusal: the site is still written. */
+  it("warns, without refusing, for each default page that has no translation", () => {
+    const result = site();
+    expect(result.files.length).toBeGreaterThan(0);
+    expect(
+      result.warnings?.map((warning) => [warning.code, warning.subject, warning.severity]),
+    ).toEqual([
+      ["docs_locale_page_untranslated", "ar/adr/index", "warning"],
+      ["docs_locale_page_untranslated", "ar/adr/0001-layout", "warning"],
+    ]);
+  });
+
+  /** A translation without its default page, a page in a locale's folder, and malformed locales are refused. */
+  it("refuses an orphan translation, a page in a locale's folder and malformed locales", () => {
+    const refusals = (patch: Partial<DocsSiteInput["config"]>, files = FILES_EN_AR) =>
+      site(patch, files).errors.map((error) => error.code);
+    expect(
+      refusals({}, [...FILES_EN_AR, { path: "docs/pricing.ar.mdx", content: page("الأسعار") }]),
+    ).toEqual(["docs_locale_page_orphan"]);
+    expect(
+      refusals(
+        {
+          navigation: [
+            {
+              tab: "Guides",
+              groups: [
+                { group: "Start", pages: ["index", "quickstart", "ar/legacy"] },
+                { group: "Decisions", pages: [{ folder: "adr" }] },
+              ],
+            },
+          ],
+        },
+        [...FILES_EN_AR, { path: "docs/ar/legacy.mdx", content: page("Legacy") }],
+      ),
+    ).toEqual(["docs_locale_path_taken"]);
+    const english = FILES_EN_AR.filter((file) => !file.path.includes(".ar."));
+    expect(
+      refusals({ locales: [{ code: "EN", label: "English", default: true }] }, english),
+    ).toEqual(["docs_locales_invalid"]);
+    expect(
+      refusals({
+        locales: [
+          { code: "en", label: "English" },
+          { code: "ar", label: "العربية" },
+        ],
+      }),
+    ).toEqual(["docs_locales_invalid"]);
+    expect(
+      emitDocsSite({
+        config: { ...CONFIG, locales: LOCALES },
+        files: FILES,
+        services: [],
+      }).errors.map((error) => error.code),
+    ).toContain("docs_locales_unsupported");
   });
 });

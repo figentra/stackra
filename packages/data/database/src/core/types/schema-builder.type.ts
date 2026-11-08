@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `SchemaBuilder`, what a migration's `up(schema)` receives: create or change a table of the module's
- *          Postgres schema, run a raw statement with its stated inverse, or create an approved extension.
+ *          Postgres schema, run a raw statement with its stated inverse, refuse a contract step while a column still
+ *          holds nulls, or create an approved extension.
  * Boundary: a type only; the migration compiler records the calls and writes ordered SQL steps with derived inverses.
  *           Table names are literals relative to the module's schema. A migration writes no data (backfills are
  *           queue jobs) and no `down()`.
@@ -34,6 +35,20 @@ export interface SchemaBuilder {
    * databases, or `false` when nothing can. A `CONCURRENTLY` statement compiles to its own non-transactional step.
    */
   sql: (statement: string, options: { readonly inverse: string | false }) => void;
+
+  /**
+   * The pre-flight of a contract step: refuses the migration while any row of `tables` holds a null `column`, with one
+   * error naming each such table's count and `remedy` (the backfill to run first). Called before the `schema.table`
+   * calls it guards, it is the first statement of their transaction, so a refusal changes nothing; it undoes nothing.
+   * `options.where` counts only the null rows that also meet it (SQL over the table's columns, a literal): the platform
+   * form keeps a platform row's null and refuses only a row whose scope path names a tenant.
+   */
+  refuseNulls: (
+    column: string,
+    tables: readonly string[],
+    remedy: string,
+    options?: { readonly where?: string },
+  ) => void;
 
   /** Creates one of the approved extensions, if the database does not have it; a down keeps it, since it is shared. */
   createExtension: (extension: Extension) => void;

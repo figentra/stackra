@@ -411,10 +411,14 @@ export function buildManifest(ir: MemberIR): {
             `add \`${name}\` to the input, use a verb whose route takes no id, or write \`endpoint: { method, path }\``,
           );
     }
-    // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason.
+    // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason. An
+    // action of risk L3 or L4 (money, deletion, access) is not a tool by default: an agent reaches it only through an
+    // explicit `tool: true` with a reason, recorded in the manifest (owner security decision 2026-11-08).
     const tool = declared.options["tool"];
     const userFacing = actors?.includes("user") ?? false;
-    const toolEnabled = tool === true || (tool !== false && (kind === "query" || userFacing));
+    const highRisk = kind === "action" && (risk === "L3" || risk === "L4");
+    const toolEnabled =
+      tool === true || (tool !== false && !highRisk && (kind === "query" || userFacing));
     const toolReason =
       typeof declared.options["toolReason"] === "string"
         ? declared.options["toolReason"]
@@ -425,6 +429,13 @@ export function buildManifest(ir: MemberIR): {
         "tool_reason_missing",
         `${kind} a user can perform says \`tool: false\` without a reason`,
         "add a `// reason: <why an agent may not call it>` line above `tool: false`",
+      );
+    if (tool === true && highRisk && toolReason === undefined)
+      fail(
+        declared,
+        "tool_reason_missing",
+        `${kind} of risk ${risk} says \`tool: true\` without a reason`,
+        "add a `// reason: <why an agent may call it>` line above `tool: true`, or remove `tool: true`",
       );
     errors.push(
       ...checkCallShape(declared, { risk, routed: endpoint !== undefined, tool: toolEnabled }),
@@ -481,6 +492,7 @@ export function buildManifest(ir: MemberIR): {
       entry["tool"] = {
         name: toolName(key),
         default: tool === undefined,
+        ...(tool === true && highRisk && toolReason !== undefined ? { reason: toolReason } : {}),
         hints: toolHints({
           kind,
           risk: String(entry["risk"]),
@@ -489,6 +501,9 @@ export function buildManifest(ir: MemberIR): {
         }),
       };
     else if (toolReason !== undefined) entry["toolOff"] = toolReason;
+    else if (highRisk && userFacing)
+      entry["toolOff"] =
+        `risk ${risk}: not a tool unless the action says \`tool: true\` with a reason`;
     // A query gen writes itself answers a package shape, described under the module (STA-1459).
     const packageRef = (name: string | undefined): Entry | undefined =>
       name !== undefined && declared.file.startsWith(".stackra/") && name in GENERATED_QUERY_SCHEMAS
@@ -952,10 +967,15 @@ export function buildManifest(ir: MemberIR): {
     drivers.set(key, entry);
   }
   // A published package's services with their constructor tokens, so a host's wiring binds one it injects
-  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686).
+  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686). Its
+  // extension points too: its services inject them, so a host binds them alongside (`LoyaltyKitExtensionPoint`).
   const services: Entry[] = published
     ? ir.classes
-        .filter((candidate) => candidate.kind === "service" && candidate.abstract !== true)
+        .filter(
+          (candidate) =>
+            (candidate.kind === "service" || candidate.kind === "extension_point") &&
+            candidate.abstract !== true,
+        )
         .map((declared) => ({
           class: declared.name,
           from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),

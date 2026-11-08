@@ -3,7 +3,8 @@
  * Purpose: integration tests of `ChecklistService` on real Postgres: with every workflow migration applied and the
  *          generated entities registered, a checklist is seeded, a step is completed once and the view reads it back,
  *          so the ORM's tables (`workflow.checklists`, `workflow.checklist_progresses`) are the migrations' tables,
- *          tenant expand column included, and filled from the call's isolation.
+ *          tenant column (contracted: NOT NULL under its equality policy) included, and filled from the call's
+ *          isolation.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. Each call runs in the scope's isolation (its
  *           scope settings and the tenant it resolves to, through `CallIsolation`), as an action would.
  * Runtime: node (vitest)
@@ -28,6 +29,7 @@ import { AddRunAutomationAndCancelMigration } from "#node/database/migrations/00
 import { AddServiceAckKeptMigration } from "#node/database/migrations/0008-add-service-ack-kept.migration";
 import { RenameChecklistProgressMigration } from "#node/database/migrations/0009-rename-checklist-progress.migration";
 import { AddWorkflowTenancyMigration } from "#node/database/migrations/0010-add-workflow-tenancy.migration";
+import { ContractWorkflowTenancyMigration } from "#node/database/migrations/0011-contract-workflow-tenancy.migration";
 import { WORKFLOW_ENTITIES } from "#node/entities.gen";
 import { Checklist } from "#node/models/checklist.model";
 import { ChecklistProgress } from "#node/models/checklist-progress.model";
@@ -54,6 +56,7 @@ const postgres = usePostgres({
     AddServiceAckKeptMigration,
     RenameChecklistProgressMigration,
     AddWorkflowTenancyMigration,
+    ContractWorkflowTenancyMigration,
   ].map((migration, index) =>
     compileMigration(migration, {
       schema: "workflow",
@@ -109,7 +112,7 @@ describe(ChecklistService, () => {
         .em()
         .execute('select step, owner_id, tenant_id from "workflow"."checklist_progresses"'),
     );
-    // the isolation set the tenant, so the expand column's default stored it
+    // the isolation set the tenant, so the tenant column's default stored it
     expect(rows).toEqual([{ step: "connect_payments", owner_id: SCOPE.id, tenant_id: SCOPE.id }]);
   });
 });
