@@ -15,6 +15,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
+import type { DeclaredClass } from "#core/types/declared-class.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
@@ -27,6 +28,24 @@ function vitestConfigOf(ir: typeof LOYALTY_KIT_IR): string {
       (file) => file.path === ".stackra/vitest.config.ts",
     )?.content ?? ""
   );
+}
+
+/** A seeder of the plans module taking `deps`. */
+function plansSeeder(name: string, deps: DeclaredClass["deps"]): DeclaredClass {
+  return {
+    name,
+    kind: "seeder",
+    module: "plans",
+    file: `src/modules/plans/database/seeders/${name}.seeder.ts`,
+    importPath: `#modules/plans/database/seeders/${name}.seeder`,
+    options: {},
+    deps,
+    facets: [],
+    methods: ["run"],
+    refusals: [],
+    statics: {},
+    traits: [],
+  };
 }
 
 describe("emitToolConfigs", () => {
@@ -120,6 +139,42 @@ describe("emitToolConfigs", () => {
     expect(setup).not.toContain("loadMemberSchemas");
     expect(setup).not.toContain("import.meta.url");
     expect(setup).toContain("registerModelPartners([\n  [InvoiceFactory, Invoice],\n]);");
+  });
+
+  it("registers the constructor tokens of each seeder that injects, for .seed() (STA-1698)", () => {
+    const ir = {
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        plansSeeder("PlansMinimalSeeder", [
+          {
+            class: { name: "Plan", from: "#modules/plans/models/plan.model" },
+            of: { name: "repositoryOf", from: "@stackra/database" },
+          },
+        ]),
+        plansSeeder("PlansDemoSeeder", []),
+      ],
+    };
+    const setup =
+      emitToolConfigs(ir, { entries: [], registrations: false }).find(
+        (file) => file.path === ".stackra/vitest.setup.ts",
+      )?.content ?? "";
+    expect(setup).toContain('import { registerSeederDeps } from "@stackra/database/testing";');
+    expect(setup).toContain(
+      'import { registerModelPartners, repositoryOf } from "@stackra/database";',
+    );
+    expect(setup).toContain('import { Plan } from "#modules/plans/models/plan.model";');
+    expect(setup).toContain(
+      "registerSeederDeps([\n  [PlansMinimalSeeder, [repositoryOf(Plan)]],\n]);",
+    );
+    // A seeder that injects nothing is built without arguments, so it needs no row.
+    expect(setup).not.toContain("PlansDemoSeeder");
+    // No row for a member off @stackra/database.
+    expect(
+      emitToolConfigs({ ...ir, packages: [] }, { entries: [], registrations: false }).find(
+        (file) => file.path === ".stackra/vitest.setup.ts",
+      )?.content,
+    ).not.toContain("registerSeederDeps");
   });
 
   it("loads the database testing entry only for a member on @stackra/database", () => {

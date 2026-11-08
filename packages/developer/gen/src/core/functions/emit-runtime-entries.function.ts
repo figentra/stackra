@@ -21,7 +21,10 @@
  */
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { importLines } from "#core/functions/import-lines.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
+import { tokenExpression } from "#core/functions/token-expression.function";
+import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -99,10 +102,26 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
   const seeders = ir.classes.filter((declared) => declared.kind === "seeder");
   if (root === undefined || seeders.length === 0 || !generated.includes(".stackra/gen/boot.ts"))
     return undefined;
+  // A seeder is not a binding, so the entry lists the tokens its constructor takes (STA-1698).
+  const tokenImports = new Map<string, Map<string, boolean>>();
+  const use = (target: ClassRef): string => {
+    tokenImports.set(
+      target.from,
+      (tokenImports.get(target.from) ?? new Map<string, boolean>()).set(target.name, false),
+    );
+    return target.name;
+  };
   const rows = seeders.map((declared) => {
     const profile = /([a-z]+)\.seeder\.ts$/.exec(declared.file)?.[1] ?? "minimal";
-    return `  { key: ${JSON.stringify(`${declared.module}.${profile}`)}, module: ${JSON.stringify(declared.module)}, profile: ${JSON.stringify(profile)}, type: ${declared.name} },`;
+    const deps =
+      declared.deps.length > 0
+        ? `, deps: [${declared.deps.map((dep) => tokenExpression(dep, use)).join(", ")}]`
+        : "";
+    return `  { key: ${JSON.stringify(`${declared.module}.${profile}`)}, module: ${JSON.stringify(declared.module)}, profile: ${JSON.stringify(profile)}, type: ${declared.name}${deps} },`;
   });
+  // `Database` comes from @stackra/database already; a token from there joins that import.
+  const database = ["Database", ...(tokenImports.get("@stackra/database")?.keys() ?? [])];
+  tokenImports.delete("@stackra/database");
   const header = generatedHeader({
     from: "stackra.config.ts, the root module, #stackra/wiring and the seeders under src/",
     purpose: `the seed entry of ${ir.package}: boots the container and runs the seeders \`stackra db seed\` asks for.`,
@@ -119,12 +138,13 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
         ? ['import "#stackra/registrations";']
         : []),
       'import { bootApp } from "@stackra/app";',
-      'import { Database } from "@stackra/database";',
+      `import { ${database.join(", ")} } from "@stackra/database";`,
       'import { directDatabaseUrl, runSeedEntry } from "@stackra/database/node";',
       'import { boot } from "#stackra/boot";',
       'import { wiring } from "#stackra/wiring";',
       `import { ${root.name} } from "${root.from}";`,
       ...seeders.map((declared) => `import { ${declared.name} } from "${declared.importPath}";`),
+      ...importLines(tokenImports),
       "",
       `const { container } = await bootApp(wiring, { roots: [${root.name}], env: process.env });`,
       "const shutdown = new AbortController();",
