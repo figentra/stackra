@@ -3,7 +3,8 @@
  * Purpose: `BlueprintRecord`, the runtime side of `Blueprint` for one table: records columns, column changes, indexes,
  *          the primary key, row-level-security policies and the `AppendOnly` revoke of `UPDATE`, installs the member's macros under their names, and
  *          compiles to SQL statements. A `platformTable` or `reviewedPolicy` declaration compiles to its marker line
- *          (`TABLE_DECLARATION_MARKERS`) first.
+ *          (`TABLE_DECLARATION_MARKERS`) first; a `systemAccess` one to its marker line, the system-access role, its
+ *          column grants and its role-scoped policies last.
  * Boundary: internal. It enforces the migration safety rules it can see in one table: every column states its
  *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
@@ -18,15 +19,19 @@
  *                     ADR 0321 (`HasTree`: `t.tree()`; `HasMetadata`: `t.metadata()`).
  */
 import { constraintName } from "#core/functions/constraint-name.function";
+import { declarationReason } from "#core/functions/declaration-reason.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
+import { systemAccessRoleSql } from "#core/functions/system-access-role-sql.function";
 import { ColumnRecord } from "#core/records/column.record";
 import { TABLE_DECLARATION_MARKERS } from "#core/constants/table-declaration-markers.constant";
 import { PUBLIC_ID_TEXT } from "#core/constants/public-id-text.constant";
+import { SYSTEM_ACCESS_ROLE } from "#core/constants/system-access-role.constant";
 import { ColumnChangeRecord } from "#core/records/column-change.record";
 import { ColumnGroupRecord } from "#core/records/column-group.record";
 import { TableIndexRecord } from "#core/records/table-index.record";
 import type { Blueprint } from "#core/types/blueprint.type";
+import type { SystemAccessOptions } from "#core/types/system-access-options.type";
 import type { ColumnChange } from "#core/types/column-change.type";
 import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
@@ -103,18 +108,6 @@ function checkPolicy(column: string, options: RowLevelSecurityOptions): void {
     throw new TypeError(`"${options.match}" is not a policy match (${MATCHES.join(", ")})`);
 }
 
-/**
- * The reason of a `t.platformTable` or `t.reviewedPolicy` declaration, trimmed.
- *
- * @throws TypeError for a reason that is empty or not one line.
- */
-function checkReason(method: string, reason: string): string {
-  const text = typeof reason === "string" ? reason.trim() : "";
-  if (text === "") throw new TypeError(`t.${method} needs its reason, a non-empty sentence`);
-  if (/[\r\n]/.test(text)) throw new TypeError(`t.${method}: the reason is one line`);
-  return text;
-}
-
 /** A declared row-level-security policy. */
 interface PolicySeed {
   readonly column: string;
@@ -170,6 +163,15 @@ export class BlueprintRecord {
   /** The policies and reason of `reviewedPolicy`, when declared. */
   private review: { readonly policies: readonly string[]; readonly reason: string } | undefined =
     undefined;
+
+  /** The columns and reason of `systemAccess`, when declared. */
+  private systemGrant:
+    | {
+        readonly select: readonly string[];
+        readonly update: readonly string[];
+        readonly reason: string;
+      }
+    | undefined = undefined;
 
   /**
    * @param table - the table name, snake_case.
@@ -582,7 +584,7 @@ export class BlueprintRecord {
    * @throws TypeError for an empty reason, or a second declaration on this blueprint.
    */
   platformTable(reason: string): void {
-    const text = checkReason("platformTable", reason);
+    const text = declarationReason("t.platformTable", reason);
     if (this.platformReason !== undefined || this.review !== undefined)
       throw new TypeError(`${this.table} already declares its row security`);
     this.platformReason = text;
@@ -594,13 +596,31 @@ export class BlueprintRecord {
    * @throws TypeError for an empty reason, no policy, a policy name that is not snake_case, or a second declaration.
    */
   reviewedPolicy(reason: string, policies: readonly string[]): void {
-    const text = checkReason("reviewedPolicy", reason);
+    const text = declarationReason("t.reviewedPolicy", reason);
     if (!Array.isArray(policies) || policies.length === 0)
       throw new TypeError(`t.reviewedPolicy on ${this.table} names the policies it reviewed`);
     for (const policy of policies) quoteIdentifier(policy);
     if (this.platformReason !== undefined || this.review !== undefined)
       throw new TypeError(`${this.table} already declares its row security`);
     this.review = { policies: [...policies], reason: text };
+  }
+
+  /**
+   * Implements `Blueprint.systemAccess`, documented there.
+   *
+   * @throws TypeError for an empty reason, no `select` column, a column name that is not snake_case, or a second
+   *         declaration.
+   */
+  systemAccess(options: SystemAccessOptions): void {
+    const reason = declarationReason("t.systemAccess", options?.reason);
+    const select = [...(options.select ?? [])];
+    const update = [...(options.update ?? [])];
+    if (select.length === 0)
+      throw new TypeError(`t.systemAccess on ${this.table} names the columns the role reads`);
+    for (const column of [...select, ...update]) quoteIdentifier(column);
+    if (this.systemGrant !== undefined)
+      throw new TypeError(`${this.table} already declares its system access`);
+    this.systemGrant = { select, update, reason };
   }
 
   /**
@@ -625,9 +645,57 @@ export class BlueprintRecord {
       ? this.compileCreate(schema, qualified)
       : this.compileAlter(schema, qualified);
     return {
-      statements: [...this.declarationSql(schema), ...compiled.statements],
+      statements: [
+        ...this.declarationSql(schema),
+        ...compiled.statements,
+        ...this.systemAccessSql(schema, qualified),
+      ],
       online: compiled.online,
     };
+  }
+
+  /**
+   * The `systemAccess` marker line, the role, its column grants and its role-scoped policies, each with its inverse;
+   * none otherwise. The schema `USAGE` stays on a down: another table of the schema may still need it.
+   *
+   * @throws TypeError on a platform table, which no tenant owns.
+   */
+  private systemAccessSql(schema: string, qualified: string): CompiledStatement[] {
+    const grant = this.systemGrant;
+    if (grant === undefined) return [];
+    if (this.platformReason !== undefined)
+      throw new TypeError(
+        `${this.table} is declared a platform table, which no tenant owns, so it takes no t.systemAccess`,
+      );
+    const role = quoteIdentifier(SYSTEM_ACCESS_ROLE);
+    const update = grant.update.length > 0 ? ` update=${grant.update.join(",")}` : "";
+    const statements: CompiledStatement[] = [
+      {
+        sql: `${TABLE_DECLARATION_MARKERS.systemAccess} ${schema}.${this.table} select=${grant.select.join(",")}${update} ${grant.reason}`,
+        inverse: [],
+      },
+      systemAccessRoleSql(),
+      { sql: `grant usage on schema ${quoteIdentifier(schema)} to ${role}`, inverse: [] },
+    ];
+    for (const [command, columns] of [
+      ["select", grant.select],
+      ["update", grant.update],
+    ] as const) {
+      if (columns.length === 0) continue;
+      const list = columns.map(quoteIdentifier).join(", ");
+      const policy = quoteIdentifier(constraintName("pol", this.table, ["system_access", command]));
+      statements.push(
+        {
+          sql: `grant ${command} (${list}) on ${qualified} to ${role}`,
+          inverse: [`revoke ${command} (${list}) on ${qualified} from ${role}`],
+        },
+        {
+          sql: `create policy ${policy} on ${qualified} for ${command} to ${role} using (true)${command === "update" ? " with check (true)" : ""}`,
+          inverse: [`drop policy if exists ${policy} on ${qualified}`],
+        },
+      );
+    }
+    return statements;
   }
 
   /**

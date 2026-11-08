@@ -11,7 +11,10 @@
  *          table added NOT VALID and validated in its own step (stackra-251), and the `platformTable` and
  *          `reviewedPolicy` declarations: their marker lines, read back by `tableDeclarations`, and their refusals (an
  *          empty or multi-line reason, no policy named, a platform table with an owner column or a policy, two
- *          declarations).
+ *          declarations), and the system-access mechanism (ADR 0239 amendment, gap A): `t.systemAccess`'s marker line,
+ *          role, column grants and role-scoped policies, `schema.systemFunction`'s marker line, definer function with
+ *          its pinned search path and its hand-over to the role, both read back by `tableDeclarations`, and their
+ *          refusals.
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
@@ -35,6 +38,16 @@ const sqlOf = (type: Parameters<typeof compileMigration>[0]): string =>
     .steps.flatMap((step) => step.sql)
     .map((statement) => `${statement};\n`)
     .join("");
+
+/** Compiling `define` on the existing `jobs` table, for a refusal. */
+const refusal = (define: (t: Blueprint) => void) => {
+  class AccessMigration extends Migration {
+    up(schema: SchemaBuilder): void {
+      schema.table("jobs", define);
+    }
+  }
+  return () => sqlOf(AccessMigration);
+};
 
 /** An id column with its equality policy, the way an isolation package's macro writes one. */
 class BelongsToWorkspaceMacro extends Macro {
@@ -1306,6 +1319,143 @@ describe(compileMigration, () => {
       expect(() => sqlOf(IsolationScopeMigration)).toThrow(/isolation_scope_id/);
       expect(() => sqlOf(SettingDefaultMigration)).toThrow(/owner_id/);
       expect(() => sqlOf(PolicyMigration)).toThrow(/workspace_id policy/);
+    });
+  });
+  describe("t.systemAccess and schema.systemFunction (ADR 0239 amendment, gap A)", () => {
+    class ClaimMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("jobs", (t: Blueprint) => {
+          t.string("id", 33).notNull().comment("The job.");
+          t.string("tenant_id", 33).notNull().comment("The owning tenant.");
+          t.timestamp("leased_until").nullable().comment("When the claim's lease ends.");
+          t.rowLevelSecurity("tenant_id", { setting: "app.tenant_id", match: "equals" });
+          t.systemAccess({
+            select: ["id", "tenant_id", "leased_until"],
+            update: ["leased_until"],
+            reason: " the worker claims due jobs across tenants ",
+          });
+        });
+        schema.table("inbox", (t: Blueprint) =>
+          t.systemAccess({ select: ["id", "tenant_id"], reason: "a webhook finds the tenant" }),
+        );
+        schema.systemFunction({
+          name: "claim_jobs",
+          args: { max_jobs: "integer" },
+          returns: { id: "varchar(33)", tenant_id: "varchar(33)" },
+          sql: "select j.id, j.tenant_id from outbox.jobs j limit max_jobs",
+          reason: "the worker claims due jobs across tenants",
+        });
+      }
+    }
+
+    it("compiles the grants, role-scoped policies and the definer function, which tableDeclarations reads back", () => {
+      const sql = sqlOf(ClaimMigration);
+      const role = '"stackra_system_access"';
+      for (const line of [
+        "-- stackra:system-access outbox.jobs select=id,tenant_id,leased_until update=leased_until the worker claims due jobs across tenants;\n",
+        `  create role ${role} nologin nobypassrls;\n`,
+        `grant usage on schema "outbox" to ${role};\n`,
+        `grant select ("id", "tenant_id", "leased_until") on "outbox"."jobs" to ${role};\n`,
+        `create policy "pol_jobs_system_access_select" on "outbox"."jobs" for select to ${role} using (true);\n`,
+        `grant update ("leased_until") on "outbox"."jobs" to ${role};\n`,
+        `create policy "pol_jobs_system_access_update" on "outbox"."jobs" for update to ${role} using (true) with check (true);\n`,
+        "-- stackra:system-access outbox.inbox select=id,tenant_id a webhook finds the tenant;\n",
+        "-- stackra:system-function outbox.claim_jobs the worker claims due jobs across tenants;\n",
+        'create function "outbox"."claim_jobs"("max_jobs" integer) returns table ("id" varchar(33), "tenant_id" varchar(33))\nlanguage sql security definer set search_path = pg_catalog, pg_temp\nas $stackra$\nselect j.id, j.tenant_id from outbox.jobs j limit max_jobs\n$stackra$;\n',
+      ])
+        expect(sql).toContain(line);
+      expect(sql).not.toContain('"pol_inbox_system_access_update"');
+      // EXECUTE is revoked from PUBLIC before the hand-over and granted to the migrator after it.
+      const order = [
+        'revoke all on function "outbox"."claim_jobs"(integer) from public',
+        `grant ${role} to current_user`,
+        `grant create on schema "outbox" to ${role}`,
+        `alter function "outbox"."claim_jobs"(integer) owner to ${role}`,
+        `revoke create on schema "outbox" from ${role}`,
+        'grant execute on function "outbox"."claim_jobs"(integer) to current_user',
+        `revoke ${role} from current_user`,
+      ].map((statement) => sql.indexOf(`${statement};\n`));
+      expect(order.every((at) => at >= 0)).toBe(true);
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+      const declared = tableDeclarations(sql);
+      expect([...declared.systemAccess]).toEqual([
+        [
+          "outbox.jobs",
+          {
+            select: ["id", "tenant_id", "leased_until"],
+            update: ["leased_until"],
+            reason: "the worker claims due jobs across tenants",
+          },
+        ],
+        [
+          "outbox.inbox",
+          { select: ["id", "tenant_id"], update: [], reason: "a webhook finds the tenant" },
+        ],
+      ]);
+      expect([...declared.systemFunctions]).toEqual([
+        ["outbox.claim_jobs", "the worker claims due jobs across tenants"],
+      ]);
+      // A down drops the function and revokes the grants; the role and the schema usage stay.
+      const [step] = compileMigration(ClaimMigration, { schema: "outbox" }).steps;
+      expect(step?.inverse).toContain('drop function if exists "outbox"."claim_jobs"(integer)');
+      expect(step?.inverse).toContain(
+        `revoke update ("leased_until") on "outbox"."jobs" from ${role}`,
+      );
+    });
+
+    it("refuses a system access without its reason or columns, on a platform table, or twice", () => {
+      expect(refusal((t) => t.systemAccess({ select: ["id"], reason: "" }))).toThrow(/reason/);
+      expect(refusal((t) => t.systemAccess({ select: ["id"], reason: "a\nb" }))).toThrow(
+        /one line/,
+      );
+      expect(refusal((t) => t.systemAccess({ select: [], reason: "r" }))).toThrow(
+        /names the columns/,
+      );
+      expect(refusal((t) => t.systemAccess({ select: ["Id"], reason: "r" }))).toThrow(
+        /database name/,
+      );
+      expect(
+        refusal((t) => t.systemAccess({ select: ["id"], update: ["x y"], reason: "r" })),
+      ).toThrow(/database name/);
+      expect(
+        refusal((t) => {
+          t.systemAccess({ select: ["id"], reason: "r" });
+          t.systemAccess({ select: ["id"], reason: "r" });
+        }),
+      ).toThrow(/already declares its system access/);
+      expect(
+        refusal((t) => {
+          t.platformTable("no tenant data");
+          t.systemAccess({ select: ["id"], reason: "r" });
+        }),
+      ).toThrow(/platform table/);
+    });
+
+    it("refuses a system function without its reason or columns, with a bad type or body", () => {
+      const base = {
+        name: "find_tenant",
+        args: { id: "varchar(33)" },
+        returns: { tenant_id: "varchar(33)" },
+        sql: "select 1",
+        reason: "a webhook finds the tenant",
+      };
+      for (const [change, message] of [
+        [{ reason: " " }, /reason/],
+        [{ name: "Find" }, /database name/],
+        [{ returns: {} }, /declares the columns it returns/],
+        [{ args: { id: "text; drop table x" } }, /not a SQL type name/],
+        [{ returns: { "tenant id": "text" } }, /database name/],
+        [{ sql: "  " }, /needs a body/],
+        [{ sql: "select 1\n\nselect 2" }, /no blank line/],
+        [{ sql: "select $stackra$x$stackra$" }, /no blank line and no/],
+      ] as const) {
+        class FunctionMigration extends Migration {
+          up(schema: SchemaBuilder): void {
+            schema.systemFunction({ ...base, ...change });
+          }
+        }
+        expect(() => sqlOf(FunctionMigration)).toThrow(message);
+      }
     });
   });
 });
