@@ -130,6 +130,11 @@
       "key": "app.csrf",
       "class": "CsrfConfig",
       "from": "@stackra/app/server"
+    },
+    {
+      "key": "app.http",
+      "class": "HttpConfig",
+      "from": "@stackra/app/server"
     }
   ],
   "env": [
