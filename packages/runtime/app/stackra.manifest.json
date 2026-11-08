@@ -100,7 +100,7 @@
             {
               "class": {
                 "name": "BearerConfig",
-                "from": "@stackra/app"
+                "from": "@stackra/app/server"
               }
             }
           ]
@@ -119,22 +119,17 @@
     {
       "key": "app.bearer",
       "class": "BearerConfig",
-      "from": "@stackra/app"
+      "from": "@stackra/app/server"
     },
     {
       "key": "app.cors",
       "class": "CorsConfig",
-      "from": "@stackra/app"
+      "from": "@stackra/app/server"
     },
     {
       "key": "app.csrf",
       "class": "CsrfConfig",
-      "from": "@stackra/app"
-    },
-    {
-      "key": "app.http",
-      "class": "HttpConfig",
-      "from": "@stackra/app"
+      "from": "@stackra/app/server"
     }
   ],
   "env": [
@@ -174,7 +169,7 @@
         {
           "class": {
             "name": "BearerConfig",
-            "from": "@stackra/app"
+            "from": "@stackra/app/server"
           }
         },
         {
@@ -198,7 +193,7 @@
         {
           "class": {
             "name": "CsrfConfig",
-            "from": "@stackra/app"
+            "from": "@stackra/app/server"
           }
         }
       ]
@@ -228,13 +223,13 @@
         {
           "class": {
             "name": "CorsConfig",
-            "from": "@stackra/app"
+            "from": "@stackra/app/server"
           }
         },
         {
           "class": {
             "name": "CsrfConfig",
-            "from": "@stackra/app"
+            "from": "@stackra/app/server"
           }
         }
       ]

@@ -3023,7 +3023,18 @@ export function createSourceReader(
       const record = (name: string, typeOnly: boolean): void => {
         names.set(name, typeOnly && (names.get(name) ?? true));
       };
+      const isIndex = /\/index\.tsx?$/.test(path);
       for (const statement of file.statements ?? []) {
+        // why: a barrel re-exports (`export { X } from "#config/x"`), and which entry exports a class decides the
+        // specifier a host imports it from (`exportingSpecifier`)
+        if (isIndex && host.kind(statement) === "ExportDeclaration") {
+          for (const element of statement.exportClause?.elements ?? [])
+            record(
+              nameOf(element.name),
+              statement.isTypeOnly === true || element.isTypeOnly === true,
+            );
+          continue;
+        }
         if (!has(statement, "ExportKeyword") || has(statement, "DefaultKeyword")) continue;
         const kind = host.kind(statement);
         if (kind === "VariableStatement")
@@ -3037,7 +3048,6 @@ export function createSourceReader(
             classes.push(nameOf(statement.name));
         }
       }
-      const isIndex = /\/index\.tsx?$/.test(path);
       if (names.size > 1 && !isIndex)
         fail(
           file,
