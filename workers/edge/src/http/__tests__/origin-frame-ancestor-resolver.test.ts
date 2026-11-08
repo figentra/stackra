@@ -63,7 +63,9 @@ describe("originFrameAncestorResolver", () => {
     ]);
     const [out] = asked;
     if (out === undefined) throw new Error("nothing asked");
-    expect(out.url).toBe(`https://api.internal.example${FRAME_ANCESTORS_PATH}?path=%2Fc%2Fcs%2001`);
+    expect(out.url).toBe(
+      `https://api.internal.example${FRAME_ANCESTORS_PATH}?path=%2Fc%2Fcs%2001&host=checkout.pay.example`,
+    );
     const keys = new MemoryEdgeSigningKeysDriver();
     keys.secrets = [SECRET];
     await expect(
@@ -91,5 +93,22 @@ describe("originFrameAncestorResolver", () => {
     expect(await resolve.resolve(HOST, "checkout.pay.example", "/c/x")).toBeUndefined();
     expect(await resolve.resolve(HOST, "checkout.pay.example", "/c/x")).toBeUndefined();
     expect(asked).toHaveLength(1);
+  });
+
+  /** The product reads the framed host from the signed target only: normalised, and inside the signature. */
+  it("sends the framed host, lower-cased and without a trailing dot, in the signed target", async () => {
+    const { resolve, asked } = resolver(async () => Response.json({ origins: [] }));
+    await resolve.resolve(HOST, "Checkout-PR-12.Pay.Preview.Figentra.com.", "/preview");
+
+    const [out] = asked;
+    if (out === undefined) throw new Error("nothing asked");
+    expect(new URL(out.url).searchParams.get("host")).toBe(
+      "checkout-pr-12.pay.preview.figentra.com",
+    );
+    const keys = new MemoryEdgeSigningKeysDriver();
+    keys.secrets = [SECRET];
+    await expect(
+      new EdgeHeaderGuard(keys, new MemoryEdgeNonceStoreDriver()).check(out),
+    ).resolves.toBeUndefined();
   });
 });

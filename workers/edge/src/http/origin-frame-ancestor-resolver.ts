@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `originFrameAncestorResolver`: the edge's `FrameAncestorResolver`. It asks the owning product, through the
- *          origin and signed like any forwarded request, `GET /.well-known/stackra/frame-ancestors?path=<path>`, which
- *          answers `{ "origins": [...] }` (Pay: the checkout session tenant's registered embed origins). Each answer
+ *          origin and signed like any forwarded request, `GET /.well-known/stackra/frame-ancestors?path=<path>&host=<host>`,
+ *          which answers `{ "origins": [...] }` (Pay: the checkout session tenant's registered embed origins; in preview,
+ *          the console of the PR the host names). `host` is the framed page's hostname as the edge matched it (lower case,
+ *          no trailing dot), inside the signed target, so the product never reads it from a header a client could set. Each answer
  *          is kept in the isolate for `seconds`, per hostname and path.
  * Boundary: fails closed: a timeout (2 s), a non-200, a body that is not `{ origins: string[] }` or a thrown fetch is
  *           `undefined` (none), and a failure is cached too, so a failing product is not asked on every request. The
@@ -49,7 +51,8 @@ export function originFrameAncestorResolver(
       if (kept !== undefined && kept.until > now) return kept.framers;
       let framers: readonly string[] | undefined;
       try {
-        const target = `${FRAME_ANCESTORS_PATH}?path=${encodeURIComponent(path)}`;
+        const framed = hostname.toLowerCase().replace(/\.$/, "");
+        const target = `${FRAME_ANCESTORS_PATH}?path=${encodeURIComponent(path)}&host=${encodeURIComponent(framed)}`;
         const headers = await signedHeaders(new Headers(), host, "GET", target, null, deps);
         headers.set("accept", "application/json");
         const response = await deps.fetcher(
