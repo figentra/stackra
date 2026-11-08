@@ -18,8 +18,9 @@ setting unset), and a policy on a column an earlier migration wrote. `assertRowS
 
 The platform form of a nullable id column is the `platform` match of `t.rowLevelSecurity`. A tenant reads its own rows
 and the NULL rows and writes only its own. A session without a tenant reads and writes only the NULL rows. It comes
-with the restrictive `pol_<table>_<column>_write_update` and `_write_delete`. `exemptNull` leaves a column's NULL rows
-out of a restrictive narrowing, and `schema.refuseNulls(..., { where })` counts only the rows that also meet `where`.
-`assertRowSecurity` accepts and requires the two write policies on a platform-form table, and does not count its NULL
-rows against a probe. It no longer stages a table in the expand step as a warning: every package table now has its
+with the restrictive `pol_<table>_<column>_write_update` and `_write_delete`. `exemptNull` lets a column's NULL rows
+through a restrictive path narrowing when their path is at or above a granted path. `schema.refuseNulls(..., { where })`
+counts only the rows that also meet `where`. `assertRowSecurity` accepts and requires the two write policies on a
+platform-form table, does not count its NULL rows against a probe, and checks that a tenant can neither take over nor
+delete a platform row. It no longer stages a table in the expand step as a warning: every package table now has its
 contract step, so such a table takes the hard checks.
