@@ -2778,9 +2778,12 @@ export function createSourceReader(
         }
     }
 
-    // The workflows the body starts, `ctx.run(RefundWorkflow, input)`, for `checkActionFirst` (ADR 0101).
+    // The workflows the body starts, `ctx.run(RefundWorkflow, input)` or typed `ctx.run<RefundOutput>(...)`, for
+    // `checkActionFirst` (ADR 0101, STA-2611).
     const workflows = new Set(
-      [...body.matchAll(/\.run\s*\(\s*([A-Z]\w*Workflow)\b/g)].map((match) => match[1] ?? ""),
+      [...body.matchAll(/\.run\s*(?:<[^()]*?>)?\s*\(\s*([A-Z]\w*Workflow)\b/g)].map(
+        (match) => match[1] ?? "",
+      ),
     );
 
     const statics: Record<string, string> = {};
