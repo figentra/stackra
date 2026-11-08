@@ -62,7 +62,7 @@
       "file": "src/node/models/webhook-delivery.model.ts",
       "table": "webhooks.webhook_deliveries",
       "publicId": "whd",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "webhooks",
         "fields": [
@@ -135,6 +135,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -162,7 +171,7 @@
       "file": "src/node/models/webhook-endpoint.model.ts",
       "table": "webhooks.webhook_endpoints",
       "publicId": "whe",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "webhooks",
         "fields": [
@@ -232,6 +241,15 @@
             "nullable": true,
             "type": {
               "kind": "date"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -433,6 +451,7 @@
         "eventType",
         "isDelivered",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -464,6 +483,10 @@
           "type": "string",
           "pattern": "^whd_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -485,6 +508,7 @@
         "previousSecretName",
         "rotatedAt",
         "disabledAt",
+        "tenantId",
         "id",
         "createdAt",
         "updatedAt"
@@ -519,6 +543,10 @@
         "disabledAt": {
           "type": ["string", "null"],
           "format": "date-time"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "id": {
           "type": "string",
