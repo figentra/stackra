@@ -50,6 +50,15 @@ export class CspOptions extends Schema {
   @Field(CSP_OPTIONS_SCHEMA.shape.frameAncestors)
   frameAncestors: Record<string, string[] | "request"> = {};
 
+  /**
+   * Third-party script origins, each with the consent category that gates it: `necessary` always loads (a payment
+   * SDK, `{ "https://js.stripe.com": "necessary" }`), any other loads only when the viewer granted that category
+   * (`{ "https://connect.facebook.net": "marketing" }`). Exact https origins only; an unlisted script never loads.
+   */
+  // reason: a record keyed by origin whose value is a consent category code; the shipped schema checks both
+  @Field(CSP_OPTIONS_SCHEMA.shape.thirdPartyScripts)
+  thirdPartyScripts: Record<string, string> = {};
+
   /** `connect-src` additions beyond the origins the runtime passes (the API gateway, realtime). */
   extraConnectSrc: string[] = [];
 

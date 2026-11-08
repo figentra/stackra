@@ -1,5 +1,18 @@
 # @stackra/csp
 
+## 0.21.0
+
+### Minor Changes
+
+- e871d59: `frameAncestorsEntry(config, path)` is exported: the `frameAncestors` entry that governs a path (an exact key, else the
+  longest `/*` prefix). A runtime uses it to ask its resolver only on a `"request"` path, as the edge Worker does.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+  - @stackra/validation@0.21.0
+  - @stackra/config@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes

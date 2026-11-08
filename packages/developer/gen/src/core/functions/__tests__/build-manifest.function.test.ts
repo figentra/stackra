@@ -161,7 +161,7 @@ describe("buildManifest", () => {
       permission: "orders.order.cancel",
       risk: "L2",
       actors: ["user", "agent"],
-      idempotency: { ttl: "PT24H" },
+      idempotency: "required",
       endpoint: { method: "PUT", path: "/orders/:orderId/cancel", derived: true },
       input: { $ref: "#/schemas/orders.CancelOrderInput" },
       output: { $ref: "#/schemas/orders.CancelOrderOutput" },

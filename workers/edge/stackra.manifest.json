@@ -105,6 +105,30 @@
         }
       },
       "from": "@stackra/app"
+    },
+    {
+      "port": "SecretStore",
+      "key": "config.SecretStore",
+      "candidates": ["memory", "aws_secrets_manager"],
+      "classes": {
+        "memory": {
+          "class": "MemorySecretStoreDriver",
+          "from": "@stackra/config"
+        },
+        "aws_secrets_manager": {
+          "class": "AwsSecretsManagerSecretStoreDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/config"
     }
   ],
   "integrations": [],

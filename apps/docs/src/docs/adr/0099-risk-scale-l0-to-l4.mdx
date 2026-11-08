@@ -1,6 +1,6 @@
 ---
 title: "0099 — One action risk scale, L0 to L4, with derived MCP hints and effect tags; change risk is R0 to R3"
-description: "Accepted, amended by 0268, 0294, 0360, 0513 · 2026-10-19; write floor enforced 2026-11-04"
+description: "Accepted, amended by 0268, 0294, 0360, 0513 · 2026-10-19; write floor enforced 2026-11-04; idempotentHint narrowed 2026-11-08"
 ---
 
 <Note>
@@ -60,7 +60,7 @@ SDLC plan has a separate scale for how risky a code change is, which must not be
 2. **Effects are tags, separate from the level**: `financial`, `security`, `pii`, `external-communication` and
    `irreversible`. Policies, approvals and evidence can filter on them. A new tag is added by amending this ADR.
 3. **MCP tool hints are derived, never hand-written.** When an action is exposed as a tool, gen sets `readOnlyHint` (L0–L1),
-   `destructiveHint` (L4, or the `irreversible` tag), `idempotentHint` (the action declares idempotency) and `openWorldHint`
+   `destructiveHint` (L4, or the `irreversible` tag), `idempotentHint` (a repeat cannot run twice: see the amendment of 2026-11-08) and `openWorldHint`
    (the `external-communication` tag).
 4. **The level and the tags are the only risk inputs to approval and AI exposure rules.** Other scales in source documents are not used.
 5. **Code-change risk is a different scale, named "change risk", R0 to R3**, defined in
@@ -86,6 +86,13 @@ role selector no longer selects a write.
 
 Planned: the gen validation pass rejects an action without a level, a destructive or `irreversible` action marked below
 L4, and a hand-written MCP hint.
+
+## Amendment 2026-11-08: `idempotentHint` follows deduplication
+
+Decision 3's `idempotentHint` is set for a query and for an action whose `idempotency` is `Idempotency.Required` or
+`Idempotency.Derived`: a repeat of those cannot run twice. `Optional` runs a call without a key every time and `Never`
+ignores the key, so neither sets it, because an MCP host may retry a hinted tool on its own (leader, 2026-11-08;
+STA-2575).
 
 ## Supersedes and sources
 

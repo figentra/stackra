@@ -1,5 +1,45 @@
 # @stackra/app
 
+## 0.21.0
+
+### Minor Changes
+
+- ae9cb23: One generated Encore auth handler for user and service calls (ADR 0209, amendment of 2026-11-07, point 5).
+  `@stackra/app/server` adds `CallAuthenticator`: it reads `Authorization: Bearer`, verifies the token with
+  `verifyBearerToken` under `BearerConfig` and the bound `JsonWebKeys`, and maps it to its actor with
+  `@stackra/identity`'s `actorOf`, answering `{ userID, actor }` (`CallAuthData`). Every failure is one
+  `BearerTokenInvalidError`, with no detail and never the token; a `Stackra-On-Behalf-Of` header is refused until the
+  forwarded user token is verified. For a service with endpoints, `@stackra/gen` now writes
+  `.stackra/encore/<member>/auth.ts`: the app's one `authHandler` over those two headers, which runs `CallAuthenticator`
+  and answers `APIError.unauthenticated` on its refusal, and the app's one `Gateway`.
+- f184d12: A service can now call for a user (ADR 0209, amendment of 2026-11-07). The calling service sends its own token as
+  `Authorization: Bearer` and the user's own access token in `Stackra-On-Behalf-Of`. `CallAuthenticator` verifies both
+  with the same issuer, audience and leeway, and the call becomes the service acting for that user:
+  `{ kind: "service", id: "svc_…", scopeId?, onBehalfOf: <the user> }`. The forwarded token itself is never kept; only
+  the user it names travels. A forward is refused when it sits beside a user token or no token, when it has expired or
+  names another audience, when it is a service's token, or when the service is bound to a tenant other than the user's.
+  
+  The call then runs in the user's tenant: `actingScopeId` gives a service with no tenant of its own the tenant of the
+  user it calls for, as it already did for an agent. `CallIsolationDriver` treats a service like an agent: it refuses
+  one whose own tenant differs from its user's, and one with a tenant whose scope sits above every tenant or is not in
+  the scope tree (`tenant_scope_mismatch`). A service with no tenant and no user stays a platform call, as before.
+
+### Patch Changes
+
+- Updated dependencies [e871d59]
+- Updated dependencies [a785356]
+- Updated dependencies [1073d9c]
+- Updated dependencies [f184d12]
+  - @stackra/csp@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/identity@0.21.0
+  - @stackra/navigation@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes

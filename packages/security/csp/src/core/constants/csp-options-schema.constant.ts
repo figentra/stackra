@@ -17,6 +17,7 @@ import { FRAME_ANCESTOR_PATH_PATTERN } from "#core/constants/frame-ancestor-path
 import { FRAME_ANCESTOR_PATTERN } from "#core/constants/frame-ancestor-pattern.constant";
 import { PERMISSIONS_POLICY_BASELINE } from "#core/constants/permissions-policy-baseline.constant";
 import { REFERRER_POLICIES } from "#core/constants/referrer-policies.constant";
+import { SCRIPT_ORIGIN_PATTERN } from "#core/constants/script-origin-pattern.constant";
 
 /** One permissions-policy source: `self` or one host source. */
 const ALLOW_SOURCE = z.union([z.literal("self"), z.string().regex(CSP_SOURCE_PATTERN)]);
@@ -39,5 +40,8 @@ export const CSP_OPTIONS_SCHEMA = z.object({
       z.string().regex(FRAME_ANCESTOR_PATH_PATTERN),
       z.union([z.literal("request"), z.array(z.string().regex(FRAME_ANCESTOR_PATTERN))]),
     )
+    .default(() => ({})),
+  thirdPartyScripts: z
+    .record(z.string().regex(SCRIPT_ORIGIN_PATTERN), z.string().regex(/^[a-z][a-z0-9_]*$/))
     .default(() => ({})),
 });

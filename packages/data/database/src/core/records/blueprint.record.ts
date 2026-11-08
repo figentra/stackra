@@ -41,6 +41,11 @@ const MAX_VARCHAR = 10_485_760;
 /** The largest `numeric` precision Postgres takes. */
 const MAX_NUMERIC_PRECISION = 1000;
 
+/** The reason and the squawk ignore written above an added column whose default is a setting (no table rewrite). */
+const SETTING_DEFAULT_SQUAWK_IGNORE =
+  "-- lint: current_setting() is STABLE, so Postgres 11+ adds this column without rewriting the table.\n" +
+  "-- squawk-ignore adding-field-with-default\n";
+
 /** A custom setting: `<prefix>.<name>`, snake_case. */
 const SETTING = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
 
@@ -634,8 +639,13 @@ export class BlueprintRecord {
         throw new TypeError(
           `${this.table}.${column.name}: an added column is nullable or has a default; NOT NULL without one waits for a contract step`,
         );
+      // A setting default calls current_setting(), which is STABLE: Postgres 11+ adds the column without a rewrite, which
+      // squawk cannot see, so the statement carries its own ignore and reason for every host's lint.
+      const settingDefault = column.defaultSql?.startsWith("nullif(current_setting(") === true;
       statements.push({
-        sql: `alter table ${qualified} add column ${column.definition(this.table, schema, false)}`,
+        sql:
+          (settingDefault ? SETTING_DEFAULT_SQUAWK_IGNORE : "") +
+          `alter table ${qualified} add column ${column.definition(this.table, schema, false)}`,
         inverse: [`alter table ${qualified} drop column if exists ${quoteIdentifier(column.name)}`],
       });
       statements.push({ sql: column.commentSql(qualified), inverse: [] });

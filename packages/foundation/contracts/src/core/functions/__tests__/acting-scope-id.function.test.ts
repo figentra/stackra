@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `actingScopeId`: an agent acts in its own tenant, else its human's, else none; every other
- *          actor kind in its own `scopeId` only, never in the tenant of an actor it acts for.
+ * Purpose: unit tests of `actingScopeId`: an agent or a service acts in its own tenant, else its user's, else none
+ *          (a service with neither is a platform call); every other actor kind in its own `scopeId` only, never in the
+ *          tenant of an actor it acts for.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0360; ADR 0495.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0360; ADR 0495; ADR 0209 (2026-11-07 amendment, condition 3).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -29,11 +30,20 @@ describe(actingScopeId, () => {
     ).toBeUndefined();
   });
 
+  it("runs a service in its own tenant, else in its user's, else as a platform call", () => {
+    expect(
+      actingScopeId({ kind: ActorKind.Service, id: "svc_1", scopeId: A, onBehalfOf: userOfA }),
+    ).toBe(A);
+    expect(actingScopeId({ kind: ActorKind.Service, id: "svc_1", onBehalfOf: userOfA })).toBe(A);
+    expect(actingScopeId({ kind: ActorKind.Service, id: "svc_1", scopeId: B })).toBe(B);
+    expect(actingScopeId({ kind: ActorKind.Service, id: "svc_1" })).toBeUndefined();
+    expect(
+      actingScopeId({ kind: ActorKind.Service, id: "svc_1", onBehalfOf: staff }),
+    ).toBeUndefined();
+  });
+
   it("runs any other actor in its own tenant only", () => {
     expect(actingScopeId(userOfA)).toBe(A);
-    expect(
-      actingScopeId({ kind: ActorKind.Service, id: "svc_1", onBehalfOf: userOfA }),
-    ).toBeUndefined();
     expect(
       actingScopeId({ kind: ActorKind.Job, id: "job_1", onBehalfOf: userOfA }),
     ).toBeUndefined();

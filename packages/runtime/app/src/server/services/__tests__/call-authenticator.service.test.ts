@@ -3,10 +3,13 @@
  * Purpose: unit tests of `CallAuthenticator`, booted through `createApp` the way a host is: a valid user token is the
  *          user actor and a valid service account token the service actor of its principal, each with Encore's
  *          `userID`; with no `ServicePrincipals` driver bound, a user token still passes and every service token is
- *          refused (never a 500); no token, a non-bearer scheme, an expired token, a wrong audience, an unknown
- *          service subject, malformed claims and any `Stackra-On-Behalf-Of` header are each one
- *          `BearerTokenInvalidError`, and the refusal never carries the token; a key source that cannot reach the
- *          issuer throws its own error.
+ *          refused (never a 500); a service bearer with a valid forwarded user token is that service acting for the
+ *          user (`onBehalfOf`), in the user's tenant, and nothing it answers carries the forwarded token; no token, a
+ *          non-bearer scheme, an expired token, a wrong audience, an unknown service subject and malformed claims are
+ *          each one `BearerTokenInvalidError`, and so are an expired forward, a forward for another audience, a
+ *          forwarded service token, a forward with no service bearer and a forward beside a user bearer; a forward for
+ *          another scope than the principal's passes here, since only `CallIsolationDriver` reads the tree; no refusal carries a token; a key source that cannot reach the issuer
+ *          throws its own error.
  * Boundary: test only; a real Web Crypto RS256 key pair, a host wiring with the memory key and principal drivers, and
  *           the bearer settings from the environment.
  * Runtime: node (vitest)
@@ -78,6 +81,16 @@ const userClaims = {
   [IDENTITY_CLAIMS.realm]: Realm.Customer,
 };
 const serviceClaims = { ...base, sub: MACHINE_SUBJECT, client_id: "ship" };
+
+/** A user's token issued for a scope: the service principal's tenant, or another one. */
+const scopedUser = (scopeId: string) => ({
+  ...userClaims,
+  [IDENTITY_CLAIMS.scopePath]: "platform.acme",
+  [IDENTITY_CLAIMS.memberships]: [
+    { scopeId, path: "platform.acme", name: "Acme", roles: ["customer"] },
+  ],
+});
+const OTHER_SCOPE_ID = "scp_01j9z3k4m5n6p7q8r9s0t1v2w7";
 
 const publicKey = { ...(await crypto.subtle.exportKey("jwk", pair.publicKey)), kid: "k1" };
 
@@ -203,9 +216,72 @@ describe(CallAuthenticator, () => {
     await refuses({ authorization: await bearer({ ...userClaims, [IDENTITY_CLAIMS.realm]: 7 }) });
   });
 
-  it("refuses a Stackra-On-Behalf-Of header until the forwarded token is verified", async () => {
+  it("authenticates a service bearer with a forwarded user token as the service acting for the user", async () => {
+    const forwarded = await token(scopedUser(SERVICE_SCOPE_ID));
+    const answer = await authenticate({
+      authorization: await bearer(serviceClaims),
+      onBehalfOf: forwarded,
+    });
+    expect(answer).toEqual({
+      userID: SERVICE_ID,
+      actor: {
+        kind: ActorKind.Service,
+        id: SERVICE_ID,
+        scopeId: SERVICE_SCOPE_ID,
+        onBehalfOf: {
+          kind: ActorKind.User,
+          id: USER_ID,
+          realm: Realm.Customer,
+          scopeId: SERVICE_SCOPE_ID,
+        },
+      },
+    });
+    // only the derived user travels: nothing answered carries the forwarded token or a part of it
+    const text = JSON.stringify(answer);
+    for (const part of forwarded.split(".")) expect(text).not.toContain(part);
+  });
+
+  it("refuses an expired forward, never extending it", async () => {
     await refuses({
       authorization: await bearer(serviceClaims),
+      onBehalfOf: await token({ ...userClaims, exp: now - 600 }),
+    });
+  });
+
+  it("refuses a forward for another audience than this product's project", async () => {
+    await refuses({
+      authorization: await bearer(serviceClaims),
+      onBehalfOf: await token({ ...userClaims, aud: "project-2" }),
+    });
+  });
+
+  it("leaves a forward for another scope than the principal's to CallIsolation, which reads the tree", async () => {
+    // a branch of the principal's tenant has its own id, so only the scope tree can tell it from another tenant
+    const answer = await authenticate({
+      authorization: await bearer(serviceClaims),
+      onBehalfOf: await token(scopedUser(OTHER_SCOPE_ID)),
+    });
+    expect(answer.actor).toMatchObject({
+      scopeId: SERVICE_SCOPE_ID,
+      onBehalfOf: { id: USER_ID, scopeId: OTHER_SCOPE_ID },
+    });
+  });
+
+  it("refuses a forwarded service token", async () => {
+    await refuses({
+      authorization: await bearer(serviceClaims),
+      onBehalfOf: await token(serviceClaims),
+    });
+  });
+
+  it("refuses a forward with no service bearer", async () => {
+    await refuses({ onBehalfOf: await token(userClaims) });
+    await refuses({ authorization: "Basic dTpw", onBehalfOf: await token(userClaims) });
+  });
+
+  it("refuses a forward beside a user bearer", async () => {
+    await refuses({
+      authorization: await bearer(userClaims),
       onBehalfOf: await token(userClaims),
     });
   });

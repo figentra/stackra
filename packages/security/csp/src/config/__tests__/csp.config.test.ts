@@ -44,6 +44,7 @@ describe("CspConfig", () => {
       referrerPolicy: "strict-origin-when-cross-origin",
       permissionsAllow: {},
       frameAncestors: {},
+      thirdPartyScripts: {},
     });
   });
 

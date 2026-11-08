@@ -1,5 +1,30 @@
 # @stackra/vite-plugin
 
+## 0.21.0
+
+### Minor Changes
+
+- 2974e54: Subresource Integrity for extension bundles. The bundle build records a sha384 for every emitted file in
+  `bundle.manifest.json` (`integrity`). Runway refuses to publish a bundle whose file is missing or changed since the
+  build, carries each value by URL on the edge release, and the shell page pins every bundle URL with it: an
+  `integrity` attribute on each modulepreload and stylesheet link, and the import map's `integrity` block for the
+  chunks no link names. A bundle built before this has no `integrity` and renders as before.
+
+### Patch Changes
+
+- Updated dependencies [2974e54]
+- Updated dependencies [ae9cb23]
+- Updated dependencies [d25a7a0]
+- Updated dependencies [9feea9d]
+- Updated dependencies [00a2477]
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+- Updated dependencies [4242bbb]
+  - @stackra/gen@0.21.0
+  - @stackra/runway@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/i18n@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes

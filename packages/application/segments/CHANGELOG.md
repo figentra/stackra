@@ -1,5 +1,27 @@
 # @stackra/segments
 
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/rules@0.21.0
+  - @stackra/scheduler@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/content@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/queue@0.21.0
+  - @stackra/iam@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes

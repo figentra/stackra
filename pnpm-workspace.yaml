@@ -130,6 +130,8 @@ catalogs:
     jscpd: 5.4.1
     # Test-only IndexedDB for @stackra/platform's share inbox. Apache-2.0.
     fake-indexeddb: 6.2.5
+    # Test-only browser-grade HTML parser: @stackra/csp parses every sanitizeHtml output with it. MIT.
+    parse5: 8.0.1
   # Release tooling: changesets, commitlint, git hooks.
   release:
     "@changesets/cli": 3.0.3

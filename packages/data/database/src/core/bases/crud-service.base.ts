@@ -208,7 +208,8 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /**
    * Implements `Repository.lock`, documented there: exclusive (`for update`) unless `shared` (`for share`), and waiting
-   * for a held row unless `nowait` (fail at once) or `skipLocked` (take the next free match, or null).
+   * for a held row unless `nowait` (fail at once) or `skipLocked` (take the next free match, or null). It flushes the
+   * unit of work's pending changes before it reads the row again, so a value assigned since an earlier lock survives.
    *
    * @throws NotFoundError when no row matches, or none the caller may see (not with `skipLocked`, which returns null).
    * @throws TypeError when both `nowait` and `skipLocked` are given.
@@ -235,9 +236,16 @@ export abstract class CrudService<M extends object> extends Service implements R
         : shared
           ? LockMode.PESSIMISTIC_READ
           : LockMode.PESSIMISTIC_WRITE;
-    // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it.
-    if (skipLocked) return this.findOne(where, { lockMode, refresh: true }) as Promise<M | null>;
-    return this.findOneOrFail(where, { lockMode, refresh: true }) as Promise<M>;
+    // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it. The flush
+    // first writes this unit's own pending changes, which the refresh would otherwise overwrite: locking a row twice
+    // in one transaction dropped an assigned, unflushed value (every document numbered 1).
+    return this.em()
+      .flush()
+      .then(() =>
+        skipLocked
+          ? (this.findOne(where, { lockMode, refresh: true }) as Promise<M | null>)
+          : (this.findOneOrFail(where, { lockMode, refresh: true }) as Promise<M>),
+      );
   }
 
   /**
