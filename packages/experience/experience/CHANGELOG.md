@@ -1,5 +1,21 @@
 # @stackra/experience
 
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [3a9a6be]
+  - @stackra/documents@0.22.0
+  - @stackra/clients@0.22.0
+  - @stackra/icons@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Patch Changes
