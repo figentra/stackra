@@ -182,6 +182,36 @@ describe("DevicePushTransportDriver", () => {
     ]);
   });
 
+  it("passes the action category and its buttons' links to Expo only when given", async () => {
+    const { driver, bodies } = await driverWith({ status: "ok", id: "ticket-1" });
+    const push = {
+      target: { kind: "expo", token: "ExponentPushToken[x]" },
+      title: "T",
+      body: "B",
+      data: { route: "/runs/1" },
+      ttlSeconds: 60,
+    } as const;
+    const actions = [
+      { label: "Approve", url: "https://approvals.example/decide?t=a", style: "primary" },
+      { label: "Reject", url: "https://approvals.example/decide?t=r", style: "danger" },
+    ] as const;
+    await driver.send({ ...push, category: "approval_request", actions }, "k1");
+    await driver.send({ ...push, actions: [] }, "k2");
+    expect(bodies).toEqual([
+      [
+        {
+          to: "ExponentPushToken[x]",
+          title: "T",
+          body: "B",
+          data: { route: "/runs/1", actions },
+          ttl: 60,
+          categoryId: "approval_request",
+        },
+      ],
+      [{ to: "ExponentPushToken[x]", title: "T", body: "B", data: { route: "/runs/1" }, ttl: 60 }],
+    ]);
+  });
+
   it("sends an encrypted Web Push with VAPID and revokes on 410", async () => {
     const { driver, tokens, p256dh, auth } = await driverWith({});
     const fetchMock = vi.fn(
