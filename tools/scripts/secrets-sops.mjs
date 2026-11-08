@@ -99,15 +99,35 @@ export function miseWhich(command, { spawn = spawnSync, root = REPO_ROOT } = {})
   return bin || null;
 }
 
-/** Map a failed CLI call to a fixed message; the CLI's own text is inspected, never repeated. */
+/**
+ * The cloud status and reasons in a failed CLI call's text (`[PermissionDenied, BILLING_DISABLED]`), or "". Only the
+ * gRPC code and the upper-case `reason` constants are taken, by fixed patterns, so no other text is ever repeated.
+ */
+export function failureDetail(err) {
+  const code = /\bcode\s*=\s*([A-Za-z]+)\b/.exec(err)?.[1];
+  const reasons = [...err.matchAll(/\breason\W{0,4}([A-Z][A-Z0-9_]{2,63})\b/g)].map(
+    (match) => match[1],
+  );
+  const parts = [...new Set([code, ...reasons].filter(Boolean))];
+  return parts.length === 0 ? "" : ` [${parts.join(", ")}]`;
+}
+
+/**
+ * Map a failed CLI call to a fixed message; the CLI's own text is inspected, never repeated, except the cloud status
+ * and reasons `failureDetail` picks, so a closed billing account or a wrong quota project is told apart from a missing
+ * key.
+ */
 export function cliFailure(what, command, r) {
   if (r.status === 127) return new Refusal(`${what}: ${command} not found (mise install)`);
   const err = `${r.stderr}\n${r.stdout}`;
+  const detail = failureDetail(err);
   if (/permission|denied|403|unauthenticated|credentials|login/i.test(err))
-    return new Refusal(`${what}: ${command} was refused (sign in, or this identity lacks the key)`);
+    return new Refusal(
+      `${what}: ${command} was refused (sign in, or this identity lacks the key)${detail}`,
+    );
   if (/no matching creation rules|creation_rules/i.test(err))
     return new Refusal(`${what}: .sops.yaml has no rule for this scope`);
-  return new Refusal(`${what}: ${command} exited ${r.status}`);
+  return new Refusal(`${what}: ${command} exited ${r.status}${detail}`);
 }
 
 /**
