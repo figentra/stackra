@@ -18,8 +18,14 @@ export class RenameChecklistProgressMigration extends Migration {
   /** Renames the table in one step, keeping its rows, indexes and policy. */
   up(schema: SchemaBuilder): void {
     // raw-sql: the blueprint has no table rename; the statement states its inverse
-    schema.sql('alter table "workflow"."checklist_progress" rename to "checklist_progresses"', {
-      inverse: 'alter table "workflow"."checklist_progresses" rename to "checklist_progress"',
-    });
+    // The lint lines (STA-2612) never change the checksum: the runner hashes the SQL without them.
+    schema.sql(
+      "-- lint: the model and every query moved to the new name in the same release; no client reads the old one.\n" +
+        "-- squawk-ignore renaming-table\n" +
+        'alter table "workflow"."checklist_progress" rename to "checklist_progresses"',
+      {
+        inverse: 'alter table "workflow"."checklist_progresses" rename to "checklist_progress"',
+      },
+    );
   }
 }
