@@ -99,6 +99,7 @@
     "@vitest/coverage-v8": "catalog:quality",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "parse5": "catalog:quality",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
     "tsdown": "catalog:build",

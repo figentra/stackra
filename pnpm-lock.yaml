@@ -673,6 +673,9 @@ catalogs:
     oxlint:
       specifier: 1.86.0
       version: 1.86.0
+    parse5:
+      specifier: 8.0.1
+      version: 8.0.1
     vitest:
       specifier: 5.0.5
       version: 5.0.5
@@ -8403,6 +8406,9 @@ importers:
       oxlint:
         specifier: catalog:quality
         version: 1.86.0
+      parse5:
+        specifier: catalog:quality
+        version: 8.0.1
       react:
         specifier: catalog:frontend
         version: 19.3.0
