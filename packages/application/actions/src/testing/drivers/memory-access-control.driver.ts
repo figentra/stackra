@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryAccessControlDriver`, the "memory" `AccessControl` of the testing module: every permission and
- *          record check passes, except a permission the test denied with `denyPermission(...)`, which is refused with
- *          `ForbiddenError` as @stackra/iam refuses it.
+ *          record check passes, except a permission the test denied with `denyPermission(...)`, and a restricted
+ *          permission asked by a customer-realm user the test did not `grant` it to, each refused with
+ *          `ForbiddenError` as @stackra/iam refuses it (a restricted permission counts only through an explicit
+ *          grant, and no customer holds one).
  * Boundary: test only, and only when a test picks it (`.useDrivers("memory")`, or `{ AccessControl: "memory" }`); a
  *           test that picks nothing still fails closed. Each compiled app gets its own instance, so a denial lasts
  *           for that app or until its restore function runs. A call with no permission (an `auth: false` query)
@@ -10,7 +12,8 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0266 (memory first); ADR 0138 (as amended: permission step).
  */
-import { Driver } from "@stackra/container";
+import { Driver, PERMISSION_REGISTRY } from "@stackra/container";
+import { Realm } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 
 import { AccessControl } from "#contracts/index";
@@ -27,6 +30,9 @@ export class MemoryAccessControlDriver extends Driver(AccessControl) {
   /** The permissions this app refuses. */
   private readonly denied = new Set<string>();
 
+  /** The restricted permissions a customer was explicitly granted. */
+  private readonly granted = new Set<string>();
+
   /** Refuses `permission` from now on. */
   deny(permission: string): void {
     this.denied.add(permission);
@@ -35,6 +41,11 @@ export class MemoryAccessControlDriver extends Driver(AccessControl) {
   /** Allows `permission` again. */
   allow(permission: string): void {
     this.denied.delete(permission);
+  }
+
+  /** Grants the restricted `permission` to customers, as an explicit grant would. */
+  grant(permission: string): void {
+    this.granted.add(permission);
   }
 
   /** Passes unless the call's permission was denied. */
@@ -47,9 +58,16 @@ export class MemoryAccessControlDriver extends Driver(AccessControl) {
     this.check(call);
   }
 
-  /** Throws `ForbiddenError` for a denied permission. */
+  /** Throws `ForbiddenError` for a denied permission, and for a restricted one a customer was not granted. */
   private check(call: CallDescriptor): void {
-    if (call.permission !== undefined && this.denied.has(call.permission))
+    const { permission, actor } = call;
+    if (permission === undefined) return;
+    if (this.denied.has(permission)) throw ForbiddenError.create();
+    if (
+      actor.realm === Realm.Customer &&
+      PERMISSION_REGISTRY.get(permission)?.isRestricted === true &&
+      !this.granted.has(permission)
+    )
       throw ForbiddenError.create();
   }
 }
