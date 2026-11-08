@@ -69,7 +69,8 @@ describe("CrudService.lock on Postgres", () => {
       const second = await counters.lock({ id: ID });
       second.next += 1;
       // The raw connection with no transaction context takes another pooled backend; an em would join this one.
-      heldElsewhere = await database.orm.em
+      heldElsewhere = await database
+        .em()
         .getConnection()
         .execute("select id from docs.counters where id = ? for update nowait", [ID])
         .then(
