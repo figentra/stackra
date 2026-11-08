@@ -195,6 +195,11 @@ export function emitToolConfigs(
     ...(ir.packages?.includes("@stackra/clients") === true
       ? ['import "@stackra/clients/testing";']
       : []),
+    // The memory `AccessControl` and the actions testing plugin, so a `useDrivers("memory")` test that only queues
+    // work or runs an action finds its permission check.
+    ...(ir.packages?.includes("@stackra/actions") === true
+      ? ['import "@stackra/actions/testing";']
+      : []),
     // The memory `CallIsolation`, so a `useDrivers("memory")` call runs as its actor's tenant, as in production.
     ...(ir.packages?.includes("@stackra/tenancy") === true
       ? ['import "@stackra/tenancy/testing";']
