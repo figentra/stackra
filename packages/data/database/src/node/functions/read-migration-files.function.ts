@@ -19,6 +19,9 @@ import type { MigrationFile } from "#node/types/migration-file.type";
 /** A step's timeout header: a `-- stackra:timeout=<interval>` line among the leading comment lines. */
 const TIMEOUT_HEADER = /^(?:--.*\n)*?-- stackra:timeout=(\w+)(?:\n|$)/;
 
+/** A whole comment line written for a linter: `-- squawk-ignore …` or `-- lint: …`. */
+const LINT_LINE = /^-- (?:squawk-ignore|lint:)[^\n]*\n/gm;
+
 /**
  * Lists the folder's migration files in sequence order.
  *
@@ -27,9 +30,6 @@ const TIMEOUT_HEADER = /^(?:--.*\n)*?-- stackra:timeout=(\w+)(?:\n|$)/;
  * @example
  * readMigrationFiles(".stackra/migrations")[0]?.name; // "0001_database_0001_create_sequence_tables"
  */
-/** A whole comment line written for a linter: `-- squawk-ignore …` or `-- lint: …`. */
-const LINT_LINE = /^-- (?:squawk-ignore|lint:)[^\n]*\n/gm;
-
 export function readMigrationFiles(directory: string): readonly MigrationFile[] {
   if (!existsSync(directory)) throw new Error(`${directory} does not exist: run stackra gen first`);
   const files = readdirSync(directory)
