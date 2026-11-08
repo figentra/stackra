@@ -28,6 +28,12 @@ export const GEN_REACHED_PORTS: readonly string[] = Object.freeze([
     "SystemSettings",
     "SystemPermissions",
     "JsonWebKeys",
+    "AppLock",
+    "Passkeys",
+    "LiveActivities",
+    "DeviceSearchIndex",
+    "IncomingShare",
+    "AppIcon",
     ...SERVER_CONTRIBUTIONS.flatMap((contribution) => contribution.deps.map((dep) => dep.name)),
   ]),
 ]);
