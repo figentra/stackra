@@ -53,6 +53,7 @@ voice meter writes to) and `@stackra/market-packs` (`valueOf`); `./node` adds `@
 | `ProviderRefusedError`, `ProviderUnavailableError`                                                                      | a provider's 4xx, and spent retries or a full bucket                                                 |
 | `ConnectionCheckFailedError`, `ConnectionAmbiguousError`, `InvalidSignatureError`                                       | a failed `check()`, an ambiguous `find`, a webhook that does not verify                              |
 | `./testing`: `fakeIntegrationApi`, `makeConnection`, `.withIntegrationApi`, `.withConnection`                           | fakes of the managed client and the store for tests                                                  |
+| `./testing`: `liveConnection`, `LiveConnectionOptions`                                                                  | a connection over the real managed client, for a certification suite against a provider sandbox      |
 | `IntegrationRole`, `ConnectorKind`                                                                                      | the five roles (ADR 0355) and the commerce connector kinds an Integration declares                   |
 | `ProviderResolver`, `ProviderDrivers`, `NoProviderError`                                                                | the provider for a call: tenant Connection first, then the Market's platform default                 |
 | `./contracts`: `ProviderDefaults`, `MarketContext`, `ProviderChoice`                                                    | the market-pack data and the Market the resolver reads                                               |
@@ -503,6 +504,22 @@ signing, `ManagedProvisioning`, `ProviderDefaults` and `ProviderResolver`. Every
 the OS integrations service (owner decision R3-8). The Chatwoot Integration and Connection left this package for it
 (os-104): copy `packages/communication/integrations/src/core/providers/chatwoot/` at commit `8d3f7b2`
 (`figentra/sta-666-wave12` before the move); it imports only this package's public names.
+
+## Testing against a provider sandbox
+
+`liveConnection(ConnectionClass, { integration, fields, secrets })` from `./testing` builds a connection whose `api` is
+the real managed client: the Integration's auth, base URL, headers, retry and rate limits, over memory stores and the
+system clock. A connector certification suite in a product runs it against a provider's sandbox with no service and
+no ConnectionStore. `fields` are the connection's own (its `@Secret` ones included); `secrets` are the Integration's
+`@Secret` values by name. No value is logged or put in an error.
+
+```ts
+const connection = liveConnection(MailConnection, {
+  integration: MailIntegration,
+  fields: { apiKey: sandboxKey, region: "eu" },
+});
+await expect(connection.check()).resolves.toBeDefined();
+```
 
 ## A per-region base URL
 
