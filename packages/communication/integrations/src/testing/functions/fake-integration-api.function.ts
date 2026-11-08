@@ -8,7 +8,14 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0308 (rule 13).
  */
-import type { Integration, IntegrationApi, IntegrationClass, RequestOptions } from "#core/index";
+import type {
+  Integration,
+  IntegrationApi,
+  IntegrationClass,
+  RawRequest,
+  RawResponse,
+  RequestOptions,
+} from "#core/index";
 import type { FakeAnswer } from "#testing/types/fake-answer.type";
 import type { FakeIntegrationRoutes } from "#testing/types/fake-integration-routes.type";
 
@@ -35,8 +42,22 @@ function match(route: Route, method: string, path: string): Record<string, strin
   return params;
 }
 
+/** A route's answer to `send`: a `{ status, headers?, body }` as given, anything else a 200 with it as text. */
+function rawOf(answer: unknown): RawResponse {
+  if (typeof answer === "object" && answer !== null) {
+    const { status, headers, body } = answer as Partial<RawResponse>;
+    if (typeof status === "number" && typeof body === "string")
+      return { status, headers: headers ?? {}, body };
+  }
+  return {
+    status: 200,
+    headers: {},
+    body: typeof answer === "string" ? answer : (JSON.stringify(answer) ?? ""),
+  };
+}
+
 /**
- * A fake managed client of `type`.
+ * A fake managed client of `type`; for `send`, a route answers `{ status, headers?, body }` to fake any status.
  *
  * @param configure - declares the routes on the builder it is given.
  * @example
@@ -100,5 +121,12 @@ export function fakeIntegrationApi<I extends Integration>(
       call("PUT", path, body, request) as Promise<T>,
     patch: <T>(path: string, body?: unknown, request?: RequestOptions) =>
       call("PATCH", path, body, request) as Promise<T>,
+    send: async (raw: RawRequest) =>
+      rawOf(
+        await call(raw.method, raw.path, undefined, {
+          ...(raw.headers === undefined ? {} : { headers: raw.headers }),
+          ...(raw.body === undefined ? {} : { body: raw.body }),
+        }),
+      ),
   };
 }

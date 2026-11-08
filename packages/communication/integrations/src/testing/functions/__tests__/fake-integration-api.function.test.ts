@@ -7,6 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3).
  */
+import { HttpMethod } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import {
@@ -73,6 +74,29 @@ describe("fakeIntegrationApi", () => {
         }),
     );
     await expect(api.get("/domains")).rejects.toBeInstanceOf(ProviderUnavailableError);
+  });
+
+  it("answers send with a route's status, or a 200 of its answer as text", async () => {
+    const api = fakeIntegrationApi(ResendIntegration, (fake) =>
+      fake
+        .post("/invoices")
+        .returns((_, request) => ({ status: 409, body: String(request.body) }))
+        .get("/status")
+        .returns(() => ({ ok: true })),
+    );
+
+    await expect(
+      api.send({
+        method: HttpMethod.Post,
+        path: "/invoices",
+        body: { content: "<a/>", contentType: "text/xml" },
+      }),
+    ).resolves.toEqual({ status: 409, headers: {}, body: "<a/>" });
+    await expect(api.send({ method: HttpMethod.Get, path: "/status" })).resolves.toEqual({
+      status: 200,
+      headers: {},
+      body: '{"ok":true}',
+    });
   });
 
   it("refuses a call no route answers", async () => {

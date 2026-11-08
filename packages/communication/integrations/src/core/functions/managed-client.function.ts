@@ -7,7 +7,8 @@
  *          provider outcome into a value or a typed refusal.
  * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call or the
  *           Integration's `requestBody` asks, or a raw body with its own media type when the call gives one (`body`);
- *           raw bytes or text out when the call asks (`bytes`, `text`). A
+ *           raw bytes or text out when the call asks (`bytes`, `text`); `send` returns the answer as it came, at
+ *           any status, and throws only when nothing came back (STA-2607). A
  *           `{field}` placeholder in the base URL (a per-region host) is filled from the credential set and must
  *           resolve to an https origin, or an http one on an `.internal` host (the private tools namespace, STA-1653);
  *           a whole-URL `{field}` is filled the same way. A `GET`, `HEAD`, `PUT` or `DELETE`
@@ -39,6 +40,8 @@ import { resolvePlaceholders } from "#core/functions/resolve-placeholders.functi
 import { signJwt } from "#core/functions/sign-jwt.function";
 import type { IntegrationApi } from "#core/types/integration-api.type";
 import type { ManagedClientOptions } from "#core/types/managed-client-options.type";
+import type { RawRequest } from "#core/types/raw-request.type";
+import type { RawResponse } from "#core/types/raw-response.type";
 import type { RequestOptions } from "#core/types/request-options.type";
 
 /** The retry an Integration gets when it states none, unchanged by stackra-223: 3 attempts, 200 ms doubling, 30 s. */
@@ -221,13 +224,20 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     }
   }
 
-  /** Sends one call with its retries and reads the answer. */
-  async function send(
+  /**
+   * Builds one call and sends it with its retries: the first answer that is not transient, or the last one once the
+   * retries are spent; `response` is undefined when nothing came back. `sent` lists the credential values it sent.
+   */
+  async function exchange(
     method: string,
     path: string,
     body: unknown,
-    request: RequestOptions = {},
-  ): Promise<unknown> {
+    request: RequestOptions,
+  ): Promise<{
+    readonly response: Response | undefined;
+    readonly failure: unknown;
+    readonly sent: readonly string[];
+  }> {
     if (request.body !== undefined && body !== undefined)
       throw new TypeError("A call sends either its body or RequestOptions.body, not both");
     const url = urlOf(path, request.query);
@@ -270,41 +280,72 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
         if (request.signal?.aborted === true) throw error;
         failure = error;
       }
-      if (response?.ok === true) {
-        if (request.bytes === true) return new Uint8Array(await response.arrayBuffer());
-        const text = await response.text();
-        if (request.text === true) return text;
-        return text === "" ? undefined : parsed(text);
-      }
-      if (response !== undefined && !isTransient(response.status)) {
-        const code = providerCodeOf(parsed(await response.text()));
-        throw ProviderRefusedError.create({
-          provider,
-          status: response.status,
-          ...(code === undefined ? {} : { code: redactSecrets(code, credentialsOf(sent)) }),
-        });
-      }
-      if (!retryable || attempt >= attempts)
-        throw ProviderUnavailableError.create(
-          { provider, ...(response === undefined ? {} : { status: response.status }) },
-          { cause: failure },
-        );
+      if (response !== undefined && !isTransient(response.status))
+        return { response, failure, sent };
+      if (!retryable || attempt >= attempts) return { response, failure, sent };
       await sleep(
         Math.min(retryAfterMs(response, clock.now()) ?? backoffDelay(policy, attempt), maxDelay),
       );
     }
   }
 
+  /** Sends one typed call and reads the answer, or refuses with the provider's outcome. */
+  async function call(
+    method: string,
+    path: string,
+    body: unknown,
+    request: RequestOptions = {},
+  ): Promise<unknown> {
+    const { response, failure, sent } = await exchange(method, path, body, request);
+    if (response?.ok === true) {
+      if (request.bytes === true) return new Uint8Array(await response.arrayBuffer());
+      const text = await response.text();
+      if (request.text === true) return text;
+      return text === "" ? undefined : parsed(text);
+    }
+    if (response !== undefined && !isTransient(response.status)) {
+      const code = providerCodeOf(parsed(await response.text()));
+      throw ProviderRefusedError.create({
+        provider,
+        status: response.status,
+        ...(code === undefined ? {} : { code: redactSecrets(code, credentialsOf(sent)) }),
+      });
+    }
+    throw ProviderUnavailableError.create(
+      { provider, ...(response === undefined ? {} : { status: response.status }) },
+      { cause: failure },
+    );
+  }
+
+  /** Sends `raw` and returns the answer as it came, whatever its status. */
+  async function send(raw: RawRequest): Promise<RawResponse> {
+    const { response, failure } = await exchange(raw.method, raw.path, undefined, {
+      text: true,
+      ...(raw.headers === undefined ? {} : { headers: raw.headers }),
+      ...(raw.body === undefined ? {} : { body: raw.body }),
+      ...(raw.idempotencyKey === undefined ? {} : { idempotencyKey: raw.idempotencyKey }),
+      ...(raw.signal === undefined ? {} : { signal: raw.signal }),
+    });
+    if (response === undefined)
+      throw ProviderUnavailableError.create({ provider }, { cause: failure });
+    return {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: await response.text(),
+    };
+  }
+
   return {
     get: <T>(path: string, request?: RequestOptions) =>
-      send("GET", path, undefined, request) as Promise<T>,
+      call("GET", path, undefined, request) as Promise<T>,
     delete: <T>(path: string, request?: RequestOptions) =>
-      send("DELETE", path, undefined, request) as Promise<T>,
+      call("DELETE", path, undefined, request) as Promise<T>,
     post: <T>(path: string, body?: unknown, request?: RequestOptions) =>
-      send("POST", path, body, request) as Promise<T>,
+      call("POST", path, body, request) as Promise<T>,
     put: <T>(path: string, body?: unknown, request?: RequestOptions) =>
-      send("PUT", path, body, request) as Promise<T>,
+      call("PUT", path, body, request) as Promise<T>,
     patch: <T>(path: string, body?: unknown, request?: RequestOptions) =>
-      send("PATCH", path, body, request) as Promise<T>,
+      call("PATCH", path, body, request) as Promise<T>,
+    send,
   };
 }

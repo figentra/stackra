@@ -4,7 +4,8 @@
  *          each auth type (an API key from the connection before the platform's secret, Basic, a signed JWT, an OAuth
  *          bearer, or a token in the header and layout the Integration names), adds the declared headers under the
  *          call's own, sends a form body when the call or the Integration asks, reads raw bytes when the call asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
- *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError` without a credential in
+ *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError`, while `send` answers
+ *          every status as it came and throws only when nothing came back, all without a credential in
  *          either: a provider code that echoes a connection's or the platform's secret, or the bearer sent, is
  *          redacted under every key a provider names it, and the client logs nothing.
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
@@ -19,7 +20,7 @@ import { inspect } from "node:util";
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
 import { Secret } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
-import { Clock, Duration } from "@stackra/contracts";
+import { Clock, Duration, HttpMethod } from "@stackra/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { type MockInstance, vi } from "vitest";
 
@@ -477,6 +478,72 @@ class SecretMailConnection extends Connection<MailIntegration> {
 }
 
 const ECHOED_KEY = "sk_test_5b8e1f9c";
+
+describe("managedClient send", () => {
+  it("answers a 4xx as it came, with its headers and text, authenticated and on its origin", async () => {
+    const result = '{"validationResults":{"status":"ERROR"}}';
+    const fetchMock = stubFetch(
+      () =>
+        new Response(result, {
+          status: 400,
+          headers: { "content-type": "application/json", "X-Request-Id": "req_1" },
+        }),
+    );
+
+    const answer = await clientOf(new MailIntegration()).send({
+      method: HttpMethod.Post,
+      path: "https://elsewhere.example/invoices",
+      headers: { "Accept-Version": "V2" },
+      body: { content: '{"invoice":"PD94"}', contentType: "application/json" },
+    });
+
+    expect(answer).toEqual({
+      status: 400,
+      headers: { "content-type": "application/json", "x-request-id": "req_1" },
+      body: result,
+    });
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url).startsWith("https://api.mail.example/v1/")).toBe(true);
+    expect(init?.body).toBe('{"invoice":"PD94"}');
+    expect(headerOf(fetchMock, 0, "authorization")).toBe("Bearer platform-key");
+    expect(headerOf(fetchMock, 0, "accept-version")).toBe("V2");
+    expect(headerOf(fetchMock, 0, "accept")).toBe("*/*");
+  });
+
+  it("retries a transient status as the typed calls do, then returns the last answer", async () => {
+    const fetchMock = stubFetch(() => new Response("down", { status: 503 }));
+    const api = clientOf(new MailIntegration());
+
+    await expect(api.send({ method: HttpMethod.Get, path: "/status" })).resolves.toMatchObject({
+      status: 503,
+      body: "down",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    await api.send({ method: HttpMethod.Post, path: "/invoices" });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+
+    await api.send({ method: HttpMethod.Post, path: "/invoices", idempotencyKey: "inv_1" });
+    expect(fetchMock).toHaveBeenCalledTimes(7);
+    expect(headerOf(fetchMock, 6, "idempotency-key")).toBe("inv_1");
+  });
+
+  it("reads an empty answer as an empty body", async () => {
+    stubFetch(() => new Response(null, { status: 204 }));
+
+    await expect(
+      clientOf(new MailIntegration()).send({ method: HttpMethod.Delete, path: "/invoices/1" }),
+    ).resolves.toEqual({ status: 204, headers: {}, body: "" });
+  });
+
+  it("throws ProviderUnavailableError only when nothing came back", async () => {
+    stubFetch(() => Promise.reject(new TypeError("fetch failed")));
+
+    await expect(
+      clientOf(new MailIntegration()).send({ method: HttpMethod.Get, path: "/status" }),
+    ).rejects.toBeInstanceOf(ProviderUnavailableError);
+  });
+});
 
 /** Everything a refusal shows: its printout, its JSON, its envelope and every console line written. */
 function shownOf(refused: unknown, consoleSpies: readonly MockInstance[]): string {

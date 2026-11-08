@@ -101,6 +101,8 @@ export type { ProviderCandidate } from "#core/types/provider-candidate.type";
 export type { ProviderDrivers } from "#core/types/provider-drivers.type";
 export type { RateLimit } from "#core/types/rate-limit.type";
 export type { RawBody } from "#core/types/raw-body.type";
+export type { RawRequest } from "#core/types/raw-request.type";
+export type { RawResponse } from "#core/types/raw-response.type";
 export type { RequestOptions } from "#core/types/request-options.type";
 export type { TokenRequest } from "#core/types/token-request.type";
 export type { WebhookSchemeRecipe } from "#core/types/webhook-scheme-recipe.type";
