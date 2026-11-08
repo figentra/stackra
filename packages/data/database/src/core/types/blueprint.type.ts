@@ -12,6 +12,7 @@
  * Runtime: node
  * Governing contract: ADR 0159 as amended by ADR 0305 (macros, literal snapshots); ADR 0239 (equality policy);
  *                     ADR 0327 (decisions 3, 8 and 9: `scope_id`, `scope_path`, isolation in the database);
+ *                     ADR 0239 (2026-11-07 amendment, gap A: `systemAccess`);
  *                     `.agents/rules/tenancy.md`; ADR 0294 (decision 28: links); ADR 0135 (public ids); ADR 0231 (names).
  */
 import type { ColumnChange } from "#core/types/column-change.type";
@@ -19,6 +20,7 @@ import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { ColumnGroup } from "#core/types/column-group.type";
 import type { ForeignKeyColumn } from "#core/types/foreign-key-column.type";
 import type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
+import type { SystemAccessOptions } from "#core/types/system-access-options.type";
 import type { TableIndex } from "#core/types/table-index.type";
 
 /**
@@ -225,4 +227,19 @@ export interface Blueprint {
    * compiled migration carries `-- stackra:reviewed-policy <schema>.<table> <policy>[,<policy>] <reason>`.
    */
   reviewedPolicy: (reason: string, policies: readonly string[]) => void;
+
+  /**
+   * Lets a system lookup or claim read this tenant table before a tenant is known (ADR 0239 amendment, gap A), through
+   * `SYSTEM_ACCESS_ROLE` (`NOLOGIN`, `NOBYPASSRLS`, no member) and only through a `schema.systemFunction` it owns:
+   * `t.systemAccess({ select: ["id", "tenant_id", "available_at", "leased_until"], update: ["leased_until"], reason })`.
+   * It creates the role when missing, grants it `USAGE` on the schema, `SELECT` on the `select` columns and `UPDATE`
+   * on the `update` columns (column grants only), and writes the permissive policies
+   * `pol_<table>_system_access_select` (`FOR SELECT TO` the role `USING (true)`) and, with `update` columns,
+   * `pol_<table>_system_access_update` (`FOR UPDATE`, `USING (true) WITH CHECK (true)`). A claim's
+   * `FOR UPDATE SKIP LOCKED` needs an `update` column. The reason is required and one line; the compiled migration
+   * carries `-- stackra:system-access <schema>.<table> select=<columns> [update=<columns>] <reason>`, which
+   * `assertRowSecurity` holds the grants to, and `stackra row-security-declarations` lists it for review. Once per
+   * blueprint, and never on a platform table.
+   */
+  systemAccess: (options: SystemAccessOptions) => void;
 }

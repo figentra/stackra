@@ -13,6 +13,10 @@
  *          migrations' declarations (`migrationsDirectory`): a `t.platformTable` table passes and is refused once it
  *          holds a scope id or the owner column; a `t.reviewedPolicy` table passes with its named policies, and is
  *          refused without forced row-level security or a named policy, and when also declared a platform table.
+ *          System access (ADR 0239 amendment, gap A): a table with `t.systemAccess` and its `schema.systemFunction`,
+ *          compiled and declared, pass in strict mode; each variant is refused: a system-access policy to PUBLIC or
+ *          to the service role, a function without SECURITY DEFINER or with an unpinned search path, PUBLIC execute,
+ *          a member of the role, a BYPASSRLS role, and a column or table grant beyond the declared columns.
  * Boundary: test only; integration tier (Docker through `usePostgres`). Every test drops the tables it adds. The
  *           declarations are compiled marker lines written to a temporary directory, as gen's migration files hold them.
  * Runtime: node (vitest)
@@ -130,6 +134,123 @@ async function withMigrations(
     rmSync(directory, { recursive: true, force: true });
   }
 }
+
+/** A claim table under the owner policy with system access, and its claim function, as a package writes them. */
+class ClaimsMigration extends Migration {
+  up(schema: SchemaBuilder): void {
+    schema.create("claims", (t: Blueprint) => {
+      t.hasPublicId("clm");
+      t.string("owner_id", 33).notNull().comment("The owner.");
+      t.string("body").notNull().comment("The owner's data.");
+      t.timestamp("leased_until").nullable().comment("When the claim's lease ends.");
+      t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "equals" });
+      t.systemAccess({
+        select: ["id", "owner_id", "leased_until"],
+        update: ["leased_until"],
+        reason: "the probe worker claims rows across owners",
+      });
+    });
+    schema.systemFunction({
+      name: "claim_claims",
+      args: { max_rows: "integer" },
+      returns: { id: "varchar(33)", owner_id: "varchar(33)" },
+      sql: "select c.id, c.owner_id from notes.claims c limit max_rows",
+      reason: "the probe worker claims rows across owners",
+    });
+  }
+}
+
+const CLAIMS = compileMigration(ClaimsMigration, { schema: "notes" }).steps.flatMap(
+  (step) => step.sql,
+);
+
+/** Runs `check` with the claims migration applied, `variant` run after it, and its declarations as a folder. */
+async function withSystemAccess(
+  variant: readonly string[],
+  undo: readonly string[],
+  check: (migrationsDirectory: string) => Promise<void>,
+): Promise<void> {
+  const em = postgres.database.em();
+  for (const statement of CLAIMS) if (!statement.startsWith("--")) await em.execute(statement);
+  try {
+    for (const statement of variant) await em.execute(statement);
+    await withMigrations(CLAIMS.map((statement) => `${statement};\n`).join(""), check);
+  } finally {
+    for (const statement of [
+      ...undo,
+      'drop function if exists "notes"."claim_claims"(integer)',
+      'drop table "notes"."claims"',
+      'revoke usage on schema "notes" from "stackra_system_access"',
+    ])
+      await em.execute(statement);
+  }
+}
+
+/** Each refused variant of the system-access shape: what it runs, what undoes it, the gap it must raise. */
+const REFUSED_ACCESS: readonly (readonly [string, readonly string[], readonly string[], RegExp])[] =
+  [
+    [
+      "a system-access policy to PUBLIC",
+      [
+        'drop policy "pol_claims_system_access_select" on "notes"."claims"',
+        'create policy "pol_claims_system_access_select" on "notes"."claims" for select using (true)',
+      ],
+      [],
+      /pol_claims_system_access_select \(to public\) is not/,
+    ],
+    [
+      "a system-access policy to the service role",
+      [
+        "do $$ begin create role probe_app nologin; exception when duplicate_object then null; end $$",
+        'drop policy "pol_claims_system_access_update" on "notes"."claims"',
+        'create policy "pol_claims_system_access_update" on "notes"."claims" for update to probe_app using (true) with check (true)',
+      ],
+      [],
+      /pol_claims_system_access_update \(to probe_app\) is not/,
+    ],
+    [
+      "a function without SECURITY DEFINER",
+      ['alter function "notes"."claim_claims"(integer) security invoker'],
+      [],
+      /claim_claims\(integer\) is owned by stackra_system_access but not SECURITY DEFINER/,
+    ],
+    [
+      "an unpinned search path",
+      ['alter function "notes"."claim_claims"(integer) reset search_path'],
+      [],
+      /claim_claims\(integer\) does not pin search_path=pg_catalog, pg_temp/,
+    ],
+    [
+      "PUBLIC execute",
+      ['grant execute on function "notes"."claim_claims"(integer) to public'],
+      [],
+      /claim_claims\(integer\): PUBLIC may execute it/,
+    ],
+    [
+      "a member of the role",
+      ["create role access_member nologin", "grant stackra_system_access to access_member"],
+      ["drop role access_member"],
+      /role access_member is a member of stackra_system_access/,
+    ],
+    [
+      "a BYPASSRLS role",
+      ["alter role stackra_system_access bypassrls"],
+      ["alter role stackra_system_access nobypassrls"],
+      /role stackra_system_access has BYPASSRLS/,
+    ],
+    [
+      "a column grant beyond the declared columns",
+      ['grant select ("body") on "notes"."claims" to stackra_system_access'],
+      [],
+      /holds SELECT on notes\.claims\.body, which t\.systemAccess does not declare/,
+    ],
+    [
+      "a table-level grant",
+      ['grant select on "notes"."claims" to stackra_system_access'],
+      [],
+      /holds SELECT on all of notes\.claims/,
+    ],
+  ];
 
 describe("assertRowSecurity", () => {
   it("passes an owned table, seeding a row of each owner itself", async () => {
@@ -396,5 +517,32 @@ describe("assertRowSecurity", () => {
     await expect(
       assertRowSecurity(postgres.database, { ...OPTIONS, role: "bypass_app" }),
     ).rejects.toThrow(/role bypass_app has BYPASSRLS/);
+  });
+
+  describe("system access (ADR 0239 amendment, gap A)", () => {
+    it("passes a declared t.systemAccess table and its schema.systemFunction, in strict mode", async () => {
+      await withSystemAccess([], [], async (migrationsDirectory) => {
+        await expect(
+          assertRowSecurity(postgres.database, { ...OPTIONS, strict: true, migrationsDirectory }),
+        ).resolves.toEqual([]);
+      });
+    });
+
+    it("refuses undeclared system access", async () => {
+      await withSystemAccess([], [], async () => {
+        await expect(assertRowSecurity(postgres.database, OPTIONS)).rejects.toThrow(
+          /pol_claims_system_access_select without a t\.systemAccess declaration/,
+        );
+      });
+    });
+
+    for (const [name, variant, undo, gap] of REFUSED_ACCESS)
+      it(`refuses ${name}`, async () => {
+        await withSystemAccess(variant, undo, async (migrationsDirectory) => {
+          await expect(
+            assertRowSecurity(postgres.database, { ...OPTIONS, migrationsDirectory }),
+          ).rejects.toThrow(gap);
+        });
+      });
   });
 });

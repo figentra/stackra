@@ -18,7 +18,10 @@
  *          the setting unset sees no owner's row, a session as the first owner sees its own row and none of the
  *          second's (a platform-form table's NULL rows are the platform's, which every session reads), and cannot move
  *          its row to the second owner; on a platform-form table it also seeds a NULL row, which the first owner can
- *          neither take over nor delete. It throws one error listing every gap.
+ *          neither take over nor delete. The system-access role and everything naming it (ADR 0239 amendment, gap A)
+ *          are held to the exact `t.systemAccess` and `schema.systemFunction` shape (`systemAccessGaps`): its policies
+ *          are left out of the owner checks and checked there, with its grants, its memberships, the functions it owns
+ *          and a `SET ROLE` probe as the service role. It throws one error listing every gap.
  * Boundary: test only (`./testing`), against a real Postgres (`usePostgres`), connected as a superuser (a test
  *           container's user). Each probe runs in a transaction it always rolls back; to seed, it drops the table's
  *           check constraints and the NOT NULL of every non-key column there and skips foreign keys and triggers
@@ -28,7 +31,7 @@
  *           usage and table rights on the owned tables' schemas on every call. Tenant vocabulary stays in
  *           @stackra/tenancy, which gives the column and setting (`tenantIsolationOptions`).
  * Runtime: node
- * Governing contract: ADR 0239 (decision 1; 2026-11-07 amendment, items 3 and 7, group (c)); ADR 0347 (decision 5: the catalogue
+ * Governing contract: ADR 0239 (decision 1; 2026-11-07 amendment, items 3 and 7, group (c), gap A); ADR 0347 (decision 5: the catalogue
  *                     audit); ADR 0231 (`pol_<table>_<column>`); ADR 0327 (decision 8); `.agents/rules/tenancy.md`
  *                     (point 7).
  */
@@ -41,11 +44,13 @@ import { tableDeclarations } from "#core/functions/table-declarations.function";
 import { BlueprintRecord } from "#core/records/blueprint.record";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 import { ISOLATION_SCOPE_TABLES } from "#testing/constants/isolation-scope-tables.constant";
+import { isSystemAccessPolicy } from "#testing/functions/is-system-access-policy.function";
 import { PLATFORM_TABLES } from "#testing/constants/platform-tables.constant";
 import { policyGaps } from "#testing/functions/policy-gaps.function";
 import { seedValue } from "#testing/functions/seed-value.function";
+import { systemAccessGaps } from "#testing/functions/system-access-gaps.function";
 import { unownedTableGroup } from "#testing/functions/unowned-table-group.function";
-import type { PolicyRow } from "#testing/types/policy-row.type";
+import type { RolePolicyRow } from "#testing/types/role-policy-row.type";
 import type { RowSecurityOptions } from "#testing/types/row-security-options.type";
 import type { SeedColumn } from "#testing/types/seed-column.type";
 
@@ -149,7 +154,9 @@ const TABLES = `select n.nspname as schema, c.relname as "table", c.relispartiti
 
 const POLICIES = `select n.nspname as schema, c.relname as "table", p.polname as name, p.polpermissive as permissive,
     p.polcmd::text as command, coalesce(pg_get_expr(p.polqual, p.polrelid), '') as "using",
-    coalesce(pg_get_expr(p.polwithcheck, p.polrelid), '') as "check"
+    coalesce(pg_get_expr(p.polwithcheck, p.polrelid), '') as "check",
+    array_to_string(array(select case when r = 0 then 'public' else pg_get_userbyid(r) end
+      from unnest(p.polroles) r order by 1), ',') as roles
   from pg_policy p
   join pg_class c on c.oid = p.polrelid
   join pg_namespace n on n.oid = c.relnamespace`;
@@ -256,10 +263,9 @@ export async function assertRowSecurity(
   const platform = new Map([...PLATFORM_TABLES, ...(options.platform ?? []), ...declared.platform]);
   const em = database.em();
   const gaps: string[] = [];
-  const policies = (await em.execute(POLICIES)) as (PolicyRow & {
-    schema: string;
-    table: string;
-  })[];
+  const allPolicies = (await em.execute(POLICIES)) as RolePolicyRow[];
+  // The system-access policies are held to their own shape by systemAccessGaps, not to the owner checks.
+  const policies = allPolicies.filter((policy) => !isSystemAccessPolicy(policy));
   const columns = (await em.execute(COLUMNS)) as ColumnRow[];
   const tables: AuditedTable[] = [];
   for (const table of (await em.execute(TABLES)) as Omit<AuditedTable, "owned" | "column">[]) {
@@ -378,6 +384,8 @@ export async function assertRowSecurity(
       `grant select, insert, update, delete on all tables in schema ${quoted} to ${quotedRole}`,
     );
   }
+
+  gaps.push(...(await systemAccessGaps(em, allPolicies, declared, role)));
 
   for (const audited of owned) {
     const quotedColumn = quoteIdentifier(audited.column);

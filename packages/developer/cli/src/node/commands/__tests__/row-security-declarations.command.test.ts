@@ -29,6 +29,7 @@ const declaration = {
   kind: "platformTable" as const,
   reason: "one row per consumer class",
   policies: [],
+  columns: [],
 };
 
 const finding = { dir: declaration.file, text: "t.platformTable on cursors is not in the list" };

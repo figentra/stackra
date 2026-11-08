@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: hold `stackra row-security-declarations` to its contract: `rowSecurityDeclarations` finds every
- *          `t.platformTable` and `t.reviewedPolicy` call in a member's migrations with its table, reason and policies
- *          (skipping tests and build output), and `rowSecurityDeclarationFindings` fails a declaration without a
+ *          `t.platformTable`, `t.reviewedPolicy`, `t.systemAccess` and `schema.systemFunction` call in a member's
+ *          migrations with its table (a function's name), reason, policies and granted columns (skipping tests and
+ *          build output), and `rowSecurityDeclarationFindings` fails a declaration without a
  *          string-literal reason, one missing from the review list or listed with another reason, and a listed one no
  *          migration makes; a fully reviewed workspace has no finding, and the committed review list parses.
  * Boundary: writes fixture workspaces into temp directories; reads only the committed review list of this checkout.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (tests live in tests folders); ADR 0239 (2026-11-07 amendment, group (c) table).
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0239 (2026-11-07 amendment, group (c) table and
+ *                     gap A).
  */
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -33,6 +35,21 @@ export class DeclareTablesMigration extends Migration {
       t.reviewedPolicy('a pre-tenant route read', ["pol_routes_read", "pol_routes_write"]);
     });
     schema.table("drafts", (t: Blueprint) => t.platformTable(REASON));
+    schema.table("jobs", (t: Blueprint) => {
+      t.systemAccess({
+        select: ["id", "tenant_id", "leased_until"],
+        update: ["leased_until"],
+        reason: "the relay claims due jobs",
+      });
+    });
+    schema.systemFunction({
+      name: "claim_jobs",
+      args: { max_jobs: "integer" },
+      returns: { id: "varchar(33)", tenant_id: "varchar(33)" },
+      sql: "select j.id, j.tenant_id from relay.jobs j limit max_jobs",
+      reason: "the relay claims due jobs",
+    });
+    schema.table("inbox", (t: Blueprint) => t.systemAccess({ select: ["id"], reason: "a webhook" }));
   }
 }
 `;
@@ -67,6 +84,7 @@ describe("rowSecurityDeclarations", () => {
         kind: "platformTable",
         reason: "one row per consumer class",
         policies: [],
+        columns: [],
       },
       {
         file: MIGRATION,
@@ -74,8 +92,40 @@ describe("rowSecurityDeclarations", () => {
         kind: "reviewedPolicy",
         reason: "a pre-tenant route read",
         policies: ["pol_routes_read", "pol_routes_write"],
+        columns: [],
       },
-      { file: MIGRATION, table: "drafts", kind: "platformTable", reason: undefined, policies: [] },
+      {
+        file: MIGRATION,
+        table: "drafts",
+        kind: "platformTable",
+        reason: undefined,
+        policies: [],
+        columns: [],
+      },
+      {
+        file: MIGRATION,
+        table: "jobs",
+        kind: "systemAccess",
+        reason: "the relay claims due jobs",
+        policies: [],
+        columns: ["select id", "select tenant_id", "select leased_until", "update leased_until"],
+      },
+      {
+        file: MIGRATION,
+        table: "claim_jobs",
+        kind: "systemFunction",
+        reason: "the relay claims due jobs",
+        policies: [],
+        columns: [],
+      },
+      {
+        file: MIGRATION,
+        table: "inbox",
+        kind: "systemAccess",
+        reason: "a webhook",
+        policies: [],
+        columns: ["select id"],
+      },
     ]);
   });
 });
@@ -89,6 +139,11 @@ describe("rowSecurityDeclarationFindings", () => {
         `  ${MIGRATION}#cursors: an older reason`,
         `  ${MIGRATION}#gone: a table no migration declares`,
         "reviewedPolicy: {}",
+        "systemAccess:",
+        `  ${MIGRATION}#jobs: the relay claims due jobs`,
+        `  ${MIGRATION}#inbox: a webhook`,
+        "systemFunction:",
+        `  ${MIGRATION}#claim_jobs: an older reason`,
         "",
       ].join("\n"),
     });
@@ -97,6 +152,7 @@ describe("rowSecurityDeclarationFindings", () => {
       `t.platformTable on cursors gives a reason other than the reviewed one in ${DECLARATIONS_LEDGER_FILE}`,
       `t.reviewedPolicy on routes is not in ${DECLARATIONS_LEDGER_FILE}: add "${MIGRATION}#routes: a pre-tenant route read" under reviewedPolicy for review`,
       "t.platformTable on drafts needs its reason as a non-empty string literal",
+      `schema.systemFunction on claim_jobs gives a reason other than the reviewed one in ${DECLARATIONS_LEDGER_FILE}`,
       `platformTable ${MIGRATION}#gone is listed but no migration declares it any more: remove it`,
     ]);
   });
@@ -110,6 +166,11 @@ describe("rowSecurityDeclarationFindings", () => {
         `  ${MIGRATION}#drafts: drafts only`,
         "reviewedPolicy:",
         `  ${MIGRATION}#routes: a pre-tenant route read`,
+        "systemAccess:",
+        `  ${MIGRATION}#jobs: the relay claims due jobs`,
+        `  ${MIGRATION}#inbox: a webhook`,
+        "systemFunction:",
+        `  ${MIGRATION}#claim_jobs: the relay claims due jobs`,
         "",
       ].join("\n"),
     });
@@ -121,6 +182,11 @@ describe("rowSecurityDeclarationFindings", () => {
       new URL(`../../../../../../../../${DECLARATIONS_LEDGER_FILE}`, import.meta.url),
     );
     const ledger = parse(readFileSync(committed, "utf8")) as Record<string, unknown>;
-    expect(Object.keys(ledger).sort()).toEqual(["platformTable", "reviewedPolicy"]);
+    expect(Object.keys(ledger).sort()).toEqual([
+      "platformTable",
+      "reviewedPolicy",
+      "systemAccess",
+      "systemFunction",
+    ]);
   });
 });

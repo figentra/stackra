@@ -141,6 +141,8 @@ export type { SequenceOptions } from "#core/types/sequence-options.type";
 export type { SequenceRegistration } from "#core/types/sequence-registration.type";
 export type { SequenceReserveOptions } from "#core/types/sequence-reserve-options.type";
 export type { SequenceSeries } from "#core/types/sequence-series.type";
+export type { SystemAccessOptions } from "#core/types/system-access-options.type";
+export type { SystemFunctionOptions } from "#core/types/system-function-options.type";
 export type { Table } from "#core/types/table.type";
 export type { RollupReport } from "#core/types/rollup-report.type";
 export type { TimeSeriesClass } from "#core/types/time-series-class.type";

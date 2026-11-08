@@ -31,8 +31,9 @@ export interface RowSecurityOptions {
   readonly platform?: ReadonlyMap<string, string>;
 
   /**
-   * The compiled migrations (`.stackra/migrations`) whose `t.platformTable` and `t.reviewedPolicy` declarations the
-   * audit reads: a declared platform table joins `platform`, and a reviewed table is held to its named policies.
+   * The compiled migrations (`.stackra/migrations`) whose declarations the audit reads: a `t.platformTable` table
+   * joins `platform`, a `t.reviewedPolicy` table is held to its named policies, and the `t.systemAccess` and
+   * `schema.systemFunction` declarations are the only grants, policies and functions the system-access role may have.
    */
   readonly migrationsDirectory?: string;
 

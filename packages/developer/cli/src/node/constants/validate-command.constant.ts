@@ -4,7 +4,8 @@
  *          catalogues, spec), and with `--repository` the repository-shape gate `pnpm validate` runs (was
  *          `tools/scripts/validate-repository.mjs`): the config, layout (ADR 0526), catalogue and structure checks of @stackra/repo-checks,
  *          the package cycles, the Expo native dependencies, the duplicate exports, the `any` ratchet, the reviewed
- *          row-security declarations (`t.platformTable`, `t.reviewedPolicy`; ADR 0239 amendment) and the
+ *          row-security declarations (`t.platformTable`, `t.reviewedPolicy`, `t.systemAccess`, `schema.systemFunction`;
+ *          ADR 0239 amendment) and the
  *          architecture map drift, the Python placement (ADR 0492 decision 7), the package entity lists (STA-1793), the lang
  *          catalogue exports (STA-1798), the launch files' drift from the runways (STA-2081) and the
  *          session settings (ADR 0495 decision 3, STA-1699). `--repository` prints the findings as `<dir>: <finding>` and a count and exits 1,

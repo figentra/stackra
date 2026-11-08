@@ -256,6 +256,11 @@ today, so moving the read means a new service. TODO: move that read into an iden
 - `assert-row-security.function.ts`: group (b) by shape, the declarations of `t.platformTable` and
   `t.reviewedPolicy`; `packages/developer/cli/src/node/commands/row-security-declarations.command.ts` and
   `validate --repository`: the reviewed list.
+- Gap A's mechanism (leader decision of 2026-11-08): `t.systemAccess({ select, update, reason })` and
+  `schema.systemFunction({ name, args, returns, sql, reason })` in @stackra/database give the `stackra_system_access`
+  role (`NOLOGIN`, `NOBYPASSRLS`, no member) column grants, role-scoped policies and the `SECURITY DEFINER` lookup or
+  claim functions it owns; `assert-row-security.function.ts` (`system-access-gaps.function.ts`) holds them to that
+  shape, and `stackra row-security-declarations` lists them. The migrating user needs `CREATEROLE`.
 - planned: the platform-form and tenant-form migrations of the table above, after the claim path of gap A for the
   cross-tenant workers (the outbox relays, the queue worker, the scheduler tick, the workflow tick, the settings
   revision tick).

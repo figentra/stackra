@@ -1,9 +1,13 @@
 # Stackra file contract:
-# Purpose: the reviewed list of every `t.platformTable(reason)` and `t.reviewedPolicy(reason, policies)` declaration
-#          in this repository's migrations, keyed `<file>#<table>` under its kind, with the reason it gives (ADR 0239
-#          amendment, group (c)). `stackra row-security-declarations` and `validate --repository` fail on a declaration
-#          that is not listed with its exact reason, so a new one shows in this file's diff and is reviewed. The
-#          framework's own platform tables are `PLATFORM_TABLES` in @stackra/database, not declarations.
+# Purpose: the reviewed list of every `t.platformTable(reason)`, `t.reviewedPolicy(reason, policies)`,
+#          `t.systemAccess({ ..., reason })` and `schema.systemFunction({ ..., reason })` declaration in this
+#          repository's migrations, keyed `<file>#<table>` (a function's `<file>#<name>`) under its kind, with the
+#          reason it gives (ADR 0239 amendment, group (c) and gap A). `stackra row-security-declarations` and
+#          `validate --repository` fail on a declaration that is not listed with its exact reason, so a new one shows
+#          in this file's diff and is reviewed. The framework's own platform tables are `PLATFORM_TABLES` in
+#          @stackra/database, not declarations.
 # Owner: release-operations · Secrets: forbidden
 platformTable: {}
 reviewedPolicy: {}
+systemAccess: {}
+systemFunction: {}

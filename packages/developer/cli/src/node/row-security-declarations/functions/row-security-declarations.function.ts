@@ -1,13 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: `rowSecurityDeclarations`, every `t.platformTable(reason)` and `t.reviewedPolicy(reason, policies)` call
- *          in the migrations of every workspace member, with its file, table, reason and policies, in file order.
+ * Purpose: `rowSecurityDeclarations`, every `t.platformTable(reason)`, `t.reviewedPolicy(reason, policies)`,
+ *          `t.systemAccess({ select, update, reason })` and `schema.systemFunction({ name, ..., reason })` call in the
+ *          migrations of every workspace member, with its file, table (a function's name), reason, policies and
+ *          granted columns, in file order.
  * Boundary: a text scan of each member's `src/**` `*.migration.ts` files (tests, dependencies and build output
  *           skipped). Migrations are frozen literals (ADR 0159), so a call is read as written: the table is the last
  *           `schema.create`/`schema.table` before it, the reason a plain string literal (else undefined), and the
- *           policies the string literals of the array after it.
+ *           policies the string literals of the array after it. For the two object-taking calls, the reason, the
+ *           function's name and the `select`/`update` columns are the first `reason:`, `name:`, `select:` and
+ *           `update:` properties after the call.
  * Runtime: node
- * Governing contract: ADR 0239 (2026-11-07 amendment, group (c) table); ADR 0159 (literal migrations).
+ * Governing contract: ADR 0239 (2026-11-07 amendment, group (c) table and gap A); ADR 0159 (literal migrations).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -20,7 +24,11 @@ import type { RowSecurityDeclaration } from "#node/row-security-declarations/typ
 const TABLE = /\bschema\.(?:create|table)\(\s*["'`]([A-Za-z_]\w*)["'`]/g;
 
 /** A declaration call, up to its first argument. */
-const CALL = /\.(platformTable|reviewedPolicy)\(\s*/g;
+const CALL = /\.(platformTable|reviewedPolicy|systemAccess|systemFunction)\(\s*/g;
+
+/** The start of the next schema call or declaration call. */
+const NEXT_CALL =
+  /\bschema\.\w+\(|\.(?:platformTable|reviewedPolicy|systemAccess|systemFunction)\(/;
 
 /** A plain string literal at the start of the text: double, single or a backtick without a placeholder. */
 const LITERAL = /^(?:"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`([^`$\\]*)`)/;
@@ -45,6 +53,18 @@ function literal(text: string): { readonly value: string; readonly length: numbe
   return { value: match[1] ?? match[2] ?? match[3] ?? "", length: match[0].length };
 }
 
+/** The string literals of the array of the first `key:` property in `text`. */
+function listOf(text: string, key: string): string[] {
+  const list = new RegExp(`\\b${key}\\s*:\\s*\\[([^\\]]*)\\]`).exec(text)?.[1] ?? "";
+  return [...list.matchAll(/["'`]([^"'`]+)["'`]/g)].map((item) => item[1] ?? "");
+}
+
+/** The string literal of the first `key:` property in `text`, or undefined when it is not a plain literal. */
+function propertyOf(text: string, key: string): string | undefined {
+  const at = new RegExp(`\\b${key}\\s*:\\s*`).exec(text);
+  return at === null ? undefined : literal(text.slice(at.index + at[0].length))?.value;
+}
+
 /**
  * The declarations in the migrations of the workspace at `root`.
  *
@@ -64,14 +84,35 @@ export function rowSecurityDeclarations(root: string): RowSecurityDeclaration[] 
         const at = (call.index ?? 0) + call[0].length;
         let table = "";
         for (const block of tables) if ((block.index ?? 0) < at) table = block[1] ?? "";
+        const kind = call[1] as RowSecurityDeclaration["kind"];
+        if (kind === "systemAccess" || kind === "systemFunction") {
+          // The call's own text: up to the next schema call or declaration, so a property is never a later call's.
+          const after = text.slice(at);
+          const next = after.search(NEXT_CALL);
+          const rest = next < 0 ? after : after.slice(0, next);
+          found.push({
+            file,
+            table: kind === "systemFunction" ? (propertyOf(rest, "name") ?? "") : table,
+            kind,
+            reason: propertyOf(rest, "reason"),
+            policies: [],
+            columns:
+              kind === "systemAccess"
+                ? [
+                    ...listOf(rest, "select").map((column) => `select ${column}`),
+                    ...listOf(rest, "update").map((column) => `update ${column}`),
+                  ]
+                : [],
+          });
+          continue;
+        }
         const reason = literal(text.slice(at));
-        const kind = call[1] === "platformTable" ? "platformTable" : "reviewedPolicy";
         let policies: string[] = [];
         if (kind === "reviewedPolicy" && reason !== undefined) {
           const list = /^\s*,\s*\[([^\]]*)\]/.exec(text.slice(at + reason.length))?.[1] ?? "";
           policies = [...list.matchAll(/["'`]([^"'`]+)["'`]/g)].map((policy) => policy[1] ?? "");
         }
-        found.push({ file, table, kind, reason: reason?.value, policies });
+        found.push({ file, table, kind, reason: reason?.value, policies, columns: [] });
       }
     }
   return found;

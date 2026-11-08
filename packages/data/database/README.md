@@ -835,6 +835,24 @@ reason is required and one line, and compiles to a `-- stackra:platform-table` o
 line. `stackra row-security-declarations` lists every declaration for review against
 `tools/scripts/row-security-declarations.yaml`.
 
+A system worker or a pre-tenant route that must find tenant rows before it knows the tenant (ADR 0239 amendment, gap
+A: a webhook's id-to-tenant lookup, the outbox relay, queue worker, scheduler or workflow tick claiming due rows) does
+it through the `stackra_system_access` role: `NOLOGIN`, `NOBYPASSRLS` and granted to no one, so no session can become
+it. `t.systemAccess({ select, update, reason })` grants the role `SELECT` on the `select` columns and `UPDATE` on the
+`update` columns of a tenant table (column grants only) and writes the permissive policies
+`pol_<table>_system_access_select` and `_update` `TO` the role `USING (true)`. `schema.systemFunction({ name, args,
+returns, sql, reason })` writes the package's lookup or claim body as a `language sql` function in the module's schema,
+`SECURITY DEFINER` owned by the role, with `search_path = pg_catalog, pg_temp` (the body names its schema), returning
+the declared columns (ids and the tenant id, never a payload), `EXECUTE` revoked from `PUBLIC` and granted to the
+migrating role. The caller then loads each row in its tenant (`withTenant`). Both create the role when missing, so the
+migrating user needs `CREATEROLE` (a managed Postgres's master user has it); a non-superuser holds the role and the
+schema's `CREATE` only for the function's owner change, inside the migration's transaction. Their reasons compile to
+`-- stackra:system-access` and `-- stackra:system-function` lines, which `stackra row-security-declarations` lists.
+`assertRowSecurity` holds them to that exact shape: the policies are the role's only, the role has no member (beyond
+the ADMIN-only grant Postgres 16+ gives its creator), no BYPASSRLS and no grant beyond the declared columns, every
+function it owns is declared, `SECURITY DEFINER`, pinned and not executable by `PUBLIC`, and the service role cannot
+`SET ROLE` to it.
+
 ```ts
 import { createTestingModule } from "@stackra/container/testing";
 import { Factory, type Faker, usePostgres } from "@stackra/database/testing";
