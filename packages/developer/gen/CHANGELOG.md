@@ -1,5 +1,22 @@
 # @stackra/gen
 
+## 0.22.0
+
+### Patch Changes
+
+- e41d9a1: A class gen names in a wiring comes from the entry that really exports it. `BearerConfig` is imported from
+  `@stackra/app/server`, both in the follow-the-system row and in a package manifest's driver, service and config
+  entries, which now name the entry whose barrel exports the class (`@stackra/app`'s configs live in `src/config` but are
+  exported from `./server`). Before, every service declaring `@stackra/app` failed typecheck on 0.21.0 with
+  `Module '"@stackra/app"' has no exported member 'BearerConfig'`. A new test checks every class gen names by hand
+  against the real package entry.
+- 4663a61: A package's generated `tsconfig.build.json` is written in oxfmt's layout (short arrays on one line), so a member's
+  `oxfmt --check` passes on the file exactly as gen writes it.
+- @stackra/money@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/support@0.22.0
+
 ## 0.21.0
 
 ### Minor Changes

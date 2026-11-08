@@ -3,7 +3,7 @@
  * Purpose: unit tests of `managedClient`: it joins paths to the base URL and refuses another origin (a resolved base URL is https, or http only on an `.internal` host), authenticates by
  *          each auth type (an API key from the connection before the platform's secret, Basic, a signed JWT, an OAuth
  *          bearer, or a token in the header and layout the Integration names), adds the declared headers under the
- *          call's own, sends a form body when the call or the Integration asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
+ *          call's own, sends a form body when the call or the Integration asks, reads raw bytes when the call asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
  *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError` without a credential in
  *          either.
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
@@ -136,6 +136,21 @@ describe("managedClient", () => {
     expect(init?.body).toBe('{"to":"a@acme.example"}');
     expect(headerOf(fetchMock, 0, "authorization")).toBe("Bearer platform-key");
     expect(headerOf(fetchMock, 0, "content-type")).toBe("application/json");
+  });
+
+  it("reads the answer as raw bytes when the call asks, and asks for any media type", async () => {
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0xff, 0x00, 0x80]);
+    const fetchMock = stubFetch(
+      () => new Response(pdf, { status: 200, headers: { "content-type": "application/pdf" } }),
+    );
+
+    const bytes = await clientOf(new MailIntegration()).get<Uint8Array>("/labels/1", {
+      bytes: true,
+    });
+
+    expect(bytes).toBeInstanceOf(Uint8Array);
+    expect([...bytes]).toEqual([...pdf]);
+    expect(headerOf(fetchMock, 0, "accept")).toBe("*/*");
   });
 
   it("sends the connection's key before the platform's", async () => {

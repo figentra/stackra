@@ -4,8 +4,9 @@
  *          that call, so the service-to-service calls it makes send it in `Stackra-On-Behalf-Of`
  *          (`ServiceClientSessionDriver`): the bearer token itself when the caller is a user (the first hop), or the
  *          token a service forwarded for its user when the action declares `onBehalfOf: { secondHop: true }`.
- * Boundary: `actor` must be the one `CallAuthenticator` derived from these same `headers` (the generated adapter passes
- *           both); nothing here verifies a token. Any other caller (an anonymous, agent, job or system call, a service
+ * Boundary: internal; `serveGuardedCall` is its one caller, with the `actor` `CallAuthenticator` derived from these
+ *           same `headers`; nothing here verifies a token. A hand-written controller (no action) holds only a first
+ *           hop's user bearer, never a forwarded token. Any other caller (an anonymous, agent, job or system call, a service
  *           acting alone, or a service acting for a user through an action without the second hop) holds nothing, so
  *           a second hop is impossible by construction. The token is never put on the actor, the call's options, its
  *           context, a log, an error or an event: it lives only in `ON_BEHALF_OF_TOKEN`'s run, emptied when `work`
@@ -34,14 +35,19 @@ function headerOf(headers: CallHeaders, name: string): string | undefined {
   return values.length === 1 ? values[0] : undefined;
 }
 
-/** Whether `action` declares `onBehalfOf: { secondHop: true }`. */
-function allowsSecondHop(action: object): boolean {
+/** Whether `action` declares `onBehalfOf: { secondHop: true }`; a controller (no action) never does. */
+function allowsSecondHop(action: object | undefined): boolean {
+  if (action === undefined) return false;
   const options = kindOf(action)?.options["onBehalfOf"] as { secondHop?: unknown } | undefined;
   return options?.secondHop === true;
 }
 
 /** The token the call may forward, by the rule in the file contract. */
-function forwardable(headers: CallHeaders, actor: Actor, action: object): string | undefined {
+function forwardable(
+  headers: CallHeaders,
+  actor: Actor,
+  action: object | undefined,
+): string | undefined {
   if (actor.kind === ActorKind.User && actor.onBehalfOf === undefined)
     return BEARER.exec(headerOf(headers, "authorization")?.trim() ?? "")?.[1];
   if (
@@ -60,19 +66,16 @@ function forwardable(headers: CallHeaders, actor: Actor, action: object): string
  *
  * @param headers - the call's headers as sent, the ones `CallAuthenticator` verified.
  * @param actor - the verified caller.
- * @param action - the action or query class the call runs.
+ * @param action - the action or query class the call runs; undefined for a controller, which forwards a first hop only.
  * @param work - the call itself.
  * @example
- * app.handlers.run((container) =>
- *   holdCallerToken(request.headers, actor, CancelOrderAction, () =>
- *     new ActionPipeline(container).execute(CancelOrderAction, input, { actor }),
- *   ),
- * );
+ * // serveGuardedCall, its one caller
+ * output = await holdCallerToken(guarded.headers, actor, options.action, () => options.execute(input, actor, guarded));
  */
 export async function holdCallerToken<T>(
   headers: CallHeaders,
   actor: Actor,
-  action: object,
+  action: object | undefined,
   work: () => Promise<T>,
 ): Promise<T> {
   let held = forwardable(headers, actor, action);

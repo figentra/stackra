@@ -142,7 +142,7 @@ describe("systemDriverDefaults", () => {
     expect(rows.map(({ port, driver }) => [port.name, driver])).toContainEqual(keys);
     expect(rows.find(({ port }) => port.name === "JsonWebKeys")?.config).toEqual({
       name: "BearerConfig",
-      from: "@stackra/app",
+      from: "@stackra/app/server",
     });
     expect(pairs({ ...COMMERCE_IR, packages: [] })).not.toContainEqual(keys);
     expect(

@@ -27,6 +27,7 @@ import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.functi
 import { checkMemberFiles } from "#node/functions/check-member-files.function";
 import { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 import { checkRawSql } from "#node/functions/check-raw-sql.function";
+import { checkHostedPeers } from "#node/functions/check-hosted-peers.function";
 import { checkMember } from "#node/functions/check-member.function";
 import { checkNativeModules } from "#node/functions/check-native-modules.function";
 import { checkPublicIdPrefixes } from "#node/functions/check-public-id-prefixes.function";
@@ -282,6 +283,20 @@ export async function structureFindings(
           licenseText: read("LICENSE"),
           rootLicense,
           stackra: isStackraRepo,
+        }),
+      );
+    // A library takes the packages whose values carry an identity in the host as peers (HOSTED_PEER_PACKAGES).
+    if (tierFor(dir) === "tier:lib")
+      report(
+        "hosted-peers",
+        dir,
+        checkHostedPeers({
+          pkg,
+          sources: files
+            .filter(
+              (p) => p.startsWith(`${dir}/src/`) && /\.tsx?$/.test(p) && !p.includes("/__tests__/"),
+            )
+            .map((p) => readFileSync(join(root, p), "utf8")),
         }),
       );
     if (tierFor(dir) === "tier:service")

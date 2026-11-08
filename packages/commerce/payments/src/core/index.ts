@@ -25,6 +25,7 @@ export { NoneConnectedAccountLimitsDriver } from "#core/drivers/none-connected-a
 export { NoneAgentCommerceProtocolsDriver } from "#core/drivers/none-agent-commerce-protocols.driver";
 export { StripeTapToPaySoftPosDriver } from "#core/drivers/stripe-tap-to-pay-soft-pos.driver";
 export { AgentConfirmationRefusedError } from "#core/errors/agent-confirmation-refused.error";
+export { ApplicationFeeInvalidError } from "#core/errors/application-fee-invalid.error";
 export { BalanceExceededError } from "#core/errors/balance-exceeded.error";
 export { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
 export { ConnectedAccountLimitsMissingError } from "#core/errors/connected-account-limits-missing.error";

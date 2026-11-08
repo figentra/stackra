@@ -1,26 +1,29 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreApi`, a service's Encore endpoints (`.stackra/encore/<member>/api.ts`): one `api()` per own
- *          action or query whose manifest entry has an endpoint, with that entry's method and path, typed by its input
- *          and output schema classes, running the call as `new ActionPipeline(container).execute(<class>, input,
- *          { actor })` inside `app.handlers.run` and `holdCallerToken` (the user's token the call may forward to the
- *          services it calls, from the request's headers). The endpoint is named by the camel-cased key and its version
- *          (`shop.order.cancel@1` is `shopOrderCancelV1`).
- * Boundary: pure; reads the manifest's actions and the member's classes and shapes. The actor comes only from
- *           Encore's verified auth data (`getAuthData()` of `~encore/auth`, `{ userID, actor }`), never from the body,
- *           a path parameter or a header; the headers are read only by `holdCallerToken`, which forwards a token only
- *           for an actor `CallAuthenticator` derived from them and never puts it on the call. An entry is `auth: true` unless its actors list `ActorKind.Anonymous`
- *           (`anonymous` in the manifest, STA-2025): then it is `auth: false` and runs as a fresh anonymous actor when
- *           no session was presented. No adapter is written for an entry without an endpoint, a hosted package's
- *           entry (its manifest does not name the files of its schemas) or one whose input or output schema is not a
- *           shape of the member; a service with none gets no file. A path parameter is always an input field:
- *           `buildManifest` refuses one that is not (`endpoint_param_unbound`), since Encore binds it from the input. A refusal propagates as Encore's default error
- *           until the refusal mapping lands.
+ * Purpose: `emitEncoreApi`, a service's Encore endpoints (`.stackra/encore/<member>/api.ts`): one `api.raw()` per own
+ *          action or query whose manifest entry has an endpoint (that entry's method and path) and one per own
+ *          controller (any method, its `path`, a trailing `/*` as Encore's `/*rest`), each `expose: true` and
+ *          `auth: false` to Encore, each calling `answerCall` of `./http`. That helper reads the body once under the
+ *          cap, runs the request guards over its exact bytes, authenticates, then runs the call as `new
+ *          ActionPipeline(container).execute(<class>, input, { actor })` (an action or query) or `container.get(<class>)
+ *          .handle(request)` (a controller). The endpoint is named by the camel-cased key and its version (`shop.order
+ *          .cancel@1` is `shopOrderCancelV1`), a controller by its class name. An action or query endpoint names its
+ *          class to the helper as `action`, so `serveGuardedCall` knows whether a forwarded user token may travel a
+ *          second hop through it (ADR 0209, amendment of 2026-11-07).
+ * Boundary: pure; reads the manifest's actions and the member's classes. The actor comes only from the verified
+ *           `Authorization` header (`CallAuthenticator`, inside the helper), never from the body, a path parameter or
+ *           another header. An entry may run without one only when its actors list `ActorKind.Anonymous`
+ *           (`anonymous` in the manifest, STA-2025); a controller is reachable without a session, since it is raw (its
+ *           own login or callback logic), and still goes through every guard. No adapter is written for an entry
+ *           without an endpoint or a hosted package's entry; a service with none gets no file. Input is parsed by the
+ *           helper (JSON body, or the query string for GET and DELETE, then the path parameters) and validated by the
+ *           pipeline; a path parameter is always an input field (`buildManifest` refuses one that is not,
+ *           `endpoint_param_unbound`).
  * Runtime: isomorphic
- * Governing contract: ADR 0091 (decision 2) and 0124 (Encore is generated); ADR 0294 (decision 21: the derived
+ * Governing contract: ADR 0091 (decision 2) and 0124 (Encore is generated); ADR 0237 (STA-2577 note: every generated
+ *                     adapter is raw, so the edge signature covers the body); ADR 0294 (decision 21: the derived
  *                     endpoint); ADR 0098 (the actor from the credential); ADR 0295 (decision 8: the adapters reach the
- *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063; ADR 0209 (2026-11-07
- *                     amendment, condition 5: one hop by default).
+ *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063; STA-2577.
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
@@ -39,18 +42,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
 type Entry = Readonly<Record<string, unknown>>;
 
 /** The local names this file always binds, which a member class never takes. */
-const RESERVED = [
-  "ActionPipeline",
-  "Actor",
-  "ActorKind",
-  "api",
-  "app",
-  "currentRequest",
-  "getAuthData",
-  "holdCallerToken",
-  "mintPublicId",
-  "requestHeaders",
-];
+const RESERVED = ["ActionPipeline", "answerCall", "api", "app"];
 
 /**
  * The Encore endpoints of a service, or undefined when it has no own action or query with an endpoint.
@@ -83,45 +75,61 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
     use(target.from, name === target.name ? name : `${target.name} as ${name}`, typeOnly);
     return name;
   };
-  /** The shape an entry's `input` or `output` names: undefined when absent, null when the member has no such shape. */
-  const shapeOf = (value: unknown): ClassRef | undefined | null => {
-    if (value === undefined) return undefined;
-    const shape = shapeOfRef(ir, value);
-    return shape === undefined ? null : { name: shape.name, from: shape.importPath };
-  };
-
   const body: string[] = [];
-  let anonymous = false;
   for (const entry of (manifest.actions ?? []) as readonly Entry[]) {
     const endpoint = entry["endpoint"] as { method?: unknown; path?: unknown } | false | undefined;
     if (typeof endpoint !== "object" || typeof entry["from"] === "string") continue;
     const declared = ownClass(ir, entry["class"], entry["module"]);
-    const input = shapeOf(entry["input"]);
-    const output = shapeOf(entry["output"]);
-    if (declared === undefined || input === null || output === null) continue;
+    if (declared === undefined) continue;
 
     const key = String(entry["key"]);
     const method = String(endpoint.method);
     const path = String(endpoint.path);
-    const open = entry["anonymous"] === true;
-    anonymous ||= open;
     const type = ref({ name: declared.name, from: declared.importPath }, false);
-    const parameter = input === undefined ? "" : `input: ${ref(input, true)}`;
-    const result = output === undefined ? "void" : ref(output, true);
-    const actor = open
-      ? 'getAuthData()?.actor ?? { kind: ActorKind.Anonymous, id: mintPublicId("anon") }'
-      : "getAuthData()!.actor";
+    // The input schema class types a GET or DELETE's query string; one the member does not declare coerces nothing.
+    const shape = entry["input"] === undefined ? undefined : shapeOfRef(ir, entry["input"]);
+    const input =
+      shape === undefined
+        ? []
+        : [`      input: ${ref({ name: shape.name, from: shape.importPath }, false)},`];
     body.push(
       `/** ${method} ${path}: ${key} through the action pipeline. */`,
-      `export const ${camelCase(key.replace("@", "_v"))} = api(`,
-      `  { method: ${JSON.stringify(method)}, path: ${JSON.stringify(path)}, expose: true, auth: ${!open} },`,
-      `  (${parameter}): Promise<${result}> =>`,
-      "    app.handlers.run((container) => {",
-      // typed, so the anonymous fallback's kind stays the literal an Actor needs
-      `      const actor${open ? ": Actor" : ""} = ${actor};`,
-      `      return holdCallerToken(requestHeaders(), actor, ${type}, () =>`,
-      `        new ActionPipeline(container).execute(${type}, ${input === undefined ? "{}" : "input"}, { actor }),`,
-      "      );",
+      `export const ${camelCase(key.replace("@", "_v"))} = api.raw(`,
+      `  { method: ${JSON.stringify(method)}, path: ${JSON.stringify(path)}, expose: true, auth: false },`,
+      "  (req, resp) =>",
+      "    answerCall(req, resp, {",
+      `      path: ${JSON.stringify(path)},`,
+      `      anonymous: ${entry["anonymous"] === true},`,
+      `      action: ${type},`,
+      ...input,
+      "      execute: (container, input, actor) =>",
+      `        new ActionPipeline(container).execute(${type}, input as never, { actor }),`,
+      "    }),",
+      ");",
+      "",
+    );
+  }
+  for (const controller of ir.classes) {
+    const path = controller.options["path"];
+    if (
+      controller.kind !== "controller" ||
+      controller.abstract === true ||
+      typeof path !== "string"
+    )
+      continue;
+    const type = ref({ name: controller.name, from: controller.importPath }, false);
+    // Encore names a wildcard segment: `/api/auth/*` is `/api/auth/*rest`.
+    const route = path.endsWith("/*") ? `${path}rest` : path;
+    body.push(
+      `/** ${path}: ${controller.name}, a raw controller, behind the same guards. */`,
+      `export const ${camelCase(controller.name)} = api.raw(`,
+      `  { method: "*", path: ${JSON.stringify(route)}, expose: true, auth: false },`,
+      "  (req, resp) =>",
+      "    answerCall(req, resp, {",
+      `      path: ${JSON.stringify(route)},`,
+      "      anonymous: true,",
+      "      raw: true,",
+      `      execute: (container, _input, _actor, request) => container.get(${type}).handle(request),`,
       "    }),",
       ");",
       "",
@@ -129,22 +137,15 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
   }
   if (body.length === 0) return undefined;
 
-  use("@stackra/actions", "ActionPipeline", false);
-  use("@stackra/app/server", "holdCallerToken", false);
-  if (anonymous) {
-    use("@stackra/contracts", "Actor", true);
-    use("@stackra/contracts", "ActorKind", false);
-    use("@stackra/contracts", "mintPublicId", false);
-  }
-  use("encore.dev", "currentRequest", false);
+  if (body.some((line) => line.includes("new ActionPipeline(")))
+    use("@stackra/actions", "ActionPipeline", false);
   use("encore.dev/api", "api", false);
-  use("~encore/auth", "getAuthData", false);
   const header = generatedHeader({
     from: "stackra.manifest.json (the own actions and queries with an endpoint)",
-    purpose: `the Encore endpoints of ${ir.package}: one api() per action and query, run through the action pipeline.`,
+    purpose: `the Encore endpoints of ${ir.package}: one api.raw() per action, query and controller, all answered by answerCall.`,
     boundary:
-      "the actor comes only from the verified auth data (`getAuthData()`), an anonymous one only where the call " +
-      "lists anonymous actors; every call runs through the server app's handlers, so a drain waits for it.",
+      "every endpoint is raw and auth: false to Encore; the guards, the authentication (CallAuthenticator) and the " +
+      "anonymous actor, only where the call lists it, are decided in answerCall, never here.",
     runtime: "node",
   });
   return {
@@ -155,12 +156,7 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       ...importLines(imports),
       "",
       ENCORE_APP_IMPORT,
-      "",
-      "/** The running call's headers as sent, which only `holdCallerToken` reads. */",
-      "function requestHeaders(): Readonly<Record<string, string | string[]>> {",
-      "  const meta = currentRequest();",
-      '  return meta?.type === "api-call" ? meta.headers : {};',
-      "}",
+      'import { answerCall } from "./http";',
       "",
       ...body,
     ]
