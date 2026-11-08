@@ -9,7 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0206 (decisions 7 and 8); ADR 0462; ADR 0294 (decisions 16 and 21); ADR 0082; STA-1538.
  */
-import { Action } from "@stackra/actions";
+import { Action, Idempotency } from "@stackra/actions";
 import { ActorKind, ApiArea } from "@stackra/contracts";
 
 import type { IdpAdmin } from "#contracts/index";
@@ -27,6 +27,8 @@ export class VerifyPasskeyAction extends Action({
   actors: [ActorKind.Anonymous],
   area: ApiArea.Public,
   rateLimit: { perMinute: 10 },
+  // a challenge is single-use and a verification answers session credentials: never kept for a replay
+  idempotency: Idempotency.Never,
   // reason: signing a person in is the device's, never an agent's
   tool: false,
 }) {
