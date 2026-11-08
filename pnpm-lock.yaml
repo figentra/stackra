@@ -2717,6 +2717,9 @@ importers:
       '@stackra/support':
         specifier: workspace:*
         version: link:../../foundation/support
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation

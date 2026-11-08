@@ -86,6 +86,8 @@ import { isAppendOnly } from "#core/functions/is-append-only.function";
 import { isTree } from "#core/functions/is-tree.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { readRowSecuritySettings } from "#core/functions/read-row-security-settings.function";
+import { replayRowSecuritySettings } from "#core/functions/replay-row-security-settings.function";
 import { rowKey } from "#core/functions/row-key.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
 import { tableCount } from "#core/functions/table-count.function";
@@ -613,8 +615,12 @@ export abstract class CrudService<M extends object> extends Service implements R
     if (options.requiresNew === true) {
       const model = this.model();
       const filter = await visibleFilter(model, where);
+      const settings = await readRowSecuritySettings(this.em());
       return this.em().transactional(
         async (em) => {
+          await replayRowSecuritySettings(settings, (sql, params) =>
+            (em as EntityManager).execute(sql, params),
+          );
           const row = await em.findOneOrFail(model, filter, {
             failHandler: () => NotFoundError.create(),
           });
@@ -802,17 +808,30 @@ export abstract class CrudService<M extends object> extends Service implements R
     ] as NonNullable<FindOptions<M>["orderBy"]>;
   }
 
-  /** Runs `work` now on its own entity manager: in a savepoint of the caller's transaction, or one of its own. */
-  private writeNow<T>(
+  /**
+   * Runs `work` now on its own entity manager: in a savepoint of the caller's transaction, or one of its own. A
+   * transaction of its own runs on another connection, so the caller's row-security settings (scope, tenant) are
+   * replayed in it first, as `Database.transaction` does with `requiresNew` (STA-2565).
+   */
+  private async writeNow<T>(
     options: Pick<TransactionOptions, "requiresNew">,
     work: (em: EntityManager) => Promise<T>,
   ): Promise<T> {
-    return this.em().transactional((em) => work(em as EntityManager), {
-      propagation:
-        options.requiresNew === true
-          ? TransactionPropagation.REQUIRES_NEW
-          : TransactionPropagation.NESTED,
-    });
+    const settings = options.requiresNew === true ? await readRowSecuritySettings(this.em()) : [];
+    return this.em().transactional(
+      async (em) => {
+        await replayRowSecuritySettings(settings, (sql, params) =>
+          (em as EntityManager).execute(sql, params),
+        );
+        return work(em as EntityManager);
+      },
+      {
+        propagation:
+          options.requiresNew === true
+            ? TransactionPropagation.REQUIRES_NEW
+            : TransactionPropagation.NESTED,
+      },
+    );
   }
 
   /**

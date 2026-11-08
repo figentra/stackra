@@ -94,6 +94,7 @@
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
@@ -112,6 +113,7 @@
     "@stackra/queue": "workspace:*",
     "@stackra/scheduler": "workspace:*",
     "@stackra/support": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
