@@ -195,16 +195,7 @@
         "path": "/loyalty/redemptions",
         "derived": false
       },
-      "tool": {
-        "name": "loyalty_kit_points_redeem",
-        "default": true,
-        "hints": {
-          "readOnlyHint": false,
-          "destructiveHint": false,
-          "idempotentHint": true,
-          "openWorldHint": false
-        }
-      },
+      "toolOff": "risk L3: not a tool unless the action says `tool: true` with a reason",
       "input": {
         "$ref": "#/schemas/loyalty_kit.RedeemPointsInput"
       },

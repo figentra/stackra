@@ -719,9 +719,10 @@ export function createSourceReader(
       if (!hasNonConstant(value)) options[name] = value;
       // ADR 0509: an unreadable `approval` is recorded so `approval_not_constant` refuses it, not skipped.
       if (name === "approval" && hasNonConstant(value)) options["approvalNotConstant"] = true;
-      // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does.
-      // A trailing `tool: false, // reason: …` counts too (owner decisions 2026-10-26, round 3).
-      if (name === "tool" && value === false) {
+      // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does, and so does a
+      // `tool: true` that makes an L3 or L4 action a tool. A trailing `// reason: …` counts too (owner decisions
+      // 2026-10-26, round 3).
+      if (name === "tool" && typeof value === "boolean") {
         const reason = /\/\/\s*reason:\s*(.+)/
           .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
           ?.trim();
