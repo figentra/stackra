@@ -24,6 +24,13 @@
       "class": "AgentConfirmationRefusedError"
     },
     {
+      "code": "application_fee_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "payments",
+      "class": "ApplicationFeeInvalidError"
+    },
+    {
       "code": "balance_exceeded",
       "kind": "failed_precondition",
       "category": "precondition_failed",
