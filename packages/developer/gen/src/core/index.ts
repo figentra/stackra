@@ -116,6 +116,7 @@ export type { DeclaredClass } from "#core/types/declared-class.type";
 export type { Endpoint } from "#core/types/endpoint.type";
 export type { DocsGroup } from "#core/types/docs-group.type";
 export type { DocsLink } from "#core/types/docs-link.type";
+export type { DocsLocale } from "#core/types/docs-locale.type";
 export type { DocsSiteInput } from "#core/types/docs-site-input.type";
 export type { DocsSite } from "#core/types/docs-site.type";
 export type { DocsTab } from "#core/types/docs-tab.type";
