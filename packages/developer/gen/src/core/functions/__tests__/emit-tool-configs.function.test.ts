@@ -201,6 +201,16 @@ describe("emitToolConfigs", () => {
     expect(bare[1]?.content).not.toContain("@stackra/tenancy/testing");
   });
 
+  it("loads the actions testing entry only for a member on @stackra/actions", () => {
+    const on = emitToolConfigs(
+      { ...COMMERCE_IR, packages: ["@stackra/container", "@stackra/actions"] },
+      { entries: [], registrations: false },
+    );
+    expect(on[1]?.content).toContain('import "@stackra/actions/testing";');
+    const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
+    expect(bare[1]?.content).not.toContain("@stackra/actions/testing");
+  });
+
   it("writes a container-free setup for a member off @stackra/container, and the container one otherwise", () => {
     const testing = {
       ...COMMERCE_IR,
