@@ -7,7 +7,8 @@
  *          clock. A generated client's call then sends the token the issuer gave for the producer's project; a producer
  *          module with no `clients.audiences` entry fails closed with a `TypeError` naming it, before any token is asked
  *          for and before anything is sent.
- * Boundary: test only; the key pair is generated here and thrown away, `fetch` stands in for the issuer and the producer.
+ * Boundary: test only; the key pair is generated here and thrown away and reaches the secret store as boot binds it,
+ *           by name from the environment; `fetch` stands in for the issuer and the producer.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0209 (decision 3 and its 2026-11-07 amendment); ADR 0263 (gen writes the wiring);
  *                     STA-2558.
@@ -16,7 +17,6 @@ import { generateKeyPairSync } from "node:crypto";
 
 import { ClientsConfig, HttpClientTransportDriver } from "@stackra/clients";
 import { ClientSession } from "@stackra/clients/contracts";
-import { MemorySecretStoreDriver } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
 import { Module } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
@@ -51,20 +51,12 @@ class HostClientsConfig extends ClientsConfig {
   override audiences = { pay: PAY_PROJECT };
 }
 
-/** The secret store holding a throwaway service account key under the configured name. */
-class TestSecrets extends MemorySecretStoreDriver {
-  constructor() {
-    super();
-    this.set(
-      "IDENTITY_SERVICE_ACCOUNT_KEY",
-      JSON.stringify({
-        keyId: "312909075212460002",
-        key: privateKey,
-        userId: "312909075212460001",
-      }),
-    );
-  }
-}
+/** A throwaway service account key file; the host's boot reads secrets by name from its environment. */
+const KEY_FILE = JSON.stringify({
+  keyId: "312909075212460002",
+  key: privateKey,
+  userId: "312909075212460001",
+});
 
 class ShipModule extends Module({}) {}
 
@@ -104,11 +96,6 @@ const wiring: Wiring = {
       },
       deps: { zitadel: [ServiceTokensConfig, SecretStore, Clock] },
     },
-    {
-      port: SecretStore,
-      key: "config.SecretStore",
-      candidates: { memory: async () => TestSecrets },
-    },
   ],
 };
 
@@ -131,6 +118,7 @@ function network(): { tokenRequests: number; sent: Request[] } {
 
 /** A generated client's call to `key`, through the booted host's session. */
 async function callAs(key: string) {
+  vi.stubEnv("IDENTITY_SERVICE_ACCOUNT_KEY", KEY_FILE);
   const app = await createApp(ShipModule, { wiring });
   try {
     return await app.handlers.run(async (container) => {
@@ -154,6 +142,7 @@ async function callAs(key: string) {
 describe("a service's default outgoing-call wiring", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("sends the token ZITADEL gave for the producer's project", async () => {
