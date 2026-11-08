@@ -154,7 +154,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>[]> {
     const [filter, rest] = await this.readOf(where, options);
-    return this.em().find(this.model(), filter, rest);
+    return (await this.settled()).find(this.model(), filter, rest);
   }
 
   /**
@@ -166,7 +166,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H> | null> {
     const [filter, rest] = await this.readOf(where, options);
-    const em = this.em();
+    const em = await this.settled();
     const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
     return em.findOne(this.model(), filter, cache === undefined ? rest : { cache });
   }
@@ -181,7 +181,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>> {
     const [filter, rest] = await this.readOf(where, options);
-    const em = this.em();
+    const em = await this.settled();
     const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
     return em.findOneOrFail(this.model(), filter, {
       ...rest,
@@ -193,9 +193,10 @@ export abstract class CrudService<M extends object> extends Service implements R
   /** Implements `Repository.count`, documented there; `DeletedReadOptions` count the rows a delete policy hides. */
   async count(where: Where<M> = {} as Where<M>, options?: DeletedReadOptions): Promise<number> {
     const [filter, rest] = await this.readOf<CountOptions<M>>(where, options);
+    const em = await this.settled();
     return rest === undefined
-      ? this.em().count(this.model(), filter)
-      : this.em().count(this.model(), filter, rest);
+      ? em.count(this.model(), filter)
+      : em.count(this.model(), filter, rest);
   }
 
   /** Implements `Repository.sum`, documented there. */
@@ -496,7 +497,7 @@ export abstract class CrudService<M extends object> extends Service implements R
       limit: perPage,
       offset: (page - 1) * perPage,
     });
-    const [items, total] = await this.em().findAndCount(this.model(), filter, rest);
+    const [items, total] = await (await this.settled()).findAndCount(this.model(), filter, rest);
     return { items, total, page, perPage, pages: Math.ceil(total / perPage) };
   }
 
@@ -598,7 +599,8 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * Changes the one row matching `where`; written when the caller's unit of work commits. With `requiresNew` it is read,
+   * Changes the one row matching `where`; written when the caller's unit of work flushes, at the latest when it commits
+   * (a later read through this service in the transaction flushes first, so it sees the change). With `requiresNew` it is read,
    * changed and written now in a transaction of its own that commits even if the caller's rolls back (an attempt
    * counter kept across a failed delivery), as `insert` does. With `expectedVersion` (a `Versioned` model), a row at
    * another version is refused before anything changes; the ORM's own version check at flush catches a change made
@@ -733,7 +735,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     input: TableQuery,
     options: TableOptions<M, H> = {},
   ): Promise<TablePage<Loaded<M, H>>> {
-    const em = this.em();
+    const em = await this.settled();
     const model = this.model();
     const orderBy = this.orderOf(input.sort);
     const filters = Object.entries(input.filter ?? {})
@@ -971,6 +973,17 @@ export abstract class CrudService<M extends object> extends Service implements R
     );
   }
 
+  /**
+   * The entity manager, once it has written the unit of work's pending changes when a transaction is running, so a read
+   * sees a value set earlier in that transaction. MikroORM's auto flush misses a field set on a loaded row, through
+   * `update` (`assign`) or a plain setter. Outside a transaction nothing is written early.
+   */
+  private async settled(): Promise<EntityManager> {
+    const em = this.em();
+    if (em.isInTransaction()) await em.flush();
+    return em;
+  }
+
   /** The filter and the ORM options of a read, with the delete filters a `DeletedReadOptions` turns off. */
   private async readOf<O extends { readonly filters?: unknown }>(
     where: Where<M>,
@@ -1009,7 +1022,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     field: string,
     where: Where<M>,
   ): Promise<number> {
-    const em = this.em();
+    const em = await this.settled();
     const model = this.model();
     const column = `row.${quoteIdentifier(columnOf(em.getMetadata(model), field))}`;
     const row = (await em
