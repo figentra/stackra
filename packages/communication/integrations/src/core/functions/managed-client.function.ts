@@ -12,12 +12,16 @@
  *           a whole-URL `{field}` is filled the same way. A `GET`, `HEAD`, `PUT` or `DELETE`
  *           retries on no answer, 408, 429 or 5xx; a `POST` or `PATCH` only with an idempotency key the provider
  *           deduplicates on. A 4xx is `ProviderRefusedError`; spent retries, or a bucket full past the longest wait,
- *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error. A bucket
- *           key names the connection id (or `platform`), never a credential.
+ *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error: the
+ *           provider's code is scrubbed against the call's credentials (the connection's and the Integration's
+ *           `@Secret` values and the key, password or token sent) before the refusal is built. A bucket key names the
+ *           connection id (or `platform`), never a credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 4, 6, 13 and 20); ADR 0217 (token buckets); ADR 0140 (refusals); STA-793;
  *                     owner D10 2026-10-28 (stackra-223): the waits are the contracts `backoffDelay`.
  */
+import { Secret } from "@stackra/config";
+import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration } from "@stackra/contracts";
 
 import type { Connection } from "#core/bases/connection.base";
@@ -29,6 +33,7 @@ import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { integrationOptionsOf } from "#core/functions/integration-options-of.function";
 import { placeholderLookup } from "#core/functions/placeholder-lookup.function";
 import { providerCodeOf } from "#core/functions/provider-code-of.function";
+import { redactSecrets } from "#core/functions/redact-secrets.function";
 import { resolvePlaceholders } from "#core/functions/resolve-placeholders.function";
 import { signJwt } from "#core/functions/sign-jwt.function";
 import type { IntegrationApi } from "#core/types/integration-api.type";
@@ -113,6 +118,21 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   const { idempotencyHeader, ...policy } = { ...RETRY, ...declared.retry };
   const { attempts } = policy;
   const maxDelay = Duration.toMilliseconds(policy.max);
+  const connectionSecrets =
+    connection === undefined ? [] : [...Secret.members(connection.constructor as AnyClass).keys()];
+  const integrationSecrets = [...Secret.members(integration.constructor as AnyClass).values()];
+
+  /** The credential values of one call, read now: `@Secret` values and what `authorize` sent. */
+  function credentialsOf(sent: readonly string[]): (string | undefined)[] {
+    return [
+      ...connectionSecrets.map((field) => {
+        const value: unknown = Reflect.get(connection ?? {}, field);
+        return typeof value === "string" ? value : undefined;
+      }),
+      ...integrationSecrets.map((secretName) => secrets.get(secretName)),
+      ...sent,
+    ];
+  }
 
   /** The full URL of `path`: always joined under the base URL, so even an absolute URL stays on its origin. */
   function urlOf(path: string, query: RequestOptions["query"]): URL {
@@ -133,30 +153,35 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     return url;
   }
 
-  /** Adds the credentials of the Integration's `auth` type. */
-  async function authorize(headers: Headers, url: URL): Promise<void> {
+  /** Adds the credentials of the Integration's `auth` type, and lists each credential value it sent in `sent`. */
+  async function authorize(headers: Headers, url: URL, sent: string[]): Promise<void> {
+    /** `resolve`, listing each placeholder value it fills in `sent`. */
+    const resolveSent = (template: string): string =>
+      resolvePlaceholders(template, (field) => {
+        const value = lookup(field);
+        if (value !== undefined) sent.push(value);
+        return value;
+      });
     switch (auth.type) {
       case AuthType.None: {
         return;
       }
       case AuthType.ApiKey: {
-        const value = resolve(auth.format ?? "{apiKey}");
+        const value = resolveSent(auth.format ?? "{apiKey}");
         if (auth.header !== undefined) headers.set(auth.header, value);
         else if (auth.query !== undefined) url.searchParams.set(auth.query, value);
         return;
       }
       case AuthType.Basic: {
-        headers.set(
-          "authorization",
-          `Basic ${encodeBase64(`${resolve(auth.username)}:${resolve(auth.password)}`)}`,
-        );
+        const basic = encodeBase64(`${resolveSent(auth.username)}:${resolveSent(auth.password)}`);
+        sent.push(basic);
+        headers.set("authorization", `Basic ${basic}`);
         return;
       }
       case AuthType.Jwt: {
-        headers.set(
-          auth.header ?? "authorization",
-          `Bearer ${await signJwt(auth, resolve, clock.now())}`,
-        );
+        const jwt = await signJwt(auth, resolveSent, clock.now());
+        sent.push(jwt);
+        headers.set(auth.header ?? "authorization", `Bearer ${jwt}`);
         return;
       }
       case AuthType.OAuth2Code:
@@ -167,6 +192,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
             `${name} authenticates with OAuth, so it calls only through a connection that holds its tokens`,
           );
         const token = await options.accessToken();
+        sent.push(token);
         headers.set(
           auth.token?.header ?? "authorization",
           (auth.token?.format ?? "Bearer {accessToken}").replace("{accessToken}", token),
@@ -214,7 +240,8 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     if (key !== undefined && idempotencyHeader !== undefined) headers.set(idempotencyHeader, key);
     const retryable =
       IDEMPOTENT_METHODS.has(method) || (key !== undefined && idempotencyHeader !== undefined);
-    await authorize(headers, url);
+    const sent: string[] = [];
+    await authorize(headers, url, sent);
     const init: RequestInit = {
       method,
       headers,
@@ -241,7 +268,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
         throw ProviderRefusedError.create({
           provider,
           status: response.status,
-          ...(code === undefined ? {} : { code }),
+          ...(code === undefined ? {} : { code: redactSecrets(code, credentialsOf(sent)) }),
         });
       }
       if (!retryable || attempt >= attempts)
