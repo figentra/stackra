@@ -14,11 +14,12 @@ import type { CustomFieldType } from "#core/index";
 import { CustomField } from "#node/models/custom-field.model";
 
 describe("CustomField", () => {
-  it("is a model with the cfd public id, the timestamps and a translatable label", () => {
+  it("is a model with the cfd public id, the tenant, the timestamps and a translatable label", () => {
     expect(new CustomField()).toBeInstanceOf(Model);
     const traits = traitsOf(CustomField);
     expect(traits.map((trait) => trait.name)).toEqual([
       "has_public_id",
+      "belongs_to_tenant",
       "timestamps",
       "translatable",
     ]);

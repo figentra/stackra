@@ -134,7 +134,7 @@
       "file": "src/node/models/automation.model.ts",
       "table": "workflow.automations",
       "publicId": "wfa",
-      "traits": ["HasPublicId", "Timestamps", "HasRevisions"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "HasRevisions"],
       "entity": {
         "module": "workflow",
         "fields": [
@@ -234,6 +234,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "id",
             "optional": false,
             "nullable": false,
@@ -270,7 +279,7 @@
       "file": "src/node/models/checklist-progress.model.ts",
       "table": "workflow.checklist_progresses",
       "publicId": "wfp",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "workflow",
         "fields": [
@@ -336,6 +345,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -363,7 +381,7 @@
       "file": "src/node/models/checklist.model.ts",
       "table": "workflow.checklists",
       "publicId": "wfc",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "workflow",
         "fields": [
@@ -448,6 +466,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "wfc"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -882,7 +909,7 @@
     },
     "workflow.Automation": {
       "type": "object",
-      "required": ["scopeId", "scopePath", "key", "id", "createdAt", "updatedAt"],
+      "required": ["scopeId", "scopePath", "key", "tenantId", "id", "createdAt", "updatedAt"],
       "properties": {
         "publishedRevision": {
           "type": ["integer", "null"],
@@ -943,6 +970,10 @@
           "type": ["string", "null"],
           "default": null
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "id": {
           "type": "string",
           "pattern": "^wfa_[0-9A-Za-z]{26}$"
@@ -967,6 +998,7 @@
         "ownerId",
         "completedBy",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -995,6 +1027,10 @@
           "type": "string",
           "pattern": "^wfp_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -1007,7 +1043,16 @@
     },
     "workflow.Checklist": {
       "type": "object",
-      "required": ["template", "scopeId", "scopePath", "key", "id", "createdAt", "updatedAt"],
+      "required": [
+        "template",
+        "scopeId",
+        "scopePath",
+        "key",
+        "id",
+        "tenantId",
+        "createdAt",
+        "updatedAt"
+      ],
       "properties": {
         "template": {
           "description": "@Field(zod): described by its zod schema"
@@ -1047,6 +1092,10 @@
         "id": {
           "type": "string",
           "pattern": "^wfc_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "createdAt": {
           "type": "string",

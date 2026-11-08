@@ -58,7 +58,7 @@ async function catalogue(): Promise<unknown[]> {
        from pg_class c
        join pg_namespace n on n.oid = c.relnamespace
        join pg_attribute a on a.attrelid = c.oid and a.attname = 'isolation_scope_id'
-       where n.nspname = 'database'
+       where n.nspname = 'database' and c.relkind = 'r'
        order by c.relname`,
   );
 }

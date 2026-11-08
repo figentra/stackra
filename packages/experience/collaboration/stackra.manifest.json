@@ -97,7 +97,7 @@
       "file": "src/node/models/comment-mention.model.ts",
       "table": "collaboration.comment_mentions",
       "publicId": "cmn",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "collaboration",
         "fields": [
@@ -165,6 +165,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -192,7 +201,7 @@
       "file": "src/node/models/comment-revision.model.ts",
       "table": "collaboration.comment_revisions",
       "publicId": "cmr",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "collaboration",
         "fields": [
@@ -248,6 +257,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -275,7 +293,7 @@
       "file": "src/node/models/comment-thread.model.ts",
       "table": "collaboration.comment_threads",
       "publicId": "cth",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "collaboration",
         "fields": [
@@ -365,6 +383,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -392,7 +419,7 @@
       "file": "src/node/models/comment.model.ts",
       "table": "collaboration.comments",
       "publicId": "cmt",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "collaboration",
         "fields": [
@@ -494,6 +521,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "cmt"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -800,6 +836,7 @@
         "kind",
         "targetId",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -829,6 +866,10 @@
           "type": "string",
           "pattern": "^cmn_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -848,6 +889,7 @@
         "body",
         "editedBy",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -873,6 +915,10 @@
           "type": "string",
           "pattern": "^cmr_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -896,6 +942,7 @@
         "resolvedAt",
         "resolvedBy",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -933,6 +980,10 @@
           "type": "string",
           "pattern": "^cth_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -957,6 +1008,7 @@
         "tombstonedAt",
         "tombstonedBy",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -998,6 +1050,10 @@
         "id": {
           "type": "string",
           "pattern": "^cmt_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "createdAt": {
           "type": "string",

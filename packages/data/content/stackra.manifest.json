@@ -45,7 +45,7 @@
       "file": "src/node/models/custom-field-value-set.model.ts",
       "table": "content.custom_field_value_sets",
       "publicId": "cfv",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "content",
         "fields": [
@@ -105,6 +105,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -132,7 +141,7 @@
       "file": "src/node/models/custom-field.model.ts",
       "table": "content.custom_fields",
       "publicId": "cfd",
-      "traits": ["HasPublicId", "Timestamps", "Translatable"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "Translatable"],
       "entity": {
         "module": "content",
         "fields": [
@@ -240,6 +249,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -267,7 +285,7 @@
       "file": "src/node/models/revision.model.ts",
       "table": "content.revisions",
       "publicId": "rev",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "content",
         "fields": [
@@ -354,6 +372,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "rev"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -474,6 +501,7 @@
         "model",
         "recordId",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -498,6 +526,10 @@
           "type": "string",
           "pattern": "^cfv_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -518,6 +550,7 @@
         "type",
         "label",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -561,6 +594,10 @@
           "type": "string",
           "pattern": "^cfd_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -581,6 +618,7 @@
         "model",
         "recordId",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -622,6 +660,10 @@
         "id": {
           "type": "string",
           "pattern": "^rev_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "createdAt": {
           "type": "string",

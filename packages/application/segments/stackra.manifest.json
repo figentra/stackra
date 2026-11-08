@@ -85,7 +85,7 @@
       "file": "src/node/models/segment-membership.model.ts",
       "table": "segments.segment_memberships",
       "publicId": "sgm",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "segments",
         "fields": [
@@ -141,6 +141,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -168,7 +177,7 @@
       "file": "src/node/models/segment.model.ts",
       "table": "segments.segments",
       "publicId": "seg",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
       "entity": {
         "module": "segments",
         "fields": [
@@ -249,6 +258,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "seg"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -402,6 +420,7 @@
         "subjectModel",
         "subjectId",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -427,6 +446,10 @@
           "type": "string",
           "pattern": "^sgm_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -449,6 +472,7 @@
         "ruleSetId",
         "computedAt",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -483,6 +507,10 @@
         "id": {
           "type": "string",
           "pattern": "^seg_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "createdAt": {
           "type": "string",
