@@ -25,6 +25,10 @@ const ALLOWED_ACTORS: ReadonlySet<string> = new Set(["user", "agent", "external_
 /** The longest approval window: 30 days (ADR 0509, L-03). */
 const MAX_WINDOW_MS = Duration.toMilliseconds(Duration.days(30));
 
+/** Whether a `@Setting` `approval` option asks for one: `true` (four-eyes) or `{ by: role }` (role-gated). */
+const needsApproval = (approval: unknown): boolean =>
+  approval === true || (typeof approval === "object" && approval !== null);
+
 /** The setting keys marked `approval`, as `<module>.<section.>name`. */
 function approvalKeys(ir: MemberIR): ReadonlySet<string> {
   const keys = new Set<string>();
@@ -38,7 +42,7 @@ function approvalKeys(ir: MemberIR): ReadonlySet<string> {
           facet.member === member &&
           typeof facet.options === "object" &&
           facet.options !== null &&
-          (facet.options as Record<string, unknown>)["approval"] === true,
+          needsApproval((facet.options as Record<string, unknown>)["approval"]),
       ) === true;
   for (const shape of ir.shapes.filter((candidate) => candidate.kind === "settings"))
     for (const field of shape.fields) {

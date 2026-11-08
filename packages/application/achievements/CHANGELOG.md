@@ -1,5 +1,36 @@
 # @stackra/achievements
 
+## 0.22.0
+
+### Patch Changes
+
+- 3a9a6be: `@stackra/integrations` is a peer of every library that uses its values (payments, webhooks, documents, notifications,
+  pricing, achievements, loyalty-kit), no longer a dependency. As a dependency, pnpm resolved a second copy in a product,
+  so a Connection's base and `makeConnection` came from different copies and every Stripe call failed with "StripeConnection
+  was not loaded by a ConnectionStore". `stackra validate` refuses the mistake (`hosted-peers`, `HOSTED_PEER_PACKAGES`).
+- Updated dependencies [41f3da5]
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [3a9a6be]
+- Updated dependencies [ae24e3c]
+- Updated dependencies [acbee14]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/integrations@0.22.0
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/documents@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/rules@0.22.0
+  - @stackra/content@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Patch Changes

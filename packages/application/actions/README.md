@@ -211,6 +211,12 @@ only costs a replica read. `reads` is not the offline `replica` option.
 over its budget, or one that runs one statement shape more than the configured repeats (an N+1 loop), is reported with
 its key, as a warning in production and a failure in strict mode. With none bound nothing is counted.
 
+`onBehalfOf: { secondHop: true }` (on `Action`) lets a service that calls the action for a user forward that user's
+access token to the services the action itself calls. Without it a user's token travels one hop only: a user's own call
+forwards the user's token, but an action called by a service for a user makes its own outgoing calls with the service
+token alone, so the next service runs them as the calling service only (ADR 0209, amendment of 2026-11-07, condition
+5). `serveGuardedCall` of `@stackra/app/server` reads the option; the pipeline itself never sees a token.
+
 `ctx.memo(key, load)` is the call's request memo: the first read of a key runs `load`, every later read in the same call
 shares the answer (a rejected load is forgotten). Nothing outlives the call, so put the scope or any id the answer
 depends on in the key.

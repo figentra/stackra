@@ -8,6 +8,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0462; ADR 0206 (decision 8); STA-1538.
  */
+import { Idempotency } from "@stackra/actions";
 import { fakeActionContext } from "@stackra/actions/testing";
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
@@ -74,12 +75,13 @@ async function enrol(idp: MemoryIdpAdminDriver, ctx: ReturnType<typeof fakeActio
 }
 
 describe("passkey actions", () => {
-  it("keeps sign-in anonymous and public, registration the user's, and none a tool", () => {
+  it("keeps sign-in anonymous, public and never replayed, registration the user's, and none a tool", () => {
     for (const kind of [ChallengePasskeyAction, VerifyPasskeyAction]) {
       const options = kindOf(kind)?.options;
       expect(options?.["actors"]).toEqual([ActorKind.Anonymous]);
       expect(options?.["area"]).toBe(ApiArea.Public);
-      expect(options?.["tool"]).toBe(false);
+      // a challenge is single-use and a verification answers session credentials: neither is ever kept or replayed
+      expect(options?.["idempotency"]).toBe(Idempotency.Never);
     }
     for (const kind of [RegisterPasskeyAction, ConfirmPasskeyAction]) {
       const options = kindOf(kind)?.options;

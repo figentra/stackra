@@ -78,7 +78,6 @@ import { emitIsolationTest } from "#core/functions/emit-isolation-test.function"
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitClientTools } from "#core/functions/emit-client-tools.function";
 import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
-import { emitEncoreAuth } from "#core/functions/emit-encore-auth.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
@@ -104,6 +103,7 @@ import { emitReports } from "#core/functions/emit-reports.function";
 import { emitSearchQueries } from "#core/functions/emit-search-queries.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { emitResources } from "#core/functions/emit-resources.function";
+import { emitPackageRoutes } from "#core/functions/emit-package-routes.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
@@ -297,12 +297,9 @@ export function generateMember(
     [".stackra/tests/tenant-isolation.int.test.ts", emitIsolationTest(ir)],
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
-  // One auth handler and gateway per Encore app (a service is one), written beside the endpoints that read it.
-  const encoreApi = emitEncoreApi(ir, manifest);
   for (const encore of [
     emitEncoreService(ir),
-    encoreApi,
-    emitEncoreAuth(ir, encoreApi !== undefined),
+    emitEncoreApi(ir, manifest),
     emitEncoreCronJobs(ir, manifest),
     emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),
@@ -311,7 +308,13 @@ export function generateMember(
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
-  files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
+  files.push(
+    ...clients.files,
+    ...emitRoutes(ir),
+    ...emitPackageRoutes(ir),
+    ...emitBlocks(ir),
+    ...expo.files,
+  );
   // The composed panel resources' route constants, for an app that hosts the panel (STA-1947).
   const resources = emitResources(ir);
   if (resources !== undefined) files.push(resources);

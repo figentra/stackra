@@ -3,7 +3,8 @@
  * Purpose: the consumer contract of the `./server` entry: `createApp` (the template's service entries import it),
  *          the `Controller` kind, the `RequestGuard` extension point, `AppDrainingError` and the edge-header guard
  *          with its memory drivers and refusal, the bearer-token guard with its config, key drivers, refusal and
- *          `VerifiedToken`, `CallAuthenticator` (the generated auth handler's check), the origin and CSRF guards with
+ *          `VerifiedToken`, `CallAuthenticator` (the generated auth handler's check), `ServiceClientSessionDriver`
+ *          (the tokens a service call sends), the origin and CSRF guards with
  *          their configuration and refusals,
  *          `apiCacheControl` and `corsHeaders` are exported, nothing else is, and `createApp` resolves to a `ServerApp`.
  * Boundary: test only; imports the stand-in barrel through its `#server` alias.
@@ -30,6 +31,7 @@ describe("@stackra/app/server", () => {
       "CsrfTokenInvalidError",
       "EdgeHeaderGuard",
       "EdgeSignatureInvalidError",
+      "HttpConfig",
       "MemoryEdgeNonceStoreDriver",
       "MemoryEdgeSigningKeysDriver",
       "MemoryJsonWebKeysDriver",
@@ -37,10 +39,12 @@ describe("@stackra/app/server", () => {
       "OriginGuard",
       "OriginNotAllowedError",
       "RequestGuard",
+      "ServiceClientSessionDriver",
       "VerifiedToken",
       "apiCacheControl",
       "corsHeaders",
       "createApp",
+      "serveGuardedCall",
     ]);
   });
 

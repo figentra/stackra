@@ -6,7 +6,7 @@
  *          declared `headers`, keeps to its rate limits, retries what is safe to retry, and turns every
  *          provider outcome into a value or a typed refusal.
  * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call or the
- *           Integration's `requestBody` asks. A
+ *           Integration's `requestBody` asks; raw bytes out when the call asks (`bytes`). A
  *           `{field}` placeholder in the base URL (a per-region host) is filled from the credential set and must
  *           resolve to an https origin, or an http one on an `.internal` host (the private tools namespace, STA-1653);
  *           a whole-URL `{field}` is filled the same way. A `GET`, `HEAD`, `PUT` or `DELETE`
@@ -206,7 +206,8 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     const headers = new Headers(request.headers);
     for (const [header, value] of Object.entries(declared.headers ?? {}))
       if (!headers.has(header)) headers.set(header, resolve(value));
-    if (!headers.has("accept")) headers.set("accept", "application/json");
+    if (!headers.has("accept"))
+      headers.set("accept", request.bytes === true ? "*/*" : "application/json");
     if (body !== undefined)
       headers.set("content-type", form ? "application/x-www-form-urlencoded" : "application/json");
     const key = request.idempotencyKey;
@@ -231,6 +232,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
         failure = error;
       }
       if (response?.ok === true) {
+        if (request.bytes === true) return new Uint8Array(await response.arrayBuffer());
         const text = await response.text();
         return text === "" ? undefined : parsed(text);
       }

@@ -1,5 +1,18 @@
 # @stackra/infra-mobile
 
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [41f3da5]
+- Updated dependencies [ae24e3c]
+  - @stackra/integrations@0.22.0
+  - @stackra/runway@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Patch Changes

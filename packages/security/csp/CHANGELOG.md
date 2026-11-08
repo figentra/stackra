@@ -1,5 +1,27 @@
 # @stackra/csp
 
+## 0.22.0
+
+### Minor Changes
+
+- 2dd98e6: `sanitizeHtml(html, policy?)` makes rich-text HTML safe to render, with no DOM and no new dependency. It rebuilds the
+  output from parsed parts against an allowlist (`RICH_TEXT_HTML_POLICY`: the editor's paragraphs, headings, lists,
+  quotes, code, marks and links). Scripts, styles and their content, event handlers, `style`, comments and unknown tags
+  are dropped, and a link keeps its `href` only for http(s), mailto, relative or fragment URLs once entities and control
+  characters are taken out. `HtmlPolicy` narrows it.
+  
+  A floor holds under any `HtmlPolicy`: event handlers, `style`, `srcdoc`, `formaction` and the like are never kept,
+  script-capable elements always go with their content, and `base`, `meta`, `link`, `embed` and form controls always go.
+- 1d5d185: `CspConfig.thirdPartyScripts` is the per-surface third-party script allowlist: each exact https origin with the
+  consent category that gates it. A `necessary` script (a payment SDK) always loads; any other (an ad pixel under
+  `marketing`) is added to `script-src` only when `CspAdditions.consent` grants its category, so without consent only
+  `necessary` scripts load and an unlisted script never does. Wildcards, paths and http are refused at boot.
+
+### Patch Changes
+
+- @stackra/config@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Minor Changes

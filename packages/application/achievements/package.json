@@ -1,6 +1,6 @@
 {
   "name": "@stackra/achievements",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "private": false,
   "description": "Stackra achievements: award kinds kept as scope data, awards granted by hand or automatically when a kind's @stackra/rules criteria match a recipient's facts, revoke, an opaque verify token and a short typed code resolved across scopes by a public verify query, a QR code, one live award per kind, recipient and period, certificates rendered through @stackra/documents, and award-granted and award-revoked integration events",
   "keywords": [
@@ -101,7 +101,6 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/iam": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/rules": "workspace:*",
@@ -112,6 +111,7 @@
   },
   "devDependencies": {
     "@stackra/container": "workspace:*",
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -123,6 +123,9 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/integrations": "workspace:*"
   },
   "engines": {
     "node": ">=24.0.0"

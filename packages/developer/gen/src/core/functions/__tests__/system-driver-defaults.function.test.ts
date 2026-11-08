@@ -142,12 +142,39 @@ describe("systemDriverDefaults", () => {
     expect(rows.map(({ port, driver }) => [port.name, driver])).toContainEqual(keys);
     expect(rows.find(({ port }) => port.name === "JsonWebKeys")?.config).toEqual({
       name: "BearerConfig",
-      from: "@stackra/app",
+      from: "@stackra/app/server",
     });
     expect(pairs({ ...COMMERCE_IR, packages: [] })).not.toContainEqual(keys);
     expect(
       pairs({ ...WEB_APP_IR, targets: ["web"], packages: ["@stackra/app"] }),
     ).not.toContainEqual(keys);
+  });
+
+  it("binds the service session and ZITADEL tokens in a service that declares app, clients and identity, and nowhere else", () => {
+    const all = ["@stackra/app", "@stackra/clients", "@stackra/identity"];
+    const session = ["ClientSession", "service"];
+    const tokens = ["ServiceTokens", "zitadel"];
+    const rows = systemDriverDefaults({ ...COMMERCE_IR, packages: all });
+    expect(rows.map(({ port, driver }) => [port.name, driver])).toEqual(
+      expect.arrayContaining([session, tokens]),
+    );
+    // each class is named by the entry that exports it, so the generated wiring resolves
+    expect(rows.find(({ port }) => port.name === "ClientSession")?.port.from).toBe(
+      "@stackra/clients/contracts",
+    );
+    expect(rows.find(({ port }) => port.name === "ServiceTokens")).toEqual({
+      port: { name: "ServiceTokens", from: "@stackra/identity/contracts" },
+      driver: "zitadel",
+      config: { name: "ServiceTokensConfig", from: "@stackra/identity/node" },
+    });
+    for (const missing of all) {
+      const some = pairs({ ...COMMERCE_IR, packages: all.filter((name) => name !== missing) });
+      expect(some).not.toContainEqual(session);
+      expect(some).not.toContainEqual(tokens);
+    }
+    const app = pairs({ ...WEB_APP_IR, targets: ["web"], packages: all });
+    expect(app).not.toContainEqual(session);
+    expect(app).not.toContainEqual(tokens);
   });
 
   it("gives a package, and a host without the port's package, none", () => {

@@ -39,6 +39,7 @@ peers, each loaded only by the entry that needs it.
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
+| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
 | `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)             |
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
@@ -52,6 +53,7 @@ peers, each loaded only by the entry that needs it.
 | `BearerTokenInvalidError`                    | `./server`  | the 401 refusal for a missing or invalid bearer token                                 |
 | `OidcJsonWebKeysDriver`                      | `./server`  | the `oidc` `JsonWebKeys` driver: discovery, key set, cache, refetch on unknown kid    |
 | `MemoryJsonWebKeysDriver`                    | `./server`  | the `memory` `JsonWebKeys` driver (tests, local runs)                                 |
+| `ServiceClientSessionDriver`                 | `./server`  | the `service` `ClientSession`: a service call's own token and the user's it forwards  |
 | `OriginNotAllowedError`                      | `./server`  | the 403 refusal for a foreign origin, or a cookie with no origin                      |
 | `CsrfTokenInvalidError`                      | `./server`  | the 403 refusal for a missing or mismatched CSRF header                               |
 | `CorsConfig`, `CsrfConfig`                   | `./server`  | `app.cors` (origins, methods, headers, credentials, max-age) and `app.csrf`           |
@@ -190,6 +192,26 @@ the scope claim step, assurance and the actor read `verified.claims` from there.
 `STACKRA_BEARER_ISSUER` and `STACKRA_BEARER_AUDIENCE` (or runway) and bind the guard, `VerifiedToken` and a
 `JsonWebKeys` driver in the service's wiring; gen does not bind them by default. ZITADEL issues opaque access tokens
 unless the app's token type is JWT; set it to JWT.
+
+### Service-to-service calls
+
+A service calls another through its generated client, whose HTTP transport asks the `ClientSession` for headers. In a
+service that session is `ServiceClientSessionDriver` (`service`): it sends `Authorization: Bearer` with the service's
+own token from `ServiceTokens` (`@stackra/identity`), issued for the producer's project
+(`ClientsConfig.audiences[<module>]`), and, when the running call holds one, the user's access token in
+`Stackra-On-Behalf-Of`. `serveGuardedCall`, the one path of every generated endpoint and controller, runs the call
+with that token held: the inbound user's bearer on a user's own call (the first hop), or the token a service forwarded
+for its user only when the endpoint's action declares `onBehalfOf: { secondHop: true }`. A hand-written controller
+names no action, so it forwards a first hop's bearer only, never a forwarded token. Otherwise nothing is held and the next service runs the call as the calling
+service alone (ADR 0209, amendment of 2026-11-07). The held token lives only in the call's async context, never on the
+actor, the context, a log, an error or an event, and is emptied when the call ends.
+
+Gen binds this by default in a service that declares `@stackra/app`, `@stackra/clients` and `@stackra/identity`:
+`ClientSession` takes `service` and `ServiceTokens` takes `zitadel` (`ZitadelServiceTokensDriver`), so no host wiring
+is needed. A deployment sets `identity.service_tokens.issuer`, the secret named by
+`identity.service_tokens.keySecret` (by default `IDENTITY_SERVICE_ACCOUNT_KEY`, the service account's ZITADEL key
+file) and `clients.audiences`. A producer module with no audience fails the call with a `TypeError` naming the module,
+before any token is asked for; nothing is ever sent unauthenticated.
 
 ### Edge Worker or in-process guard
 

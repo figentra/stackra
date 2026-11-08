@@ -2,11 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitEncoreApi`: a service gets `.stackra/encore/<member>/api.ts` with one `api()` per own
  *          action and query that has an endpoint, named by its camel-cased key and version, with the entry's method and
- *          path, typed by its input and output schemas, running `new ActionPipeline(container).execute(...)` inside
- *          `app.handlers.run` with the actor from `getAuthData()`; an anonymous entry is `auth: false` and falls back
- *          to an anonymous actor; an entry with no endpoint, a hosted entry and one whose input or output schema the
- *          member does not declare get no adapter; a shape named like a bound name or another module's shape is
- *          aliased; a package, an app and a service with no such entry get no file.
+ *          path, typed by its input and output schemas, answered by the `answerCall` helper (`api.raw`, `auth: false` to Encore, the pipeline run with the
+ *          verified actor); only an anonymous entry opens to a call with no credential; a controller is a raw `*`
+ *          endpoint; an entry with no endpoint or a hosted entry gets no adapter; a package, an app and a service with no such entry get no file.
  * Boundary: test only; runs on the commerce IR fixture and the manifest `buildManifest` derives from it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 21); ADR 0098; STA-2025; STA-2063 (FR-002 to
@@ -114,33 +112,37 @@ describe(emitEncoreApi, () => {
     entry: (typeof entries)[number] | undefined,
   ): { method: string; path: string } => entry?.["endpoint"] as { method: string; path: string };
 
-  it("writes the endpoints file of a service, importing the pipeline, Encore and the server app", () => {
+  it("writes the endpoints file of a service, importing the pipeline, Encore, the helper and the server app", () => {
     expect(emitEncoreApi(ir, manifest)?.path).toBe(".stackra/encore/commerce/api.ts");
     for (const line of [
       'import { ActionPipeline } from "@stackra/actions";',
-      'import { ActorKind, mintPublicId } from "@stackra/contracts";',
       'import { api } from "encore.dev/api";',
-      'import { getAuthData } from "~encore/auth";',
       'import { CancelOrderAction } from "#modules/orders/actions/cancel-order.action";',
-      'import type { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";',
+      'import { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";',
+      'import { answerCall } from "./http";',
       `import { app } from "${GENERATED_ENTRY}";`,
     ])
       expect(content).toContain(line);
+    expect(content).not.toContain("~encore/auth");
+    expect(content).not.toContain("getAuthData");
   });
 
-  it("writes one adapter per action with the derived endpoint, run through the pipeline with the verified actor", () => {
+  it("writes one raw adapter per action with the derived endpoint, answered by the one helper", () => {
     const { method, path } = endpoint(cancel);
     expect(content).toContain(
       [
         `/** ${method} ${path}: orders.order.cancel@1 through the action pipeline. */`,
-        "export const ordersOrderCancelV1 = api(",
-        `  { method: "${method}", path: "${path}", expose: true, auth: true },`,
-        "  (input: CancelOrderInput): Promise<CancelOrderOutput> =>",
-        "    app.handlers.run((container) =>",
-        "      new ActionPipeline(container).execute(CancelOrderAction, input, {",
-        "        actor: getAuthData()!.actor,",
-        "      }),",
-        "    ),",
+        "export const ordersOrderCancelV1 = api.raw(",
+        `  { method: "${method}", path: "${path}", expose: true, auth: false },`,
+        "  (req, resp) =>",
+        "    answerCall(req, resp, {",
+        `      path: "${path}",`,
+        "      anonymous: false,",
+        "      action: CancelOrderAction,",
+        "      input: CancelOrderInput,",
+        "      execute: (container, input, actor) =>",
+        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor }),",
+        "    }),",
         ");",
       ].join("\n"),
     );
@@ -149,62 +151,57 @@ describe(emitEncoreApi, () => {
   it("writes a query's adapter like an action's", () => {
     const { method, path } = endpoint(list);
     expect(method).toBe("GET");
-    expect(content).toContain("export const ordersOrderListV1 = api(");
-    expect(content).toContain(`  { method: "GET", path: "${path}", expose: true, auth: true },`);
-    expect(content).toContain("  (input: ListOrdersInput): Promise<ListOrdersOutput> =>");
+    expect(content).toContain("export const ordersOrderListV1 = api.raw(");
+    expect(content).toContain(`  { method: "GET", path: "${path}", expose: true, auth: false },`);
     expect(content).toContain(
-      "      new ActionPipeline(container).execute(ListOrdersQuery, input, {",
+      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor }),",
     );
   });
 
-  it("opens an anonymous entry and falls back to an anonymous actor; no input or output takes none", () => {
-    const { path } = endpoint(entries.find((entry) => entry.key === "orders.health.check@1"));
-    expect(path).not.toContain(":");
-    expect(content).toContain(
-      [
-        "export const ordersHealthCheckV1 = api(",
-        `  { method: "GET", path: "${path}", expose: true, auth: false },`,
-        "  (): Promise<void> =>",
-        "    app.handlers.run((container) =>",
-        "      new ActionPipeline(container).execute(CheckHealthQuery, {}, {",
-        '        actor: getAuthData()?.actor ?? { kind: ActorKind.Anonymous, id: mintPublicId("anon") },',
-        "      }),",
-        "    ),",
-        ");",
-      ].join("\n"),
+  it("lets only an anonymous entry run without a credential; Encore auth is off for all", () => {
+    expect(content).toContain("export const ordersHealthCheckV1 = api.raw(");
+    expect(content.match(/anonymous: true/g)).toHaveLength(1);
+    expect(content.match(/expose: true, auth: false/g)).toHaveLength(
+      content.match(/= api\.raw\(/g)?.length ?? -1,
     );
-    // Only the anonymous entry may run without a session.
-    expect(content.match(/auth: false/g)).toHaveLength(1);
-    expect(content.match(/getAuthData\(\)!\.actor/g)).toHaveLength(4);
+    expect(content).not.toContain("auth: true");
   });
 
-  it("writes no adapter for an entry without an endpoint, a hosted entry or an undeclared schema", () => {
+  it("writes no adapter for an entry without an endpoint or a hosted entry", () => {
     expect(content).not.toContain("CountOrdersQuery");
     expect(content).not.toContain("kitOrderCancelV1");
-    expect(content).not.toContain("ordersOrderVoidV1");
-    expect(content).not.toContain("ordersOrderRefundV1");
-    expect(content).not.toContain("RefundOrderOutput");
-    expect(content.match(/= api\(/g)).toHaveLength(5);
   });
 
-  it("aliases a shape named like a bound name, or like another module's shape", () => {
+  it("writes a raw controller as a wildcard-method endpoint through the same helper", () => {
+    const withController: MemberIR = {
+      ...ir,
+      classes: [
+        ...ir.classes,
+        {
+          ...query("AuthCallbackController", "auth-callback", { path: "/api/auth/*" }),
+          kind: "controller",
+          file: "src/modules/orders/raw/auth-callback.controller.ts",
+          importPath: "#modules/orders/raw/auth-callback.controller",
+        },
+      ],
+    };
+    const text = emitEncoreApi(withController, manifest)?.content ?? "";
     for (const line of [
-      'import { ActionPipeline } from "@stackra/actions";',
-      'import type { ActionPipeline as ActionPipeline2 } from "#modules/orders/schemas/action-pipeline.schema";',
-      'import type { Summary } from "#modules/orders/schemas/summary.schema";',
-      'import type { Summary as Summary2 } from "#modules/billing/schemas/summary.schema";',
-      "  (input: ListOrdersInput): Promise<ActionPipeline2> =>",
-      "  (input: Summary): Promise<Summary2> =>",
+      "export const authCallbackController = api.raw(",
+      '  { method: "*", path: "/api/auth/*rest", expose: true, auth: false },',
+      "      raw: true,",
+      "      execute: (container, _input, _actor, request) => container.get(AuthCallbackController).handle(request),",
     ])
-      expect(content).toContain(line);
-    // The pipeline the adapters run is still the bound one.
-    expect(content).not.toContain("new ActionPipeline2(");
+      expect(text).toContain(line);
+    // A controller names no action, so serveGuardedCall never lets a forwarded token through it (ADR 0209).
+    const controller = text.slice(text.indexOf("export const authCallbackController"));
+    expect(controller).not.toContain("action:");
   });
 
-  it("imports the anonymous actor helpers only when an entry is anonymous", () => {
-    const closed = emitEncoreApi(COMMERCE_IR, buildManifest(COMMERCE_IR).manifest)?.content;
-    expect(closed).not.toContain("@stackra/contracts");
-    expect(closed).not.toContain("auth: false");
+  it("names each action's class to the helper, so a second hop is read from it", () => {
+    expect(content.match(/^ {6}action: \w+,$/gm)).toHaveLength(
+      content.match(/new ActionPipeline\(/g)?.length ?? -1,
+    );
   });
 
   it("writes none for a package, an app or a service with no endpoint", () => {

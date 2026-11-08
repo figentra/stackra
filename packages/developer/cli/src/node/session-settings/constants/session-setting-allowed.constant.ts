@@ -16,8 +16,9 @@ export const SESSION_SETTING_ALLOWED: Readonly<Record<string, string>> = Object.
   // withScope lives in @stackra/database, which cannot depend on tenancy, so it cannot move into the isolation driver
   "packages/data/database/src/core/functions/run-in-scope.function.ts":
     "withScope for both database drivers: the app.scope_* settings, transaction-local, and the enclosing ones put back after a nested call",
-  "packages/data/database/src/node/drivers/postgres-database.driver.ts":
-    "onReplica: the withScope settings replayed in the replica's transaction, transaction-local",
+  // the read-and-replay of withScope's settings, shared by onReplica and a requiresNew transaction (STA-2565)
+  "packages/data/database/src/core/functions/replay-row-security-settings.function.ts":
+    "the withScope settings replayed transaction-locally in a replica's or a requiresNew transaction (STA-2565)",
   // its tenant is a `PLATFORM` partition string and its argument is a scope id, not an actor, so it cannot call
   // `withTenant`, and iam must not depend on tenancy; it sets the tenant transaction-locally in a transaction of its own
   "packages/security/iam/src/node/drivers/postgres-policy-snapshot-store.driver.ts":

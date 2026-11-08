@@ -1,5 +1,16 @@
 # @stackra/model
 
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [acbee14]
+  - @stackra/events@0.22.0
+  - @stackra/money@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/validation@0.22.0
+
 ## 0.21.0
 
 ### Minor Changes

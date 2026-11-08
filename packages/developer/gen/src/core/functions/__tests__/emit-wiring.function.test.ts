@@ -727,6 +727,7 @@ describe("emitWiring", () => {
       '    { module: "billing", kind: "service", provide: SearchHealthIndicatorDriver, deps: [SearchDriver, SearchConfig] },',
       '    { key: "app.cors", provide: CorsConfig },',
       '    { key: "app.csrf", provide: CsrfConfig },',
+      '    { key: "app.http", provide: HttpConfig },',
       '    { key: "database", provide: DatabaseConfig },',
       '    { key: "queue", provide: QueueConfig },',
     ])

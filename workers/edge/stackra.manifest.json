@@ -98,7 +98,7 @@
             {
               "class": {
                 "name": "BearerConfig",
-                "from": "@stackra/app"
+                "from": "@stackra/app/server"
               }
             }
           ]
