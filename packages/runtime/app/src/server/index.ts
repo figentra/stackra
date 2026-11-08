@@ -5,7 +5,7 @@
  *          guard with its memory drivers and refusal, the origin and CSRF guards with their configuration and
  *          refusals, the JWKS bearer-token guard with its configuration, key drivers, refusal and the request's
  *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check) with its call types,
- *          `corsHeaders`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
+ *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
  * Runtime: node
@@ -15,6 +15,7 @@
 export { BearerConfig } from "#config/bearer.config";
 export { CorsConfig } from "#config/cors.config";
 export { CsrfConfig } from "#config/csrf.config";
+export { HttpConfig } from "#config/http.config";
 export { Controller } from "#server/bases/controller.base";
 export { RequestGuard } from "#server/bases/request-guard.base";
 export { MemoryEdgeNonceStoreDriver } from "#server/drivers/memory-edge-nonce-store.driver";
@@ -29,6 +30,7 @@ export { OriginNotAllowedError } from "#server/errors/origin-not-allowed.error";
 export { apiCacheControl } from "#server/functions/api-cache-control.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
+export { serveGuardedCall } from "#server/functions/serve-guarded-call.function";
 export { BearerTokenGuard } from "#server/services/bearer-token.guard";
 export { CallAuthenticator } from "#server/services/call-authenticator.service";
 export { CsrfGuard } from "#server/services/csrf.guard";
@@ -38,6 +40,7 @@ export { VerifiedToken } from "#server/services/verified-token.service";
 export type { CallAuthData } from "#server/types/call-auth-data.type";
 export type { CallCredentials } from "#server/types/call-credentials.type";
 export type { ControllerClass } from "#server/types/controller-class.type";
+export type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
 export type { ControllerOptions } from "#server/types/controller-options.type";
 export type { ProbeAnswer } from "#server/types/probe-answer.type";
 export type { ServerApp } from "#server/types/server-app.type";
