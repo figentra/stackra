@@ -743,7 +743,11 @@
             "from": "@stackra/contracts"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "Comment",
+        "from": "@stackra/collaboration/node"
+      }
     }
   ],
   "schemas": {

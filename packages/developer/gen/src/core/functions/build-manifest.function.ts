@@ -982,7 +982,8 @@ export function buildManifest(ir: MemberIR): {
     drivers.set(key, entry);
   }
   // A published package's services with their constructor tokens, so a host's wiring binds one it injects
-  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686). Its
+  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686), and the
+  // model a `CrudService<M>` is typed against (`partner`), so the host registers the pair (ADR 0305 rule 5). Its
   // extension points too: its services inject them, so a host binds them alongside (`LoyaltyKitExtensionPoint`).
   const services: Entry[] = published
     ? ir.classes
@@ -995,6 +996,17 @@ export function buildManifest(ir: MemberIR): {
           class: declared.name,
           from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
+          ...(declared.partner === undefined
+            ? {}
+            : {
+                partner: {
+                  name: declared.partner.name,
+                  from: exportedFrom(
+                    declared.partner.name,
+                    publicSpecifier(ir.package, declared.partner.from),
+                  ),
+                },
+              }),
         }))
     : [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {

@@ -250,7 +250,11 @@
   "services": [
     {
       "class": "ConditionFieldService",
-      "from": "@stackra/rules/node"
+      "from": "@stackra/rules/node",
+      "partner": {
+        "name": "ConditionField",
+        "from": "@stackra/rules/node"
+      }
     },
     {
       "class": "RuleSetService",
@@ -266,7 +270,11 @@
             "from": "@stackra/database"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "RuleSet",
+        "from": "@stackra/rules/node"
+      }
     }
   ],
   "schemas": {

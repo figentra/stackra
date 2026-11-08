@@ -303,7 +303,11 @@
             "from": "@stackra/scope"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "ScopeNode",
+        "from": "@stackra/scope/node"
+      }
     }
   ],
   "schemas": {
