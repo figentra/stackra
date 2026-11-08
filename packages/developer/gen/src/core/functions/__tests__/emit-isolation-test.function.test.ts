@@ -56,12 +56,16 @@ describe("emitIsolationTest", () => {
     );
     expect(test).toContain('import { tenantIsolationOptions } from "@stackra/tenancy/testing";');
     expect(test).toContain(
-      'const postgres = usePostgres({ migrationsDirectory: fileURLToPath(new URL("../migrations", import.meta.url)) });',
+      [
+        'const migrationsDirectory = fileURLToPath(new URL("../migrations", import.meta.url));',
+        "const postgres = usePostgres({ migrationsDirectory });",
+      ].join("\n"),
     );
     expect(test).toContain(
       [
         "    const warnings = await assertRowSecurity(postgres.database, {",
         "      ...tenantIsolationOptions(),",
+        "      migrationsDirectory,",
         "      platform: new Map([",
         '        ["achievements.award_verifications", "ADR 0368 decision 5"],',
         "      ]),",

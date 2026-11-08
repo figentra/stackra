@@ -8,7 +8,10 @@
  *          unapproved extension, raw statement without an inverse, a policy the table cannot take), and the ICU
  *          collation of a text column (with its refusals), column changes on an existing table (nullable, NOT NULL,
  *          type with a stated `from`) with their inverses and refusals, and a foreign key or enum check on an existing
- *          table added NOT VALID and validated in its own step (stackra-251).
+ *          table added NOT VALID and validated in its own step (stackra-251), and the `platformTable` and
+ *          `reviewedPolicy` declarations: their marker lines, read back by `tableDeclarations`, and their refusals (an
+ *          empty or multi-line reason, no policy named, a platform table with an owner column or a policy, two
+ *          declarations).
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
@@ -24,6 +27,14 @@ import type { Blueprint } from "#core/types/blueprint.type";
 import type { ColumnGroup } from "#core/types/column-group.type";
 import type { MigrationId } from "#core/types/migration-id.type";
 import type { SchemaBuilder } from "#core/types/schema-builder.type";
+import { tableDeclarations } from "#core/functions/table-declarations.function";
+
+/** The compiled SQL of `type` in the `outbox` schema, as gen writes a migration file. */
+const sqlOf = (type: Parameters<typeof compileMigration>[0]): string =>
+  compileMigration(type, { schema: "outbox" })
+    .steps.flatMap((step) => step.sql)
+    .map((statement) => `${statement};\n`)
+    .join("");
 
 /** An id column with its equality policy, the way an isolation package's macro writes one. */
 class BelongsToWorkspaceMacro extends Macro {
@@ -1173,6 +1184,128 @@ describe(compileMigration, () => {
         /at least one table/,
       );
       expect(() => compileMigration(NoRemedyMigration, { schema: "documents" })).toThrow(/remedy/);
+    });
+  });
+  describe("the platformTable and reviewedPolicy declarations (ADR 0239 amendment, group (c))", () => {
+    it("compiles each declaration to its marker line, which tableDeclarations reads back", () => {
+      class DeclareMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("inbox", (t: Blueprint) =>
+            t.platformTable("  received event ids only; no customer data  "),
+          );
+          schema.create("routes", (t: Blueprint) => {
+            t.string("route_id", 33).notNull().comment("The route.");
+            t.reviewedPolicy("a pre-tenant route read through a setting", [
+              "pol_routes_read",
+              "pol_routes_write",
+            ]);
+          });
+        }
+      }
+      const sql = sqlOf(DeclareMigration);
+      expect(sql).toContain(
+        "-- stackra:platform-table outbox.inbox received event ids only; no customer data;\n",
+      );
+      expect(sql).toContain(
+        "-- stackra:reviewed-policy outbox.routes pol_routes_read,pol_routes_write a pre-tenant route read through a setting;\n",
+      );
+      const declared = tableDeclarations(sql);
+      expect([...declared.platform]).toEqual([
+        ["outbox.inbox", "received event ids only; no customer data"],
+      ]);
+      expect([...declared.reviewed]).toEqual([
+        [
+          "outbox.routes",
+          {
+            policies: ["pol_routes_read", "pol_routes_write"],
+            reason: "a pre-tenant route read through a setting",
+          },
+        ],
+      ]);
+      // A marker is a comment: it has no inverse, and the declared create still compiles first after it.
+      const [step] = compileMigration(DeclareMigration, { schema: "outbox" }).steps;
+      expect(step?.inverse).toEqual(['drop table if exists "outbox"."routes"']);
+    });
+
+    it("refuses an empty or multi-line reason and a review that names no policy", () => {
+      for (const reason of ["", "   ", "two\nlines"]) {
+        class PlatformMigration extends Migration {
+          up(schema: SchemaBuilder): void {
+            schema.table("inbox", (t: Blueprint) => t.platformTable(reason));
+          }
+        }
+        class ReviewMigration extends Migration {
+          up(schema: SchemaBuilder): void {
+            schema.table("routes", (t: Blueprint) => t.reviewedPolicy(reason, ["pol_routes_read"]));
+          }
+        }
+        expect(() => sqlOf(PlatformMigration)).toThrow(/reason/);
+        expect(() => sqlOf(ReviewMigration)).toThrow(/reason/);
+      }
+      class NoPolicyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("routes", (t: Blueprint) => t.reviewedPolicy("reviewed", []));
+        }
+      }
+      class BadPolicyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("routes", (t: Blueprint) => t.reviewedPolicy("reviewed", ["pol x"]));
+        }
+      }
+      class TwiceMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("routes", (t: Blueprint) => {
+            t.platformTable("no tenant data");
+            t.reviewedPolicy("reviewed", ["pol_routes_read"]);
+          });
+        }
+      }
+      expect(() => sqlOf(NoPolicyMigration)).toThrow(/names the policies/);
+      expect(() => sqlOf(BadPolicyMigration)).toThrow();
+      expect(() => sqlOf(TwiceMigration)).toThrow(/already declares/);
+    });
+
+    it("refuses a platform table that holds an owner column or a policy", () => {
+      class ScopeIdMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.string("scope_id", 63).nullable().comment("The scope.");
+          });
+        }
+      }
+      class IsolationScopeMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.string("isolation_scope_id", 33).nullable().comment("The isolation scope.");
+          });
+        }
+      }
+      class SettingDefaultMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.string("owner_id", 33)
+              .nullable()
+              .defaultSetting("app.owner_id")
+              .comment("Filled from the call.");
+          });
+        }
+      }
+      class PolicyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.uuid("workspace_id").notNull().comment("The workspace.");
+            t.rowLevelSecurity("workspace_id", { setting: "app.workspace_id", match: "equals" });
+          });
+        }
+      }
+      expect(() => sqlOf(ScopeIdMigration)).toThrow(/platform table.*scope_id/);
+      expect(() => sqlOf(IsolationScopeMigration)).toThrow(/isolation_scope_id/);
+      expect(() => sqlOf(SettingDefaultMigration)).toThrow(/owner_id/);
+      expect(() => sqlOf(PolicyMigration)).toThrow(/workspace_id policy/);
     });
   });
 });

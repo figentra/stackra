@@ -73,9 +73,9 @@ Every row is in force: the items below, the group (c) dispositions and the gap a
    restrictive policy or a query predicate.
 2. **`scope.scope_nodes` is a platform table.** Its one reader outside the scope package is the isolation driver
    (`CallIsolationDriver`, `@stackra/tenancy`). That driver reads one node and its tenant, in a savepoint it always
-   rolls back. No other package names the table, its model, its service or its Postgres driver. The system readers
-   named below read the tree only through the `ScopeTree` port. The scope package
-   still owns and writes it (0327 decision 3). The audit lists it as a platform table at its contract step, with this
+   rolls back. No other package names the table, its model, its service or its Postgres driver, except the audit's
+   `PLATFORM_TABLES` row, which names it with its reason and reads nothing. The system readers named below read the
+   tree only through the `ScopeTree` port. The scope package still owns and writes it (0327 decision 3). The audit lists it as a platform table at its contract step, with this
    reason.
 3. **The `@stackra/database` tables carry `isolation_scope_id`.**
    [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) keeps the word
@@ -85,8 +85,7 @@ Every row is in force: the items below, the group (c) dispositions and the gap a
    `pol_<table>_isolation_scope_id`: equality with `app.tenant_id`. `scope_id` stays the caller's sub-scope, part of
    each table's key. The audit treats these four tables as group (b) by name; they get no platform entry. Precedent:
    core's `packages/commerce/payments` keeps the tenant in `scope_id` against `app.tenant_id` with `equalsOrUnset`.
-   Payments' column is not renamed now: it stays group (b) by name, like `isolation_scope_id`, and is revisited only if
-   the strict audit of 0.20 needs it.
+   Payments' column is not renamed: the audit accepts it as group (b) by policy shape (2026-11-08, below).
 4. **Tenant and TenantMove are a named exception.** The Figentra OS tenancy tables for tenants and tenant moves span
    tenants by nature, so they have no tenant equality policy. They are read and written only by the tenancy service.
    The exception covers no other table of that service.
@@ -102,7 +101,7 @@ Every row is in force: the items below, the group (c) dispositions and the gap a
    | Group | Table shape                                                         | Until it is fixed                |
    | ----- | ------------------------------------------------------------------- | -------------------------------- |
    | (a)   | an `ancestor` `scope_path` policy                                   | the contract step adds the owner |
-   | (b)   | equality on `scope_id` or `isolation_scope_id` with `app.tenant_id` | stays, named by table (item 3)   |
+   | (b)   | equality on `scope_id` or `isolation_scope_id` with `app.tenant_id` | stays: by shape or by name       |
    | (c)   | a system table with no row-level security                           | the disposition below            |
 
    In 0.19 the audit warns. From 0.20 every unlisted table in any group is an error.
@@ -141,8 +140,62 @@ means the nullable form of gap C.
 | `search.indexes`                    | Counts and a resume cursor per model and scope; `scope_key` uses `-` for platform-wide.  | Platform form; NULL replaces the `-` sentinel.                                             |
 | `database.seed_records`             | Product defaults only; "a tenant's own values ... are never written here".               | Platform list: product seed ledger, no tenant data.                                        |
 
-The audit also counts the outbox's `changes`, `change_cursors`, `device_sequences`, `offline_cap_uses` and
-`replica_changes` in group (c). Their dispositions follow in a later amendment.
+The outbox's other five tables were decided 2026-11-08 (leader), by the rule below.
+
+| Table                     | Evidence (migration comment, audit)                                               | Disposition                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `outbox.changes`          | Each row change's `data` and `meta`, with the writer's scope; partitioned by day. | Platform form, its partitions (`changes_default` and the daily ones) included. |
+| `outbox.change_cursors`   | One row per change consumer class: its position in the global log.                | Platform list: a consumer's log position, no tenant, scope or device key.      |
+| `outbox.replica_changes`  | A partition's ordered row changes, with the writer's scope.                       | Platform form: a tenant's partition carries its id.                            |
+| `outbox.device_sequences` | The last settled sequence per device, with its scope.                             | Platform form: a device of a tenant user is that tenant's.                     |
+| `outbox.offline_cap_uses` | Uses of an offline cap per device and action.                                     | Platform form: a device of a tenant user, so per-tenant usage.                 |
+
+#### The rule, and its two mechanisms (2026-11-08, leader)
+
+A table whose rows can be tied to a tenant takes the tenant form (`tenant_id` NOT NULL) or the platform form (a nullable
+`tenant_id`, NULL for a platform row). The platform list is only for a table no row of which can ever be tied to a
+tenant. Each table the audit names in core has this disposition and reason:
+
+| Table                                                                           | Disposition                                  | Reason                                                                      |
+| ------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| `outbox.inbox`                                                                  | Platform list                                | Received event ids only.                                                    |
+| `outbox.change_cursors`                                                         | Platform list                                | One row per consumer class; a global log position.                          |
+| `queue.job_batches`                                                             | Platform list                                | Batch counters only.                                                        |
+| `scheduler.watermarks`                                                          | Platform list                                | Tick bookkeeping.                                                           |
+| `workflow.service_ack_sets`                                                     | Platform list, `Model.global`                | Service acks, no tenant payload.                                            |
+| `rules.condition_fields`                                                        | Platform list, `Model.global`                | A field registry services publish.                                          |
+| `database.seed_records`                                                         | Platform list                                | The ledger of product defaults only.                                        |
+| `scope.scope_nodes`                                                             | Platform list, `Model.global`                | The scope tree, read outside its package only through `ScopeTree` (item 2). |
+| `outbox.messages`, `outbox.deliveries`                                          | Platform form                                | An event of a tenant's call; the relays claim ids only (gap A).             |
+| `outbox.changes` (and partitions), `outbox.replica_changes`                     | Platform form                                | A row change of a tenant's write.                                           |
+| `outbox.device_sequences`, `outbox.offline_cap_uses`                            | Platform form                                | A device of a tenant user.                                                  |
+| `queue.jobs`                                                                    | Platform form                                | A tenant's job; platform jobs keep NULL.                                    |
+| `scheduler.schedules`                                                           | Platform form                                | A tenant's schedule; platform crons keep NULL.                              |
+| `workflow.runs`, `workflow.steps`, `workflow.signals`                           | Platform form                                | A tenant's run, set from its scope; steps and signals from their run.       |
+| `settings.stored_settings`, `settings.stored_setting_revisions`                 | Platform form                                | Tenant and user rows key by `(tenant_id, user_id)`; defaults keep NULL.     |
+| `search.indexes`                                                                | Platform form                                | A tenant's index state; NULL replaces the `-` sentinel.                     |
+| `webhooks.webhook_endpoints`, `webhooks.webhook_deliveries`                     | Tenant form (NOT NULL), `BelongsToTenant`    | A tenant's receivers and their attempts.                                    |
+| `payments.payment_records`                                                      | Group (b) by shape: `scope_id`, no migration | The tenant in `scope_id`, `equalsOrUnset` on `app.tenant_id`.               |
+| `identity.account_deletions`                                                    | Group (b) by shape: `scope_id`, no migration | The tenant in `scope_id`, `equalsOrUnset` on `app.tenant_id`.               |
+| `payments.connected_account_limits`, `payments.connected_account_limit_changes` | Group (b) by shape: `scope_id`, no migration | The tenant in `scope_id`, `equalsOrUnset` on `app.tenant_id`.               |
+
+1. **Group (b) by shape.** The audit owns a table by `scope_id` when its one permissive `pol_<table>_scope_id` is
+   exactly the `equals` or `equalsOrUnset` policy `Blueprint.rowLevelSecurity` writes on `app.tenant_id`. It compares
+   the catalogue's text of the table's policy with the text of that generated policy, created on the table in a
+   transaction it rolls back, so a looser variant (`... or true`) or a second permissive policy is still refused. The
+   table then gets every owner check and the two-tenant probe, by `scope_id`.
+2. **`t.platformTable(reason)` and `t.reviewedPolicy(reason, policies)`.** A product table that no row ties to a
+   tenant declares it in its migration; one whose policies have a reviewed shape the audit cannot derive (a pre-tenant
+   route read through a setting) names them. The reason is required and one line. The compiled migration carries a
+   `-- stackra:platform-table` or `-- stackra:reviewed-policy` comment line with the table, the policies and the
+   reason, and gen's isolation test passes its migrations to the audit, which reads them. A platform table is refused
+   at compile time with a scope id, an isolation scope id, a column filled from a setting or a policy, and in the
+   audit once it holds the owner column, a scope id or an isolation scope id. A reviewed table must still enable and
+   force row-level security and hold every policy it names; only the owner-policy checks and the probe are left out.
+   `stackra row-security-declarations` lists every declaration with its reason, and `validate --repository` fails one
+   that is not in the reviewed list `tools/scripts/row-security-declarations.yaml` with that reason. The framework's
+   own platform tables stay `PLATFORM_TABLES` rows, one way: every host's audit sees them without reading migrations,
+   and none needs a migration only to declare it.
 
 ### The other gaps
 
@@ -192,16 +245,23 @@ today, so moving the read means a new service. TODO: move that read into an iden
 ### Enforcement
 
 - `packages/security/tenancy/src/node/drivers/__tests__/scope-nodes-reader.test.ts`: outside the scope package, only
-  the isolation driver names `scope_nodes`, `ScopeNodeModel`, `ScopeNodeService` or `PostgresScopeTreeDriver`, and the
-  `ScopeTree` port has exactly the readers listed above; no file in an `actions/`, `queries/` or `listeners/` folder
-  names `ScopeTree`, except the bootstrap-operator exception.
+  the isolation driver and the audit's `PLATFORM_TABLES` row (data only) name `scope_nodes`, `ScopeNodeModel`,
+  `ScopeNodeService` or `PostgresScopeTreeDriver`, and the `ScopeTree` port has exactly the readers listed above; no
+  file in an `actions/`, `queries/` or `listeners/` folder names `ScopeTree`, except the bootstrap-operator exception.
 - `packages/data/database/src/testing/functions/assert-row-security.function.ts` and `unowned-table-group.function.ts`:
   the three groups of item 7, warnings until 0.20 (`strict`, `STACKRA_GEN_STRICT=1`).
-- planned: the contract migrations of items 1, 3 and 6, and a `PLATFORM_TABLES` row for each platform-list table, each
-  with its reason.
+- `packages/data/database/src/testing/constants/platform-tables.constant.ts`: a `PLATFORM_TABLES` row with its reason
+  for each platform-list table, and `Model.global` on the models of `workflow.service_ack_sets`,
+  `rules.condition_fields` and `scope.scope_nodes`.
+- `assert-row-security.function.ts`: group (b) by shape, the declarations of `t.platformTable` and
+  `t.reviewedPolicy`; `packages/developer/cli/src/node/commands/row-security-declarations.command.ts` and
+  `validate --repository`: the reviewed list.
+- planned: the platform-form and tenant-form migrations of the table above, after the claim path of gap A for the
+  cross-tenant workers (the outbox relays, the queue worker, the scheduler tick, the workflow tick, the settings
+  revision tick).
 
 Supersedes: Proposed [0411](/adr/0411-scope-subtree-move-re-paths-the-node-table-and-each-service-re-paths-its-own-rows-on-scope-moved);
 in part, Proposed [0412](/adr/0412-inherited-row-policy-rows-on-the-path-above-the-session-are-read-only-to-it) (its
 row policy).
 Sources: tenancy audit 2026-11-07 (sections 2, 3 and 6); master plan 2026-11-07, owner decision 12; leader decisions
-of 2026-11-07; STA-2561.
+of 2026-11-07 and 2026-11-08 (stackra#693 and the group (c) dispositions); STA-2561.

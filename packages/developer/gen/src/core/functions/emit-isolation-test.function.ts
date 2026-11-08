@@ -3,7 +3,10 @@
  * Purpose: `emitIsolationTest`, a service's generated row-security test
  *          (`.stackra/tests/tenant-isolation.int.test.ts`): one Postgres with the service's compiled migrations
  *          (`.stackra/migrations`), then `assertRowSecurity` with `tenantIsolationOptions()` and, as `platform`, the
- *          tables of the service's `Model.global` models and `MODEL_SCOPE_EXEMPTIONS`: every other table holds the
+ *          tables of the service's `Model.global` models and `MODEL_SCOPE_EXEMPTIONS`, and as `migrationsDirectory` the
+ *          compiled migrations, whose `t.platformTable` and `t.reviewedPolicy` declarations the audit reads (a declared
+ *          platform table joins the platform list; a reviewed table must still enable and force row-level security
+ *          and hold every policy it names): every other table holds the
  *          owner column under forced row-level security with its one permissive policy, the service role does not
  *          bypass it, and the two-owner probe sees and moves nothing. It prints each warning the audit returns (an
  *          unlisted table without `tenant_id`, until 0.20) and passes with only warnings.
@@ -74,12 +77,15 @@ export function emitIsolationTest(ir: MemberIR): string | undefined {
     'import { tenantIsolationOptions } from "@stackra/tenancy/testing";',
     'import { describe, it } from "@stackra/testing";',
     "",
-    'const postgres = usePostgres({ migrationsDirectory: fileURLToPath(new URL("../migrations", import.meta.url)) });',
+    'const migrationsDirectory = fileURLToPath(new URL("../migrations", import.meta.url));',
+    "const postgres = usePostgres({ migrationsDirectory });",
     "",
     'describe("row-level security", () => {',
     '  it("isolates every owned table", async () => {',
     "    const warnings = await assertRowSecurity(postgres.database, {",
     "      ...tenantIsolationOptions(),",
+    // The compiled migrations' t.platformTable and t.reviewedPolicy declarations, which the audit reads and holds.
+    "      migrationsDirectory,",
     "      platform: new Map([",
     ...platform.map(
       ([table, reason]) => `        [${JSON.stringify(table)}, ${JSON.stringify(reason)}],`,

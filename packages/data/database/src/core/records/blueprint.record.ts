@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `BlueprintRecord`, the runtime side of `Blueprint` for one table: records columns, column changes, indexes,
  *          the primary key, row-level-security policies and the `AppendOnly` revoke of `UPDATE`, installs the member's macros under their names, and
- *          compiles to SQL statements.
+ *          compiles to SQL statements. A `platformTable` or `reviewedPolicy` declaration compiles to its marker line
+ *          (`TABLE_DECLARATION_MARKERS`) first.
  * Boundary: internal. It enforces the migration safety rules it can see in one table: every column states its
  *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
@@ -20,6 +21,7 @@ import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import { ColumnRecord } from "#core/records/column.record";
+import { TABLE_DECLARATION_MARKERS } from "#core/constants/table-declaration-markers.constant";
 import { PUBLIC_ID_TEXT } from "#core/constants/public-id-text.constant";
 import { ColumnChangeRecord } from "#core/records/column-change.record";
 import { ColumnGroupRecord } from "#core/records/column-group.record";
@@ -101,6 +103,18 @@ function checkPolicy(column: string, options: RowLevelSecurityOptions): void {
     throw new TypeError(`"${options.match}" is not a policy match (${MATCHES.join(", ")})`);
 }
 
+/**
+ * The reason of a `t.platformTable` or `t.reviewedPolicy` declaration, trimmed.
+ *
+ * @throws TypeError for a reason that is empty or not one line.
+ */
+function checkReason(method: string, reason: string): string {
+  const text = typeof reason === "string" ? reason.trim() : "";
+  if (text === "") throw new TypeError(`t.${method} needs its reason, a non-empty sentence`);
+  if (/[\r\n]/.test(text)) throw new TypeError(`t.${method}: the reason is one line`);
+  return text;
+}
+
 /** A declared row-level-security policy. */
 interface PolicySeed {
   readonly column: string;
@@ -149,6 +163,13 @@ export class BlueprintRecord {
 
   /** The range-partition column, when `partitionBy` was called. */
   private partitionColumn: string | undefined = undefined;
+
+  /** The reason of `platformTable`, when declared. */
+  private platformReason: string | undefined = undefined;
+
+  /** The policies and reason of `reviewedPolicy`, when declared. */
+  private review: { readonly policies: readonly string[]; readonly reason: string } | undefined =
+    undefined;
 
   /**
    * @param table - the table name, snake_case.
@@ -556,6 +577,33 @@ export class BlueprintRecord {
   }
 
   /**
+   * Implements `Blueprint.platformTable`, documented there.
+   *
+   * @throws TypeError for an empty reason, or a second declaration on this blueprint.
+   */
+  platformTable(reason: string): void {
+    const text = checkReason("platformTable", reason);
+    if (this.platformReason !== undefined || this.review !== undefined)
+      throw new TypeError(`${this.table} already declares its row security`);
+    this.platformReason = text;
+  }
+
+  /**
+   * Implements `Blueprint.reviewedPolicy`, documented there.
+   *
+   * @throws TypeError for an empty reason, no policy, a policy name that is not snake_case, or a second declaration.
+   */
+  reviewedPolicy(reason: string, policies: readonly string[]): void {
+    const text = checkReason("reviewedPolicy", reason);
+    if (!Array.isArray(policies) || policies.length === 0)
+      throw new TypeError(`t.reviewedPolicy on ${this.table} names the policies it reviewed`);
+    for (const policy of policies) quoteIdentifier(policy);
+    if (this.platformReason !== undefined || this.review !== undefined)
+      throw new TypeError(`${this.table} already declares its row security`);
+    this.review = { policies: [...policies], reason: text };
+  }
+
+  /**
    * The statements of this table: the transactional ones in order, then each online index as its own step.
    *
    * @param schema - the module's Postgres schema.
@@ -573,9 +621,47 @@ export class BlueprintRecord {
       throw new TypeError(
         `${this.table}: every column states notNull() or nullable() and has a comment(); not ${incomplete.map((column) => column.name).join(", ")}`,
       );
-    return this.creating
+    const compiled = this.creating
       ? this.compileCreate(schema, qualified)
       : this.compileAlter(schema, qualified);
+    return {
+      statements: [...this.declarationSql(schema), ...compiled.statements],
+      online: compiled.online,
+    };
+  }
+
+  /**
+   * The marker line of `platformTable` or `reviewedPolicy`, which the compiled migration carries for the audit.
+   *
+   * @throws TypeError for a platform table that holds an owner column: a scope or isolation scope id, a column filled
+   *         from a setting, or a policy of its own.
+   */
+  private declarationSql(schema: string): CompiledStatement[] {
+    if (this.platformReason !== undefined) {
+      const owner = this.columns.find(
+        (column) =>
+          ["scope_id", "isolation_scope_id"].includes(column.name) ||
+          column.defaultSql?.startsWith("nullif(current_setting(") === true,
+      );
+      if (owner !== undefined || this.policies.length > 0)
+        throw new TypeError(
+          `${this.table} is declared a platform table, so it holds no owner column or policy; not ${owner?.name ?? `the ${this.policies[0]?.column} policy`}`,
+        );
+      return [
+        {
+          sql: `${TABLE_DECLARATION_MARKERS.platformTable} ${schema}.${this.table} ${this.platformReason}`,
+          inverse: [],
+        },
+      ];
+    }
+    if (this.review !== undefined)
+      return [
+        {
+          sql: `${TABLE_DECLARATION_MARKERS.reviewedPolicy} ${schema}.${this.table} ${this.review.policies.join(",")} ${this.review.reason}`,
+          inverse: [],
+        },
+      ];
+    return [];
   }
 
   /**

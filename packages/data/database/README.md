@@ -802,13 +802,19 @@ actor (`deliverInIsolation`, STA-1789). The testing entry needs `@stackra/events
 `assertRowSecurity(database, { column, setting, role, probe, platform })` audits a migrated database (ADR 0347 d5).
 It walks every table of every non-system schema (an extension's own tables aside). A table without `column` must be
 named, with its reason, in `PLATFORM_TABLES` (the framework's: the migration ledger, `database.idempotency_keys` and
-`rate_limit_buckets`, `cache.entries` and `set_members`, `locking.lock_tokens`) or in the caller's `platform` map; any
+`rate_limit_buckets`, `cache.entries` and `set_members`, `locking.lock_tokens`, and the platform-list tables of ADR
+0239's group (c)), in the caller's `platform` map, or by a `t.platformTable(reason)` of the compiled migrations in
+`migrationsDirectory`; any
 other is returned as a warning naming its group (an ancestor `scope_path` table awaiting the contract step, a
 `scope_id` table whose policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or
 unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. The
 tables in `ISOLATION_SCOPE_TABLES` (the sequence and projection tables, group (b) by name) are audited by their own
-owner column, `isolation_scope_id`, in place of `column`. A listed table that holds
-`column` is always a gap. A table with it has row-level security enabled and
+owner column, `isolation_scope_id`, in place of `column`, and a table whose `pol_<table>_scope_id` is exactly the
+`equals` or `equalsOrUnset` policy `t.rowLevelSecurity` writes on `setting` by `scope_id` (group (b) by shape: the
+catalogue's text of its policy equals that of the generated one, created on the table in a rolled-back transaction, so
+a looser variant is not accepted). A listed table that holds `column` is always a gap, and a declared one that holds a
+scope id or an isolation scope id too. A `t.reviewedPolicy(reason, policies)` table must enable and force row-level
+security and hold every policy it names, and is not held to the owner policy or probed. A table with it has row-level security enabled and
 forced, exactly one permissive policy, `pol_<table>_<column>`, `FOR ALL` and testing `column` against `setting`, and
 only restrictive policies beside it, each named `pol_<table>_<column>` after one of its columns. A platform-form owner
 policy (its `USING` also shows the null rows) also needs its restrictive `pol_<table>_<column>_write_update` and
@@ -820,7 +826,14 @@ number, UUID or instant), and as `role` proves a session with `setting` unset se
 sees its own row and not the other, and cannot move its row to `probe[1]`. A table it cannot seed is a gap. It throws
 one error listing every gap (stackra-258), and otherwise returns the warnings. `@stackra/tenancy/testing`'s `tenantIsolationOptions()` gives the tenant
 form; gen writes a service's `.stackra/tests/tenant-isolation.int.test.ts` with both, listing the service's global
-models' tables and gen's `MODEL_SCOPE_EXEMPTIONS` as `platform` and prints each warning.
+models' tables and gen's `MODEL_SCOPE_EXEMPTIONS` as `platform`, passing its migrations folder as
+`migrationsDirectory`, and prints each warning.
+
+A migration declares a table's row security with `t.platformTable(reason)` (no row of it can belong to a tenant: no
+scope id, isolation scope id, setting-filled column or policy beside it) or `t.reviewedPolicy(reason, policies)`. The
+reason is required and one line, and compiles to a `-- stackra:platform-table` or `-- stackra:reviewed-policy` comment
+line. `stackra row-security-declarations` lists every declaration for review against
+`tools/scripts/row-security-declarations.yaml`.
 
 ```ts
 import { createTestingModule } from "@stackra/container/testing";

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves `scope.scope_nodes` is a platform table with one reader outside its owner (ADR 0239, amendment of
  *          2026-11-07, item 2 and its allowed system readers): no source file under `packages/` names the table, its
- *          model, its service or its Postgres driver, except the scope package that owns it and `CallIsolationDriver`;
+ *          model, its service or its Postgres driver, except the scope package that owns it, `CallIsolationDriver` and
+ *          the audit's `PLATFORM_TABLES` row, which names it with its reason and reads nothing;
  *          the `ScopeTree` port, which that driver reads through, has exactly the readers the amendment names, so a new
  *          one fails here until the ADR names it; and no file in an `actions/`, `queries/` or `listeners/` folder names
  *          the port, except the one exception the amendment names.
@@ -21,6 +22,8 @@ const REPO = fileURLToPath(new URL("../../../../../../../", import.meta.url));
 const PACKAGES = join(REPO, "packages");
 const OWNER = "packages/security/scope/";
 const DRIVER = "packages/security/tenancy/src/node/drivers/call-isolation.driver.ts";
+/** The audit's platform list, which names the table with its reason and reads nothing (ADR 0239 amendment, item 2). */
+const AUDIT = "packages/data/database/src/testing/constants/platform-tables.constant.ts";
 const SKIPPED = new Set(["node_modules", "dist", ".stackra", "__tests__", ".turbo"]);
 const SOURCE = /\.(?:ts|tsx|mts|mjs|sql)$/;
 const TABLE = /\bscope_nodes\b|\bScopeNodeModel\b|\bScopeNodeService\b|\bPostgresScopeTreeDriver\b/;
@@ -70,8 +73,8 @@ describe("scope.scope_nodes readers", () => {
     expect(files).toContain(DRIVER);
   });
 
-  it("is named outside the scope package only by the isolation driver", () => {
-    expect(namingFiles(files, TABLE)).toEqual([DRIVER]);
+  it("is named outside the scope package only by the isolation driver and the audit's platform list", () => {
+    expect(namingFiles(files, TABLE)).toEqual([AUDIT, DRIVER].sort());
   });
 
   it("is read through the ScopeTree port only by the consumers the ADR names", () => {

@@ -256,6 +256,16 @@
       "entry": "node"
     },
     {
+      "name": "row-security-declarations",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "RowSecurityDeclarationsCommand",
+      "file": "src/node/commands/row-security-declarations.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "runway",
       "aliases": [],
       "hidden": false,
