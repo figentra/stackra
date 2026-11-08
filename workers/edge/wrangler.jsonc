@@ -35,6 +35,63 @@
     // How long the owning product's answer for one "request" path's framers is kept in the isolate.
     "EDGE_FRAME_ANCESTORS_SECONDS": 60,
   },
+  // Wrangler does not inherit `vars` into an environment, so each repeats them; only EDGE_CSP differs (runway's
+  // dev, preview, staging and production).
+  "env": {
+    "dev": {
+      // Pay's checkout: its pages are framed by Pay's console only, `/c/*` by the merchant site Pay names per request.
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.dev.figentra.com\"]}}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
+    "preview": {
+      // A PR's console host is `console-pr-<n>.pay.preview.figentra.com`; no origin can be listed and @stackra/csp refuses
+      // wildcards, so Pay answers `/preview` per request with the console of the same PR (STA-2562).
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":\"request\"}}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
+    "staging": {
+      // As dev, on staging's console.
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.staging.figentra.com\"]}}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
+    "production": {
+      // As dev, on the production console.
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.figentra.com\"]}}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
+  },
   // No route or custom domain yet: the owner decides which hosts this Worker fronts and adds them here.
   "routes": [],
   "workers_dev": false,
