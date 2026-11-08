@@ -10,7 +10,7 @@
  */
 
 /**
- * One button.
+ * One button a message shows: its translated label, the link it opens and its style.
  *
  * @example
  * const approve: MessageAction = { label: "Approve", url: links.approve, style: "primary" };

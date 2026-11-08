@@ -23,7 +23,7 @@ export class GeoPointType extends GeographyType<GeoPoint> {
   /** A PostGIS `Point`. */
   protected readonly shape = "Point";
 
-  /** `POINT(lon lat)`. */
+  /** The point as well-known text, `POINT(lon lat)`, the form PostGIS reads. */
   protected wkt(value: GeoPoint): string {
     return `POINT(${wktPair(value)})`;
   }

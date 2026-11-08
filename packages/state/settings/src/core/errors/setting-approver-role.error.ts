@@ -18,7 +18,7 @@ export class SettingApproverRoleError extends Refusal({
   kind: ErrorKind.Forbidden,
   retryable: false,
 }) {
-  /** The revision. */
+  /** The setting revision whose approval was refused. */
   revision!: string;
 
   /** The role its approver must hold. */

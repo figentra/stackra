@@ -13,6 +13,6 @@ export interface CallAuthData {
   /** The actor's public id (`usr_…`, `svc_…`), Encore's user id. */
   readonly userID: string;
 
-  /** The caller. */
+  /** The verified actor the call runs as, user or service. */
   readonly actor: Actor;
 }

@@ -3,8 +3,8 @@
  * Purpose: `DocsConfig`, the typed site configuration of a docs app: `src/config/docs.config.ts` exports one subclass,
  *          and gen renders the Mintlify `docs.json` of `.stackra/site/` from it. It holds the site name, theme,
  *          colours, logo and favicon (paths under `src/assets`), the tabs and navigation groups, the navbar and
- *          footer, the services whose API reference the site carries, the redirects of moved paths, and `raw`, the
- *          tool keys gen does not own (fonts, appearance, SEO, search, …).
+ *          footer, the services whose API reference the site carries, the redirects of moved paths, the site's
+ *          languages (`locales`), and `raw`, the tool keys gen does not own (fonts, appearance, SEO, search, …).
  * Boundary: data only: field initializers, no method, no environment read. Gen imports the file and reads the fields
  *           of a new instance; nothing else in it runs. It lives in `@stackra/gen` because only gen reads it, and every
  *           docs app already has gen as a dev dependency; no runtime package carries it (decision recorded in the
@@ -16,6 +16,7 @@
 import type { Json } from "@stackra/contracts";
 
 import type { DocsLink } from "#core/types/docs-link.type";
+import type { DocsLocale } from "#core/types/docs-locale.type";
 import type { DocsTab } from "#core/types/docs-tab.type";
 
 /**
@@ -65,6 +66,13 @@ export abstract class DocsConfig {
 
   /** The service keys whose API reference the site carries, from each service's committed manifest. */
   readonly apiReference: readonly string[] = [];
+
+  /**
+   * The site's languages, the default first. Empty (the default) is one language, the pages as written. With locales, a
+   * page of another locale sits beside its default page as `<page>.<code>.mdx` and is served under `/<code>/`, with
+   * the locale's direction, interface strings and language switch (Fumadocs sites only).
+   */
+  readonly locales: readonly DocsLocale[] = [];
 
   /**
    * Paths that moved: each `from` answers with a permanent redirect to `to`, a page path or an absolute URL. The
