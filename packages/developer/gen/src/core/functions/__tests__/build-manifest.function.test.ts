@@ -995,6 +995,13 @@ describe("buildManifest", () => {
   });
 });
 
+/** A manifest's `LoyaltyService` entries alone; the kit's actions and queries sit beside them in `services`. */
+function servicesOf(manifest: Record<string, unknown>): readonly { class: string }[] {
+  return (manifest["services"] as readonly { class: string }[]).filter(
+    (entry) => entry.class === "LoyaltyService",
+  );
+}
+
 describe("buildManifest's package services", () => {
   it("records the model a CrudService<M> is typed against, so a host registers the pair", () => {
     const ir: MemberIR = {
@@ -1008,14 +1015,13 @@ describe("buildManifest's package services", () => {
           : candidate,
       ),
     };
-    const services = buildManifest(ir).manifest["services"];
-    expect(services).toEqual([
+    expect(servicesOf(buildManifest(ir).manifest)).toEqual([
       expect.objectContaining({
         class: "LoyaltyService",
         partner: { name: "LoyaltyAccount", from: expect.stringMatching(/^@acme\/loyalty-kit/) },
       }),
     ]);
-    expect(buildManifest(LOYALTY_KIT_IR).manifest["services"]).toEqual([
+    expect(servicesOf(buildManifest(LOYALTY_KIT_IR).manifest)).toEqual([
       expect.not.objectContaining({ partner: expect.anything() }),
     ]);
   });

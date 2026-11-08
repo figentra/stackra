@@ -373,6 +373,76 @@
           }
         }
       ]
+    },
+    {
+      "class": "EraseSubjectAction",
+      "from": "@stackra/privacy/node"
+    },
+    {
+      "class": "ExportSubjectDataAction",
+      "from": "@stackra/privacy/node",
+      "deps": [
+        {
+          "class": {
+            "name": "SubjectExportService",
+            "from": "@stackra/privacy"
+          }
+        }
+      ]
+    },
+    {
+      "class": "PlaceHoldAction",
+      "from": "@stackra/privacy/node",
+      "deps": [
+        {
+          "class": {
+            "name": "Database",
+            "from": "@stackra/database"
+          }
+        }
+      ]
+    },
+    {
+      "class": "PurgeSubjectExportsAction",
+      "from": "@stackra/privacy/node",
+      "deps": [
+        {
+          "class": {
+            "name": "FileSystem",
+            "from": "@stackra/filesystem/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "PrivacyConfig",
+            "from": "@stackra/privacy"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ReleaseHoldAction",
+      "from": "@stackra/privacy/node",
+      "deps": [
+        {
+          "class": {
+            "name": "Database",
+            "from": "@stackra/database"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ListHoldsQuery",
+      "from": "@stackra/privacy/node",
+      "deps": [
+        {
+          "class": {
+            "name": "Database",
+            "from": "@stackra/database"
+          }
+        }
+      ]
     }
   ],
   "schemas": {

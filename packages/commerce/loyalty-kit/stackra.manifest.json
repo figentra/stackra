@@ -783,8 +783,138 @@
       ]
     },
     {
+      "class": "ConfirmRedemptionAction",
+      "from": "@stackra/loyalty-kit/node"
+    },
+    {
+      "class": "EarnVisitAction",
+      "from": "@stackra/loyalty-kit/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountService",
+            "from": "@stackra/loyalty-kit/node"
+          }
+        },
+        {
+          "class": {
+            "name": "LoyaltyLedger",
+            "from": "@stackra/loyalty-kit/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "SettingsReader",
+            "from": "@stackra/settings"
+          }
+        }
+      ]
+    },
+    {
+      "class": "EnrollMemberAction",
+      "from": "@stackra/loyalty-kit/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountService",
+            "from": "@stackra/loyalty-kit/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ExpirePointsAction",
+      "from": "@stackra/loyalty-kit/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountService",
+            "from": "@stackra/loyalty-kit/node"
+          }
+        },
+        {
+          "class": {
+            "name": "LoyaltyLedger",
+            "from": "@stackra/loyalty-kit/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "SettingsReader",
+            "from": "@stackra/settings"
+          }
+        }
+      ]
+    },
+    {
+      "class": "FreezeAccountAction",
+      "from": "@stackra/loyalty-kit/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountService",
+            "from": "@stackra/loyalty-kit/node"
+          }
+        }
+      ]
+    },
+    {
+      "class": "RedeemPointsAction",
+      "from": "@stackra/loyalty-kit/node"
+    },
+    {
       "class": "LoyaltyKitExtensionPoint",
       "from": "@stackra/loyalty-kit/node"
+    },
+    {
+      "class": "GetBalanceQuery",
+      "from": "@stackra/loyalty-kit/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountService",
+            "from": "@stackra/loyalty-kit/node"
+          }
+        },
+        {
+          "class": {
+            "name": "LoyaltyLedger",
+            "from": "@stackra/loyalty-kit/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "LedgerEntry",
+            "from": "@stackra/loyalty-kit/node"
+          },
+          "of": {
+            "name": "repositoryOf",
+            "from": "@stackra/database"
+          }
+        },
+        {
+          "class": {
+            "name": "SettingsReader",
+            "from": "@stackra/settings"
+          }
+        }
+      ]
+    },
+    {
+      "class": "PointsIssuedQuery",
+      "from": "@stackra/loyalty-kit/node",
+      "deps": [
+        {
+          "class": {
+            "name": "LedgerEntry",
+            "from": "@stackra/loyalty-kit/node"
+          },
+          "of": {
+            "name": "repositoryOf",
+            "from": "@stackra/database"
+          }
+        }
+      ]
     },
     {
       "class": "AccountService",
@@ -847,6 +977,24 @@
           "class": {
             "name": "LoyaltyLedger",
             "from": "@stackra/loyalty-kit/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "SearchLoyaltyAccountQuery",
+      "from": "#stackra/search",
+      "deps": [
+        {
+          "class": {
+            "name": "Search",
+            "from": "@stackra/search"
+          }
+        },
+        {
+          "class": {
+            "name": "Database",
+            "from": "@stackra/database"
           }
         }
       ]

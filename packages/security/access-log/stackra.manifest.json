@@ -704,6 +704,66 @@
           }
         }
       ]
+    },
+    {
+      "class": "ExportAuditAction",
+      "from": "@stackra/access-log/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AuditLogEntry",
+            "from": "@stackra/access-log/node"
+          },
+          "of": {
+            "name": "repositoryOf",
+            "from": "@stackra/database"
+          }
+        },
+        {
+          "class": {
+            "name": "AuditExportSink",
+            "from": "@stackra/access-log/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "PurgeAccessLogAction",
+      "from": "@stackra/access-log/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccessLogEntry",
+            "from": "@stackra/access-log/node"
+          },
+          "of": {
+            "name": "repositoryOf",
+            "from": "@stackra/database"
+          }
+        },
+        {
+          "class": {
+            "name": "AccessLogConfig",
+            "from": "@stackra/access-log"
+          }
+        }
+      ]
+    },
+    {
+      "class": "AuditQuery",
+      "from": "@stackra/access-log/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AuditLogEntry",
+            "from": "@stackra/access-log/node"
+          },
+          "of": {
+            "name": "repositoryOf",
+            "from": "@stackra/database"
+          }
+        }
+      ]
     }
   ],
   "schemas": {

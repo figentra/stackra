@@ -338,6 +338,18 @@
       ]
     },
     {
+      "class": "IngestAnalyticsBatchAction",
+      "from": "@stackra/analytics/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AnalyticsConfig",
+            "from": "@stackra/analytics"
+          }
+        }
+      ]
+    },
+    {
       "class": "AnalyticsFake",
       "from": "@stackra/analytics/testing"
     }

@@ -402,6 +402,42 @@
       ]
     },
     {
+      "class": "DeliverWebhookAction",
+      "from": "@stackra/webhooks/node",
+      "deps": [
+        {
+          "class": {
+            "name": "WebhookEndpointStore",
+            "from": "@stackra/webhooks/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "WebhookDeliveryLog",
+            "from": "@stackra/webhooks/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "WebhookSender",
+            "from": "@stackra/webhooks/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "Clock",
+            "from": "@stackra/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "WebhookObjectSink",
+            "from": "@stackra/webhooks/contracts"
+          }
+        }
+      ]
+    },
+    {
       "class": "WebhookDeliveryService",
       "from": "@stackra/webhooks/node",
       "partner": {

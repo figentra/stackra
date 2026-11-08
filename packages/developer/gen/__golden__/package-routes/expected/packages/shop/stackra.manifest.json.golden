@@ -185,6 +185,18 @@
           "named": "fallback"
         }
       ]
+    },
+    {
+      "class": "CancelOrderAction",
+      "from": "@golden/shop/node",
+      "deps": [
+        {
+          "class": {
+            "name": "ShopService",
+            "from": "@golden/shop"
+          }
+        }
+      ]
     }
   ],
   "ui": {

@@ -1238,6 +1238,204 @@
       ]
     },
     {
+      "class": "BootstrapOperatorAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "RolesAtNode",
+            "from": "@stackra/iam/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "RoleGrants",
+            "from": "@stackra/iam/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "ScopeTree",
+            "from": "@stackra/scope/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "CancelAccountDeletionAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountDeletions",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ChallengePasskeyAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ConfirmPasskeyAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "IdentityConfig",
+            "from": "@stackra/identity"
+          }
+        }
+      ]
+    },
+    {
+      "class": "DeleteMyAccountAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountDeletions",
+            "from": "@stackra/identity/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "IdentityConfig",
+            "from": "@stackra/identity"
+          }
+        }
+      ]
+    },
+    {
+      "class": "EndAllMySessionsAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "EndMySessionAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "EndUserSessionsAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "EraseDueAccountsAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountDeletions",
+            "from": "@stackra/identity/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "SubjectHolds",
+            "from": "@stackra/privacy/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "Logger",
+            "from": "@stackra/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "RegisterPasskeyAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "VerifyPasskeyAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ListMySessionsQuery",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ShowAccountDeletionQuery",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AccountDeletions",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
       "class": "BffService",
       "from": "@stackra/identity/node",
       "deps": [

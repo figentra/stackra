@@ -728,6 +728,18 @@
       ]
     },
     {
+      "class": "RoomPublishAction",
+      "from": "@stackra/collaboration/node",
+      "deps": [
+        {
+          "class": {
+            "name": "RealtimeRooms",
+            "from": "@stackra/realtime"
+          }
+        }
+      ]
+    },
+    {
       "class": "CommentService",
       "from": "@stackra/collaboration/node",
       "deps": [

@@ -631,6 +631,18 @@
       ]
     },
     {
+      "class": "PruneApprovalBindingsAction",
+      "from": "@stackra/tenancy/node",
+      "deps": [
+        {
+          "class": {
+            "name": "ApprovalBindingStore",
+            "from": "@stackra/actions/contracts"
+          }
+        }
+      ]
+    },
+    {
       "class": "TenantIsolationService",
       "from": "@stackra/tenancy/node",
       "deps": [
