@@ -13,10 +13,11 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { RuleSet } from "#node/models/rule-set.model";
 
 describe("RuleSet", () => {
-  it("is a model with the rset public id, the timestamps and revisions", () => {
+  it("is a model with the rset public id, the tenant, the timestamps and revisions", () => {
     expect(new RuleSet()).toBeInstanceOf(Model);
     expect(traitsOf(RuleSet).map((trait) => trait.name)).toEqual([
       "has_public_id",
+      "belongs_to_tenant",
       "timestamps",
       "has_revisions",
     ]);

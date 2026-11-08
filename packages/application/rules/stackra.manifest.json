@@ -153,7 +153,7 @@
       "file": "src/node/models/rule-set.model.ts",
       "table": "rules.rule_sets",
       "publicId": "rset",
-      "traits": ["HasPublicId", "Timestamps", "HasRevisions"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "HasRevisions"],
       "entity": {
         "module": "rules",
         "fields": [
@@ -205,6 +205,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "rset"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
@@ -363,7 +372,7 @@
     },
     "rules.RuleSet": {
       "type": "object",
-      "required": ["scopeId", "scopePath", "consumer", "id", "createdAt", "updatedAt"],
+      "required": ["scopeId", "scopePath", "consumer", "id", "tenantId", "createdAt", "updatedAt"],
       "properties": {
         "scopeId": {
           "type": "string",
@@ -386,6 +395,10 @@
         "id": {
           "type": "string",
           "pattern": "^rset_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         },
         "createdAt": {
           "type": "string",
