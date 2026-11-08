@@ -77,9 +77,13 @@ export function fakeIntegrationApi<I extends Integration>(
       const params = match(known, method, path);
       if (params !== undefined)
         return known.answer(params, {
-          body,
+          // why: a raw body reaches the route as its text, with its media type among the headers
+          body: request.body?.content ?? body,
           query: request.query ?? {},
-          headers: request.headers ?? {},
+          headers:
+            request.body === undefined
+              ? (request.headers ?? {})
+              : { ...request.headers, "content-type": request.body.contentType },
         });
     }
     throw new TypeError(`The fake of ${type.name} has no answer for ${method} ${path}`);

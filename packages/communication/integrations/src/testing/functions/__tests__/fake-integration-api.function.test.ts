@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `fakeIntegrationApi`: a route answers with its path parameters and the request, a later route
- *          for the same call wins, an answer that throws rejects the call, and a call no route answers is refused by
- *          name.
+ * Purpose: unit tests of `fakeIntegrationApi`: a route answers with its path parameters and the request, a raw body
+ *          reaches the route as its text with its media type, a later route for the same call wins, an answer that
+ *          throws rejects the call, and a call no route answers is refused by name.
  * Boundary: test only; no request leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3).
@@ -48,6 +48,18 @@ describe("fakeIntegrationApi", () => {
       echoed: { to: "a@acme.example" },
       key: true,
     });
+  });
+
+  it("hands a raw body to the route as its text, with its media type", async () => {
+    const api = fakeIntegrationApi(ResendIntegration, (fake) =>
+      fake.post("/soap").returns((_params, request) => ({
+        body: request.body,
+        type: request.headers["content-type"],
+      })),
+    );
+    await expect(
+      api.post("/soap", undefined, { body: { content: "<a/>", contentType: "text/xml" } }),
+    ).resolves.toEqual({ body: "<a/>", type: "text/xml" });
   });
 
   it("lets a later route win and an answer reject", async () => {
