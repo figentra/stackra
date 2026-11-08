@@ -253,11 +253,21 @@ describe("managedClient", () => {
 
       authToken = "tok";
     }
+    class KeyOnlyIntegration extends Integration({
+      ...BASE,
+      provider: "key_only",
+      auth: { type: AuthType.Basic, username: "{apiKey}", password: "" },
+    }) {
+      apiKey = "sk_1";
+    }
     const fetchMock = stubFetch(() => json({}));
     await clientOf(new QueryIntegration()).get("/x");
     await clientOf(new BasicIntegration()).get("/x");
+    await clientOf(new KeyOnlyIntegration()).get("/x");
     expect(new URL(String(fetchMock.mock.calls[0]?.[0])).searchParams.get("key")).toBe("query-key");
     expect(headerOf(fetchMock, 1, "authorization")).toBe(`Basic ${btoa("AC1:tok")}`);
+    // An empty password still sends the colon (RFC 7617), as Medusa's and Stripe's API keys expect.
+    expect(headerOf(fetchMock, 2, "authorization")).toBe(`Basic ${btoa("sk_1:")}`);
   });
 
   it("signs a JWT for each call", async () => {
