@@ -7,7 +7,7 @@
     "digest": "sha256:e509a43a7dce5996b41f14db75c321663cb3815f83d9ee5e8d434a9c25937424"
   },
   "profile": "framework",
-  "overrides": "sha256:16d9a8e8f17d6909a34e49bfa9e4ee6070fca0deb3b71e18f4851f28c0dba2d6",
+  "overrides": "sha256:2c037df324bbd8d429ae8af066ff91b3919aecab58c27c0957db2ab8b80bcbc5",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:dadd456558c5895efceb9bf14c2fca9c8681421e976d26f2d57b0e0f1ad67b66",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:207e5dfaad462cecd97fa741dabb0e4db28edc3f51bd6156528246d652ba7322",
@@ -49,7 +49,7 @@
     ".agents/agents/spec-writer.md": "sha256:e5b34afe30a78d34ebef990cf2c3986ef9af532f4977762caad910fd1e2d39be",
     ".agents/agents/test-engineer.md": "sha256:392617f21ed96bdb847033258fb1cd074d19cd6569b714a17c215222f47f451e",
     ".agents/agents/vault-keeper.md": "sha256:07f42ea5007dadedf3481ad7b05c209fc4d90632abfa898ac3aee8634a187bd7",
-    ".agents/rules/ai-tools.md": "sha256:efc692cd6a0f4c4b67d4fd8e68aaefd6a5c8211d460088affc0cf511140ff58f",
+    ".agents/rules/ai-tools.md": "sha256:693d618487d823fed8757c3a815b1fee8f77613bcda29a07124c8149fdc97f46",
     ".agents/rules/concurrent-sessions.md": "sha256:1f709e0fdc280a08a682a2143e7c9fe5c4b0f551552a914229bdccb89b8ba256",
     ".agents/rules/http-conventions.md": "sha256:4bdae5e2f1600850abab9d5dd8665dd9bf8ebe0276a64627b3fa98722eb7284f",
     ".agents/rules/linear.md": "sha256:0cf4dea6648c2513fe5a88cb3369d8d55932d45ca362defc189c9833fe9151dc",
@@ -118,7 +118,7 @@
     ".mcp.yaml": "sha256:1fdd9050a11f0626579b1143f64128f44278d4b6d483c793c202532d6caa6a48",
     "AGENTS.md": "sha256:007c751c24a5ee65e15c3a517fccc32817b8e375bd4bb5dabd3b60281ee6ca15",
     "CLAUDE.md": "sha256:cbe167f9ce91b969d2009df7e37dba680d7f7fc63fca8580657cc6c6cd94ba76",
-    "lefthook.yml": "sha256:6d2725dca8972ebf6b70d85b0bed2324cc053bc93254e20648d77de6556f5fab",
+    "lefthook.yml": "sha256:1c7629c1a7987449b676bf69d7b227597b3dccef45c363c3fed5edd54534bc5e",
     "README.md": "sha256:df3eb289202e9e631583f27b37b855ca8bc5a9813177216871c2fcbca22d981d",
     ".github/workflows/fflow-baseline.yml": "sha256:14f410878afe286c988002b8d4a1eeff93c9752840a3d1effb94dd8e6f78179d",
     ".github/workflows/fflow-approve.yml": "sha256:1b40455f9ef08edbc4aee5dbac7c3f7e18a59676abb3d23443f97f4027b05226",
