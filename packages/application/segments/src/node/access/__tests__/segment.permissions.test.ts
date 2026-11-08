@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `SegmentPermissions`: it is a `Permissions` class and `recompute` is a system-held L1
+ * Purpose: unit tests of `SegmentPermissions`: it is a `Permissions` class and `recompute` is a system-held L2
  *          permission.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -12,10 +12,10 @@ import { describe, expect, it } from "@stackra/testing";
 import { SegmentPermissions } from "#node/access/segment.permissions";
 
 describe("SegmentPermissions", () => {
-  it("declares recompute as a system-held L1 permission", () => {
+  it("declares recompute as a system-held L2 permission", () => {
     expect(Object.getPrototypeOf(SegmentPermissions)).toBe(Permissions);
     expect(SegmentPermissions.recompute).toBeInstanceOf(Permission);
-    expect(SegmentPermissions.recompute.risk).toBe(Risk.L1);
+    expect(SegmentPermissions.recompute.risk).toBe(Risk.L2);
     expect(SegmentPermissions.recompute.isSystem).toBe(true);
   });
 });

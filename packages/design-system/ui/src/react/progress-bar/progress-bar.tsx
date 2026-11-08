@@ -25,6 +25,7 @@ import { useDotLoader } from "#react/hooks/use-dot-loader";
 import { Label } from "#react/label/label";
 import type { ProgressBarProps } from "#react/progress-bar/progress-bar.props";
 
+/** The dot loader as a progress bar: a row filled to the value, or the build running when there is none. */
 export function ProgressBar({
   value,
   minValue = 0,

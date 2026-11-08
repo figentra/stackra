@@ -187,7 +187,7 @@ describe("emitSettings", () => {
   it("flattens a section's fields under the section, with the section field's flags and its own", () => {
     expect(content).toContain(
       [
-        '    "windowDays": {',
+        '    "cancellation.windowDays": {',
         '      "type": "number",',
         '      "default": 14,',
         '      "scopes": ["platform","product","node"],',
@@ -245,6 +245,30 @@ describe("emitSettings", () => {
     expect(text).toContain('  "account": {\n    "locale": {');
     expect(text).not.toContain('"settings": {');
     expect(text).toContain('"label": "settings::settings.account.locale.label" as Label,');
+  });
+
+  it("keys each section's field by its section, so two sections may share a field name (STA-2192)", () => {
+    const returns = shape("ReturnsSection", "schema", [
+      field("windowDays", { kind: "number" }, { default: { value: 30, code: "30", imports: [] } }),
+    ]);
+    const twoSections: MemberIR = {
+      ...IR,
+      shapes: [
+        ...IR.shapes.filter((candidate) => candidate !== SETTINGS),
+        shape("OrdersSettings", "settings", [
+          ...SETTINGS.fields,
+          field("returns", { kind: "schema", name: "ReturnsSection", module: "orders" }),
+        ]),
+        returns,
+      ],
+    };
+    const emitted = emitSettings(twoSections) ?? "";
+    expect(emitted).toContain('    "cancellation.windowDays": {');
+    expect(emitted).toContain('    "returns.windowDays": {');
+    expect(emitted).toContain('"label": "orders::settings.returns.windowDays.label" as Label,');
+    expect(emitted.match(/^ {4}"[^"]+": \{$/gm)?.length).toBe(
+      new Set(emitted.match(/^ {4}"[^"]+": \{$/gm)).size,
+    );
   });
 
   it("writes nothing without a settings class or without @stackra/settings", () => {

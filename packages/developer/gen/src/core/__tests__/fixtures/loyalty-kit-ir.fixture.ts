@@ -96,7 +96,7 @@ export const LOYALTY_KIT_IR: MemberIR = {
       facets: [],
       methods: [],
       refusals: [],
-      statics: { redeem: "Permission.L1" },
+      statics: { redeem: "Permission.L3" },
       traits: [],
     },
     {
@@ -105,7 +105,12 @@ export const LOYALTY_KIT_IR: MemberIR = {
       module: "loyalty_kit",
       file: "src/node/actions/redeem-points.action.ts",
       importPath: "#node/actions/redeem-points.action",
-      options: { key: "loyalty_account.redeem", actors: ["user"] },
+      options: {
+        key: "loyalty_account.redeem",
+        actors: ["user"],
+        idempotency: "required",
+        stepUp: "aal2",
+      },
       deps: [{ class: { name: "LoyaltyService", from: "#core/services/loyalty.service" } }],
       facets: [],
       methods: ["handle"],

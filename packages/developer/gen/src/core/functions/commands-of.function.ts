@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `commandsOf`, the `commands` manifest section (ADR 0506 decision 4): one row per `Command` class of the
  *          member (`name`, `aliases`, `hidden`, `audit`, `bin`, `class`, `file`, `entry`, `module?`), then, for a
- *          service or app, the rows of every hosted package marked `from: <package>`, except a package's `bin` rows;
+ *          service or app, the rows of every hosted package marked `from: <package>`, except a package's `bin` rows
+ *          and a devDependency's (tooling the member's console does not have where it runs);
  *          and the refusals gen can see: `identity_missing` (no written `name`), `kind_path` (a command outside its
  *          kind's home group) and `command_collision` (two rows share a name or an alias).
  * Boundary: pure. Options are read as the constants gen found in `Command({...})`. A command's home is
@@ -107,6 +108,9 @@ export function commandsOf(ir: MemberIR): {
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {
       if (dependency.manifest["kind"] === "app") continue;
+      // A devDependency is tooling (`@stackra/cli`'s `runway`): the member's console runs where it is not installed.
+      if (ir.runtimePackages !== undefined && !ir.runtimePackages.includes(dependency.package))
+        continue;
       for (const item of (dependency.manifest.commands ?? []) as unknown as readonly Entry[])
         if (item["bin"] !== true) rows.push({ ...item, from: item["from"] ?? dependency.package });
     }

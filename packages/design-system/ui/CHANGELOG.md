@@ -1,5 +1,380 @@
 # @stackra/ui
 
+## 0.26.0
+
+### Patch Changes
+
+- e5da198: The web `Button` takes `href` and `target`: with an `href` (and not disabled or loading) it renders an accessible
+  link, React Aria's `Link` with the button's HeroUI classes, the composition `PageActions` already uses, so it
+  navigates through the nearest `RouterProvider`. HeroUI v3's button has no `as` and dropped `href`, so
+  `<Button as="a" href>` rendered a button that went nowhere. Without `href` it is unchanged.
+- @stackra/icons@0.26.0
+  - @stackra/tokens@0.26.0
+  - @stackra/shortcuts@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/icons@0.25.0
+  - @stackra/tokens@0.25.0
+  - @stackra/shortcuts@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/icons@0.24.0
+  - @stackra/tokens@0.24.0
+  - @stackra/shortcuts@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- dee48f0: The class-component base `Component<P>` (web and native) declares React's class surface as types only (`state`,
+  `context`, `setState`, `forceUpdate`), so tsc takes a subclass as a JSX element and a `ComponentType` with its props
+  checked. Nothing is emitted: the compiled component is still a function.
+- @stackra/icons@0.23.0
+  - @stackra/tokens@0.23.0
+  - @stackra/shortcuts@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/icons@0.22.0
+  - @stackra/tokens@0.22.0
+  - @stackra/shortcuts@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/shortcuts@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/icons@0.21.0
+  - @stackra/tokens@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/icons@0.20.0
+  - @stackra/tokens@0.20.0
+  - @stackra/shortcuts@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/shortcuts@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/icons@0.19.0
+  - @stackra/tokens@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/icons@0.18.1
+  - @stackra/tokens@0.18.1
+  - @stackra/shortcuts@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/i18n@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/icons@0.18.0
+  - @stackra/tokens@0.18.0
+  - @stackra/shortcuts@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/icons@0.17.2
+  - @stackra/tokens@0.17.2
+  - @stackra/shortcuts@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/icons@0.17.1
+  - @stackra/tokens@0.17.1
+  - @stackra/shortcuts@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/icons@0.17.0
+  - @stackra/tokens@0.17.0
+  - @stackra/shortcuts@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/i18n@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/icons@0.16.0
+  - @stackra/tokens@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/shortcuts@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/icons@0.15.0
+  - @stackra/tokens@0.15.0
+  - @stackra/shortcuts@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/icons@0.14.4
+  - @stackra/tokens@0.14.4
+  - @stackra/shortcuts@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/icons@0.14.3
+  - @stackra/tokens@0.14.3
+  - @stackra/shortcuts@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/icons@0.14.2
+  - @stackra/tokens@0.14.2
+  - @stackra/shortcuts@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/icons@0.14.1
+  - @stackra/tokens@0.14.1
+  - @stackra/shortcuts@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/icons@0.14.0
+  - @stackra/tokens@0.14.0
+  - @stackra/shortcuts@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/icons@0.13.0
+  - @stackra/tokens@0.13.0
+  - @stackra/shortcuts@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/icons@0.12.0
+  - @stackra/tokens@0.12.0
+  - @stackra/shortcuts@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/icons@0.11.1
+  - @stackra/tokens@0.11.1
+  - @stackra/shortcuts@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/icons@0.11.0
+  - @stackra/tokens@0.11.0
+  - @stackra/shortcuts@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/icons@0.10.0
+  - @stackra/tokens@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/shortcuts@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- 681d01a: Five web components in `@stackra/ui/react` from the UI build list (STA-1981). `Autocomplete` wraps HeroUI v3's
+  Autocomplete with the single ComboBox contract: a select whose list opens with a search box that narrows it.
+  `ColorField` wraps HeroUI v3's ColorField with ColorPicker's field contract, a typed `#rrggbb` value with a swatch
+  of it. `ColorSwatch` wraps HeroUI v3's ColorSwatch and also draws a colour React Aria cannot parse, such as a token's
+  `var()`. `Flag` draws a country's flag from its ISO code (or a language tag's region) with `flagOf`. `MarkerMap`
+  places pins by projection on an SVG, with no map tiles, beside a selectable `List` of them in a `SidePanel`.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [e8cb518]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/tokens@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/icons@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/shortcuts@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

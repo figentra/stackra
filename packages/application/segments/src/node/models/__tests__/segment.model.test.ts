@@ -14,9 +14,13 @@ import type { SegmentKind } from "#contracts/index";
 import { Segment } from "#node/models/segment.model";
 
 describe("Segment", () => {
-  it("is a model with the seg public id and the timestamps", () => {
+  it("is a model with the seg public id, the tenant and the timestamps", () => {
     expect(new Segment()).toBeInstanceOf(Model);
-    expect(traitsOf(Segment).map((trait) => trait.name)).toEqual(["has_public_id", "timestamps"]);
+    expect(traitsOf(Segment).map((trait) => trait.name)).toEqual([
+      "has_public_id",
+      "belongs_to_tenant",
+      "timestamps",
+    ]);
     expect(traitsOf(Segment)[0]?.options).toEqual({ prefix: "seg" });
     expect(new Segment().id).toMatch(/^seg_[0-9a-z]{26}$/);
   });

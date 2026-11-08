@@ -43,8 +43,9 @@ driver).
 - The `postgres` driver reaches Postgres only through the `CacheSql` port; this package never depends on
   @stackra/database (that package reaches this one through @stackra/actions, so the dependency would be a cycle).
   Raw SQL lives in `PostgresCacheDriver` only, each statement with a `// raw-sql:` reason, every value bound, the
-  schema from the validated `postgres.schema`. A change to its tables changes `postgresCacheTables` and needs a new
-  migration.
+  schema from the validated `postgres.schema`. The driver never creates a table: the default schema's tables are
+  @stackra/database's migration `database.0005_create_cache_tables` (platform tables, no row-level security). A
+  change to its tables changes `postgresCacheTables` and needs a new migration there.
 - `CacheKey.subject(id)` is the only erasure tag (`~subject:<id>`); keep its `~` prefix, which no class name has, so
   it never covers a model key. Never import @stackra/privacy (it depends on this package).
 - No tenant word here (final review R-59): scoping goes through `CacheNamespace`.

@@ -213,6 +213,23 @@ describe(QueueWorkerService, () => {
     expect(await worker.drain()).toEqual([]);
   });
 
+  it("runs a job queued by an agent with no tenant of its own in the tenant of the human it acts for", async () => {
+    const { queue, worker, deliver } = setup();
+    const agent: Actor = {
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { ...user, scopeId: "org_1" },
+    };
+    const id = await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { origin: agent });
+    await worker.drain();
+    expect(deliver.contexts[0]?.actor).toEqual({
+      kind: ActorKind.System,
+      id,
+      scopeId: "org_1",
+      onBehalfOf: agent,
+    });
+  });
+
   it("retries after the backoff, then dead-letters after the last attempt and calls onDeadLetter once", async () => {
     const { queue, worker, deliver } = setup();
     deliver.outcome = "down";

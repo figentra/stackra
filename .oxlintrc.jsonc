@@ -36,6 +36,12 @@
     ".claude/skills/**",
     // a copy of .agents/hooks written by agents-sync; the source is linted (rule-gap N-1)
     ".claude/hooks/**",
+    // the guard bundle and its OpenCode plugin, rendered by `fflow sync`; .flow/lock.json pins their bytes
+    ".agents/hooks/fflow-guard.mjs",
+    ".opencode/plugins/fflow-guard.mjs",
+    // @stackra/flow-preset's content, kept byte for byte as moved from figentra/flow (STA-2097); its guard tables
+    // are single-entry rule files, like .agents/hooks, that the member rules would split file by file
+    "packages/developer/flow-preset/preset/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",
   ],

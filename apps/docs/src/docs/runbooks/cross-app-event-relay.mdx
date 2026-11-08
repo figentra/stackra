@@ -1,0 +1,167 @@
+---
+title: "Cross-app event relay"
+description: "How a producer sends its integration events to services in other apps, how a consumer gets its inbox, rotating the signing key, and reading and replaying dead deliveries."
+icon: "send"
+---
+
+<Note>
+  Status: built (STA-1910). `@stackra/outbox` ships the relay, the inbox and the two operator
+  commands; `stackra gen` writes the inbox route and the producer wiring. The end-to-end test runs
+  on a testbed box (`cross-app-relay.int.test.ts`). No product runs it in an environment yet.
+</Note>
+
+An integration event that a service in **another app** listens to leaves its producer as one signed HTTP request from the
+producer's outbox to the consumer's inbox ([ADR 0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events)
+decisions 11 to 19). Inside one app, events keep the generated subscription (decision 14); nothing on this page applies
+there. Delivery is at least once and the inbox runs each event id once.
+
+```
+producer outbox ─► CrossAppFanOut ─► outbox.deliveries ─► CrossAppRelayService ─► POST <inbox>/events/inbox ─► RelayInboxService ─► listener
+```
+
+## Producer: turn it on
+
+A producer is a service whose `runway.yaml` has an `events` block in an environment. Without one it publishes nothing
+across apps.
+
+```yaml
+environments:
+  dev:
+    secrets:
+      - STACKRA_EVENTS_SIGNING_KEY # the same name, so the environment receives it
+    events:
+      signingKey: STACKRA_EVENTS_SIGNING_KEY # a secret NAME, never a value; this is the default
+      keys:
+        - id: pay-dev-202611 # the current key first
+          publicKey: "<base64url Ed25519 public key>" # not a secret
+      subscribers:
+        - member: billing # the consumer's member key
+          inbox: http://localhost:4012 # an origin, no path: https outside a loopback dev run
+          events:
+            - payments.payment.captured.v1
+            - payments.payment.failed.v1
+```
+
+- `keys` holds one or two entries: the current key first, then the next one during a rotation. The current one signs.
+- `subscribers[].events` are versioned wire names. Each published event gets one delivery per subscriber that lists its
+  type, and an older version published under the same id gets its own.
+- Gen copies the keys and each subscriber's member and events (never the inbox origin) into the `relay` section of the
+  producer's `stackra.manifest.json`, so the contract a consumer pins carries them. It also writes
+  `.stackra/gen/events-relay.ts` and starts `CrossAppRelayService.work` in the boot beside the outbox relay.
+- Republish the producer's contract after changing `keys` or `subscribers`: consumers read them from the contract.
+
+## Producer: make the signing key
+
+The private key is an application secret of kind **generated** in `figentra/secrets`
+([ADR 0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical)). Nobody sees it.
+
+<Steps>
+  <Step title="Name it in the catalog">
+    Add the name to `catalog.yaml` with `kind: generated`, `generator: ed25519` and the product's `scopes` (optionally
+    `keyIdPrefix`).
+  </Step>
+  <Step title="Generate it">
+    `pnpm secrets:generate --missing --dry-run` lists what it would add; `pnpm secrets:generate --missing` writes the
+    private key (PKCS#8 DER, base64url) through a self-merging pull request and prints only the public half and the key
+    id (`<product>-<env>-<yyyymm>`).
+  </Step>
+  <Step title="List the public half">
+    Put that key id and public key into the environment's `events.keys`, and the secret name into `events.signingKey`
+    and `secrets:`. Gen, publish the contract, deploy.
+  </Step>
+</Steps>
+
+<Warning>
+  `pnpm secrets:generate NAME --scope S [--rotate]` makes a random value, not an Ed25519 key. Never
+  use it for a signing key: the relay refuses to sign (`… is not a PKCS#8 Ed25519 key`) and every
+  tick fails.
+</Warning>
+
+## Producer: rotate the key
+
+A rotation needs no simultaneous deploy because a consumer accepts every key its pinned contract lists for its
+environment.
+
+<Steps>
+  <Step title="Add the next key">
+    Generate a second key under a **new** secret name (`--missing` never replaces a file). List it
+    **second** in `events.keys`; the current key still signs. Publish the contract.
+  </Step>
+  <Step title="Wait for every consumer">
+    Each consumer bumps its pin of the producer's contract, runs gen and deploys. Its inbox now
+    takes both keys.
+  </Step>
+  <Step title="Switch">
+    Put the new key **first** and set `events.signingKey` (and `secrets:`) to its name. Deploy the
+    producer.
+  </Step>
+  <Step title="Retire the old key">
+    Drop the old entry from `events.keys`, publish the contract, let consumers bump, then remove the
+    old secret.
+  </Step>
+</Steps>
+
+## Consumer: get an inbox
+
+A consumer writes nothing for the relay. It depends on the producer's contract package and writes a `Listener` whose
+`handle(event)` takes the producer's event. Gen then registers the listener for inbox delivery (no Encore
+subscription) and writes `.stackra/gen/inbox.ts` (`InboundEventsController` on `POST /events/inbox`, with
+`RelayInboxConfig` holding each pinned producer's keys and events) and `.stackra/encore/<member>/inbox.ts` (the exposed
+`api.raw` route, `auth: false`). Never edit either file: rerun gen.
+
+The inbox accepts only a key the pinned contract lists for `STACKRA_ENVIRONMENT`, so after the producer adds a key or
+an event, bump the contract pin and run gen again.
+
+The producer must also list the consumer: add it to the producer's `events.subscribers` with its inbox origin. Until
+the pinned contract lists the consumer for an event it listens to (any version, in any environment), gen prints a
+`warning:` with code `client_event_unsubscribed` on the listener's `handle`, naming the consumer, the event and the
+producer. Gen still writes; nothing reaches that listener until the producer adds the consumer under
+`events.subscribers`, releases its contract and the consumer bumps its pin. An event the contract does not publish at
+all is the error `client_event_unknown` instead.
+
+## What the inbox answers
+
+| Answer | When                                                                                                                          | The producer                                  |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| 204    | handled, already received (same event id), or a newer version than the consumer reads                                         | deletes the delivery                          |
+| 401    | no signature, a malformed one, a key not listed for this environment, a bad signature, or a timestamp more than 5 minutes off | dead-letters it at once                       |
+| 403    | verified, but the producer's contract does not publish that event                                                             | dead-letters it at once                       |
+| 405    | a method other than `POST`                                                                                                    | dead-letters it at once                       |
+| 413    | a body over 1 MiB (the Encore route)                                                                                          | dead-letters it at once                       |
+| 422    | the body is not JSON, the envelope or the event's data breaks its schema, or the event is unknown here                        | dead-letters it at once; replay after the fix |
+| 5xx    | the receipt itself failed (the database, the inbox claim)                                                                     | retries                                       |
+
+The producer also retries a network error, a timeout (10 s), a redirect, 408 and 429, with the outbox's exponential
+backoff, and dead-letters a delivery after 10 attempts. A subscriber's deliveries go in order and stop at the first
+failure in a tick, so a failing consumer never holds back a healthy one. Every dead letter is logged as
+`outbox.delivery_dead` with subscriber, type, attempts and code; the inbox logs `outbox.inbox_unverified`,
+`outbox.inbox_forbidden` and `outbox.inbox_invalid` with ids only, never the body.
+
+## Read and replay dead deliveries
+
+Run these in the producer service:
+
+```bash
+stackra outbox:relay-deliveries                       # every delivery, oldest first (50 rows)
+stackra outbox:relay-deliveries --state dead --subscriber billing --limit 100
+stackra outbox:relay-replay dlv_01JC...               # make one dead delivery due again now
+```
+
+`--state` is `pending`, `failing` or `dead`. The table shows each delivery's subscriber, type, state, attempts and last
+error (`http_status 401`, `timeout`, `network`, `unsubscribed`); it never prints the envelope. A replay resets the
+attempts and sends on the next tick. `relay-replay` refuses (exit 2) a delivery that is not dead. Replaying a delivery
+the consumer already handled is safe: its inbox answers 204 and runs nothing.
+
+Fix the cause first: a 401 is a key the consumer's pinned contract lacks (bump it), a 403 or 422 is an event the
+consumer's contract or code does not know yet, `unsubscribed` is a subscriber the producer's `runway.yaml` no longer
+lists.
+
+## Known shortcuts
+
+- **Dead deliveries are never pruned.** They stay in `outbox.deliveries` until replayed; delete old ones by hand if the
+  table grows.
+- **A listener's own failure is not reported to the producer.** The consumer's bus records it on its delivery and the
+  inbox still answers 204, so the producer neither retries nor dead-letters. Make a listener that must not lose work a
+  queued listener. Only a failure of the receipt itself (5xx) makes the producer retry.
+- The relay's sender identity is the producer key; STA-1792's workload identity replaces it later, through the inbox's
+  verifier only.

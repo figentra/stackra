@@ -1,0 +1,110 @@
+/**
+ * Stackra file contract:
+ * Purpose: integration tests of `ContractSegmentsTenancyMigration` on real Postgres, over every segments migration
+ *          before it (the expand step included): with a row whose `tenant_id` is null the pre-flight refuses, naming
+ *          the table's count, and changes nothing; on clean data it applies, each of `segments` and
+ *          `segment_memberships` has `tenant_id` NOT NULL, `pol_<table>_tenant_id` as its one permissive policy and the
+ *          scope path restrictive, and `assertRowSecurity` proves one tenant never sees, nor moves a row to, another's,
+ *          with no warning for these tables.
+ * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The tests share one database and run in order.
+ *           The container's superuser writes the null row, as row-level security never restricts it.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022; ADR 0182 (integration tier); ADR 0239 (2026-11-07 amendment, item 1); ADR 0347
+ *                     (decisions 1 to 3 and 5).
+ */
+import { compileMigration, type CompiledMigration } from "@stackra/database";
+import { assertRowSecurity, usePostgres } from "@stackra/database/testing";
+import { BelongsToTenantMacro } from "@stackra/tenancy/node";
+import { tenantIsolationOptions } from "@stackra/tenancy/testing";
+import { describe, expect, it } from "@stackra/testing";
+
+import { CreateSegmentsMigration } from "#node/database/migrations/0001-create-segments.migration";
+import { AddSegmentsTenancyMigration } from "#node/database/migrations/0002-add-segments-tenancy.migration";
+import { ContractSegmentsTenancyMigration } from "#node/database/migrations/0003-contract-segments-tenancy.migration";
+
+const TABLES = ["segments", "segment_memberships"];
+
+const postgres = usePostgres({
+  entities: [],
+  migrations: [CreateSegmentsMigration, AddSegmentsTenancyMigration].map((migration, index) =>
+    compileMigration(migration, {
+      schema: "segments",
+      createsSchema: index === 0,
+      macros: [BelongsToTenantMacro],
+    }),
+  ),
+});
+
+const CONTRACT = compileMigration(ContractSegmentsTenancyMigration, {
+  schema: "segments",
+  macros: [BelongsToTenantMacro],
+});
+
+/** Runs each step of `migration` in its own transaction, as the migration runner does. */
+async function apply(migration: CompiledMigration): Promise<void> {
+  const { database } = postgres;
+  for (const step of migration.steps)
+    await database.transaction(async () => {
+      // raw-sql: the compiled migration's own statements
+      for (const sql of step.sql) await database.em().execute(sql);
+    });
+}
+
+/** Each contracted table's policies and whether `tenant_id` is NOT NULL. */
+async function catalogue(): Promise<unknown[]> {
+  // raw-sql: the catalogue's policies and NOT NULL flags of the contracted tables
+  return postgres.database.em().execute(
+    `select c.relname as "table", a.attnotnull as "notNull",
+       array(select p.polname || ':' || case when p.polpermissive then 'permissive' else 'restrictive' end
+             from pg_policy p where p.polrelid = c.oid order by p.polname) as policies
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     join pg_attribute a on a.attrelid = c.oid and a.attname = 'tenant_id'
+     where n.nspname = 'segments' and c.relname in ('segments', 'segment_memberships')
+     order by c.relname`,
+  );
+}
+
+describe("ContractSegmentsTenancyMigration on Postgres", () => {
+  it("refuses while a row has no tenant, naming the count, and changes nothing", async () => {
+    const before = await catalogue();
+    const em = postgres.database.em();
+    // raw-sql: an expand-step row written outside any tenant, so its tenant_id stayed null
+    await em.execute(
+      `insert into "segments"."segments" (id, scope_id, scope_path, name, subject_model, kind)
+       values ('seg_01jab3k4m5n6p7q8r9s0t1v2w3', 'scp_01jab3k4m5n6p7q8r9s0t1v2w3', 'platform.acme', 'VIP', 'crm.contact', 'manual')`,
+    );
+    try {
+      await expect(apply(CONTRACT)).rejects.toThrow(
+        /refused before any change: rows with a null tenant_id: segments\.segments 1\. Backfill tenant_id/,
+      );
+      expect(await catalogue()).toEqual(before);
+    } finally {
+      // raw-sql: removes the null row so the contract can apply
+      await em.execute('delete from "segments"."segments"');
+    }
+  });
+
+  it("applies on clean data: NOT NULL, the one equality and the scope path restrictive", async () => {
+    await apply(CONTRACT);
+    expect(await catalogue()).toEqual(
+      [...TABLES].sort().map((table) => ({
+        table,
+        notNull: true,
+        policies: [`pol_${table}_scope_path:restrictive`, `pol_${table}_tenant_id:permissive`],
+      })),
+    );
+  });
+
+  it("isolates each tenant's rows under assertRowSecurity, with no warning for these tables", async () => {
+    const warnings = await assertRowSecurity(postgres.database, {
+      ...tenantIsolationOptions(),
+      strict: false,
+    });
+    expect(
+      warnings.filter((warning) =>
+        TABLES.some((table) => warning.startsWith(`segments.${table} `)),
+      ),
+    ).toEqual([]);
+  });
+});

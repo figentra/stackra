@@ -1,0 +1,1 @@
+{"name":"@stackra/ui","exports":{"./react":{"types":"./react.d.ts"},"./native":{"types":"./native.d.ts"}}}

@@ -3,7 +3,8 @@
  * Purpose: `emitSettings`, the settings target: `.stackra/gen/settings.ts`, reached as `#stackra/settings`, with
  *          `Settings`, the typed setting keys of the member's settings classes built by `settingKeys` of
  *          `@stackra/settings` (`Settings.orders.customersMayCancel`, and `Settings.pick([...])` for a form over keys).
- *          One key per setting field, a section's fields flattened under their section, in the group `settingsKeyOf` derives from the class name
+ *          One key per setting field, a section's fields flattened under their section and keyed `<section>.<name>`
+ *          (two sections may share a field name, STA-2192), in the group `settingsKeyOf` derives from the class name
  *          (`AccountSettings` is `Settings.account`); each key carries its type (a `choice` or `list` with `options`),
  *          default, levels, label key, bounds, nullability, `@Setting` flags, section and earlier name.
  * Boundary: pure. Reads the settings shapes (kind `settings`), their section shapes, the class options (`scopes`) and
@@ -81,7 +82,8 @@ function keyOf(
   // Two groups of one module never share a label: a group other than the module's own carries its key.
   const label = group === module ? inGroup : `${group}.${inGroup}`;
   lines.push(`      "label": ${JSON.stringify(`${module}::settings.${label}.label`)} as Label,`);
-  return `    ${JSON.stringify(field.name)}: {\n${lines.join("\n")}\n    }`;
+  // A section's field is keyed `<section>.<name>`, so two sections may share a field name (one module, one object).
+  return `    ${JSON.stringify(inGroup)}: {\n${lines.join("\n")}\n    }`;
 }
 
 /** The keys of one settings class, a section's fields flattened under it, in declaration order. */

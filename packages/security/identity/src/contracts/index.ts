@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `AccountDeletions`, `AccountSecurity` (the
  *          SecurityPage's client port), `SessionStore`, `SignInBrowser`,
- *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals` and
+ *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals`,
+ *          `ServicePrincipals`, `ServiceTokens` and
  *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `AppleSignIn` port with
  *          `AppleSignInRefusal`, the `LoginDirectoryStore` port
  *          with `loginDirectoryPrefix` (the login directory's key format, shared with the edge Worker), and the types
@@ -38,6 +39,8 @@ export { IdpAdmin } from "#contracts/ports/idp-admin.port";
 export { LoginDirectoryStore } from "#contracts/ports/login-directory-store.port";
 export { Passkeys } from "#contracts/ports/passkeys.port";
 export { SessionStore } from "#contracts/ports/session-store.port";
+export { ServicePrincipals } from "#contracts/ports/service-principals.port";
+export { ServiceTokens } from "#contracts/ports/service-tokens.port";
 export { SignInBrowser } from "#contracts/ports/sign-in-browser.port";
 export { StaffPinStore } from "#contracts/ports/staff-pin-store.port";
 export { Verification } from "#contracts/ports/verification.port";
@@ -50,6 +53,8 @@ export type { AppApprovalRequester } from "#contracts/types/app-approval-request
 export type { AppleCredential } from "#contracts/types/apple-credential.type";
 export type { AppleSignInResult } from "#contracts/types/apple-sign-in-result.type";
 export type { AutomationPrincipalInput } from "#contracts/types/automation-principal-input.type";
+export type { ClaimsActionInput } from "#contracts/types/claims-action-input.type";
+export type { ClaimsActionInstall } from "#contracts/types/claims-action-install.type";
 export type { DeviceAuthorization } from "#contracts/types/device-authorization.type";
 export type { AccountSession } from "#contracts/types/account-session.type";
 export type { DeviceTokenResult } from "#contracts/types/device-token-result.type";
@@ -71,6 +76,7 @@ export type { PasskeySignInChallenge } from "#contracts/types/passkey-sign-in-ch
 export type { PasskeySummary } from "#contracts/types/passkey-summary.type";
 export type { PasswordPolicy } from "#contracts/types/password-policy.type";
 export type { SessionUser } from "#contracts/types/session-user.type";
+export type { ServicePrincipal } from "#contracts/types/service-principal.type";
 export type { SignInOptions } from "#contracts/types/sign-in-options.type";
 export type { StaffPinCredential } from "#contracts/types/staff-pin-credential.type";
 export type { VerificationCandidate } from "#contracts/types/verification-candidate.type";

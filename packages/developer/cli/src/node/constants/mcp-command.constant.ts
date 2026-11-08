@@ -8,8 +8,11 @@
  * Governing contract: ADR 0282 (decision 5: local mode shares one core with the CLI); R-29 (proxy the local Encore
  *                     tools).
  */
+import { toolsOf } from "@stackra/console";
+import { NodeProcessRunnerDriver } from "@stackra/console/node";
 import { serveLocalMcp } from "@stackra/mcp/node";
 
+import { DoctorCommand } from "#node/commands/doctor.command";
 import { captureIo } from "#node/functions/capture-io.function";
 import { cliVersion } from "#node/functions/cli-version.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -23,6 +26,11 @@ export const MCP_COMMAND: CliCommand = {
     await serveLocalMcp({
       version: cliVersion(),
       root: cwd,
+      // A converted command is served from its own definition; the rest stay on LOCAL_TOOLS until they are converted.
+      tools: toolsOf(
+        { name: "stackra", version: cliVersion(), commands: [DoctorCommand] },
+        { cwd, process: () => new NodeProcessRunnerDriver() },
+      ),
       run: async (args) => {
         const { io, output } = captureIo();
         const exitCode = await cli(args, io);

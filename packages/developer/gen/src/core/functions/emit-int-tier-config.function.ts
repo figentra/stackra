@@ -25,7 +25,7 @@ export function emitIntTierConfig(packageName: string): GeneratedFile {
     path: ".stackra/vitest.int.config.ts",
     content: [
       generatedHeader({
-        from: ".stackra/vitest.config.ts and the `.int.test.ts` files under src/",
+        from: ".stackra/vitest.config.ts and the `.int.test.ts` files under src/ and .stackra/tests/",
         purpose: `the integration tests of ${packageName}: the unit config narrowed to the \`.int\` tier.`,
         boundary:
           "`<subject>.int.test.ts(x)` in `__tests__/`, one file after another; run by `stackra test --tier int`.",

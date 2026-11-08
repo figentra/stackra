@@ -3,7 +3,8 @@
  * Purpose: `ServiceAckSet`, the acks a workflow waits for on one subject: the services expected, the services that
  *          acked so far, what each kept (`KeptRecords`) and when the set completed.
  * Boundary: data only. Key `workflow.service_ack_set`, table `workflow.service_ack_sets`. Platform data like the
- *           journal (a subject spans services and scopes), so the table has no row-level-security policy. One row per
+ *           journal (a subject spans services and scopes), so the table has no row-level-security policy: `Model.global`,
+ *           a platform-list table of the audit (ADR 0239 amendment, group (c): service acks, no tenant payload). One row per
  *           subject, versioned: two acks that land at once conflict, and the redelivered one re-reads the row, so the
  *           completing ack is never lost. Rows are added through `ServiceAckService.expect`, never with `new`.
  * Runtime: node
@@ -19,7 +20,7 @@ import { type KeptRecords, KeptRecords$ } from "#core/index";
 
 /** One subject's acks. Traits add `id`, the timestamps and the version; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class ServiceAckSet extends Model.with(HasPublicId("wfk"), Timestamps, Versioned) {
+export class ServiceAckSet extends Model.global(HasPublicId("wfk"), Timestamps, Versioned) {
   /** What each service that acked kept, by member key; a service that kept nothing is absent. */
   // reason: KeptRecords is this package's interface; its shipped KeptRecords$ holds the rules
   @Field(z.record(z.string(), z.array(KeptRecords$)))

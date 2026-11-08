@@ -22,6 +22,7 @@ import { NotFoundError } from "@stackra/errors";
 import { refusal } from "@stackra/errors/testing";
 import { Money } from "@stackra/money";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
 import { ConnectionMode } from "#contracts/enums/connection-mode.enum";
@@ -31,6 +32,7 @@ import { TenderKind } from "#contracts/enums/tender-kind.enum";
 import { MemoryAgentCommerceProtocolsDriver } from "#core/drivers/memory-agent-commerce-protocols.driver";
 import { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records.driver";
 import { AgentConfirmationRefusedError } from "#core/errors/agent-confirmation-refused.error";
+import { ApplicationFeeInvalidError } from "#core/errors/application-fee-invalid.error";
 import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
 import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
 import { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiated-not-allowed.error";
@@ -426,6 +428,71 @@ describe("PaymentService", () => {
       clock.at = new Date("2026-10-25T10:15:00Z");
       await expect(withAgents().agentCheckout(ask)).rejects.toRefuseWith(refused("expired"));
       expect(await records.find("cart_1")).toBeNull();
+    });
+  });
+
+  describe("direct-charge application fee", () => {
+    const fee = Money.ofMinor(250, "SAR");
+
+    it("passes the fee to the gateway on checkout and on a token charge", async () => {
+      const checkout = vi.spyOn(gateway, "checkout");
+      await payments.checkout("m1", { ...request, applicationFee: fee });
+      expect(checkout.mock.calls[0]?.[0].applicationFee).toEqual(fee);
+      const charge = vi.spyOn(gateway, "charge");
+      await payments.charge({
+        reference: "inv_7",
+        method,
+        amount,
+        initiator: ChargeInitiator.Customer,
+        applicationFee: fee,
+      });
+      expect(charge.mock.calls[0]?.[0].applicationFee).toEqual(fee);
+    });
+
+    it("builds the capture request with the fee, and without one when none is given", async () => {
+      const capture = vi.spyOn(gateway, "capture");
+      const held = { reference: "tab_9", amount, method, initiator: ChargeInitiator.Customer };
+      await payments.preAuthorize(held);
+      await payments.capture("tab_9", Money.ofMinor(8000, "SAR"), fee);
+      expect(capture.mock.calls[0]?.[0]).toMatchObject({
+        amount: { minor: 8000 },
+        applicationFee: fee,
+        reference: "capture:tab_9",
+      });
+      await payments.preAuthorize({ ...held, reference: "tab_10" });
+      await payments.capture("tab_10");
+      expect(capture.mock.calls[1]?.[0]).not.toHaveProperty("applicationFee");
+    });
+
+    it.each([
+      ["currency", Money.ofMinor(250, "USD")],
+      ["negative", Money.ofMinor(-1, "SAR")],
+      ["above_amount", Money.ofMinor(10_001, "SAR")],
+    ])("refuses a fee that is %s", async (reason, bad) => {
+      await expect(
+        payments.checkout("m1", { ...request, applicationFee: bad }),
+      ).rejects.toRefuseWith(refusal(ApplicationFeeInvalidError, { reference: "ord_1", reason }));
+    });
+
+    it("refuses a fee beside a destination platform share, and one above what a capture takes", async () => {
+      await expect(
+        payments.checkout("m1", {
+          ...request,
+          applicationFee: fee,
+          platform: { accountRef: "acct_1", fee },
+        }),
+      ).rejects.toRefuseWith(
+        refusal(ApplicationFeeInvalidError, { reference: "ord_1", reason: "with_platform" }),
+      );
+      await payments.preAuthorize({
+        reference: "tab_11",
+        amount,
+        method,
+        initiator: ChargeInitiator.Customer,
+      });
+      await expect(payments.capture("tab_11", Money.ofMinor(200, "SAR"), fee)).rejects.toRefuseWith(
+        refusal(ApplicationFeeInvalidError, { reference: "tab_11", reason: "above_amount" }),
+      );
     });
   });
 

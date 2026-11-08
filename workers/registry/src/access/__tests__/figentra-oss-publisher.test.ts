@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: tests of migration 0005: `@figentra-oss` is an `open` scope with the `open-source` licence rule, and
- *          `figentra/flow`'s release workflow on main, in the `release` environment, is its only trusted publisher;
+ *          `figentra/flow`'s release workflow on main, in the `release` environment, is a trusted publisher (with
+ *          `figentra/pay`'s since migration 0015);
  *          the same repository from another ref or environment, a look-alike repository id and another scope's
  *          publisher are not; figentra/flow publishes nothing to `@figentra`.
  * Boundary: test only; D1 is node:sqlite with the real migrations.
@@ -34,10 +35,12 @@ describe("migration 0005: the @figentra-oss scope, published by figentra/flow", 
     expect(row).toEqual({ read_rule: "open", licence_rule: "open-source" });
   });
 
-  it("trusts only the flow release workflow on main in the release environment", async () => {
+  it("trusts the flow release workflow on main in the release environment, and no other ref", async () => {
     const { db } = sqliteD1();
     const publishers = await new RegistryStore(db).publishers("@figentra-oss");
-    expect(publishers.map((row) => row.repository)).toEqual(["figentra/flow"]);
+    expect(publishers.map((row) => row.repository)).toEqual(
+      expect.arrayContaining(["figentra/flow"]),
+    );
     expect(matchPublisher(FLOW_CLAIMS, publishers)).toEqual(
       expect.objectContaining({ repository: "figentra/flow", environment: "release" }),
     );

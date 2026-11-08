@@ -45,7 +45,7 @@ describe("startTunnel", () => {
     const { spawnProcess, calls } = fakeSpawn();
     expect(() => startTunnel({ PATH: "/bin" }, io, spawnProcess)).toThrow(CliUsageError);
     expect(() => startTunnel({ CLOUDFLARE_TUNNEL_TOKEN: "" }, io, spawnProcess)).toThrow(
-      /CLOUDFLARE_TUNNEL_TOKEN.*infisical run --env=dev --path=\/agents/,
+      /CLOUDFLARE_TUNNEL_TOKEN.*secrets-exec\.mjs --names CLOUDFLARE_TUNNEL_TOKEN -- stackra dev --tunnel/,
     );
     expect(calls).toHaveLength(0);
   });

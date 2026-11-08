@@ -9,7 +9,9 @@
  * Runtime: node
  * Governing contract: ADR 0320; ADR 0501 (tokens v2, the materials block); ADR 0022 (test placement).
  */
+import { BlueprintRole } from "#contracts/enums/blueprint-role.enum";
 import { MaterialRole } from "#contracts/enums/material-role.enum";
+import { FAMILY_BLUEPRINT } from "#core/constants/family-blueprint.constant";
 import { MATERIAL_FAMILY_ROLES } from "#core/constants/material-family-roles.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { InvalidThemeError } from "#core/errors/invalid-theme.error";
@@ -60,6 +62,21 @@ describe("renderMaterialCss", () => {
     // Studio never puts content on glass.
     for (const role of ["card", "sidebar", "toolbar"] as const)
       expect(MATERIAL_FAMILY_ROLES.studio[role]).toBe("solid");
+  });
+
+  it("sets every blueprint role in each family, from theme roles only (ADR 0501 section 9, 2026-11-03)", () => {
+    const front = blockOf('[data-family="front"]');
+    const studio = blockOf('[data-family="studio"]');
+    for (const role of BlueprintRole) {
+      expect(front).toContain(`  --blueprint-${role}: ${FAMILY_BLUEPRINT.front[role]};`);
+      expect(studio).toContain(`  --blueprint-${role}: ${FAMILY_BLUEPRINT.studio[role]};`);
+    }
+    // The theme's own family (studio for Stackra) on :root, so a page without data-family still has every role.
+    expect(blockOf(":root {")).toContain("  --blueprint-rule: var(--separator);");
+    expect(front).toContain("  --blueprint-frame-radius: calc(var(--radius-lg) + 4px);");
+    // No colour value: every colour is a theme role, so a product theme draws the blueprint in its own colours.
+    for (const family of Object.values(FAMILY_BLUEPRINT))
+      for (const value of Object.values(family)) expect(value).not.toMatch(/#|oklch\(|rgb/);
   });
 
   it("writes one drawing class per level and role, and the press lift on glass", () => {

@@ -152,6 +152,23 @@ describe("commandsOf", () => {
     ]);
   });
 
+  it("hosts no command from a devDependency, whose tooling the member's console does not have", () => {
+    const ir = {
+      ...service(
+        [PRUNE],
+        [
+          { package: "@stackra/database", manifest: hosted([DB_STATUS]) },
+          { package: "@acme/dev-tools", manifest: hosted([{ ...DB_STATUS, name: "tools:lint" }]) },
+        ],
+      ),
+      runtimePackages: ["@stackra/database"],
+    };
+    expect(commandsOf(ir).commands.map((row) => row["name"])).toEqual([
+      "orders:prune",
+      "db:status",
+    ]);
+  });
+
   // @covers sta-1731:FR-005
   it("fails with command_collision naming both classes when a name or alias repeats", () => {
     const clash = command(

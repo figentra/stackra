@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the `ProcessRunner` port: runs one child process with its output captured, or with the terminal when it is
- *          interactive, and resolves with its exit code and output.
+ *          interactive or inherits the streams (`inherit: "stderr"`: standard input ignored, both outputs on standard
+ *          error), and resolves with its exit code and output.
  * Boundary: an abstract class that is its own token. A driver never prints the child's output itself: the console
  *           shows it only under `--verbose`, and the tail of a failed step under its task line. The node driver lives
  *           in `./node`, a memory one in `./testing`.

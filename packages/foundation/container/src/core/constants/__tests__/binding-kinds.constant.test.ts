@@ -18,7 +18,9 @@ describe("BINDING_KINDS", () => {
   });
 
   it("holds the bindings of this package and none of the value or token kinds", () => {
-    expect(BINDING_KINDS).toEqual(expect.arrayContaining(["service", "driver", "explorer"]));
+    expect(BINDING_KINDS).toEqual(
+      expect.arrayContaining(["service", "driver", "explorer", "shortcut", "extension_point"]),
+    );
     for (const kind of ["module", "schema", "model", "config", "port", "enum"])
       expect(BINDING_KINDS).not.toContain(kind);
   });

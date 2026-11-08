@@ -12,30 +12,17 @@
  * Governing contract: ADR 0159 (as amended by ADR 0305: macros, literal snapshots); ADR 0221 (decisions 1 and 3);
  *                     data-layer gap se10 (`searchable_columns_drift`).
  */
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { readFileSync } from "node:fs";
+import { relative } from "node:path";
 
-import { folderKey } from "#core/functions/folder-key.function";
-import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import type { MemberIR } from "#core/types/member-ir.type";
+import { migrationFilesOf } from "#node/functions/migration-files-of.function";
 
 /** A table a migration creates or alters: `schema.create("products"`, `schema.table('products'`. */
 const TABLE = /\bschema\.(?:create|table)\(\s*["'`]([A-Za-z_][\w]*)["'`]/g;
 
 /** The start of a `t.searchable({` call. */
 const CALL = /\.searchable\(\s*\{/g;
-
-/** The `.migration.ts` files of `directory`, sorted, or none when it does not exist. */
-function migrationsOf(directory: string): string[] {
-  if (!existsSync(directory)) return [];
-  return (
-    readdirSync(directory)
-      .filter((name) => name.endsWith(".migration.ts"))
-      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      .sort()
-      .map((name) => join(directory, name))
-  );
-}
 
 /** The object literal opening at `start` (a `{`), up to its matching brace. */
 function objectAt(text: string, start: number): string {
@@ -77,18 +64,6 @@ export function readSearchableColumns(
   layout: MemberIR["layout"],
   member: string,
 ): NonNullable<MemberIR["searchableColumns"]> {
-  const modules =
-    layout === "service"
-      ? (existsSync(join(root, "src/modules"))
-          ? readdirSync(join(root, "src/modules"), { withFileTypes: true })
-          : []
-        )
-          .filter((entry) => entry.isDirectory() && isModuleFolder(entry.name))
-          .map((entry) => ({
-            module: folderKey(entry.name),
-            dir: join(root, "src/modules", entry.name, "database/migrations"),
-          }))
-      : [{ module: member, dir: join(root, "src/node/database/migrations") }];
   const found: {
     file: string;
     module: string;
@@ -97,26 +72,25 @@ export function readSearchableColumns(
     filters: string[];
     version?: number;
   }[] = [];
-  for (const { module, dir } of modules)
-    for (const path of migrationsOf(dir)) {
-      const text = readFileSync(path, "utf8");
-      const tables = [...text.matchAll(TABLE)];
-      for (const call of text.matchAll(CALL)) {
-        const at = call.index ?? 0;
-        let table: string | undefined;
-        for (const each of tables) if ((each.index ?? 0) < at) table = each[1];
-        const object = objectAt(text, at + call[0].length - 1);
-        const fields = stringsOf(object, "text");
-        if (table === undefined || fields === undefined) continue;
-        found.push({
-          file: relative(root, path),
-          module,
-          table,
-          text: fields,
-          filters: stringsOf(object, "filters") ?? [],
-          ...versionOf(object),
-        });
-      }
+  for (const { module, path } of migrationFilesOf(root, layout, member)) {
+    const text = readFileSync(path, "utf8");
+    const tables = [...text.matchAll(TABLE)];
+    for (const call of text.matchAll(CALL)) {
+      const at = call.index ?? 0;
+      let table: string | undefined;
+      for (const each of tables) if ((each.index ?? 0) < at) table = each[1];
+      const object = objectAt(text, at + call[0].length - 1);
+      const fields = stringsOf(object, "text");
+      if (table === undefined || fields === undefined) continue;
+      found.push({
+        file: relative(root, path),
+        module,
+        table,
+        text: fields,
+        filters: stringsOf(object, "filters") ?? [],
+        ...versionOf(object),
+      });
     }
+  }
   return found;
 }

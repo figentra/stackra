@@ -7,15 +7,23 @@
       "detail": "Full gate: format, lint, typecheck, test, build, validate, boundaries, knip",
       "type": "shell",
       "command": "pnpm verify",
-      "group": { "kind": "build", "isDefault": true },
-      "problemMatcher": ["$tsc"]
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
     },
     {
       "label": "test",
       "detail": "Every member's vitest suite",
       "type": "shell",
       "command": "pnpm test",
-      "group": { "kind": "test", "isDefault": true },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     {
@@ -31,6 +39,46 @@
       "detail": "oxfmt the whole repo",
       "type": "shell",
       "command": "pnpm format",
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: surface-landing",
+      "detail": "Start surface-landing on http://localhost:4173 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@stackra/cli... && node packages/developer/cli/dist/stackra.mjs build --product --surfaces-only && exec node packages/developer/cli/dist/stackra.mjs preview serve --surface landing --port 4173",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: mobile",
+      "detail": "Start mobile on http://localhost:8081 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/mobile^... && exec pnpm --filter @figentra/mobile run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: playground",
+      "detail": "Start playground on http://localhost:3710 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/playground^... && exec pnpm --filter @figentra/playground run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: worker-docs",
+      "detail": "Start worker-docs on http://localhost:3333 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/docs... && exec pnpm --filter @figentra/docs run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: worker-static",
+      "detail": "Start worker-static on http://localhost:8787 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/worker-static... && exec pnpm --filter @figentra/worker-static run dev",
+      "isBackground": true,
       "problemMatcher": []
     }
   ]

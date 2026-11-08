@@ -1,6 +1,6 @@
 {
   "name": "@stackra/documents",
-  "version": "0.8.0",
+  "version": "0.26.0",
   "private": false,
   "description": "Stackra documents: one print-document template model rendered to HTML, PDF (through the PdfEngine port) and DOCX, with bilingual layouts, bidi isolation, Arabic shaping for devices that cannot shape, QR codes, amounts in words, signed form PDFs with a content hash, the ESignatureProvider port and its Documenso connector",
   "keywords": [
@@ -89,7 +89,6 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/data-transfer": "workspace:*",
     "@stackra/errors": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "docx": "catalog:documents",
@@ -97,6 +96,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -108,6 +108,9 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/integrations": "workspace:*"
   },
   "engines": {
     "node": ">=24.0.0"

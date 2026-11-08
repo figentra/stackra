@@ -14,6 +14,7 @@ import { CataloguePermissions } from "#node/access/catalogue.permissions";
 import { PublishCatalogueAction } from "#node/actions/publish-catalogue.action";
 import { CataloguePublished } from "#node/events/catalogue-published.event";
 import { PublishCatalogueInput } from "#node/schemas/publish-catalogue-input.schema";
+import { PublishCatalogueOutput } from "#node/schemas/publish-catalogue-output.schema";
 import { registerActions } from "@stackra/actions";
 import { registerPermissions } from "@stackra/container";
 import { registerEventNames } from "@stackra/events";
@@ -27,5 +28,5 @@ registerPermissions([
 ]);
 
 registerActions([
-  { type: PublishCatalogueAction, key: "catalogue.catalogue.publish@1", permission: "catalogue.catalogue.publish", risk: "L2", input: PublishCatalogueInput },
+  { type: PublishCatalogueAction, key: "catalogue.catalogue.publish@1", permission: "catalogue.catalogue.publish", risk: "L2", input: PublishCatalogueInput, output: PublishCatalogueOutput },
 ]);

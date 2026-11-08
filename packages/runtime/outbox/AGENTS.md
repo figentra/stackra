@@ -2,7 +2,8 @@
 
 The transactional outbox: the ORM flush writer, the relay, inbox deduplication, the `OutboxDriver`, `InboxDriver`,
 `ChangeFeed` and `EventPublisher` ports with memory and Postgres drivers, the `EventOutbox` driver and the retained
-change feed with its change consumers (ADR 0078 decision 4, ADR 0141, ADR 0221 decision 5, both amended 2026-10-28). Member at `packages/runtime/outbox` (`tier:lib`), in the programming
+change feed with its change consumers (ADR 0078 decision 4, ADR 0141, ADR 0221 decision 5, both amended 2026-10-28), and
+the cross-app event relay: fan-out, signed delivery and the verified inbox (ADR 0511 decisions 11 to 19, STA-1910). Member at `packages/runtime/outbox` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 
 ## Where code goes
@@ -10,6 +11,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 | You are writing…                            | It goes in…                                               |
 | ------------------------------------------- | --------------------------------------------------------- |
 | The configuration (`OutboxConfig`)          | `src/config/outbox.config.ts`                             |
+| The cross-app relay's and inbox's configs   | `src/config/{events-relay,relay-inbox}.config.ts`         |
 | Its options shape                           | `src/core/schemas/outbox-options.schema.ts`               |
 | Its shipped zod schema (`OutboxConfig$`)    | `src/core/constants/outbox-config-schema.constant.ts`     |
 | A port, a stored type or its enum           | `src/contracts/{ports,types,enums}/`                      |
@@ -69,6 +71,17 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   (ADR 0294 decision 23): the row-change seam is a change consumer.
 - Never mint an id here: message ids come from `@stackra/contracts`' `mintPublicId("evt", time)`. Never narrow the
   `evt_` check to one body form; stored ids of the older forms must keep passing (STA-1380).
+- Cross-app delivery (ADR 0511 d11-19): the fan-out runs only when the container binds `CrossAppFanOut`, so a service
+  with no relay configuration relays exactly as before; a fan-out failure fails the outbox message, and
+  `outbox.deliveries`' unique (event id, subscriber, type) keeps a retry single. `CrossAppRelayService` holds its own lock
+  (`outbox.cross-app`) only to lease deliveries (`DeliveryDriver.lease`); it never sends HTTP inside the lock or a
+  transaction, and records each outcome in its own write. It reuses `OUTBOX_DEFAULTS`' attempts, backoff and poll. The
+  inbox answers 403 to an event its verified producer does not publish (`RelayInboxConfig.producers[s].events`). Never send `producer`: the
+  inbox sets it from the verified sender. Never parse an inbox body before `InboxVerifier.verify`, never log a body,
+  and never import @stackra/webhooks (the signature layout is copied, research R-4). The signing key's value is read
+  only through the `SecretStore` port by its name; it is never logged or kept as text. `EventsRelayConfig`
+  (subscribers, keys) and `RelayInboxConfig`'s producer key table are values gen emits at build time, never runtime
+  env vars.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
@@ -85,5 +98,6 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 | Event payload | `outbox.messages.data` (jsonb), memory store          | The integration event's fields as its author declared them; deleted once delivered, never logged                                                                     |
 | Actor         | `outbox.messages.meta` (jsonb), the envelope's `meta` | Public ids and kinds of the caller, for consumers' audit and `onBehalfOf`                                                                                            |
 | Row change    | `outbox.changes.data` (jsonb)                         | Model name, row key, field names; values only when the model opts in, never encrypted or `@Classified` ones; kept `changeRetentionDays`, dropped by whole partitions |
+| Delivery      | `outbox.deliveries.envelope` (jsonb)                  | The cross-app envelope as sent; deleted once delivered, never logged; `last_error` keeps a code and HTTP status only                                                 |
 | Last error    | `outbox.messages.last_error` (jsonb)                  | The error's code and message; the relay adds no payload and no stack                                                                                                 |
 | Event ids     | `outbox.inbox.event_id`                               | Opaque ids, pruned by the retention purge                                                                                                                            |

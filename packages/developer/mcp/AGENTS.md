@@ -16,7 +16,7 @@ shape (ADR 0294, 0305). Entries `.` and `./node` (ADR 0127, 2026-10-24 note).
 
 - `.` stays bundle-safe: no `node:*` import outside `src/node/`.
 - A secret value never passes through this process: `execWithSecrets` hands `$NAME` references to
-  `infisical run ... -- sh -c` and never reads, prints or puts a value on argv. Never add a flag that takes a value.
+  `sops exec-env <file> 'exec …'` (one per secret, ADR 0525) and never reads, prints or puts a value on argv. Never add a flag that takes a value.
 - Every write tool of the local server goes through the CLI's `run`, so the CLI's gates apply.
 - The hosted server core (`toolTable`, `filterTools`, `protectedResourceMetadata`, `wwwAuthenticate`) is pure and
   lives in `.`. It reads committed manifests only, never adds or annotates a tool by hand, and takes every URL,

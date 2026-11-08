@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `runSeeders` and `runSeedEntry`: a profile runs `minimal` first, each seeder in its own
- *          transaction with its ledger row, built by the booted container (a seeder that injects a service gets it); an
+ *          transaction with its ledger row, built by the booted container (a seeder that injects a service gets it,
+ *          bound or built from its entry's `deps`); an
  *          unchanged seeder is skipped, `again` runs it anyway; `module` narrows the run; a failing seeder stops the run
  *          and is named; an unknown profile is refused; the entry prints the run and answers 1 on a failure.
  * Boundary: test only; the database is a stand-in that counts transactions, the ledger a map; the SQL ledger is
@@ -84,6 +85,18 @@ class BrokenTestSeeder extends Seeder {
   }
 }
 
+/** A seeder the wiring does not bind: the seed entry lists its constructor's tokens instead (`deps`). */
+class CatalogDemoSeeder extends Seeder {
+  constructor(private readonly settings: Settings) {
+    super();
+  }
+
+  async run(): Promise<void> {
+    seeded.push(`catalog.demo:${this.settings.pack()}`);
+    await Promise.resolve();
+  }
+}
+
 class SeedingModule extends Module {}
 
 registerWiring({
@@ -149,6 +162,28 @@ describe(runSeeders, () => {
     expect(seeded).toEqual(["orders.minimal:settings", "catalog.minimal", "orders.demo"]);
     expect(database.transactions).toBe(3);
     expect(ledger.by).toEqual(["ci", "ci", "ci"]);
+  });
+
+  it("builds a seeder the wiring does not bind from its entry's deps, resolved in the container", async () => {
+    const container = await createTestingModule(SeedingModule).compile();
+    const result = await runSeeders({
+      container,
+      member: "seeding",
+      seeders: [
+        {
+          key: "catalog.demo",
+          module: "catalog",
+          profile: "demo",
+          type: CatalogDemoSeeder,
+          deps: [Settings],
+        },
+      ],
+      ledger: memoryLedger(),
+      ranBy: "ci",
+      profile: "demo",
+    });
+    expect(result.ran).toEqual(["catalog.demo"]);
+    expect(seeded).toEqual(["catalog.demo:settings"]);
   });
 
   it("skips an unchanged seeder, runs it again with `again`, and narrows to one module", async () => {

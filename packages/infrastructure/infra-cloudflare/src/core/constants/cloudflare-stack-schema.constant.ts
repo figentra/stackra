@@ -52,6 +52,23 @@ export const CLOUDFLARE_STACK_SCHEMA = z
         serviceTokens: z.array(DNS_LABEL_SCHEMA).default([]),
       })
       .optional(),
+    /**
+     * Worker members of the `internal-tool` preset, each behind Access (ADR 0519 decision 4). Fed by the member's
+     * `access` setting in runway once STA-1988 lands; needs `access`.
+     */
+    internalTools: z
+      .strictObject({
+        /** The account's `workers.dev` subdomain, which Version URLs live under (`<version>-<worker>.<it>.workers.dev`). */
+        workersDevSubdomain: DNS_LABEL_SCHEMA.optional(),
+        members: z.record(
+          DNS_LABEL_SCHEMA,
+          z.strictObject({
+            /** The custom domains and routes the Worker answers on, such as `console.figentra.cloud`. */
+            hostnames: z.array(z.string().min(1)).default([]),
+          }),
+        ),
+      })
+      .optional(),
     /** The OS edge Worker in front of every web host (ADR 0437). */
     edgeWorker: EDGE_WORKER_SCHEMA.optional(),
   })
@@ -62,6 +79,12 @@ export const CLOUDFLARE_STACK_SCHEMA = z
           code: "custom",
           path: ["devZone"],
           message: "Tunnels and Access need the dev zone (ADR 0290 decision 1)",
+        });
+      if (stack.internalTools !== undefined && stack.access === undefined)
+        context.addIssue({
+          code: "custom",
+          path: ["internalTools"],
+          message: "Internal-tool Workers need the Access config (ADR 0519 decision 4)",
         });
       for (const [zone, options] of Object.entries(stack.zones)) {
         const outside = (host: string) => host !== zone && !host.endsWith(`.${zone}`);

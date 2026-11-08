@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `formatGenError`, the two lines a gen refusal prints: the location, code, subject and message, then the
- *          fix, which is what an author or an agent reads to correct it.
+ * Purpose: `formatGenError`, the two lines a gen finding prints: the location, the word `error` or `warning`, the
+ *          code, subject and message, then the fix, which is what an author or an agent reads to correct it.
  * Boundary: pure.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: refusals print their fix).
+ * Governing contract: ADR 0294 (decision 26: refusals print their fix); ADR 0101 (Enforcement: gen warns).
  */
 import type { GenError } from "#core/types/gen-error.type";
 
@@ -18,5 +18,5 @@ import type { GenError } from "#core/types/gen-error.type";
  */
 export function formatGenError(error: GenError): string {
   const at = error.line > 0 ? `${error.file}:${error.line}:${error.column}` : error.file;
-  return `${at} error ${error.code} ${error.subject}: ${error.message}\n  fix: ${error.fix}`;
+  return `${at} ${error.severity ?? "error"} ${error.code} ${error.subject}: ${error.message}\n  fix: ${error.fix}`;
 }

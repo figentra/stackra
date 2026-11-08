@@ -13,9 +13,13 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { AwardKind } from "#node/models/award-kind.model";
 
 describe("AwardKind", () => {
-  it("is a model with the awk public id and the timestamps", () => {
+  it("is a model with the awk public id, the tenant and the timestamps", () => {
     expect(new AwardKind()).toBeInstanceOf(Model);
-    expect(traitsOf(AwardKind).map((trait) => trait.name)).toEqual(["has_public_id", "timestamps"]);
+    expect(traitsOf(AwardKind).map((trait) => trait.name)).toEqual([
+      "has_public_id",
+      "belongs_to_tenant",
+      "timestamps",
+    ]);
     expect(traitsOf(AwardKind)[0]?.options).toEqual({ prefix: "awk" });
     expect(new AwardKind().id).toMatch(/^awk_[0-9a-z]{26}$/);
   });

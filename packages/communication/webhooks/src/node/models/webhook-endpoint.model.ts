@@ -3,7 +3,8 @@
  * Purpose: `WebhookEndpoint`, one receiver a scope registers for outbound webhooks: its scope node, its https URL, the
  *          wire names of the integration events it subscribes to, the name of its signing secret (and of the one a
  *          rotation replaced), and when delivery to it stopped.
- * Boundary: data plus the rotation rule. Key `webhooks.webhook_endpoint`, table `webhooks.webhook_endpoints`. It holds
+ * Boundary: data plus the rotation rule. Key `webhooks.webhook_endpoint`, table `webhooks.webhook_endpoints`, owned by its
+ *           tenant (`BelongsToTenant`: filled from the call, under the table's tenant equality policy). It holds
  *           secret names only, never a value: the delivery job reads the value blind from the `SecretStore` just
  *           before it signs (ADR 0173). Endpoints are added through `WebhookEndpointService.register`, never with `new`;
  *           the ORM loads rows without running the constructor.
@@ -14,13 +15,14 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** How long the secret a rotation replaced still signs, in milliseconds. */
 const ROTATION_OVERLAP_MS = 24 * 60 * 60 * 1000;
 
-/** A registered receiver. Traits add `id` and the timestamps; the indexes are the migration's. */
+/** A registered receiver. Traits add `id`, the owning tenant and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class WebhookEndpoint extends Model.with(HasPublicId("whe"), Timestamps) {
+export class WebhookEndpoint extends Model.with(HasPublicId("whe"), BelongsToTenant, Timestamps) {
   /** The scope node whose events the endpoint receives. */
   scopeId!: PublicId<"scp">;
 
@@ -65,5 +67,5 @@ export class WebhookEndpoint extends Model.with(HasPublicId("whe"), Timestamps) 
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface WebhookEndpoint {
   /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

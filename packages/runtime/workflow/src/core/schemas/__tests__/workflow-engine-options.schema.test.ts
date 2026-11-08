@@ -27,6 +27,7 @@ describe("WorkflowEngineOptions", () => {
       signalRetention: "7d",
       forEachLimit: 1000,
       maxChainDepth: 3,
+      retryInlineMax: "0s",
     });
   });
 

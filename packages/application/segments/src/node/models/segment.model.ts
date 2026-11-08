@@ -14,13 +14,14 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Int } from "@stackra/validation";
 
 import type { SegmentKind } from "#contracts/index";
 
 /** A segment. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Segment extends Model.with(HasPublicId("seg"), Timestamps) {
+export class Segment extends Model.with(HasPublicId("seg"), BelongsToTenant, Timestamps) {
   /** The rule set revision the membership was last fully computed from; null before the first computation. */
   @Int
   revision!: number | null;
@@ -53,5 +54,5 @@ export class Segment extends Model.with(HasPublicId("seg"), Timestamps) {
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Segment {
   /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

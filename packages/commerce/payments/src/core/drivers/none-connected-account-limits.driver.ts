@@ -23,7 +23,7 @@ import { ConnectedAccountLimitsMissingError } from "#core/errors/connected-accou
  */
 export class NoneConnectedAccountLimitsDriver extends Driver(ConnectedAccountLimits) {
   /**
-   * Never answers.
+   * Never answers the cap; always throws.
    *
    * @throws ConnectedAccountLimitsMissingError always.
    */
@@ -32,7 +32,7 @@ export class NoneConnectedAccountLimitsDriver extends Driver(ConnectedAccountLim
   }
 
   /**
-   * Never answers.
+   * Never answers whether payouts are held; always throws.
    *
    * @throws ConnectedAccountLimitsMissingError always.
    */

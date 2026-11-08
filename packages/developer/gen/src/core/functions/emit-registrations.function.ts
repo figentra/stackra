@@ -4,7 +4,7 @@
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
  *          from the identities the manifest locked: the hosted packages' entities (the service's own files written from
  *          their manifests, STA-1667, or an older manifest's entity list), the model partners of each
- *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
+ *          `CrudService<M>` (and of every `CrudService<M>` its packages' manifests list with its model, `services[].partner`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
@@ -12,7 +12,8 @@
  *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
  *          then `registerRoles`; without
  *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
- *          STA-1702), and every action and query with its locked key, permission, risk, effects and input class
+ *          STA-1702), each record policy with its model (`registerPolicies`; without it `ctx.authorize(record)` runs no
+ *          policy, STA-2045), and every action and query with its locked key, permission, risk, effects and input class
  *          (`registerActions`; without it the pipeline checks no permission and validates no input, STA-2025).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
@@ -31,15 +32,17 @@ import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
-import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
+import { connectionOf } from "#core/functions/connection-of.function";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { ownClass } from "#core/functions/own-class.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
+import { shapeOfRef } from "#core/functions/shape-of-ref.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -78,9 +81,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   };
   /** A class of this member, by name and, when given, module. */
   const own = (name: string, module?: unknown): ClassRef | undefined => {
-    const declared =
-      ir.classes.find((candidate) => candidate.name === name && candidate.module === module) ??
-      ir.classes.find((candidate) => candidate.name === name);
+    const declared = ownClass(ir, name, module);
     return declared === undefined ? undefined : { name, from: declared.importPath };
   };
   /** The class of a manifest entry: this member's, or a hosted package's from the entry exporting its file. */
@@ -142,18 +143,24 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }
   }
 
-  // A platform CrudService a class injects (`RuleSetService`) is typed against its package's model.
-  const injected = ir.classes.flatMap((declared) =>
-    declared.deps.filter((dep) => dep.of === undefined && dep.named === undefined),
-  );
-  const platformPartners = Object.entries(PLATFORM_PARTNERS).flatMap(([key, model]) => {
-    const [pkg = "", name = ""] = key.split("#");
-    const service = injected.find(
-      (dep) =>
-        dep.class.name === name && (dep.class.from === pkg || dep.class.from.startsWith(`${pkg}/`)),
-    );
-    return service === undefined ? [] : [`[${ref(service.class)}, ${ref(model)}]`];
-  });
+  // A package's `CrudService<M>` is typed against its own model; the base's type argument is gone at runtime, so its
+  // manifest keeps the pair (`services[].partner`) and a service registers it for every package it hosts. A package
+  // registers only its own.
+  const packagePartners = (ir.layout === "service" ? ir.dependencies : [])
+    .filter(({ manifest: dependency }) => dependency.kind !== "app")
+    .flatMap(({ manifest: dependency }) => {
+      const rows: unknown = dependency["services"];
+      return (Array.isArray(rows) ? rows : []).flatMap((row: unknown) => {
+        const service = classRefIn(row, "class");
+        const model =
+          typeof row === "object" && row !== null
+            ? classRefIn(Reflect.get(row, "partner"), "name")
+            : undefined;
+        return service === undefined || model === undefined
+          ? []
+          : [`[${ref(service)}, ${ref(model)}]`];
+      });
+    });
   call("registerModelPartners", "@stackra/database", [
     ...ir.classes
       .filter((declared) => declared.kind === "service" && declared.partner !== undefined)
@@ -162,7 +169,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
           ? undefined
           : `[${ref({ name: declared.name, from: declared.importPath })}, ${ref({ name: declared.partner.name, from: declared.partner.from })}]`,
       ),
-    ...platformPartners,
+    ...packagePartners,
   ]);
 
   const events = ((manifest.events ?? []) as readonly Entry[]).filter(
@@ -275,10 +282,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       .map((declared) => {
         const partner = declared.partner;
         if (partner === undefined) return undefined;
-        const connection = ir.classes.find(
-          (candidate) =>
-            candidate.kind === "connection" && candidate.partner?.name === partner.name,
-        );
+        const connection = connectionOf(ir.classes, partner.name);
         return (
           `{ event: ${ref({ name: declared.name, from: declared.importPath })}, ` +
           `integration: ${ref({ name: partner.name, from: partner.from })}` +
@@ -376,23 +380,44 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }),
   );
 
+  // Each record policy with the model it judges, own and hosted, so `ctx.authorize(record)` runs it (ADR 0132 as
+  // amended, STA-2045); the base's type argument is gone at runtime, so this row is the only pairing.
+  // shortcut: a hosted policy whose model the package does not declare (no `modelFile`) is not registered; upgrade when
+  // the manifest names the model's package and file.
+  call(
+    "registerPolicies",
+    "@stackra/iam",
+    ((manifest["policies"] ?? []) as readonly Entry[]).map((entry) => {
+      // The model is resolved first, so a row that cannot be written imports nothing.
+      if (typeof entry["from"] === "string" && typeof entry["modelFile"] !== "string")
+        return undefined;
+      const partner =
+        typeof entry["from"] === "string"
+          ? undefined
+          : ir.classes.find(
+              (declared) => declared.name === entry["class"] && declared.module === entry["module"],
+            )?.partner;
+      const model =
+        typeof entry["from"] === "string"
+          ? classOf(entry, "model", "modelFile")
+          : partner === undefined
+            ? undefined
+            : ref({ name: partner.name, from: partner.from });
+      if (model === undefined) return undefined;
+      const policy = classOf(entry);
+      return policy === undefined ? undefined : `{ model: ${model}, policy: ${policy} }`;
+    }),
+  );
+
   // Every action and query with the identities the manifest locked, own and hosted, so the pipeline checks the
   // permission and validates the input (ADR 0098, STA-2025). Every row carries its permission: an anonymous caller of a
   // class that lists `ActorKind.Anonymous` skips the check in the access-control driver, never by a missing row.
   // shortcut: a hosted package's input class is not imported, since its manifest names the input schema but not the
   // file that declares it; its calls are permission-checked but not validated until the manifest carries that file.
-  const inputOf = (entry: Entry): string | undefined => {
+  // The output class rides along so the idempotency store leaves out its `@ShownOnce` fields (STA-2568).
+  const shapeOf = (entry: Entry, side: "input" | "output"): string | undefined => {
     if (typeof entry["from"] === "string") return undefined;
-    const input = entry["input"];
-    const target = /^#\/schemas\/([^.]+)\.(.+)$/.exec(
-      typeof input === "object" && input !== null ? String((input as Entry)["$ref"] ?? "") : "",
-    );
-    const shape =
-      target === null
-        ? undefined
-        : ir.shapes.find(
-            (candidate) => candidate.module === target[1] && candidate.name === target[2],
-          );
+    const shape = shapeOfRef(ir, entry[side]);
     return shape === undefined ? undefined : ref({ name: shape.name, from: shape.importPath });
   };
   call(
@@ -401,12 +426,14 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     ((manifest.actions ?? []) as readonly Entry[]).map((entry) => {
       const type = classOf(entry);
       if (type === undefined) return undefined;
-      const input = inputOf(entry);
+      const input = shapeOf(entry, "input");
+      const output = shapeOf(entry, "output");
       const effects = entry["effects"];
       return (
         `{ type: ${type}, key: ${JSON.stringify(entry["key"])}, permission: ${JSON.stringify(entry["permission"])}, risk: ${JSON.stringify(entry["risk"])}` +
         `${Array.isArray(effects) && effects.length > 0 ? `, effects: ${JSON.stringify(effects)}` : ""}` +
-        `${input === undefined ? "" : `, input: ${input}`} }`
+        `${input === undefined ? "" : `, input: ${input}`}` +
+        `${output === undefined ? "" : `, output: ${output}`} }`
       );
     }),
   );
@@ -426,4 +453,15 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     runtime: "node",
   });
   return [header, ...loads, ...importLines(imports), "", ...calls].join("\n").replace(/\n+$/, "\n");
+}
+
+/**
+ * The class a manifest row names: its `nameKey` field (`class` on a service row, `name` on a partner) with its `from`,
+ * or `undefined` when the row names none.
+ */
+function classRefIn(row: unknown, nameKey: string): ClassRef | undefined {
+  if (typeof row !== "object" || row === null) return undefined;
+  const name: unknown = Reflect.get(row, nameKey);
+  const from: unknown = Reflect.get(row, "from");
+  return typeof name === "string" && typeof from === "string" ? { name, from } : undefined;
 }

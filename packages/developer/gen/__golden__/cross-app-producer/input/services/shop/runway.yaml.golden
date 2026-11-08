@@ -1,0 +1,25 @@
+# Golden fixture member runway: the cross-app relay's events block per environment (ADR 0511, STA-1910).
+environments:
+  dev:
+    events:
+      keys:
+        - id: shop-dev-1
+          publicKey: c2hvcC1kZXYtcHVibGlj
+      subscribers:
+        - member: channels
+          inbox: http://localhost:4012
+          events:
+            - shop.order.paid.v1
+  prod:
+    events:
+      signingKey: SHOP_EVENTS_SIGNING_KEY
+      keys:
+        - id: shop-prod-2
+          publicKey: c2hvcC1wcm9kLW5leHQ
+        - id: shop-prod-1
+          publicKey: c2hvcC1wcm9kLXB1YmxpYw
+      subscribers:
+        - member: channels
+          inbox: https://channels.example.com
+          events:
+            - shop.order.paid.v1

@@ -4,14 +4,16 @@
  *          runs gen first (except for `lint`, and for members without `stackra.config.ts`), so the tool always sees
  *          fresh generated configs and entries, then starts the tool `resolveTool` picks. At the workspace root it fans
  *          out through `turbo run <task>`, whose member scripts call `stackra <task>` again.
- *          A docs app (`src/config/docs.config.ts`, STA-1316) always runs gen first, `lint` included, since Mintlify
- *          checks the site gen assembles: `dev` keeps gen watching `src/` while `mint dev` runs, and `lint` runs
- *          `mint broken-links`, then `mint a11y`.
+ *          A docs app (`src/config/docs.config.ts`, STA-1316) always runs gen first, `lint` included, since the
+ *          checks read the site gen assembles: `dev` keeps gen watching `src/` while the site's dev server runs. For a
+ *          Mintlify site `lint` runs `mint broken-links`, then `mint a11y`; for a Fumadocs site (STA-2026) it builds the
+ *          site, then runs `checkDocsLinks` over the build and exits 1 naming each broken link by page (the
+ *          accessibility check is the app's e2e tier).
  *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
  *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown. A
  *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
- * Boundary: starts at most one tool (two in sequence for a docs app's `lint`); a gen refusal stops before the tool
- *           and exits 1.
+ * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
+ *           the tool and exits 1.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 5: tools read the configs gen writes); the task vocabulary rule (root
  *                     commands run `turbo run <task>`); ADR 0182 (test tiers).
@@ -23,6 +25,7 @@ import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
+import { checkDocsLinks } from "#node/functions/check-docs-links.function";
 import { readMember } from "#node/functions/read-member.function";
 import { resolveTool } from "#node/functions/resolve-tool.function";
 import { runGen } from "#node/functions/run-gen.function";
@@ -101,7 +104,13 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
       const tool = resolveTool(task, member, { target, tier });
       if (docs && task === "lint") {
         const code = await runProcess(tool, io);
-        return code === 0 ? runProcess({ ...tool, args: ["a11y"] }, io) : code;
+        if (code !== 0) return code;
+        if (tool.command === "mint") return runProcess({ ...tool, args: ["a11y"] }, io);
+        const broken = checkDocsLinks(join(tool.cwd, "build", "client"));
+        for (const { page, link, reason } of broken) io.err(`${page}: ${link} (${reason})\n`);
+        if (broken.length > 0) return 1;
+        io.out("every internal link resolves\n");
+        return 0;
       }
       if (docs && task === "dev") {
         const watcher = watchDocsSite(

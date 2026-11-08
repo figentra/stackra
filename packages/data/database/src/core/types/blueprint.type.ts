@@ -12,6 +12,7 @@
  * Runtime: node
  * Governing contract: ADR 0159 as amended by ADR 0305 (macros, literal snapshots); ADR 0239 (equality policy);
  *                     ADR 0327 (decisions 3, 8 and 9: `scope_id`, `scope_path`, isolation in the database);
+ *                     ADR 0239 (2026-11-07 amendment, gap A: `systemAccess`);
  *                     `.agents/rules/tenancy.md`; ADR 0294 (decision 28: links); ADR 0135 (public ids); ADR 0231 (names).
  */
 import type { ColumnChange } from "#core/types/column-change.type";
@@ -19,6 +20,7 @@ import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { ColumnGroup } from "#core/types/column-group.type";
 import type { ForeignKeyColumn } from "#core/types/foreign-key-column.type";
 import type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
+import type { SystemAccessOptions } from "#core/types/system-access-options.type";
 import type { TableIndex } from "#core/types/table-index.type";
 
 /**
@@ -66,6 +68,18 @@ export interface Blueprint {
 
   /** A `tsvector`, a full-text document for a GIN index; @stackra/search's `t.searchable(...)` macro writes them. */
   tsvector: (name: string) => ColumnDefinition;
+
+  /**
+   * A `GeoPoint` field: `geography(Point,4326)` (WGS 84) with the GiST index `idx_<table>_<column>`, built online on an
+   * existing table (ADR 0314). The database needs `Extension.Postgis`.
+   */
+  point: (name: string) => ColumnDefinition;
+
+  /** A `GeoPolygon` field: `geography(Polygon,4326)` with its GiST index, as `point` (ADR 0314). */
+  polygon: (name: string) => ColumnDefinition;
+
+  /** A `GeoLine` field: `geography(LineString,4326)` with its GiST index, as `point` (ADR 0314). */
+  line: (name: string) => ColumnDefinition;
 
   /** `text` limited to `values` by the check constraint `ck_<table>_<column>`. */
   enum: (name: string, values: readonly string[]) => ColumnDefinition;
@@ -172,9 +186,63 @@ export interface Blueprint {
    * index (`scope_path` with `app.scope_paths`), and `inherited` is `ancestor` plus a select-only policy
    * `pol_<table>_<column>_inherited` that shows the rows on the path above a granted path, read only (a template seeded
    * at the platform or product node, seen by every tenant below it; ADR 0412). Otherwise an unset or `''` setting matches no row.
-   * The column must be defined in the same blueprint, and a blueprint takes one `rowLevelSecurity` call, as Postgres
-   * ORs permissive policies. A business table keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327
-   * d8).
+   * `platform` is the platform form of a nullable id column (ADR 0239 amendment, gap C): a set session reads its rows and
+   * the null rows and writes only its own, a session with the setting unset reads and writes only the null rows, and
+   * the restrictive `pol_<table>_<column>_write_update` and `_write_delete` keep those commands on the session's rows.
+   * `restrictive: true` writes it `AS RESTRICTIVE`: it narrows the one permissive policy, and an unset or `''` setting
+   * does not narrow (ADR 0347 d2 and d3); `exemptNull: column` also lets through that column's null rows on a path at or above a granted path. On a table being created the column is defined in the same blueprint; on an
+   * existing table it may be one an earlier migration wrote (a public id for an id match, `scope_path` for a path
+   * match). A blueprint takes one permissive policy, as Postgres ORs them, and one policy per column. A business table
+   * keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327 d8).
    */
   rowLevelSecurity: (column: string, options: RowLevelSecurityOptions) => void;
+
+  /**
+   * Drops the policy `pol_<table>_<column>` an earlier migration created with `options` (`schema.table` only), before
+   * this blueprint's policies, so a contract step can replace it: `t.dropRowLevelSecurity("scope_path", { setting:
+   * "app.scope_paths", match: "ancestor" })`. `options.table` names the table the policy was created under when the
+   * table was renamed since (a rename keeps the policy's name). The dev inverse creates it again from `options`.
+   */
+  dropRowLevelSecurity: (
+    column: string,
+    options: RowLevelSecurityOptions & { readonly table?: string },
+  ) => void;
+
+  /**
+   * Declares this table a platform table: no row of it can ever be tied to a tenant, so it holds no owner column and
+   * no policy (ADR 0239 amendment, group (c)): `t.platformTable("one row per consumer class; a global log position")`.
+   * The reason is required, one line, and the compiled migration carries it as
+   * `-- stackra:platform-table <schema>.<table> <reason>`, which `assertRowSecurity` and gen's isolation test read.
+   * Compiling refuses a blueprint that also writes a scope id, an isolation scope id, a column filled from a setting
+   * or a policy; the audit refuses the table once it holds the owner column or a scope id. `stackra
+   * row-security-declarations` lists every declaration for review.
+   */
+  platformTable: (reason: string) => void;
+
+  /**
+   * Declares this table's row security reviewed by hand: its policies, named in `policies`, have a shape the audit
+   * does not derive (a pre-tenant route read through a setting), so the audit does not hold them to the one
+   * permissive owner policy and does not run its owner probe. It still requires row-level security enabled and
+   * forced and every named policy present, so it is never a blanket skip. The reason is required and one line; the
+   * compiled migration carries `-- stackra:reviewed-policy <schema>.<table> <policy>[,<policy>] <reason>`.
+   */
+  reviewedPolicy: (reason: string, policies: readonly string[]) => void;
+
+  /**
+   * Lets a system lookup or claim read this tenant table before a tenant is known (ADR 0239 amendment, gap A), through
+   * `SYSTEM_ACCESS_ROLE` (`NOLOGIN`, `NOBYPASSRLS`, no member) and only through a `schema.systemFunction` it owns:
+   * `t.systemAccess({ select: ["id", "tenant_id", "available_at", "leased_until"], update: ["leased_until"], reason })`.
+   * It creates the role when missing, grants it `USAGE` on the schema, `SELECT` on the `select` columns and `UPDATE`
+   * on the `update` columns (column grants only), and writes the permissive policies
+   * `pol_<table>_system_access_select` (`FOR SELECT TO` the role `USING (true)`) and, with `update` columns,
+   * `pol_<table>_system_access_update` (`FOR UPDATE`, `USING (true) WITH CHECK (true)`). A claim's
+   * `FOR UPDATE SKIP LOCKED` needs an `update` column. On a platform-form table (`match: "platform"`) declared in the
+   * same blueprint, `update` columns also let the role through `pol_<table>_<column>_write_update`
+   * (`... or current_user = 'stackra_system_access'`), which would otherwise keep a claim with no tenant on the NULL
+   * rows; the audit accepts that suffix only there. The reason is required and one line; the compiled migration
+   * carries `-- stackra:system-access <schema>.<table> select=<columns> [update=<columns>] <reason>`, which
+   * `assertRowSecurity` holds the grants to, and `stackra row-security-declarations` lists it for review. Once per
+   * blueprint, and never on a platform table.
+   */
+  systemAccess: (options: SystemAccessOptions) => void;
 }

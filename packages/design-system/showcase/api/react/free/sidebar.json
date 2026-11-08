@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "3cf4dae7eefa137a",
+    "hash": "b08ded38beab326f",
     "propsFiles": [
       "ui/src/react/sidebar/sidebar-content.props.ts",
       "ui/src/react/sidebar/sidebar-footer.props.ts",
@@ -1744,12 +1744,26 @@
           "type": "\"sm\" | \"md\" | \"lg\""
         },
         {
+          "description": "The browsing context of the link (`_blank`); read only with `href`.",
+          "name": "target",
+          "required": false,
+          "source": "stackra",
+          "type": "HTMLAttributeAnchorTarget"
+        },
+        {
           "default": "default",
           "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
           "name": "shape",
           "required": false,
           "source": "stackra",
           "type": "\"default\" | \"pill\""
+        },
+        {
+          "description": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
+          "name": "href",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",

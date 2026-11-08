@@ -38,6 +38,7 @@ import type { NamedToken } from "#core/types/named-token.type";
 import type { Token } from "#core/types/token.type";
 import type { Wiring } from "#core/types/wiring.type";
 import type { WiringBinding } from "#core/types/wiring-binding.type";
+import type { WiringReplacement } from "#core/types/wiring-replacement.type";
 
 /** How one token is built: the class, its lifetime and its constructor tokens, or a built-in's factory. */
 interface Recipe {
@@ -81,7 +82,7 @@ interface Graph {
   readonly configs: Map<string, MergedConfig>;
   readonly configByToken: Map<AnyClass, MergedConfig>;
   readonly drivers: Map<AnyClass, MergedDriver>;
-  readonly replaces: Map<AnyClass, AnyClass>;
+  readonly replaces: Map<AnyClass, WiringReplacement>;
   readonly overrides: ReadonlyMap<Token, object>;
   readonly loaded: Map<Token, Recipe>;
   readonly exported: Set<AnyClass>;
@@ -164,7 +165,7 @@ function mergeWirings(wirings: readonly Wiring[], overrides: ReadonlyMap<Token, 
       Object.assign(driver.deps, entry.deps);
       graph.drivers.set(entry.port, driver);
     }
-    for (const entry of wiring.replaces ?? []) graph.replaces.set(entry.provide, entry.override);
+    for (const entry of wiring.replaces ?? []) graph.replaces.set(entry.provide, entry);
   }
   for (const config of graph.configs.values()) {
     graph.configByToken.set(config.provide, config);
@@ -412,7 +413,8 @@ export class Container {
     if (config !== undefined)
       return { key: config.provide, ...this.recipeFor(config.override ?? config.provide) };
     const replacement = graph.replaces.get(token);
-    if (replacement !== undefined) return { key: token, ...this.recipeFor(replacement) };
+    if (replacement !== undefined)
+      return { key: token, ...this.recipeFor(replacement.override, replacement.deps) };
     const driver = graph.loaded.get(token);
     if (driver !== undefined) return { key: token, ...driver };
     for (const [port, loaded] of graph.loaded)

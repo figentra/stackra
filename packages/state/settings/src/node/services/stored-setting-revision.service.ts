@@ -48,6 +48,7 @@ export class StoredSettingRevisionService extends CrudService<StoredSettingRevis
       status: revision.status,
       effectiveAt: new Date(revision.effectiveAt),
       decidedBy: revision.decidedBy,
+      approvalRole: revision.approvalRole ?? null,
       appliedAt: revision.appliedAt === null ? null : new Date(revision.appliedAt),
     });
   }

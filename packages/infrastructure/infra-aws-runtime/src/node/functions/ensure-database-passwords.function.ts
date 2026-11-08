@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `ensureDatabasePasswords(plan, request)`, each Postgres resource's admin password for the Pulumi program,
- *          by plan key: the one the deploy job already has (`<RESOURCE>_PASSWORD`, from the Infisical sync), or, the
- *          first time, a new random one written blind to Infisical at `<environment>:/runtime/<resource>` before it
+ *          by plan key: the one the deploy job already has (`<RESOURCE>_PASSWORD`, from the secrets sync), or, the
+ *          first time, a new random one written blind to the vault at `<environment>:/runtime/<resource>` before it
  *          is used, so a later run reuses it instead of rotating it.
  * Boundary: runs in the deploy job only. A value lives in a local and the returned Pulumi secret; it is never logged,
  *           printed or written to disk. Writes go through the `VaultWriter` port.
@@ -21,7 +21,7 @@ import { RESOURCE_SECRETS_SETTINGS } from "#node/constants/resource-secrets-sett
 /**
  * The admin password of each database in `plan`.
  *
- * @param request - `vault` writes a new password; `env` is the job's environment; `vaultEnvironment` is the Infisical
+ * @param request - `vault` writes a new password; `env` is the job's environment; `vaultEnvironment` is the vault's
  *        environment slug of the plan's environment (`prod` for production).
  * @example
  * const passwords = await ensureDatabasePasswords(plan, { vault, env: process.env, vaultEnvironment: "prod" });

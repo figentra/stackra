@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "f554f0d33f274f8c",
+    "hash": "c83376f6899f223d",
     "heroDoc": "vendor/heroui/native/list-group.json",
     "propsFiles": ["ui/src/native/list/list-item.props.ts", "ui/src/native/list/list.props.ts"]
   },
@@ -91,7 +91,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",

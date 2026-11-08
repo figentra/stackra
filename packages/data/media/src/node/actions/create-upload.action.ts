@@ -9,7 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0098 (actions are the unit); ADR 0222 (decision 2).
  */
-import { Action } from "@stackra/actions";
+import { Action, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
@@ -22,6 +22,7 @@ import { CreateUploadOutput } from "#node/schemas/create-upload-output.schema";
 export class CreateUploadAction extends Action({
   key: "upload.create",
   actors: [ActorKind.User, ActorKind.Agent],
+  idempotency: Idempotency.Optional,
 }) {
   /** The media library that signs it. */
   private readonly media: MediaLibrary;

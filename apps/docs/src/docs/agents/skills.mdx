@@ -8,11 +8,11 @@ A skill teaches an agent **how**: patterns, gotchas and the order to decide thin
 
 ## Three kinds, and where each lives
 
-| Kind                                | Lives in                                                                                                    | Managed by                                                             | Edit it?                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------- |
-| Spec engine commands                | Figentra Flow's `flow-*` skills, rendered into `.agents/skills/flow-*` and projected into `.claude/skills/` | `pnpm spec:sync` (`figentra-flow sync`), recorded in `.flow/lock.json` | No. Override in `.flow/overrides/` |
-| Upstream skills the repository uses | `.agents/skills/<upstream-name>`                                                                            | `npx skills add`, `update`, `remove`, pinned in `skills-lock.json`     | No. Never in place                 |
-| House skills                        | `.agents/skills/<category>-<name>`                                                                          | A normal change                                                        | Yes                                |
+| Kind                                | Lives in                                                                                                    | Managed by                                                         | Edit it?                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| Spec engine commands                | Figentra Flow's `flow-*` skills, rendered into `.agents/skills/flow-*` and projected into `.claude/skills/` | `pnpm spec:sync` (`fflow sync`), recorded in `.flow/lock.json`     | No. Override in `.flow/overrides/` |
+| Upstream skills the repository uses | `.agents/skills/<upstream-name>`                                                                            | `npx skills add`, `update`, `remove`, pinned in `skills-lock.json` | No. Never in place                 |
+| House skills                        | `.agents/skills/<category>-<name>`                                                                          | A normal change                                                    | Yes                                |
 
 ### The spec engine
 
@@ -81,7 +81,7 @@ A skill that is confidently wrong is worse than a missing one, because an agent 
 | Worker templates (`cloudflare-worker-development`, `hono-worker-development`, `node-worker-development`, `wrangler`) | No Worker in the API path, and no Worker template                                                                |
 | `go-service-development`, `python-service-development`                                                               | No Go or Python workspace                                                                                        |
 | `nextjs-development`, `react-development`, `vite-react-development`, `react-native-development`                      | Superseded by the specific web and mobile skills                                                                 |
-| `multi-tenant-safety-checker`, `security-tenancy-isolation-test`, `security-iam-model`                               | Tenancy skills return with the first tenant-owned table                                                          |
+| `multi-tenant-safety-checker`, `security-iam-model`                                                                  | Return with their first use; `security-tenancy-isolation-test` ships in `@stackra/flow-preset`                   |
 | `domain-billing-payments`, `domain-design`, `domain-scheduling-attendance`, `ai-mcp-tools`                           | Product domains, not framework                                                                                   |
 | `stripe-*`, `resend`, `aws-*`, `astro`                                                                               | A vendor or platform this repository does not use                                                                |
 | `documentation-and-adrs`                                                                                             | Duplicates `docs-adr`                                                                                            |

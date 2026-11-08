@@ -8,7 +8,12 @@
 
 /** One publishable package of the core tree. */
 export type ConsumerGateCorePack = {
+  /** The package name, `@stackra/<name>`. */
   readonly name: string;
+
+  /** The version its `package.json` declares. */
   readonly version: string;
+
+  /** The package folder, where it is packed from. */
   readonly dir: string;
 };

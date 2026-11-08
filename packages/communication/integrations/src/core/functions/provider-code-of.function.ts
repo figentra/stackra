@@ -3,14 +3,15 @@
  * Purpose: `providerCodeOf`, the provider's own error code in an error answer: the first machine code under `code`,
  *          `error`, `name` or `type`, at the top or inside an `error` object (`{ "name": "restricted_api_key" }`,
  *          `{ "error": "invalid_grant" }`, `{ "error": { "code": "card_declined" } }`).
- * Boundary: internal. Only a short code without spaces is taken, so a provider's message text, which may echo the
- *           request, never reaches a refusal's details.
+ * Boundary: internal. Only a code-like value is taken (letters, digits, `_`, `.` and `-`, at most 64 characters), so a
+ *           provider's message text, which may echo the request, never reaches a refusal's details. A code can still
+ *           echo a credential, so each caller scrubs it with `redactSecrets` before it builds the refusal.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 13 and 20).
  */
 
-/** A machine code: no spaces, at most 100 characters. */
-const CODE = /^[\w.:-]{1,100}$/;
+/** A machine code: letters, digits, `_`, `.` and `-`, at most 64 characters. */
+const CODE = /^[\w.-]{1,64}$/;
 
 /** The keys a provider names its code under, in the order they are tried. */
 const KEYS = ["code", "error", "name", "type"] as const;

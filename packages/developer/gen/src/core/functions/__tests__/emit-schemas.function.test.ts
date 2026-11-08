@@ -507,6 +507,48 @@ describe("emitSchemas", () => {
     expect(content).toMatch(/import type \{ I18nKey \} from "@stackra\/i18n";/);
   });
 
+  it("validates GeoPoint, GeoPolygon and GeoLine with @stackra/validation's builders (ADR 0314)", () => {
+    const placed: ShapeIR = {
+      name: "Placed",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/placed.schema.ts",
+      importPath: "#modules/orders/schemas/placed.schema",
+      fields: [
+        {
+          name: "door",
+          optional: false,
+          nullable: false,
+          type: { kind: "geo", shape: "point" },
+          rules: [],
+        },
+        {
+          name: "area",
+          optional: false,
+          nullable: true,
+          type: { kind: "geo", shape: "polygon" },
+          rules: [],
+        },
+        {
+          name: "route",
+          optional: false,
+          nullable: false,
+          type: { kind: "geo", shape: "line" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [placed], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("  door: geoPoint(),");
+    expect(content).toContain("  area: geoPolygon().nullable(),");
+    expect(content).toContain("  route: geoLine(),");
+    expect(content).toMatch(/import \{[^}]*geoLine[^}]*\} from "@stackra\/validation";/);
+  });
+
   it("imports a package's shipped schema under an alias instead of compiling it (STA-1290)", () => {
     const site: ShapeIR = {
       name: "Site",
@@ -584,6 +626,71 @@ describe("emitSchemas", () => {
     expect(content).toMatch(
       /import \{[^}]*CreateOrderInput as RemoteCreateOrderInput[^}]*\} from "#stackra\/clients\/commerce";/,
     );
+  });
+
+  it("aliases a hatch's import of an X$ this file declares itself, as an override's field reuses its base (STA-2215)", () => {
+    const options: ShapeIR = {
+      name: "GizmoOptions",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/gizmo-options.schema.ts",
+      importPath: "#modules/orders/schemas/gizmo-options.schema",
+      fields: [
+        {
+          name: "mode",
+          optional: false,
+          nullable: false,
+          type: {
+            kind: "hatch",
+            source: "GizmoOptions$.shape.mode",
+            imports: [["GizmoOptions$", "@acme/gizmos"]],
+          },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [options], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toMatch(
+      /import \{[^}]*GizmoOptions\$ as HatchGizmoOptions\$[^}]*\} from "@acme\/gizmos";/,
+    );
+    expect(content).toContain("  mode: HatchGizmoOptions$.shape.mode,");
+    expect(content).toContain("export const GizmoOptions$ = z.object({");
+  });
+
+  it("imports no hatch for a package base's override, whose fields read BaseX$.shape (TS6133)", () => {
+    const override: ShapeIR = {
+      name: "GizmoOptions",
+      kind: "config",
+      module: "orders",
+      file: "src/config/gizmo-options.config.ts",
+      importPath: "#config/gizmo-options.config",
+      base: { kind: "package", name: "GizmoOptions", from: "@acme/gizmos" },
+      fields: [
+        {
+          name: "mode",
+          optional: false,
+          nullable: false,
+          type: {
+            kind: "hatch",
+            source: "GizmoOptions$.shape.mode",
+            imports: [["GizmoOptions$", "@acme/gizmos"]],
+          },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [override], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("export const GizmoOptions$ = BaseGizmoOptions$.extend({");
+    expect(content).toContain("  mode: BaseGizmoOptions$.shape.mode,");
+    expect(content).not.toContain("HatchGizmoOptions$");
   });
 
   it("imports what a hatch's source uses and applies nullable once (STA-1293)", () => {

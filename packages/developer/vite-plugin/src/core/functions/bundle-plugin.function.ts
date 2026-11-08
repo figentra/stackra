@@ -4,7 +4,7 @@
  *          its surface and its version from the committed `stackra.manifest.json`, writes the bundle to
  *          `<outDir>/<surface>/<version>/`, refuses a bundle that carries its own copy of a package the shell's import
  *          map supplies or any HeroUI Pro code, and emits `bundle.manifest.json` (targets, entry, modulepreload list,
- *          stylesheets, the import-map specifiers used).
+ *          stylesheets, the import-map specifiers used, and the sha384 integrity of every emitted file).
  * Boundary: build only. Leaving the shared specifiers external is `bundleConfig`'s; this plugin checks the output,
  *           read as rolldown's `OutputChunk` (with Vite's `viteMetadata`), never a hand-written copy of its shape.
  *           A member with no manifest, or one that targets no shell on the surface, fails before the build with what
@@ -14,6 +14,7 @@
  *                     of the import-map external fails); app-shells-edge-and-extension.md 4.2, 15 (points 7 and 8) and
  *                     16 (point 8); owner decision D12.
  */
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -27,6 +28,10 @@ import type { ImportMap } from "#core/types/import-map.type";
 
 /** The bundle manifest's file name, beside the bundle. */
 const BUNDLE_MANIFEST = "bundle.manifest.json";
+
+/** The Subresource Integrity value of `source`: sha384, as the browser checks it. */
+const integrityOf = (source: string | Uint8Array): string =>
+  `sha384-${createHash("sha384").update(source).digest("base64")}`;
 
 /** The package a module id under `node_modules` belongs to, or undefined for the member's own files. */
 function packageOf(id: string): string | undefined {
@@ -127,6 +132,16 @@ export function bundlePlugin(options: {
         css: [...(entry.viteMetadata?.importedCss ?? [])],
         // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
         imports: [...imports].sort(),
+        // every emitted file, so the edge can pin each modulepreload, stylesheet and import-map URL (STA-2562)
+        integrity: Object.fromEntries(
+          Object.values(bundle)
+            .map((item): [string, string] => [
+              item.fileName,
+              integrityOf(item.type === "chunk" ? item.code : item.source),
+            ])
+            // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+            .sort(([a], [b]) => a.localeCompare(b)),
+        ),
         ...(options.proTypesOnly === true ? { pro: "types-only" as const } : {}),
       };
       this.emitFile({

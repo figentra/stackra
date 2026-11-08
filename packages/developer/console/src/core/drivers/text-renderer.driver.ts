@@ -74,10 +74,12 @@ export class TextRendererDriver extends Driver(Renderer) {
     return this.context.mode.json || this.context.mode.quiet;
   }
 
+  /** Writes one plain line, empty by default. */
   line(text = ""): void {
     this.out(text === "" ? "" : `  ${this.bidi(text)}`);
   }
 
+  /** Writes a one-line message; warn and error go to standard error. */
   message(tone: MessageTone, text: string): void {
     const { painter, symbols } = this;
     const body = this.bidi(text);
@@ -87,10 +89,12 @@ export class TextRendererDriver extends Driver(Renderer) {
     else this.err(mark(painter.error(symbols.error), body));
   }
 
+  /** Writes a bold section title. */
   title(text: string): void {
     this.out(`\n  ${this.painter.bold(this.painter.accent(this.bidi(text)))}\n`);
   }
 
+  /** Writes one `key ........ value` line per entry. */
   keyValue(entries: Readonly<Record<string, unknown>>): void {
     for (const [name, value] of Object.entries(entries)) {
       const key = this.bidi(name);
@@ -99,11 +103,13 @@ export class TextRendererDriver extends Driver(Renderer) {
     }
   }
 
+  /** Writes a bulleted list. */
   list(items: readonly string[]): void {
     for (const item of items)
       this.out(mark(this.painter.dim(this.symbols.bullet), this.bidi(item)));
   }
 
+  /** Writes a table fitted to the width. */
   table(table: TableSpec): void {
     const { mode } = this.context;
     const options = {
@@ -115,6 +121,7 @@ export class TextRendererDriver extends Driver(Renderer) {
     for (const line of renderTable(table, options)) this.out(line);
   }
 
+  /** Writes the grouped status rows and the summary line; returns the counts. */
   checklist(checklist: ChecklistSpec): ChecklistSummary {
     const options = { unicode: this.context.mode.unicode, painter: this.painter, bidi: this.bidi };
     const { lines, summary } = renderChecklist(checklist, options);
@@ -122,6 +129,7 @@ export class TextRendererDriver extends Driver(Renderer) {
     return summary;
   }
 
+  /** Writes a tree, one level deep unless `expanded`. */
   tree(nodes: readonly TreeNode[], expanded: boolean): void {
     const options = {
       unicode: this.context.mode.unicode,
@@ -132,6 +140,7 @@ export class TextRendererDriver extends Driver(Renderer) {
     for (const line of renderTree(nodes, options)) this.out(line);
   }
 
+  /** Writes a rounded box; a warning or alert goes to standard error. */
   box(text: string, tone: NoteTone, title?: string): void {
     const { painter } = this;
     const style = {
@@ -150,32 +159,38 @@ export class TextRendererDriver extends Driver(Renderer) {
       else this.err(`  ${line}`);
   }
 
+  /** Writes the problem screen to standard error. */
   problem(problem: Problem, verbose: boolean): void {
     const { mode } = this.context;
     const options = { unicode: mode.unicode, painter: this.painter, width: mode.columns, verbose };
     for (const line of renderProblem(problem, options)) this.err(line);
   }
 
+  /** Writes the theme's banner, on a terminal only. */
   banner(): void {
     if (this.silent || !this.context.mode.tty) return;
     for (const line of renderBanner(this.context.theme, this.context.version, this.context.mode))
       this.context.stdout.write(`${line}\n`);
   }
 
+  /** Writes the name and version on one line. */
   about(): void {
     this.out(
       `${this.painter.bold(this.context.theme.name)} ${this.painter.success(this.context.version)}`,
     );
   }
 
+  /** Writes a command's help, run as `binary`. */
   help(structure: CommandStructure, binary: string): void {
     for (const line of renderHelp(structure, binary, this.painter)) this.out(line);
   }
 
+  /** Writes the visible commands under their headings. */
   commandList(structures: readonly CommandStructure[], binary: string): void {
     for (const line of renderList(structures, binary, this.painter)) this.out(line);
   }
 
+  /** Runs `work` and writes a dotted DONE or FAIL line with its timing; rethrows a failure. */
   async task<T>(name: string, work: () => Promise<T> | T): Promise<T> {
     const { painter } = this;
     const label = this.bidi(name);
@@ -199,6 +214,7 @@ export class TextRendererDriver extends Driver(Renderer) {
     }
   }
 
+  /** Starts a spinner that animates only while the mode animates. */
   spinner(message: string): Spinner {
     const { painter, symbols, context } = this;
     const silent = this.silent;
@@ -233,6 +249,7 @@ export class TextRendererDriver extends Driver(Renderer) {
     };
   }
 
+  /** Starts a progress bar of `total` steps; without animation, a line per ten percent. */
   progress(total: number, name = ""): Progress {
     const { painter, symbols, context } = this;
     const { mode } = context;
@@ -269,6 +286,7 @@ export class TextRendererDriver extends Driver(Renderer) {
     };
   }
 
+  /** Tracks a live view and writes its final checklist when it stops. */
   live(view: LiveView): LiveHandle {
     // Text never redraws: the view's final checklist is written when it stops.
     const state = liveRows(view);
@@ -282,6 +300,7 @@ export class TextRendererDriver extends Driver(Renderer) {
     };
   }
 
+  /** Writes data as pretty-printed JSON. */
   json(data: unknown): void {
     this.out(JSON.stringify(data, undefined, 2));
   }

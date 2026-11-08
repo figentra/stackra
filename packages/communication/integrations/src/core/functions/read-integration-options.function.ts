@@ -121,10 +121,11 @@ export function readIntegrationOptions(
       break;
     }
     case AuthType.Basic: {
+      // RFC 7617 allows an empty password (an API key as the user name, Medusa and Stripe): only the user name is required.
       ensure(
-        isText(auth.username) && isText(auth.password),
+        isText(auth.username) && typeof auth.password === "string",
         "auth",
-        "of Basic needs username and password",
+        "of Basic needs a username and a password, which may be empty",
       );
       break;
     }

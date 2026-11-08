@@ -70,6 +70,9 @@ export class StoredSettingRevision extends Model.with(HasPublicId("ssr"), Timest
   /** Who approved or rejected it; `null` until then. */
   decidedBy!: string | null;
 
+  /** The role its approver must hold, for a role-gated key; `null` for four-eyes or none. */
+  approvalRole!: string | null;
+
   /** When it applied; `null` until then. */
   appliedAt!: Date | null;
 }

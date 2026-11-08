@@ -3,7 +3,8 @@
  * Purpose: `ResourceTableProps`, the props of the internal data table the List page and every relation manager draw.
  * Boundary: props only; internal to the resource pages.
  * Runtime: browser
- * Governing contract: ADR 0307 (rules 1, 2 and 11); ADR 0164; ADR 0271 (decisions 1 and 7); ADR 0505.
+ * Governing contract: ADR 0307 (rules 1, 2 and 11); ADR 0164; ADR 0271 (decisions 1 and 7); ADR 0505; the SDUI
+ *                     catalogue case `tableColumns` (STA-1981).
  */
 import type { QueryRef } from "@stackra/clients";
 import type { ResourceAction } from "@stackra/ui/contracts";
@@ -41,4 +42,12 @@ export interface ResourceTableProps {
   readonly views?: ViewStore | undefined;
   /** The resource's preset views: tabs whose filter values and sort the table takes, and whose fixed input goes with every read. */
   readonly presets?: readonly ViewNode[] | undefined;
+  /** Writes an edited cell of a column marked `isEditable`; a rejection shows on the cell. */
+  readonly onCellEdit?:
+    | ((
+        row: Readonly<Record<string, unknown>> & { readonly id: string },
+        columnId: string,
+        value: unknown,
+      ) => Promise<void>)
+    | undefined;
 }
