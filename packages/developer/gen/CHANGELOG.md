@@ -1,5 +1,20 @@
 # @stackra/gen
 
+## 0.25.0
+
+### Patch Changes
+
+- 689c37b: A generated docs site serves its home page again. The routes had only a top-level splat, which React Router does not
+  match for `/`, so the root `index.mdx` prerendered as the bare shell and every docs site showed a blank home page. An
+  index route now serves it through the same page module. The generated `react-router.config.ts` also fails the build
+  when a page listed in `app/site.json` prerenders without a `<title>`, so a page no route matches cannot ship blank.
+- 8a8fa6f: Gen sees `ctx.run<Output>(XWorkflow, input)` as the action starting `XWorkflow`, as it does the untyped call, so an
+  action may type the run's result and still pass `checkActionFirst`.
+- @stackra/money@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/support@0.25.0
+
 ## 0.24.0
 
 ### Minor Changes
