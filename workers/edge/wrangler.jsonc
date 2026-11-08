@@ -30,7 +30,9 @@
     "EDGE_TOKEN_LEEWAY_SECONDS": 60,
     // "<product>.<surface>" -> @stackra/csp CspConfig values (extraConnectSrc, frameAncestors, reportOnly, ...); a
     // surface not listed gets the baseline, frame-ancestors 'none'. Interim until runway emits Workers config.
-    // Pay's checkout, for one: { "pay.checkout": { "frameAncestors": { "/c/*": "request" } } }.
+    // Pay's checkout, for one: { "pay.checkout": { "frameAncestors": { "/c/*": "request" } } }. Its payment widgets'
+    // origins (pay#151) are scripts of consent category `necessary`, frame and connect sources: HyperPay's sandbox
+    // outside production, its live host in production only, and Geidea's regional hosts.
     "EDGE_CSP": "{}",
     // How long the owning product's answer for one "request" path's framers is kept in the isolate.
     "EDGE_FRAME_ANCESTORS_SECONDS": 60,
@@ -47,7 +49,7 @@
         "EDGE_OIDC_AUDIENCE": "",
         "EDGE_OIDC_KEYS_SECONDS": 3600,
         "EDGE_TOKEN_LEEWAY_SECONDS": 60,
-        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.dev.figentra.com\"]}}}",
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.dev.figentra.com\"]},\"thirdPartyScripts\":{\"https://eu-test.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
         "EDGE_FRAME_ANCESTORS_SECONDS": 60,
       },
     },
@@ -61,7 +63,7 @@
         "EDGE_OIDC_AUDIENCE": "",
         "EDGE_OIDC_KEYS_SECONDS": 3600,
         "EDGE_TOKEN_LEEWAY_SECONDS": 60,
-        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":\"request\"}}}",
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":\"request\"},\"thirdPartyScripts\":{\"https://eu-test.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
         "EDGE_FRAME_ANCESTORS_SECONDS": 60,
       },
     },
@@ -74,7 +76,7 @@
         "EDGE_OIDC_AUDIENCE": "",
         "EDGE_OIDC_KEYS_SECONDS": 3600,
         "EDGE_TOKEN_LEEWAY_SECONDS": 60,
-        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.staging.figentra.com\"]}}}",
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.staging.figentra.com\"]},\"thirdPartyScripts\":{\"https://eu-test.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
         "EDGE_FRAME_ANCESTORS_SECONDS": 60,
       },
     },
@@ -87,7 +89,7 @@
         "EDGE_OIDC_AUDIENCE": "",
         "EDGE_OIDC_KEYS_SECONDS": 3600,
         "EDGE_TOKEN_LEEWAY_SECONDS": 60,
-        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.figentra.com\"]}}}",
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.figentra.com\"]},\"thirdPartyScripts\":{\"https://eu-prod.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-prod.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-prod.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
         "EDGE_FRAME_ANCESTORS_SECONDS": 60,
       },
     },

@@ -65,6 +65,28 @@ describe("wrangler.jsonc EDGE_CSP", () => {
     });
   });
 
+  /** The providers' embedded widgets (pay#151): HyperPay's sandbox outside production, its live host in production only. */
+  it("loads the payment widgets, HyperPay's live host in production only", () => {
+    const geidea = [
+      "https://www.ksamerchant.geidea.net",
+      "https://www.merchant.geidea.net",
+      "https://payments.geidea.ae",
+    ];
+    for (const name of ["dev", "preview", "staging", "production"]) {
+      const hyperpay =
+        name === "production" ? "https://eu-prod.oppwa.com" : "https://eu-test.oppwa.com";
+      const checkout = settingsOf(name).csp["pay.checkout"];
+      const origins = [hyperpay, ...geidea];
+      expect(Object.keys(checkout?.thirdPartyScripts ?? {})).toEqual(origins);
+      expect(Object.values(checkout?.thirdPartyScripts ?? {})).toEqual(
+        origins.map(() => "necessary"),
+      );
+      expect(checkout?.extraFrameSrc).toEqual(origins);
+      expect(checkout?.extraConnectSrc).toEqual(origins);
+    }
+    expect(JSON.stringify(settingsOf("production").csp)).not.toContain("eu-test.oppwa.com");
+  });
+
   /** A payment page is never framed by any site: a wildcard framer does not load. */
   it("refuses a wildcard framer", () => {
     const vars = WRANGLER.env["preview"]?.vars ?? {};
