@@ -127,7 +127,6 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/i18n": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/support": "workspace:*",
@@ -135,6 +134,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -152,6 +152,7 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@stackra/integrations": "workspace:*",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend"
   },

@@ -92,12 +92,12 @@
   "dependencies": {
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -118,6 +118,7 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@stackra/integrations": "workspace:*",
     "react": "catalog:frontend"
   },
   "peerDependenciesMeta": {

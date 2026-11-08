@@ -108,7 +108,6 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/iam": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/scheduler": "workspace:*",
@@ -117,6 +116,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -128,6 +128,9 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/integrations": "workspace:*"
   },
   "engines": {
     "node": ">=24.0.0"

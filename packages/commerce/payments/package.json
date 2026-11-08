@@ -123,7 +123,6 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/market-packs": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/ui": "workspace:*",
@@ -131,6 +130,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -151,6 +151,7 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "react": "catalog:frontend"
   },
