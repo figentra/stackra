@@ -111,6 +111,20 @@ export interface MemberIR {
   }[];
 
   /**
+   * The undeclared `@stackra/*` packages the declared packages' manifests wire from, found through the packages that
+   * brought them in, each with the packages its own manifest wires from, and the version specifier the member uses
+   * for its `@stackra/*` dependencies. Read only to refuse the whole missing set at once; never hosted. Absent when
+   * none, and in an IR built by hand.
+   */
+  readonly transitiveDependencies?: {
+    readonly specifier: string;
+    readonly packages: readonly {
+      readonly package: string;
+      readonly requires: readonly string[];
+    }[];
+  };
+
+  /**
    * The dependencies the member imports only through their `./contracts` entry, each with the part of its manifest a
    * host carries (its contracts events). They are hosted contracts-only: no model, migration or action (STA-2567).
    * Absent when none, and in an IR built by hand.

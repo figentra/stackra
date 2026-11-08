@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `RequestOptions`, the last argument of a managed client call: query parameters, extra headers, the call's
- *          idempotency key, an abort signal, and whether the body is sent as a form instead of JSON.
+ *          idempotency key, an abort signal, whether the body is sent as a form instead of JSON or as a raw body
+ *          (`body`), and whether the answer is read as bytes or as text.
  * Boundary: a type only. Credentials are never passed here: the client adds them from the Integration's `auth`.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rule 13).
  */
+import type { RawBody } from "#core/types/raw-body.type";
 
 /**
  * The options of one managed client call.
@@ -38,4 +40,17 @@ export interface RequestOptions {
    * any media type unless the call sets `accept`. A refusal's body is still read as JSON for the provider's code.
    */
   readonly bytes?: boolean;
+
+  /**
+   * Sends this body exactly as given, with its own `content-type`, instead of the call's JSON or form body (a SOAP
+   * envelope). The call's own body argument must then be left out. Auth, retries, rate limits and the egress rule are
+   * unchanged.
+   */
+  readonly body?: RawBody;
+
+  /**
+   * Reads the answer as text (a SOAP reply, an XML document) instead of parsing it as JSON, and asks for any media type
+   * unless the call sets `accept`. A refusal's body is still read for the provider's code only, never returned.
+   */
+  readonly text?: boolean;
 }

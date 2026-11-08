@@ -3,8 +3,9 @@
  * Purpose: `WebhookSchemeRecipe`, the data of a provider webhook scheme that is not an HMAC over the raw body: where the
  *          token, signature or JWT sits (a header, a query parameter or a body path), which body fields are signed and
  *          in what order, the hash, and the headers an encrypted body's IV and tag travel in. One shape serves the
- *          `body_token`, `aes_gcm_body`, `ordered_field_hmac`, `keyed_field_digest`, `shared_header` and `jwt_hs256`
- *          codes of `@stackra/webhooks`' `SignatureScheme`; each reads only the fields its scheme names.
+ *          `body_token`, `aes_gcm_body`, `ordered_field_hmac`, `labelled_field_hmac`, `keyed_field_digest`,
+ *          `shared_header` and `jwt_hs256` codes of `@stackra/webhooks`' `SignatureScheme`; each reads only the fields
+ *          its scheme names.
  * Boundary: a type only; `registerWebhookEvents` of `@stackra/webhooks` (which owns the codes) checks that the fields
  *           its scheme needs are present. Header names are lowercase; a path is dotted (`obj.order.id`). Vendor recipes
  *           are OS integrations data (ADR 0443 decision 7), never constants here.
@@ -40,7 +41,7 @@ export interface WebhookSchemeRecipe {
   /** The body paths whose numbers are written with a fixed count of decimals before joining (`paymentAmount: 2`). */
   readonly decimals?: Readonly<Record<string, number>>;
 
-  /** The hash of an ordered-field HMAC or a keyed field digest; `SHA-1` only for a provider that still digests with it. */
+  /** The hash of an ordered- or labelled-field HMAC or a keyed field digest; `SHA-1` only for a provider that needs it. */
   readonly algorithm?: "SHA-1" | "SHA-256" | "SHA-512";
 
   /** Where a `keyed_field_digest` puts the secret among the joined values: `end` (the default) or `start`. */
@@ -60,4 +61,16 @@ export interface WebhookSchemeRecipe {
 
   /** The header that carries an encrypted body's hex GCM tag (`x-authentication-tag`). */
   readonly tagHeader?: string;
+
+  /**
+   * The body paths a `labelled_field_hmac` signs, in order: each `label` followed by the value at its `path`
+   * (`[{ label: "amount", path: "amount" }]` signs `amount100.00`).
+   */
+  readonly labelledFields?: readonly { readonly label: string; readonly path: string }[];
+
+  /**
+   * The amount a `labelled_field_hmac` writes with the minor-unit decimals of the ISO 4217 currency at `currencyPath`
+   * (`100` in KWD signs `100.000`, in JPY `100`).
+   */
+  readonly currencyDecimals?: { readonly path: string; readonly currencyPath: string };
 }

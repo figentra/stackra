@@ -3,7 +3,8 @@
  * Purpose: unit tests of `policyGaps`: the one permissive owner equality passes, beside a restrictive policy named
  *          after its column; a missing, restrictive, per-command or non-equality owner policy, a second permissive
  *          policy and a misnamed restrictive policy are each a gap. A platform-form owner policy needs its two
- *          restrictive write policies, whose names pass only beside it.
+ *          restrictive write policies, whose names pass only beside it; `_write_update` passes the system-access role
+ *          exactly when the table declares system update, and tests what `_write_delete` does otherwise.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0347 (decisions 1, 2 and 5).
@@ -35,13 +36,17 @@ const KIND: PolicyRow = {
 const need = (suffix: string, command: string) =>
   `notes.notes: pol_notes_owner_id is the platform form, so it needs pol_notes_owner_id_write_${suffix}, a restrictive FOR ${command} policy testing owner_id against app.owner_id`;
 
-/** The gaps of `notes.notes` with `policies`. */
-const gaps = (policies: readonly PolicyRow[]): string[] =>
-  policyGaps("notes.notes", "notes", "owner_id", "app.owner_id", policies, [
-    "id",
+/** The gaps of `notes.notes` with `policies`, and its system-access update policy when `systemUpdate`. */
+const gaps = (policies: readonly PolicyRow[], systemUpdate = false): string[] =>
+  policyGaps(
+    "notes.notes",
+    "notes",
     "owner_id",
-    "kind",
-  ]);
+    "app.owner_id",
+    policies,
+    ["id", "owner_id", "kind"],
+    systemUpdate,
+  );
 
 describe("policyGaps", () => {
   it("passes the owner equality beside a restrictive policy named after its column", () => {
@@ -102,6 +107,26 @@ describe("policyGaps", () => {
       expect(gaps([PLATFORM, { ...UPDATE, permissive: true }, DELETE])).toEqual([
         need("update", "UPDATE"),
         "notes.notes: pol_notes_owner_id_write_update is a second permissive policy, which widens pol_notes_owner_id; only a restrictive policy may narrow it",
+      ]);
+    });
+
+    it("lets the system-access role through _write_update only when the table declares system update", () => {
+      const LIFTED = {
+        ...UPDATE,
+        using: `(${own} OR (CURRENT_USER = 'stackra_system_access'::name))`,
+      };
+      expect(gaps([PLATFORM, LIFTED, DELETE], true)).toEqual([]);
+      expect(gaps([PLATFORM, UPDATE, DELETE], true)).toEqual([
+        "notes.notes: pol_notes_owner_id_write_update must also pass stackra_system_access (… or current_user = 'stackra_system_access'), as the table declares t.systemAccess update columns; without it a claim reaches only the NULL rows. Declare both in one blueprint",
+      ]);
+      expect(gaps([PLATFORM, LIFTED, DELETE], false)).toEqual([
+        "notes.notes: pol_notes_owner_id_write_update does not test what pol_notes_owner_id_write_delete does; it passes stackra_system_access, though the table declares no t.systemAccess update column",
+      ]);
+      // Any other widening is refused either way.
+      const widened = { ...UPDATE, using: `(${own} OR (CURRENT_USER = 'someone'::name))` };
+      expect(gaps([PLATFORM, widened, DELETE], true)).toHaveLength(1);
+      expect(gaps([PLATFORM, widened, DELETE], false)).toEqual([
+        "notes.notes: pol_notes_owner_id_write_update does not test what pol_notes_owner_id_write_delete does",
       ]);
     });
 

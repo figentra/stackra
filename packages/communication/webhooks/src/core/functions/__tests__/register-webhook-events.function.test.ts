@@ -166,6 +166,37 @@ describe(registerWebhookEvents, () => {
     expect(WEBHOOK_EVENTS.byIntegration.get(Complete)?.types.get("payment.paid")).toBe(Received);
   });
 
+  it("refuses a labelled-field HMAC without its labelled fields or carrier, and takes it once present", () => {
+    const Received = eventFor("charge.settled");
+    const labelled = { ...WEBHOOKS, scheme: SignatureScheme.LabelledFieldHmac };
+    expect(() =>
+      registerWebhookEvents([
+        { event: Received, integration: integrationWith("labelled-none", labelled) },
+      ]),
+    ).toThrow("webhooks.recipe.labelledFields");
+    expect(() =>
+      registerWebhookEvents([
+        {
+          event: Received,
+          integration: integrationWith("labelled-carrier", {
+            ...labelled,
+            recipe: { labelledFields: [{ label: "id", path: "id" }], algorithm: "SHA-256" },
+          }),
+        },
+      ]),
+    ).toThrow("webhooks.recipe.header or query");
+    const Complete = integrationWith("labelled-complete", {
+      ...labelled,
+      recipe: {
+        header: "x-signature",
+        labelledFields: [{ label: "id", path: "id" }],
+        algorithm: "SHA-256",
+      },
+    });
+    registerWebhookEvents([{ event: Received, integration: Complete }]);
+    expect(WEBHOOK_EVENTS.byIntegration.get(Complete)?.types.get("charge.settled")).toBe(Received);
+  });
+
   it("refuses a second connection class and a second class for one event type", () => {
     const MailIntegration = integrationWith("mail-twice");
     registerWebhookEvents([

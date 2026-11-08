@@ -133,6 +133,8 @@ describe("@stackra/integrations", () => {
       | "bodyFormat"
       | "ivHeader"
       | "tagHeader"
+      | "labelledFields"
+      | "currencyDecimals"
     >();
     expectTypeOf<WebhookSchemeRecipe["algorithm"]>().toEqualTypeOf<
       "SHA-1" | "SHA-256" | "SHA-512" | undefined

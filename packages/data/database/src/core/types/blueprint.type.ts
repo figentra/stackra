@@ -236,7 +236,10 @@ export interface Blueprint {
    * on the `update` columns (column grants only), and writes the permissive policies
    * `pol_<table>_system_access_select` (`FOR SELECT TO` the role `USING (true)`) and, with `update` columns,
    * `pol_<table>_system_access_update` (`FOR UPDATE`, `USING (true) WITH CHECK (true)`). A claim's
-   * `FOR UPDATE SKIP LOCKED` needs an `update` column. The reason is required and one line; the compiled migration
+   * `FOR UPDATE SKIP LOCKED` needs an `update` column. On a platform-form table (`match: "platform"`) declared in the
+   * same blueprint, `update` columns also let the role through `pol_<table>_<column>_write_update`
+   * (`... or current_user = 'stackra_system_access'`), which would otherwise keep a claim with no tenant on the NULL
+   * rows; the audit accepts that suffix only there. The reason is required and one line; the compiled migration
    * carries `-- stackra:system-access <schema>.<table> select=<columns> [update=<columns>] <reason>`, which
    * `assertRowSecurity` holds the grants to, and `stackra row-security-declarations` lists it for review. Once per
    * blueprint, and never on a platform table.

@@ -32,6 +32,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
+import { connectionOf } from "#core/functions/connection-of.function";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
@@ -281,10 +282,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       .map((declared) => {
         const partner = declared.partner;
         if (partner === undefined) return undefined;
-        const connection = ir.classes.find(
-          (candidate) =>
-            candidate.kind === "connection" && candidate.partner?.name === partner.name,
-        );
+        const connection = connectionOf(ir.classes, partner.name);
         return (
           `{ event: ${ref({ name: declared.name, from: declared.importPath })}, ` +
           `integration: ${ref({ name: partner.name, from: partner.from })}` +

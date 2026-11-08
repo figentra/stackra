@@ -120,6 +120,7 @@ import { openApiOf } from "#core/functions/open-api-of.function";
 import { reportQueriesOf } from "#core/functions/report-queries-of.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { searchQueriesOf } from "#core/functions/search-queries-of.function";
+import { transitiveRefusals } from "#core/functions/transitive-refusals.function";
 import { undeclaredPackages } from "#core/functions/undeclared-packages.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -354,7 +355,18 @@ export function generateMember(
     "generated_dependency_missing",
     ["encore.dev"],
   );
-  if (elsewhere.length > 0) return { files: [], errors: elsewhere, warnings, manifest };
+  if (elsewhere.length > 0) {
+    // The packages those undeclared ones bring in the same way, so the member adds them all in one go.
+    const seeds = elsewhere
+      .map((error) => error.subject)
+      .filter((name) => name.startsWith("@stackra/"));
+    return {
+      files: [],
+      errors: [...elsewhere, ...transitiveRefusals(ir, seeds, "generated_dependency_missing")],
+      warnings,
+      manifest,
+    };
+  }
   // The member's part of the system graph, read by the repo step (ADR 0452).
   files.push({ path: ".stackra/graph.json", content: json(memberGraphOf(ir, manifest)) });
   return { files, errors: [], warnings, manifest };
