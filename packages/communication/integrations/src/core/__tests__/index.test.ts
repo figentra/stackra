@@ -122,7 +122,16 @@ describe("@stackra/integrations", () => {
     expectTypeOf<ConnectionHostCalls>().toHaveProperty("token");
     expectTypeOf<IntegrationWebhooks["recipe"]>().toEqualTypeOf<WebhookSchemeRecipe | undefined>();
     expectTypeOf<keyof WebhookSchemeRecipe>().toEqualTypeOf<
-      "header" | "query" | "path" | "fields" | "decimals" | "algorithm" | "ivHeader" | "tagHeader"
+      | "header"
+      | "query"
+      | "path"
+      | "fields"
+      | "decimals"
+      | "algorithm"
+      | "ivHeader"
+      | "tagHeader"
+      | "labelledFields"
+      | "currencyDecimals"
     >();
     expectTypeOf<WebhookSchemeRecipe["algorithm"]>().toEqualTypeOf<
       "SHA-256" | "SHA-512" | undefined

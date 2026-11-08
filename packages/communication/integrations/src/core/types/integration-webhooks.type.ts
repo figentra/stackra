@@ -8,7 +8,8 @@
  *           secret that a connection's `subscribe()` returns is written into the field this placeholder names. A
  *           scheme whose recipe is data (`hmac`) reads `signature`; the event id is the `webhook-id` header, else the
  *           payload's `eventId` path. A scheme that is not an HMAC over the raw body (`body_token`, `aes_gcm_body`,
- *           `ordered_field_hmac`, `keyed_field_digest`, `shared_header`, `jwt_hs256`) reads `recipe`.
+ *           `ordered_field_hmac`, `labelled_field_hmac`, `keyed_field_digest`, `shared_header`, `jwt_hs256`) reads
+ *           `recipe`.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 15 to 17); ADR 0224 (webhooks); STA-1357 (the regional gateways' schemes).
  */
