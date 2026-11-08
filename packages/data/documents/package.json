@@ -89,7 +89,6 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/data-transfer": "workspace:*",
     "@stackra/errors": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "docx": "catalog:documents",
@@ -97,6 +96,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -108,6 +108,9 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/integrations": "workspace:*"
   },
   "engines": {
     "node": ">=24.0.0"
