@@ -32,4 +32,10 @@ export interface RequestOptions {
    * booleans; an array value repeats its key.
    */
   readonly form?: boolean;
+
+  /**
+   * Reads the answer as raw bytes (a `Uint8Array`: a label PDF, an image) instead of parsing it as JSON, and asks for
+   * any media type unless the call sets `accept`. A refusal's body is still read as JSON for the provider's code.
+   */
+  readonly bytes?: boolean;
 }
