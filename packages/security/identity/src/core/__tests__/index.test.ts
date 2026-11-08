@@ -94,6 +94,7 @@ describe("@stackra/identity", () => {
       "signInProvidersOf",
       "signInWithPasskey",
       "stepUpSignIn",
+      "verifyZitadelSignature",
     ]);
   });
 

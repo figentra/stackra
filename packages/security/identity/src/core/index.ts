@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/identity (the configuration with its shipped schema, the flows
  *          and statuses, the session service, the session drivers, the claims mappings (`sessionUserOf`, and `actorOf`
- *          for a call's actor, user or service), the `ClientSession`,
+ *          for a call's actor, user or service), the claims action's answer and the check of its `ZITADEL-Signature`
+ *          (`claimsActionResponse`, `verifyZitadelSignature`), the `ClientSession`,
  *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys and
  *          their verification by hash, automation and service principals and service tokens in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
@@ -72,6 +73,7 @@ export { AppApprovalDenied } from "#core/events/app-approval-denied.event";
 export { AppApprovalRequested } from "#core/events/app-approval-requested.event";
 export { actorOf } from "#core/functions/actor-of.function";
 export { claimsActionResponse } from "#core/functions/claims-action-response.function";
+export { verifyZitadelSignature } from "#core/functions/verify-zitadel-signature.function";
 export { assuranceOf } from "#core/functions/assurance-of.function";
 export { checkPublishableKey } from "#core/functions/check-publishable-key.function";
 export { hashApiKey } from "#core/functions/hash-api-key.function";
