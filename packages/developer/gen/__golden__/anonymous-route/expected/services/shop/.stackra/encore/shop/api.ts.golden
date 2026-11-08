@@ -12,19 +12,28 @@ import { CancelOrderAction } from "#node/actions/cancel-order.action";
 import type { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";
 import type { CancelOrderOutput } from "#node/schemas/cancel-order-output.schema";
 import { ActionPipeline } from "@stackra/actions";
-import { ActorKind, mintPublicId } from "@stackra/contracts";
+import { holdCallerToken } from "@stackra/app/server";
+import { type Actor, ActorKind, mintPublicId } from "@stackra/contracts";
+import { currentRequest } from "encore.dev";
 import { api } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 
 import { app } from "../../entry/server";
 
+/** The running call's headers as sent, which only `holdCallerToken` reads. */
+function requestHeaders(): Readonly<Record<string, string | string[]>> {
+  const meta = currentRequest();
+  return meta?.type === "api-call" ? meta.headers : {};
+}
+
 /** PUT /orders/:orderId/cancel: shop.order.cancel@1 through the action pipeline. */
 export const shopOrderCancelV1 = api(
   { method: "PUT", path: "/orders/:orderId/cancel", expose: true, auth: false },
   (input: CancelOrderInput): Promise<CancelOrderOutput> =>
-    app.handlers.run((container) =>
-      new ActionPipeline(container).execute(CancelOrderAction, input, {
-        actor: getAuthData()?.actor ?? { kind: ActorKind.Anonymous, id: mintPublicId("anon") },
-      }),
-    ),
+    app.handlers.run((container) => {
+      const actor: Actor = getAuthData()?.actor ?? { kind: ActorKind.Anonymous, id: mintPublicId("anon") };
+      return holdCallerToken(requestHeaders(), actor, CancelOrderAction, () =>
+        new ActionPipeline(container).execute(CancelOrderAction, input, { actor }),
+      );
+    }),
 );

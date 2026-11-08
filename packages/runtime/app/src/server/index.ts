@@ -5,6 +5,7 @@
  *          guard with its memory drivers and refusal, the origin and CSRF guards with their configuration and
  *          refusals, the JWKS bearer-token guard with its configuration, key drivers, refusal and the request's
  *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check) with its call types,
+ *          `holdCallerToken` and `ServiceClientSessionDriver` (a service call's own token and the user's it forwards),
  *          `corsHeaders`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
@@ -21,6 +22,7 @@ export { MemoryEdgeNonceStoreDriver } from "#server/drivers/memory-edge-nonce-st
 export { MemoryEdgeSigningKeysDriver } from "#server/drivers/memory-edge-signing-keys.driver";
 export { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.driver";
 export { OidcJsonWebKeysDriver } from "#server/drivers/oidc-json-web-keys.driver";
+export { ServiceClientSessionDriver } from "#server/drivers/service-client-session.driver";
 export { AppDrainingError } from "#server/errors/app-draining.error";
 export { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 export { CsrfTokenInvalidError } from "#server/errors/csrf-token-invalid.error";
@@ -29,6 +31,7 @@ export { OriginNotAllowedError } from "#server/errors/origin-not-allowed.error";
 export { apiCacheControl } from "#server/functions/api-cache-control.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
+export { holdCallerToken } from "#server/functions/hold-caller-token.function";
 export { BearerTokenGuard } from "#server/services/bearer-token.guard";
 export { CallAuthenticator } from "#server/services/call-authenticator.service";
 export { CsrfGuard } from "#server/services/csrf.guard";

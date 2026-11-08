@@ -11,18 +11,27 @@ import { PublishCatalogueAction } from "#node/actions/publish-catalogue.action";
 import type { PublishCatalogueInput } from "#node/schemas/publish-catalogue-input.schema";
 import type { PublishCatalogueOutput } from "#node/schemas/publish-catalogue-output.schema";
 import { ActionPipeline } from "@stackra/actions";
+import { holdCallerToken } from "@stackra/app/server";
+import { currentRequest } from "encore.dev";
 import { api } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 
 import { app } from "../../entry/server";
 
+/** The running call's headers as sent, which only `holdCallerToken` reads. */
+function requestHeaders(): Readonly<Record<string, string | string[]>> {
+  const meta = currentRequest();
+  return meta?.type === "api-call" ? meta.headers : {};
+}
+
 /** POST /catalogues/publish: catalogue.catalogue.publish@1 through the action pipeline. */
 export const catalogueCataloguePublishV1 = api(
   { method: "POST", path: "/catalogues/publish", expose: true, auth: true },
   (input: PublishCatalogueInput): Promise<PublishCatalogueOutput> =>
-    app.handlers.run((container) =>
-      new ActionPipeline(container).execute(PublishCatalogueAction, input, {
-        actor: getAuthData()!.actor,
-      }),
-    ),
+    app.handlers.run((container) => {
+      const actor = getAuthData()!.actor;
+      return holdCallerToken(requestHeaders(), actor, PublishCatalogueAction, () =>
+        new ActionPipeline(container).execute(PublishCatalogueAction, input, { actor }),
+      );
+    }),
 );

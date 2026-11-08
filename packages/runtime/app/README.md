@@ -52,6 +52,8 @@ peers, each loaded only by the entry that needs it.
 | `BearerTokenInvalidError`                    | `./server`  | the 401 refusal for a missing or invalid bearer token                                 |
 | `OidcJsonWebKeysDriver`                      | `./server`  | the `oidc` `JsonWebKeys` driver: discovery, key set, cache, refetch on unknown kid    |
 | `MemoryJsonWebKeysDriver`                    | `./server`  | the `memory` `JsonWebKeys` driver (tests, local runs)                                 |
+| `holdCallerToken`                            | `./server`  | holds the user's token a call may forward, for that call only (the adapters use it)   |
+| `ServiceClientSessionDriver`                 | `./server`  | the `service` `ClientSession`: a service call's own token and the user's it forwards  |
 | `OriginNotAllowedError`                      | `./server`  | the 403 refusal for a foreign origin, or a cookie with no origin                      |
 | `CsrfTokenInvalidError`                      | `./server`  | the 403 refusal for a missing or mismatched CSRF header                               |
 | `CorsConfig`, `CsrfConfig`                   | `./server`  | `app.cors` (origins, methods, headers, credentials, max-age) and `app.csrf`           |
@@ -190,6 +192,18 @@ the scope claim step, assurance and the actor read `verified.claims` from there.
 `STACKRA_BEARER_ISSUER` and `STACKRA_BEARER_AUDIENCE` (or runway) and bind the guard, `VerifiedToken` and a
 `JsonWebKeys` driver in the service's wiring; gen does not bind them by default. ZITADEL issues opaque access tokens
 unless the app's token type is JWT; set it to JWT.
+
+### Service-to-service calls
+
+A service calls another through its generated client, whose HTTP transport asks the `ClientSession` for headers. In a
+service that session is `ServiceClientSessionDriver` (`service`): it sends `Authorization: Bearer` with the service's
+own token from `ServiceTokens` (`@stackra/identity`), issued for the producer's project
+(`ClientsConfig.audiences[<module>]`), and, when the running call holds one, the user's access token in
+`Stackra-On-Behalf-Of`. The generated endpoints run every call inside `holdCallerToken`, which holds the inbound user's
+bearer on a user's own call (the first hop), or the token a service forwarded for its user only when the action
+declares `onBehalfOf: { secondHop: true }`. Otherwise nothing is held and the next service runs the call as the calling
+service alone (ADR 0209, amendment of 2026-11-07). The held token lives only in the call's async context, never on the
+actor, the context, a log, an error or an event, and is emptied when the call ends.
 
 ### Edge Worker or in-process guard
 

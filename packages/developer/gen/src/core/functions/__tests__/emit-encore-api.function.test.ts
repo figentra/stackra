@@ -3,14 +3,15 @@
  * Purpose: unit tests of `emitEncoreApi`: a service gets `.stackra/encore/<member>/api.ts` with one `api()` per own
  *          action and query that has an endpoint, named by its camel-cased key and version, with the entry's method and
  *          path, typed by its input and output schemas, running `new ActionPipeline(container).execute(...)` inside
- *          `app.handlers.run` with the actor from `getAuthData()`; an anonymous entry is `auth: false` and falls back
+ *          `app.handlers.run` and `holdCallerToken` (over the request's headers, read by `currentRequest()`) with the
+ *          actor from `getAuthData()`; an anonymous entry is `auth: false` and falls back
  *          to an anonymous actor; an entry with no endpoint, a hosted entry and one whose input or output schema the
  *          member does not declare get no adapter; a shape named like a bound name or another module's shape is
  *          aliased; a package, an app and a service with no such entry get no file.
  * Boundary: test only; runs on the commerce IR fixture and the manifest `buildManifest` derives from it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 21); ADR 0098; STA-2025; STA-2063 (FR-002 to
- *                     FR-006).
+ *                     FR-006); ADR 0209 (2026-11-07 amendment, condition 5).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -118,7 +119,9 @@ describe(emitEncoreApi, () => {
     expect(emitEncoreApi(ir, manifest)?.path).toBe(".stackra/encore/commerce/api.ts");
     for (const line of [
       'import { ActionPipeline } from "@stackra/actions";',
-      'import { ActorKind, mintPublicId } from "@stackra/contracts";',
+      'import { holdCallerToken } from "@stackra/app/server";',
+      'import { type Actor, ActorKind, mintPublicId } from "@stackra/contracts";',
+      'import { currentRequest } from "encore.dev";',
       'import { api } from "encore.dev/api";',
       'import { getAuthData } from "~encore/auth";',
       'import { CancelOrderAction } from "#modules/orders/actions/cancel-order.action";',
@@ -126,6 +129,19 @@ describe(emitEncoreApi, () => {
       `import { app } from "${GENERATED_ENTRY}";`,
     ])
       expect(content).toContain(line);
+  });
+
+  it("reads the request's headers only for holdCallerToken", () => {
+    expect(content).toContain(
+      [
+        "/** The running call's headers as sent, which only `holdCallerToken` reads. */",
+        "function requestHeaders(): Readonly<Record<string, string | string[]>> {",
+        "  const meta = currentRequest();",
+        '  return meta?.type === "api-call" ? meta.headers : {};',
+        "}",
+      ].join("\n"),
+    );
+    expect(content.match(/requestHeaders\(\)/g)).toHaveLength(6);
   });
 
   it("writes one adapter per action with the derived endpoint, run through the pipeline with the verified actor", () => {
@@ -136,11 +152,12 @@ describe(emitEncoreApi, () => {
         "export const ordersOrderCancelV1 = api(",
         `  { method: "${method}", path: "${path}", expose: true, auth: true },`,
         "  (input: CancelOrderInput): Promise<CancelOrderOutput> =>",
-        "    app.handlers.run((container) =>",
-        "      new ActionPipeline(container).execute(CancelOrderAction, input, {",
-        "        actor: getAuthData()!.actor,",
-        "      }),",
-        "    ),",
+        "    app.handlers.run((container) => {",
+        "      const actor = getAuthData()!.actor;",
+        "      return holdCallerToken(requestHeaders(), actor, CancelOrderAction, () =>",
+        "        new ActionPipeline(container).execute(CancelOrderAction, input, { actor }),",
+        "      );",
+        "    }),",
         ");",
       ].join("\n"),
     );
@@ -153,7 +170,7 @@ describe(emitEncoreApi, () => {
     expect(content).toContain(`  { method: "GET", path: "${path}", expose: true, auth: true },`);
     expect(content).toContain("  (input: ListOrdersInput): Promise<ListOrdersOutput> =>");
     expect(content).toContain(
-      "      new ActionPipeline(container).execute(ListOrdersQuery, input, {",
+      "        new ActionPipeline(container).execute(ListOrdersQuery, input, { actor }),",
     );
   });
 
@@ -165,11 +182,12 @@ describe(emitEncoreApi, () => {
         "export const ordersHealthCheckV1 = api(",
         `  { method: "GET", path: "${path}", expose: true, auth: false },`,
         "  (): Promise<void> =>",
-        "    app.handlers.run((container) =>",
-        "      new ActionPipeline(container).execute(CheckHealthQuery, {}, {",
-        '        actor: getAuthData()?.actor ?? { kind: ActorKind.Anonymous, id: mintPublicId("anon") },',
-        "      }),",
-        "    ),",
+        "    app.handlers.run((container) => {",
+        '      const actor: Actor = getAuthData()?.actor ?? { kind: ActorKind.Anonymous, id: mintPublicId("anon") };',
+        "      return holdCallerToken(requestHeaders(), actor, CheckHealthQuery, () =>",
+        "        new ActionPipeline(container).execute(CheckHealthQuery, {}, { actor }),",
+        "      );",
+        "    }),",
         ");",
       ].join("\n"),
     );

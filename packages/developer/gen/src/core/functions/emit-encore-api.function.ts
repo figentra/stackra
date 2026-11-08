@@ -3,11 +3,13 @@
  * Purpose: `emitEncoreApi`, a service's Encore endpoints (`.stackra/encore/<member>/api.ts`): one `api()` per own
  *          action or query whose manifest entry has an endpoint, with that entry's method and path, typed by its input
  *          and output schema classes, running the call as `new ActionPipeline(container).execute(<class>, input,
- *          { actor })` inside `app.handlers.run`. The endpoint is named by the camel-cased key and its version
+ *          { actor })` inside `app.handlers.run` and `holdCallerToken` (the user's token the call may forward to the
+ *          services it calls, from the request's headers). The endpoint is named by the camel-cased key and its version
  *          (`shop.order.cancel@1` is `shopOrderCancelV1`).
  * Boundary: pure; reads the manifest's actions and the member's classes and shapes. The actor comes only from
  *           Encore's verified auth data (`getAuthData()` of `~encore/auth`, `{ userID, actor }`), never from the body,
- *           a path parameter or a header. An entry is `auth: true` unless its actors list `ActorKind.Anonymous`
+ *           a path parameter or a header; the headers are read only by `holdCallerToken`, which forwards a token only
+ *           for an actor `CallAuthenticator` derived from them and never puts it on the call. An entry is `auth: true` unless its actors list `ActorKind.Anonymous`
  *           (`anonymous` in the manifest, STA-2025): then it is `auth: false` and runs as a fresh anonymous actor when
  *           no session was presented. No adapter is written for an entry without an endpoint, a hosted package's
  *           entry (its manifest does not name the files of its schemas) or one whose input or output schema is not a
@@ -17,7 +19,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0091 (decision 2) and 0124 (Encore is generated); ADR 0294 (decision 21: the derived
  *                     endpoint); ADR 0098 (the actor from the credential); ADR 0295 (decision 8: the adapters reach the
- *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063.
+ *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063; ADR 0209 (2026-11-07
+ *                     amendment, condition 5: one hop by default).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
@@ -36,7 +39,18 @@ import type { MemberIR } from "#core/types/member-ir.type";
 type Entry = Readonly<Record<string, unknown>>;
 
 /** The local names this file always binds, which a member class never takes. */
-const RESERVED = ["ActionPipeline", "ActorKind", "api", "app", "getAuthData", "mintPublicId"];
+const RESERVED = [
+  "ActionPipeline",
+  "Actor",
+  "ActorKind",
+  "api",
+  "app",
+  "currentRequest",
+  "getAuthData",
+  "holdCallerToken",
+  "mintPublicId",
+  "requestHeaders",
+];
 
 /**
  * The Encore endpoints of a service, or undefined when it has no own action or query with an endpoint.
@@ -102,11 +116,13 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       `export const ${camelCase(key.replace("@", "_v"))} = api(`,
       `  { method: ${JSON.stringify(method)}, path: ${JSON.stringify(path)}, expose: true, auth: ${!open} },`,
       `  (${parameter}): Promise<${result}> =>`,
-      "    app.handlers.run((container) =>",
-      `      new ActionPipeline(container).execute(${type}, ${input === undefined ? "{}" : "input"}, {`,
-      `        actor: ${actor},`,
-      "      }),",
-      "    ),",
+      "    app.handlers.run((container) => {",
+      // typed, so the anonymous fallback's kind stays the literal an Actor needs
+      `      const actor${open ? ": Actor" : ""} = ${actor};`,
+      `      return holdCallerToken(requestHeaders(), actor, ${type}, () =>`,
+      `        new ActionPipeline(container).execute(${type}, ${input === undefined ? "{}" : "input"}, { actor }),`,
+      "      );",
+      "    }),",
       ");",
       "",
     );
@@ -114,10 +130,13 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
   if (body.length === 0) return undefined;
 
   use("@stackra/actions", "ActionPipeline", false);
+  use("@stackra/app/server", "holdCallerToken", false);
   if (anonymous) {
+    use("@stackra/contracts", "Actor", true);
     use("@stackra/contracts", "ActorKind", false);
     use("@stackra/contracts", "mintPublicId", false);
   }
+  use("encore.dev", "currentRequest", false);
   use("encore.dev/api", "api", false);
   use("~encore/auth", "getAuthData", false);
   const header = generatedHeader({
@@ -136,6 +155,12 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       ...importLines(imports),
       "",
       ENCORE_APP_IMPORT,
+      "",
+      "/** The running call's headers as sent, which only `holdCallerToken` reads. */",
+      "function requestHeaders(): Readonly<Record<string, string | string[]>> {",
+      "  const meta = currentRequest();",
+      '  return meta?.type === "api-call" ? meta.headers : {};',
+      "}",
       "",
       ...body,
     ]

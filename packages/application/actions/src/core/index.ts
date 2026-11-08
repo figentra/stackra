@@ -99,6 +99,7 @@ export type { JobCron } from "#core/types/job-cron.type";
 export type { JobOptions } from "#core/types/job-options.type";
 export type { OfflineCap } from "#core/types/offline-cap.type";
 export type { OfflineOptions } from "#core/types/offline-options.type";
+export type { OnBehalfOfOptions } from "#core/types/on-behalf-of-options.type";
 export type { OutputOf } from "#core/types/output-of.type";
 export type { Period } from "#core/types/period.type";
 export type { PeriodInput } from "#core/types/period-input.type";

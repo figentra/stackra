@@ -11,18 +11,27 @@ import { PublishChannelsAction } from "#node/actions/publish-channels.action";
 import type { PublishChannelsInput } from "#node/schemas/publish-channels-input.schema";
 import type { PublishChannelsOutput } from "#node/schemas/publish-channels-output.schema";
 import { ActionPipeline } from "@stackra/actions";
+import { holdCallerToken } from "@stackra/app/server";
+import { currentRequest } from "encore.dev";
 import { api } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 
 import { app } from "../../entry/server";
 
+/** The running call's headers as sent, which only `holdCallerToken` reads. */
+function requestHeaders(): Readonly<Record<string, string | string[]>> {
+  const meta = currentRequest();
+  return meta?.type === "api-call" ? meta.headers : {};
+}
+
 /** POST /channelses/publish: channels.channels.publish@1 through the action pipeline. */
 export const channelsChannelsPublishV1 = api(
   { method: "POST", path: "/channelses/publish", expose: true, auth: true },
   (input: PublishChannelsInput): Promise<PublishChannelsOutput> =>
-    app.handlers.run((container) =>
-      new ActionPipeline(container).execute(PublishChannelsAction, input, {
-        actor: getAuthData()!.actor,
-      }),
-    ),
+    app.handlers.run((container) => {
+      const actor = getAuthData()!.actor;
+      return holdCallerToken(requestHeaders(), actor, PublishChannelsAction, () =>
+        new ActionPipeline(container).execute(PublishChannelsAction, input, { actor }),
+      );
+    }),
 );

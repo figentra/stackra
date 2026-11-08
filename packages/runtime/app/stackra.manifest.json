@@ -63,6 +63,31 @@
   "models": [],
   "drivers": [
     {
+      "port": "ClientSession",
+      "key": "clients.ClientSession",
+      "candidates": ["service"],
+      "classes": {
+        "service": {
+          "class": "ServiceClientSessionDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "ServiceTokens",
+                "from": "@stackra/identity/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "ClientsConfig",
+                "from": "@stackra/clients"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "EdgeNonceStore",
       "key": "app.EdgeNonceStore",
       "candidates": ["memory"],

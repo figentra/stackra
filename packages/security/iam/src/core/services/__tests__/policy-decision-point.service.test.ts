@@ -4,7 +4,8 @@
  *          at the root, a wildcard counts only in a system role, module roles come from `registerRoles`, a system
  *          permission is the platform's only, deny overrides allow (by role and scope node audiences), a
  *          conditional deny is tested only against a record and fails closed without a fact source, every link of
- *          the actor chain must hold the permission, visibility answers deny over allow and abstains with no
+ *          the actor chain must hold the permission (a service calling for a user needs both grants, each alone is
+ *          refused), visibility answers deny over allow and abstains with no
  *          matching rule, the visible condition of a query joins the rules of the principal's audiences by the deny
  *          rule and reads them closed, and delegation stays at or below a held role's node; a restricted permission
  *          is never self-granted, an open break-glass grant allows past breakable denies only, a dimension value that is
@@ -263,6 +264,34 @@ describe("PolicyDecisionPointService", () => {
         principal: customer.id,
         role: "buyer",
       });
+    });
+
+    it("allows a service call for a user only when the service and the user both hold the grant", async () => {
+      const forCustomer: Actor = { ...relay, onBehalfOf: customer };
+      const grantTo = (...principals: string[]) =>
+        pdpOver({
+          grants: principals.map((principal) => ({ principal, role: "settler", scope: ACME })),
+          roles: { settler: ["orders.order.cancel"] },
+        });
+      const at = { scope: ACME };
+
+      // the service holds it, the user does not
+      expect(await grantTo(relay.id).explain(forCustomer, "orders.order.cancel", at)).toMatchObject(
+        {
+          allowed: false,
+          principal: customer.id,
+        },
+      );
+      // the user holds it, the service does not
+      expect(
+        await grantTo(customer.id).explain(forCustomer, "orders.order.cancel", at),
+      ).toMatchObject({ allowed: false, principal: relay.id });
+      // both hold it
+      expect(
+        await grantTo(relay.id, customer.id).check(forCustomer, OrderPermissions.cancel, at),
+      ).toBe(true);
+      // the service alone, with no user, needs only its own
+      expect(await grantTo(relay.id).check(relay, OrderPermissions.cancel, at)).toBe(true);
     });
 
     it("lets the platform through without a snapshot", async () => {

@@ -55,6 +55,7 @@ describe("@stackra/identity", () => {
       "MemoryLoginDirectoryStoreDriver",
       "MemoryPasskeysDriver",
       "MemoryServicePrincipalsDriver",
+      "MemoryServiceTokensDriver",
       "MemorySessionStoreDriver",
       "MemoryStaffPinStoreDriver",
       "MemoryVerificationDriver",

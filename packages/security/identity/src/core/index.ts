@@ -4,7 +4,7 @@
  *          and statuses, the session service, the session drivers, the claims mappings (`sessionUserOf`, and `actorOf`
  *          for a call's actor, user or service), the `ClientSession`,
  *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys and
- *          their verification by hash, automation and service principals in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
+ *          their verification by hash, automation and service principals and service tokens in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
  *          matching and QR, sign-in and step-up) with its memory driver and events, the login directory writer with its
  *          configuration and memory driver, the passkeys memory driver with the client halves of a passkey sign-in and
@@ -37,6 +37,7 @@ export { MemoryLoginDirectoryStoreDriver } from "#core/drivers/memory-login-dire
 export { MemoryPasskeysDriver } from "#core/drivers/memory-passkeys.driver";
 export { MemorySessionStoreDriver } from "#core/drivers/memory-session-store.driver";
 export { MemoryServicePrincipalsDriver } from "#core/drivers/memory-service-principals.driver";
+export { MemoryServiceTokensDriver } from "#core/drivers/memory-service-tokens.driver";
 export { MemoryStaffPinStoreDriver } from "#core/drivers/memory-staff-pin-store.driver";
 export { MemoryVerificationDriver } from "#core/drivers/memory-verification.driver";
 export { PkceSessionStoreDriver } from "#core/drivers/pkce-session-store.driver";
