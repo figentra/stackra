@@ -93,7 +93,7 @@ describe("transitiveRefusals", () => {
       ...ir,
       transitiveDependencies: { ...ir.transitiveDependencies, specifier: "workspace:*" },
     };
-    expect(transitiveRefusals(pinned, ["@stackra/storage"], CODE)[1]?.fix).toContain(
+    expect(transitiveRefusals(pinned, ["@stackra/storage"], CODE).at(-1)?.fix).toContain(
       '"@stackra/storage": "workspace:*",',
     );
     expect(transitiveRefusals(BILLING_IR, ["@stackra/storage"], CODE)).toEqual([]);
