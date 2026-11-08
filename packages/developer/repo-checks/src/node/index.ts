@@ -76,6 +76,7 @@ export { checkService } from "#node/functions/check-service.function";
 export { checkTestPlacement } from "#node/functions/check-test-placement.function";
 export { checkRepositoryLayout } from "#node/functions/check-repository-layout.function";
 export { checkToolPins } from "#node/functions/check-tool-pins.function";
+export { checkGenStrictEnv } from "#node/functions/check-gen-strict-env.function";
 export { checkWindowSizing } from "#node/functions/check-window-sizing.function";
 export { checkWorkflowTriggers } from "#node/functions/check-workflow-triggers.function";
 export { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
