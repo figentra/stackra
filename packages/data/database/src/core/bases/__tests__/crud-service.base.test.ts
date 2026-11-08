@@ -153,6 +153,7 @@ function fakeEm() {
       hasNextPage: true,
       endCursor: "c2",
     })),
+    isInTransaction: vi.fn(() => false),
     transactional: vi.fn(async (work: (em: unknown) => Promise<unknown>, _options?: unknown) =>
       work(em),
     ),
