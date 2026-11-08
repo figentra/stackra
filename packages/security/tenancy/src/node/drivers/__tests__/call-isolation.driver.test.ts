@@ -11,7 +11,7 @@
  *          tenant differs or a user's, agent's or service's scope sits above every tenant or is unknown to the tree (a
  *          platform user, agent or service stays a platform call there), a service whose own tenant differs from its
  *          user's is refused and one with none runs in its user's, a claimed scope is read through the tree (a branch
- *          user of A runs in A, also through a service or agent of A; one of B's branch is refused; a claimed scope the
+ *          user of A runs in A, and the work receives the actor with A as its tenant, also through a service or agent of A; one of B's branch is refused; a claimed scope the
  *          tree does not show or above every tenant is refused), a failing tree read fails the call before it runs, several granted scopes that span tenants are
  *          refused while several within one tenant run in it, and the tree is read in a session over the path's root
  *          label.
@@ -524,6 +524,11 @@ describe("the tenant of a call", () => {
       // the isolation runs as the tenant, never the branch id
       expect(tenantOfRun(withTenant)).toBe(ID_A);
     }
+    // the work receives that actor, so the pipeline writes the tenant the isolation set
+    const handed = await setUp().driver.run(branchUser, branch, async (runAs) => runAs, {
+      readOnly: false,
+    });
+    expect(handed).toEqual({ ...branchUser, scopeId: ID_A });
     const other = setUp();
     await expect(run(other.driver, branchUser, tenantB)).rejects.toBeInstanceOf(
       TenantScopeMismatchError,

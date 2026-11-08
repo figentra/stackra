@@ -3,7 +3,9 @@
  * Purpose: `PostgresAuditTrailDriver`, the `postgres` driver of the `AuditTrail` port of @stackra/actions: each audited
  *          action call becomes the next `AuditLogEntry` of its tenant's audit hash chain, for a host that runs no
  *          separate audit service (the `outbox` driver stays the choice of one that does, such as Figentra OS).
- * Boundary: implements the port only. It writes inside `withTenant(call.actor, ...)`, which is a savepoint inside the
+ * Boundary: implements the port only. It writes inside `withTenant` of the call's tenant (`call.scopeId`, the tree
+ *           tenant the pipeline's isolation ran as, so a branch user's entry joins its tenant's chain; else the actor's
+ *           own claim, for an entry built outside the pipeline), which is a savepoint inside the
  *           caller's transaction, so the success entry the pipeline writes inside the unit of work commits or rolls
  *           back with the call's writes, and a refusal's entry (written after the rollback) gets a transaction of its
  *           own. The chain head is the tenant's highest sequence; two writers that read the same head collide on the
@@ -65,13 +67,15 @@ export class PostgresAuditTrailDriver extends Driver(AuditTrail) {
    */
   async record(entry: AuditEntry): Promise<void> {
     const { actor, callId, key } = entry.call;
-    if (actingScopeId(actor) === undefined) {
+    const scopeId = entry.call.scopeId ?? actingScopeId(actor);
+    if (scopeId === undefined) {
       this.logger.warn(AUDIT_WRITE_SKIPPED, { callId, key });
       return;
     }
+    const writer = scopeId === actingScopeId(actor) ? actor : Object.freeze({ ...actor, scopeId });
     for (let attempt = 1; ; attempt++) {
       try {
-        await this.tenancy.withTenant(actor, () => this.append(entry));
+        await this.tenancy.withTenant(writer, () => this.append(entry));
         return;
       } catch (error) {
         if (!(error instanceof UniqueViolation) || attempt >= ATTEMPTS) throw error;

@@ -3,7 +3,7 @@
  * Purpose: unit tests of `PostgresAuditTrailDriver`: each entry is inserted under the call's tenant as the next
  *          verifiable link after the head; a lost race retries from a fresh savepoint; five lost races and any other
  *          failure propagate; an agent with no tenant of its own is written in its
- *          human's tenant; a call in no tenant (a platform agent too) is logged as `audit_write_skipped` and never fails.
+ *          human's tenant; a branch user's entry is written in the call's tree tenant (`call.scopeId`); a call in no tenant (a platform agent too) is logged as `audit_write_skipped` and never fails.
  * Boundary: test only; the table, tenant isolation and the logger are in-memory stand-ins of the calls the driver
  *           makes, so no Postgres runs.
  * Runtime: node (vitest)
@@ -122,6 +122,25 @@ describe("PostgresAuditTrailDriver", () => {
       callId: "call_2",
       key: "orders.order.create@1",
     });
+  });
+
+  it("writes a branch user's entry in the tenant the pipeline ran as, not the branch", async () => {
+    const { driver, tenancy } = driverWith();
+    const branchUser: Actor = {
+      kind: ActorKind.User,
+      id: "usr_1",
+      realm: Realm.Customer,
+      scopeId: "scp_riyadh",
+    };
+    const entry = entryOf("call_1", branchUser);
+    await driver.record({
+      ...entry,
+      call: { ...entry.call, scopeId: "scp_acme", branchScopeId: "scp_riyadh" },
+    });
+    expect(tenancy.withTenant).toHaveBeenCalledWith(
+      { ...branchUser, scopeId: "scp_acme" },
+      expect.any(Function),
+    );
   });
 
   it("retries from a fresh savepoint after a lost race", async () => {
