@@ -263,7 +263,8 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
   reads its rows and the null rows (the platform's) and writes only its own; one with the setting unset reads and
   writes only the null rows. It also writes the restrictive `pol_<table>_<column>_write_update` and `_write_delete`,
   because the permissive `USING` would otherwise let a tenant update, delete or take over a platform row. A restrictive
-  policy's `exemptNull: column` leaves that column's null rows unnarrowed (the scope path of a platform-form table).
+  path policy's `exemptNull: column` also lets through that column's null rows whose path is at or above a granted
+  path (the scope path of a platform-form table: the root's and the session's product's corpus, not another's).
   `schema.refuseNulls(..., { where })` counts only the null rows that also meet `where`.
 - A contract step swaps a table's policy: `schema.refuseNulls(column, tables, remedy)` first refuses the migration,
   before any change, while a row of `tables` holds a null `column`, naming each table's count and the remedy (the

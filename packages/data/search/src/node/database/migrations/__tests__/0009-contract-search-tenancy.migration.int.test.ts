@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: integration tests of `ContractSearchTenancyMigration` on real Postgres, over every search migration before
- *          it: the pre-flight refuses a null `tenant_id` row below the platform root, naming the count, and changes
- *          nothing, while it keeps a null row at the root (a platform row); applied, the platform form holds for an
- *          unprivileged role: a tenant reads its rows and the platform's, never another tenant's; it cannot update,
- *          delete or take over a platform row, but changes its own; a platform session changes only NULL rows; and
- *          `assertRowSecurity` warns about neither table.
+ *          it: the pre-flight refuses a null `tenant_id` row at a tenant node, naming the count, and changes nothing,
+ *          while it keeps null rows at the root and at product nodes (platform rows); applied, the platform form holds
+ *          for an unprivileged role: a tenant under product alpha reads its rows, the root's and alpha's corpus, never
+ *          beta's corpus or another tenant's rows; it cannot update, delete or take over a platform row, but changes
+ *          its own; a platform session changes only NULL rows; and `assertRowSecurity` warns about neither table.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The tests share one database and run in order.
  *           The container's superuser writes the seed rows, as row-level security never restricts it; each probe runs
  *           as `search_reader` in a transaction with the session settings of a tenant or of the platform.
@@ -31,7 +31,7 @@ import { ContractSearchTenancyMigration } from "#node/database/migrations/0009-c
 
 const TABLES = ["vector_items", "queries"];
 
-/** Two tenants, as `withTenant` writes them, under the platform root `platform`. */
+/** Two tenants, as `withTenant` writes them: acme under product `platform.alpha`, globex under `platform.beta`. */
 const ACME = "scp_01jab3k4m5n6p7q8r9s0t1v2w3";
 const GLOBEX = "scp_01jab3k4m5n6p7q8r9s0t1v2w4";
 
@@ -111,8 +111,8 @@ const phrases = async (owner: string, paths: string): Promise<string[]> =>
   ).map((row) => row.phrase);
 
 describe("ContractSearchTenancyMigration on Postgres", () => {
-  it("refuses a null tenant below the platform root, naming the count, and changes nothing", async () => {
-    await seed(null, "platform.acme", "missed backfill");
+  it("refuses a null tenant at a tenant node, naming the count, and changes nothing", async () => {
+    await seed(null, "platform.alpha.acme", "missed backfill");
     try {
       await expect(apply(CONTRACT)).rejects.toThrow(
         /refused before any change: rows with a null tenant_id: search\.queries 1\. Backfill tenant_id/,
@@ -130,10 +130,12 @@ describe("ContractSearchTenancyMigration on Postgres", () => {
     }
   });
 
-  it("applies over a platform row at the root, and keeps tenant_id nullable", async () => {
+  it("applies over platform rows at the root and at product nodes, and keeps tenant_id nullable", async () => {
     await seed(null, "platform", "global");
-    await seed(ACME, "platform.acme", "acme");
-    await seed(GLOBEX, "platform.globex", "globex");
+    await seed(null, "platform.alpha", "alpha corpus");
+    await seed(null, "platform.beta", "beta corpus");
+    await seed(ACME, "platform.alpha.acme", "acme");
+    await seed(GLOBEX, "platform.beta.globex", "globex");
     await apply(CONTRACT);
     // raw-sql: the catalogue's policies and the column's NOT NULL flag
     const rows = (await postgres.database.em().execute(
@@ -170,58 +172,70 @@ describe("ContractSearchTenancyMigration on Postgres", () => {
       );
   });
 
-  it("shows a tenant its rows and the platform's, never another tenant's", async () => {
-    expect(await phrases(ACME, "platform.acme")).toEqual(["acme", "global"]);
-    expect(await phrases(GLOBEX, "platform.globex")).toEqual(["global", "globex"]);
-    expect(await phrases("", "platform")).toEqual(["global"]);
+  it("shows a tenant its rows, the root's and its product's corpus, never another tenant's or product's", async () => {
+    expect(await phrases(ACME, "platform.alpha.acme")).toEqual(["acme", "alpha corpus", "global"]);
+    expect(await phrases(GLOBEX, "platform.beta.globex")).toEqual([
+      "beta corpus",
+      "global",
+      "globex",
+    ]);
+    expect(await phrases("", "platform")).toEqual(["alpha corpus", "beta corpus", "global"]);
   });
 
   it("keeps a tenant from updating, deleting or taking over a platform row", async () => {
     expect(
       await as(
         ACME,
-        "platform.acme",
+        "platform.alpha.acme",
         `update "search"."queries" set phrase = 'changed' where tenant_id is null`,
       ),
     ).toBe(0);
     expect(
-      await as(ACME, "platform.acme", `delete from "search"."queries" where tenant_id is null`),
+      await as(
+        ACME,
+        "platform.alpha.acme",
+        `delete from "search"."queries" where tenant_id is null`,
+      ),
     ).toBe(0);
     expect(
       await as(
         ACME,
-        "platform.acme",
+        "platform.alpha.acme",
         `update "search"."queries" set tenant_id = '${ACME}' where tenant_id is null`,
       ),
     ).toBe(0);
     await expect(
       as(
         ACME,
-        "platform.acme",
+        "platform.alpha.acme",
         `insert into "search"."queries" (id, scope_id, scope_path, model, searched_at, tenant_id)
          values (gen_random_uuid(), '${ACME}', 'platform', 'Product', now(), null)`,
       ),
     ).rejects.toThrow(/row-level security/);
-    expect(await phrases("", "platform")).toEqual(["global"]);
+    expect(await phrases("", "platform")).toEqual(["alpha corpus", "beta corpus", "global"]);
   });
 
   it("lets a tenant change its own rows", async () => {
     expect(
       await as(
         ACME,
-        "platform.acme",
+        "platform.alpha.acme",
         `update "search"."queries" set hits = 3 where tenant_id = '${ACME}'`,
       ),
     ).toBe(1);
     expect(
-      await as(ACME, "platform.acme", `delete from "search"."queries" where tenant_id = '${ACME}'`),
+      await as(
+        ACME,
+        "platform.alpha.acme",
+        `delete from "search"."queries" where tenant_id = '${ACME}'`,
+      ),
     ).toBe(1);
   });
 
   it("lets a platform session change only the NULL rows", async () => {
     expect(
       await as("", "platform", `update "search"."queries" set hits = 1 where tenant_id is null`),
-    ).toBe(1);
+    ).toBe(3);
     expect(
       await as(
         "",
@@ -237,10 +251,14 @@ describe("ContractSearchTenancyMigration on Postgres", () => {
         "",
         "platform",
         `insert into "search"."queries" (id, scope_id, scope_path, model, searched_at, tenant_id)
-         values (gen_random_uuid(), '${GLOBEX}', 'platform.globex', 'Product', now(), '${GLOBEX}')`,
+         values (gen_random_uuid(), '${GLOBEX}', 'platform.beta.globex', 'Product', now(), '${GLOBEX}')`,
       ),
     ).rejects.toThrow(/row-level security/);
-    expect(await phrases(GLOBEX, "platform.globex")).toEqual(["global", "globex"]);
+    expect(await phrases(GLOBEX, "platform.beta.globex")).toEqual([
+      "beta corpus",
+      "global",
+      "globex",
+    ]);
   });
 
   it("audits both tables without a warning", async () => {

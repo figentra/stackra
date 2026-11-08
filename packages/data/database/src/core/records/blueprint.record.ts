@@ -521,6 +521,8 @@ export class BlueprintRecord {
     if (options.exemptNull !== undefined && options.restrictive !== true)
       throw new TypeError(`${this.table}.${column}: exemptNull is for a restrictive policy only`);
     if (options.exemptNull !== undefined) quoteIdentifier(options.exemptNull);
+    if (options.exemptNull !== undefined && ID_MATCHES.has(options.match))
+      throw new TypeError(`${this.table}.${column}: exemptNull is for a path match only`);
     // Postgres ORs permissive policies, so a second one would widen what the first lets a session see.
     const permissive = this.policies.find((policy) => policy.options.restrictive !== true);
     if (options.restrictive !== true && permissive !== undefined)
@@ -854,9 +856,12 @@ export class BlueprintRecord {
           : `${column} ? array(select (granted || '.*')::lquery from ${grantedPaths(options.setting)})`;
     if (options.restrictive !== true) return { using: match, check: match };
     // A restrictive policy narrows only a session the setting narrows (ADR 0347 d3): unset, it shows the whole tenant.
-    // `exemptNull` leaves the rows whose column is null (the platform form's platform rows) to the permissive policy.
+    // `exemptNull` lets a row whose column is null (the platform form's platform row) through when its path is at or
+    // above a granted path: the root's and the session's product's corpus, never another product's.
     const exempt =
-      options.exemptNull === undefined ? "" : `${quoteIdentifier(options.exemptNull)} is null or `;
+      options.exemptNull === undefined
+        ? ""
+        : `(${quoteIdentifier(options.exemptNull)} is null and ${column} @> array(select granted::ltree from ${grantedPaths(options.setting)})) or `;
     const narrowed = `nullif(${setting}, '') is null or ${exempt}${match}`;
     return { using: narrowed, check: narrowed };
   }

@@ -188,7 +188,7 @@ export interface Blueprint {
    * the null rows and writes only its own, a session with the setting unset reads and writes only the null rows, and
    * the restrictive `pol_<table>_<column>_write_update` and `_write_delete` keep those commands on the session's rows.
    * `restrictive: true` writes it `AS RESTRICTIVE`: it narrows the one permissive policy, and an unset or `''` setting
-   * does not narrow (ADR 0347 d2 and d3); `exemptNull: column` leaves that column's null rows unnarrowed. On a table being created the column is defined in the same blueprint; on an
+   * does not narrow (ADR 0347 d2 and d3); `exemptNull: column` also lets through that column's null rows on a path at or above a granted path. On a table being created the column is defined in the same blueprint; on an
    * existing table it may be one an earlier migration wrote (a public id for an id match, `scope_path` for a path
    * match). A blueprint takes one permissive policy, as Postgres ORs them, and one policy per column. A business table
    * keeps the equality policy @stackra/tenancy generates (ADR 0239, ADR 0327 d8).

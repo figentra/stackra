@@ -41,8 +41,10 @@ export interface RowLevelSecurityOptions {
   readonly restrictive?: boolean;
 
   /**
-   * A column whose null rows this restrictive policy does not narrow: the platform form's platform rows, which every
-   * tenant reads (`exemptNull: "tenant_id"` on the scope path of a platform-form table). Restrictive policies only.
+   * A column whose null rows this restrictive path policy also lets through when the row's path is an ancestor of, or
+   * equal to, a granted path: the platform form's platform rows at the root and at the session's product node, never
+   * another product's (`exemptNull: "tenant_id"` on the scope path of a platform-form table). Restrictive path
+   * policies only.
    */
   readonly exemptNull?: string;
 }

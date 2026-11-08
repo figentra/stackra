@@ -1104,7 +1104,8 @@ describe(compileMigration, () => {
       expect(sql).toContain(
         `create policy "pol_notices_owner_id_write_delete" on "docs"."notices" as restrictive for delete using (${own})`,
       );
-      const narrowed = `nullif(current_setting('app.scope_paths', true), '') is null or "owner_id" is null or ${paths}`;
+      const granted = `array(select granted::ltree from unnest(string_to_array(current_setting('app.scope_paths', true), '|')) as granted)`;
+      const narrowed = `nullif(current_setting('app.scope_paths', true), '') is null or ("owner_id" is null and "scope_path" @> ${granted}) or ${paths}`;
       expect(sql).toContain(
         `create policy "pol_notices_scope_path" on "docs"."notices" as restrictive using (${narrowed}) with check (${narrowed})`,
       );

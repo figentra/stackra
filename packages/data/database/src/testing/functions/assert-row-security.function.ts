@@ -11,7 +11,8 @@
  *          BYPASSRLS. Then, per owned table, it seeds a row of each probe owner and, as that role, proves a session with
  *          the setting unset sees no owner's row, a session as the first owner sees its own row and none of the
  *          second's (a platform-form table's NULL rows are the platform's, which every session reads), and cannot move
- *          its row to the second owner. It throws one error listing every gap.
+ *          its row to the second owner; on a platform-form table it also seeds a NULL row, which the first owner can
+ *          neither take over nor delete. It throws one error listing every gap.
  * Boundary: test only (`./testing`), against a real Postgres (`usePostgres`), connected as a superuser (a test
  *           container's user). Each probe runs in a transaction it always rolls back; to seed, it drops the table's
  *           check constraints and the NOT NULL of every non-key column there and skips foreign keys and triggers
@@ -103,7 +104,7 @@ async function seedOwners(
   name: string,
   columns: readonly ColumnRow[],
   column: string,
-  owners: readonly [string, string],
+  owners: readonly (string | null)[],
 ): Promise<string | undefined> {
   // raw-sql: a savepoint, so a seed the table refuses rolls back without aborting the probe's transaction
   await tx.execute("savepoint stackra_seed");
@@ -135,7 +136,11 @@ async function seedOwners(
     const row = `(${["?", ...values].join(", ")})`;
     const into = [column, ...keys.map((key) => key.name)].map(quoteIdentifier).join(", ");
     // raw-sql: one row per probe owner; names are quoted catalogue identifiers and the owners are parameters
-    await tx.execute(`insert into ${name} (${into}) values ${row}, ${row}`, [...owners], "run");
+    await tx.execute(
+      `insert into ${name} (${into}) values ${owners.map(() => row).join(", ")}`,
+      [...owners],
+      "run",
+    );
     // raw-sql: keeps the seeded rows for the probe
     await tx.execute("release savepoint stackra_seed");
     return undefined;
@@ -266,7 +271,14 @@ export async function assertRowSecurity(
         // A partition gets its rows through its parent, whose seed lands in it when the key routes there.
         const unseeded = audited.partition
           ? undefined
-          : await seedOwners(tx, name, of(columns, audited), audited.column, probe);
+          : await seedOwners(
+              tx,
+              name,
+              of(columns, audited),
+              audited.column,
+              // A platform-form table also gets a platform row (NULL owner), which no owner may change.
+              platformForm.has(audited) ? [...probe, null] : probe,
+            );
         if (unseeded !== undefined)
           gaps.push(
             `${label}: could not seed a row of each probe owner, so no cross-owner read ran: ${unseeded}`,
@@ -314,6 +326,31 @@ export async function assertRowSecurity(
           // raw-sql: undoes the refused write so the probe can finish
           await tx.execute("rollback to savepoint stackra_probe");
         }
+        if (platformForm.has(audited))
+          for (const [verb, sql, params] of [
+            [
+              "changed",
+              `update ${name} set ${quotedColumn} = ? where ${quotedColumn} is null`,
+              [own],
+            ],
+            ["deleted", `delete from ${name} where ${quotedColumn} is null`, []],
+          ] as const)
+            try {
+              // raw-sql: a savepoint, so a write the policy refuses does not abort the probe's transaction
+              await tx.execute("savepoint stackra_probe");
+              // raw-sql: tries to take over or delete the platform's rows; the write policies must refuse it
+              const written = (await tx.execute(sql, [...params], "run")) as {
+                affectedRows?: number;
+              };
+              if ((written.affectedRows ?? 0) > 0)
+                gaps.push(
+                  `${label}: a probe as ${own} ${verb} ${written.affectedRows} platform rows (NULL ${audited.column})`,
+                );
+            } catch {
+              // The policy refused the write, as it must.
+              // raw-sql: undoes the refused write so the probe can finish
+              await tx.execute("rollback to savepoint stackra_probe");
+            }
         throw new ProbeDone();
       });
     } catch (error) {
