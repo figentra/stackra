@@ -5,11 +5,15 @@
  *          limit per subscriber in one statement, deleted once delivered, counted, rescheduled or dead-lettered when an attempt fails,
  *          listed per subscriber and state for an operator, and replayed once dead.
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
- *           and every result row read through zod. The table is the producer's operational table, read across scopes,
- *           so it has no row-level-security policy. Envelope and last error are `jsonb`.
+ *           and every result row read through zod. The table is tenant-owned in the platform form (`outbox.0006`): the
+ *           lease and the operator's list go through the system functions `outbox.lease_due_deliveries` and
+ *           `outbox.list_deliveries`, which return ids, tenants, subscribers and states only; every other statement
+ *           runs under the caller's row-level security, so a delivery is read or changed only in its tenant's
+ *           isolation. `tenant_id` is never written here: its default takes the call's `app.tenant_id` (the relay
+ *           fans out in the message's tenant). Envelope and last error are `jsonb`.
  * Runtime: node
  * Governing contract: ADR 0511 (decisions 12 and 13, amendment of 2026-11-02); ADR 0160 (raw SQL is parameterised and
- *                     typed with zod); ADR 0142 (drivers behind ports).
+ *                     typed with zod); ADR 0142 (drivers behind ports); ADR 0239 (2026-11-07 amendment, gaps A and C).
  */
 import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
@@ -17,7 +21,7 @@ import type { Database } from "@stackra/database";
 import { z } from "zod";
 
 import { DeliveryDriver, DeliveryState } from "#contracts/index";
-import type { CrossAppEnvelope, Delivery, DeliveryError } from "#contracts/index";
+import type { CrossAppEnvelope, Delivery, DeliveryClaim, DeliveryError } from "#contracts/index";
 
 /** The delivery table, in the package's schema. */
 const TABLE = '"outbox"."deliveries"';
@@ -26,26 +30,33 @@ const TABLE = '"outbox"."deliveries"';
 const COLUMNS =
   "id, event_id, subscriber, type, envelope, attempts, available_at, last_error, dead_at, created_at";
 
-/** The columns of a leased row, qualified by the update's alias. */
-const LEASED_COLUMNS = COLUMNS.split(", ")
-  .map((column) => `d.${column}`)
-  .join(", ");
+/** Rows of a claim function. */
+const CLAIMS = z.array(
+  z.object({
+    id: z.string().startsWith("dlv_"),
+    tenant_id: z.string().nullable(),
+    subscriber: z.string(),
+    attempts: z.number().int(),
+    dead_at: z.coerce.date().nullable(),
+  }),
+);
 
-/** By subscriber, then oldest written first, by id within one instant: the relay's order. */
-function byOrder(left: Delivery, right: Delivery): number {
-  return (
-    (left.subscriber < right.subscriber ? -1 : left.subscriber > right.subscriber ? 1 : 0) ||
-    left.createdAt.getTime() - right.createdAt.getTime() ||
-    (left.id < right.id ? -1 : left.id > right.id ? 1 : 0)
+/** The claims of `rows`, a claim function's result. */
+function claimsOf(rows: unknown): DeliveryClaim[] {
+  return CLAIMS.parse(rows).map((row) =>
+    Object.freeze({
+      id: row.id as PublicId<"dlv">,
+      ...(row.tenant_id === null ? {} : { ownerId: row.tenant_id as PublicId<"scp"> }),
+      subscriber: row.subscriber,
+      state:
+        row.dead_at !== null
+          ? DeliveryState.Dead
+          : row.attempts > 0
+            ? DeliveryState.Failing
+            : DeliveryState.Pending,
+    }),
   );
 }
-
-/** The SQL condition of each state, on `attempts` and `dead_at`. */
-const STATE_WHERE: Readonly<Record<DeliveryState, string>> = Object.freeze({
-  [DeliveryState.Pending]: "dead_at is null and attempts = 0",
-  [DeliveryState.Failing]: "dead_at is null and attempts > 0",
-  [DeliveryState.Dead]: "dead_at is not null",
-});
 
 /** One row of `outbox.deliveries`. */
 const ROW = z.object({
@@ -124,20 +135,28 @@ export class PostgresDeliveryDriver extends Driver(DeliveryDriver) {
   }
 
   /** Implements `DeliveryDriver.lease`, documented there. */
-  async lease(now: Date, limit: number, until: Date): Promise<readonly Delivery[]> {
-    // raw-sql: the deliveries have no model; one statement ranks each subscriber's due rows, takes at most `limit` of
-    // each and moves their due time to the lease's end; `returning` has no order, so the rows are sorted here
-    const rows = await this.database
-      .em()
-      .execute(
-        `with due as (select id from (select id, row_number() over ` +
-          "(partition by subscriber order by created_at, id) as rank " +
-          `from ${TABLE} where dead_at is null and available_at <= ?) as ranked where rank <= ?) ` +
-          `update ${TABLE} as d set available_at = ? from due where d.id = due.id returning ${LEASED_COLUMNS}`,
-        [now, limit, until],
-      );
-    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-    return ROWS.parse(rows).map(deliveryOf).sort(byOrder);
+  async lease(now: Date, limit: number, until: Date): Promise<readonly DeliveryClaim[]> {
+    // raw-sql: the system function ranks each subscriber's due rows of every tenant, takes at most `limit` of each and
+    // moves their due time to the lease's end; `returning` has no order, so the relay's order is set here
+    return claimsOf(
+      await this.database
+        .em()
+        .execute(
+          "select l.id, l.tenant_id, l.subscriber, l.attempts, l.dead_at " +
+            "from outbox.lease_due_deliveries(?::timestamptz, ?::integer, ?::timestamptz) as l " +
+            "order by l.subscriber, l.created_at, l.id",
+          [now, limit, until],
+        ),
+    );
+  }
+
+  /** Implements `DeliveryDriver.load`, documented there. */
+  async load(id: PublicId<"dlv">): Promise<Delivery | undefined> {
+    // raw-sql: the deliveries have no model; one parameterised read under the caller's row-level security
+    const [row] = ROWS.parse(
+      await this.database.em().execute(`select ${COLUMNS} from ${TABLE} where id = ?`, [id]),
+    );
+    return row === undefined ? undefined : deliveryOf(row);
   }
 
   /** Implements `DeliveryDriver.remove`, documented there. */
@@ -170,27 +189,21 @@ export class PostgresDeliveryDriver extends Driver(DeliveryDriver) {
 
   /** Implements `DeliveryDriver.list`, documented there. */
   async list(filter: {
+    readonly id?: PublicId<"dlv">;
     readonly subscriber?: string;
     readonly state?: DeliveryState;
     readonly limit: number;
-  }): Promise<readonly Delivery[]> {
-    const where: string[] = [];
-    const params: unknown[] = [];
-    if (filter.subscriber !== undefined) {
-      where.push("subscriber = ?");
-      params.push(filter.subscriber);
-    }
-    if (filter.state !== undefined) where.push(STATE_WHERE[filter.state]);
-    // raw-sql: the deliveries have no model; the conditions are fixed text, every value bound
-    const rows = await this.database
-      .em()
-      .execute(
-        `select ${COLUMNS} from ${TABLE}` +
-          (where.length === 0 ? "" : ` where ${where.join(" and ")}`) +
-          " order by created_at, id limit ?",
-        [...params, filter.limit],
-      );
-    return ROWS.parse(rows).map(deliveryOf);
+  }): Promise<readonly DeliveryClaim[]> {
+    // raw-sql: the system function lists every tenant's deliveries (ids, tenants, subscribers, states); all bound
+    return claimsOf(
+      await this.database
+        .em()
+        .execute(
+          "select id, tenant_id, subscriber, attempts, dead_at " +
+            "from outbox.list_deliveries(?::varchar, ?::varchar, ?::text, ?::integer)",
+          [filter.id ?? null, filter.subscriber ?? null, filter.state ?? null, filter.limit],
+        ),
+    );
   }
 
   /** Implements `DeliveryDriver.replay`, documented there. */

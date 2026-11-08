@@ -7,16 +7,19 @@
  *          at once; the last attempt dead-letters; an unlisted subscriber dead-letters; every dead letter is logged
  *          with subscriber, type and code; nothing runs while another relay holds the lock; a tick leases its rows and
  *          sends them outside the lock, so another tick takes none in flight and a crashed relay's rows return when the
- *          lease ends; `work` logs a failed tick and stops when its signal aborts.
+ *          lease ends; `work` logs a failed tick and stops when its signal aborts. A leased delivery is loaded and its
+ *          outcome recorded in its owner through the bound `CallIsolation`; an owned delivery with no isolation bound,
+ *          or one that does not load, fails the tick and is never skipped.
  * Boundary: test only; the memory delivery store, the memory lock driver, the real Ed25519 signer with a fresh key, a
  *           fixed clock, a recording logger and a stubbed `fetch`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0511 (decisions 12 and 13; AC-005, SC-005).
  */
 import type { Resolver } from "@stackra/actions";
+import { CallIsolation } from "@stackra/actions/contracts";
 import type { AnyClass } from "@stackra/container";
 import { Duration, Logger } from "@stackra/contracts";
-import type { Clock } from "@stackra/contracts";
+import type { Actor, Clock } from "@stackra/contracts";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { afterEach, beforeAll, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -32,6 +35,8 @@ import {
 } from "#core/__tests__/fixtures/relay-key.fixture";
 import type { RelayKeyPair } from "#core/__tests__/fixtures/relay-key.fixture";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
+import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
+import { RowIsolationMissingError } from "#core/errors/row-isolation-missing.error";
 import { ConfigSubscriberSourceDriver } from "#core/drivers/config-subscriber-source.driver";
 import { ContractInboxVerifierDriver } from "#core/drivers/contract-inbox-verifier.driver";
 import { Ed25519EventSignerDriver } from "#core/drivers/ed25519-event-signer.driver";
@@ -104,10 +109,33 @@ function transport(answers: Readonly<Record<string, number | Error>> = {}): Sent
   return sent;
 }
 
-/** A relay over a memory store holding `deliveries`, with a recording logger. */
-async function relayOf(deliveries: readonly Delivery[], secrets: Record<string, string> = {}) {
+/** An isolation that records the owner (`scopeId`) each unit runs in. */
+function recordingIsolation(owners: (string | undefined)[]): CallIsolation {
+  return {
+    run: (actor: Actor, _scope: unknown, work: () => Promise<unknown>) => {
+      owners.push(actor.scopeId);
+      return work();
+    },
+  } as unknown as CallIsolation;
+}
+
+/**
+ * A relay over a memory store holding `deliveries`, with a recording logger; `owned` makes every lease claim owned by
+ * that scope, `unloaded` makes every load miss, and `isolation` is bound when given.
+ */
+async function relayOf(
+  deliveries: readonly Delivery[],
+  secrets: Record<string, string> = {},
+  options: { owned?: string; unloaded?: boolean; isolation?: CallIsolation } = {},
+) {
   const driver = new MemoryDeliveryDriver();
   await driver.write(deliveries);
+  if (options.owned !== undefined) {
+    const lease = driver.lease.bind(driver);
+    driver.lease = async (...args) =>
+      (await lease(...args)).map((claim) => ({ ...claim, ownerId: options.owned as never }));
+  }
+  if (options.unloaded === true) driver.load = async () => undefined;
   const lockDriver = new MemoryLockDriver(clock);
   const logger = new RecordingLogger();
   const relay = new CrossAppRelayService(
@@ -120,7 +148,10 @@ async function relayOf(deliveries: readonly Delivery[], secrets: Record<string, 
     new Locks(lockDriver, clock),
     clock,
   );
-  const bound = new Map<AnyClass, object>([[Logger, logger]]);
+  const bound = new Map<AnyClass, object>([
+    [Logger, logger],
+    ...(options.isolation === undefined ? [] : [[CallIsolation, options.isolation] as const]),
+  ]);
   const resolver: Resolver = {
     has: (type) => bound.has(type),
     get: <T extends object>(type: AnyClass<T>) => bound.get(type) as T,
@@ -131,7 +162,8 @@ async function relayOf(deliveries: readonly Delivery[], secrets: Record<string, 
 
 /** Every stored delivery, oldest first. */
 async function stored(driver: MemoryDeliveryDriver) {
-  return driver.list({ limit: 100 });
+  const claims = await driver.list({ limit: 100 });
+  return Promise.all(claims.map(async (claim) => (await driver.load(claim.id)) as Delivery));
 }
 
 describe(CrossAppRelayService, () => {
@@ -286,6 +318,36 @@ describe(CrossAppRelayService, () => {
         await expect(relay.relay()).resolves.toBe(0);
       },
     );
+    expect(sent).toEqual([]);
+  });
+
+  it("loads and records an owned delivery in its owner through the bound isolation", async () => {
+    transport();
+    const owners: (string | undefined)[] = [];
+    const { relay, driver } = await relayOf(
+      [deliveryOf()],
+      {},
+      {
+        owned: "scp_acme",
+        isolation: recordingIsolation(owners),
+      },
+    );
+    await expect(relay.relay()).resolves.toBe(1);
+    expect(owners).toEqual(["scp_acme", "scp_acme"]);
+    expect(await stored(driver)).toEqual([]);
+  });
+
+  it("refuses an owned delivery with no isolation bound, sending nothing", async () => {
+    const sent = transport();
+    const { relay } = await relayOf([deliveryOf()], {}, { owned: "scp_acme" });
+    await expect(relay.relay()).rejects.toBeInstanceOf(RowIsolationMissingError);
+    expect(sent).toEqual([]);
+  });
+
+  it("refuses a leased delivery that does not load, never skipping it", async () => {
+    const sent = transport();
+    const { relay } = await relayOf([deliveryOf()], {}, { unloaded: true });
+    await expect(relay.relay()).rejects.toBeInstanceOf(ClaimNotLoadedError);
     expect(sent).toEqual([]);
   });
 

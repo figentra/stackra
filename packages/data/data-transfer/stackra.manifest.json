@@ -199,6 +199,12 @@
             "name": "Clock",
             "from": "@stackra/contracts"
           }
+        },
+        {
+          "class": {
+            "name": "Container",
+            "from": "@stackra/container"
+          }
         }
       ]
     }

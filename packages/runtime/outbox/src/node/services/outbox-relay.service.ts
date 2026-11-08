@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `OutboxRelayService`, the relay: on every tick one relay of the service, holding a lock, takes the due
- *          messages oldest first and delivers each: an event through the `EventPublisher` (a row change message left
+ * Purpose: `OutboxRelayService`, the relay: on every tick one relay of the service, holding a lock, claims the due
+ *          messages of every tenant oldest first, loads each in its tenant's isolation and delivers it: an event through
+ *          the `EventPublisher` (a row change message left
  *          from before the change log to every change consumer of its model, in the row's scope). A delivered message
  *          is deleted; a failed one is retried after an exponential backoff and dead-lettered (and logged) after its
  *          last attempt. With a batch window (`outbox.batchWindowSeconds`), a tick holds a part batch until its oldest
  *          message has been due that long. Then, for each change consumer the container binds, it reads the retained
- *          change log after that consumer's cursor and hands it each run of one model's changes in one scope
+ *          change log after that consumer's cursor (claimed across tenants, each tenant's entries loaded in its own
+ *          isolation) and hands it each run of one model's changes in one scope
  *          (`consumeMany` with the run coalesced, or `consume` one by one), saving the cursor after the run; a failed
  *          consumer retries from its cursor after the same backoff and stalls (logged, nothing dropped) after its last
  *          attempt, while every other consumer moves on. An event is published at its current version and then at
@@ -23,6 +25,11 @@
  *           the next delivery. With a `CallIsolation` bound (ADR 0495) that isolation is the stored actor's (a message
  *           stored with no actor runs as a platform call, which matches no tenant row) in the stored scope, and a
  *           run of changes splits where the actor changes; with none bound it is `Database.withScope` alone. A consumer class the container does not bind is skipped, as unbooted listeners are.
+ *           The tables are tenant-owned (ADR 0239 amendment, gaps A and C): a claim hands back ids and tenants only, and
+ *           a message's load, fan-out and outcome run in its tenant's isolation (`inRowOwner`), the fan-out with the
+ *           delivery's outcome so the deliveries take the message's tenant. A claimed row that does not load, or a
+ *           tenant's row with no isolation bound, fails the tick (`ClaimNotLoadedError`, `RowIsolationMissingError`):
+ *           it is never skipped.
  * Runtime: node
  * Governing contract: ADR 0078 (decision 4: the relay); ADR 0221 (decision 5: under five seconds of lag); ADR 0142
  *                     (decision 1); ADR 0149 (one runner under a lock); ADR 0327 (decision 9: the scope session);
@@ -49,13 +56,17 @@ import type {
   ChangeRecord,
   EventEnvelope,
   EventPublisher,
+  OutboxClaim,
   OutboxDriver,
   OutboxError,
   OutboxMessage,
   RowChange,
 } from "#contracts/index";
 import { CHANGE_CONSUMERS } from "#core/constants/change-consumers.constant";
+import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
 import { coalesceChanges } from "#core/functions/coalesce-changes.function";
+import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { loadChanges } from "#core/functions/load-changes.function";
 import { olderEnvelopes } from "#core/functions/older-envelopes.function";
 import { pauseFor } from "#core/functions/pause-for.function";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
@@ -196,10 +207,10 @@ export class OutboxRelayService extends Service {
     let handled = 0;
     await this.locks.tryWith(OUTBOX_DEFAULTS.lockKey, OUTBOX_DEFAULTS.lockTtl, async () => {
       const now = this.clock.now();
-      const due = await this.driver.due(now, OUTBOX_DEFAULTS.batchSize);
+      const due = await this.driver.claim(now, OUTBOX_DEFAULTS.batchSize);
       if (!this.holds(due, now))
-        for (const message of due) {
-          await this.deliver(message, now, resolver);
+        for (const claim of due) {
+          await this.deliver(claim, now, resolver);
           handled += 1;
         }
       for (const [type, models] of consumersOf())
@@ -227,20 +238,36 @@ export class OutboxRelayService extends Service {
   }
 
   /** Whether a part batch waits: the oldest of `due` became due less than the batch window before `now`. */
-  private holds(due: readonly OutboxMessage[], now: Date): boolean {
+  private holds(due: readonly OutboxClaim[], now: Date): boolean {
     const window = this.config.batchWindowSeconds * 1000;
     if (window === 0 || due.length === 0 || due.length >= OUTBOX_DEFAULTS.batchSize) return false;
     const oldest = Math.min(...due.map((message) => message.availableAt.getTime()));
     return now.getTime() - oldest < window;
   }
 
-  /** Delivers one message and records how it went. */
-  private async deliver(message: OutboxMessage, now: Date, resolver: Resolver): Promise<void> {
+  /**
+   * Loads one claimed message in its tenant, delivers it and records how it went there.
+   *
+   * @throws ClaimNotLoadedError when the claimed message does not load in its tenant.
+   * @throws RowIsolationMissingError when it has a tenant and no `CallIsolation` is bound.
+   */
+  private async deliver(claim: OutboxClaim, now: Date, resolver: Resolver): Promise<void> {
+    const isolation = resolver.has(CallIsolation) ? resolver.get(CallIsolation) : undefined;
+    const inOwner = <T>(work: () => Promise<T>) =>
+      inRowOwner(isolation, claim.ownerId, claim.id, work);
+    const message = await inOwner(() => this.driver.load(claim.id));
+    if (message === undefined) throw ClaimNotLoadedError.create({ id: claim.id });
     try {
-      await (message.kind === MessageKind.Event
-        ? this.publish(this.envelopeOf(message), now)
-        : this.consume(message, resolver));
-      await this.driver.remove(message.id);
+      if (message.kind === MessageKind.Event) {
+        const envelopes = await this.publish(this.envelopeOf(message), now);
+        await inOwner(async () => {
+          await this.fanOut(envelopes, now);
+          await this.driver.remove(message.id);
+        });
+      } else {
+        await this.consume(message, resolver);
+        await inOwner(() => this.driver.remove(message.id));
+      }
     } catch (error) {
       const failure = this.failureOf(error);
       const attempt = message.attempts + 1;
@@ -249,10 +276,10 @@ export class OutboxRelayService extends Service {
           now.getTime() +
             backoffDelay({ ...JOB_BACKOFF, backoff: OUTBOX_DEFAULTS.backoff }, attempt),
         );
-        await this.driver.retry(message.id, availableAt, failure);
+        await inOwner(() => this.driver.retry(message.id, availableAt, failure));
         return;
       }
-      await this.driver.deadLetter(message.id, failure, now);
+      await inOwner(() => this.driver.deadLetter(message.id, failure, now));
       this.logger()?.error(OUTBOX_LOG_EVENTS.messageDead, {
         messageId: message.id,
         type: message.type,
@@ -281,8 +308,13 @@ export class OutboxRelayService extends Service {
       availableAt: now,
     };
     if (cursor.stalledAt !== undefined || cursor.availableAt.getTime() > now.getTime()) return 0;
-    const records = await this.feed.read(cursor.position, models, OUTBOX_DEFAULTS.batchSize);
-    if (records.length === 0) return 0;
+    const claims = await this.feed.claim(cursor.position, models, OUTBOX_DEFAULTS.batchSize);
+    if (claims.length === 0) return 0;
+    const records = await loadChanges(
+      this.feed,
+      resolver.has(CallIsolation) ? resolver.get(CallIsolation) : undefined,
+      claims,
+    );
     let position = cursor.position;
     let handled = 0;
     try {
@@ -372,12 +404,21 @@ export class OutboxRelayService extends Service {
   }
 
   /**
-   * Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141), then, when
-   * the container binds the cross-app fan-out, writes their deliveries to other apps (ADR 0511 decision 12).
+   * Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141).
+   *
+   * @returns every envelope it published.
    */
-  private async publish(envelope: EventEnvelope, now: Date): Promise<void> {
+  private async publish(envelope: EventEnvelope, now: Date): Promise<readonly EventEnvelope[]> {
     const envelopes = [envelope, ...olderEnvelopes(envelope, now)];
     for (const each of envelopes) await this.publisher.publish(each);
+    return envelopes;
+  }
+
+  /**
+   * When the container binds the cross-app fan-out, writes the deliveries of `envelopes` to other apps (ADR 0511
+   * decision 12), in the running isolation, so each takes the message's tenant.
+   */
+  private async fanOut(envelopes: readonly EventEnvelope[], now: Date): Promise<void> {
     if (this.resolver?.has(CrossAppFanOut) === true)
       await this.resolver.get(CrossAppFanOut).fanOut(envelopes, now);
   }

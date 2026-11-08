@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresOutboxDriver`: a write goes through the batch insert on the running context's entity
- *          manager; `due` selects live due messages oldest first with every value bound and reads rows back into
- *          messages (scope, failure, dead time); `remove`, `retry`, `deadLetter`, `pruneDead` and `rewrite` are one
- *          bound statement each; `holding` narrows by the value's JSON text and keeps only payloads holding it as a
- *          value.
+ *          manager; `claim` and `claimDead` call their system functions with every value bound and read back ids,
+ *          owners and due times (a NULL tenant is a platform claim); `load` reads one row back into a message (scope,
+ *          failure, dead time) or undefined; `remove`, `retry`, `deadLetter` and `rewrite` are one bound statement
+ *          each; `holding` narrows by the value's JSON text and keeps only payloads holding it as a value.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -84,13 +84,41 @@ describe(PostgresOutboxDriver, () => {
     expectBound(statements);
   });
 
-  it("lists live due messages oldest first and reads them back", async () => {
-    const { database, statements } = databaseWith([ROW]);
-    const messages = await new PostgresOutboxDriver(database).due(NOON, 100);
-    expect(statements[0]?.sql).toContain("where dead_at is null and available_at <= ?");
-    expect(statements[0]?.sql).toContain("order by occurred_at, id limit ?");
+  it("claims due messages of every owner through the system function", async () => {
+    const { database, statements } = databaseWith([
+      { id: "evt_A", tenant_id: "scp_acme", available_at: NOON },
+      { id: "evt_B", tenant_id: null, available_at: NOON },
+    ]);
+    const claims = await new PostgresOutboxDriver(database).claim(NOON, 100);
+    expect(statements[0]?.sql).toBe(
+      "select id, tenant_id, available_at from outbox.claim_due_messages(?::timestamptz, ?::integer)",
+    );
     expect(statements[0]?.params).toEqual([NOON, 100]);
-    expect(messages).toEqual([
+    expect(claims).toEqual([
+      { id: "evt_A", ownerId: "scp_acme", availableAt: NOON },
+      { id: "evt_B", availableAt: NOON },
+    ]);
+  });
+
+  it("claims old dead letters through the system function", async () => {
+    const { database, statements } = databaseWith([
+      { id: "evt_A", tenant_id: null, available_at: NOON },
+    ]);
+    await expect(new PostgresOutboxDriver(database).claimDead(NOON, 50)).resolves.toEqual([
+      { id: "evt_A", availableAt: NOON },
+    ]);
+    expect(statements[0]?.sql).toContain(
+      "from outbox.claim_dead_messages(?::timestamptz, ?::integer)",
+    );
+    expect(statements[0]?.params).toEqual([NOON, 50]);
+  });
+
+  it("loads one message under the caller's row-level security and reads it back", async () => {
+    const { database, statements } = databaseWith([ROW]);
+    const message = await new PostgresOutboxDriver(database).load("evt_A");
+    expect(statements[0]?.sql).toContain('from "outbox"."messages" where id = ?');
+    expect(statements[0]?.params).toEqual(["evt_A"]);
+    expect([message]).toEqual([
       {
         id: "evt_A",
         kind: MessageKind.Change,
@@ -111,10 +139,13 @@ describe(PostgresOutboxDriver, () => {
     const { database } = databaseWith([
       { ...ROW, scope_id: null, scope_path: null, last_error: null, dead_at: NOON },
     ]);
-    const [message] = await new PostgresOutboxDriver(database).due(NOON, 1);
+    const message = await new PostgresOutboxDriver(database).load("evt_A");
     expect(message?.scope).toBeUndefined();
     expect(message?.lastError).toBeUndefined();
     expect(message?.deadAt).toEqual(NOON);
+    await expect(
+      new PostgresOutboxDriver(databaseWith().database).load("evt_A"),
+    ).resolves.toBeUndefined();
   });
 
   it("removes, retries and dead-letters with one bound statement each", async () => {
@@ -131,14 +162,6 @@ describe(PostgresOutboxDriver, () => {
     ]);
     expect(statements[1]?.sql).toContain("attempts = attempts + 1, available_at = ?");
     expect(statements[2]?.sql).toContain("attempts = attempts + 1, dead_at = ?");
-    expectBound(statements);
-  });
-
-  it("prunes old dead letters with one bound statement and counts them", async () => {
-    const { database, statements } = databaseWith([{ id: "evt_A" }, { id: "evt_B" }]);
-    await expect(new PostgresOutboxDriver(database).pruneDead(NOON)).resolves.toBe(2);
-    expect(statements[0]?.sql).toContain("where dead_at is not null and dead_at < ? returning id");
-    expect(statements[0]?.params).toEqual([NOON]);
     expectBound(statements);
   });
 

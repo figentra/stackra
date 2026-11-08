@@ -14,12 +14,19 @@
  *           mid-send only delays its rows (delivery is at least once; the inbox deduplicates). Nothing of a body is
  *           kept or logged. A delivery
  *           whose subscriber the source no longer lists is dead-lettered (`unsubscribed`). A signing failure fails the
- *           tick (logged by `work`), spending no attempt. `connect` is optional: it gives the logger.
+ *           tick (logged by `work`), spending no attempt. The deliveries are tenant-owned (ADR 0239 amendment, gaps A
+ *           and C): the lease hands back ids, tenants and subscribers only, and each delivery is loaded and its outcome
+ *           recorded in its tenant's isolation (`inRowOwner`, through the `CallIsolation` `connect` gives), each in a
+ *           short transaction of its own while no transaction is open for the send. A leased row that does not load,
+ *           or a tenant's row with no isolation bound, fails the tick (`ClaimNotLoadedError`,
+ *           `RowIsolationMissingError`): it is never skipped. `connect` gives the logger and the isolation; without
+ *           it only platform rows are sent.
  * Runtime: node
  * Governing contract: ADR 0511 (decisions 12, 13 and 16, amendment of 2026-11-02); ADR 0078 (decision 4); ADR 0149
- *                     (one runner under a lock); ADR 0148 (backoff).
+ *                     (one runner under a lock); ADR 0148 (backoff); ADR 0239 (2026-11-07 amendment, gaps A and C).
  */
 import type { Resolver } from "@stackra/actions";
+import { CallIsolation } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import { backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Clock } from "@stackra/contracts";
@@ -28,6 +35,7 @@ import { JOB_BACKOFF } from "@stackra/queue";
 
 import type {
   Delivery,
+  DeliveryClaim,
   DeliveryDriver,
   DeliveryError,
   EventSigner,
@@ -36,6 +44,8 @@ import type {
 import { CROSS_APP_DEFAULTS } from "#core/constants/cross-app-defaults.constant";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
+import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
+import { inRowOwner } from "#core/functions/in-row-owner.function";
 import { pauseFor } from "#core/functions/pause-for.function";
 
 /** Whether an answered status is worth another attempt: a 4xx other than 408 and 429 is a permanent refusal. */
@@ -91,7 +101,7 @@ export class CrossAppRelayService extends Service {
     this.clock = clock;
   }
 
-  /** Resolves the logger from `resolver` (a booted container or a testing app). */
+  /** Resolves the logger and the isolation from `resolver` (a booted container or a testing app). */
   connect(resolver: Resolver): void {
     this.resolver = resolver;
   }
@@ -108,11 +118,11 @@ export class CrossAppRelayService extends Service {
   async relay(): Promise<number> {
     const now = this.clock.now();
     const until = new Date(now.getTime() + Duration.toMilliseconds(CROSS_APP_DEFAULTS.lease));
-    let leased: readonly Delivery[] = [];
+    let leased: readonly DeliveryClaim[] = [];
     await this.locks.tryWith(CROSS_APP_DEFAULTS.lockKey, OUTBOX_DEFAULTS.lockTtl, async () => {
       leased = await this.driver.lease(now, CROSS_APP_DEFAULTS.batchSize, until);
     });
-    const bySubscriber = new Map<string, Delivery[]>();
+    const bySubscriber = new Map<string, DeliveryClaim[]>();
     for (const delivery of leased)
       bySubscriber.set(delivery.subscriber, [
         ...(bySubscriber.get(delivery.subscriber) ?? []),
@@ -141,7 +151,7 @@ export class CrossAppRelayService extends Service {
   }
 
   /** Sends one subscriber's `deliveries` in order, stopping at the first that fails; how many it tried. */
-  private async deliverInOrder(deliveries: readonly Delivery[], now: Date): Promise<number> {
+  private async deliverInOrder(deliveries: readonly DeliveryClaim[], now: Date): Promise<number> {
     let tried = 0;
     for (const delivery of deliveries) {
       tried += 1;
@@ -150,13 +160,20 @@ export class CrossAppRelayService extends Service {
     return tried;
   }
 
-  /** Sends one delivery and records how it went; whether the consumer took it. */
-  private async deliver(delivery: Delivery, now: Date): Promise<boolean> {
+  /**
+   * Loads one leased delivery in its tenant, sends it and records how it went there; whether the consumer took it.
+   *
+   * @throws ClaimNotLoadedError when the leased delivery does not load in its tenant.
+   * @throws RowIsolationMissingError when it has a tenant and no `CallIsolation` is bound.
+   */
+  private async deliver(claim: DeliveryClaim, now: Date): Promise<boolean> {
+    const delivery = await this.inOwner(claim, () => this.driver.load(claim.id));
+    if (delivery === undefined) throw ClaimNotLoadedError.create({ id: claim.id });
     const subscriber = (await this.source.subscribersOf(delivery.type)).find(
       (each) => each.member === delivery.subscriber,
     );
     if (subscriber === undefined) {
-      await this.dead(delivery, { code: "unsubscribed" }, now);
+      await this.dead(claim, delivery, { code: "unsubscribed" }, now);
       return false;
     }
     const body = JSON.stringify(delivery.envelope);
@@ -172,12 +189,12 @@ export class CrossAppRelayService extends Service {
       });
       await response.body?.cancel();
       if (response.status >= 200 && response.status < 300) {
-        await this.driver.remove(delivery.id);
+        await this.inOwner(claim, () => this.driver.remove(delivery.id));
         return true;
       }
       failure = { code: "http_status", status: response.status };
       if (!retryable(response.status)) {
-        await this.dead(delivery, failure, now);
+        await this.dead(claim, delivery, failure, now);
         return false;
       }
     } catch (error) {
@@ -187,19 +204,24 @@ export class CrossAppRelayService extends Service {
     }
     const attempt = delivery.attempts + 1;
     if (attempt >= OUTBOX_DEFAULTS.attempts) {
-      await this.dead(delivery, failure, now);
+      await this.dead(claim, delivery, failure, now);
       return false;
     }
     const availableAt = new Date(
       now.getTime() + backoffDelay({ ...JOB_BACKOFF, backoff: OUTBOX_DEFAULTS.backoff }, attempt),
     );
-    await this.driver.retry(delivery.id, availableAt, failure);
+    await this.inOwner(claim, () => this.driver.retry(delivery.id, availableAt, failure));
     return false;
   }
 
-  /** Dead-letters `delivery` with `failure` and logs it by subscriber, type and code. */
-  private async dead(delivery: Delivery, failure: DeliveryError, now: Date): Promise<void> {
-    await this.driver.deadLetter(delivery.id, failure, now);
+  /** Dead-letters `delivery` with `failure` in its tenant and logs it by subscriber, type and code. */
+  private async dead(
+    claim: DeliveryClaim,
+    delivery: Delivery,
+    failure: DeliveryError,
+    now: Date,
+  ): Promise<void> {
+    await this.inOwner(claim, () => this.driver.deadLetter(delivery.id, failure, now));
     this.logger()?.error(OUTBOX_LOG_EVENTS.deliveryDead, {
       deliveryId: delivery.id,
       subscriber: delivery.subscriber,
@@ -208,6 +230,13 @@ export class CrossAppRelayService extends Service {
       code: failure.code,
       ...(failure.status === undefined ? {} : { status: failure.status }),
     });
+  }
+
+  /** Runs `work` in the owner of `claim`, through the connected isolation when there is one. */
+  private inOwner<T>(claim: DeliveryClaim, work: () => Promise<T>): Promise<T> {
+    const isolation =
+      this.resolver?.has(CallIsolation) === true ? this.resolver.get(CallIsolation) : undefined;
+    return inRowOwner(isolation, claim.ownerId, claim.id, work);
   }
 
   /** The bound logger, when there is one. */

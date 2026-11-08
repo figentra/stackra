@@ -16,6 +16,7 @@ describe("@stackra/outbox", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(outbox).sort()).toEqual([
       "BrokerEventPublisherDriver",
+      "ClaimNotLoadedError",
       "ConfigSubscriberSourceDriver",
       "ConsumesChanges",
       "ContractInboxVerifierDriver",
@@ -32,8 +33,12 @@ describe("@stackra/outbox", () => {
       "OutboxOptions",
       "RelayInboxConfig",
       "RelayInboxOptions",
+      "RowIsolationMissingError",
       "UnknownEventError",
+      "boundIsolation",
       "coalesceChanges",
+      "loadChanges",
+      "maintainChangeLog",
       "pruneOutbox",
       "redactSubjectMessages",
       "registerChangeConsumers",
