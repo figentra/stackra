@@ -2,10 +2,10 @@
  * Stackra file contract:
  * Purpose: `emitToolConfigs`, the tool configs gen writes into `.stackra/` for a package or a service: tsdown with one
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
- *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database` or
- *          `@stackra/clients`) that package's testing entry, registers the member's wiring for `createTestingModule`,
- *          imports each generated schemas file statically (through Vite, so its `#` imports and decorators resolve as in
- *          source; STA-2032) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>`
+ *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database`,
+ *          `@stackra/clients` or `@stackra/tenancy`) that package's testing entry, registers the member's wiring for
+ *          `createTestingModule`, imports each generated schemas file statically (through Vite, so its `#` imports and
+ *          decorators resolve as in source; STA-2032) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>`
  *          with its model; and the root
  *          `vitest.config.ts` shim that re-exports the generated config, since `vitest run` reads only the member root
  *          (STA-1296).
@@ -194,6 +194,10 @@ export function emitToolConfigs(
     // The memory `ClientTransport` (`ClientFake`) a test picks with `useDrivers("memory")` (STA-1297).
     ...(ir.packages?.includes("@stackra/clients") === true
       ? ['import "@stackra/clients/testing";']
+      : []),
+    // The memory `CallIsolation`, so a `useDrivers("memory")` call runs as its actor's tenant, as in production.
+    ...(ir.packages?.includes("@stackra/tenancy") === true
+      ? ['import "@stackra/tenancy/testing";']
       : []),
     ...(generated.registrations ? ['import "#stackra/registrations";'] : []),
     // Each schemas file registers its shapes. Imported here, the setup Vite transforms loads them through Vite too; a
