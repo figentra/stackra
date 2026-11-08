@@ -26,7 +26,7 @@ describe(emitEncoreHttp, () => {
     expect(file?.path).toBe(".stackra/encore/billing/http.ts");
     const content = file?.content ?? "";
     for (const line of [
-      'import { apiCacheControl, CorsConfig, corsHeaders } from "@stackra/app/server";',
+      "  corsHeaders,",
       `import { app } from "${GENERATED_ENTRY}";`,
       "  return app.handlers.run(async (container) => {",
       "    const cors = corsHeaders(request, container.get(CorsConfig));",
@@ -34,6 +34,19 @@ describe(emitEncoreHttp, () => {
       '      if (name === "vary") response.headers.append(name, value);',
       "    const cacheControl = apiCacheControl(request, response);",
       '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
+    ])
+      expect(content).toContain(line);
+  });
+
+  it("bridges a raw request through serveGuardedCall: capped body, guards, CallAuthenticator, written back (STA-2577)", () => {
+    const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
+    for (const line of [
+      "export async function answerCall(req: IncomingMessage, resp: ServerResponse, call: Call): Promise<void> {",
+      '    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),',
+      "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
+      "      guard: (guarded) => app.handlers.guard(guarded, container),",
+      "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
+      "  resp.end(Buffer.from(await response.arrayBuffer()));",
     ])
       expect(content).toContain(line);
   });

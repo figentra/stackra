@@ -39,6 +39,7 @@ peers, each loaded only by the entry that needs it.
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
+| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
 | `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)             |
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
