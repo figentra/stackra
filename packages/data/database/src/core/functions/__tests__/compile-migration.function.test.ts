@@ -113,6 +113,26 @@ describe(compileMigration, () => {
     expect(sql.some((text) => text.includes('using brin ("occurred_at")'))).toBe(true);
   });
 
+  it("writes one index for a link column the blueprint also makes unique", () => {
+    class CreateLocationsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("locations", (t: Blueprint) => {
+          t.hasPublicId("loc");
+          t.link("scope_id").notNull().comment("The location's scope node.");
+          t.link("group_id").nullable().comment("Its group.");
+          t.unique(["scope_id"]);
+        });
+      }
+    }
+    const sql = compileMigration(CreateLocationsMigration, { schema: "entities" }).steps.flatMap(
+      (step) => step.sql,
+    );
+    const onScope = sql.filter((text) => text.includes('"idx_locations_scope_id"'));
+    expect(onScope).toHaveLength(1);
+    expect(onScope[0]).toMatch(/^create unique index/);
+    expect(sql.filter((text) => text.includes('"idx_locations_group_id"'))).toHaveLength(1);
+  });
+
   it("refuses a partitioning Postgres would refuse", () => {
     class NullableMigration extends Migration {
       up(schema: SchemaBuilder): void {
