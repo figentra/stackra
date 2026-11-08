@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: proves the native `Component<P>` is an abstract base with no runtime member that types `this.props` as
- *          `Readonly<P>` and asks a subclass for `render()`, the shape the generated `#stackra/ui` facade extends.
+ *          `Readonly<P>` and asks a subclass for `render()`, and that tsc takes a subclass as a JSX element and a
+ *          `ComponentType` with its props checked, the shape the generated `#stackra/ui` facade extends.
  * Boundary: test only; the class is never rendered, because the Metro transformer compiles it to a function.
  * Runtime: node
  * Governing contract: ADR 0305 (rules 37 to 41); ADR 0022 (test placement).
  */
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 import { Component } from "#native/component/component";
 
@@ -25,5 +26,16 @@ describe("Component (native)", () => {
   it("types the props and asks for render", () => {
     expectTypeOf<Greeting["props"]>().toEqualTypeOf<Readonly<{ readonly name: string }>>();
     expectTypeOf<Component["render"]>().returns.toEqualTypeOf<ReactNode>();
+  });
+
+  /** tsc checks a subclass against React's class surface: JSX, `ComponentType`, and its props. */
+  it("is a JSX element and a ComponentType, with its props checked", () => {
+    const element = <Greeting name="Amal" />;
+    const type: ComponentType<{ readonly name: string }> = Greeting;
+    expect(element.type).toBe(Greeting);
+    expect(type).toBe(Greeting);
+    // @ts-expect-error a missing prop is a type error, as for a function component
+    const missing = <Greeting />;
+    expect(missing.type).toBe(Greeting);
   });
 });
