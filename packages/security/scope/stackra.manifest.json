@@ -64,6 +64,7 @@
       "table": "scope.scope_nodes",
       "publicId": "scp",
       "traits": ["HasPublicId", "Timestamps"],
+      "global": true,
       "entity": {
         "module": "scope",
         "fields": [

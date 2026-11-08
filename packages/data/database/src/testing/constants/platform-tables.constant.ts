@@ -8,6 +8,7 @@
  *           column instead.
  * Runtime: node
  * Governing contract: ADR 0347 (decision 5: the catalogue audit); ADR 0210 (2026-10-24 amendment: global by design);
+ *                     ADR 0239 (2026-11-07 amendment: group (c) dispositions, item 2: the scope tree);
  *                     `.agents/rules/tenancy.md` (point 7).
  */
 
@@ -35,4 +36,34 @@ export const PLATFORM_TABLES: ReadonlyMap<string, string> = new Map([
     "database.0005: a key carries its CacheNamespace prefix; written outside the caller's transaction",
   ],
   ["locking.lock_tokens", "locking.0001: a lock key is not tenant data"],
+  // ADR 0239 amendment, group (c) (#693): no row of these can ever be tied to a tenant.
+  [
+    "outbox.inbox",
+    "outbox.0002: received event ids only; an id names no record and holds no customer data",
+  ],
+  [
+    "outbox.change_cursors",
+    "outbox.0004: one row per change consumer class, its position in the global change log",
+  ],
+  ["queue.job_batches", "queue.0002: batch counters only (total, done, failed), keyed by batch id"],
+  [
+    "scheduler.watermarks",
+    "scheduler.0001: tick bookkeeping, the last tick per cron or schedule key",
+  ],
+  [
+    "workflow.service_ack_sets",
+    "workflow.0005: service names expected and acked per subject, no tenant payload",
+  ],
+  [
+    "rules.condition_fields",
+    "rules.0003: the registry of fields a condition may test, published by services (Model.global)",
+  ],
+  [
+    "database.seed_records",
+    "database.0003: the ledger of product defaults; a tenant's own values are never written here",
+  ],
+  [
+    "scope.scope_nodes",
+    "scope.0001: the scope tree, read outside its package only through the ScopeTree port by the allowed readers (ADR 0239 amendment, item 2)",
+  ],
 ]);

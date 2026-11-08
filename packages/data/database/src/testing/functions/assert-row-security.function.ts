@@ -4,8 +4,14 @@
  *          non-system schema: a table without the owner column must be a listed platform table (`PLATFORM_TABLES` or
  *          the caller's `platform`, each with its reason), else it is returned as a warning naming its group
  *          (`unownedTableGroup`) until 0.20, and is a gap in strict mode (`strict`, `STACKRA_GEN_STRICT=1`). A table in
- *          `ISOLATION_SCOPE_TABLES` (group (b) by name) is audited by its own owner column, `isolation_scope_id`. Any
- *          other table with it has row-level security enabled and forced, exactly one permissive policy
+ *          `ISOLATION_SCOPE_TABLES` (group (b) by name) is audited by its own owner column, `isolation_scope_id`; a
+ *          table whose `pol_<table>_scope_id` is exactly the `equals` or `equalsOrUnset` policy
+ *          `Blueprint.rowLevelSecurity` writes on the setting (group (b) by shape, core payments' tables) by `scope_id`,
+ *          and any looser variant is not accepted. With `migrationsDirectory`, the compiled migrations'
+ *          `t.platformTable` declarations join the platform tables (and are refused while the table holds the owner
+ *          column, a scope id or an isolation scope id), and each `t.reviewedPolicy` table must enable and force
+ *          row-level security and hold every policy it names; it is not held to the owner policy or probed. Any
+ *          other table with the owner column has row-level security enabled and forced, exactly one permissive policy
  *          (`pol_<table>_<column>`, the owner equality, or the platform form with its two write policies) and only
  *          restrictive policies named after their column beside it. The service role is neither a superuser nor
  *          BYPASSRLS. Then, per owned table, it seeds a row of each probe owner and, as that role, proves a session with
@@ -22,14 +28,18 @@
  *           usage and table rights on the owned tables' schemas on every call. Tenant vocabulary stays in
  *           @stackra/tenancy, which gives the column and setting (`tenantIsolationOptions`).
  * Runtime: node
- * Governing contract: ADR 0239 (decision 1; 2026-11-07 amendment, items 3 and 7); ADR 0347 (decision 5: the catalogue
+ * Governing contract: ADR 0239 (decision 1; 2026-11-07 amendment, items 3 and 7, group (c)); ADR 0347 (decision 5: the catalogue
  *                     audit); ADR 0231 (`pol_<table>_<column>`); ADR 0327 (decision 8); `.agents/rules/tenancy.md`
  *                     (point 7).
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 
 import type { Database } from "#core/ports/database.port";
+import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { tableDeclarations } from "#core/functions/table-declarations.function";
+import { BlueprintRecord } from "#core/records/blueprint.record";
+import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 import { ISOLATION_SCOPE_TABLES } from "#testing/constants/isolation-scope-tables.constant";
 import { PLATFORM_TABLES } from "#testing/constants/platform-tables.constant";
 import { policyGaps } from "#testing/functions/policy-gaps.function";
@@ -66,6 +76,67 @@ interface ColumnRow extends SeedColumn {
 
 /** Rolls the probe's transaction back once it has run. */
 class ProbeDone extends Error {}
+
+/** The columns a declared platform table never holds: a scope id or an isolation scope id names an owner. */
+const SCOPE_COLUMNS: ReadonlySet<string> = new Set(["scope_id", "isolation_scope_id"]);
+
+/** The rows of `rows` that belong to one table. */
+const of = <T extends { schema: string; table: string }>(
+  rows: readonly T[],
+  table: { readonly schema: string; readonly table: string },
+): T[] => rows.filter((row) => row.schema === table.schema && row.table === table.table);
+
+/** The name the shape probe creates its reference policies under, inside a transaction it rolls back. */
+const SHAPE_PROBE = "stackra_shape_probe";
+
+/**
+ * The `USING` and `WITH CHECK` text Postgres gives each exact policy `Blueprint.rowLevelSecurity` writes on `scope_id`
+ * for `setting` with match `equals` and `equalsOrUnset`, for a column of `type`: each created on the table under a
+ * probe name and read back from the catalogue, in a transaction that is always rolled back. Comparing the deparsed
+ * text holds a policy to the generated shape exactly, so a looser variant (`... or true`) is not one of them.
+ */
+async function scopeEqualities(
+  em: ReturnType<Database["em"]>,
+  schema: string,
+  table: string,
+  type: string,
+  setting: string,
+): Promise<{ readonly using: string; readonly check: string }[]> {
+  const qualified = `${quoteIdentifier(schema)}.${quoteIdentifier(table)}`;
+  const generated = quoteIdentifier(constraintName("pol", table, ["scope_id"]));
+  const shapes: { using: string; check: string }[] = [];
+  try {
+    await em.transactional(async (tx) => {
+      for (const match of ["equals", "equalsOrUnset"] as const) {
+        const blueprint = new BlueprintRecord(table, false, [], type);
+        blueprint.rowLevelSecurity("scope_id", { setting, match });
+        const create = blueprint
+          .compile(schema)
+          .statements.find((statement) => statement.sql.startsWith(`create policy ${generated} `));
+        if (create === undefined) continue;
+        // raw-sql: the generated policy under the probe's name, rolled back below; names are quoted identifiers
+        await tx.execute(
+          create.sql.replace(`create policy ${generated} `, `create policy ${SHAPE_PROBE} `),
+        );
+        // raw-sql: the catalogue's text of the probe policy just created
+        const [shape] = (await tx.execute(
+          `select coalesce(pg_get_expr(polqual, polrelid), '') as "using",
+             coalesce(pg_get_expr(polwithcheck, polrelid), '') as "check"
+           from pg_policy where polrelid = ?::regclass and polname = ?`,
+          [qualified, SHAPE_PROBE],
+        )) as { using: string; check: string }[];
+        if (shape !== undefined) shapes.push(shape);
+        // raw-sql: drops the probe policy before the next match's; the whole transaction rolls back anyway
+        await tx.execute(`drop policy ${SHAPE_PROBE} on ${qualified}`);
+      }
+      throw new ProbeDone();
+    });
+  } catch (error) {
+    // A generated policy the table cannot take (a column type it does not cast to) is no shape it can match.
+    if (!(error instanceof ProbeDone)) return [];
+  }
+  return shapes;
+}
 
 /** The tables of every schema the service owns: no system schema, no table an extension made. */
 const TABLES = `select n.nspname as schema, c.relname as "table", c.relispartition as partition,
@@ -174,7 +245,15 @@ export async function assertRowSecurity(
   const strict = options.strict ?? process.env["STACKRA_GEN_STRICT"] === "1";
   const warnings: string[] = [];
   const [own, other] = probe;
-  const platform = new Map([...PLATFORM_TABLES, ...(options.platform ?? [])]);
+  // The compiled migrations' `t.platformTable` and `t.reviewedPolicy` declarations, when the caller names them.
+  const declared = tableDeclarations(
+    options.migrationsDirectory === undefined
+      ? ""
+      : readMigrationFiles(options.migrationsDirectory)
+          .map((file) => file.sql)
+          .join("\n"),
+  );
+  const platform = new Map([...PLATFORM_TABLES, ...(options.platform ?? []), ...declared.platform]);
   const em = database.em();
   const gaps: string[] = [];
   const policies = (await em.execute(POLICIES)) as (PolicyRow & {
@@ -182,21 +261,33 @@ export async function assertRowSecurity(
     table: string;
   })[];
   const columns = (await em.execute(COLUMNS)) as ColumnRow[];
-  // Group (b) by name: a table in ISOLATION_SCOPE_TABLES is owned through its own column, against the same setting.
-  const tables = ((await em.execute(TABLES)) as Omit<AuditedTable, "owned" | "column">[]).map(
-    (table): AuditedTable => {
-      const owner = ISOLATION_SCOPE_TABLES.get(`${table.schema}.${table.table}`) ?? column;
-      const owned = columns.some(
-        (known) =>
-          known.schema === table.schema && known.table === table.table && known.name === owner,
-      );
-      return { ...table, owned, column: owner };
-    },
-  );
-  const of = <T extends { schema: string; table: string }>(
-    rows: readonly T[],
-    owned: AuditedTable,
-  ) => rows.filter((row) => row.schema === owned.schema && row.table === owned.table);
+  const tables: AuditedTable[] = [];
+  for (const table of (await em.execute(TABLES)) as Omit<AuditedTable, "owned" | "column">[]) {
+    const name = `${table.schema}.${table.table}`;
+    const holds = (owner: string) => of(columns, table).some((known) => known.name === owner);
+    // Group (b) by name: a table in ISOLATION_SCOPE_TABLES is owned through its own column, against the same setting.
+    let owner = ISOLATION_SCOPE_TABLES.get(name) ?? column;
+    // Group (b) by shape: a scope_id whose one policy is exactly the generated equality on the setting (`equals` or
+    // `equalsOrUnset`) is the table's owner column (core payments' tables). Any other shape stays unowned.
+    const equality = of(policies, table).find(
+      (policy) => policy.name === `pol_${table.table}_scope_id`,
+    );
+    const scope = of(columns, table).find((known) => known.name === "scope_id");
+    if (
+      !holds(owner) &&
+      !platform.has(name) &&
+      !declared.reviewed.has(name) &&
+      scope !== undefined &&
+      equality !== undefined &&
+      equality.permissive &&
+      equality.command === "*" &&
+      (await scopeEqualities(em, table.schema, table.table, scope.type, setting)).some(
+        (shape) => shape.using === equality.using && shape.check === equality.check,
+      )
+    )
+      owner = "scope_id";
+    tables.push({ ...table, owned: holds(owner), column: owner });
+  }
 
   const owned: AuditedTable[] = [];
   // The platform-form tables (ADR 0239 amendment, gap C): their NULL rows are the platform's, which every session reads.
@@ -204,14 +295,40 @@ export async function assertRowSecurity(
   for (const audited of tables) {
     const name = `${audited.schema}.${audited.table}`;
     const reason = platform.get(name);
+    const review = declared.reviewed.get(name);
+    // A reviewed table keeps its hand-written policies, but never without row-level security or a named policy.
+    if (review !== undefined) {
+      if (reason !== undefined)
+        gaps.push(`${name} is declared both a platform table and a reviewed policy`);
+      if (review.reason === "") gaps.push(`${name}: t.reviewedPolicy has no reason`);
+      if (!audited.enabled)
+        gaps.push(`${name} is a reviewed policy table but does not enable row-level security`);
+      if (!audited.forced)
+        gaps.push(`${name} is a reviewed policy table but does not force row-level security`);
+      for (const policy of review.policies)
+        if (!of(policies, audited).some((known) => known.name === policy))
+          gaps.push(`${name}: t.reviewedPolicy names ${policy}, which the table does not have`);
+      continue;
+    }
     if (!audited.owned) {
+      const group = unownedTableGroup(audited.enabled, of(policies, audited), setting);
+      const scopeEquality = group.startsWith("a scope_id table")
+        ? `; its pol_${audited.table}_scope_id is not exactly the generated equals or equalsOrUnset policy, so it is not group (b)`
+        : "";
       if (reason === undefined)
         // shortcut: warn-only for tables without tenant_id until 0.20, then error (push to `gaps` always).
         (strict ? gaps : warnings).push(
-          `${name} has no ${audited.column} column and is not a platform table (${unownedTableGroup(audited.enabled, of(policies, audited), setting)}); give it ${audited.column} or list it in \`platform\` with its reason`,
+          `${name} has no ${audited.column} column and is not a platform table (${group}${scopeEquality}); give it ${audited.column} or list it in \`platform\` with its reason`,
         );
       else if (reason.trim() === "")
         gaps.push(`${name} is listed as a platform table with no reason`);
+      else if (declared.platform.has(name)) {
+        const scoped = of(columns, audited).find((known) => SCOPE_COLUMNS.has(known.name));
+        if (scoped !== undefined)
+          gaps.push(
+            `${name} is declared a platform table (t.platformTable) but holds ${scoped.name}`,
+          );
+      }
       continue;
     }
     if (reason !== undefined)

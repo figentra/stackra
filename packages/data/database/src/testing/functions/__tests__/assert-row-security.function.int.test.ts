@@ -7,14 +7,28 @@
  *          unclassified) and a failure in strict mode, a listed one passes, and a listing with no reason or of an owned
  *          table fails; a table without row-level security, a second permissive policy, a misnamed restrictive
  *          policy, a leaking policy, an unseedable key and a role that bypasses row-level security are each reported,
- *          whatever the mode.
- * Boundary: test only; integration tier (Docker through `usePostgres`). Every test drops the tables it adds.
+ *          whatever the mode. Group (b) by shape: a `scope_id` table under exactly the `equals` or `equalsOrUnset`
+ *          policy `Blueprint.rowLevelSecurity` writes (core payments' shape) passes strict mode and is probed by
+ *          `scope_id`; a looser `... or true` variant and a second permissive policy are rejected. The compiled
+ *          migrations' declarations (`migrationsDirectory`): a `t.platformTable` table passes and is refused once it
+ *          holds a scope id or the owner column; a `t.reviewedPolicy` table passes with its named policies, and is
+ *          refused without forced row-level security or a named policy, and when also declared a platform table.
+ * Boundary: test only; integration tier (Docker through `usePostgres`). Every test drops the tables it adds. The
+ *           declarations are compiled marker lines written to a temporary directory, as gen's migration files hold them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0182 (integration tier); ADR 0239 (decision 1); ADR 0347
  *                     (decision 5).
  */
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "@stackra/testing";
 
+import { Migration } from "#core/bases/migration.base";
+import { compileMigration } from "#core/functions/compile-migration.function";
+import type { Blueprint } from "#core/types/blueprint.type";
+import type { SchemaBuilder } from "#core/types/schema-builder.type";
 import { assertRowSecurity } from "#testing/functions/assert-row-security.function";
 import { usePostgres } from "#testing/use-postgres";
 
@@ -87,6 +101,36 @@ async function withTables(
   }
 }
 
+/** The SQL of a `scope_id` table as `Blueprint.rowLevelSecurity` writes it with `match`: core payments' shape. */
+function scopedTable(table: string, match: "equals" | "equalsOrUnset"): readonly string[] {
+  class ScopedMigration extends Migration {
+    up(schema: SchemaBuilder): void {
+      schema.create(table, (t: Blueprint) => {
+        t.hasPublicId("lim");
+        const scope = t.string("scope_id", 63).comment("The tenant that owns the row.");
+        if (match === "equals") scope.notNull();
+        else scope.nullable();
+        t.rowLevelSecurity("scope_id", { setting: "app.owner_id", match });
+      });
+    }
+  }
+  return compileMigration(ScopedMigration, { schema: "notes" }).steps.flatMap((step) => step.sql);
+}
+
+/** Runs `check` with a migrations directory holding `sql` as one compiled file, then removes it. */
+async function withMigrations(
+  sql: string,
+  check: (migrationsDirectory: string) => Promise<void>,
+): Promise<void> {
+  const directory = mkdtempSync(join(tmpdir(), "stackra-declarations-"));
+  writeFileSync(join(directory, "0001_notes_0001_declare.up.sql"), sql);
+  try {
+    await check(directory);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
 describe("assertRowSecurity", () => {
   it("passes an owned table, seeding a row of each owner itself", async () => {
     await expect(assertRowSecurity(postgres.database, OPTIONS)).resolves.toEqual([]);
@@ -108,7 +152,7 @@ describe("assertRowSecurity", () => {
           /^notes\.oddities has no owner_id column and is not a platform table \(unclassified\)/,
         ),
         expect.stringMatching(
-          /^notes\.scoped has no owner_id column and is not a platform table \(a scope_id table whose policy reads app\.owner_id\)/,
+          /^notes\.scoped has no owner_id column and is not a platform table \(a scope_id table whose policy reads app\.owner_id; its pol_scoped_scope_id is not exactly the generated equals or equalsOrUnset policy, so it is not group \(b\)\)/,
         ),
         expect.stringMatching(
           /^notes\.tags has no owner_id column and is not a platform table \(a system table with no row-level security, awaiting its ADR decision\)/,
@@ -217,6 +261,134 @@ describe("assertRowSecurity", () => {
         );
       },
     );
+  });
+
+  it("accepts a scope_id table under exactly the generated equality, and probes it by scope_id", async () => {
+    await withTables(
+      ["limits", "strict_limits"],
+      [...scopedTable("limits", "equalsOrUnset"), ...scopedTable("strict_limits", "equals")],
+      async () => {
+        await expect(
+          assertRowSecurity(postgres.database, { ...OPTIONS, strict: true }),
+        ).resolves.toEqual([]);
+      },
+    );
+  });
+
+  it("rejects a looser scope_id policy and a second permissive policy beside the exact one", async () => {
+    await withTables(
+      ["loose_limits"],
+      [
+        'create table "notes"."loose_limits" ("id" varchar(33) primary key, "scope_id" varchar(63))',
+        'alter table "notes"."loose_limits" enable row level security',
+        'alter table "notes"."loose_limits" force row level security',
+        `create policy "pol_loose_limits_scope_id" on "notes"."loose_limits" using ("scope_id" is not distinct from nullif(current_setting('app.owner_id', true), '')::varchar(63) or true) with check ("scope_id" is not distinct from nullif(current_setting('app.owner_id', true), '')::varchar(63) or true)`,
+      ],
+      async () => {
+        await expect(
+          assertRowSecurity(postgres.database, { ...OPTIONS, strict: true }),
+        ).rejects.toThrow(
+          /notes\.loose_limits has no owner_id column and is not a platform table \(a scope_id table whose policy reads app\.owner_id; its pol_loose_limits_scope_id is not exactly the generated/,
+        );
+      },
+    );
+    await withTables(
+      ["wide_limits"],
+      [
+        ...scopedTable("wide_limits", "equalsOrUnset"),
+        `create policy "pol_wide_limits_id" on "notes"."wide_limits" for select using (true)`,
+      ],
+      async () => {
+        await expect(
+          assertRowSecurity(postgres.database, { ...OPTIONS, strict: true }),
+        ).rejects.toThrow(/notes\.wide_limits: pol_wide_limits_id is a second permissive policy/);
+      },
+    );
+  });
+
+  it("reads t.platformTable from the compiled migrations, and refuses it on a table with a scope id", async () => {
+    const declare = "-- stackra:platform-table notes.cursors one row per consumer class;\n";
+    await withTables(
+      ["cursors"],
+      ['create table "notes"."cursors" ("consumer" varchar(255) primary key)'],
+      async () => {
+        await withMigrations(declare, async (migrationsDirectory) => {
+          await expect(
+            assertRowSecurity(postgres.database, { ...OPTIONS, strict: true, migrationsDirectory }),
+          ).resolves.toEqual([]);
+        });
+      },
+    );
+    await withTables(
+      ["cursors"],
+      ['create table "notes"."cursors" ("consumer" varchar(255) primary key, "scope_id" text)'],
+      async () => {
+        await withMigrations(declare, async (migrationsDirectory) => {
+          await expect(
+            assertRowSecurity(postgres.database, { ...OPTIONS, migrationsDirectory }),
+          ).rejects.toThrow(
+            /notes\.cursors is declared a platform table \(t\.platformTable\) but holds scope_id/,
+          );
+        });
+      },
+    );
+    await withTables(["cursors"], [...ownedTable("cursors"), ownerPolicy("cursors")], async () => {
+      await withMigrations(declare, async (migrationsDirectory) => {
+        await expect(
+          assertRowSecurity(postgres.database, { ...OPTIONS, migrationsDirectory }),
+        ).rejects.toThrow(/notes\.cursors is listed as a platform table but holds owner_id/);
+      });
+    });
+  });
+
+  it("holds a t.reviewedPolicy table to forced row-level security and its named policies", async () => {
+    const routes = [
+      'create table "notes"."routes" ("id" varchar(33) primary key, "scope_id" varchar(63) not null)',
+      'alter table "notes"."routes" enable row level security',
+      `create policy "pol_routes_read" on "notes"."routes" for select using (current_setting('notes.route_read', true) = 'on')`,
+    ];
+    const review =
+      "-- stackra:reviewed-policy notes.routes pol_routes_read a pre-tenant route read;\n";
+    await withTables(
+      ["routes"],
+      [...routes, 'alter table "notes"."routes" force row level security'],
+      async () => {
+        await withMigrations(review, async (migrationsDirectory) => {
+          await expect(
+            assertRowSecurity(postgres.database, { ...OPTIONS, strict: true, migrationsDirectory }),
+          ).resolves.toEqual([]);
+        });
+        await withMigrations(
+          "-- stackra:reviewed-policy notes.routes pol_routes_read,pol_routes_write a pre-tenant route;\n",
+          async (migrationsDirectory) => {
+            await expect(
+              assertRowSecurity(postgres.database, { ...OPTIONS, migrationsDirectory }),
+            ).rejects.toThrow(
+              /notes\.routes: t\.reviewedPolicy names pol_routes_write, which the table does not have/,
+            );
+          },
+        );
+        await withMigrations(
+          `${review}-- stackra:platform-table notes.routes no tenant data;\n`,
+          async (migrationsDirectory) => {
+            await expect(
+              assertRowSecurity(postgres.database, { ...OPTIONS, migrationsDirectory }),
+            ).rejects.toThrow(
+              /notes\.routes is declared both a platform table and a reviewed policy/,
+            );
+          },
+        );
+      },
+    );
+    await withTables(["routes"], routes, async () => {
+      await withMigrations(review, async (migrationsDirectory) => {
+        await expect(
+          assertRowSecurity(postgres.database, { ...OPTIONS, migrationsDirectory }),
+        ).rejects.toThrow(
+          /notes\.routes is a reviewed policy table but does not force row-level security/,
+        );
+      });
+    });
   });
 
   it("reports a role that bypasses row-level security", async () => {

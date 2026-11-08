@@ -506,6 +506,7 @@
       "table": "workflow.service_ack_sets",
       "publicId": "wfk",
       "traits": ["HasPublicId", "Timestamps", "Versioned"],
+      "global": true,
       "entity": {
         "module": "workflow",
         "fields": [

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `RowSecurityOptions`, what `assertRowSecurity` checks: the owner column whose tables must be under
  *          row-level security, the setting its policy reads, the role the service connects as, the two owner
- *          values the probe reads and writes as, the tables that hold no owner column by design, and strict mode.
+ *          values the probe reads and writes as, the tables that hold no owner column by design, the compiled
+ *          migrations whose declarations the audit reads, and strict mode.
  * Boundary: a type only. The values are the caller's: `@stackra/tenancy/testing` passes its own column and setting.
  * Runtime: node
  * Governing contract: ADR 0239 (decision 1: row-level security); ADR 0231 (policy name `pol_<table>_<column>`); ADR 0347
@@ -28,6 +29,12 @@ export interface RowSecurityOptions {
    * reason; added to `PLATFORM_TABLES`. Every other table without the column is a gap.
    */
   readonly platform?: ReadonlyMap<string, string>;
+
+  /**
+   * The compiled migrations (`.stackra/migrations`) whose `t.platformTable` and `t.reviewedPolicy` declarations the
+   * audit reads: a declared platform table joins `platform`, and a reviewed table is held to its named policies.
+   */
+  readonly migrationsDirectory?: string;
 
   /**
    * Whether an unlisted table without the owner column is a gap rather than a warning; default

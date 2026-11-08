@@ -38,6 +38,7 @@ import { AddCommand } from "#node/commands/add.command";
 import { AgentsCheckCommand } from "#node/commands/agents-check.command";
 import { AgentsSyncCommand } from "#node/commands/agents-sync.command";
 import { AnyRatchetCommand } from "#node/commands/any-ratchet.command";
+import { RowSecurityDeclarationsCommand } from "#node/commands/row-security-declarations.command";
 import { AppNativeDepsCommand } from "#node/commands/app-native-deps.command";
 import { ArchitectureMapCommand } from "#node/commands/architecture-map.command";
 import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
@@ -137,6 +138,7 @@ export const COMMANDS: CliCommands = [
   AppNativeDepsCommand,
   DuplicateExportsCommand,
   AnyRatchetCommand,
+  RowSecurityDeclarationsCommand,
   DuplicationCommand,
   SkillLicencesCommand,
 ];

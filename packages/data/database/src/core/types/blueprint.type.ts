@@ -205,4 +205,24 @@ export interface Blueprint {
     column: string,
     options: RowLevelSecurityOptions & { readonly table?: string },
   ) => void;
+
+  /**
+   * Declares this table a platform table: no row of it can ever be tied to a tenant, so it holds no owner column and
+   * no policy (ADR 0239 amendment, group (c)): `t.platformTable("one row per consumer class; a global log position")`.
+   * The reason is required, one line, and the compiled migration carries it as
+   * `-- stackra:platform-table <schema>.<table> <reason>`, which `assertRowSecurity` and gen's isolation test read.
+   * Compiling refuses a blueprint that also writes a scope id, an isolation scope id, a column filled from a setting
+   * or a policy; the audit refuses the table once it holds the owner column or a scope id. `stackra
+   * row-security-declarations` lists every declaration for review.
+   */
+  platformTable: (reason: string) => void;
+
+  /**
+   * Declares this table's row security reviewed by hand: its policies, named in `policies`, have a shape the audit
+   * does not derive (a pre-tenant route read through a setting), so the audit does not hold them to the one
+   * permissive owner policy and does not run its owner probe. It still requires row-level security enabled and
+   * forced and every named policy present, so it is never a blanket skip. The reason is required and one line; the
+   * compiled migration carries `-- stackra:reviewed-policy <schema>.<table> <policy>[,<policy>] <reason>`.
+   */
+  reviewedPolicy: (reason: string, policies: readonly string[]) => void;
 }
