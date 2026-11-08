@@ -14,7 +14,11 @@
  *          refuses first while a row has no tenant (`schema.refuseNulls`). `{ contract: true, nullable: true }` is the
  *          platform form's contract step (ADR 0239 amendment, gap C): the column stays nullable, a NULL row is the
  *          platform's, which every tenant reads and only a platform session writes (@stackra/database's `platform`
- *          match, with its restrictive `pol_<table>_tenant_id_write_update` and `_write_delete`).
+ *          match, with its restrictive `pol_<table>_tenant_id_write_update` and `_write_delete`). A new contract step
+ *          passes `{ contract: true, safeNotNull: true }`: NOT NULL through ADR 0159's validated check (`ADD CONSTRAINT
+ *          ... NOT VALID`, then a later step that validates it, sets NOT NULL without a scan and drops the check), so no
+ *          exclusive lock is held while the table is scanned. The released contract steps keep the plain SET NOT NULL,
+ *          whose checksum must not change; it carries a reviewed squawk ignore after `schema.refuseNulls`.
  * Boundary: a `Macro` (ADR 0159 as amended by ADR 0305), installed by name as `t.belongsToTenant`. It states the
  *           column's nullability and comment itself, so the bare call compiles. Equality only, no tree logic (ADR
  *           0239): an organisation reads its children through read models. A blueprint takes one policy, so the table
@@ -50,9 +54,10 @@ export class BelongsToTenantMacro extends Macro {
    *
    * @param t - the blueprint of the tenant-owned table being created.
    * @param options - `nullable: true` for a table whose NULL rows are the platform's (`BelongsToTenantOrPlatform`);
-   *                  `expand: true` for the column alone on an existing table; `contract: true` for its contract step.
+   *                  `expand: true` for the column alone on an existing table; `contract: true` for its contract step;
+   *                  `safeNotNull: true` with `contract` for NOT NULL through a validated check (new contract steps).
    * @returns the tenant column; none for the contract step, which changes the existing one.
-   * @throws TypeError for `contract` with `expand`.
+   * @throws TypeError for `contract` with `expand`, or `safeNotNull` without the non-nullable contract step.
    */
   apply(
     t: Blueprint,
@@ -60,8 +65,13 @@ export class BelongsToTenantMacro extends Macro {
       readonly nullable?: boolean;
       readonly expand?: boolean;
       readonly contract?: boolean;
+      readonly safeNotNull?: boolean;
     } = {},
   ): ColumnGroup {
+    if (options.safeNotNull === true && (options.contract !== true || options.nullable === true))
+      throw new TypeError(
+        "t.belongsToTenant({ safeNotNull: true }) is the contract step's NOT NULL: pass contract: true, without nullable",
+      );
     if (options.contract === true) {
       if (options.expand === true)
         throw new TypeError("t.belongsToTenant({ contract: true }) does not take expand");
@@ -69,7 +79,7 @@ export class BelongsToTenantMacro extends Macro {
       if (options.nullable === true)
         t.rowLevelSecurity("tenant_id", { setting: TENANT_ID_SETTING, match: "platform" });
       else {
-        t.change("tenant_id").notNull();
+        t.change("tenant_id").notNull({ safe: options.safeNotNull === true });
         t.rowLevelSecurity("tenant_id", { setting: TENANT_ID_SETTING, match: "equals" });
       }
       return t.group();

@@ -73,6 +73,11 @@ type WithMacros = Blueprint & {
 
 const macros = [BelongsToWorkspaceMacro, DataClassificationMacro];
 
+/** The reviewed squawk ignore above a SET NOT NULL a whole-table pre-flight vouched for (STA-2612). */
+const REFUSED_NOT_NULL =
+  "-- lint: contract step after the expand phase; the pre-flight above refused any NULL, the table is pre-production, and the step runs once (ADR 0239).\n" +
+  "-- squawk-ignore adding-not-nullable-field\n";
+
 class CreateOrdersMigration extends Migration {
   up(schema: SchemaBuilder): void {
     schema.create("orders", (blueprint: Blueprint) => {
@@ -1040,7 +1045,7 @@ describe(compileMigration, () => {
 
     it("sets NOT NULL, swaps the scope-path policy for the equality and makes the scope path restrictive", () => {
       expect(step?.sql.slice(1)).toEqual([
-        'alter table "documents"."documents" alter column "owner_id" set not null',
+        `${REFUSED_NOT_NULL}alter table "documents"."documents" alter column "owner_id" set not null`,
         'drop policy "pol_documents_scope_path" on "documents"."documents"',
         'alter table "documents"."documents" enable row level security',
         'alter table "documents"."documents" force row level security',
@@ -1056,6 +1061,59 @@ describe(compileMigration, () => {
         `create policy "pol_documents_scope_path" on "documents"."documents" using (${paths}) with check (${paths})`,
         'alter table "documents"."documents" alter column "owner_id" drop not null',
       ]);
+    });
+
+    it("writes the squawk ignore only above a SET NOT NULL that a whole-table pre-flight above vouched for", () => {
+      class UnvouchedMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("documents", (t: Blueprint) => t.change("owner_id").notNull());
+          schema.refuseNulls("owner_id", ["documents", "folders"], "Backfill first.");
+          schema.refuseNulls("parent_id", ["folders"], "Backfill first.", { where: "true" });
+          schema.table("folders", (t: Blueprint) => {
+            t.change("owner_id").notNull();
+            t.change("parent_id").notNull();
+            t.change("title").notNull();
+          });
+        }
+      }
+      const sql = compileMigration(UnvouchedMigration, { schema: "documents" }).steps[0]?.sql;
+      expect(sql?.filter((statement) => statement.includes("set not null"))).toEqual([
+        'alter table "documents"."documents" alter column "owner_id" set not null',
+        `${REFUSED_NOT_NULL}alter table "documents"."folders" alter column "owner_id" set not null`,
+        'alter table "documents"."folders" alter column "parent_id" set not null',
+        'alter table "documents"."folders" alter column "title" set not null',
+      ]);
+    });
+
+    it("sets a safe NOT NULL through a NOT VALID check, validated in a later step (ADR 0159)", () => {
+      class SafeContractMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["documents"], "Backfill first.");
+          schema.table("documents", (t: Blueprint) => t.change("owner_id").notNull({ safe: true }));
+        }
+      }
+      const table = '"documents"."documents"';
+      const check = '"ck_documents_owner_id_not_null"';
+      const [first, later, ...rest] = compileMigration(SafeContractMigration, {
+        schema: "documents",
+      }).steps;
+      expect(rest).toEqual([]);
+      expect(first?.sql.slice(1)).toEqual([
+        `alter table ${table} add constraint ${check} check ("owner_id" is not null) not valid`,
+      ]);
+      expect(first?.inverse).toEqual([`alter table ${table} drop constraint if exists ${check}`]);
+      expect(later).toEqual({
+        sql: [
+          `alter table ${table} validate constraint ${check}`,
+          `alter table ${table} alter column "owner_id" set not null`,
+          `alter table ${table} drop constraint ${check}`,
+        ],
+        transactional: true,
+        inverse: [
+          `alter table ${table} alter column "owner_id" drop not null`,
+          `alter table ${table} add constraint ${check} check ("owner_id" is not null) not valid`,
+        ],
+      });
     });
 
     it("drops a renamed table's policy by the name it was created under", () => {
