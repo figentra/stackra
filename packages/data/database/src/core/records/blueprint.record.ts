@@ -834,7 +834,7 @@ export class BlueprintRecord {
         throw new TypeError(
           `${this.table}.${change.name} is added by this blueprint, so it is defined, not changed`,
         );
-      statements.push(...change.statements(qualified));
+      statements.push(...change.statements(this.table, qualified));
     }
     const online: CompiledStep[] = [];
     const onlineIndex = (index: TableIndexRecord) =>
@@ -882,6 +882,8 @@ export class BlueprintRecord {
     for (const column of this.columns)
       for (const validate of column.validateSql(this.table, qualified))
         online.push({ sql: [validate], transactional: true, inverse: [] });
+    // A safe notNull() validates its NOT VALID check in a later step, then sets NOT NULL without a scan (ADR 0159).
+    for (const change of this.changes) online.push(...change.laterSteps(this.table, qualified));
     statements.push(...this.rowSecuritySql(qualified));
     statements.push(...this.appendOnlySql(qualified));
     return { statements, online };

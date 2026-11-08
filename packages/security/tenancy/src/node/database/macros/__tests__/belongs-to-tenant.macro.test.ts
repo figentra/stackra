@@ -141,6 +141,51 @@ describe(BelongsToTenantMacro, () => {
     ]);
   });
 
+  it("writes the safe contract form: NOT NULL through a NOT VALID check, validated in a later step", () => {
+    class SafeContractTicketsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("tickets", (t: Blueprint) => {
+          t.belongsToTenant({ contract: true, safeNotNull: true });
+        });
+      }
+    }
+    const steps = compileMigration(SafeContractTicketsMigration, {
+      schema: "support",
+      macros: [BelongsToTenantMacro],
+    }).steps;
+    const table = '"support"."tickets"';
+    const check = '"ck_tickets_tenant_id_not_null"';
+    expect(steps.map((step) => step.sql)).toEqual([
+      [
+        `alter table ${table} add constraint ${check} check ("tenant_id" is not null) not valid`,
+        `alter table ${table} enable row level security`,
+        `alter table ${table} force row level security`,
+        `create policy "pol_tickets_tenant_id" on ${table} using ("tenant_id" = nullif(current_setting('app.tenant_id', true), '')::varchar(33)) with check ("tenant_id" = nullif(current_setting('app.tenant_id', true), '')::varchar(33))`,
+      ],
+      [
+        `alter table ${table} validate constraint ${check}`,
+        `alter table ${table} alter column "tenant_id" set not null`,
+        `alter table ${table} drop constraint ${check}`,
+      ],
+    ]);
+    expect(steps.map((step) => step.transactional)).toEqual([true, true]);
+  });
+
+  it.each([
+    [{ safeNotNull: true }],
+    [{ safeNotNull: true, expand: true }],
+    [{ safeNotNull: true, contract: true, nullable: true }],
+  ])("refuses safeNotNull outside the non-nullable contract step: %o", (options) => {
+    class BadMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("tickets", (t: Blueprint) => t.belongsToTenant(options));
+      }
+    }
+    expect(() =>
+      compileMigration(BadMigration, { schema: "support", macros: [BelongsToTenantMacro] }),
+    ).toThrow(/safeNotNull/);
+  });
+
   it("writes the platform form's contract: the column stays nullable, under the platform match", () => {
     class ContractNoticesMigration extends Migration {
       up(schema: SchemaBuilder): void {

@@ -3,7 +3,8 @@
  * Purpose: `SchemaRecord`, the runtime side of `SchemaBuilder`: records a migration's operations in order and compiles
  *          them to steps, one transactional step first and then each online statement as its own step, each with
  *          its derived inverse. A `systemFunction` compiles to its marker line, the system-access role, the function
- *          and the grants that hand it to the role.
+ *          and the grants that hand it to the role. A `SET NOT NULL` whose column a whole-table `refuseNulls` above
+ *          checked carries a reviewed squawk ignore and its reason; lint lines leave the checksum as it was.
  * Boundary: internal. Raw statements keep the inverse the migration stated; a `CONCURRENTLY` statement becomes its
  *           own non-transactional step. Extensions are the ADR 0160 list and PostGIS (ADR 0314) only; an ICU
  *           collation is created in the module's schema. A raw `CREATE SEQUENCE` is refused: a document number is a
@@ -62,6 +63,14 @@ const BODY_QUOTE = "$stackra$";
 
 /** A statement that cannot run inside a transaction. */
 const CONCURRENTLY = /\bconcurrently\b/i;
+
+/**
+ * The reason and the squawk ignore written above a `SET NOT NULL` whose column a `refuseNulls` earlier in the migration
+ * checked on that whole table. Lint lines never change a checksum: the runner hashes a file without them (STA-2612).
+ */
+const REFUSED_NOT_NULL_SQUAWK_IGNORE =
+  "-- lint: contract step after the expand phase; the pre-flight above refused any NULL, the table is pre-production, and the step runs once (ADR 0239).\n" +
+  "-- squawk-ignore adding-not-nullable-field\n";
 
 /** A Postgres sequence, which a rolled-back transaction burns a value of. */
 const CREATE_SEQUENCE = /\bcreate\s+(?:(?:temp|temporary|unlogged)\s+)?sequence\b/i;
@@ -284,6 +293,8 @@ export class SchemaRecord implements SchemaBuilder {
   compile(schema: string, createsSchema: boolean): readonly CompiledStep[] {
     const transactional: CompiledStatement[] = [];
     const online: CompiledStep[] = [];
+    // The SET NOT NULL statements a whole-table `refuseNulls` above already vouched for.
+    const refused = new Set<string>();
     if (createsSchema)
       transactional.push({
         sql: `create schema if not exists ${quoteIdentifier(schema)}`,
@@ -308,6 +319,12 @@ export class SchemaRecord implements SchemaBuilder {
       }
       if ("remedy" in operation) {
         transactional.push({ sql: refuseNullsSql(schema, operation), inverse: [] });
+        // A `where` refuses only some rows, so only a whole-table refusal vouches for a later SET NOT NULL.
+        if (operation.where === undefined)
+          for (const table of operation.tables)
+            refused.add(
+              `alter table ${quoteIdentifier(schema)}.${quoteIdentifier(table)} alter column ${quoteIdentifier(operation.column)} set not null`,
+            );
         continue;
       }
       if ("systemFunction" in operation) {
@@ -316,7 +333,13 @@ export class SchemaRecord implements SchemaBuilder {
       }
       if ("blueprint" in operation) {
         const compiled = operation.blueprint.compile(schema);
-        transactional.push(...compiled.statements);
+        transactional.push(
+          ...compiled.statements.map((statement) =>
+            refused.has(statement.sql)
+              ? { ...statement, sql: REFUSED_NOT_NULL_SQUAWK_IGNORE + statement.sql }
+              : statement,
+          ),
+        );
         online.push(...compiled.online);
         continue;
       }
