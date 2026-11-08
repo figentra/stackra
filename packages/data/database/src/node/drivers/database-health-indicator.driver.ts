@@ -4,7 +4,8 @@
  *          bounded by `DatabaseConfig.health.timeout`; a probe that fails or runs past it is `down`, or `degraded` when
  *          `health.critical` is off, so `/readyz` fails a deploy whose the database does not answer. With
  *          `health.rowSecurity` it also reads the connected role, and is `down` (whatever `critical` says) when that
- *          role can bypass row-level security, so `FORCE ROW LEVEL SECURITY` holds for the runtime (tenancy gap J).
+ *          role can bypass row-level security, own a table with it, act as the system-access role or create roles or
+ *          databases: the checks of the runtime role in RUNWAY's runtime-role design (tenancy gap J).
  * Boundary: `Driver(HealthIndicator)`, so `/readyz` finds it among the bound `HealthIndicator`s. It probes through
  *           the `Database` port only; the query reads no table. A failure reports the error's name, never its message, and never throws.
  * Runtime: node
@@ -16,15 +17,20 @@ import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import type { HealthReport } from "@stackra/contracts";
 
 import type { DatabaseConfig } from "#config/database.config";
+import { SYSTEM_ACCESS_ROLE } from "#core/constants/system-access-role.constant";
 import type { Database } from "#core/ports/database.port";
 
 /**
- * Whether the connected role can bypass row-level security: it is, or may become (`pg_has_role` MEMBER), a superuser
- * or a BYPASSRLS role, or it may become the owner of a table with row security, which can turn FORCE off.
+ * What the connected role could do around row-level security (the runtime role of ADR 0239 gap J, which holds none of
+ * it): be, or become (`pg_has_role` MEMBER), a superuser or a BYPASSRLS role; become the owner of a table with row
+ * security, which can turn FORCE off; become `SYSTEM_ACCESS_ROLE`, which reads tenant rows before a tenant is known; or
+ * create roles or databases.
  */
 const ROLE_PROBE = `select
   exists (select 1 from pg_roles r where (r.rolsuper or r.rolbypassrls) and pg_has_role(current_user, r.oid, 'MEMBER')) as "bypass",
-  (select count(*)::int from pg_class c where c.relrowsecurity and pg_has_role(current_user, c.relowner, 'MEMBER')) as "owned"`;
+  (select count(*)::int from pg_class c where c.relrowsecurity and pg_has_role(current_user, c.relowner, 'MEMBER')) as "owned",
+  exists (select 1 from pg_roles r where r.rolname = '${SYSTEM_ACCESS_ROLE}' and pg_has_role(current_user, r.oid, 'MEMBER')) as "system",
+  (select r.rolcreaterole or r.rolcreatedb from pg_roles r where r.rolname = current_user) as "creates"`;
 
 /** Whether the database answers a cheap probe in time. */
 export class DatabaseHealthIndicatorDriver extends Driver(HealthIndicator) {
@@ -62,6 +68,8 @@ export class DatabaseHealthIndicatorDriver extends Driver(HealthIndicator) {
         const [role] = (await Promise.race([this.database.em().execute(ROLE_PROBE), late])) as {
           bypass: boolean;
           owned: number;
+          system: boolean;
+          creates: boolean;
         }[];
         const gap =
           role === undefined
@@ -70,7 +78,11 @@ export class DatabaseHealthIndicatorDriver extends Driver(HealthIndicator) {
               ? "its role can bypass row-level security (a superuser or BYPASSRLS)"
               : role.owned > 0
                 ? `its role owns ${role.owned} tables with row-level security`
-                : undefined;
+                : role.system
+                  ? `its role may act as ${SYSTEM_ACCESS_ROLE}`
+                  : role.creates
+                    ? "its role can create roles or databases"
+                    : undefined;
         if (gap !== undefined)
           return { status: HealthStatus.Down, detail: `the database is open: ${gap}` };
       }

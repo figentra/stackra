@@ -21,6 +21,17 @@ import { DatabaseHealthIndicatorDriver } from "#node/drivers/database-health-ind
 /** Every call the fake `Database` received, with all its arguments. */
 const calls: unknown[][] = [];
 
+/** What the role probe answers. */
+interface Role {
+  readonly bypass: boolean;
+  readonly owned: number;
+  readonly system: boolean;
+  readonly creates: boolean;
+}
+
+/** A runtime role with none of the rights the probe looks for. */
+const SAFE: Role = { bypass: false, owned: 0, system: false, creates: false };
+
 /**
  * An indicator over a fake whose probe resolves, rejects with `error`, or never settles (`"hang"`); the role probe
  * answers `role` (no row when it is undefined).
@@ -28,7 +39,7 @@ const calls: unknown[][] = [];
 function indicator(
   outcome: "answer" | Error | "hang",
   health: Partial<DatabaseConfig["health"]> = {},
-  role: { bypass: boolean; owned: number } | undefined = { bypass: false, owned: 0 },
+  role: Role | undefined = SAFE,
 ): DatabaseHealthIndicatorDriver {
   const probe = (...args: unknown[]): Promise<unknown> => {
     calls.push(args);
@@ -99,7 +110,7 @@ describe("DatabaseHealthIndicatorDriver", () => {
     const report = await indicator(
       "answer",
       { rowSecurity: true, critical: false },
-      { bypass: true, owned: 0 },
+      { ...SAFE, bypass: true },
     ).check();
     expect(report).toEqual({
       status: "down",
@@ -109,14 +120,31 @@ describe("DatabaseHealthIndicatorDriver", () => {
   });
 
   it("is down when the role owns tables with row-level security", async () => {
-    const report = await indicator(
-      "answer",
-      { rowSecurity: true },
-      { bypass: false, owned: 3 },
-    ).check();
+    const report = await indicator("answer", { rowSecurity: true }, { ...SAFE, owned: 3 }).check();
     expect(report).toEqual({
       status: "down",
       detail: "the database is open: its role owns 3 tables with row-level security",
+    });
+  });
+
+  it("is down when the role may act as the system-access role, or create roles or databases", async () => {
+    const system = await indicator(
+      "answer",
+      { rowSecurity: true },
+      { ...SAFE, system: true },
+    ).check();
+    expect(system).toEqual({
+      status: "down",
+      detail: "the database is open: its role may act as stackra_system_access",
+    });
+    const creates = await indicator(
+      "answer",
+      { rowSecurity: true },
+      { ...SAFE, creates: true },
+    ).check();
+    expect(creates).toEqual({
+      status: "down",
+      detail: "the database is open: its role can create roles or databases",
     });
   });
 
