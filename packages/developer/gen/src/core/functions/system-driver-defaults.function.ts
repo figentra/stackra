@@ -76,7 +76,7 @@ const SYSTEM_PORTS: readonly SystemPort[] = [
   {
     package: "@stackra/app",
     port: { name: "JsonWebKeys", from: "@stackra/app/contracts" },
-    config: { name: "BearerConfig", from: "@stackra/app" },
+    config: { name: "BearerConfig", from: "@stackra/app/server" },
     server: "oidc",
   },
 ];

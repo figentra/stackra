@@ -88,6 +88,7 @@ import { modelEntityFacts } from "#core/functions/model-entity-facts.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
 import { roleKey } from "#core/functions/role-key.function";
+import { exportingSpecifier } from "#core/functions/exporting-specifier.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
@@ -900,8 +901,14 @@ export function buildManifest(ir: MemberIR): {
     }
   >();
   const published = ir.layout === "package";
+  // why: a package may export a class from another entry than its folder's (`@stackra/app`'s configs from `./server`)
+  const exportedFrom = (name: string, specifier: string): string =>
+    exportingSpecifier(ir.package, ir.files, name, specifier);
   const publicToken = (dep: TokenRef): Entry => ({
-    class: { name: dep.class.name, from: publicSpecifier(ir.package, dep.class.from) },
+    class: {
+      name: dep.class.name,
+      from: exportedFrom(dep.class.name, publicSpecifier(ir.package, dep.class.from)),
+    },
     ...(dep.named !== undefined ? { named: dep.named } : {}),
     ...(dep.of !== undefined
       ? { of: { name: dep.of.name, from: publicSpecifier(ir.package, dep.of.from) } }
@@ -938,7 +945,7 @@ export function buildManifest(ir: MemberIR): {
         ...entry.classes,
         [name]: {
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
         },
       };
@@ -951,7 +958,7 @@ export function buildManifest(ir: MemberIR): {
         .filter((candidate) => candidate.kind === "service" && candidate.abstract !== true)
         .map((declared) => ({
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
         }))
     : [];
@@ -968,7 +975,7 @@ export function buildManifest(ir: MemberIR): {
           if (published)
             entry.config = {
               class: declared.name,
-              from: packageSpecifier(ir.package, declared.file),
+              from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
             };
         }
     }
@@ -1149,7 +1156,7 @@ export function buildManifest(ir: MemberIR): {
         .map((declared) => ({
           key: configKeyOf(declared.name, ir.member),
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
         }))
     : [];
 
