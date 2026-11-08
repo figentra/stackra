@@ -23,6 +23,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
+import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
@@ -594,6 +595,67 @@ describe("emitWiring", () => {
     expect(content).toMatch(/import \{[^}]*\bLockingConfig\b[^}]*\} from "@stackra\/locking";/);
     expect(content).not.toContain("MemoryUnreachedDriver");
     expect(content).not.toContain('"locking.LockDriver": ');
+  });
+
+  it("lists no browser, React Native or Electron driver in a service, nor a port that has only those", () => {
+    const identity: MemberIR["dependencies"][number] = {
+      package: "@stackra/identity",
+      manifest: {
+        member: "identity",
+        package: "@stackra/identity",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "SessionStore",
+            key: "identity.SessionStore",
+            candidates: ["memory", "pkce"],
+            classes: {
+              memory: { class: "MemorySessionStoreDriver", from: "@stackra/identity" },
+              pkce: {
+                class: "PkceSessionStoreDriver",
+                from: "@stackra/identity",
+                deps: [{ class: { name: "SignInBrowser", from: "@stackra/identity/contracts" } }],
+              },
+            },
+          },
+          {
+            port: "SignInBrowser",
+            key: "identity.SignInBrowser",
+            candidates: ["electron", "expo"],
+            classes: {
+              electron: { class: "ElectronSignInBrowserDriver", from: "@stackra/identity/desktop" },
+              expo: { class: "ExpoSignInBrowserDriver", from: "@stackra/identity/native" },
+            },
+          },
+        ],
+      },
+    };
+    const sessions: DeclaredClass = {
+      name: "SignOutService",
+      kind: "service",
+      module: "billing",
+      file: "src/modules/billing/services/sign-out.service.ts",
+      importPath: "#modules/billing/services/sign-out.service",
+      options: {},
+      deps: [{ class: { name: "SessionStore", from: "@stackra/identity/contracts" } }],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    };
+    const content = emitWiring({
+      ...BILLING_IR,
+      classes: [...BILLING_IR.classes, sessions],
+      dependencies: [...BILLING_IR.dependencies, identity],
+    });
+    expect(content).toContain('      key: "identity.SessionStore",');
+    expect(content).toContain(
+      '        "memory": () => import("@stackra/identity").then((m) => m.MemorySessionStoreDriver),',
+    );
+    expect(content).not.toContain('key: "identity.SignInBrowser"');
+    expect(content).not.toContain("ExpoSignInBrowserDriver");
+    expect(content).not.toContain("ElectronSignInBrowserDriver");
   });
 
   it("lists a package candidate without the tokens of a library the member does not declare", () => {
