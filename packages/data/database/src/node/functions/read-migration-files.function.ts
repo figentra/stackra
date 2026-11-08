@@ -48,6 +48,7 @@ export function readMigrationFiles(directory: string): readonly MigrationFile[] 
         sql,
         // lint comments (a squawk ignore and its reason) never change what runs, so a frozen file keeps its checksum
         checksum: createHash("sha256").update(sql.replaceAll(LINT_LINE, "")).digest("hex"),
+        legacyChecksum: createHash("sha256").update(sql).digest("hex"),
         inverse: existsSync(down) ? readFileSync(down, "utf8") : undefined,
       };
     })

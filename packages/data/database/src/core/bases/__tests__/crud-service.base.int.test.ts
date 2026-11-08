@@ -72,8 +72,9 @@ describe("CrudService.lock on Postgres", () => {
         first.next += 1;
         const second = await counters.lock({ id: ID });
         second.next += 1;
-        heldElsewhere = await other
-          .em()
+        // the raw connection, not `em()`: an em would join the running transaction through the shared context
+        heldElsewhere = await other.orm.em
+          .getConnection()
           .execute("select id from docs.counters where id = ? for update nowait", [ID])
           .then(
             () => undefined,

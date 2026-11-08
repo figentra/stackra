@@ -74,6 +74,9 @@ describe("readMigrationFiles", () => {
       }),
     );
     expect(linted?.checksum).toBe(plain?.checksum);
+    // the whole-file digest stays available for rows recorded before lint lines were left out
+    expect(linted?.legacyChecksum).not.toBe(linted?.checksum);
+    expect(plain?.legacyChecksum).toBe(plain?.checksum);
     const [changed] = readMigrationFiles(
       makeFolder({ "0001_a.up.sql": `-- a note\n${statement};\n` }),
     );
