@@ -268,7 +268,7 @@ describe("PolicyDecisionPointService", () => {
 
     it("allows a service call for a user only when the service and the user both hold the grant", async () => {
       const forCustomer: Actor = { ...relay, onBehalfOf: customer };
-      const grantTo = (...principals: string[]) =>
+      const grantTo = (...principals: PublicId[]) =>
         pdpOver({
           grants: principals.map((principal) => ({ principal, role: "settler", scope: ACME })),
           roles: { settler: ["orders.order.cancel"] },
