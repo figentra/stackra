@@ -11,7 +11,8 @@
  *          does not show such as A's own id with the root's path, and an agent or a service of A in those scopes, and a
  *          service of B calling for a user of A, a branch user (directly, or through a service or an agent of A) of B's
  *          branch, and a user whose scope the tree does not show (`tenant_scope_mismatch`; a branch user of A lists
- *          A's rows, directly or through a service or an agent of A; a service calling for a user of A lists A's rows; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
+ *          A's rows, directly or through a service or an agent of A, and parks an approval-gated action with its
+ *          binding inserted as A under the binding table's forced policy; a service calling for a user of A lists A's rows; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
  *          root and sees no tenant row), a job whose scope the tree does not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
  *          runs), and a pushed scope that is not a `ScopeRef` (`scope_not_platform_written`). A last test states why the
  *          driver reads the tree from the path's root: the branch's own scope session cannot see its tenant.
@@ -28,7 +29,18 @@
  */
 import { Action, ActionPipeline, Query } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
-import { AccessControl, CallIsolation, UnitOfWork } from "@stackra/actions/contracts";
+import {
+  AccessControl,
+  ApprovalBindingStore,
+  ApprovalGate,
+  CallIsolation,
+  UnitOfWork,
+} from "@stackra/actions/contracts";
+import type {
+  ApprovalBinding,
+  ApprovalDraft,
+  ApprovalRequirement,
+} from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
 import { ActorKind, Clock, Realm } from "@stackra/contracts";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
@@ -51,7 +63,9 @@ import { beforeAll, describe, expect, it } from "@stackra/testing";
 import { TenantScopeMismatchError } from "#core/errors/tenant-scope-mismatch.error";
 import { TenantScopeUnresolvedError } from "#core/errors/tenant-scope-unresolved.error";
 import { BelongsToTenantMacro } from "#node/database/macros/belongs-to-tenant.macro";
+import { CreateApprovalBindingsMigration } from "#node/database/migrations/0001-create-approval-bindings.migration";
 import { CallIsolationDriver } from "#node/drivers/call-isolation.driver";
+import { PostgresApprovalBindingStoreDriver } from "#node/drivers/postgres-approval-binding-store.driver";
 import { TenantIsolationService } from "#node/services/tenant-isolation.service";
 import { tenantActor } from "#testing/functions/tenant-actor.function";
 
@@ -89,6 +103,11 @@ const postgres = usePostgres({
       macros: [BelongsToTenantMacro],
     }),
     compileMigration(CreateScopeNodesMigration, { schema: "scope", createsSchema: true }),
+    compileMigration(CreateApprovalBindingsMigration, {
+      schema: "tenancy",
+      createsSchema: true,
+      macros: [BelongsToTenantMacro],
+    }),
   ],
 });
 
@@ -201,6 +220,8 @@ beforeAll(async () => {
   );
   await em.execute(`grant usage on schema "scope" to ${ROLE}`);
   await em.execute(`grant select on all tables in schema "scope" to ${ROLE}`);
+  await em.execute(`grant usage on schema "tenancy" to ${ROLE}`);
+  await em.execute(`grant select, insert on all tables in schema "tenancy" to ${ROLE}`);
   // the tree, seeded as the container's superuser (a bootstrap, outside any policy)
   const nodes: readonly [string, string, string, string][] = [
     [ROOT.id, "platform", ROOT.path, "Platform"],
@@ -265,14 +286,15 @@ const isolationOf = () =>
     new SqlScopeTree(),
   );
 
-/** A resolver over the real isolation and unit of work, and the actions. */
-function resolverOf(): Resolver {
+/** A resolver over the real isolation and unit of work, the actions, and `extra`. */
+function resolverOf(extra: readonly (readonly [AnyClass, object])[] = []): Resolver {
   const bound = new Map<AnyClass, object>([
     [AccessControl, new AllowAll()],
     [UnitOfWork, new DatabaseUnitOfWorkDriver()],
     [CallIsolation, isolationOf()],
     [SurveyTicketsAction, new SurveyTicketsAction()],
     [ListTicketsQuery, new ListTicketsQuery()],
+    ...extra,
   ]);
   return {
     has: (type) => bound.has(type),
@@ -553,6 +575,89 @@ describe("a branch user's tenant on Postgres", () => {
       await expect(list(who, SCOPE_A)).rejects.toSatisfy((error: unknown) =>
         isRefusal(error, TenantScopeMismatchError),
       );
+  });
+});
+
+/** Refunds a ticket, always after one approval. */
+class RefundTicketAction extends Action({
+  key: "ticket.refund",
+  actors: [ActorKind.User],
+  approval: true,
+}) {
+  async handle(): Promise<string> {
+    return "refunded";
+  }
+}
+
+/** Asks one approval of every call and keeps what it parks: the approval service is not what these tests prove. */
+class OneApproval extends Driver(ApprovalGate) {
+  readonly parked: ApprovalDraft[] = [];
+
+  async decide(): Promise<ApprovalRequirement> {
+    return { approvals: 1, expiresAfter: "72h" };
+  }
+
+  async park(draft: ApprovalDraft): Promise<void> {
+    this.parked.push(draft);
+  }
+
+  async find(): Promise<undefined> {
+    return undefined;
+  }
+
+  async begin(): Promise<boolean> {
+    return false;
+  }
+
+  async settle(): Promise<boolean> {
+    return false;
+  }
+}
+
+/** The real binding store, each statement as the probe role, so the table's forced tenant policy decides. */
+class ProbedBindings extends PostgresApprovalBindingStoreDriver {
+  override async insert(binding: ApprovalBinding): Promise<void> {
+    await postgres.database.em().execute(`set local role ${ROLE}`);
+    return super.insert(binding);
+  }
+
+  override async find(approvalId: string): Promise<ApprovalBinding | undefined> {
+    await postgres.database.em().execute(`set local role ${ROLE}`);
+    return super.find(approvalId);
+  }
+}
+
+describe("a branch user's approval on Postgres", () => {
+  it("parks a branch user's approval-gated action: its binding is inserted as A under the forced policy", async () => {
+    const ofA = branchUserOf(BRANCH);
+    const gate = new OneApproval();
+    const bindings = new ProbedBindings(postgres.database);
+    const pipeline = new ActionPipeline(
+      resolverOf([
+        [ApprovalGate, gate],
+        [ApprovalBindingStore, bindings],
+        [RefundTicketAction, new RefundTicketAction()],
+      ]),
+    );
+    const refused = await pipeline
+      .execute(RefundTicketAction, {}, { actor: ofA, scope: BRANCH })
+      .catch((error: unknown) => error);
+    // before the tree tenant, the binding named the branch and the policy refused it, so this was the database error
+    expect(refused).toMatchObject({ code: "approval_required" });
+    const { approvalId } = refused as { readonly approvalId: string };
+    expect(gate.parked).toEqual([expect.objectContaining({ approvalId, scopeId: TENANT_A })]);
+    const stored = await isolationOf().run(ofA, BRANCH, () => bindings.find(approvalId), {
+      readOnly: true,
+    });
+    expect(stored).toMatchObject({ approvalId, scopeId: TENANT_A, scope: BRANCH, requester: ofA });
+    // tenant B's session does not see it
+    const fromB = await isolationOf().run(
+      tenantActor(TENANT_B as PublicId<"scp">),
+      SCOPE_B,
+      () => bindings.find(approvalId),
+      { readOnly: true },
+    );
+    expect(fromB).toBeUndefined();
   });
 });
 

@@ -16,7 +16,8 @@
  *           (`tenantOf`): an agent or a service whose tenant differs from that of the user it acts for is refused, one
  *           with none runs in its user's (ADR 0209's amendment of 2026-11-07, condition 3), and a claimed scope the
  *           tree does not show, or one above every tenant, is refused; the isolation then runs as the tenant, never a
- *           branch id. A tree read that fails fails the call. Any other actor keeps its own `scopeId`,
+ *           branch id, and `work` receives that actor, so the action pipeline writes the tenant the isolation set
+           (`CallDescriptor.scopeId`). A tree read that fails fails the call. Any other actor keeps its own `scopeId`,
  *           and when that tenant and the scope's tenant are both known and differ the call is refused
  *           (`TenantScopeMismatchError`), never settled by picking one; a user, an agent or a service with a tenant (an
  *           agent's or a service's own, or else its user's) whose scope the tree shows above every tenant, or does not show at that path, is
@@ -95,11 +96,13 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
   async run<T>(
     actor: Actor,
     scope: ScopeRef | readonly ScopeRef[] | undefined,
-    work: () => Promise<T>,
+    work: (actor?: Actor) => Promise<T>,
     options: { readonly readOnly: boolean },
   ): Promise<T> {
     const isolate = (tenant: Actor) =>
-      this.database.withScope(scope ?? [], () => this.isolation.withTenant(tenant, work));
+      this.database.withScope(scope ?? [], () =>
+        this.isolation.withTenant(tenant, () => work(tenant)),
+      );
     const open = async () => isolate(await this.actorIn(actor, scope));
     if (!this.database.em().isInTransaction()) {
       return options.readOnly ? this.database.transaction(open, { readOnly: true }) : open();
