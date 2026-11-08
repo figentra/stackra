@@ -5,7 +5,8 @@
  *          bearer, or a token in the header and layout the Integration names), adds the declared headers under the
  *          call's own, sends a form body when the call or the Integration asks, reads raw bytes when the call asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
  *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError` without a credential in
- *          either.
+ *          either: a provider code that echoes a connection's or the platform's secret, or the bearer sent, is
+ *          redacted under every key a provider names it, and the client logs nothing.
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
  *           are the memory driver of `@stackra/actions`.
  * Runtime: node (vitest)
@@ -13,12 +14,14 @@
  *                     (`retry.base` was `retry.backoff: "1ms"`; the default 200 ms doubling to 30 s is pinned in the
  *                     contracts `backoffDelay` test).
  */
+import { inspect } from "node:util";
+
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
 import { Secret } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
 import { Clock, Duration } from "@stackra/contracts";
-import { afterEach, describe, expect, it } from "@stackra/testing";
-import { vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { type MockInstance, vi } from "vitest";
 
 import { Connection } from "#core/bases/connection.base";
 import { Integration } from "#core/bases/integration.base";
@@ -428,5 +431,97 @@ describe("managedClient", () => {
       auth: { type: AuthType.None },
     } satisfies IntegrationOptions) {}
     await expect(clientOf(new HooksOnlyIntegration()).get("/x")).rejects.toThrow(/no baseUrl/);
+  });
+});
+
+/** A connection that keeps its key as a `@Secret` field. */
+class SecretMailConnection extends Connection<MailIntegration> {
+  @Secret("MAIL_CONNECTION_API_KEY")
+  apiKey!: string;
+
+  async check(): Promise<ConnectedAccount> {
+    return ConnectedAccount.create({ id: "mail" });
+  }
+}
+
+const ECHOED_KEY = "sk_test_5b8e1f9c";
+
+/** Everything a refusal shows: its printout, its JSON, its envelope and every console line written. */
+function shownOf(refused: unknown, consoleSpies: readonly MockInstance[]): string {
+  return [
+    inspect(refused, { depth: 10, showHidden: true }),
+    JSON.stringify(refused),
+    JSON.stringify((refused as ProviderRefusedError).toEnvelope()),
+    ...consoleSpies.flatMap((spy) => spy.mock.calls.map((args) => inspect(args))),
+  ].join("\n");
+}
+
+describe("managedClient with a provider that echoes a credential", () => {
+  let consoleSpies: MockInstance[] = [];
+
+  beforeEach(() => {
+    consoleSpies = (["log", "info", "warn", "error", "debug"] as const).map((method) =>
+      vi.spyOn(console, method).mockImplementation(() => undefined),
+    );
+  });
+
+  afterEach(() => {
+    for (const spy of consoleSpies) spy.mockRestore();
+  });
+
+  const echoes = [ECHOED_KEY, `bad_key_${ECHOED_KEY}_given`, `The key ${ECHOED_KEY} is not valid`];
+  const cases = ["code", "error", "name", "type", "message"].flatMap((field) =>
+    echoes.flatMap((echo) => [
+      { field, echo, body: { [field]: echo } },
+      { field, echo, body: { error: { [field]: echo } } },
+    ]),
+  );
+
+  it.each(cases)("redacts the key echoed under $field ($echo)", async ({ body }) => {
+    stubFetch(() => json(body, 401));
+    const connection = hydrateConnection(
+      SecretMailConnection,
+      { id: "conn_00000000000000000000000001", fields: {}, secrets: { apiKey: ECHOED_KEY } },
+      (built) => clientOf(new MailIntegration(), { connection: built }),
+    );
+    const refused = await connection.api.get("/domains").catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(refused, { status: 401 })).toBe(true);
+    expect((refused as ProviderRefusedError).providerCode ?? "[redacted]").toBe("[redacted]");
+    const shown = shownOf(refused, consoleSpies);
+    expect(shown).not.toContain(ECHOED_KEY);
+    expect(shown).not.toContain("5b8e1f9c");
+  });
+
+  it("redacts the platform's secret and the OAuth bearer it sent", async () => {
+    stubFetch(() => json({ error: { code: "platform-key" } }, 403));
+    const platform = await clientOf(new MailIntegration())
+      .get("/domains")
+      .catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(platform, { status: 403, code: "[redacted]" })).toBe(true);
+
+    class OAuthIntegration extends Integration({
+      ...BASE,
+      provider: "oauth",
+      auth: {
+        type: AuthType.OAuth2ClientCredentials,
+        tokenUrl: "https://auth.mail.example/token",
+        clientId: "{clientId}",
+        clientSecret: "{clientSecret}",
+      },
+    }) {}
+    stubFetch(() => json({ name: "token_at_7d41e2_expired" }, 401));
+    const bearer = await clientOf(new OAuthIntegration(), { accessToken: async () => "at_7d41e2" })
+      .get("/x")
+      .catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(bearer, { status: 401, code: "[redacted]" })).toBe(true);
+    expect(shownOf(bearer, consoleSpies)).not.toContain("at_7d41e2");
+  });
+
+  it("keeps a code that holds no credential", async () => {
+    stubFetch(() => json({ error: { type: "invalid_request" } }, 400));
+    const refused = await clientOf(new MailIntegration())
+      .get("/domains")
+      .catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(refused, { status: 400, code: "invalid_request" })).toBe(true);
   });
 });
