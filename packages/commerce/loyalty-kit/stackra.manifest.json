@@ -792,6 +792,10 @@
       ]
     },
     {
+      "class": "LoyaltyKitExtensionPoint",
+      "from": "@stackra/loyalty-kit/node"
+    },
+    {
       "class": "AccountService",
       "from": "@stackra/loyalty-kit/node",
       "deps": [

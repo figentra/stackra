@@ -246,6 +246,75 @@ describe("emitWiring", () => {
     expect(content).toMatch(/import \{[^}]*LoyaltyService[^}]*\} from "@acme\/loyalty-kit";/);
   });
 
+  it("binds a package's extension point that its service injects, from the package's manifest", () => {
+    const point = {
+      name: "LoyaltyKitExtensionPoint",
+      kind: "extension_point",
+      module: "loyalty_kit",
+      file: "src/node/extensions/loyalty-kit.extension-point.ts",
+      importPath: "#node/extensions/loyalty-kit.extension-point",
+      options: {},
+      deps: [],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    } as const;
+    const kit = buildManifest({
+      ...LOYALTY_KIT_IR,
+      classes: [
+        ...LOYALTY_KIT_IR.classes.map((declared) =>
+          declared.name === "LoyaltyService"
+            ? {
+                ...declared,
+                deps: [
+                  ...declared.deps,
+                  {
+                    class: {
+                      name: point.name,
+                      from: "#node/extensions/loyalty-kit.extension-point",
+                    },
+                  },
+                ],
+              }
+            : declared,
+        ),
+        point,
+      ],
+    }).manifest;
+    const services = kit["services"] as readonly { class: string; deps?: unknown[] }[];
+    expect(services.find((entry) => entry.class === point.name)).toEqual({
+      class: point.name,
+      from: expect.stringMatching(/^@acme\/loyalty-kit/) as unknown,
+    });
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
+      classes: [
+        ...COMMERCE_IR.classes,
+        {
+          name: "RewardsService",
+          kind: "service",
+          module: "orders",
+          file: "src/modules/orders/services/rewards.service.ts",
+          importPath: "#modules/orders/services/rewards.service",
+          options: {},
+          deps: [{ class: { name: "LoyaltyService", from: "@acme/loyalty-kit" } }],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+      dependencies: [{ package: "@acme/loyalty-kit", manifest: kit }],
+    });
+    expect(content).toMatch(
+      /\{ module: "orders", kind: "service", provide: LoyaltyKitExtensionPoint, deps: \[\] \},/,
+    );
+  });
+
   it("adds the bindings no class declares", () => {
     const billing = emitWiring(BILLING_IR);
     for (const line of [
