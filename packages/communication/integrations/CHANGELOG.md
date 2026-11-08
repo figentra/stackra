@@ -1,5 +1,37 @@
 # @stackra/integrations
 
+## 0.23.0
+
+### Minor Changes
+
+- d002763: `./testing` adds `liveConnection(ConnectionClass, { integration, fields, secrets })`: a connection whose `api` is the
+  real managed client (the Integration's auth, base URL, headers, retry and rate limits over memory stores and the system
+  clock), so a connector certification suite in a product can run a connector against a provider sandbox without a
+  service or a ConnectionStore.
+
+### Patch Changes
+
+- c0237a4: A provider's error code no longer carries a credential into `ProviderRefusedError`. The managed client and
+  `requestToken` replace a code that equals or contains a value the call sent with `"[redacted]"`. For the managed client
+  that means a connection's or an Integration's `@Secret` value, a placeholder value filled into the auth, the Basic
+  credential, the signed JWT or the OAuth bearer; for `requestToken`, the client secret or a grant's code, verifier, refresh
+  token or assertion. `providerCodeOf` now takes only letters, digits, `_`, `.` and `-`, at most 64 characters.
+- 1d76993: `RegionMapProviderDefaultsDriver` is `internal`: `SpeechService` builds it, so a host's `ProviderDefaults` has one
+  candidate, the market-pack driver. With two and no config to choose, a host that reached the port failed at boot with
+  `UnresolvedPortError` (Commerce channels).
+- Updated dependencies [a42a80c]
+  - @stackra/clients@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/data-transfer@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

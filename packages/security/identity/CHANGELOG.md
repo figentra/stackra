@@ -1,5 +1,80 @@
 # @stackra/identity
 
+## 0.23.0
+
+### Minor Changes
+
+- a42a80c: A service now proves who it is when it calls another service, and who it acts for.
+  
+  - An outgoing service call sends the service's own token (`Authorization: Bearer`). `ServiceTokens` in
+    `@stackra/identity` answers it, with a memory driver for tests; the token is issued for the receiving product's
+    project, set per module in `clients.audiences`.
+  - When the call acts for a user, it also sends that user's own token in `Stackra-On-Behalf-Of`. `serveGuardedCall` in
+    `@stackra/app/server` keeps that token for the one request and empties it when the request ends. It is never put on
+    the actor, the call context, a log, an error or an event.
+  - A user's token travels one hop. A service called for a user forwards it again only into an action that declares
+    `onBehalfOf: { secondHop: true }`; otherwise its own calls carry the service token alone.
+  - `ServiceClientSessionDriver` (`service`) is the `ClientSession` a service binds for its generated clients, and
+    `ClientSession.headers` now receives the call it is about to send.
+  - Generated endpoints name their action to `serveGuardedCall`, which reads its second-hop option. A hand-written
+    controller forwards only a user's own token, never a forwarded one.
+- f790fa1: A service now gets its own token from ZITADEL by itself, and sends it on every call to another service.
+  
+  - `ZitadelServiceTokensDriver` (`zitadel`, in `@stackra/identity/node`) signs in as the service's own ZITADEL
+    service account with the JWT profile. It reads the account's key file from the secret store, signs a short-lived
+    assertion, and asks the issuer for a token for the receiving product's project. Each token is reused until shortly
+    before it expires, and callers asking at the same moment share one request. The key and the tokens are never
+    logged, never put in an error and never put in an event. If the issuer refuses, the error is
+    `ServiceTokenRefusedError`. If it cannot be reached or is failing, the error is `ServiceTokenUnavailableError`.
+  - A service that declares `@stackra/app`, `@stackra/clients` and `@stackra/identity` now uses the `service` client
+    session and the `zitadel` token driver by default, so its generated clients need no extra wiring.
+  - If a call goes to a producer module that has no `clients.audiences` entry, the call fails with an error naming that
+    module, before any token is fetched. A call is never sent without a token.
+  
+  What each deployment must set (the values come from the owner or runway, the names are below):
+  
+  - `identity.service_tokens.issuer`: the ZITADEL issuer URL, the same as the bearer issuer.
+  - The secret `IDENTITY_SERVICE_ACCOUNT_KEY`: the service account's ZITADEL key file (JSON). Set
+    `identity.service_tokens.keySecret` to use another secret name.
+  - `clients.audiences`: for each producer module the service calls, the project id of the product that serves it.
+  - In ZITADEL, the service account's access token type must be JWT, because the receiving service checks the token
+    against the issuer's public keys.
+
+### Patch Changes
+
+- c8998d9: Passkey sign-in (`passkey.challenge`, `passkey.verify`) is `Idempotency.Never`: a challenge is single-use and a
+  verification answers session credentials, so neither is kept by the idempotency store or replayed.
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [12f4836]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/clients@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/scheduler@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/privacy@0.23.0
+  - @stackra/scope@0.23.0
+  - @stackra/query@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/transport@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

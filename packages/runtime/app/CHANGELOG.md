@@ -1,5 +1,66 @@
 # @stackra/app
 
+## 0.23.0
+
+### Minor Changes
+
+- c26fb86: Every generated HTTP adapter is an Encore raw endpoint that runs the request guards (STA-2577, ADR 0237 note of
+  2026-11-08). `@stackra/app/server` adds `serveGuardedCall` and `HttpConfig` (`app.http`, `maxBodyBytes`, 1 MiB by
+  default): the body is read once under the cap (413), every `RequestGuard` runs over the exact bytes (so the edge
+  signature covers the body), `CallAuthenticator` verifies an `Authorization` header (a bad one is refused, never
+  anonymous), then the input is parsed and the action pipeline runs; guard and authentication failures are one generic
+  401 or 403. `@stackra/gen` now writes `api.raw()` endpoints (auth: false to Encore) for actions, queries and
+  controllers through `answerCall` in `http.ts`, binds `app.http` in the wiring, and no longer writes `auth.ts` or the
+  `Gateway`.
+  
+  GET and DELETE query strings are typed by the call's registered input schema (`coerceQueryInput`): finite numbers,
+  `"true"` and `"false"`, and arrays element-wise; enums and strings stay as sent, and a value that does not fit stays a
+  string so validation refuses it. A void output answers 200 `null`.
+  
+  New reachable surface: the typed `api()` skipped every entry whose input or output was not a schema class of the
+  member, so those had no HTTP route. They now get one, behind the same guards, authentication and permission checks:
+  generated search and report queries, replica queries (`ReplicaPage` output) and any other action or query whose
+  schemas come from a package. The gen fixtures show it only for the billing unit fixture (`BILLING_IR`), and no golden
+  gains an endpoint. A hand-written `Controller` is now served too (every method, behind the guards), reachable with no
+  `Authorization` header; a present but invalid or expired one is 401 and never falls back to anonymous.
+- a42a80c: A service now proves who it is when it calls another service, and who it acts for.
+  
+  - An outgoing service call sends the service's own token (`Authorization: Bearer`). `ServiceTokens` in
+    `@stackra/identity` answers it, with a memory driver for tests; the token is issued for the receiving product's
+    project, set per module in `clients.audiences`.
+  - When the call acts for a user, it also sends that user's own token in `Stackra-On-Behalf-Of`. `serveGuardedCall` in
+    `@stackra/app/server` keeps that token for the one request and empties it when the request ends. It is never put on
+    the actor, the call context, a log, an error or an event.
+  - A user's token travels one hop. A service called for a user forwards it again only into an action that declares
+    `onBehalfOf: { secondHop: true }`; otherwise its own calls carry the service token alone.
+  - `ServiceClientSessionDriver` (`service`) is the `ClientSession` a service binds for its generated clients, and
+    `ClientSession.headers` now receives the call it is about to send.
+  - Generated endpoints name their action to `serveGuardedCall`, which reads its second-hop option. A hand-written
+    controller forwards only a user's own token, never a forwarded one.
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- Updated dependencies [c8998d9]
+- Updated dependencies [a42a80c]
+- Updated dependencies [f790fa1]
+  - @stackra/identity@0.23.0
+  - @stackra/clients@0.23.0
+  - @stackra/navigation@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+  - @stackra/csp@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

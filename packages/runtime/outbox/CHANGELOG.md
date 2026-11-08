@@ -1,5 +1,28 @@
 # @stackra/outbox
 
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+  - @stackra/database@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/locking@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/versioning@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

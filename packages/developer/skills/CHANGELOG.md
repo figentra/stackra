@@ -1,5 +1,11 @@
 # @stackra/skills
 
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/contracts@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

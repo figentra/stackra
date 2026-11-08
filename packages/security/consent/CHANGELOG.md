@@ -1,5 +1,24 @@
 # @stackra/consent
 
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [6edeee4]
+- Updated dependencies [a42a80c]
+- Updated dependencies [dee48f0]
+  - @stackra/ui@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

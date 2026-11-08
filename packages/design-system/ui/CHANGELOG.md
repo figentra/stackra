@@ -1,5 +1,28 @@
 # @stackra/ui
 
+## 0.23.0
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- dee48f0: The class-component base `Component<P>` (web and native) declares React's class surface as types only (`state`,
+  `context`, `setState`, `forceUpdate`), so tsc takes a subclass as a JSX element and a `ComponentType` with its props
+  checked. Nothing is emitted: the compiled component is still a function.
+- @stackra/icons@0.23.0
+  - @stackra/tokens@0.23.0
+  - @stackra/shortcuts@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

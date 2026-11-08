@@ -1,5 +1,22 @@
 # @stackra/analytics
 
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [a42a80c]
+  - @stackra/actions@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/privacy@0.23.0
+  - @stackra/consent@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/platform@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

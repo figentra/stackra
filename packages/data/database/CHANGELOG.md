@@ -1,5 +1,63 @@
 # @stackra/database
 
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The contract step of the sequence and projection tables. Migration `database.0007_contract_isolation_scope` makes
+  `isolation_scope_id` NOT NULL on `sequence_counters`, `sequence_blocks`, `sequence_voids` and `projection_rows`, makes
+  `pol_<table>_isolation_scope_id` (equality with `app.tenant_id`) each table's one permissive policy, and keeps the scope
+  path only as a restrictive policy. `scope_id` stays the caller's sub-scope. The migration first counts the rows with no
+  `isolation_scope_id` and refuses before changing anything if there are any, naming each table's count: an environment
+  with such rows from the expand step runs the backfill (RUNWAY 4c) first. After this step a sequence or projection is
+  written only inside a tenant call.
+  
+  New migration API for a contract step: `schema.refuseNulls(column, tables, remedy)` (the pre-flight),
+  `t.dropRowLevelSecurity(column, options)` (drops a policy an earlier migration created, by the name it was created
+  under), `restrictive: true` on `t.rowLevelSecurity` (an `AS RESTRICTIVE` policy that does not narrow a session with the
+  setting unset), and a policy on a column an earlier migration wrote. `assertRowSecurity` audits these four tables by
+  `isolation_scope_id` (group (b), by name), with every check and probe of a tenant table.
+  
+  The platform form of a nullable id column is the `platform` match of `t.rowLevelSecurity`. A tenant reads its own rows
+  and the NULL rows and writes only its own. A session without a tenant reads and writes only the NULL rows. It comes
+  with the restrictive `pol_<table>_<column>_write_update` and `_write_delete`. `exemptNull` lets a column's NULL rows
+  through a restrictive path narrowing when their path is at or above a granted path. `schema.refuseNulls(..., { where })`
+  counts only the rows that also meet `where`. `assertRowSecurity` accepts and requires the two write policies on a
+  platform-form table, does not count its NULL rows against a probe, and checks that a tenant can neither take over nor
+  delete a platform row. It no longer stages a table in the expand step as a warning: every package table now has its
+  contract step, so such a table takes the hard checks.
+- a2c8821: A seeder that injects its repositories or services now runs wherever seeders run. A seeder is not a binding, so the
+  container could not build one with its dependencies: `.seed()` and `stackra db seed` built it with no arguments and its
+  first repository call failed. `seederOf(container, type, deps)` (`@stackra/database/node`) builds a bound seeder from the
+  container, else the class with its constructor tokens resolved in the container. Gen lists those tokens in the seed
+  entry (`SeederEntry.deps`) and registers them in the test setup (`registerSeederDeps`, `@stackra/database/testing`).
+
+### Patch Changes
+
+- 82238da: Under the memory (PGlite) driver, `Database.transaction(work, { requiresNew: true })` inside a running transaction runs
+  as a savepoint instead of waiting forever for a second connection PGlite does not have. It commits with the caller
+  under PGlite, and a failure inside it rolls back only the savepoint; its timeouts still apply. The independent commit
+  is proven only in `.int` tests on Postgres. The Postgres driver's real `REQUIRES_NEW` is unchanged.
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- Updated dependencies [a42a80c]
+  - @stackra/actions@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/testing@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+  - @stackra/cache@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

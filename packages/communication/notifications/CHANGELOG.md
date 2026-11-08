@@ -1,5 +1,42 @@
 # @stackra/notifications
 
+## 0.23.0
+
+### Minor Changes
+
+- e86d519: Messages can carry buttons. `MessageAction` (`label`, `url`, optional `style`) is new; `OutboundChatMessage.actions`
+  lists the buttons under a chat message, and `OutboundPush` gains `category` (the app's action category, Expo
+  `categoryId`) and `actions` (the links behind its buttons). The `device` push driver passes both through: to Expo as
+  `categoryId` with the links in `data.actions`, and in the Web Push payload. Notify uses them for the approvals bot's
+  one-tap Approve and Reject (ADR 0533).
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- Updated dependencies [d002763]
+- Updated dependencies [c0237a4]
+- Updated dependencies [1d76993]
+- Updated dependencies [a42a80c]
+  - @stackra/integrations@0.23.0
+  - @stackra/clients@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/assets@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

@@ -1,5 +1,43 @@
 # @stackra/search
 
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The tenancy contract step of `search.vector_items` and `search.queries`, in the platform form. Migration
+  `search.0009_contract_search_tenancy` keeps `tenant_id` nullable: a NULL row is the platform's (the global corpus).
+  A tenant session reads its own rows and the platform's rows, and writes only its own. It cannot update, delete or take
+  over a platform row. A platform session reads and writes only NULL rows. The scope path still narrows a tenant's rows.
+  A tenant reads the platform rows at the root and at its own product's node, never another product's.
+  
+  The migration first refuses, before changing anything, while a row has no tenant but sits at or below a tenant node
+  (deeper than a product node). Such a row belongs to a tenant and was written in the expand step outside a tenant call.
+  An environment with such rows runs the tenant backfill (RUNWAY 4c) first. A NULL row at the root or at a product node
+  is a platform row and stays.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [fb6e2b3]
+- Updated dependencies [12f4836]
+  - @stackra/database@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/settings@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes
