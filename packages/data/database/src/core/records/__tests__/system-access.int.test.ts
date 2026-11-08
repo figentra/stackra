@@ -123,7 +123,8 @@ function as(
   return database.transaction(async () => {
     const em = database.em();
     await em.execute("select set_config('app.tenant_id', ?, true)", [scopeId]);
-    await em.execute(`set local role ${role}`);
+    // The session user, as a connection's: Postgres checks SET ROLE against it, not against the current role.
+    await em.execute(`set local session authorization ${role}`);
     return (await em.execute(statement, [...params])) as Record<string, unknown>[];
   });
 }

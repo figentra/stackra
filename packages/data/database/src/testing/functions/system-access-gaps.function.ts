@@ -15,7 +15,8 @@
  *          function is owned by it. Last, a session as the service role tries `SET ROLE` to it, which must fail.
  * Boundary: test only; `assertRowSecurity` passes the catalogue's policies and the compiled migrations' declarations,
  *           and creates the service role first. It reads the catalogue as a superuser; the `SET ROLE` probe runs in a
- *           transaction it always rolls back. With no role and no declaration there is nothing to audit.
+ *           transaction it always rolls back, with the service role as its session user (`SET LOCAL SESSION
+ *           AUTHORIZATION`), because Postgres checks `SET ROLE` against the session user, never the current role. With no role and no declaration there is nothing to audit.
  * Runtime: node
  * Governing contract: ADR 0239 (2026-11-07 amendment, gap A); ADR 0347 (decision 5: the catalogue audit).
  */
@@ -185,8 +186,8 @@ export async function systemAccessGaps(
   // The probe: a session as the service role cannot become the system-access role.
   try {
     await em.transactional(async (tx) => {
-      // raw-sql: the probe runs as the service role; the name is a quoted identifier
-      await tx.execute(`set local role ${quoteIdentifier(service)}`);
+      // raw-sql: the probe's session user is the service role, since SET ROLE is checked against the session user
+      await tx.execute(`set local session authorization ${quoteIdentifier(service)}`);
       try {
         // raw-sql: a savepoint, so the refused SET ROLE does not abort the probe's transaction
         await tx.execute("savepoint stackra_probe");
