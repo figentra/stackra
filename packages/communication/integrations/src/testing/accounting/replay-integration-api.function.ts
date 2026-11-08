@@ -5,7 +5,8 @@
  * Boundary: no request leaves the process and no secret is read. Each call must be the next recorded one (method, path
  *           and every request part the recording pins); any other call, or a call past the end, rejects with a
  *           `TypeError` that names the call and the differing part, never a body. A recorded refusal rejects with
- *           `ProviderRefusedError`, as the managed client would.
+ *           `ProviderRefusedError`, as the managed client would; `send` answers it as its status and code instead, and an
+ *           answer as a 200 with it as text.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0443 (decision 8); owner D3 2026-10-27 (recorded fixtures,
  *                     certification pending).
@@ -13,7 +14,7 @@
 import { isDeepStrictEqual } from "node:util";
 
 import { ProviderRefusedError } from "#core/index";
-import type { RequestOptions } from "#core/index";
+import type { RawRequest, RawResponse, RequestOptions } from "#core/index";
 import type { RecordedExchange } from "#testing/accounting/recorded-exchange.type";
 import type { ReplayedIntegrationApi } from "#testing/accounting/replayed-integration-api.type";
 
@@ -48,13 +49,13 @@ export function replayIntegrationApi(
 ): ReplayedIntegrationApi {
   let next = 0;
 
-  /** Answers one call from the next recorded exchange. */
-  async function call(
+  /** The next recorded exchange, which must be this call. */
+  function take(
     method: string,
     path: string,
     body: unknown,
-    request: RequestOptions = {},
-  ): Promise<unknown> {
+    request: RequestOptions,
+  ): RecordedExchange {
     const expected = exchanges[next];
     if (expected === undefined)
       throw new TypeError(
@@ -66,6 +67,17 @@ export function replayIntegrationApi(
         `The ${provider} recording expected ${expected.method} ${expected.path} as call ${next + 1}; ${method} ${path} differs in its ${part}`,
       );
     next += 1;
+    return expected;
+  }
+
+  /** Answers one typed call from the next recorded exchange. */
+  async function call(
+    method: string,
+    path: string,
+    body: unknown,
+    request: RequestOptions = {},
+  ): Promise<unknown> {
+    const expected = take(method, path, body, request);
     if (expected.refusal !== undefined)
       throw ProviderRefusedError.create({
         provider,
@@ -96,5 +108,24 @@ export function replayIntegrationApi(
       call("PUT", path, body, request) as Promise<T>,
     patch: <T>(path: string, body?: unknown, request?: RequestOptions) =>
       call("PATCH", path, body, request) as Promise<T>,
+    send: async (raw: RawRequest): Promise<RawResponse> => {
+      const { refusal, answer } = take(
+        raw.method,
+        raw.path,
+        raw.body?.content,
+        raw.idempotencyKey === undefined ? {} : { idempotencyKey: raw.idempotencyKey },
+      );
+      if (refusal !== undefined)
+        return {
+          status: refusal.status,
+          headers: {},
+          body: refusal.code === undefined ? "" : JSON.stringify({ code: refusal.code }),
+        };
+      return {
+        status: 200,
+        headers: {},
+        body: typeof answer === "string" ? answer : (JSON.stringify(answer) ?? ""),
+      };
+    },
   };
 }
