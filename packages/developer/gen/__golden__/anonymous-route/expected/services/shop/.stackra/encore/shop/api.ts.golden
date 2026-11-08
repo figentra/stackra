@@ -8,6 +8,7 @@
  */
 import "./database";
 import { CancelOrderAction } from "#node/actions/cancel-order.action";
+import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";
 import { ActionPipeline } from "@stackra/actions";
 import { api } from "encore.dev/api";
 
@@ -21,6 +22,7 @@ export const shopOrderCancelV1 = api.raw(
     answerCall(req, resp, {
       path: "/orders/:orderId/cancel",
       anonymous: true,
+      input: CancelOrderInput,
       execute: (container, input, actor) =>
         new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor }),
     }),

@@ -7,6 +7,7 @@
  * Runtime: node
  */
 import { PublishChannelsAction } from "#node/actions/publish-channels.action";
+import { PublishChannelsInput } from "#node/schemas/publish-channels-input.schema";
 import { ActionPipeline } from "@stackra/actions";
 import { api } from "encore.dev/api";
 
@@ -20,6 +21,7 @@ export const channelsChannelsPublishV1 = api.raw(
     answerCall(req, resp, {
       path: "/channelses/publish",
       anonymous: false,
+      input: PublishChannelsInput,
       execute: (container, input, actor) =>
         new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor }),
     }),

@@ -83,7 +83,7 @@ describe(coerceQueryInput, () => {
 
 describe("serveGuardedCall query input", () => {
   it("passes a GET's typed query to the call", async () => {
-    const execute = vi.fn(async () => ({}));
+    const execute = vi.fn(async (_input: unknown) => ({}));
     await serveGuardedCall({
       request: new Request("https://api.example.test/orders?limit=20&ids=a&active=true"),
       path: "/orders",

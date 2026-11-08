@@ -18,7 +18,7 @@ import {
   HttpConfig,
   serveGuardedCall,
 } from "@stackra/app/server";
-import type { Container } from "@stackra/container";
+import type { AnyClass, Container } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
 import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";
 
@@ -58,6 +58,7 @@ export function answerHttp(
 interface Call {
   path: string;
   anonymous: boolean;
+  input?: AnyClass;
   raw?: boolean;
   execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;
 }
@@ -81,6 +82,7 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
       request: incoming,
       path: call.path,
       anonymous: call.anonymous,
+      input: call.input,
       raw: call.raw === true,
       maxBodyBytes: container.get(HttpConfig).maxBodyBytes,
       guard: (guarded) => app.handlers.guard(guarded, container),
