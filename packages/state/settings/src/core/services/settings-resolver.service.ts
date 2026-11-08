@@ -37,6 +37,7 @@ import type {
 } from "#contracts/index";
 import type { Settings } from "#core/bases/settings.base";
 import { SETTING_KEY_REGISTRY } from "#core/constants/setting-key-registry.constant";
+import { SettingApproverRoleError } from "#core/errors/setting-approver-role.error";
 import { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
 import { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
 import { crossesFloor } from "#core/functions/crosses-floor.function";
@@ -216,7 +217,20 @@ export class SettingsResolver extends Service {
     refuseBelowFloors(changes, await this.floorSource.floors(page.key, target));
     const now = this.clock.now();
     const effectiveAt = options.effectiveAt ?? now;
-    const status = keys.some((key) => key.approval === true)
+    // A role-gated key names who must approve; one change waits for one role, so two different roles are refused.
+    const roles = [
+      ...new Set(
+        keys.flatMap((key) =>
+          typeof key.approval === "object" && key.approval !== null ? [key.approval.by] : [],
+        ),
+      ),
+    ];
+    if (roles.length > 1)
+      throw new TypeError(
+        `One settings change needs one approving role, and these keys need ${roles.join(" and ")}: write them apart`,
+      );
+    const approvalRole = roles[0];
+    const status = keys.some((key) => key.approval !== undefined && key.approval !== false)
       ? SettingRevisionStatus.Pending
       : effectiveAt > now
         ? SettingRevisionStatus.Scheduled
@@ -237,6 +251,7 @@ export class SettingsResolver extends Service {
       effectiveAt: effectiveAt.toISOString(),
       createdAt: now.toISOString(),
       decidedBy: null,
+      ...(approvalRole === undefined ? {} : { approvalRole }),
       appliedAt: status === SettingRevisionStatus.Applied ? now.toISOString() : null,
     });
   }
@@ -294,18 +309,30 @@ export class SettingsResolver extends Service {
   }
 
   /**
-   * Approves pending revision `id` as `approver`: it applies now, or is scheduled when its time is later.
+   * Approves pending revision `id` as `approver`: it applies now, or is scheduled when its time is later. A revision of a
+   * role-gated key (`approval: { by }`) needs an approver holding that role, from the roles the calling action read
+   * from IAM (`approverRoles`); none passed refuses it. The role is its control, so its holder may approve their own
+   * change; any other revision needs a second person (four-eyes). `decidedBy` records who approved.
    *
    * @throws TypeError when there is no revision `id`.
    * @throws SettingRevisionClosedError when it is not pending.
-   * @throws SettingFourEyesError when `approver` is its author.
+   * @throws SettingApproverRoleError when the revision is role-gated and `approverRoles` lacks its role.
+   * @throws SettingFourEyesError when `approver` is the author of a revision that is not role-gated.
    * @throws SettingBelowFloorError when a floor rose above a value since it was made.
    */
-  async approve(id: string, approver: string): Promise<SettingRevision> {
+  async approve(
+    id: string,
+    approver: string,
+    approverRoles: readonly string[] = [],
+  ): Promise<SettingRevision> {
     const revision = await this.revisionOf(id);
     if (revision.status !== SettingRevisionStatus.Pending)
       throw SettingRevisionClosedError.create({ revision: id, status: revision.status });
-    if (revision.author === approver) throw SettingFourEyesError.create({ revision: id });
+    const role = revision.approvalRole ?? undefined;
+    if (role !== undefined) {
+      if (!approverRoles.includes(role))
+        throw SettingApproverRoleError.create({ revision: id, role });
+    } else if (revision.author === approver) throw SettingFourEyesError.create({ revision: id });
     if (Date.parse(revision.effectiveAt) > this.clock.now().getTime())
       return this.revisions.update(id, {
         status: SettingRevisionStatus.Scheduled,
