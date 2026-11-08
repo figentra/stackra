@@ -138,6 +138,7 @@ describe(emitEncoreApi, () => {
         "    answerCall(req, resp, {",
         `      path: "${path}",`,
         "      anonymous: false,",
+        "      action: CancelOrderAction,",
         "      input: CancelOrderInput,",
         "      execute: (container, input, actor) =>",
         "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor }),",
@@ -192,6 +193,15 @@ describe(emitEncoreApi, () => {
       "      execute: (container, _input, _actor, request) => container.get(AuthCallbackController).handle(request),",
     ])
       expect(text).toContain(line);
+    // A controller names no action, so serveGuardedCall never lets a forwarded token through it (ADR 0209).
+    const controller = text.slice(text.indexOf("export const authCallbackController"));
+    expect(controller).not.toContain("action:");
+  });
+
+  it("names each action's class to the helper, so a second hop is read from it", () => {
+    expect(content.match(/^ {6}action: \w+,$/gm)).toHaveLength(
+      content.match(/new ActionPipeline\(/g)?.length ?? -1,
+    );
   });
 
   it("writes none for a package, an app or a service with no endpoint", () => {

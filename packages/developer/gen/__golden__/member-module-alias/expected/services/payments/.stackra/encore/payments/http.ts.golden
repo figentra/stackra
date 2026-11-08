@@ -54,10 +54,11 @@ export function answerHttp(
   });
 }
 
-/** What an endpoint states: its route, whether anonymous callers may reach it, and the call it runs. */
+/** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */
 interface Call {
   path: string;
   anonymous: boolean;
+  action?: AnyClass;
   input?: AnyClass;
   raw?: boolean;
   execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;
@@ -82,6 +83,7 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
       request: incoming,
       path: call.path,
       anonymous: call.anonymous,
+      action: call.action,
       input: call.input,
       raw: call.raw === true,
       maxBodyBytes: container.get(HttpConfig).maxBodyBytes,

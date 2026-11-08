@@ -5,6 +5,7 @@
  *          guard with its memory drivers and refusal, the origin and CSRF guards with their configuration and
  *          refusals, the JWKS bearer-token guard with its configuration, key drivers, refusal and the request's
  *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check) with its call types,
+ *          `ServiceClientSessionDriver` (a service call's own token and the user's token it forwards),
  *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
@@ -22,6 +23,7 @@ export { MemoryEdgeNonceStoreDriver } from "#server/drivers/memory-edge-nonce-st
 export { MemoryEdgeSigningKeysDriver } from "#server/drivers/memory-edge-signing-keys.driver";
 export { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.driver";
 export { OidcJsonWebKeysDriver } from "#server/drivers/oidc-json-web-keys.driver";
+export { ServiceClientSessionDriver } from "#server/drivers/service-client-session.driver";
 export { AppDrainingError } from "#server/errors/app-draining.error";
 export { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 export { CsrfTokenInvalidError } from "#server/errors/csrf-token-invalid.error";

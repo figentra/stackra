@@ -9,7 +9,9 @@
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
  *           nothing about which check failed; it never logs or echoes the body, the signature or the credential. A
  *           `RateLimitedError`, any non-refusal error and an authenticator outage propagate, for `answerHttp` (429) and
- *           Encore (500). A refusal of the call is mapped by `Enum.meta(ErrorKind, kind).httpStatus`.
+ *           Encore (500). A refusal of the call is mapped by `Enum.meta(ErrorKind, kind).httpStatus`. The call runs
+ *           inside `holdCallerToken`, so its service-to-service calls forward the user's token only as ADR 0209's
+ *           amendment allows (a first hop, or a second into an action that declares it), never past the call.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order and the
  *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
@@ -19,6 +21,7 @@ import type { Actor } from "@stackra/contracts";
 import { ErrorKind, isRefusal, RateLimitedError } from "@stackra/errors";
 
 import { coerceQueryInput } from "#server/functions/coerce-query-input.function";
+import { holdCallerToken } from "#server/functions/hold-caller-token.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
 import { readCappedBody } from "#server/functions/read-capped-body.function";
 import type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
@@ -127,7 +130,10 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
 
   let output: unknown;
   try {
-    output = await options.execute(input, actor, guarded);
+    // The one place a call's forwardable user token is held: for this call only, emptied when it ends (ADR 0209).
+    output = await holdCallerToken(guarded.headers, actor, options.action, () =>
+      options.execute(input, actor, guarded),
+    );
   } catch (error) {
     if (!isRefusal(error) || isRefusal(error, RateLimitedError)) throw error;
     return Response.json(error.toEnvelope(), {

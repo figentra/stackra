@@ -786,6 +786,17 @@
       }
     },
     {
+      "port": "ServiceTokens",
+      "key": "identity.ServiceTokens",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryServiceTokensDriver",
+          "from": "@stackra/identity"
+        }
+      }
+    },
+    {
       "port": "StaffPinStore",
       "key": "identity.StaffPinStore",
       "candidates": ["memory", "storage"],

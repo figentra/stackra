@@ -46,6 +46,8 @@ describe(emitEncoreHttp, () => {
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
+      "  action?: AnyClass;",
+      "      action: call.action,",
       "  resp.end(Buffer.from(await response.arrayBuffer()));",
     ])
       expect(content).toContain(line);

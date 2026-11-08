@@ -21,6 +21,7 @@ export const channelsChannelsPublishV1 = api.raw(
     answerCall(req, resp, {
       path: "/channelses/publish",
       anonymous: false,
+      action: PublishChannelsAction,
       input: PublishChannelsInput,
       execute: (container, input, actor) =>
         new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor }),

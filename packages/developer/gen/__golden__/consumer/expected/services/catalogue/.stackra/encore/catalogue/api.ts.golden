@@ -21,6 +21,7 @@ export const catalogueCataloguePublishV1 = api.raw(
     answerCall(req, resp, {
       path: "/catalogues/publish",
       anonymous: false,
+      action: PublishCatalogueAction,
       input: PublishCatalogueInput,
       execute: (container, input, actor) =>
         new ActionPipeline(container).execute(PublishCatalogueAction, input as never, { actor }),

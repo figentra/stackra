@@ -7451,6 +7451,9 @@ importers:
 
   packages/runtime/app:
     dependencies:
+      '@stackra/clients':
+        specifier: workspace:*
+        version: link:../../application/clients
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
@@ -7482,6 +7485,21 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
+      '@stackra/scope':
+        specifier: workspace:*
+        version: link:../../security/scope
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing

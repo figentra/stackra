@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `AccountDeletions`, `AccountSecurity` (the
  *          SecurityPage's client port), `SessionStore`, `SignInBrowser`,
  *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals`,
- *          `ServicePrincipals` and
+ *          `ServicePrincipals`, `ServiceTokens` and
  *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `AppleSignIn` port with
  *          `AppleSignInRefusal`, the `LoginDirectoryStore` port
  *          with `loginDirectoryPrefix` (the login directory's key format, shared with the edge Worker), and the types
@@ -40,6 +40,7 @@ export { LoginDirectoryStore } from "#contracts/ports/login-directory-store.port
 export { Passkeys } from "#contracts/ports/passkeys.port";
 export { SessionStore } from "#contracts/ports/session-store.port";
 export { ServicePrincipals } from "#contracts/ports/service-principals.port";
+export { ServiceTokens } from "#contracts/ports/service-tokens.port";
 export { SignInBrowser } from "#contracts/ports/sign-in-browser.port";
 export { StaffPinStore } from "#contracts/ports/staff-pin-store.port";
 export { Verification } from "#contracts/ports/verification.port";

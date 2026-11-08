@@ -7,7 +7,9 @@
  *          cap, runs the request guards over its exact bytes, authenticates, then runs the call as `new
  *          ActionPipeline(container).execute(<class>, input, { actor })` (an action or query) or `container.get(<class>)
  *          .handle(request)` (a controller). The endpoint is named by the camel-cased key and its version (`shop.order
- *          .cancel@1` is `shopOrderCancelV1`), a controller by its class name.
+ *          .cancel@1` is `shopOrderCancelV1`), a controller by its class name. An action or query endpoint names its
+ *          class to the helper as `action`, so `serveGuardedCall` knows whether a forwarded user token may travel a
+ *          second hop through it (ADR 0209, amendment of 2026-11-07).
  * Boundary: pure; reads the manifest's actions and the member's classes. The actor comes only from the verified
  *           `Authorization` header (`CallAuthenticator`, inside the helper), never from the body, a path parameter or
  *           another header. An entry may run without one only when its actors list `ActorKind.Anonymous`
@@ -98,6 +100,7 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       "    answerCall(req, resp, {",
       `      path: ${JSON.stringify(path)},`,
       `      anonymous: ${entry["anonymous"] === true},`,
+      `      action: ${type},`,
       ...input,
       "      execute: (container, input, actor) =>",
       `        new ActionPipeline(container).execute(${type}, input as never, { actor }),`,

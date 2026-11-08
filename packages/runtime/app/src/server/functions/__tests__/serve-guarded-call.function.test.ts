@@ -6,23 +6,34 @@
  *          GET with no body works; a request that fails a guard never reaches the authenticator; a bad `Authorization`
  *          header on an anonymous-allowing call is refused, not downgraded; a call with no header is anonymous only
  *          where it lists the anonymous actor; a refusal of the call is its kind's status; the refusal bodies do not
- *          say which check failed.
- * Boundary: test only; real Web Crypto signing with `signEdgeRequest` against real `Date.now()`.
+ *          say which check failed. Through the adapter, a call forwards a user's token only as ADR 0209's amendment
+ *          allows: a user's bearer on a first hop, a service's forwarded token only into an action that declares
+ *          `onBehalfOf: { secondHop: true }`, never through a controller, and the holder is empty once the call
+ *          returned or threw.
+ * Boundary: test only; real Web Crypto signing with `signEdgeRequest` against real `Date.now()`; the forwarding cases
+ *           stub the authenticator and `fetch` and use throwaway token strings.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0237 (STA-2577 note); ADR 0437 (decision 4); ADR 0140.
  */
 import { createHash } from "node:crypto";
 
-import { ActorKind } from "@stackra/contracts";
+import { Action } from "@stackra/actions";
+import { ClientsConfig, HttpClientTransportDriver } from "@stackra/clients";
+import { buildConfig } from "@stackra/config";
+import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { describe, expect, it } from "@stackra/testing";
+import { MemoryServiceTokensDriver } from "@stackra/identity";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
+import { z } from "zod";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { signEdgeRequest } from "#core/functions/sign-edge-request.function";
+import { ON_BEHALF_OF_TOKEN } from "#server/constants/on-behalf-of-token.constant";
 import { MemoryEdgeNonceStoreDriver } from "#server/drivers/memory-edge-nonce-store.driver";
 import { MemoryEdgeSigningKeysDriver } from "#server/drivers/memory-edge-signing-keys.driver";
+import { ServiceClientSessionDriver } from "#server/drivers/service-client-session.driver";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 import { serveGuardedCall } from "#server/functions/serve-guarded-call.function";
 import { EdgeHeaderGuard } from "#server/services/edge-header.guard";
@@ -242,5 +253,150 @@ describe(serveGuardedCall, () => {
     const [first, second] = [await unsigned.text(), await swapped.text()];
     expect(first).toBe(second);
     expect(first).not.toMatch(/signature|edge|body|hash|origin|csrf/i);
+  });
+});
+
+const USER_TOKEN = "throwaway-user-token";
+const FORWARDED_TOKEN = "throwaway-forwarded-token";
+const SERVICE_TOKEN = "throwaway-service-token";
+
+const customer: Actor = {
+  kind: ActorKind.User,
+  id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
+  realm: Realm.Customer,
+};
+const shipping: Actor = { kind: ActorKind.Service, id: "svc_01j9z3k4m5n6p7q8r9s0t1v2w5" };
+
+/** One hop: keeps a forwarded user token to itself. */
+class PostSettlementAction extends Action({
+  key: "cod_settlement.post",
+  actors: [ActorKind.User, ActorKind.Service],
+}) {
+  async handle(): Promise<void> {}
+}
+
+/** Lets a forwarded user token travel once more. */
+class IssueBalanceAction extends Action({
+  key: "balance.issue",
+  actors: [ActorKind.Service],
+  onBehalfOf: { secondHop: true },
+}) {
+  async handle(): Promise<void> {}
+}
+
+/** The generated clients' transport over a service's session, sending to Pay. */
+function payTransport(): HttpClientTransportDriver {
+  const config = buildConfig(ClientsConfig, {
+    values: { baseUrl: "https://pay.internal", audiences: { pay: "pay-project" } },
+  });
+  const tokens = new MemoryServiceTokensDriver().seed({ "pay-project": SERVICE_TOKEN });
+  return new HttpClientTransportDriver(config, new ServiceClientSessionDriver(tokens, config));
+}
+
+/**
+ * Serves one call through the adapter with `headers`: the authenticator answers a user for a bare bearer and the
+ * service acting for that user when a token is forwarded; the call sends one service call to Pay (or throws `fails`).
+ * Answers the outgoing call's headers and the holder's reader as the call saw it.
+ */
+async function forwardingCall(
+  headers: Record<string, string>,
+  options: { action?: object; fails?: Error } = {},
+) {
+  const sent: Request[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((request: Request) => {
+      sent.push(request);
+      return Promise.resolve(Response.json({ posted: true }));
+    }),
+  );
+  let reader: (() => string | undefined) | undefined;
+  const answer = serveGuardedCall({
+    request: new Request("https://api.example.test/settlements", {
+      method: "POST",
+      headers,
+      body: "{}",
+    }),
+    path: "/settlements",
+    maxBodyBytes: 1024,
+    anonymous: false,
+    ...(options.action === undefined ? { raw: true } : { action: options.action as never }),
+    guard: async () => {},
+    authenticate: async (credentials) => ({
+      actor:
+        credentials.onBehalfOf === undefined ? customer : { ...shipping, onBehalfOf: customer },
+    }),
+    execute: async () => {
+      reader = ON_BEHALF_OF_TOKEN.getStore();
+      await payTransport().send({
+        key: "pay.ledger.post@1",
+        kind: "action",
+        endpoint: { method: HttpMethod.Post, path: "/ledger/posts" },
+        input: {},
+        output: z.object({ posted: z.boolean() }),
+      });
+      if (options.fails !== undefined) throw options.fails;
+      return options.action === undefined ? new Response("ok") : { ok: true };
+    },
+  });
+  return { answer, sent, reader: () => reader };
+}
+
+const userCall = { authorization: `Bearer ${USER_TOKEN}` };
+const serviceCall = {
+  authorization: `Bearer ${SERVICE_TOKEN}`,
+  "stackra-on-behalf-of": FORWARDED_TOKEN,
+};
+
+describe("serveGuardedCall forwarding a caller's token (ADR 0209)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("holds a user's bearer on a first hop and sends it on the action's service call", async () => {
+    const { answer, sent } = await forwardingCall(userCall, { action: PostSettlementAction });
+    expect((await answer).status).toBe(200);
+    expect(sent[0]?.headers.get("Authorization")).toBe(`Bearer ${SERVICE_TOKEN}`);
+    expect(sent[0]?.headers.get("Stackra-On-Behalf-Of")).toBe(USER_TOKEN);
+  });
+
+  it("holds a forwarded token only into an action that declares a second hop", async () => {
+    const oneHop = await forwardingCall(serviceCall, { action: PostSettlementAction });
+    expect((await oneHop.answer).status).toBe(200);
+    expect(oneHop.sent[0]?.headers.get("Authorization")).toBe(`Bearer ${SERVICE_TOKEN}`);
+    expect(oneHop.sent[0]?.headers.has("Stackra-On-Behalf-Of")).toBe(false);
+    const secondHop = await forwardingCall(serviceCall, { action: IssueBalanceAction });
+    expect((await secondHop.answer).status).toBe(200);
+    expect(secondHop.sent[0]?.headers.get("Stackra-On-Behalf-Of")).toBe(FORWARDED_TOKEN);
+  });
+
+  it("lets a controller forward a first hop's bearer, never a forwarded token", async () => {
+    const first = await forwardingCall(userCall);
+    expect((await first.answer).status).toBe(200);
+    expect(first.sent[0]?.headers.get("Stackra-On-Behalf-Of")).toBe(USER_TOKEN);
+    const second = await forwardingCall(serviceCall);
+    expect((await second.answer).status).toBe(200);
+    expect(second.sent[0]?.headers.has("Stackra-On-Behalf-Of")).toBe(false);
+  });
+
+  it("empties the holder once the call returned, was refused or threw", async () => {
+    const returned = await forwardingCall(userCall, { action: PostSettlementAction });
+    await returned.answer;
+    const refused = await forwardingCall(userCall, {
+      action: PostSettlementAction,
+      fails: OrderLockedError.create(),
+    });
+    expect((await refused.answer).status).toBe(409);
+    const threw = await forwardingCall(userCall, {
+      action: PostSettlementAction,
+      fails: new Error("boom"),
+    });
+    await expect(threw.answer).rejects.toThrow("boom");
+    for (const { reader, sent } of [returned, refused, threw]) {
+      expect(sent[0]?.headers.get("Stackra-On-Behalf-Of")).toBe(USER_TOKEN);
+      expect(reader()).toBeDefined();
+      expect(reader()?.()).toBeUndefined();
+    }
+    expect(ON_BEHALF_OF_TOKEN.getStore()).toBeUndefined();
   });
 });

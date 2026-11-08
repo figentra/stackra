@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `GuardedCallOptions`, what `serveGuardedCall` needs to answer one inbound HTTP call: the request (body
- *          unread), the body cap, the route template, whether the call lists the anonymous actor, whether it is raw,
+ *          unread), the body cap, the route template, whether the call lists the anonymous actor, the action it runs,
+ *          whether it is raw,
  *          and the three seams the generated adapter fills (`guard`, `authenticate`, `execute`).
  * Boundary: a type only. The seams are functions, so the library depends on neither `@stackra/actions` nor Encore.
  * Runtime: node
@@ -27,6 +28,12 @@ export interface GuardedCallOptions {
 
   /** True when the call lists the anonymous actor: with no `Authorization` header it runs as an anonymous visitor. */
   readonly anonymous: boolean;
+
+  /**
+   * The action or query class the call runs, which `holdCallerToken` reads for `onBehalfOf: { secondHop: true }`.
+   * Absent for a hand-written controller: it may forward a user's own bearer (a first hop), never a forwarded token.
+   */
+  readonly action?: AnyClass | undefined;
 
   /** The call's input schema class: its registered schema types the query string of a GET or DELETE (numbers, booleans, arrays). */
   readonly input?: AnyClass | undefined;
