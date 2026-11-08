@@ -14,6 +14,14 @@
     ".github/workflows/fflow-approve.yml",
     ".github/workflows/fflow-baseline.yml",
     "README.md",
+    // also rendered by `fflow sync` 0.5.0 and digest-locked; AGENTS.md ends with agents-sync's rules block
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".agents/hooks/fflow-guard.mjs",
+    ".opencode/plugins/fflow-guard.mjs",
+    // written by `stackra gen:workspace` from the runways; formatting them by hand makes gen and oxfmt disagree
+    ".vscode/tasks.json",
+    ".claude/launch.json",
     "**/node_modules/**",
     "**/dist/**",
     // Expo: generated native projects and the CLI cache
@@ -49,6 +57,9 @@
     // Figentra Flow output (lock, README) and the constitution agents-sync generates from the docs laws
     ".flow/**",
     ".opencode/commands/**",
+    // @stackra/flow-preset's content, kept byte for byte as moved from figentra/flow (STA-2097), which never
+    // formats it: `fflow sync` renders it and .flow/lock.json pins its digest in every repository
+    "packages/developer/flow-preset/preset/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",
   ],

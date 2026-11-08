@@ -7,8 +7,13 @@
  *          Pushed with `{ scope: A }` or `{ scope: branch }` and no origin, the job sees only tenant A's rows; a job
  *          stamped as the scheduler's system actor in the branch likewise (the actor names the branch id, which is no
  *          tenant); tenant B's scope sees only B's; the pipeline lists only A's rows for a user of A in scope A; and the
- *          negative cases refuse: a user of A in B's scope (`tenant_scope_mismatch`), a job whose scope the tree does
- *          not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
+ *          negative cases refuse: a user of A in B's scope, in the root scope above every tenant, or in a scope the tree
+ *          does not show such as A's own id with the root's path, and an agent or a service of A in those scopes, and a
+ *          service of B calling for a user of A, a branch user (directly, or through a service or an agent of A) of B's
+ *          branch, and a user whose scope the tree does not show (`tenant_scope_mismatch`; a branch user of A lists
+ *          A's rows, directly or through a service or an agent of A, and parks an approval-gated action with its
+ *          binding inserted as A under the binding table's forced policy; a service calling for a user of A lists A's rows; an agent with no tenant of its own lists its owner's A rows, one with none anywhere lists nothing; a platform user lists in the
+ *          root and sees no tenant row), a job whose scope the tree does not show, and a scope whose id is A's but whose path is B's (`tenant_scope_unresolved`, the handler never
  *          runs), and a pushed scope that is not a `ScopeRef` (`scope_not_platform_written`). A last test states why the
  *          driver reads the tree from the path's root: the branch's own scope session cannot see its tenant.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The container's user is a superuser, which row
@@ -24,9 +29,20 @@
  */
 import { Action, ActionPipeline, Query } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
-import { AccessControl, CallIsolation, UnitOfWork } from "@stackra/actions/contracts";
+import {
+  AccessControl,
+  ApprovalBindingStore,
+  ApprovalGate,
+  CallIsolation,
+  UnitOfWork,
+} from "@stackra/actions/contracts";
+import type {
+  ApprovalBinding,
+  ApprovalDraft,
+  ApprovalRequirement,
+} from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
-import { ActorKind, Clock } from "@stackra/contracts";
+import { ActorKind, Clock, Realm } from "@stackra/contracts";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 import { compileMigration, Extension, Migration } from "@stackra/database";
 import type { Blueprint, SchemaBuilder } from "@stackra/database";
@@ -47,7 +63,9 @@ import { beforeAll, describe, expect, it } from "@stackra/testing";
 import { TenantScopeMismatchError } from "#core/errors/tenant-scope-mismatch.error";
 import { TenantScopeUnresolvedError } from "#core/errors/tenant-scope-unresolved.error";
 import { BelongsToTenantMacro } from "#node/database/macros/belongs-to-tenant.macro";
+import { CreateApprovalBindingsMigration } from "#node/database/migrations/0001-create-approval-bindings.migration";
 import { CallIsolationDriver } from "#node/drivers/call-isolation.driver";
+import { PostgresApprovalBindingStoreDriver } from "#node/drivers/postgres-approval-binding-store.driver";
 import { TenantIsolationService } from "#node/services/tenant-isolation.service";
 import { tenantActor } from "#testing/functions/tenant-actor.function";
 
@@ -85,6 +103,11 @@ const postgres = usePostgres({
       macros: [BelongsToTenantMacro],
     }),
     compileMigration(CreateScopeNodesMigration, { schema: "scope", createsSchema: true }),
+    compileMigration(CreateApprovalBindingsMigration, {
+      schema: "tenancy",
+      createsSchema: true,
+      macros: [BelongsToTenantMacro],
+    }),
   ],
 });
 
@@ -97,6 +120,7 @@ const TENANT_B = "scp_01j9z3k4m5n6p7q8r9s0t1v2b1";
 const SCOPE_A: ScopeRef = { id: TENANT_A, path: "platform.acme" };
 const SCOPE_B: ScopeRef = { id: TENANT_B, path: "platform.globex" };
 const BRANCH: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2a2", path: "platform.acme.riyadh" };
+const BRANCH_B: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2b2", path: "platform.globex.jeddah" };
 /** Well shaped, and in no tree. */
 const NOWHERE: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2ff", path: "platform.nowhere" };
 /** A's id with B's path: a reference that names one node and grants another's rows. */
@@ -196,12 +220,15 @@ beforeAll(async () => {
   );
   await em.execute(`grant usage on schema "scope" to ${ROLE}`);
   await em.execute(`grant select on all tables in schema "scope" to ${ROLE}`);
+  await em.execute(`grant usage on schema "tenancy" to ${ROLE}`);
+  await em.execute(`grant select, insert on all tables in schema "tenancy" to ${ROLE}`);
   // the tree, seeded as the container's superuser (a bootstrap, outside any policy)
   const nodes: readonly [string, string, string, string][] = [
     [ROOT.id, "platform", ROOT.path, "Platform"],
     [TENANT_A, "tenant", SCOPE_A.path, "Acme"],
     [TENANT_B, "tenant", SCOPE_B.path, "Globex"],
     [BRANCH.id, "branch", BRANCH.path, "Riyadh"],
+    [BRANCH_B.id, "branch", BRANCH_B.path, "Jeddah"],
   ];
   for (const [id, level, path, name] of nodes)
     await em.execute(
@@ -244,7 +271,7 @@ class SurveyTicketsAction extends Action({
 /** Lists the caller's tickets. */
 class ListTicketsQuery extends Query({
   key: "ticket.list_all",
-  actors: [ActorKind.User],
+  actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
 }) {
   async handle(): Promise<string[]> {
     return visible();
@@ -259,14 +286,15 @@ const isolationOf = () =>
     new SqlScopeTree(),
   );
 
-/** A resolver over the real isolation and unit of work, and the actions. */
-function resolverOf(): Resolver {
+/** A resolver over the real isolation and unit of work, the actions, and `extra`. */
+function resolverOf(extra: readonly (readonly [AnyClass, object])[] = []): Resolver {
   const bound = new Map<AnyClass, object>([
     [AccessControl, new AllowAll()],
     [UnitOfWork, new DatabaseUnitOfWorkDriver()],
     [CallIsolation, isolationOf()],
     [SurveyTicketsAction, new SurveyTicketsAction()],
     [ListTicketsQuery, new ListTicketsQuery()],
+    ...extra,
   ]);
   return {
     has: (type) => bound.has(type),
@@ -382,6 +410,255 @@ describe("a user's tenant on Postgres", () => {
       (error: unknown) => isRefusal(error, TenantScopeMismatchError),
     );
   });
+
+  it("refuses a user of A in a scope the tree does not show, such as A's own id with the root's path", async () => {
+    const user = tenantActor(TENANT_A as PublicId<"scp">);
+    const forged: readonly ScopeRef[] = [
+      { id: TENANT_A, path: ROOT.path },
+      { id: TENANT_A, path: "nowhere" },
+    ];
+    for (const at of forged)
+      await expect(list(user, at)).rejects.toSatisfy((error: unknown) =>
+        isRefusal(error, TenantScopeMismatchError),
+      );
+  });
+
+  it("refuses a user of A in the root scope, above every tenant, and lets a platform user list there", async () => {
+    await expect(list(tenantActor(TENANT_A as PublicId<"scp">), ROOT)).rejects.toSatisfy(
+      (error: unknown) => isRefusal(error, TenantScopeMismatchError),
+    );
+    const staff: Actor = {
+      kind: ActorKind.User,
+      id: "usr_00000000000000000000000000",
+      realm: Realm.Staff,
+    };
+    expect(await list(staff, ROOT)).toEqual([]);
+  });
+});
+
+describe("an agent's tenant on Postgres", () => {
+  const user = tenantActor(TENANT_A as PublicId<"scp">);
+  /** An agent of A acting for its user, and one that carries only that user's tenant. */
+  const agents: readonly Actor[] = [
+    { kind: ActorKind.Agent, id: "agt_1", scopeId: TENANT_A, onBehalfOf: user },
+    { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: user },
+  ];
+
+  it("shows an agent of A in a branch of A only A's rows", async () => {
+    expect(await list(agents[0] as Actor, BRANCH)).toEqual([A1, A2]);
+  });
+
+  it("runs a background agent with no tenant of its own in its owner's: A's rows and none of B's", async () => {
+    const background = agents[1] as Actor;
+    expect(await list(background, SCOPE_A)).toEqual([A1, A2]);
+    expect(await list(background, BRANCH)).toEqual([A1, A2]);
+    expect(await list(background)).toEqual([A1, A2]);
+  });
+
+  it("keeps an agent with no tenant anywhere a platform call, which sees no tenant row", async () => {
+    const staff: Actor = {
+      kind: ActorKind.User,
+      id: "usr_00000000000000000000000000",
+      realm: Realm.Staff,
+    };
+    const platformAgent: Actor = { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: staff };
+    expect(await list(platformAgent)).toEqual([]);
+    expect(await list(platformAgent, ROOT)).toEqual([]);
+  });
+
+  it("refuses an agent of A in a scope the tree does not show or in the root scope above every tenant", async () => {
+    const refused: readonly ScopeRef[] = [
+      { id: TENANT_A, path: ROOT.path },
+      { id: TENANT_A, path: "nowhere" },
+      NOWHERE,
+      ROOT,
+    ];
+    for (const agent of agents)
+      for (const at of refused)
+        await expect(list(agent, at)).rejects.toSatisfy((error: unknown) =>
+          isRefusal(error, TenantScopeMismatchError),
+        );
+  });
+});
+
+describe("a service's tenant on Postgres", () => {
+  const user = tenantActor(TENANT_A as PublicId<"scp">);
+  const id = "svc_01j9z3k4m5n6p7q8r9s0t1v2w5";
+  /** A service of A calling for its user, and one with no tenant of its own calling for that user. */
+  const services: readonly Actor[] = [
+    { kind: ActorKind.Service, id, scopeId: TENANT_A, onBehalfOf: user },
+    { kind: ActorKind.Service, id, onBehalfOf: user },
+  ];
+
+  it("runs a service calling for a user of A in A: A's rows and none of B's", async () => {
+    for (const service of services) {
+      expect(await list(service, SCOPE_A)).toEqual([A1, A2]);
+      expect(await list(service, BRANCH)).toEqual([A1, A2]);
+    }
+    expect(await list(services[1] as Actor)).toEqual([A1, A2]);
+  });
+
+  it("refuses a service of B calling for a user of A, and one calling for A in B's scope", async () => {
+    const mismatched: Actor = { kind: ActorKind.Service, id, scopeId: TENANT_B, onBehalfOf: user };
+    await expect(list(mismatched, SCOPE_A)).rejects.toSatisfy((error: unknown) =>
+      isRefusal(error, TenantScopeMismatchError),
+    );
+    await expect(list(services[1] as Actor, SCOPE_B)).rejects.toSatisfy((error: unknown) =>
+      isRefusal(error, TenantScopeMismatchError),
+    );
+  });
+
+  it("refuses a service of A in a scope the tree does not show or in the root scope above every tenant", async () => {
+    const refused: readonly ScopeRef[] = [
+      { id: TENANT_A, path: ROOT.path },
+      { id: TENANT_A, path: "nowhere" },
+      NOWHERE,
+      ROOT,
+    ];
+    for (const service of services)
+      for (const at of refused)
+        await expect(list(service, at)).rejects.toSatisfy((error: unknown) =>
+          isRefusal(error, TenantScopeMismatchError),
+        );
+  });
+
+  it("keeps a service with no tenant and no user a platform call, which sees no tenant row", async () => {
+    const platform: Actor = { kind: ActorKind.Service, id };
+    expect(await list(platform)).toEqual([]);
+    expect(await list(platform, ROOT)).toEqual([]);
+  });
+});
+
+/** A user of A whose token was issued for `branch`. */
+const branchUserOf = (branch: ScopeRef): Actor => ({
+  ...tenantActor(TENANT_A as PublicId<"scp">),
+  scopeId: branch.id,
+});
+/** A service and an agent of A, each calling for `user`. */
+const delegatesFor = (user: Actor): readonly Actor[] => [
+  {
+    kind: ActorKind.Service,
+    id: "svc_01j9z3k4m5n6p7q8r9s0t1v2w5",
+    scopeId: TENANT_A,
+    onBehalfOf: user,
+  },
+  { kind: ActorKind.Agent, id: "agt_1", scopeId: TENANT_A, onBehalfOf: user },
+];
+
+describe("a branch user's tenant on Postgres", () => {
+  const ofA = branchUserOf(BRANCH);
+  const ofB = branchUserOf(BRANCH_B);
+
+  it("runs a branch user of A in A, read through the tree: A's rows and none of B's", async () => {
+    expect(await list(ofA, BRANCH)).toEqual([A1, A2]);
+    expect(await list(ofA, SCOPE_A)).toEqual([A1, A2]);
+    await expect(list(ofA, SCOPE_B)).rejects.toSatisfy((error: unknown) =>
+      isRefusal(error, TenantScopeMismatchError),
+    );
+  });
+
+  it("runs a service or an agent of A for a branch user of A, and refuses one for a user of B's branch", async () => {
+    for (const delegate of delegatesFor(ofA)) {
+      expect(await list(delegate, BRANCH)).toEqual([A1, A2]);
+      expect(await list(delegate, SCOPE_A)).toEqual([A1, A2]);
+    }
+    for (const delegate of delegatesFor(ofB))
+      for (const at of [SCOPE_A, BRANCH, BRANCH_B])
+        await expect(list(delegate, at)).rejects.toSatisfy((error: unknown) =>
+          isRefusal(error, TenantScopeMismatchError),
+        );
+  });
+
+  it("refuses a user, or a service calling for one, whose scope the tree does not show", async () => {
+    const lost = branchUserOf(NOWHERE);
+    for (const who of [lost, ...delegatesFor(lost)])
+      await expect(list(who, SCOPE_A)).rejects.toSatisfy((error: unknown) =>
+        isRefusal(error, TenantScopeMismatchError),
+      );
+  });
+});
+
+/** Refunds a ticket, always after one approval. */
+class RefundTicketAction extends Action({
+  key: "ticket.refund",
+  actors: [ActorKind.User],
+  approval: true,
+}) {
+  async handle(): Promise<string> {
+    return "refunded";
+  }
+}
+
+/** Asks one approval of every call and keeps what it parks: the approval service is not what these tests prove. */
+class OneApproval extends Driver(ApprovalGate) {
+  readonly parked: ApprovalDraft[] = [];
+
+  async decide(): Promise<ApprovalRequirement> {
+    return { approvals: 1, expiresAfter: "72h" };
+  }
+
+  async park(draft: ApprovalDraft): Promise<void> {
+    this.parked.push(draft);
+  }
+
+  async find(): Promise<undefined> {
+    return undefined;
+  }
+
+  async begin(): Promise<boolean> {
+    return false;
+  }
+
+  async settle(): Promise<boolean> {
+    return false;
+  }
+}
+
+/** The real binding store, each statement as the probe role, so the table's forced tenant policy decides. */
+class ProbedBindings extends PostgresApprovalBindingStoreDriver {
+  override async insert(binding: ApprovalBinding): Promise<void> {
+    await postgres.database.em().execute(`set local role ${ROLE}`);
+    return super.insert(binding);
+  }
+
+  override async find(approvalId: string): Promise<ApprovalBinding | undefined> {
+    await postgres.database.em().execute(`set local role ${ROLE}`);
+    return super.find(approvalId);
+  }
+}
+
+describe("a branch user's approval on Postgres", () => {
+  it("parks a branch user's approval-gated action: its binding is inserted as A under the forced policy", async () => {
+    const ofA = branchUserOf(BRANCH);
+    const gate = new OneApproval();
+    const bindings = new ProbedBindings(postgres.database);
+    const pipeline = new ActionPipeline(
+      resolverOf([
+        [ApprovalGate, gate],
+        [ApprovalBindingStore, bindings],
+        [RefundTicketAction, new RefundTicketAction()],
+      ]),
+    );
+    const refused = await pipeline
+      .execute(RefundTicketAction, {}, { actor: ofA, scope: BRANCH })
+      .catch((error: unknown) => error);
+    // before the tree tenant, the binding named the branch and the policy refused it, so this was the database error
+    expect(refused).toMatchObject({ code: "approval_required" });
+    const { approvalId } = refused as { readonly approvalId: string };
+    expect(gate.parked).toEqual([expect.objectContaining({ approvalId, scopeId: TENANT_A })]);
+    const stored = await isolationOf().run(ofA, BRANCH, () => bindings.find(approvalId), {
+      readOnly: true,
+    });
+    expect(stored).toMatchObject({ approvalId, scopeId: TENANT_A, scope: BRANCH, requester: ofA });
+    // tenant B's session does not see it
+    const fromB = await isolationOf().run(
+      tenantActor(TENANT_B as PublicId<"scp">),
+      SCOPE_B,
+      () => bindings.find(approvalId),
+      { readOnly: true },
+    );
+    expect(fromB).toBeUndefined();
+  });
 });
 
 describe("why the tree is read from the root of the scope's path", () => {
@@ -419,17 +696,18 @@ describe("a refusal inside a held transaction", () => {
       [tenantActor(TENANT_A as PublicId<"scp">), SCOPE_B],
       [tenantActor(TENANT_B as PublicId<"scp">), BRANCH],
     ];
-    await database.transaction(async () => {
-      // the caller's own scope session, which stays set until the outer transaction ends
-      await database.withScope(BRANCH, async () => {});
-      const before = await scopeSettings();
-      expect(before).toEqual([BRANCH.id, BRANCH.path, BRANCH.path]);
-      for (const [who, at] of refusals) {
-        await expect(
-          isolationOf().run(who, at, async () => "ran", { readOnly: false }),
-        ).rejects.toBeDefined();
-        expect(await scopeSettings()).toEqual(before);
-      }
-    });
+    await database.transaction(() =>
+      // the caller's own scope session, inside a held transaction so each refusal runs in a savepoint
+      database.withScope(BRANCH, async () => {
+        const before = await scopeSettings();
+        expect(before).toEqual([BRANCH.id, BRANCH.path, BRANCH.path]);
+        for (const [who, at] of refusals) {
+          await expect(
+            isolationOf().run(who, at, async () => "ran", { readOnly: false }),
+          ).rejects.toBeDefined();
+          expect(await scopeSettings()).toEqual(before);
+        }
+      }),
+    );
   });
 });

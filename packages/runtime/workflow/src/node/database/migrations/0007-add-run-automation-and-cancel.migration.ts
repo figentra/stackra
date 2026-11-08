@@ -23,8 +23,11 @@ export class AddRunAutomationAndCancelMigration extends Migration {
       t.index(["automation_id", "started_at"]).where("automation_id is not null").concurrently();
     });
     // raw-sql: a column's enum check has no blueprint change; the constraint name is migration 0001's
+    // The lint lines (STA-2612) never change the checksum: the runner hashes the SQL without them.
     schema.sql(
-      'alter table "workflow"."runs" drop constraint "ck_runs_status", add constraint "ck_runs_status" check ' +
+      "-- lint: one statement swaps the check for a wider one, so no guarantee is lost and no row can fail the scan.\n" +
+        "-- squawk-ignore ban-drop-constraint, constraint-missing-not-valid\n" +
+        'alter table "workflow"."runs" drop constraint "ck_runs_status", add constraint "ck_runs_status" check ' +
         "(\"status\" in ('running', 'waiting', 'completed', 'compensating', 'compensated', 'failed', 'cancelled'))",
       {
         inverse:

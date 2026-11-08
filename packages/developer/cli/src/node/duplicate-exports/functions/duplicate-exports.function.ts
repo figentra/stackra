@@ -3,8 +3,9 @@
  * Purpose: `duplicateExports(root)`, each exported value or type name (`export function|const|let|var|class|interface|
  *          type|enum|namespace`) declared in the `src/` of more than one workspace package, with one row per package (its
  *          first file). A re-export declares nothing and never counts (moved from `tools/scripts/duplicate-exports.mjs`).
- * Boundary: reads pnpm-workspace.yaml and the `src/` files (`.ts`, `.tsx`, `.mts`; `__tests__/` and `.d.ts` skipped) of
- *           every member under `packages/`; writes nothing.
+ * Boundary: reads pnpm-workspace.yaml and the `src/` files (`.ts`, `.tsx`, `.mts`; `__tests__/`, `.d.ts` and
+ *           `.template.ts` skipped: a template's exports are the text it emits) of every member under `packages/`;
+ *           writes nothing.
  * Runtime: node
  * Governing contract: ADR 0305 (one declaration per file, one home per concept); stackra-224 (STA-1382).
  */
@@ -25,7 +26,10 @@ function sourceFiles(dir: string): string[] {
     const path = join(dir, entry.name);
     if (entry.isDirectory())
       return ["__tests__", "node_modules", "dist"].includes(entry.name) ? [] : sourceFiles(path);
-    return /\.(ts|tsx|mts)$/.test(entry.name) && !entry.name.endsWith(".d.ts") ? [path] : [];
+    // A `.template.ts` file is one constant of emitted source; its `export` lines belong to the file it writes.
+    return /\.(ts|tsx|mts)$/.test(entry.name) && !/\.(d|template)\.ts$/.test(entry.name)
+      ? [path]
+      : [];
   });
 }
 

@@ -63,6 +63,14 @@ description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456), 2026-10-28
 
 planned — the reindex and swap test on a sample index; the erasure test confirms documents leave the index.
 
+## Note 2026-11-07: partial matches fill the tail
+
+A multi-word query also returns the rows that hold only some of its words. The Postgres driver adds a partial lane (the
+words ORed) beside the full-text, trigram and vector lanes, and ranks its rows after every row a full lane found, so a
+full match always outranks a partial one and the full matches keep their own order. A one-word query has no partial
+lane. This is the recall the evaluation set labels ("linen shirt" grades "Linen trousers" 1), as Elasticsuite fills the
+tail of a multi-word search.
+
 ## Supersedes and sources
 
 Supersedes: [0089](/adr/0089-search-fresh-with-pro-engine-drivers). Notes on: [0049](/adr/0049-search-driver-interface). Sources: owner search answers SR1–SR6, DA10 (`stackra-decisions-2026-10-19.md` L536, L708–717, 2026-10-20). Closes gap C35.

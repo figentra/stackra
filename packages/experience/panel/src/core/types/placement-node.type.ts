@@ -1,15 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: `PlacementNode`, one recorded button of a resource: an action run, an export, an import or the create button,
- *          with the places it is narrowed to and the layer it was placed in.
+ *          with the places it is narrowed to, the layer it was placed in and its `ActionButtonSpec` look (icons, variant,
+ *          size, shortcut, disabled reason, description, tone, link, permission, confirmation, record predicate).
  * Boundary: a type only; built by `Placement.*` and by the actions builder. With no `places`, gen derives them from the
  *           action's input (ADR 0307 rule 3). `layer` is the placement layer seam (ADR 0306, 0336 layer 2b).
  * Runtime: isomorphic
- * Governing contract: ADR 0307 (rules 3, 4 and 10); ADR 0306 (rules 7 and 8); ADR 0336 (decision 4).
+ * Governing contract: ADR 0307 (rules 3, 4 and 10); ADR 0306 (rules 7 and 8); ADR 0336 (decision 4); the SDUI catalogue
+ *                     case `actionButton` (STA-1981).
  */
 import type { AnyClass } from "@stackra/container";
 
 import type { ActionPlace } from "#core/enums/action-place.enum";
+import type { ActionButtonSpec } from "#core/types/action-button-spec.type";
 import type { ExportFormat } from "#core/enums/export-format.enum";
 import type { ImportMode } from "#core/enums/import-mode.enum";
 import type { PlacementLayer } from "#core/enums/placement-layer.enum";
@@ -33,7 +36,7 @@ export type PlacementNode = (
       /** The row paths written; the view's columns when absent. */
       readonly columns?: readonly string[];
       /** The export permission; gen fills it (`<module>.<model>.export`). */
-      readonly permission?: string;
+      readonly permission?: string | undefined;
     }
   | {
       /** An import from a file, every row through the action pipeline. */
@@ -45,7 +48,7 @@ export type PlacementNode = (
       /** The most rows one file may hold. */
       readonly maxRows?: number;
       /** The import permission; gen fills it (`<module>.<model>.import`). */
-      readonly permission?: string;
+      readonly permission?: string | undefined;
     }
   | {
       /** The create button of the list header and the empty state. */
@@ -59,4 +62,4 @@ export type PlacementNode = (
 
   /** The layer it was placed in; the owner's when absent. */
   readonly layer?: PlacementLayer;
-};
+} & Omit<ActionButtonSpec, "action" | "place">;

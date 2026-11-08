@@ -80,7 +80,7 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly (ClassRef | Tok
       { name: "SettingRevisionStore", from: "@stackra/settings/contracts" },
       { name: "Clock", from: "@stackra/contracts" },
     ],
-    // the workflow node's CrudServices over their own models (`PLATFORM_PARTNERS`, STA-1708)
+    // the workflow node's CrudServices over their own models (their manifests' `services[].partner`, STA-1708)
     "@stackra/workflow#AutomationService": [
       {
         class: { name: "Revision", from: "@stackra/content/node" },

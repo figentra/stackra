@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `WebhookDelivery`, the delivery log: one row per attempt to deliver one event to one endpoint, with the
  *          event's id and wire name, the endpoint's answer and whether it was accepted.
- * Boundary: data only, append-only by use. Key `webhooks.webhook_delivery`, table `webhooks.webhook_deliveries`. It holds
+ * Boundary: data only, append-only by use. Key `webhooks.webhook_delivery`, table `webhooks.webhook_deliveries`, owned
+ *           by its endpoint's tenant (`BelongsToTenant`, filled from the delivery job's call). It holds
  *           no body, no header and no secret: the body lives in the queue job until it ends (a dead letter keeps it
  *           for a redrive). `createdAt` is when the attempt was made. Rows are written through
  *           `WebhookDeliveryService.record`, never with `new`.
@@ -13,11 +14,12 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Int } from "@stackra/validation";
 
-/** One delivery attempt. Traits add `id` and the timestamps; the indexes are the migration's. */
+/** One delivery attempt. Traits add `id`, the owning tenant and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class WebhookDelivery extends Model.with(HasPublicId("whd"), Timestamps) {
+export class WebhookDelivery extends Model.with(HasPublicId("whd"), BelongsToTenant, Timestamps) {
   /** The endpoint's HTTP status; `null` when it did not answer. */
   @Int
   responseStatus!: number | null;
@@ -47,5 +49,5 @@ export class WebhookDelivery extends Model.with(HasPublicId("whd"), Timestamps) 
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface WebhookDelivery {
   /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

@@ -42,6 +42,7 @@ describe("@stackra/settings", () => {
       "PromotionBaseStaleError",
       "PromotionReleaseTooOldError",
       "Setting",
+      "SettingApproverRoleError",
       "SettingBelowFloorError",
       "SettingFourEyesError",
       "SettingRevisionClosedError",

@@ -5,7 +5,7 @@
  *          package class), its options as constants (a class thunk, `counts: () => Till`, as its class), its partner from the heritage type argument (`Point["slot"]`
  *          included; the value argument of `Driver(Port)`, `Widget.place` and `ModelAddition(Base)`, ADR 0336), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
  *          package reads as `replica`, ADR 0338; a listener's parameter is its event class, one from
- *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, a query's caller reads (`ctx.actor`, ...; STA-1445), statics and traits; each shape's fields from the declared
+ *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, the workflows it starts (`ctx.run(XWorkflow, ...)`, ADR 0101), a query's caller reads (`ctx.actor`, ...; STA-1445), statics and traits; each shape's fields from the declared
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
  *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
  *          source order; each file's exports; and the services any own file (tests included) imports from
@@ -243,6 +243,11 @@ function fits(rule: FieldRule, type: TypeDesc): boolean {
     return type.kind === "string" || type.kind === "translated";
   if (rule.name === "Int" || rule.name === "Num") return type.kind === "number";
   return type.kind === "array";
+}
+
+/** Whether `candidate` is an array of strings (a `@Secret` option list, STA-2104). */
+function isStringList(candidate: unknown): candidate is string[] {
+  return Array.isArray(candidate) && candidate.every((item) => typeof item === "string");
 }
 
 /** Whether a value, or anything inside it, is not a constant. */
@@ -687,6 +692,12 @@ export function createSourceReader(
       : NOT_CONSTANT;
   };
 
+  /** The `// reason: …` written above a property or trailing it, if any. */
+  const reasonOf = (property: TsNode): string | undefined =>
+    /\/\/\s*reason:\s*(.+)/
+      .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
+      ?.trim() || undefined;
+
   /** The options object of a call argument: its constant properties, non-constant ones left out. */
   const optionsOf = (node: TsNode | undefined): Record<string, unknown> => {
     if (node === undefined || host.kind(node) !== "ObjectLiteralExpression") return {};
@@ -714,13 +725,24 @@ export function createSourceReader(
       if (!hasNonConstant(value)) options[name] = value;
       // ADR 0509: an unreadable `approval` is recorded so `approval_not_constant` refuses it, not skipped.
       if (name === "approval" && hasNonConstant(value)) options["approvalNotConstant"] = true;
-      // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does.
-      // A trailing `tool: false, // reason: …` counts too (owner decisions 2026-10-26, round 3).
-      if (name === "tool" && value === false) {
-        const reason = /\/\/\s*reason:\s*(.+)/
-          .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
-          ?.trim();
+      // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does, and so does a
+      // `tool: true` that makes an L3 or L4 action a tool. A trailing `// reason: …` counts too (owner decisions
+      // 2026-10-26, round 3).
+      // A product's `DataClass` class is recorded as its key, as `@Classify` reads it (STA-2594).
+      if (name === "dataClass" && kind === "PropertyAssignment") {
+        const key = dataClassOf(property.initializer)?.["key"];
+        if (typeof key === "string") options["dataClass"] = key;
+      }
+      if (name === "tool" && typeof value === "boolean") {
+        const reason = reasonOf(property);
         if (reason) options["toolReason"] = reason;
+      }
+      // A query that reads above L1 (secrets, bulk personal data, a tenant's whole evidence) says why with a
+      // `// reason:` on its `permission`, or on its `key` when the permission is derived (leader, 2026-11-08).
+      if (name === "permission" || name === "key") {
+        const reason = reasonOf(property);
+        if (reason && (name === "permission" || options["riskReason"] === undefined))
+          options["riskReason"] = reason;
       }
     }
     return options;
@@ -1362,6 +1384,9 @@ export function createSourceReader(
       }
       if (name === "Money") return { kind: "money" };
       if (name === "Json") return { kind: "json" };
+      if (name === "GeoPoint") return { kind: "geo", shape: "point" };
+      if (name === "GeoPolygon") return { kind: "geo", shape: "polygon" };
+      if (name === "GeoLine") return { kind: "geo", shape: "line" };
       if (name === "Duration") return { kind: "duration" };
       if (name === "Url") return { kind: "brand", brand: "url" };
       if (name === "Email") return { kind: "brand", brand: "email" };
@@ -1474,6 +1499,32 @@ export function createSourceReader(
         : [];
       return { type: publicIdType(prefixes), nullable };
     }
+    // A trait's enum field keeps the enum's alias (`PublicationStatus`, or `Enum.Value<typeof X>`) (STA-2215).
+    if (alias !== undefined) {
+      const named = enumOf(alias.symbol, at);
+      const valueOf =
+        host.symbolName(alias.symbol) === "Value" && alias.args[0] !== undefined
+          ? enumOf(host.typeSymbol(alias.args[0]), at)
+          : undefined;
+      const found = named ?? valueOf;
+      if (found !== undefined) return { type: found, nullable };
+      // A built package's `.d.ts` has no `Enum.of` initializer to read: the alias's string literals are its codes.
+      const codes = rest.map((member) => host.literal(member));
+      if (rest.length > 1 && codes.every((code): code is string => typeof code === "string")) {
+        const aliasName = host.symbolName(alias.symbol);
+        const name =
+          aliasName === "Value" && alias.args[0] !== undefined
+            ? host.symbolName(host.typeSymbol(alias.args[0]) ?? alias.symbol)
+            : aliasName;
+        return { type: { kind: "enum", name, values: codes }, nullable };
+      }
+    }
+    // A trait's `PublicId` with no prefix, its alias lost on `| null`, is `${string}_${string}`: any prefix (STA-2215).
+    if (
+      rest.length > 0 &&
+      rest.every((member) => host.typeText(member) === "`${string}_${string}`")
+    )
+      return { type: publicIdType([]), nullable };
     // A trait's `PublicId<P>` field reaches here as its bare template literal once `Model.with` infers it (STA-1720).
     const textPrefixes = rest.map((member) =>
       host.typeHas(member, "TemplateLiteral")
@@ -1501,6 +1552,20 @@ export function createSourceReader(
         isLib(host.fileName(declaration))
       )
         return { type: { kind: "date" }, nullable };
+      // A trait's `Translated` field and its list of primitives, as their type nodes read (STA-2215).
+      if (
+        symbol !== undefined &&
+        declaration !== undefined &&
+        isStackra(host.fileName(declaration))
+      ) {
+        const name = host.symbolName(symbol);
+        if (name === "Translated") return { type: { kind: "translated", form: "value" }, nullable };
+        if (name === "TranslatedStrings")
+          return { type: { kind: "translated", form: "strings" }, nullable };
+      }
+      const listed = /^(?:readonly )?(string|number|boolean)\[\]$/.exec(host.typeText(only))?.[1];
+      if (listed === "string" || listed === "number" || listed === "boolean")
+        return { type: { kind: "array", element: { kind: listed } }, nullable };
       if (host.literal(only) !== undefined) {
         const enumName =
           initializer !== undefined &&
@@ -1754,6 +1819,26 @@ export function createSourceReader(
         "@Secret does not name its secret with a SCREAMING_SNAKE literal",
         'write `@Secret("<PROVIDER>_<PURPOSE>")`, such as `@Secret("RESEND_API_KEY")`; the value comes from the secret store',
       );
+    // `@Secret("NAME", { refuse, environments })`: the options as constants, only their well-formed parts (STA-2104).
+    const secretOptionsOf = (
+      node: TsNode | undefined,
+    ): Omit<NonNullable<FieldIR["secret"]>, "name"> => {
+      const options = node === undefined ? undefined : constant(node);
+      if (typeof options !== "object" || options === null || hasNonConstant(options)) return {};
+      const { refuse, environments } = options as { refuse?: unknown; environments?: unknown };
+      return {
+        ...(typeof refuse === "object" && refuse !== null
+          ? {
+              refuse: Object.fromEntries(
+                Object.entries(refuse).filter((entry): entry is [string, string[]] =>
+                  isStringList(entry[1]),
+                ),
+              ),
+            }
+          : {}),
+        ...(isStringList(environments) ? { environments } : {}),
+      };
+    };
     // `@Classified(DataClassification.Personal)`: the code, from a literal or the enum member's name (stackra-262).
     const classifiedArg = decorators.find((use) => use.name === "Classified")?.args[0];
     const classifiedValue = classifiedArg === undefined ? undefined : constant(classifiedArg);
@@ -1776,7 +1861,11 @@ export function createSourceReader(
       ...(initial !== undefined ? { default: initial } : {}),
       ...(typeof renamedTo === "string" ? { renamed: renamedTo } : {}),
       ...(classified === undefined ? {} : { classified }),
+      ...(typeof secretName === "string" && SECRET_NAME.test(secretName)
+        ? { secret: { name: secretName, ...secretOptionsOf(secret?.args[1]) } }
+        : {}),
       ...(decorators.some((use) => use.name === "Hidden") ? { hidden: true as const } : {}),
+      ...(decorators.some((use) => use.name === "ShownOnce") ? { shownOnce: true as const } : {}),
     };
     if (!quiet && type.kind !== "hatch")
       checkRules(field, declaration.name ?? declaration, subject);
@@ -2589,10 +2678,16 @@ export function createSourceReader(
     const options = optionsOf(optionsArgument);
     // A driver over the package's own base (`class EpsonReceiptPrinterDriver extends NetworkReceiptPrinterDriver`) takes
     // its port from the nearest base whose heritage names one, so it stays a candidate in the manifest.
+    // A connection over another connection (`class RegionalConnection extends BaseConnection`) inherits its base's
+    // integration here; `pairSubclassConnections` pairs it with a same-stem integration of the member when one exists.
+    const ownPartner = partnerOf(node, info.kind, heritage);
     const partner =
-      partnerOf(node, info.kind, heritage) ??
-      (info.kind === "driver" ? inheritedPartner(info.chain.slice(1)) : undefined);
-    checkPartner(node, info.kind, partner, options);
+      ownPartner ??
+      (info.kind === "driver" || info.kind === "connection"
+        ? inheritedPartner(info.chain.slice(1))
+        : undefined);
+    // An inherited connection partner was checked against its base's stem, not this class's.
+    checkPartner(node, info.kind, info.kind === "connection" ? ownPartner : partner, options);
 
     const members = node.members ?? [];
     // The container calls the nearest constructor the chain declares: the class's own, else its base's (STA-1365 item 5).
@@ -2689,6 +2784,14 @@ export function createSourceReader(
         }
     }
 
+    // The workflows the body starts, `ctx.run(RefundWorkflow, input)` or typed `ctx.run<RefundOutput>(...)`, for
+    // `checkActionFirst` (ADR 0101, STA-2611).
+    const workflows = new Set(
+      [...body.matchAll(/\.run\s*(?:<[^()]*?>)?\s*\(\s*([A-Z]\w*Workflow)\b/g)].map(
+        (match) => match[1] ?? "",
+      ),
+    );
+
     const statics: Record<string, string> = {};
     for (const member of members)
       if (
@@ -2730,6 +2833,7 @@ export function createSourceReader(
       ...(handle !== undefined ? { handle } : {}),
       refusals: [...refusals],
       ...(callerReads.size > 0 ? { callerReads: [...callerReads] } : {}),
+      ...(workflows.size > 0 ? { workflows: [...workflows] } : {}),
       statics,
       traits,
       ...(renamed !== undefined ? { renamed } : {}),
@@ -2834,6 +2938,21 @@ export function createSourceReader(
           .map(([service, file]) => ({ service, file }))
       );
     },
+    packageImports: () => {
+      const found = new Map<string, Set<string>>();
+      for (const path of all.map((file) => file.fileName ?? "").filter(isOwn))
+        for (const statement of byPath.get(path)?.statements ?? []) {
+          // shortcut: a dynamic `import()` is not seen; static imports and `export … from` count.
+          const kind = host.kind(statement);
+          if (kind !== "ImportDeclaration" && kind !== "ExportDeclaration") continue;
+          const from = statement.moduleSpecifier?.text;
+          if (from === undefined || from.startsWith(".") || from.startsWith("#")) continue;
+          const parts = from.split("/");
+          const pkg = from.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? from);
+          found.set(pkg, (found.get(pkg) ?? new Set()).add(from));
+        }
+      return found;
+    },
     classes: (file) =>
       classNodes(file)
         .map(readClass)
@@ -2930,7 +3049,18 @@ export function createSourceReader(
       const record = (name: string, typeOnly: boolean): void => {
         names.set(name, typeOnly && (names.get(name) ?? true));
       };
+      const isIndex = /\/index\.tsx?$/.test(path);
       for (const statement of file.statements ?? []) {
+        // why: a barrel re-exports (`export { X } from "#config/x"`), and which entry exports a class decides the
+        // specifier a host imports it from (`exportingSpecifier`)
+        if (isIndex && host.kind(statement) === "ExportDeclaration") {
+          for (const element of statement.exportClause?.elements ?? [])
+            record(
+              nameOf(element.name),
+              statement.isTypeOnly === true || element.isTypeOnly === true,
+            );
+          continue;
+        }
         if (!has(statement, "ExportKeyword") || has(statement, "DefaultKeyword")) continue;
         const kind = host.kind(statement);
         if (kind === "VariableStatement")
@@ -2944,7 +3074,6 @@ export function createSourceReader(
             classes.push(nameOf(statement.name));
         }
       }
-      const isIndex = /\/index\.tsx?$/.test(path);
       if (names.size > 1 && !isIndex)
         fail(
           file,

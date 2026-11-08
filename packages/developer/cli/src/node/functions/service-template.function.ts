@@ -205,7 +205,7 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       content: [
         "# Stackra file contract:",
         `# Purpose: what ${packageName} needs at runtime beyond what gen derives (runway v3, ADR 0296).`,
-        "# Boundary: names and sizes only; secret values come from Infisical through runway (ADR 0173).",
+        "# Boundary: names and sizes only; secret values come from figentra/secrets through runway (ADR 0525).",
         "# Governing contract: ADR 0296 (decision 1).",
         "version: 3",
         "requires: {}",

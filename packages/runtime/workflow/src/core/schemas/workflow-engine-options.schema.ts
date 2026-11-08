@@ -38,6 +38,12 @@ export class WorkflowEngineOptions extends Schema {
 
   /** How long an untaken signal or held event is kept (`"7d"`), from 1 minute to 90 days. */
   signalRetention: string = "7d";
+
+  /**
+   * The longest backoff a failed step waits out in process before its next attempt (`"0s"`, up to `"1m"`); a longer
+   * one parks the run until then, so the caller answers at once and the worker runs the retry (STA-2613).
+   */
+  retryInlineMax: string = "0s";
 }
 
 registerSchemas([[WorkflowEngineOptions, WORKFLOW_CONFIG_SCHEMA]]);

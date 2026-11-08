@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `CSP_OPTIONS_SCHEMA`, the zod schema of `CspOptions` that this package ships (its `X$`): three lists of
  *          added sources, each source matching `CSP_SOURCE_PATTERN`, the report-only switch, the HSTS fields, the
- *          referrer policy and the permissions-policy allowances, with the class's defaults.
+ *          referrer policy, the permissions-policy allowances and the framers per path, with the class's defaults.
  * Boundary: the stand-in for what gen will write for this package; `buildConfig` validates the configuration with it
  *           at boot, so a source that would loosen the policy fails the boot, not a request. A permissions allowance
  *           names a baseline feature and lists `self` or host sources only (never `*`). Internal:
@@ -13,8 +13,11 @@
 import { z } from "zod";
 
 import { CSP_SOURCE_PATTERN } from "#core/constants/csp-source-pattern.constant";
+import { FRAME_ANCESTOR_PATH_PATTERN } from "#core/constants/frame-ancestor-path-pattern.constant";
+import { FRAME_ANCESTOR_PATTERN } from "#core/constants/frame-ancestor-pattern.constant";
 import { PERMISSIONS_POLICY_BASELINE } from "#core/constants/permissions-policy-baseline.constant";
 import { REFERRER_POLICIES } from "#core/constants/referrer-policies.constant";
+import { SCRIPT_ORIGIN_PATTERN } from "#core/constants/script-origin-pattern.constant";
 
 /** One permissions-policy source: `self` or one host source. */
 const ALLOW_SOURCE = z.union([z.literal("self"), z.string().regex(CSP_SOURCE_PATTERN)]);
@@ -31,5 +34,14 @@ export const CSP_OPTIONS_SCHEMA = z.object({
   referrerPolicy: z.enum(REFERRER_POLICIES).default("strict-origin-when-cross-origin"),
   permissionsAllow: z
     .partialRecord(z.enum(PERMISSIONS_POLICY_BASELINE), z.array(ALLOW_SOURCE))
+    .default(() => ({})),
+  frameAncestors: z
+    .record(
+      z.string().regex(FRAME_ANCESTOR_PATH_PATTERN),
+      z.union([z.literal("request"), z.array(z.string().regex(FRAME_ANCESTOR_PATTERN))]),
+    )
+    .default(() => ({})),
+  thirdPartyScripts: z
+    .record(z.string().regex(SCRIPT_ORIGIN_PATTERN), z.string().regex(/^[a-z][a-z0-9_]*$/))
     .default(() => ({})),
 });

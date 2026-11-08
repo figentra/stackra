@@ -4,7 +4,8 @@
  *          default, levels, label and help keys, bounds, nullability, lock, approval, client, live and essential flags,
  *          the market-pack key that floors it, the entitlements that unlock it or its values, its section and its
  *          earlier names.
- * Boundary: a type only, data gen derives from the settings classes and the consumed manifests; authored code never
+ * Boundary: a type only, extending `SettingOptions` (lock, approval, client, live, essential, floor, entitlements);
+ *           data gen derives from the settings classes and the consumed manifests; authored code never
  *           writes it. The label and help are the declaring module's `<module>::settings.<path>.label|help` keys.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 22 to 24); ADR 0294 (decision 20: derived labels); registry v3.1 section 5
@@ -15,9 +16,10 @@ import type { I18nKey } from "@stackra/i18n";
 import type { SettingValue } from "#contracts/index";
 import type { SettingType } from "#core/enums/setting-type.enum";
 import type { SettingLevel } from "#core/types/setting-level.type";
+import type { SettingOptions } from "#core/types/setting-options.type";
 
-/** The metadata of one setting key. */
-export interface SettingKeyInput {
+/** The metadata of one setting key: its declared `@Setting` options, with the levels resolved, plus what gen derives. */
+export interface SettingKeyInput extends Omit<SettingOptions, "scopes"> {
   /** What the key holds. */
   readonly type: SettingType;
 
@@ -41,30 +43,6 @@ export interface SettingKeyInput {
 
   /** Whether `null` is a value. */
   readonly nullable?: boolean;
-
-  /** Whether a holder may lock it for every holder below. */
-  readonly lockable?: boolean;
-
-  /** Whether a change waits for a second approver. */
-  readonly approval?: boolean;
-
-  /** Whether clients receive it in the area bootstrap. */
-  readonly client?: boolean;
-
-  /** Whether it is edited in place on live (an operational value); otherwise only by promotion. */
-  readonly live?: boolean;
-
-  /** Whether normal mode shows it. */
-  readonly essential?: boolean;
-
-  /** The market-pack key whose legal floor bounds it. */
-  readonly floor?: string;
-
-  /** The entitlement that unlocks it; without it the default applies and a write is refused. */
-  readonly entitlement?: string;
-
-  /** The entitlement that unlocks each gated value, keyed by the value as text. */
-  readonly entitlementValues?: Readonly<Record<string, string>>;
 
   /** The section field that holds it, when it belongs to a section. */
   readonly section?: string;

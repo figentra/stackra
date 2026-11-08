@@ -288,52 +288,46 @@ test("OpenCode gets no skills copy, and a leftover one is pruned", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Rules block (AGENTS.md)
+// Rules (validated; the AGENTS.md block is retired)
 // ---------------------------------------------------------------------------
 
 const RULE = (fm, body) =>
   `---\ntitle: ${fm.title}\ndescription: ${fm.title} rule\n${fm.extra ?? ""}---\n\n# ${fm.title}\n\n${body}\n`;
 
-test("rules reach OpenCode as a marked AGENTS.md block; hand-written text is kept", () => {
+test("a leftover rules block is removed from AGENTS.md; the text around it is kept", () => {
   withFixture({ "reviewer.md": READ_ONLY }, (root) => {
     mkdirSync(join(root, ".agents/rules"));
     writeFileSync(
       join(root, ".agents/rules/secrets.md"),
       RULE({ title: "Secrets", extra: "always: true\n" }, "## Never\n\nNo values."),
     );
+    const block =
+      "<!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->" +
+      "\n\n## Repository rules\n\nNo values.\n\n<!-- END generated from .agents/rules -->";
     writeFileSync(
-      join(root, ".agents/rules/versions.md"),
-      RULE({ title: "Versions", extra: 'applies_to: ["**/package.json"]\n' }, "Catalogs only."),
+      join(root, "AGENTS.md"),
+      `# AGENTS.md\n\nHand-written intro.\n\n${block}\n\nMore hand-written text.\n`,
     );
-    writeFileSync(join(root, "AGENTS.md"), "# AGENTS.md\n\nHand-written intro.\n");
+    assert.match(run(root, "--check").out, /AGENTS\.md: retired generated rules block present/);
     assert.equal(run(root).code, 0);
-    const text = read(root, "AGENTS.md");
-    assert.match(text, /^# AGENTS\.md\n\nHand-written intro\.\n/);
-    assert.match(text, /<!-- BEGIN generated from \.agents\/rules/);
-    assert.match(
-      text,
-      /### Secrets\n[\s\S]*#### Never\n\nNo values\./,
-      "always-on rule in full, headings demoted",
-    );
-    assert.match(
-      text,
-      /- \*\*Versions\*\* — `\*\*\/package\.json`: read `\.agents\/rules\/versions\.md`/,
-    );
-    assert.doesNotMatch(text, /Catalogs only\./, "file-scoped rule is indexed, not inlined");
-    assert.equal(run(root, "--check").code, 0, "idempotent");
-
-    writeFileSync(join(root, "AGENTS.md"), `${text}\nMore hand-written text.\n`);
-    assert.equal(run(root, "--check").code, 0, "text outside the markers is not drift");
-    writeFileSync(
-      join(root, ".agents/rules/secrets.md"),
-      RULE({ title: "Secrets", extra: "always: true\n" }, "Changed."),
-    );
-    assert.match(run(root, "--check").out, /AGENTS\.md: generated rules block stale/);
-    assert.equal(run(root).code, 0);
-    assert.match(
+    assert.equal(
       read(root, "AGENTS.md"),
-      /Changed\.[\s\S]*END generated[\s\S]*More hand-written text\./,
+      "# AGENTS.md\n\nHand-written intro.\n\nMore hand-written text.\n",
     );
+    assert.equal(run(root, "--check").code, 0, "idempotent: nothing is added back");
+  });
+});
+
+test("a rule with malformed frontmatter still fails the run", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    mkdirSync(join(root, ".agents/rules"));
+    writeFileSync(
+      join(root, ".agents/rules/broken.md"),
+      "---\ntitle: Broken\n---\n\nNo description.\n",
+    );
+    const r = run(root);
+    assert.equal(r.code, 2);
+    assert.match(r.out, /invalid neutral frontmatter in \.agents\/rules\/broken\.md/);
   });
 });
 

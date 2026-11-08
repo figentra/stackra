@@ -126,8 +126,9 @@ gen, and the bindings change with the code anyway.
 
 ## Enforcement
 
+- `stackra validate --repository` (`checkWranglerOperationalKeys`) refuses an operational key in a new member's
+  `wrangler.jsonc`; the four hand-written files are listed until they deploy through the provider (STA-1989).
 - planned — `pnpm validate` (`checkRunwayFiles`) refuses:
-  - an operational key in a member's `wrangler.jsonc`;
   - a `compatibility_date` that differs from the root's;
   - a queue consumer without a dead-letter queue;
   - an `internal-tool` member without `access` (STA-1989).

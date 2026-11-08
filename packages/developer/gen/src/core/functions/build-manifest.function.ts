@@ -2,52 +2,62 @@
  * Stackra file contract:
  * Purpose: `buildManifest`, the derivation of a member's `stackra.manifest.json` from what discovery read: every
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
- *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module graph, the facets, and the JSON
- *          Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's output, ADR 0338, and the package
- *          input and output of a generated search or report query, STA-1459); a service or app also lists what its hosted packages contribute, marked
- *          `from`; each Integration's key, connection, webhook path and egress entry (a `{field}` host kept as data);
- *          each sequence's key; an app's block and route
- *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
- *          the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix records the
- *          package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry and
- *          constructor tokens (`classes`; the entry is the folder's own for `src/desktop` and the like, and an
- *          abstract or internal driver is no candidate) and the config class that selects one (`config`), which a host's wiring
- *          reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a host's wiring
- *          knows its configs without guessing from a name (STA-1308). It reports the identity checks it can see:
- *          `identity_collision`,
- *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
- *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
+ *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module
+ *          graph, the facets, and the JSON Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's
+ *          output, ADR 0338, and the package input and output of a generated search or report query, STA-1459); a
+ *          service or app also lists what its hosted packages contribute, marked `from`; each Integration's key,
+ *          connection, webhook path and egress entry (a `{field}` host kept as data); each sequence's key; an app's
+ *          block and route keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles
+ *          and listing; the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix
+ *          records the package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry
+ *          and constructor tokens (`classes`; the entry is the folder's own for `src/desktop` and the like, and an
+ *          abstract or internal driver is no candidate) and the config class that selects one (`config`), which a
+ *          host's wiring reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a
+ *          host's wiring knows its configs without guessing from a name (STA-1308). It reports the identity checks it
+ *          can see: `identity_collision`, `override_duplicate`, `permission_unknown`, `identity_missing`,
+ *          `action_risk_below_write` (an action whose permission is L0 or L1, STA-2096), the public id prefix checks
+ *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `data_class_unknown` (an
+ *          action's or query's `dataClass`, recorded on its entry, STA-2594), the call-shape refusals
+ *          of `checkCallShape` (`query_above_l1`, `query_precondition`, `action_cache`, `step_up_missing`,
+ *          `idempotency_missing`), `effect_unknown`,
+ *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
- *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as
- *          action keys) in `agents` and each wallet pass kind in `passes`; and each entitlement in `entitlements`
- *          with its derived key, kind, counted model, `where` filter and the action and query keys it gates (STA-903).
- *          It lists each shell slot the member declares in `slots` (key, const, entry, surface, cardinality, props) and
- *          each fill whose slot resolves in `fills` (slot key, const, entry, surface, props), for the OS registry
- *          (ADR 0438, stackra-03). It lists in `surfaces` each surface a shell dependency's slots sit on, with the
- *          shell line the member targets there (`targets: "console@3"`, from that shell's major) and the shell
- *          package, for the extension-bundle build and the registry's compatibility check (ADR 0436, stackra-04).
- *          It lists each model addition in `additions` (`additionsOf`: base key, side table, wire key, fields) with
- *          `addition_base_source`, `addition_target_missing` and `addition_key_collision` (ADR 0336, stackra-64).
- *          It lists each `Report` in `reports` (`reportsOf`: key, source, dimensions, measures, permission, generated
- *          query key) with its refusals (ADR 0470, stackra-389).
- *          It lists each console `Command` in `commands` (`commandsOf`, own then hosted, `from`) with `kind_path`,
- *          `command_collision` and `identity_missing` (ADR 0506, STA-1731).
- *          It lists each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
+ *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists
+ *          each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as action
+ *          keys) in `agents` and each wallet pass kind in `passes`; and each entitlement in `entitlements` with its
+ *          derived key, kind, counted model, `where` filter and the action and query keys it gates (STA-903). It lists
+ *          each shell slot the member declares in `slots` (key, const, entry, surface, cardinality, props) and each
+ *          fill whose slot resolves in `fills` (slot key, const, entry, surface, props), for the OS registry (ADR 0438,
+ *          stackra-03). It lists in `surfaces` each surface a shell dependency's slots sit on, with the shell line the
+ *          member targets there (`targets: "console@3"`, from that shell's major) and the shell package, for the
+ *          extension-bundle build and the registry's compatibility check (ADR 0436, stackra-04). It lists each model
+ *          addition in `additions` (`additionsOf`: base key, side table, wire key, fields) with `addition_base_source`,
+ *          `addition_target_missing` and `addition_key_collision` (ADR 0336, stackra-64). It lists each `Report` in
+ *          `reports` (`reportsOf`: key, source, dimensions, measures, permission, generated query key) with its
+ *          refusals (ADR 0470, stackra-389). It lists each console `Command` in `commands` (`commandsOf`, own then
+ *          hosted, `from`) with `kind_path`, `command_collision` and `identity_missing` (ADR 0506, STA-1731). It lists
+ *          each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
  *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
  *          `uiMenusOf`) (STA-1947).
+ *          A service with a runway `events` block gets the `relay` section: per environment, its public keys (current
+ *          first) and its subscribers with the events each takes, never an inbox origin (ADR 0511 d16 and d17).
+ *          It lists each environment variable its configuration classes declare in `env` (`envOf`: name, kind, type,
+ *          rules, the config that declares it; a host adds its packages' rows), STA-2104.
+ *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
+ *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
  *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
- *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys); ADR 0360 (decisions 4 and 10: user
- *                     actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099 (decisions
- *                     2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR 0308 (rule
- *                     21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home); owner decisions
- *                     2026-10-26 round 3 (query verbs, hosted prefixes; STA-1283); STA-1296 (each permission names its
- *                     Permissions class).
+ *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys); ADR 0360 (decisions 4 and 10:
+ *                     user actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099
+ *                     (decisions 2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR
+ *                     0308 (rule 21: `listing.entitlement`); ADR 0394 (decision 2: a sequence's one home); owner
+ *                     decisions 2026-10-26 round 3 (query verbs, hosted prefixes; STA-1283); STA-1296 (each permission
+ *                     names its Permissions class).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
@@ -64,12 +74,15 @@ import { REPLICA_PAGE_SCHEMA } from "#core/constants/replica-page-schema.constan
 import { actionKey } from "#core/functions/action-key.function";
 import { additionsOf } from "#core/functions/additions-of.function";
 import { blockKey } from "#core/functions/block-key.function";
+import { checkCallShape } from "#core/functions/check-call-shape.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
+import { connectionOf } from "#core/functions/connection-of.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
+import { envOf } from "#core/functions/env-of.function";
 import { eventName } from "#core/functions/event-name.function";
 import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
@@ -77,12 +90,14 @@ import { modelEntityFacts } from "#core/functions/model-entity-facts.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
 import { roleKey } from "#core/functions/role-key.function";
+import { exportingSpecifier } from "#core/functions/exporting-specifier.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { resourcesOf } from "#core/functions/resources-of.function";
+import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -105,6 +120,9 @@ import type { TokenRef } from "#core/types/token-ref.type";
 
 /** A written Integration key: two snake_case parts joined by a dot (STA-1739). */
 const INTEGRATION_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
+/** A data class key, built in (`financial`) or a product's (`clinical_note`): snake_case, as `DataClass` checks. */
+const DATA_CLASS_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 
 /** A manifest entry under construction. */
 type Entry = { [key: string]: Json };
@@ -358,7 +376,15 @@ export function buildManifest(ir: MemberIR): {
         declared,
         "permission_unknown",
         `permission \`${permission}\` is declared by no Permissions class`,
-        `add \`static readonly ${permission.split(".").pop() ?? verb} = Permission.L1;\` to the module's Permissions class`,
+        `add \`static readonly ${permission.split(".").pop() ?? verb} = Permission.${kind === "action" ? "L2" : "L0"};\` to the module's Permissions class`,
+      );
+    // Owner decision 2026-11-04 (STA-2096): every write is at least L2, so no agent runs one unapproved (ADR 0360 d3).
+    if (kind === "action" && (risk === "L0" || risk === "L1"))
+      fail(
+        declared,
+        "action_risk_below_write",
+        `action uses \`${permission}\` at ${risk}, but an action writes, so its permission is at least L2`,
+        "raise the static to `Permission.L2` (L3 for money, L4 for access, deletion or customer sends); a query that shares it and must stay a read takes its own read permission",
       );
     const actors = Array.isArray(declared.options["actors"])
       ? declared.options["actors"].map(String)
@@ -374,10 +400,30 @@ export function buildManifest(ir: MemberIR): {
         ? { endpoint: declared.options["endpoint"] }
         : {}),
     });
-    // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason.
+    // Encore binds each path parameter from the input field of that name, so one with no such field cannot build
+    // (STA-2063). A shape built on a package's or another service's shape is not read whole here, so it is not checked.
+    let root = input;
+    for (let base = root?.base; base?.kind === "member"; base = root?.base)
+      root = shapeNamed(base.name);
+    if (declared.handle?.input === undefined || (root !== undefined && root.base === undefined)) {
+      const fields = new Set(fieldsOf(input).map((field) => field.name));
+      for (const [, name = ""] of endpoint?.path.matchAll(/:(\w+)/g) ?? [])
+        if (!fields.has(name))
+          fail(
+            declared,
+            "endpoint_param_unbound",
+            `${kind} route \`${endpoint?.method} ${endpoint?.path}\` binds \`${name}\`, which its input does not declare`,
+            `add \`${name}\` to the input, use a verb whose route takes no id, or write \`endpoint: { method, path }\``,
+          );
+    }
+    // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason. An
+    // action of risk L3 or L4 (money, deletion, access) is not a tool by default: an agent reaches it only through an
+    // explicit `tool: true` with a reason, recorded in the manifest (owner security decision 2026-11-08).
     const tool = declared.options["tool"];
     const userFacing = actors?.includes("user") ?? false;
-    const toolEnabled = tool === true || (tool !== false && (kind === "query" || userFacing));
+    const highRisk = kind === "action" && (risk === "L3" || risk === "L4");
+    const toolEnabled =
+      tool === true || (tool !== false && !highRisk && (kind === "query" || userFacing));
     const toolReason =
       typeof declared.options["toolReason"] === "string"
         ? declared.options["toolReason"]
@@ -389,6 +435,16 @@ export function buildManifest(ir: MemberIR): {
         `${kind} a user can perform says \`tool: false\` without a reason`,
         "add a `// reason: <why an agent may not call it>` line above `tool: false`",
       );
+    if (tool === true && highRisk && toolReason === undefined)
+      fail(
+        declared,
+        "tool_reason_missing",
+        `${kind} of risk ${risk} says \`tool: true\` without a reason`,
+        "add a `// reason: <why an agent may call it>` line above `tool: true`, or remove `tool: true`",
+      );
+    errors.push(
+      ...checkCallShape(declared, { risk, routed: endpoint !== undefined, tool: toolEnabled }),
+    );
     const writtenEffects = Array.isArray(declared.options["effects"])
       ? declared.options["effects"].map(String)
       : [];
@@ -415,10 +471,23 @@ export function buildManifest(ir: MemberIR): {
       class: declared.name,
       file: declared.file,
       permission,
-      risk: risk ?? (kind === "query" ? "L0" : "L1"),
+      risk: risk ?? (kind === "query" ? "L0" : "L2"),
     };
     if (actors !== undefined) entry["actors"] = actors;
+    if (kind === "query" && typeof declared.options["riskReason"] === "string")
+      entry["riskReason"] = declared.options["riskReason"];
     if (effects.length > 0) entry["effects"] = effects;
+    // The data class it handles, so the AI gateway routes a run in region by it (STA-2594).
+    const dataClass = declared.options["dataClass"];
+    if (typeof dataClass === "string" && DATA_CLASS_KEY.test(dataClass))
+      entry["dataClass"] = dataClass;
+    else if (dataClass !== undefined)
+      fail(
+        declared,
+        "data_class_unknown",
+        `\`dataClass\` names no data class gen can read`,
+        "use a `DataClassification` value or a `DataClass({ key })` class from an `access/` group",
+      );
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
@@ -441,16 +510,18 @@ export function buildManifest(ir: MemberIR): {
       entry["tool"] = {
         name: toolName(key),
         default: tool === undefined,
+        ...(tool === true && highRisk && toolReason !== undefined ? { reason: toolReason } : {}),
         hints: toolHints({
           kind,
           risk: String(entry["risk"]),
           effects,
-          idempotent:
-            declared.options["idempotency"] !== undefined &&
-            declared.options["idempotency"] !== false,
+          idempotency: declared.options["idempotency"],
         }),
       };
     else if (toolReason !== undefined) entry["toolOff"] = toolReason;
+    else if (highRisk && userFacing)
+      entry["toolOff"] =
+        `risk ${risk}: not a tool unless the action says \`tool: true\` with a reason`;
     // A query gen writes itself answers a package shape, described under the module (STA-1459).
     const packageRef = (name: string | undefined): Entry | undefined =>
       name !== undefined && declared.file.startsWith(".stackra/") && name in GENERATED_QUERY_SCHEMAS
@@ -596,9 +667,7 @@ export function buildManifest(ir: MemberIR): {
     const key =
       typeof written === "string" ? written : integrationKey(declared.module, declared.name);
     claim(`integration:${key}`, declared);
-    const connection = ir.classes.find(
-      (candidate) => candidate.kind === "connection" && candidate.partner?.name === declared.name,
-    );
+    const connection = connectionOf(ir.classes, declared.name);
     // The listing's roles (ADR 0355 d1): the declared ones, plus `webhooks` when the provider sends us events.
     const declaredRoles = Array.isArray(declared.options["roles"])
       ? declared.options["roles"].map(String)
@@ -863,8 +932,14 @@ export function buildManifest(ir: MemberIR): {
     }
   >();
   const published = ir.layout === "package";
+  // why: a package may export a class from another entry than its folder's (`@stackra/app`'s configs from `./server`)
+  const exportedFrom = (name: string, specifier: string): string =>
+    exportingSpecifier(ir.package, ir.files, name, specifier);
   const publicToken = (dep: TokenRef): Entry => ({
-    class: { name: dep.class.name, from: publicSpecifier(ir.package, dep.class.from) },
+    class: {
+      name: dep.class.name,
+      from: exportedFrom(dep.class.name, publicSpecifier(ir.package, dep.class.from)),
+    },
     ...(dep.named !== undefined ? { named: dep.named } : {}),
     ...(dep.of !== undefined
       ? { of: { name: dep.of.name, from: publicSpecifier(ir.package, dep.of.from) } }
@@ -901,24 +976,46 @@ export function buildManifest(ir: MemberIR): {
         ...entry.classes,
         [name]: {
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
         },
       };
     drivers.set(key, entry);
   }
   // A published package's services with their constructor tokens, so a host's wiring binds one it injects
-  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686).
+  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686), and the
+  // model a `CrudService<M>` is typed against (`partner`), so the host registers the pair (ADR 0305 rule 5). Its
+  // extension points too: its services inject them, so a host binds them alongside (`LoyaltyKitExtensionPoint`).
+  // Its actions and queries too: they are its module's surface, which a host that imports the module binds.
   const services: Entry[] = published
     ? ir.classes
-        .filter((candidate) => candidate.kind === "service" && candidate.abstract !== true)
+        .filter(
+          (candidate) =>
+            (candidate.kind === "service" ||
+              candidate.kind === "extension_point" ||
+              candidate.kind === "action" ||
+              candidate.kind === "query") &&
+            candidate.abstract !== true,
+        )
         .map((declared) => ({
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
+          ...(declared.partner === undefined
+            ? {}
+            : {
+                partner: {
+                  name: declared.partner.name,
+                  from: exportedFrom(
+                    declared.partner.name,
+                    publicSpecifier(ir.package, declared.partner.from),
+                  ),
+                },
+              }),
         }))
     : [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
+    if (declared.base !== undefined && !declared.base.own) continue; // an override's base package selects its drivers
     const schema = declared.options["schema"];
     const shape = isClassValue(schema) ? shapeNamed(schema.$class) : undefined;
     for (const field of shape?.fields ?? []) {
@@ -930,14 +1027,13 @@ export function buildManifest(ir: MemberIR): {
           if (published)
             entry.config = {
               class: declared.name,
-              from: packageSpecifier(ir.package, declared.file),
+              from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
             };
         }
     }
   }
 
   // Modules and their edges.
-  const moduleOf = new Map(ir.classes.map((declared) => [declared.name, declared.module]));
   const root = rootModuleOf(ir);
   const modules: Entry[] = ir.modules.map((key) => {
     const authored = ir.classes.find(
@@ -950,21 +1046,13 @@ export function buildManifest(ir: MemberIR): {
     const exports = Array.isArray(exported)
       ? exported.filter(isClassValue).map((value) => value.$class)
       : [];
-    const dependsOn = new Set<string>();
-    for (const declared of ir.classes.filter((candidate) => candidate.module === key))
-      for (const dep of declared.deps) {
-        const target = moduleOf.get(dep.class.name);
-        if (target !== undefined && target !== key && dep.class.from.startsWith("#"))
-          dependsOn.add(target);
-      }
     return {
       key,
       ...(moduleClass !== undefined ? { class: moduleClass.name } : {}),
       // Only an authored module class is importable by a host; a generated one lives in this member's `.stackra/gen`.
       ...(authored !== undefined ? { file: authored.file } : {}),
       exports,
-      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      dependsOn: [...dependsOn].sort(),
+      dependsOn: moduleDependsOn(ir, key),
     };
   });
 
@@ -1073,6 +1161,43 @@ export function buildManifest(ir: MemberIR): {
         }
     }
 
+  // A contracts-only dependency adds just its contracts events, from its `./contracts` entry (STA-2567).
+  if (ir.layout !== "package")
+    for (const dependency of ir.contractsDependencies ?? [])
+      for (const item of (dependency.manifest.events ?? []) as unknown as readonly Entry[])
+        eventEntries.push({
+          ...(rehome(item, dependency.package) as Entry),
+          from: dependency.package,
+        });
+
+  // Each record policy with the model it judges, own then hosted (`from`), so a host registers its packages' policies
+  // too; the base's type argument is gone at runtime, so this is where the pair is kept (ADR 0132 as amended,
+  // STA-2045). Written only when there is one, so a member without policies keeps its manifest.
+  const policies: Entry[] = ir.classes
+    .filter((declared) => declared.kind === "policy" && declared.abstract !== true)
+    .flatMap((declared) => {
+      const partner = declared.partner;
+      if (partner === undefined) return [];
+      const model = ir.shapes.find(
+        (shape) => shape.name === partner.name && shape.kind === "model",
+      );
+      return [
+        {
+          class: declared.name,
+          model: partner.name,
+          module: declared.module,
+          file: declared.file,
+          ...(model === undefined ? {} : { modelFile: model.file }),
+        },
+      ];
+    });
+  if (ir.layout !== "package")
+    for (const dependency of ir.dependencies) {
+      if (dependency.manifest["kind"] === "app") continue;
+      for (const item of (dependency.manifest["policies"] ?? []) as readonly Entry[])
+        policies.push({ ...item, from: item["from"] ?? dependency.package });
+    }
+
   // A package's config classes, so a host's wiring writes a config row for exactly these (STA-1308).
   const configs: Entry[] = published
     ? ir.classes
@@ -1083,9 +1208,12 @@ export function buildManifest(ir: MemberIR): {
         .map((declared) => ({
           key: configKeyOf(declared.name, ir.member),
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
         }))
     : [];
+
+  // The environment variables its configuration classes declare, own then hosted (ADR 0173 amendment 2026-11-04).
+  const env = envOf(ir);
 
   // The shell slots it declares and the fills it binds, for the OS registry and a filler's check (ADR 0438).
   const slots: Entry[] = [...(ir.slots ?? [])]
@@ -1149,6 +1277,34 @@ export function buildManifest(ir: MemberIR): {
     ...(uiMenus.length > 0 ? { menus: uiMenus as unknown as Json } : {}),
   };
 
+  // A producer's cross-app relay facts from its runway `events` blocks: keys and subscribers, never origins (ADR 0511
+  // decisions 16 and 17).
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+  const relayEnvironments = Object.keys(ir.eventsRelay ?? {}).sort();
+  const relay: Entry | undefined =
+    relayEnvironments.length === 0
+      ? undefined
+      : {
+          keys: Object.fromEntries(
+            relayEnvironments.map((environment) => [
+              environment,
+              (ir.eventsRelay?.[environment]?.keys ?? []).map(({ id, publicKey }) => ({
+                id,
+                publicKey,
+              })),
+            ]),
+          ),
+          subscribers: Object.fromEntries(
+            relayEnvironments.map((environment) => [
+              environment,
+              (ir.eventsRelay?.[environment]?.subscribers ?? []).map(({ member, events }) => ({
+                member,
+                events: [...events],
+              })),
+            ]),
+          ),
+        };
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1162,6 +1318,7 @@ export function buildManifest(ir: MemberIR): {
     ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
     ...(configs.length > 0 ? { config: configs } : {}),
+    ...(env.length > 0 ? { env } : {}),
     ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
     ...(slots.length > 0 ? { slots } : {}),
@@ -1172,7 +1329,9 @@ export function buildManifest(ir: MemberIR): {
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
+    ...(policies.length > 0 ? { policies } : {}),
     ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
+    ...(relay !== undefined ? { relay } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

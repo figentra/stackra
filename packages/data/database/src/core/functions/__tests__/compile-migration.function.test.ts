@@ -8,7 +8,13 @@
  *          unapproved extension, raw statement without an inverse, a policy the table cannot take), and the ICU
  *          collation of a text column (with its refusals), column changes on an existing table (nullable, NOT NULL,
  *          type with a stated `from`) with their inverses and refusals, and a foreign key or enum check on an existing
- *          table added NOT VALID and validated in its own step (stackra-251).
+ *          table added NOT VALID and validated in its own step (stackra-251), and the `platformTable` and
+ *          `reviewedPolicy` declarations: their marker lines, read back by `tableDeclarations`, and their refusals (an
+ *          empty or multi-line reason, no policy named, a platform table with an owner column or a policy, two
+ *          declarations), and the system-access mechanism (ADR 0239 amendment, gap A): `t.systemAccess`'s marker line,
+ *          role, column grants and role-scoped policies, `schema.systemFunction`'s marker line, definer function with
+ *          its pinned search path and its hand-over to the role, both read back by `tableDeclarations`, and their
+ *          refusals.
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
@@ -24,6 +30,24 @@ import type { Blueprint } from "#core/types/blueprint.type";
 import type { ColumnGroup } from "#core/types/column-group.type";
 import type { MigrationId } from "#core/types/migration-id.type";
 import type { SchemaBuilder } from "#core/types/schema-builder.type";
+import { tableDeclarations } from "#core/functions/table-declarations.function";
+
+/** The compiled SQL of `type` in the `outbox` schema, as gen writes a migration file. */
+const sqlOf = (type: Parameters<typeof compileMigration>[0]): string =>
+  compileMigration(type, { schema: "outbox" })
+    .steps.flatMap((step) => step.sql)
+    .map((statement) => `${statement};\n`)
+    .join("");
+
+/** Compiling `define` on the existing `jobs` table, for a refusal. */
+const refusal = (define: (t: Blueprint) => void) => {
+  class AccessMigration extends Migration {
+    up(schema: SchemaBuilder): void {
+      schema.table("jobs", define);
+    }
+  }
+  return () => sqlOf(AccessMigration);
+};
 
 /** An id column with its equality policy, the way an isolation package's macro writes one. */
 class BelongsToWorkspaceMacro extends Macro {
@@ -48,6 +72,11 @@ type WithMacros = Blueprint & {
 };
 
 const macros = [BelongsToWorkspaceMacro, DataClassificationMacro];
+
+/** The reviewed squawk ignore above a SET NOT NULL a whole-table pre-flight vouched for (STA-2612). */
+const REFUSED_NOT_NULL =
+  "-- lint: contract step after the expand phase; the pre-flight above refused any NULL, the table is pre-production, and the step runs once (ADR 0239).\n" +
+  "-- squawk-ignore adding-not-nullable-field\n";
 
 class CreateOrdersMigration extends Migration {
   up(schema: SchemaBuilder): void {
@@ -100,6 +129,26 @@ describe(compileMigration, () => {
       'create table "usage"."meter_events_default" partition of "usage"."meter_events" default',
     );
     expect(sql.some((text) => text.includes('using brin ("occurred_at")'))).toBe(true);
+  });
+
+  it("writes one index for a link column the blueprint also makes unique", () => {
+    class CreateLocationsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("locations", (t: Blueprint) => {
+          t.hasPublicId("loc");
+          t.link("scope_id").notNull().comment("The location's scope node.");
+          t.link("group_id").nullable().comment("Its group.");
+          t.unique(["scope_id"]);
+        });
+      }
+    }
+    const sql = compileMigration(CreateLocationsMigration, { schema: "entities" }).steps.flatMap(
+      (step) => step.sql,
+    );
+    const onScope = sql.filter((text) => text.includes('"idx_locations_scope_id"'));
+    expect(onScope).toHaveLength(1);
+    expect(onScope[0]).toMatch(/^create unique index/);
+    expect(sql.filter((text) => text.includes('"idx_locations_group_id"'))).toHaveLength(1);
   });
 
   it("refuses a partitioning Postgres would refuse", () => {
@@ -186,8 +235,15 @@ describe(compileMigration, () => {
       'create index "idx_orders_workspace_id_status" on "orders"."orders" ("workspace_id", "status")',
     );
     expect(step?.sql).toContain('alter table "orders"."orders" force row level security');
-    expect(step?.sql).toContain(
-      `create policy "pol_orders_workspace_id" on "orders"."orders" using ("workspace_id" = nullif(current_setting('app.workspace_id', true), '')::uuid) with check ("workspace_id" = nullif(current_setting('app.workspace_id', true), '')::uuid)`,
+    // A uuid column decodes a public-id setting and casts any other value; the int test runs it on Postgres.
+    const policy = step?.sql.find((sql) =>
+      sql.startsWith('create policy "pol_orders_workspace_id"'),
+    );
+    expect(policy).toContain(
+      `using ("workspace_id" = (case when strpos(nullif(current_setting('app.workspace_id', true), ''), '_') > 0 then `,
+    );
+    expect(policy).toContain(
+      `else nullif(current_setting('app.workspace_id', true), '') end)::uuid) with check ("workspace_id" = (case`,
     );
     expect(step?.sql).toContain(
       'alter table "orders"."order_lines" add constraint "fk_order_lines_order_id" foreign key ("order_id") references "orders"."orders" ("id") on delete cascade',
@@ -534,6 +590,38 @@ describe(compileMigration, () => {
     );
   });
 
+  it("defaults a column to a setting, null while it is unset, and refuses one on a uuid column", () => {
+    class AddWorkspaceMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("plans", (t: Blueprint) => {
+          t.link("workspace_id")
+            .nullable()
+            .defaultSetting("app.workspace_id")
+            .comment("The workspace.");
+        });
+      }
+    }
+    const [step] = compileMigration(AddWorkspaceMigration, { schema: "plans" }).steps;
+    expect(step?.sql).toContain(
+      "-- lint: current_setting() is STABLE, so Postgres 11+ adds this column without rewriting the table.\n" +
+        "-- squawk-ignore adding-field-with-default\n" +
+        `alter table "plans"."plans" add column "workspace_id" varchar(33) default nullif(current_setting('app.workspace_id', true), '')::varchar(33) null`,
+    );
+    expect(() =>
+      compileMigration(AddWorkspaceMigration, { schema: "plans", publicIds: "uuid" }),
+    ).toThrow("workspace_id is uuid, so it takes no setting default");
+    class BadSettingMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("plans", (t: Blueprint) => {
+          t.link("workspace_id").nullable().defaultSetting("workspace").comment("The workspace.");
+        });
+      }
+    }
+    expect(() => compileMigration(BadSettingMigration, { schema: "plans" })).toThrow(
+      '"workspace" is not a custom setting',
+    );
+  });
+
   it("creates an ICU collation in the module schema and collates a text column by it", () => {
     class CreatePartiesMigration extends Migration {
       up(schema: SchemaBuilder): void {
@@ -665,6 +753,45 @@ describe(compileMigration, () => {
     expect(steps.flatMap((each) => each.sql).join("\n")).toContain('"tree_path" ltree null');
     expect(steps.flatMap((each) => each.sql).join("\n")).toContain(
       'create index concurrently "idx_categories_tree_path"',
+    );
+  });
+
+  it("writes geography columns with their GiST indexes, online on an existing table", () => {
+    class CreateZonesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension(Extension.Postgis);
+        schema.create("zones", (t: Blueprint) => {
+          t.hasPublicId("zon");
+          t.polygon("area").notNull().comment("The zone's outer ring.");
+          t.point("depot").nullable().comment("Where its drivers start.");
+        });
+      }
+    }
+    class AddRoutesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("zones", (t: Blueprint) => {
+          t.line("route").nullable().comment("The usual run.");
+        });
+      }
+    }
+    const created = compileMigration(CreateZonesMigration, { schema: "places" })
+      .steps.flatMap((each) => each.sql)
+      .join("\n");
+    expect(created).toContain('create extension if not exists "postgis"');
+    expect(created).toContain('"area" geography(Polygon,4326) not null');
+    expect(created).toContain('"depot" geography(Point,4326) null');
+    expect(created).toContain(
+      'create index "idx_zones_area" on "places"."zones" using gist ("area")',
+    );
+    expect(created).toContain(
+      'create index "idx_zones_depot" on "places"."zones" using gist ("depot")',
+    );
+    const added = compileMigration(AddRoutesMigration, { schema: "places" })
+      .steps.flatMap((each) => each.sql)
+      .join("\n");
+    expect(added).toContain('"route" geography(LineString,4326) null');
+    expect(added).toContain(
+      'create index concurrently "idx_zones_route" on "places"."zones" using gist ("route")',
     );
   });
 
@@ -881,5 +1008,567 @@ describe(compileMigration, () => {
     expect(() => compileMigration(EmptyMigration, { schema: "x", macros: [StringMacro] })).toThrow(
       /takes the name t.string/,
     );
+  });
+
+  describe("the contract step of an existing table (ADR 0347 d1 to d3)", () => {
+    /** The scope path's ancestor policy, as the table was created with it. */
+    const SCOPE_PATHS = { setting: "app.scope_paths", match: "ancestor" } as const;
+    const paths = `"scope_path" ? array(select (granted || '.*')::lquery from unnest(string_to_array(current_setting('app.scope_paths', true), '|')) as granted)`;
+
+    class ContractDocumentsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.refuseNulls("owner_id", ["documents", "folders"], "Backfill owner_id first.");
+        schema.table("documents", (t: Blueprint) => {
+          t.dropRowLevelSecurity("scope_path", SCOPE_PATHS);
+          t.change("owner_id").notNull();
+          t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "equals" });
+          t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, restrictive: true });
+        });
+      }
+    }
+    const [step] = compileMigration(ContractDocumentsMigration, { schema: "documents" }).steps;
+
+    it("refuses first, in one DO block that counts each table's nulls and undoes nothing", () => {
+      expect(step?.transactional).toBe(true);
+      const preflight = step?.sql[0] ?? "";
+      expect(preflight).toMatch(/^do \$\$\n/);
+      expect(preflight).toContain(
+        `select count(*) into n from "documents"."documents" where "owner_id" is null;`,
+      );
+      expect(preflight).toContain(`from "documents"."folders" where "owner_id" is null;`);
+      expect(preflight).toContain("'documents.folders'");
+      expect(preflight).toContain(
+        "raise exception 'refused before any change: rows with a null %: %. %', 'owner_id', array_to_string(found, ', '), 'Backfill owner_id first.';",
+      );
+      expect(preflight).not.toMatch(/\n\s*\n/);
+    });
+
+    it("sets NOT NULL, swaps the scope-path policy for the equality and makes the scope path restrictive", () => {
+      expect(step?.sql.slice(1)).toEqual([
+        `${REFUSED_NOT_NULL}alter table "documents"."documents" alter column "owner_id" set not null`,
+        'drop policy "pol_documents_scope_path" on "documents"."documents"',
+        'alter table "documents"."documents" enable row level security',
+        'alter table "documents"."documents" force row level security',
+        `create policy "pol_documents_owner_id" on "documents"."documents" using ("owner_id" = nullif(current_setting('app.owner_id', true), '')::varchar(33)) with check ("owner_id" = nullif(current_setting('app.owner_id', true), '')::varchar(33))`,
+        `create policy "pol_documents_scope_path" on "documents"."documents" as restrictive using (nullif(current_setting('app.scope_paths', true), '') is null or ${paths}) with check (nullif(current_setting('app.scope_paths', true), '') is null or ${paths})`,
+      ]);
+    });
+
+    it("derives the inverse: the old permissive policy back, row-level security left on", () => {
+      expect(step?.inverse).toEqual([
+        'drop policy if exists "pol_documents_scope_path" on "documents"."documents"',
+        'drop policy if exists "pol_documents_owner_id" on "documents"."documents"',
+        `create policy "pol_documents_scope_path" on "documents"."documents" using (${paths}) with check (${paths})`,
+        'alter table "documents"."documents" alter column "owner_id" drop not null',
+      ]);
+    });
+
+    it("writes the squawk ignore only above a SET NOT NULL that a whole-table pre-flight above vouched for", () => {
+      class UnvouchedMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("documents", (t: Blueprint) => t.change("owner_id").notNull());
+          schema.refuseNulls("owner_id", ["documents", "folders"], "Backfill first.");
+          schema.refuseNulls("parent_id", ["folders"], "Backfill first.", { where: "true" });
+          schema.table("folders", (t: Blueprint) => {
+            t.change("owner_id").notNull();
+            t.change("parent_id").notNull();
+            t.change("title").notNull();
+          });
+        }
+      }
+      const sql = compileMigration(UnvouchedMigration, { schema: "documents" }).steps[0]?.sql;
+      expect(sql?.filter((statement) => statement.includes("set not null"))).toEqual([
+        'alter table "documents"."documents" alter column "owner_id" set not null',
+        `${REFUSED_NOT_NULL}alter table "documents"."folders" alter column "owner_id" set not null`,
+        'alter table "documents"."folders" alter column "parent_id" set not null',
+        'alter table "documents"."folders" alter column "title" set not null',
+      ]);
+    });
+
+    it("sets a safe NOT NULL through a NOT VALID check, validated in a later step (ADR 0159)", () => {
+      class SafeContractMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["documents"], "Backfill first.");
+          schema.table("documents", (t: Blueprint) => t.change("owner_id").notNull({ safe: true }));
+        }
+      }
+      const table = '"documents"."documents"';
+      const check = '"ck_documents_owner_id_not_null"';
+      const [first, later, ...rest] = compileMigration(SafeContractMigration, {
+        schema: "documents",
+      }).steps;
+      expect(rest).toEqual([]);
+      expect(first?.sql.slice(1)).toEqual([
+        `alter table ${table} add constraint ${check} check ("owner_id" is not null) not valid`,
+      ]);
+      expect(first?.inverse).toEqual([`alter table ${table} drop constraint if exists ${check}`]);
+      expect(later).toEqual({
+        sql: [
+          `alter table ${table} validate constraint ${check}`,
+          `alter table ${table} alter column "owner_id" set not null`,
+          `alter table ${table} drop constraint ${check}`,
+        ],
+        transactional: true,
+        inverse: [
+          `alter table ${table} alter column "owner_id" drop not null`,
+          `alter table ${table} add constraint ${check} check ("owner_id" is not null) not valid`,
+        ],
+      });
+    });
+
+    it("drops a renamed table's policy by the name it was created under", () => {
+      class ContractProgressMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("checklist_progresses", (t: Blueprint) => {
+            t.dropRowLevelSecurity("scope_path", { ...SCOPE_PATHS, table: "checklist_progress" });
+          });
+        }
+      }
+      expect(
+        compileMigration(ContractProgressMigration, { schema: "workflow" }).steps[0]?.sql,
+      ).toEqual([
+        'drop policy "pol_checklist_progress_scope_path" on "workflow"."checklist_progresses"',
+      ]);
+    });
+
+    it.each([
+      [
+        "a second permissive policy",
+        (t: Blueprint) => {
+          t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "equals" });
+          t.rowLevelSecurity("scope_path", SCOPE_PATHS);
+        },
+        /a table takes one permissive policy/,
+      ],
+      [
+        "a second policy on one column",
+        (t: Blueprint) => {
+          t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, restrictive: true });
+          t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, restrictive: true });
+        },
+        /already has a policy on scope_path/,
+      ],
+      [
+        "a restrictive inherited match",
+        (t: Blueprint) =>
+          t.rowLevelSecurity("scope_path", {
+            setting: "app.scope_paths",
+            match: "inherited",
+            restrictive: true,
+          }),
+        /never restrictive/,
+      ],
+      [
+        "dropping an inherited policy",
+        (t: Blueprint) =>
+          t.dropRowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "inherited" }),
+        /not supported/,
+      ],
+    ])("refuses %s", (_name, define, message) => {
+      class BadMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("documents", define);
+        }
+      }
+      expect(() => compileMigration(BadMigration, { schema: "documents" })).toThrow(message);
+    });
+
+    it("writes the platform match, the scope path exempting its NULL rows, and a narrowed pre-flight", () => {
+      class ContractNoticesMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["notices"], "Backfill first.", {
+            where: 'nlevel("scope_path") > 1',
+          });
+          schema.table("notices", (t: Blueprint) => {
+            t.dropRowLevelSecurity("scope_path", SCOPE_PATHS);
+            t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "platform" });
+            t.rowLevelSecurity("scope_path", {
+              ...SCOPE_PATHS,
+              restrictive: true,
+              exemptNull: "owner_id",
+            });
+          });
+        }
+      }
+      const sql =
+        compileMigration(ContractNoticesMigration, { schema: "docs" }).steps[0]?.sql ?? [];
+      const value = "nullif(current_setting('app.owner_id', true), '')::varchar(33)";
+      const own = `"owner_id" is not distinct from ${value}`;
+      expect(sql[0]).toContain(
+        `from "docs"."notices" where "owner_id" is null and (nlevel("scope_path") > 1);`,
+      );
+      expect(sql).toContain(
+        `create policy "pol_notices_owner_id" on "docs"."notices" using ("owner_id" = ${value} or "owner_id" is null) with check (${own})`,
+      );
+      expect(sql).toContain(
+        `create policy "pol_notices_owner_id_write_update" on "docs"."notices" as restrictive for update using (${own})`,
+      );
+      expect(sql).toContain(
+        `create policy "pol_notices_owner_id_write_delete" on "docs"."notices" as restrictive for delete using (${own})`,
+      );
+      const granted = `array(select granted::ltree from unnest(string_to_array(current_setting('app.scope_paths', true), '|')) as granted)`;
+      const narrowed = `nullif(current_setting('app.scope_paths', true), '') is null or ("owner_id" is null and "scope_path" @> ${granted}) or ${paths}`;
+      expect(sql).toContain(
+        `create policy "pol_notices_scope_path" on "docs"."notices" as restrictive using (${narrowed}) with check (${narrowed})`,
+      );
+    });
+
+    it("refuses a restrictive platform match, exemptNull on a permissive policy, and a multi-line where", () => {
+      class RestrictivePlatformMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("notices", (t: Blueprint) =>
+            t.rowLevelSecurity("owner_id", {
+              setting: "app.owner_id",
+              match: "platform",
+              restrictive: true,
+            }),
+          );
+        }
+      }
+      class PermissiveExemptMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("notices", (t: Blueprint) =>
+            t.rowLevelSecurity("scope_path", { ...SCOPE_PATHS, exemptNull: "owner_id" }),
+          );
+        }
+      }
+      class MultiLineWhereMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["notices"], "Backfill first.", {
+            where: "true\nor true",
+          });
+        }
+      }
+      expect(() => compileMigration(RestrictivePlatformMigration, { schema: "docs" })).toThrow(
+        /never restrictive/,
+      );
+      expect(() => compileMigration(PermissiveExemptMigration, { schema: "docs" })).toThrow(
+        /restrictive policy only/,
+      );
+      expect(() => compileMigration(MultiLineWhereMigration, { schema: "docs" })).toThrow(
+        /one-line where/,
+      );
+    });
+
+    it("refuses a drop on a table being created, and a pre-flight with no table or remedy", () => {
+      class DropOnCreateMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("documents", (t: Blueprint) =>
+            t.dropRowLevelSecurity("scope_path", SCOPE_PATHS),
+          );
+        }
+      }
+      class NoTablesMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", [], "Backfill first.");
+        }
+      }
+      class NoRemedyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.refuseNulls("owner_id", ["documents"], " ");
+        }
+      }
+      expect(() => compileMigration(DropOnCreateMigration, { schema: "documents" })).toThrow(
+        /has no policy to drop/,
+      );
+      expect(() => compileMigration(NoTablesMigration, { schema: "documents" })).toThrow(
+        /at least one table/,
+      );
+      expect(() => compileMigration(NoRemedyMigration, { schema: "documents" })).toThrow(/remedy/);
+    });
+  });
+  describe("the platformTable and reviewedPolicy declarations (ADR 0239 amendment, group (c))", () => {
+    it("compiles each declaration to its marker line, which tableDeclarations reads back", () => {
+      class DeclareMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("inbox", (t: Blueprint) =>
+            t.platformTable("  received event ids only; no customer data  "),
+          );
+          schema.create("routes", (t: Blueprint) => {
+            t.string("route_id", 33).notNull().comment("The route.");
+            t.reviewedPolicy("a pre-tenant route read through a setting", [
+              "pol_routes_read",
+              "pol_routes_write",
+            ]);
+          });
+        }
+      }
+      const sql = sqlOf(DeclareMigration);
+      expect(sql).toContain(
+        "-- stackra:platform-table outbox.inbox received event ids only; no customer data;\n",
+      );
+      expect(sql).toContain(
+        "-- stackra:reviewed-policy outbox.routes pol_routes_read,pol_routes_write a pre-tenant route read through a setting;\n",
+      );
+      const declared = tableDeclarations(sql);
+      expect([...declared.platform]).toEqual([
+        ["outbox.inbox", "received event ids only; no customer data"],
+      ]);
+      expect([...declared.reviewed]).toEqual([
+        [
+          "outbox.routes",
+          {
+            policies: ["pol_routes_read", "pol_routes_write"],
+            reason: "a pre-tenant route read through a setting",
+          },
+        ],
+      ]);
+      // A marker is a comment: it has no inverse, and the declared create still compiles first after it.
+      const [step] = compileMigration(DeclareMigration, { schema: "outbox" }).steps;
+      expect(step?.inverse).toEqual(['drop table if exists "outbox"."routes"']);
+    });
+
+    it("refuses an empty or multi-line reason and a review that names no policy", () => {
+      for (const reason of ["", "   ", "two\nlines"]) {
+        class PlatformMigration extends Migration {
+          up(schema: SchemaBuilder): void {
+            schema.table("inbox", (t: Blueprint) => t.platformTable(reason));
+          }
+        }
+        class ReviewMigration extends Migration {
+          up(schema: SchemaBuilder): void {
+            schema.table("routes", (t: Blueprint) => t.reviewedPolicy(reason, ["pol_routes_read"]));
+          }
+        }
+        expect(() => sqlOf(PlatformMigration)).toThrow(/reason/);
+        expect(() => sqlOf(ReviewMigration)).toThrow(/reason/);
+      }
+      class NoPolicyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("routes", (t: Blueprint) => t.reviewedPolicy("reviewed", []));
+        }
+      }
+      class BadPolicyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("routes", (t: Blueprint) => t.reviewedPolicy("reviewed", ["pol x"]));
+        }
+      }
+      class TwiceMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("routes", (t: Blueprint) => {
+            t.platformTable("no tenant data");
+            t.reviewedPolicy("reviewed", ["pol_routes_read"]);
+          });
+        }
+      }
+      expect(() => sqlOf(NoPolicyMigration)).toThrow(/names the policies/);
+      expect(() => sqlOf(BadPolicyMigration)).toThrow();
+      expect(() => sqlOf(TwiceMigration)).toThrow(/already declares/);
+    });
+
+    it("refuses a platform table that holds an owner column or a policy", () => {
+      class ScopeIdMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.string("scope_id", 63).nullable().comment("The scope.");
+          });
+        }
+      }
+      class IsolationScopeMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.string("isolation_scope_id", 33).nullable().comment("The isolation scope.");
+          });
+        }
+      }
+      class SettingDefaultMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.string("owner_id", 33)
+              .nullable()
+              .defaultSetting("app.owner_id")
+              .comment("Filled from the call.");
+          });
+        }
+      }
+      class PolicyMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("cursors", (t: Blueprint) => {
+            t.platformTable("one row per consumer");
+            t.uuid("workspace_id").notNull().comment("The workspace.");
+            t.rowLevelSecurity("workspace_id", { setting: "app.workspace_id", match: "equals" });
+          });
+        }
+      }
+      expect(() => sqlOf(ScopeIdMigration)).toThrow(/platform table.*scope_id/);
+      expect(() => sqlOf(IsolationScopeMigration)).toThrow(/isolation_scope_id/);
+      expect(() => sqlOf(SettingDefaultMigration)).toThrow(/owner_id/);
+      expect(() => sqlOf(PolicyMigration)).toThrow(/workspace_id policy/);
+    });
+  });
+  describe("t.systemAccess and schema.systemFunction (ADR 0239 amendment, gap A)", () => {
+    class ClaimMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("jobs", (t: Blueprint) => {
+          t.string("id", 33).notNull().comment("The job.");
+          t.string("tenant_id", 33).notNull().comment("The owning tenant.");
+          t.timestamp("leased_until").nullable().comment("When the claim's lease ends.");
+          t.rowLevelSecurity("tenant_id", { setting: "app.tenant_id", match: "equals" });
+          t.systemAccess({
+            select: ["id", "tenant_id", "leased_until"],
+            update: ["leased_until"],
+            reason: " the worker claims due jobs across tenants ",
+          });
+        });
+        schema.table("inbox", (t: Blueprint) =>
+          t.systemAccess({ select: ["id", "tenant_id"], reason: "a webhook finds the tenant" }),
+        );
+        schema.systemFunction({
+          name: "claim_jobs",
+          args: { max_jobs: "integer" },
+          returns: { id: "varchar(33)", tenant_id: "varchar(33)" },
+          sql: "select j.id, j.tenant_id from outbox.jobs j limit max_jobs",
+          reason: "the worker claims due jobs across tenants",
+        });
+      }
+    }
+
+    it("compiles the grants, role-scoped policies and the definer function, which tableDeclarations reads back", () => {
+      const sql = sqlOf(ClaimMigration);
+      const role = '"stackra_system_access"';
+      for (const line of [
+        "-- stackra:system-access outbox.jobs select=id,tenant_id,leased_until update=leased_until the worker claims due jobs across tenants;\n",
+        `  create role ${role} nologin nobypassrls;\n`,
+        `grant usage on schema "outbox" to ${role};\n`,
+        `grant select ("id", "tenant_id", "leased_until") on "outbox"."jobs" to ${role};\n`,
+        `create policy "pol_jobs_system_access_select" on "outbox"."jobs" for select to ${role} using (true);\n`,
+        `grant update ("leased_until") on "outbox"."jobs" to ${role};\n`,
+        `create policy "pol_jobs_system_access_update" on "outbox"."jobs" for update to ${role} using (true) with check (true);\n`,
+        "-- stackra:system-access outbox.inbox select=id,tenant_id a webhook finds the tenant;\n",
+        "-- stackra:system-function outbox.claim_jobs the worker claims due jobs across tenants;\n",
+        'create function "outbox"."claim_jobs"("max_jobs" integer) returns table ("id" varchar(33), "tenant_id" varchar(33))\nlanguage sql security definer set search_path = pg_catalog, pg_temp\nas $stackra$\nselect j.id, j.tenant_id from outbox.jobs j limit max_jobs\n$stackra$;\n',
+      ])
+        expect(sql).toContain(line);
+      expect(sql).not.toContain('"pol_inbox_system_access_update"');
+      // EXECUTE is revoked from PUBLIC before the hand-over and granted to the migrator after it.
+      const order = [
+        'revoke all on function "outbox"."claim_jobs"(integer) from public',
+        `grant ${role} to current_user`,
+        `grant create on schema "outbox" to ${role}`,
+        `alter function "outbox"."claim_jobs"(integer) owner to ${role}`,
+        `revoke create on schema "outbox" from ${role}`,
+        'grant execute on function "outbox"."claim_jobs"(integer) to current_user',
+        `revoke ${role} from current_user`,
+      ].map((statement) => sql.indexOf(`${statement};\n`));
+      expect(order.every((at) => at >= 0)).toBe(true);
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+      const declared = tableDeclarations(sql);
+      expect([...declared.systemAccess]).toEqual([
+        [
+          "outbox.jobs",
+          {
+            select: ["id", "tenant_id", "leased_until"],
+            update: ["leased_until"],
+            reason: "the worker claims due jobs across tenants",
+          },
+        ],
+        [
+          "outbox.inbox",
+          { select: ["id", "tenant_id"], update: [], reason: "a webhook finds the tenant" },
+        ],
+      ]);
+      expect([...declared.systemFunctions]).toEqual([
+        ["outbox.claim_jobs", "the worker claims due jobs across tenants"],
+      ]);
+      // A down drops the function and revokes the grants; the role and the schema usage stay.
+      const [step] = compileMigration(ClaimMigration, { schema: "outbox" }).steps;
+      expect(step?.inverse).toContain('drop function if exists "outbox"."claim_jobs"(integer)');
+      expect(step?.inverse).toContain(
+        `revoke update ("leased_until") on "outbox"."jobs" from ${role}`,
+      );
+    });
+
+    it("lets the role through a platform-form table's _write_update only with update columns", () => {
+      class PlatformClaimMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("messages", (t: Blueprint) => {
+            t.rowLevelSecurity("tenant_id", { setting: "app.tenant_id", match: "platform" });
+            t.systemAccess({
+              select: ["id", "tenant_id"],
+              update: ["leased_until"],
+              reason: "the relay claims",
+            });
+          });
+        }
+      }
+      class PlatformLookupMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.table("messages", (t: Blueprint) => {
+            t.rowLevelSecurity("tenant_id", { setting: "app.tenant_id", match: "platform" });
+            t.systemAccess({ select: ["id", "tenant_id"], reason: "a webhook finds the tenant" });
+          });
+        }
+      }
+      const own =
+        "\"tenant_id\" is not distinct from nullif(current_setting('app.tenant_id', true), '')::varchar(33)";
+      const policy = 'create policy "pol_messages_tenant_id_write_';
+      const on = 'on "outbox"."messages" as restrictive for';
+      const claims = sqlOf(PlatformClaimMigration);
+      expect(claims).toContain(
+        `${policy}update" ${on} update using ((${own}) or current_user = 'stackra_system_access');\n`,
+      );
+      expect(claims).toContain(`${policy}delete" ${on} delete using (${own});\n`);
+      const lookup = sqlOf(PlatformLookupMigration);
+      expect(lookup).toContain(`${policy}update" ${on} update using (${own});\n`);
+      expect(lookup).not.toContain("current_user = 'stackra_system_access'");
+    });
+
+    it("refuses a system access without its reason or columns, on a platform table, or twice", () => {
+      expect(refusal((t) => t.systemAccess({ select: ["id"], reason: "" }))).toThrow(/reason/);
+      expect(refusal((t) => t.systemAccess({ select: ["id"], reason: "a\nb" }))).toThrow(
+        /one line/,
+      );
+      expect(refusal((t) => t.systemAccess({ select: [], reason: "r" }))).toThrow(
+        /names the columns/,
+      );
+      expect(refusal((t) => t.systemAccess({ select: ["Id"], reason: "r" }))).toThrow(
+        /database name/,
+      );
+      expect(
+        refusal((t) => t.systemAccess({ select: ["id"], update: ["x y"], reason: "r" })),
+      ).toThrow(/database name/);
+      expect(
+        refusal((t) => {
+          t.systemAccess({ select: ["id"], reason: "r" });
+          t.systemAccess({ select: ["id"], reason: "r" });
+        }),
+      ).toThrow(/already declares its system access/);
+      expect(
+        refusal((t) => {
+          t.platformTable("no tenant data");
+          t.systemAccess({ select: ["id"], reason: "r" });
+        }),
+      ).toThrow(/platform table/);
+    });
+
+    it("refuses a system function without its reason or columns, with a bad type or body", () => {
+      const base = {
+        name: "find_tenant",
+        args: { id: "varchar(33)" },
+        returns: { tenant_id: "varchar(33)" },
+        sql: "select 1",
+        reason: "a webhook finds the tenant",
+      };
+      for (const [change, message] of [
+        [{ reason: " " }, /reason/],
+        [{ name: "Find" }, /database name/],
+        [{ returns: {} }, /declares the columns it returns/],
+        [{ args: { id: "text; drop table x" } }, /not a SQL type name/],
+        [{ returns: { "tenant id": "text" } }, /database name/],
+        [{ sql: "  " }, /needs a body/],
+        [{ sql: "select 1\n\nselect 2" }, /no blank line/],
+        [{ sql: "select $stackra$x$stackra$" }, /no blank line and no/],
+      ] as const) {
+        class FunctionMigration extends Migration {
+          up(schema: SchemaBuilder): void {
+            schema.systemFunction({ ...base, ...change });
+          }
+        }
+        expect(() => sqlOf(FunctionMigration)).toThrow(message);
+      }
+    });
   });
 });

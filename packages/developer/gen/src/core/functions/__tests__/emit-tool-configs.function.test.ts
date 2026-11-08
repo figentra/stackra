@@ -15,6 +15,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
+import type { DeclaredClass } from "#core/types/declared-class.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
@@ -27,6 +28,24 @@ function vitestConfigOf(ir: typeof LOYALTY_KIT_IR): string {
       (file) => file.path === ".stackra/vitest.config.ts",
     )?.content ?? ""
   );
+}
+
+/** A seeder of the plans module taking `deps`. */
+function plansSeeder(name: string, deps: DeclaredClass["deps"]): DeclaredClass {
+  return {
+    name,
+    kind: "seeder",
+    module: "plans",
+    file: `src/modules/plans/database/seeders/${name}.seeder.ts`,
+    importPath: `#modules/plans/database/seeders/${name}.seeder`,
+    options: {},
+    deps,
+    facets: [],
+    methods: ["run"],
+    refusals: [],
+    statics: {},
+    traits: [],
+  };
 }
 
 describe("emitToolConfigs", () => {
@@ -71,6 +90,10 @@ describe("emitToolConfigs", () => {
     ) as Record<string, unknown>;
     expect(tsconfig["extends"]).toBe("./tsconfig.json");
     expect(tsconfig["include"]).toEqual(["src", ".stackra/entry"]);
+    // oxfmt's layout, so the member's format check passes on the file as written.
+    expect(pkg.find((file) => file.path === "tsconfig.build.json")?.content).toContain(
+      '  "include": ["src", ".stackra/entry"],\n  "exclude": ["src/**/__tests__/**", "src/*.ts", "src/*.tsx"]\n}\n',
+    );
     expect(content("tsconfig.build.json")).toBe("");
   });
 
@@ -118,6 +141,42 @@ describe("emitToolConfigs", () => {
     expect(setup).toContain("registerModelPartners([\n  [InvoiceFactory, Invoice],\n]);");
   });
 
+  it("registers the constructor tokens of each seeder that injects, for .seed() (STA-1698)", () => {
+    const ir = {
+      ...BILLING_IR,
+      classes: [
+        ...BILLING_IR.classes,
+        plansSeeder("PlansMinimalSeeder", [
+          {
+            class: { name: "Plan", from: "#modules/plans/models/plan.model" },
+            of: { name: "repositoryOf", from: "@stackra/database" },
+          },
+        ]),
+        plansSeeder("PlansDemoSeeder", []),
+      ],
+    };
+    const setup =
+      emitToolConfigs(ir, { entries: [], registrations: false }).find(
+        (file) => file.path === ".stackra/vitest.setup.ts",
+      )?.content ?? "";
+    expect(setup).toContain('import { registerSeederDeps } from "@stackra/database/testing";');
+    expect(setup).toContain(
+      'import { registerModelPartners, repositoryOf } from "@stackra/database";',
+    );
+    expect(setup).toContain('import { Plan } from "#modules/plans/models/plan.model";');
+    expect(setup).toContain(
+      "registerSeederDeps([\n  [PlansMinimalSeeder, [repositoryOf(Plan)]],\n]);",
+    );
+    // A seeder that injects nothing is built without arguments, so it needs no row.
+    expect(setup).not.toContain("PlansDemoSeeder");
+    // No row for a member off @stackra/database.
+    expect(
+      emitToolConfigs({ ...ir, packages: [] }, { entries: [], registrations: false }).find(
+        (file) => file.path === ".stackra/vitest.setup.ts",
+      )?.content,
+    ).not.toContain("registerSeederDeps");
+  });
+
   it("loads the database testing entry only for a member on @stackra/database", () => {
     expect(content(".stackra/vitest.setup.ts")).toContain('import "@stackra/database/testing";');
     const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
@@ -130,6 +189,26 @@ describe("emitToolConfigs", () => {
     expect(content(".stackra/vitest.setup.ts")).toContain('import "@stackra/clients/testing";');
     const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
     expect(bare[1]?.content).not.toContain("@stackra/clients/testing");
+  });
+
+  it("loads the tenancy testing entry only for a member on @stackra/tenancy", () => {
+    const on = emitToolConfigs(
+      { ...COMMERCE_IR, packages: ["@stackra/container", "@stackra/tenancy"] },
+      { entries: [], registrations: false },
+    );
+    expect(on[1]?.content).toContain('import "@stackra/tenancy/testing";');
+    const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
+    expect(bare[1]?.content).not.toContain("@stackra/tenancy/testing");
+  });
+
+  it("loads the actions testing entry only for a member on @stackra/actions", () => {
+    const on = emitToolConfigs(
+      { ...COMMERCE_IR, packages: ["@stackra/container", "@stackra/actions"] },
+      { entries: [], registrations: false },
+    );
+    expect(on[1]?.content).toContain('import "@stackra/actions/testing";');
+    const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
+    expect(bare[1]?.content).not.toContain("@stackra/actions/testing");
   });
 
   it("writes a container-free setup for a member off @stackra/container, and the container one otherwise", () => {

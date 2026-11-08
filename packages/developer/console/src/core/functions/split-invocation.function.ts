@@ -1,18 +1,20 @@
 /**
  * Stackra file contract:
- * Purpose: `splitInvocation(argv, known)`, the command name and the other tokens, with `-n` spelt out as
+ * Purpose: `splitInvocation(argv, known, valueFlag)`, the command name and the other tokens, with `-n` spelt out as
  *          `--no-interaction`. The name is the first positional token before `--`, joined with the words after it
  *          into the longest `a:b` name that `known` accepts, so `mcp sync` runs `mcp:sync`; `raw` keeps the other
  *          tokens exactly as given.
- * Boundary: pure. Only global options, which are all flags, may come before the name.
+ * Boundary: pure. Before the name come global options (all flags) and options for which `valueFlag` is true, each of
+ *           which takes the next token as its value (`--box 2 ssh`); `--box=2` is one token either way.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-009 and FR-015; STA-1966 spec FR-012.
+ * Governing contract: STA-1730 spec FR-009 and FR-015; STA-1966 spec FR-012; ADR 0506 (amendment 2026-11-03).
  */
 
 /** The name and the remaining tokens of `argv`. */
 export function splitInvocation(
   argv: readonly string[],
   known: (name: string) => boolean = () => false,
+  valueFlag: (token: string) => boolean = () => false,
 ): {
   name: string | undefined;
   rest: string[];
@@ -32,6 +34,15 @@ export function splitInvocation(
       afterDash = true;
       rest.push(token);
       raw.push(token);
+    } else if (
+      name === undefined &&
+      !token.includes("=") &&
+      valueFlag(token) &&
+      index + 1 < argv.length
+    ) {
+      index += 1;
+      rest.push(token, argv[index] ?? "");
+      raw.push(token, argv[index] ?? "");
     } else if (name === undefined && !token.startsWith("-")) {
       let words = 1;
       while (index + words < argv.length && !(argv[index + words] ?? "-").startsWith("-"))

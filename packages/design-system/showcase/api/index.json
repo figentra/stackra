@@ -77,6 +77,11 @@
     "propsCount": 11,
     "react": true
   },
+  "free/autocomplete": {
+    "partsCount": 1,
+    "propsCount": 56,
+    "react": true
+  },
   "free/avatar": {
     "native": true,
     "partsCount": 1,
@@ -152,7 +157,7 @@
   "free/button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 56,
+    "propsCount": 58,
     "react": true
   },
   "free/button-group": {
@@ -296,10 +301,20 @@
     "propsCount": 21,
     "react": true
   },
+  "free/color-field": {
+    "partsCount": 1,
+    "propsCount": 48,
+    "react": true
+  },
   "free/color-picker": {
     "native": true,
     "partsCount": 1,
     "propsCount": 13,
+    "react": true
+  },
+  "free/color-swatch": {
+    "partsCount": 1,
+    "propsCount": 16,
     "react": true
   },
   "free/column-chooser": {
@@ -359,7 +374,7 @@
   "free/copy-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 52,
+    "propsCount": 54,
     "react": true
   },
   "free/countdown": {
@@ -548,7 +563,7 @@
   "free/file-trigger": {
     "native": true,
     "partsCount": 2,
-    "propsCount": 69,
+    "propsCount": 71,
     "react": true
   },
   "free/filter-bar": {
@@ -561,6 +576,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 17,
+    "react": true
+  },
+  "free/flag": {
+    "partsCount": 1,
+    "propsCount": 4,
     "react": true
   },
   "free/flip-card": {
@@ -677,7 +697,7 @@
   "free/icon-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 53,
+    "propsCount": 55,
     "react": true
   },
   "free/image": {
@@ -812,6 +832,11 @@
     "propsCount": 5,
     "react": true
   },
+  "free/marker-map": {
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
   "free/marquee": {
     "native": true,
     "partsCount": 1,
@@ -892,7 +917,7 @@
   "free/morph-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 55,
+    "propsCount": 57,
     "react": true
   },
   "free/morph-tabs": {
@@ -1071,7 +1096,7 @@
   "free/progress-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 57,
+    "propsCount": 59,
     "react": true
   },
   "free/progress-circle": {
@@ -1354,7 +1379,7 @@
   "free/sidebar": {
     "native": true,
     "partsCount": 14,
-    "propsCount": 275,
+    "propsCount": 277,
     "react": true
   },
   "free/single-column-layout": {

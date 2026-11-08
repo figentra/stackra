@@ -1,0 +1,24 @@
+{
+  "member": "shop",
+  "package": "@golden/service-shop",
+  "version": "1.0.0",
+  "actions": [
+    {
+      "key": "shop.order.void@1",
+      "kind": "action",
+      "module": "shop",
+      "class": "CancelOrderAction",
+      "file": "src/node/actions/cancel-order.action.ts"
+    }
+  ],
+  "permissions": [
+    {
+      "key": "shop.order.look",
+      "risk": "L0",
+      "class": "OrderPermissions",
+      "module": "shop",
+      "member": "read",
+      "file": "src/node/access/order.permissions.ts"
+    }
+  ]
+}

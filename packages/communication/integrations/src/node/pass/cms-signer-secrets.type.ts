@@ -3,7 +3,7 @@
  * Purpose: `CmsSignerSecrets`, the names of the secrets the pkijs `CmsSigner` reads: the signing certificate, its
  *          PKCS #8 private key and the intermediate certificates sent with the signature (Apple's WWDR).
  * Boundary: a type only; names, never values (ADR 0173). The values are PEM text held in the deployment's secret
- *           store (Infisical), never in git or a log.
+ *           store (synced from SOPS by runway), never in plain text in git or a log.
  * Runtime: isomorphic
  * Governing contract: ADR 0348 (decision 5: `APPLE_WALLET_PASS_CERTIFICATE`, `APPLE_WALLET_PASS_KEY`); ADR 0173.
  */

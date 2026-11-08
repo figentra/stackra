@@ -1,0 +1,4 @@
+/** The props of `Greeting`. */
+export interface GreetingProps {
+  readonly name: string;
+}

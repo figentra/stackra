@@ -19,7 +19,7 @@ import type { EdgeBundle } from "#node/types/edge-bundle.type";
  * The keys uploaded, sorted.
  *
  * @example
- * await uploadBundle(bundle, "mezzora", "figentra-assets", runCommand);
+ * await uploadBundle(bundle, "mezzora", "figentra-assets", runProgram);
  */
 export async function uploadBundle(
   bundle: EdgeBundle,

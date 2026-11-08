@@ -129,6 +129,9 @@
     "stackra/no-literal-shadow": "error",
     "stackra/no-literal-z-index": "error",
     "stackra/no-parameter-decorator": "error",
+    // ADR 0173 amendment 2026-11-04 (STA-2104): the one rule at warn, a declared exception to B-1 while the current
+    // raw env reads migrate to configuration classes; it moves to error with the last one.
+    "stackra/no-raw-env": "warn",
     "stackra/no-raw-key-literal": "error",
     "stackra/no-tenant-vocabulary": "error",
     "stackra/one-declaration-per-file": "error",

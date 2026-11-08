@@ -3,11 +3,11 @@
  * Purpose: `githubStack(plan, rules, config?)`, the GitHub slice of the Pulumi program `stackra infra gen` composes:
  *          the repository's settings (squash merges only, keeping the commit messages; branches deleted on merge;
  *          secret scanning and push protection on a public repository), the OIDC subject template pinned to GitHub's
- *          default `repo:<org>/<repo>:environment:<env>` that the cloud roles and the Infisical CI identity trust,
- *          each deployment environment with its reviewers, deploy refs and variables, the repository variables, and
- *          every committed ruleset and the branch protection.
- * Boundary: runs inside a Pulumi program. Creates no Actions secret and reads no secret value: CI reads secrets from
- *           Infisical over OIDC (ADR 0173), so GitHub holds variables (ids) only. The repository is protected and
+ *          default `repo:<org>/<repo>:environment:<env>` (opt-in, `oidcTemplate`), each deployment environment with
+ *          its reviewers, deploy refs and variables, the repository variables, and every committed ruleset and the
+ *          branch protection (opt-in, `rules`).
+ * Boundary: runs inside a Pulumi program. Creates no Actions secret and reads no secret value: CI decrypts secrets
+ *           from sops over OIDC (ADR 0525), so GitHub holds variables (ids) only. The repository is protected and
  *           retained on delete, so neither `pulumi destroy` nor a removed resource deletes it; the owner imports an
  *           existing repository once before the first `up`. The provider's token comes from the environment
  *           (`GITHUB_TOKEN`), never from this code. Agents run `pulumi preview` at most; `up` is the owner's.
@@ -22,6 +22,7 @@ import * as pulumi from "@pulumi/pulumi";
 import { GithubVisibility } from "#core/enums/github-visibility.enum";
 import type { GithubPlan } from "#core/types/github-plan.type";
 import type { GithubRules } from "#core/types/github-rules.type";
+import type { GithubStackOptions } from "#node/types/github-stack-options.type";
 import { resolveRef } from "#node/functions/resolve-ref.function";
 import { rulesetRules } from "#node/functions/ruleset-rules.function";
 import type { GithubStack } from "#node/types/github-stack.type";
@@ -32,6 +33,7 @@ import type { GithubStack } from "#node/types/github-stack.type";
  * @param plan - the plan `githubPlan` built from the root runway.
  * @param rules - the committed rules `readGithubRules` read.
  * @param config - the stack config that `ref:` values resolve from; defaults to the project's.
+ * @param options - the opt-in parts: `oidcTemplate` and `rules`, both off by default.
  * @throws Error (Pulumi's missing-configuration error) when a `ref:` variable is not set in the stack config.
  * @example
  * // .stackra/infra/index.ts (generated)
@@ -41,6 +43,7 @@ export function githubStack(
   plan: GithubPlan,
   rules: GithubRules,
   config: pulumi.Config = new pulumi.Config(),
+  options: GithubStackOptions = {},
 ): GithubStack {
   const opts = { provider: new github.Provider(plan.repo, { owner: plan.org }) };
 
@@ -68,11 +71,12 @@ export function githubStack(
     { ...opts, protect: true, retainOnDelete: true },
   );
 
-  void new github.ActionsRepositoryOidcSubjectClaimCustomizationTemplate(
-    `${plan.repo}-oidc`,
-    { repository: repository.name, useDefault: true },
-    opts,
-  );
+  if (options.oidcTemplate === true)
+    void new github.ActionsRepositoryOidcSubjectClaimCustomizationTemplate(
+      `${plan.repo}-oidc`,
+      { repository: repository.name, useDefault: true },
+      opts,
+    );
 
   for (const [name, value] of Object.entries(plan.variables)) {
     void new github.ActionsVariable(
@@ -139,7 +143,7 @@ export function githubStack(
     }
   }
 
-  for (const ruleset of rules.rulesets) {
+  for (const ruleset of options.rules === true ? rules.rulesets : []) {
     void new github.RepositoryRuleset(
       `${plan.repo}-${ruleset.name}`,
       {
@@ -164,7 +168,7 @@ export function githubStack(
     );
   }
 
-  const protection = rules.branchProtection;
+  const protection = options.rules === true ? rules.branchProtection : undefined;
   if (protection !== undefined) {
     const { rules: branch } = protection;
     const checks = branch.required_status_checks;

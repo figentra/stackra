@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `PostgresAuditTrailDriver`: each entry is inserted under the call's tenant as the next
  *          verifiable link after the head; a lost race retries from a fresh savepoint; five lost races and any other
- *          failure propagate; a call in no tenant is logged as `audit_write_skipped` and never fails.
+ *          failure propagate; an agent with no tenant of its own is written in its
+ *          human's tenant; a branch user's entry is written in the call's tree tenant (`call.scopeId`); a call in no tenant (a platform agent too) is logged as `audit_write_skipped` and never fails.
  * Boundary: test only; the table, tenant isolation and the logger are in-memory stand-ins of the calls the driver
  *           makes, so no Postgres runs.
  * Runtime: node (vitest)
@@ -10,11 +11,11 @@
  */
 import { AuditTrail } from "@stackra/actions/contracts";
 import type { AuditEntry } from "@stackra/actions/contracts";
-import { ActorKind, ApiArea } from "@stackra/contracts";
+import { ActorKind, ApiArea, Realm } from "@stackra/contracts";
 import type { Actor, Logger } from "@stackra/contracts";
 import { UniqueViolation } from "@stackra/database";
-import type { Repository } from "@stackra/database";
-import type { TenantIsolationService } from "@stackra/tenancy/node";
+import type { Database, Repository } from "@stackra/database";
+import { TenantIsolationService } from "@stackra/tenancy/node";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -84,6 +85,62 @@ describe("PostgresAuditTrailDriver", () => {
       [2, "call_2"],
     ]);
     await expect(findAuditChainBreak(rows)).resolves.toBeUndefined();
+  });
+
+  it("writes an agent with no tenant of its own in its human's tenant, and skips a platform agent", async () => {
+    const scopeA = "scp_01j9z3k4m5n6p7q8r9s0t1v2wa";
+    const human: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Staff };
+    const background: Actor = {
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { ...human, scopeId: scopeA },
+    };
+    // the real tenant service over a recording database, so the tenant it sets is the one the row is written under
+    const execute = vi.fn(async () => []);
+    const database = {
+      em: () => ({ execute, flush: async () => undefined, isInTransaction: () => false }),
+      transaction: async (work: () => Promise<unknown>) => work(),
+    } as unknown as Database;
+    const { rows, entries, logger } = driverWith();
+    const driver = new PostgresAuditTrailDriver(
+      entries as unknown as Repository<AuditLogEntry>,
+      new TenantIsolationService(database),
+      logger as unknown as Logger,
+    );
+    await driver.record(entryOf("call_1", background));
+    expect(rows.map((row) => row.callId)).toEqual(["call_1"]);
+    expect(execute).toHaveBeenCalledWith("select set_config(?, ?, true)", [
+      "app.tenant_id",
+      scopeA,
+    ]);
+
+    await driver.record(
+      entryOf("call_2", { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: human }),
+    );
+    expect(rows).toHaveLength(1);
+    expect(logger.warn).toHaveBeenCalledWith(AUDIT_WRITE_SKIPPED, {
+      callId: "call_2",
+      key: "orders.order.create@1",
+    });
+  });
+
+  it("writes a branch user's entry in the tenant the pipeline ran as, not the branch", async () => {
+    const { driver, tenancy } = driverWith();
+    const branchUser: Actor = {
+      kind: ActorKind.User,
+      id: "usr_1",
+      realm: Realm.Customer,
+      scopeId: "scp_riyadh",
+    };
+    const entry = entryOf("call_1", branchUser);
+    await driver.record({
+      ...entry,
+      call: { ...entry.call, scopeId: "scp_acme", branchScopeId: "scp_riyadh" },
+    });
+    expect(tenancy.withTenant).toHaveBeenCalledWith(
+      { ...branchUser, scopeId: "scp_acme" },
+      expect.any(Function),
+    );
   });
 
   it("retries from a fresh savepoint after a lost race", async () => {

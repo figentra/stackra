@@ -11,7 +11,7 @@
  * Governing contract: ADR 0294 (decisions 3, 16, 18 and 21); ADR 0305 (rule 28); ADR 0098; ADR 0101.
  */
 import { Action, type ActionContext, Idempotency } from "@stackra/actions";
-import { ActorKind, HttpMethod } from "@stackra/contracts";
+import { ActorKind, AssuranceLevel, HttpMethod } from "@stackra/contracts";
 
 import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import type { RedeemPointsInput } from "#node/schemas/redeem-points-input.schema";
@@ -29,6 +29,7 @@ export class RedeemPointsAction extends Action({
   permission: LoyaltyAccountPermissions.redeem,
   actors: [ActorKind.User, ActorKind.Service],
   idempotency: Idempotency.Required,
+  stepUp: AssuranceLevel.Aal2,
   rateLimit: { perMinute: 30 },
   endpoint: { method: HttpMethod.Post, path: "/loyalty/redemptions" },
 }) {

@@ -1,6 +1,13 @@
 [
   {
     "member": "packages/shop",
+    "code": "idempotency_missing",
+    "file": "src/node/actions/untyped.action.ts",
+    "subject": "UntypedAction",
+    "severity": "warning"
+  },
+  {
+    "member": "packages/shop",
     "code": "shape_number_kind",
     "file": "src/core/schemas/banned.schema.ts",
     "subject": "Banned.count"

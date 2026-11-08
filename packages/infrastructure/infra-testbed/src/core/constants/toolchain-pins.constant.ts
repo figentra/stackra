@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `TOOLCHAIN_PINS`, the one place the testbed's tool versions are written: the job image's Dockerfile
- *          build arguments, the host components and the recipe version all read it. A test checks `node`, `pnpm`,
- *          `infisical` and `shfmt` against the repository's `mise.toml`, and `playwright` against the catalogue, so a
+ *          build arguments, the host components and the recipe version all read it. A test checks `node`, `pnpm`
+ *          and `shfmt` against the repository's `mise.toml`, and `playwright` against the catalogue, so a
  *          bump there that forgets this file fails.
  * Boundary: data only; pure and Pulumi-free.
  * Runtime: isomorphic
@@ -13,8 +13,8 @@ export const TOOLCHAIN_PINS = {
   /** `mise.toml` `node`. */
   node: "24.22.0",
   /** `mise.toml` `pnpm`, equal to the root `packageManager`. */
-  pnpm: "12.6.0",
-  /** `mise.toml` `github:Infisical/cli`. */
+  pnpm: "12.16.1",
+  /** The boxes' Infisical CLI; workstations no longer pin it in `mise.toml` (ADR 0525). */
   infisical: "0.44.2",
   /** `mise.toml` `shfmt`: `pnpm format:check` (and so `pnpm verify`) runs it over the shell scripts. */
   shfmt: "3.14.1",

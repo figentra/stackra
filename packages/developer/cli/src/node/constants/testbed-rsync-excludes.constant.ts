@@ -17,4 +17,6 @@ export const TESTBED_RSYNC_EXCLUDES: readonly string[] = [
   ".turbo",
   "dist",
   ".next",
+  // A worktree's pnpm store (about 7.5 GB), which every run would otherwise resend over SSM; the box has its own.
+  ".cache",
 ];

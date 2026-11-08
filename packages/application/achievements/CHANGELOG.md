@@ -1,5 +1,604 @@
 # @stackra/achievements
 
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [ceceef3]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [031a1f7]
+- Updated dependencies [9d0dd67]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/integrations@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/rules@0.26.0
+  - @stackra/content@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/documents@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- 1d7bbc1: The contract migrations (database 0007, achievements 0004, rules 0005, segments 0003, content 0006, collaboration
+  0004, workflow 0011 and webhooks 0003) now carry a reviewed squawk ignore, with its reason, above each `SET NOT NULL`
+  that the migration's pre-flight checked, so a product that hosts them lints clean. The runner hashes a migration
+  without its lint lines, so no checksum changes, and nothing runs differently.
+  
+  New contract steps can set NOT NULL without scanning the table under an exclusive lock:
+  `t.belongsToTenant({ contract: true, safeNotNull: true })`, or `t.change(column).notNull({ safe: true })`, adds a
+  `NOT VALID` check, then validates it, sets NOT NULL and drops the check in a later step. The released migrations keep
+  their form.
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/rules@0.25.0
+  - @stackra/content@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/iam@0.25.0
+  - @stackra/integrations@0.25.0
+  - @stackra/documents@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/rules@0.24.0
+  - @stackra/integrations@0.24.0
+  - @stackra/content@0.24.0
+  - @stackra/documents@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The tenancy contract step. A new migration in each package (`achievements.0004`, `rules.0005`, `segments.0003`,
+  `content.0006`, `collaboration.0004`, `workflow.0011`) makes `tenant_id` NOT NULL on the tables the expand step gave
+  it, makes the tenant equality `pol_<table>_tenant_id` each table's one permissive policy, and keeps the scope path only
+  as a restrictive policy, which narrows a session inside its tenant and never widens it. The models of those tables now
+  carry `BelongsToTenant`, so a row is filled from the running tenant call.
+  
+  Each migration first counts the rows with no tenant. If any table has one, it refuses before changing anything and
+  names each table's count. An environment that wrote rows in the expand step outside a tenant call runs the tenant
+  backfill (RUNWAY 4c) first, then migrates again. After this step, these tables are written only inside a tenant call.
+  
+  `t.belongsToTenant({ contract: true })` is the macro's form for that step: `SET NOT NULL` on the existing column and
+  the equality policy. `{ contract: true, nullable: true }` is the platform form's contract step: the column stays
+  nullable under the `platform` policy, as search uses it. The packages ship an int test tier (`test:int`) for these migrations.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [d002763]
+- Updated dependencies [c0237a4]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [1d76993]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [12f4836]
+  - @stackra/database@0.23.0
+  - @stackra/integrations@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/rules@0.23.0
+  - @stackra/content@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/documents@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- 3a9a6be: `@stackra/integrations` is a peer of every library that uses its values (payments, webhooks, documents, notifications,
+  pricing, achievements, loyalty-kit), no longer a dependency. As a dependency, pnpm resolved a second copy in a product,
+  so a Connection's base and `makeConnection` came from different copies and every Stripe call failed with "StripeConnection
+  was not loaded by a ConnectionStore". `stackra validate` refuses the mistake (`hosted-peers`, `HOSTED_PEER_PACKAGES`).
+- Updated dependencies [41f3da5]
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [3a9a6be]
+- Updated dependencies [ae24e3c]
+- Updated dependencies [acbee14]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/integrations@0.22.0
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/documents@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/rules@0.22.0
+  - @stackra/content@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/rules@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/integrations@0.21.0
+  - @stackra/content@0.21.0
+  - @stackra/documents@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/iam@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/rules@0.20.0
+  - @stackra/integrations@0.20.0
+  - @stackra/content@0.20.0
+  - @stackra/documents@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- c3d6edc: `AwardService.verify` and `verifyCode` read the award through `CallIsolation` as a system actor in the award's scope,
+  so the read runs in that scope and the tenant it resolves to, not in a scope session with no tenant (which the
+  tenant equality policy of the contract step would show no rows). The service now takes `CallIsolation` where it took
+  `Database` (tenancy audit 2026-11-07, gap D).
+- d76d1ed: The expand step of tenancy audit gap D: each scope-path table gains a nullable, indexed `tenant_id` that every insert
+  fills from `app.tenant_id` (`t.belongsToTenant({ expand: true })`), with no policy change, so no session reads a row
+  more or less. Migrations: `achievements.0003_add_tenancy` (`award_kinds`, `awards`), `rules.0004_add_tenancy`
+  (`rule_sets`), `segments.0002_add_tenancy` (`segments`, `segment_memberships`), `content.0005_add_tenancy`
+  (`custom_fields`, `custom_field_value_sets`, `revisions`), `search.0008_add_tenancy` (`vector_items`, `queries`),
+  `collaboration.0003_add_tenancy` (the four comment tables) and `workflow.0010_add_tenancy` (`automations`, `checklists`,
+  `checklist_progresses`). Each package now depends on `@stackra/tenancy` for the macro. Older rows stay null until a
+  backfill job sets them; the contract step (NOT NULL, the tenant equality as the one permissive policy, the scope path
+  restrictive) follows in a later release.
+- 6ec440d: Each package's tenancy expand migration now carries the package's name, in its class and its file
+  (`AddAchievementsTenancyMigration` in `0003-add-achievements-tenancy.migration.ts`, and so on), so no exported name is
+  declared in two packages. The SQL is unchanged. The migration ids change with the file names
+  (`achievements.0003_add_achievements_tenancy`); these migrations ship first in this release, so no database has
+  applied the old ids.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [e5ac3d0]
+- Updated dependencies [d76d1ed]
+- Updated dependencies [d2b3d22]
+- Updated dependencies [eafb209]
+- Updated dependencies [d22e767]
+- Updated dependencies [e283a31]
+- Updated dependencies [27f2b3f]
+- Updated dependencies [15d8a1b]
+- Updated dependencies [bc5a0ab]
+- Updated dependencies [6ec440d]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/tenancy@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/integrations@0.19.0
+  - @stackra/rules@0.19.0
+  - @stackra/content@0.19.0
+  - @stackra/documents@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/outbox@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/rules@0.18.1
+  - @stackra/iam@0.18.1
+  - @stackra/integrations@0.18.1
+  - @stackra/documents@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/content@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/outbox@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/rules@0.18.0
+  - @stackra/iam@0.18.0
+  - @stackra/integrations@0.18.0
+  - @stackra/documents@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/content@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/outbox@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/rules@0.17.2
+  - @stackra/iam@0.17.2
+  - @stackra/integrations@0.17.2
+  - @stackra/documents@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/content@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/outbox@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/rules@0.17.1
+  - @stackra/integrations@0.17.1
+  - @stackra/iam@0.17.1
+  - @stackra/documents@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/content@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/outbox@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/rules@0.17.0
+  - @stackra/integrations@0.17.0
+  - @stackra/content@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/documents@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/outbox@0.17.0
+  - @stackra/iam@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/rules@0.16.0
+  - @stackra/integrations@0.16.0
+  - @stackra/content@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/documents@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/outbox@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [3c99709]
+- Updated dependencies [0b0cf51]
+  - @stackra/documents@0.15.0
+  - @stackra/outbox@0.15.0
+  - @stackra/rules@0.15.0
+  - @stackra/integrations@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/content@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/rules@0.14.4
+  - @stackra/integrations@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/documents@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/content@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/outbox@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/rules@0.14.3
+  - @stackra/integrations@0.14.3
+  - @stackra/content@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/documents@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/outbox@0.14.3
+  - @stackra/iam@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/actions@0.14.2
+  - @stackra/rules@0.14.2
+  - @stackra/integrations@0.14.2
+  - @stackra/content@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/documents@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/rules@0.14.1
+  - @stackra/integrations@0.14.1
+  - @stackra/content@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/documents@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/outbox@0.14.1
+  - @stackra/iam@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/rules@0.14.0
+  - @stackra/integrations@0.14.0
+  - @stackra/content@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/documents@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/iam@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/rules@0.13.0
+  - @stackra/integrations@0.13.0
+  - @stackra/content@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/documents@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/outbox@0.13.0
+  - @stackra/iam@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/rules@0.12.0
+  - @stackra/integrations@0.12.0
+  - @stackra/content@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/documents@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/outbox@0.12.0
+  - @stackra/iam@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/rules@0.11.1
+  - @stackra/integrations@0.11.1
+  - @stackra/content@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/documents@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/outbox@0.11.1
+  - @stackra/iam@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/rules@0.11.0
+  - @stackra/integrations@0.11.0
+  - @stackra/content@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/documents@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/outbox@0.11.0
+  - @stackra/iam@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/integrations@0.10.0
+  - @stackra/documents@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/outbox@0.10.0
+  - @stackra/rules@0.10.0
+  - @stackra/content@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/iam@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/rules@0.9.0
+  - @stackra/integrations@0.9.0
+  - @stackra/content@0.9.0
+  - @stackra/documents@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/outbox@0.9.0
+  - @stackra/iam@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

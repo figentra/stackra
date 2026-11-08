@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `LoyaltyAccountPermissions`: a permission set whose six verbs carry their risks, with
- *          `expire` held by the platform only and `stamp` (the stamp card) an ordinary L1 permission.
+ * Purpose: unit tests of `LoyaltyAccountPermissions`: a permission set whose six verbs carry their risks, with `expire`
+ *          held by the platform only and `stamp` (the stamp card) an ordinary L3 permission (it moves a points
+ *          balance).
  * Boundary: test only; reads the statics and the recorded kind.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0132 as amended; ADR 0099.
@@ -21,7 +22,7 @@ describe("LoyaltyAccountPermissions", () => {
     const { read, enroll, freeze, redeem, expire, stamp } = LoyaltyAccountPermissions;
     expect(
       [read, enroll, freeze, redeem, expire, stamp].map((permission) => permission.risk),
-    ).toEqual([Risk.L0, Risk.L1, Risk.L2, Risk.L1, Risk.L2, Risk.L1]);
+    ).toEqual([Risk.L0, Risk.L2, Risk.L2, Risk.L3, Risk.L3, Risk.L3]);
     expect([read, enroll, freeze, redeem, stamp].some((permission) => permission.isSystem)).toBe(
       false,
     );

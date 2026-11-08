@@ -1,5 +1,492 @@
 # @stackra/app
 
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [9b02a7c]
+  - @stackra/identity@0.26.0
+  - @stackra/clients@0.26.0
+  - @stackra/navigation@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/validation@0.26.0
+  - @stackra/csp@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [fd0e4a9]
+  - @stackra/identity@0.25.0
+  - @stackra/clients@0.25.0
+  - @stackra/navigation@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/validation@0.25.0
+  - @stackra/csp@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/clients@0.24.0
+  - @stackra/identity@0.24.0
+  - @stackra/navigation@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/validation@0.24.0
+  - @stackra/csp@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- c26fb86: Every generated HTTP adapter is an Encore raw endpoint that runs the request guards (STA-2577, ADR 0237 note of
+  2026-11-08). `@stackra/app/server` adds `serveGuardedCall` and `HttpConfig` (`app.http`, `maxBodyBytes`, 1 MiB by
+  default): the body is read once under the cap (413), every `RequestGuard` runs over the exact bytes (so the edge
+  signature covers the body), `CallAuthenticator` verifies an `Authorization` header (a bad one is refused, never
+  anonymous), then the input is parsed and the action pipeline runs; guard and authentication failures are one generic
+  401 or 403. `@stackra/gen` now writes `api.raw()` endpoints (auth: false to Encore) for actions, queries and
+  controllers through `answerCall` in `http.ts`, binds `app.http` in the wiring, and no longer writes `auth.ts` or the
+  `Gateway`.
+  
+  GET and DELETE query strings are typed by the call's registered input schema (`coerceQueryInput`): finite numbers,
+  `"true"` and `"false"`, and arrays element-wise; enums and strings stay as sent, and a value that does not fit stays a
+  string so validation refuses it. A void output answers 200 `null`.
+  
+  New reachable surface: the typed `api()` skipped every entry whose input or output was not a schema class of the
+  member, so those had no HTTP route. They now get one, behind the same guards, authentication and permission checks:
+  generated search and report queries, replica queries (`ReplicaPage` output) and any other action or query whose
+  schemas come from a package. The gen fixtures show it only for the billing unit fixture (`BILLING_IR`), and no golden
+  gains an endpoint. A hand-written `Controller` is now served too (every method, behind the guards), reachable with no
+  `Authorization` header; a present but invalid or expired one is 401 and never falls back to anonymous.
+- a42a80c: A service now proves who it is when it calls another service, and who it acts for.
+  
+  - An outgoing service call sends the service's own token (`Authorization: Bearer`). `ServiceTokens` in
+    `@stackra/identity` answers it, with a memory driver for tests; the token is issued for the receiving product's
+    project, set per module in `clients.audiences`.
+  - When the call acts for a user, it also sends that user's own token in `Stackra-On-Behalf-Of`. `serveGuardedCall` in
+    `@stackra/app/server` keeps that token for the one request and empties it when the request ends. It is never put on
+    the actor, the call context, a log, an error or an event.
+  - A user's token travels one hop. A service called for a user forwards it again only into an action that declares
+    `onBehalfOf: { secondHop: true }`; otherwise its own calls carry the service token alone.
+  - `ServiceClientSessionDriver` (`service`) is the `ClientSession` a service binds for its generated clients, and
+    `ClientSession.headers` now receives the call it is about to send.
+  - Generated endpoints name their action to `serveGuardedCall`, which reads its second-hop option. A hand-written
+    controller forwards only a user's own token, never a forwarded one.
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- Updated dependencies [c8998d9]
+- Updated dependencies [a42a80c]
+- Updated dependencies [f790fa1]
+  - @stackra/identity@0.23.0
+  - @stackra/clients@0.23.0
+  - @stackra/navigation@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+  - @stackra/csp@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- 940e198: Calls from branch users now work, directly and through a service or an agent. A user's token is often issued for a
+  branch, so the user's `scopeId` is the branch's id, not the tenant's. `CallIsolationDriver` used to compare those ids
+  as they were, so a branch user was refused in its own tenant, and so was a service or an agent of the tenant acting
+  for that user. It now reads every scope a user, an agent or a service claims through the scope tree and compares
+  tenants: a branch counts as the tenant above it, and the call runs with that tenant set, never the branch id. A user
+  from another tenant's branch is still refused, and so is a claimed scope the tree does not show or one above every
+  tenant (`tenant_scope_mismatch`). A tree read that fails fails the call; it never lets the call through.
+  
+  `CallAuthenticator` no longer compares the service's and the user's scope ids itself, since it cannot see the tree;
+  `CallIsolationDriver` now owns that rule.
+- Updated dependencies [2dd98e6]
+- Updated dependencies [1d5d185]
+  - @stackra/csp@0.22.0
+  - @stackra/identity@0.22.0
+  - @stackra/navigation@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- ae9cb23: One generated Encore auth handler for user and service calls (ADR 0209, amendment of 2026-11-07, point 5).
+  `@stackra/app/server` adds `CallAuthenticator`: it reads `Authorization: Bearer`, verifies the token with
+  `verifyBearerToken` under `BearerConfig` and the bound `JsonWebKeys`, and maps it to its actor with
+  `@stackra/identity`'s `actorOf`, answering `{ userID, actor }` (`CallAuthData`). Every failure is one
+  `BearerTokenInvalidError`, with no detail and never the token; a `Stackra-On-Behalf-Of` header is refused until the
+  forwarded user token is verified. For a service with endpoints, `@stackra/gen` now writes
+  `.stackra/encore/<member>/auth.ts`: the app's one `authHandler` over those two headers, which runs `CallAuthenticator`
+  and answers `APIError.unauthenticated` on its refusal, and the app's one `Gateway`.
+- f184d12: A service can now call for a user (ADR 0209, amendment of 2026-11-07). The calling service sends its own token as
+  `Authorization: Bearer` and the user's own access token in `Stackra-On-Behalf-Of`. `CallAuthenticator` verifies both
+  with the same issuer, audience and leeway, and the call becomes the service acting for that user:
+  `{ kind: "service", id: "svc_…", scopeId?, onBehalfOf: <the user> }`. The forwarded token itself is never kept; only
+  the user it names travels. A forward is refused when it sits beside a user token or no token, when it has expired or
+  names another audience, when it is a service's token, or when the service is bound to a tenant other than the user's.
+  
+  The call then runs in the user's tenant: `actingScopeId` gives a service with no tenant of its own the tenant of the
+  user it calls for, as it already did for an agent. `CallIsolationDriver` treats a service like an agent: it refuses
+  one whose own tenant differs from its user's, and one with a tenant whose scope sits above every tenant or is not in
+  the scope tree (`tenant_scope_mismatch`). A service with no tenant and no user stays a platform call, as before.
+
+### Patch Changes
+
+- Updated dependencies [e871d59]
+- Updated dependencies [a785356]
+- Updated dependencies [1073d9c]
+- Updated dependencies [f184d12]
+  - @stackra/csp@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/identity@0.21.0
+  - @stackra/navigation@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [cc87438]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/identity@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/navigation@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/csp@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- cb26737: Secrets now come from SOPS files keyed by Google Cloud KMS, not Infisical (ADR 0525). `@stackra/config` no longer
+  ships the Infisical secret store: `InfisicalSecretStoreDriver`, `InfisicalConfig`, `InfisicalConfig$` and
+  `InfisicalOptions` are removed, with the `infisical` candidate of the `SecretStore` port and the
+  `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` env rows. The `SecretStore` candidates are now `memory` and
+  `aws_secrets_manager`; a deployed runtime still reads the platform's own store through `envSecrets`. Re-run
+  `stackra gen` after upgrading so a committed `stackra.manifest.json` drops the `infisical` candidate. The other
+  packages only update comments and docs that named Infisical as the runtime store.
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [581af77]
+- Updated dependencies [3a894fa]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/identity@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/csp@0.19.0
+  - @stackra/navigation@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/identity@0.18.1
+  - @stackra/navigation@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/i18n@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/csp@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/identity@0.18.0
+  - @stackra/navigation@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/csp@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/identity@0.17.2
+  - @stackra/navigation@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/csp@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/identity@0.17.1
+  - @stackra/navigation@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/csp@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/navigation@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/i18n@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/csp@0.17.0
+  - @stackra/identity@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- 64cfc1d: `bootApp` binds the environment as the `SecretStore` port unless the caller overrides it, so a driver that reads a secret
+  by name (the cross-app event signer, STA-1910) resolves in a generated service.
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/navigation@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/csp@0.16.0
+  - @stackra/identity@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/identity@0.15.0
+  - @stackra/navigation@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/csp@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [cc150d2]
+  - @stackra/navigation@0.14.4
+  - @stackra/identity@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/csp@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/navigation@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/csp@0.14.3
+  - @stackra/identity@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/navigation@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/identity@0.14.2
+  - @stackra/csp@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/navigation@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/csp@0.14.1
+  - @stackra/identity@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/navigation@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/csp@0.14.0
+  - @stackra/identity@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/navigation@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/csp@0.13.0
+  - @stackra/identity@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/navigation@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/csp@0.12.0
+  - @stackra/identity@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/navigation@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/csp@0.11.1
+  - @stackra/identity@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/navigation@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/csp@0.11.0
+  - @stackra/identity@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/navigation@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/csp@0.10.0
+  - @stackra/identity@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [378f6a6]
+- Updated dependencies [e80a99b]
+- Updated dependencies [681d01a]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/identity@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/navigation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/csp@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

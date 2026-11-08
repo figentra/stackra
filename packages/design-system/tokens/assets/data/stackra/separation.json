@@ -213,7 +213,7 @@
     {
       "theme": "base",
       "subject": "accent",
-      "compared": "vellum:violet-deep",
+      "compared": "flow:violet-deep",
       "group": "family",
       "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 54,
@@ -322,7 +322,7 @@
     {
       "theme": "base",
       "subject": "link",
-      "compared": "vellum:violet-deep",
+      "compared": "flow:violet-deep",
       "group": "family",
       "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 54,
@@ -431,7 +431,7 @@
     {
       "theme": "base",
       "subject": "focus",
-      "compared": "vellum:violet-deep",
+      "compared": "flow:violet-deep",
       "group": "family",
       "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 54,
@@ -541,7 +541,7 @@
     {
       "theme": "dark",
       "subject": "accent",
-      "compared": "vellum:violet",
+      "compared": "flow:violet",
       "group": "family",
       "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 180,
@@ -651,7 +651,7 @@
     {
       "theme": "dark",
       "subject": "link",
-      "compared": "vellum:violet",
+      "compared": "flow:violet",
       "group": "family",
       "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 180,
@@ -761,7 +761,7 @@
     {
       "theme": "dark",
       "subject": "focus",
-      "compared": "vellum:violet",
+      "compared": "flow:violet",
       "group": "family",
       "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 180,

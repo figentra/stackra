@@ -4,7 +4,7 @@
  *          production plans every region it lists with every catalogue tool on its pinned image, the region's extract
  *          in Nominatim's variables, Photon pointed at the region's Nominatim, Nominatim on EBS, secrets under the
  *          default parameter path (the worker reads Chatwoot's), the Valkey, the databases with the admin login and
- *          the Infisical folders to sync; overrides replace image (by provider), size, storage and provider; disabling
+ *          the vault folders to sync; overrides replace image (by provider), size, storage and provider; disabling
  *          Chatwoot drops its worker, its Valkey and its database; the ML workers plan (retrieval on GPU, forecast on CPU) while `recommend` and `speech` stay off until the runway
  *          enables them; missing facts fail together, naming their paths.
  * Boundary: test only; the runway goes through `parseRunway`, so the plan reads what the schemas let through.
@@ -184,7 +184,7 @@ describe("toolsStackPlan", () => {
         secretsSync: {
           source: "/runtime/tools",
           principal: "arn:aws:iam::999988887777:root",
-          externalId: "ref:infisical.externalId",
+          externalId: "ref:secrets-sync.externalId",
         },
       }),
       "production",
@@ -202,7 +202,7 @@ describe("toolsStackPlan", () => {
     expect(region?.databases.map((database) => database.name)).toEqual(["documenso"]);
     expect(region?.secretsSync).toEqual({
       principal: "arn:aws:iam::999988887777:root",
-      externalId: "ref:infisical.externalId",
+      externalId: "ref:secrets-sync.externalId",
     });
     expect(tools.find((tool) => tool.key === "nominatim")?.secrets[0]?.parameter).toBe(
       "/acme/prod/tools/nominatim/NOMINATIM_PASSWORD",

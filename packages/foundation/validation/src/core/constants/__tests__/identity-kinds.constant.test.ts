@@ -18,7 +18,7 @@ describe("IDENTITY_KINDS", () => {
     expect(Object.isFrozen(IDENTITY_KINDS)).toBe(true);
     for (const code of IDENTITY_KINDS) expect(code).toMatch(/^[a-z]+(_[a-z]+)*$/);
     expect(IDENTITY_KINDS).toEqual(
-      expect.arrayContaining(["action", "block", "domain_event", "model", "refusal"]),
+      expect.arrayContaining(["action", "block", "domain_event", "model", "refusal", "report"]),
     );
   });
 

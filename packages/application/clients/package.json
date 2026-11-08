@@ -1,14 +1,15 @@
 {
   "name": "@stackra/clients",
-  "version": "0.8.0",
+  "version": "0.26.0",
   "private": false,
-  "description": "Stackra generated-client runtime: the ref factories gen writes into #stackra/clients (actions, queries, events, refusals, shapes, widgets, modules, permissions, intents), ServiceClient with call and queue, the HTTP ClientTransport and MutationSender drivers, the React query and action hooks, the Worker's public clients and forwarded facts, and fakeClient",
+  "description": "Stackra generated-client runtime: the ref factories gen writes into #stackra/clients (actions, queries, events, refusals, shapes, widgets, modules, permissions, intents), ServiceClient with call and queue, the HTTP ClientTransport and MutationSender drivers, the React query and action hooks and their React Native useQuery (refetched when the app returns to the foreground) and useAction (./native), the Worker's public clients and forwarded facts, and fakeClient",
   "keywords": [
     "api-client",
     "application",
     "fake-client",
     "generated-client",
     "react-hooks",
+    "react-native",
     "rpc",
     "stackra",
     "transport"
@@ -49,6 +50,12 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -87,6 +94,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -151,15 +163,20 @@
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
-    "react": "catalog:frontend"
+    "react": "catalog:frontend",
+    "react-native": "catalog:mobile"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "react-native": {
       "optional": true
     }
   },
@@ -173,8 +190,9 @@
     "runtimes": [
       "isomorphic",
       "node",
+      "react-native",
       "worker"
     ],
-    "summary": "Use when code calls another service's actions, queries or events through the generated #stackra/clients refs from a server, a Worker or React, and use fakeClient to stub those calls in tests."
+    "summary": "Use when code calls another service's actions, queries or events through the generated #stackra/clients refs from a server, a Worker, React or React Native, and use fakeClient to stub those calls in tests."
   }
 }

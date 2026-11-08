@@ -1,6 +1,6 @@
 ---
 title: "0107 — Three homes for keys; tenant credentials live in @stackra/connections"
-description: "Accepted, amended by 0305, 0308 · 2026-10-19"
+description: "Accepted, amended by 0305, 0308, 0525 · 2026-10-19"
 ---
 
 <Note>
@@ -10,6 +10,12 @@ description: "Accepted, amended by 0305, 0308 · 2026-10-19"
 <Note>
   Amended by [0218](/adr/0218-integrations-the-connector-sdk-and-connections-per-chain-level):
   connections per chain level and the connector SDK.
+</Note>
+
+<Note>
+  Amended by [0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical) (2026-11-06): home A's
+  values live in `figentra/secrets` (SOPS, Google Cloud KMS), and Runway syncs them into the runtime
+  secret store. Homes B and C stand.
 </Note>
 
 ## Context
@@ -24,11 +30,11 @@ HeroUI key or registry token.
 
 1. **Three homes, no fourth**:
 
-   | Home                               | Holds                                                                                               | Where the value lives                                                                                                                          |
-   | ---------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-   | A. Our keys                        | HeroUI token, Apple and Google signing and store API keys, Cloudflare, AWS, the Stripe platform key | Infisical and the runtime secret store ([0009](/adr/0009-secrets-two-mechanisms)); CI via OIDC. `@stackra/config` holds only secret references |
-   | B. Tenant keys                     | A tenant's API keys, certificates and OAuth tokens                                                  | `@stackra/connections`, per tenant, encrypted                                                                                                  |
-   | C. Customer developer install keys | A Pro customer's own HeroUI key or `npm.figentra.com` token                                         | The customer's environment (their `.npmrc`, their CI secrets). We never store it                                                               |
+   | Home                               | Holds                                                                                               | Where the value lives                                                                                                                                                                           |
+   | ---------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | A. Our keys                        | HeroUI token, Apple and Google signing and store API keys, Cloudflare, AWS, the Stripe platform key | `figentra/secrets` (SOPS, Cloud KMS) and the runtime secret store ([0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical)); CI via OIDC. `@stackra/config` holds only secret references |
+   | B. Tenant keys                     | A tenant's API keys, certificates and OAuth tokens                                                  | `@stackra/connections`, per tenant, encrypted                                                                                                                                                   |
+   | C. Customer developer install keys | A Pro customer's own HeroUI key or `npm.figentra.com` token                                         | The customer's environment (their `.npmrc`, their CI secrets). We never store it                                                                                                                |
 
 2. **`@stackra/connections`** is a package with a store owned by an Integrations service: envelope encryption with a key from
    KMS in SaaS or a local key on-prem, OAuth refresh, rotation and revocation, all audited.

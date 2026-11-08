@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `publishResourceSecrets(plan, request)`, after `pulumi up`: writes each Postgres resource's connection
- *          details to Infisical at `<environment>:/runtime/<resource>` under its variable names (`_HOST`, `_PORT`,
- *          `_USER`, and `_URL` with the password and `sslmode=require`), so the Infisical sync hands them to every
+ *          details to the vault at `<environment>:/runtime/<resource>` under its variable names (`_HOST`, `_PORT`,
+ *          `_USER`, and `_URL` with the password and `sslmode=require`), so the secrets sync hands them to every
  *          consumer that `uses` the resource.
  * Boundary: runs in the deploy job only, from the applied stack's outputs and the passwords `ensureDatabasePasswords`
  *           gave the program. Never logs a value; writes through the `VaultWriter` port. Returns the names written.
@@ -19,7 +19,7 @@ import { RESOURCE_SECRETS_SETTINGS } from "#node/constants/resource-secrets-sett
  * Writes each database's connection details and answers the variable names written, by resource.
  *
  * @param request - `endpoints` are the applied proxy endpoints and ports by plan key; `passwords` the admin passwords
- *        by plan key; `vaultEnvironment` the Infisical environment slug.
+ *        by plan key; `vaultEnvironment` the vault's environment slug.
  * @throws TypeError when a database has no endpoint or password.
  * @example
  * await publishResourceSecrets(plan, { vault, vaultEnvironment: "prod", endpoints, passwords });

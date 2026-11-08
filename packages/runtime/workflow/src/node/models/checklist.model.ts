@@ -14,13 +14,14 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 
 import { type ChecklistTemplate, ChecklistTemplate$ } from "#core/index";
 
 /** A scope's checklist. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Checklist extends Model.with(HasPublicId("wfc"), Timestamps) {
+export class Checklist extends Model.with(HasPublicId("wfc"), BelongsToTenant, Timestamps) {
   /** The template as last seeded. */
   // reason: ChecklistTemplate is the output of this package's shipped ChecklistTemplate$, so the hatch names that schema
   @Field(ChecklistTemplate$)
@@ -54,5 +55,12 @@ export class Checklist extends Model.with(HasPublicId("wfc"), Timestamps) {
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Checklist {
   /** The fields that have a default, so an insert may leave them out. */
-  [OptionalProps]?: "createdAt" | "updatedAt" | "hidden" | "order" | "profile" | "customized";
+  [OptionalProps]?:
+    | "createdAt"
+    | "tenantId"
+    | "updatedAt"
+    | "hidden"
+    | "order"
+    | "profile"
+    | "customized";
 }

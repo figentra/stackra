@@ -12,10 +12,12 @@
  *                     category).
  */
 export { InfraAwsConfig } from "#config/infra-aws.config";
+export { GLOBAL_ACTIONS } from "#core/constants/global-actions.constant";
 export { InfraAwsConfig$ } from "#core/constants/infra-aws-config-schema.constant";
 export { AwsHealthIndicatorDriver } from "#core/drivers/aws-health-indicator.driver";
 export { awsAccounts } from "#core/functions/aws-accounts.function";
 export { awsBaselineConfig } from "#core/functions/aws-baseline-config.function";
+export { regionLock } from "#core/functions/region-lock.function";
 export type { AwsAccounts } from "#core/types/aws-accounts.type";
 export type { AwsBaselineConfig } from "#core/types/aws-baseline-config.type";
 export type { BackupLock } from "#core/types/backup-lock.type";

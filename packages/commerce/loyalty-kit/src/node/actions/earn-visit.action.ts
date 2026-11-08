@@ -4,15 +4,15 @@
  *          booking service stamps a member's card for a visit; the stamp count and the card size are the
  *          `stampsPerVisit` and `stampsPerCard` settings, so a tenant changes its card without a deploy.
  * Boundary: the action is the contract; `AccountService.earnVisit` does the work (enroll on first use, frozen check,
- *           one ledger entry per visit reference, `points.earned`). Staff and services only: a customer never stamps
- *           their own card, so no customer role holds `LoyaltyAccountPermissions.stamp`. Which visits earn a stamp is
+ *           one ledger entry per visit reference, `points.earned`). Services only (L3, STA-340): a till or booking service
+ *           stamps for the staff member, so no endpoint and no step-up; a customer never stamps their own card. Which visits earn a stamp is
  *           the host's earn rule set; this action stamps what it is given.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0098; the PUT-133, COM-181 and COM-183 answers;
  *                     config-model section 4 (earn rules are a rule set).
  */
-import { Action } from "@stackra/actions";
-import { ActorKind, HttpMethod } from "@stackra/contracts";
+import { Action, Idempotency } from "@stackra/actions";
+import { ActorKind } from "@stackra/contracts";
 import type { SettingsReader } from "@stackra/settings";
 
 import type { LoyaltyLedger } from "#contracts/ports/loyalty-ledger.port";
@@ -33,8 +33,8 @@ import type { AccountService } from "#node/services/account.service";
 export class EarnVisitAction extends Action({
   key: "points.earn_visit",
   permission: LoyaltyAccountPermissions.stamp,
-  actors: [ActorKind.User, ActorKind.Service],
-  endpoint: { method: HttpMethod.Post, path: "/loyalty/visits" },
+  actors: [ActorKind.Service],
+  idempotency: Idempotency.Optional,
 }) {
   /** Credits the stamps. */
   private readonly accounts: AccountService;

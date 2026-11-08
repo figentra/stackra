@@ -7,7 +7,7 @@
  *          worker gets no registration and reads the Valkey URL; an EFS tool mounts its access point; an EBS tool runs
  *          on its own EC2 instance with an encrypted, retained disk and a host volume; secrets are parameter references
  *          the execution role may read, never values; the database task carries the admin login and each password as
- *          parameters; the Infisical role trusts only its principal with the external id; another cloud is refused.
+ *          parameters; the secrets sync role trusts only its principal with the external id; another cloud is refused.
  * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0444; ADR 0173; ADR 0238.
@@ -328,7 +328,7 @@ describe("awsToolsStack", () => {
     );
   });
 
-  it("lets Infisical write the synced folders only, with its external id", () => {
+  it("lets the secrets sync write the synced folders only, with its external id", () => {
     const role = resource("Role", "acme-production-gcc-tools-secrets-sync");
     const trust = JSON.parse(String(role.inputs.assumeRolePolicy)) as {
       Statement: { Principal: unknown; Condition: unknown }[];

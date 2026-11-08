@@ -2,7 +2,10 @@
  * Stackra file contract:
  * Purpose: unit tests of `NativeWorkflowRunnerDriver`, the engine's conformance on the memory journal: steps run in
  *          order with their results kept for later steps and `output`; a refused step undoes the completed steps last
- *          first and rejects with the refusal; a failing step is retried within its budget with its progress kept; a
+ *          first and rejects with the refusal; a failing step's retry parks the run until its backoff passes, the caller
+ *          answering at once and the worker's tick running the attempt (STA-2613), or waits in process under
+ *          `retryInlineMax`; a failing step is retried within its budget with its progress kept, a
+ *          live budget read on each failure replacing the declared one unless the read is bad (STA-2610); a
  *          `when` skips; a failing undo leaves the run failed; a signal wait parks the run, answers with the output so
  *          far, and resumes on the matching signal (sent before or after it parked), or times out and compensates;
  *          `startOn` runs once per key; the context carries the call, its scope (the session's when the call has none),
@@ -58,6 +61,7 @@ import { registerWorkflows } from "#core/functions/register-workflows.function";
 import type { Run } from "#core/types/run.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
+import type { StepRetryValues } from "#core/types/step-retry-values.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
 
 vi.mock("@stackra/contracts", async (importOriginal) => ({
@@ -200,6 +204,36 @@ class SkippingWorkflow extends Workflow<{ readonly gift: boolean }>({}) {
   }
 }
 
+/** A step that declares one attempt and reads its live budget, as a settings-backed retry does (STA-2610). */
+class LiveRetryWorkflow extends Workflow({}) {
+  /** The attempts the step saw. */
+  readonly attempts: number[] = [];
+
+  /** What `live` answers, or a read that fails. */
+  live: StepRetryValues | Error | undefined;
+
+  /** Failures still to throw. */
+  failures = 0;
+
+  @Step<LiveRetryWorkflow>({
+    retry: {
+      attempts: 1,
+      live: async (workflow) => {
+        if (workflow.live instanceof Error) throw workflow.live;
+        return workflow.live;
+      },
+    },
+  })
+  async send(_run: Run<this>, ctx: StepContext): Promise<string> {
+    this.attempts.push(ctx.attempt);
+    if (this.failures > 0) {
+      this.failures -= 1;
+      throw new TypeError("provider timeout");
+    }
+    return "sent";
+  }
+}
+
 class BrokenUndoWorkflow extends Workflow({}) {
   async hold(): Promise<void> {}
 
@@ -250,12 +284,14 @@ function resolverOf(entries: readonly (readonly [AnyClass, object])[]): Resolver
 function engineWith(
   entries: readonly (readonly [AnyClass, object])[],
   journal: MemoryWorkflowJournalDriver = new MemoryWorkflowJournalDriver(),
+  config?: WorkflowConfig,
 ) {
   const clock = clockAt(NOON);
   const runner = new NativeWorkflowRunnerDriver(
     journal,
     new Locks(new MemoryLockDriver(clock), clock),
     clock,
+    config,
   );
   runner.connect(resolverOf(entries));
   return { runner, journal, clock };
@@ -311,10 +347,43 @@ describe(NativeWorkflowRunnerDriver, () => {
     expect(order.calls.slice(-2)).toEqual(["undoCreate:ord_1", "undoReserve"]);
   });
 
-  it("retries a failing step within its budget, with the progress it reported", async () => {
+  it("parks a retry until its backoff passes, answers at once, and runs it on the worker's tick (STA-2613)", async () => {
     const order = new OrderWorkflow();
     order.failures.push(new TypeError("gateway timeout"));
     const { runner } = engineWith([[OrderWorkflow, order]]);
+
+    // The caller answers with the output so far, without waiting out the backoff.
+    expect(await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN)).toEqual({
+      orderId: "ord_1",
+      total: 10,
+    });
+    const parked = await runner.last(OrderWorkflow);
+    expect(parked?.status).toBe(WorkflowRunStatus.Waiting);
+    const step = parked?.steps.at(-1);
+    expect(step).toMatchObject({ name: "authorize", status: StepStatus.Waiting, attempts: 1 });
+    expect(step?.error).toBeDefined();
+    expect(step?.wakeAt?.getTime()).toBeGreaterThan(NOON.getTime());
+
+    // Not due yet: the tick leaves it; due: it runs attempt 2 and completes.
+    expect(await runner.tick(NOON)).toBe(0);
+    expect(await runner.tick(plus(1))).toBe(1);
+    const run = await runner.last(OrderWorkflow);
+    expect(run?.status).toBe(WorkflowRunStatus.Completed);
+    expect(run?.steps.at(-1)).toMatchObject({ attempts: 2, progress: { page: 1 } });
+    expect(order.calls.filter((call) => call.startsWith("authorize"))).toEqual([
+      "authorize:1:null",
+      'authorize:2:{"page":1}',
+    ]);
+  });
+
+  it("retries a failing step within its budget in process when its backoff is under retryInlineMax", async () => {
+    const order = new OrderWorkflow();
+    order.failures.push(new TypeError("gateway timeout"));
+    const { runner } = engineWith([[OrderWorkflow, order]], undefined, {
+      journal: "memory",
+      signalRetention: "7d",
+      retryInlineMax: "1m",
+    } as WorkflowConfig);
 
     // The back-off wait is a real timer; the `backoffDelay` mock misses once a setup file has loaded
     // @stackra/contracts, so the wait runs on fake timers.
@@ -340,6 +409,30 @@ describe(NativeWorkflowRunnerDriver, () => {
       "authorize:1:null",
       'authorize:2:{"page":1}',
     ]);
+  });
+
+  it("takes a step's live retry budget when it fails, and its declared one when the read is bad (STA-2610)", async () => {
+    // Each retry parks (STA-2613), so the worker's ticks run the attempts until the run ends.
+    const settle = async (workflow: LiveRetryWorkflow): Promise<string | undefined> => {
+      const { runner } = engineWith([[LiveRetryWorkflow, workflow]]);
+      await runner.start(LiveRetryWorkflow, undefined, ORIGIN).catch(() => undefined);
+      for (let minute = 1; minute <= 10; minute += 1) await runner.tick(plus(minute * 10));
+      return (await runner.last(LiveRetryWorkflow))?.status;
+    };
+
+    const raised = Object.assign(new LiveRetryWorkflow(), { live: { attempts: 3 }, failures: 2 });
+    expect(await settle(raised)).toBe(WorkflowRunStatus.Completed);
+    expect(raised.attempts).toEqual([1, 2, 3]);
+
+    for (const live of [
+      { attempts: 0 },
+      { attempts: 1.5 },
+      new TypeError("settings unavailable"),
+    ]) {
+      const kept = Object.assign(new LiveRetryWorkflow(), { live, failures: 1 });
+      expect(await settle(kept)).toBe(WorkflowRunStatus.Compensated);
+      expect(kept.attempts).toEqual([1]);
+    }
   });
 
   it("skips a step whose when is false", async () => {

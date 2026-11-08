@@ -4,8 +4,11 @@
  *          permission and risk gen derived, the caller, the tenant, the scope node, the API area and the sandbox
  *          flag (so an entitlement or access driver can relax a check for a sandbox install, STA-1248) and the request
  *          origin (storefront, console, API key, agent; ADR 0456), which the audit entry and AI attribution read.
- * Boundary: a type only; the pipeline builds it once per call and hands the same frozen object to every port. It
- *           carries no input and no record: a step that needs a record gets it as its own argument.
+ * Boundary: a type only; the pipeline builds it once per call and hands the same frozen object to every port, except
+ *           that when the `CallIsolation` runs as another tenant than the actor claims (a branch user runs as its
+ *           parent tenant) it is rebuilt once with that tenant, before any step inside the isolation reads it; the
+ *           tenancy step, which runs before the isolation, sees the actor's own claim. It carries no input and no
+ *           record: a step that needs a record gets it as its own argument.
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended: the fixed order); ADR 0136 (decision 1: the handler context); ADR 0294
  *                     (decision 20: derived identities); ADR 0327 (decision 6: the current scope); ADR 0456 (decision 1).
@@ -42,8 +45,18 @@ export interface CallDescriptor {
   /** Who is calling. */
   readonly actor: Actor;
 
-  /** The tenant the call acts in; absent for a platform call. */
+  /**
+   * The tenant the call acts in, and the one every row and event it writes is labelled with: the tenant the
+   * `CallIsolation` runs as (a branch's parent tenant, read through the scope tree), else the actor's own claim
+   * (`actingScopeId`); absent for a platform call.
+   */
   readonly scopeId?: PublicId;
+
+  /**
+   * The scope node the actor itself claims (`actingScopeId`): a branch below `scopeId`, or `scopeId` itself; absent when
+   * the actor claims none. Context for the audit and the access log only, never written as a tenant.
+   */
+  readonly branchScopeId?: PublicId;
 
   /** The scope node the call acts in, from `CallOptions.scope`; absent for a platform call. */
   readonly scope?: ScopeRef;
