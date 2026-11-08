@@ -572,6 +572,7 @@ export function emitWiring(ir: MemberIR): string {
   }
 
   // The declared packages' driver tables by port key, and the member of each package (STA-1297).
+  const server = ir.layout === "service" || ir.layout === "worker";
   const packageTables = dependencyDriverTables(ir);
   const configKeys = new Set(configLines.map((line) => /key: "([^"]+)"/.exec(line)?.[1]));
   const linked = new Set<string>();
@@ -596,8 +597,14 @@ export function emitWiring(ir: MemberIR): string {
     const table = packageTables.get(key);
     if (table === undefined || linked.has(key)) return brought;
     linked.add(key);
+    // A server never runs a browser, React Native or Electron driver, so its wiring lists none: a port with only
+    // those (`SignInBrowser`) stays out, else the boot fails choosing a driver nothing on the server asks for.
+    const candidates = server
+      ? table.candidates.filter((candidate) => !isClientEntry(candidate.type.from))
+      : table.candidates;
+    if (candidates.length === 0) return brought;
     const entry = ports.get(key) ?? { port: dep.class, key, candidates: [], own: [] };
-    for (const candidate of table.candidates)
+    for (const candidate of candidates)
       if (!entry.candidates.some((known) => known.name === candidate.name)) {
         entry.candidates.push(candidate);
         brought.push(...candidate.deps);
@@ -869,4 +876,9 @@ export function emitWiring(ir: MemberIR): string {
     runtime: "isomorphic",
   });
   return [header, ...importLines(imports), "", ...lines].join("\n") + "\n";
+}
+
+/** Whether `from` is a client-only entry of a package (`@stackra/identity/native`, `/desktop`, `/react`). */
+function isClientEntry(from: string): boolean {
+  return /\/(?:react|native|desktop)(?:\/|$)/.test(from);
 }
