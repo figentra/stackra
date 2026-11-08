@@ -49,6 +49,8 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: >-
             node pnpm gitleaks shfmt aqua:rhysd/actionlint aqua:zizmorcore/zizmor aqua:google/osv-scanner
 
@@ -216,6 +218,8 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm
 
       # Without the licensed build, the playground and the mobile app cannot typecheck or build; stop here with the

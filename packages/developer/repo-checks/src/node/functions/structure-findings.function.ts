@@ -40,6 +40,7 @@ import { checkTestPlacement } from "#node/functions/check-test-placement.functio
 import { checkWranglerOperationalKeys } from "#node/functions/check-wrangler-operational-keys.function";
 import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
 import { checkWorkflowTriggers } from "#node/functions/check-workflow-triggers.function";
+import { checkMiseActionVersion } from "#node/functions/check-mise-action-version.function";
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
@@ -147,6 +148,15 @@ export async function structureFindings(
     checkWorkflowTriggers(
       files
         .filter((p) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(p))
+        .map((p): [string, string] => [p, text(p)]),
+    ),
+  );
+  report(
+    "mise-action-version",
+    "",
+    checkMiseActionVersion(
+      files
+        .filter((p) => /^\.github\/(?:workflows\/[^/]+|actions\/[^/]+\/action)\.ya?ml$/.test(p))
         .map((p): [string, string] => [p, text(p)]),
     ),
   );
