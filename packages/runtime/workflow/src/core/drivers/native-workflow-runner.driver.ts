@@ -46,7 +46,7 @@ import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration, Logger } from "@stackra/contracts";
-import type { Clock, Json, PublicId } from "@stackra/contracts";
+import type { Clock, Json, PublicId, RetryPolicy } from "@stackra/contracts";
 import { isRefusal, WorkflowTimedOutError } from "@stackra/errors";
 import { EventBus } from "@stackra/events";
 import type { Event } from "@stackra/events";
@@ -85,6 +85,7 @@ import type { RunChain } from "#core/types/run-chain.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
 import type { StepPlan } from "#core/types/step-plan.type";
+import type { StepRetryValues } from "#core/types/step-retry-values.type";
 import type { WorkflowError } from "#core/types/workflow-error.type";
 import type { WorkflowPlan } from "#core/types/workflow-plan.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
@@ -198,6 +199,26 @@ function viewOf(run: WorkflowRun): object {
 /** An instance of `type` built from a held payload, as `Event.create` builds an event: no constructor runs. */
 const signalOf = (type: AnyClass, payload: object): object =>
   Object.freeze(Object.assign(Object.create(type.prototype as object) as object, payload));
+
+/**
+ * `step`'s retry for this failure: the declared attempts, first wait and curve, each replaced by a valid `live` value
+ * (STA-2610). A live count that is not a whole number from 1 is ignored.
+ */
+function retryOf(
+  step: StepPlan,
+  live: StepRetryValues | undefined,
+): Pick<RetryPolicy, "attempts" | "backoff" | "base"> {
+  const attempts =
+    live?.attempts !== undefined && Number.isInteger(live.attempts) && live.attempts >= 1
+      ? live.attempts
+      : step.attempts;
+  const base = live?.base ?? step.base;
+  return {
+    attempts,
+    backoff: live?.backoff ?? step.backoff,
+    ...(base === undefined ? {} : { base }),
+  };
+}
 
 /**
  * Calls `method` of `instance` with `args`.
@@ -828,11 +849,15 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           ...(progress === undefined ? {} : { progress }),
           startedAt: latest.record?.startedAt ?? at,
         };
-        const delay = backoffDelay({ ...JOB_BACKOFF, backoff: step.backoff }, attempt);
+        // Read per failure, so a changed setting applies to the next retry; a failed read keeps the declared values.
+        // oxlint-disable-next-line no-await-in-loop -- see above
+        const live = await step.live?.(instance as never).catch(() => undefined);
+        const { attempts, ...curve } = retryOf(step, live);
+        const delay = backoffDelay({ ...JOB_BACKOFF, ...curve }, attempt);
         const late =
           current.deadlineAt !== undefined &&
           this.clock.now().getTime() + delay >= current.deadlineAt.getTime();
-        if (!retryable(error) || attempt >= step.attempts || late)
+        if (!retryable(error) || attempt >= attempts || late)
           return {
             kind: "failed",
             run: withStep(current, {

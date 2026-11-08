@@ -78,6 +78,8 @@ export type { StepContext } from "#core/types/step-context.type";
 export type { StepDecorator } from "#core/types/step-decorator.type";
 export type { StepName } from "#core/types/step-name.type";
 export type { StepOptions } from "#core/types/step-options.type";
+export type { StepRetry } from "#core/types/step-retry.type";
+export type { StepRetryValues } from "#core/types/step-retry-values.type";
 export type { WorkflowClass } from "#core/types/workflow-class.type";
 export type { WorkflowError } from "#core/types/workflow-error.type";
 export type { WorkflowOptions } from "#core/types/workflow-options.type";
