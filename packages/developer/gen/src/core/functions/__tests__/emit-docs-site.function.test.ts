@@ -296,6 +296,17 @@ describe("emitDocsSite with the fumadocs renderer", () => {
     expect(fumadocs()).toEqual(site);
   });
 
+  /** The splat does not match "/"; without the index route the home page prerendered as an empty shell. */
+  it("routes the site root to the page module and fails a build that prerenders a bare shell", () => {
+    const site = fumadocs();
+    const routes = text(site, "app/routes.ts");
+    const config = text(site, "react-router.config.ts");
+    expect(routes).toContain('index("routes/page.tsx", { id: "routes/home" })');
+    expect(routes.indexOf("index(")).toBeLessThan(routes.indexOf('route("*"'));
+    expect(config).toContain('.includes("<title>")');
+    expect(config).toContain("throw new Error(");
+  });
+
   it("writes the navigation as a page tree, and every page path to prerender", () => {
     const site = JSON.parse(text(fumadocs(), "app/site.json"));
     expect(Object.keys(site)).toEqual([
