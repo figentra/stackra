@@ -831,8 +831,10 @@ const order = await OrderFactory.new().paid().has(OrderLineFactory.new().count(2
   connected: `usePostgres()` (connected before the module compiles) or a driver the container built for the module
   wins. The memory database an earlier module left is closed.
 - **`app.repository(Model)`** is the model's `Repository`, the `repositoryOf(Model)` binding when the wiring has one.
-- **Limits.** PGlite is one connection: a `requiresNew` transaction shares the surrounding session, and tests of
-  concurrent sessions, row-level security under an unprivileged role, or geography columns stay in the integration tier.
+- **Limits.** PGlite is one connection, so `Database.transaction(work, { requiresNew: true })` inside a running
+  transaction is a savepoint under the memory driver: it commits with the caller under PGlite, and a failure inside it
+  rolls back only the savepoint. The independent commit is proven only in `.int` tests on Postgres. Tests of concurrent
+  sessions, row-level security under an unprivileged role, or geography columns stay in the integration tier too.
 
 Faker, Testcontainers (`@testcontainers/postgresql` and `testcontainers`, which builds the test image), PGlite
 (`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) and `@mikro-orm/pglite` are optional peers of `./testing`; a
