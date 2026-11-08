@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export type { RecordPolicyRun } from "#core/types/record-policy-run.type";
 export { RateLimitConfig } from "#config/rate-limit.config";
 export { StoresConfig } from "#config/stores.config";
 export { Action } from "#core/bases/action.base";
@@ -56,6 +57,7 @@ export { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 export { UsageRecorded } from "#core/events/usage-recorded.event";
 export { approverRefusal } from "#core/functions/approver-refusal.function";
 export { connectExtensions } from "#core/functions/connect-extensions.function";
+export { connectRecordPolicies } from "#core/functions/connect-record-policies.function";
 export { isRawBody } from "#core/functions/is-raw-body.function";
 export { limitedSettingsReader } from "#core/functions/limited-settings-reader.function";
 export { mergeApprovalRequirements } from "#core/functions/merge-approval-requirements.function";

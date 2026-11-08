@@ -17,6 +17,7 @@ import { Realm } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 
 import { AccessControl } from "#contracts/index";
+import { RECORD_POLICY_RUNNER } from "#core/constants/record-policy-runner.constant";
 import type { CallDescriptor } from "#contracts/index";
 
 /**
@@ -53,9 +54,12 @@ export class MemoryAccessControlDriver extends Driver(AccessControl) {
     this.check(call);
   }
 
-  /** Passes unless the call's permission was denied; no record policy runs. */
-  async authorize(call: CallDescriptor, _record: object): Promise<void> {
+  /** Passes unless the call's permission was denied, or the record's policy refuses it (when one is connected). */
+  async authorize(call: CallDescriptor, record: object): Promise<void> {
     this.check(call);
+    const { run } = RECORD_POLICY_RUNNER;
+    if (call.permission !== undefined && run !== undefined && !(await run(call, record)))
+      throw ForbiddenError.create();
   }
 
   /** Throws `ForbiddenError` for a denied permission, and for a restricted one a customer was not granted. */

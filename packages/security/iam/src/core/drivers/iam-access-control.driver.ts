@@ -17,78 +17,17 @@
  *                     ADR 0132 (as amended by 0294 and 0263); ADR 0208 (decision 3); ADR 0327 (decision 7).
  */
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
-import { type AnyClass, Driver, kindOf } from "@stackra/container";
-import {
-  actingScopeId,
-  type Actor,
-  ActorKind,
-  Enum,
-  type PublicId,
-  type ScopeRef,
-} from "@stackra/contracts";
+import { Driver } from "@stackra/container";
+import { actingScopeId, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { RuleFacts } from "@stackra/rules";
 import type { ScopeTree } from "@stackra/scope/contracts";
 
-import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
 import { Decision } from "#core/enums/decision.enum";
+import { decidePolicy } from "#core/functions/decide-policy.function";
+import { isAnonymousCall } from "#core/functions/is-anonymous-call.function";
+import { policyRowOf } from "#core/functions/policy-row-of.function";
 import type { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
-import type { PolicyRegistration } from "#core/types/policy-registration.type";
-
-/**
- * Whether `call` is an anonymous caller's call of a class that opts into anonymous callers (its `actors` list
- * `ActorKind.Anonymous`): the one call the permission and record-policy steps let through. A signed-in caller of the
- * same class is checked as usual, and a call with no permission (never registered) is refused (STA-2025).
- */
-function isAnonymousCall(call: CallDescriptor): boolean {
-  const actors = kindOf(call.type)?.options["actors"];
-  return (
-    call.actor.kind === ActorKind.Anonymous &&
-    Array.isArray(actors) &&
-    actors.includes(ActorKind.Anonymous)
-  );
-}
-
-/** The three answers a policy method may give. */
-const DECISIONS: ReadonlySet<unknown> = new Set(Enum.values(Decision));
-
-/** The policy row of `record`'s model, walking up its class chain so a subclass model finds its base's policy. */
-function rowOf(record: object): PolicyRegistration | undefined {
-  for (
-    let type: unknown = record.constructor;
-    typeof type === "function" && type !== Function.prototype;
-    type = Object.getPrototypeOf(type)
-  ) {
-    const row = POLICY_REGISTRY.rows.get(type as AnyClass);
-    if (row !== undefined) return row;
-  }
-  return undefined;
-}
-
-/** The answer of the policy method named after the verb of `permission`; `Abstain` when the policy has none. */
-async function decide(
-  row: PolicyRegistration,
-  permission: string,
-  actor: Actor,
-  record: object,
-): Promise<Decision> {
-  const { resolver } = POLICY_REGISTRY;
-  if (resolver === undefined)
-    throw new Error(
-      `${row.policy.name} cannot run: call connectPolicies(container) once the container is booted`,
-    );
-  const policy = resolver.get(row.policy);
-  const method: unknown = Reflect.get(policy, permission.slice(permission.lastIndexOf(".") + 1));
-  if (typeof method !== "function") return Decision.Abstain;
-  const decision: unknown = await (method as (...args: unknown[]) => unknown).call(
-    policy,
-    actor,
-    record,
-  );
-  if (!DECISIONS.has(decision))
-    throw new TypeError(`${row.policy.name} answered ${String(decision)}, not a Decision`);
-  return decision as Decision;
-}
 
 /**
  * Enforces permissions and record rules for the pipeline.
@@ -137,8 +76,11 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
     const { permission } = call;
     if (permission === undefined) throw ForbiddenError.create();
     if (isAnonymousCall(call)) return;
-    const row = rowOf(record);
-    if (row !== undefined && (await decide(row, permission, call.actor, record)) === Decision.Deny)
+    const row = policyRowOf(record);
+    if (
+      row !== undefined &&
+      (await decidePolicy(row, permission, call.actor, record)) === Decision.Deny
+    )
       throw ForbiddenError.create();
     const scope = await this.scopeOf(call);
     const facts =
