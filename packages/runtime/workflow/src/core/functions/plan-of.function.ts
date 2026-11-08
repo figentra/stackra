@@ -96,6 +96,7 @@ function stepOf(
     throw new RangeError(
       `${where}: retry.backoff takes a Backoff code, got ${JSON.stringify(backoff)}`,
     );
+  const { base, live } = options.retry ?? {};
   const { waitFor, when, correlate } = options;
   if (waitFor !== undefined && !WAITABLE.has(kindOf(waitFor)?.kind ?? ""))
     throw new TypeError(`${where}: waitFor takes a class that extends Signal, or an event`);
@@ -106,6 +107,8 @@ function stepOf(
     after: Object.freeze([...(options.after ?? [])]),
     attempts,
     backoff,
+    ...(base === undefined ? {} : { base }),
+    ...(live === undefined ? {} : { live }),
     ...(when === undefined ? {} : { when }),
     ...(heartbeat === undefined ? {} : { heartbeat }),
     ...(waitFor === undefined ? {} : { waitFor, signal: workflowKey(waitFor) }),
