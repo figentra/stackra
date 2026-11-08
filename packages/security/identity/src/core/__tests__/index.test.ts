@@ -60,6 +60,8 @@ describe("@stackra/identity", () => {
       "MemoryStaffPinStoreDriver",
       "MemoryVerificationDriver",
       "PkceSessionStoreDriver",
+      "ServiceTokenRefusedError",
+      "ServiceTokenUnavailableError",
       "SessionClientSessionDriver",
       "SessionOfflineSessionDriver",
       "SessionRevokedError",
