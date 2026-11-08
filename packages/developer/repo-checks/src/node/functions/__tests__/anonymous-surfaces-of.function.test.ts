@@ -4,7 +4,7 @@
  *          (from `anonymous: true` or an older manifest's `actors`), a hosted row is left to its owner; and every
  *          anonymous-callable call in this repository's committed manifests is in REVIEWED_ANONYMOUS_SURFACES, so a
  *          new one fails here until it is reviewed and recorded. The list also records product repositories' calls,
- *          which this repository cannot see.
+ *          which this repository cannot see; the checkout ones are checked present with a reason.
  * Boundary: test only; the last case reads the repository's committed `stackra.manifest.json` files.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-2025, STA-2515.
@@ -57,5 +57,15 @@ describe("anonymousSurfacesOf", () => {
       .sort();
     expect(keys.filter((key) => !(key in REVIEWED_ANONYMOUS_SURFACES))).toEqual([]);
     expect(keys).toHaveLength(5);
+  });
+
+  it("records the product checkout calls this repository cannot see, each with its reason", () => {
+    for (const key of [
+      "checkouts.checkout_page.choose_method@1",
+      "checkouts.checkout_page.framers@1",
+      "checkouts.checkout_page.load@1",
+      "payment_links.payment_link.open@1",
+    ])
+      expect(REVIEWED_ANONYMOUS_SURFACES[key]).toMatch(/\w/);
   });
 });
