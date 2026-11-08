@@ -28,7 +28,10 @@ export type DocsSiteInput = {
     | "apiReference"
     | "redirects"
     | "raw"
-  >;
+  > & {
+    /** The site's languages; one language (the pages as written) when absent or empty. */
+    readonly locales?: DocsConfig["locales"];
+  };
 
   /** Every file under `src/`, by its path relative to `src/` (`docs/guides/x.mdx`); the text of `.md` and `.mdx`. */
   readonly files: readonly { readonly path: string; readonly content?: string }[];

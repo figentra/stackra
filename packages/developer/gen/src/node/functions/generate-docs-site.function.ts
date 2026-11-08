@@ -125,7 +125,9 @@ export async function generateDocsSite(
     path: `${DOCS_SITE_DIR}/${file.path}`,
     content: file.content,
   }));
-  if (options.check === true) return { errors: [], files: generated, changed: [] };
+  // A warning (a page not yet translated) prints beside the outcome and never blocks writing.
+  const warnings = site.warnings === undefined ? {} : { warnings: site.warnings };
+  if (options.check === true) return { errors: [], files: generated, changed: [], ...warnings };
 
   const out = join(root, DOCS_SITE_DIR);
   const changed: string[] = [];
@@ -154,5 +156,5 @@ export async function generateDocsSite(
     changed.push(`${DOCS_SITE_DIR}/${stale}`);
   }
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-  return { errors: [], files: generated, changed: changed.sort() };
+  return { errors: [], files: generated, changed: changed.sort(), ...warnings };
 }
