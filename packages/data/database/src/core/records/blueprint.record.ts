@@ -115,7 +115,7 @@ function checkReason(method: string, reason: string): string {
   return text;
 }
 
-/** A declared row-level-security policy.
+/** A declared row-level-security policy. */
 interface PolicySeed {
   readonly column: string;
   readonly options: RowLevelSecurityOptions;

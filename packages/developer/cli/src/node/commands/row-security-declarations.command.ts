@@ -36,7 +36,7 @@ export class RowSecurityDeclarationsCommand extends Command({
       io.output.checklist({
         rows: declarations.map((declaration) => ({
           name: `${declaration.kind} ${declaration.file}#${declaration.table}`,
-          status: "pass" as const,
+          status: "ok" as const,
           detail: [declaration.policies.join(", "), declaration.reason ?? ""]
             .filter(Boolean)
             .join(": "),
