@@ -162,10 +162,17 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
     }
     // The tenants the actor claims, read through the tree, so a branch stands for its tenant: its own and, for an
     // agent or a service, that of the user it acts for. It runs in its own or, with none, in its user's.
-    const own =
-      actor.scopeId === undefined ? undefined : await this.tenantOfId(actor.scopeId, first);
+    // A claimed id that is one of the call's scopes reuses that scope's answer instead of reading the tree again.
+    const known = new Map<string, Resolved>(scopes.map((one, index) => [one.id, answers[index]]));
+    const tenantOfClaim = async (id: PublicId): Promise<PublicId<"scp">> => {
+      if (!known.has(id)) return this.tenantOfId(id, first);
+      const answer = known.get(id);
+      if (answer?.tenant === undefined) throw TenantScopeMismatchError.create();
+      return answer.tenant;
+    };
+    const own = actor.scopeId === undefined ? undefined : await tenantOfClaim(actor.scopeId);
     const userScopeId = delegating ? actor.onBehalfOf?.scopeId : undefined;
-    const user = userScopeId === undefined ? undefined : await this.tenantOfId(userScopeId, first);
+    const user = userScopeId === undefined ? undefined : await tenantOfClaim(userScopeId);
     if (own !== undefined && user !== undefined && own !== user)
       throw TenantScopeMismatchError.create();
     const claimed = own ?? user;
