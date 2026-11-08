@@ -8141,6 +8141,9 @@ importers:
       '@stackra/events':
         specifier: workspace:*
         version: link:../../foundation/events
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/locking':
         specifier: workspace:*
         version: link:../locking

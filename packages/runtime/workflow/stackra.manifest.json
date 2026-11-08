@@ -11,7 +11,40 @@
       "dependsOn": []
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "key": "workflow.run.get@1",
+      "kind": "query",
+      "module": "workflow",
+      "class": "GetRunQuery",
+      "file": "src/node/queries/get-run.query.ts",
+      "permission": "workflow.run.get",
+      "risk": "L1",
+      "actors": ["user", "agent", "service"],
+      "endpoint": {
+        "method": "GET",
+        "path": "/runs/:runId",
+        "derived": true
+      },
+      "tool": {
+        "name": "workflow_run_get",
+        "default": true,
+        "hints": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      "input": {
+        "$ref": "#/schemas/workflow.GetRunInput"
+      },
+      "output": {
+        "$ref": "#/schemas/workflow.GetRunOutput"
+      },
+      "refusals": ["run_not_found"]
+    }
+  ],
   "events": [
     {
       "name": "workflow.service.acked.v1",
@@ -75,7 +108,16 @@
       }
     }
   ],
-  "permissions": [],
+  "permissions": [
+    {
+      "key": "workflow.run.get",
+      "risk": "L1",
+      "class": "RunPermissions",
+      "module": "workflow",
+      "member": "get",
+      "file": "src/node/access/run.permissions.ts"
+    }
+  ],
   "errors": [
     {
       "code": "automation_changed",
@@ -125,6 +167,13 @@
       "category": "precondition_failed",
       "module": "workflow",
       "class": "ForEachItemsInvalidError"
+    },
+    {
+      "code": "run_not_found",
+      "kind": "not_found",
+      "category": "not_found",
+      "module": "workflow",
+      "class": "RunNotFoundError"
     }
   ],
   "models": [
@@ -695,6 +744,18 @@
   ],
   "services": [
     {
+      "class": "GetRunQuery",
+      "from": "@stackra/workflow/node",
+      "deps": [
+        {
+          "class": {
+            "name": "WorkflowRunner",
+            "from": "@stackra/actions/contracts"
+          }
+        }
+      ]
+    },
+    {
       "class": "AutomationService",
       "from": "@stackra/workflow/node",
       "deps": [
@@ -1163,6 +1224,41 @@
         },
         "version": {
           "type": "number"
+        }
+      }
+    },
+    "workflow.GetRunInput": {
+      "type": "object",
+      "required": ["runId"],
+      "properties": {
+        "runId": {
+          "type": "string",
+          "pattern": "^wfr_[0-9A-Za-z]{26}$"
+        }
+      }
+    },
+    "workflow.GetRunOutput": {
+      "type": "object",
+      "required": ["runId", "status", "endedAt", "output"],
+      "properties": {
+        "runId": {
+          "type": "string",
+          "pattern": "^wfr_[0-9A-Za-z]{26}$"
+        },
+        "status": {
+          "$ref": "#/schemas/workflow.WorkflowRunStatus"
+        },
+        "endedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "output": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     }
