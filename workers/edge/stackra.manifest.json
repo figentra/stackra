@@ -98,13 +98,63 @@
             {
               "class": {
                 "name": "BearerConfig",
-                "from": "@stackra/app"
+                "from": "@stackra/app/server"
               }
             }
           ]
         }
       },
       "from": "@stackra/app"
+    },
+    {
+      "port": "ClientSession",
+      "key": "clients.ClientSession",
+      "candidates": ["service"],
+      "classes": {
+        "service": {
+          "class": "ServiceClientSessionDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "ServiceTokens",
+                "from": "@stackra/identity/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "ClientsConfig",
+                "from": "@stackra/clients"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/app"
+    },
+    {
+      "port": "SecretStore",
+      "key": "config.SecretStore",
+      "candidates": ["memory", "aws_secrets_manager"],
+      "classes": {
+        "memory": {
+          "class": "MemorySecretStoreDriver",
+          "from": "@stackra/config"
+        },
+        "aws_secrets_manager": {
+          "class": "AwsSecretsManagerSecretStoreDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/config"
     }
   ],
   "integrations": [],

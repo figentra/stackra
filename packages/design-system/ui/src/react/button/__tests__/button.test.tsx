@@ -3,7 +3,9 @@
  * Purpose: proves the web Button renders every variant and size as HeroUI's classes, presses once and not when
  *          disabled or loading, keeps focus while loading under an unchanged name with a hidden spinner, stretches to
  *          full width, orders its icons, takes its name from `label`, passes unknown props and the ref through, and
- *          refuses HeroUI's own names for the concepts the contract renames.
+ *          refuses HeroUI's own names for the concepts the contract renames; with `href` it is an `<a>` carrying the
+ *          href, the target, the button's classes and its accessible name, and without one (or disabled or loading)
+ *          it stays a button.
  * Boundary: jsdom with real HeroUI and React Aria; the theme CSS is not loaded, so classes are checked, not looks.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
@@ -190,5 +192,55 @@ describe("Button (web): the core variant and the pill shape", () => {
         .getByRole("button", { name: "Square" })
         .classList.contains("rounded-[var(--radius-pill)]"),
     ).toBe(false);
+  });
+});
+
+describe("Button (web): a link drawn as the button", () => {
+  it("renders an <a> with the href, the target, the button's classes and an accessible name", () => {
+    render(
+      <Button href="/docs" target="_blank" variant="secondary" size="sm">
+        Docs
+      </Button>,
+    );
+    const link = screen.getByRole("link", { name: "Docs" });
+    expect(link.tagName).toBe("A");
+    expect(link.getAttribute("href")).toBe("/docs");
+    expect(link.getAttribute("target")).toBe("_blank");
+    for (const name of ["button", "button--secondary", "button--sm"])
+      expect(link.classList.contains(name)).toBe(true);
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("takes the primary look by default, its name from label, and the pill and full width", () => {
+    render(
+      <Button href="/billing" label="Open billing" shape="pill" isFullWidth>
+        Billing
+      </Button>,
+    );
+    const link = screen.getByRole("link", { name: "Open billing" });
+    expect(link.classList.contains("button--primary")).toBe(true);
+    expect(link.classList.contains("rounded-[var(--radius-pill)]")).toBe(true);
+    expect(link.classList.contains("button--full-width")).toBe(true);
+    expect(link.hasAttribute("target")).toBe(false);
+  });
+
+  it("stays a button without an href, and when disabled or loading", () => {
+    const { rerender } = render(<Button>Save</Button>);
+    expect(screen.getByRole("button", { name: "Save" })).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
+    rerender(
+      <Button href="/docs" isDisabled>
+        Docs
+      </Button>,
+    );
+    expect((screen.getByRole("button", { name: "Docs" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole("link")).toBeNull();
+    rerender(
+      <Button href="/docs" isLoading>
+        Docs
+      </Button>,
+    );
+    expect(screen.getByRole("button", { name: "Docs" }).getAttribute("aria-disabled")).toBe("true");
+    expect(screen.queryByRole("link")).toBeNull();
   });
 });

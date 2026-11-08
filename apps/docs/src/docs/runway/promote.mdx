@@ -1,0 +1,52 @@
+---
+title: "runway promote"
+description: "Ships a commit of origin/main to production by dispatching the production caller workflows."
+---
+
+Ships a commit of origin/main to production by dispatching the production caller workflows.
+
+```bash
+stackra runway promote <sha> [--dry-run]
+```
+
+| Argument or option | Kind     | Meaning                                       |
+| ------------------ | -------- | --------------------------------------------- |
+| `sha`              | argument | A full commit SHA on origin/main.             |
+| `--dry-run`        | option   | Print the `gh` commands and dispatch nothing. |
+
+## What it does
+
+Checks that the commit is on origin/main, prints it and the record message, then dispatches every caller workflow of
+the production destinations that takes a `sha` input. Each run waits on its GitHub environment's protection and, in a
+private repository, the owner gate in the caller workflow.
+
+## What it prints
+
+The commit, the record message, and each workflow run it started.
+
+## Exit codes
+
+| Code | Means                                                      |
+| ---- | ---------------------------------------------------------- |
+| 0    | Dispatched, or printed for a dry run.                      |
+| 1    | The commit is not on origin/main, or `git` or `gh` failed. |
+| 2    | Usage error.                                               |
+
+## Where it runs
+
+Production is the owner's. An agent never starts a promote; the command matrix runs it only with `--dry-run`.
+Production waits on the owner's one GitHub environment approval.
+
+## Examples
+
+```bash
+stackra runway promote <sha> --dry-run
+```
+
+## See also
+
+[0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted),
+[0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step),
+[0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

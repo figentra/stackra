@@ -59,7 +59,7 @@ export const COMMERCE_IR: MemberIR = {
       module: "orders",
       file: "src/modules/orders/actions/cancel-order.action.ts",
       importPath: "#modules/orders/actions/cancel-order.action",
-      options: { key: "order.cancel", actors: ["user", "agent"], idempotency: { ttl: "PT24H" } },
+      options: { key: "order.cancel", actors: ["user", "agent"], idempotency: "required" },
       deps: [{ class: { name: "OrderService", from: "#modules/orders/services/order.service" } }],
       facets: [],
       methods: ["handle"],

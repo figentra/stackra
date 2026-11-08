@@ -1,5 +1,152 @@
 # @stackra/devices
 
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [9cee75d]
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/storage@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/transport@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/iam@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/storage@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/transport@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+  - @stackra/actions@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/storage@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/transport@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [a42a80c]
+  - @stackra/actions@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/transport@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [786848c]
+  - @stackra/actions@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/storage@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/transport@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/storage@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/transport@0.21.0
+  - @stackra/iam@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/storage@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/transport@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- e0298ce: Device pairing no longer takes the credential from the status poll. `HttpDevicePairingDriver.begin` mints a 256-bit
+  pairing secret, keeps it in the `secrets` area and sends it in the body of `POST /device-pairings`; `check` polls
+  `GET /device-pairings/:pairingId` for the state only and, once paired, picks the token up once from
+  `POST /device-pairings/:pairingId/pickup` with the secret in the body. A pickup the hub answers with 409 (not issued
+  yet) reads as pending; a wrong or spent secret is refused. New: `DEVICE_HUB_PATHS.pickup`,
+  `DEVICE_STORAGE_KEYS.pairingSecret`. Needs a hub that serves the pickup (figentra/os devices).
+
+### Patch Changes
+
+- 0921f1f: `Idempotency.Never`: an action whose output must never be kept (a credential) ignores a sent `Idempotency-Key`;
+  every call runs and nothing is stored in or replayed from the idempotency store. `HttpDevicePairingDriver` sends no
+  `Idempotency-Key` on the credential pickup (`hubSender(config, credential, { idempotencyKey: false })`), so the hub
+  never keeps the answer that carries the token.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/storage@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/transport@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -1,5 +1,164 @@
 # @stackra/settings
 
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [e5da198]
+  - @stackra/database@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/icons@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/market-packs@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/icons@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/market-packs@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [2df7162]
+  - @stackra/database@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/icons@0.24.0
+  - @stackra/ui@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/market-packs@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- fb6e2b3: A role-gated setting approval: `@Setting({ approval: { by: SystemRole.Owner } })` holds a change until someone holding
+  that role approves it, beside the existing four-eyes `approval: true`. The revision records the role (`approvalRole`,
+  migration `settings.0003_add_setting_revision_approval_role`); `SettingsResolver.approve(id, approver, roles)` refuses
+  an approver without it (`SettingApproverRoleError`, forbidden) and fails closed when the calling action passes no roles.
+  The role is the control, so its holder may approve a change they wrote; `decidedBy` records who did. One change needs
+  one approving role. Gen treats a role-gated key as approval-marked too.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/icons@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+  - @stackra/database@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/icons@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/market-packs@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/market-packs@0.21.0
+  - @stackra/icons@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/icons@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [b59aa22]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/market-packs@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/icons@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -232,6 +232,13 @@ test("missing files, PII, license drift, manifest hygiene", () => {
   assert.equal(f.length, 9); // the replaced manifest also lacks repository and publishConfig
 });
 
+test("an @figentra-oss member keeps its own open-source LICENSE in a product repository", () => {
+  const widget = { ...filesOk, licenseText: "MIT", rootLicense: "Proprietary", stackra: false };
+  const check = (name: string) => checkMemberFiles({ ...widget, pkg: { ...filesOk.pkg, name } });
+  assert.deepEqual(check("@figentra-oss/pay-widget"), []);
+  assert.deepEqual(check("@figentra/pay-sdk"), ["LICENSE differs from the root LICENSE"]);
+});
+
 test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {
   const app = { dir: "apps/console", pkg: { description: "x", license: "UNLICENSED" } };
   assert.deepEqual(
@@ -408,6 +415,8 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/mobile/brand.json",
       "apps/playground/src/constants/brand-themes/jute.json",
       "packages/design-system/showcase/api/react/free/button.json",
+      "packages/connectors/here/src/node/drivers/__tests__/fixtures/here-matrix-dubai.json",
+      "src/__tests__/fixtures/v2/order.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
       ".oxlintrc.jsonc",
@@ -421,6 +430,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     "knip.json",
     ".agents/models.json",
     "packages/x/brand.json",
+    "packages/x/fixtures/order.json",
   ];
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),

@@ -23,6 +23,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
+import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
@@ -172,7 +173,7 @@ describe("emitWiring", () => {
       ],
     };
     const content = emitWiring(ir);
-    expect(content).toContain("    { provide: BasePolicy, override: OrderPolicy },");
+    expect(content).toContain("    { provide: BasePolicy, override: OrderPolicy, deps: [");
     expect(content).toContain('    { class: OrderPolicy, partner: "orders.order" },');
     expect(content).toContain(
       '    loyalty_kit: { exports: [], dependsOn: [], from: "@acme/loyalty-kit", type: LoyaltyKitModule },',
@@ -211,13 +212,11 @@ describe("emitWiring", () => {
 
   it("binds a package service the member injects, from the package's manifest (STA-1686)", () => {
     const kit = buildManifest(LOYALTY_KIT_IR).manifest;
-    expect(kit["services"]).toEqual([
-      {
-        class: "LoyaltyService",
-        from: "@acme/loyalty-kit",
-        deps: [{ class: { name: "LoyaltyLedger", from: "@acme/loyalty-kit/contracts" } }],
-      },
-    ]);
+    expect(kit["services"]).toContainEqual({
+      class: "LoyaltyService",
+      from: "@acme/loyalty-kit",
+      deps: [{ class: { name: "LoyaltyLedger", from: "@acme/loyalty-kit/contracts" } }],
+    });
     const content = emitWiring({
       ...COMMERCE_IR,
       packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
@@ -244,6 +243,117 @@ describe("emitWiring", () => {
       /\{ module: "orders", kind: "service", provide: LoyaltyService, deps: \[LoyaltyLedger\] \},/,
     );
     expect(content).toMatch(/import \{[^}]*LoyaltyService[^}]*\} from "@acme\/loyalty-kit";/);
+  });
+
+  it("binds a package's extension point that its service injects, from the package's manifest", () => {
+    const point = {
+      name: "LoyaltyKitExtensionPoint",
+      kind: "extension_point",
+      module: "loyalty_kit",
+      file: "src/node/extensions/loyalty-kit.extension-point.ts",
+      importPath: "#node/extensions/loyalty-kit.extension-point",
+      options: {},
+      deps: [],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    } as const;
+    const kit = buildManifest({
+      ...LOYALTY_KIT_IR,
+      classes: [
+        ...LOYALTY_KIT_IR.classes.map((declared) =>
+          declared.name === "LoyaltyService"
+            ? {
+                ...declared,
+                deps: [
+                  ...declared.deps,
+                  {
+                    class: {
+                      name: point.name,
+                      from: "#node/extensions/loyalty-kit.extension-point",
+                    },
+                  },
+                ],
+              }
+            : declared,
+        ),
+        point,
+      ],
+    }).manifest;
+    const services = kit["services"] as readonly { class: string; deps?: unknown[] }[];
+    expect(services.find((entry) => entry.class === point.name)).toEqual({
+      class: point.name,
+      from: expect.stringMatching(/^@acme\/loyalty-kit/) as unknown,
+    });
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
+      classes: [
+        ...COMMERCE_IR.classes,
+        {
+          name: "RewardsService",
+          kind: "service",
+          module: "orders",
+          file: "src/modules/orders/services/rewards.service.ts",
+          importPath: "#modules/orders/services/rewards.service",
+          options: {},
+          deps: [{ class: { name: "LoyaltyService", from: "@acme/loyalty-kit" } }],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+      dependencies: [{ package: "@acme/loyalty-kit", manifest: kit }],
+    });
+    expect(content).toMatch(
+      /\{ module: "orders", kind: "service", provide: LoyaltyKitExtensionPoint, deps: \[\] \},/,
+    );
+  });
+
+  it("binds a hosted package module's actions, whether or not a class injects them", () => {
+    const enroll = {
+      name: "EnrollMemberAction",
+      kind: "action",
+      module: "loyalty_kit",
+      file: "src/node/actions/enroll-member.action.ts",
+      importPath: "#node/actions/enroll-member.action",
+      options: { key: "account.enroll" },
+      deps: [{ class: { name: "LoyaltyService", from: "#core/services/loyalty.service" } }],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    } as const;
+    const built = buildManifest({
+      ...LOYALTY_KIT_IR,
+      classes: [...LOYALTY_KIT_IR.classes, enroll],
+    }).manifest;
+    // The fixture's module is generated; a published kit names the file its module class lives in.
+    const kit = {
+      ...built,
+      modules: (built.modules ?? []).map((entry) => ({
+        ...entry,
+        class: entry.class ?? "LoyaltyKitModule",
+        file: entry["file"] ?? "src/node/loyalty-kit.module.ts",
+      })),
+    };
+    const services = (kit as Record<string, unknown>)["services"] as readonly { class: string }[];
+    expect(services.map((entry) => entry.class)).toContain("EnrollMemberAction");
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
+      dependencies: [{ package: "@acme/loyalty-kit", manifest: kit }],
+    });
+    expect(content).toMatch(
+      /\{ module: "loyalty_kit", kind: "action", provide: EnrollMemberAction, deps: \[LoyaltyService\] \},/,
+    );
+    // Its tokens are bound too, so the action can be built.
+    expect(content).toMatch(/provide: LoyaltyService, deps: \[LoyaltyLedger\]/);
   });
 
   it("adds the bindings no class declares", () => {
@@ -527,6 +637,67 @@ describe("emitWiring", () => {
     expect(content).not.toContain('"locking.LockDriver": ');
   });
 
+  it("lists no browser, React Native or Electron driver in a service, nor a port that has only those", () => {
+    const identity: MemberIR["dependencies"][number] = {
+      package: "@stackra/identity",
+      manifest: {
+        member: "identity",
+        package: "@stackra/identity",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "SessionStore",
+            key: "identity.SessionStore",
+            candidates: ["memory", "pkce"],
+            classes: {
+              memory: { class: "MemorySessionStoreDriver", from: "@stackra/identity" },
+              pkce: {
+                class: "PkceSessionStoreDriver",
+                from: "@stackra/identity",
+                deps: [{ class: { name: "SignInBrowser", from: "@stackra/identity/contracts" } }],
+              },
+            },
+          },
+          {
+            port: "SignInBrowser",
+            key: "identity.SignInBrowser",
+            candidates: ["electron", "expo"],
+            classes: {
+              electron: { class: "ElectronSignInBrowserDriver", from: "@stackra/identity/desktop" },
+              expo: { class: "ExpoSignInBrowserDriver", from: "@stackra/identity/native" },
+            },
+          },
+        ],
+      },
+    };
+    const sessions: DeclaredClass = {
+      name: "SignOutService",
+      kind: "service",
+      module: "billing",
+      file: "src/modules/billing/services/sign-out.service.ts",
+      importPath: "#modules/billing/services/sign-out.service",
+      options: {},
+      deps: [{ class: { name: "SessionStore", from: "@stackra/identity/contracts" } }],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    };
+    const content = emitWiring({
+      ...BILLING_IR,
+      classes: [...BILLING_IR.classes, sessions],
+      dependencies: [...BILLING_IR.dependencies, identity],
+    });
+    expect(content).toContain('      key: "identity.SessionStore",');
+    expect(content).toContain(
+      '        "memory": () => import("@stackra/identity").then((m) => m.MemorySessionStoreDriver),',
+    );
+    expect(content).not.toContain('key: "identity.SignInBrowser"');
+    expect(content).not.toContain("ExpoSignInBrowserDriver");
+    expect(content).not.toContain("ElectronSignInBrowserDriver");
+  });
+
   it("lists a package candidate without the tokens of a library the member does not declare", () => {
     const database: MemberIR["dependencies"][number] = {
       package: "@stackra/database",
@@ -727,6 +898,7 @@ describe("emitWiring", () => {
       '    { module: "billing", kind: "service", provide: SearchHealthIndicatorDriver, deps: [SearchDriver, SearchConfig] },',
       '    { key: "app.cors", provide: CorsConfig },',
       '    { key: "app.csrf", provide: CsrfConfig },',
+      '    { key: "app.http", provide: HttpConfig },',
       '    { key: "database", provide: DatabaseConfig },',
       '    { key: "queue", provide: QueueConfig },',
     ])

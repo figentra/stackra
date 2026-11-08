@@ -1,5 +1,231 @@
 # @stackra/search
 
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/settings@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/settings@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/settings@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The tenancy contract step of `search.vector_items` and `search.queries`, in the platform form. Migration
+  `search.0009_contract_search_tenancy` keeps `tenant_id` nullable: a NULL row is the platform's (the global corpus).
+  A tenant session reads its own rows and the platform's rows, and writes only its own. It cannot update, delete or take
+  over a platform row. A platform session reads and writes only NULL rows. The scope path still narrows a tenant's rows.
+  A tenant reads the platform rows at the root and at its own product's node, never another product's.
+  
+  The migration first refuses, before changing anything, while a row has no tenant but sits at or below a tenant node
+  (deeper than a product node). Such a row belongs to a tenant and was written in the expand step outside a tenant call.
+  An environment with such rows runs the tenant backfill (RUNWAY 4c) first. A NULL row at the root or at a product node
+  is a platform row and stays.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [fb6e2b3]
+- Updated dependencies [12f4836]
+  - @stackra/database@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/settings@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/settings@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- d3e77e0: `SearchHealthIndicatorDriver` no longer throws when `health.table` is empty. It builds, and every `check()` reports
+  `down` with "search health.table is not set", without searching. A deploy without the setting still fails `/readyz`,
+  and a testing container that binds every indicator (gen's wiring) compiles again; commerce catalogue and os parties
+  lost every module-booting test to the constructor error.
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/settings@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/settings@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 9063bb3: A multi-word search also returns the rows that hold only some of its words, after every full match: the Postgres
+  driver adds a partial lane and ranks its rows below every row a full lane found, so full matches keep their order and
+  partial ones fill the tail. A one-word search is unchanged. The evaluation set's recall@50 now reaches its threshold.
+
+### Patch Changes
+
+- d76d1ed: The expand step of tenancy audit gap D: each scope-path table gains a nullable, indexed `tenant_id` that every insert
+  fills from `app.tenant_id` (`t.belongsToTenant({ expand: true })`), with no policy change, so no session reads a row
+  more or less. Migrations: `achievements.0003_add_tenancy` (`award_kinds`, `awards`), `rules.0004_add_tenancy`
+  (`rule_sets`), `segments.0002_add_tenancy` (`segments`, `segment_memberships`), `content.0005_add_tenancy`
+  (`custom_fields`, `custom_field_value_sets`, `revisions`), `search.0008_add_tenancy` (`vector_items`, `queries`),
+  `collaboration.0003_add_tenancy` (the four comment tables) and `workflow.0010_add_tenancy` (`automations`, `checklists`,
+  `checklist_progresses`). Each package now depends on `@stackra/tenancy` for the macro. Older rows stay null until a
+  backfill job sets them; the contract step (NOT NULL, the tenant equality as the one permissive policy, the scope path
+  restrictive) follows in a later release.
+- 6ec440d: Each package's tenancy expand migration now carries the package's name, in its class and its file
+  (`AddAchievementsTenancyMigration` in `0003-add-achievements-tenancy.migration.ts`, and so on), so no exported name is
+  declared in two packages. The SQL is unchanged. The migration ids change with the file names
+  (`achievements.0003_add_achievements_tenancy`); these migrations ship first in this release, so no database has
+  applied the old ids.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [e5ac3d0]
+- Updated dependencies [d2b3d22]
+- Updated dependencies [eafb209]
+- Updated dependencies [d22e767]
+- Updated dependencies [e283a31]
+- Updated dependencies [27f2b3f]
+- Updated dependencies [15d8a1b]
+- Updated dependencies [bc5a0ab]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/tenancy@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/outbox@0.19.0
+  - @stackra/settings@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

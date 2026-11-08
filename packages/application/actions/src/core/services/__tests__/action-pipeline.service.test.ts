@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `ActionPipeline`: the fixed order of the steps; the actor check and fail-closed permission;
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
- *          failure); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
+ *          failure, a shorter window, a @ShownOnce output field never kept); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
  *          with its back-off details and a `rate_limited` usage event, the default per-scope and per-hashed-address
  *          buckets of an action with no `rateLimit`); the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
@@ -28,7 +28,11 @@
  *          committed write or a carried `lastWriteAt`, never for a refused write or another caller's write; and
  *          `analytics` (STA-1512): `action.called` in the unit of work and after a refusal, a declared AnalyticsEvent
  *          with only its fields, a query's event, nothing without granted consent, a skipped misfit, no replay event.
- *          Also `QueryBudget` around `handle` and the per-call `ctx.memo` (STA-1400).
+ *          Also `QueryBudget` around `handle` and the per-call `ctx.memo` (STA-1400). And the tree tenant: inside a
+ *          bound `CallIsolation` a branch user's descriptor and context carry the tenant the isolation runs as as
+ *          `scopeId`, and its approval binding and draft are written under it, with the branch on `branchScopeId`;
+ *          a tenant-level user, a job and a system actor keep their tenant in both, a platform call has neither, and
+ *          with no isolation bound the branch stays the `scopeId`.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -73,7 +77,7 @@ import type { RecordedEvent } from "@stackra/events/contracts";
 import { EventOutbox } from "@stackra/events/contracts";
 import { describe, expect, it, onTestFinished } from "@stackra/testing";
 import { vi } from "vitest";
-import { registerSchemas, Schema } from "@stackra/validation";
+import { registerSchemas, Schema, ShownOnce } from "@stackra/validation";
 import { z } from "zod";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
@@ -304,6 +308,43 @@ class SendMessageAction extends Action({
   async handle(input: { text: string }): Promise<{ count: number; text: string }> {
     this.sent += 1;
     return { count: this.sent, text: input.text };
+  }
+}
+
+/** Hands out a secret: its output must never land in the idempotency store. */
+class PickupSecretAction extends Action({
+  key: "secret.pickup",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Never,
+}) {
+  picked = 0;
+
+  async handle(): Promise<{ token: string }> {
+    this.picked += 1;
+    return { token: `token-${this.picked}` };
+  }
+}
+
+/** A registered endpoint's output: the signing secret is shown once. */
+class RegisterEndpointOutput extends Schema {
+  @ShownOnce
+  signingSecret!: string;
+
+  endpointId!: string;
+}
+
+/** Registers a webhook endpoint once per key: a retry replays the endpoint without its secret. */
+class RegisterEndpointAction extends Action({
+  key: "endpoint.register",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Required,
+  idempotencyTtl: Duration.minutes(10),
+}) {
+  registered = 0;
+
+  async handle(): Promise<{ endpointId: string; signingSecret: string }> {
+    this.registered += 1;
+    return { endpointId: `whe_${this.registered}`, signingSecret: `whsec_${this.registered}` };
   }
 }
 
@@ -765,6 +806,84 @@ describe(ActionPipeline, () => {
     });
   });
 
+  it("never stores or replays the output of an Idempotency.Never action, even with a key", async () => {
+    const claimed: string[] = [];
+    class Recording extends MemoryIdempotencyStoreDriver {
+      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
+        claimed.push(args[0]);
+        return super.claim(...args);
+      }
+    }
+    const action = new PickupSecretAction();
+    const { pipeline } = setup([
+      [IdempotencyStore, new Recording(new FixedClock())],
+      [PickupSecretAction, action],
+    ]);
+    const first = await pipeline.execute(
+      PickupSecretAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    const again = await pipeline.execute(
+      PickupSecretAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    expect(first).toEqual({ token: "token-1" });
+    expect(again).toEqual({ token: "token-2" });
+    expect(action.picked).toBe(2);
+    expect(claimed).toEqual([]);
+  });
+
+  it("never keeps a @ShownOnce output field: the replay omits it and says so", async () => {
+    onTestFinished(() => {
+      ACTION_REGISTRY.delete(RegisterEndpointAction);
+    });
+    registerActions([
+      {
+        type: RegisterEndpointAction,
+        key: "webhooks.endpoint.register@1",
+        // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes these registrations
+        permission: "webhooks.endpoint.register",
+        risk: "L2",
+        output: RegisterEndpointOutput,
+      },
+    ]);
+    const stored: { output: unknown; ttl?: unknown }[] = [];
+    class Recording extends MemoryIdempotencyStoreDriver {
+      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
+        stored.push({ output: undefined, ttl: args[2] });
+        return super.claim(...args);
+      }
+
+      override async complete(key: string, output: unknown) {
+        stored.push({ output });
+        return super.complete(key, output);
+      }
+    }
+    const action = new RegisterEndpointAction();
+    const { pipeline } = setup([
+      [IdempotencyStore, new Recording(new FixedClock())],
+      [RegisterEndpointAction, action],
+    ]);
+    const first = await pipeline.execute(
+      RegisterEndpointAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    const again = await pipeline.execute(
+      RegisterEndpointAction,
+      {},
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    expect(first).toEqual({ endpointId: "whe_1", signingSecret: "whsec_1" });
+    expect(again).toEqual({ endpointId: "whe_1", secretOmitted: true });
+    expect(action.registered).toBe(1);
+    expect(stored[0]?.ttl).toEqual(Duration.minutes(10));
+    expect(stored[1]?.output).toEqual({ endpointId: "whe_1", secretOmitted: true });
+    expect(JSON.stringify(stored)).not.toContain("whsec_");
+  });
+
   it("derives a key without one, then applies the action's own rate limit", async () => {
     const { pipeline, send } = setup();
     const first = await pipeline.execute(SendMessageAction, { text: "hi" }, { actor: customer });
@@ -968,6 +1087,25 @@ describe(ActionPipeline, () => {
       { outcome: "refused", code: "orders_paused", fields: {} },
     ]);
     expect(trail.entries[0]?.at).toEqual(NOW);
+  });
+
+  it("gives an agent with no tenant of its own its human's tenant, and a platform agent none", async () => {
+    const { pipeline } = setup();
+    const background: Actor = { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: customer };
+    const platformAgent: Actor = {
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { kind: ActorKind.User, id: "usr_2", realm: Realm.Staff },
+    };
+    await expect(pipeline.execute(InspectAction, {}, { actor: background })).resolves.toMatchObject(
+      {
+        scopeId: "ten_1",
+      },
+    );
+    const output = (await pipeline.execute(InspectAction, {}, { actor: platformAgent })) as {
+      scopeId?: string;
+    };
+    expect(output.scopeId).toBeUndefined();
   });
 
   it("builds the context: frozen clock, request facts, key, tenant, scope, period; logs a failed after-commit", async () => {
@@ -3395,5 +3533,121 @@ describe("ActionPipeline approval stage (ADR 0509)", () => {
       pipeline.execute(SteppedCouponAction, {}, { actor: customer, approvalId }),
     ).resolves.toBe("rotated");
     expect(stepUp.calls.at(-1)).toEqual([assurance, AssuranceLevel.Aal2, NOW]);
+  });
+});
+
+/** A tenant above the branch below. */
+const TREE_TOP = "scp_01j9z3k4m5n6p7q8r9s0t1v2t1";
+
+/** A branch of `TREE_TOP`. */
+const TREE_BRANCH: ScopeRef = {
+  id: "scp_01j9z3k4m5n6p7q8r9s0t1v2t2",
+  path: "platform.acme.riyadh",
+};
+
+/** Runs an actor that claims `TREE_BRANCH` as `TREE_TOP`, as `CallIsolationDriver` does once the tree shows it. */
+class TreeIsolation extends Driver(CallIsolation) {
+  async run<T>(
+    actor: Actor,
+    _scope: ScopeRef | readonly ScopeRef[] | undefined,
+    work: (actor?: Actor) => Promise<T>,
+  ): Promise<T> {
+    return work(
+      actor.scopeId === TREE_BRANCH.id ? Object.freeze({ ...actor, scopeId: TREE_TOP }) : actor,
+    );
+  }
+}
+
+/** An action a person, a job or the system may run. */
+class SweepAction extends Action({
+  key: "order.sweep",
+  actors: [ActorKind.User, ActorKind.Job, ActorKind.System],
+}) {
+  async handle(): Promise<string> {
+    return "swept";
+  }
+}
+
+describe("ActionPipeline tree tenant (STA-2561)", () => {
+  const branchUser: Actor = {
+    kind: ActorKind.User,
+    id: "usr_7",
+    realm: Realm.Customer,
+    scopeId: TREE_BRANCH.id,
+  };
+
+  it("writes a branch user's approval under the tenant the isolation runs as, with the branch apart", async () => {
+    const approvals = new Approvals();
+    const bindings = new MemoryApprovalBindingStoreDriver();
+    const { pipeline, access } = setup([
+      [CallIsolation, new TreeIsolation()],
+      [ApprovalGate, approvals],
+      [ApprovalBindingStore, bindings],
+      [ApprovedRefundAction, new ApprovedRefundAction()],
+    ]);
+    const refused = await pipeline
+      .execute(ApprovedRefundAction, {}, { actor: branchUser, scope: TREE_BRANCH })
+      .catch((error: unknown) => error);
+    expect(refused).toMatchObject({ code: "approval_required" });
+    const { approvalId } = refused as { approvalId: string };
+    expect(access.calls[0]).toMatchObject({
+      actor: branchUser,
+      scopeId: TREE_TOP,
+      branchScopeId: TREE_BRANCH.id,
+      scope: TREE_BRANCH,
+    });
+    expect(await bindings.find(approvalId)).toMatchObject({
+      scopeId: TREE_TOP,
+      requester: branchUser,
+    });
+    expect(approvals.parked[0]).toMatchObject({ scopeId: TREE_TOP, scope: TREE_BRANCH });
+  });
+
+  it("hands a branch user's handler the tenant as ctx.scopeId", async () => {
+    const { pipeline } = setup([[CallIsolation, new TreeIsolation()]]);
+    const output = await pipeline.execute(
+      InspectAction,
+      {},
+      { actor: branchUser, scope: TREE_BRANCH },
+    );
+    expect(output).toMatchObject({ scopeId: TREE_TOP, scope: TREE_BRANCH });
+  });
+
+  it("keeps a tenant-level user's, a job's and a system actor's tenant in both fields", async () => {
+    const { pipeline, access } = setup([
+      [CallIsolation, new TreeIsolation()],
+      [SweepAction, new SweepAction()],
+    ]);
+    const topScope: ScopeRef = { id: TREE_TOP, path: "platform.acme" };
+    const callers: Actor[] = [
+      { kind: ActorKind.User, id: "usr_8", realm: Realm.Customer, scopeId: TREE_TOP },
+      { kind: ActorKind.Job, id: "job_1", scopeId: TREE_TOP },
+      { kind: ActorKind.System, id: "sys_1", scopeId: TREE_TOP },
+    ];
+    for (const actor of callers)
+      await pipeline.execute(SweepAction, {}, { actor, scope: topScope });
+    expect(access.calls.map((call) => [call.actor, call.scopeId, call.branchScopeId])).toEqual(
+      callers.map((actor) => [actor, TREE_TOP, TREE_TOP]),
+    );
+  });
+
+  it("gives a platform call neither field", async () => {
+    const { pipeline, access } = setup([
+      [CallIsolation, new TreeIsolation()],
+      [SweepAction, new SweepAction()],
+    ]);
+    const staff: Actor = { kind: ActorKind.User, id: "usr_2", realm: Realm.Staff };
+    await pipeline.execute(SweepAction, {}, { actor: staff });
+    expect(access.calls[0]).not.toHaveProperty("scopeId");
+    expect(access.calls[0]).not.toHaveProperty("branchScopeId");
+  });
+
+  it("keeps the branch as scopeId when no isolation is bound", async () => {
+    const { pipeline, access } = setup([[SweepAction, new SweepAction()]]);
+    await pipeline.execute(SweepAction, {}, { actor: branchUser, scope: TREE_BRANCH });
+    expect(access.calls[0]).toMatchObject({
+      scopeId: TREE_BRANCH.id,
+      branchScopeId: TREE_BRANCH.id,
+    });
   });
 });

@@ -16,10 +16,16 @@ import { HasRevisions } from "@stackra/content/node";
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** A rule set. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class RuleSet extends Model.with(HasPublicId("rset"), Timestamps, HasRevisions) {
+export class RuleSet extends Model.with(
+  HasPublicId("rset"),
+  BelongsToTenant,
+  Timestamps,
+  HasRevisions,
+) {
   /** The scope node the rule set belongs to. */
   scopeId!: PublicId<"scp">;
 
@@ -42,5 +48,5 @@ export class RuleSet extends Model.with(HasPublicId("rset"), Timestamps, HasRevi
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface RuleSet {
   /** The optional properties: the trait timestamps and the seed fields. */
-  [OptionalProps]?: "createdAt" | "updatedAt" | "seedKey" | "seedVersion";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt" | "seedKey" | "seedVersion";
 }

@@ -17,6 +17,7 @@
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
  *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds,
+ *          the pipeline's own ports for what a service declares (`pipelinePorts`, STA-2573),
  *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504), and the
  *          cross-app relay (STA-1910): a consumer of a contract-only producer's events gets the inbox route
  *          (`InboundEventsController` over `RelayInboxService`) and its `outbox.relay_inbox` override from
@@ -56,6 +57,7 @@ import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
+import { pipelinePorts } from "#core/functions/pipeline-ports.function";
 import { portKey } from "#core/functions/port-key.function";
 import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
 import { moduleDependsOn } from "#core/functions/module-depends-on.function";
@@ -472,6 +474,37 @@ export function emitWiring(ir: MemberIR): string {
     );
   }
 
+  // A hosted package module's actions and queries are its surface, so the host binds each one whether or not a class
+  // injects it (a test or a client calls it by class), with its constructor tokens from the manifest's `services`.
+  const hostedTokens: { readonly module: string; readonly dep: TokenRef }[] = [];
+  const hostedKeys: string[] = [];
+  const hostedServices = dependencyServices(ir);
+  for (const { package: name, manifest } of ir.dependencies) {
+    const entry = manifest.modules?.find((candidate) => candidate.key === manifest.member);
+    if (entry?.class === undefined || typeof entry["file"] !== "string" || manifest.kind === "app")
+      continue;
+    const key = dependencyKeys.get(manifest.member) ?? manifest.member;
+    const surface = Array.isArray(manifest["actions"]) ? (manifest["actions"] as unknown[]) : [];
+    for (const declared of surface) {
+      const { class: type, kind } = (declared ?? {}) as Record<string, unknown>;
+      if (typeof type !== "string" || (kind !== "action" && kind !== "query")) continue;
+      const services = Array.isArray(manifest["services"])
+        ? (manifest["services"] as unknown[])
+        : [];
+      const listed = services.find(
+        (candidate) => ((candidate ?? {}) as Record<string, unknown>)["class"] === type,
+      ) as Record<string, unknown> | undefined;
+      const tokens = hostedServices.get(`${name}#${type}`);
+      if (listed === undefined || typeof listed["from"] !== "string" || tokens === undefined)
+        continue;
+      bindingLines.push(
+        `    { module: ${JSON.stringify(key)}, kind: ${JSON.stringify(kind)}, provide: ${ref({ name: type, from: listed["from"] })}, deps: ${list(tokens.map(token))} },`,
+      );
+      for (const dep of tokens) hostedTokens.push({ module: key, dep });
+      hostedKeys.push(`:${listed["from"]}#${type}`);
+    }
+  }
+
   // A config class's key: an override keeps its base's key (ADR 0294 decision 20), read from the base package's
   // manifest, else derived from the base's own member.
   const packageConfigs = dependencyConfigs(ir);
@@ -570,6 +603,7 @@ export function emitWiring(ir: MemberIR): string {
   }
 
   // The declared packages' driver tables by port key, and the member of each package (STA-1297).
+  const server = ir.layout === "service" || ir.layout === "worker";
   const packageTables = dependencyDriverTables(ir);
   const configKeys = new Set(configLines.map((line) => /key: "([^"]+)"/.exec(line)?.[1]));
   const linked = new Set<string>();
@@ -594,8 +628,14 @@ export function emitWiring(ir: MemberIR): string {
     const table = packageTables.get(key);
     if (table === undefined || linked.has(key)) return brought;
     linked.add(key);
+    // A server never runs a browser, React Native or Electron driver, so its wiring lists none: a port with only
+    // those (`SignInBrowser`) stays out, else the boot fails choosing a driver nothing on the server asks for.
+    const candidates = server
+      ? table.candidates.filter((candidate) => !isClientEntry(candidate.type.from))
+      : table.candidates;
+    if (candidates.length === 0) return brought;
     const entry = ports.get(key) ?? { port: dep.class, key, candidates: [], own: [] };
-    for (const candidate of table.candidates)
+    for (const candidate of candidates)
       if (!entry.candidates.some((known) => known.name === candidate.name)) {
         entry.candidates.push(candidate);
         brought.push(...candidate.deps);
@@ -615,6 +655,7 @@ export function emitWiring(ir: MemberIR): string {
       declared.kind === "driver"
     )
       for (const dep of depsOf(declared)) used.push({ module: declared.module, dep });
+  used.push(...hostedTokens);
   if (webhookIntegrations(ir).length > 0) {
     const receiver: TokenRef = { class: { name: "WebhookReceiver", from: "@stackra/webhooks" } };
     const route = ref({ name: "InboundWebhooksController", from: "#stackra/webhooks" });
@@ -655,6 +696,8 @@ export function emitWiring(ir: MemberIR): string {
     }
     // The pipeline resolves ReplicaReads optionally, so a replica query's port is reached here (STA-1504).
     for (const dep of replicaReadsPorts(ir)) used.push({ module: ir.member, dep });
+    // The ports the pipeline itself requires for what the service declares, injected or not (STA-2573).
+    for (const dep of pipelinePorts(ir)) used.push({ module: ir.member, dep });
   }
   // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
   const systemDefaults = new Map<string, string>();
@@ -663,7 +706,7 @@ export function emitWiring(ir: MemberIR): string {
     used.push({ module: ir.member, dep: { class: port } });
     if (config !== undefined) used.push({ module: ir.member, dep: { class: config } });
   }
-  const added = new Set<string>();
+  const added = new Set<string>(hostedKeys);
   const packageServices = dependencyServices(ir);
   // The array iterator reads the live length, so the links pushed below are walked too.
   for (const { module, dep } of used) {
@@ -770,7 +813,8 @@ export function emitWiring(ir: MemberIR): string {
     for (const facet of declared.facets.filter((candidate) => candidate.name === "Replaces"))
       if (isClassValue(facet.options))
         replaceLines.push(
-          `    { provide: ${ref({ name: facet.options.$class, from: facet.options.from })}, override: ${ref(own(declared))} },`,
+          // the override is built from this row, so it carries the constructor tokens a binding row would (STA-2569)
+          `    { provide: ${ref({ name: facet.options.$class, from: facet.options.from })}, override: ${ref(own(declared))}, deps: ${list(depsOf(declared).map(token))} },`,
         );
     const partner = declared.partner;
     if (partner === undefined || declared.kind === "driver") continue;
@@ -864,4 +908,9 @@ export function emitWiring(ir: MemberIR): string {
     runtime: "isomorphic",
   });
   return [header, ...importLines(imports), "", ...lines].join("\n") + "\n";
+}
+
+/** Whether `from` is a client-only entry of a package (`@stackra/identity/native`, `/desktop`, `/react`). */
+function isClientEntry(from: string): boolean {
+  return /\/(?:react|native|desktop)(?:\/|$)/.test(from);
 }

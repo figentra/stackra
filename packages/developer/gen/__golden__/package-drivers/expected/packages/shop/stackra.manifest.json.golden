@@ -50,7 +50,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": true,
+          "idempotentHint": false,
           "openWorldHint": false
         }
       },
@@ -183,6 +183,18 @@
             "from": "@golden/shop/contracts"
           },
           "named": "fallback"
+        }
+      ]
+    },
+    {
+      "class": "CancelOrderAction",
+      "from": "@golden/shop/node",
+      "deps": [
+        {
+          "class": {
+            "name": "ShopService",
+            "from": "@golden/shop"
+          }
         }
       ]
     }

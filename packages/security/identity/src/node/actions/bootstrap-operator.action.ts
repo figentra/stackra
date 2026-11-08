@@ -61,7 +61,10 @@ export class BootstrapOperatorAction extends Action({
   /** Writes the grant. */
   private readonly grants: RoleGrants;
 
-  /** Finds the platform node. */
+  /**
+   * Finds the platform node. TODO(STA-2561): the one action ADR 0239 (amendment of 2026-11-07) lets take `ScopeTree`;
+   * move this read into an identity service.
+   */
   private readonly tree: ScopeTree;
 
   /**

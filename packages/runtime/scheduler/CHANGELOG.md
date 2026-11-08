@@ -1,5 +1,205 @@
 # @stackra/scheduler
 
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [ec00fd8]
+- Updated dependencies [081989b]
+- Updated dependencies [b1603a7]
+- Updated dependencies [5c0aafc]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/gen@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/locking@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/testing@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [689c37b]
+- Updated dependencies [8a8fa6f]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/gen@0.25.0
+  - @stackra/locking@0.25.0
+  - @stackra/queue@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/testing@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [b4c2501]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/gen@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/queue@0.24.0
+  - @stackra/locking@0.24.0
+  - @stackra/testing@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [7ff4969]
+- Updated dependencies [926faa4]
+- Updated dependencies [96374f4]
+- Updated dependencies [557809c]
+- Updated dependencies [c26fb86]
+- Updated dependencies [8b42c02]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [f790fa1]
+- Updated dependencies [fb6e2b3]
+  - @stackra/database@0.23.0
+  - @stackra/gen@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/locking@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/testing@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [e41d9a1]
+- Updated dependencies [4663a61]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/gen@0.22.0
+  - @stackra/locking@0.22.0
+  - @stackra/queue@0.22.0
+  - @stackra/testing@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [2974e54]
+- Updated dependencies [ae9cb23]
+- Updated dependencies [d25a7a0]
+- Updated dependencies [9feea9d]
+- Updated dependencies [00a2477]
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+- Updated dependencies [4242bbb]
+  - @stackra/gen@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/locking@0.21.0
+  - @stackra/queue@0.21.0
+  - @stackra/testing@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [6623da1]
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/gen@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/queue@0.20.0
+  - @stackra/locking@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [ee00741]
+- Updated dependencies [5830168]
+- Updated dependencies [ef04935]
+- Updated dependencies [1cc3bd3]
+- Updated dependencies [afd7846]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/queue@0.19.0
+  - @stackra/gen@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/locking@0.19.0
+  - @stackra/testing@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

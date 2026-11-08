@@ -507,6 +507,48 @@ describe("emitSchemas", () => {
     expect(content).toMatch(/import type \{ I18nKey \} from "@stackra\/i18n";/);
   });
 
+  it("validates GeoPoint, GeoPolygon and GeoLine with @stackra/validation's builders (ADR 0314)", () => {
+    const placed: ShapeIR = {
+      name: "Placed",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/placed.schema.ts",
+      importPath: "#modules/orders/schemas/placed.schema",
+      fields: [
+        {
+          name: "door",
+          optional: false,
+          nullable: false,
+          type: { kind: "geo", shape: "point" },
+          rules: [],
+        },
+        {
+          name: "area",
+          optional: false,
+          nullable: true,
+          type: { kind: "geo", shape: "polygon" },
+          rules: [],
+        },
+        {
+          name: "route",
+          optional: false,
+          nullable: false,
+          type: { kind: "geo", shape: "line" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [placed], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("  door: geoPoint(),");
+    expect(content).toContain("  area: geoPolygon().nullable(),");
+    expect(content).toContain("  route: geoLine(),");
+    expect(content).toMatch(/import \{[^}]*geoLine[^}]*\} from "@stackra\/validation";/);
+  });
+
   it("imports a package's shipped schema under an alias instead of compiling it (STA-1290)", () => {
     const site: ShapeIR = {
       name: "Site",

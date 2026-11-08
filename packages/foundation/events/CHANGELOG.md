@@ -1,5 +1,88 @@
 # @stackra/events
 
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/testing@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/testing@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/testing@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/testing@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- acbee14: The events testing plugin offers `OutboxFake` as `EventOutbox`'s `memory` test driver. Since gen binds the real outbox
+  for the action pipeline (#706), a `createTestingModule(...).useDrivers("memory")` app bound `OutboxEventOutboxDriver`,
+  so `drainOutbox()` threw and `toRecord` and `app.events.published()` saw nothing. Under `memory` the fake is bound
+  again. An explicit `.override(EventOutbox, …)` still wins, and a container that doesn't pick `memory` keeps the real
+  outbox, as production wiring does.
+- @stackra/testing@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/testing@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/testing@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

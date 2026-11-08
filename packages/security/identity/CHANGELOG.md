@@ -1,5 +1,386 @@
 # @stackra/identity
 
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [e5da198]
+  - @stackra/database@0.26.0
+  - @stackra/privacy@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/scheduler@0.26.0
+  - @stackra/scope@0.26.0
+  - @stackra/query@0.26.0
+  - @stackra/clients@0.26.0
+  - @stackra/storage@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/market-packs@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/transport@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- fd0e4a9: `verifyZitadelSignature` is exported from `@stackra/identity`, beside `claimsActionResponse`. A service that answers the
+  claims action (`IdpAdmin.installClaimsAction`) checks the `ZITADEL-Signature` header over the raw body with it before it
+  reads the body, without copying the HMAC check.
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/queue@0.25.0
+  - @stackra/scheduler@0.25.0
+  - @stackra/iam@0.25.0
+  - @stackra/privacy@0.25.0
+  - @stackra/scope@0.25.0
+  - @stackra/clients@0.25.0
+  - @stackra/query@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/storage@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/market-packs@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/transport@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/scope@0.24.0
+  - @stackra/clients@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/queue@0.24.0
+  - @stackra/scheduler@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/privacy@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/query@0.24.0
+  - @stackra/storage@0.24.0
+  - @stackra/ui@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/market-packs@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/transport@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- a42a80c: A service now proves who it is when it calls another service, and who it acts for.
+  
+  - An outgoing service call sends the service's own token (`Authorization: Bearer`). `ServiceTokens` in
+    `@stackra/identity` answers it, with a memory driver for tests; the token is issued for the receiving product's
+    project, set per module in `clients.audiences`.
+  - When the call acts for a user, it also sends that user's own token in `Stackra-On-Behalf-Of`. `serveGuardedCall` in
+    `@stackra/app/server` keeps that token for the one request and empties it when the request ends. It is never put on
+    the actor, the call context, a log, an error or an event.
+  - A user's token travels one hop. A service called for a user forwards it again only into an action that declares
+    `onBehalfOf: { secondHop: true }`; otherwise its own calls carry the service token alone.
+  - `ServiceClientSessionDriver` (`service`) is the `ClientSession` a service binds for its generated clients, and
+    `ClientSession.headers` now receives the call it is about to send.
+  - Generated endpoints name their action to `serveGuardedCall`, which reads its second-hop option. A hand-written
+    controller forwards only a user's own token, never a forwarded one.
+- f790fa1: A service now gets its own token from ZITADEL by itself, and sends it on every call to another service.
+  
+  - `ZitadelServiceTokensDriver` (`zitadel`, in `@stackra/identity/node`) signs in as the service's own ZITADEL
+    service account with the JWT profile. It reads the account's key file from the secret store, signs a short-lived
+    assertion, and asks the issuer for a token for the receiving product's project. Each token is reused until shortly
+    before it expires, and callers asking at the same moment share one request. The key and the tokens are never
+    logged, never put in an error and never put in an event. If the issuer refuses, the error is
+    `ServiceTokenRefusedError`. If it cannot be reached or is failing, the error is `ServiceTokenUnavailableError`.
+  - A service that declares `@stackra/app`, `@stackra/clients` and `@stackra/identity` now uses the `service` client
+    session and the `zitadel` token driver by default, so its generated clients need no extra wiring.
+  - If a call goes to a producer module that has no `clients.audiences` entry, the call fails with an error naming that
+    module, before any token is fetched. A call is never sent without a token.
+  
+  What each deployment must set (the values come from the owner or runway, the names are below):
+  
+  - `identity.service_tokens.issuer`: the ZITADEL issuer URL, the same as the bearer issuer.
+  - The secret `IDENTITY_SERVICE_ACCOUNT_KEY`: the service account's ZITADEL key file (JSON). Set
+    `identity.service_tokens.keySecret` to use another secret name.
+  - `clients.audiences`: for each producer module the service calls, the project id of the product that serves it.
+  - In ZITADEL, the service account's access token type must be JWT, because the receiving service checks the token
+    against the issuer's public keys.
+
+### Patch Changes
+
+- c8998d9: Passkey sign-in (`passkey.challenge`, `passkey.verify`) is `Idempotency.Never`: a challenge is single-use and a
+  verification answers session credentials, so neither is kept by the idempotency store or replayed.
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [12f4836]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/clients@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/scheduler@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/privacy@0.23.0
+  - @stackra/scope@0.23.0
+  - @stackra/query@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/transport@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/queue@0.22.0
+  - @stackra/scheduler@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/privacy@0.22.0
+  - @stackra/scope@0.22.0
+  - @stackra/clients@0.22.0
+  - @stackra/query@0.22.0
+  - @stackra/storage@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/market-packs@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/transport@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- 1073d9c: `IdpAdmin.installClaimsAction({ endpoint, timeoutSeconds? })` makes the provider add the Stackra claims to every
+  token and userinfo answer. On ZITADEL it is an Actions v2 `restCall` target named `stackra-claims` that fails the token
+  when the endpoint fails, plus the `preuserinfo` and `preaccesstoken` function executions. The first install answers the
+  target's signing key once, and a later install repoints the target and answers none. `claimsActionResponse(claims)` is
+  the endpoint's answer: `append_claims` for every `IDENTITY_CLAIMS` name, the realm included. `StackraClaims` types its
+  input. The endpoint verifies each call with the existing `verifyZitadelSignature`.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/scheduler@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/clients@0.21.0
+  - @stackra/storage@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/market-packs@0.21.0
+  - @stackra/transport@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/queue@0.21.0
+  - @stackra/iam@0.21.0
+  - @stackra/privacy@0.21.0
+  - @stackra/scope@0.21.0
+  - @stackra/query@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Minor Changes
+
+- cc87438: `actorOf(claims, principals)` turns a verified access token into the call's `Actor` (ADR 0209 decision 3,
+  service-to-service calls). A token whose subject is a service account is the `service` actor of its principal, found
+  through the new `ServicePrincipals` port (`bySubject`, answering a `ServicePrincipal`: a `svc_` id, the
+  `<product>.<member>` key and the tenant), whatever other claims it carries. Any other token is a `user` actor read from
+  `urn:stackra:user_id`, the new `urn:stackra:realm` claim (`IDENTITY_CLAIMS.realm`) and the membership matching the
+  token's scope path. An unknown subject, a missing or mistyped claim, or a scope path outside the memberships is
+  refused `unauthenticated`. `MemoryServicePrincipalsDriver` serves tests.
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/clients@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/queue@0.20.0
+  - @stackra/scheduler@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/privacy@0.20.0
+  - @stackra/scope@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/query@0.20.0
+  - @stackra/storage@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/transport@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+- 0da5f7a: Step-up works out of the box (STA-340). `@stackra/identity` ships `IdentityStepUpCheckDriver`, the `identity` driver of
+  the actions pipeline's `StepUpCheck` (`requireAssurance` with `IdentityConfig.stepUpMaxAgeMinutes`; a call without
+  assurance is refused). gen binds it by default in every service that declares `@stackra/identity`; a host without
+  identity binds none and its step-up actions still fail closed. `@stackra/actions/testing` adds
+  `MemoryStepUpCheckDriver`, picked by `.useDrivers("memory")`: a test passes `assurance` at the declared level to
+  `run`, and a call without it is refused `step_up_required`.
+
+### Patch Changes
+
+- 0e0de4f: Gen refuses a misshapen call. `checkCallShape` runs once per action or query in the manifest pass and refuses a query
+  whose permission is L2 or above (`query_above_l1`), a query with `preconditions` (`query_precondition`), an action with
+  `cache` (`action_cache`), an L3 or L4 action a user can call with no `stepUp` (`step_up_missing`) and a client write,
+  an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`). Each refusal carries its
+  fix. Write `idempotency: Idempotency.Optional` on a client write that is safe to repeat: it is the default the
+  pipeline already applies, and it now also sets the tool's `idempotentHint`.
+  
+  The actions pipeline asks `StepUpCheck` only when the caller is a user. A service, job, system or agent call carries
+  no assurance, so an action that both users and services call can declare `stepUp` and its service callers keep
+  working; a user call with no `StepUpCheck` bound still fails closed (ADR 0406 as amended).
+  
+  `identity.operator.bootstrap`, `identity.session.end_user` and `privacy.hold.release` declare
+  `stepUp: AssuranceLevel.Aal2`, so a user call to them now needs a bound `StepUpCheck`. The client writes of identity,
+  privacy, access-log, loyalty-kit, data-maintenance, media and collaboration that declared no idempotency write
+  `Idempotency.Optional`; their manifests gain the `idempotency` entry and `idempotentHint: true`.
+- 0e0de4f: Step-up for the L3 and L4 user actions STA-2096 raised (STA-340):
+  
+  - `@stackra/actions`: `stepUp` also takes `{ exempt: "first-factor-enrolment" }`, for which the pipeline asks no
+    `StepUpCheck`; the action enforces its own rule.
+  - `@stackra/gen`: refuses the exemption on any action outside `FIRST_FACTOR_ENROLMENT_ACTIONS`
+    (`step_up_exemption_unlisted`).
+  - `@stackra/identity`: `identity.passkey.confirm` takes the exemption. A first strong factor needs a fresh sign-in;
+    once the user has one, a new passkey needs AAL2. Each enrolment is audited with `firstFactor`.
+  - `@stackra/loyalty-kit`: `points.redeem` and `points.confirm_redemption` need AAL2 from a user. `points.earn_visit` is
+    service-only and loses its `POST /loyalty/visits` endpoint: call it from the till or booking service.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [e5ac3d0]
+- Updated dependencies [d2b3d22]
+- Updated dependencies [eafb209]
+- Updated dependencies [d22e767]
+- Updated dependencies [e283a31]
+- Updated dependencies [27f2b3f]
+- Updated dependencies [15d8a1b]
+- Updated dependencies [bc5a0ab]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/queue@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/tenancy@0.19.0
+  - @stackra/privacy@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/clients@0.19.0
+  - @stackra/storage@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/market-packs@0.19.0
+  - @stackra/transport@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/outbox@0.19.0
+  - @stackra/scheduler@0.19.0
+  - @stackra/scope@0.19.0
+  - @stackra/query@0.19.0
+  - @stackra/support@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -109,10 +109,19 @@ like a relation) and the manifest's JSON Schema, so it never reaches an action o
 
 `model_tenancy_missing` (`checkModelScope`, full pass only, stackra-258): in a service that declares
 `@stackra/tenancy`, a model with neither `BelongsToTenant`/`BelongsToTenantOrPlatform` nor a `Model.global(...)` base is
-refused (a model extending an own model takes its base's answer). The reader reads the traits of `Model.global(...)`
+refused (a model extending an own model takes its base's answer). A package's models are checked too, as warnings
+until 0.20; a table an ADR names (`MODEL_SCOPE_EXEMPTIONS`, today `achievements.award_verifications`, ADR 0368 d5) is
+skipped. `model_tenancy_migration_missing` (staged: a warning until 0.20 or `STACKRA_GEN_STRICT=1`) flags an owned model
+whose table some own migration touches but none calls `t.belongsToTenant()`. The reader reads the traits of `Model.global(...)`
 and marks the class `global`, which the manifest's model records. Such a service with an owned model and
 `@stackra/testing` also gets `.stackra/tests/tenant-isolation.int.test.ts` (`emitIsolationTest`): its compiled
-migrations, then `assertRowSecurity(postgres.database, tenantIsolationOptions())`.
+migrations, then `assertRowSecurity` with `tenantIsolationOptions()` and, as `platform`, the tables of its
+`Model.global` models and of `MODEL_SCOPE_EXEMPTIONS`, so every other table without `tenant_id` fails it (ADR 0347 d5).
+
+Shown-once output (STA-2568): `secret_output_kept` (`checkShownOnce`, full pass only) warns when an action that is not
+`Idempotency.Never` returns an output field named like a secret (`signingSecret`, `apiKey`, `accessToken`) that is
+neither `@ShownOnce` nor `@Hidden`: the idempotency store would keep it for a replay. Every `registerActions` row
+carries its output class, so the pipeline drops `@ShownOnce` fields before it stores the output.
 
 The query cache (ADR 0305 rule 31, STA-1445): `site_cache_reads_caller` (`checkQueryCache`, full pass only) refuses a
 query cached `per: CacheScope.Site` whose `handle` reads its caller from its context (`ctx.actor`, `scopeId`, `scope`,
@@ -633,29 +642,37 @@ filters, entries, sections, fields, steps; not relations or actions), for the ca
 
 A service gets `.stackra/encore/<member>/encore.service.ts` (`export default new Service("<member>")`, so the folder
 is one Encore service) and, when it has an own action or query with an endpoint, `.stackra/encore/<member>/api.ts`:
-one `api()` per such manifest entry, named by its camel-cased key and version (`shop.order.cancel@1` is
-`shopOrderCancelV1`), with the entry's derived `method` and `path` and `expose: true`, its parameter typed by the input
-schema class and its result by the output one (none, or `Promise<void>`, when the entry names none). It runs the call
-as `new ActionPipeline(container).execute(<class>, input, { actor })` inside `app.handlers.run` (STA-2063).
-
-The actor comes only from Encore's verified auth data, `getAuthData()` of `~encore/auth`, whose shape is
-`{ userID: string; actor: Actor }`. An entry is `auth: true` unless its `actors` list `ActorKind.Anonymous` (manifest
-`anonymous: true`, STA-2025): that one is `auth: false` and runs as the session's actor when one is presented,
-otherwise as `{ kind: ActorKind.Anonymous, id: mintPublicId("anon") }`. No adapter is written for an entry with no
-endpoint, a hosted package's entry (its manifest does not name the files of its schemas, the limit `registerActions`
-has), or one whose input or output schema is not a shape of the member (a generated search or report query's package
-shapes, a replica page). Encore binds each path parameter from the input field of that name, so the manifest build
-refuses a route whose parameter is no field of the input (`endpoint_param_unbound`), such as `x.get` with no `xId`.
-Waiting for the auth handler and gateway (wp-114): the handler that returns that auth data
-(until it lands, `encore build` refuses an `auth: true` endpoint), and the rest of `CallOptions`. A refusal surfaces as
-Encore's default error until refusal kinds map to `APIError`.
+one `api.raw()` per such manifest entry (and one per own `Controller`, method `*`, its `path`), named by its
+camel-cased key and version (`shop.order.cancel@1` is `shopOrderCancelV1`), with the entry's derived `method` and
+`path`, `expose: true` and `auth: false` to Encore (STA-2577). Every adapter is raw and calls the one helper,
+`answerCall` of the generated `http.ts`, so the edge signature covers the exact body bytes, which a typed `api()` never
+sees. `answerCall` hands the request to `serveGuardedCall` of `@stackra/app/server`, in a fixed order: the body is read
+once under `HttpConfig.maxBodyBytes` (1 MiB by default; larger is 413 before any guard); every `RequestGuard` runs over a
+request with those bytes (`app.handlers.guard`); the caller is authenticated, where an `Authorization` header is verified
+by `CallAuthenticator` (built per call over the call's container; a bad one is 401, never anonymous) and no header is the
+anonymous actor `{ kind: ActorKind.Anonymous, id: mintPublicId("anon") }` only for an entry whose `actors` list
+`ActorKind.Anonymous` (manifest `anonymous: true`, STA-2025), else 401; the input is parsed (the JSON body, or the query
+string for GET and DELETE, then the path parameters, which win); the call runs as `new ActionPipeline(container)
+.execute(<class>, input, { actor })`, which validates the input. A guard or authentication failure is one generic 401 or
+403 (`request_refused`) naming no check; a refusal of the call is its kind's status with its envelope; a rate limit is
+429 through `answerHttp`. A controller skips input parsing, runs `container.get(<class>).handle(request)` and is
+reachable without a credential (it is raw: its own login or callback logic), behind the same guards. No adapter is
+written for an entry with no endpoint or a hosted package's entry (its manifest does not name the files of its schemas,
+the limit `registerActions` has). The manifest build refuses a route whose path parameter is no field of the input
+(`endpoint_param_unbound`), such as `x.get` with no `xId`. No `auth.ts` or `Gateway` is written: no endpoint uses
+Encore's auth handler. A service that declares `@stackra/app` binds `JsonWebKeys` to `oidc` with `BearerConfig` by
+default; with no `ServicePrincipals` driver bound, every service token is refused and user tokens still pass. A service
+bearer with the user's own token in `Stackra-On-Behalf-Of` is that service acting for the user (`onBehalfOf`), in the
+user's tenant; a forward beside a user bearer, of a service token, or for another tenant than the service's is refused
+(all inside `CallAuthenticator`, ADR 0209 amendment of 2026-11-07). An issuer outage stays its own error. Still waiting:
+the rest of `CallOptions`.
 
 The full `CallOptions` of an endpoint come in two parts and nothing else: the verified facts from the credential
 (`actor`, then `scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the
 header-borne values the pipeline checks itself, lifted by `requestCallOptions(request)` of `@stackra/actions`:
 `Idempotency-Key` onto `idempotencyKey` (the idempotency step, ADR 0138) and `Stackra-Consent` onto `consentSnapshot`
-(verified by `ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`. A typed
-`api()` sees no `Request`, so the generated endpoints pass only `actor` today; the rest come with the gateway.
+(verified by `ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`. The raw
+adapters now hold the `Request` (`serveGuardedCall` passes it to the call), so lifting these headers is the next step.
 
 ```ts
 await pipeline.execute(X, input, { actor, ...requestCallOptions(request) });

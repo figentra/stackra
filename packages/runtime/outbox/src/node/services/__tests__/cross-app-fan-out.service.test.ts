@@ -134,7 +134,13 @@ function relayOf(bound: readonly (readonly [AnyClass, object])[]) {
 
 /** The subscriber and type of each stored delivery. */
 async function targets(driver: MemoryDeliveryDriver) {
-  return (await driver.list({ limit: 100 })).map(({ subscriber, type }) => [subscriber, type]);
+  return (await stored(driver)).map(({ subscriber, type }) => [subscriber, type]);
+}
+
+/** Every stored delivery, oldest first. */
+async function stored(driver: MemoryDeliveryDriver) {
+  const claims = await driver.list({ limit: 100 });
+  return Promise.all(claims.map(async (claim) => (await driver.load(claim.id)) as Delivery));
 }
 
 describe(CrossAppFanOut, () => {
@@ -147,7 +153,7 @@ describe(CrossAppFanOut, () => {
       ["billing", "payments.payment.captured.v2"],
       ["os", "payments.payment.captured.v1"],
     ]);
-    const [billing, os] = await deliveries.list({ limit: 100 });
+    const [billing, os] = await stored(deliveries);
     expect(billing?.id).toMatch(/^dlv_/);
     expect(billing).toMatchObject({ eventId: "evt_A", attempts: 0, availableAt: NOON });
     expect(billing?.envelope).toMatchObject({

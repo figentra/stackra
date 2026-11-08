@@ -20,7 +20,7 @@ The fix was not a better checklist. The checkable half moved into a script: a li
 
 Four ignore-file patterns were written as a path, two spaces, a `#` and a comment. That file format has no trailing-comment syntax, so each line was one pattern containing literal spaces and a hash. It matched nothing, and nobody noticed until `git check-ignore` was run against a real file. Every highlighter and every reviewer read them as intended.
 
-**A pattern, a glob or a path reference is a testable claim, not decoration.** Run the tool that consumes it before trusting that it does what the prose says. The same holds for the `applies_to` globs in [rule frontmatter](/agents/index): a pattern that matches nothing loads the rule nowhere.
+**A pattern, a glob or a path reference is a testable claim, not decoration.** Run the tool that consumes it before trusting that it does what the prose says. The same holds for the `applies_to` globs in [rule frontmatter](/agents): a pattern that matches nothing loads the rule nowhere.
 
 ## Vendored copies drift silently
 
@@ -56,4 +56,4 @@ Where an agent's charter and the real check disagree, the charter is the bug. Wh
 5. Add the provenance line when the rule comes from a finding. See [Spec lifecycle](/agents/spec-lifecycle).
 6. Route a suspected drift to the lead, whose method is to verify a document's claims against the repository and report which side is wrong, never to assume a document is right because it exists.
 
-Related: [Working with agents](/agents/index), [Hooks](/agents/hooks), [Roster](/agents/roster).
+Related: [Working with agents](/agents), [Hooks](/agents/hooks), [Roster](/agents/roster).

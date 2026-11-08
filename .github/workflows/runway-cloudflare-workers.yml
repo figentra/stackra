@@ -4,12 +4,15 @@
 #          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
 #          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
-#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml, deploy-docs.yml.
+#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml, deploy-docs.yml,
+#          and a product repository's own caller (`product: true`, e.g. its docs Worker): the product's installed
+#          `stackra` ships, and the job first reads the Stackra registry token so the install resolves @figentra/*.
 # Secrets: none in the repository. The job decrypts figentra/secrets scopes as itself (ADR 0525, the shared
 #          secrets-decrypt action; figentra/infra estate/secret-callers.mjs grants each caller environment its scopes):
 #          CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from `scope`, the `secret-name`s
 #          from `secret-scope`, with `bot-app` STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from `<scope>/release`,
-#          and the turbo values from ci/build/turbo (TURBO_TOKEN among them).
+#          and the turbo values from ci/build/turbo (TURBO_TOKEN among them). A product caller also reads
+#          STACKRA_REGISTRY_TOKEN from ci/build/registry, which every figentra repository may read.
 # Owner: release-operations
 name: Runway cloudflare-workers
 
@@ -60,6 +63,12 @@ on:
         description: >-
           Also read the stackra-bot GitHub App's STACKRA_BOT_APP_ID and STACKRA_BOT_PRIVATE_KEY from
           `<scope>/release`, for a Worker that mints App tokens.
+        type: boolean
+        default: false
+      product:
+        description: >-
+          A product repository calls: read the Stackra registry token before the install, and ship with the product's
+          installed `stackra` (`pnpm exec stackra`) instead of building core's CLI from the workspace.
         type: boolean
         default: false
     outputs:
@@ -117,7 +126,25 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm
+
+      # A product's install reads @figentra/* from the Stackra registry, which answers 401 without a read token.
+      - name: Registry token (sops)
+        if: inputs.product
+        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        with:
+          scope: ci/build/registry
+          names: STACKRA_REGISTRY_TOKEN
+
+      # pnpm 12 reads registry tokens only from the user-level ~/.npmrc, never the repository's.
+      - name: Registry token (user .npmrc)
+        if: inputs.product
+        run: |
+          echo "::add-mask::${STACKRA_REGISTRY_TOKEN}"
+          umask 077
+          printf '//npm.stackra.figentra.com/:_authToken=%s\n' "${STACKRA_REGISTRY_TOKEN}" >> "$HOME/.npmrc"
 
       # The arguments arrive through the environment, never spliced into the script (zizmor template-injection);
       # `set -f` keeps a `!` filter from globbing.
@@ -143,8 +170,12 @@ jobs:
       - name: Build
         env:
           PACKAGE: ${{ inputs.package }}
+          PRODUCT: ${{ inputs.product }}
         run: |
-          pnpm turbo run build --filter="$PACKAGE^..." --filter=@stackra/cli...
+          # A product installs @stackra/cli from the registry; only core builds it from the workspace.
+          cli=(--filter=@stackra/cli...)
+          [ "$PRODUCT" = true ] && cli=()
+          pnpm turbo run build --filter="$PACKAGE^..." "${cli[@]}"
           pnpm turbo run gen --filter="$PACKAGE" --only
 
       # Only CLOUDFLARE_API_TOKEN from the scope, so no other value of it enters the job.
@@ -192,4 +223,8 @@ jobs:
         env:
           MEMBER: ${{ inputs.member }}
           SHA: ${{ steps.commit.outputs.sha }}
-        run: node packages/developer/cli/dist/stackra.mjs deploy --env production --kind web --member "$MEMBER" --sha "$SHA"
+          PRODUCT: ${{ inputs.product }}
+        run: |
+          stackra=(node packages/developer/cli/dist/stackra.mjs)
+          [ "$PRODUCT" = true ] && stackra=(pnpm exec stackra)
+          "${stackra[@]}" deploy --env production --kind web --member "$MEMBER" --sha "$SHA"

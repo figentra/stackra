@@ -1,5 +1,376 @@
 # @stackra/loyalty-kit
 
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [ceceef3]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [e5da198]
+- Updated dependencies [031a1f7]
+- Updated dependencies [9d0dd67]
+- Updated dependencies [0341ef1]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/integrations@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/workflow@0.26.0
+  - @stackra/ledger@0.26.0
+  - @stackra/search@0.26.0
+  - @stackra/panel@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/scheduler@0.26.0
+  - @stackra/settings@0.26.0
+  - @stackra/experience@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/versioning@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/testing@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+- Updated dependencies [fe19ac7]
+- Updated dependencies [ec5272e]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/workflow@0.25.0
+  - @stackra/ledger@0.25.0
+  - @stackra/search@0.25.0
+  - @stackra/panel@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/queue@0.25.0
+  - @stackra/scheduler@0.25.0
+  - @stackra/iam@0.25.0
+  - @stackra/settings@0.25.0
+  - @stackra/integrations@0.25.0
+  - @stackra/experience@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/money@0.25.0
+  - @stackra/versioning@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/testing@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/workflow@0.24.0
+  - @stackra/integrations@0.24.0
+  - @stackra/search@0.24.0
+  - @stackra/panel@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/queue@0.24.0
+  - @stackra/scheduler@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/ledger@0.24.0
+  - @stackra/settings@0.24.0
+  - @stackra/experience@0.24.0
+  - @stackra/money@0.24.0
+  - @stackra/versioning@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/ui@0.24.0
+  - @stackra/testing@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- 8b42c02: A published package's manifest lists its extension points in `services`, beside the services that inject them, so a
+  host's wiring binds them. Commerce customers injects `AccountService` from `@stackra/loyalty-kit`, whose
+  `LoyaltyKitExtensionPoint` had no binding and failed with `UnboundTokenError`.
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [d002763]
+- Updated dependencies [c0237a4]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [1d76993]
+- Updated dependencies [12f4836]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [fb6e2b3]
+- Updated dependencies [12f4836]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/integrations@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/search@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/settings@0.23.0
+  - @stackra/workflow@0.23.0
+  - @stackra/ledger@0.23.0
+  - @stackra/panel@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/scheduler@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/experience@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/versioning@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/testing@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- 3a9a6be: `@stackra/integrations` is a peer of every library that uses its values (payments, webhooks, documents, notifications,
+  pricing, achievements, loyalty-kit), no longer a dependency. As a dependency, pnpm resolved a second copy in a product,
+  so a Connection's base and `makeConnection` came from different copies and every Stripe call failed with "StripeConnection
+  was not loaded by a ConnectionStore". `stackra validate` refuses the mistake (`hosted-peers`, `HOSTED_PEER_PACKAGES`).
+- Updated dependencies [41f3da5]
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [ae24e3c]
+- Updated dependencies [acbee14]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/integrations@0.22.0
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/ledger@0.22.0
+  - @stackra/search@0.22.0
+  - @stackra/panel@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/queue@0.22.0
+  - @stackra/scheduler@0.22.0
+  - @stackra/workflow@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/settings@0.22.0
+  - @stackra/experience@0.22.0
+  - @stackra/versioning@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/money@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/testing@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [d3e77e0]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/search@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/scheduler@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/ledger@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/integrations@0.21.0
+  - @stackra/versioning@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/experience@0.21.0
+  - @stackra/panel@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/queue@0.21.0
+  - @stackra/workflow@0.21.0
+  - @stackra/iam@0.21.0
+  - @stackra/settings@0.21.0
+  - @stackra/testing@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+- Updated dependencies [6623da1]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/workflow@0.20.0
+  - @stackra/integrations@0.20.0
+  - @stackra/search@0.20.0
+  - @stackra/panel@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/queue@0.20.0
+  - @stackra/scheduler@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/ledger@0.20.0
+  - @stackra/settings@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/versioning@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/experience@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+- 0e0de4f: Step-up for the L3 and L4 user actions STA-2096 raised (STA-340):
+  
+  - `@stackra/actions`: `stepUp` also takes `{ exempt: "first-factor-enrolment" }`, for which the pipeline asks no
+    `StepUpCheck`; the action enforces its own rule.
+  - `@stackra/gen`: refuses the exemption on any action outside `FIRST_FACTOR_ENROLMENT_ACTIONS`
+    (`step_up_exemption_unlisted`).
+  - `@stackra/identity`: `identity.passkey.confirm` takes the exemption. A first strong factor needs a fresh sign-in;
+    once the user has one, a new passkey needs AAL2. Each enrolment is audited with `firstFactor`.
+  - `@stackra/loyalty-kit`: `points.redeem` and `points.confirm_redemption` need AAL2 from a user. `points.earn_visit` is
+    service-only and loses its `POST /loyalty/visits` endpoint: call it from the till or booking service.
+
+### Patch Changes
+
+- 0e0de4f: Gen refuses a misshapen call. `checkCallShape` runs once per action or query in the manifest pass and refuses a query
+  whose permission is L2 or above (`query_above_l1`), a query with `preconditions` (`query_precondition`), an action with
+  `cache` (`action_cache`), an L3 or L4 action a user can call with no `stepUp` (`step_up_missing`) and a client write,
+  an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`). Each refusal carries its
+  fix. Write `idempotency: Idempotency.Optional` on a client write that is safe to repeat: it is the default the
+  pipeline already applies, and it now also sets the tool's `idempotentHint`.
+  
+  The actions pipeline asks `StepUpCheck` only when the caller is a user. A service, job, system or agent call carries
+  no assurance, so an action that both users and services call can declare `stepUp` and its service callers keep
+  working; a user call with no `StepUpCheck` bound still fails closed (ADR 0406 as amended).
+  
+  `identity.operator.bootstrap`, `identity.session.end_user` and `privacy.hold.release` declare
+  `stepUp: AssuranceLevel.Aal2`, so a user call to them now needs a bound `StepUpCheck`. The client writes of identity,
+  privacy, access-log, loyalty-kit, data-maintenance, media and collaboration that declared no idempotency write
+  `Idempotency.Optional`; their manifests gain the `idempotency` entry and `idempotentHint: true`.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [9063bb3]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [e5ac3d0]
+- Updated dependencies [d76d1ed]
+- Updated dependencies [d2b3d22]
+- Updated dependencies [eafb209]
+- Updated dependencies [d22e767]
+- Updated dependencies [e283a31]
+- Updated dependencies [27f2b3f]
+- Updated dependencies [15d8a1b]
+- Updated dependencies [bc5a0ab]
+- Updated dependencies [6ec440d]
+- Updated dependencies [3833180]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/queue@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/workflow@0.19.0
+  - @stackra/tenancy@0.19.0
+  - @stackra/panel@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/integrations@0.19.0
+  - @stackra/search@0.19.0
+  - @stackra/ledger@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/versioning@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/experience@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/outbox@0.19.0
+  - @stackra/scheduler@0.19.0
+  - @stackra/settings@0.19.0
+  - @stackra/testing@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -73,6 +73,21 @@ const FIXTURES: readonly GoldenFixture[] = [
     members: ["services/catalogue", "services/channels"],
   },
   { name: "cross-app-producer", base: "service", members: ["services/shop"] },
+  // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): its event is in the
+  // manifest, none of its models or permissions.
+  { name: "contracts-only-host", base: "service", members: ["services/shop"] },
+  // A port injected from `<package>/contracts` keeps the package hosted: its memory driver binds the port.
+  { name: "contracts-port-host", base: "service", members: ["services/shop"] },
+  // An anonymous-only action still gets its route, served with `auth: false` (STA-2578).
+  { name: "anonymous-route", base: "service", members: ["services/shop"] },
+  // A package imported only through ./contracts that drives a port gen binds without injection stays hosted (STA-2584):
+  // the shop publishes OrderPaid, so its EventOutbox table comes from the outbox it reaches only by a type.
+  { name: "contracts-pipeline-port", base: "service", members: ["services/shop"] },
+  // The pipeline's own ports are bound from what the service declares, not from a constructor (STA-2573): its
+  // integration event reaches EventOutbox, its idempotent action IdempotencyStore.
+  { name: "pipeline-ports", base: "service", members: ["services/shop"] },
+  // A package's own routes get the `Routes` ref table (`#stackra/routes`), keyed as its manifest records them.
+  { name: "package-routes", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-shim-authored", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-tool-reason", base: "package-drivers", members: ["packages/shop"] },

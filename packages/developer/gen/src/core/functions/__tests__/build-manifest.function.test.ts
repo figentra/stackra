@@ -6,8 +6,10 @@
  *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a config's
  *          schema, merged package sections marked `from`, and the checks `identity_collision`, `override_duplicate`,
  *          `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and `prefix_duplicate`;
- *          `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with
- *          `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound` (STA-2063),
+ *          `event_name_prefixed` (STA-1255); the v3 tool default (L3 and L4 actions off) with `tool_reason_missing`,
+ *          an action's `dataClass` with `data_class_unknown` (STA-2594), the public flag with
+ *          `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound`
+ *          (STA-2063),
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
  *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308); the `agents`,
@@ -92,6 +94,10 @@ const billingNumberedBy = (sequence: string): MemberIR => ({
   ),
 });
 
+/** The manifest entry of `CancelOrderAction` in `ir`. */
+const cancelEntryOf = (ir: MemberIR) =>
+  buildManifest(ir).manifest.actions?.find((action) => action.class === "CancelOrderAction");
+
 /** `code subject` of each error the manifest build reports for `ir`. */
 const codesOf = (ir: MemberIR): string[] =>
   buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`);
@@ -161,7 +167,7 @@ describe("buildManifest", () => {
       permission: "orders.order.cancel",
       risk: "L2",
       actors: ["user", "agent"],
-      idempotency: { ttl: "PT24H" },
+      idempotency: "required",
       endpoint: { method: "PUT", path: "/orders/:orderId/cancel", derived: true },
       input: { $ref: "#/schemas/orders.CancelOrderInput" },
       output: { $ref: "#/schemas/orders.CancelOrderOutput" },
@@ -808,6 +814,19 @@ describe("buildManifest", () => {
       classes: [...COMMERCE_IR.classes.filter((item) => item.name !== cancel.name), ...classes],
     });
 
+    it("records an action's data class and refuses one gen cannot read (STA-2594)", () => {
+      const financial = { ...cancel, options: { ...cancel.options, dataClass: "financial" } };
+      const { errors: found } = buildManifest(withClasses(financial));
+      expect(found).toEqual([]);
+      expect(cancelEntryOf(withClasses(financial))?.["dataClass"]).toBe("financial");
+      expect(cancelEntryOf(withClasses(cancel))?.["dataClass"]).toBeUndefined();
+      const unread = {
+        ...cancel,
+        options: { ...cancel.options, dataClass: { $class: "LocalClass", from: "#node/x" } },
+      };
+      expect(codesOf(withClasses(unread))).toContain("data_class_unknown CancelOrderAction");
+    });
+
     it("refuses `tool: false` on a user action without a reason, and records the reason", () => {
       const off = { ...cancel, options: { ...cancel.options, tool: false } };
       expect(codesOf(withClasses(off))).toContain("tool_reason_missing CancelOrderAction");
@@ -817,6 +836,36 @@ describe("buildManifest", () => {
       const entry = built.actions?.find((action) => action.class === "CancelOrderAction");
       expect(entry?.["tool"]).toBeUndefined();
       expect(entry?.["toolOff"]).toBe("needs a card reader");
+    });
+
+    it("makes an L3 or L4 user action a tool only with `tool: true` and a reason", () => {
+      const permissions = COMMERCE_IR.classes.find(
+        (item) => item.name === "OrderPermissions",
+      ) as DeclaredClass;
+      const atL3 = (action: DeclaredClass): MemberIR => ({
+        ...COMMERCE_IR,
+        classes: [
+          ...COMMERCE_IR.classes.filter(
+            (item) => item.name !== cancel.name && item.name !== permissions.name,
+          ),
+          { ...permissions, statics: { ...permissions.statics, cancel: "Permission.L3" } },
+          action,
+        ],
+      });
+
+      // An L3 action a user calls needs a step-up anyway (step_up_missing).
+      const stepped = { ...cancel, options: { ...cancel.options, stepUp: "aal2" } };
+      expect(buildManifest(atL3(stepped)).errors).toEqual([]);
+      expect(cancelEntryOf(atL3(stepped))?.["tool"]).toBeUndefined();
+      expect(cancelEntryOf(atL3(stepped))?.["toolOff"]).toContain("risk L3");
+      const on = { ...stepped, options: { ...stepped.options, tool: true } };
+      expect(codesOf(atL3(on))).toContain("tool_reason_missing CancelOrderAction");
+      const reasoned = { ...on, options: { ...on.options, toolReason: "staff cancel by chat" } };
+      expect(buildManifest(atL3(reasoned)).errors).toEqual([]);
+      expect(cancelEntryOf(atL3(reasoned))?.["tool"]).toMatchObject({
+        default: false,
+        reason: "staff cancel by chat",
+      });
     });
 
     it("marks a public action and refuses one with no endpoint to publish", () => {
@@ -943,6 +992,38 @@ describe("buildManifest", () => {
         },
       ]);
     });
+  });
+});
+
+/** A manifest's `LoyaltyService` entries alone; the kit's actions and queries sit beside them in `services`. */
+function servicesOf(manifest: Record<string, unknown>): readonly { class: string }[] {
+  return (manifest["services"] as readonly { class: string }[]).filter(
+    (entry) => entry.class === "LoyaltyService",
+  );
+}
+
+describe("buildManifest's package services", () => {
+  it("records the model a CrudService<M> is typed against, so a host registers the pair", () => {
+    const ir: MemberIR = {
+      ...LOYALTY_KIT_IR,
+      classes: LOYALTY_KIT_IR.classes.map((candidate) =>
+        candidate.name === "LoyaltyService"
+          ? {
+              ...candidate,
+              partner: { name: "LoyaltyAccount", from: "#node/models/loyalty-account.model" },
+            }
+          : candidate,
+      ),
+    };
+    expect(servicesOf(buildManifest(ir).manifest)).toEqual([
+      expect.objectContaining({
+        class: "LoyaltyService",
+        partner: { name: "LoyaltyAccount", from: expect.stringMatching(/^@acme\/loyalty-kit/) },
+      }),
+    ]);
+    expect(servicesOf(buildManifest(LOYALTY_KIT_IR).manifest)).toEqual([
+      expect.not.objectContaining({ partner: expect.anything() }),
+    ]);
   });
 });
 

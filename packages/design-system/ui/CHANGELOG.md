@@ -1,5 +1,130 @@
 # @stackra/ui
 
+## 0.26.0
+
+### Patch Changes
+
+- e5da198: The web `Button` takes `href` and `target`: with an `href` (and not disabled or loading) it renders an accessible
+  link, React Aria's `Link` with the button's HeroUI classes, the composition `PageActions` already uses, so it
+  navigates through the nearest `RouterProvider`. HeroUI v3's button has no `as` and dropped `href`, so
+  `<Button as="a" href>` rendered a button that went nowhere. Without `href` it is unchanged.
+- @stackra/icons@0.26.0
+  - @stackra/tokens@0.26.0
+  - @stackra/shortcuts@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/icons@0.25.0
+  - @stackra/tokens@0.25.0
+  - @stackra/shortcuts@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/icons@0.24.0
+  - @stackra/tokens@0.24.0
+  - @stackra/shortcuts@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- dee48f0: The class-component base `Component<P>` (web and native) declares React's class surface as types only (`state`,
+  `context`, `setState`, `forceUpdate`), so tsc takes a subclass as a JSX element and a `ComponentType` with its props
+  checked. Nothing is emitted: the compiled component is still a function.
+- @stackra/icons@0.23.0
+  - @stackra/tokens@0.23.0
+  - @stackra/shortcuts@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/icons@0.22.0
+  - @stackra/tokens@0.22.0
+  - @stackra/shortcuts@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/shortcuts@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/icons@0.21.0
+  - @stackra/tokens@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/icons@0.20.0
+  - @stackra/tokens@0.20.0
+  - @stackra/shortcuts@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/shortcuts@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/icons@0.19.0
+  - @stackra/tokens@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

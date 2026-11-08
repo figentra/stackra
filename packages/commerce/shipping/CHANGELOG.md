@@ -1,5 +1,111 @@
 # @stackra/shipping
 
+## 0.26.0
+
+### Minor Changes
+
+- a4d5848: `RateQuote.carrier` and `Shipment.carrier`, both optional: an aggregator connection (one account quoting and booking
+  many carriers) names the carrier that delivers, while the connection's `provider` stays the aggregator's. Direct
+  carriers leave it out (STA-2625).
+
+### Patch Changes
+
+- @stackra/money@0.26.0
+  - @stackra/testing@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/money@0.25.0
+  - @stackra/testing@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/money@0.24.0
+  - @stackra/testing@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/money@0.23.0
+  - @stackra/testing@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/money@0.22.0
+  - @stackra/testing@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- 9084225: `LabelGateway` gains an optional `findLabel(reference)`: the shipment the carrier booked for a `createLabel` reference,
+  or null when it booked none. A caller whose `createLabel` reply was lost asks it before buying again, so one reference
+  is never booked twice; a connector whose carrier cannot search by reference leaves it out.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/testing@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/testing@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -1,5 +1,91 @@
 # @stackra/i18n
 
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/money@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/money@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/money@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/money@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/money@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+  - @stackra/validation@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/support@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

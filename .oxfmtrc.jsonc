@@ -19,6 +19,9 @@
     "CLAUDE.md",
     ".agents/hooks/fflow-guard.mjs",
     ".opencode/plugins/fflow-guard.mjs",
+    // written by `stackra gen:workspace` from the runways; formatting them by hand makes gen and oxfmt disagree
+    ".vscode/tasks.json",
+    ".claude/launch.json",
     "**/node_modules/**",
     "**/dist/**",
     // Expo: generated native projects and the CLI cache

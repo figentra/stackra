@@ -110,6 +110,7 @@
     // imports @stackra/container/testing, which would close a dependency cycle with it (STA-1299).
     "//#gen:workspace": {
       "description": "Generate every member's .stackra/ (tool configs, wiring, schemas, entries) and manifest with the built `stackra` CLI.",
+      "env": ["STACKRA_GEN_STRICT"],
       "dependsOn": [
         "@stackra/cli#build",
         "@stackra/database#build",
@@ -140,6 +141,7 @@
     // also covers, the two would otherwise write the same files at once (the rerun is deterministic and writes nothing new).
     "gen": {
       "description": "Generate this member's .stackra/ and stackra.manifest.json with the built `stackra` CLI (`stackra gen` in the member).",
+      "env": ["STACKRA_GEN_STRICT"],
       "dependsOn": ["@stackra/cli#build", "//#gen:workspace"],
       "inputs": [
         "src/**",
@@ -153,7 +155,15 @@
         "*.extend.ts",
         "runway.yaml",
       ],
-      "outputs": [".stackra/**", "stackra.manifest.json", "src/node/entities.gen.ts"],
+      // the gitignored root shims too (ROOT_VITEST_SHIM, the Expo shim): a cache hit that restored only .stackra/
+      // left `vitest run` with no config in a member that has no authored one (@stackra/console)
+      "outputs": [
+        ".stackra/**",
+        "stackra.manifest.json",
+        "src/node/entities.gen.ts",
+        "vitest.config.ts",
+        "app.config.ts",
+      ],
     },
     "format": {
       "description": "Rewrite files in place with oxfmt. Never cached: its job is to mutate the tree.",

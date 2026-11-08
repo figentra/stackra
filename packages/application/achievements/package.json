@@ -1,6 +1,6 @@
 {
   "name": "@stackra/achievements",
-  "version": "0.18.1",
+  "version": "0.26.0",
   "private": false,
   "description": "Stackra achievements: award kinds kept as scope data, awards granted by hand or automatically when a kind's @stackra/rules criteria match a recipient's facts, revoke, an opaque verify token and a short typed code resolved across scopes by a public verify query, a QR code, one live award per kind, recipient and period, certificates rendered through @stackra/documents, and award-granted and award-revoked integration events",
   "keywords": [
@@ -87,6 +87,7 @@
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
@@ -100,16 +101,17 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/iam": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/rules": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "uqr": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/container": "workspace:*",
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -121,6 +123,9 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/integrations": "workspace:*"
   },
   "engines": {
     "node": ">=24.0.0"

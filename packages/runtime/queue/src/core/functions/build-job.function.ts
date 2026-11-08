@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 1 and 2); ADR 0305 (rule 28); ADR 0327 and ADR 0323 (`ScopeRef`).
  */
-import { Duration } from "@stackra/contracts";
+import { actingScopeId, Duration } from "@stackra/contracts";
 
 import { JobStatus } from "#contracts/index";
 import type { QueuedJob } from "#contracts/index";
@@ -45,7 +45,11 @@ export function buildJob(
     ...(origin === undefined ? {} : { origin }),
     ...(scope === undefined ? {} : { scope: { id: scope.id, path: scope.path } }),
     ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
-    ...(plan.unique ? { uniqueKey: `${plan.key}:${scope?.id ?? origin?.scopeId ?? "-"}` } : {}),
+    ...(plan.unique
+      ? {
+          uniqueKey: `${plan.key}:${scope?.id ?? (origin === undefined ? undefined : actingScopeId(origin)) ?? "-"}`,
+        }
+      : {}),
     ...(causedBy === undefined ? {} : { causedBy }),
     status: JobStatus.Waiting,
     attempts: 0,

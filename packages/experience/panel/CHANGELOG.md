@@ -1,5 +1,312 @@
 # @stackra/panel
 
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [e5da198]
+  - @stackra/database@0.26.0
+  - @stackra/access-log@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/entitlements@0.26.0
+  - @stackra/query@0.26.0
+  - @stackra/pricing@0.26.0
+  - @stackra/documents@0.26.0
+  - @stackra/clients@0.26.0
+  - @stackra/navigation@0.26.0
+  - @stackra/experience@0.26.0
+  - @stackra/data-transfer@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/filesystem@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/icons@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/access-log@0.25.0
+  - @stackra/entitlements@0.25.0
+  - @stackra/iam@0.25.0
+  - @stackra/data-transfer@0.25.0
+  - @stackra/clients@0.25.0
+  - @stackra/navigation@0.25.0
+  - @stackra/query@0.25.0
+  - @stackra/documents@0.25.0
+  - @stackra/experience@0.25.0
+  - @stackra/pricing@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/money@0.25.0
+  - @stackra/filesystem@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/icons@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/clients@0.24.0
+  - @stackra/documents@0.24.0
+  - @stackra/access-log@0.24.0
+  - @stackra/entitlements@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/query@0.24.0
+  - @stackra/experience@0.24.0
+  - @stackra/navigation@0.24.0
+  - @stackra/pricing@0.24.0
+  - @stackra/data-transfer@0.24.0
+  - @stackra/money@0.24.0
+  - @stackra/filesystem@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/icons@0.24.0
+  - @stackra/ui@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [12f4836]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/clients@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/access-log@0.23.0
+  - @stackra/entitlements@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/pricing@0.23.0
+  - @stackra/documents@0.23.0
+  - @stackra/experience@0.23.0
+  - @stackra/navigation@0.23.0
+  - @stackra/query@0.23.0
+  - @stackra/data-transfer@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/filesystem@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/icons@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [3a9a6be]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/access-log@0.22.0
+  - @stackra/pricing@0.22.0
+  - @stackra/documents@0.22.0
+  - @stackra/entitlements@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/clients@0.22.0
+  - @stackra/query@0.22.0
+  - @stackra/experience@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/data-transfer@0.22.0
+  - @stackra/navigation@0.22.0
+  - @stackra/money@0.22.0
+  - @stackra/filesystem@0.22.0
+  - @stackra/icons@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/access-log@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/clients@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/pricing@0.21.0
+  - @stackra/data-transfer@0.21.0
+  - @stackra/documents@0.21.0
+  - @stackra/filesystem@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/experience@0.21.0
+  - @stackra/navigation@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/entitlements@0.21.0
+  - @stackra/iam@0.21.0
+  - @stackra/query@0.21.0
+  - @stackra/icons@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/clients@0.20.0
+  - @stackra/documents@0.20.0
+  - @stackra/access-log@0.20.0
+  - @stackra/entitlements@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/query@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/pricing@0.20.0
+  - @stackra/data-transfer@0.20.0
+  - @stackra/filesystem@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/icons@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/experience@0.20.0
+  - @stackra/navigation@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [e5ac3d0]
+- Updated dependencies [d2b3d22]
+- Updated dependencies [eafb209]
+- Updated dependencies [d22e767]
+- Updated dependencies [e283a31]
+- Updated dependencies [27f2b3f]
+- Updated dependencies [15d8a1b]
+- Updated dependencies [bc5a0ab]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/access-log@0.19.0
+  - @stackra/tenancy@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/filesystem@0.19.0
+  - @stackra/clients@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/pricing@0.19.0
+  - @stackra/data-transfer@0.19.0
+  - @stackra/documents@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/experience@0.19.0
+  - @stackra/navigation@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/entitlements@0.19.0
+  - @stackra/query@0.19.0
+  - @stackra/icons@0.19.0
+  - @stackra/support@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

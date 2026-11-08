@@ -25,6 +25,7 @@
 import type { Resolver } from "@stackra/actions";
 import { ScopeOwnership } from "@stackra/actions/contracts";
 import type { Revision } from "@stackra/content/node";
+import { actingScopeId } from "@stackra/contracts";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 import { CrudService, type Repository, UniqueViolation } from "@stackra/database";
 import { NotFoundError } from "@stackra/errors";
@@ -381,7 +382,7 @@ export class AutomationService extends CrudService<Automation> {
       throw new Error(
         "AutomationService is not connected: the boot connects it before an automation is published",
       );
-    if (principal.scopeId !== undefined) {
+    if (actingScopeId(principal) !== undefined) {
       const ownership = resolver.has(ScopeOwnership) ? resolver.get(ScopeOwnership) : undefined;
       if (
         ownership === undefined ||

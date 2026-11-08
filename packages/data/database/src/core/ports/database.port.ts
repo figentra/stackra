@@ -61,7 +61,8 @@ export abstract class Database extends Port {
    * Runs `work` in a transaction with the scope settings the generated row-level-security policies read: for one
    * scope `app.scope_id` and `app.scope_path`, and for one or several granted scopes `app.scope_paths`, their paths
    * joined by `|`. A setting with nothing to hold is `''`, which matches no row, so no granted scope sees nothing.
-   * Inside a running transaction the settings last until it ends.
+   * Inside a running transaction the enclosing settings are back once `work` ends: put back after it returns (its
+   * writes flushed first), and by the savepoint's rollback when it throws.
    *
    * @throws TypeError for a scope path that is not an `ltree` path.
    */

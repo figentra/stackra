@@ -82,6 +82,7 @@ describe("COMMANDS", () => {
         "app-native-deps",
         "duplicate-exports",
         "any-ratchet",
+        "row-security-declarations",
         "duplication",
         "skill-licences",
       ]),

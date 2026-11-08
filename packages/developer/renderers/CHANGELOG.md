@@ -1,5 +1,65 @@
 # @stackra/renderers
 
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/skills@0.26.0
+  - @stackra/contracts@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/skills@0.25.0
+  - @stackra/contracts@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/skills@0.24.0
+  - @stackra/contracts@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/skills@0.23.0
+  - @stackra/contracts@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/skills@0.22.0
+  - @stackra/contracts@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/skills@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- @stackra/skills@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/skills@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

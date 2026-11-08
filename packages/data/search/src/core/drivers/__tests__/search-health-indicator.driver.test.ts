@@ -9,7 +9,7 @@
  *                     17); registry gap R-27.
  */
 import { buildConfig } from "@stackra/config";
-import { Duration, HealthIndicator } from "@stackra/contracts";
+import { Duration, HealthIndicator, HealthStatus } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -96,7 +96,14 @@ describe("SearchHealthIndicatorDriver", () => {
     expect(calls.at(-1)?.[0]).toEqual({ table: "products", primaryKey: "id" });
   });
 
-  it("refuses an empty probe table", () => {
-    expect(() => indicator("answer", { table: "" })).toThrow(TypeError);
+  /** A testing container binds every indicator: an unset table must not stop it compiling, and readiness stays shut. */
+  it("builds without a probe table and is down, without a search, until one is set", async () => {
+    const unset = indicator("answer", { table: "" });
+
+    expect(await unset.check()).toEqual({
+      status: HealthStatus.Down,
+      detail: "search health.table is not set: runway names the table the probe searches",
+    });
+    expect(calls).toEqual([]);
   });
 });

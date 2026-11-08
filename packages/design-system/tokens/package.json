@@ -1,6 +1,6 @@
 {
   "name": "@stackra/tokens",
-  "version": "0.18.1",
+  "version": "0.26.0",
   "private": false,
   "description": "Stackra Design System tokens: the theme schema, the default stackra theme and its HeroUI web and Uniwind native CSS.",
   "keywords": [

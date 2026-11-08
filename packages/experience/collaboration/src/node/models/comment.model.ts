@@ -13,6 +13,7 @@
 import { Enum, type PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 import { z } from "zod";
 
@@ -22,7 +23,7 @@ import type { MentionTarget } from "#contracts/types/mention-target.type";
 
 /** A comment. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Comment extends Model.with(HasPublicId("cmt"), Timestamps) {
+export class Comment extends Model.with(HasPublicId("cmt"), BelongsToTenant, Timestamps) {
   /** The current mentions, each target once. */
   // reason: `MentionTarget` is an interface that ships no `X$`; stored as one jsonb list
   @Field(z.array(z.object({ kind: z.enum(Enum.values(MentionKind)), id: z.string().nullable() })))
@@ -62,5 +63,5 @@ export class Comment extends Model.with(HasPublicId("cmt"), Timestamps) {
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Comment {
   /** The trait timestamps an insert may leave out. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

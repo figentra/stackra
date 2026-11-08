@@ -1,5 +1,182 @@
 # @stackra/runway
 
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/app@0.26.0
+  - @stackra/console@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/app@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/app@0.24.0
+  - @stackra/console@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [c26fb86]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a42a80c]
+  - @stackra/app@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [940e198]
+  - @stackra/app@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- 2974e54: Subresource Integrity for extension bundles. The bundle build records a sha384 for every emitted file in
+  `bundle.manifest.json` (`integrity`). Runway refuses to publish a bundle whose file is missing or changed since the
+  build, carries each value by URL on the edge release, and the shell page pins every bundle URL with it: an
+  `integrity` attribute on each modulepreload and stylesheet link, and the import map's `integrity` block for the
+  chunks no link names. A bundle built before this has no `integrity` and renders as before.
+
+### Patch Changes
+
+- Updated dependencies [ae9cb23]
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/app@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/console@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+
+## 0.20.0
+
+### Minor Changes
+
+- 3b48b0f: `runway evidence` judges `rollout` per target. A production Workers member with more than one traffic step and no
+  Durable Object migration is `true`; a migrating or single-step member, and every other declared target, is `false`; an
+  unknown is `null`. `rolloutDetail` adds `steps` and `floorReason`; `release.strategy` is no longer read.
+  
+  Every Worker now moves production traffic in `[10, 50, 100]` steps by default. The `public-site`, `internal-tool` and
+  `cache` presets stay at one step, and a member can name its own. A Worker that was never deployed moves at once, since
+  there is no version to split with.
+
+### Patch Changes
+
+- 671c9fd: The `encore-cloud` driver's verify polls `<origin>/readyz` with backoff (5 s, doubling to 60 s) while Encore Cloud
+  builds the pushed commit, instead of reading it once right after the push. A 404 ("application not found"), a 5xx or
+  no answer counts as still building until `encore.readyTimeoutMinutes` (15 by default) passes; then verify reports down
+  with the last answer. A first deploy no longer fails verify before Encore has built it.
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/app@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- bac874e: The last Infisical uses in the developer packages move to sops and figentra/secrets (ADR 0525).
+  
+  - `stackra mcp exec -- <argv>` decrypts each `$NAME` the command names with `sops exec-env` from the `agents` scope of
+    the local figentra/secrets clone (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`), one nested call per secret,
+    instead of `infisical run`. Its `--env` and `--path` flags are gone; `McpExecOptions` is now `{ secretsDir? }`.
+  - Mobile onboarding no longer writes the FCM key to a vault: it goes only to EAS, its one reader, and running the
+    `push` step again replaces a lost key. `InfisicalVaultWriterDriver` is removed, and `MobileOnboardRequest` has no
+    `vault` port. A missing root-kit name prints `pnpm secrets:put <NAME> --scope ci/production/store` as its owner step.
+  - gen's `env` manifest rows no longer carry `home` (the Infisical folder `/runtime/<member>`), and the field is gone
+    from the `StackraManifest` type; runway already ignored it. Products regenerate their manifests after the release.
+  - `stackra dev --tunnel` names the sops way to start with `CLOUDFLARE_TUNNEL_TOKEN`, and the service template's
+    `runway.yaml` header names figentra/secrets.
+- 414586e: `runway evidence <environment> --target <t> --sha <sha> [--member <m>]` writes the approvals bot's evidence for
+  one deploy job (ADR 0533): `runway-evidence-<environment>[-<member>].json` with the repo, commit, target and member,
+  `rollout` (true only for a gradual `release.strategy.kind` with `autoRollback`) and `destructive` (null, the owner's,
+  until gen classifies migrations). The contract `runway.evidence/v1` is agreed with figentra/infra's classifier.
+- 7a83de3: `runway validate` warns on every Mintlify field a root runway still sets (ADR 0514): `providers.mintlify`,
+  `targets.mintlify` and a `mintlify` destination. The docs app is a Fumadocs site on a Worker, deployed by
+  `cloudflare-workers`. The fields stay accepted for one release; the `mintlify` driver goes with them.
+- 1f33c82: Runway no longer reads Infisical (ADR 0525). The secret sync (`runway secrets sync`, and `stackra deploy` with
+  `secrets.sync: on-deploy`) and the Workers provider read every declared secret from the job's environment, where
+  `.github/actions/secrets-decrypt` put the product's sops scope. `--from-env` is still accepted on both commands but does
+  nothing and prints a deprecation note; it goes in the next minor release.
+  
+  - A product's runtime secrets live in the scope `products/<project>/<dev|staging|production>`; a preview reads dev's.
+    `deployPlan` gives `secretScope` in place of `infisicalEnvironment`, and a `SecretSyncEntry` gives `scope` in place
+    of `path`. The secret entries of `deployPlan(...).sync` no longer carry a `path`.
+  - `providers.infisical` is no longer typed in the root schema, and `secrets.defaultPath` is ignored. A runway.yaml that
+    still has either passes validation, and `runway validate` warns on each for one release: remove them.
+  - `runway env check` checks each name against the sops scope of its environment, and counts the `names:` of a
+    `secrets-decrypt` step as declared, in place of Infisical `secret-name:` steps. Names only, no login.
+  - `runway env check --values --env <env>` reads the values from the job's environment and checks only that
+    environment; `--project-id` is gone.
+  - `runway env orphans <env> [--dir <d>]` lists the scope's names from its ciphertext file names, decrypting nothing;
+    `--project-id` is gone.
+  - `readMemberSecrets` takes `env` and no longer takes `source` or `run`. `syncSecrets` no longer takes `fromEnv`.
+  - infra-github still sets the `INFISICAL_DOMAIN` and `INFISICAL_PROJECT_ID` variables from an untyped
+    `providers.infisical` block while CI logins need them.
+
+### Patch Changes
+
+- 2933e48: `publishProduct` requires canary scopes only in production. D6 stages a release for real tenants first, so a dev or
+  staging publish without `canaryScopes` now writes the `release:` pointer directly instead of refusing. Production
+  still refuses without them unless the release is marked first.
+- e105174: The infrastructure and developer packages describe sops and figentra/secrets instead of Infisical (ADR 0525).
+  
+  - `@stackra/infra-aws-runtime`: the RDS Proxy login secret's description names the vault, not Infisical, so the next
+    apply updates that description in place. The docs name the vault and runway's secrets sync.
+  - `@stackra/infra-tools`: the tools-stack secrets sync is the vault's (`secretsSync` keeps its shape: `source`,
+    `principal`, `externalId`); the missing external id error names the secrets sync.
+  - `@stackra/infra-github`, `@stackra/infra-cloudflare`, `@stackra/infra-identity`, `@stackra/infra-observability`,
+    `@stackra/runway`, `@stackra/mcp`, `@stackra/cli`, `@stackra/fiscal`, `@stackra/licensing`: docs and comments only.
+    `githubPlan` still turns `providers.infisical` into the `INFISICAL_*` CI variables until plan phase P6.
+- c239773: `DeployRunways` types the root runway's `providers.encore.app`, the Encore app the secrets sync writes into, so the
+  sync and its callers typecheck again.
+- Updated dependencies [58e3066]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/app@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

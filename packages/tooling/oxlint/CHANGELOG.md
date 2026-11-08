@@ -1,5 +1,61 @@
 # @stackra/oxlint-config
 
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.26.0
+  - @stackra/feature-flags@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.25.0
+  - @stackra/feature-flags@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.24.0
+  - @stackra/feature-flags@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.23.0
+  - @stackra/feature-flags@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.22.0
+  - @stackra/feature-flags@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- @stackra/feature-flags@0.21.0
+  - @stackra/coding-standard@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- @stackra/feature-flags@0.20.0
+  - @stackra/coding-standard@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- @stackra/feature-flags@0.19.0
+  - @stackra/coding-standard@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -1,7 +1,14 @@
 ---
 title: "0354 — Two clouds: AWS and GCP, and one AWS account per product-region"
-description: "Accepted, amended by 0524 · 2026-10-25"
+description: "Accepted, amended by 0524 and 0532 · 2026-10-25"
 ---
+
+<Note>
+  Amended 2026-11-07 by [0532](/adr/0532-infrastructure-ownership) (owner and leader, STA-2104):
+  decision 5 changes. figentra/infra's own Pulumi stacks drive `@stackra/infra-aws` and
+  `@stackra/infra-gcp`, not Runway; `stackra runway infra` is retired. Services reach either cloud
+  through the `encore-cloud` provider (Encore Cloud into the product's AWS account or GCP project).
+</Note>
 
 <Note>
   Amended 2026-11-05 (owner, STA-2115) by
@@ -33,7 +40,8 @@ description: "Accepted, amended by 0524 · 2026-10-25"
 2. **One AWS account per product-region.** Each product gets one AWS account in each region it runs in, plus the one shared and tooling account (OS-1). This replaces "one AWS account per product" in [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) decision 1; the rest of that decision (environments by IAM roles, tags and service control policies, Identity Center, no IAM users) stands.
 3. **`@stackra/infra-gcp`.** A new package in the infrastructure category holds the GCP Pulumi components, beside `@stackra/infra-aws` ([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) decision 2). Its licensing follows 0171 decision 5: the foundation is free, an own-cloud runtime stack is `@stackra-pro`.
 4. **A cloud dimension in `runway.yaml`.** Each region or deployment in `runway.yaml` names its cloud (AWS or GCP) and its cloud region. The field names are set by the Runway schema, not here.
-5. **Runway drives both clouds.** `stackra runway infra preview|up` drives the `@stackra/infra-aws` and `@stackra/infra-gcp` components through the Pulumi Automation API ([0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step) decision 4). A GCP target is a Runway provider behind the same port (plan, apply, verify, rollback, 0352 decision 3). There is no second tool.
+5. **Runway drives both clouds.** _(Changed 2026-11-07 by [0532](/adr/0532-infrastructure-ownership): figentra/infra's
+   stacks drive both clouds; Runway deploys to them through `encore-cloud`.)_ `stackra runway infra preview|up` drives the `@stackra/infra-aws` and `@stackra/infra-gcp` components through the Pulumi Automation API ([0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step) decision 4). A GCP target is a Runway provider behind the same port (plan, apply, verify, rollback, 0352 decision 3). There is no second tool.
 
 ## Consequences
 

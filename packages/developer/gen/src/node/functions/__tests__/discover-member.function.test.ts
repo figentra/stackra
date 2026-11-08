@@ -6,7 +6,8 @@
  *          shapes with rules, defaults, enums, dates and driver names, enums in source order, file exports, the
  *          authored root module, the dependency package names, and tests read only when asked; on both TypeScript
  *          backends with equal results; the consumed services that exist beside the member (`workspaceServices`); and
- *          the declared packages' lang catalogues and the `I18n` keys the member uses (STA-1298).
+ *          the declared packages' lang catalogues and the `I18n` keys the member uses (STA-1298); and a connection that
+ *          extends another paired with its same-stem integration in the manifest and the registrations.
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 42 and
@@ -17,6 +18,8 @@ import { dirname, join } from "node:path";
 
 import { describe, expect, it } from "@stackra/testing";
 
+import { buildManifest } from "#core/functions/build-manifest.function";
+import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { SHOP_SOURCES } from "#node/__tests__/fixtures/shop-sources.fixture";
 import { writeFixtureMember } from "#node/__tests__/fixtures/write-fixture-member";
@@ -286,5 +289,75 @@ describe("discoverMember i18n (STA-1298)", () => {
     });
     const ir = await discoverMember(root);
     expect(ir.packageCatalogues).toBeUndefined();
+  });
+});
+
+/** An integration of the `gateway` module, and its connection over `base` (a direct one when `base` is absent). */
+const pair = (stem: string, file: string, base?: string): Record<string, string> => ({
+  [`src/modules/gateway/integrations/${file}.integration.ts`]: [
+    'import { Integration } from "@stackra/integrations";',
+    "",
+    `export class ${stem}Integration extends Integration({ name: "${stem}" }) {}`,
+    "",
+  ].join("\n"),
+  [`src/modules/gateway/connections/${file}.connection.ts`]:
+    base === undefined
+      ? [
+          'import { Connection } from "@stackra/integrations";',
+          `import type { ${stem}Integration } from "#modules/gateway/integrations/${file}.integration";`,
+          "",
+          `export class ${stem}Connection extends Connection<${stem}Integration> {}`,
+          "",
+        ].join("\n")
+      : [
+          'import { BaseConnection } from "#modules/gateway/connections/base.connection";',
+          "",
+          `export class ${stem}Connection extends ${base} {}`,
+          "",
+        ].join("\n"),
+});
+
+describe("discoverMember subclassed connections", async () => {
+  const root = writeFixtureMember("gateway", {
+    "node_modules/@stackra/integrations/package.json": JSON.stringify({
+      name: "@stackra/integrations",
+      types: "./index.d.ts",
+    }),
+    "node_modules/@stackra/integrations/index.d.ts": [
+      'export declare abstract class IntegrationBase { protected readonly "~kind": "integration"; }',
+      "export declare function Integration(options: { readonly [option: string]: unknown }): abstract new () => IntegrationBase;",
+      "export declare abstract class Connection<I = unknown> { protected readonly integration?: I; }",
+      "",
+    ].join("\n"),
+    ...pair("Base", "base"),
+    ...pair("Regional", "regional", "BaseConnection"),
+    ...pair("BaseSandbox", "base-sandbox", "BaseConnection"),
+  });
+  const ir = await discoverMember(root);
+  const { manifest } = buildManifest(ir);
+  const integrations = (manifest["integrations"] ?? []) as readonly Record<string, unknown>[];
+  const connectionOf = (integration: string) =>
+    integrations.find((entry) => entry["class"] === integration)?.["connection"];
+
+  it("pairs each subclass with its same-stem integration, and the direct pair stays", () => {
+    expect(
+      ir.errors.filter(
+        (error) => error.code.startsWith("partner_") || error.code.startsWith("connection_"),
+      ),
+    ).toEqual([]);
+    expect(
+      ir.classes.find((declared) => declared.name === "RegionalConnection")?.partner?.name,
+    ).toBe("RegionalIntegration");
+    expect(connectionOf("BaseIntegration")).toBe("BaseConnection");
+    expect(connectionOf("RegionalIntegration")).toBe("RegionalConnection");
+    expect(connectionOf("BaseSandboxIntegration")).toBe("BaseSandboxConnection");
+  });
+
+  it("registers both subclassed connections with their integrations", () => {
+    const registrations = emitRegistrations(ir, manifest) ?? "";
+    for (const stem of ["Base", "BaseSandbox", "Regional"])
+      expect(registrations).toContain(
+        `{ connection: ${stem}Connection, integration: ${stem}Integration, key: `,
+      );
   });
 });

@@ -1,5 +1,199 @@
 # @stackra/integrations
 
+## 0.26.0
+
+### Minor Changes
+
+- ceceef3: A managed client call can send a raw body with its own media type (`RequestOptions.body: { content, contentType }`,
+  a SOAP envelope) and read the answer as text (`text: true`); auth, retries, rate limits and the egress rule are
+  unchanged, and `fakeIntegrationApi` hands the raw body to the route as its text (STA-2617).
+
+### Patch Changes
+
+- 031a1f7: `keyed_field_digest` takes four optional recipe fields, each defaulting to today's behaviour so existing recipes are
+  unchanged: `secretAt: "start" | "end"` (default `end`), `separator` (default nothing), `algorithm` now also `SHA-1`,
+  and `bodyFormat: "json" | "form"` (default `json`), where a form body is read as
+  `application/x-www-form-urlencoded` with its values percent-decoded. A missing value is an empty string.
+  `WebhookSchemeRecipe` gains the fields.
+- 9d0dd67: A new `labelled_field_hmac` signature scheme: a hex HMAC (SHA-256 or SHA-512) over each label followed by its body
+  field's value, in order, carried in a header or a query parameter and compared in constant time
+  (`verifyLabelledFieldHmac`). The recipe names the fields as `labelledFields: [{ label, path }]` and may set
+  `currencyDecimals: { path, currencyPath }`, which writes that amount with the minor-unit decimals of the ISO 4217
+  currency at `currencyPath` from `@stackra/money`'s table (3 for KWD, BHD and OMR, 0 for JPY). A missing field, or an
+  amount the currency cannot hold, does not verify. `WebhookSchemeRecipe` gains both fields.
+- Updated dependencies [9cee75d]
+  - @stackra/actions@0.26.0
+  - @stackra/clients@0.26.0
+  - @stackra/data-transfer@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/market-packs@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/data-transfer@0.25.0
+  - @stackra/clients@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/money@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/market-packs@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+  - @stackra/actions@0.24.0
+  - @stackra/clients@0.24.0
+  - @stackra/data-transfer@0.24.0
+  - @stackra/money@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/market-packs@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- d002763: `./testing` adds `liveConnection(ConnectionClass, { integration, fields, secrets })`: a connection whose `api` is the
+  real managed client (the Integration's auth, base URL, headers, retry and rate limits over memory stores and the system
+  clock), so a connector certification suite in a product can run a connector against a provider sandbox without a
+  service or a ConnectionStore.
+
+### Patch Changes
+
+- c0237a4: A provider's error code no longer carries a credential into `ProviderRefusedError`. The managed client and
+  `requestToken` replace a code that equals or contains a value the call sent with `"[redacted]"`. For the managed client
+  that means a connection's or an Integration's `@Secret` value, a placeholder value filled into the auth, the Basic
+  credential, the signed JWT or the OAuth bearer; for `requestToken`, the client secret or a grant's code, verifier, refresh
+  token or assertion. `providerCodeOf` now takes only letters, digits, `_`, `.` and `-`, at most 64 characters.
+- 1d76993: `RegionMapProviderDefaultsDriver` is `internal`: `SpeechService` builds it, so a host's `ProviderDefaults` has one
+  candidate, the market-pack driver. With two and no config to choose, a host that reached the port failed at boot with
+  `UnresolvedPortError` (Commerce channels).
+- Updated dependencies [a42a80c]
+  - @stackra/clients@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/data-transfer@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- 41f3da5: `Integration({ auth: { type: AuthType.Basic } })` takes an empty password, as RFC 7617 allows: a provider whose API key is
+  the whole credential (Medusa, Stripe) sends `key:`. A user name is still required.
+- ae24e3c: `RequestOptions.bytes`: a managed client call can read the answer as raw bytes (a `Uint8Array`) instead of parsing it
+  as JSON, for a provider that returns a label PDF or an image. The call asks for any media type unless it sets
+  `accept`. A refusal's body is still read for the provider's code.
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/clients@0.22.0
+  - @stackra/data-transfer@0.22.0
+  - @stackra/money@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/market-packs@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/clients@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/data-transfer@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/market-packs@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/clients@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/data-transfer@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- cb26737: Secrets now come from SOPS files keyed by Google Cloud KMS, not Infisical (ADR 0525). `@stackra/config` no longer
+  ships the Infisical secret store: `InfisicalSecretStoreDriver`, `InfisicalConfig`, `InfisicalConfig$` and
+  `InfisicalOptions` are removed, with the `infisical` candidate of the `SecretStore` port and the
+  `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` env rows. The `SecretStore` candidates are now `memory` and
+  `aws_secrets_manager`; a deployed runtime still reads the platform's own store through `envSecrets`. Re-run
+  `stackra gen` after upgrading so a committed `stackra.manifest.json` drops the `infisical` candidate. The other
+  packages only update comments and docs that named Infisical as the runtime store.
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/clients@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/data-transfer@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/market-packs@0.19.0
+  - @stackra/validation@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

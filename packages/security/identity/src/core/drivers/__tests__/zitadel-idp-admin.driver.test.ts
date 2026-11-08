@@ -275,6 +275,51 @@ describe(ZitadelIdpAdminDriver, () => {
     expect(updated.sent[1]?.headers["x-zitadel-orgid"]).toBe("org_1");
   });
 
+  /** The first install creates the target and answers its key once; a redeploy updates it and answers none. */
+  it("installs the claims action as a target with its preuserinfo and preaccesstoken executions", async () => {
+    const endpoint = "https://id.acme.example/api/identity/claims";
+    const first = driverWith([
+      [200, { result: [] }],
+      [200, { id: "tgt_1", signingKey: "key_1" }],
+      [200, {}],
+      [200, {}],
+    ]);
+    expect(await first.idp.installClaimsAction({ endpoint })).toEqual({
+      targetId: "tgt_1",
+      signingKey: "key_1",
+    });
+    expect(
+      first.sent.map((request) => `${request.method} ${new URL(request.url).pathname}`),
+    ).toEqual([
+      "POST /v2/actions/targets/search",
+      "POST /v2/actions/targets",
+      "PUT /v2/actions/executions",
+      "PUT /v2/actions/executions",
+    ]);
+    expect(JSON.parse(first.sent[1]?.body ?? "")).toEqual({
+      name: "stackra-claims",
+      endpoint,
+      timeout: "10s",
+      restCall: { interruptOnError: true },
+    });
+    expect(first.sent.slice(2).map((request) => JSON.parse(request.body ?? ""))).toEqual([
+      { condition: { function: { name: "preuserinfo" } }, targets: ["tgt_1"] },
+      { condition: { function: { name: "preaccesstoken" } }, targets: ["tgt_1"] },
+    ]);
+
+    const again = driverWith([
+      [200, { result: [{ id: "tgt_1" }] }],
+      [200, {}],
+      [200, {}],
+      [200, {}],
+    ]);
+    expect(await again.idp.installClaimsAction({ endpoint, timeoutSeconds: 5 })).toEqual({
+      targetId: "tgt_1",
+    });
+    expect(new URL(again.sent[1]?.url ?? "").pathname).toBe("/v2/actions/targets/tgt_1");
+    expect(JSON.parse(again.sent[1]?.body ?? "")).toMatchObject({ endpoint, timeout: "5s" });
+  });
+
   it("lists a user's authentication methods as unique amr codes", async () => {
     const { idp, sent } = driverWith([
       [

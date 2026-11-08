@@ -48,6 +48,7 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
+import { emitEncorePackage } from "#core/functions/emit-encore-package.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
@@ -306,10 +307,33 @@ export async function generate(
         ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
       ]
     : migrations.files;
+  // The Encore app root needs a package.json to start, and Encore reads migrations only from a local folder, so a
+  // service's compiled files are copied under its Encore service too.
+  const encoreFiles =
+    encore.files.length === 0
+      ? []
+      : [
+          ...encore.files,
+          emitEncorePackage(ir.package),
+          ...migrations.files.map((file) => ({
+            ...file,
+            path: file.path.replace(
+              `${MIGRATIONS_DIR}/`,
+              `.stackra/encore/${ir.member}/migrations/`,
+            ),
+          })),
+        ];
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
-  let files = [...result.files, ...encore.files, ...migrationFiles];
-  // A member with an `.int.test.ts` gets the integration-tier config beside the unit one (`stackra test --tier int`).
-  if (files.some((file) => file.path === ".stackra/vitest.config.ts") && hasIntTests(root))
+  let files = [...result.files, ...encoreFiles, ...migrationFiles];
+  // A member with an `.int.test.ts`, its own or gen's, gets the integration-tier config beside the unit one
+  // (`stackra test --tier int`), so the generated tenant-isolation test runs with no authored int test beside it.
+  if (
+    files.some((file) => file.path === ".stackra/vitest.config.ts") &&
+    hasIntTests(
+      root,
+      files.map((file) => file.path),
+    )
+  )
     files.push(emitIntTierConfig(ir.package));
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;

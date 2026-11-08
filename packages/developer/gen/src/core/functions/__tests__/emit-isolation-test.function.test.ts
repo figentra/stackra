@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `emitIsolationTest`: a service with an owned model and the database, tenancy and testing
- *          packages gets the row-security test over its compiled migrations; otherwise no file.
+ * Purpose: unit tests of `emitIsolationTest`: a service with an owned model, its own or a hosted package's, and the
+ *          database, tenancy and testing packages gets the row-security test over its compiled migrations, with its
+ *          global models' tables and the ADR exemptions as platform tables; otherwise no file.
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0239 (decision 1); ADR 0182.
@@ -22,6 +23,31 @@ const OWNED: MemberIR = {
   ),
 };
 
+/** A service with no owned model of its own that hosts one package model with `traits`. */
+const hosting = (traits: readonly string[], kind?: string): MemberIR => ({
+  ...COMMERCE_IR,
+  packages: ["@stackra/database", "@stackra/tenancy", "@stackra/testing"],
+  dependencies: [
+    {
+      package: "@stackra/tenancy",
+      manifest: {
+        member: "tenancy",
+        package: "@stackra/tenancy",
+        version: "0.3.0",
+        ...(kind === undefined ? {} : { kind }),
+        models: [
+          {
+            key: "tenancy.approval_binding",
+            table: "tenancy.approval_bindings",
+            publicId: "apb",
+            traits,
+          },
+        ],
+      },
+    },
+  ],
+});
+
 describe("emitIsolationTest", () => {
   it("checks every owned table of the compiled migrations", () => {
     const test = emitIsolationTest(OWNED) ?? "";
@@ -30,11 +56,53 @@ describe("emitIsolationTest", () => {
     );
     expect(test).toContain('import { tenantIsolationOptions } from "@stackra/tenancy/testing";');
     expect(test).toContain(
-      'const postgres = usePostgres({ migrationsDirectory: fileURLToPath(new URL("../migrations", import.meta.url)) });',
+      [
+        'const migrationsDirectory = fileURLToPath(new URL("../migrations", import.meta.url));',
+        "const postgres = usePostgres({ migrationsDirectory });",
+      ].join("\n"),
     );
     expect(test).toContain(
-      "    await assertRowSecurity(postgres.database, tenantIsolationOptions());",
+      [
+        "    const warnings = await assertRowSecurity(postgres.database, {",
+        "      ...tenantIsolationOptions(),",
+        "      migrationsDirectory,",
+        "      platform: new Map([",
+        '        ["achievements.award_verifications", "ADR 0368 decision 5"],',
+        "      ]),",
+        "    });",
+        "    for (const warning of warnings) console.warn(`row-level security: ${warning}`);",
+      ].join("\n"),
     );
+  });
+
+  it("lists a global model's table as a platform table", () => {
+    const withGlobal: MemberIR = {
+      ...OWNED,
+      classes: [
+        ...OWNED.classes,
+        ...COMMERCE_IR.classes
+          .filter((declared) => declared.kind === "model")
+          .slice(0, 1)
+          .map((declared) => ({
+            ...declared,
+            name: "Currency",
+            traits: [],
+            global: true as const,
+          })),
+      ],
+    };
+    expect(emitIsolationTest(withGlobal)).toContain(
+      '        ["orders.currencies", "Model.global (ADR 0210)"],',
+    );
+  });
+
+  it("checks a service whose only owned tables come from a hosted package", () => {
+    expect(emitIsolationTest(hosting(["BelongsToTenant"]))).toContain("assertRowSecurity");
+    expect(emitIsolationTest(hosting(["BelongsToTenantOrPlatform"]))).toContain(
+      "assertRowSecurity",
+    );
+    expect(emitIsolationTest(hosting([]))).toBeUndefined();
+    expect(emitIsolationTest(hosting(["BelongsToTenant"], "app"))).toBeUndefined();
   });
 
   it("writes nothing without an owned model or a needed package", () => {

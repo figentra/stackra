@@ -692,6 +692,12 @@ export function createSourceReader(
       : NOT_CONSTANT;
   };
 
+  /** The `// reason: …` written above a property or trailing it, if any. */
+  const reasonOf = (property: TsNode): string | undefined =>
+    /\/\/\s*reason:\s*(.+)/
+      .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
+      ?.trim() || undefined;
+
   /** The options object of a call argument: its constant properties, non-constant ones left out. */
   const optionsOf = (node: TsNode | undefined): Record<string, unknown> => {
     if (node === undefined || host.kind(node) !== "ObjectLiteralExpression") return {};
@@ -719,13 +725,24 @@ export function createSourceReader(
       if (!hasNonConstant(value)) options[name] = value;
       // ADR 0509: an unreadable `approval` is recorded so `approval_not_constant` refuses it, not skipped.
       if (name === "approval" && hasNonConstant(value)) options["approvalNotConstant"] = true;
-      // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does.
-      // A trailing `tool: false, // reason: …` counts too (owner decisions 2026-10-26, round 3).
-      if (name === "tool" && value === false) {
-        const reason = /\/\/\s*reason:\s*(.+)/
-          .exec(`${host.leading(property)}\n${host.trailing(property)}`)?.[1]
-          ?.trim();
+      // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does, and so does a
+      // `tool: true` that makes an L3 or L4 action a tool. A trailing `// reason: …` counts too (owner decisions
+      // 2026-10-26, round 3).
+      // A product's `DataClass` class is recorded as its key, as `@Classify` reads it (STA-2594).
+      if (name === "dataClass" && kind === "PropertyAssignment") {
+        const key = dataClassOf(property.initializer)?.["key"];
+        if (typeof key === "string") options["dataClass"] = key;
+      }
+      if (name === "tool" && typeof value === "boolean") {
+        const reason = reasonOf(property);
         if (reason) options["toolReason"] = reason;
+      }
+      // A query that reads above L1 (secrets, bulk personal data, a tenant's whole evidence) says why with a
+      // `// reason:` on its `permission`, or on its `key` when the permission is derived (leader, 2026-11-08).
+      if (name === "permission" || name === "key") {
+        const reason = reasonOf(property);
+        if (reason && (name === "permission" || options["riskReason"] === undefined))
+          options["riskReason"] = reason;
       }
     }
     return options;
@@ -1367,6 +1384,9 @@ export function createSourceReader(
       }
       if (name === "Money") return { kind: "money" };
       if (name === "Json") return { kind: "json" };
+      if (name === "GeoPoint") return { kind: "geo", shape: "point" };
+      if (name === "GeoPolygon") return { kind: "geo", shape: "polygon" };
+      if (name === "GeoLine") return { kind: "geo", shape: "line" };
       if (name === "Duration") return { kind: "duration" };
       if (name === "Url") return { kind: "brand", brand: "url" };
       if (name === "Email") return { kind: "brand", brand: "email" };
@@ -1845,6 +1865,7 @@ export function createSourceReader(
         ? { secret: { name: secretName, ...secretOptionsOf(secret?.args[1]) } }
         : {}),
       ...(decorators.some((use) => use.name === "Hidden") ? { hidden: true as const } : {}),
+      ...(decorators.some((use) => use.name === "ShownOnce") ? { shownOnce: true as const } : {}),
     };
     if (!quiet && type.kind !== "hatch")
       checkRules(field, declaration.name ?? declaration, subject);
@@ -2657,10 +2678,16 @@ export function createSourceReader(
     const options = optionsOf(optionsArgument);
     // A driver over the package's own base (`class EpsonReceiptPrinterDriver extends NetworkReceiptPrinterDriver`) takes
     // its port from the nearest base whose heritage names one, so it stays a candidate in the manifest.
+    // A connection over another connection (`class RegionalConnection extends BaseConnection`) inherits its base's
+    // integration here; `pairSubclassConnections` pairs it with a same-stem integration of the member when one exists.
+    const ownPartner = partnerOf(node, info.kind, heritage);
     const partner =
-      partnerOf(node, info.kind, heritage) ??
-      (info.kind === "driver" ? inheritedPartner(info.chain.slice(1)) : undefined);
-    checkPartner(node, info.kind, partner, options);
+      ownPartner ??
+      (info.kind === "driver" || info.kind === "connection"
+        ? inheritedPartner(info.chain.slice(1))
+        : undefined);
+    // An inherited connection partner was checked against its base's stem, not this class's.
+    checkPartner(node, info.kind, info.kind === "connection" ? ownPartner : partner, options);
 
     const members = node.members ?? [];
     // The container calls the nearest constructor the chain declares: the class's own, else its base's (STA-1365 item 5).
@@ -2757,9 +2784,12 @@ export function createSourceReader(
         }
     }
 
-    // The workflows the body starts, `ctx.run(RefundWorkflow, input)`, for `checkActionFirst` (ADR 0101).
+    // The workflows the body starts, `ctx.run(RefundWorkflow, input)` or typed `ctx.run<RefundOutput>(...)`, for
+    // `checkActionFirst` (ADR 0101, STA-2611).
     const workflows = new Set(
-      [...body.matchAll(/\.run\s*\(\s*([A-Z]\w*Workflow)\b/g)].map((match) => match[1] ?? ""),
+      [...body.matchAll(/\.run\s*(?:<[^()]*?>)?\s*\(\s*([A-Z]\w*Workflow)\b/g)].map(
+        (match) => match[1] ?? "",
+      ),
     );
 
     const statics: Record<string, string> = {};
@@ -2908,6 +2938,21 @@ export function createSourceReader(
           .map(([service, file]) => ({ service, file }))
       );
     },
+    packageImports: () => {
+      const found = new Map<string, Set<string>>();
+      for (const path of all.map((file) => file.fileName ?? "").filter(isOwn))
+        for (const statement of byPath.get(path)?.statements ?? []) {
+          // shortcut: a dynamic `import()` is not seen; static imports and `export … from` count.
+          const kind = host.kind(statement);
+          if (kind !== "ImportDeclaration" && kind !== "ExportDeclaration") continue;
+          const from = statement.moduleSpecifier?.text;
+          if (from === undefined || from.startsWith(".") || from.startsWith("#")) continue;
+          const parts = from.split("/");
+          const pkg = from.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? from);
+          found.set(pkg, (found.get(pkg) ?? new Set()).add(from));
+        }
+      return found;
+    },
     classes: (file) =>
       classNodes(file)
         .map(readClass)
@@ -3004,7 +3049,18 @@ export function createSourceReader(
       const record = (name: string, typeOnly: boolean): void => {
         names.set(name, typeOnly && (names.get(name) ?? true));
       };
+      const isIndex = /\/index\.tsx?$/.test(path);
       for (const statement of file.statements ?? []) {
+        // why: a barrel re-exports (`export { X } from "#config/x"`), and which entry exports a class decides the
+        // specifier a host imports it from (`exportingSpecifier`)
+        if (isIndex && host.kind(statement) === "ExportDeclaration") {
+          for (const element of statement.exportClause?.elements ?? [])
+            record(
+              nameOf(element.name),
+              statement.isTypeOnly === true || element.isTypeOnly === true,
+            );
+          continue;
+        }
         if (!has(statement, "ExportKeyword") || has(statement, "DefaultKeyword")) continue;
         const kind = host.kind(statement);
         if (kind === "VariableStatement")
@@ -3018,7 +3074,6 @@ export function createSourceReader(
             classes.push(nameOf(statement.name));
         }
       }
-      const isIndex = /\/index\.tsx?$/.test(path);
       if (names.size > 1 && !isIndex)
         fail(
           file,

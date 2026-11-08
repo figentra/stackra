@@ -29,7 +29,7 @@
  *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
  *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
- *           `model_tenancy_missing`, stackra-258) or a site-cached query that reads its caller
+ *           `model_tenancy_missing`, stackra-258; a package's warns until 0.20) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path
@@ -61,6 +61,7 @@ import { checkApproval } from "#core/functions/check-approval.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
+import { checkShownOnce } from "#core/functions/check-shown-once.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkActionFirst } from "#core/functions/check-action-first.function";
@@ -102,6 +103,7 @@ import { emitReports } from "#core/functions/emit-reports.function";
 import { emitSearchQueries } from "#core/functions/emit-search-queries.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { emitResources } from "#core/functions/emit-resources.function";
+import { emitPackageRoutes } from "#core/functions/emit-package-routes.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
@@ -118,6 +120,7 @@ import { openApiOf } from "#core/functions/open-api-of.function";
 import { reportQueriesOf } from "#core/functions/report-queries-of.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { searchQueriesOf } from "#core/functions/search-queries-of.function";
+import { transitiveRefusals } from "#core/functions/transitive-refusals.function";
 import { undeclaredPackages } from "#core/functions/undeclared-packages.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -198,6 +201,7 @@ export function generateMember(
     ...checkModelScope(ir),
     ...checkApproval(ir),
     ...checkQueryCache(ir),
+    ...checkShownOnce(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
     // This run's recorded trees, so an unindexed path is refused in the run that adds it (ADR 0307 rule 2).
@@ -305,7 +309,13 @@ export function generateMember(
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
-  files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
+  files.push(
+    ...clients.files,
+    ...emitRoutes(ir),
+    ...emitPackageRoutes(ir),
+    ...emitBlocks(ir),
+    ...expo.files,
+  );
   // The composed panel resources' route constants, for an app that hosts the panel (STA-1947).
   const resources = emitResources(ir);
   if (resources !== undefined) files.push(resources);
@@ -345,7 +355,18 @@ export function generateMember(
     "generated_dependency_missing",
     ["encore.dev"],
   );
-  if (elsewhere.length > 0) return { files: [], errors: elsewhere, warnings, manifest };
+  if (elsewhere.length > 0) {
+    // The packages those undeclared ones bring in the same way, so the member adds them all in one go.
+    const seeds = elsewhere
+      .map((error) => error.subject)
+      .filter((name) => name.startsWith("@stackra/"));
+    return {
+      files: [],
+      errors: [...elsewhere, ...transitiveRefusals(ir, seeds, "generated_dependency_missing")],
+      warnings,
+      manifest,
+    };
+  }
   // The member's part of the system graph, read by the repo step (ADR 0452).
   files.push({ path: ".stackra/graph.json", content: json(memberGraphOf(ir, manifest)) });
   return { files, errors: [], warnings, manifest };

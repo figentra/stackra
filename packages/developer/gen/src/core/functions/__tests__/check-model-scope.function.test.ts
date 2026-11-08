@@ -2,10 +2,13 @@
  * Stackra file contract:
  * Purpose: unit tests of `checkModelScope`: in a service running @stackra/tenancy, a model with neither an owner
  *          trait nor `Model.global` is refused (`model_tenancy_missing`); an owned, a global and a model extending an
- *          owned own model pass; a service without tenancy and a package are not checked.
+ *          owned own model pass; a service without tenancy is not checked; a package is, as warnings; an ADR-named
+ *          table is skipped; an owned model whose migrated table never calls `t.belongsToTenant()` is flagged
+ *          (`model_tenancy_migration_missing`).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0239 (decision 1); ADR 0210 (2026-10-24 amendment).
+ * Governing contract: ADR 0022 (test placement); ADR 0239 (decision 1); ADR 0210 (2026-10-24 amendment); ADR 0368
+ *                     (decision 5).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -29,6 +32,14 @@ const withModel = (
     ),
     ...extra,
   ],
+});
+
+/** A migration block of the fixture's `orders` module. */
+const block = (table: string, ownerColumn: boolean, file = "0001-create-orders.migration.ts") => ({
+  file,
+  module: "orders",
+  table,
+  ownerColumn,
 });
 
 describe("checkModelScope", () => {
@@ -62,8 +73,56 @@ describe("checkModelScope", () => {
     ).toEqual([]);
   });
 
-  it("checks nothing without tenancy or outside a service", () => {
+  it("checks nothing in a service without tenancy or in an app", () => {
     expect(checkModelScope(COMMERCE_IR)).toEqual([]);
-    expect(checkModelScope({ ...withModel({}), layout: "package" })).toEqual([]);
+    expect(checkModelScope({ ...withModel({}), layout: "app" })).toEqual([]);
+  });
+
+  it("warns on a package's model that is neither, with or without tenancy (an error from 0.20)", () => {
+    const warned = checkModelScope({ ...COMMERCE_IR, layout: "package" });
+    expect(warned.map((error) => [error.code, error.subject, error.severity])).toEqual([
+      ["model_tenancy_missing", MODEL.name, "warning"],
+    ]);
+    expect(checkModelScope({ ...withModel({ global: true }), layout: "package" })).toEqual([]);
+  });
+
+  it("skips a table an ADR names", () => {
+    const exempt = withModel({ name: "AwardVerification", module: "achievements" });
+    expect(checkModelScope(exempt)).toEqual([]);
+    expect(checkModelScope({ ...exempt, layout: "package" })).toEqual([]);
+  });
+
+  describe("the migration cross-check", () => {
+    const owned = withModel({ traits: [{ name: "BelongsToTenant", args: [] }] });
+
+    it("flags an owned model whose migrated table never calls t.belongsToTenant()", () => {
+      const errors = checkModelScope({ ...owned, migrationTables: [block("orders", false)] });
+      expect(errors.map((error) => [error.code, error.subject, error.severity])).toEqual([
+        ["model_tenancy_migration_missing", MODEL.name, undefined],
+      ]);
+      expect(errors[0]?.message).toContain("0001-create-orders.migration.ts");
+      const inPackage = checkModelScope({
+        ...owned,
+        layout: "package",
+        migrationTables: [block("orders", false)],
+      });
+      expect(inPackage.map((error) => error.severity)).toEqual(["warning"]);
+    });
+
+    it("passes when any migration of the table calls it, and judges no table without a migration", () => {
+      expect(
+        checkModelScope({
+          ...owned,
+          migrationTables: [
+            block("orders", false),
+            block("orders", true, "0002-own-orders.migration.ts"),
+          ],
+        }),
+      ).toEqual([]);
+      expect(checkModelScope({ ...owned, migrationTables: [block("order_lines", false)] })).toEqual(
+        [],
+      );
+      expect(checkModelScope(owned)).toEqual([]);
+    });
   });
 });

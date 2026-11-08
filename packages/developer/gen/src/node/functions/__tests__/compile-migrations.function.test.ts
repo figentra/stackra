@@ -3,11 +3,12 @@
  * Purpose: unit tests of `compileMigrations` against a hermetic host in a temp folder (a fake `@stackra/database`, a
  *          fake `@stackra/tenancy` shipping a migration and a macro, a fake `@stackra/ai` whose migration calls that
  *          macro): the module and macro edges (tenancy before ai although ai sorts first, also from the recorded macro
- *          call alone, and an own module after the sibling its classes depend on), the import check
- *          (`migration_import_forbidden` for a value, a type-only and a dynamic import, before the file is loaded), and
- *          the merged `Blueprint` augmentation of an own macro, through which a TypeScript program accepts the call
- *          and rejects a wrong argument, and `module_key_collision` for an own module with migrations whose key a
- *          made-up declared package's migrations need (STA-2161).
+ *          call alone, and an own module after the sibling its classes depend on), no migration of a package the
+ *          service has only indirectly (in node_modules through a declared package, not declared itself), the import
+ *          check (`migration_import_forbidden` for a value, a type-only and a dynamic import, before the file is
+ *          loaded), and the merged `Blueprint` augmentation of an own macro, through which a TypeScript program accepts
+ *          the call and rejects a wrong argument, and `module_key_collision` for an own module with migrations whose
+ *          key a made-up declared package's migrations need (STA-2161).
  * Boundary: test only; writes under the OS temp folder and removes it. No workspace dependency is used.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305.
@@ -153,6 +154,19 @@ describe("compileMigrations", () => {
     expect(files.map((file) => file.path)).toEqual([
       ".stackra/migrations/0001_tenancy_0001_create_tenants.up.sql",
       ".stackra/migrations/0002_ai_0001_create_agents.up.sql",
+    ]);
+  });
+
+  it("writes no migration of a package the service has only indirectly, through a declared package", async () => {
+    // tenancy is installed (ai depends on it) but the service declares only ai: tenancy's macro still compiles ai's
+    // migration, while tenancy's own migration is not the service's to apply.
+    const { files, errors } = await compileMigrations(host(), {
+      ...serviceIr(["shop"]),
+      packages: ["@stackra/ai"],
+    });
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).toEqual([
+      ".stackra/migrations/0001_ai_0001_create_agents.up.sql",
     ]);
   });
 

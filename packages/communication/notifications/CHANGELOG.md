@@ -1,5 +1,185 @@
 # @stackra/notifications
 
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [ceceef3]
+- Updated dependencies [031a1f7]
+- Updated dependencies [9d0dd67]
+  - @stackra/integrations@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/clients@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/assets@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/outbox@0.25.0
+  - @stackra/clients@0.25.0
+  - @stackra/integrations@0.25.0
+  - @stackra/money@0.25.0
+  - @stackra/assets@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/clients@0.24.0
+  - @stackra/integrations@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/money@0.24.0
+  - @stackra/assets@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- e86d519: Messages can carry buttons. `MessageAction` (`label`, `url`, optional `style`) is new; `OutboundChatMessage.actions`
+  lists the buttons under a chat message, and `OutboundPush` gains `category` (the app's action category, Expo
+  `categoryId`) and `actions` (the links behind its buttons). The `device` push driver passes both through: to Expo as
+  `categoryId` with the links in `data.actions`, and in the Web Push payload. Notify uses them for the approvals bot's
+  one-tap Approve and Reject (ADR 0533).
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- Updated dependencies [d002763]
+- Updated dependencies [c0237a4]
+- Updated dependencies [1d76993]
+- Updated dependencies [a42a80c]
+  - @stackra/integrations@0.23.0
+  - @stackra/clients@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/assets@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- 3a9a6be: `@stackra/integrations` is a peer of every library that uses its values (payments, webhooks, documents, notifications,
+  pricing, achievements, loyalty-kit), no longer a dependency. As a dependency, pnpm resolved a second copy in a product,
+  so a Connection's base and `makeConnection` came from different copies and every Stripe call failed with "StripeConnection
+  was not loaded by a ConnectionStore". `stackra validate` refuses the mistake (`hosted-peers`, `HOSTED_PEER_PACKAGES`).
+- Updated dependencies [41f3da5]
+- Updated dependencies [ae24e3c]
+- Updated dependencies [acbee14]
+  - @stackra/integrations@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/clients@0.22.0
+  - @stackra/money@0.22.0
+  - @stackra/assets@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/clients@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/integrations@0.21.0
+  - @stackra/assets@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/clients@0.20.0
+  - @stackra/integrations@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/assets@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/integrations@0.19.0
+  - @stackra/clients@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/assets@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/outbox@0.19.0
+  - @stackra/support@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

@@ -3,8 +3,11 @@
  * Purpose: `postgresCacheTables`, the statements that create the two unlogged tables the `postgres` cache driver keeps
  *          in a schema: `entries` (one row per namespaced key: the entry's JSON text and the instant the row may go)
  *          and `set_members` (the keys carrying each tag), each with the index its sweep reads.
- * Boundary: the shape the driver's statements expect, for the migration that creates it (a migration is a frozen
- *           snapshot, so it copies these statements as literals, with `schema.sql(statement, { inverse })`). Unlogged:
+ * Boundary: the shape the driver's statements expect. The tables of the default schema (`cache`) ship as the migration
+ *           `database.0005_create_cache_tables` of @stackra/database (this package cannot depend on it), which copies
+ *           these statements as literals with `if not exists`; a service that sets another `postgres.schema` copies
+ *           them into its own migration with `schema.sql(statement, { inverse })`. The driver never creates a table:
+ *           a missing one rejects each call with Postgres's "does not exist". Platform tables, not tenant-owned. Unlogged:
  *           the tables skip the WAL, so writes are cheap, a crash empties them and replicas do not see them, which a
  *           cache allows. Keys sort in the "C" collation, so a prefix `like` uses the primary key. No row-level
  *           security: every key already carries its namespace.

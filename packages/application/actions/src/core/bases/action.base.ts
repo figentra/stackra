@@ -241,6 +241,17 @@ function read(options: ActionOptions) {
     throw new TypeError(
       `Action({ structural }) is true or false, got ${JSON.stringify(options.structural)}`,
     );
+  const { onBehalfOf } = options;
+  if (
+    onBehalfOf !== undefined &&
+    (typeof onBehalfOf !== "object" ||
+      onBehalfOf === null ||
+      typeof onBehalfOf.secondHop !== "boolean" ||
+      Object.keys(onBehalfOf).length !== 1)
+  )
+    throw new TypeError(
+      `Action({ onBehalfOf }) is { secondHop: true } or { secondHop: false } (${options.key}), got ${JSON.stringify(onBehalfOf)}`,
+    );
   const { meter } = options;
   if (meter !== undefined) {
     if (typeof meter.name !== "string" || !METER_NAME.test(meter.name))

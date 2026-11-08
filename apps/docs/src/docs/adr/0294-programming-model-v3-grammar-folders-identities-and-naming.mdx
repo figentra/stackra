@@ -428,7 +428,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Any other query name                            | `GET /xs/<name-kebab>`      |
 
     `endpoint: { method, path }` overrides the route, and `endpoint: false` removes it. An action whose actors include
-    neither a user nor an agent gets no public endpoint.
+    neither a user nor an agent gets no public endpoint. (Amended 2026-11-08, STA-2578: an anonymous caller counts too, so an
+    anonymous-only action or query gets its route, served with `auth: false`; only a call whose actors include no user,
+    agent or anonymous caller, such as a system-only job, has none.)
 
 22. **The manifest lock.** `stackra.manifest.json` records every identity. A changed identity fails `stackra gen --check`
     unless the class or field carries `@Renamed(old)`. Gen also fails when a derived i18n key is missing in any locale;
@@ -683,6 +685,16 @@ decision it changes. Everything else stands.
 Decision 16's Extension point row reads `Binding: yes`. The owner injects its point (ADR 0305 rule 25), so gen writes a
 binding for it, as it does for a Menu, Shortcut, Store (a singleton) and Bridge (request-scoped, ADR 0251). A config
 override keeps its base's key (decision 20), so a host's wiring holds one row per config token.
+
+## Amendment 2026-11-07: a contracts-only dependency is not hosted (STA-2567)
+
+Decision 15 makes `./contracts` the leaf entry. A member that imports a package only through that entry
+(`@stackra/x/contracts`, at least one import and no import of any other entry, `export … from` included) is hosted
+contracts-only: gen carries the package's integration events from `src/contracts/`, so the outbox and topic emitters
+know their wire names, and hosts none of its models, entities, migrations, actions, drivers, roles or permissions.
+A package the member imports nothing from, or imports any other entry of, is hosted whole as before. The first user is
+`@stackra/workflow/contracts` (`ServiceAcked`, wire name `workflow.service.acked.v1`), which a product service sends
+without hosting the workflow engine.
 
 ## Amendment 2026-10-27: showcase routes read their words from the registry
 

@@ -6,7 +6,8 @@
  *          changes structural configuration (`structural`), the meter it feeds (`meter`), whether it always needs an
  *          approval gate (`approval`), the assurance level it needs (`stepUp`) and the statement timeout of its unit of
  *          work (`timeout`), and the analytics event each call writes (`analytics`), and the most statements a
- *          call may run (`queryBudget`).
+ *          call may run (`queryBudget`), and whether a service calling it for a user may forward the user's token
+ *          once more (`onBehalfOf`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
  *           static only when the class stem differs from the action's model (ADR 0305 rule 7).
@@ -15,7 +16,8 @@
  *                     ADR 0138 (as amended); ADR 0252 (decision 2); ADR 0338 (decision 5); ADR 0337 (decisions 4
  *                     and 5); ADR 0359 (decisions 3 and 5); ADR 0216 (decisions 1 and 2); ADR 0360 (decision 4:
  *                     the tool default); ADR 0099 (decision 2: effect tags); ADR 0397 as amended by STA-813
- *                     (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`); STA-1512 (`analytics`).
+ *                     (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`); STA-1512 (`analytics`);
+ *                     ADR 0209 (2026-11-07 amendment, condition 5: `onBehalfOf`).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea, AssuranceLevel, Duration } from "@stackra/contracts";
@@ -30,9 +32,11 @@ import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
+import type { CallDataClass } from "#core/types/call-data-class.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { JobOptions } from "#core/types/job-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
+import type { OnBehalfOfOptions } from "#core/types/on-behalf-of-options.type";
 
 /** The options of an action. */
 export interface ActionOptions {
@@ -60,8 +64,20 @@ export interface ActionOptions {
   /** The Idempotency-Key policy; `Idempotency.Optional` when absent. */
   readonly idempotency?: Idempotency;
 
+  /**
+   * How long a key and its kept output last, when shorter than the 24 hours of ADR 0136 (a longer one is ignored).
+   * An output field marked `@ShownOnce` is never kept, whatever the window.
+   */
+  readonly idempotencyTtl?: Duration;
+
   /** The action's own token bucket, on top of the area's. */
   readonly rateLimit?: ActionRateLimit;
+
+  /**
+   * The data class it handles (`DataClassification.Financial`, or a product's `DataClass` class); gen records its key,
+   * and the AI gateway keeps a run that calls it in region when the tenant's policy says so. None when absent.
+   */
+  readonly dataClass?: CallDataClass;
 
   /** A route override, or `false` for no endpoint; derived from the key when absent. */
   readonly endpoint?: EndpointOptions | false;
@@ -128,4 +144,10 @@ export interface ActionOptions {
    * `action.called` (every outcome), or an `AnalyticsEvent` class (a successful call only, in its unit of work).
    */
   readonly analytics?: CallAnalytics;
+
+  /**
+   * `{ secondHop: true }` lets a service that calls this action for a user forward the user's token to the services the
+   * action calls. One hop when absent: those calls carry the service token only (ADR 0209, amendment of 2026-11-07).
+   */
+  readonly onBehalfOf?: OnBehalfOfOptions;
 }

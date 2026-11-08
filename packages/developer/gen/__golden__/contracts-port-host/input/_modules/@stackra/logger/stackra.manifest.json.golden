@@ -1,0 +1,16 @@
+{
+  "member": "logger",
+  "package": "@stackra/logger",
+  "version": "0.20.0",
+  "drivers": [
+    {
+      "port": "LogReporter",
+      "key": "logger.LogReporter",
+      "candidates": ["console", "otlp"],
+      "classes": {
+        "console": { "class": "ConsoleLogReporterDriver", "from": "@stackra/logger" },
+        "otlp": { "class": "OtlpLogReporterDriver", "from": "@stackra/logger" }
+      }
+    }
+  ]
+}

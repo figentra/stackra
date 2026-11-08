@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `checkCallShape`, the call-shape refusals of one action or query: a query whose permission is L2 or above
- *          (`query_above_l1`), a query with `preconditions` (`query_precondition`), an action with `cache`
+ *          with no written reason (`query_above_l1`; a `// reason:` on its `permission` or `key` lets a deliberate
+ *          floor stand), a query with `preconditions` (`query_precondition`), an action with `cache`
  *          (`action_cache`), an L3 or L4 action a user can call with no `stepUp` (`step_up_missing`) and a client
  *          write, an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`). The
  *          `stepUp: { exempt: "first-factor-enrolment" }` exemption counts as a `stepUp` only on an action listed in
@@ -52,11 +53,11 @@ export function checkCallShape(
   const risk = resolved.risk;
 
   if (declared.kind === "query") {
-    if (risk !== undefined && ABOVE_L1.has(risk))
+    if (risk !== undefined && ABOVE_L1.has(risk) && typeof options["riskReason"] !== "string")
       refuse(
         "query_above_l1",
         `${declared.name} is a query but its permission is ${risk}, and a query only reads (L0 or L1)`,
-        "give the query an L0 or L1 permission, or make it an action if it changes state",
+        "give the query an L0 or L1 permission, make it an action if it changes state, or, for a deliberate floor, write `// reason: <why it reads at this level>` on its `permission` (or `key`)",
       );
     if (Array.isArray(options["preconditions"]) && options["preconditions"].length > 0)
       refuse(
@@ -99,7 +100,7 @@ export function checkCallShape(
     refuse(
       "idempotency_missing",
       `${declared.name} can be called by a client (${resolved.routed ? "it has an endpoint" : "it is a tool"}) but declares no \`idempotency\``,
-      "write `idempotency: Idempotency.Optional` (the default), `Idempotency.Required` or `Idempotency.Derived`",
+      "write `idempotency: Idempotency.Optional` (the default), `Idempotency.Required`, `Idempotency.Derived` or `Idempotency.Never`",
     );
   return errors;
 }

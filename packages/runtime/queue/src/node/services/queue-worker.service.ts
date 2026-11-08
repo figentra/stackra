@@ -35,7 +35,7 @@ import {
 } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { backoffDelay, Duration, Logger } from "@stackra/contracts";
+import { actingScopeId, backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Actor, Clock } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 
@@ -376,10 +376,11 @@ export class QueueWorkerService extends Service {
   private actorOf(plan: JobPlan, job: QueuedJob): Actor {
     const { origin } = job;
     if (!plan.declared && origin !== undefined) return origin;
+    const scopeId = origin === undefined ? undefined : actingScopeId(origin);
     return Object.freeze({
       kind: plan.actor,
       id: job.id,
-      ...(origin?.scopeId === undefined ? {} : { scopeId: origin.scopeId }),
+      ...(scopeId === undefined ? {} : { scopeId }),
       ...(origin === undefined ? {} : { onBehalfOf: origin }),
     });
   }

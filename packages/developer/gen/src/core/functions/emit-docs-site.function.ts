@@ -18,7 +18,13 @@
  *          (`docs_owned_key`) and an API reference service with no manifest (`docs_service_unknown`). The `fumadocs`
  *          renderer also refuses a redirect from a page's own path (`docs_redirect_shadows_page`), a redirect to
  *          neither a page nor an absolute URL (`docs_redirect_target_missing`), and a capitalised tag outside code
- *          that is neither in the component map nor imported by its page (`docs_component_unknown`).
+ *          that is neither in the component map nor imported by its page (`docs_component_unknown`). With
+ *          `locales` (Fumadocs only), a `<page>.<code>.mdx` beside its default page is that page in the locale, served
+ *          under `/<code>/` with the locale's page tree, direction, interface strings and font and the multi-language
+ *          shell; a translation without its default page (`docs_locale_page_orphan`), a default page in a locale's
+ *          folder (`docs_locale_path_taken`) and malformed locales (`docs_locales_invalid`,
+ *          `docs_locales_unsupported` on Mintlify) are refused; a default page with no translation is a warning
+ *          (`docs_locale_page_untranslated`). An empty `locales` writes the site byte for byte as before.
  * Boundary: pure and deterministic: files sorted by path, `docs.json` and `site.json` keys in a fixed order with
  *           `raw` in authored order. When there is a refusal nothing is returned to write. Nothing it returns lands in
  *           `src/`.
@@ -31,13 +37,18 @@
 import { kebabCase } from "@stackra/support";
 
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
+import { DOCS_LOCALE_UI } from "#core/constants/docs-locale-ui.constant";
 import { DOCS_OWNED_KEYS } from "#core/constants/docs-owned-keys.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { openApiOf } from "#core/functions/open-api-of.function";
 import { APP_CSS_TEMPLATE } from "#core/templates/docs-site/app-css.template";
 import { ENTRY_SERVER_TEMPLATE } from "#core/templates/docs-site/entry-server.template";
 import { FOOTER_TEMPLATE } from "#core/templates/docs-site/footer.template";
+import { I18N_LAYOUT_TEMPLATE } from "#core/templates/docs-site/i18n-layout.template";
+import { I18N_PAGE_ROUTE_TEMPLATE } from "#core/templates/docs-site/i18n-page-route.template";
+import { I18N_ROOT_TEMPLATE } from "#core/templates/docs-site/i18n-root.template";
 import { LAYOUT_TEMPLATE } from "#core/templates/docs-site/layout.template";
+import { LOCALE_LIB_TEMPLATE } from "#core/templates/docs-site/locale-lib.template";
 import { MDX_COMPONENTS_TEMPLATE } from "#core/templates/docs-site/mdx-components.template";
 import { NOT_FOUND_ROUTE_TEMPLATE } from "#core/templates/docs-site/not-found-route.template";
 import { PAGE_ROUTE_TEMPLATE } from "#core/templates/docs-site/page-route.template";
@@ -50,6 +61,7 @@ import { SOURCE_TEMPLATE } from "#core/templates/docs-site/source.template";
 import { TSCONFIG_TEMPLATE } from "#core/templates/docs-site/tsconfig.template";
 import { VITE_CONFIG_TEMPLATE } from "#core/templates/docs-site/vite-config.template";
 import type { DocsGroup } from "#core/types/docs-group.type";
+import type { DocsLocale } from "#core/types/docs-locale.type";
 import type { DocsSiteInput } from "#core/types/docs-site-input.type";
 import type { DocsSite } from "#core/types/docs-site.type";
 import type { GenError } from "#core/types/gen-error.type";
@@ -116,6 +128,20 @@ const FUMADOCS_SHELL: readonly (readonly [string, string])[] = [
   ["tsconfig.json", TSCONFIG_TEMPLATE],
   ["vite.config.ts", VITE_CONFIG_TEMPLATE],
 ];
+
+/** The shell files a multi-language site replaces, by path, and the one it adds. */
+const I18N_SHELL: ReadonlyMap<string, string> = new Map([
+  ["app/lib/layout.tsx", I18N_LAYOUT_TEMPLATE],
+  ["app/lib/locale.ts", LOCALE_LIB_TEMPLATE],
+  ["app/root.tsx", I18N_ROOT_TEMPLATE],
+  ["app/routes/page.tsx", I18N_PAGE_ROUTE_TEMPLATE],
+]);
+
+/** A language code: lower case, two or three letters, with an optional upper-case region. */
+const LOCALE_CODE = /^[a-z]{2,3}(?:-[A-Z]{2})?$/;
+
+/** The interface strings, labels and font of `locale`'s base language; undefined for one gen has none for. */
+const uiOf = (locale: DocsLocale) => DOCS_LOCALE_UI[locale.code.split("-")[0] ?? ""];
 
 /** One page read from `src/docs`. */
 type Page = { readonly path: string; readonly content: string };
@@ -196,15 +222,17 @@ function pageTreeOf(
   name: string,
   tabs: readonly { readonly tab: string; readonly groups: readonly Group[] }[],
   title: (id: string) => string,
+  url: (id: string) => string = urlOf,
+  label: (text: string) => string = (text) => text,
 ): unknown {
   const nodes = (group: Group, id: string): unknown[] =>
     group.pages.map((entry, index) =>
       typeof entry === "string"
-        ? { type: "page", name: title(entry), url: urlOf(entry) }
+        ? { type: "page", name: title(entry), url: url(entry) }
         : {
             $id: `${id}.${index}`,
             type: "folder",
-            name: entry.group,
+            name: label(entry.group),
             defaultOpen: true,
             children: nodes(entry, `${id}.${index}`),
           },
@@ -214,10 +242,10 @@ function pageTreeOf(
     children: tabs.map((tab, t) => ({
       $id: `tab.${t}`,
       type: "folder",
-      name: tab.tab,
+      name: label(tab.tab),
       root: true,
       children: tab.groups.flatMap((group, g) => [
-        { $id: `tab.${t}.${g}`, type: "separator", name: group.group },
+        { $id: `tab.${t}.${g}`, type: "separator", name: label(group.group) },
         ...nodes(group, `tab.${t}.${g}`),
       ]),
     })),
@@ -281,6 +309,45 @@ export function emitDocsSite(
   const errors: GenError[] = [];
   const refuse = (code: string, file: string, subject: string, message: string, fix: string) =>
     errors.push({ code, file, line: 0, column: 0, subject, message, fix });
+  const warnings: GenError[] = [];
+
+  // Locales: one default, codes well formed and unique; only the Fumadocs renderer serves more than one language.
+  const locales = config.locales ?? [];
+  if (locales.length > 0) {
+    const codes = locales.map((locale) => locale.code);
+    const defaults = locales.filter((locale) => locale.default === true);
+    if (!fumadocs)
+      refuse(
+        "docs_locales_unsupported",
+        DOCS_CONFIG_FILE,
+        "locales",
+        "`locales` is set, but only a Fumadocs site serves more than one language",
+        "add fumadocs-ui to the docs app's dependencies, or remove `locales`",
+      );
+    for (const code of codes.filter(
+      (each, index) => !LOCALE_CODE.test(each) || codes.indexOf(each) !== index,
+    ))
+      refuse(
+        "docs_locales_invalid",
+        DOCS_CONFIG_FILE,
+        `locales.${code}`,
+        `the locale code ${code} is malformed or listed twice`,
+        "write each code once, lower case with an optional upper-case region (`ar`, `ar-SA`)",
+      );
+    if (defaults.length !== 1)
+      refuse(
+        "docs_locales_invalid",
+        DOCS_CONFIG_FILE,
+        "locales",
+        `${defaults.length} locales are marked default; a site has exactly one`,
+        "set `default: true` on the one locale whose pages are the source pages",
+      );
+  }
+  const others = new Set(
+    locales.filter((locale) => locale.default !== true).map((locale) => locale.code),
+  );
+  // A translated page: `<page>.<code>.mdx`, served as the page `<code>/<page>`.
+  const translations = new Map<string, Page & { readonly base: string; readonly source: string }>();
 
   // Placement: src/ holds docs/, assets/, snippets/ and config/ only.
   const pages = new Map<string, Page>();
@@ -302,11 +369,20 @@ export function emitDocsSite(
           : "move it to the member root, beside package.json",
       );
     else if (file.path.startsWith("docs/")) {
-      if (PAGE.test(file.path))
-        pages.set(file.path.slice("docs/".length).replace(PAGE, ""), {
-          path: file.path.slice("docs/".length),
+      const relative = file.path.slice("docs/".length);
+      const id = relative.replace(PAGE, "");
+      const dot = id.lastIndexOf(".");
+      const code = dot > 0 ? id.slice(dot + 1) : "";
+      if (PAGE.test(file.path) && others.has(code)) {
+        const base = id.slice(0, dot);
+        translations.set(`${code}/${base}`, {
+          path: `${code}/${base}${relative.endsWith(".md") ? ".md" : ".mdx"}`,
           content: file.content ?? "",
+          base,
+          source: where,
         });
+      } else if (PAGE.test(file.path))
+        pages.set(id, { path: relative, content: file.content ?? "" });
       else
         refuse(
           "docs_source_misplaced",
@@ -406,6 +482,39 @@ export function emitDocsSite(
         `list "${id}" (or its folder) in a group of ${DOCS_CONFIG_FILE}, or delete the page`,
       );
 
+  // Translations: each has its default page; a default page in a locale's folder would collide with the locale's paths.
+  for (const [id, translation] of translations)
+    if (!pages.has(translation.base))
+      refuse(
+        "docs_locale_page_orphan",
+        translation.source,
+        id,
+        `${translation.source} translates src/docs/${translation.base}.mdx, which does not exist`,
+        `add src/docs/${translation.base}.mdx in the default locale, or delete the translation`,
+      );
+  for (const id of pages.keys())
+    if (others.has(id.split("/")[0] ?? ""))
+      refuse(
+        "docs_locale_path_taken",
+        `src/docs/${pages.get(id)?.path ?? id}`,
+        id,
+        `src/docs/${pages.get(id)?.path ?? id} sits in the folder of the locale ${id.split("/")[0]}, whose pages are served there`,
+        "move the page to another folder, or write it as a translation (`<page>.<code>.mdx`) beside its default page",
+      );
+  for (const code of others)
+    for (const id of order)
+      if (!translations.has(`${code}/${id}`))
+        warnings.push({
+          code: "docs_locale_page_untranslated",
+          file: `src/docs/${pages.get(id)?.path ?? id}`,
+          line: 0,
+          column: 0,
+          subject: `${code}/${id}`,
+          message: `src/docs/${pages.get(id)?.path ?? id} has no ${code} translation, so the ${code} site links to it`,
+          fix: `add src/docs/${id}.${code}.mdx when the translation is ready`,
+          severity: "warning",
+        });
+
   // Assets: the logo and favicon exist, and every media asset is referenced.
   const known = new Set(assets);
   for (const [field, path] of [
@@ -422,7 +531,7 @@ export function emitDocsSite(
         `add src/assets/${path}, or name an asset that exists`,
       );
   const corpus = [
-    ...[...pages.values()].map((page) => page.content),
+    ...[...pages.values(), ...translations.values()].map((page) => page.content),
     ...snippets.map((snippet) => snippet.content ?? ""),
     ...[config.logo?.light, config.logo?.dark, config.favicon].map((path) => `assets/${path}`),
     JSON.stringify([config.navbar, config.footer, config.raw]),
@@ -493,6 +602,9 @@ export function emitDocsSite(
         `point it at a page path (such as /quickstart) or an https:// URL`,
       );
   }
+  // A translation is checked and written as a page of its own, under its locale's folder.
+  for (const [id, translation] of translations)
+    pages.set(id, { path: translation.path, content: translation.content });
   const content = new Map<string, string>();
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [id, page] of [...pages].sort(([a], [b]) => (a < b ? -1 : 1))) {
@@ -550,7 +662,10 @@ export function emitDocsSite(
   }
 
   if (errors.length > 0) return { errors, files: [], copies: [] };
-  return fumadocsSite(input, tabs, pages, content, snippets, assets, services, llms, order);
+  const site = fumadocsSite(input, tabs, pages, content, snippets, assets, services, llms, order, [
+    ...translations.keys(),
+  ]);
+  return warnings.length === 0 ? site : { ...site, warnings };
 }
 
 /** The Mintlify root of a docs app with no refusal. */
@@ -638,8 +753,10 @@ function fumadocsSite(
   services: readonly Service[],
   llms: readonly string[],
   order: readonly string[],
+  translated: readonly string[] = [],
 ): DocsSite {
   const { config } = input;
+  const locales: readonly DocsLocale[] = config.locales ?? [];
   const reference = services.map((service) => ({
     id: `api-reference/${kebabCase(service.key)}`,
     service,
@@ -660,7 +777,45 @@ function fumadocsSite(
     const text = pages.get(id)?.content ?? generated.get(id) ?? "";
     return frontmatter(text, "sidebarTitle") ?? frontmatter(text, "title") ?? id;
   };
-  const paths = [...order, ...generated.keys()].map(urlOf);
+  const paths = [...order, ...generated.keys(), ...translated].map(urlOf);
+  const has = new Set(translated);
+  const tree = pageTreeOf(config.name, tabs, title);
+  // Per locale: the page in that language where it is translated, else the default page; tab and group names from the
+  // locale's labels, then gen's own, then as authored.
+  const localised =
+    locales.length === 0
+      ? {}
+      : {
+          locales: locales.map((locale) => ({
+            code: locale.code,
+            label: locale.label,
+            dir: locale.dir ?? "ltr",
+            prefix: locale.default === true ? "" : locale.code,
+            font: uiOf(locale)?.font ?? null,
+          })),
+          trees: Object.fromEntries(
+            locales.map((locale) => {
+              if (locale.default === true) return [locale.code, tree];
+              const own = (id: string) =>
+                has.has(`${locale.code}/${id}`) ? `${locale.code}/${id}` : id;
+              const label = (text: string) =>
+                locale.labels?.[text] ?? uiOf(locale)?.labels[text] ?? text;
+              return [
+                locale.code,
+                pageTreeOf(
+                  config.name,
+                  tabs,
+                  (id) => title(own(id)),
+                  (id) => urlOf(own(id)),
+                  label,
+                ),
+              ];
+            }),
+          ),
+          translations: Object.fromEntries(
+            locales.map((locale) => [locale.code, uiOf(locale)?.translations ?? {}]),
+          ),
+        };
 
   const site = {
     name: config.name,
@@ -684,7 +839,8 @@ function fumadocsSite(
     layout: config.raw,
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     paths: [...new Set(paths)].sort(),
-    tree: pageTreeOf(config.name, tabs, title),
+    tree,
+    ...localised,
   };
   const theme = [
     ":root {",
@@ -695,6 +851,19 @@ function fumadocsSite(
     `  --color-fd-primary: ${config.colors.light ?? config.colors.primary};`,
     "}",
     "",
+    // Each locale with its own font sets its pages in it (Arabic in IBM Plex Sans Arabic, at Arabic line height).
+    ...locales.flatMap((locale) => {
+      const font = uiOf(locale)?.font;
+      return font === null || font === undefined
+        ? []
+        : [
+            `html[lang="${locale.code}"] body {`,
+            `  font-family: "${font.family}", ui-sans-serif, system-ui, sans-serif;`,
+            "  line-height: 1.75;",
+            "}",
+            "",
+          ];
+    }),
   ].join("\n");
   const full = order.map((id) => {
     const text = pages.get(id)?.content ?? "";
@@ -703,7 +872,16 @@ function fumadocsSite(
   });
 
   const files: GeneratedFile[] = [
-    ...FUMADOCS_SHELL.map(([path, text]) => ({ path, content: noticed(path, text) })),
+    ...(locales.length === 0
+      ? FUMADOCS_SHELL
+      : [
+          ...FUMADOCS_SHELL.map(([path, text]): readonly [string, string] => [
+            path,
+            I18N_SHELL.get(path) ?? text,
+          ]),
+          ["app/lib/locale.ts", LOCALE_LIB_TEMPLATE] as const,
+        ]
+    ).map(([path, text]) => ({ path, content: noticed(path, text) })),
     { path: "app/site.json", content: `${JSON.stringify(site, null, 2)}\n` },
     { path: "app/theme.css", content: noticed("app/theme.css", theme) },
     { path: "public/llms.txt", content: `${llms.join("\n")}\n` },

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/loyalty-kit",
-  "version": "0.18.1",
+  "version": "0.26.0",
   "private": false,
   "description": "Stackra loyalty kit, the golden capability kit: points accounts, tiers, earning and redemption maths behind the LoyaltyLedger and LoyaltyMembers ports, memory and Postgres ledger drivers (the Postgres one on @stackra/ledger's journal, floored at zero), the loyalty account permissions and policy, the enroll, freeze, expire, redeem and confirm actions, the redemption workflow and its signal, the balance and points-issued queries, versioned events, an extension point with the tier multiplier, settings, the panel resource, overview document and two widgets, web and native renderers, and the members fake, points fixture and balance matcher",
   "keywords": [
@@ -138,7 +138,6 @@
     "@stackra/experience": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/iam": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/ledger": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/money": "workspace:*",
@@ -156,6 +155,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/locking": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
@@ -178,6 +178,7 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "react": "catalog:frontend",
     "react-native": "catalog:mobile"

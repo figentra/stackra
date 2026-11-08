@@ -86,4 +86,33 @@ describe("renderShellPage", () => {
     expect(html).toContain("\\u003c/script>\\u003cb>");
     expect(html).not.toContain("shell.css");
   });
+
+  it("pins each bundle URL the build hashed, on its link and in the import map", () => {
+    const integrity = {
+      [`${BASE}entry.js`]: "sha384-ENTRY",
+      [`${BASE}bundle.css`]: "sha384-CSS",
+      [`${BASE}chunks/late.js`]: "sha384-LATE",
+    };
+    const html = renderShellPage({
+      shell: SHELL,
+      release: { ...RELEASE, integrity },
+      record: RECORD,
+      title: "acme",
+    });
+
+    expect(html).toContain(
+      `<link rel="modulepreload" crossorigin href="${BASE}entry.js" integrity="sha384-ENTRY">`,
+    );
+    expect(html).toContain(`<link rel="modulepreload" crossorigin href="${SHELL.entry}">`);
+    expect(html).toContain(
+      `<link rel="stylesheet" crossorigin href="${BASE}bundle.css" integrity="sha384-CSS">`,
+    );
+    const map = JSON.parse(/<script type="importmap">(.*?)<\/script>/.exec(html)?.[1] ?? "{}");
+    expect(map).toEqual({ ...SHELL.importMap, integrity });
+  });
+
+  it("writes the shell's import map untouched for a bundle built before SRI", () => {
+    const html = renderShellPage({ shell: SHELL, release: RELEASE, record: RECORD, title: "acme" });
+    expect(html).not.toContain("integrity");
+  });
 });

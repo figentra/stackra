@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `emitEncoreDatabase`, a service's Encore database declaration (`.stackra/encore/<member>/database.ts`):
- *          one `SQLDatabase` named after the member (snake case), whose migrations are the compiled
- *          `.stackra/migrations` folder (`MIGRATIONS_DIR`, stackra-248), so Encore provisions the service's own logical
- *          database and applies its migrations. It hands its `connectionString` to `provideDatabaseUrl`, which
+ *          one `SQLDatabase` named after the member (snake case), whose migrations are `./migrations` beside it, the
+ *          compiled `.stackra/migrations` files gen copies there (Encore takes only a local relative path), so Encore
+ *          provisions the service's own logical database and applies its migrations. It hands its `connectionString` to `provideDatabaseUrl`, which
  *          `#stackra/boot` reads through `databaseUrl()` without importing this file (STA-1652).
  * Boundary: pure; written only for a service with a database (`usesDatabase`). The connection string is Encore's at
  *           run time, never read or logged here. Replicas are not an Encore declaration: the boot reads them from the
@@ -14,7 +14,6 @@
  */
 import { snakeCase } from "@stackra/support";
 
-import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -45,8 +44,8 @@ export function emitEncoreDatabase(ir: MemberIR): GeneratedFile | undefined {
       "",
       "/** The service's own database; Encore applies the `.up.sql` files in order. */",
       `export const database = new SQLDatabase(${JSON.stringify(snakeCase(ir.member))}, {`,
-      // Relative to this file, two folders under the member root.
-      `  migrations: ${JSON.stringify(`../../${MIGRATIONS_DIR.slice(".stackra/".length)}`)},`,
+      // Encore takes only a local relative path, so the compiled files are copied beside this one.
+      '  migrations: { path: "./migrations" },',
       "});",
       "",
       "// `#stackra/boot` reads it at connect; every generated Encore file imports this one first.",

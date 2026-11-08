@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `OutboundPush`, one push notification as a `PushTransport` driver sends it: the device, the title and body
  *          already translated, data for the app, how long the push service may hold it, and the Android channel it
- *          shows on.
+ *          shows on, and the action category and buttons the app shows on it.
  * Boundary: a type only. A push shows on a lock screen, so a restricted record's push is its content-free variant.
  * Runtime: isomorphic
  * Governing contract: ADR 0223 (decision 1); ADR 0348 (decision 5: what a lock screen may show); ADR 0255 (2026-10-29
  *                     note: one Android channel per category).
  */
+import type { MessageAction } from "#contracts/types/message-action.type";
 import type { PushTarget } from "#contracts/types/push-target.type";
 
 /** A push ready to send. */
@@ -32,4 +33,13 @@ export interface OutboundPush {
    * id), so the person mutes or changes that category in the system settings; absent uses the app's default channel.
    */
   readonly channelId?: string;
+
+  /**
+   * The action category the app registered for this kind of push (Expo `categoryId`), whose buttons the system shows;
+   * absent shows none. The app must register it, or the push shows without buttons.
+   */
+  readonly category?: string;
+
+  /** The links behind the category's buttons, in its order, for the app to open; absent or empty has none. */
+  readonly actions?: readonly MessageAction[];
 }

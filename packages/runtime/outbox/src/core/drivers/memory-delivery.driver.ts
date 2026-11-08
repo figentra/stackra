@@ -3,7 +3,8 @@
  * Purpose: `MemoryDeliveryDriver`, the `DeliveryDriver` of a test or a single process: cross-app deliveries in process
  *          memory, the envelope stored as JSON as Postgres stores it, unique on (event id, subscriber, type), listed in
  *          the order and with the per-subscriber limit Postgres lists them.
- * Boundary: no transaction: a write is kept at once (the Postgres driver is the transactional one).
+ * Boundary: no transaction: a write is kept at once (the Postgres driver is the transactional one). No tenant is kept,
+ *           so every claim is a platform row's, which needs no isolation.
  * Runtime: isomorphic
  * Governing contract: ADR 0511 (decisions 12 and 13, amendment of 2026-11-02); ADR 0142; ADR 0266 (memory first).
  */
@@ -11,7 +12,7 @@ import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
 
 import { DeliveryDriver } from "#contracts/index";
-import type { Delivery, DeliveryError, DeliveryState } from "#contracts/index";
+import type { Delivery, DeliveryClaim, DeliveryError, DeliveryState } from "#contracts/index";
 import { deliveryStateOf } from "#core/functions/delivery-state-of.function";
 
 /** Oldest written first, by id within one instant. */
@@ -28,6 +29,15 @@ function byOrder(left: Delivery, right: Delivery): number {
     (left.subscriber < right.subscriber ? -1 : left.subscriber > right.subscriber ? 1 : 0) ||
     byAge(left, right)
   );
+}
+
+/** The claim of a kept delivery: memory keeps no tenant, so every delivery is a platform row. */
+function claimOf(delivery: Delivery): DeliveryClaim {
+  return Object.freeze({
+    id: delivery.id,
+    subscriber: delivery.subscriber,
+    state: deliveryStateOf(delivery),
+  });
 }
 
 /**
@@ -59,7 +69,7 @@ export class MemoryDeliveryDriver extends Driver(DeliveryDriver) {
   }
 
   /** Implements `DeliveryDriver.lease`, documented there. */
-  lease(now: Date, limit: number, until: Date): Promise<readonly Delivery[]> {
+  lease(now: Date, limit: number, until: Date): Promise<readonly DeliveryClaim[]> {
     const taken = new Map<string, number>();
     const due = [...this.deliveries.values()]
       .filter((each) => each.deadAt === undefined && each.availableAt.getTime() <= now.getTime())
@@ -72,7 +82,12 @@ export class MemoryDeliveryDriver extends Driver(DeliveryDriver) {
       })
       .map((each) => Object.freeze({ ...each, availableAt: until }));
     for (const each of due) this.deliveries.set(each.id, each);
-    return Promise.resolve(due);
+    return Promise.resolve(due.map(claimOf));
+  }
+
+  /** Implements `DeliveryDriver.load`, documented there. */
+  load(id: PublicId<"dlv">): Promise<Delivery | undefined> {
+    return Promise.resolve(this.deliveries.get(id));
   }
 
   /** Implements `DeliveryDriver.remove`, documented there. */
@@ -95,19 +110,21 @@ export class MemoryDeliveryDriver extends Driver(DeliveryDriver) {
 
   /** Implements `DeliveryDriver.list`, documented there. */
   list(filter: {
+    readonly id?: PublicId<"dlv">;
     readonly subscriber?: string;
     readonly state?: DeliveryState;
     readonly limit: number;
-  }): Promise<readonly Delivery[]> {
+  }): Promise<readonly DeliveryClaim[]> {
     const listed = [...this.deliveries.values()]
       .filter(
         (each) =>
+          (filter.id === undefined || each.id === filter.id) &&
           (filter.subscriber === undefined || each.subscriber === filter.subscriber) &&
           (filter.state === undefined || deliveryStateOf(each) === filter.state),
       )
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort(byAge);
-    return Promise.resolve(listed.slice(0, filter.limit));
+    return Promise.resolve(listed.slice(0, filter.limit).map(claimOf));
   }
 
   /** Implements `DeliveryDriver.replay`, documented there. */

@@ -49,4 +49,7 @@ export interface FieldIR {
 
   /** `@Hidden`: the field never goes out on the wire, so `X$` and the manifest's JSON Schema leave it out (stackra-260). */
   readonly hidden?: true;
+
+  /** `@ShownOnce`: the caller sees the field once; the idempotency store never keeps it (STA-2568). */
+  readonly shownOnce?: true;
 }

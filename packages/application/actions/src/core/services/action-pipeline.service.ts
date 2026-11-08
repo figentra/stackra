@@ -24,7 +24,9 @@
  *          live-configuration guard run first; then, when a `CallIsolation` is bound, everything after them (permission,
  *          approval, idempotency, rate limit, interceptors, the unit of work and `handle`) runs inside it, in one
  *          transaction whose scope and tenant settings are transaction-local and from the verified actor (an action
- *          writable, a query read-only). The action's unit of work is then a savepoint of that transaction (the default
+ *          writable, a query read-only); the descriptor's and the context's `scopeId` are then the tenant the isolation
+ *          runs as (a branch user's parent tenant), so every tenant-labelled write, the rate-limit and idempotency keys
+ *          among them, is per tenant, and the branch stays on `descriptor.branchScopeId`. The action's unit of work is then a savepoint of that transaction (the default
  *          propagation: its `timeout` and its rollback hold, and it is not `requiresNew`), so a call commits once, when
  *          the isolation transaction ends. What waits for that commit runs after it: the idempotency `complete`, the
  *          offline cap record, the read-your-writes mark and `ctx.afterCommit` work. The audit's refusal entries and a
@@ -68,6 +70,8 @@
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
+  actingScopeId,
+  type Actor,
   ActorKind,
   type ApiArea,
   ApprovalSettingsSource,
@@ -162,6 +166,7 @@ import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
+import { keptOutput } from "#core/functions/kept-output.function";
 import { limitedSettingsReader } from "#core/functions/limited-settings-reader.function";
 import { mergeApprovalRequirements } from "#core/functions/merge-approval-requirements.function";
 import { periodOf } from "#core/functions/period-of.function";
@@ -197,6 +202,7 @@ interface Recorded {
   readonly interceptors: readonly AnyClass<Interceptor>[];
   readonly preconditions?: readonly AnyClass<Precondition>[];
   readonly idempotency?: Idempotency;
+  readonly idempotencyTtl?: Duration;
   readonly rateLimit?: ActionRateLimit;
   readonly offline?: OfflineOptions;
   readonly accepts?: ActionAccepts;
@@ -243,11 +249,13 @@ interface Call {
   readonly kind: "action" | "query";
   readonly options: Recorded;
   readonly registration: ActionRegistration | undefined;
-  readonly descriptor: CallDescriptor;
+  /** Replaced once, with the tenant the isolation runs as, when that is not the actor's own claim (`isolated`). */
+  descriptor: CallDescriptor;
   readonly request: CallOptions;
   readonly at: Date;
   readonly state: CallState;
-  readonly ctx: QueryContext | ActionContext;
+  /** Replaced with `descriptor`. */
+  ctx: QueryContext | ActionContext;
 }
 
 /** An instance whose `handle` the pipeline calls. */
@@ -387,6 +395,8 @@ export class ActionPipeline {
     const registration = ACTION_REGISTRY.get(type);
     const at = this.optional(Clock)?.now() ?? new Date();
     const { actor } = request;
+    // an agent with no tenant of its own acts in its human's (ADR 0360); a branch until the isolation names its tenant
+    const scopeId = actingScopeId(actor);
     const descriptor: CallDescriptor = Object.freeze({
       callId: request.callId ?? globalThis.crypto.randomUUID(),
       type,
@@ -398,7 +408,7 @@ export class ActionPipeline {
         ? {}
         : { effects: Object.freeze([...(registration?.effects ?? options.effects ?? [])]) }),
       actor,
-      ...(actor.scopeId === undefined ? {} : { scopeId: actor.scopeId }),
+      ...(scopeId === undefined ? {} : { scopeId, branchScopeId: scopeId }),
       ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
       ...(request.sandbox === true ? { sandbox: true as const } : {}),
@@ -427,7 +437,7 @@ export class ActionPipeline {
    * then what waits for the isolation transaction's commit.
    */
   private async steps(call: Call, raw: unknown): Promise<unknown> {
-    const { descriptor, kind } = call;
+    const { kind } = call;
     await this.checkedTenancy(call);
     // read before the isolation opens its own: a call that joined a running transaction does not own the commit
     call.state.joined = kind === "action" && (this.optional(UnitOfWork)?.inTransaction() ?? false);
@@ -464,13 +474,16 @@ export class ActionPipeline {
     if (claim !== undefined && "replay" in claim) return output;
     try {
       if (kind === "action")
-        await this.optional(ReplicaReads)?.wrote(this.writerOf(descriptor), call.at);
+        await this.optional(ReplicaReads)?.wrote(this.writerOf(call.descriptor), call.at);
       if (claim !== undefined)
-        await this.required(IdempotencyStore, "").complete(claim.held, output);
+        await this.required(IdempotencyStore, "").complete(
+          claim.held,
+          keptOutput(call.registration?.output, output),
+        );
       if (amount !== undefined && call.request.device?.sequence !== undefined)
         await this.required(OfflineCapStore, "").record(
           call.request.device.deviceId,
-          descriptor.key,
+          call.descriptor.key,
           call.at,
           amount,
         );
@@ -495,13 +508,24 @@ export class ActionPipeline {
 
   /**
    * Runs `work` in the call's `CallIsolation` transaction, built from the verified actor and the call's scope (a
-   * query read-only, an action and a proposal writable); with none bound it runs as it is.
+   * query read-only, an action and a proposal writable); with none bound it runs as it is. When the isolation runs as
+   * another tenant than the actor claims (a branch's parent tenant), the call's descriptor and context take that tenant
+   * as `scopeId` first, so what the call writes carries the tenant the isolation set.
    */
   private isolated<T>(call: Call, work: () => Promise<T>): Promise<T> {
     const isolation = this.optional(CallIsolation);
     if (isolation === undefined) return work();
     const { actor, scope } = call.descriptor;
-    return isolation.run(actor, scope, work, { readOnly: call.kind === "query" });
+    // an isolation that hands no actor (a test stand-in) leaves the call as it was built
+    const settled = (runAs?: Actor): Promise<T> => {
+      const scopeId = runAs === undefined ? undefined : actingScopeId(runAs);
+      if (scopeId === undefined || scopeId === call.descriptor.scopeId) return work();
+      call.descriptor = Object.freeze({ ...call.descriptor, scopeId });
+      call.ctx = this.contextOf(call.descriptor, call.request, call.at, call.state);
+      const storage = this.optional(ContextStorage);
+      return storage === undefined ? work() : storage.run(call.ctx, work);
+    };
+    return isolation.run(actor, scope, settled, { readOnly: call.kind === "query" });
   }
 
   /**
@@ -556,7 +580,7 @@ export class ActionPipeline {
     );
     const execute =
       declared === undefined ? ApprovalExecution.OnResubmit : ApprovalExecution.OnGrant;
-    const scopeId = descriptor.scopeId ?? descriptor.actor.scopeId;
+    const { scopeId } = descriptor;
     if (scopeId === undefined) throw ForbiddenError.create();
     call.state.parking = {
       binding: {
@@ -854,6 +878,8 @@ export class ActionPipeline {
     input: unknown,
   ): Promise<{ readonly held: string } | { readonly replay: unknown } | undefined> {
     const policy = call.options.idempotency ?? Idempotency.Optional;
+    // its output must never be kept (a credential): a sent key is ignored, so nothing is stored or replayed
+    if (policy === Idempotency.Never) return undefined;
     const sent = call.request.idempotencyKey;
     if (sent === undefined && policy === Idempotency.Required)
       throw IdempotencyKeyRequiredError.create();
@@ -870,7 +896,13 @@ export class ActionPipeline {
     // a store outside the transaction would mark the key done before the outer commit, which may still fail
     if (call.state.joined && !store.joinsTransaction)
       throw IdempotencyStoreNotTransactionalError.create();
-    const earlier = await store.claim(scoped, fingerprint, IDEMPOTENCY_TTL);
+    const own = call.options.idempotencyTtl;
+    // an action may shorten the window, never lengthen it past the 24 hours of ADR 0136
+    const ttl =
+      own !== undefined && Duration.toMilliseconds(own) < Duration.toMilliseconds(IDEMPOTENCY_TTL)
+        ? own
+        : IDEMPOTENCY_TTL;
+    const earlier = await store.claim(scoped, fingerprint, ttl);
     if (earlier === undefined) return { held: scoped };
     if (!earlier.done || earlier.fingerprint !== fingerprint)
       throw IdempotencyKeyReusedError.create();

@@ -183,6 +183,9 @@ HeroUI's `color` and `truncate` are refused by the type, as they are `tone` and 
 `Button`, `IconButton` and `CloseButton` are thin wrappers over HeroUI's own buttons (`Button` and `CloseButton` on
 web, `Button` and `CloseButton` on native). Every HeroUI prop the contract does not name passes through, the native
 press feedback (`feedbackVariant`, `animation`, `background`) included; the look is HeroUI's, themed by the tokens.
+On the web, `href` (with an optional `target`) draws the button as a link: React Aria's `Link` with the same HeroUI
+classes, which navigates through the nearest `RouterProvider`. HeroUI v3's button has no `as`, so `as="a"` is not the
+way; a disabled or loading `href` button stays a button.
 
 | Prop                   | Does                                                                                                          | HeroUI v3 (web) | HeroUI Native                       |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------- |

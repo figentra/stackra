@@ -22,6 +22,8 @@ describe("CSP_OPTIONS_SCHEMA", () => {
       hstsPreload: false,
       referrerPolicy: "strict-origin-when-cross-origin",
       permissionsAllow: {},
+      frameAncestors: {},
+      thirdPartyScripts: {},
     });
   });
 

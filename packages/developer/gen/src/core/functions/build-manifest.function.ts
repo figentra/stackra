@@ -16,7 +16,8 @@
  *          host's wiring knows its configs without guessing from a name (STA-1308). It reports the identity checks it
  *          can see: `identity_collision`, `override_duplicate`, `permission_unknown`, `identity_missing`,
  *          `action_risk_below_write` (an action whose permission is L0 or L1, STA-2096), the public id prefix checks
- *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, the call-shape refusals
+ *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `data_class_unknown` (an
+ *          action's or query's `dataClass`, recorded on its entry, STA-2594), the call-shape refusals
  *          of `checkCallShape` (`query_above_l1`, `query_precondition`, `action_cache`, `step_up_missing`,
  *          `idempotency_missing`), `effect_unknown`,
  *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
@@ -75,6 +76,7 @@ import { additionsOf } from "#core/functions/additions-of.function";
 import { blockKey } from "#core/functions/block-key.function";
 import { checkCallShape } from "#core/functions/check-call-shape.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
+import { connectionOf } from "#core/functions/connection-of.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
@@ -88,6 +90,7 @@ import { modelEntityFacts } from "#core/functions/model-entity-facts.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
 import { roleKey } from "#core/functions/role-key.function";
+import { exportingSpecifier } from "#core/functions/exporting-specifier.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
@@ -117,6 +120,9 @@ import type { TokenRef } from "#core/types/token-ref.type";
 
 /** A written Integration key: two snake_case parts joined by a dot (STA-1739). */
 const INTEGRATION_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
+/** A data class key, built in (`financial`) or a product's (`clinical_note`): snake_case, as `DataClass` checks. */
+const DATA_CLASS_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 
 /** A manifest entry under construction. */
 type Entry = { [key: string]: Json };
@@ -410,10 +416,14 @@ export function buildManifest(ir: MemberIR): {
             `add \`${name}\` to the input, use a verb whose route takes no id, or write \`endpoint: { method, path }\``,
           );
     }
-    // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason.
+    // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason. An
+    // action of risk L3 or L4 (money, deletion, access) is not a tool by default: an agent reaches it only through an
+    // explicit `tool: true` with a reason, recorded in the manifest (owner security decision 2026-11-08).
     const tool = declared.options["tool"];
     const userFacing = actors?.includes("user") ?? false;
-    const toolEnabled = tool === true || (tool !== false && (kind === "query" || userFacing));
+    const highRisk = kind === "action" && (risk === "L3" || risk === "L4");
+    const toolEnabled =
+      tool === true || (tool !== false && !highRisk && (kind === "query" || userFacing));
     const toolReason =
       typeof declared.options["toolReason"] === "string"
         ? declared.options["toolReason"]
@@ -424,6 +434,13 @@ export function buildManifest(ir: MemberIR): {
         "tool_reason_missing",
         `${kind} a user can perform says \`tool: false\` without a reason`,
         "add a `// reason: <why an agent may not call it>` line above `tool: false`",
+      );
+    if (tool === true && highRisk && toolReason === undefined)
+      fail(
+        declared,
+        "tool_reason_missing",
+        `${kind} of risk ${risk} says \`tool: true\` without a reason`,
+        "add a `// reason: <why an agent may call it>` line above `tool: true`, or remove `tool: true`",
       );
     errors.push(
       ...checkCallShape(declared, { risk, routed: endpoint !== undefined, tool: toolEnabled }),
@@ -457,7 +474,20 @@ export function buildManifest(ir: MemberIR): {
       risk: risk ?? (kind === "query" ? "L0" : "L2"),
     };
     if (actors !== undefined) entry["actors"] = actors;
+    if (kind === "query" && typeof declared.options["riskReason"] === "string")
+      entry["riskReason"] = declared.options["riskReason"];
     if (effects.length > 0) entry["effects"] = effects;
+    // The data class it handles, so the AI gateway routes a run in region by it (STA-2594).
+    const dataClass = declared.options["dataClass"];
+    if (typeof dataClass === "string" && DATA_CLASS_KEY.test(dataClass))
+      entry["dataClass"] = dataClass;
+    else if (dataClass !== undefined)
+      fail(
+        declared,
+        "data_class_unknown",
+        `\`dataClass\` names no data class gen can read`,
+        "use a `DataClassification` value or a `DataClass({ key })` class from an `access/` group",
+      );
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
@@ -480,16 +510,18 @@ export function buildManifest(ir: MemberIR): {
       entry["tool"] = {
         name: toolName(key),
         default: tool === undefined,
+        ...(tool === true && highRisk && toolReason !== undefined ? { reason: toolReason } : {}),
         hints: toolHints({
           kind,
           risk: String(entry["risk"]),
           effects,
-          idempotent:
-            declared.options["idempotency"] !== undefined &&
-            declared.options["idempotency"] !== false,
+          idempotency: declared.options["idempotency"],
         }),
       };
     else if (toolReason !== undefined) entry["toolOff"] = toolReason;
+    else if (highRisk && userFacing)
+      entry["toolOff"] =
+        `risk ${risk}: not a tool unless the action says \`tool: true\` with a reason`;
     // A query gen writes itself answers a package shape, described under the module (STA-1459).
     const packageRef = (name: string | undefined): Entry | undefined =>
       name !== undefined && declared.file.startsWith(".stackra/") && name in GENERATED_QUERY_SCHEMAS
@@ -635,9 +667,7 @@ export function buildManifest(ir: MemberIR): {
     const key =
       typeof written === "string" ? written : integrationKey(declared.module, declared.name);
     claim(`integration:${key}`, declared);
-    const connection = ir.classes.find(
-      (candidate) => candidate.kind === "connection" && candidate.partner?.name === declared.name,
-    );
+    const connection = connectionOf(ir.classes, declared.name);
     // The listing's roles (ADR 0355 d1): the declared ones, plus `webhooks` when the provider sends us events.
     const declaredRoles = Array.isArray(declared.options["roles"])
       ? declared.options["roles"].map(String)
@@ -902,8 +932,14 @@ export function buildManifest(ir: MemberIR): {
     }
   >();
   const published = ir.layout === "package";
+  // why: a package may export a class from another entry than its folder's (`@stackra/app`'s configs from `./server`)
+  const exportedFrom = (name: string, specifier: string): string =>
+    exportingSpecifier(ir.package, ir.files, name, specifier);
   const publicToken = (dep: TokenRef): Entry => ({
-    class: { name: dep.class.name, from: publicSpecifier(ir.package, dep.class.from) },
+    class: {
+      name: dep.class.name,
+      from: exportedFrom(dep.class.name, publicSpecifier(ir.package, dep.class.from)),
+    },
     ...(dep.named !== undefined ? { named: dep.named } : {}),
     ...(dep.of !== undefined
       ? { of: { name: dep.of.name, from: publicSpecifier(ir.package, dep.of.from) } }
@@ -940,21 +976,42 @@ export function buildManifest(ir: MemberIR): {
         ...entry.classes,
         [name]: {
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
         },
       };
     drivers.set(key, entry);
   }
   // A published package's services with their constructor tokens, so a host's wiring binds one it injects
-  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686).
+  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686), and the
+  // model a `CrudService<M>` is typed against (`partner`), so the host registers the pair (ADR 0305 rule 5). Its
+  // extension points too: its services inject them, so a host binds them alongside (`LoyaltyKitExtensionPoint`).
+  // Its actions and queries too: they are its module's surface, which a host that imports the module binds.
   const services: Entry[] = published
     ? ir.classes
-        .filter((candidate) => candidate.kind === "service" && candidate.abstract !== true)
+        .filter(
+          (candidate) =>
+            (candidate.kind === "service" ||
+              candidate.kind === "extension_point" ||
+              candidate.kind === "action" ||
+              candidate.kind === "query") &&
+            candidate.abstract !== true,
+        )
         .map((declared) => ({
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
+          ...(declared.partner === undefined
+            ? {}
+            : {
+                partner: {
+                  name: declared.partner.name,
+                  from: exportedFrom(
+                    declared.partner.name,
+                    publicSpecifier(ir.package, declared.partner.from),
+                  ),
+                },
+              }),
         }))
     : [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
@@ -970,7 +1027,7 @@ export function buildManifest(ir: MemberIR): {
           if (published)
             entry.config = {
               class: declared.name,
-              from: packageSpecifier(ir.package, declared.file),
+              from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
             };
         }
     }
@@ -1104,6 +1161,15 @@ export function buildManifest(ir: MemberIR): {
         }
     }
 
+  // A contracts-only dependency adds just its contracts events, from its `./contracts` entry (STA-2567).
+  if (ir.layout !== "package")
+    for (const dependency of ir.contractsDependencies ?? [])
+      for (const item of (dependency.manifest.events ?? []) as unknown as readonly Entry[])
+        eventEntries.push({
+          ...(rehome(item, dependency.package) as Entry),
+          from: dependency.package,
+        });
+
   // Each record policy with the model it judges, own then hosted (`from`), so a host registers its packages' policies
   // too; the base's type argument is gone at runtime, so this is where the pair is kept (ADR 0132 as amended,
   // STA-2045). Written only when there is one, so a member without policies keeps its manifest.
@@ -1142,7 +1208,7 @@ export function buildManifest(ir: MemberIR): {
         .map((declared) => ({
           key: configKeyOf(declared.name, ir.member),
           class: declared.name,
-          from: packageSpecifier(ir.package, declared.file),
+          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
         }))
     : [];
 

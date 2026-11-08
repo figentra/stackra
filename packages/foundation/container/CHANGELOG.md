@@ -1,5 +1,60 @@
 # @stackra/container
 
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/contracts@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/contracts@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/contracts@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/contracts@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/contracts@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- a7b7e58: `@Replaces(Port)` now builds the replacement with its constructor dependencies: gen writes the replacement's
+  constructor tokens on each `replaces` row (`deps`), and the container passes them, as it does for any driver. Before,
+  the replacement was built with none and its injected fields were silently undefined.
+- @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+
 ## 0.18.1
 
 ### Patch Changes

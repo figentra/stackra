@@ -4,7 +4,8 @@
  *          the routes and menus of its `react` and `native` entries (with the page beside each route) in `ui.routes` and
  *          `ui.menus`, never a `node` one; an app lists them on the runtime their entry serves, imported from
  *          `<package>/<entry>`, a clashing class name imported under its module's, and registers every menu; one key
- *          from two owners, or the app's own, is refused.
+ *          from two owners, or the app's own, is refused; the package's own `Routes` refs carry the keys `ui.routes`
+ *          records, one per stem.
  * Boundary: test only; runs on the loyalty kit and web app IR fixtures with UI classes added.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0111 (decisions 1, 3 and 4); ADR 0053; STA-1947.
@@ -15,6 +16,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 import { buildManifest } from "#core/functions/build-manifest.function";
+import { emitPackageRoutes } from "#core/functions/emit-package-routes.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { hostRoutesOf } from "#core/functions/host-routes-of.function";
 import { uiMenusOf } from "#core/functions/ui-menus-of.function";
@@ -167,5 +169,27 @@ describe("the route tables of an app with UI dependencies", () => {
     expect(
       hostRoutesOf({ ...APP, classes: [...APP.classes, mine] }).errors.map((error) => error.code),
     ).toEqual(["menu_duplicate"]);
+  });
+});
+
+describe("emitPackageRoutes", () => {
+  /** A package's pages link its own routes by ref, under the keys its host registers. */
+  it("writes one ref per stem, keyed as ui.routes records it, and nothing for an app", () => {
+    const [file] = emitPackageRoutes(KIT);
+    expect(file?.path).toBe(".stackra/gen/routes.ts");
+    expect(file?.content).toContain('import { routeRef } from "@stackra/navigation";');
+    expect(file?.content).toContain(
+      'import type { PointsRoute } from "#react/points/points.route";',
+    );
+    expect(file?.content).toContain(
+      '  points: routeRef<typeof PointsRoute>("loyalty_kit_points"),',
+    );
+    // The react and native classes of one stem are one ref; a node route is no UI route.
+    expect(file?.content.match(/routeRef</g)).toHaveLength(1);
+    const keys = new Set(uiRoutesOf(KIT).map(({ key }) => key));
+    expect(
+      [...(file?.content.matchAll(/routeRef<[^>]+>\("([^"]+)"\)/g) ?? [])].map(([, key]) => key),
+    ).toEqual([...keys]);
+    expect(emitPackageRoutes(WEB_APP_IR)).toEqual([]);
   });
 });

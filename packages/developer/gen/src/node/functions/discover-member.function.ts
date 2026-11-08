@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
- *          class, shape, enum, shell slot, slot fill and file export of its own sources (sorted by path), its dependency package names and the
+ *          class, shape, enum, shell slot, slot fill and file export of its own sources (sorted by path; a subclassed
+ *          connection paired with its same-stem integration by `pairSubclassConnections`), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
  *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, the anchors its components declare and refer to (`readAnchors`, STA-1631), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port, the writes that skip the unit of work (`readNativeWrites`, stackra-262) and the
- *          `t.searchable` literals of its migrations (`readSearchableColumns`, data-layer gap se10) and an app's static
+ *          `t.searchable` literals and tenant columns of its migrations (`readSearchableColumns`, data-layer gap se10;
+ *          `readMigrationTables`) and an app's static
  *          `defineApp` data and icon sets (`readAppDefinition`), and a service's runway `events` blocks
  *          (`readRunwayEvents`, ADR 0511 d16 and d17): the
  *          `MemberIR` every gen output is a pure function of.
@@ -24,9 +26,11 @@ import { dirname, join } from "node:path";
 import { kebabCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
+import { GEN_REACHED_PORTS } from "#core/constants/gen-reached-ports.constant";
 import { driverName } from "#core/functions/driver-name.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
+import { pairSubclassConnections } from "#core/functions/pair-subclass-connections.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
@@ -37,13 +41,16 @@ import type { SlotIR } from "#core/types/slot-ir.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
 import { createSourceReader } from "#node/functions/create-source-reader.function";
 import { openHost } from "#node/functions/open-host.function";
+import { contractsOnlyManifest } from "#core/functions/contracts-only-manifest.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
+import { readTransitiveDependencies } from "#node/functions/read-transitive-dependencies.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
 import { readAnchors } from "#node/functions/read-anchors.function";
 import { readAppDefinition } from "#node/functions/read-app-definition.function";
 import { readCatalogues } from "#node/functions/read-catalogues.function";
 import { readI18nReferences } from "#node/functions/read-i18n-references.function";
 import { readNativeWrites } from "#node/functions/read-native-writes.function";
+import { readMigrationTables } from "#node/functions/read-migration-tables.function";
 import { readSearchableColumns } from "#node/functions/read-searchable-columns.function";
 import { readPackageCatalogues } from "#node/functions/read-package-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
@@ -65,6 +72,24 @@ function withDrivers(type: TypeDesc, names: ReadonlyMap<string, readonly string[
     }
     default: {
       return type;
+    }
+  }
+}
+
+/** The ports of every `DriverName<Port>` in a type. */
+function driverPortsOf(type: TypeDesc): readonly string[] {
+  switch (type.kind) {
+    case "driver_name": {
+      return [type.port];
+    }
+    case "array": {
+      return driverPortsOf(type.element);
+    }
+    case "record": {
+      return driverPortsOf(type.value);
+    }
+    default: {
+      return [];
     }
   }
 }
@@ -97,21 +122,63 @@ export async function discoverMember(
       facts,
       options.includeTests === true ? { includeTests: true } : {},
     );
-    const classes: DeclaredClass[] = [];
+    const read: DeclaredClass[] = [];
     const shapes: ShapeIR[] = [];
     const enums: EnumIR[] = [];
     const files: FileExports[] = [];
     const slots: SlotIR[] = [];
     const fills: SlotFillIR[] = [];
     for (const file of reader.sources) {
-      classes.push(...reader.classes(file));
+      read.push(...reader.classes(file));
       slots.push(...reader.slots(file));
       fills.push(...reader.fills(file));
       shapes.push(...reader.shapes(file));
       enums.push(...reader.enums(file));
       files.push(reader.exports(file));
     }
-    const dependencies = readDependencyManifests(facts.root, facts.dependencies);
+    // A subclassed connection takes its same-stem integration, else its base's, once every class is read.
+    const paired = pairSubclassConnections(read);
+    const classes = [...paired.classes];
+    // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): it leaves the
+    // declared packages, so nothing of it (models, migrations, wiring) is hosted, and its events are carried. A
+    // package one of whose driver ports the member injects or names in a `DriverName<Port>` field stays hosted, or no
+    // driver of it would bind the port or fill the field; so does one driving a port gen binds without injection.
+    const importedBy = reader.packageImports();
+    const ports = new Set([
+      ...classes.flatMap((declared) => declared.deps.map((dep) => dep.class.name)),
+      ...shapes.flatMap((shape) => shape.fields.flatMap((field) => driverPortsOf(field.type))),
+      // the ports gen binds without injection in a service or an app (STA-2584)
+      ...(facts.layout === "package" ? [] : GEN_REACHED_PORTS),
+    ]);
+    const contractsImported = facts.dependencies.filter((name) => {
+      const specifiers = importedBy.get(name);
+      return (
+        specifiers !== undefined &&
+        specifiers.size > 0 &&
+        [...specifiers].every((from) => from === `${name}/contracts`)
+      );
+    });
+    const portHosts = new Set(
+      readDependencyManifests(facts.root, contractsImported)
+        .filter((dependency) =>
+          (dependency.manifest.drivers ?? []).some((driver) => ports.has(driver.port)),
+        )
+        .map((dependency) => dependency.package),
+    );
+    const contractsOnly = new Set(contractsImported.filter((name) => !portHosts.has(name)));
+    const contractsDependencies = readDependencyManifests(facts.root, [...contractsOnly]).map(
+      (dependency) => ({
+        package: dependency.package,
+        manifest: contractsOnlyManifest(dependency.manifest),
+      }),
+    );
+    const declaredPackages = facts.dependencies.filter((name) => !contractsOnly.has(name));
+    const runtimeDeclared = (facts.runtimeDependencies ?? []).filter(
+      (name) => !contractsOnly.has(name),
+    );
+    const dependencies = readDependencyManifests(facts.root, declaredPackages);
+    // The undeclared packages those wire from, so a refusal names the whole missing set at once.
+    const transitive = readTransitiveDependencies(facts.root, dependencies, facts.dependencies);
     // A service is consumed by an injected client, by a listener of one of its events, or by any file importing it.
     const clientImports = reader.clientImports();
     const consumed = [
@@ -125,7 +192,7 @@ export async function discoverMember(
     const catalogues = readCatalogues(facts.root);
     // The lang its runtime packages ship, found like their manifests, and the keys its files use (STA-1298). A
     // devDependency's lang never reaches the runtime, so it is neither merged nor a clash (STA-1309).
-    const shippedCatalogues = readPackageCatalogues(facts.root, facts.runtimeDependencies ?? []);
+    const shippedCatalogues = readPackageCatalogues(facts.root, runtimeDeclared);
     const i18nReferences = readI18nReferences(facts.root);
     // The anchors its components declare, which an app's client tools point at (ADR 0490).
     const { anchors, references: anchorReferences } = readAnchors(facts.root);
@@ -133,6 +200,8 @@ export async function discoverMember(
     const nativeWrites = readNativeWrites(facts.root);
     // The search columns each migration declares, refused when a facet drifts from them (data-layer gap se10).
     const searchableColumns = readSearchableColumns(facts.root, facts.layout, facts.member);
+    // The tables each migration gives the tenant column, refused when an owned model's never gets it (ADR 0239 d1).
+    const migrationTables = readMigrationTables(facts.root, facts.layout, facts.member);
     // A relay service hears every integration topic of the product (ADR 0260 decision 4).
     const publishers =
       facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
@@ -231,9 +300,18 @@ export async function discoverMember(
       files,
       ...(slots.length > 0 ? { slots } : {}),
       ...(fills.length > 0 ? { fills } : {}),
-      packages: facts.dependencies,
-      runtimePackages: facts.runtimeDependencies ?? [],
+      packages: declaredPackages,
+      runtimePackages: runtimeDeclared,
       dependencies,
+      ...(contractsDependencies.length > 0 ? { contractsDependencies } : {}),
+      ...(transitive.length > 0
+        ? {
+            transitiveDependencies: {
+              specifier: facts.stackraSpecifier ?? "catalog:stackra",
+              packages: transitive,
+            },
+          }
+        : {}),
       ...(services.length > 0 ? { services } : {}),
       ...(eventsRelay !== undefined ? { eventsRelay } : {}),
       ...(publishers.length > 0 ? { publishers } : {}),
@@ -246,7 +324,8 @@ export async function discoverMember(
       ...(anchorReferences.length > 0 ? { anchorReferences } : {}),
       ...(nativeWrites.length > 0 ? { nativeWrites } : {}),
       ...(searchableColumns.length > 0 ? { searchableColumns } : {}),
-      errors: [...reader.errors, ...appDefinition.errors],
+      ...(migrationTables.length > 0 ? { migrationTables } : {}),
+      errors: [...reader.errors, ...paired.errors, ...appDefinition.errors],
     };
   } finally {
     host.close();

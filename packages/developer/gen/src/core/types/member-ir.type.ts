@@ -111,6 +111,30 @@ export interface MemberIR {
   }[];
 
   /**
+   * The undeclared `@stackra/*` packages the declared packages' manifests wire from, found through the packages that
+   * brought them in, each with the packages its own manifest wires from, and the version specifier the member uses
+   * for its `@stackra/*` dependencies. Read only to refuse the whole missing set at once; never hosted. Absent when
+   * none, and in an IR built by hand.
+   */
+  readonly transitiveDependencies?: {
+    readonly specifier: string;
+    readonly packages: readonly {
+      readonly package: string;
+      readonly requires: readonly string[];
+    }[];
+  };
+
+  /**
+   * The dependencies the member imports only through their `./contracts` entry, each with the part of its manifest a
+   * host carries (its contracts events). They are hosted contracts-only: no model, migration or action (STA-2567).
+   * Absent when none, and in an IR built by hand.
+   */
+  readonly contractsDependencies?: readonly {
+    readonly package: string;
+    readonly manifest: StackraManifest;
+  }[];
+
+  /**
    * The committed manifests of the services the member injects a generated client of (`#stackra/clients/<service>`),
    * found beside the member, with the folder each sits in (absent in an IR built by hand: the service key is used).
    * Absent in an IR built by hand. A service with no folder came from a contract package (STA-1820).
@@ -210,6 +234,18 @@ export interface MemberIR {
     readonly filters: readonly string[];
     /** The call's `version` literal (a shadow-column rebuild), absent for the live columns. */
     readonly version?: number;
+  }[];
+
+  /**
+   * Every `schema.create`/`schema.table` block of the member's own migrations, in apply order, with its table, module
+   * and file and whether it calls `t.belongsToTenant(...)`; `checkModelScope` refuses an owned model whose table never
+   * does (`model_tenancy_migration_missing`). Absent when none.
+   */
+  readonly migrationTables?: readonly {
+    readonly file: string;
+    readonly module: string;
+    readonly table: string;
+    readonly ownerColumn: boolean;
   }[];
 
   /**
