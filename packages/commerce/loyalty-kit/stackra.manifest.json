@@ -826,7 +826,11 @@
             "from": "@stackra/settings"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "LoyaltyAccount",
+        "from": "@stackra/loyalty-kit/node"
+      }
     },
     {
       "class": "LedgerReconcilerService",

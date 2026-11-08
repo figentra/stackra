@@ -323,7 +323,11 @@
   "services": [
     {
       "class": "SegmentMembershipService",
-      "from": "@stackra/segments/node"
+      "from": "@stackra/segments/node",
+      "partner": {
+        "name": "SegmentMembership",
+        "from": "@stackra/segments/node"
+      }
     },
     {
       "class": "SegmentService",
@@ -359,7 +363,11 @@
             "from": "@stackra/contracts"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "Segment",
+        "from": "@stackra/segments/node"
+      }
     },
     {
       "class": "SubjectChangeService",

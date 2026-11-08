@@ -328,7 +328,11 @@
     },
     {
       "class": "StoredViewService",
-      "from": "@stackra/panel/node"
+      "from": "@stackra/panel/node",
+      "partner": {
+        "name": "StoredView",
+        "from": "@stackra/panel/node"
+      }
     },
     {
       "class": "ActionRunnerClient",

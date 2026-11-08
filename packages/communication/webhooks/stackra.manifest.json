@@ -385,7 +385,11 @@
     },
     {
       "class": "WebhookDeliveryService",
-      "from": "@stackra/webhooks/node"
+      "from": "@stackra/webhooks/node",
+      "partner": {
+        "name": "WebhookDelivery",
+        "from": "@stackra/webhooks/node"
+      }
     },
     {
       "class": "WebhookEndpointService",
@@ -397,7 +401,11 @@
             "from": "@stackra/webhooks/contracts"
           }
         }
-      ]
+      ],
+      "partner": {
+        "name": "WebhookEndpoint",
+        "from": "@stackra/webhooks/node"
+      }
     }
   ],
   "schemas": {

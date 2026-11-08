@@ -583,11 +583,19 @@
     },
     {
       "class": "StoredSettingRevisionService",
-      "from": "@stackra/settings/node"
+      "from": "@stackra/settings/node",
+      "partner": {
+        "name": "StoredSettingRevision",
+        "from": "@stackra/settings/node"
+      }
     },
     {
       "class": "StoredSettingService",
-      "from": "@stackra/settings/node"
+      "from": "@stackra/settings/node",
+      "partner": {
+        "name": "StoredSetting",
+        "from": "@stackra/settings/node"
+      }
     },
     {
       "class": "SettingsFake",
