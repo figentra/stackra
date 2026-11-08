@@ -73,9 +73,9 @@ Every row is in force: the items below, the group (c) dispositions and the gap a
    restrictive policy or a query predicate.
 2. **`scope.scope_nodes` is a platform table.** Its one reader outside the scope package is the isolation driver
    (`CallIsolationDriver`, `@stackra/tenancy`). That driver reads one node and its tenant, in a savepoint it always
-   rolls back. No other package names the table, its model, its service or its Postgres driver. The system readers
-   named below read the tree only through the `ScopeTree` port. The scope package
-   still owns and writes it (0327 decision 3). The audit lists it as a platform table at its contract step, with this
+   rolls back. No other package names the table, its model, its service or its Postgres driver, except the audit's
+   `PLATFORM_TABLES` row, which names it with its reason and reads nothing. The system readers named below read the
+   tree only through the `ScopeTree` port. The scope package still owns and writes it (0327 decision 3). The audit lists it as a platform table at its contract step, with this
    reason.
 3. **The `@stackra/database` tables carry `isolation_scope_id`.**
    [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) keeps the word
@@ -245,9 +245,9 @@ today, so moving the read means a new service. TODO: move that read into an iden
 ### Enforcement
 
 - `packages/security/tenancy/src/node/drivers/__tests__/scope-nodes-reader.test.ts`: outside the scope package, only
-  the isolation driver names `scope_nodes`, `ScopeNodeModel`, `ScopeNodeService` or `PostgresScopeTreeDriver`, and the
-  `ScopeTree` port has exactly the readers listed above; no file in an `actions/`, `queries/` or `listeners/` folder
-  names `ScopeTree`, except the bootstrap-operator exception.
+  the isolation driver and the audit's `PLATFORM_TABLES` row (data only) name `scope_nodes`, `ScopeNodeModel`,
+  `ScopeNodeService` or `PostgresScopeTreeDriver`, and the `ScopeTree` port has exactly the readers listed above; no
+  file in an `actions/`, `queries/` or `listeners/` folder names `ScopeTree`, except the bootstrap-operator exception.
 - `packages/data/database/src/testing/functions/assert-row-security.function.ts` and `unowned-table-group.function.ts`:
   the three groups of item 7, warnings until 0.20 (`strict`, `STACKRA_GEN_STRICT=1`).
 - `packages/data/database/src/testing/constants/platform-tables.constant.ts`: a `PLATFORM_TABLES` row with its reason

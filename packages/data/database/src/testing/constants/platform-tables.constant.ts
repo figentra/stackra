@@ -64,6 +64,6 @@ export const PLATFORM_TABLES: ReadonlyMap<string, string> = new Map([
   ],
   [
     "scope.scope_nodes",
-    "scope.0001: the scope tree, read outside its package only through the ScopeTree port by the allowed readers (ADR 0239 amendment, item 2)",
+    "scope.0001: the scope tree, read outside its package only through the scope-tree port by the allowed readers (ADR 0239 amendment, item 2)",
   ],
 ]);
