@@ -1,5 +1,62 @@
 # @stackra/tenancy
 
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The tenancy contract step. A new migration in each package (`achievements.0004`, `rules.0005`, `segments.0003`,
+  `content.0006`, `collaboration.0004`, `workflow.0011`) makes `tenant_id` NOT NULL on the tables the expand step gave
+  it, makes the tenant equality `pol_<table>_tenant_id` each table's one permissive policy, and keeps the scope path only
+  as a restrictive policy, which narrows a session inside its tenant and never widens it. The models of those tables now
+  carry `BelongsToTenant`, so a row is filled from the running tenant call.
+  
+  Each migration first counts the rows with no tenant. If any table has one, it refuses before changing anything and
+  names each table's count. An environment that wrote rows in the expand step outside a tenant call runs the tenant
+  backfill (RUNWAY 4c) first, then migrates again. After this step, these tables are written only inside a tenant call.
+  
+  `t.belongsToTenant({ contract: true })` is the macro's form for that step: `SET NOT NULL` on the existing column and
+  the equality policy. `{ contract: true, nullable: true }` is the platform form's contract step: the column stays
+  nullable under the `platform` policy, as search uses it. The packages ship an int test tier (`test:int`) for these migrations.
+
+### Patch Changes
+
+- 1083617: Memory-tier tests now run actions in the actor's tenant, as production does, so `runAsTenant` wraps around `run()`
+  become optional. Under `createTestingModule(...).useDrivers("memory")` the tenancy testing plugin binds
+  `MemoryCallIsolationDriver` as `CallIsolation`: a `BelongsToTenant` row built inside the call carries the actor's
+  tenant before it is flushed. An actor with no tenant stays a platform call. Inside `runAsTenant(T)`, an actor of
+  another tenant is refused with `TenantSwitchRefusedError`, as the real driver refuses a tenant switch. An explicit
+  `.override(CallIsolation, …)` still wins. The driver is test-only: production wiring never lists it. Gen's Vitest setup
+  now loads `@stackra/tenancy/testing` for a member on `@stackra/tenancy`, as it loads the database and clients testing
+  entries.
+  
+  **Upgrading.** A product's memory-tier tests now run each action inside its actor's tenant, so a test that relied on
+  no isolation can fail after the bump:
+  
+  - Arrange each tenant's rows under that tenant: `await runAsTenant(tenantA, () => Factory.new().create(...))`, then
+    `runAsTenant(tenantB, …)` for B's rows. A row built inside `runAsTenant(A)` by an actor of B is refused
+    (`TenantSwitchRefusedError`), and a row whose `tenantId` differs from the `runAsTenant` tenant throws.
+  - Call `run(Action, input, { as: actor })` outside any `runAsTenant`, or inside the actor's own tenant. A
+    `runAsTenant(tenant, () => run(...))` wrap around an action of that same tenant still works but is no longer needed.
+  - `drainOutbox()` delivers each event in its actor's tenant. Call it outside `runAsTenant`: inside `runAsTenant(T)`, an
+    event of another tenant is refused in the memory tier (production's own transaction would not refuse it).
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/scheduler@0.23.0
+  - @stackra/scope@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Minor Changes

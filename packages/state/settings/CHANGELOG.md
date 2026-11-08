@@ -1,5 +1,34 @@
 # @stackra/settings
 
+## 0.23.0
+
+### Minor Changes
+
+- fb6e2b3: A role-gated setting approval: `@Setting({ approval: { by: SystemRole.Owner } })` holds a change until someone holding
+  that role approves it, beside the existing four-eyes `approval: true`. The revision records the role (`approvalRole`,
+  migration `settings.0003_add_setting_revision_approval_role`); `SettingsResolver.approve(id, approver, roles)` refuses
+  an approver without it (`SettingApproverRoleError`, forbidden) and fails closed when the calling action passes no roles.
+  The role is the control, so its holder may approve a change they wrote; `decidedBy` records who did. One change needs
+  one approving role. Gen treats a role-gated key as approval-marked too.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/icons@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

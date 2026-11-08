@@ -1,5 +1,125 @@
 # @stackra/gen
 
+## 0.23.0
+
+### Minor Changes
+
+- 7ff4969: Docs sites in more than one language. `DocsConfig.locales` lists the languages, with one default:
+  
+  - **Pages.** A page in another language sits beside its default page as `<page>.<code>.mdx` and is served under
+    `/<code>/`. A page that isn't translated yet links to the default page in that language's navigation.
+  - **Direction.** The page sets `lang` and `dir`, so an Arabic page renders right to left, sidebar included.
+  - **Interface.** Each language gets its own interface strings, navigation labels and font. Arabic ships with its
+    strings and IBM Plex Sans Arabic.
+  - **Language switch.** The switch keeps the reader on the same page.
+  - **Checks.** gen refuses a translation that has no default page and a page that sits in a language's folder. A page
+    not yet translated is only a warning.
+  - **No change by default.** With `locales` left empty (the default), a site is written byte for byte as before.
+- 96374f4: An L3 or L4 action is no longer an agent tool by default. It becomes one only with `tool: true` and a `// reason:`
+  line, and gen fails with `tool_reason_missing` without the reason. The manifest records the reason on the tool and,
+  for a high-risk user action left off, a `toolOff` note. Owner security decision 2026-11-08.
+- c26fb86: Every generated HTTP adapter is an Encore raw endpoint that runs the request guards (STA-2577, ADR 0237 note of
+  2026-11-08). `@stackra/app/server` adds `serveGuardedCall` and `HttpConfig` (`app.http`, `maxBodyBytes`, 1 MiB by
+  default): the body is read once under the cap (413), every `RequestGuard` runs over the exact bytes (so the edge
+  signature covers the body), `CallAuthenticator` verifies an `Authorization` header (a bad one is refused, never
+  anonymous), then the input is parsed and the action pipeline runs; guard and authentication failures are one generic
+  401 or 403. `@stackra/gen` now writes `api.raw()` endpoints (auth: false to Encore) for actions, queries and
+  controllers through `answerCall` in `http.ts`, binds `app.http` in the wiring, and no longer writes `auth.ts` or the
+  `Gateway`.
+  
+  GET and DELETE query strings are typed by the call's registered input schema (`coerceQueryInput`): finite numbers,
+  `"true"` and `"false"`, and arrays element-wise; enums and strings stay as sent, and a value that does not fit stays a
+  string so validation refuses it. A void output answers 200 `null`.
+  
+  New reachable surface: the typed `api()` skipped every entry whose input or output was not a schema class of the
+  member, so those had no HTTP route. They now get one, behind the same guards, authentication and permission checks:
+  generated search and report queries, replica queries (`ReplicaPage` output) and any other action or query whose
+  schemas come from a package. The gen fixtures show it only for the billing unit fixture (`BILLING_IR`), and no golden
+  gains an endpoint. A hand-written `Controller` is now served too (every method, behind the guards), reachable with no
+  `Authorization` header; a present but invalid or expired one is 401 and never falls back to anonymous.
+- a42a80c: A service now proves who it is when it calls another service, and who it acts for.
+  
+  - An outgoing service call sends the service's own token (`Authorization: Bearer`). `ServiceTokens` in
+    `@stackra/identity` answers it, with a memory driver for tests; the token is issued for the receiving product's
+    project, set per module in `clients.audiences`.
+  - When the call acts for a user, it also sends that user's own token in `Stackra-On-Behalf-Of`. `serveGuardedCall` in
+    `@stackra/app/server` keeps that token for the one request and empties it when the request ends. It is never put on
+    the actor, the call context, a log, an error or an event.
+  - A user's token travels one hop. A service called for a user forwards it again only into an action that declares
+    `onBehalfOf: { secondHop: true }`; otherwise its own calls carry the service token alone.
+  - `ServiceClientSessionDriver` (`service`) is the `ClientSession` a service binds for its generated clients, and
+    `ClientSession.headers` now receives the call it is about to send.
+  - Generated endpoints name their action to `serveGuardedCall`, which reads its second-hop option. A hand-written
+    controller forwards only a user's own token, never a forwarded one.
+- f790fa1: A service now gets its own token from ZITADEL by itself, and sends it on every call to another service.
+  
+  - `ZitadelServiceTokensDriver` (`zitadel`, in `@stackra/identity/node`) signs in as the service's own ZITADEL
+    service account with the JWT profile. It reads the account's key file from the secret store, signs a short-lived
+    assertion, and asks the issuer for a token for the receiving product's project. Each token is reused until shortly
+    before it expires, and callers asking at the same moment share one request. The key and the tokens are never
+    logged, never put in an error and never put in an event. If the issuer refuses, the error is
+    `ServiceTokenRefusedError`. If it cannot be reached or is failing, the error is `ServiceTokenUnavailableError`.
+  - A service that declares `@stackra/app`, `@stackra/clients` and `@stackra/identity` now uses the `service` client
+    session and the `zitadel` token driver by default, so its generated clients need no extra wiring.
+  - If a call goes to a producer module that has no `clients.audiences` entry, the call fails with an error naming that
+    module, before any token is fetched. A call is never sent without a token.
+  
+  What each deployment must set (the values come from the owner or runway, the names are below):
+  
+  - `identity.service_tokens.issuer`: the ZITADEL issuer URL, the same as the bearer issuer.
+  - The secret `IDENTITY_SERVICE_ACCOUNT_KEY`: the service account's ZITADEL key file (JSON). Set
+    `identity.service_tokens.keySecret` to use another secret name.
+  - `clients.audiences`: for each producer module the service calls, the project id of the product that serves it.
+  - In ZITADEL, the service account's access token type must be JWT, because the receiving service checks the token
+    against the issuer's public keys.
+
+### Patch Changes
+
+- 926faa4: A dependency imported only through its `./contracts` entry stays fully hosted when it drives a port gen binds without
+  injection: the action pipeline's own (`EventOutbox` for `ctx.publish`, `IdempotencyStore`, the offline, review and
+  step-up stores, `ReplicaReads`), the follow-the-system defaults and the server contributions' tokens. Before, such a
+  package was hosted contracts-only and the port was left unbound ("EventOutbox is not bound").
+- 557809c: A package that ships routes in its `react` or `native` entry gets its `Routes` ref table, `.stackra/gen/routes.ts`
+  (`#stackra/routes`): one `routeRef` per route stem, keyed `<module>_<stem>` as its manifest's `ui.routes` records and
+  its host app registers, so the package's own pages link to its routes by ref.
+- 8b42c02: A published package's manifest lists its extension points in `services`, beside the services that inject them, so a
+  host's wiring binds them. Commerce customers injects `AccountService` from `@stackra/loyalty-kit`, whose
+  `LoyaltyKitExtensionPoint` had no binding and failed with `UnboundTokenError`.
+- 1083617: Memory-tier tests now run actions in the actor's tenant, as production does, so `runAsTenant` wraps around `run()`
+  become optional. Under `createTestingModule(...).useDrivers("memory")` the tenancy testing plugin binds
+  `MemoryCallIsolationDriver` as `CallIsolation`: a `BelongsToTenant` row built inside the call carries the actor's
+  tenant before it is flushed. An actor with no tenant stays a platform call. Inside `runAsTenant(T)`, an actor of
+  another tenant is refused with `TenantSwitchRefusedError`, as the real driver refuses a tenant switch. An explicit
+  `.override(CallIsolation, …)` still wins. The driver is test-only: production wiring never lists it. Gen's Vitest setup
+  now loads `@stackra/tenancy/testing` for a member on `@stackra/tenancy`, as it loads the database and clients testing
+  entries.
+  
+  **Upgrading.** A product's memory-tier tests now run each action inside its actor's tenant, so a test that relied on
+  no isolation can fail after the bump:
+  
+  - Arrange each tenant's rows under that tenant: `await runAsTenant(tenantA, () => Factory.new().create(...))`, then
+    `runAsTenant(tenantB, …)` for B's rows. A row built inside `runAsTenant(A)` by an actor of B is refused
+    (`TenantSwitchRefusedError`), and a row whose `tenantId` differs from the `runAsTenant` tenant throws.
+  - Call `run(Action, input, { as: actor })` outside any `runAsTenant`, or inside the actor's own tenant. A
+    `runAsTenant(tenant, () => run(...))` wrap around an action of that same tenant still works but is no longer needed.
+  - `drainOutbox()` delivers each event in its actor's tenant. Call it outside `runAsTenant`: inside `runAsTenant(T)`, an
+    event of another tenant is refused in the memory tier (production's own transaction would not refuse it).
+- a2c8821: A seeder that injects its repositories or services now runs wherever seeders run. A seeder is not a binding, so the
+  container could not build one with its dependencies: `.seed()` and `stackra db seed` built it with no arguments and its
+  first repository call failed. `seederOf(container, type, deps)` (`@stackra/database/node`) builds a bound seeder from the
+  container, else the class with its constructor tokens resolved in the container. Gen lists those tokens in the seed
+  entry (`SeederEntry.deps`) and registers them in the test setup (`registerSeederDeps`, `@stackra/database/testing`).
+- fb6e2b3: A role-gated setting approval: `@Setting({ approval: { by: SystemRole.Owner } })` holds a change until someone holding
+  that role approves it, beside the existing four-eyes `approval: true`. The revision records the role (`approvalRole`,
+  migration `settings.0003_add_setting_revision_approval_role`); `SettingsResolver.approve(id, approver, roles)` refuses
+  an approver without it (`SettingApproverRoleError`, forbidden) and fails closed when the calling action passes no roles.
+  The role is the control, so its holder may approve a change they wrote; `decidedBy` records who did. One change needs
+  one approving role. Gen treats a role-gated key as approval-marked too.
+- @stackra/money@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/support@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

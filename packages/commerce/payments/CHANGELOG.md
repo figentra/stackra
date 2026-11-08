@@ -1,5 +1,40 @@
 # @stackra/payments
 
+## 0.23.0
+
+### Minor Changes
+
+- 9577871: A direct-charge `applicationFee?: Money` on `CheckoutRequest`, `TokenCharge` and `CaptureRequest`: the platform's fee on
+  a charge made on the connected account (Stripe `application_fee_amount`), unlike `platform`, which is a destination
+  charge. `PaymentService.capture(reference, amount?, applicationFee?)` puts it on the capture request it builds, so a
+  partial capture carries the fee for what it takes. A fee in another currency, negative, above the amount, or beside a
+  `platform` share is refused (`ApplicationFeeInvalidError`). Whether a connection takes the fee is its gateway's call:
+  a Stripe connector sends it only for a connected account's direct charge.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [d002763]
+- Updated dependencies [c0237a4]
+- Updated dependencies [6edeee4]
+- Updated dependencies [1d76993]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/integrations@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/testing@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

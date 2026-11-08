@@ -1,5 +1,23 @@
 # @stackra/documents
 
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [d002763]
+- Updated dependencies [c0237a4]
+- Updated dependencies [1d76993]
+- Updated dependencies [a42a80c]
+  - @stackra/integrations@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/data-transfer@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes
