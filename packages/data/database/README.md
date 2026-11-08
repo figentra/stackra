@@ -63,6 +63,11 @@ const byChannel = await paid.breakdown("channel", Aggregate.Sum, "total.minor", 
 
 - The model comes from the type argument (gen registers it with `registerModelPartners`); the entity manager is the
   running context's, so every write joins the action's unit of work (`DatabaseUnitOfWorkDriver`).
+- Inside a transaction, each read verb (`find`, `findOne`, `findOneOrFail`, `count`, `sum`, `countDistinct`, `page`,
+  `table`) flushes the unit of work first, so it sees a field set earlier in the same transaction, by `update` or by a
+  plain set on a loaded row. MikroORM's own auto flush misses both. A raw `em.find` or `em.execute` after a plain set
+  does not flush: call `em.flush()` first, or write the change through `update`. Outside a transaction a read writes
+  nothing early.
 - `findOneOrFail` refuses with `not_found`; `insert` writes now and throws `UniqueViolation` without spoiling the
   caller's transaction; a money `sum` over two currencies refuses with `mixed_currency`.
 - Raw SQL is a parameterised condition, or a list of them ANDed: `{ $raw: sql\`${StockLevels.columns.onHand} <= ${n}\` }`,
