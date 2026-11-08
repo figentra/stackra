@@ -2708,6 +2708,9 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
+      '@stackra/money':
+        specifier: workspace:*
+        version: link:../../commerce/money
       '@stackra/queue':
         specifier: workspace:*
         version: link:../../runtime/queue
