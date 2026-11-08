@@ -7,7 +7,7 @@
     "digest": "sha256:e509a43a7dce5996b41f14db75c321663cb3815f83d9ee5e8d434a9c25937424"
   },
   "profile": "framework",
-  "overrides": "sha256:2c037df324bbd8d429ae8af066ff91b3919aecab58c27c0957db2ab8b80bcbc5",
+  "overrides": "sha256:ee73d8d3d478bca712f099f2034d8050e33a78f93eb1d08509664ff3782c4347",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:dadd456558c5895efceb9bf14c2fca9c8681421e976d26f2d57b0e0f1ad67b66",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:207e5dfaad462cecd97fa741dabb0e4db28edc3f51bd6156528246d652ba7322",
@@ -59,7 +59,7 @@
     ".agents/rules/secrets.md": "sha256:47aa22715386f94ee071c26514da0e672b23a4bb0f60237803c18d56a1a7352c",
     ".agents/rules/service-checklist.md": "sha256:423ab583ffb47570b3c681fad4d1671d9aca437c4a3502e3595b493c65ad4ee2",
     ".agents/rules/task-vocabulary.md": "sha256:f470e768ad5f46f8e191d96a46a18c31ae79a47db7b41060ca562b631fa3896f",
-    ".agents/rules/tenancy.md": "sha256:7467e8beffcacb37791e0ea5474bc09d88984904c0e2b8df1dbb6b4654652415",
+    ".agents/rules/tenancy.md": "sha256:0c48b74687ff205350e9769a030665fa4d5ffd29acc674ecd14a465a6266f541",
     ".agents/rules/third-party-sources.md": "sha256:b0e99d50da6b404ac0bfcce68c0850dd45e53008838399fd02d91361b6dc382e",
     ".agents/rules/versions.md": "sha256:1cb2bcc2f7c35e66eb8052269a97b8b57a756952b4f31c16102513e3897453a9",
     ".agents/rules/workspace-layout.md": "sha256:c41f522f4544bdfdb8ea6e17b2a9dd885d839f9385fb962e1c52d9627f9f872b",

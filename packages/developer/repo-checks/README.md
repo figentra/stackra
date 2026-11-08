@@ -50,6 +50,11 @@ an `.execute(...)` with a literal statement, or a `raw(...)` imported from the O
 `// raw-sql: <why>` comment on its line, inside its statement, or in the comment lines directly above the statement.
 `RAW_SQL_BASELINE` lists the calls that had no reason when the check landed, per file; it only goes down.
 
+`checkIsolationTier` (rule `isolation-tier`, ADR 0239 decision 1) fails a test that imports `assertRowSecurity` or
+`tenantIsolationOptions` from `@stackra/database/testing` or `@stackra/tenancy/testing` unless it is a `.int.test.ts`.
+PGlite, the memory database driver and the container superuser bypass row-level security, so a unit-tier isolation
+assertion passes whatever the policies say.
+
 ## Spec checks
 
 `specFindings` is the read-only spec check set, published so any repository with `.agents/specs` runs it through
