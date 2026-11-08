@@ -16,11 +16,13 @@ declare module "@stackra/database" {
      * forced row-level security with the equality policy `pol_<table>_tenant_id` on `app.tenant_id`. With
      * `nullable: true`, the nullable column of `BelongsToTenantOrPlatform`: NULL rows are the platform's. With
      * `expand: true`, the expand step of an existing table: the nullable column only, filled from `app.tenant_id` by
-     * default, and no policy until the contract step.
+     * default, and no policy until the contract step. With `contract: true`, that step: the column NOT NULL and the
+     * equality policy (the migration drops the table's old policy, after `schema.refuseNulls`).
      */
     belongsToTenant: (options?: {
       readonly nullable?: boolean;
       readonly expand?: boolean;
+      readonly contract?: boolean;
     }) => ColumnGroup;
   }
 }

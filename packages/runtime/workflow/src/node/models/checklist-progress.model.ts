@@ -11,10 +11,11 @@
 import type { Actor, PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** One completed step. Traits add `id` and the timestamps (`createdAt` is when it was completed). */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class ChecklistProgress extends Model.with(HasPublicId("wfp"), Timestamps) {
+export class ChecklistProgress extends Model.with(HasPublicId("wfp"), BelongsToTenant, Timestamps) {
   /** The scope node the progress belongs to. */
   scopeId!: PublicId<"scp">;
 
@@ -40,5 +41,5 @@ export class ChecklistProgress extends Model.with(HasPublicId("wfp"), Timestamps
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface ChecklistProgress {
   /** The fields that have a default, so an insert may leave them out. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

@@ -15,12 +15,13 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field, Int } from "@stackra/validation";
 import { z } from "zod";
 
 /** A revision of one record. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Revision extends Model.with(HasPublicId("rev"), Timestamps) {
+export class Revision extends Model.with(HasPublicId("rev"), BelongsToTenant, Timestamps) {
   /** The revision's number for its record, from 1. */
   @Int({ min: 1 })
   number!: number;
@@ -58,5 +59,11 @@ export class Revision extends Model.with(HasPublicId("rev"), Timestamps) {
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Revision {
   /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
-  [OptionalProps]?: "createdAt" | "updatedAt" | "publishedAt" | "scheduledAt" | "campaign";
+  [OptionalProps]?:
+    | "createdAt"
+    | "tenantId"
+    | "updatedAt"
+    | "publishedAt"
+    | "scheduledAt"
+    | "campaign";
 }
