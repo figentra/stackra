@@ -415,6 +415,8 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/mobile/brand.json",
       "apps/playground/src/constants/brand-themes/jute.json",
       "packages/design-system/showcase/api/react/free/button.json",
+      "packages/connectors/here/src/node/drivers/__tests__/fixtures/here-matrix-dubai.json",
+      "src/__tests__/fixtures/v2/order.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
       ".oxlintrc.jsonc",
@@ -428,6 +430,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     "knip.json",
     ".agents/models.json",
     "packages/x/brand.json",
+    "packages/x/fixtures/order.json",
   ];
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
