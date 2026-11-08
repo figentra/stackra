@@ -79,6 +79,7 @@ export { checkToolPins } from "#node/functions/check-tool-pins.function";
 export { checkGenStrictEnv } from "#node/functions/check-gen-strict-env.function";
 export { checkWindowSizing } from "#node/functions/check-window-sizing.function";
 export { checkWorkflowTriggers } from "#node/functions/check-workflow-triggers.function";
+export { checkMiseActionVersion } from "#node/functions/check-mise-action-version.function";
 export { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
 export { configFindings } from "#node/functions/config-findings.function";
 export { layoutFindings } from "#node/functions/layout-findings.function";
