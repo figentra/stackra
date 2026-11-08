@@ -8,6 +8,7 @@
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order);
  *                     ADR 0457 (request guards); ADR 0098 (the actor from the credential).
  */
+import type { AnyClass } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
 
 import type { CallAuthData } from "#server/types/call-auth-data.type";
@@ -26,6 +27,9 @@ export interface GuardedCallOptions {
 
   /** True when the call lists the anonymous actor: with no `Authorization` header it runs as an anonymous visitor. */
   readonly anonymous: boolean;
+
+  /** The call's input schema class: its registered schema types the query string of a GET or DELETE (numbers, booleans, arrays). */
+  readonly input?: AnyClass | undefined;
 
   /** True for a hand-written controller: the body is not parsed and `execute` answers a `Response` itself. */
   readonly raw?: boolean;

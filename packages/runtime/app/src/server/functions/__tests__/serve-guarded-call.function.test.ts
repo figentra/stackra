@@ -179,6 +179,31 @@ describe(serveGuardedCall, () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it("refuses a bad Authorization header on a raw controller call too, never anonymous", async () => {
+    const authenticate = vi.fn(async () => {
+      throw BearerTokenInvalidError.create();
+    });
+    const execute = vi.fn(async () => new Response("ok"));
+    const serve = async (headers: Record<string, string>) =>
+      serveGuardedCall({
+        request: await forwarded("GET", "/api/auth/callback", "", "", headers),
+        path: "/api/auth/*rest",
+        maxBodyBytes: 1024,
+        anonymous: true,
+        raw: true,
+        guard: (guarded) => edgeGuard().check(guarded),
+        authenticate,
+        execute,
+      });
+    expect((await serve({ authorization: "Bearer expired" })).status).toBe(401);
+    expect(execute).not.toHaveBeenCalled();
+    // with no header the controller still runs, as an anonymous visitor
+    const open = await serve({});
+    expect(open.status).toBe(200);
+    expect(await open.text()).toBe("ok");
+    expect(execute).toHaveBeenCalledOnce();
+  });
+
   it("runs as an anonymous visitor only where the call lists the anonymous actor", async () => {
     const open = call({ anonymous: true });
     expect((await open.serve(await forwarded("GET", "/orders/ord_1", "", ""))).status).toBe(200);

@@ -11,3 +11,14 @@ anonymous), then the input is parsed and the action pipeline runs; guard and aut
 401 or 403. `@stackra/gen` now writes `api.raw()` endpoints (auth: false to Encore) for actions, queries and
 controllers through `answerCall` in `http.ts`, binds `app.http` in the wiring, and no longer writes `auth.ts` or the
 `Gateway`.
+
+GET and DELETE query strings are typed by the call's registered input schema (`coerceQueryInput`): finite numbers,
+`"true"` and `"false"`, and arrays element-wise; enums and strings stay as sent, and a value that does not fit stays a
+string so validation refuses it. A void output answers 200 `null`.
+
+New reachable surface: the typed `api()` skipped every entry whose input or output was not a schema class of the
+member, so those had no HTTP route. They now get one, behind the same guards, authentication and permission checks:
+generated search and report queries, replica queries (`ReplicaPage` output) and any other action or query whose
+schemas come from a package. The gen fixtures show it only for the billing unit fixture (`BILLING_IR`), and no golden
+gains an endpoint. A hand-written `Controller` is now served too (every method, behind the guards), reachable with no
+`Authorization` header; a present but invalid or expired one is 401 and never falls back to anonymous.

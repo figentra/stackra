@@ -67,7 +67,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  HttpConfig,",
       "  serveGuardedCall,",
       '} from "@stackra/app/server";',
-      'import type { Container } from "@stackra/container";',
+      'import type { AnyClass, Container } from "@stackra/container";',
       'import type { Actor } from "@stackra/contracts";',
       ...(errors
         ? ['import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";']
@@ -113,6 +113,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "interface Call {",
       "  path: string;",
       "  anonymous: boolean;",
+      "  input?: AnyClass;",
       "  raw?: boolean;",
       "  execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;",
       "}",
@@ -136,6 +137,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      request: incoming,",
       "      path: call.path,",
       "      anonymous: call.anonymous,",
+      "      input: call.input,",
       "      raw: call.raw === true,",
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",

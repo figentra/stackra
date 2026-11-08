@@ -31,6 +31,7 @@ import { encoreDatabaseImport } from "#core/functions/encore-database-import.fun
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { ownClass } from "#core/functions/own-class.function";
+import { shapeOfRef } from "#core/functions/shape-of-ref.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -83,6 +84,12 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
     const method = String(endpoint.method);
     const path = String(endpoint.path);
     const type = ref({ name: declared.name, from: declared.importPath }, false);
+    // The input schema class types a GET or DELETE's query string; one the member does not declare coerces nothing.
+    const shape = entry["input"] === undefined ? undefined : shapeOfRef(ir, entry["input"]);
+    const input =
+      shape === undefined
+        ? []
+        : [`      input: ${ref({ name: shape.name, from: shape.importPath }, false)},`];
     body.push(
       `/** ${method} ${path}: ${key} through the action pipeline. */`,
       `export const ${camelCase(key.replace("@", "_v"))} = api.raw(`,
@@ -91,6 +98,7 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       "    answerCall(req, resp, {",
       `      path: ${JSON.stringify(path)},`,
       `      anonymous: ${entry["anonymous"] === true},`,
+      ...input,
       "      execute: (container, input, actor) =>",
       `        new ActionPipeline(container).execute(${type}, input as never, { actor }),`,
       "    }),",

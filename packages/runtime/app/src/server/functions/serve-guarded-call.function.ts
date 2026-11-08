@@ -4,7 +4,7 @@
  *          body once under the cap (413 before any guard), run every request guard on a request carrying the exact
  *          bytes, authenticate (an `Authorization` header is verified and never downgraded to anonymous; none is the
  *          anonymous actor only where the call lists it, else 401), parse the input (JSON body, or the query string for
- *          GET and DELETE, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
+ *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
  *          kind's status with its envelope.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
  *           nothing about which check failed; it never logs or echoes the body, the signature or the credential. A
@@ -18,6 +18,7 @@ import { ActorKind, Enum, mintPublicId } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
 import { ErrorKind, isRefusal, RateLimitedError } from "@stackra/errors";
 
+import { coerceQueryInput } from "#server/functions/coerce-query-input.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
 import { readCappedBody } from "#server/functions/read-capped-body.function";
 import type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
@@ -120,6 +121,7 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
       }
     }
     // The path wins over the body, so a caller cannot name another record than the one it addressed.
+    if (!BODY_METHODS.has(method)) fields = coerceQueryInput(fields, options.input);
     input = { ...fields, ...pathParamsOf(options.path, url.pathname) };
   }
 

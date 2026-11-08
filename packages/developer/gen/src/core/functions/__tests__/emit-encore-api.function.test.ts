@@ -118,6 +118,7 @@ describe(emitEncoreApi, () => {
       'import { ActionPipeline } from "@stackra/actions";',
       'import { api } from "encore.dev/api";',
       'import { CancelOrderAction } from "#modules/orders/actions/cancel-order.action";',
+      'import { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";',
       'import { answerCall } from "./http";',
       `import { app } from "${GENERATED_ENTRY}";`,
     ])
@@ -137,6 +138,7 @@ describe(emitEncoreApi, () => {
         "    answerCall(req, resp, {",
         `      path: "${path}",`,
         "      anonymous: false,",
+        "      input: CancelOrderInput,",
         "      execute: (container, input, actor) =>",
         "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor }),",
         "    }),",
