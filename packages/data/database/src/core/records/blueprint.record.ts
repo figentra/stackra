@@ -804,7 +804,7 @@ export class BlueprintRecord {
     for (const column of this.columns) add(column.commentSql(qualified));
     for (const column of this.columns) add(column.foreignKeySql(schema, this.table, qualified));
     for (const column of this.columns)
-      if (column.indexed)
+      if (column.indexed && !this.declaresIndexOn(column.name))
         add(new TableIndexRecord([column.name], false).sql(this.table, qualified, false));
     for (const index of this.indexes) {
       if (index.online)
@@ -816,6 +816,14 @@ export class BlueprintRecord {
     for (const { sql } of this.rowSecuritySql(qualified)) add(sql);
     statements.push(...this.appendOnlySql(qualified));
     return { statements, online: [] };
+  }
+
+  /**
+   * Whether the blueprint declares an index on `column` alone (`t.unique(["scope_id"])` beside `t.scopeId()`): that
+   * index serves the column, so its own plain index is not written, which would take the same `idx_` name.
+   */
+  private declaresIndexOn(column: string): boolean {
+    return this.indexes.some((index) => index.columns.length === 1 && index.columns[0] === column);
   }
 
   /** `ALTER TABLE` steps on an existing table, and its indexes as online steps. */
@@ -869,7 +877,8 @@ export class BlueprintRecord {
         column.checkSql(this.table, qualified),
       ])
         if (constraint !== undefined) statements.push({ sql: constraint, inverse: [] });
-      if (column.indexed) onlineIndex(new TableIndexRecord([column.name], false));
+      if (column.indexed && !this.declaresIndexOn(column.name))
+        onlineIndex(new TableIndexRecord([column.name], false));
     }
     for (const index of this.indexes) {
       if (!index.online)
