@@ -23,6 +23,7 @@ describe("CSP_OPTIONS_SCHEMA", () => {
       referrerPolicy: "strict-origin-when-cross-origin",
       permissionsAllow: {},
       frameAncestors: {},
+      thirdPartyScripts: {},
     });
   });
 
