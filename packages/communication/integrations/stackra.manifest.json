@@ -151,7 +151,7 @@
     {
       "port": "ProviderDefaults",
       "key": "integrations.ProviderDefaults",
-      "candidates": ["market_pack", "region_map"],
+      "candidates": ["market_pack"],
       "classes": {
         "market_pack": {
           "class": "MarketPackProviderDefaultsDriver",
@@ -167,18 +167,6 @@
               "class": {
                 "name": "Clock",
                 "from": "@stackra/contracts"
-              }
-            }
-          ]
-        },
-        "region_map": {
-          "class": "RegionMapProviderDefaultsDriver",
-          "from": "@stackra/integrations",
-          "deps": [
-            {
-              "class": {
-                "name": "RegionMapSource",
-                "from": "@stackra/integrations/contracts"
               }
             }
           ]
