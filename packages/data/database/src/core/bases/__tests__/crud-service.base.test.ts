@@ -514,6 +514,22 @@ describe("CrudService row lock, increment and update requiresNew (STA-1239)", ()
     expect(isRefusal(options.failHandler(), NotFoundError)).toBe(true);
   });
 
+  it("flushes the unit of work before the refreshing read, so an assigned value survives a second lock", async () => {
+    const em = connect();
+    const order: string[] = [];
+    em.flush.mockImplementation(async () => {
+      order.push("flush");
+    });
+    em.findOneOrFail.mockImplementation(async () => {
+      order.push("read");
+      return new Order();
+    });
+    const service = new OrderService();
+    await service.lock({ id: "ord_1" });
+    await service.lock({ id: "ord_1" });
+    expect(order).toEqual(["flush", "read", "flush", "read"]);
+  });
+
   it("takes a shared, nowait or skip-locked lock, and refuses nowait with skipLocked (stackra-279)", async () => {
     const em = connect();
     const service = new OrderService();

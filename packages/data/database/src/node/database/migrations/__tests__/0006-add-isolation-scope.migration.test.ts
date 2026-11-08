@@ -30,6 +30,13 @@ describe("AddIsolationScopeMigration", () => {
     }
   });
 
+  it("tells squawk, statement by statement, that a setting default rewrites no table", () => {
+    const ignores = sql.match(
+      /-- squawk-ignore adding-field-with-default\nalter table "database"\."\w+" add column "isolation_scope_id"/g,
+    );
+    expect(ignores).toHaveLength(TABLES.length);
+  });
+
   it("leaves each table's scope column and scope-path policy as they are", () => {
     expect(sql).not.toContain('"scope_id"');
     expect(sql).not.toContain("policy");
