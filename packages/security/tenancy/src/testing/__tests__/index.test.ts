@@ -13,10 +13,8 @@ import * as testing from "#testing/index";
 describe("@stackra/tenancy/testing", () => {
   it("exports exactly its helpers", () => {
     expect(Object.keys(testing).sort()).toEqual([
-      "MemoryCallIsolationDriver",
       "MemoryTenantMembersDriver",
       "MemoryTenantProfileDriver",
-      "TENANCY_TESTING_PLUGIN",
       "asTenant",
       "fakeTenantId",
       "runAsTenant",

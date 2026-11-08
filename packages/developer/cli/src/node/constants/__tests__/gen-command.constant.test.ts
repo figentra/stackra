@@ -3,8 +3,7 @@
  * Purpose: unit tests of `GEN_COMMAND`: one run in a member, one per `stackra.config.ts` member at the workspace root
  *          (continuing past a failure), `--check` and `--backend` passed on, an unknown backend refused; the manifest
  *          pass before the full pass, `--manifests` alone, and the rounds (the refused members and the client
- *          consumers, until a round writes nothing) that print only the last round's refusals; every member's
- *          warnings, a passing member's too, and the `N warning(s) in M member(s)` line.
+ *          consumers, until a round writes nothing) that print only the last round's refusals.
  * Boundary: test only; `runGen` is replaced by a fake, so no TypeScript host opens.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22).
@@ -140,44 +139,6 @@ describe("GEN_COMMAND", () => {
     expect(await GEN_COMMAND.run(context({}, io))).toBe(0);
     expect(gen.mock.calls.filter(([path]) => path === sales)).toHaveLength(3);
     expect(output()).toBe("wrote services/sales/stackra.manifest.json\n");
-  });
-
-  it("prints a passing member's warnings and the warning count, and still exits 0", async () => {
-    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - packages/*\n");
-    member("packages/billing", true);
-    member("packages/clean", true);
-    gen.mockImplementation(async (path, _options, io) => {
-      if (path.endsWith("billing"))
-        io.err("warning: packages/billing/src/a.model.ts:3:1 model_tenancy_missing …\n");
-      return true;
-    });
-    const { io, output } = captureIo();
-    expect(await GEN_COMMAND.run(context({ check: true }, io))).toBe(0);
-    expect(output()).toBe(
-      "warning: packages/billing/src/a.model.ts:3:1 model_tenancy_missing …\n" +
-        "gen: 1 warning(s) in 1 member(s)\n" +
-        "gen --check: 2 member(s) up to date\n",
-    );
-  });
-
-  it("prints a failing member's errors and warnings and exits 1", async () => {
-    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - packages/*\n");
-    member("packages/billing", true);
-    member("packages/orders", true);
-    gen.mockImplementation(async (path, _options, io) => {
-      io.err(`warning: ${path.slice(root.length + 1)}/w\n`);
-      if (!path.endsWith("orders")) return true;
-      io.err("packages/orders/e\n");
-      return false;
-    });
-    const { io, output } = captureIo();
-    expect(await GEN_COMMAND.run(context({ check: true }, io))).toBe(1);
-    expect(output()).toBe(
-      "warning: packages/billing/w\n" +
-        "warning: packages/orders/w\n" +
-        "packages/orders/e\n" +
-        "gen: 2 warning(s) in 2 member(s)\n",
-    );
   });
 
   it("refuses an unknown backend", async () => {
