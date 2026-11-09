@@ -39,6 +39,43 @@
           ]
         }
       }
+    },
+    {
+      "port": "Signer",
+      "key": "contracts.Signer",
+      "candidates": ["ephemeral", "kms"],
+      "classes": {
+        "ephemeral": {
+          "class": "EphemeralSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "kms": {
+          "class": "KmsSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            },
+            {
+              "class": {
+                "name": "KmsClient",
+                "from": "@stackra/config/contracts"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],
@@ -52,6 +89,11 @@
     {
       "key": "config.aws_secrets_manager",
       "class": "AwsSecretsManagerConfig",
+      "from": "@stackra/config"
+    },
+    {
+      "key": "config.signer",
+      "class": "SignerConfig",
       "from": "@stackra/config"
     }
   ],
