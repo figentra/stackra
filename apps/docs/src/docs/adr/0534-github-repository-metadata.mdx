@@ -74,7 +74,8 @@ The owner asked for a standard, kept as code, applied to every repository, with 
   standard is applied by one plain `figentra bot gh repo edit` per repository until the github stack's first apply.
 - A visibility change is not metadata only. Before a repository changes visibility, its environments' protection rules
   are read back, and kept or restored the same day. The organization is on GitHub Enterprise, so a private repository
-  keeps environment required reviewers ([0522](/adr/0522-testbed-own-repo), amendment of 2026-11-09). The owner sets
+  keeps environment required reviewers ([0522](/adr/0522-testbed-own-repo), amendment of 2026-11-09): after testbed went
+  private, its `testbed` environment still requires the owner (read back the same day). The owner sets
   environment reviewers by hand: an agent's write to an environment's protection rules is refused by the promote
   guard, and that is intended.
 
