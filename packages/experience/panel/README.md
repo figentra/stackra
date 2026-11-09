@@ -115,7 +115,8 @@ export class OrderKpisWidget extends Widget<OrderKpisQuery>({
   `format: "percent"` on the wire. The tile shows it as a percent in the reader's locale, and its trend chip moves in
   percentage points (`+7 pts vs previous period` from 60% to 67%), not as a relative change. Build it with
   `PercentMetric.from({ current, previous }, { series, target })`; the query computes the ratio. A progress display of
-  a percent without a target fills out of one.
+  a percent without a target fills out of one. The ratio is not clamped to 0..1 on purpose: attainment over 100%
+  (`1.12`) and a negative margin (`-0.05`) are real values; only a non-finite number is refused.
 - `.note(path)` adds a short muted line under the value. `path` is a number or string field of the query output, and
   the words come from the derived key `<module>::widgets.<widget>.<path>`, given `{count}` for a number (ICU, so it
   takes plurals) or `{value}` for a string. An absent or null field, or a message that formats to nothing, shows no
