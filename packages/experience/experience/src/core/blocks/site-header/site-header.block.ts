@@ -30,5 +30,6 @@ export class SiteHeaderBlock extends Block({
   /** Only once the AI gateway is live; until then the page leaves it out. */
   askAi?: LandingLink;
 
-  githubHref!: string;
+  /** The code host's URL. A product's customer-facing landing leaves it out, so the bar shows no code-host link. */
+  githubHref?: string;
 }

@@ -69,6 +69,19 @@ describe("SiteHeader", () => {
     );
   });
 
+  it("shows no code-host link when a product's landing leaves githubHref out", () => {
+    render(
+      <SiteHeader
+        brand={<a href="/">Figentra Geo</a>}
+        links={[{ label: "Docs", href: "/docs" }]}
+        navLabel="Site"
+        docsSearch={{ label: "Search docs", href: "/docs/search" }}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: "GitHub" })).toBeNull();
+    expect(stops()).toEqual(["Figentra Geo", "Docs", "Search docs"]);
+  });
+
   it("reaches every stop from the keyboard in order: brand, sections, search, links, switchers", () => {
     render(HEADER);
     expect(stops()).toEqual([

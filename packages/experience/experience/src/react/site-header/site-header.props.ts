@@ -27,8 +27,8 @@ export interface SiteHeaderProps {
   readonly docsSearch: { readonly label: string; readonly href: string };
   /** A link to ask the docs a question. */
   readonly askAi?: { readonly label: string; readonly href: string } | undefined;
-  /** The repository's URL. */
-  readonly githubHref: string;
+  /** The repository's URL; absent on a product's customer-facing landing, which then shows no code-host link. */
+  readonly githubHref?: string | undefined;
   /** The repository link's words. Defaults to "GitHub", a name. */
   readonly githubLabel?: string | undefined;
   /** The locale switcher, the app's own element. */

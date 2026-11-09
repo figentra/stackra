@@ -82,9 +82,11 @@ export function SiteHeader({
               {askAi.label}
             </Link>
           ) : null}
-          <Link href={githubHref} underline="hover" className={LINK}>
-            {githubLabel}
-          </Link>
+          {githubHref === undefined ? null : (
+            <Link href={githubHref} underline="hover" className={LINK}>
+              {githubLabel}
+            </Link>
+          )}
           {localeSwitcher}
           {themeToggle}
         </>
