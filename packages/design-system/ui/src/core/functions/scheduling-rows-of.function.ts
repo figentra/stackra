@@ -38,9 +38,12 @@ export function schedulingRowsOf(
   const tops = resources.filter((resource) => parents.get(resource.id) === undefined);
   const groups: (string | undefined)[] = [];
   for (const top of tops) if (!groups.includes(top.group)) groups.push(top.group);
-  for (const group of groups.toSorted(
-    (a, b) => Number(a !== undefined) - Number(b !== undefined),
-  )) {
+  // ungrouped first; a sort cannot do it, since it moves undefined to the end without asking the comparator
+  const ordered = [
+    ...groups.filter((group) => group === undefined),
+    ...groups.filter((group) => group !== undefined),
+  ];
+  for (const group of ordered) {
     if (group !== undefined) rows.push({ kind: "group", group, collapsed: collapsed.has(group) });
     if (group !== undefined && collapsed.has(group)) continue;
     for (const top of tops) if (top.group === group) walk(top, []);
