@@ -27,7 +27,7 @@ export interface Display<O> {
   kpi: (path: MetricPath<O>) => KpiBuilder<O>;
 
   /** Several KPIs in one tile. */
-  kpiGroup: (kpis: readonly KpiBuilder[]) => Built<DisplayNode>;
+  kpiGroup: (kpis: readonly KpiBuilder<O>[]) => Built<DisplayNode>;
 
   /** One metric field against its target. */
   progress: (path: MetricPath<O>) => Built<DisplayNode>;
