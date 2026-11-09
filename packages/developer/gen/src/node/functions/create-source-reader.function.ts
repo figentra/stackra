@@ -480,13 +480,29 @@ export function createSourceReader(
           .declarations(symbol)
           .find((declaration) => host.kind(declaration) === "ClassDeclaration");
 
+  /** The name `local` is exported under by the import that brings it into `path` (`B` of `import { B as A }`). */
+  const importedNameOf = (path: string, local: string): string | undefined => {
+    for (const statement of byPath.get(path)?.statements ?? []) {
+      if (host.kind(statement) !== "ImportDeclaration") continue;
+      for (const element of statement.importClause?.namedBindings?.elements ?? [])
+        if (nameOf(element.name) === local) return nameOf(element.propertyName ?? element.name);
+    }
+    return undefined;
+  };
+
   /** A class or constant referenced at `at`, and where a generated file imports it from. */
   const refOf = (at: TsNode, symbol: TsSymbol): ClassRef => {
     const declaration = host.declarations(symbol)[0];
     const path = declaration === undefined ? "" : host.fileName(declaration);
-    const name = host.symbolName(symbol);
+    const resolved = host.symbolName(symbol);
+    const local = kindOf(at) === "Identifier" ? nameOf(at) : resolved;
+    // A type imported from a package whose types the checker cannot resolve (a hosted package's `/node` entry) has no
+    // declaration and reads as `unknown`; the import itself still names what it brings in (SHIP, 0.29).
+    const name =
+      declaration === undefined || resolved === "unknown"
+        ? (importedNameOf(host.fileName(at), local) ?? resolved)
+        : resolved;
     if (isOwn(path)) return { name, from: importPathOf(path) };
-    const local = kindOf(at) === "Identifier" ? nameOf(at) : name;
     return { name, from: importsOf(host.fileName(at)).get(local) ?? packageOf(path) ?? path };
   };
 
@@ -2347,7 +2363,18 @@ export function createSourceReader(
       target = heritage.call?.arguments?.[0];
     if (target === undefined) return undefined;
     const symbol = host.symbolAt(target);
-    if (symbol === undefined) return undefined;
+    if (symbol === undefined) {
+      // A package the checker cannot load at all gives no symbol; the file's own import still names the class.
+      const local = kindOf(target) === "Identifier" ? nameOf(target) : undefined;
+      const file = host.fileName(target);
+      const from = local === undefined ? undefined : importsOf(file).get(local);
+      if (local === undefined || from === undefined) return undefined;
+      return {
+        name: importedNameOf(file, local) ?? local,
+        ...(slot !== undefined && slot !== "" ? { slot } : {}),
+        from,
+      };
+    }
     const declarations = host.declarations(symbol);
     if (declarations.some((declaration) => host.kind(declaration) === "TypeAliasDeclaration")) {
       fail(
@@ -2361,11 +2388,23 @@ export function createSourceReader(
     }
     const declaration = classDeclarationOf(symbol);
     const partnerKind = declaration === undefined ? undefined : kindInfo(declaration)?.kind;
+    const ref = refOf(target, symbol);
+    if (ref.name === "unknown") {
+      // Never a generated `import { unknown }`: it is undefined at runtime and nothing typechecks .stackra/gen.
+      fail(
+        target,
+        subject,
+        "partner_unresolved",
+        `the type argument \`${host.text(target)}\` resolves to no class gen can import`,
+        'import the partner class by its own name from its package\'s public entry (`import type { X } from "@scope/pkg/node"`)',
+      );
+      return undefined;
+    }
     return {
-      name: host.symbolName(symbol),
+      name: ref.name,
       ...(partnerKind !== undefined ? { kind: partnerKind } : {}),
       ...(slot !== undefined && slot !== "" ? { slot } : {}),
-      from: refOf(target, symbol).from,
+      from: ref.from,
     };
   };
 

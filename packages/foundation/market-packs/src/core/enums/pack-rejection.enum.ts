@@ -22,6 +22,8 @@ export const PackRejection = Enum.of({
   OverlayCycle: "overlay_cycle",
   /** No pack is stored under the content hash asked for. */
   NotStored: "not_stored",
+  /** A pinned pack is not `live` (the `bundled` source serves live packs only; drafts are for authoring). */
+  NotLive: "not_live",
 });
 
 /** One of the codes above. */

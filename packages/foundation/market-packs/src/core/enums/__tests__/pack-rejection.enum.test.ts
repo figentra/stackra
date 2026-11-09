@@ -19,6 +19,7 @@ describe("PackRejection", () => {
       "signature_invalid",
       "overlay_cycle",
       "not_stored",
+      "not_live",
     ]);
   });
 
@@ -30,6 +31,7 @@ describe("PackRejection", () => {
       | "signature_invalid"
       | "overlay_cycle"
       | "not_stored"
+      | "not_live"
     >();
   });
 });

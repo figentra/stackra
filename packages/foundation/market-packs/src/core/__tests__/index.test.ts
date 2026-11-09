@@ -27,6 +27,9 @@ describe("@stackra/market-packs", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "BASE_PACK_SCHEMAS",
+      "BUNDLED_PACK_HASHES",
+      "BundledPackSourceRefusedError",
+      "BundledResolvedPackSourceDriver",
       "FilesystemPackStoreDriver",
       "FloorBound",
       "MarketContext",
@@ -35,6 +38,7 @@ describe("@stackra/market-packs", () => {
       "MarketPacksConfig$",
       "MarketPacksOptions",
       "MemoryResolvedPackSourceDriver",
+      "PackEnvironment",
       "PackIssueCode",
       "PackNotFoundError",
       "PackRejectedError",
