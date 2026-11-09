@@ -18,6 +18,43 @@
   "models": [],
   "drivers": [
     {
+      "port": "Signer",
+      "key": "contracts.Signer",
+      "candidates": ["ephemeral", "kms"],
+      "classes": {
+        "ephemeral": {
+          "class": "EphemeralSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "kms": {
+          "class": "KmsSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            },
+            {
+              "class": {
+                "name": "KmsClient",
+                "from": "@stackra/config/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "SecretStore",
       "key": "config.SecretStore",
       "candidates": ["memory", "aws_secrets_manager"],
@@ -39,6 +76,25 @@
           ]
         }
       }
+    },
+    {
+      "port": "KmsClient",
+      "key": "config.KmsClient",
+      "candidates": ["aws_sdk"],
+      "classes": {
+        "aws_sdk": {
+          "class": "AwsSdkKmsClientDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],
@@ -52,6 +108,11 @@
     {
       "key": "config.aws_secrets_manager",
       "class": "AwsSecretsManagerConfig",
+      "from": "@stackra/config"
+    },
+    {
+      "key": "config.signer",
+      "class": "SignerConfig",
       "from": "@stackra/config"
     }
   ],
