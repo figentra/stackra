@@ -31,6 +31,7 @@ import { UploadExpiredError } from "#core/errors/upload-expired.error";
 import { UploadIncompleteError } from "#core/errors/upload-incomplete.error";
 import { UploadRejectedError } from "#core/errors/upload-rejected.error";
 import { bucketKeyOf } from "#core/functions/bucket-key-of.function";
+import { contentMatches } from "#core/functions/content-matches.function";
 import { bucketOptionsOf } from "#core/functions/bucket-options-of.function";
 import { filePathOf } from "#core/functions/file-path-of.function";
 import { mintUploadId } from "#core/functions/mint-upload-id.function";
@@ -41,6 +42,9 @@ import { Upload } from "#core/values/upload.value";
 
 /** Where uploads wait for their claim. */
 const UPLOADS = "uploads/";
+
+/** How many leading bytes the content check reads: enough for every signature, an `ftyp` box's brands included. */
+const HEAD = 64;
 
 /** What the server remembers about one upload, written beside it as `uploads/<id>.json`. */
 type UploadRecord = { readonly bucket: string; readonly expires: string };
@@ -128,7 +132,8 @@ export class MediaLibrary extends Service {
    * @throws UploadIncompleteError when nothing waits under the token (never uploaded, already claimed, or not a token).
    * @throws UploadBucketMismatchError when the token was signed for another bucket.
    * @throws UploadExpiredError when the token's lifetime has passed.
-   * @throws UploadRejectedError when the stored file's media type or size breaks the bucket's rules.
+   * @throws UploadRejectedError when the stored file's media type or size breaks the bucket's rules, or its bytes are
+   *         not that media type.
    */
   async claim<B extends BucketBase>(upload: Upload<B>, bucket: BucketClass<B>): Promise<MediaFile> {
     const options = bucketOptionsOf(bucket);
@@ -157,6 +162,13 @@ export class MediaLibrary extends Service {
         bucket: key,
         reason: mediaType === undefined ? "media_type" : "size",
       });
+    }
+    // shortcut: reads the whole staged file (bounded by maxBytes, checked above) for its head; read a range once
+    // FileSystem has one
+    if (!contentMatches((await this.disk.read(staged)).subarray(0, HEAD), mediaType)) {
+      await this.disk.delete(staged);
+      await this.disk.delete(recordPath);
+      throw UploadRejectedError.create({ bucket: key, reason: "content" });
     }
     const path = filePathOf(bucket, upload.id, mediaType);
     await this.disk.move(staged, path);
