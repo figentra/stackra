@@ -104,7 +104,6 @@ describe("ContractAchievementsTenancyMigration on Postgres", () => {
   it("isolates each tenant's rows under assertRowSecurity, with no warning for these tables", async () => {
     const warnings = await assertRowSecurity(postgres.database, {
       ...tenantIsolationOptions(),
-      strict: false,
     });
     expect(
       warnings.filter((warning) =>
