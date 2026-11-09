@@ -1894,6 +1894,11 @@
         "description": "A chapter's large heading in the core tone, with a muted subtitle.",
         "keywords": "chapter, heading, title, subtitle, section title, landing"
       },
+      "capability_matrix": {
+        "title": "Capability matrix",
+        "description": "A table of subjects by capability, each cell a yes, a no, coming or a short note.",
+        "keywords": "capability, matrix, comparison, table, features, carriers, landing"
+      },
       "station": {
         "title": "Station",
         "description": "One station on the landing's pipe: a rail, a title and its line, and the window it shows.",
@@ -1948,6 +1953,21 @@
         "title": "Page dock",
         "description": "The landing's section dock: a sticky bar of section links with the page's status line.",
         "keywords": "dock, sections, scroll spy, status, navigation, landing"
+      },
+      "notification_inbox": {
+        "title": "Notification inbox",
+        "description": "The person's notifications behind a bell with the unread count, or listed in place, on the web and in the app.",
+        "keywords": "notifications, inbox, bell, unread, in-app, mobile"
+      },
+      "notification_preferences": {
+        "title": "Notification preferences",
+        "description": "Each kind of notification with a switch per channel; channels that must stay on show locked.",
+        "keywords": "notifications, preferences, settings, email, push, unsubscribe"
+      },
+      "push_primer": {
+        "title": "Push primer",
+        "description": "Explains what push notifications give before the system asks, as a sheet or inside onboarding.",
+        "keywords": "push, notifications, permission, onboarding, opt in, mobile"
       }
     }
   },
@@ -5753,6 +5773,11 @@
           "title": "Basics"
         }
       },
+      "capability_matrix": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
       "station": {
         "basics": {
           "title": "Basics"
@@ -5807,6 +5832,21 @@
         }
       },
       "page_dock": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "notification_inbox": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "notification_preferences": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "push_primer": {
         "basics": {
           "title": "Basics"
         }
@@ -9705,6 +9745,15 @@
           "rtl": "The heading and subtitle follow the reading direction.",
           "when_not": "For a heading inside a card; use Heading."
         },
+        "capability_matrix": {
+          "headline": "Who does what, in one table.",
+          "intro": "Subjects down the side, capabilities across, and each cell a state with its word beside its icon, or a short note.",
+          "tags": "Landing kit · Table · Comparison",
+          "what": "The capability matrix block of the experience module.",
+          "when": "To compare what each carrier, plan or product supports on a landing page.",
+          "rtl": "Columns run from the right in Arabic, and on a narrow screen the table scrolls inside its own named region.",
+          "when_not": "For data people sort or filter; use DataTable."
+        },
         "station": {
           "headline": "One stop on the pipe.",
           "intro": "A ruled blueprint band with the pipe on its inline start and a junction at the title, the station's words, and its window, which a document gives as children.",
@@ -9803,6 +9852,30 @@
           "when": "For a long page of named sections, such as the landing's stations.",
           "rtl": "The links follow the reading order, so the dock mirrors in Arabic.",
           "when_not": "For the site's own navigation; use SiteHeader."
+        },
+        "notification_inbox": {
+          "headline": "Every update, one bell away.",
+          "intro": "Shows the person's notifications grouped by day, with unread marks, mark-all-read and dismiss; your app loads the inbox and keeps its read state.",
+          "tags": "Notifications kit · Inbox · In-app",
+          "what": "The notifications module's inbox, on the design system's notifications panel, on the web and on mobile.",
+          "when": "In the header of an app, or on a notifications screen or dashboard tile when shown in place.",
+          "rtl": "The panel mirrors in Arabic: the bell sits at the inline end and each notification keeps its own direction."
+        },
+        "notification_preferences": {
+          "headline": "Let people choose how they hear from you.",
+          "intro": "Lists each topic with a switch for every channel it can use, saves only what changed, and keeps locked channels, such as security mail, switched on.",
+          "tags": "Notifications kit · Preferences · Settings",
+          "what": "The notifications module's preferences editor, read and saved through its client port.",
+          "when": "In account settings, or in an organisation's settings for its defaults.",
+          "rtl": "Rows mirror in Arabic: the topic reads from the right and its switches line up at the inline end."
+        },
+        "push_primer": {
+          "headline": "Ask for push at the right moment.",
+          "intro": "Says what notifications will bring before the system prompt appears; one button asks, the other leaves it for later, and a retry never registers the device twice.",
+          "tags": "Notifications kit · Push · Onboarding",
+          "what": "The notifications module's push permission primer for the app, as a full sheet or an inline card.",
+          "when": "In onboarding, after a first order, or wherever push would help the person most.",
+          "rtl": "The card mirrors in Arabic, and its buttons keep their order from the inline start."
         }
       }
     }

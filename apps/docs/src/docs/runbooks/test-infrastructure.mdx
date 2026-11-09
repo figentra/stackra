@@ -74,6 +74,12 @@ For callers such as `fflow gate`:
   to the group's maximum) and keeps waiting. Do not start a second copy of the job.
 - A command that calls `ci-box` or `stackra testbed` is refused. Run it from the Mac instead.
 - A job runs for at most 3 hours.
+- Turbo runs in strict env mode (`envMode: "strict"` in `turbo.jsonc`), so a variable a task does not list never
+  reaches it. `STACKRA_GEN_STRICT=1 pnpm turbo run test:int` does not make the tests strict: only `gen` and
+  `//#gen:workspace` list it. To run the tests with it, run them normally first (that builds and generates), then again
+  with `STACKRA_GEN_STRICT=1 pnpm turbo run test:int --only --env-mode=loose`, so only the tests see it.
+- Count a run as proof only when its output ends with turbo's own `Tasks: N successful, N total` line. Never wrap
+  `testbed run` in `timeout` or pipe it: an interrupted run can then look like exit 0.
 
 ### How the Mac reaches a box
 

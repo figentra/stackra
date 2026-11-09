@@ -1,5 +1,50 @@
 # @stackra/runway
 
+## 0.30.0
+
+### Minor Changes
+
+- a3a3190: A service runway's `environments.<env>.database.extensions` now takes only the Postgres extensions ADR 0160 approves:
+  vector, pg_trgm, ltree, citext, pgcrypto, postgis, pg_stat_statements and btree_gist. `@stackra/runway` exports them
+  as the `PostgresExtension` enum and the frozen `APPROVED_POSTGRES_EXTENSIONS` list, and the shipped
+  `schema/service.json` carries them as an `enum` on `extensions.items`. Any other name is refused with its path.
+  
+  The AWS runtime plan carries each Postgres server's extensions (`DatabasePlan.extensions`, the names its member
+  consumers list, once and sorted) and those it preloads (`preloadLibraries`). A server that preloads one gets its own
+  parameter group (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot.
+  
+  `@stackra/database`'s `Extension` adds `BtreeGist`, so a migration may run `schema.createExtension(Extension.BtreeGist)`.
+- 0765ecc: Runway publishes a pull request's preview (STA-1907, ADR 0289 decision 7).
+  
+  - `publishProduct({ environment: "preview", pullRequest: n })` uploads the console bundle and writes
+    `host:<product>-pr-<n>.figentra.cloud` and `release:<product>:console:pr-<n>`, both expiring after 7 days, with no canary; the
+    answer carries `host`. A host row another product holds is refused before any upload. `pullRequestPreviewHost(product, n)` and `PULL_REQUEST_PREVIEW_SETTINGS` are exported.
+  - `EdgeKvWriter.put(key, value, ttlSeconds?)` takes an optional expiry; `WranglerEdgeKvDriver` passes it as `--ttl`.
+  - `EdgeKvWriter.read(key)` answers the row or `null`; every driver implements it (wrangler's `kv key get --text`,
+    where the API's 404 is `null`).
+  - The product command takes `--pr <n>` (or `STACKRA_PULL_REQUEST`) with `--env preview` (digits only), and prints the host.
+- f4df473: A worker workload needs no port: `port` and `health` are optional unless the workload is `public`, and an internal
+  worker may name `healthCommand`, which becomes its Fargate container's health check (no port mapping is declared).
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [04d04e4]
+- Updated dependencies [0394e56]
+- Updated dependencies [7d60f82]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [0765ecc]
+- Updated dependencies [cd2496b]
+  - @stackra/contracts@0.30.0
+  - @stackra/app@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

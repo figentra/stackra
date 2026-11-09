@@ -20,7 +20,9 @@
  *          (`analytics.tracked`, through the outbox when its consent grants `analytics`). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
  *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output). `handle` runs inside
  *          `QueryBudget` when one is bound (the call's statements counted against its `queryBudget`), and `ctx.memo`
- *          keeps one answer per key for the call. Order (ADR 0138 as amended by ADR 0495): the tenancy check and the
+ *          keeps one answer per key for the call. `ctx.detach()` holds the call's isolation past its transaction: each
+ *          `isolated` step of a stream or loop is a new `CallIsolation` transaction with the descriptor's actor and
+ *          scope. Order (ADR 0138 as amended by ADR 0495): the tenancy check and the
  *          live-configuration guard run first; then, when a `CallIsolation` is bound, everything after them (permission,
  *          approval, idempotency, rate limit, interceptors, the unit of work and `handle`) runs inside it, in one
  *          transaction whose scope and tenant settings are transaction-local and from the verified actor (an action
@@ -157,6 +159,7 @@ import { APPROVAL_PARK_FAILED } from "#core/constants/approval-park-failed.const
 import { ANALYTICS_CONSENT_CATEGORY } from "#core/constants/analytics-consent-category.constant";
 import { ANALYTICS_SKIPPED } from "#core/constants/analytics-skipped.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
+import { DETACHED_CALLS } from "#core/constants/detached-calls.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
 import { RATE_LIMITED_METER } from "#core/constants/rate-limited-meter.constant";
@@ -198,6 +201,7 @@ import type { ActionRegistration } from "#core/types/action-registration.type";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
 import type { CallInput } from "#core/types/call-input.type";
 import type { CallOptions } from "#core/types/call-options.type";
+import type { DetachedCall } from "#core/types/detached-call.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
 import type { OutputOf } from "#core/types/output-of.type";
 import type { PeriodInput } from "#core/types/period-input.type";
@@ -1602,8 +1606,36 @@ export class ActionPipeline {
           descriptor,
         ),
       publish: (event: Event) => this.published(descriptor, at, event),
+      detach: () => this.detachedOf(descriptor, action),
     };
     return Object.freeze(action);
+  }
+
+  /**
+   * The call's isolation held past its transaction (`ctx.detach()`): `run` stores a copy of the call's context, which
+   * `RequestContext.detached()` answers with this call, and `isolated` opens a step through `CallIsolation` with the
+   * descriptor's actor and scope, as `isolated(call, ...)` does for the call itself, so its checks run again per step.
+   */
+  private detachedOf(descriptor: CallDescriptor, ctx: ActionContext): DetachedCall {
+    const storage = this.optional(ContextStorage);
+    // a copy, so the call's own context never reads as detached
+    const view: object = Object.freeze({ ...ctx });
+    const within = <T>(work: () => Promise<T>): Promise<T> =>
+      storage === undefined ? work() : storage.run(view, work);
+    const detached: DetachedCall = Object.freeze({
+      actor: descriptor.actor,
+      ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
+      run: within,
+      isolated: <T>(work: () => Promise<T>): Promise<T> =>
+        within(() => {
+          const isolation = this.optional(CallIsolation);
+          return isolation === undefined
+            ? work()
+            : isolation.run(descriptor.actor, descriptor.scope, () => work(), { readOnly: false });
+        }),
+    });
+    DETACHED_CALLS.set(view, detached);
+    return detached;
   }
 
   /**
