@@ -56,7 +56,12 @@ describe("SA, AE and EG seed packs", () => {
     for (const pack of packs) {
       expect(pack.status).toBe(PackStatus.Draft);
       expect(pack.extends).toBeUndefined();
-      expect(registry.check(pack)).toEqual([]);
+      // this package registers the identity schemas; `fiscal.*` keys are @stackra/fiscal's and tested there
+      const own = {
+        ...pack,
+        entries: pack.entries.filter((entry) => !entry.key.startsWith("fiscal.")),
+      };
+      expect(registry.check(own)).toEqual([]);
       expect(launchGate(resolvePack(packs, pack.market, drafts), "os").ready).toBe(false);
     }
   });
