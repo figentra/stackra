@@ -10,7 +10,9 @@
  */
 import type { Money } from "@stackra/money";
 
+import type { Incoterm } from "#contracts/enums/incoterm.enum";
 import type { LabelFormat } from "#contracts/enums/label-format.enum";
+import type { CustomsId } from "#contracts/types/customs-id.type";
 import type { CustomsItem } from "#contracts/types/customs-item.type";
 import type { Parcel } from "#contracts/types/parcel.type";
 import type { ShippingParty } from "#contracts/types/shipping-party.type";
@@ -52,6 +54,15 @@ export interface LabelRequest {
 
   /** The customs declaration, for a cross-border shipment. */
   readonly customs?: readonly CustomsItem[];
+
+  /**
+   * Who pays the duties, when the caller chose; absent, the carrier's default (DAP). A connector that cannot honour
+   * DDP refuses with `ddp_unsupported` and never books DAP instead.
+   */
+  readonly incoterm?: Incoterm;
+
+  /** The shipper's customs and tax identifiers (EORI, IOSS, EIN, VAT) for a cross-border shipment. */
+  readonly customsIds?: readonly CustomsId[];
 
   /**
    * The carrier's pickup point or locker to deliver to, from `PickupPointGateway.searchPickupPoints`; the recipient
