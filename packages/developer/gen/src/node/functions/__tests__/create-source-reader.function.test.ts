@@ -1045,6 +1045,16 @@ describe("createSourceReader on a webhook event typed by a hosted package's inte
   const classes = reader.sources.flatMap((file) => reader.classes(file));
   host.close();
 
+  // The fixture member's `@stackra/events` stand-in must declare `WebhookEvent`, or no event here is read at all.
+  it("reads every fixture event, so a stand-in without WebhookEvent fails here first", () => {
+    expect(
+      classes
+        .filter((candidate) => candidate.kind === "webhook_event")
+        .map((candidate) => candidate.name)
+        .toSorted(),
+    ).toEqual(["BostaDeliveryUpdated", "OtoShipmentUpdated", "QuiqupOrderUpdated"]);
+  });
+
   it("names the integration as imported, never `unknown`, from the package's entry", () => {
     expect(
       classes.find((candidate) => candidate.name === "QuiqupOrderUpdated")?.partner,
