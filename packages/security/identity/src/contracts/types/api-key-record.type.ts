@@ -10,6 +10,8 @@
  */
 import type { PublicId } from "@stackra/contracts";
 
+import type { ApiKeyMode } from "#contracts/enums/api-key-mode.enum";
+
 /** One stored API key. */
 export interface ApiKeyRecord {
   /** The key's public id (`key_…`), what an admin screen and the audit name. */
@@ -35,6 +37,12 @@ export interface ApiKeyRecord {
 
   /** When the key was revoked; absent while it is live. */
   readonly revokedAt?: Date;
+
+  /** Test or live, as the key was issued; absent for a key issued before modes (live). */
+  readonly mode?: ApiKeyMode;
+
+  /** The `Stackra-Version` date the key was issued at, which its calls default to; absent for no pin. */
+  readonly versionPin?: string;
 
   /** When the key last passed verification; absent when never (written through `ApiKeyStore.recordUse`). */
   readonly lastUsedAt?: Date;
