@@ -103,11 +103,19 @@ class InvoiceService extends CrudService<Invoice> {}
 
 class Customer extends Model.with(HasPublicId("cus"), HasMetadata) {}
 
+/** A subclass with its own `settled` member, a name the base must not claim (it compiles only if the base has none). */
+class SettledOrderService extends CrudService<Order> {
+  settled(label: string): string {
+    return `settled:${label}`;
+  }
+}
+
 class CustomerService extends CrudService<Customer> {}
 
 registerModelPartners([
   [CustomerService, Customer],
   [OrderService, Order],
+  [SettledOrderService, Order],
   [LedgerEntryService, LedgerEntry],
   [ContactService, Contact],
   [InvoiceService, Invoice],
@@ -230,6 +238,19 @@ describe(CrudService, () => {
     expect(em.find).toHaveBeenCalledWith(Order, { status: "paid", [raw.key]: [] }, { limit: 5 });
     expect(await new OrderService().count({ status: "paid" })).toBe(3);
     expect(await new OrderService().purge({ status: "paid" })).toBe(2);
+  });
+
+  it("flushes before a read inside a transaction, and leaves a subclass's own `settled` member alone", async () => {
+    const em = connect();
+    em.isInTransaction.mockReturnValue(true);
+    const service = new SettledOrderService();
+    await service.find({ status: "paid" });
+    expect(em.flush).toHaveBeenCalledTimes(1);
+    expect(em.find).toHaveBeenCalledTimes(1);
+    expect(service.settled("x")).toBe("settled:x");
+    em.isInTransaction.mockReturnValue(false);
+    await service.count({ status: "paid" });
+    expect(em.flush).toHaveBeenCalledTimes(1);
   });
 
   it("refuses with not_found through findOneOrFail", async () => {
