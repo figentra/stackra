@@ -104,9 +104,9 @@ describe("defaultChatPartRenderers", () => {
       { artifactId: "art_1", name: "Open orders", kind: "csv", version: 2, bytes: 2048 },
       { onOpenArtifact, onDownloadArtifact },
     );
-    fireEvent.click(screen.getByRole("button", { name: /Open orders\.csv/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Open Open orders\.csv$/ }));
     expect(onOpenArtifact).toHaveBeenCalledWith("art_1", 2);
-    fireEvent.click(screen.getAllByRole("button").at(-1) as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: /^Download Open orders\.csv$/ }));
     expect(onDownloadArtifact).toHaveBeenCalledWith("art_1", 2);
   });
 
