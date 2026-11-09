@@ -700,6 +700,8 @@ export { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 export type { ShortcutHintProps } from "#react/shortcut-hint/shortcut-hint.props";
 export { ShortcutSettingsPanel } from "#react/shortcut-settings-panel/shortcut-settings-panel";
 export type { ShortcutSettingsPanelProps } from "#react/shortcut-settings-panel/shortcut-settings-panel.props";
+export { ApprovalCard } from "#react/approval-card/approval-card";
+export type { ApprovalCardProps } from "#react/approval-card/approval-card.props";
 export { TamoAskBox } from "#react/tamo-ask-box/tamo-ask-box";
 export type { TamoAskBoxProps } from "#react/tamo-ask-box/tamo-ask-box.props";
 export { TamoButton } from "#react/tamo-button/tamo-button";

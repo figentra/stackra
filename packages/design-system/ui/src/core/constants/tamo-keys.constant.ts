@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `TAMO_KEYS`, the typed keys of the Tamo parts' own words in `assets/lang/<locale>/ui.json` (`ui::tamo.*`):
- *          "Ask Tamo", the text actions, the review, ask-in-words, marker, status and panel words.
+ *          "Ask Tamo", the text actions, the review, ask-in-words, marker, status, panel and approval words.
  * Boundary: internal: the web and native components import it by path. Kept apart from `UI_KEYS` so the AI layer
  *           lands without editing the shared key list.
  * Runtime: isomorphic
@@ -76,6 +76,14 @@ export const TAMO_KEYS = keys({
       "you",
       "disclaimer",
       "close",
+      "approval_title",
+      "approval_waiting",
+      "approve",
+      "deny",
+      "approved",
+      "denied",
+      "expired",
+      "risk",
     ],
   },
 });
