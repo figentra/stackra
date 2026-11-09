@@ -5075,5 +5075,12 @@
       "granted": "Notifications are on.",
       "postponed": "You can turn them on later in settings."
     }
+  },
+  "brand_logo": {
+    "basics": {
+      "brand": "Acme Studio",
+      "with_logo": "The logo for the scheme on screen",
+      "without_logo": "No logo yet: the brand name instead"
+    }
   }
 }

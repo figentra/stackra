@@ -18077,6 +18077,30 @@
   },
   {
     "category": "blocks",
+    "description": "Lets a person choose light, dark or the system's look, kept on their device.",
+    "headings": ["Basics"],
+    "key": "free/appearance-toggle",
+    "keywords": ["theme", "dark mode", "light mode", "color scheme", "appearance", "kit"],
+    "lang": "en",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "Appearance toggle"
+  },
+  {
+    "category": "blocks",
+    "description": "يتيح للشخص اختيار المظهر الفاتح أو الداكن أو مظهر النظام، ويُحفظ على جهازه.",
+    "headings": ["الأساسيات"],
+    "key": "free/appearance-toggle",
+    "keywords": ["سمة", "الوضع الداكن", "الوضع الفاتح", "نظام الألوان", "المظهر"],
+    "lang": "ar",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "مبدّل المظهر"
+  },
+  {
+    "category": "blocks",
     "description": "A link drawn as a search field that opens the docs, quiet until the assistant is live.",
     "headings": ["Basics"],
     "key": "free/ask-ai",
@@ -18139,6 +18163,30 @@
     "propNames": [],
     "tier": "free",
     "title": "شبكة البنتو"
+  },
+  {
+    "category": "blocks",
+    "description": "Draws the theme's logo, or yours, in the scheme on screen.",
+    "headings": ["Basics"],
+    "key": "free/brand-logo",
+    "keywords": ["logo", "brand", "wordmark", "dark mode", "theme", "kit"],
+    "lang": "en",
+    "platforms": ["react", "native"],
+    "propNames": [],
+    "tier": "free",
+    "title": "Brand logo"
+  },
+  {
+    "category": "blocks",
+    "description": "يرسم شعار السمة، أو شعارك، بحسب النظام الظاهر على الشاشة.",
+    "headings": ["الأساسيات"],
+    "key": "free/brand-logo",
+    "keywords": ["شعار", "علامة تجارية", "شعار نصي", "الوضع الداكن", "سمة"],
+    "lang": "ar",
+    "platforms": ["react", "native"],
+    "propNames": [],
+    "tier": "free",
+    "title": "شعار العلامة"
   },
   {
     "category": "blocks",
