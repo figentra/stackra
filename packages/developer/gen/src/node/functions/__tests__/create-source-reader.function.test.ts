@@ -980,6 +980,82 @@ describe("createSourceReader on a driver over another package's base", async () 
   });
 });
 
+/**
+ * SHIP's webhook events typed by a hosted connector's integration, `import type`d from its `/node` entry, whose types
+ * the checker cannot resolve here (no such package is installed): the regression of `integration: Importedunknown3`.
+ */
+const HOSTED_WEBHOOK_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/events/quiqup-order-updated.event.ts": [
+    'import type { QuiqupIntegration } from "@figentra/ship-connector-quiqup/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class QuiqupOrderUpdated extends WebhookEvent<QuiqupIntegration>({ type: "order" }) {}',
+    "",
+  ].join("\n"),
+  "src/core/events/bosta-delivery-updated.event.ts": [
+    'import type { BostaIntegration as Bosta } from "@figentra/ship-connector-bosta/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class BostaDeliveryUpdated extends WebhookEvent<Bosta>({ type: "delivery" }) {}',
+    "",
+  ].join("\n"),
+  // installed, but its `/node` types are not built: the import resolves to a module the checker cannot read
+  "node_modules/@figentra/ship-connector-oto/package.json": JSON.stringify({
+    name: "@figentra/ship-connector-oto",
+    type: "module",
+    exports: { "./node": { types: "./dist/node.d.mts", default: "./dist/node.mjs" } },
+  }),
+  "src/core/events/oto-shipment-updated.event.ts": [
+    'import type { OtoIntegration } from "@figentra/ship-connector-oto/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class OtoShipmentUpdated extends WebhookEvent<OtoIntegration>({ type: "shipment" }) {}',
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a webhook event typed by a hosted package's integration", async () => {
+  const root = writeFixtureMember("hosted-webhook-events", HOSTED_WEBHOOK_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("names the integration as imported, never `unknown`, from the package's entry", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "QuiqupOrderUpdated")?.partner,
+    ).toMatchObject({ name: "QuiqupIntegration", from: "@figentra/ship-connector-quiqup/node" });
+  });
+
+  it("names an aliased import by the name the package exports", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "BostaDeliveryUpdated")?.partner,
+    ).toMatchObject({ name: "BostaIntegration", from: "@figentra/ship-connector-bosta/node" });
+  });
+
+  it("names the integration of an installed package whose types are not built", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "OtoShipmentUpdated")?.partner,
+    ).toMatchObject({ name: "OtoIntegration", from: "@figentra/ship-connector-oto/node" });
+  });
+
+  it("reads each event as a webhook event", () => {
+    expect(
+      classes.map((candidate) => [candidate.name, candidate.kind, candidate.partner?.name]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["QuiqupOrderUpdated", "webhook_event", "QuiqupIntegration"],
+        ["BostaDeliveryUpdated", "webhook_event", "BostaIntegration"],
+        ["OtoShipmentUpdated", "webhook_event", "OtoIntegration"],
+      ]),
+    );
+  });
+
+  it("refuses no partner it could name", () => {
+    expect(reader.errors.map((error) => error.code)).not.toContain("partner_unresolved");
+  });
+});
+
 /** Per-locale and upload fields (STA-1218), with stand-ins for `@stackra/model` and `@stackra/media`. */
 const VOCABULARY_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/model/package.json": JSON.stringify({
