@@ -68,25 +68,25 @@ The rules in full, and what enforces each one, are in [`AGENTS.md`](../AGENTS.md
 
 ## Commands
 
-| Command                                      | Does                                                                                                                         |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm verify`                                | format check, lint, typecheck, test, build, then `validate`, `boundaries` and `knip`                                         |
-| `pnpm verify:affected`                       | the turbo half of `verify`, only for members changed since `main`                                                            |
-| `pnpm validate`                              | repository shape, spec gates, hook tests and the agent sync check                                                            |
-| `pnpm build` / `test` / `lint` / `typecheck` | one turbo task across every member                                                                                           |
-| `pnpm format` / `pnpm format:check`          | oxfmt (and shfmt for `*.sh`) over the repo, writing or checking                                                              |
-| `pnpm boundaries`                            | `turbo boundaries`: the tier direction                                                                                       |
-| `pnpm knip`                                  | unused files, exports and dependencies                                                                                       |
-| `pnpm docs` / `pnpm console` / `pnpm mobile` | run one app in dev mode                                                                                                      |
-| `pnpm new <kind> <name>`                     | scaffold a member from `tools/scaffold/templates`                                                                            |
-| `pnpm changeset`                             | record a release note for a package change                                                                                   |
-| `pnpm secrets:scan`                          | gitleaks over the whole history                                                                                              |
-| `pnpm doctor`                                | fresh-machine checklist                                                                                                      |
-| `pnpm spec:sync`                             | `fflow sync --direct`: render the Flow skills, project `.agents/` into `.claude/` and `.opencode/`, record `.flow/lock.json` |
-| `pnpm spec:gate` / `pnpm spec:trace`         | spec stage gates and requirement-to-test traceability                                                                        |
-| `pnpm linear <command>`                      | keep the Linear issue current: `start`, `review`, `done`, `comment`, `create`, `mine`                                        |
-| `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)                                          |
-| `pnpm pr:merge <n>`                          | the only way an agent merges: green gate and an `AI-REVIEW: PASS` for the head's diff                                        |
+| Command                                      | Does                                                                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `pnpm verify`                                | format check, lint, typecheck, test, build, then `validate`, `boundaries` and `knip`                                |
+| `pnpm verify:affected`                       | the turbo half of `verify`, only for members changed since `main`                                                   |
+| `pnpm validate`                              | repository shape, spec gates, hook tests and the agent sync check                                                   |
+| `pnpm build` / `test` / `lint` / `typecheck` | one turbo task across every member                                                                                  |
+| `pnpm format` / `pnpm format:check`          | oxfmt (and shfmt for `*.sh`) over the repo, writing or checking                                                     |
+| `pnpm boundaries`                            | `turbo boundaries`: the tier direction                                                                              |
+| `pnpm knip`                                  | unused files, exports and dependencies                                                                              |
+| `pnpm docs` / `pnpm console` / `pnpm mobile` | run one app in dev mode                                                                                             |
+| `pnpm new <kind> <name>`                     | scaffold a member from `tools/scaffold/templates`                                                                   |
+| `pnpm changeset`                             | record a release note for a package change                                                                          |
+| `pnpm secrets:scan`                          | gitleaks over the whole history                                                                                     |
+| `pnpm doctor`                                | fresh-machine checklist                                                                                             |
+| `pnpm spec:sync`                             | `fflow sync`: render the Flow skills, project `.agents/` into `.claude/` and `.opencode/`, record `.flow/lock.json` |
+| `pnpm spec:gate` / `pnpm spec:trace`         | spec stage gates and requirement-to-test traceability                                                               |
+| `pnpm linear <command>`                      | keep the Linear issue current: `start`, `review`, `done`, `comment`, `create`, `mine`                               |
+| `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)                                 |
+| `pnpm pr:merge <n>`                          | the only way an agent merges: green gate and an `AI-REVIEW: PASS` for the head's diff                               |
 
 `pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from sops through
 `tools/scripts/secrets-exec.mjs`. One line per

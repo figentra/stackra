@@ -3,4 +3,4 @@
 ---
 
 The guard's refusals for generated agent files, the reviewer list, `.mcp.json` and the rules block now say to run
-`fflow sync --direct`, which projects `.agents/` now that core's `agents:sync` script has retired.
+`fflow sync`, which projects `.agents/` now that core's `agents:sync` script has retired.

@@ -1,6 +1,6 @@
 # Agents
 
-Canonical agent definitions for Stackra. `pnpm spec:sync` (`fflow sync --direct`) renders them into `.claude/agents` and
+Canonical agent definitions for Stackra. `pnpm spec:sync` (`fflow sync`) renders them into `.claude/agents` and
 `.opencode/agents`; edit the source here, never the generated copies.
 
 Every agent is defined here; no plugin supplies roles to this repository (ADR 0121 D3). The roster is ADR 0258

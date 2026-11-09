@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "prepare": "{ [ -n \"$CI\" ] || ! d=$(git rev-parse --path-format=absolute --git-dir 2>/dev/null) || [ \"$d\" != \"$(git rev-parse --path-format=absolute --git-common-dir)\" ] || lefthook install; } && if [ -z \"$CI\" ]; then fflow sync --direct >/dev/null; fi",
+    "prepare": "{ [ -n \"$CI\" ] || ! d=$(git rev-parse --path-format=absolute --git-dir 2>/dev/null) || [ \"$d\" != \"$(git rev-parse --path-format=absolute --git-common-dir)\" ] || lefthook install; } && if [ -z \"$CI\" ]; then fflow sync >/dev/null; fi",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "gen": "turbo run gen:workspace gen",
@@ -41,7 +41,7 @@
     "ai:spend": "node tools/scripts/ai-spend.mjs",
     "doctor": "node packages/developer/cli/dist/stackra.mjs doctor",
     "eas:preflight": "node packages/developer/cli/dist/stackra.mjs eas-preflight",
-    "spec:sync": "fflow sync --direct",
+    "spec:sync": "fflow sync",
     "spec:gate": "fflow gate",
     "spec:trace": "fflow trace",
     "secrets:import": "node tools/scripts/secrets-import.mjs",

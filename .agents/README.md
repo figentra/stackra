@@ -1,7 +1,7 @@
 # `.agents/` — the source of truth for every AI artifact
 
 One canonical tree, projected into each assistant's own directory by
-`fflow sync --direct` (`pnpm spec:sync`). Edit here; never edit the
+`fflow sync` (`pnpm spec:sync`; `projection: true` in `flow.config.json`). Edit here; never edit the
 projection ([ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx)).
 
 | Entry                     | Holds                                                         | Projected to                                                             |
@@ -12,7 +12,7 @@ projection ([ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx
 | [`skills/`](skills)       | invocable skills (`<name>/SKILL.md`)                          | symlinked into `.claude/skills/`; OpenCode reads `.agents/skills` itself |
 | [`reference/`](reference) | fenced upstream material (the Encore skills, ADR 0258)        | not projected; read on purpose by `compiler-engineer`                    |
 | [`specs/`](specs)         | Flow specs, one `sta-<n>-<slug>/` folder per Linear issue     | read in place, not projected                                             |
-| `models.yaml`             | which model each assistant runs for each agent tier           | read by `fflow sync --direct`                                            |
+| `models.yaml`             | which model each assistant runs for each agent tier           | read by `fflow sync`                                            |
 | `routing.yaml`            | task type → executor, model and agent; the daily OpenCode cap | read by `pnpm delegate` and `pnpm ai:spend`                              |
 
 A folder's `README.md` is documentation and is never projected.
@@ -25,7 +25,7 @@ hand-edited projection rather than silently overwriting it; `pnpm spec:sync` rep
 `stackra validate --repository` lints the agent sources.
 
 ```bash
-pnpm spec:sync                                # fflow sync --direct: project into .claude/ and .opencode/
+pnpm spec:sync                                # fflow sync: project into .claude/ and .opencode/
 pnpm exec fflow check                         # verify; fails on drift
 ```
 

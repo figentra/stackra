@@ -10,7 +10,7 @@ pnpm spec:sync
 pnpm exec fflow check
 ```
 
-`pnpm spec:sync` (`fflow sync --direct`) renders `.agents/agents/*.md` (plus tier→model from `.agents/models.yaml`) into the generated copies under `.claude/agents` and `.opencode/agents`. `fflow check` then verifies the generated copies match the sources.
+`pnpm spec:sync` (`fflow sync`) renders `.agents/agents/*.md` (plus tier→model from `.agents/models.yaml`) into the generated copies under `.claude/agents` and `.opencode/agents`. `fflow check` then verifies the generated copies match the sources.
 
 Report the result plainly:
 

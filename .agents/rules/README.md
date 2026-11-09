@@ -1,7 +1,7 @@
 # `.agents/rules/`
 
 Canonical repository rules, written once with assistant-neutral frontmatter. Figentra Flow
-(`pnpm spec:sync`, `fflow sync --direct`) lists them in the "Rules index" of the root `AGENTS.md` (path, description,
+(`pnpm spec:sync`, `fflow sync`) lists them in the "Rules index" of the root `AGENTS.md` (path, description,
 when it applies). Edit the source here and re-run the sync; `fflow gate ci` (in `pnpm validate`) fails on drift.
 
 ## Frontmatter
