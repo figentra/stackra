@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "prepare": "{ [ \"$(git rev-parse --path-format=absolute --git-dir)\" != \"$(git rev-parse --path-format=absolute --git-common-dir)\" ] || lefthook install; } && if [ -z \"$CI\" ]; then fflow sync --direct >/dev/null; fi",
+    "prepare": "{ [ -n \"$CI\" ] || ! d=$(git rev-parse --path-format=absolute --git-dir 2>/dev/null) || [ \"$d\" != \"$(git rev-parse --path-format=absolute --git-common-dir)\" ] || lefthook install; } && if [ -z \"$CI\" ]; then fflow sync --direct >/dev/null; fi",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "gen": "turbo run gen:workspace gen",
