@@ -5,7 +5,8 @@
  *          bytes, authenticate (an `Authorization` header is verified and never downgraded to anonymous; none is the
  *          anonymous actor only where the call lists it, else 401; an action that declares `credentials: "ignore"` reads
  *          no credential and runs anonymous; an anonymous actor is the visitor its signed token names, and an answer to
- *          a new or re-signed visitor carries the token back in a header and an httpOnly cookie), parse the input (JSON body, or the query string for
+ *          a new or re-signed visitor carries the token back in a header and an httpOnly cookie; an API key's call
+ *          carries its key's call options to the call), parse the input (JSON body, or the query string for
  *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
  *          kind's status with its envelope.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
@@ -33,6 +34,7 @@ import { holdCallerToken } from "#server/functions/hold-caller-token.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
 import { readCappedBody } from "#server/functions/read-capped-body.function";
 import type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
+import type { KeyCallOptions } from "#server/types/key-call-options.type";
 import type { VisitorIdentity } from "#server/types/visitor-identity.type";
 
 /** Methods whose input is the body; every other method's input is the query string. */
@@ -102,19 +104,20 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
 
   const authorization = guarded.headers.get("authorization");
   const onBehalfOf = guarded.headers.get("stackra-on-behalf-of");
+  const origin = guarded.headers.get("origin");
   // `credentials: "ignore"`: the credential is never verified or held, so no user token is forwarded either
   const ignored =
     options.action !== undefined && kindOf(options.action)?.options["credentials"] === "ignore";
   let actor: Actor;
+  let call: KeyCallOptions | undefined;
   let visitor: VisitorIdentity | undefined;
   if (!ignored && (authorization !== null || onBehalfOf !== null)) {
     try {
-      actor = (
-        await options.authenticate({
-          ...(authorization === null ? {} : { authorization }),
-          ...(onBehalfOf === null ? {} : { onBehalfOf }),
-        })
-      ).actor;
+      ({ actor, call } = await options.authenticate({
+        ...(authorization === null ? {} : { authorization }),
+        ...(onBehalfOf === null ? {} : { onBehalfOf }),
+        ...(origin === null ? {} : { origin }),
+      }));
     } catch (error) {
       if (isRefusal(error) && error.kind === ErrorKind.Unauthenticated) return refused(401);
       throw error;
@@ -157,7 +160,7 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   try {
     // The one place a call's forwardable user token is held: for this call only, emptied when it ends (ADR 0209).
     output = await holdCallerToken(guarded.headers, actor, options.action, () =>
-      options.execute(input, actor, guarded),
+      options.execute(input, actor, guarded, call),
     );
   } catch (error) {
     if (!isRefusal(error) || isRefusal(error, RateLimitedError)) throw error;
