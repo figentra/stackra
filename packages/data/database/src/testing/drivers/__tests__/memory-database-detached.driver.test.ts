@@ -3,7 +3,9 @@
  * Purpose: tests of the detached-call hooks on PGlite (`MemoryDatabaseDriver`): a continuation started inside a
  *          transaction that has since committed, run through `runDetached`, is outside every transaction and its step
  *          commits its own write (the stream or agent loop an action starts in `handle`); inside a detached run a
- *          `CrudService` operation outside a transaction runs as one step, and inside a transaction it does not; two
+ *          `CrudService` operation outside a transaction runs as one step, and inside a transaction it does not; what a step loads and
+ *          changes is flushed before the step commits, with no explicit flush (the outbox writer, a flush subscriber,
+ *          writes a recorded event in that same flush); two
  *          databases in one process keep their own step; and building a driver registers one wrapper in
  *          `DETACHED_RUNS`, which runs the work in the connected database.
  * Boundary: unit tier: PGlite runs in this process, no Docker. The step is a plain transaction here; the action
@@ -98,6 +100,22 @@ describe("MemoryDatabaseDriver detached runs", { timeout: 60_000 }, () => {
     expect(Database.detached()).toBeUndefined();
     await notes().count({});
     expect(steps).toBe(1);
+  });
+
+  it("flushes what a step loads and changes before the step commits, with no explicit flush", async () => {
+    const database = new MemoryDatabaseDriver();
+    await database.transaction(async () => {
+      await notes().insert({ id: "note_01ja0000000000000000000003", body: "pending" });
+    });
+    const step: DetachedStep = (work) => database.transaction(work);
+    await database.runDetached(step, () =>
+      step(async () => {
+        const note = await notes().findOneOrFail({ id: "note_01ja0000000000000000000003" });
+        note.body = "settled";
+      }),
+    );
+    const reread = await notes().findOneOrFail({ id: "note_01ja0000000000000000000003" });
+    expect(reread.body).toBe("settled");
   });
 
   it("keeps each database's step its own when two run in one process", async () => {
