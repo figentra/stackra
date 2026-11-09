@@ -1,5 +1,30 @@
 # @stackra/privacy
 
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [8a70552]
+- Updated dependencies [5119f3c]
+  - @stackra/database@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/data-transfer@0.27.0
+  - @stackra/workflow@0.27.0
+  - @stackra/search@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/scheduler@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/filesystem@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/testing@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes
