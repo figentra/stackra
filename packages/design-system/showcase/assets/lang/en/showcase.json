@@ -1948,6 +1948,16 @@
         "title": "Page dock",
         "description": "The landing's section dock: a sticky bar of section links with the page's status line.",
         "keywords": "dock, sections, scroll spy, status, navigation, landing"
+      },
+      "appearance_toggle": {
+        "title": "Appearance toggle",
+        "description": "Lets a person choose light, dark or the system's look, kept on their device.",
+        "keywords": "theme, dark mode, light mode, color scheme, appearance"
+      },
+      "brand_logo": {
+        "title": "Brand logo",
+        "description": "Draws the theme's logo, or yours, in the scheme on screen.",
+        "keywords": "logo, brand, wordmark, dark mode, theme"
       }
     }
   },
@@ -5807,6 +5817,16 @@
         }
       },
       "page_dock": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "appearance_toggle": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "brand_logo": {
         "basics": {
           "title": "Basics"
         }
@@ -9803,6 +9823,22 @@
           "when": "For a long page of named sections, such as the landing's stations.",
           "rtl": "The links follow the reading order, so the dock mirrors in Arabic.",
           "when_not": "For the site's own navigation; use SiteHeader."
+        },
+        "appearance_toggle": {
+          "headline": "Light, dark or the system's look, one tap away.",
+          "intro": "Shows the colour schemes the app offers and keeps the one a person picks on their device; set to system, it follows the phone or computer.",
+          "tags": "Theming kit · Colour scheme · Dark mode",
+          "what": "The theming module's scheme picker over the device's chosen scheme: segments for a settings page, a switch for a compact header, or a menu behind a button for a site header.",
+          "when": "In a settings page, an account menu or a marketing site's header, wherever people expect to change the look.",
+          "rtl": "The segments and the menu follow the reading direction, so the first scheme sits on the right in Arabic and the arrow keys move with it."
+        },
+        "brand_logo": {
+          "headline": "Your logo, right in light and in dark.",
+          "intro": "Draws the logo the theme configures, or a logo per scheme you hand it, sized to a height and letterboxed so it never stretches; with no logo it shows your fallback.",
+          "tags": "Theming kit · Branding · Dark mode",
+          "what": "The theming module's logo, read from the theme's configuration and the scheme on screen.",
+          "when": "In an app bar, a sidebar header, a sign-in page or a branding preview.",
+          "rtl": "A logo is a picture, so it is never mirrored; only its place in the row follows the reading direction."
         }
       }
     }
