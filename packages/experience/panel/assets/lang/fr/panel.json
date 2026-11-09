@@ -88,6 +88,16 @@
     "loading": "Recherche dans {source}",
     "failed": "Impossible de rechercher dans {source}."
   },
+  "chat_form": {
+    "send": "Envoyer",
+    "sent": "Envoyé",
+    "loading": "Chargement du formulaire",
+    "unavailable": "Ce formulaire ne peut pas être affiché ici.",
+    "upload": "Choisir un fichier",
+    "uploading": "Envoi de {name}",
+    "upload_failed": "Impossible d’envoyer {name}.",
+    "no_upload": "Impossible d’ajouter des fichiers ici."
+  },
   "checklist": {
     "title": "Bien démarrer",
     "progress": "{done} sur {total} terminées",

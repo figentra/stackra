@@ -88,6 +88,16 @@
     "loading": "Searching {source}",
     "failed": "{source} could not be searched."
   },
+  "chat_form": {
+    "send": "Send",
+    "sent": "Sent",
+    "loading": "Loading the form",
+    "unavailable": "This form cannot be shown here.",
+    "upload": "Choose a file",
+    "uploading": "Uploading {name}",
+    "upload_failed": "{name} could not be uploaded.",
+    "no_upload": "Files cannot be added here."
+  },
   "checklist": {
     "title": "Get started",
     "progress": "{done} of {total} done",

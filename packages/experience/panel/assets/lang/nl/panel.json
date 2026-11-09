@@ -88,6 +88,16 @@
     "loading": "Zoeken in {source}",
     "failed": "{source} kon niet worden doorzocht."
   },
+  "chat_form": {
+    "send": "Versturen",
+    "sent": "Verstuurd",
+    "loading": "Formulier laden",
+    "unavailable": "Dit formulier kan hier niet worden getoond.",
+    "upload": "Kies een bestand",
+    "uploading": "{name} uploaden",
+    "upload_failed": "{name} kon niet worden geüpload.",
+    "no_upload": "Hier kunnen geen bestanden worden toegevoegd."
+  },
   "checklist": {
     "title": "Aan de slag",
     "progress": "{done} van {total} klaar",
