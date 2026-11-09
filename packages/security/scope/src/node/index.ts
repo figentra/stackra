@@ -10,6 +10,7 @@
 export { ScopeDepthEntitlement } from "#node/access/scope-depth.entitlement";
 export { PostgresScopeTreeDriver } from "#node/drivers/postgres-scope-tree.driver";
 export { ScopeMoved } from "#node/events/scope-moved.event";
+export { RepathOnScopeMovedListener } from "#node/listeners/repath-on-scope-moved.listener";
 export { ScopeNode } from "#node/models/scope-node.model";
 export { ScopeNodeService } from "#node/services/scope-node.service";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
