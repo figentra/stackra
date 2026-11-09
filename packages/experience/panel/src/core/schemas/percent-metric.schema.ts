@@ -14,6 +14,7 @@
 import { Num, registerSchemas, Schema } from "@stackra/validation";
 
 import { PERCENT_METRIC_SCHEMA } from "#core/constants/percent-metric-schema.constant";
+import { MetricFormat } from "#core/enums/metric-format.enum";
 import type { MetricValue } from "#core/types/metric-value.type";
 
 /**
@@ -43,7 +44,7 @@ export class PercentMetric extends Schema {
   target!: number | null;
 
   /** Marks the metric as a percent, so a renderer formats it from the answer alone. */
-  format!: "percent";
+  format!: MetricFormat;
 
   /**
    * A percent metric from a current and previous ratio.
@@ -61,7 +62,7 @@ export class PercentMetric extends Schema {
       previous: ratio.previous,
       series: options.series === undefined || options.series === null ? null : [...options.series],
       target: options.target ?? null,
-      format: "percent",
+      format: MetricFormat.Percent,
     });
   }
 }

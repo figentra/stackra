@@ -51,6 +51,7 @@ export { ActionPlace } from "#core/enums/action-place.enum";
 export { Aggregate } from "#core/enums/aggregate.enum";
 export { Count } from "#core/enums/count.enum";
 export { DisplayKind } from "#core/enums/display-kind.enum";
+export { MetricFormat } from "#core/enums/metric-format.enum";
 export { DocumentLayout } from "#core/enums/document-layout.enum";
 export { ExportFormat } from "#core/enums/export-format.enum";
 export { FieldControl } from "#core/enums/field-control.enum";

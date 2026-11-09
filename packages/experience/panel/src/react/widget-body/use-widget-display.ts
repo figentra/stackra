@@ -15,6 +15,7 @@ import { createElement, type ComponentType, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { DisplayKind } from "#core/enums/display-kind.enum";
+import { MetricFormat } from "#core/enums/metric-format.enum";
 import { valueAt } from "#core/functions/value-at.function";
 import { widgetTitle } from "#core/functions/widget-title.function";
 import type { CustomWidgetProps } from "#core/types/custom-widget-props.type";
@@ -101,7 +102,7 @@ export function useWidgetDisplay({ widget, data, isRefreshing }: WidgetBodyProps
       const value = valueAt(data, `${display.path}.value`);
       const target = valueAt(data, `${display.path}.target`);
       // a percent metric's ratio fills a bar out of one, not the kit's default of a hundred
-      const isPercent = valueAt(data, `${display.path}.format`) === "percent";
+      const isPercent = valueAt(data, `${display.path}.format`) === MetricFormat.Percent;
       const maxValue = typeof target === "number" ? target : isPercent ? 1 : undefined;
       return {
         kind: "progress",

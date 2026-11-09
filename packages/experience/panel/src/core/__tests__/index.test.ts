@@ -58,6 +58,7 @@ describe("@stackra/panel", () => {
       "FormField",
       "FormStep",
       "ImportMode",
+      "MetricFormat",
       "MoneyMetric",
       "MoneyMetric$",
       "Panel",

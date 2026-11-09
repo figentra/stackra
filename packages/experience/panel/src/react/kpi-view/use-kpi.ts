@@ -14,6 +14,7 @@ import { Tone } from "@stackra/contracts";
 import { useMoney, useNumber, useTranslation } from "@stackra/i18n/react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { MetricFormat } from "#core/enums/metric-format.enum";
 import { changeOf } from "#core/functions/change-of.function";
 import { pointChangeOf } from "#core/functions/point-change-of.function";
 import { toneOf } from "#core/functions/tone-of.function";
@@ -65,7 +66,7 @@ export function useKpi({ widget, kpi, metric, note }: KpiViewProps): {
       : t(widgetTitle(widget.key, kpi.note), noteValues);
   const words = { label, note: noteText === "" ? undefined : noteText };
   if (!isMetric(metric) || metric.value === null) return words;
-  const isPercent = metric.format === "percent";
+  const isPercent = metric.format === MetricFormat.Percent;
   const format = (value: number): string => {
     if (isPercent) return number(value, { style: "percent", maximumFractionDigits: 1 });
     return metric.currency === undefined ? number(value) : money(value, metric.currency);
