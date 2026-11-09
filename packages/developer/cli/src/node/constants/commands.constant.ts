@@ -41,6 +41,7 @@ import { AnyRatchetCommand } from "#node/commands/any-ratchet.command";
 import { RowSecurityDeclarationsCommand } from "#node/commands/row-security-declarations.command";
 import { AppNativeDepsCommand } from "#node/commands/app-native-deps.command";
 import { ArchitectureMapCommand } from "#node/commands/architecture-map.command";
+import { ConstitutionCommand } from "#node/commands/constitution.command";
 import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
 import { CatalogueCompletenessCommand } from "#node/commands/catalogue-completeness.command";
 import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
@@ -132,6 +133,7 @@ export const COMMANDS: CliCommands = [
   EAS_PREFLIGHT_COMMAND,
   StructureCommand,
   ArchitectureMapCommand,
+  ConstitutionCommand,
   DocStandardCommand,
   CatalogueCompletenessCommand,
   CyclesCommand,
