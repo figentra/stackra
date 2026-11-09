@@ -36,7 +36,8 @@
  *          writable isolation with the call's actor and scope that commits or rolls back alone, `RequestContext.detached()`
  *          answers only inside the detached run, another store's value stays readable, a branch user's steps run as the
  *          settled tenant, each `DETACHED_RUNS` wrapper is entered around a run and a lone step (never again for a step
- *          inside a run), and with no isolation bound a step runs as it is.
+ *          inside a run), and with no isolation bound a step runs as it is. And `ctx.attempt`: a queued job's attempt from
+ *          the call options, none on a direct call.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -4000,6 +4001,28 @@ describe("ActionPipeline tree tenant (STA-2561)", () => {
     expect(access.calls[0]).toMatchObject({
       scopeId: TREE_BRANCH.id,
       branchScopeId: TREE_BRANCH.id,
+    });
+  });
+});
+
+/** An action that answers which attempt of a job it runs as. */
+class AttemptAction extends Action({
+  key: "order.attempt",
+  actors: [ActorKind.User, ActorKind.Job],
+}) {
+  async handle(_input: object, ctx: ActionContext): Promise<object> {
+    return { attempt: ctx.attempt ?? null };
+  }
+}
+
+describe("ActionPipeline job attempt (ctx.attempt)", () => {
+  it("hands a queued job's attempt to the context, and none to a direct call", async () => {
+    const { pipeline } = setup([[AttemptAction, new AttemptAction()]]);
+    await expect(
+      pipeline.execute(AttemptAction, {}, { actor: customer, attempt: { number: 3, last: true } }),
+    ).resolves.toEqual({ attempt: { number: 3, last: true } });
+    await expect(pipeline.execute(AttemptAction, {}, { actor: customer })).resolves.toEqual({
+      attempt: null,
     });
   });
 });

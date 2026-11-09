@@ -1578,6 +1578,7 @@ export class ActionPipeline {
     if (descriptor.kind === "query") return Object.freeze(query);
     const action: ActionContext = {
       ...query,
+      ...(request.attempt === undefined ? {} : { attempt: request.attempt }),
       ...(request.expectedVersion === undefined
         ? {}
         : { expectedVersion: request.expectedVersion }),
