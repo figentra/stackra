@@ -3078,6 +3078,8 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
       "read-only": { Demo: FreeSchedulingBoardReadOnly, code: FreeSchedulingBoardReadOnlyCode },
       drag: { Demo: FreeSchedulingBoardDrag, code: FreeSchedulingBoardDragCode },
     },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/scheduling-board.json") as ApiDoc,
   },
   "free/scroll-area": {
     examples: {
