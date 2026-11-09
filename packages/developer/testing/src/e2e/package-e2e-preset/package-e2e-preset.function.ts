@@ -4,8 +4,9 @@
  *          under the package root, run in parallel against the Vite app gen writes into `.stackra/e2e`, in Chromium
  *          and in Chromium with an Arabic locale (the page then renders right to left), plus Firefox and WebKit on
  *          request.
- * Boundary: pure apart from reading `CI`. Results and the HTML report go under `<root>/.stackra/e2e-results`. The page
- *           server is `vite` run from the package, so `vite` must resolve there.
+ * Boundary: pure apart from reading `CI`. Results go under `<root>/.stackra/e2e-results` and the HTML report under
+ *           `<root>/.stackra/e2e-report`. The page server is `vite` run from the package on 127.0.0.1, so `vite` must
+ *           resolve there.
  * Runtime: node
  * Governing contract: ADR 0022 (the 2026-11-09 amendment: package e2e); ADR 0182 (the e2e tier); ADR 0295
  *                     (decision 5).
@@ -37,7 +38,11 @@ export function packageE2ePreset(options: PackageE2ePresetOptions): PlaywrightTe
     fullyParallel: true,
     forbidOnly: isCi,
     outputDir: results,
-    reporter: [["list"], ["html", { outputFolder: `${results}/report`, open: "never" }]],
+    // The HTML reporter clears its folder, so it may not sit inside `outputDir` (Playwright refuses that).
+    reporter: [
+      ["list"],
+      ["html", { outputFolder: `${options.root}/.stackra/e2e-report`, open: "never" }],
+    ],
     use: { baseURL, trace: "retain-on-failure" },
     projects: [
       { name: "chromium", use: { ...devices["Desktop Chrome"] } },
@@ -51,10 +56,14 @@ export function packageE2ePreset(options: PackageE2ePresetOptions): PlaywrightTe
     ],
     webServer: {
       name: options.package,
-      command: `pnpm exec vite --config .stackra/e2e/vite.config.ts --port ${port} --strictPort`,
+      // `--host 127.0.0.1`: `localhost` can resolve to IPv6 only, which the IPv4 `url` never reaches.
+      command: `pnpm exec vite --config .stackra/e2e/vite.config.ts --host 127.0.0.1 --port ${port} --strictPort`,
       cwd: options.root,
       url: baseURL,
       reuseExistingServer: !isCi,
+      // A server that never answers shows why, in the run's output.
+      stdout: "pipe",
+      stderr: "pipe",
     },
   };
 }

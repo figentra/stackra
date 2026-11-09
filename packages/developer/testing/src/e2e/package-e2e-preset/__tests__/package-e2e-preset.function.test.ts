@@ -51,13 +51,19 @@ describe(packageE2ePreset, () => {
     expect(config.testMatch).toEqual(/\.e2e\.test\.ts$/);
     expect(config.fullyParallel).toBe(true);
     expect(config.outputDir).toBe("/repo/packages/ui/button/.stackra/e2e-results");
+    // the report sits beside the results, never inside them (the reporter clears its own folder)
+    expect(config.reporter).toContainEqual([
+      "html",
+      { outputFolder: "/repo/packages/ui/button/.stackra/e2e-report", open: "never" },
+    ]);
     expect(config.use).toEqual({ baseURL: "http://127.0.0.1:5199", trace: "retain-on-failure" });
   });
 
   it("serves the pages with Vite from the package on the given port", () => {
     const server = packageE2ePreset({ ...BASE, port: 6001 }).webServer;
     expect(server).toMatchObject({
-      command: "pnpm exec vite --config .stackra/e2e/vite.config.ts --port 6001 --strictPort",
+      command:
+        "pnpm exec vite --config .stackra/e2e/vite.config.ts --host 127.0.0.1 --port 6001 --strictPort",
       cwd: BASE.root,
       url: "http://127.0.0.1:6001",
     });
