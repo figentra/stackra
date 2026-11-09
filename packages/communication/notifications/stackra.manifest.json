@@ -136,6 +136,28 @@
           "from": "@stackra/notifications"
         }
       }
+    },
+    {
+      "port": "NotificationPreferencesClient",
+      "key": "notifications.NotificationPreferencesClient",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryNotificationPreferencesClientDriver",
+          "from": "@stackra/notifications/testing"
+        }
+      }
+    },
+    {
+      "port": "PushRegistration",
+      "key": "notifications.PushRegistration",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryPushRegistrationDriver",
+          "from": "@stackra/notifications/testing"
+        }
+      }
     }
   ],
   "integrations": [],

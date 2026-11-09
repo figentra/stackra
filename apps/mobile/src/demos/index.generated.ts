@@ -749,6 +749,8 @@ import FreeNavigationListRefused from "#src/demos/free/navigation-list/refused";
 import FreeNavigationListRefusedCode from "#src/demos/free/navigation-list/refused.code";
 import FreeNetworkGraphTeam from "#src/demos/free/network-graph/team";
 import FreeNetworkGraphTeamCode from "#src/demos/free/network-graph/team.code";
+import FreeNotificationInboxBasics from "#src/demos/free/notification-inbox/basics";
+import FreeNotificationInboxBasicsCode from "#src/demos/free/notification-inbox/basics.code";
 import FreeNotificationsPanelInbox from "#src/demos/free/notifications-panel/inbox";
 import FreeNotificationsPanelInboxCode from "#src/demos/free/notifications-panel/inbox.code";
 import FreeNotificationsPanelArrival from "#src/demos/free/notifications-panel/arrival";
@@ -905,6 +907,8 @@ import FreePropertyListCopy from "#src/demos/free/property-list/copy";
 import FreePropertyListCopyCode from "#src/demos/free/property-list/copy.code";
 import FreePullToRefreshBasics from "#src/demos/free/pull-to-refresh/basics";
 import FreePullToRefreshBasicsCode from "#src/demos/free/pull-to-refresh/basics.code";
+import FreePushPrimerBasics from "#src/demos/free/push-primer/basics";
+import FreePushPrimerBasicsCode from "#src/demos/free/push-primer/basics.code";
 import FreeQrCodePayment from "#src/demos/free/qr-code/payment";
 import FreeQrCodePaymentCode from "#src/demos/free/qr-code/payment.code";
 import FreeQrCodeWifi from "#src/demos/free/qr-code/wifi";
@@ -1013,6 +1017,16 @@ import FreeSchedulerMonth from "#src/demos/free/scheduler/month";
 import FreeSchedulerMonthCode from "#src/demos/free/scheduler/month.code";
 import FreeSchedulerAgenda from "#src/demos/free/scheduler/agenda";
 import FreeSchedulerAgendaCode from "#src/demos/free/scheduler/agenda.code";
+import FreeSchedulingBoardDay from "#src/demos/free/scheduling-board/day";
+import FreeSchedulingBoardDayCode from "#src/demos/free/scheduling-board/day.code";
+import FreeSchedulingBoardWeek from "#src/demos/free/scheduling-board/week";
+import FreeSchedulingBoardWeekCode from "#src/demos/free/scheduling-board/week.code";
+import FreeSchedulingBoardTimeline from "#src/demos/free/scheduling-board/timeline";
+import FreeSchedulingBoardTimelineCode from "#src/demos/free/scheduling-board/timeline.code";
+import FreeSchedulingBoardReadOnly from "#src/demos/free/scheduling-board/read-only";
+import FreeSchedulingBoardReadOnlyCode from "#src/demos/free/scheduling-board/read-only.code";
+import FreeSchedulingBoardDrag from "#src/demos/free/scheduling-board/drag";
+import FreeSchedulingBoardDragCode from "#src/demos/free/scheduling-board/drag.code";
 import FreeScrollAreaTerms from "#src/demos/free/scroll-area/terms";
 import FreeScrollAreaTermsCode from "#src/demos/free/scroll-area/terms.code";
 import FreeScrollAreaChips from "#src/demos/free/scroll-area/chips";
@@ -2580,6 +2594,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/network-graph.json") as ApiDoc,
   },
+  "free/notification-inbox": {
+    examples: {
+      basics: { Demo: FreeNotificationInboxBasics, code: FreeNotificationInboxBasicsCode },
+    },
+  },
   "free/notifications-panel": {
     examples: {
       inbox: { Demo: FreeNotificationsPanelInbox, code: FreeNotificationsPanelInboxCode },
@@ -2847,6 +2866,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/pull-to-refresh.json") as ApiDoc,
   },
+  "free/push-primer": {
+    examples: {
+      basics: { Demo: FreePushPrimerBasics, code: FreePushPrimerBasicsCode },
+    },
+  },
   "free/qr-code": {
     examples: {
       payment: { Demo: FreeQrCodePayment, code: FreeQrCodePaymentCode },
@@ -3059,6 +3083,17 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/scheduler.json") as ApiDoc,
+  },
+  "free/scheduling-board": {
+    examples: {
+      day: { Demo: FreeSchedulingBoardDay, code: FreeSchedulingBoardDayCode },
+      week: { Demo: FreeSchedulingBoardWeek, code: FreeSchedulingBoardWeekCode },
+      timeline: { Demo: FreeSchedulingBoardTimeline, code: FreeSchedulingBoardTimelineCode },
+      "read-only": { Demo: FreeSchedulingBoardReadOnly, code: FreeSchedulingBoardReadOnlyCode },
+      drag: { Demo: FreeSchedulingBoardDrag, code: FreeSchedulingBoardDragCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/scheduling-board.json") as ApiDoc,
   },
   "free/scroll-area": {
     examples: {

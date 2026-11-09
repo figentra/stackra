@@ -28,6 +28,7 @@ export class ProductCardsBlock extends Block({
   /** The words of a product's link; the product's name when absent. */
   linkLabel?: LocalizedText;
 
+  /** The products, in order. */
   products!: LandingProduct[];
 
   /** `grid` when absent. */
