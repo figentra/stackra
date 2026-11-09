@@ -314,6 +314,27 @@
             "visibility": {
               "enum": ["private", "public", "internal"]
             },
+            "description": {
+              "description": "The repository's one-sentence GitHub description (ADR 0534).",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 350
+            },
+            "topics": {
+              "description": "The repository's GitHub topics: the base set for its type first, then its domain topics (ADR 0534).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,49}$"
+              },
+              "maxItems": 20,
+              "uniqueItems": true
+            },
+            "homepage": {
+              "description": "The repository's homepage: the live docs site, else the live product site (ADR 0534).",
+              "type": "string",
+              "format": "uri"
+            },
             "variables": {
               "type": "object",
               "propertyNames": {
