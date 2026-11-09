@@ -75,6 +75,8 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   (`CallClient` reaches no port) (STA-1588).
 - A bound `RateLimitCapSource` (a scope's settings) only lowers a bucket: take the minimum of each number, never its
   value alone. A failed caps read fails the call.
+- A bound `IdempotencyRetentionSource` sets the idempotency window, capped at `IDEMPOTENCY_TTL` (24 hours); an action's
+  own shorter `idempotencyTtl` wins over it. A failed read fails the call.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.
