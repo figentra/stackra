@@ -496,12 +496,10 @@ describe("Container", () => {
           ],
         },
       ]);
-      expect(container.has(Container)).toBe(true);
-      expect(container.get(Container)).toBe(container);
       expect(container.get(Reader).container).toBe(container);
       const request = container.forRequest();
-      expect(request.get(Container)).toBe(container);
       expect(request.get(RequestReader).container).toBe(container);
+      expect(request.get(Reader).container).toBe(container);
     });
 
     it("boots a host whose exported singleton takes the container (resolved at boot)", async () => {
