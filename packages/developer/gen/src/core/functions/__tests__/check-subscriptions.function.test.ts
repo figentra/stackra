@@ -62,6 +62,13 @@ describe(checkSubscriptions, () => {
     ]);
   });
 
+  it("warns by default and refuses under strict, since the listener is never delivered to", () => {
+    expect(checkSubscriptions(pinning(BARE)).map((each) => each.severity)).toEqual(["warning"]);
+    const strict = checkSubscriptions(pinning(BARE), true);
+    expect(strict.map((each) => each.code)).toEqual(["client_event_unsubscribed"]);
+    expect(strict.every((each) => each.severity === undefined)).toBe(true);
+  });
+
   it("warns nothing for a sibling producer", () => {
     expect(checkSubscriptions(pinning(BARE, "pay"))).toEqual([]);
   });

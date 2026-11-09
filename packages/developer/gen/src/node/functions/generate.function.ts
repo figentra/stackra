@@ -406,9 +406,13 @@ export async function generate(
       );
   }
   if (errors.length > 0) return { errors, warnings, files: [], changed: partial };
+  // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910): a
+  // warning, and a refusal under strict, which writes nothing.
+  const unsubscribed = options.pass === undefined ? checkSubscriptions(ir, strict) : [];
+  if (strict && unsubscribed.length > 0)
+    return { errors: unsubscribed, warnings, files: [], changed: partial };
   result = { ...result, files };
-  // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
-  const reported = [...warnings, ...(options.pass === undefined ? checkSubscriptions(ir) : [])];
+  const reported = [...warnings, ...unsubscribed];
   return {
     errors: [],
     files: result.files,
