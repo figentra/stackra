@@ -1,0 +1,21 @@
+{
+  "slug": "lead-form",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "LeadForm",
+  "parts": ["LeadForm"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 520
+    }
+  ],
+  "related": ["free/cta-row", "free/text-field", "free/checkbox"],
+  "tokens": ["color.success", "color.danger", "color.border"],
+  "keywords": ["lead", "form", "contact", "demo", "consent", "landing", "marketing", "kit"],
+  "status": "new"
+}
