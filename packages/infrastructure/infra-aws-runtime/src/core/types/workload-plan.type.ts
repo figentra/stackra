@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `WorkloadPlan`, one container workload of a runtime plan: its service name, image, port, health path,
+ * Purpose: `WorkloadPlan`, one container workload of a runtime plan (a runway workload, or a `gotenberg` resource's
+ *          engine): its service name, image, port, health path,
  *          arguments, the one-off migration run before each rollout, exposure, public env, secret names, the resources it uses and the names it reads their variables
  *          under, task size and count, and its tags.
  * Boundary: type only. Secret values never appear; only names.
@@ -46,4 +47,12 @@ export type WorkloadPlan = {
   readonly scale: { readonly min: number; readonly max: number };
   /** `env` and `service` (the workload name). */
   readonly tags: Readonly<Record<string, string>>;
+  /** A `gotenberg` resource's engine: its resource name; its credentials and consumer variables follow it. */
+  readonly gotenberg?: { readonly resource: string };
+  /** The image is a path under the account's ECR pull-through registry, not a full reference. */
+  readonly registryImage?: true;
+  /** Its own security group: in from the consumers on its port, out on tcp/443 only. */
+  readonly httpsEgressOnly?: true;
+  /** Runs on FARGATE_SPOT (dev and staging): an interruption only fails a render the caller retries. */
+  readonly spot?: true;
 };

@@ -101,6 +101,24 @@ It runs again only for a new revision of its task definition: a new image, comma
 pre-deploy hook, so the dynamic resource calls ECS through `@aws-sdk/client-ecs` with the deploy job's credentials,
 and the stacks repository lists that package beside `@pulumi/aws`. Found by INFRA-CODE planning self-hosted Chatwoot.
 
+## Amendment, 2026-11-09: the gotenberg resource (one PDF engine per environment)
+
+`@stackra/documents`' PdfEngine renders through Gotenberg. A root runway may declare one resource of kind `gotenberg`
+(a second is refused), and members `uses` it. Runway runs it as an internal workload:
+
+- Gotenberg 8's Chromium image, pinned by digest and pulled through the account's ECR pull-through cache for Docker
+  Hub (`shared.network.registry`, never Docker Hub directly);
+- port 3000, with no load balancer and no public address;
+- basic auth on, webhooks and downloads off, and Chromium allowed to load only the request's own files;
+- its own security group, admitting the consumers on 3000 and letting out tcp/443 only;
+- half a vCPU and 1 GiB at `small` (about $18 a month per task), one task, or one to two in production;
+- FARGATE_SPOT outside production.
+
+The deploy job generates the basic-auth password once and writes it blind (`ensureGotenbergCredentials`). Every
+consumer reads DocumentsConfig's own names, `DOCUMENTS_GOTENBERG_URL` and `DOCUMENTS_GOTENBERG_AUTHORIZATION`. VPC
+interface endpoints (ECR, logs) would let egress close entirely, but they're an owner cost decision for production
+and aren't part of this.
+
 ## Supersedes and sources
 
 `Supersedes: none`. Amends
