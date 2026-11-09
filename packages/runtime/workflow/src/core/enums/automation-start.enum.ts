@@ -1,10 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `AutomationStart`, what starts a published automation's run: a trigger event's delivery or a schedule's
- *          tick. The quota check treats an unreadable quota by it.
- * Boundary: an `Enum.of` value plus the type of the same name. An event start that cannot read the quota throws, so
- *           the delivery is retried and no occurrence is lost; a schedule start records a skip, and its next tick
- *           tries again.
+ *          tick, kept on the skip a quota records.
+ * Boundary: an `Enum.of` value plus the type of the same name.
  * Runtime: isomorphic
  * Governing contract: ADR 0122 (decision 3); ADR 0153 (decision 1); ADR 0231 (snake_case codes).
  */

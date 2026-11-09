@@ -40,7 +40,6 @@ import { AutomationExceedsPublisherError } from "#core/errors/automation-exceeds
 import { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 import { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
 import { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
-import { AutomationQuotaUnavailableError } from "#core/errors/automation-quota-unavailable.error";
 import { AutomationPaused } from "#core/events/automation-paused.event";
 import { AutomationRunSkipped } from "#core/events/automation-run-skipped.event";
 import { checkAutomation } from "#core/functions/check-automation.function";
@@ -214,12 +213,11 @@ export class AutomationService extends CrudService<Automation> {
    * The published, running automations of the session's scopes that `block` (a trigger block key) starts. One whose
    * publisher may no longer call a block of its document is paused instead (`AutomationPaused`) and left out. Each
    * left is checked against its tenant's `AutomationQuota`: one over the quota is left out and records
-   * `AutomationRunSkipped` (`quota_exceeded`). A quota that cannot be read starts nothing: for an event start it
-   * throws, so the delivery is retried; for a schedule start it records the skip (`quota_unavailable`) and the next
-   * tick tries again.
+   * `AutomationRunSkipped` (`quota_exceeded`); one whose quota cannot be read starts nothing and records
+   * `quota_unavailable` (fail closed). Neither throws, so the other automations of the occurrence still start.
    *
-   * @param startedBy - what starts the runs: a trigger event's delivery (the default) or a schedule's tick.
-   * @throws AutomationQuotaUnavailableError for an event start whose quota cannot be read.
+   * @param startedBy - what starts the runs, kept on a skip: a trigger event's delivery (the default) or a schedule's
+   *   tick.
    */
   async triggered(
     block: string,
@@ -461,11 +459,11 @@ export class AutomationService extends CrudService<Automation> {
   }
 
   /**
-   * Whether `automation`'s scope may start one more run. Over the quota, or unreadable on a schedule start, it records
-   * `AutomationRunSkipped` and answers `false`; unreadable on an event start (an `unavailable` answer, an answer it
-   * does not know, or a driver that throws) it throws, so the delivery is retried and no occurrence is lost.
-   *
-   * @throws AutomationQuotaUnavailableError for an event start whose quota cannot be read.
+   * Whether `automation`'s scope may start one more run. Otherwise it records `AutomationRunSkipped` and answers
+   * `false`: `quota_exceeded` over the quota, `quota_unavailable` when the quota cannot be read (an `unavailable`
+   * answer, an answer this version does not know, or a driver that throws), which fails closed. It never throws: a
+   * trigger's listener runs once per delivery (a throw is only recorded on it, never redelivered), so the skip is what
+   * keeps the occurrence in the run history.
    */
   private async withinQuota(automation: Automation, startedBy: AutomationStart): Promise<boolean> {
     let answer: AutomationQuotaAnswer;
@@ -474,16 +472,11 @@ export class AutomationService extends CrudService<Automation> {
         { id: automation.scopeId, path: automation.scopePath },
         automation.id,
       );
-    } catch (error) {
-      if (startedBy === AutomationStart.Event)
-        throw AutomationQuotaUnavailableError.create({}, { cause: error });
+    } catch {
       answer = AutomationQuotaAnswer.Unavailable;
     }
     if (answer === AutomationQuotaAnswer.Allow) return true;
     const exceeded = answer === AutomationQuotaAnswer.Exceeded;
-    // fail closed: an answer this version does not know reads as unavailable
-    if (!exceeded && startedBy === AutomationStart.Event)
-      throw AutomationQuotaUnavailableError.create();
     automation.record(
       AutomationRunSkipped.create({
         automationId: automation.id,

@@ -6,8 +6,11 @@
  *           it, so a host that runs automations must select a driver: its billing's (Figentra Billing's usage query
  *           `credits.quota.check@1` on the meter `automation.runs`, in the automation's scope), or
  *           `UnlimitedAutomationQuotaDriver` on purpose. Never a silent default. This package names no billing service.
- *           A driver only reads: the run's own usage event consumes the quota. A driver that cannot answer returns
- *           `unavailable` (or throws), and no run starts.
+ *           The driver calls the quota as the host member (a `Service` actor), inside the automation's tenant, never as
+ *           the automation's own principal, so the host's existing grant covers it. A driver only reads: the run's own
+ *           usage event consumes the quota, so runs that start at the same moment may overrun it a little (accepted).
+ *           A driver that cannot answer returns `unavailable` (or throws), and no run starts: it is skipped as
+ *           `quota_unavailable`.
  * Runtime: isomorphic
  * Governing contract: ADR 0122 (decision 3); ADR 0142 (drivers behind ports); ADR 0153 (decision 2).
  */

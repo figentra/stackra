@@ -5,7 +5,7 @@
  *          `WorkflowConfig$`, its shape and the key registration, the building-block registry, the automation
  *          document kind (`AutomationDocument$`, its check, its dry run and refusals) and the workflow template pack
  *          (`WorkflowTemplatePack$`), the publisher-access port with its memory driver and the pause event, the automation quota port (its answers, start
- *          kinds, unlimited driver, refusal and skip event), the
+ *          kinds, unlimited driver and skip event), the
  *          service-acked contract (`ServiceAcked`, `AllServicesAcked`) and the checklist engine (schemas, audience,
  *          view, check, refusal and events) are its values, and nothing else is.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -35,7 +35,6 @@ describe("@stackra/workflow", () => {
       "AutomationPrincipalMismatchError",
       "AutomationQuota",
       "AutomationQuotaAnswer",
-      "AutomationQuotaUnavailableError",
       "AutomationRunSkipped",
       "AutomationStart",
       "BlockKind",

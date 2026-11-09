@@ -6,8 +6,8 @@
  *          publisher's access and otherwise stamps it with the trigger, principal and publisher; `revision` reads the
  *          published one; `triggered` lists the published automations of a block with their documents and pauses one
  *          whose publisher lost access, and checks each against its scope's `AutomationQuota` (allowed starts; exceeded
- *          skips with `quota_exceeded`; unavailable throws on an event start and skips with `quota_unavailable` on a
- *          schedule start; an unknown answer fails closed); `recheck` pauses the same; `pause` pauses for a host's reason once and refuses
+ *          skips with `quota_exceeded`; unavailable, unreachable or unknown skips with
+ *          `quota_unavailable` and never throws, for an event or a schedule start); `recheck` pauses the same; `pause` pauses for a host's reason once and refuses
  *          a reason that is not a code; `seed` creates, skips, keeps a tenant's edit and updates; `seedPack` seeds each
  *          template.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
@@ -34,7 +34,6 @@ import {
   AutomationPrincipalMismatchError,
   AutomationQuota,
   AutomationQuotaAnswer,
-  AutomationQuotaUnavailableError,
   AutomationStart,
   BlockKind,
   DryRunOutcome,
@@ -446,54 +445,29 @@ describe("AutomationService automation quota", () => {
       expect(automation.pausedAt ?? null).toBeNull();
     });
 
-  it("throws on an event start whose quota is unavailable, so the delivery is retried", async () => {
-    const { record } = published();
-    const refused = await serviceOf(new FixedQuota(AutomationQuotaAnswer.Unavailable))
-      .triggered("orders.order_paid", AutomationStart.Event)
-      .catch((error: unknown) => error);
-    expect(refused).toBeInstanceOf(AutomationQuotaUnavailableError);
-    expect(isRefusal(refused) && refused.retryable).toBe(true);
-    expect(record).not.toHaveBeenCalled();
-  });
-
-  it("throws on an event start whose quota driver throws, keeping the cause", async () => {
-    published();
-    const down = new Error("usage service unreachable");
-    const refused = await serviceOf(new FixedQuota(down))
-      .triggered("orders.order_paid")
-      .catch((error: unknown) => error);
-    expect(refused).toBeInstanceOf(AutomationQuotaUnavailableError);
-    expect((refused as Error).cause).toBe(down);
-  });
-
-  it("skips a schedule start whose quota is unavailable or unreachable, recording quota_unavailable", async () => {
-    for (const answer of [
-      AutomationQuotaAnswer.Unavailable,
-      new Error("usage service unreachable"),
-    ]) {
-      const { automation, record } = published();
-      const started = await serviceOf(new FixedQuota(answer)).triggered(
-        "orders.order_paid",
-        AutomationStart.Schedule,
-      );
-      expect(started).toEqual([]);
-      expect(record).toHaveBeenCalledWith(
-        expect.objectContaining({
-          automationId: automation.id,
-          reason: "quota_unavailable",
-          startedBy: "schedule",
-        }),
-      );
-    }
-  });
-
-  it("reads an answer it does not know as unavailable, failing closed", async () => {
-    published();
-    const unknown = "maybe" as unknown as AutomationQuotaAnswer;
-    await expect(
-      serviceOf(new FixedQuota(unknown)).triggered("orders.order_paid"),
-    ).rejects.toBeInstanceOf(AutomationQuotaUnavailableError);
-  });
+  for (const startedBy of [AutomationStart.Event, AutomationStart.Schedule])
+    it(`skips the run when the quota is unavailable, unreachable or unknown, recording quota_unavailable and never throwing (${startedBy})`, async () => {
+      const unknown = "maybe" as unknown as AutomationQuotaAnswer;
+      for (const answer of [
+        AutomationQuotaAnswer.Unavailable,
+        new Error("usage service unreachable"),
+        unknown,
+      ]) {
+        const { automation, record } = published();
+        const started = await serviceOf(new FixedQuota(answer)).triggered(
+          "orders.order_paid",
+          startedBy,
+        );
+        expect(started).toEqual([]);
+        expect(record).toHaveBeenCalledWith(
+          expect.objectContaining({
+            automationId: automation.id,
+            reason: "quota_unavailable",
+            startedBy,
+          }),
+        );
+      }
+    });
 
   it("allows every run with the unlimited driver a host picks on purpose", async () => {
     await expect(

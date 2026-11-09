@@ -88,8 +88,10 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - Every run a trigger or a schedule starts is checked against `AutomationQuota` in `triggered` (the tenant, the
   automation). This package names no billing service: the host selects its billing driver or
   `UnlimitedAutomationQuotaDriver` on purpose, never by default. `exceeded` skips with `AutomationRunSkipped`
-  (`quota_exceeded`), never a failure or a pause. An unreadable quota starts nothing: an event start throws
-  `AutomationQuotaUnavailableError` (the outbox retries), a schedule start skips with `quota_unavailable`.
+  (`quota_exceeded`), never a failure or a pause. An unreadable quota (or a driver that throws) starts nothing and
+  skips with `quota_unavailable`. `triggered` never throws for a quota: a trigger listener runs once per delivery and
+  a throw there is only recorded, never redelivered. The driver calls the quota as the host member, in the
+  automation's tenant, never as the automation's principal.
 - Checklist steps, lock flags and industry profiles are seed data; no step is coded here. A customization never hides
   or reorders a locked step (ADR 0424).
 - `ServiceAckSet` is platform data with no scope policy (a listed platform table); `expect` runs before the request leaves.
