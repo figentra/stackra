@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/workflow (the `Workflow` and `Signal` kind bases, `@Step`, the
  *          two status enums, the run and step types, the native engine with its journal port and memory journal, the
  *          configuration and the key registration; the building-block registry, the automation document kind with its
- *          check and dry run, the workflow template pack and their refusals) until `stackra gen` writes the entry
+ *          check and dry run, the automation quota port with its unlimited driver and skip event, the workflow template pack
+ *          and their refusals) until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
  *           (`WorkflowConfig$`, `AutomationDocument$`, `WorkflowTemplatePack$`, `KeptRecords$`). The plans, keys, id minting and
@@ -28,6 +29,9 @@ export { Step } from "#core/decorators/step.decorator";
 export { MemoryPublisherAccessDriver } from "#core/drivers/memory-publisher-access.driver";
 export { MemoryWorkflowJournalDriver } from "#core/drivers/memory-workflow-journal.driver";
 export { NativeWorkflowRunnerDriver } from "#core/drivers/native-workflow-runner.driver";
+export { UnlimitedAutomationQuotaDriver } from "#core/drivers/unlimited-automation-quota.driver";
+export { AutomationQuotaAnswer } from "#core/enums/automation-quota-answer.enum";
+export { AutomationStart } from "#core/enums/automation-start.enum";
 export { BlockKind } from "#core/enums/block-kind.enum";
 export { ChecklistAudience } from "#core/enums/checklist-audience.enum";
 export { DryRunOutcome } from "#core/enums/dry-run-outcome.enum";
@@ -39,10 +43,12 @@ export { AutomationExceedsPublisherError } from "#core/errors/automation-exceeds
 export { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 export { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
 export { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
+export { AutomationQuotaUnavailableError } from "#core/errors/automation-quota-unavailable.error";
 export { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
 export { RunNotFoundError } from "#core/errors/run-not-found.error";
 export { ChecklistInvalidError } from "#core/errors/checklist-invalid.error";
 export { AutomationPaused } from "#core/events/automation-paused.event";
+export { AutomationRunSkipped } from "#core/events/automation-run-skipped.event";
 export { ChecklistCompleted } from "#core/events/checklist-completed.event";
 export { ChecklistStepCompleted } from "#core/events/checklist-step-completed.event";
 export { ServiceAcked } from "#contracts/events/service-acked.event";
@@ -55,6 +61,7 @@ export { checklistView } from "#core/functions/checklist-view.function";
 export { dryRun } from "#core/functions/dry-run.function";
 export { registerBlocks } from "#core/functions/register-blocks.function";
 export { registerWorkflows } from "#core/functions/register-workflows.function";
+export { AutomationQuota } from "#core/ports/automation-quota.port";
 export { PublisherAccess } from "#core/ports/publisher-access.port";
 export { WorkflowJournal } from "#core/ports/workflow-journal.port";
 export { WorkflowEngineOptions } from "#core/schemas/workflow-engine-options.schema";

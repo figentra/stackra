@@ -87,6 +87,7 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly (ClassRef | Tok
         of: { name: "repositoryOf", from: "@stackra/database" },
       },
       { name: "PublisherAccess", from: "@stackra/workflow" },
+      { name: "AutomationQuota", from: "@stackra/workflow" },
     ],
     "@stackra/workflow#ChecklistService": [
       {
