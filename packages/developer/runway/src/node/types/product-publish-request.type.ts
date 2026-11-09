@@ -41,6 +41,11 @@ export type ProductPublishRequest = {
   readonly appLinks?: AppLinkKeys;
   /** The review of the change; required when the root runway has `surfaces.ops`. */
   readonly review?: OpsReview;
+  /**
+   * The pull request this publish previews (`environment` must be `preview`): one `<product>-pr-<n>.figentra.cloud` host with the
+   * console's release, expiring after 7 days, and no canary (ADR 0289 decision 7).
+   */
+  readonly pullRequest?: number;
   /** The canary start; now when absent. */
   readonly now?: Date;
   /** The command runner; `runProgram` when absent. */
