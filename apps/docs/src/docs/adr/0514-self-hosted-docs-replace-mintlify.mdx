@@ -135,9 +135,11 @@ nothing else.
    `DocsConfig` apps. Each repository then converts its `docs/` in one pull request. The `DocsConfig` reader goes
    once no repository uses it.
 
-Enforcement: planned — a `@stackra/repo-checks` rule that refuses `apps/` in a product repository, landing with
-step one; gen's `docs` member reader, the `docs.yaml` schema and the `meta.json` `MUST_STAY_JSON` row, in one core
-pull request; and a repo-checks rule that a product's `docs/` is kind `docs`, once every product has converted.
+Enforcement: step one is checked already. The `layout` rule of `stackra validate --repository`
+(`checkRepositoryLayout`, ADR 0526 decision 3) requires a root `docs` and refuses an `apps/` that package.json
+`stackra.layout.allow` does not declare, and no product declares one. Planned: gen's `docs` member reader, the
+`docs.yaml` schema and the `meta.json` `MUST_STAY_JSON` row, in one core pull request; and a repo-checks rule that a
+product's `docs/` is kind `docs`, once every product has converted.
 
 ## Supersedes and sources
 
