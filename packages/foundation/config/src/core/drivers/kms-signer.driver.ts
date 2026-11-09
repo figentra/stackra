@@ -3,7 +3,7 @@
  * Purpose: the `kms` driver of @stackra/contracts' `Signer` port: ES256 signatures made inside AWS KMS with the
  *          configured `ECC_NIST_P256` key, so a service that injects `Signer` gets a driver gen can bind.
  * Boundary: the container's twin of @stackra/contracts' `AwsKmsSignerDriver`, which this driver delegates to: its
- *           constructor takes the `SignerConfig` and the host's `KmsClient`, both from the container. The delegate is
+ *           constructor takes the `SignerConfig` and the bound `KmsClient` (`aws-sdk` by default), both from the container. The delegate is
  *           built on first use, so an empty `kmsKeyId` is refused when the first signature or key is asked for (a
  *           RangeError naming no key material). The private key never leaves KMS.
  * Runtime: isomorphic

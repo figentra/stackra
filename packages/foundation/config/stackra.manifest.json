@@ -18,6 +18,25 @@
   "models": [],
   "drivers": [
     {
+      "port": "KmsClient",
+      "key": "config.KmsClient",
+      "candidates": ["aws_sdk"],
+      "classes": {
+        "aws_sdk": {
+          "class": "AwsSdkKmsClientDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "SecretStore",
       "key": "config.SecretStore",
       "candidates": ["memory", "aws_secrets_manager"],

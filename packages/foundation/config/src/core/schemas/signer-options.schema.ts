@@ -27,6 +27,9 @@ export class SignerOptions extends Schema {
 
   /** The KMS key id, ARN or alias the `kms` driver signs with; it refuses to sign while this is empty. */
   kmsKeyId = "";
+
+  /** The KMS region the `aws-sdk` client calls (`me-central-1`); empty means the SDK's default (`AWS_REGION`). */
+  region = "";
 }
 
 registerSchemas([[SignerOptions, SIGNER_CONFIG_SCHEMA]]);

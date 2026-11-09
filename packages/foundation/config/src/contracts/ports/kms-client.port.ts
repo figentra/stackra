@@ -3,8 +3,9 @@
  * Purpose: the `KmsClient` port: the AWS KMS calls a KMS-backed driver makes (`sign`, `getPublicKey`, `decrypt`,
  *          `generateDataKeyWithoutPlaintext`), so `KmsSignerDriver` takes its client from the container.
  * Boundary: an abstract class that is its own token, shaped as @stackra/contracts' `AwsKmsApi`, so the aggregated `KMS`
- *           client of `@aws-sdk/client-kms` fits a driver as it is. This package takes no SDK dependency: the host binds
- *           a driver that wraps `new KMS({ region })` with the runtime's role (no credential in config).
+ *           client of `@aws-sdk/client-kms` fits a driver as it is. Its default driver, `aws-sdk` in `./node`, builds that
+ *           client on first use (an optional peer) with the runtime's role, no credential in config; a host may bind its
+ *           own.
  * Runtime: isomorphic
  * Governing contract: ADR 0188 (decision 2); ADR 0416; ADR 0294 (decisions 16 and 17).
  */

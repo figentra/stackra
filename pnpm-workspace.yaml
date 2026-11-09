@@ -55,6 +55,9 @@ catalog:
   "@aws-sdk/s3-request-presigner": 3.1149.0
   # The AWS Secrets Manager store of @stackra/config/node (BatchGetSecretValue). Apache-2.0; keep beside client-s3.
   "@aws-sdk/client-secrets-manager": 3.1149.0
+  # The KMS client of @stackra/config/node's `aws-sdk` KmsClient driver (KmsSignerDriver). Apache-2.0; keep beside
+  # client-s3 (owner approval 2026-11-09).
+  "@aws-sdk/client-kms": 3.1149.0
   # The GCS disk of @stackra/filesystem (GcsFileSystemDriver, ADR 0354): objects and V4 signed URLs. Apache-2.0.
   "@google-cloud/storage": 8.4.0
   # @stackra/model on the server only (ADR 0014, 0227): Collection, Ref, custom Types and the Money embeddable.
