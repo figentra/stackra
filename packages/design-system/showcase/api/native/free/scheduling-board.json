@@ -1,0 +1,414 @@
+{
+  "generatedFrom": {
+    "hash": "a126897caf58c6e7",
+    "propsFiles": [
+      "ui/src/native/scheduling-board/scheduling-board-block.props.ts",
+      "ui/src/native/scheduling-board/scheduling-board-lane.props.ts",
+      "ui/src/native/scheduling-board/scheduling-board.props.ts"
+    ]
+  },
+  "importLine": "import { SchedulingBoard } from \"@stackra/ui/native\";",
+  "key": "free/scheduling-board",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each view chosen.",
+          "name": "onViewChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(view: \"timeline\" | \"day\" | \"week\") => void"
+        },
+        {
+          "description": "Called with the day the view holds after previous, next or Today.",
+          "name": "onDateChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(date: CalendarDate) => void"
+        },
+        {
+          "description": "Called with an empty range selected, by dragging across slots or from the keyboard.",
+          "name": "onSelectRange",
+          "required": false,
+          "source": "stackra",
+          "type": "(range: SchedulingBoardRange) => void"
+        },
+        {
+          "description": "Called when an item is moved or resized. A promise holds the item where it was dropped, pending, until it settles;\n`false` puts it back. Anything else is taken as accepted: the screen passes the new items.",
+          "name": "onItemChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(change: SchedulingBoardChange) => void | Promise<boolean>"
+        },
+        {
+          "description": "Called when an item is pressed, for example to open its register.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => void"
+        }
+      ],
+      "name": "SchedulingBoard",
+      "props": [
+        {
+          "description": "The spoken name of the board, for example \"Branch schedule\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The rows, in order within their group.",
+          "name": "resources",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardResource[]"
+        },
+        {
+          "description": "The blocks; those that overlap on a row lie side by side.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardItem[]"
+        },
+        {
+          "description": "The view, for a controlled board.",
+          "name": "view",
+          "required": false,
+          "source": "stackra",
+          "type": "\"timeline\" | \"day\" | \"week\""
+        },
+        {
+          "description": "The starting view, for an uncontrolled one; `day` by default.",
+          "name": "defaultView",
+          "required": false,
+          "source": "stackra",
+          "type": "\"timeline\" | \"day\" | \"week\""
+        },
+        {
+          "description": "The day the view holds, for a controlled board.",
+          "name": "date",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The starting day, for an uncontrolled one; today by default.",
+          "name": "defaultDate",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The days the timeline view spans, 1 to 62; 14 by default.",
+          "name": "timelineDays",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The IANA time zone of the node the board shows; the device's by default.",
+          "name": "timeZone",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The length of a slot in minutes, the step every drag snaps to: 5 to 60, a divisor of 60; 15 by default.",
+          "name": "slotMinutes",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The first hour the day and week views show, 0 to 23; 0 by default.",
+          "name": "startHour",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The hour the day and week views end at, 1 to 24; 24 by default.",
+          "name": "endHour",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Working time, expanded for the range shown; time outside a row's stretches is shaded. None shades nothing.",
+          "name": "workingTime",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardInterval[]"
+        },
+        {
+          "description": "Each day's standing, for the header; a rest day or holiday is shaded.",
+          "name": "dayMarks",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardDayMark[]"
+        },
+        {
+          "description": "The calendar the headers write dates in; `islamic-umalqura` for Hijri. Gregorian by default.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "The moment taken as now, for the current-time line, Today and the past's shading; the clock at mount by default.",
+          "name": "now",
+          "required": false,
+          "source": "stackra",
+          "type": "Date"
+        },
+        {
+          "description": "True to let nothing be selected, moved or resized; items stay pressable.",
+          "name": "readOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show a skeleton instead of the rows.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A screen's own conflicts for a drag's would-be result, merged with the board's; called as the preview moves.",
+          "name": "conflictsOf",
+          "required": false,
+          "source": "stackra",
+          "type": "(draft: SchedulingBoardDraft) => readonly SchedulingBoardConflict[]"
+        },
+        {
+          "description": "A block's content; the title, the time, the fill and a hold's countdown by default.",
+          "name": "renderItem",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => ReactNode"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called when an item is pressed, for example to open its register.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => void"
+        },
+        {
+          "description": "Reports a drag's would-be result, or null when it ends.",
+          "name": "onDraft",
+          "required": true,
+          "source": "stackra",
+          "type": "(draft: SchedulingBoardDraft | null) => void"
+        }
+      ],
+      "name": "SchedulingBoard.Block",
+      "props": [
+        {
+          "description": "A block's content; the title, the time, the fill and a hold's countdown by default.",
+          "name": "renderItem",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => ReactNode"
+        },
+        {
+          "description": "The shared state.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardState"
+        },
+        {
+          "description": "The item as placed on this row.",
+          "name": "placed",
+          "required": true,
+          "source": "stackra",
+          "type": "PlacedSchedulingItem"
+        },
+        {
+          "description": "The row it is drawn on.",
+          "name": "resource",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardResource"
+        },
+        {
+          "description": "The row's parents' ids, nearest first, for an inherited item's words.",
+          "name": "ancestors",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "A column's width in points.",
+          "name": "width",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "1 when columns run left to right, -1 in right-to-left, so a finger's movement reads as time.",
+          "name": "sign",
+          "required": true,
+          "source": "stackra",
+          "type": "1 | -1"
+        },
+        {
+          "description": "True for the first resource row: no \"move up\".",
+          "name": "isFirstRow",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True for the last resource row: no \"move down\".",
+          "name": "isLastRow",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True while this block is being dragged; the preview is drawn where it would land.",
+          "name": "isDragging",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "How many resource rows a vertical movement of `dy` points crosses from a row.",
+          "name": "rowStepsOf",
+          "required": true,
+          "source": "stackra",
+          "type": "(resourceId: string, dy: number) => number"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called when an item is pressed, for example to open its register.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => void"
+        },
+        {
+          "description": "Reports a drag's would-be result, or null when it ends.",
+          "name": "onDraft",
+          "required": true,
+          "source": "stackra",
+          "type": "(draft: SchedulingBoardDraft | null) => void"
+        }
+      ],
+      "name": "SchedulingBoard.Lane",
+      "props": [
+        {
+          "description": "A block's content; the title, the time, the fill and a hold's countdown by default.",
+          "name": "renderItem",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => ReactNode"
+        },
+        {
+          "description": "The shared state.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardState"
+        },
+        {
+          "description": "The row.",
+          "name": "resource",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardResource"
+        },
+        {
+          "description": "Its parents' ids, nearest first; their items show here, faded.",
+          "name": "ancestors",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "A column's width in points.",
+          "name": "width",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "1 when columns run left to right, -1 in right-to-left.",
+          "name": "sign",
+          "required": true,
+          "source": "stackra",
+          "type": "1 | -1"
+        },
+        {
+          "description": "True for the first resource row.",
+          "name": "isFirstRow",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True for the last resource row.",
+          "name": "isLastRow",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to make each empty slot a button that selects a range.",
+          "name": "canSelect",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The days shaded as rest days or holidays, in columns.",
+          "name": "dayShade",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchedulingSpan[]"
+        },
+        {
+          "description": "The drag in progress anywhere on the board, or null.",
+          "name": "draft",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardDraft | null"
+        },
+        {
+          "description": "The conflicts at the drag in progress, for the preview's colour.",
+          "name": "conflicts",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardConflict[]"
+        },
+        {
+          "description": "How many resource rows a vertical movement of `dy` points crosses from a row.",
+          "name": "rowStepsOf",
+          "required": true,
+          "source": "stackra",
+          "type": "(resourceId: string, dy: number) => number"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}
