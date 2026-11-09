@@ -1,6 +1,6 @@
 ---
 title: "0522 — The testbed moves to its own public repo"
-description: "Accepted · 2026-11-03"
+description: "Accepted · 2026-11-03, amended 2026-11-09"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0522 (Accepted 2026-11-03, STA-2073), the owner's decision that the testbed leaves core for its own public, unbranded repository figentra/testbed: the package @figentra/testbed, its own CLI `testbed`, the frozen interface that FLOW and the agents call, the live AWS names that stay, and the order of the move. Boundary: decision text only; the move is built under STA-2073 in figentra/testbed and in core. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0484, 0500, 0503, 0453, 0516. */}
@@ -143,6 +143,18 @@ was weighed; the owner chose a separate CLI.
   `0010_figentra_testbed.sql`.
 - planned — before step 8, a grep of `stackra", *"testbed` across every open branch and worktree, recorded in the
   removal pull request.
+
+## Amendment 2026-11-09: private, reviewers kept
+
+figentra/testbed is **private since 2026-11-09** (owner, under [0534](/adr/0534-github-repository-metadata)). The
+organization is on GitHub Enterprise, where a private repository has environment required reviewers, so the Context's
+GitHub Team premise no longer holds. The owner restored the environments' reviewers on 2026-11-09 and decided that
+only an environment that touches the boxes requires one: the `testbed` environment (the apply and the image build)
+requires the owner, figentra-usr; the `release` environment (the `@figentra/testbed` publish) keeps the main branch
+policy and no reviewer. The owner sets environment reviewers by hand; an agent's write to an environment's protection
+rules is refused by the promote guard.
+Lanes install the CLI from the tarball and nothing pulls the repository anonymously, so its users are unaffected. Free
+secret scanning and push protection are lost with public visibility; the owner accepted that.
 
 ## Supersedes and sources
 

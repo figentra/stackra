@@ -1,0 +1,101 @@
+---
+title: "0534 — GitHub repository metadata is a standard, kept as code"
+description: "Accepted · 2026-11-09"
+---
+
+{/* Stackra file contract. Purpose: ADR 0534 (Accepted 2026-11-09, STA-2115), the owner's standard for every figentra repository's GitHub metadata (description, topics, homepage, default branch, license, visibility) and where it is kept as code. Boundary: decision text only; the rows live in figentra/infra estate/repos.mjs and the github stack. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0514, 0522, 0525, 0532. */}
+
+## Context
+
+On 2026-11-09 the organization's 25 repositories showed their metadata unevenly: six had no description (geo, ship,
+testbed, flow-neutral-demo, marketing, analytics), five had no topics (notify, infra, secrets, neutral-template,
+`.github`), and stackra's topics still named two retired technologies, Infisical ([0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical))
+and Mintlify ([0514](/adr/0514-self-hosted-docs-replace-mintlify)). Nothing held the values, so nothing showed them drift.
+The owner asked for a standard, kept as code, applied to every repository, with new repositories created to it.
+
+## Decision
+
+1. **Description.** One short sentence, at most 200 characters, with no internal detail (no account id, hostname,
+   person or price). A product reads `Figentra <Product>: <what it does>…`; an endorsed brand keeps its own name
+   (`Tamo: …`); the framework reads `Stackra …`; a platform repository reads `Figentra <Thing>: …`.
+2. **Topics.** The base set of the repository's type comes first, then two to six domain topics, twelve at most, in
+   lower-kebab-case:
+   - product: `figentra`, `stackra`, `typescript`, `multi-tenant`;
+   - framework: `stackra`, `typescript`;
+   - platform: `figentra`, plus `typescript` when the repository's own source is TypeScript.
+
+   A retired technology is never a topic.
+
+3. **Homepage.** The live docs site, else the live product site, else none. Never a URL that does not render.
+4. **Default branch** `main` everywhere.
+5. **License.** As the repository's own `LICENSE` file: MIT for the public framework, Flow and the templates. A private
+   repository carries none (proprietary, Figentra Technologies L.L.C).
+6. **Visibility.** Private unless the table says public. A repository goes public only with no private detail in its
+   tree or history.
+7. **Kept as code.** figentra/infra `estate/repos.mjs` holds every row and its self-check holds them to rules 1, 2 and 6. `scripts/repos-check.mjs` reports drift, read-only. The github stack sets the same values through
+   `providers.github` (`description`, `topics`, `homepage`, in `@stackra/infra-github`), so a preview shows drift. A
+   product's own row may live in its root runway's `providers.github`.
+8. **New repositories.** `fflow create` applies the standard, and the new repository gets its row in the same change.
+
+## The table (applied 2026-11-09)
+
+| Repository        | Type      | Visibility | Topics                                                                                                                 | Description (public repositories)                                                                                                                                    |
+| ----------------- | --------- | ---------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| academorix-legacy | legacy    | private    | `encore`, `expo`, `multi-tenant`, `pnpm`, `react`, `react-native`, `saas`, `sports`, `turborepo`, `typescript`         | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| analytics         | product   | private    | `analytics`, `business-intelligence`, `dashboards`, `figentra`, `multi-tenant`, `stackra`, `typescript`                | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| billing           | product   | private    | `billing`, `entitlements`, `figentra`, `multi-tenant`, `stackra`, `subscriptions`, `typescript`, `usage-based-billing` | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| brand             | platform  | private    | `brand`, `brand-guidelines`, `design-system`, `figentra`                                                               | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| commerce          | product   | private    | `commerce`, `ecommerce`, `figentra`, `inventory`, `multi-tenant`, `pos`, `stackra`, `typescript`                       | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| figentra          | platform  | private    | `figentra`, `stackra`, `typescript`, `website`, `cli`                                                                  | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| flow              | platform  | public     | `ai-agents`, `cli`, `developer-tools`, `figentra`, `spec-driven-development`, `code-review`, `workflow`                | Figentra Flow: spec-driven development for agent teams: specs, approval stops, tasks, the gate, landing and releases. CLI figentra-flow, package @figentra-oss/flow. |
+| flow-neutral-demo | platform  | public     | `demo`, `figentra`, `github-actions`, `spec-driven-development`, `figentra-flow`                                       | Figentra Flow demo: a small public repository run end to end by Flow's neutral preset, GitHub Issues and GitHub Actions.                                             |
+| geo               | product   | private    | `figentra`, `geocoding`, `geofencing`, `maps`, `multi-tenant`, `routing`, `stackra`, `typescript`                      | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| .github           | platform  | public     | `community-health`, `figentra`, `github-profile`                                                                       | Figentra organisation profile and default community health files                                                                                                     |
+| infra             | platform  | private    | `aws`, `cloudflare`, `figentra`, `infrastructure-as-code`, `pulumi`                                                    | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| invoicing         | product   | private    | `e-invoicing`, `figentra`, `invoicing`, `multi-tenant`, `stackra`, `tax`, `typescript`, `vat`, `zatca`                 | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| marketing         | product   | private    | `campaigns`, `figentra`, `loyalty`, `marketing`, `multi-tenant`, `reviews`, `stackra`, `typescript`                    | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| neutral-template  | platform  | public     | `figentra`, `figentra-flow`, `repository-template`, `template`                                                         | Neutral template: the layout every non-product Figentra repository starts from (Flow's neutral preset)                                                               |
+| notify            | product   | private    | `figentra`, `messaging`, `multi-tenant`, `notifications`, `push-notifications`, `stackra`, `typescript`, `whatsapp`    | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| os                | product   | private    | `encore`, `figentra`, `multi-tenant`, `saas-platform`, `stackra`, `typescript`                                         | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| pay               | product   | private    | `fintech`, `multi-tenant`, `payment-gateway`, `payments`, `pos-terminals`, `typescript`, `figentra`, `stackra`         | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| secrets           | platform  | private    | `figentra`, `secrets-management`, `sops`                                                                               | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| ship              | product   | private    | `carriers`, `figentra`, `logistics`, `multi-tenant`, `shipping`, `stackra`, `typescript`                               | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| stackra           | framework | public     | `encore`, `expo`, `monorepo`, `pnpm`, `turborepo`, `typescript`, `framework`, `stackra`, `fumadocs`                    | Stackra: the TypeScript framework and toolchain behind Figentra (services, packages, gen, CLI, docs).                                                                |
+| stackra-notes     | platform  | private    | `figentra`, `notes`, `stackra`                                                                                         | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| stackra-pro       | framework | private    | `stackra`, `typescript`, `ui-components`                                                                               | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| stackra-template  | framework | public     | `monorepo`, `pnpm`, `stackra`, `template`, `turborepo`, `typescript`                                                   | Stackra template: the starting workspace for a new Stackra product (services, packages, docs).                                                                       |
+| tamo              | product   | private    | `agents`, `ai`, `ai-assistant`, `figentra`, `llm`, `mcp`, `multi-tenant`, `stackra`, `typescript`                      | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+| testbed           | platform  | private    | `aws`, `ci`, `ec2`, `figentra`, `testing`, `typescript`                                                                | (in figentra/infra `estate/repos.mjs`)                                                                                                                               |
+
+## Consequences
+
+- A repository's description and topics are reviewed like code; a drive-by edit on GitHub shows as drift.
+- The bot App (`stackra-bot`) holds Administration: write on the organization's repositories (owner, 2026-11-09), so the
+  standard is applied by one plain `figentra bot gh repo edit` per repository until the github stack's first apply.
+- A visibility change is not metadata only. Before a repository changes visibility, its environments' protection rules
+  are read back, and kept or restored the same day. The organization is on GitHub Enterprise, so a private repository
+  keeps environment required reviewers ([0522](/adr/0522-testbed-own-repo), amendment of 2026-11-09): after testbed went
+  private, its `testbed` environment still requires the owner (read back the same day). The owner sets
+  environment reviewers by hand: an agent's write to an environment's protection rules is refused by the promote
+  guard, and that is intended.
+
+- A product's release job opens its changesets version PR with the **figentra-release** App, never stackra-bot.
+  figentra-release has Contents and Pull requests write only, and its id and key live in their own sops sub-scope,
+  `ci/production/product-release`. Ciphertext grants are per sub-scope prefix, so a release job can read none of
+  stackra-bot's `ci/production/release` (owner, 2026-11-09; figentra/infra secret-callers).
+
+## Enforcement
+
+- figentra/infra `estate/repos.test.mjs`: every row has a known type, its base topics, at most 12 lower-case topics,
+  no retired topic, a description of 1–200 characters, a product name on a product, an https homepage.
+- figentra/infra `scripts/repos-check.mjs`: read-only drift report against GitHub; exits 1 on drift.
+- `@stackra/infra-github` `GITHUB_PROVIDER_SCHEMA`: description 1–350 characters, at most 20 unique lower-case topics,
+  an absolute homepage URL.
+- planned — a scheduled run of `scripts/repos-check.mjs` with the figentra-infra App's read token.
+- planned — FLOW: `fflow create` writes the new repository's metadata from this standard.
+
+## Supersedes and sources
+
+Supersedes: none. Related: [0522](/adr/0522-testbed-own-repo) (testbed's visibility, amended 2026-11-09),
+[0532](/adr/0532-infrastructure-ownership) (the github stack). Sources: the owner's ask via the leader, 2026-11-09;
+the table approved the same day.
