@@ -3,7 +3,7 @@
  * Purpose: `renderChatParts`, one turn's AI SDK UI message parts drawn in order: text, reasoning (a run of parts is one
  *          disclosure, one step per part), sources (a run is one list), a tool call that waits for a person or was
  *          answered as an ApprovalCard, a failed tool call as a muted line, and each `data-tamo-<kind>` part through
- *          the host's renderer. Every other part draws nothing.
+ *          the host's renderer for its kind, else `defaultChatPartRenderers`. Every other part draws nothing.
  * Boundary: pure: it reads each part defensively (the parts arrive from the wire), so an unknown or malformed part
  *           draws nothing and never throws. It answers no approval itself: the host's `onApprovalResponse` does.
  * Runtime: browser
@@ -17,6 +17,16 @@ import { Fragment, type ReactNode } from "react";
 import type { TamoPartKind } from "#contracts/enums/tamo-part-kind.enum";
 import type { ChatPartOptions } from "#react/chat-surface/chat-part-options.type";
 import type { ChatPartRenderers } from "#react/chat-surface/chat-part-renderers.type";
+import { defaultChatPartRenderers } from "#react/chat-surface/default-chat-part-renderers.constant";
+
+/** A part renderer as called here, after the kind is read off the wire. */
+type LooseRenderer = (data: unknown, part: unknown, options: ChatPartOptions) => ReactNode;
+
+/** The registry's own renderer for `kind`, so a kind named like an Object member (`constructor`) has none. */
+const rendererIn = (renderers: ChatPartRenderers, kind: string): LooseRenderer | undefined =>
+  Object.hasOwn(renderers, kind)
+    ? (renderers[kind as TamoPartKind] as LooseRenderer | undefined)
+    : undefined;
 
 /** A part as read off the wire: any field may be missing or of another type. */
 type Loose = Readonly<Record<string, unknown>>;
@@ -159,14 +169,10 @@ export function renderChatParts(
       nodes.push(toolPart(part, key, options));
     } else if (type.startsWith("data-tamo-")) {
       const kind = type.slice("data-tamo-".length);
-      const renderers: ChatPartRenderers = options.renderers ?? {};
-      const render = Object.hasOwn(renderers, kind)
-        ? (renderers[kind as TamoPartKind] as
-            | ((data: unknown, part: unknown) => ReactNode)
-            | undefined)
-        : undefined;
+      const render =
+        rendererIn(options.renderers ?? {}, kind) ?? rendererIn(defaultChatPartRenderers, kind);
       if (render !== undefined)
-        nodes.push(<Fragment key={key}>{render(part["data"], raw)}</Fragment>);
+        nodes.push(<Fragment key={key}>{render(part["data"], raw, options)}</Fragment>);
     }
   });
   flush(String(parts.length));
