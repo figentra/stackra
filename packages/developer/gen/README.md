@@ -51,12 +51,15 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `emitUiFacade`                                                               | `#stackra/ui`: `Component`, the class-component base from `@stackra/ui/react` or `/native`                              |
 | `.`                   | `reportsOf`, `emitReports`                                                   | the manifest's `reports` section and `#stackra/reports`: one query per `Report` (ADR 0470)                              |
 | `.`                   | `DocsConfig`, `emitDocsSite`, `DOCS_CONFIG_FILE`, `DOCS_SITE_DIR`            | a docs app's typed site config and the Mintlify site gen assembles (see below)                                          |
+| `.`                   | `navigationOfMeta`, `DOCS_APP_SOURCE`, `DOCS_MEMBER_SOURCE`                  | a docs member's navigation from its `meta.json` files, and where each input's source lives (see below)                |
 | `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest                                                                          |
 | `.`                   | `actionKey`, `eventName`, `permissionKey`, `modelKey`, `tableName`, ...      | the identity formulas of ADR 0294 decision 20                                                                           |
 | `.`                   | `integrationKey`, `webhookPath`, `sequenceKey`, `blockKey`, `routeKey`       | integration, webhook, sequence, block and route identities                                                              |
 | `.`                   | `toolHints`, `EFFECT_TAGS`, `INTEGRATION_ROLES`                              | derived MCP hints, the effect tags and the Integration roles the manifest accepts                                       |
 | `./node`              | `generate`, `ModuleLoader`                                                   | one run: write, or `{ check: true }` for `--check`; `loader` imports resource classes                                   |
 | `./node`              | `generateDocsSite`, `watchDocsSite`                                          | a docs app's run (`generate` takes it), and its watch for `stackra dev`                                                 |
+| `./node`              | `readDocsMember`, `isDocsMember`                                             | a docs member read for the docs-site run (`generate` takes it)                                                          |
+| `./schema/docs.json`  | the JSON Schema of `docs.yaml`                                               | for editors; a byte copy of `tools/schemas/docs.schema.json`                                                            |
 | `./node`              | `discoverMember`, `openHost`                                                 | discovery on TypeScript 7, falling back to TypeScript 6                                                                 |
 | `./node`              | `readServiceManifests`                                                       | the committed manifests of the services a member injects a client of                                                    |
 | `./node`              | `classComponents`                                                            | the Vite plugin of the class-component pass                                                                             |
@@ -249,6 +252,17 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
 (media only), `docs_owned_key`, `docs_service_unknown` and `docs_config_invalid`. `stackra dev` keeps gen watching
 `src/` under `mint dev`; `stackra build` runs `mint validate` and `stackra lint` runs `mint broken-links` and
 `mint a11y`, all in `.stackra/site/` (ADR 0002 amendment of 2026-10-27).
+
+A docs member is the second input (ADR 0514 amendment of 2026-11-09): a workspace member whose `package.json` has
+`"stackra": { "kind": "docs" }`, with no `src/config/docs.config.ts` and no `stackra.config.ts`. Its pages are
+`content/**/*.mdx|md`, its assets `content/assets/` and its snippets `content/snippets/`. Each folder's `meta.json`
+sets the navigation (`title`, `icon`, `pages`, `root`, `defaultOpen`): a `root` folder directly under `content/` is a
+tab, `---Label---` starts a group, a subfolder is a nested group and `...` is the rest, `index` first
+(`navigationOfMeta`). `docs.yaml` at the member root holds every other `DocsConfig` field (no `navigation`, no
+`theme`); editors read its shape from `@stackra/gen/schema/docs.json`. The site is always Fumadocs, written to
+`.stackra/site/` the same way, and the refusals name `content/`, `docs.yaml` and `content/**/meta.json`. Added
+refusals: `docs_meta_invalid`, `docs_meta_entry_invalid` (`!name`, `z...a`, links, an entry naming nothing) and
+`docs_meta_root_nested`.
 
 ## Tools, effects, listings and replacements
 
