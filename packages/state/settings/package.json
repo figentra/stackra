@@ -132,6 +132,7 @@
     "@stackra/icons": "workspace:*",
     "@stackra/market-packs": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "yaml": "catalog:",

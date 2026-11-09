@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: the isolation test of the settings runner (`settings:apply`) on real Postgres, connected as a NOBYPASSRLS
  *          login role in the service role: applied at a tenant node (`nlevel` 3), it writes that node's row and its
- *          revision as the tenant's, so the tenant's own session can then update the row; asked for a node below a
- *          tenant node, it refuses before connecting and writes nothing.
+ *          revision as the tenant's (`withTenant` inside `withScope`, one transaction), so the tenant's own session can
+ *          then update the row; applied at a product node (`nlevel` 2), it writes them as the platform's (`tenant_id`
+ *          NULL); asked for a node below a tenant node, it refuses before connecting and writes nothing.
  * Boundary: integration tier (`.int`): runs only where `TESTBED_POSTGRES_HOST` names a Postgres and is skipped elsewhere.
  *           One fresh database for the file (`ownerPostgres`); the runner connects through `DATABASE_URL`, set for the
  *           file to a login role of its own that is a member of the service role; the superuser checks, and the
@@ -23,7 +24,8 @@ import { SettingType } from "#core/enums/setting-type.enum";
 import { settingKeys } from "#core/functions/setting-keys.function";
 import { settingsApply } from "#node/functions/settings-apply.function";
 
-/** A tenant under product alpha, and a node below it. */
+/** Product alpha (the platform's), a tenant under it, and a node below that. */
+const ALPHA: ScopeRef = { id: "scp_01jab3k4m5n6p7q8r9s0t1v2w4", path: "platform.alpha" };
 const ACME: ScopeRef = { id: "scp_01jab3k4m5n6p7q8r9s0t1v2w3", path: "platform.alpha.acme" };
 const NORTH: ScopeRef = { id: "scp_01jab3k4m5n6p7q8r9s0t1v2w5", path: "platform.alpha.acme.north" };
 
@@ -103,6 +105,29 @@ describe.skipIf(HOST === undefined)("settings runner row security on Postgres", 
     ).toEqual([{ values: { a: 1, b: 2 } }]);
   });
 
+  it("applies at a product node as the platform, with no tenant", async () => {
+    const { revisions } = await settingsApply({
+      cwd: process.cwd(),
+      environment: "dev",
+      scope: ALPHA,
+      yaml: PACK,
+      author: "usr_01jab3k4m5n6p7q8r9s0t1v2w6",
+    });
+    expect(revisions).toHaveLength(1);
+    expect(
+      await superuser(
+        'select tenant_id, "values" from settings.stored_settings where scope_id = ?',
+        [ALPHA.id],
+      ),
+    ).toEqual([{ tenant_id: null, values: { a: 1 } }]);
+    expect(
+      await superuser(
+        "select tenant_id from settings.stored_setting_revisions where scope_id = ?",
+        [ALPHA.id],
+      ),
+    ).toEqual([{ tenant_id: null }]);
+  });
+
   it("refuses a node below a tenant node before connecting, and writes nothing", async () => {
     await expect(
       settingsApply({
@@ -115,6 +140,11 @@ describe.skipIf(HOST === undefined)("settings runner row security on Postgres", 
     ).rejects.toThrow(/cannot resolve the tenant of platform\.alpha\.acme\.north yet/);
     expect(
       await superuser("select 1 from settings.stored_settings where scope_id = ?", [NORTH.id]),
+    ).toEqual([]);
+    expect(
+      await superuser("select 1 from settings.stored_setting_revisions where scope_id = ?", [
+        NORTH.id,
+      ]),
     ).toEqual([]);
   });
 });

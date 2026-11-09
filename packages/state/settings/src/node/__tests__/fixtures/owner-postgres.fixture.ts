@@ -4,22 +4,24 @@
  *          test file with the settings migrations applied (all, or the first few so a test can seed rows first and
  *          apply the rest), a NOBYPASSRLS service role of its own that owns the settings tables and executes their
  *          system functions (the shape a deployed service has), and a unit of work as that role in one owner
- *          (`asService`), as the tenancy driver's isolation sets it.
+ *          (`asService`), through `TenantIsolationService.withTenant` as the tenancy driver's isolation runs it.
  * Boundary: test only; used by the `.int` files, skipped without `TESTBED_POSTGRES_HOST` (user `postgres`, a
  *           superuser, with trust auth). Migrations run as that superuser, as a migrator would, and the service role is
  *           then given the tables and the functions' EXECUTE; the system-access role is created first so concurrent
  *           files never race on it. Superuser statements (seeds, catalogue reads) bypass row security on purpose. The
- *           settings entities are registered, so `StoredSettingService` runs on the file's database. Settings does not
- *           depend on @stackra/tenancy, so the owner setting here is the tenancy driver's behaviour, not its code.
+ *           settings entities are registered, so `StoredSettingService` runs on the file's database. The owned models
+ *           take their tenant from the running `withTenant` call, so a write in `asService` lands in its owner.
  * Runtime: node (vitest)
  * Governing contract: ADR 0182 (integration tier); ADR 0239 (2026-11-07 amendment, gaps A and C);
  *                     `.agents/rules/tenancy.md` (point 8).
  */
 import { randomUUID } from "node:crypto";
 
+import { type Actor, ActorKind, type PublicId } from "@stackra/contracts";
 import { compileMigration } from "@stackra/database";
 import type { CompiledMigration } from "@stackra/database";
 import { PostgresDatabaseDriver } from "@stackra/database/node";
+import { TenantIsolationService } from "@stackra/tenancy/node";
 
 import { CreateStoredSettingsMigration } from "#node/database/migrations/0001-create-stored-settings.migration";
 import { CreateStoredSettingRevisionsMigration } from "#node/database/migrations/0002-create-stored-setting-revisions.migration";
@@ -123,10 +125,11 @@ export async function ownerPostgres(through: number = MIGRATIONS.length): Promis
 }
 
 /**
- * Runs `work` in one transaction as `role`, with `app.tenant_id` set to `owner` ('' or undefined: no owner).
+ * Runs `work` in one transaction as `role`, in `withTenant` of a system actor in `owner` ('' or undefined: no owner).
  *
+ * @throws TypeError when `owner` is set but is not a tenant id (`scp_…`).
  * @example
- * await asService(postgres, "scp_acme", () => store.layers("orders", { scope }));
+ * await asService(postgres, ACME.id, () => store.layers("orders", { scope }));
  */
 export function asService<T>(
   postgres: OwnerPostgres,
@@ -137,8 +140,12 @@ export function asService<T>(
   return database.transaction(async () => {
     // raw-sql: the role row-level security applies to, for this transaction only
     await database.em().execute(`set local role "${role}"`);
-    // raw-sql: the owner setting, as the isolation writes it, for this transaction only
-    await database.em().execute("select set_config('app.tenant_id', ?, true)", [owner ?? ""]);
-    return work();
+    const actor: Actor = {
+      kind: ActorKind.System,
+      id: "sys_settings_test",
+      ...(owner === undefined || owner === "" ? {} : { scopeId: owner as PublicId }),
+    };
+    // a savepoint in this transaction, so the role above holds for `work`
+    return new TenantIsolationService(database).withTenant(actor, work);
   });
 }
