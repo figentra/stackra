@@ -106,6 +106,16 @@
       "entry": "node"
     },
     {
+      "name": "constitution",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "ConstitutionCommand",
+      "file": "src/node/commands/constitution.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "consumer-gate",
       "aliases": [],
       "hidden": false,

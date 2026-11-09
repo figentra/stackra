@@ -121,6 +121,12 @@ keys the address by its SHA-256, never the address itself. An action's own `rate
 per-action opt-out, so an action that needs more declares a larger `rateLimit`. Like the area buckets, the defaults
 apply only while a `RateLimitStore` and `RateLimitConfig` are bound.
 
+When a `RateLimitCapSource` (`@stackra/contracts`) is bound, the step reads the call's scope caps before it takes: each
+area bucket number and each default action bucket is the lower of its own and the cap, so an operator lowers a scope's
+limits without a deploy. `@stackra/settings` binds `SettingsRateLimitCapSourceDriver` over its `RateLimitSettings`
+group (`rate_limit.<area>PerMinute`, `rate_limit.<area>Burst`, `rate_limit.actionPerScope`,
+`rate_limit.actionPerAddress`; `null` caps nothing). A cap never raises a limit, and a failed read fails the call.
+
 A refusal is `RateLimitedError` with the refusing bucket's `retryAfterMs` (absent when it never refills), `limit` and
 `remaining`, which travel as the envelope's `details` (the MCP answer) and become `Retry-After` and `RateLimit-*`
 through `rateLimitHeaders` of `@stackra/errors` (the generated HTTP adapter). When an `EventOutbox` is bound, each

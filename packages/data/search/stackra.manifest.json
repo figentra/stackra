@@ -405,6 +405,28 @@
       ]
     }
   ],
+  "settings": [
+    {
+      "key": "search",
+      "class": "SearchSettings",
+      "module": "search",
+      "file": "src/core/search.settings.ts",
+      "keys": [
+        {
+          "path": "synonyms",
+          "type": "string"
+        },
+        {
+          "path": "rankingRules",
+          "type": "string"
+        },
+        {
+          "path": "querySample",
+          "type": "number"
+        }
+      ]
+    }
+  ],
   "schemas": {
     "search.SearchIndexState": {
       "type": "string",

@@ -11,6 +11,15 @@
       "dependsOn": []
     }
   ],
+  "facets": [
+    {
+      "name": "Setting",
+      "kind": "setting",
+      "target": "field",
+      "from": "@stackra/settings",
+      "targets": ["QuerySettings.offlineLimitHours"]
+    }
+  ],
   "actions": [],
   "events": [],
   "permissions": [],
@@ -249,6 +258,20 @@
     {
       "class": "QueueFake",
       "from": "@stackra/query/testing"
+    }
+  ],
+  "settings": [
+    {
+      "key": "query",
+      "class": "QuerySettings",
+      "module": "query",
+      "file": "src/core/query.settings.ts",
+      "keys": [
+        {
+          "path": "offlineLimitHours",
+          "type": "integer"
+        }
+      ]
     }
   ],
   "schemas": {

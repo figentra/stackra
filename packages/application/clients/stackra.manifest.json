@@ -113,6 +113,25 @@
           ]
         }
       }
+    },
+    {
+      "port": "PlanServiceChannel",
+      "key": "entitlements.PlanServiceChannel",
+      "candidates": ["transport"],
+      "classes": {
+        "transport": {
+          "class": "TransportPlanServiceChannelDriver",
+          "from": "@stackra/clients",
+          "deps": [
+            {
+              "class": {
+                "name": "ClientTransport",
+                "from": "@stackra/clients/contracts"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],

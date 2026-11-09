@@ -93,11 +93,29 @@
     {
       "port": "PlanSnapshots",
       "key": "entitlements.PlanSnapshots",
-      "candidates": ["memory"],
+      "candidates": ["memory", "service"],
       "classes": {
         "memory": {
           "class": "MemoryPlanSnapshotsDriver",
           "from": "@stackra/entitlements"
+        },
+        "service": {
+          "class": "ServicePlanSnapshotsDriver",
+          "from": "@stackra/entitlements",
+          "deps": [
+            {
+              "class": {
+                "name": "PlanServiceChannel",
+                "from": "@stackra/entitlements/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
         }
       }
     },
