@@ -1,0 +1,79 @@
+{
+  "generatedFrom": {
+    "hash": "aa3d50744c673cf5",
+    "propsFiles": ["ui/src/react/terminal-demo/terminal-demo.props.ts"]
+  },
+  "importLine": "import { TerminalDemo } from \"@stackra/ui/react\";",
+  "key": "free/terminal-demo",
+  "parts": [
+    {
+      "name": "TerminalDemo",
+      "props": [
+        {
+          "description": "The command in the top bar, which the copy button copies, such as `stackra create my-app`.",
+          "name": "command",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The mono label in the top bar, and the region's spoken name. Defaults to \"Try it\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The recorded session, played a whole line at a time.",
+          "name": "lines",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TerminalLine[]"
+        },
+        {
+          "description": "What the session ends on, such as a framed localhost preview; shown once every line is.",
+          "name": "result",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "When the session plays: once it scrolls into view (the default), at once, or `never` (the last frame only).",
+          "name": "autoplay",
+          "required": false,
+          "source": "stackra",
+          "type": "\"always\" | \"in-view\" | \"never\""
+        },
+        {
+          "description": "The time between lines in milliseconds, by default the theme's `floor` motion step.",
+          "name": "stepMs",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the copy button. Defaults to true.",
+          "name": "isCopyable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The copy button's spoken name. Defaults to \"Copy command\".",
+          "name": "copyLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the window.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "02688ec7fde41a7e",
+    "propsFiles": ["ui/src/react/frame/frame.props.ts"]
+  },
+  "importLine": "import { Frame } from \"@stackra/ui/react\";",
+  "key": "free/frame",
+  "parts": [
+    {
+      "name": "Frame",
+      "props": [
+        {
+          "default": "window",
+          "description": "The chrome around the content: a `window` with a title bar, a `schematic` window (a striped title bar on the\nblueprint frame radius), a `phone`, or a `plain` border. Defaults to `window`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"phone\" | \"window\" | \"schematic\" | \"plain\""
+        },
+        {
+          "description": "The window's title, address or file name, shown in its title bar; only `window` and `schematic` draw it.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A screenshot or a live widget.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "none",
+          "description": "Lets the frame run past its parent's edge, which clips it: `bottom`, `end` or both. Defaults to `none`.",
+          "name": "bleed",
+          "required": false,
+          "source": "stackra",
+          "type": "\"bottom\" | \"end\" | \"none\" | \"bottom-end\""
+        },
+        {
+          "description": "A pill switcher docked on the frame's bottom edge, such as a SegmentedControl of surfaces.",
+          "name": "tabs",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Styles the frame.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}
