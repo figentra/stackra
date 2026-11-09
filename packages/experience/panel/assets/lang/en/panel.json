@@ -193,6 +193,9 @@
       "update": "Update existing",
       "upsert": "Create or update"
     },
+    "metric_format": {
+      "percent": "Percent"
+    },
     "place": {
       "band": "KPI band",
       "grid": "Grid",

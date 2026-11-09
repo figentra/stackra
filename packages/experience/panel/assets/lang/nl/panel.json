@@ -193,6 +193,9 @@
       "update": "Bestaande bijwerken",
       "upsert": "Aanmaken of bijwerken"
     },
+    "metric_format": {
+      "percent": "Percentage"
+    },
     "place": {
       "band": "KPI-balk",
       "grid": "Raster",

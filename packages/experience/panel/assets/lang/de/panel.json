@@ -193,6 +193,9 @@
       "update": "Vorhandene aktualisieren",
       "upsert": "Anlegen oder aktualisieren"
     },
+    "metric_format": {
+      "percent": "Prozent"
+    },
     "place": {
       "band": "Kennzahlenleiste",
       "grid": "Raster",
