@@ -136,7 +136,7 @@ nothing else.
    once no repository uses it.
 
 Enforcement: step one is checked already. The `layout` rule of `stackra validate --repository`
-(`checkRepositoryLayout`, ADR 0526 decision 3) requires a root `docs` and refuses an `apps/` that package.json
+(`checkRepositoryLayout`, ADR 0526 decision 3, stackra#583) requires a root `docs` and refuses an `apps/` that package.json
 `stackra.layout.allow` does not declare, and no product declares one. Planned: gen's `docs` member reader, the
 `docs.yaml` schema and the `meta.json` `MUST_STAY_JSON` row, in one core pull request; and a repo-checks rule that a
 product's `docs/` is kind `docs`, once every product has converted.
