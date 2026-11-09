@@ -303,8 +303,19 @@ describe("emitDocsSite with the fumadocs renderer", () => {
     const config = text(site, "react-router.config.ts");
     expect(routes).toContain('index("routes/page.tsx", { id: "routes/home" })');
     expect(routes.indexOf("index(")).toBeLessThan(routes.indexOf('route("*"'));
-    expect(config).toContain('.includes("<title>")');
+    expect(config).toContain("<title>([^<]*)<[/]title>");
     expect(config).toContain("throw new Error(");
+  });
+
+  /** "Figentra Geo · Figentra Geo": the home page's own words are the site's name, so it is titled by them alone. */
+  it("titles the home page by its own words and fails a build whose title repeats a part", () => {
+    const site = fumadocs();
+    const route = text(site, "app/routes/page.tsx");
+    const config = text(site, "react-router.config.ts");
+    expect(route).toContain("const HOME_PAGE = /^index(\\.[A-Za-z-]+)?\\.mdx?$/;");
+    expect(route).toContain('HOME_PAGE.test(path) ? page.title : page.title + " · " + site.name');
+    expect(config).toContain('title.split(" · ")');
+    expect(config).toContain("titles repeat a part: ");
   });
 
   it("writes the navigation as a page tree, and every page path to prerender", () => {

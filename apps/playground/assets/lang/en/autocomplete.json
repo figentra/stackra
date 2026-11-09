@@ -1,0 +1,25 @@
+{
+  "basics": {
+    "label": "Billing country",
+    "placeholder": "Choose a country",
+    "description": "Tax on each invoice follows this country.",
+    "search": "Search countries",
+    "clear": "Clear the country",
+    "empty": "No country matches.",
+    "chosen": "Tax country: {country}",
+    "none": "not set"
+  },
+  "sample": {
+    "saudi_arabia": "Saudi Arabia",
+    "united_arab_emirates": "United Arab Emirates",
+    "egypt": "Egypt",
+    "jordan": "Jordan",
+    "kuwait": "Kuwait",
+    "qatar": "Qatar",
+    "bahrain": "Bahrain",
+    "oman": "Oman",
+    "united_kingdom": "United Kingdom",
+    "germany": "Germany",
+    "united_states": "United States"
+  }
+}

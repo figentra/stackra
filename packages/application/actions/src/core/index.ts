@@ -80,6 +80,7 @@ export type { ActionAccepts } from "#core/types/action-accepts.type";
 export type { ActionApproval } from "#core/types/action-approval.type";
 export type { ActionClass } from "#core/types/action-class.type";
 export type { ActionContext } from "#core/types/action-context.type";
+export type { DetachedCall } from "#core/types/detached-call.type";
 export type { ActionDraft } from "#core/types/action-draft.type";
 export type { ActionEffects } from "#core/types/action-effects.type";
 export type { ActionMeter } from "#core/types/action-meter.type";
