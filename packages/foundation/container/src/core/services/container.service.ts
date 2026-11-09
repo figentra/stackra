@@ -421,6 +421,16 @@ export class Container {
       if (!isNamed(port) && loaded.type === token) return { key: port, ...loaded };
     if (graph.bindings.has(token) || graph.exported.has(token))
       return { key: token, ...this.recipeFor(token) };
+    // The container itself, for a class that reads an optional binding at call time (`has` then `get`): the root, so
+    // a request scope's class gets the container its singletons live in.
+    if (token === Container)
+      return {
+        key: token,
+        type: token as unknown as AnyClass,
+        lifetime: Lifetime.Singleton,
+        deps: [],
+        create: (container) => container,
+      };
     if (token === DiscoveryService)
       return {
         key: token,
