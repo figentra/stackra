@@ -61,11 +61,8 @@ describe("defaultChatPartRenderers", () => {
       ],
     });
     expect(screen.getByText("Revenue")).toBeTruthy();
-    expect(
-      screen.getByText(
-        new Intl.NumberFormat(undefined, { style: "currency", currency: "SAR" }).format(1200),
-      ),
-    ).toBeTruthy();
+    // Intl puts a no-break space after the currency code; the DOM text is normalised, the matcher must be too
+    expect(screen.getByText(/SAR\s1,200\.00/)).toBeTruthy();
   });
 
   it("answers a question through onAnswer, and shows it read-only without it", () => {
@@ -80,7 +77,8 @@ describe("defaultChatPartRenderers", () => {
     const onAnswer = vi.fn();
     draw("question", question, { onAnswer });
     act(() => fireEvent.click(screen.getByRole("radio", { name: "Tahlia" })));
-    act(() => fireEvent.click(screen.getByRole("button", { name: "Next" })));
+    // one question is also the last, so its step button opens the summary
+    act(() => fireEvent.click(screen.getByRole("button", { name: "Review answers" })));
     act(() => fireEvent.click(screen.getByRole("button", { name: "Send answers" })));
     expect(onAnswer).toHaveBeenCalledWith("q1", { q1: "tahlia" });
     cleanup();
