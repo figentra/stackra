@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreApp`, the app file of a service's generated Encore application (`.stackra/encore/encore.app`):
- *          `{ id, lang: "typescript" }`, the id being the root runway's `providers.encore.app`, so `encore run` in
- *          `.stackra/encore` (what `stackra dev` starts) finds its app.
+ * Purpose: `emitEncoreApp`, the app file of a service's generated Encore application, at the member root (`encore.app`, gitignored):
+ *          `{ id, lang: "typescript" }`, the id being the root runway's `providers.encore.app`, so `encore run` in the
+ *          member (what `stackra dev` starts) finds its app and resolves the member's `#` imports and node_modules.
  * Boundary: pure; the caller reads the id from the root runway and refuses a missing one (`encore_app_missing`). JSON
  *           only, no comment: Encore reads the file as is, and `generate` writes it only when its content changes.
  * Runtime: isomorphic
- * Governing contract: ADR 0091 (decision 2: gen emits the whole Encore app, encore.app included, into
+ * Governing contract: ADR 0091 (decision 2 as amended 2026-11-09: the app root is the member root, the services stay in
  *                     `.stackra/encore`); ADR 0029 (one Encore app); ADR 0296 (the root runway); STA-1322.
  */
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -20,7 +20,7 @@ import type { GeneratedFile } from "#core/types/generated-file.type";
  */
 export function emitEncoreApp(id: string): GeneratedFile {
   return {
-    path: ".stackra/encore/encore.app",
+    path: "encore.app",
     content: `${JSON.stringify({ id, lang: "typescript" }, null, 2)}\n`,
   };
 }

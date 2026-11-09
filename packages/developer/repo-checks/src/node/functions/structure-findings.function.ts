@@ -32,6 +32,8 @@ import { checkMemberMetadata } from "#node/functions/check-member-metadata.funct
 import { checkRawSql } from "#node/functions/check-raw-sql.function";
 import { checkForkingPeers } from "#node/functions/check-forking-peers.function";
 import { checkHostedPeers } from "#node/functions/check-hosted-peers.function";
+import { checkEncoreService } from "#node/functions/check-encore-service.function";
+import { catalogEncoreVersion } from "#node/functions/catalog-encore-version.function";
 import { checkMember } from "#node/functions/check-member.function";
 import { checkNativeModules } from "#node/functions/check-native-modules.function";
 import { checkPublicIdPrefixes } from "#node/functions/check-public-id-prefixes.function";
@@ -252,6 +254,7 @@ export async function structureFindings(
     options.warn(
       `validate: ${unreviewed.length} anonymous-callable action(s) and query(ies) not yet reviewed, past the permission and record-policy steps for a caller with no session (not in REVIEWED_ANONYMOUS_SURFACES of @stackra/repo-checks): ${unreviewed.join(", ")}`,
     );
+  const catalogEncore = catalogEncoreVersion(maybe("pnpm-workspace.yaml"));
   for (const { dir, path } of members) {
     const at = (f: string): unknown =>
       existsSync(join(path, f)) ? readJsonc(join(path, f)) : undefined;
@@ -315,6 +318,16 @@ export async function structureFindings(
               (p) => p.startsWith(`${dir}/src/`) && /\.tsx?$/.test(p) && !p.includes("/__tests__/"),
             )
             .map((p) => readFileSync(join(root, p), "utf8")),
+        }),
+      );
+    if (tierFor(dir) === "tier:service")
+      report(
+        "service",
+        dir,
+        checkEncoreService({
+          pkg,
+          tsconfig: at("tsconfig.json") as Parameters<typeof checkEncoreService>[0]["tsconfig"],
+          catalogEncore,
         }),
       );
     if (tierFor(dir) === "tier:service")

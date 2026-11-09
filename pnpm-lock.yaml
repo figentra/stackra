@@ -9675,7 +9675,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/foundation/container
       encore.dev:
-        specifier: 'catalog:'
+        specifier: 1.58.8
         version: 1.58.8
     devDependencies:
       '@stackra/cli':
@@ -9709,7 +9709,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/foundation/container
       encore.dev:
-        specifier: 'catalog:'
+        specifier: 1.58.8
         version: 1.58.8
     devDependencies:
       '@stackra/cli':
