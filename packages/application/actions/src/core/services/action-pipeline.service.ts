@@ -81,6 +81,7 @@ import {
   AssuranceLevel,
   Clock,
   Duration,
+  IdempotencyRetentionSource,
   IdentityResolver,
   type Json,
   Logger,
@@ -1027,11 +1028,19 @@ export class ActionPipeline {
     if (call.state.joined && !store.joinsTransaction)
       throw IdempotencyStoreNotTransactionalError.create();
     const own = call.options.idempotencyTtl;
-    // an action may shorten the window, never lengthen it past the 24 hours of ADR 0136
-    const ttl =
-      own !== undefined && Duration.toMilliseconds(own) < Duration.toMilliseconds(IDEMPOTENCY_TTL)
-        ? own
+    // a bound source (settings) sets the window; a failed read fails the call. It and an action may shorten the
+    // window, never lengthen it past the 24 hours of ADR 0136
+    const configured =
+      (await this.optional(IdempotencyRetentionSource)?.retention(descriptor.scope)) ??
+      IDEMPOTENCY_TTL;
+    const window =
+      Duration.toMilliseconds(configured) < Duration.toMilliseconds(IDEMPOTENCY_TTL)
+        ? configured
         : IDEMPOTENCY_TTL;
+    const ttl =
+      own !== undefined && Duration.toMilliseconds(own) < Duration.toMilliseconds(window)
+        ? own
+        : window;
     const earlier = await store.claim(scoped, fingerprint, ttl);
     if (earlier === undefined) return { held: scoped, fingerprint, ttl, sent: !derived };
     if (earlier.fingerprint !== fingerprint) throw IdempotencyKeyReusedError.create();
