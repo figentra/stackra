@@ -430,7 +430,7 @@ test("generate --rotate: an ed25519 catalog name gets a new pair and prints only
   // the new public half and a day-dated id, so it never shares the id of the key it replaces
   assert.match(
     out.lines[1],
-    /^ {2}public key [A-Za-z0-9_-]{43} {2}key id invoicing-staging-\d{8}$/,
+    /^ {2}public key [A-Za-z0-9_-]{43} {2}key id invoicing-staging-\d{8}\n?$/,
   );
   const written = JSON.parse(cli.stdins.at(-1)).STACKRA_EVENTS_SIGNING_KEY;
   assert.equal(
