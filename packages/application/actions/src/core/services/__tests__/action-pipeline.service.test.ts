@@ -35,7 +35,8 @@
  *          with no isolation bound the branch stays the `scopeId`. And `ctx.detach()`: each step after the call is a new
  *          writable isolation with the call's actor and scope that commits or rolls back alone, `RequestContext.detached()`
  *          answers only inside the detached run, another store's value stays readable, a branch user's steps run as the
- *          settled tenant, and with no isolation bound a step runs as it is.
+ *          settled tenant, each `DETACHED_RUNS` wrapper is entered around a run and a lone step (never again for a step
+ *          inside a run), and with no isolation bound a step runs as it is.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -170,6 +171,8 @@ import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
 import type { RuleEvaluator } from "#core/types/rule-evaluator.type";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { DetachedCall } from "#core/types/detached-call.type";
+import { DETACHED_RUNS } from "#contracts/constants/detached-runs.constant";
+import type { DetachedRun } from "#contracts/types/detached-run.type";
 import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 import type { QueryContext } from "#core/types/query-context.type";
 import type { ReplicaPage } from "#core/types/replica-page.type";
@@ -4116,6 +4119,25 @@ describe("ActionPipeline detached call (ctx.detach)", () => {
     expect(detached).toMatchObject({ actor: branchUser, scope: TREE_BRANCH });
     const scopeId = await detached.isolated(async () => request.current().scopeId);
     expect(scopeId).toBe(TREE_TOP);
+  });
+
+  it("enters each DETACHED_RUNS wrapper around run and a lone step, never again for a step inside run", async () => {
+    const entered: string[] = [];
+    const wrapper: DetachedRun = async (step, work) => {
+      entered.push("enter");
+      expect(typeof step).toBe("function");
+      return work();
+    };
+    DETACHED_RUNS.add(wrapper);
+    try {
+      const { detached } = await streamed(new LoggingIsolation());
+      await detached.run(() => detached.isolated(async () => undefined));
+      expect(entered).toEqual(["enter"]);
+      await detached.isolated(async () => undefined);
+      expect(entered).toEqual(["enter", "enter"]);
+    } finally {
+      DETACHED_RUNS.delete(wrapper);
+    }
   });
 
   it("runs a step as it is when no isolation is bound", async () => {
