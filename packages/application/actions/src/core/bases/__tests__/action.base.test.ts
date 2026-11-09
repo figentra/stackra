@@ -307,9 +307,9 @@ describe("Action", () => {
       idempotency: Idempotency.Never,
     } as const;
     expect(kindOf(Action(stream))?.options).toMatchObject({ stream: true, tool: false });
-    expect(() => Action({ ...stream, tool: undefined })).toThrow(
-      /takes no tool.*stream_not_replayable/,
-    );
+    // a user action is a tool by default, so leaving `tool` out is refused too
+    const { tool: _tool, ...toolByDefault } = stream;
+    expect(() => Action(toolByDefault)).toThrow(/takes no tool.*stream_not_replayable/);
     expect(() => Action({ ...stream, idempotency: Idempotency.Optional })).toThrow(
       /idempotency other than Never/,
     );
