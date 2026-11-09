@@ -228,6 +228,7 @@ interface Recorded {
   readonly approval?: boolean | ActionApproval;
   readonly stepUp?: AssuranceLevel;
   readonly public?: ActionPublic;
+  readonly stream?: boolean;
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
@@ -476,6 +477,7 @@ export class ActionPipeline {
         ? {}
         : { credential: Object.freeze({ ...request.credential }) }),
       ...publicField(publicOf(options, registration?.permission, registration?.risk)),
+      ...(options.stream === true ? { stream: true as const } : {}),
     });
     const state: CallState = {
       idempotencyKey: undefined,
