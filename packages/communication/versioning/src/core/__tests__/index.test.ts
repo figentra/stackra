@@ -27,12 +27,15 @@ describe("@stackra/versioning", () => {
       "UnsupportedVersionError",
       "VERSIONING_HEADERS",
       "VERSION_SUPPORT_MONTHS",
+      "VersionRequiredError",
       "VersionSunsetError",
+      "VersioningConfig",
       "applyVersionHeaders",
       "downgrade",
       "publishedVersions",
       "registerChanges",
       "resolveVersion",
+      "serveVersioned",
       "upgrade",
     ]);
     expect("isCalendarDate" in versioning).toBe(false);

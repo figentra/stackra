@@ -16,6 +16,7 @@ import { Schema } from "@stackra/validation";
 
 import { Change } from "#core/bases/change.base";
 import { UnsupportedVersionError } from "#core/errors/unsupported-version.error";
+import { VersionRequiredError } from "#core/errors/version-required.error";
 import { VersionSunsetError } from "#core/errors/version-sunset.error";
 import { registerChanges } from "#core/functions/register-changes.function";
 import { resolveVersion } from "#core/functions/resolve-version.function";
@@ -58,6 +59,24 @@ describe("resolveVersion", () => {
       "2027-03-01",
     );
     expect(resolveVersion(config).version).toBe("2026-10-01");
+  });
+
+  it("refuses a required caller that names no version, naming the header and the current version", () => {
+    const error = thrown(() => resolveVersion({ ...config, required: true }));
+    expect(isRefusal(error, VersionRequiredError)).toBe(true);
+    expect((error as VersionRequiredError).toEnvelope()).toEqual({
+      code: "version_required",
+      category: "validation",
+      retryable: false,
+      details: { header: "Stackra-Version", current: "2027-09-01" },
+    });
+    // a header or a pin satisfies it
+    expect(resolveVersion({ ...config, required: true, pin: "2027-03-01" }).version).toBe(
+      "2027-03-01",
+    );
+    expect(resolveVersion({ ...config, required: true, header: "2027-09-01" }).version).toBe(
+      "2027-09-01",
+    );
   });
 
   it("sends no header for the newest version", () => {

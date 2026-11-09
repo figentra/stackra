@@ -17,18 +17,20 @@ const deprecated = {
 };
 
 describe("applyVersionHeaders", () => {
-  it("writes Deprecation, Sunset and Vary for an older version", () => {
+  it("writes Stackra-Version, Deprecation, Sunset and Vary for an older version", () => {
     const headers = new Headers();
     applyVersionHeaders(headers, deprecated);
+    expect(headers.get("Stackra-Version")).toBe("2026-10-01");
     expect(headers.get("Deprecation")).toBe("@1803859200");
     expect(headers.get("Sunset")).toBe("Wed, 01 Mar 2028 00:00:00 GMT");
     expect(headers.get("Vary")).toBe("Stackra-Version");
   });
 
-  it("writes only Vary for the newest version", () => {
+  it("writes only the version and Vary for the newest version", () => {
     const headers = new Headers();
     applyVersionHeaders(headers, { version: "2027-09-01", headers: {} });
-    expect([...headers.keys()]).toEqual(["vary"]);
+    expect([...headers.keys()]).toEqual(["stackra-version", "vary"]);
+    expect(headers.get("Stackra-Version")).toBe("2027-09-01");
   });
 
   it("keeps an existing Vary and never repeats the version header", () => {

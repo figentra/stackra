@@ -1,15 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `applyVersionHeaders`, the edge step after `resolveVersion`: writes the resolved `Deprecation` and `Sunset`
- *          headers onto the outgoing response headers and adds `Stackra-Version` to `Vary`, so a shared cache never
- *          serves one version's shape to a caller of another.
+ *          headers onto the outgoing response headers, names the version in `Stackra-Version` (every answer does) and
+ *          adds `Stackra-Version` to `Vary`, so a shared cache never serves one version's shape to a caller of another.
  * Boundary: mutates only the `Headers` it is given; reads nothing else. An existing `Vary` keeps its values. The
- *           generated gateway's version middleware calls it once per response.
+ *           generated adapter reaches it through `serveVersioned`.
  * Runtime: isomorphic
  * Governing contract: ADR 0118 (decision 4); ADR 0237 (the version header is handled in the gateway); RFC 9745;
- *                     RFC 8594; RFC 9110 section 12.5.5 (`Vary`).
+ *                     RFC 8594; RFC 9110 section 12.5.5 (`Vary`); STA-2532 (FR-006).
  */
 import { VERSIONING_HEADERS } from "#core/constants/versioning-headers.constant";
+import { varyOnVersion } from "#core/functions/vary-on-version.function";
 import type { ResolvedVersion } from "#core/types/resolved-version.type";
 
 /**
@@ -22,11 +23,6 @@ import type { ResolvedVersion } from "#core/types/resolved-version.type";
  */
 export function applyVersionHeaders(headers: Headers, resolved: ResolvedVersion): void {
   for (const [name, value] of Object.entries(resolved.headers)) headers.set(name, value);
-  const vary = headers.get("Vary");
-  const names = vary?.split(",").map((name) => name.trim().toLowerCase()) ?? [];
-  if (!names.includes("*") && !names.includes(VERSIONING_HEADERS.version.toLowerCase()))
-    headers.set(
-      "Vary",
-      vary ? `${vary}, ${VERSIONING_HEADERS.version}` : VERSIONING_HEADERS.version,
-    );
+  headers.set(VERSIONING_HEADERS.version, resolved.version);
+  varyOnVersion(headers);
 }

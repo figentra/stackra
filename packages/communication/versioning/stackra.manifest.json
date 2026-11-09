@@ -22,6 +22,13 @@
       "class": "UnsupportedVersionError"
     },
     {
+      "code": "version_required",
+      "kind": "validation",
+      "category": "validation",
+      "module": "versioning",
+      "class": "VersionRequiredError"
+    },
+    {
       "code": "version_sunset",
       "kind": "failed_precondition",
       "category": "precondition_failed",
@@ -38,6 +45,13 @@
   "passes": [],
   "entitlements": [],
   "roles": [],
+  "config": [
+    {
+      "key": "versioning",
+      "class": "VersioningConfig",
+      "from": "@stackra/versioning"
+    }
+  ],
   "schemas": {
     "versioning.ChangeBase": {
       "type": "object",

@@ -19,6 +19,12 @@ export interface VersionRequest {
   /** Every `YYYY-MM-DD` version the service serves. */
   readonly supported: readonly string[];
 
+  /**
+   * True for a caller that must choose its version (an API key): with neither header nor pin it is refused with
+   * `VersionRequiredError` instead of getting `fallback`.
+   */
+  readonly required?: boolean | undefined;
+
   /** The version of a caller with neither header nor pin; one of `supported`. */
   readonly fallback: string;
 

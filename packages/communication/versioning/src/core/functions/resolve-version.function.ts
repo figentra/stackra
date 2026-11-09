@@ -4,7 +4,8 @@
  *          caller's pin, else the service's fallback. An older version is served while deprecated: it gets the
  *          `Deprecation` header (when its successor shipped) and the `Sunset` header, the earlier of its support
  *          window's end (`supportMonths` calendar months after its successor) and the earliest sunset among the
- *          dated changes after it. From its sunset on it is retired: refused with `VersionSunsetError`.
+ *          dated changes after it. From its sunset on it is retired: refused with `VersionSunsetError`. A caller that must
+ *          choose (`required`, an API key with no pin) and sends neither is refused with `VersionRequiredError`.
  * Boundary: reads the request and the registry only. A version the service does not serve is refused with
  *           `UnsupportedVersionError`, a version past its sunset with `VersionSunsetError`; a fallback missing from
  *           `supported` is the service's own mistake, so it throws a TypeError. With one supported date (the dormant
@@ -20,6 +21,7 @@ import { CHANGE_REGISTRY } from "#core/constants/change-registry.constant";
 import { VERSION_SUPPORT_MONTHS } from "#core/constants/version-support-months.constant";
 import { VERSIONING_HEADERS } from "#core/constants/versioning-headers.constant";
 import { UnsupportedVersionError } from "#core/errors/unsupported-version.error";
+import { VersionRequiredError } from "#core/errors/version-required.error";
 import { VersionSunsetError } from "#core/errors/version-sunset.error";
 import type { ResolvedVersion } from "#core/types/resolved-version.type";
 import type { VersionRequest } from "#core/types/version-request.type";
@@ -45,6 +47,7 @@ function sunsetOf(version: string, windowEnd: string): string {
 /**
  * The request's dated version and the headers its response carries.
  *
+ * @throws VersionRequiredError when `required` is set and the request sends neither the header nor a pin.
  * @throws UnsupportedVersionError when the header or the pin names a version the service does not serve.
  * @throws VersionSunsetError when the version's sunset has passed.
  * @throws TypeError when `fallback` is not one of `supported`, or `supportMonths` is not a whole number above 0.
@@ -65,6 +68,11 @@ export function resolveVersion(request: VersionRequest): ResolvedVersion {
       `The support window must be a whole number of months, got ${supportMonths}`,
     );
   const sent = request.header ?? request.pin;
+  if (sent === undefined && request.required === true && supported.length > 0)
+    throw VersionRequiredError.create({
+      header: VERSIONING_HEADERS.version,
+      current: supported.reduce((latest, day) => (day > latest ? day : latest)),
+    });
   const version = sent ?? fallback;
   if (!supported.includes(version)) {
     if (sent === undefined)
