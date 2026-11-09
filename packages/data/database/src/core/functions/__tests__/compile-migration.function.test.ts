@@ -373,7 +373,40 @@ describe(compileMigration, () => {
     ]);
   });
 
+  it("gives an existing column a default read from a setting, which its inverse drops", () => {
+    class StampPivotMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("product_tags", (t: Blueprint) =>
+          t.change("tenant_id").defaultSetting("app.tenant_id"),
+        );
+      }
+    }
+    const table = '"catalogue"."product_tags"';
+    expect(compileMigration(StampPivotMigration, { schema: "catalogue" }).steps).toEqual([
+      {
+        sql: [
+          `alter table ${table} alter column "tenant_id" set default nullif(current_setting('app.tenant_id', true), '')`,
+        ],
+        transactional: true,
+        inverse: [`alter table ${table} alter column "tenant_id" drop default`],
+      },
+    ]);
+  });
+
   it.each([
+    [
+      "a setting default that is not a custom setting",
+      "table",
+      (t: Blueprint) => t.change("tenant_id").defaultSetting("tenant_id"),
+      /is not a custom setting/,
+    ],
+    [
+      "a second setting default of one column",
+      "table",
+      (t: Blueprint) =>
+        t.change("tenant_id").defaultSetting("app.tenant_id").defaultSetting("app.owner_id"),
+      /already changes its default/,
+    ],
     [
       "a change on a table being created",
       "create",
