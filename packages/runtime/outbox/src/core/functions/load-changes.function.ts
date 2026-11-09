@@ -9,11 +9,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0078 and ADR 0221 (2026-10-28 amendment); ADR 0239 (2026-11-07 amendment, gaps A and C).
  */
+import { ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { CallIsolation } from "@stackra/actions/contracts";
 
 import type { ChangeClaim, ChangeFeed, ChangeRecord } from "#contracts/index";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 
 /**
  * The entries of `claims`, each loaded in its owner.
@@ -39,7 +39,9 @@ export async function loadChanges(
     const positions = run.map((claim) => claim.position);
     const loaded = new Map(
       (
-        await inRowOwner(isolation, run[0]?.ownerId, positions[0] ?? "", () => feed.load(positions))
+        await inRowOwner(isolation, OUTBOX_ACTOR_ID, run[0]?.ownerId, positions[0] ?? "", () =>
+          feed.load(positions),
+        )
       ).map((record) => [record.position, record]),
     );
     for (const position of positions) {

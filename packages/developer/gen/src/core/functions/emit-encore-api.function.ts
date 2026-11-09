@@ -5,7 +5,7 @@
  *          controller (any method, its `path`, a trailing `/*` as Encore's `/*rest`), each `expose: true` and
  *          `auth: false` to Encore, each calling `answerCall` of `./http`. That helper reads the body once under the
  *          cap, runs the request guards over its exact bytes, authenticates, then runs the call as `new
- *          ActionPipeline(container).execute(<class>, input, { actor })` (an action or query) or `container.get(<class>)
+ *          ActionPipeline(container).execute(<class>, input, { actor, ...requestCallOptions(request) })` (an action or query) or `container.get(<class>)
  *          .handle(request)` (a controller). The endpoint is named by the camel-cased key and its version (`shop.order
  *          .cancel@1` is `shopOrderCancelV1`), a controller by its class name. A hosted package's actions, queries and
  *          controllers get the same adapters, imported from the entry its manifest's `services` names, when the host
@@ -45,7 +45,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
 type Entry = Readonly<Record<string, unknown>>;
 
 /** The local names this file always binds, which a member class never takes. */
-const RESERVED = ["ActionPipeline", "answerCall", "api", "app"];
+const RESERVED = ["ActionPipeline", "answerCall", "api", "app", "requestCallOptions"];
 
 /**
  * The Encore endpoints of a service, or undefined when it has no own action or query with an endpoint.
@@ -130,8 +130,8 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       `      anonymous: ${entry["anonymous"] === true},`,
       `      action: ${type},`,
       ...input,
-      "      execute: (container, input, actor) =>",
-      `        new ActionPipeline(container).execute(${type}, input as never, { actor }),`,
+      "      execute: (container, input, actor, request) =>",
+      `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request) }),`,
       "    }),",
       ");",
       "",
@@ -174,8 +174,10 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
   }
   if (body.length === 0) return undefined;
 
-  if (body.some((line) => line.includes("new ActionPipeline(")))
+  if (body.some((line) => line.includes("new ActionPipeline("))) {
     use("@stackra/actions", "ActionPipeline", false);
+    use("@stackra/actions", "requestCallOptions", false);
+  }
   use("encore.dev/api", "api", false);
   const header = generatedHeader({
     from: "stackra.manifest.json (the own actions and queries with an endpoint)",

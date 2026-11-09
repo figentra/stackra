@@ -123,6 +123,19 @@ Shown-once output (STA-2568): `secret_output_kept` (`checkShownOnce`, full pass 
 neither `@ShownOnce` nor `@Hidden`: the idempotency store would keep it for a replay. Every `registerActions` row
 carries its output class, so the pipeline drops `@ShownOnce` fields before it stores the output.
 
+The endpoint convention and ADR 0305 rule 30 (STA-340): every derived route starts with its area, `/<area>`
+(`/app` when the action or query writes no `area`, or a service's own `defineService({ area })`), and every manifest
+action entry records `area`. `checkEndpoints` (full pass only) refuses `endpoint_collision` (two calls, own or hosted,
+on one method and path once parameter names are erased: `GET /app/orders/:orderId` and `GET /app/orders/:id`; each is
+named, and no `openapi.json` is written), `endpoint_versioned` (a `v<digits>` path segment, ADR 0118),
+`endpoint_area_mismatch` (a path neither `/<area>` nor under `/<area>/`), `endpoint_method_mismatch` (a query not on
+`GET`, an action on `GET`, or a transition overridden away from `PUT`), `job_without_system_actor` (a `job` without
+the `system` or `job` actor), `cron_input_invalid` (a `job.cron.input` property the input's JSON Schema does not have,
+a required one it omits, or a value of another JSON type; a run without `input` gets `{}`, and a schema without
+`properties` has only `required` checked) and `intent_phrases_missing` (`intent: true` without a non-empty
+`actions.<key>.intents` list in each base-language catalogue that ships the module's namespace, or in
+`assets/lang/en/<module>.json` when none does).
+
 The query cache (ADR 0305 rule 31, STA-1445): `site_cache_reads_caller` (`checkQueryCache`, full pass only) refuses a
 query cached `per: CacheScope.Site` whose `handle` reads its caller from its context (`ctx.actor`, `scopeId`, `scope`,
 `authorize`, `deviceId`, `assurance`, `client`, or a destructuring of them; the reader records them as
@@ -261,6 +274,10 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
 - **Listings (ADR 0355 decision 1, ADR 0308 rule 21).** An Integration's `roles` (plus `webhooks` when it receives
   them) and its `listing` (the entitlement reference) land on its entry; a role outside `INTEGRATION_ROLES` is
   `integration_role_unknown`.
+- **Webhook event ids.** The inbox dedupes inbound webhooks by event id. Only Standard Webhooks carries one in its
+  `webhook-id` header, so an Integration whose `webhooks` use any other scheme (`hmac`, a regional gateway's) and name
+  neither `eventId` (a payload `path`, or `parts` of paths and headers) nor `signature.idHeader` is
+  `webhook_event_id_undeclared`: every event would share the id `""` and be kept once.
 - **Replacements.** Every `@Replaces(Base)` is listed in a `replaces` section.
 - **Agents and passes (STA-903, ADR 0399, ADR 0348 decision 5).** `agent` and `pass` are binding kinds. An
   `Agent({ key, task, tools })` lands in `agents` (tools as action keys) and a `Pass({ key })` in `passes`; both keys

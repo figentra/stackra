@@ -1,5 +1,27 @@
 # @stackra/media
 
+## 0.29.0
+
+### Minor Changes
+
+- 2d5172a: `MediaLibrary.claim` checks a stored upload's bytes against the media type it declared (JPEG, PNG, GIF, WebP and PDF
+  signatures, the `ftyp` box for AVIF and MP4) and refuses a mismatch with `UploadRejectedError` reason `content`, deleting
+  the file, so an SVG or any other file renamed as an image is never accepted. `contentMatches` does the check (STA-2644).
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/filesystem@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
 ## 0.28.0
 
 ### Patch Changes

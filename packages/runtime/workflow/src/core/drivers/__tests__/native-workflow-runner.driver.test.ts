@@ -26,7 +26,12 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0102 (decisions 1, 2 and 7); ADR 0151 (decision 6: conformance);
  *                     ADR 0152 (0294 note).
  */
-import { Action, ActionPipeline } from "@stackra/actions";
+import {
+  Action,
+  ActionPipeline,
+  ClaimNotLoadedError,
+  RowIsolationMissingError,
+} from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { CallIsolation, ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
@@ -39,7 +44,6 @@ import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import type { I18nKey } from "@stackra/i18n";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
-import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/outbox";
 import { FieldType, Operator } from "@stackra/rules/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";

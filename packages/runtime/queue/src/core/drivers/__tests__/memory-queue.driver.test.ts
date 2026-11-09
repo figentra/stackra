@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemoryQueueDriver`: the input stored as JSON, reservation oldest `runAt` first per queue or
  *          across queues, a held reservation that no other `reserve` returns until it lapses, unique keys held while a
- *          job waits or runs, retries that wait for their time, the dead-letter list, redrive and removal.
+ *          job waits or runs, retries that wait for their time, the dead-letter list and its claims (no owner in memory),
+ *          redrive and removal.
  * Boundary: test only; instants are fixed, so no clock runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decisions 1 and 3).
@@ -35,6 +36,16 @@ function jobOf(id: PublicId<"job">, fields: Partial<QueuedJob> = {}): QueuedJob 
 
 const failure = { code: "provider_unavailable", message: "provider_unavailable" };
 
+/** The job `driver` reserves of `queue` at `now`, loaded as its claim names it. */
+async function reserved(
+  driver: MemoryQueueDriver,
+  queue: string | undefined,
+  now: Date,
+): Promise<QueuedJob | undefined> {
+  const claim = await driver.reserve(queue, now);
+  return claim === undefined ? undefined : driver.load(claim.id);
+}
+
 describe(MemoryQueueDriver, () => {
   it("is a QueueDriver", () => {
     expect(new MemoryQueueDriver()).toBeInstanceOf(QueueDriver);
@@ -44,10 +55,10 @@ describe(MemoryQueueDriver, () => {
     const driver = new MemoryQueueDriver();
     await driver.push(jobOf("job_a", { input: { sentAt: at(0) } }));
     await driver.push(jobOf("job_b", { input: undefined, runAt: at(1) }));
-    expect((await driver.reserve(undefined, at(5)))?.input).toEqual({
+    expect((await reserved(driver, undefined, at(5)))?.input).toEqual({
       sentAt: "2026-10-24T12:00:00.000Z",
     });
-    expect((await driver.reserve(undefined, at(5)))?.input).toBeNull();
+    expect((await reserved(driver, undefined, at(5)))?.input).toBeNull();
   });
 
   it("reserves the oldest due job of a queue, or of any queue, marked running with one more attempt", async () => {
@@ -55,18 +66,25 @@ describe(MemoryQueueDriver, () => {
     await driver.push(jobOf("job_late", { runAt: at(20) }));
     await driver.push(jobOf("job_early", { runAt: at(10) }));
     await driver.push(jobOf("job_other", { queue: "inbox", runAt: at(0) }));
-    expect(await driver.reserve("delivery", at(5))).toBeUndefined();
-    const first = await driver.reserve("delivery", at(30));
+    expect(await reserved(driver, "delivery", at(5))).toBeUndefined();
+    const first = await reserved(driver, "delivery", at(30));
     expect(first).toMatchObject({ id: "job_early", status: JobStatus.Running, attempts: 1 });
-    expect((await driver.reserve(undefined, at(30)))?.id).toBe("job_other");
+    expect((await reserved(driver, undefined, at(30)))?.id).toBe("job_other");
+  });
+
+  it("claims a reserved job by its id alone: memory keeps no owner", async () => {
+    const driver = new MemoryQueueDriver();
+    await driver.push(jobOf("job_a", { scope: { id: "scp_acme", path: "platform.alpha.acme" } }));
+    expect(await driver.reserve(undefined, at(0))).toEqual({ id: "job_a" });
+    expect(await driver.load("job_missing")).toBeUndefined();
   });
 
   it("holds a reservation until its lease lapses, then hands the job out again", async () => {
     const driver = new MemoryQueueDriver();
     await driver.push(jobOf("job_a"));
-    await driver.reserve(undefined, at(0));
-    expect(await driver.reserve(undefined, at(59))).toBeUndefined();
-    expect(await driver.reserve(undefined, at(60))).toMatchObject({ id: "job_a", attempts: 2 });
+    await reserved(driver, undefined, at(0));
+    expect(await reserved(driver, undefined, at(59))).toBeUndefined();
+    expect(await reserved(driver, undefined, at(60))).toMatchObject({ id: "job_a", attempts: 2 });
   });
 
   it("queues a unique job once while it waits or runs, and again once it is dead", async () => {
@@ -74,7 +92,7 @@ describe(MemoryQueueDriver, () => {
     const unique = { uniqueKey: "orders.order.expire_unpaid@1:scp_1" };
     expect(await driver.push(jobOf("job_a", unique))).toBe(true);
     expect(await driver.push(jobOf("job_b", unique))).toBe(false);
-    await driver.reserve(undefined, at(0));
+    await reserved(driver, undefined, at(0));
     expect(await driver.push(jobOf("job_c", unique))).toBe(false);
     await driver.deadLetter("job_a", failure);
     expect(await driver.push(jobOf("job_d", unique))).toBe(true);
@@ -83,10 +101,10 @@ describe(MemoryQueueDriver, () => {
   it("makes a retried job wait for its time and keeps the failure", async () => {
     const driver = new MemoryQueueDriver();
     await driver.push(jobOf("job_a"));
-    await driver.reserve(undefined, at(0));
+    await reserved(driver, undefined, at(0));
     await driver.retry("job_a", at(30), failure);
-    expect(await driver.reserve(undefined, at(29))).toBeUndefined();
-    expect(await driver.reserve(undefined, at(30))).toMatchObject({
+    expect(await reserved(driver, undefined, at(29))).toBeUndefined();
+    expect(await reserved(driver, undefined, at(30))).toMatchObject({
       attempts: 2,
       lastError: failure,
     });
@@ -110,24 +128,40 @@ describe(MemoryQueueDriver, () => {
     });
   });
 
+  it("claims dead letters by queue or by id, with no owner, up to the limit", async () => {
+    const driver = new MemoryQueueDriver();
+    for (const id of ["job_a", "job_b", "job_c"] as const) {
+      await driver.push(jobOf(id, { queue: id === "job_b" ? "inbox" : "delivery" }));
+      await driver.deadLetter(id, failure);
+    }
+    await driver.push(jobOf("job_live"));
+    expect(await driver.claimDead({ queue: "delivery", limit: 10 })).toEqual([
+      { id: "job_a" },
+      { id: "job_c" },
+    ]);
+    expect(await driver.claimDead({ id: "job_b", limit: 10 })).toEqual([{ id: "job_b" }]);
+    expect(await driver.claimDead({ id: "job_live", limit: 10 })).toEqual([]);
+    expect(await driver.claimDead({ limit: 2 })).toHaveLength(2);
+  });
+
   it("redrives a dead job with its attempts reset, but not a live one or one whose unique key is held", async () => {
     const driver = new MemoryQueueDriver();
     await driver.push(jobOf("job_a", { uniqueKey: "u" }));
     expect(await driver.redrive("job_a", at(0))).toBe(false);
-    await driver.reserve(undefined, at(0));
+    await reserved(driver, undefined, at(0));
     await driver.deadLetter("job_a", failure);
     await driver.push(jobOf("job_b", { uniqueKey: "u" }));
     expect(await driver.redrive("job_a", at(0))).toBe(false);
     await driver.remove("job_b");
     expect(await driver.redrive("job_a", at(40))).toBe(true);
-    expect(await driver.reserve(undefined, at(39))).toBeUndefined();
-    expect(await driver.reserve(undefined, at(40))).toMatchObject({ id: "job_a", attempts: 1 });
+    expect(await reserved(driver, undefined, at(39))).toBeUndefined();
+    expect(await reserved(driver, undefined, at(40))).toMatchObject({ id: "job_a", attempts: 1 });
   });
 
   it("removes a job", async () => {
     const driver = new MemoryQueueDriver();
     await driver.push(jobOf("job_a"));
     await driver.remove("job_a");
-    expect(await driver.reserve(undefined, at(0))).toBeUndefined();
+    expect(await reserved(driver, undefined, at(0))).toBeUndefined();
   });
 });

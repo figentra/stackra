@@ -116,7 +116,7 @@ describe(emitEncoreApi, () => {
   it("writes the endpoints file of a service, importing the pipeline, Encore, the helper and the server app", () => {
     expect(emitEncoreApi(ir, manifest)?.path).toBe(".stackra/encore/commerce/api.ts");
     for (const line of [
-      'import { ActionPipeline } from "@stackra/actions";',
+      'import { ActionPipeline, requestCallOptions } from "@stackra/actions";',
       'import { api } from "encore.dev/api";',
       'import { CancelOrderAction } from "#modules/orders/actions/cancel-order.action";',
       'import { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";',
@@ -141,8 +141,8 @@ describe(emitEncoreApi, () => {
         "      anonymous: false,",
         "      action: CancelOrderAction,",
         "      input: CancelOrderInput,",
-        "      execute: (container, input, actor) =>",
-        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor }),",
+        "      execute: (container, input, actor, request) =>",
+        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request) }),",
         "    }),",
         ");",
       ].join("\n"),
@@ -155,7 +155,7 @@ describe(emitEncoreApi, () => {
     expect(content).toContain("export const ordersOrderListV1 = api.raw(");
     expect(content).toContain(`  { method: "GET", path: "${path}", expose: true, auth: false },`);
     expect(content).toContain(
-      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor }),",
+      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor, ...requestCallOptions(request) }),",
     );
   });
 

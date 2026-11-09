@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `buildManifest`, the derivation of a member's `stackra.manifest.json` from what discovery read: every
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
- *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module
+ *          port keys), the endpoint, area (written, else a service's own, else `app`, STA-340), tool and refusal list of each action (and a query's `reads`, STA-1504), the module
  *          graph, the facets, and the JSON Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's
  *          output, ADR 0338, and the package input and output of a generated search or report query, STA-1459); a
  *          service or app also lists what its hosted packages contribute, marked `from`; each Integration's key,
@@ -21,7 +21,9 @@
  *          of `checkCallShape` (`query_above_l1`, `query_precondition`, `action_cache`, `step_up_missing`,
  *          `idempotency_missing`), `effect_unknown`,
  *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
- *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
+ *          `integration_role_unknown`, `egress_invalid`, `webhook_event_id_undeclared` (an Integration receiving
+ *          webhooks of a scheme other than Standard Webhooks that names neither `eventId` nor `signature.idHeader`,
+ *          so the inbox would dedupe its events as one), `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
  *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists
  *          each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as action
@@ -68,6 +70,7 @@ import type { Json, StackraManifest } from "@stackra/contracts";
 import { ErrorKind, refusalCode } from "@stackra/errors";
 import { camelCase, snakeCase } from "@stackra/support";
 
+import { DEFAULT_AREA } from "#core/constants/default-area.constant";
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
@@ -428,12 +431,17 @@ export function buildManifest(ir: MemberIR): {
       ? declared.options["actors"].map(String)
       : undefined;
     const input = shapeNamed(declared.handle?.input);
+    // The written area, else a service's own (`defineService({ area })`), else `app` (ADR 0082 decision 3).
+    const area =
+      typeof declared.options["area"] === "string"
+        ? declared.options["area"]
+        : ((ir.layout === "service" ? ir.area : undefined) ?? DEFAULT_AREA);
     const endpoint = deriveEndpoint({
       key: written,
       kind,
       inputFields: fieldsOf(input).map((field) => field.name),
       ...(actors !== undefined ? { actors } : {}),
-      ...(typeof declared.options["area"] === "string" ? { area: declared.options["area"] } : {}),
+      area,
       ...(declared.options["endpoint"] !== undefined
         ? { endpoint: declared.options["endpoint"] }
         : {}),
@@ -527,7 +535,11 @@ export function buildManifest(ir: MemberIR): {
         "use a `DataClassification` value or a `DataClass({ key })` class from an `access/` group",
       );
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
-    for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
+    // Every entry records its area, written or the default, so the gateway and review read it (STA-340).
+    for (const option of ["idempotency", "rateLimit", "cache"])
+      if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
+    entry["area"] = area;
+    for (const option of ["job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     // The meter it feeds and the entitlements it names, so a quota or an entitlement gates it (STA-2059).
     const meter = declared.options["meter"];
@@ -748,6 +760,24 @@ export function buildManifest(ir: MemberIR): {
         "egress_invalid",
         `\`baseUrl\` ${JSON.stringify(baseUrl)} is not an https origin the managed client can call`,
         'write an https URL; a per-region host is a camelCase `{field}` of the credential set ("https://{region}.api.example.com"), or the whole URL is one `{field}` ("{baseUrl}")',
+      );
+    // why: the inbox dedupes by event id; only Standard Webhooks carries one in a header, so another scheme that names
+    // neither `eventId` nor `signature.idHeader` keys every event "" and keeps one of them (`WebhookReceiver`).
+    const webhooks = declared.options["webhooks"] as
+      | { readonly scheme?: unknown; readonly eventId?: unknown; readonly signature?: unknown }
+      | undefined;
+    const idHeader = (webhooks?.signature as { readonly idHeader?: unknown } | undefined)?.idHeader;
+    if (
+      webhooks !== undefined &&
+      webhooks.scheme !== "standard_webhooks" &&
+      webhooks.eventId === undefined &&
+      (typeof idHeader !== "string" || idHeader === "")
+    )
+      fail(
+        declared,
+        "webhook_event_id_undeclared",
+        `${declared.name} receives \`${String(webhooks.scheme)}\` webhooks but names no event id, so the inbox would keep every event as one`,
+        "name `webhooks.eventId` (the payload `path` of the provider's event id, or `parts` of paths and headers) or a `webhooks.signature.idHeader`, or use `SignatureScheme.StandardWebhooks`",
       );
     integrations.push({
       key,

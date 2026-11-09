@@ -19,11 +19,19 @@
  *           and the `onDeadLetter` hook runs in it too (a job stored with no actor runs as a platform call); with none
  *           bound a job with a scope is refused (`JobIsolationMissingError`, dead-lettered at once, since nothing could
  *           set its tenant) and a job with none runs as a platform call.
+ *           Jobs are tenant-owned (ADR 0239 amendment, gaps A and C): a reservation claims a job's id and owner across
+ *           owners, and the job is loaded, settled (removed, retried, released or dead-lettered) in that owner's
+ *           isolation (`inJobOwner`); the next link of its chain is queued in a transaction of its own (`requiresNew`,
+ *           with a `Database` bound) in that owner, so it takes the owner's tenant. A claimed job that does not load,
+ *           or an owned one with no isolation bound, fails the reservation (`JobClaimNotLoadedError`,
+ *           `JobRowIsolationMissingError`): it is never skipped, and runs again once its lease lapses. A job a broker
+ *           delivered has no claimed row: its row work (a dead letter kept in the store) runs in its own scope's
+ *           isolation, so it takes that scope's tenant.
  * Runtime: node
  * Governing contract: ADR 0495 (decision 2 and the note of 2026-11-01); ADR 0148 (decisions 1, 2 and 3); ADR 0305
  *                     (rules 28 and 30); ADR 0138 (as amended: the pipeline); ADR 0136 (decision 3: jobs derive their
  *                     Idempotency-Keys); ADR 0260 (decision 4); ADR 0327 (decisions 6 and 9: the call's scope, the
- *                     scope session).
+ *                     scope session); ADR 0239 (2026-11-07 amendment, gaps A and C).
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { Action, Resolver } from "@stackra/actions";
@@ -35,23 +43,29 @@ import {
 } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { actingScopeId, backoffDelay, Duration, Logger } from "@stackra/contracts";
+import { actingScopeId, ActorKind, backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Actor, Clock } from "@stackra/contracts";
+import { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 
-import type { QueueDriver, JobError, QueuedJob } from "#contracts/index";
+import type { QueueDriver, JobClaim, JobError, QueuedJob } from "#contracts/index";
 import { JOB_BACKOFF } from "#core/constants/job-backoff.constant";
 import { JOB_DEFAULTS } from "#core/constants/job-defaults.constant";
 import { JOB_TYPES } from "#core/constants/job-types.constant";
 import { buildJob } from "#core/functions/build-job.function";
 import { QUEUE_LOG_EVENTS } from "#core/constants/queue-log-events.constant";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
+import { JobClaimNotLoadedError } from "#core/errors/job-claim-not-loaded.error";
 import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
+import { inJobOwner } from "#core/functions/in-job-owner.function";
 import { readJob } from "#core/functions/read-job.function";
 import type { JobPlan } from "#core/types/job-plan.type";
 import type { JobRun } from "#core/types/job-run.type";
+
+/** The actor a delivered job's row work runs as, in the job's scope: the worker's system actor. */
+const WORKER_ACTOR: Actor = Object.freeze({ kind: ActorKind.System, id: "sys_queue_worker" });
 
 /** The connected container and the pipeline over it. */
 interface Connection {
@@ -100,7 +114,7 @@ export class QueueWorkerService extends Service {
    */
   async process(job: QueuedJob): Promise<JobRun> {
     const now = this.clock.now();
-    return this.run(await this.driver.claim(job, now), now);
+    return this.run(await this.driver.claim(job, now), now, undefined);
   }
 
   /**
@@ -108,16 +122,16 @@ export class QueueWorkerService extends Service {
    *
    * @param at - the instant to drain at instead of the clock's, so a test runs a retry without waiting for it.
    * @returns every attempt made, in order.
-   * @throws Error before `connect`; a driver's error.
+   * @throws Error before `connect`; a driver's error; `JobClaimNotLoadedError` or `JobRowIsolationMissingError` for a
+   *         reserved job that cannot load in its owner.
    */
   async drain(queue?: string, at?: Date): Promise<readonly JobRun[]> {
     this.connected();
     const runs: JobRun[] = [];
     for (;;) {
-      const now = at ?? this.clock.now();
-      const job = await this.driver.reserve(queue, now);
-      if (job === undefined) return runs;
-      runs.push(await this.run(job, now));
+      const run = await this.next(queue, at ?? this.clock.now());
+      if (run === undefined) return runs;
+      runs.push(run);
     }
   }
 
@@ -143,9 +157,7 @@ export class QueueWorkerService extends Service {
   private async loop(queue: string, signal: AbortSignal): Promise<void> {
     while (!signal.aborted) {
       try {
-        const now = this.clock.now();
-        const job = await this.driver.reserve(queue, now);
-        await (job === undefined ? this.pause(signal) : this.run(job, now));
+        if ((await this.next(queue, this.clock.now())) === undefined) await this.pause(signal);
       } catch (error) {
         this.logger()?.error(QUEUE_LOG_EVENTS.workerFailed, { queue, cause: error });
         await this.pause(signal);
@@ -170,12 +182,30 @@ export class QueueWorkerService extends Service {
     });
   }
 
-  /** Runs one attempt of a reserved job at `now` and records its outcome. */
-  private async run(job: QueuedJob, now: Date): Promise<JobRun> {
+  /**
+   * Reserves the next due job of `queue` at `now`, loads it in its owner and runs one attempt; `undefined` when none is
+   * due.
+   *
+   * @throws JobClaimNotLoadedError when the reserved job does not load in its owner.
+   * @throws JobRowIsolationMissingError when it has an owner and no `CallIsolation` is bound.
+   */
+  private async next(queue: string | undefined, now: Date): Promise<JobRun | undefined> {
+    const claim = await this.driver.reserve(queue, now);
+    if (claim === undefined) return undefined;
+    const job = await inJobOwner(this.isolation(), claim.ownerId, claim.id, () =>
+      this.driver.load(claim.id),
+    );
+    if (job === undefined) throw JobClaimNotLoadedError.create({ id: claim.id });
+    return this.run(job, now, claim);
+  }
+
+  /** Runs one attempt of a reserved job at `now` (claimed, or delivered when `claim` is undefined) and records it. */
+  private async run(job: QueuedJob, now: Date, claim: JobClaim | undefined): Promise<JobRun> {
     this.connected();
+    const inOwner = <T>(work: () => Promise<T>) => this.inOwner(job, claim, work);
     const found = this.resolve(job);
     if ("error" in found) {
-      await this.driver.deadLetter(job.id, this.failureOf(found.error));
+      await inOwner(() => this.driver.deadLetter(job.id, this.failureOf(found.error)));
       await this.settle(job, true);
       return Object.freeze({ job, outcome: JobOutcome.DeadLettered, error: found.error });
     }
@@ -184,7 +214,7 @@ export class QueueWorkerService extends Service {
     try {
       const retryAt = await this.throttled(job, now);
       if (retryAt !== undefined) {
-        await this.driver.release(job.id, retryAt);
+        await inOwner(() => this.driver.release(job.id, retryAt));
         return Object.freeze({ job, outcome: JobOutcome.Throttled, retryAt });
       }
       // With a `CallIsolation` bound the pipeline isolates the attempt itself (the job's actor and scope), and commits
@@ -192,11 +222,11 @@ export class QueueWorkerService extends Service {
       output = this.connected().resolver.has(CallIsolation)
         ? await this.attempt(type, plan, job)
         : await this.unisolated(job, () => this.attempt(type, plan, job));
-      await this.driver.remove(job.id);
+      await inOwner(() => this.driver.remove(job.id));
     } catch (error) {
-      return this.failed(type, plan, job, now, error);
+      return this.failed(type, plan, job, now, error, inOwner);
     }
-    await this.followUp(job);
+    await this.followUp(job, claim);
     return Object.freeze({ job, outcome: JobOutcome.Done, output });
   }
 
@@ -225,8 +255,11 @@ export class QueueWorkerService extends Service {
       : new Date(now.getTime() + Math.max(1, decision.retryAfterMs));
   }
 
-  /** After `job` is done: queues the next link of its chain, or counts it done in its batch at the chain's end. */
-  private async followUp(job: QueuedJob): Promise<void> {
+  /**
+   * After `job` is done: queues the next link of its chain in a transaction of its own in the job's owner, so the link
+   * takes that owner's tenant, or counts it done in its batch at the chain's end.
+   */
+  private async followUp(job: QueuedJob, claim: JobClaim | undefined): Promise<void> {
     const [link, ...rest] = job.chain ?? [];
     if (link === undefined) {
       await this.settle(job, false);
@@ -245,19 +278,45 @@ export class QueueWorkerService extends Service {
           }
         : readJob(type);
     const { origin, scope, causedBy } = job;
-    await this.driver.push(
-      buildJob(
-        plan,
-        link.input,
-        {
-          ...(origin === undefined ? {} : { origin }),
-          ...(scope === undefined ? {} : { scope }),
-          ...(causedBy === undefined ? {} : { causedBy }),
-        },
-        this.clock.now(),
-        { ...(job.batchId === undefined ? {} : { batchId: job.batchId }), chain: rest },
-      ),
+    const next = buildJob(
+      plan,
+      link.input,
+      {
+        ...(origin === undefined ? {} : { origin }),
+        ...(scope === undefined ? {} : { scope }),
+        ...(causedBy === undefined ? {} : { causedBy }),
+      },
+      this.clock.now(),
+      { ...(job.batchId === undefined ? {} : { batchId: job.batchId }), chain: rest },
     );
+    const { resolver } = this.connected();
+    const push = () => this.inOwner(job, claim, () => this.driver.push(next));
+    // A tenant insert from a no-tenant session: its own transaction, so no running transaction's tenant is replaced.
+    await (resolver.has(Database)
+      ? resolver.get(Database).transaction(push, { requiresNew: true })
+      : push());
+  }
+
+  /**
+   * Runs the row work of `job` in its owner: the claimed owner of a stored job (`inJobOwner`), or, for one a broker
+   * delivered (no claim), the tenant of its own scope through the bound isolation (none bound: as it is).
+   */
+  private inOwner<T>(
+    job: QueuedJob,
+    claim: JobClaim | undefined,
+    work: () => Promise<T>,
+  ): Promise<T> {
+    const isolation = this.isolation();
+    if (claim !== undefined) return inJobOwner(isolation, claim.ownerId, claim.id, work);
+    return isolation === undefined
+      ? work()
+      : isolation.run(WORKER_ACTOR, job.scope, () => work(), { readOnly: false });
+  }
+
+  /** The bound `CallIsolation`, if any. */
+  private isolation(): CallIsolation | undefined {
+    const { resolver } = this.connected();
+    return resolver.has(CallIsolation) ? resolver.get(CallIsolation) : undefined;
   }
 
   /** Counts `job` in its batch, as failed for good when `failed`. */
@@ -313,6 +372,7 @@ export class QueueWorkerService extends Service {
     job: QueuedJob,
     now: Date,
     error: unknown,
+    inOwner: <T>(work: () => Promise<T>) => Promise<T>,
   ): Promise<JobRun> {
     const failure = this.failureOf(error);
     const retryable = !isRefusal(error) || error.retryable;
@@ -320,16 +380,16 @@ export class QueueWorkerService extends Service {
       const retryAt = new Date(
         now.getTime() + backoffDelay({ ...JOB_BACKOFF, backoff: plan.backoff }, job.attempts),
       );
-      await this.driver.retry(job.id, retryAt, failure);
+      await inOwner(() => this.driver.retry(job.id, retryAt, failure));
       return Object.freeze({ job, outcome: JobOutcome.Retried, error, retryAt });
     }
     if (plan.deadLetter) {
-      await this.driver.deadLetter(job.id, failure);
+      await inOwner(() => this.driver.deadLetter(job.id, failure));
       await this.settle(job, true);
       await this.afterDeadLetter(type, plan, job);
       return Object.freeze({ job, outcome: JobOutcome.DeadLettered, error });
     }
-    await this.driver.remove(job.id);
+    await inOwner(() => this.driver.remove(job.id));
     await this.settle(job, true);
     this.logger()?.error(QUEUE_LOG_EVENTS.jobDropped, {
       jobId: job.id,

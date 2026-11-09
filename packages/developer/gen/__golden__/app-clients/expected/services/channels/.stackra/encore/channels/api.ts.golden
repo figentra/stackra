@@ -8,22 +8,22 @@
  */
 import { PublishChannelsAction } from "#node/actions/publish-channels.action";
 import { PublishChannelsInput } from "#node/schemas/publish-channels-input.schema";
-import { ActionPipeline } from "@stackra/actions";
+import { ActionPipeline, requestCallOptions } from "@stackra/actions";
 import { api } from "encore.dev/api";
 
 import { app } from "../../entry/server";
 import { answerCall } from "./http";
 
-/** POST /channelses/publish: channels.channels.publish@1 through the action pipeline. */
+/** POST /app/channelses/publish: channels.channels.publish@1 through the action pipeline. */
 export const channelsChannelsPublishV1 = api.raw(
-  { method: "POST", path: "/channelses/publish", expose: true, auth: false },
+  { method: "POST", path: "/app/channelses/publish", expose: true, auth: false },
   (req, resp) =>
     answerCall(req, resp, {
-      path: "/channelses/publish",
+      path: "/app/channelses/publish",
       anonymous: false,
       action: PublishChannelsAction,
       input: PublishChannelsInput,
-      execute: (container, input, actor) =>
-        new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor }),
+      execute: (container, input, actor, request) =>
+        new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor, ...requestCallOptions(request) }),
     }),
 );

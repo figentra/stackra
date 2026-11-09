@@ -4,7 +4,7 @@
  *          and its bucket key and expiry are recorded beside it, a bucket's type and size rules hold at signing and
  *          again at claim, a claim moves the file to its bucket path once and drops the record, a disk that cannot sign
  *          refuses, and a foreign, expired, missing, malformed or oversized upload, or one whose bytes are not its
- *          declared type, is refused.
+ *          declared type, is refused; `store` writes the server's bytes under the same rules and refuses each break.
  * Boundary: test only; the memory `FileSystem` disk stands in for S3 and receives the bytes as a browser's signed `PUT`
  *           would. A hand-moved clock drives expiry.
  * Runtime: node (vitest)
@@ -316,5 +316,51 @@ describe("MediaLibrary.claim", () => {
     expect(await media.temporaryUrl(file, Duration.minutes(5))).toBe(
       `${file.url}?expires=2026-10-24T09%3A05%3A00.000Z`,
     );
+  });
+});
+
+describe("MediaLibrary.store", () => {
+  it("stores the server's bytes as a file of the bucket and returns it", async () => {
+    const { disk, media } = setup();
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]);
+
+    const file = await media.store(InvoicesBucket, pdf, MediaType.Pdf);
+
+    expect(file.path).toBe(`private/invoices/${file.id}.pdf`);
+    expect(file).toMatchObject({ bucket: "invoices", mediaType: MediaType.Pdf, size: 8 });
+    expect(await disk.read(file.path)).toEqual(pdf);
+    expect(await disk.stat(file.path)).toMatchObject({ contentType: "application/pdf" });
+  });
+
+  it("refuses a media type the bucket does not take, and writes nothing", async () => {
+    const { disk, media } = setup();
+
+    await expect(
+      media.store(InvoicesBucket, new Uint8Array([0x89, 0x50, 0x4e, 0x47]), MediaType.Png),
+    ).rejects.toMatchObject({ code: "upload_rejected", reason: "media_type" });
+    expect(await disk.list("private/")).toEqual([]);
+  });
+
+  it("refuses empty and oversized bytes, and writes nothing", async () => {
+    const { disk, media } = setup();
+
+    await expect(
+      media.store(InvoicesBucket, new Uint8Array(0), MediaType.Pdf),
+    ).rejects.toMatchObject({
+      reason: "size",
+    });
+    await expect(
+      media.store(InvoicesBucket, new Uint8Array(101).fill(0x25), MediaType.Pdf),
+    ).rejects.toMatchObject({ reason: "size" });
+    expect(await disk.list("private/")).toEqual([]);
+  });
+
+  it("refuses bytes that are not the declared type, and writes nothing", async () => {
+    const { disk, media } = setup();
+
+    await expect(
+      media.store(InvoicesBucket, new TextEncoder().encode("<html></html>"), MediaType.Pdf),
+    ).rejects.toMatchObject({ reason: "content" });
+    expect(await disk.list("private/")).toEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `registerPermissions`: a row gives each static its locked key, and a class that is not a
+ * Purpose: unit tests of `registerPermissions`: a row gives each static its locked key and records the static's
+ *          name under that key (`PERMISSION_MEMBERS`), and a class that is not a
  *          permission set, a static without a key, a key naming no static and a malformed key all fail at boot.
  * Boundary: test only; the registry is cleared before each test.
  * Runtime: node (vitest)
@@ -10,6 +11,7 @@ import { Permission } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { Permissions } from "#core/bases/permissions.base";
+import { PERMISSION_MEMBERS } from "#core/constants/permission-members.constant";
 import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 import { registerPermissions } from "#core/functions/register-permissions.function";
 import type { PermissionRegistration } from "#core/types/permission-registration.type";
@@ -29,6 +31,16 @@ describe("registerPermissions", () => {
     registerPermissions([{ type: OrderPermissions, keys: KEYS }]);
     expect(PERMISSION_REGISTRY.get("orders.order.cancel")).toBe(OrderPermissions.cancel);
     expect(PERMISSION_REGISTRY.get("orders.order.read")).toBe(OrderPermissions.read);
+  });
+
+  it("records each key's static name, so a multi-word verb finds its camelCase policy method", () => {
+    class CodPermissions extends Permissions {
+      static readonly confirmByCode = Permission.L2;
+    }
+    registerPermissions([
+      { type: CodPermissions, keys: { confirmByCode: "orders.order.confirm_by_code" } },
+    ]);
+    expect(PERMISSION_MEMBERS.get("orders.order.confirm_by_code")).toBe("confirmByCode");
   });
 
   it("refuses a class that is not a permission set", () => {

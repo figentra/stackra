@@ -38,7 +38,7 @@ describe(emitEncoreHttp, () => {
       expect(content).toContain(line);
   });
 
-  it("bridges a raw request through serveGuardedCall: capped body, guards, CallAuthenticator, written back (STA-2577)", () => {
+  it("bridges a raw request through serveGuardedCall: capped body, guards, CallAuthenticator, the signed visitor, written back (STA-2577)", () => {
     const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
     for (const line of [
       "export async function answerCall(req: IncomingMessage, resp: ServerResponse, call: Call): Promise<void> {",
@@ -46,6 +46,7 @@ describe(emitEncoreHttp, () => {
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
+      "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",
       "  action?: AnyClass;",
       "      action: call.action,",
       "  if (response.body === null) resp.end();",

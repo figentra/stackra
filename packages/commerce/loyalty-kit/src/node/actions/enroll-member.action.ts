@@ -34,7 +34,7 @@ export class EnrollMemberAction extends Action({
   permission: LoyaltyAccountPermissions.enroll,
   actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
   idempotency: Idempotency.Optional,
-  endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId" },
+  endpoint: { method: HttpMethod.Put, path: "/app/loyalty/accounts/:accountId" },
   tool: true,
   intent: true,
 }) {
