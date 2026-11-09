@@ -1,5 +1,24 @@
 # @stackra/payments
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [54db249]
+  - @stackra/config@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/integrations@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/market-packs@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
 ## 0.31.0
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @stackra/gen
 
+## 0.32.0
+
+### Patch Changes
+
+- 597e3e8: A generated docs site titles its home page (`index.mdx`, or a language's `index.<lang>.mdx`) by the page's own
+  words alone, not followed by the site name it already names ("Figentra Geo · Figentra Geo"). The build now also fails
+  when a prerendered title repeats a part.
+- @stackra/errors@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+
 ## 0.31.0
 
 ### Patch Changes

@@ -1,5 +1,30 @@
 # @stackra/app
 
+## 0.32.0
+
+### Minor Changes
+
+- 33f61e5: Every app shows dates in the tenant's calendar with no wiring of its own: `Contexts`' `i18n` context reads the
+  tenant's `DisplaySettings.calendar` (`@stackra/settings`) through the container's `SettingsReader` and passes it to
+  `I18nProvider`, so `useDateTime` writes Hijri dates for a tenant on the Umm al-Qura calendar. Gregorian until the read
+  answers, and where no reader is bound.
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/navigation@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/csp@0.32.0
+  - @stackra/identity@0.32.0
+  - @stackra/settings@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
 ## 0.31.0
 
 ### Patch Changes
