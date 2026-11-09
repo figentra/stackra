@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `ScopeLevelInvalidError`, the refusal of a node whose level cannot sit under its parent
- *          (`scope_level_invalid`): the level is not the parent's recursive level nor the next declared one, or not
- *          the first level for a root.
+ *          (`scope_level_invalid`): the level is not one `childLevelsOf` offers under the parent (its recursive
+ *          level, a level whose `parents` name it, or the next declared one with no `parents`), or not the first level
+ *          for a root.
  * Boundary: raised by `ScopeNodeService.add`; kind `Validation` (HTTP 400), not retryable. Its details name the level
  *           asked for and the levels the parent takes, both deployment data and never another scope's nodes.
  * Runtime: isomorphic
