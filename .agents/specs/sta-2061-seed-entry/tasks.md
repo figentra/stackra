@@ -27,7 +27,7 @@ description: "Tasks for STA-2061: the seed entry registers factory partners, hos
 
 - [x] T005 [US1] Test own factory pairs in the seed entry, and no call without factories, in `packages/developer/gen/src/core/functions/__tests__/emit-runtime-entries.function.test.ts` — covers: FR-001, P-001, EC-06, AC-001 — route: tests — deps: T004
 - [x] T006 [US1] Register own factory pairs and list own seeders through `seedersOf` in `packages/developer/gen/src/core/functions/emit-runtime-entries.function.ts` — covers: FR-001, FR-006, P-001, AC-001 — route: gen — deps: T005
-- [ ] T007 [US1] Add `OrderFactory` and `ShopDemoSeeder` to the golden `service` fixture under `packages/developer/gen/__golden__/service/input/services/shop/src/node/database/` and refresh `packages/developer/gen/__golden__/service/expected/` on ci-box, checking every other fixture's wiring is unchanged — covers: FR-001, SC-001, SC-003, P-007, AC-002 — route: gen — deps: T006
+- [x] T007 [US1] Add `OrderFactory` and `ShopDemoSeeder` to the golden `service` fixture under `packages/developer/gen/__golden__/service/input/services/shop/src/node/database/` and refresh `packages/developer/gen/__golden__/service/expected/` on ci-box, checking every other fixture's wiring is unchanged — covers: FR-001, SC-001, SC-003, P-007, AC-002 — route: gen — deps: T006
 
 ## Phase 4: User Story 2 - Hosted package seeders run, in module-dependency order (Priority: P1)
 
@@ -46,4 +46,4 @@ entry imports both from `<package>/testing`, registers the pair and lists the ho
 
 - [x] T013 [P] Name the `seeders` and `factories` sections and the seed entry's pairs and hosted seeders in `packages/developer/gen/README.md` — covers: SC-001, AC-003 — route: steward-docs — deps: T011
 - [x] T014 [P] Add a changeset for `@stackra/gen` in `.changeset/sta-2061-seed-entry.md` — covers: SC-004, AC-005 — route: steward-changesets — deps: T011
-- [ ] T015 Run the gen package's gate (format, lint, typecheck, test, build) and `stackra gen --check` on ci-box for `packages/developer/gen` — covers: SC-002, SC-004, AC-001, AC-003 — route: verify-fix — deps: T007, T012, T013, T014
+- [x] T015 Run the gen package's gate (format, lint, typecheck, test, build) and `stackra gen --check` on ci-box for `packages/developer/gen` — covers: SC-002, SC-004, AC-001, AC-003 — route: verify-fix — deps: T007, T012, T013, T014
