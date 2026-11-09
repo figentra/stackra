@@ -1,0 +1,86 @@
+{
+  "generatedFrom": {
+    "hash": "f920e90800c30ab2",
+    "propsFiles": ["ui/src/react/bento-card/bento-card.props.ts"]
+  },
+  "importLine": "import { BentoCard } from \"@stackra/ui/react\";",
+  "key": "free/bento-card",
+  "parts": [
+    {
+      "name": "BentoCard",
+      "props": [
+        {
+          "description": "The card's heading.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The heading's level in the page outline. Defaults to 3.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "2 | 4 | 3"
+        },
+        {
+          "description": "One or two lines under the title.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Up to two pill links under the text; `primary` is filled, `ghost` (the default) is quiet.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly { readonly id: string; readonly label: string; readonly href: string; readonly variant?: \"ghost\" | \"primary\" | undefined; }[]"
+        },
+        {
+          "description": "The live widget at the bottom of the card.",
+          "name": "media",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "How the media meets the card's edge: `bottom` (the default) runs it to the bottom edge, `full` to every edge.",
+          "name": "mediaBleed",
+          "required": false,
+          "source": "stackra",
+          "type": "\"bottom\" | \"none\" | \"full\""
+        },
+        {
+          "description": "Dithered art behind the media.",
+          "name": "art",
+          "required": false,
+          "source": "stackra",
+          "type": "DitherArtProps"
+        },
+        {
+          "description": "A product's theme: the card draws in that brand's tokens, as on the \"Built on\" strip.",
+          "name": "brand",
+          "required": false,
+          "source": "stackra",
+          "type": "Theme"
+        },
+        {
+          "description": "The columns the card spans in a two-column bento grid. Defaults to 1.",
+          "name": "span",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2"
+        },
+        {
+          "description": "Styles the card.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

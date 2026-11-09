@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "b7bc8696afc83339",
+    "hash": "25d5869d5a334ceb",
     "propsFiles": ["ui/src/react/app-header/app-header.props.ts"]
   },
   "importLine": "import { AppHeader } from \"@stackra/ui/react\";",
@@ -29,6 +29,13 @@
           "required": false,
           "source": "stackra",
           "type": "ReactNode"
+        },
+        {
+          "description": "`solid` (the default) is the console's bar. `transparent` is a marketing site's: sticky at the top, see-through\nwith no rule until the page scrolls, then on the nav-bar material over a hairline. Native draws `solid`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"transparent\" | \"solid\""
         },
         {
           "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",

@@ -1,11 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `WORKLOAD_SCHEMA`, one container of the root runway's `workloads`: the image pinned by digest, its port and
- *          health path, the arguments it starts with, `internal` or `public`, the resources it uses, its public env,
+ *          health path (or, for a worker with no port, the command that checks it), the arguments it starts with,
+ *          `internal` or `public`, the resources it uses, its public env,
  *          secret NAMES and the names it reads a resource variable under, a size and a task count per environment, and
  *          the reason no managed option fits.
  * Boundary: internal; the root runway schema composes it, and checks `uses` against `resources`. Strict. An image tag
- *           can change under us, so a digest is required; `reason` is required (ADR 0493 decision 5). Env values are
+ *           can change under us, so a digest is required; `reason` is required (ADR 0493 decision 5). A public
+ *           workload needs a port and a health path, which its load balancer uses; a health path needs a port; an
+ *           internal one may have neither (a queue worker such as Sidekiq). Env values are
  *           public; a secret goes in `secrets` by name. Whether an `aliases` target is a variable of a resource the
  *           workload uses is checked where the plan names the variables (`runtimePlan`, infra-aws-runtime).
  * Runtime: isomorphic
@@ -28,31 +31,53 @@ const SCALE = z
   .refine((scale) => scale.min <= scale.max, { message: "min is above max", path: ["min"] });
 
 /** One container workload. */
-export const WORKLOAD_SCHEMA = z.strictObject({
-  image: z
-    .string()
-    .regex(
-      /^[^\s@]+@sha256:[a-f0-9]{64}$/,
-      "Expected an image pinned by digest: <name>@sha256:<64 hex>",
-    ),
-  port: z.int().min(1).max(65_535),
-  health: z.string().regex(/^\//, "Expected a path starting with /"),
-  /** The container's arguments, replacing the image's default command (ZITADEL starts with `start-from-init …`). */
-  command: z.array(z.string().min(1)).min(1).optional(),
-  expose: z.enum(["internal", "public"]).optional(),
-  uses: z.array(KEY_SCHEMA).optional(),
-  env: z.record(VARIABLE, z.string()).optional(),
-  secrets: SECRET_NAMES_SCHEMA.optional(),
-  /** The name the image reads → a variable of a resource it uses (`ZITADEL_DATABASE_POSTGRES_DSN: MAIN_DB_URL`). */
-  aliases: z.record(VARIABLE, VARIABLE).optional(),
-  size: SIZE_BY_ENVIRONMENT_SCHEMA.optional(),
-  scale: z
-    .partialRecord(
-      z.enum(Enum.values(RunwayEnvironment) as [RunwayEnvironment, ...RunwayEnvironment[]]),
-      SCALE,
-    )
-    .optional(),
-  reason: z
-    .string()
-    .min(1, "A workload needs a reason: no managed option fits, residency, or on-prem parity"),
-});
+export const WORKLOAD_SCHEMA = z
+  .strictObject({
+    image: z
+      .string()
+      .regex(
+        /^[^\s@]+@sha256:[a-f0-9]{64}$/,
+        "Expected an image pinned by digest: <name>@sha256:<64 hex>",
+      ),
+    port: z.int().min(1).max(65_535).optional(),
+    health: z.string().regex(/^\//, "Expected a path starting with /").optional(),
+    /** A worker's own health check: the command the container runs, healthy when it exits 0 (`["pgrep", "-f", "sidekiq"]`). */
+    healthCommand: z.array(z.string().min(1)).min(1).optional(),
+    /** The container's arguments, replacing the image's default command (ZITADEL starts with `start-from-init …`). */
+    command: z.array(z.string().min(1)).min(1).optional(),
+    expose: z.enum(["internal", "public"]).optional(),
+    uses: z.array(KEY_SCHEMA).optional(),
+    env: z.record(VARIABLE, z.string()).optional(),
+    secrets: SECRET_NAMES_SCHEMA.optional(),
+    /** The name the image reads → a variable of a resource it uses (`ZITADEL_DATABASE_POSTGRES_DSN: MAIN_DB_URL`). */
+    aliases: z.record(VARIABLE, VARIABLE).optional(),
+    size: SIZE_BY_ENVIRONMENT_SCHEMA.optional(),
+    scale: z
+      .partialRecord(
+        z.enum(Enum.values(RunwayEnvironment) as [RunwayEnvironment, ...RunwayEnvironment[]]),
+        SCALE,
+      )
+      .optional(),
+    reason: z
+      .string()
+      .min(1, "A workload needs a reason: no managed option fits, residency, or on-prem parity"),
+  })
+  .superRefine((workload, context) => {
+    // its load balancer forwards to the port and checks the path
+    if (workload.expose === "public") {
+      if (workload.port === undefined)
+        context.addIssue({
+          code: "custom",
+          path: ["port"],
+          message: "A public workload needs a port",
+        });
+      if (workload.health === undefined)
+        context.addIssue({
+          code: "custom",
+          path: ["health"],
+          message: "A public workload needs a health path",
+        });
+    }
+    if (workload.health !== undefined && workload.port === undefined)
+      context.addIssue({ code: "custom", path: ["health"], message: "A health path needs a port" });
+  });

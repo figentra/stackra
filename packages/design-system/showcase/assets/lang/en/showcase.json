@@ -1894,6 +1894,11 @@
         "description": "A chapter's large heading in the core tone, with a muted subtitle.",
         "keywords": "chapter, heading, title, subtitle, section title, landing"
       },
+      "capability_matrix": {
+        "title": "Capability matrix",
+        "description": "A table of subjects by capability, each cell a yes, a no, coming or a short note.",
+        "keywords": "capability, matrix, comparison, table, features, carriers, landing"
+      },
       "station": {
         "title": "Station",
         "description": "One station on the landing's pipe: a rail, a title and its line, and the window it shows.",
@@ -5764,6 +5769,11 @@
         }
       },
       "chapter_title": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "capability_matrix": {
         "basics": {
           "title": "Basics"
         }
@@ -9734,6 +9744,15 @@
           "when": "To open each chapter of a landing page.",
           "rtl": "The heading and subtitle follow the reading direction.",
           "when_not": "For a heading inside a card; use Heading."
+        },
+        "capability_matrix": {
+          "headline": "Who does what, in one table.",
+          "intro": "Subjects down the side, capabilities across, and each cell a state with its word beside its icon, or a short note.",
+          "tags": "Landing kit · Table · Comparison",
+          "what": "The capability matrix block of the experience module.",
+          "when": "To compare what each carrier, plan or product supports on a landing page.",
+          "rtl": "Columns run from the right in Arabic, and on a narrow screen the table scrolls inside its own named region.",
+          "when_not": "For data people sort or filter; use DataTable."
         },
         "station": {
           "headline": "One stop on the pipe.",
