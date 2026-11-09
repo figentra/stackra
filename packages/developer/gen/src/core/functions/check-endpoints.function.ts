@@ -11,7 +11,9 @@
  * Boundary: pure; reads the built manifest (routes, areas, actors, jobs and the input JSON Schemas it records) and, for
  *           intents, the IR's classes and lang catalogues. A hosted package's entries (marked `from`) take part in the
  *           collision check only, since they share one router with the member's own; the package's own run checks
- *           the rest. A call without a route takes no part in the route checks. A cron input is checked against the
+ *           the rest. Raw controllers, the member's own and those of each hosted package whose root module it imports
+ *           (its manifest's `services` rows with a `path`), take part too: a controller answers every method, so it
+ *           collides with any call or controller on its path (or under it, for a trailing `/*`). A call without a route takes no part in the route checks. A cron input is checked against the
  *           JSON Schema, not the full Zod rules; a schema without `properties` has only its `required` list checked,
  *           and a run without `input` gets `{}`. Intents are checked in every base locale (no region) that ships the
  *           module's namespace, or once against `assets/lang/en/<module>.json` when none does. Runs in the full pass
@@ -129,6 +131,78 @@ function collisions(entries: readonly Entry[]): GenError[] {
         );
       }),
     );
+}
+
+/** A raw controller as the router sees it: its class, its file (or hosting package) and its path, on every method. */
+interface RawRoute {
+  readonly class: string;
+  readonly file: string;
+  readonly path: string;
+}
+
+/** The raw controllers the member serves: its own, and those of each hosted package whose root module it imports. */
+function rawRoutesOf(ir: MemberIR): RawRoute[] {
+  const own = ir.classes
+    .filter((declared) => declared.kind === "controller" && declared.abstract !== true)
+    .flatMap((declared) => {
+      const path = declared.options["path"];
+      return typeof path === "string" ? [{ class: declared.name, file: declared.file, path }] : [];
+    });
+  const hosted = ir.dependencies.flatMap(({ package: name, manifest }) => {
+    const root = manifest.modules?.find((candidate) => candidate.key === manifest.member);
+    const rows = manifest["services"];
+    if (typeof root?.["file"] !== "string" || manifest.kind === "app" || !Array.isArray(rows))
+      return [];
+    return (rows as readonly Readonly<Record<string, unknown>>[]).flatMap((row) =>
+      typeof row["path"] === "string"
+        ? [{ class: String(row["class"]), file: name, path: row["path"] }]
+        : [],
+    );
+  });
+  return [...own, ...hosted];
+}
+
+/** A path with its parameter names erased (`/app/orders/:/cancel`). */
+function erased(path: string): string {
+  return path.replaceAll(/:[^/]+/g, ":");
+}
+
+/** Whether a raw controller on `raw` (any method; a trailing `/*` covers what is under it) also answers `path`. */
+function rawCovers(raw: string, path: string): boolean {
+  if (raw.endsWith("/*")) return erased(path).startsWith(erased(raw.slice(0, -1)));
+  return erased(raw) === erased(path);
+}
+
+/** The collision refusals of the raw controllers: one shares a path with a call or another controller. */
+function rawCollisions(entries: readonly Entry[], raws: readonly RawRoute[]): GenError[] {
+  const fix = "give the controller a path of its own, or move the call off it";
+  return raws.flatMap((raw, index) => {
+    const others = [
+      ...entries.flatMap((entry) => {
+        const route = routeOf(entry);
+        return route !== undefined && rawCovers(raw.path, route.path)
+          ? [`${entry.class} (${route.method} ${route.path})`]
+          : [];
+      }),
+      ...raws
+        .filter(
+          (other, at) =>
+            at !== index && (rawCovers(raw.path, other.path) || rawCovers(other.path, raw.path)),
+        )
+        .map((other) => `${other.class} (${other.path})`),
+    ];
+    return others.length === 0
+      ? []
+      : [
+          refusal(
+            "endpoint_collision",
+            raw.file,
+            raw.class,
+            `${raw.class} serves ${raw.path} on every method, the route ${others.join(", ")} is also on`,
+            fix,
+          ),
+        ];
+  });
 }
 
 /** The route refusals of one own entry: version segment, area and method. */
@@ -339,6 +413,7 @@ export function checkEndpoints(ir: MemberIR, manifest: StackraManifest): GenErro
   const own = entries.filter((entry) => entry["from"] === undefined);
   return [
     ...collisions(entries),
+    ...rawCollisions(entries, rawRoutesOf(ir)),
     ...own.flatMap((entry) => routeRefusals(manifest, entry)),
     ...own.flatMap((entry) => jobRefusals(manifest, entry)),
     ...intentRefusals(ir),
