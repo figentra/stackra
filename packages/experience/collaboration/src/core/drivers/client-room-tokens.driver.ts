@@ -3,9 +3,9 @@
  * Purpose: the client driver of the `RoomTokens` port (driver name `client`): `issue` calls the hosting service's
  *          `collaboration.room.token` action and `publish` its `collaboration.room.publish` action, through the app's
  *          `DynamicClient`, so a browser or native host binds rooms with no hand-written driver.
- * Boundary: the routes are the ones gen derives for the two keys (`POST /rooms/token`, `POST /rooms/publish`); the
- *           base URL is the clients config's, `producers.collaboration` when the hosting service is not behind the one
- *           API URL. The answer of `issue` is checked to be a `RealtimeTarget` before it is used. A refusal rejects, and
+ * Boundary: the routes are the ones gen derives for the two keys, in the app area (`POST /app/rooms/token`,
+ *           `POST /app/rooms/publish`); the base URL is the clients config's, `producers.collaboration` when the
+ *           hosting service is not behind the one API URL. The answer of `issue` is checked to be a `RealtimeTarget` before it is used. A refusal rejects, and
  *           `openRoom` retries it like a dropped link. The room's scope path travels as the call's scope.
  * Runtime: isomorphic
  * Governing contract: ADR 0346 (decisions 3 and 5); ADR 0260 (decision 6 and the 2026-10-26 note: dynamic keys).
@@ -22,14 +22,14 @@ import type { CollaborationRoom } from "#contracts/types/collaboration-room.type
 const TOKEN = Object.freeze({
   key: "collaboration.room.token@1",
   kind: "action" as const,
-  endpoint: { method: HttpMethod.Post, path: "/rooms/token" },
+  endpoint: { method: HttpMethod.Post, path: "/app/rooms/token" },
 });
 
 /** The stream member's publish action. */
 const PUBLISH = Object.freeze({
   key: "collaboration.room.publish@1",
   kind: "action" as const,
-  endpoint: { method: HttpMethod.Post, path: "/rooms/publish" },
+  endpoint: { method: HttpMethod.Post, path: "/app/rooms/publish" },
 });
 
 /**

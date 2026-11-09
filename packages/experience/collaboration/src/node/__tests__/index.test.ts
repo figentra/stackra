@@ -23,6 +23,7 @@ describe("@stackra/collaboration/node", () => {
       "CommentThread",
       "PostgresSnapshotStoreDriver",
       "RoomController",
+      "RoomMemberRole",
       "RoomPermissions",
       "RoomPublishAction",
       "RoomPublishInput",

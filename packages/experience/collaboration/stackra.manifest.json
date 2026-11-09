@@ -44,9 +44,10 @@
       "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/rooms/token",
+        "path": "/app/rooms/token",
         "derived": true
       },
       "toolOff": "a room token is a live editor's connection credential, not something an agent asks for as a tool call",
@@ -723,7 +724,14 @@
       "gates": []
     }
   ],
-  "roles": [],
+  "roles": [
+    {
+      "key": "collaboration.room_member",
+      "class": "RoomMemberRole",
+      "module": "collaboration",
+      "file": "src/node/access/room-member.role.ts"
+    }
+  ],
   "config": [
     {
       "key": "collaboration",

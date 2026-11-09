@@ -32,6 +32,7 @@ entitlement.
 | `./node`      | `Collaborative`, `CollaborativeOptions`                                                 | the model facet: a model's records have rooms                  |
 | `./node`      | `RoomTokenAction`, `RoomTokenInput`, `RoomTokenOutput`                                  | `collaboration.room.token`: the checked one-time room token    |
 | `./node`      | `RoomController`, `CollaborationModule`                                                 | the room stream at `REALTIME_ROOM_PATH`; the root module       |
+| `./node`      | `RoomMemberRole`                                                                        | grants `collaboration.room.token` and `.publish`               |
 | `.`           | `ClientRoomTokensDriver`                                                                | `RoomTokens` over the app's `DynamicClient` (driver `client`)  |
 
 ## Comments
@@ -115,18 +116,22 @@ export class Template extends Model.with(HasPublicId("tpl"), BelongsToTenant) {}
 
 Gen wires the rest from the package's root module (`CollaborationModule`), with no hand code in the service:
 
-- `collaboration.room.token@1` (`RoomTokenAction`, `POST /rooms/token`, users only, not a tool, permission
+- `collaboration.room.token@1` (`RoomTokenAction`, `POST /app/rooms/token`, users only, not a tool, permission
   `collaboration.room.token`, L2). Its input is the document's public id; the prefix names the `@Collaborative` model.
   It reads the record through its repository in the caller's tenant (row security and visibility: an unknown, another
   tenant's or an invisible document is `not_found`), checks the model's `view` permission on it through `AccessControl`
   as `ctx.authorize(record)` does (`forbidden`), requires `LiveCollaborationEntitlement` for the scope
   (`entitlement_required`), sets `mayEdit` from the model's `edit` permission and answers the `RealtimeTarget` (the
   `realtime.origin` config and a one-time token from `RealtimeRooms.issueToken`, bound to the document and the caller).
-- `collaboration.room.publish@1` (`POST /rooms/publish`), the stream member's send.
+- `collaboration.room.publish@1` (`POST /app/rooms/publish`), the stream member's send.
 - `RoomController` at `REALTIME_ROOM_PATH`: a GET is the room's server-sent-events stream (`RealtimeRooms.stream`).
 - Revocation: the grant carries `recheckEdit`, so the room asks the edit permission again before relaying each
   `update`. Once it is refused (or the check fails) the member's update is answered `refused: forbidden` and the member
   stays a viewer; viewing ends at the latest when the token's lifetime (`realtime.subscribeTokenTtl`) closes the link.
+
+Both room permissions are L2, so a member needs them granted on top of the model's view (and edit) permission: assign
+the shipped module role `RoomMemberRole` (`collaboration.room_member`, `./node`), or list the two keys in a custom role.
+An owner holds them through the wildcard.
 
 A browser or native host binds `RoomTokens` to `ClientRoomTokensDriver` (driver `client`): it calls the two actions by
 key and route through the app's `DynamicClient`. When the hosting service is not behind the one API URL, set
@@ -138,7 +143,7 @@ sequenceDiagram
   participant T as collaboration.room.token
   participant R as RealtimeRooms
   participant P as Other members
-  B->>T: POST /rooms/token { document }
+  B->>T: POST /app/rooms/token { document }
   T->>T: load record (tenant, visibility), authorize view, entitlement, mayEdit from edit
   T->>R: issueToken({ session, document, mayEdit, recheckEdit })
   R-->>T: one-time token
@@ -149,7 +154,7 @@ sequenceDiagram
     B->>R: GET REALTIME_ROOM_PATH?token (RoomController, stream)
   end
   R-->>B: welcome { self, key }
-  B->>R: update (socket, or POST /rooms/publish with key)
+  B->>R: update (socket, or POST /app/rooms/publish with key)
   R->>R: caps, mayEdit, recheckEdit()
   R-->>P: update (here, and through the fanout)
   Note over T,R: edit permission revoked

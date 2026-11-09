@@ -188,7 +188,7 @@ describe(emitEncoreApi, () => {
     for (const line of [
       'import { CancelOrderAction as CancelOrderAction2, RoomController } from "@acme/kit/node";',
       "export const kitOrderCancelV1 = api.raw(",
-      "        new ActionPipeline(container).execute(CancelOrderAction2, input as never, { actor }),",
+      "        new ActionPipeline(container).execute(CancelOrderAction2, input as never, { actor, ...requestCallOptions(request) }),",
       "export const roomController = api.raw(",
       '  { method: "*", path: "/realtime/room", expose: true, auth: false },',
       "      execute: (container, _input, _actor, request) => container.get(RoomController).handle(request),",

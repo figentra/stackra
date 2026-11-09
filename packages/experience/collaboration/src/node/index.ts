@@ -11,6 +11,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (an entry exists once its folder has a file);
  *                     the STA-347 stand-in barrel decision.
  */
+export { RoomMemberRole } from "#node/access/room-member.role";
 export { RoomPermissions } from "#node/access/room.permissions";
 export { RoomPublishAction } from "#node/actions/room-publish.action";
 export { RoomTokenAction } from "#node/actions/room-token.action";
