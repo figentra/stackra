@@ -10,7 +10,8 @@
  *          allows: a user's bearer on a first hop, a service's forwarded token only into an action that declares
  *          `onBehalfOf: { secondHop: true }`, never through a controller, never anything into an action that declares
  *          `credentials: "ignore"` (which runs anonymous, its credential never verified), and the holder is empty once
- *          the call returned or threw.
+ *          the call returned or threw. An API key's call options and the `Origin` header reach the call; a token's
+ *          call gets none.
  * Boundary: test only; real Web Crypto signing with `signEdgeRequest` against real `Date.now()`; the forwarding cases
  *           stub the authenticator and `fetch` and use throwaway token strings.
  * Runtime: node (vitest)
@@ -19,6 +20,7 @@
 import { createHash } from "node:crypto";
 
 import { Action } from "@stackra/actions";
+import { CallOriginKind } from "@stackra/actions/contracts";
 import { ClientsConfig, HttpClientTransportDriver } from "@stackra/clients";
 import { buildConfig } from "@stackra/config";
 import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
@@ -38,6 +40,8 @@ import { ServiceClientSessionDriver } from "#server/drivers/service-client-sessi
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 import { serveGuardedCall } from "#server/functions/serve-guarded-call.function";
 import { EdgeHeaderGuard } from "#server/services/edge-header.guard";
+import type { CallCredentials } from "#server/types/call-credentials.type";
+import type { KeyCallOptions } from "#server/types/key-call-options.type";
 
 const SECRET = "edge-secret";
 const USER: Actor = { kind: ActorKind.Service, id: "svc_01H2J3K4L5M6N7P8Q9R0S1T2U3" as never };
@@ -172,6 +176,47 @@ describe(serveGuardedCall, () => {
     expect(response.headers.getSetCookie()).toEqual([
       `stackra_visitor=${SIGNED_VISITOR}; Path=/; HttpOnly; Secure; SameSite=Lax`,
     ]);
+  });
+
+  it("hands an API key's call options and its Origin to the call, and a token's call none", async () => {
+    const key = {
+      credential: {
+        kind: "api_key" as const,
+        id: "aki_1",
+        scopes: ["catalogue.product.read"],
+        publishable: true,
+      },
+      origin: { kind: CallOriginKind.ApiKey, id: "aki_1" },
+      sandbox: true,
+    };
+    const client: Actor = { kind: ActorKind.ApiClient, id: "prn_1" as never };
+    const authenticate = vi.fn(async (credentials: CallCredentials) =>
+      credentials.origin === undefined ? { actor: USER } : { actor: client, call: key },
+    );
+    const execute = vi.fn(
+      async (_input: unknown, _actor: Actor, _request: Request, _call?: KeyCallOptions) => ({}),
+    );
+    const serve = (headers: Record<string, string>) =>
+      serveGuardedCall({
+        request: new Request("https://api.example.test/carts/crt_1", { headers }),
+        path: "/carts/:cartId",
+        maxBodyBytes: 1024,
+        anonymous: false,
+        guard: async () => undefined,
+        authenticate,
+        execute,
+      });
+
+    await serve({ authorization: "Bearer k", origin: "https://shop.acme.example" });
+    await serve({ authorization: "Bearer t" });
+
+    expect(authenticate.mock.calls[0]?.[0]).toEqual({
+      authorization: "Bearer k",
+      origin: "https://shop.acme.example",
+    });
+    expect(execute.mock.calls[0]?.[1]).toEqual(client);
+    expect(execute.mock.calls[0]?.[3]).toEqual(key);
+    expect(execute.mock.calls[1]?.[3]).toBeUndefined();
   });
 
   it("never resolves a visitor for a signed-in call", async () => {

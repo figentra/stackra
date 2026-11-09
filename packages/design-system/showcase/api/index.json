@@ -50,7 +50,7 @@
   "free/app-header": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 19,
+    "propsCount": 20,
     "react": true
   },
   "free/app-shell": {
@@ -129,10 +129,20 @@
     "propsCount": 6,
     "react": true
   },
+  "free/bento-card": {
+    "partsCount": 1,
+    "propsCount": 10,
+    "react": true
+  },
   "free/bidi": {
     "native": true,
     "partsCount": 2,
     "propsCount": 10,
+    "react": true
+  },
+  "free/blueprint-section": {
+    "partsCount": 1,
+    "propsCount": 5,
     "react": true
   },
   "free/box-plot-chart": {
@@ -169,6 +179,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 7,
+    "react": true
+  },
+  "free/button-link": {
+    "partsCount": 1,
+    "propsCount": 39,
     "react": true
   },
   "free/calendar": {
@@ -472,6 +487,11 @@
     "propsCount": 7,
     "react": true
   },
+  "free/dither-art": {
+    "partsCount": 1,
+    "propsCount": 12,
+    "react": true
+  },
   "free/donut-chart": {
     "native": true,
     "partsCount": 1,
@@ -628,6 +648,11 @@
     "propsCount": 16,
     "react": true
   },
+  "free/frame": {
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
   "free/fullscreen-bar": {
     "native": true,
     "partsCount": 1,
@@ -703,6 +728,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 55,
+    "react": true
+  },
+  "free/illustration": {
+    "partsCount": 1,
+    "propsCount": 5,
     "react": true
   },
   "free/image": {
@@ -1014,6 +1044,11 @@
     "propsCount": 19,
     "react": true
   },
+  "free/package-list": {
+    "partsCount": 1,
+    "propsCount": 5,
+    "react": true
+  },
   "free/page-header": {
     "native": true,
     "partsCount": 1,
@@ -1126,6 +1161,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 18,
+    "react": true
+  },
+  "free/props-playground": {
+    "partsCount": 1,
+    "propsCount": 10,
     "react": true
   },
   "free/pull-to-refresh": {
@@ -1282,6 +1322,11 @@
     "propsCount": 20,
     "react": true
   },
+  "free/schematic": {
+    "partsCount": 3,
+    "propsCount": 8,
+    "react": true
+  },
   "free/screen": {
     "native": true,
     "partsCount": 1,
@@ -1304,6 +1349,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 28,
+    "react": true
+  },
+  "free/section-dock": {
+    "partsCount": 1,
+    "propsCount": 3,
     "react": true
   },
   "free/segmented-control": {
@@ -1640,6 +1690,11 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 11,
+    "react": true
+  },
+  "free/terminal-demo": {
+    "partsCount": 1,
+    "propsCount": 9,
     "react": true
   },
   "free/text": {

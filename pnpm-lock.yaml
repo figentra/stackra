@@ -7542,6 +7542,9 @@ importers:
 
   packages/runtime/app:
     dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
       '@stackra/clients':
         specifier: workspace:*
         version: link:../../application/clients
@@ -7576,9 +7579,6 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
-      '@stackra/actions':
-        specifier: workspace:*
-        version: link:../../application/actions
       '@stackra/database':
         specifier: workspace:*
         version: link:../../data/database

@@ -23,7 +23,7 @@ export const channelsChannelsPublishV1 = api.raw(
       anonymous: false,
       action: PublishChannelsAction,
       input: PublishChannelsInput,
-      execute: (container, input, actor, request) =>
-        new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor, ...requestCallOptions(request) }),
+      execute: (container, input, actor, request, call) =>
+        new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor, ...requestCallOptions(request), ...call }),
     }),
 );
