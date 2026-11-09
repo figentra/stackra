@@ -33,7 +33,8 @@ decisions 4 and 5). Member at `packages/runtime/scheduler` (`tier:lib`), in the 
 - The scheduler only dispatches (ADR 0078 decision 6): every run is a `QueueService.push`; never call an action's
   `handle` and never do work in a tick.
 - One runner per tick through `Locks.tryWith("scheduler:tick", ...)`; the watermarks, not the lock, keep a second tick
-  of the same minute from pushing twice. Advance the watermarks in the same tick as the pushes, last.
+  of the same minute from pushing twice. The lock covers only the claim and the watermark advance (ADR 0239
+  amendment, decision 5); each owner's pushes run after it, in a `requiresNew` transaction in that owner's isolation.
 - A driver stores; it never parses a cron, reads a clock or pushes. The service passes every instant.
 - The cron parser stays the classic five fields (the shape `Action({ job: { cron } })` checks). No croner: no catalog
   carries it, and a new dependency needs `dependency-steward` and the owner.
@@ -41,8 +42,11 @@ decisions 4 and 5). Member at `packages/runtime/scheduler` (`tier:lib`), in the 
   `{ crons: false }`, so no cron is pushed twice. This package never imports `encore.dev`.
 - `cronRuns` steps minute by minute over a range the caller bounds; keep `catchUpWindow` capped at one day.
 - Raw SQL only in `PostgresScheduleDriver`, every value bound, every row read through zod, each statement with a
-  `// raw-sql:` reason (ADR 0160). The tables carry no row-level security (the tick reads every scope), so a scope's
-  read or delete binds `scope_id` itself. A released migration is frozen; a change is a new migration.
+  `// raw-sql:` reason (ADR 0160). `scheduler.schedules` is tenant-owned in the platform form (`scheduler.0002`): the
+  tick claims every owner's through `scheduler.claim_schedules` and loads each in its owner; a claim that does not
+  load, or an owned one with no `CallIsolation`, throws. A scope's read or delete still binds `scope_id`. Never write
+  `tenant_id`. `scheduler.watermarks` stays a platform table. A released migration is frozen; a change is a new
+  migration.
 - No tenant word is declared or read here (R-59, ADR 0323): a scope is a `ScopeRef`, and the cron switch is
   `@stackra/actions`' `JobCron.perScope`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.

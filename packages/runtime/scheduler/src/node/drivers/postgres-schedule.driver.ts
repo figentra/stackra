@@ -3,12 +3,16 @@
  * Purpose: `PostgresScheduleDriver`, the server's `ScheduleDriver`: schedules are rows of `scheduler.schedules` and
  *          watermarks rows of `scheduler.watermarks`, advanced together in one upsert per tick.
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
- *           and every result row read through zod. Inside the tick's lock (a Postgres transaction) each statement joins
- *           it, so the watermarks commit with the jobs the tick pushed or not at all. The tables have no row-level
- *           security: the tick reads every scope, and a scope's reads and deletes bind `scope_id` themselves.
+ *           and every result row read through zod. Inside the tick's lock (a Postgres transaction) the claim and the
+ *           watermark advance join it. `scheduler.schedules` is tenant-owned in the platform form (`scheduler.0002`):
+ *           the tick claims every owner's schedules through the system function `scheduler.claim_schedules` (ids,
+ *           owners and what decides their runs only); every other statement runs under the caller's row-level
+ *           security, so a schedule is loaded, listed or deleted only in its owner's isolation, and a scope's reads and
+ *           deletes still bind `scope_id`. `tenant_id` is never written here: its default takes the call's
+ *           `app.tenant_id`. `scheduler.watermarks` is a platform table.
  * Runtime: node
- * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0160 (raw SQL is parameterised and typed with zod); ADR 0142
- *                     (drivers behind ports); ADR 0294 (decision 16).
+ * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0160 (raw SQL is
+ *                     parameterised and typed with zod); ADR 0142 (drivers behind ports); ADR 0294 (decision 16).
  */
 import { Driver } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -17,7 +21,7 @@ import type { Database } from "@stackra/database";
 import { z } from "zod";
 
 import { Misfire, ScheduleDriver } from "#contracts/index";
-import type { Schedule } from "#contracts/index";
+import type { Schedule, ScheduleClaim } from "#contracts/index";
 
 /** The schedule table, in the package's schema. */
 const SCHEDULES = '"scheduler"."schedules"';
@@ -27,6 +31,22 @@ const WATERMARKS = '"scheduler"."watermarks"';
 
 /** The columns a schedule is read from. */
 const COLUMNS = "id, scope_id, scope_path, job_key, cron, time_zone, input, misfire, created_at";
+
+/** A misfire policy as stored. */
+const MISFIRE = z.enum(Enum.values(Misfire) as [Misfire, ...Misfire[]]);
+
+/** Rows of the claim function. */
+const CLAIMS = z.array(
+  z.object({
+    id: z.string().startsWith("sch_"),
+    tenant_id: z.string().nullable(),
+    job_key: z.string(),
+    cron: z.string(),
+    time_zone: z.string(),
+    misfire: MISFIRE,
+    created_at: z.coerce.date(),
+  }),
+);
 
 /** Rows of `scheduler.schedules`. */
 const ROWS = z.array(
@@ -38,10 +58,26 @@ const ROWS = z.array(
     cron: z.string(),
     time_zone: z.string(),
     input: z.record(z.string(), z.unknown()),
-    misfire: z.enum(Enum.values(Misfire) as [Misfire, ...Misfire[]]),
+    misfire: MISFIRE,
     created_at: z.coerce.date(),
   }),
 );
+
+/** The schedules of `rows`. */
+function schedulesOf(rows: unknown): readonly Schedule[] {
+  return ROWS.parse(rows).map((row) =>
+    Object.freeze({
+      id: row.id as PublicId<"sch">,
+      scope: { id: row.scope_id as PublicId<"scp">, path: row.scope_path },
+      key: row.job_key,
+      cron: row.cron,
+      timeZone: row.time_zone,
+      input: row.input,
+      misfire: row.misfire,
+      createdAt: row.created_at,
+    }),
+  );
+}
 
 /** Rows of `scheduler.watermarks`. */
 const MARKS = z.array(z.object({ schedule_key: z.string(), ticked_at: z.coerce.date() }));
@@ -105,28 +141,45 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
     return IDS.parse(rows).length > 0;
   }
 
-  /** Lists the schedules of `scope`, or of every scope (see `ScheduleDriver.schedules`). */
-  async schedules(scope?: ScopeRef): Promise<readonly Schedule[]> {
-    const filter = scope === undefined ? "" : " where scope_id = ?";
+  /** Lists the schedules of `scope` (see `ScheduleDriver.schedules`). */
+  async schedules(scope: ScopeRef): Promise<readonly Schedule[]> {
     // raw-sql: the schedule table has no model; ids are UUIDv7, so ordering by id is creation order
+    return schedulesOf(
+      await this.database
+        .em()
+        .execute(`select ${COLUMNS} from ${SCHEDULES} where scope_id = ? order by id`, [scope.id]),
+    );
+  }
+
+  /** Claims every owner's schedules through the system function (see `ScheduleDriver.claim`). */
+  async claim(): Promise<readonly ScheduleClaim[]> {
+    // raw-sql: the system function reads every owner's schedules, which no owner's session may read
     const rows = await this.database
       .em()
       .execute(
-        `select ${COLUMNS} from ${SCHEDULES}${filter} order by id`,
-        scope === undefined ? [] : [scope.id],
+        "select id, tenant_id, job_key, cron, time_zone, misfire, created_at from scheduler.claim_schedules()",
+        [],
       );
-    return ROWS.parse(rows).map((row) =>
+    return CLAIMS.parse(rows).map((row) =>
       Object.freeze({
         id: row.id as PublicId<"sch">,
-        scope: { id: row.scope_id as PublicId<"scp">, path: row.scope_path },
+        ...(row.tenant_id === null ? {} : { ownerId: row.tenant_id as PublicId<"scp"> }),
         key: row.job_key,
         cron: row.cron,
         timeZone: row.time_zone,
-        input: row.input,
         misfire: row.misfire,
         createdAt: row.created_at,
       }),
     );
+  }
+
+  /** Schedule `id` as the caller's isolation reads it (see `ScheduleDriver.load`). */
+  async load(id: PublicId<"sch">): Promise<Schedule | undefined> {
+    // raw-sql: the schedule table has no model; one parameterised read under the caller's row-level security
+    const [schedule] = schedulesOf(
+      await this.database.em().execute(`select ${COLUMNS} from ${SCHEDULES} where id = ?`, [id]),
+    );
+    return schedule;
   }
 
   /** Reads every watermark, by key (see `ScheduleDriver.watermarks`). */

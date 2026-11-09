@@ -12,6 +12,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { ScheduleDriver } from "#contracts/ports/schedule-driver.port";
 import type { Schedule } from "#contracts/types/schedule.type";
+import type { ScheduleClaim } from "#contracts/types/schedule-claim.type";
 
 class NullScheduleDriver extends Driver(ScheduleDriver) {
   async add(): Promise<void> {}
@@ -22,6 +23,14 @@ class NullScheduleDriver extends Driver(ScheduleDriver) {
 
   async schedules(): Promise<readonly Schedule[]> {
     return [];
+  }
+
+  async claim(): Promise<readonly ScheduleClaim[]> {
+    return [];
+  }
+
+  async load(): Promise<Schedule | undefined> {
+    return undefined;
   }
 
   async watermarks(): Promise<ReadonlyMap<string, Date>> {
@@ -36,13 +45,19 @@ describe("ScheduleDriver", () => {
     const driver: ScheduleDriver = new NullScheduleDriver();
     expect(driver).toBeInstanceOf(ScheduleDriver);
     expect(driver).toBeInstanceOf(Port);
-    await expect(driver.schedules()).resolves.toEqual([]);
+    await expect(driver.claim()).resolves.toEqual([]);
   });
 
   it("is keyed scheduler.ScheduleDriver", () => {
     expectTypeOf<ScheduleDriver["~key"]>().toEqualTypeOf<"scheduler.ScheduleDriver">();
     expectTypeOf<Awaited<ReturnType<ScheduleDriver["watermarks"]>>>().toEqualTypeOf<
       ReadonlyMap<string, Date>
+    >();
+  });
+
+  it("claims a schedule by its id, owner and what decides its runs, never its input or scope", () => {
+    expectTypeOf<keyof ScheduleClaim>().toEqualTypeOf<
+      "id" | "ownerId" | "key" | "cron" | "timeZone" | "misfire" | "createdAt"
     >();
   });
 });

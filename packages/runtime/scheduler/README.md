@@ -75,7 +75,9 @@ one runs at both instants. No run from before the schedule was made is pushed.
 ## Ticks, misfires and one runner
 
 - `tick(at)` takes the lock `scheduler:tick` with `Locks.tryWith`: every instance ticks, one runs, the others get
-  `{ ran: false }`. With the Postgres drivers the pushes and the watermarks commit in the lock's transaction.
+  `{ ran: false }`. The lock covers only the claim of every owner's schedules and the watermark advance; each
+  owner's runs are pushed after it, in a transaction of their own in that owner's isolation (schedules are
+  tenant-owned, `scheduler.0002`). A tick that dies between the advance and its pushes loses those runs.
 - Each cron and schedule keeps a watermark (the last tick that evaluated it). A tick looks for runs after the
   watermark, never further back than `catchUpWindow` (one hour by default, one minute to one day). A cron new to the
   store looks back one minute.

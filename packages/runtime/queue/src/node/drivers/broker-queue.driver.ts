@@ -12,6 +12,9 @@
  *           job turns a repeat into a replay. A message is the job as JSON (`{ id, body }`); a retry's message id carries
  *           the attempt, so subscribers that deduplicate by id still see it. Priority and `scopeConcurrency` are not
  *           applied: the broker delivers in its own order (a Pub/Sub subscription's `maxConcurrency` caps a queue).
+ *           The dead letters in `queue.jobs` are tenant-owned (`queue.0003`): the worker keeps one in the delivered job's
+ *           own scope's isolation, and `load`, `claimDead`, `deadLetters` and `redrive` read the store as the Postgres
+ *           driver does (a claim across owners, everything else in the caller's).
  * Runtime: node
  * Governing contract: ADR 0148 (decisions 1, 3 and 6: Encore Pub/Sub queues in SaaS, retries, dead letters);
  *                     ADR 0142 (drivers behind ports); ADR 0266 (decision 4.3: encore-pubsub); ADR 0136 (decision 3).
@@ -21,12 +24,9 @@ import type { PublicId } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 
 import { JobStatus, QueueDriver } from "#contracts/index";
-import type { BrokerPublisher, JobBatch, JobError, QueuedJob } from "#contracts/index";
+import type { BrokerPublisher, JobBatch, JobClaim, JobError, QueuedJob } from "#contracts/index";
 import { JobNotDueError } from "#core/errors/job-not-due.error";
 import { PostgresQueueDriver } from "#node/drivers/postgres-queue.driver";
-
-/** How many dead letters `redrive` scans for the id it was given. */
-const REDRIVE_SCAN = 1000;
 
 /**
  * Runs jobs from broker subscriptions.
@@ -84,8 +84,13 @@ export class BrokerQueueDriver extends Driver(QueueDriver) {
   }
 
   /** No job: the broker delivers each one to the generated subscription. */
-  reserve(_queue: string | undefined, _now: Date): Promise<QueuedJob | undefined> {
+  reserve(_queue: string | undefined, _now: Date): Promise<JobClaim | undefined> {
     return Promise.resolve(undefined);
+  }
+
+  /** Dead letter `id` from `queue.jobs`, as the caller's isolation reads it. */
+  load(id: PublicId<"job">): Promise<QueuedJob | undefined> {
+    return this.store.load(id);
   }
 
   /**
@@ -136,17 +141,22 @@ export class BrokerQueueDriver extends Driver(QueueDriver) {
     return this.store.deadLetters(queue, limit);
   }
 
+  /** Claims dead letters of every owner from `queue.jobs` (see `QueueDriver.claimDead`). */
+  claimDead(options: {
+    readonly queue?: string;
+    readonly id?: PublicId<"job">;
+    readonly limit: number;
+  }): Promise<readonly JobClaim[]> {
+    return this.store.claimDead(options);
+  }
+
   /**
    * Publishes dead job `id` again from `now` with its attempts reset, and deletes it from `queue.jobs`; `false` when it
-   * is not dead.
-   *
-   * shortcut: scans the oldest 1000 dead letters for `id`; add a lookup by id to the store when a service keeps more.
+   * is not dead or not the caller's to read.
    */
   async redrive(id: PublicId<"job">, now: Date): Promise<boolean> {
-    const dead = (await this.store.deadLetters(undefined, REDRIVE_SCAN)).find(
-      (job) => job.id === id,
-    );
-    if (dead === undefined) return false;
+    const dead = await this.store.load(id);
+    if (dead?.status !== JobStatus.Dead) return false;
     await this.publish(
       { ...dead, status: JobStatus.Waiting, attempts: 0, runAt: now },
       `${id}:redrive:${now.getTime()}`,

@@ -3,7 +3,8 @@
  * Purpose: the memory driver of the `ScheduleDriver` port: schedules and watermarks in process memory.
  * Boundary: one process only and nothing survives a restart: tests and a single-process deployment. The input is stored
  *           as JSON, as the Postgres driver stores it, so a test sees what a tick in another process would. It reads no
- *           clock: the scheduler passes every instant.
+ *           clock: the scheduler passes every instant. There are no owner settings in memory, so a schedule keeps no
+ *           owner: every claim is a platform schedule's, which needs no isolation.
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decision 5); ADR 0266 (memory drivers first); ADR 0142 (drivers behind ports).
  */
@@ -11,7 +12,7 @@ import { Driver } from "@stackra/container";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 
 import { ScheduleDriver } from "#contracts/index";
-import type { Schedule } from "#contracts/index";
+import type { Schedule, ScheduleClaim } from "#contracts/index";
 
 /**
  * Keeps schedules in process memory.
@@ -43,12 +44,25 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
     return Promise.resolve(this.stored.delete(id));
   }
 
-  /** Lists the schedules of `scope`, or of every scope (see `ScheduleDriver.schedules`). */
-  schedules(scope?: ScopeRef): Promise<readonly Schedule[]> {
-    const all = [...this.stored.values()];
+  /** Lists the schedules of `scope` (see `ScheduleDriver.schedules`). */
+  schedules(scope: ScopeRef): Promise<readonly Schedule[]> {
     return Promise.resolve(
-      scope === undefined ? all : all.filter((schedule) => schedule.scope.id === scope.id),
+      [...this.stored.values()].filter((schedule) => schedule.scope.id === scope.id),
     );
+  }
+
+  /** Claims every schedule, oldest first (see `ScheduleDriver.claim`); memory keeps no owner. */
+  claim(): Promise<readonly ScheduleClaim[]> {
+    return Promise.resolve(
+      [...this.stored.values()].map(({ id, key, cron, timeZone, misfire, createdAt }) =>
+        Object.freeze({ id, key, cron, timeZone, misfire, createdAt }),
+      ),
+    );
+  }
+
+  /** Schedule `id`, if stored (see `ScheduleDriver.load`). */
+  load(id: PublicId<"sch">): Promise<Schedule | undefined> {
+    return Promise.resolve(this.stored.get(id));
   }
 
   /** Returns a copy of every watermark, by key (see `ScheduleDriver.watermarks`). */

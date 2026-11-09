@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresScheduleDriver`: each method's statement binds every value (one placeholder per
- *          parameter, no value in the text), reads its rows through zod into the port's shapes, deletes a schedule
- *          only with its scope and with its watermark, and advances every key in one upsert (none for no key).
+ *          parameter, no value in the text), reads its rows through zod into the port's shapes, claims every owner's
+ *          schedules through `scheduler.claim_schedules` (no input or scope), loads one by id, deletes a schedule only
+ *          with its scope and with its watermark, and advances every key in one upsert (none for no key).
  * Boundary: test only; a recording entity manager stands in for the database. A Postgres integration test runs with
  *           the testing workflow.
  * Runtime: node (vitest)
@@ -99,7 +100,7 @@ describe(PostgresScheduleDriver, () => {
     );
   });
 
-  it("reads schedules through zod, of one scope or of all", async () => {
+  it("reads the schedules of one scope through zod, and loads one by id", async () => {
     const { database, statements } = databaseWith([
       {
         id: "sch_1",
@@ -115,16 +116,59 @@ describe(PostgresScheduleDriver, () => {
     ]);
     const driver = new PostgresScheduleDriver(database);
     await expect(driver.schedules(acme)).resolves.toEqual([schedule]);
-    await driver.schedules();
+    await expect(driver.load("sch_1")).resolves.toEqual(schedule);
     expect(statements[0]?.sql).toContain("where scope_id = ? order by id");
     expect(statements[0]?.params).toEqual(["scp_acme"]);
-    expect(statements[1]?.sql).not.toContain("where");
+    expect(statements[1]?.sql).toContain("where id = ?");
+    expect(statements[1]?.params).toEqual(["sch_1"]);
+    expectBound(statements);
+    const gone = databaseWith([]);
+    await expect(new PostgresScheduleDriver(gone.database).load("sch_1")).resolves.toBeUndefined();
+  });
+
+  it("claims every owner's schedules through the system function, with no input or scope", async () => {
+    const { database, statements } = databaseWith([
+      {
+        id: "sch_1",
+        tenant_id: "scp_acme",
+        job_key: "digests.digest.send@1",
+        cron: "0 8 * * mon",
+        time_zone: "Asia/Dubai",
+        misfire: "once",
+        created_at: NOON.toISOString(),
+      },
+      {
+        id: "sch_2",
+        tenant_id: null,
+        job_key: "digests.digest.send@1",
+        cron: "0 8 * * mon",
+        time_zone: "UTC",
+        misfire: "skip",
+        created_at: NOON.toISOString(),
+      },
+    ]);
+    const claims = await new PostgresScheduleDriver(database).claim();
+    expect(claims).toEqual([
+      {
+        id: "sch_1",
+        ownerId: "scp_acme",
+        key: "digests.digest.send@1",
+        cron: "0 8 * * mon",
+        timeZone: "Asia/Dubai",
+        misfire: Misfire.Once,
+        createdAt: NOON,
+      },
+      expect.not.objectContaining({ ownerId: expect.anything() }),
+    ]);
+    expect(statements[0]?.sql).toBe(
+      "select id, tenant_id, job_key, cron, time_zone, misfire, created_at from scheduler.claim_schedules()",
+    );
     expectBound(statements);
   });
 
   it("refuses a row that is not a schedule", async () => {
     const { database } = databaseWith([{ id: "job_1" }]);
-    await expect(new PostgresScheduleDriver(database).schedules()).rejects.toThrow();
+    await expect(new PostgresScheduleDriver(database).schedules(acme)).rejects.toThrow();
   });
 
   it("reads every watermark by key", async () => {

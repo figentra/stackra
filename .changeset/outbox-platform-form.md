@@ -20,6 +20,9 @@ scope and become platform rows.
 
 Platform messages and changes (written with no tenant) carry no personal data: no tenant's erasure can rewrite them.
 
+Migration `outbox.0007_revoke_secure_change_partition` revokes `outbox.secure_change_partition(text)` from `PUBLIC`
+(defence in depth: it has invoker rights, and its owner, the migrating role, still runs it on each new partition).
+
 Breaking port changes, for a custom driver:
 
 - `OutboxDriver`: `due` is `claim` (returns `OutboxClaim`: id, `ownerId`, due time) plus `load(id)`; `pruneDead` is
