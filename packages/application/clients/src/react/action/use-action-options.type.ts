@@ -12,4 +12,11 @@ import type { QueryRef } from "#core/types/query-ref.type";
 export interface UseActionOptions {
   /** Invalidated after each sent call (not after a queued one). */
   readonly invalidates?: readonly QueryRef[];
+
+  /**
+   * The scope path every call of this hook runs in (`platform.acme.branch-2`), sent in the scope header over the
+   * session's: creating a unit under a parent without switching the screen's active scope. Absent, the session's
+   * scope applies.
+   */
+  readonly scope?: string;
 }

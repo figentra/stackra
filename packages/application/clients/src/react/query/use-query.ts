@@ -14,7 +14,7 @@ import type { QueryObserverOptions } from "@tanstack/query-core";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { clientRequest } from "#core/functions/client-request.function";
-import { queryKeyOf } from "#core/functions/query-key-of.function";
+import { scopedQueryKeyOf } from "#core/functions/scoped-query-key-of.function";
 import type { ClientError } from "#core/types/client-error.type";
 import type { QueryRef } from "#core/types/query-ref.type";
 import type { RefInput } from "#core/types/ref-input.type";
@@ -38,10 +38,15 @@ export function useQuery<Q extends QueryRef>(
 ): UseQueryResult<RefOutput<Q>> {
   const { transport, cache } = useClientRuntime();
   const observerOptions: QueryObserverOptions<RefOutput<Q>, ClientError> = {
-    queryKey: queryKeyOf(query, input),
+    queryKey: scopedQueryKeyOf(query, input, options.scope),
     // The transport decodes the answer with the query's output schema.
     queryFn: ({ signal }) =>
-      transport.send(clientRequest(query, input, { signal })) as Promise<RefOutput<Q>>,
+      transport.send(
+        clientRequest(query, input, {
+          signal,
+          ...(options.scope === undefined ? {} : { scope: options.scope }),
+        }),
+      ) as Promise<RefOutput<Q>>,
     enabled: options.enabled ?? true,
     ...(options.refetchOnFocus === undefined
       ? {}

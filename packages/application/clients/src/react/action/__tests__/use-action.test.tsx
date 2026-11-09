@@ -24,6 +24,7 @@ import { actionRef } from "#core/functions/action-ref.function";
 import { refusalRef } from "#core/functions/refusal-ref.function";
 import { useAction } from "#react/action/use-action";
 import type { UseActionResult } from "#react/action/use-action-result.type";
+import type { ClientRequest } from "#contracts/types/client-request.type";
 import { ClientFake } from "#testing/client.fake";
 
 class CancelOrderAction extends actionRef("orders.order.cancel@1", {
@@ -51,13 +52,25 @@ class StubSession extends ClientSession {
   }
 }
 
-/** Hands the hook's result to `report`. */
+/** A fake that also records the scope each request runs in. */
+class ScopeRecordingFake extends ClientFake {
+  readonly scopes: (string | undefined)[] = [];
+
+  override send(request: ClientRequest): Promise<unknown> {
+    this.scopes.push(request.scope);
+    return super.send(request);
+  }
+}
+
+/** Hands the hook's result to `report`; with `scope`, the hook runs every call in it. */
 function Probe({
   report,
+  scope,
 }: {
   readonly report: (result: UseActionResult<typeof CancelOrderAction>) => void;
+  readonly scope?: string;
 }) {
-  report(useAction(CancelOrderAction));
+  report(useAction(CancelOrderAction, scope === undefined ? {} : { scope }));
   return null;
 }
 
@@ -65,6 +78,7 @@ function Probe({
 async function actionOf(
   fake: ClientFake,
   session?: ClientSession,
+  scope?: string,
 ): Promise<UseActionResult<typeof CancelOrderAction>> {
   const cache = Object.assign(Object.create(ServerStateCache.prototype) as ServerStateCache, {
     client: new QueryClient(),
@@ -83,6 +97,7 @@ async function actionOf(
         report={(value) => {
           result = value;
         }}
+        {...(scope === undefined ? {} : { scope })}
       />
     </ContainerProvider>,
   );
@@ -109,6 +124,14 @@ describe("useAction", () => {
       data: { status: "cancelled" },
     });
     expect(fake.called(CancelOrderAction)).toEqual([{ orderId: "ord_1" }]);
+  });
+
+  it("runs each call in the hook's scope, over the session's, and in the session's without one", async () => {
+    const fake = new ScopeRecordingFake();
+    fake.on(CancelOrderAction).returns({ status: "cancelled" });
+    await (await actionOf(fake, undefined, "platform.acme.branch-2")).run({ orderId: "ord_1" });
+    await (await actionOf(fake)).run({ orderId: "ord_2" });
+    expect(fake.scopes).toEqual(["platform.acme.branch-2", undefined]);
   });
 
   it("rejects a run with the producer's refusal", async () => {

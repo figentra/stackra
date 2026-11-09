@@ -17,4 +17,10 @@ export interface UseQueryOptions {
 
   /** Keeps the previous input's answer on screen while the new one loads (a search box). */
   readonly keepPreviousData?: boolean;
+
+  /**
+   * The scope path the query runs in, sent in the scope header over the session's; its answer is cached apart from
+   * the same query's in another scope. Absent, the session's scope applies.
+   */
+  readonly scope?: string;
 }

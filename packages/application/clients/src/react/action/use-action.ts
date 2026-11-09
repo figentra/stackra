@@ -34,7 +34,7 @@ export function useAction<A extends ActionRef>(
   const { transport, cache, queue, session } = useClientRuntime();
   const [running, setRunning] = useState(0);
   const [error, setError] = useState<ClientError | null>(null);
-  const invalidates = options.invalidates;
+  const { invalidates, scope } = options;
   const run = useCallback(
     async (input: RefInput<A>) => {
       setRunning((count) => count + 1);
@@ -49,6 +49,7 @@ export function useAction<A extends ActionRef>(
           },
           action,
           input,
+          scope === undefined ? {} : { scope },
         );
       } catch (failureError) {
         if (isRefusal(failureError)) setError(failureError);
@@ -57,7 +58,7 @@ export function useAction<A extends ActionRef>(
         setRunning((count) => count - 1);
       }
     },
-    [action, transport, cache, queue, invalidates],
+    [action, transport, cache, queue, invalidates, scope],
   );
   return {
     run,

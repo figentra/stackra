@@ -21,6 +21,7 @@ import type { ClientRequest } from "#contracts/types/client-request.type";
 import { TransportError } from "#core/errors/transport.error";
 import { clientRequest } from "#core/functions/client-request.function";
 import type { ActionRef } from "#core/types/action-ref.type";
+import type { CallOptions } from "#core/types/call-options.type";
 import type { ActionResult } from "#core/types/action-result.type";
 import type { QueryRef } from "#core/types/query-ref.type";
 import type { RefInput } from "#core/types/ref-input.type";
@@ -63,8 +64,9 @@ export async function runAction<A extends ActionRef>(
   runtime: ActionRuntime,
   action: A,
   input: RefInput<A>,
+  call: CallOptions = {},
 ): Promise<ActionResult<RefOutput<A>>> {
-  const request = clientRequest(action, input);
+  const request = clientRequest(action, input, call);
   let data: unknown;
   try {
     data = await runtime.transport.send(request);
