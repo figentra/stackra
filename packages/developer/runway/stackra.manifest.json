@@ -407,6 +407,19 @@
       "type": "string",
       "enum": ["done", "planned", "manual", "blocked"]
     },
+    "runway.PostgresExtension": {
+      "type": "string",
+      "enum": [
+        "vector",
+        "pg_trgm",
+        "ltree",
+        "citext",
+        "pgcrypto",
+        "postgis",
+        "pg_stat_statements",
+        "btree_gist"
+      ]
+    },
     "runway.PreviewDatabaseSource": {
       "type": "string",
       "enum": ["seed-pack", "branch"]
