@@ -5,6 +5,7 @@
     "retry": "Opnieuw proberen",
     "range": "Periode",
     "change": "{change} t.o.v. vorige periode",
+    "change_points": "{change} procentpunt t.o.v. vorige periode",
     "target": "Doel {target}",
     "not_rendered": "Deze tegel kan hier niet worden getoond."
   },
@@ -191,6 +192,9 @@
       "create": "Nieuw aanmaken",
       "update": "Bestaande bijwerken",
       "upsert": "Aanmaken of bijwerken"
+    },
+    "metric_format": {
+      "percent": "Percentage"
     },
     "place": {
       "band": "KPI-balk",

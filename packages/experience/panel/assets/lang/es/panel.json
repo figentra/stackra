@@ -5,6 +5,7 @@
     "retry": "Reintentar",
     "range": "Periodo",
     "change": "{change} frente al periodo anterior",
+    "change_points": "{change} p. p. frente al periodo anterior",
     "target": "Objetivo {target}",
     "not_rendered": "Este panel no se puede mostrar aquí."
   },
@@ -191,6 +192,9 @@
       "create": "Crear nuevos",
       "update": "Actualizar existentes",
       "upsert": "Crear o actualizar"
+    },
+    "metric_format": {
+      "percent": "Porcentaje"
     },
     "place": {
       "band": "Banda de KPI",

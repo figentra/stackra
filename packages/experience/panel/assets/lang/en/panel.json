@@ -5,6 +5,7 @@
     "retry": "Try again",
     "range": "Period",
     "change": "{change} vs previous period",
+    "change_points": "{change} pts vs previous period",
     "target": "Target {target}",
     "not_rendered": "This tile cannot be shown here."
   },
@@ -191,6 +192,9 @@
       "create": "Create new",
       "update": "Update existing",
       "upsert": "Create or update"
+    },
+    "metric_format": {
+      "percent": "Percent"
     },
     "place": {
       "band": "KPI band",
