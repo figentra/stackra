@@ -1169,7 +1169,15 @@ const kit = (
     member: "kit",
     package: "@acme/kit",
     version: "1.0.0",
-    models: [{ key: "content.custom_field", class: "CustomField" }],
+    models: [
+      {
+        key: "content.custom_field",
+        class: "CustomField",
+        table: "content.custom_fields",
+        publicId: "cfd",
+        traits: [],
+      },
+    ],
     entitlements: [
       { key: "collaboration.live_collaboration", class: "LiveCollaborationEntitlement", gates },
     ],
@@ -1188,10 +1196,11 @@ const action = (name: string, key: string, options: Record<string, unknown>) =>
   call("action", name, key, { idempotency: "optional", ...options });
 const entitlement = (name: string, options: Record<string, unknown>) =>
   kindClass(name, "entitlement", `src/modules/orders/access/${name}.entitlement.ts`, options);
+/** The entitlements section of `built`, as entries. */
+const entitlementsOf = (built: ReturnType<typeof build>) =>
+  (built.manifest.entitlements ?? []) as readonly Record<string, unknown>[];
 const gatesOf = (built: ReturnType<typeof build>, key: string) =>
-  (built.manifest.entitlements as readonly Record<string, unknown>[] | undefined)?.find(
-    (e) => e["key"] === key,
-  )?.["gates"];
+  entitlementsOf(built).find((e) => e["key"] === key)?.["gates"];
 
 describe("buildManifest's entitlement gates (STA-2059)", () => {
   it("gates the action that names a local entitlement and records the key", () => {
@@ -1233,9 +1242,7 @@ describe("buildManifest's entitlement gates (STA-2059)", () => {
       action("OtherAction", "order.other", { meter: { name: "ai.other", kind: "count" } }),
     ]);
     expect(built.errors).toEqual([]);
-    expect(
-      built.manifest.entitlements?.find((e) => e["key"] === "orders.token_quota"),
-    ).toMatchObject({
+    expect(entitlementsOf(built).find((e) => e["key"] === "orders.token_quota")).toMatchObject({
       meter: "ai.tokens",
       per: "month",
       gates: ["orders.order.chat@1"],
@@ -1268,7 +1275,7 @@ describe("buildManifest's entitlement gates (STA-2059)", () => {
       [kit()],
     );
     expect(built.errors).toEqual([]);
-    const all = built.manifest.entitlements ?? [];
+    const all = entitlementsOf(built);
     expect(all.find((e) => e["key"] === "collaboration.live_collaboration")).toMatchObject({
       from: "@acme/kit",
       gates: ["orders.order.live@1"],
