@@ -160,6 +160,11 @@
       "key": "app.http",
       "class": "HttpConfig",
       "from": "@stackra/app/server"
+    },
+    {
+      "key": "app.visitor",
+      "class": "VisitorConfig",
+      "from": "@stackra/app/server"
     }
   ],
   "env": [
@@ -189,6 +194,24 @@
       "config": "app.cors",
       "class": "CorsConfig",
       "field": "allowedOrigins"
+    },
+    {
+      "name": "STACKRA_VISITOR_SIGNING_KEY",
+      "kind": "secret",
+      "type": "string",
+      "required": false,
+      "config": "app.visitor",
+      "class": "VisitorConfig",
+      "field": "signingKey"
+    },
+    {
+      "name": "STACKRA_VISITOR_SIGNING_KEY_PREVIOUS",
+      "kind": "secret",
+      "type": "string",
+      "required": false,
+      "config": "app.visitor",
+      "class": "VisitorConfig",
+      "field": "previousSigningKey"
     }
   ],
   "services": [
@@ -267,6 +290,18 @@
     {
       "class": "VerifiedToken",
       "from": "@stackra/app/server"
+    },
+    {
+      "class": "VisitorIdentityService",
+      "from": "@stackra/app/server",
+      "deps": [
+        {
+          "class": {
+            "name": "VisitorConfig",
+            "from": "@stackra/app/server"
+          }
+        }
+      ]
     }
   ],
   "schemas": {
