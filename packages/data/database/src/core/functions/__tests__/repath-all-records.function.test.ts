@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: tests of `repathAllRecords` on PGlite: when `platform.a.shop` moves to `platform.b.shop`, every row of each
- *          model with `MovesWithScope` at or below the old path takes the new prefix (a service's table and a core
- *          package's table alike), a sibling subtree stays put, a model without the trait is never touched, a second
+ *          model with `MovesWithScope` at or below the old path takes the new prefix, whether its path column is
+ *          `ltree` or `varchar`, a sibling subtree stays put, a model without the trait is never touched, a second
  *          run moves nothing, and each opted-in model answers one report.
  * Boundary: unit tier: PGlite runs in this process, no Docker. The rows are written outside row-level security; the
  *           listener's scope session is the caller's, as `repath` documents.
@@ -35,10 +35,11 @@ class Receipt extends Model.with(HasPublicId("rcp")) {
   scopePath!: string;
 }
 
-/** The entity schema of `type`, a table with an id and an `ltree` scope path. */
+/** The entity schema of `type`, a table with an id and a scope path stored as `columnType`. */
 function schemaOf<M extends { id: string; scopePath: string }>(
   type: new () => M,
   table: string,
+  columnType: "ltree" | "varchar(255)",
 ): EntitySchema<M> {
   return new EntitySchema<M>({
     class: type,
@@ -46,15 +47,16 @@ function schemaOf<M extends { id: string; scopePath: string }>(
     tableName: table,
     properties: {
       id: { type: "string", primary: true, columnType: "varchar(33)" },
-      scopePath: { type: "string", fieldName: "scope_path", columnType: "ltree" },
+      scopePath: { type: "string", fieldName: "scope_path", columnType },
     } as never,
   });
 }
 
+// a service table on `ltree`, a table whose path is `varchar` (as several os services store it), one opted out
 registerEntities([
-  schemaOf(Ticket, "tickets"),
-  schemaOf(Remark, "remarks"),
-  schemaOf(Receipt, "receipts"),
+  schemaOf(Ticket, "tickets", "ltree"),
+  schemaOf(Remark, "remarks", "varchar(255)"),
+  schemaOf(Receipt, "receipts", "ltree"),
 ]);
 
 /** A new repository of `type` on the connected database. */
