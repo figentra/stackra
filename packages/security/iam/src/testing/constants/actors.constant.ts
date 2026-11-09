@@ -4,12 +4,17 @@
  *          (optionally acting for someone), a job, the system and an anonymous visitor.
  * Boundary: test code only. Each call returns a new frozen `Actor`; the defaults are fixed, well-formed public ids, so
  *           two `actors.customer()` calls are the same person. A user id passed in must be a user's public id
- *           (`usr_…`). No actor carries a scope, so a call through the pipeline acts at the root.
+ *           (`usr_…`). A customer or staff actor acts in `TEST_SCOPE_ID` unless the test names another `scopeId`, or
+ *           `scopeId: null` for a platform call at the root, so a call through the pipeline has a tenant and can write
+ *           a tenant-owned row. A service, job, system or anonymous actor carries no scope: a service claims a tenant
+ *           through `onBehalfOf`.
  * Runtime: node
  * Governing contract: ADR 0098 (decisions 6 and 7: the actor model); ADR 0269 (decision 3: domain helpers in the
  *                     owning package's `./testing`); the template's tests (`actors.customer(order.customerId)`).
  */
 import { type Actor, ActorKind, type PublicId, Realm } from "@stackra/contracts";
+
+import { TEST_SCOPE_ID } from "#testing/constants/test-scope-id.constant";
 
 /** A user actor, so `.id` is a user's public id. */
 type UserActor = Extract<Actor, { readonly kind: typeof ActorKind.User }>;
@@ -22,6 +27,17 @@ const CUSTOMER_ID = "usr_01j9z3k4m5n6p7q8r9s0t1v2c1";
 
 /** The default staff member. */
 const STAFF_ID = "usr_01j9z3k4m5n6p7q8r9s0t1v2s1";
+
+/** How a user actor is scoped: `scopeId` names its tenant, `null` makes a platform call at the root. */
+interface UserActorOptions {
+  readonly scopeId?: PublicId | null;
+}
+
+/** The actor's `scopeId`: the one named, none for `null`, else the test tenant. */
+function scopeOf(options: UserActorOptions): { readonly scopeId?: PublicId } {
+  if (options.scopeId === null) return {};
+  return { scopeId: options.scopeId ?? TEST_SCOPE_ID };
+}
 
 /** The user id `id` or the default, checked. */
 function userId(id: string | undefined, fallback: PublicId<"usr">): PublicId<"usr"> {
@@ -36,6 +52,7 @@ function userId(id: string | undefined, fallback: PublicId<"usr">): PublicId<"us
  *
  * @example
  * await run(CancelOrderAction, { orderId }, { as: actors.customer(order.customerId) });
+ * actors.staff(undefined, { scopeId: otherTenant }); // another tenant; `scopeId: null` acts at the root
  * actors.service("notifications", { onBehalfOf: actors.customer(order.customerId) });
  */
 export const actors = Object.freeze({
@@ -44,16 +61,26 @@ export const actors = Object.freeze({
    *
    * @throws TypeError when `id` is not a user's public id.
    */
-  customer: (id?: string): UserActor =>
-    Object.freeze({ kind: ActorKind.User, id: userId(id, CUSTOMER_ID), realm: Realm.Customer }),
+  customer: (id?: string, options: UserActorOptions = {}): UserActor =>
+    Object.freeze({
+      kind: ActorKind.User,
+      id: userId(id, CUSTOMER_ID),
+      realm: Realm.Customer,
+      ...scopeOf(options),
+    }),
 
   /**
    * A staff member of a scope (`Realm.Staff`, the contracts realm of a scope's staff).
    *
    * @throws TypeError when `id` is not a user's public id.
    */
-  staff: (id?: string): UserActor =>
-    Object.freeze({ kind: ActorKind.User, id: userId(id, STAFF_ID), realm: Realm.Staff }),
+  staff: (id?: string, options: UserActorOptions = {}): UserActor =>
+    Object.freeze({
+      kind: ActorKind.User,
+      id: userId(id, STAFF_ID),
+      realm: Realm.Staff,
+      ...scopeOf(options),
+    }),
 
   /** Another service by its name, acting for no one or for `onBehalfOf`. */
   service: (name: string, options: { readonly onBehalfOf?: Actor } = {}): OtherActor =>
