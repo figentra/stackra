@@ -470,8 +470,9 @@ describe("AutomationService automation quota", () => {
     });
 
   it("allows every run with the unlimited driver a host picks on purpose", async () => {
-    await expect(
-      new UnlimitedAutomationQuotaDriver().check(SCOPE, "wfa_01j9z3k4m5n6p7q8r9s0t1v2w3"),
-    ).resolves.toBe(AutomationQuotaAnswer.Allow);
+    const quota: AutomationQuota = new UnlimitedAutomationQuotaDriver();
+    await expect(quota.check(SCOPE, "wfa_01j9z3k4m5n6p7q8r9s0t1v2w3")).resolves.toBe(
+      AutomationQuotaAnswer.Allow,
+    );
   });
 });

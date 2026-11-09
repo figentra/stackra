@@ -14,6 +14,7 @@ import { DomainEvent } from "@stackra/events";
 import { registerSchemas } from "@stackra/validation";
 
 import { AUTOMATION_RUN_SKIPPED_SCHEMA } from "#core/constants/automation-run-skipped-schema.constant";
+import type { AutomationStart } from "#core/enums/automation-start.enum";
 
 /**
  * One run the quota kept from starting.
@@ -29,11 +30,11 @@ export class AutomationRunSkipped extends DomainEvent {
   /** Its document key (`commerce.cod_confirmation`). */
   key!: string;
 
-  /** Why: `quota_exceeded`, or `quota_unavailable`. */
-  reason!: "quota_exceeded" | "quota_unavailable";
+  /** Why: `quota_exceeded`, or `quota_unavailable` (the shipped schema allows only these two). */
+  reason!: string;
 
-  /** What would have started it: `event` or `schedule`. */
-  startedBy!: "event" | "schedule";
+  /** What would have started it. */
+  startedBy!: AutomationStart;
 }
 
 registerSchemas([[AutomationRunSkipped, AUTOMATION_RUN_SKIPPED_SCHEMA]]);
