@@ -12,3 +12,5 @@ never goes ready (tenancy audit gap J).
 
 Turn it on only once the service connects as its own runtime role: today a service on Encore connects as the role that
 runs its migrations and owns its tables, so the probe is rightly `down` there until that role exists.
+
+A host that overrides `health` whole (`override health = { timeout, critical }`) now also states `rowSecurity`.
