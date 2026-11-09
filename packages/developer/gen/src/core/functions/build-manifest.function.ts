@@ -85,6 +85,7 @@ import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { envOf } from "#core/functions/env-of.function";
 import { eventName } from "#core/functions/event-name.function";
@@ -102,6 +103,7 @@ import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { resourcesOf } from "#core/functions/resources-of.function";
 import { moduleDependsOn } from "#core/functions/module-depends-on.function";
+import { seedersOf } from "#core/functions/seeders-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -1106,6 +1108,20 @@ export function buildManifest(ir: MemberIR): {
     };
   });
 
+  // The seeders in module order and the factory pairs, which a host's seed entry imports from `./testing` (STA-2061).
+  const seeders: Entry[] = seedersOf(ir).map((row) => ({
+    key: row.key,
+    module: row.module,
+    profile: row.profile,
+    class: row.name,
+    file: row.file,
+  }));
+  const factories: Entry[] = factoryPairsOf(ir).map((factory) => ({
+    class: factory.name,
+    file: factory.file,
+    model: factory.partner.name,
+  }));
+
   // Replacements: `@Replaces(Base)` on a class of the member, so a host and a reviewer see what it swaps out.
   const replaces: Entry[] = [];
   for (const declared of ir.classes)
@@ -1411,6 +1427,8 @@ export function buildManifest(ir: MemberIR): {
     ...(env.length > 0 ? { env } : {}),
     ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
+    ...(seeders.length > 0 ? { seeders } : {}),
+    ...(factories.length > 0 ? { factories } : {}),
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),
     ...(surfaces.length > 0 ? { surfaces } : {}),

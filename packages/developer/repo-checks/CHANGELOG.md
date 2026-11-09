@@ -1,5 +1,19 @@
 # @stackra/repo-checks
 
+## 0.29.0
+
+### Minor Changes
+
+- 856207e: `stackra validate --repository` checks the skill and agent sources: a skill that teaches rejected technology (ADR 0227) without a reasoned allowance, and an agent that names a missing path, is told to run a command without Bash, sets
+  an OpenCode `allow`, names the retired `sdlc` plugin, or is routed to OpenCode at a tier OpenCode does not run. These
+  are the checks core's agents-sync script ran, moved here now that Flow projects `.agents/` (STA-2098 H6).
+- 6f43cd8: `stackra constitution` writes `.flow/constitution.md` (the file Figentra Flow's `flow-*` commands read) from the docs
+  laws, and `stackra validate --repository` reports it missing or out of date (`constitution`). It was rendered by core's
+  agents-sync script, which retires now that Flow projects `.agents/` (STA-2098 H6).
+  
+  The stackra preset's workspace-layout rule and guard hint name the docs site as Fumadocs on a Worker (ADR 0514), not
+  Mintlify.
+
 ## 0.28.0
 
 No changes in this release.
