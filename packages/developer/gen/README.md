@@ -261,6 +261,10 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
 - **Listings (ADR 0355 decision 1, ADR 0308 rule 21).** An Integration's `roles` (plus `webhooks` when it receives
   them) and its `listing` (the entitlement reference) land on its entry; a role outside `INTEGRATION_ROLES` is
   `integration_role_unknown`.
+- **Webhook event ids.** The inbox dedupes inbound webhooks by event id. Only Standard Webhooks carries one in its
+  `webhook-id` header, so an Integration whose `webhooks` use any other scheme (`hmac`, a regional gateway's) and name
+  neither `eventId` (a payload `path`, or `parts` of paths and headers) nor `signature.idHeader` is
+  `webhook_event_id_undeclared`: every event would share the id `""` and be kept once.
 - **Replacements.** Every `@Replaces(Base)` is listed in a `replaces` section.
 - **Agents and passes (STA-903, ADR 0399, ADR 0348 decision 5).** `agent` and `pass` are binding kinds. An
   `Agent({ key, task, tools })` lands in `agents` (tools as action keys) and a `Pass({ key })` in `passes`; both keys

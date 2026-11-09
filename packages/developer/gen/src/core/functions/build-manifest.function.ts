@@ -21,7 +21,9 @@
  *          of `checkCallShape` (`query_above_l1`, `query_precondition`, `action_cache`, `step_up_missing`,
  *          `idempotency_missing`), `effect_unknown`,
  *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
- *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
+ *          `integration_role_unknown`, `egress_invalid`, `webhook_event_id_undeclared` (an Integration receiving
+ *          webhooks of a scheme other than Standard Webhooks that names neither `eventId` nor `signature.idHeader`,
+ *          so the inbox would dedupe its events as one), `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
  *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists
  *          each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as action
@@ -748,6 +750,24 @@ export function buildManifest(ir: MemberIR): {
         "egress_invalid",
         `\`baseUrl\` ${JSON.stringify(baseUrl)} is not an https origin the managed client can call`,
         'write an https URL; a per-region host is a camelCase `{field}` of the credential set ("https://{region}.api.example.com"), or the whole URL is one `{field}` ("{baseUrl}")',
+      );
+    // why: the inbox dedupes by event id; only Standard Webhooks carries one in a header, so another scheme that names
+    // neither `eventId` nor `signature.idHeader` keys every event "" and keeps one of them (`WebhookReceiver`).
+    const webhooks = declared.options["webhooks"] as
+      | { readonly scheme?: unknown; readonly eventId?: unknown; readonly signature?: unknown }
+      | undefined;
+    const idHeader = (webhooks?.signature as { readonly idHeader?: unknown } | undefined)?.idHeader;
+    if (
+      webhooks !== undefined &&
+      webhooks.scheme !== "standard_webhooks" &&
+      webhooks.eventId === undefined &&
+      (typeof idHeader !== "string" || idHeader === "")
+    )
+      fail(
+        declared,
+        "webhook_event_id_undeclared",
+        `${declared.name} receives \`${String(webhooks.scheme)}\` webhooks but names no event id, so the inbox would keep every event as one`,
+        "name `webhooks.eventId` (the payload `path` of the provider's event id, or `parts` of paths and headers) or a `webhooks.signature.idHeader`, or use `SignatureScheme.StandardWebhooks`",
       );
     integrations.push({
       key,

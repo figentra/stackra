@@ -10,7 +10,8 @@
  *          an action's `dataClass` with `data_class_unknown` (STA-2594), the public flag with
  *          `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound`
  *          (STA-2063),
- *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
+ *          Integration roles and listing with `integration_role_unknown`, `webhook_event_id_undeclared` (webhooks
+ *          that name no event id outside Standard Webhooks), the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
  *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308); the `agents`,
  *          `passes` and `entitlements` sections with derived entitlement keys and gates (STA-903).
@@ -59,6 +60,16 @@ function kindClass(
     importPath: `#${file}`,
     options,
     deps: [],
+  };
+}
+
+/** The billing service with its Stripe Integration receiving `webhooks` and nothing else. */
+function receiving(webhooks: Record<string, unknown>): MemberIR {
+  return {
+    ...BILLING_IR,
+    classes: BILLING_IR.classes.map((candidate) =>
+      candidate.name === "StripeIntegration" ? { ...candidate, options: { webhooks } } : candidate,
+    ),
   };
 }
 
@@ -707,6 +718,25 @@ describe("buildManifest", () => {
         (error) => `${error.code} ${error.subject}`,
       ),
     ).toEqual(["egress_invalid StripeIntegration"]);
+  });
+
+  /** Only Standard Webhooks brings its own event id; any other scheme must name one, or the inbox keeps one event. */
+  it("refuses an Integration whose webhooks name no event id, unless the scheme is Standard Webhooks", () => {
+    expect(codesOf(receiving({ scheme: "hmac" }))).toContain(
+      "webhook_event_id_undeclared StripeIntegration",
+    );
+    expect(codesOf(receiving({ scheme: "aes_gcm_body", recipe: { ivHeader: "x-iv" } }))).toContain(
+      "webhook_event_id_undeclared StripeIntegration",
+    );
+    for (const webhooks of [
+      { scheme: "standard_webhooks" },
+      { scheme: "hmac", eventId: { path: "id" } },
+      { scheme: "keyed_field_digest", eventId: { parts: [{ path: "ref" }, { header: "x-at" }] } },
+      { scheme: "hmac", signature: { idHeader: "x-event-id" } },
+    ])
+      expect(codesOf(receiving(webhooks))).not.toContain(
+        "webhook_event_id_undeclared StripeIntegration",
+      );
   });
 
   it("reports colliding, duplicate, unknown and missing identities", () => {
