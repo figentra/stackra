@@ -314,7 +314,7 @@ describe("emitWiring", () => {
     );
   });
 
-  it("binds a hosted package module's actions, whether or not a class injects them", () => {
+  it("binds a hosted package module's actions and raw controllers, whether or not a class injects them", () => {
     const enroll = {
       name: "EnrollMemberAction",
       kind: "action",
@@ -329,9 +329,17 @@ describe("emitWiring", () => {
       statics: {},
       traits: [],
     } as const;
+    const stream = {
+      ...enroll,
+      name: "PointsStreamController",
+      kind: "controller",
+      file: "src/node/raw/points-stream.controller.ts",
+      importPath: "#node/raw/points-stream.controller",
+      options: { path: "/loyalty/points/stream" },
+    } as const;
     const built = buildManifest({
       ...LOYALTY_KIT_IR,
-      classes: [...LOYALTY_KIT_IR.classes, enroll],
+      classes: [...LOYALTY_KIT_IR.classes, enroll, stream],
     }).manifest;
     // The fixture's module is generated; a published kit names the file its module class lives in.
     const kit = {
@@ -344,6 +352,9 @@ describe("emitWiring", () => {
     };
     const services = (kit as Record<string, unknown>)["services"] as readonly { class: string }[];
     expect(services.map((entry) => entry.class)).toContain("EnrollMemberAction");
+    expect(services).toContainEqual(
+      expect.objectContaining({ class: "PointsStreamController", path: "/loyalty/points/stream" }),
+    );
     const content = emitWiring({
       ...COMMERCE_IR,
       packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
@@ -351,6 +362,9 @@ describe("emitWiring", () => {
     });
     expect(content).toMatch(
       /\{ module: "loyalty_kit", kind: "action", provide: EnrollMemberAction, deps: \[LoyaltyService\] \},/,
+    );
+    expect(content).toMatch(
+      /\{ module: "loyalty_kit", kind: "controller", provide: PointsStreamController, deps: \[LoyaltyService\] \},/,
     );
     // Its tokens are bound too, so the action can be built.
     expect(content).toMatch(/provide: LoyaltyService, deps: \[LoyaltyLedger\]/);
@@ -888,14 +902,16 @@ describe("emitWiring", () => {
     expect(content).not.toContain("provide: SearchIndexConfig }");
   });
 
-  it("binds a service's request guards and health indicators with their config rows (STA-1385)", () => {
+  it("binds a service's request guards and health indicators with their config rows (STA-1385, STA-2577)", () => {
     const billing = emitWiring(BILLING_IR);
     for (const line of [
+      '    { module: "billing", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },',
       '    { module: "billing", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },',
       '    { module: "billing", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },',
       '    { module: "billing", kind: "service", provide: DatabaseHealthIndicatorDriver, deps: [Database, DatabaseConfig] },',
       '    { module: "billing", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },',
       '    { module: "billing", kind: "service", provide: SearchHealthIndicatorDriver, deps: [SearchDriver, SearchConfig] },',
+      '    { key: "app.edge", provide: EdgeConfig },',
       '    { key: "app.cors", provide: CorsConfig },',
       '    { key: "app.csrf", provide: CsrfConfig },',
       '    { key: "app.http", provide: HttpConfig },',

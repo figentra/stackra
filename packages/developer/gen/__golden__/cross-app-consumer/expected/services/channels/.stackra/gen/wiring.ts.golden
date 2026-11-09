@@ -15,7 +15,8 @@ import { SyncService } from "#core/services/sync.service";
 import { CatalogueClient } from "#stackra/clients/catalogue";
 import { InboundEventsController, RelayInboxConfig } from "#stackra/inbox";
 import { ChannelsModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
+import { EdgeNonceStore, EdgeSigningKeys } from "@stackra/app/contracts";
+import { CorsConfig, CsrfConfig, CsrfGuard, EdgeConfig, EdgeHeaderGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import { ClientTransport } from "@stackra/clients/contracts";
 import type { Wiring } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
@@ -42,6 +43,7 @@ export const wiring = {
     { module: "channels", kind: "listener", provide: ListOnPaymentCapturedListener, deps: [] },
     { module: "channels", kind: "service", provide: SyncService, deps: [CatalogueClient] },
     { module: "channels", kind: "controller", provide: InboundEventsController, deps: [RelayInboxService] },
+    { module: "channels", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },
     { module: "channels", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },
     { module: "channels", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },
     { module: "channels", kind: "service", provide: DatabaseHealthIndicatorDriver, deps: [Database, DatabaseConfig] },
@@ -52,6 +54,7 @@ export const wiring = {
   ],
   config: [
     { key: "outbox.relay_inbox", provide: BaseRelayInboxConfig, override: RelayInboxConfig },
+    { key: "app.edge", provide: EdgeConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
     { key: "app.http", provide: HttpConfig },

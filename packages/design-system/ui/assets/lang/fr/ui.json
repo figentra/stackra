@@ -1253,6 +1253,14 @@
     "shortcut": "Raccourci {keys}",
     "you": "Vous",
     "disclaimer": "Tamo peut se tromper. Vérifiez ce qu'il propose.",
-    "close": "Fermer"
+    "close": "Fermer",
+    "approval_title": "Tamo veut exécuter ceci",
+    "approval_waiting": "En attente de votre approbation.",
+    "approve": "Approuver",
+    "deny": "Refuser",
+    "approved": "Approuvé",
+    "denied": "Refusé",
+    "expired": "Expiré",
+    "risk": "Risque {level}"
   }
 }

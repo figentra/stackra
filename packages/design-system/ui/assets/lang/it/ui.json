@@ -1253,6 +1253,14 @@
     "shortcut": "Scorciatoia {keys}",
     "you": "Tu",
     "disclaimer": "Tamo può sbagliare. Controlla le sue bozze.",
-    "close": "Chiudi"
+    "close": "Chiudi",
+    "approval_title": "Tamo vuole eseguire questo",
+    "approval_waiting": "In attesa della tua approvazione.",
+    "approve": "Approva",
+    "deny": "Rifiuta",
+    "approved": "Approvato",
+    "denied": "Rifiutato",
+    "expired": "Scaduto",
+    "risk": "Rischio {level}"
   }
 }

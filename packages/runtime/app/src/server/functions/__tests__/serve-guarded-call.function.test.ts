@@ -136,10 +136,11 @@ describe(serveGuardedCall, () => {
     expect(authenticate).not.toHaveBeenCalled();
   });
 
-  it("refuses an unsigned request where the edge guard is bound", async () => {
+  it("refuses an unsigned request carrying an edge header where the edge guard is bound", async () => {
     const { serve, execute } = call({ anonymous: true });
     const request = new Request("https://api.example.test/orders/ord_1", {
       method: "POST",
+      headers: { "x-figentra-tenant": "scp_spoofed" },
       body: "{}",
     });
     expect((await serve(request)).status).toBe(401);
@@ -223,7 +224,7 @@ describe(serveGuardedCall, () => {
   it("never reaches the authenticator when a guard refuses", async () => {
     const { serve, authenticate } = call();
     const request = new Request("https://api.example.test/orders/ord_1", {
-      headers: { authorization: "Bearer t" },
+      headers: { authorization: "Bearer t", "x-figentra-realm": "ops" },
     });
     expect((await serve(request)).status).toBe(401);
     expect(authenticate).not.toHaveBeenCalled();

@@ -10,7 +10,8 @@
  * Runtime: isomorphic
  */
 import { BillingModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
+import { EdgeNonceStore, EdgeSigningKeys } from "@stackra/app/contracts";
+import { CorsConfig, CsrfConfig, CsrfGuard, EdgeConfig, EdgeHeaderGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import type { Wiring } from "@stackra/container";
 import { QueueConfig, QueueHealthIndicatorDriver } from "@stackra/queue";
 import { QueueDriver } from "@stackra/queue/contracts";
@@ -25,11 +26,13 @@ export const wiring = {
   },
   platform: [],
   bindings: [
+    { module: "billing", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },
     { module: "billing", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },
     { module: "billing", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },
     { module: "billing", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },
   ],
   config: [
+    { key: "app.edge", provide: EdgeConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
     { key: "app.http", provide: HttpConfig },
