@@ -174,6 +174,9 @@ An account id is a quoted string or a `ref:`: YAML reads an unquoted one as a nu
   of the backup stack) to the alerting channel. The topics carry failures only, so no subscription filter is needed.
 - Decide whether the backup vault lock moves to compliance mode (`providers.aws.backupLock`, irreversible; see above).
 - Send `egressIps` to each partner that allow-lists our calls, and attach `egressAllocationIds` to the NAT gateways.
+- Fill the Docker Hub login of ECR's pull-through cache (`dockerHubCacheSecretArn`, secret
+  `ecr-pullthroughcache/docker-hub`, from the account's first environment) with `{"username": …, "accessToken": …}`, a
+  Docker Hub read-only token. Runway workloads then pull `<account>.dkr.ecr.<region>.amazonaws.com/docker-hub/<image>`.
 
 ## Not here
 
