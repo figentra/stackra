@@ -35,7 +35,7 @@ export abstract class ScheduleDriver extends Port {
   /** Stores `schedule` in this driver. */
   abstract add(schedule: Schedule): Promise<void>;
 
-  /** Deletes schedule `id` of `scope` and its watermark; `false` when `scope` holds no such schedule. */
+  /** Deletes schedule `id` of `scope`, its watermark and its fires; `false` when `scope` holds no such schedule. */
   abstract remove(id: PublicId<"sch">, scope: ScopeRef): Promise<boolean>;
 
   /** The schedules of `scope` the caller's isolation reads, oldest first. */
@@ -47,9 +47,25 @@ export abstract class ScheduleDriver extends Port {
   /** Schedule `id` as the caller's isolation reads it; `undefined` when it is gone or another owner's. */
   abstract load(id: PublicId<"sch">): Promise<Schedule | undefined>;
 
+  /**
+   * Records that the runs of fire key `key` (a stored schedule's id, a cron's job key, or `<job key>:<scope id>` for a
+   * per-scope cron) fired at `at`, in the caller's transaction and owner; `false`, recording nothing, when that fire was
+   * recorded before. The record outlasts the job it pushed, so a tick that pushes again never pushes a fire twice.
+   */
+  abstract recordFire(key: string, at: Date): Promise<boolean>;
+
+  /** Deletes the records of fire key `key` at or before `through`, in the caller's owner: no tick evaluates them. */
+  abstract forgetFires(key: string, through: Date): Promise<void>;
+
+  /**
+   * Runs `work` in a transaction of its own, never joining a running one, so one owner's fire records commit with that
+   * owner's pushes and nothing of the tick's lock (a store with no transactions runs `work` as it is).
+   */
+  abstract transaction<T>(work: () => Promise<T>): Promise<T>;
+
   /** Every watermark, by key. */
   abstract watermarks(): Promise<ReadonlyMap<string, Date>>;
 
-  /** Sets the watermark of every key of `keys` to `at`. */
+  /** Moves the watermark of every key of `keys` to `at`, never back. */
   abstract advance(keys: readonly string[], at: Date): Promise<void>;
 }

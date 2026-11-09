@@ -4,8 +4,8 @@
  *          migration: the pre-flight refuses a schedule below a tenant node, naming the count and the remedy
  *          (unschedule, migrate, schedule again), and changes nothing; applied, the backfill gives a schedule at a
  *          tenant node (nlevel 3) its scope as owner and keeps one at the root or at a product node a platform
- *          schedule; `scheduler.watermarks` stays a platform table; and `assertRowSecurity`, strict, with the compiled
- *          migrations as its directory, finds no gap.
+ *          schedule; `scheduler.watermarks` stays a platform table; and, with 0003's `scheduler.fires` applied,
+ *          `assertRowSecurity`, strict, with the compiled migrations as its directory, finds no gap.
  * Boundary: integration tier (`.int`): runs only where `TESTBED_POSTGRES_HOST` names a Postgres. One fresh database for
  *           the file with migration 0001 (`ownerPostgres(1)`); the superuser seeds the rows, applies 0002 as a migrator
  *           would, and reads the catalogue. The audit probes with its own NOBYPASSRLS role. Tests run in order.
@@ -100,6 +100,9 @@ describe.skipIf(HOST === undefined)("ContractSchedulerTenancyMigration on Postgr
   });
 
   it("passes the strict row-security audit, its system access held to the compiled declarations", async () => {
+    const fires = schedulerMigrations()[2];
+    if (fires === undefined) throw new Error("0003 is not compiled");
+    await postgres.apply(fires);
     const directory = mkdtempSync(join(tmpdir(), "scheduler-migrations-"));
     try {
       for (const [index, migration] of schedulerMigrations().entries())

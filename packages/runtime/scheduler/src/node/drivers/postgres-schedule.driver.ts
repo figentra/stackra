@@ -9,7 +9,9 @@
  *           owners and what decides their runs only); every other statement runs under the caller's row-level
  *           security, so a schedule is loaded, listed or deleted only in its owner's isolation, and a scope's reads and
  *           deletes still bind `scope_id`. `tenant_id` is never written here: its default takes the call's
- *           `app.tenant_id`. `scheduler.watermarks` is a platform table.
+ *           `app.tenant_id`. `scheduler.watermarks` is a platform table. `scheduler.fires` (`scheduler.0003`, platform
+ *           form) records each fire once, in the owner's transaction of its push; its primary key decides a repeat
+ *           across owners.
  * Runtime: node
  * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0160 (raw SQL is
  *                     parameterised and typed with zod); ADR 0142 (drivers behind ports); ADR 0294 (decision 16).
@@ -28,6 +30,9 @@ const SCHEDULES = '"scheduler"."schedules"';
 
 /** The watermark table, in the package's schema. */
 const WATERMARKS = '"scheduler"."watermarks"';
+
+/** The fire table, in the package's schema. */
+const FIRES = '"scheduler"."fires"';
 
 /** The columns a schedule is read from. */
 const COLUMNS = "id, scope_id, scope_path, job_key, cron, time_zone, input, misfire, created_at";
@@ -134,7 +139,8 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
       .em()
       .execute(
         `with gone as (delete from ${SCHEDULES} where id = ? and scope_id = ? returning id), ` +
-          `marks as (delete from ${WATERMARKS} where schedule_key in (select id from gone)) ` +
+          `marks as (delete from ${WATERMARKS} where schedule_key in (select id from gone)), ` +
+          `fired as (delete from ${FIRES} where fire_key in (select id from gone)) ` +
           "select id from gone",
         [id, scope.id],
       );
@@ -182,6 +188,32 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
     return schedule;
   }
 
+  /** Records a fire of `key` at `at` once (see `ScheduleDriver.recordFire`). */
+  async recordFire(key: string, at: Date): Promise<boolean> {
+    // raw-sql: the fire's primary key decides a repeat across every owner, which the ORM's insert cannot target
+    const rows = await this.database
+      .em()
+      .execute(
+        `insert into ${FIRES} (fire_key, fire_at) values (?, ?) ` +
+          "on conflict (fire_key, fire_at) do nothing returning fire_key as id",
+        [key, at],
+      );
+    return IDS.parse(rows).length > 0;
+  }
+
+  /** Deletes the fires of `key` at or before `through` (see `ScheduleDriver.forgetFires`). */
+  async forgetFires(key: string, through: Date): Promise<void> {
+    // raw-sql: the fire table has no model; one parameterised delete under the caller's row-level security
+    await this.database
+      .em()
+      .execute(`delete from ${FIRES} where fire_key = ? and fire_at <= ?`, [key, through]);
+  }
+
+  /** Runs `work` in a `requiresNew` transaction of the database (see `ScheduleDriver.transaction`). */
+  transaction<T>(work: () => Promise<T>): Promise<T> {
+    return this.database.transaction(work, { requiresNew: true });
+  }
+
   /** Reads every watermark, by key (see `ScheduleDriver.watermarks`). */
   async watermarks(): Promise<ReadonlyMap<string, Date>> {
     // raw-sql: the watermark table has no model; one read of every key
@@ -191,7 +223,7 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
     return new Map(MARKS.parse(rows).map((row) => [row.schedule_key, row.ticked_at]));
   }
 
-  /** Upserts the watermark of each key to `at` (see `ScheduleDriver.advance`). */
+  /** Upserts the watermark of each key to `at`, never back (see `ScheduleDriver.advance`). */
   async advance(keys: readonly string[], at: Date): Promise<void> {
     if (keys.length === 0) return;
     // raw-sql: every key in one upsert, the keys bound as one JSON array
@@ -200,7 +232,8 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
       .execute(
         `insert into ${WATERMARKS} (schedule_key, ticked_at) ` +
           "select key, ?::timestamptz from jsonb_array_elements_text(?::jsonb) as keys(key) " +
-          "on conflict (schedule_key) do update set ticked_at = excluded.ticked_at",
+          "on conflict (schedule_key) do update " +
+          "set ticked_at = greatest(watermarks.ticked_at, excluded.ticked_at)",
         [at, JSON.stringify(keys)],
       );
   }

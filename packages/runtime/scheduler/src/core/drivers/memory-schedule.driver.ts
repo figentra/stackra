@@ -29,6 +29,9 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
   /** Watermark key to instant. */
   private readonly marks = new Map<string, Date>();
 
+  /** Fire key to the epoch milliseconds of its recorded fires. */
+  private readonly fires = new Map<string, Set<number>>();
+
   /** Stores a frozen copy of `schedule` (see `ScheduleDriver.add`). */
   add(schedule: Schedule): Promise<void> {
     // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: it is what the wire does (Dates become strings, undefined and functions drop)
@@ -41,6 +44,7 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
   remove(id: PublicId<"sch">, scope: ScopeRef): Promise<boolean> {
     if (this.stored.get(id)?.scope.id !== scope.id) return Promise.resolve(false);
     this.marks.delete(id);
+    this.fires.delete(id);
     return Promise.resolve(this.stored.delete(id));
   }
 
@@ -65,14 +69,41 @@ export class MemoryScheduleDriver extends Driver(ScheduleDriver) {
     return Promise.resolve(this.stored.get(id));
   }
 
+  /**
+   * Records a fire of `key` at `at` (see `ScheduleDriver.recordFire`).
+   *
+   * shortcut: memory has no transaction, so a push that fails after its record leaves the fire recorded and not
+   * pushed; the Postgres driver rolls both back together.
+   */
+  recordFire(key: string, at: Date): Promise<boolean> {
+    const fired = this.fires.get(key) ?? new Set<number>();
+    this.fires.set(key, fired);
+    if (fired.has(at.getTime())) return Promise.resolve(false);
+    fired.add(at.getTime());
+    return Promise.resolve(true);
+  }
+
+  /** Deletes the fires of `key` at or before `through` (see `ScheduleDriver.forgetFires`). */
+  forgetFires(key: string, through: Date): Promise<void> {
+    const fired = this.fires.get(key);
+    for (const at of fired ?? []) if (at <= through.getTime()) fired?.delete(at);
+    return Promise.resolve();
+  }
+
+  /** Runs `work` as it is: memory has no transaction (see `ScheduleDriver.transaction`). */
+  transaction<T>(work: () => Promise<T>): Promise<T> {
+    return work();
+  }
+
   /** Returns a copy of every watermark, by key (see `ScheduleDriver.watermarks`). */
   watermarks(): Promise<ReadonlyMap<string, Date>> {
     return Promise.resolve(new Map(this.marks));
   }
 
-  /** Sets the watermark of each key to `at` (see `ScheduleDriver.advance`). */
+  /** Moves the watermark of each key to `at`, never back (see `ScheduleDriver.advance`). */
   advance(keys: readonly string[], at: Date): Promise<void> {
-    for (const key of keys) this.marks.set(key, new Date(at));
+    for (const key of keys)
+      this.marks.set(key, new Date(Math.max(at.getTime(), this.marks.get(key)?.getTime() ?? 0)));
     return Promise.resolve();
   }
 }

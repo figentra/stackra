@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemoryScheduleDriver`: it stores schedules with their input as JSON, lists them by scope,
  *          claims every one with no owner and loads one by id, deletes one only from its own scope (with its
- *          watermark), and keeps watermarks by key.
+ *          watermark and fires), records each fire once, and keeps watermarks by key, never moving one back.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0148 (decision 5).
@@ -74,6 +74,32 @@ describe(MemoryScheduleDriver, () => {
     await expect(driver.remove("sch_1", acme)).resolves.toBe(true);
     await expect(driver.remove("sch_1", acme)).resolves.toBe(false);
     expect([...(await driver.watermarks()).keys()]).toEqual(["orders.order.expire_unpaid@1"]);
+  });
+
+  it("records each fire once, forgets fires through an instant, and deletes a schedule's fires with it", async () => {
+    const driver = new MemoryScheduleDriver();
+    const later = new Date(NOON.getTime() + 60_000);
+    await expect(driver.recordFire("sch_1", NOON)).resolves.toBe(true);
+    await expect(driver.recordFire("sch_1", NOON)).resolves.toBe(false);
+    await expect(driver.recordFire("sch_1", later)).resolves.toBe(true);
+    await driver.forgetFires("sch_1", NOON);
+    await expect(driver.recordFire("sch_1", NOON)).resolves.toBe(true);
+    await expect(driver.recordFire("sch_1", later)).resolves.toBe(false);
+    await driver.add(scheduleOf("sch_1", acme));
+    await driver.remove("sch_1", acme);
+    await expect(driver.recordFire("sch_1", later)).resolves.toBe(true);
+  });
+
+  it("runs work as it is, with no transaction", async () => {
+    await expect(new MemoryScheduleDriver().transaction(async () => 7)).resolves.toBe(7);
+  });
+
+  it("never moves a watermark back", async () => {
+    const driver = new MemoryScheduleDriver();
+    const later = new Date(NOON.getTime() + 60_000);
+    await driver.advance(["a"], later);
+    await driver.advance(["a"], NOON);
+    expect((await driver.watermarks()).get("a")).toEqual(later);
   });
 
   it("sets and moves watermarks by key, as copies", async () => {

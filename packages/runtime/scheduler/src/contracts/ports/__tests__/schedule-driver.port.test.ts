@@ -33,6 +33,16 @@ class NullScheduleDriver extends Driver(ScheduleDriver) {
     return undefined;
   }
 
+  async recordFire(): Promise<boolean> {
+    return true;
+  }
+
+  async forgetFires(): Promise<void> {}
+
+  transaction<T>(work: () => Promise<T>): Promise<T> {
+    return work();
+  }
+
   async watermarks(): Promise<ReadonlyMap<string, Date>> {
     return new Map();
   }

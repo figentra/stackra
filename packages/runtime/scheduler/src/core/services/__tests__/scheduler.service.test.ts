@@ -22,7 +22,6 @@ import { buildConfig } from "@stackra/config";
 import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind, Clock, Duration, Logger } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
-import { Database } from "@stackra/database";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { MemoryQueueDriver, QueueService, registerJobs } from "@stackra/queue";
 import type { QueuedJob } from "@stackra/queue/contracts";
@@ -445,24 +444,10 @@ const scheduleIn = (driver: MemoryScheduleDriver, id: `sch_${string}`, scope: Sc
 describe("SchedulerService across owners", () => {
   it("claims under the lock, then pushes each owner's runs after it, each in its own transaction", async () => {
     const isolation = new RecordingIsolation();
-    const transactions: unknown[] = [];
-    const database = {
-      transaction: (work: () => Promise<unknown>, options: unknown) => {
-        transactions.push(options);
-        return work();
-      },
-    };
     const driver = ownedDriver({ sch_acme: "scp_acme" });
-    const { scheduler, jobs, locks } = setup(
-      {},
-      [globex],
-      [
-        [CallIsolation, isolation],
-        [Database, database],
-      ],
-      driver,
-    );
+    const { scheduler, jobs, locks } = setup({}, [globex], [[CallIsolation, isolation]], driver);
     await scheduleIn(driver, "sch_acme", acme);
+    const transaction = vi.spyOn(driver, "transaction");
     const held: boolean[] = [];
     const push = jobs.push.bind(jobs);
     jobs.push = async (job) => {
@@ -473,8 +458,7 @@ describe("SchedulerService across owners", () => {
     // the platform purge cron, the per-scope cron in globex, and acme's schedule: one transaction each
     expect(await scheduler.tick(at("12:00:30"))).toMatchObject({ ran: true, pushed: 3 });
     expect(held).toEqual([false, false, false]);
-    expect(transactions).toHaveLength(3);
-    expect(transactions).toEqual(transactions.map(() => ({ requiresNew: true })));
+    expect(transaction).toHaveBeenCalledTimes(3);
     expect(isolation.runs).toEqual(
       expect.arrayContaining([
         [{ kind: ActorKind.System, id: "sys_scheduler" }, undefined],
@@ -486,7 +470,7 @@ describe("SchedulerService across owners", () => {
     expect(digest).toMatchObject({ scope: acme, input: { audience: "sch_acme" } });
   });
 
-  it("refuses an owned schedule with no isolation bound after pushing the others, its watermark moved", async () => {
+  it("refuses an owned schedule with no isolation bound after pushing the others, keeping its watermark", async () => {
     const driver = ownedDriver({ sch_acme: "scp_acme" });
     const { scheduler, jobs } = setup({}, [], [], driver);
     await scheduleIn(driver, "sch_acme", acme);
@@ -497,7 +481,41 @@ describe("SchedulerService across owners", () => {
     const keys = (await stored(jobs)).map((job) => job.input);
     expect(keys).toEqual(expect.arrayContaining([{ audience: "sch_platform" }]));
     expect(keys).not.toContainEqual({ audience: "sch_acme" });
-    expect((await driver.watermarks()).get("sch_acme")).toEqual(at("12:00:30"));
+    const marks = await driver.watermarks();
+    expect(marks.has("sch_acme")).toBe(false);
+    expect(marks.get("sch_platform")).toEqual(at("12:00:30"));
+  });
+
+  it("pushes each fire exactly once when a tick dies after its pushes and before its watermark moves", async () => {
+    const driver = new MemoryScheduleDriver();
+    const { scheduler, jobs } = setup({}, [acme], [], driver);
+    await scheduleIn(driver, "sch_acme", acme);
+    const advance = vi.spyOn(driver, "advance").mockRejectedValueOnce(new Error("crash"));
+    await expect(scheduler.tick(at("12:00:30"))).rejects.toThrow("crash");
+    // the platform purge cron, the per-scope cron in acme, and acme's schedule were pushed; no watermark moved
+    expect((await driver.watermarks()).size).toBe(0);
+    expect(await scheduler.tick(at("12:00:50"))).toMatchObject({ ran: true, pushed: 0 });
+    expect(advance).toHaveBeenCalledTimes(2);
+    const keys = (await stored(jobs)).map((job) => job.key).sort();
+    expect(keys).toEqual([
+      "access_log.entry.purge@1",
+      "digests.digest.send@1",
+      "orders.order.expire_unpaid@1",
+    ]);
+  });
+
+  it("pushes a fire once even when its first job finished before the next tick", async () => {
+    const driver = new MemoryScheduleDriver();
+    const { scheduler, jobs } = setup({}, [], [], driver);
+    await scheduleIn(driver, "sch_acme", acme);
+    vi.spyOn(driver, "advance").mockRejectedValueOnce(new Error("crash"));
+    await expect(scheduler.tick(at("12:00:30"))).rejects.toThrow("crash");
+    // the worker ran and removed every job: nothing live holds a unique key any more
+    const first = await stored(jobs);
+    expect(first).toHaveLength(2);
+    for (const job of first) await jobs.remove(job.id);
+    expect(await scheduler.tick(at("12:00:50"))).toMatchObject({ pushed: 0 });
+    expect(await stored(jobs)).toEqual([]);
   });
 
   it("fails the tick on a claimed schedule that does not load in its owner", async () => {
@@ -512,26 +530,14 @@ describe("SchedulerService across owners", () => {
 
   it("fires a per-scope cron in each scope's own isolation and transaction", async () => {
     const isolation = new RecordingIsolation();
-    const transactions: unknown[] = [];
-    const database = {
-      transaction: (work: () => Promise<unknown>, options: unknown) => {
-        transactions.push(options);
-        return work();
-      },
-    };
-    const { scheduler } = setup(
-      {},
-      [acme, globex],
-      [
-        [CallIsolation, isolation],
-        [Database, database],
-      ],
-    );
+    const driver = new MemoryScheduleDriver();
+    const transaction = vi.spyOn(driver, "transaction");
+    const { scheduler } = setup({}, [acme, globex], [[CallIsolation, isolation]], driver);
     await expect(scheduler.fire("orders.order.expire_unpaid@1")).resolves.toBe(2);
     expect(isolation.runs.map(([actor, scope]) => [actor.scopeId, scope])).toEqual([
       ["scp_acme", acme],
       ["scp_globex", globex],
     ]);
-    expect(transactions).toEqual([{ requiresNew: true }, { requiresNew: true }]);
+    expect(transaction).toHaveBeenCalledTimes(2);
   });
 });

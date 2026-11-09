@@ -7,7 +7,10 @@
  *          claims and advances the watermarks there, then pushes each due schedule's runs, and each per-scope cron's,
  *          in a transaction of its own (`requiresNew`) in the owner's isolation, never in the lock's transaction; a
  *          second tick of the minute pushes nothing. An owned schedule with no isolation bound fails the tick after
- *          the other owners' runs are pushed.
+ *          the other owners' runs are pushed. Dispatch is at least once with no duplicate: a tick that dies after its
+ *          pushes and before its watermark moves is followed by one that pushes nothing again, also when the first
+ *          jobs already finished (the fire records in `scheduler.fires` outlast them), and a push that fails rolls its
+ *          fire back with it and keeps its key's watermark, so the next tick pushes it exactly once.
  * Boundary: integration tier (`.int`): runs only where `TESTBED_POSTGRES_HOST` names a Postgres and is skipped elsewhere.
  *           One fresh database for the file (`ownerPostgres`); the superuser seeds and checks, everything under test
  *           runs as the service role (`asService`, `OwnerIsolation`). The jobs go to a memory queue whose push records
@@ -23,7 +26,7 @@ import { buildConfig } from "@stackra/config";
 import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind, Clock, Logger } from "@stackra/contracts";
 import type { ScopeRef } from "@stackra/contracts";
-import { Database } from "@stackra/database";
+import type { Database } from "@stackra/database";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { MemoryQueueDriver, QueueService, registerJobs } from "@stackra/queue";
 import type { QueuedJob } from "@stackra/queue/contracts";
@@ -52,6 +55,14 @@ const ROOT: ScopeRef = { id: "scp_01jab3k4m5n6p7q8r9s0t1v2w7", path: "platform" 
 
 /** The minute every schedule here runs in. */
 const TICK = new Date("2026-11-09T12:00:30.000Z");
+
+/** The same minute on the next days, for the crash cases. */
+const DAY_2 = new Date("2026-11-10T12:00:30.000Z");
+const DAY_3 = new Date("2026-11-11T12:00:30.000Z");
+const DAY_4 = new Date("2026-11-12T12:00:30.000Z");
+
+/** Twenty seconds after `at`: the next tick of the same minute. */
+const later = (at: Date): Date => new Date(at.getTime() + 20_000);
 
 class FixedClock extends Clock {
   now(): Date {
@@ -103,6 +114,9 @@ interface Pushed {
 class RecordingQueueDriver extends MemoryQueueDriver {
   readonly pushed: Pushed[] = [];
 
+  /** An owner whose pushes fail, as a queue that refuses them would. */
+  failFor: string | undefined;
+
   /** The database each push reads its setting and transaction from. */
   private readonly database: Database;
 
@@ -117,10 +131,15 @@ class RecordingQueueDriver extends MemoryQueueDriver {
       .execute(
         "select coalesce(current_setting('app.tenant_id', true), '') as owner, txid_current()::text as tx",
       )) as { owner: string; tx: string }[];
+    if (row?.owner === this.failFor) throw new Error(`the queue refused ${row?.owner}`);
     this.pushed.push({ owner: row?.owner ?? "?", tx: row?.tx ?? "?", job });
     return super.push(job);
   }
 }
+
+/** The key and scope of every job pushed, sorted. */
+const runsOf = (jobs: RecordingQueueDriver) =>
+  jobs.pushed.map((push) => `${push.job.key} ${push.job.scope?.id ?? "-"}`).sort();
 
 /** A container binding `bound`. */
 const containerOf = (bound: readonly (readonly [AnyClass, object])[]): Container => {
@@ -232,21 +251,19 @@ describe.skipIf(HOST === undefined)("scheduler row security and the tick on Post
   });
 
   it("refuses an owned schedule with no isolation bound after pushing the platform's runs", async () => {
-    const { scheduler, jobs } = schedulerOf([[Database, postgres.database]]);
+    const { scheduler, jobs } = schedulerOf([]);
     await expect(asService(postgres, undefined, () => scheduler.tick(TICK))).rejects.toBeInstanceOf(
       ScheduleRowIsolationMissingError,
     );
     expect(jobs.pushed.map((push) => push.job.input)).toEqual([{ audience: "sch_platform" }]);
-    // the test's no-owner transaction around the tick rolled back with it, so the next tick starts afresh
+    // the test's no-owner transaction around the tick rolled back with it (no watermark moved); the platform
+    // push's fire record committed in its own transaction, so the next tick does not push that run again
     expect(await superuser("select schedule_key from scheduler.watermarks")).toEqual([]);
   });
 
   it("claims and advances under the lock, then pushes each owner's runs in its own transaction and owner", async () => {
     const { scheduler, jobs } = schedulerOf(
-      [
-        [CallIsolation, isolation],
-        [Database, postgres.database],
-      ],
+      [[CallIsolation, isolation]],
       [ACME_SCOPE, GLOBEX_SCOPE],
     );
     const lock: string[] = [];
@@ -260,7 +277,8 @@ describe.skipIf(HOST === undefined)("scheduler row security and the tick on Post
     };
     try {
       const result = await asService(postgres, undefined, () => scheduler.tick(TICK));
-      expect(result).toEqual({ ran: true, pushed: 5, skipped: [] });
+      // the refused tick above already pushed the platform schedule's noon run and recorded its fire: not again
+      expect(result).toEqual({ ran: true, pushed: 4, skipped: [] });
     } finally {
       driver.advance = advance;
     }
@@ -271,12 +289,11 @@ describe.skipIf(HOST === undefined)("scheduler row security and the tick on Post
         [GLOBEX, "stock.stock.recount@1", GLOBEX],
         [ACME, "digests.digest.send@1", ACME],
         [GLOBEX, "digests.digest.send@1", GLOBEX],
-        ["", "digests.digest.send@1", ROOT.id],
       ]),
     );
-    expect(byOwner).toHaveLength(5);
+    expect(byOwner).toHaveLength(4);
     const transactions = new Set(jobs.pushed.map((push) => push.tx));
-    expect(transactions.size).toBe(5);
+    expect(transactions.size).toBe(4);
     expect(lock).toHaveLength(1);
     expect(transactions.has(lock[0] ?? "")).toBe(false);
     expect(
@@ -286,5 +303,99 @@ describe.skipIf(HOST === undefined)("scheduler row security and the tick on Post
     ).toEqual(["sch_acme", "sch_globex", "sch_platform", "stock.stock.recount@1"]);
     const again = await asService(postgres, undefined, () => scheduler.tick(TICK));
     expect(again.pushed).toBe(0);
+  });
+
+  /** The fire keys recorded at noon of `at`'s day, with their owners. */
+  const firesOn = async (at: Date) =>
+    (
+      await superuser(
+        "select fire_key, tenant_id from scheduler.fires where fire_at = ? order by fire_key",
+        [new Date(at.getTime() - 30_000)],
+      )
+    ).map((row) => [row["fire_key"], row["tenant_id"]]);
+
+  /** A scheduler whose next advance fails, as a tick that dies after its pushes. */
+  const crashing = () => {
+    const made = schedulerOf([[CallIsolation, isolation]], [ACME_SCOPE, GLOBEX_SCOPE]);
+    const advance = driver.advance.bind(driver);
+    driver.advance = async () => {
+      driver.advance = advance;
+      throw new Error("crash after the pushes");
+    };
+    return made;
+  };
+
+  /** Every run of one day: two recount runs, three digest runs, each in its owner. */
+  const EVERY_RUN = [
+    `digests.digest.send@1 ${ACME}`,
+    `digests.digest.send@1 ${GLOBEX}`,
+    `digests.digest.send@1 ${ROOT.id}`,
+    `stock.stock.recount@1 ${ACME}`,
+    `stock.stock.recount@1 ${GLOBEX}`,
+  ].sort();
+
+  it("pushes each run exactly once when a tick dies after its pushes and before its watermark moves", async () => {
+    const { scheduler, jobs } = crashing();
+    await expect(asService(postgres, undefined, () => scheduler.tick(DAY_2))).rejects.toThrow(
+      "crash after the pushes",
+    );
+    expect(runsOf(jobs)).toEqual(EVERY_RUN);
+    // each fire was recorded in its owner, committed with its push
+    expect(await firesOn(DAY_2)).toEqual([
+      ["sch_acme", ACME],
+      ["sch_globex", GLOBEX],
+      ["sch_platform", null],
+      [`stock.stock.recount@1:${ACME}`, ACME],
+      [`stock.stock.recount@1:${GLOBEX}`, GLOBEX],
+    ]);
+    const marks = await superuser("select max(ticked_at) as at from scheduler.watermarks");
+    expect(new Date(String(marks[0]?.["at"]))).toEqual(TICK);
+    const again = await asService(postgres, undefined, () => scheduler.tick(later(DAY_2)));
+    expect(again).toEqual({ ran: true, pushed: 0, skipped: [] });
+    expect(runsOf(jobs)).toEqual(EVERY_RUN);
+  });
+
+  it("pushes each run exactly once when its first job finished before the next tick", async () => {
+    const { scheduler, jobs } = crashing();
+    await expect(asService(postgres, undefined, () => scheduler.tick(DAY_3))).rejects.toThrow(
+      "crash after the pushes",
+    );
+    // the worker ran every job and removed it: no live job holds any key any more
+    for (const push of jobs.pushed) await jobs.remove(push.job.id);
+    expect(await jobs.load(jobs.pushed[0]?.job.id ?? "job_x")).toBeUndefined();
+    const again = await asService(postgres, undefined, () => scheduler.tick(later(DAY_3)));
+    expect(again.pushed).toBe(0);
+    expect(runsOf(jobs)).toEqual(EVERY_RUN);
+  });
+
+  it("rolls a failed push's fire back with it, keeps that key's watermark, and pushes it once on the next tick", async () => {
+    const { scheduler, jobs } = schedulerOf(
+      [[CallIsolation, isolation]],
+      [ACME_SCOPE, GLOBEX_SCOPE],
+    );
+    jobs.failFor = GLOBEX;
+    // caught inside the no-owner transaction, so the advance it made commits as the lock's would
+    const refused = await asService(postgres, undefined, () =>
+      scheduler.tick(DAY_4).catch((error: unknown) => error),
+    );
+    expect(String(refused)).toContain(`the queue refused ${GLOBEX}`);
+    expect((await firesOn(DAY_4)).map((row) => row[0])).toEqual([
+      "sch_acme",
+      "sch_platform",
+      `stock.stock.recount@1:${ACME}`,
+    ]);
+    const marks = new Map(
+      (await superuser("select schedule_key, ticked_at from scheduler.watermarks")).map((row) => [
+        row["schedule_key"],
+        new Date(String(row["ticked_at"])),
+      ]),
+    );
+    expect(marks.get("sch_acme")).toEqual(DAY_4);
+    expect(marks.get("sch_globex")).toEqual(later(DAY_3));
+    expect(marks.get("stock.stock.recount@1")).toEqual(later(DAY_3));
+    jobs.failFor = undefined;
+    const again = await asService(postgres, undefined, () => scheduler.tick(later(DAY_4)));
+    expect(again.pushed).toBe(2);
+    expect(runsOf(jobs)).toEqual(EVERY_RUN);
   });
 });

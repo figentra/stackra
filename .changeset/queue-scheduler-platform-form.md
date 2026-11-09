@@ -22,9 +22,14 @@ input and missed-run policy, unschedule it, migrate again, then schedule it agai
 The worker loads each reserved job in its owner and records every outcome there (removed, retried, released or
 dead-lettered); it queues a chain's next link in a transaction of its own (`requiresNew`) in the job's owner. A job a
 broker delivered keeps its dead letter in its own scope's isolation. The scheduler's lock now covers only the claim
-of every owner's schedules and the watermark advance: each owner's runs (a schedule's, or a per-scope cron's in one
-scope) are pushed after it, in a `requiresNew` transaction in that owner's isolation. A tick that dies between the
-advance and its pushes loses those runs rather than pushing them twice.
+of every owner's schedules and, taken again after the pushes, the watermark advance: each owner's runs (a schedule's,
+or a per-scope cron's in one scope) are pushed between them, in a `requiresNew` transaction in that owner's isolation.
+Dispatch is at least once with no duplicate: migration `scheduler.0003_create_fires` adds `scheduler.fires` (platform
+form, keyed by fire key and fire time), and each run is pushed only when its fire record is new, in the push's own
+transaction, before the watermark moves. A tick that dies between the pushes and the advance pushes nothing again,
+even when the first jobs already finished; a key whose push failed keeps its watermark. A watermark never moves back.
+`ScheduleDriver` gains `recordFire(key, at)` and `forgetFires(key, through)`; its `remove` also deletes the
+schedule's fires.
 
 Breaking port changes, for a custom driver:
 
@@ -38,5 +43,7 @@ Breaking port changes, for a custom driver:
 New: `JobClaimNotLoadedError` and `JobRowIsolationMissingError` (`@stackra/queue`), `ScheduleClaimNotLoadedError` and
 `ScheduleRowIsolationMissingError` (`@stackra/scheduler`): a claimed row that does not load in its owner, or an owned
 row with no `CallIsolation` bound, fails the work; it is never skipped. `queue:failed` and `queue:retry` inject the
-`Container` and `SchedulerService` takes it as its last argument; each reads `CallIsolation` (and the scheduler
-`Database`) from it optionally, so an app without tenancy still boots and runs its platform rows as before.
+`Container` and `SchedulerService` takes it as its last argument; each reads `CallIsolation` from it optionally, so
+an app without tenancy still boots and runs its platform rows as before. `ScheduleDriver` also gains
+`transaction(work)` (a `requiresNew` transaction on Postgres, `work` as it is in memory), in which each owner's fire
+records and pushes commit together.

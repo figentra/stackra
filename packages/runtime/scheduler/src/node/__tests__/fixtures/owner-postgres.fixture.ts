@@ -27,12 +27,17 @@ import { PostgresDatabaseDriver } from "@stackra/database/node";
 
 import { CreateSchedulesMigration } from "#node/database/migrations/0001-create-schedules.migration";
 import { ContractSchedulerTenancyMigration } from "#node/database/migrations/0002-contract-scheduler-tenancy.migration";
+import { CreateFiresMigration } from "#node/database/migrations/0003-create-fires.migration";
 
 /** The testbed's throwaway Postgres; unset on the Mac and in plain CI, where the files are skipped. */
 export const HOST = process.env["TESTBED_POSTGRES_HOST"];
 
 /** The scheduler migrations in apply order. */
-const MIGRATIONS = [CreateSchedulesMigration, ContractSchedulerTenancyMigration] as const;
+const MIGRATIONS = [
+  CreateSchedulesMigration,
+  ContractSchedulerTenancyMigration,
+  CreateFiresMigration,
+] as const;
 
 /** Each scheduler migration compiled, in apply order. */
 export function schedulerMigrations(): readonly CompiledMigration[] {

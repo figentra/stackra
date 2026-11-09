@@ -34,7 +34,9 @@ decisions 4 and 5). Member at `packages/runtime/scheduler` (`tier:lib`), in the 
   `handle` and never do work in a tick.
 - One runner per tick through `Locks.tryWith("scheduler:tick", ...)`; the watermarks, not the lock, keep a second tick
   of the same minute from pushing twice. The lock covers only the claim and the watermark advance (ADR 0239
-  amendment, decision 5); each owner's pushes run after it, in a `requiresNew` transaction in that owner's isolation.
+  amendment, decision 5); each owner's pushes run between them, in a `requiresNew` transaction in that owner's
+  isolation. Push first, then advance (at least once); a fire record (`recordFire`, in the push's transaction) drops
+  the copy a re-tick would push. Never advance a key whose push failed, and never move a watermark back.
 - A driver stores; it never parses a cron, reads a clock or pushes. The service passes every instant.
 - The cron parser stays the classic five fields (the shape `Action({ job: { cron } })` checks). No croner: no catalog
   carries it, and a new dependency needs `dependency-steward` and the owner.

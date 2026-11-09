@@ -92,6 +92,7 @@ describe(PostgresScheduleDriver, () => {
     const [statement] = gone.statements;
     expect(statement?.sql).toContain("where id = ? and scope_id = ?");
     expect(statement?.sql).toContain('delete from "scheduler"."watermarks"');
+    expect(statement?.sql).toContain('delete from "scheduler"."fires"');
     expect(statement?.params).toEqual(["sch_1", "scp_acme"]);
     expectBound(gone.statements);
     const kept = databaseWith([]);
@@ -171,6 +172,41 @@ describe(PostgresScheduleDriver, () => {
     await expect(new PostgresScheduleDriver(database).schedules(acme)).rejects.toThrow();
   });
 
+  it("records a fire once by its key and time, and forgets a key's fires through an instant", async () => {
+    const first = databaseWith([{ id: "sch_1" }]);
+    await expect(
+      new PostgresScheduleDriver(first.database).recordFire("sch_1", NOON),
+    ).resolves.toBe(true);
+    expect(first.statements[0]?.sql).toContain(
+      'insert into "scheduler"."fires" (fire_key, fire_at)',
+    );
+    expect(first.statements[0]?.sql).toContain("on conflict (fire_key, fire_at) do nothing");
+    expect(first.statements[0]?.params).toEqual(["sch_1", NOON]);
+    expectBound(first.statements);
+    const again = databaseWith([]);
+    await expect(
+      new PostgresScheduleDriver(again.database).recordFire("sch_1", NOON),
+    ).resolves.toBe(false);
+    const forget = databaseWith([]);
+    await new PostgresScheduleDriver(forget.database).forgetFires("sch_1", NOON);
+    expect(forget.statements[0]?.sql).toBe(
+      'delete from "scheduler"."fires" where fire_key = ? and fire_at <= ?',
+    );
+    expect(forget.statements[0]?.params).toEqual(["sch_1", NOON]);
+  });
+
+  it("runs work in a transaction of its own", async () => {
+    const options: unknown[] = [];
+    const database = {
+      transaction: (work: () => Promise<unknown>, given: unknown) => {
+        options.push(given);
+        return work();
+      },
+    } as unknown as Database;
+    await expect(new PostgresScheduleDriver(database).transaction(async () => 7)).resolves.toBe(7);
+    expect(options).toEqual([{ requiresNew: true }]);
+  });
+
   it("reads every watermark by key", async () => {
     const { database } = databaseWith([
       { schedule_key: "access_log.entry.purge@1", ticked_at: NOON.toISOString() },
@@ -186,6 +222,7 @@ describe(PostgresScheduleDriver, () => {
     await driver.advance([], NOON);
     expect(statements).toHaveLength(1);
     expect(statements[0]?.sql).toContain("on conflict (schedule_key) do update");
+    expect(statements[0]?.sql).toContain("greatest(watermarks.ticked_at, excluded.ticked_at)");
     expect(statements[0]?.params).toEqual([NOON, '["access_log.entry.purge@1","sch_1"]']);
     expectBound(statements);
   });
