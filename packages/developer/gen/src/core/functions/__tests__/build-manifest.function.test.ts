@@ -1425,3 +1425,70 @@ describe("buildManifest's relay section (STA-1910)", () => {
     expect("relay" in buildManifest(INBOX_IR).manifest).toBe(false);
   });
 });
+
+/** A class of the orders module at `file`. */
+function ordersClass(file: string, name: string, kind: string): DeclaredClass {
+  return {
+    ...declared("CommerceConfig"),
+    name,
+    kind,
+    module: "orders",
+    file,
+    importPath: `#modules/orders/${file}`,
+    options: {},
+    deps: [],
+  };
+}
+
+describe("buildManifest's seeders and factories sections (STA-2061)", () => {
+  const ir: MemberIR = {
+    ...COMMERCE_IR,
+    classes: [
+      ...COMMERCE_IR.classes,
+      ordersClass(
+        "src/modules/orders/database/seeders/demo.seeder.ts",
+        "OrdersDemoSeeder",
+        "seeder",
+      ),
+      {
+        ...ordersClass(
+          "src/modules/orders/database/factories/order.factory.ts",
+          "OrderFactory",
+          "factory",
+        ),
+        partner: { name: "Order", from: "#modules/orders/models/order.model" },
+      },
+      ordersClass(
+        "src/modules/orders/database/factories/loose.factory.ts",
+        "LooseFactory",
+        "factory",
+      ),
+    ],
+  };
+
+  it("records the seeders and the partnered factories (@covers sta-2061:FR-002, FR-003)", () => {
+    const { manifest } = buildManifest(ir);
+    expect(manifest["seeders"]).toEqual([
+      {
+        key: "orders.demo",
+        module: "orders",
+        profile: "demo",
+        class: "OrdersDemoSeeder",
+        file: "src/modules/orders/database/seeders/demo.seeder.ts",
+      },
+    ]);
+    expect(manifest["factories"]).toEqual([
+      {
+        class: "OrderFactory",
+        file: "src/modules/orders/database/factories/order.factory.ts",
+        model: "Order",
+      },
+    ]);
+  });
+
+  it("writes neither section for a member without them (@covers sta-2061:FR-002)", () => {
+    const { manifest } = buildManifest(COMMERCE_IR);
+    expect(manifest).not.toHaveProperty("seeders");
+    expect(manifest).not.toHaveProperty("factories");
+  });
+});

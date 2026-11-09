@@ -766,6 +766,13 @@
       ]
     }
   ],
+  "factories": [
+    {
+      "class": "AccessLogEntryFactory",
+      "file": "src/node/database/factories/access-log-entry.factory.ts",
+      "model": "AccessLogEntry"
+    }
+  ],
   "schemas": {
     "access_log.AccessRecorded": {
       "type": "object",

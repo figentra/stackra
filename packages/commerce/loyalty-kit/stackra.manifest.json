@@ -14,6 +14,20 @@
   ],
   "facets": [
     {
+      "name": "Setting",
+      "kind": "setting",
+      "target": "field",
+      "from": "@stackra/settings",
+      "targets": [
+        "LoyaltyKitSettings.earnPerMinor",
+        "LoyaltyKitSettings.pointValueMinor",
+        "LoyaltyKitSettings.maxRedeemPercent",
+        "LoyaltyKitSettings.expiryMonths",
+        "LoyaltyKitSettings.tiers",
+        "LoyaltyTierSettings.goldFrom"
+      ]
+    },
+    {
       "name": "Index",
       "kind": "index",
       "target": "class",
@@ -1000,6 +1014,27 @@
       ]
     }
   ],
+  "seeders": [
+    {
+      "key": "loyalty_kit.demo",
+      "module": "loyalty_kit",
+      "profile": "demo",
+      "class": "LoyaltyKitDemoSeeder",
+      "file": "src/node/database/seeders/demo.seeder.ts"
+    }
+  ],
+  "factories": [
+    {
+      "class": "LedgerEntryFactory",
+      "file": "src/node/database/factories/ledger-entry.factory.ts",
+      "model": "LedgerEntry"
+    },
+    {
+      "class": "LoyaltyAccountFactory",
+      "file": "src/node/database/factories/loyalty-account.factory.ts",
+      "model": "LoyaltyAccount"
+    }
+  ],
   "policies": [
     {
       "class": "LoyaltyAccountPolicy",
@@ -1124,6 +1159,52 @@
       }
     }
   },
+  "settings": [
+    {
+      "key": "loyalty_kit",
+      "class": "LoyaltyKitSettings",
+      "module": "loyalty_kit",
+      "file": "src/node/loyalty-kit.settings.ts",
+      "keys": [
+        {
+          "path": "earnPerMinor",
+          "type": "number"
+        },
+        {
+          "path": "pointValueMinor",
+          "type": "integer"
+        },
+        {
+          "path": "maxRedeemPercent",
+          "type": "integer"
+        },
+        {
+          "path": "expiryMonths",
+          "type": "integer"
+        },
+        {
+          "path": "tiers.silverFrom",
+          "type": "integer"
+        },
+        {
+          "path": "tiers.goldFrom",
+          "type": "integer"
+        },
+        {
+          "path": "stampsPerVisit",
+          "type": "integer"
+        },
+        {
+          "path": "stampsPerCard",
+          "type": "integer"
+        },
+        {
+          "path": "isActive",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
   "schemas": {
     "loyalty_kit.DebitOutcome": {
       "type": "string",

@@ -1,0 +1,4 @@
+import { Factory } from "@stackra/database/testing";
+import type { Order } from "#node/models/order.model";
+
+export class OrderFactory extends Factory<Order> {}
