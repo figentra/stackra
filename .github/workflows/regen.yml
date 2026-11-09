@@ -1,0 +1,87 @@
+# Stackra file contract:
+# Purpose: regen, step 1 of 2. On a pull request labelled `regen`, regenerate what a lane cannot produce without a
+#          workstation (owner, 2026-11-09: GitHub CI is the only gate and nothing runs on the Mac): the lockfile after a
+#          catalog change (`pnpm install --lockfile-only`), then every member's gen output (`turbo run gen`:
+#          stackra.manifest.json, openapi.json, entities.gen.ts). The difference is uploaded as a patch with the pull
+#          request's number and head; "Regen (push)" checks it and pushes it as stackra-bot.
+# Boundary: holds no write credential and never runs on a fork or on main; reads only the turbo cache scope. The two
+#           Uniwind Pro members are left out, as in the Quality Gate.
+# Owner: release-operations
+# Governing contract: ADR 0019 (supply chain), ADR 0525 (sops scopes), ADR 0294 R10 (committed contracts).
+name: Regen
+
+on:
+  pull_request:
+    branches: [main]
+    types: [labeled, synchronize]
+
+permissions: {}
+
+concurrency:
+  group: regen-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  regen:
+    name: Regen (build the patch)
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'regen')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # ADR 0525: the sops decrypt of ci/build/turbo only
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      - name: Turborepo remote cache (sops)
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
+        with:
+          scope: ci/build/turbo
+
+      # The lockfile first: a catalog change in pnpm-workspace.yaml leaves it stale, and a frozen install refuses it.
+      - name: Lockfile (pnpm install --lockfile-only)
+        run: pnpm install --lockfile-only
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
+
+      - name: Gen (turbo run gen)
+        run: pnpm exec turbo run gen --filter='!@figentra/mobile' --filter='!@figentra/playground'
+
+      # The patch, the pull request and the head it was made from. An empty patch means nothing to regenerate.
+      - name: Patch
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git add -A
+          mkdir -p "$RUNNER_TEMP/regen"
+          git diff --cached --binary > "$RUNNER_TEMP/regen/regen.patch"
+          printf '%s\n' "$PR" > "$RUNNER_TEMP/regen/pr"
+          printf '%s\n' "$HEAD_SHA" > "$RUNNER_TEMP/regen/head"
+          if [ -s "$RUNNER_TEMP/regen/regen.patch" ]; then
+            git diff --cached --stat
+          else
+            echo "::notice title=Regen::nothing to regenerate"
+          fi
+
+      - name: Upload the patch
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: regen
+          path: ${{ runner.temp }}/regen/
+          retention-days: 1
