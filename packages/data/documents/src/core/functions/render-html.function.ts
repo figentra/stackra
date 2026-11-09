@@ -39,6 +39,11 @@ function styleOf(document: ResolvedDocument): string {
     ".pair{display:grid;grid-template-columns:1fr 1fr;gap:4mm}",
     "table{width:100%;border-collapse:collapse;margin:0 0 2mm}",
     "th,td{border-bottom:.2mm solid #000;padding:1mm}",
+    ".brand-logo img{height:16mm;width:auto;max-width:60mm}",
+    // the accent reaches only the title and the table rules; it is a checked `#RRGGBB`, so nothing else enters the sheet
+    document.brand.accent === null
+      ? ""
+      : `h1{color:${document.brand.accent}}th{border-bottom-color:${document.brand.accent}}`,
     fonts,
   ].join("");
 }
@@ -149,5 +154,10 @@ export function renderHtml(document: ResolvedDocument): string {
       }
     })
     .join("");
-  return `<!doctype html><html lang="${escapeHtml(primary?.code ?? "")}" dir="${primary?.direction ?? "ltr"}"><head><meta charset="utf-8"><title>${escapeHtml(template.name)}</title><style>${styleOf(document)}</style></head><body>${body}</body></html>`;
+  const { logo } = document.brand;
+  const brand =
+    logo === null
+      ? ""
+      : `<figure class="brand-logo start"><img src="data:${logo.mediaType};base64,${base64Of(logo.bytes)}" alt=""></figure>`;
+  return `<!doctype html><html lang="${escapeHtml(primary?.code ?? "")}" dir="${primary?.direction ?? "ltr"}"><head><meta charset="utf-8"><title>${escapeHtml(template.name)}</title><style>${styleOf(document)}</style></head><body>${brand}${body}</body></html>`;
 }

@@ -14,8 +14,8 @@ export interface ParsedApiKey {
   /** The kind its prefix names. */
   readonly kind: ApiKeyKind;
 
-  /** The mode its text names after the prefix; `live` for a key with none (minted before modes). */
-  readonly mode: ApiKeyMode;
+  /** The mode its text names after the prefix; absent for a key with none (minted before modes), never live. */
+  readonly mode: ApiKeyMode | undefined;
 
   /** Its checksum matches its body. */
   readonly wellFormed: boolean;

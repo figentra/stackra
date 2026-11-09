@@ -12,7 +12,7 @@
  */
 import { buildConfig } from "@stackra/config";
 import { Clock, Duration } from "@stackra/contracts";
-import { FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
+import { FileRetainedError, FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { MediaConfig } from "#config/media.config";
@@ -330,6 +330,21 @@ describe("MediaLibrary.store", () => {
     expect(file).toMatchObject({ bucket: "invoices", mediaType: MediaType.Pdf, size: 8 });
     expect(await disk.read(file.path)).toEqual(pdf);
     expect(await disk.stat(file.path)).toMatchObject({ contentType: "application/pdf" });
+  });
+
+  it("keeps a stored file unchangeable until its retention ends", async () => {
+    const { disk, media } = setup();
+    const retainUntil = new Date("2032-11-09T10:30:00Z");
+
+    const file = await media.store(
+      InvoicesBucket,
+      new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]),
+      MediaType.Pdf,
+      { retainUntil },
+    );
+
+    await expect(disk.delete(file.path)).rejects.toBeInstanceOf(FileRetainedError);
+    expect(await disk.exists(file.path)).toBe(true);
   });
 
   it("refuses a media type the bucket does not take, and writes nothing", async () => {

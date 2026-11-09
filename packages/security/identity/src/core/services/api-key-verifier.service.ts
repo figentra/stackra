@@ -17,7 +17,6 @@ import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 
 import type { IdentityConfig } from "#config/identity.config";
-import { ApiKeyMode } from "#contracts/enums/api-key-mode.enum";
 import type { ApiKeyStore } from "#contracts/ports/api-key-store.port";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { ApiKeyRejectedError } from "#core/errors/api-key-rejected.error";
@@ -71,13 +70,15 @@ export class ApiKeyVerifierService extends Service {
     if (record === undefined || !sameText(record.hash, hash)) throw ApiKeyRejectedError.create();
     const expired = record.expiresAt !== undefined && record.expiresAt <= this.clock.now();
     if (record.revokedAt !== undefined || expired) throw ApiKeyRejectedError.create();
-    // the stored mode is the issued one; a text naming another mode is not that key
-    if ((record.mode ?? ApiKeyMode.Live) !== parsed.mode) throw ApiKeyRejectedError.create();
+    // a mode is never assumed: live comes only from a key issued live, and a text naming another mode than its record
+    // is not that key
+    const { mode } = parsed;
+    if (mode === undefined || record.mode !== mode) throw ApiKeyRejectedError.create();
     const browser = origin !== null && origin !== undefined;
     if (parsed.kind === ApiKeyKind.Secret ? browser : !isOriginAllowed(origin, record.origins))
       throw ApiKeyRejectedError.create();
     await this.recordUse(record);
-    return { kind: parsed.kind, mode: parsed.mode, record };
+    return { kind: parsed.kind, mode, record };
   }
 
   /** Writes `record`'s last use when it is older than the configured interval; a failure is swallowed. */

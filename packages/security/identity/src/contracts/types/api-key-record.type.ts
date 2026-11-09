@@ -38,7 +38,7 @@ export interface ApiKeyRecord {
   /** When the key was revoked; absent while it is live. */
   readonly revokedAt?: Date;
 
-  /** Test or live, as the key was issued; absent for a key issued before modes (live). */
+  /** Test or live, as the key was issued; absent for a key issued before modes, which the verifier refuses. */
   readonly mode?: ApiKeyMode;
 
   /** The `Stackra-Version` date the key was issued at, which its calls default to; absent for no pin. */

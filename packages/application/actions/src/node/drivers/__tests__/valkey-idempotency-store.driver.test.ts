@@ -10,6 +10,7 @@
 import { buildConfig } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
 import { Duration } from "@stackra/contracts";
+import { ErrorKind } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -88,5 +89,27 @@ describe(ValkeyIdempotencyStoreDriver, () => {
     ]);
     await store.release("k1");
     expect(server.values.has("t:idempotency:k1")).toBe(false);
+  });
+
+  it("writes a refusal whole, claimed or not, and a later claim reads it back", async () => {
+    const store = new ValkeyIdempotencyStoreDriver(config());
+    const refusal = {
+      kind: ErrorKind.Conflict,
+      code: "out_of_stock",
+      category: "conflict",
+      retryable: false,
+    } as const;
+    await store.completeRefused("k2", "fp", refusal, Duration.hours(24));
+    expect(server.sets.at(-1)).toEqual([
+      "t:idempotency:k2",
+      JSON.stringify({ fingerprint: "fp", done: true, refusal }),
+      "PX",
+      86_400_000,
+    ]);
+    await expect(store.claim("k2", "fp", Duration.hours(24))).resolves.toEqual({
+      fingerprint: "fp",
+      done: true,
+      refusal,
+    });
   });
 });

@@ -18,7 +18,7 @@
  */
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
-import { actingScopeId, type PublicId, type ScopeRef } from "@stackra/contracts";
+import { ActorKind, actingScopeId, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { RuleFacts } from "@stackra/rules";
 import type { ScopeTree } from "@stackra/scope/contracts";
@@ -26,6 +26,7 @@ import type { ScopeTree } from "@stackra/scope/contracts";
 import { Decision } from "#core/enums/decision.enum";
 import { decidePolicy } from "#core/functions/decide-policy.function";
 import { isAnonymousCall } from "#core/functions/is-anonymous-call.function";
+import { keyCovers } from "#core/functions/key-covers.function";
 import { policyRowOf } from "#core/functions/policy-row-of.function";
 import type { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 
@@ -59,6 +60,10 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    * @throws ForbiddenError when it does not, or when the call's scope node does not exist.
    */
   async require(call: CallDescriptor): Promise<void> {
+    if (call.actor.kind === ActorKind.ApiClient) {
+      if (!keyCovers(call)) throw ForbiddenError.create();
+      return;
+    }
     if (call.permission === undefined) throw ForbiddenError.create();
     if (isAnonymousCall(call)) return;
     const scope = await this.scopeOf(call);
@@ -76,6 +81,8 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
     const { permission } = call;
     if (permission === undefined) throw ForbiddenError.create();
     if (isAnonymousCall(call)) return;
+    const viaKey = call.actor.kind === ActorKind.ApiClient;
+    if (viaKey && !keyCovers(call)) throw ForbiddenError.create();
     const row = policyRowOf(record);
     if (
       row !== undefined &&
@@ -87,6 +94,9 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
       row?.rules === undefined
         ? null
         : { rules: row.rules, facts: { record: record as RuleFacts[string] } };
+    // an API key's grants are its scopes (checked above) and its record policy (decided above); shortcut: deny rules are
+    // the decision point's, which a key call skips, so a tenant's deny rule does not bind a key yet (STA-2646 follow-up)
+    if (viaKey) return;
     const options = scope === undefined ? { record: facts } : { scope, record: facts };
     if (!(await this.pdp.check(call.actor, permission, options))) throw ForbiddenError.create();
   }

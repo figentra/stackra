@@ -1,0 +1,21 @@
+{
+  "slug": "page-dock",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "PageDock",
+  "parts": ["PageDock"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 200
+    }
+  ],
+  "related": ["free/section-dock", "free/station"],
+  "tokens": ["color.accent", "color.muted"],
+  "keywords": ["dock", "sections", "scroll spy", "status", "navigation", "landing", "kit"],
+  "status": "new"
+}

@@ -82,6 +82,54 @@ describe("checkEndpoints: routes", () => {
     ]);
   });
 
+  it("counts own and hosted raw controllers, on every method and under a wildcard", () => {
+    // Hosted entries, so only the collision check reads them (their paths sit outside the app area).
+    const stream = entry("room.stream", "query", {
+      endpoint: route("GET", "/realtime/room", false),
+      from: "@acme/rooms",
+    });
+    const kit = {
+      member: "kit",
+      modules: [{ key: "kit", class: "KitModule", file: "src/node/kit.module.ts", exports: [] }],
+      services: [{ class: "RoomController", from: "@acme/kit/node", path: "/realtime/room" }],
+    } as unknown as StackraManifest;
+    const hosting: MemberIR = { ...BARE, dependencies: [{ package: "@acme/kit", manifest: kit }] };
+    expect(check([stream], {}, hosting)).toEqual([["endpoint_collision", "RoomController"]]);
+    const unhosted = {
+      ...kit,
+      modules: [{ key: "kit", class: "KitModule", exports: [] }],
+    } as unknown as StackraManifest;
+    expect(
+      check(
+        [stream],
+        {},
+        { ...BARE, dependencies: [{ package: "@acme/kit", manifest: unhosted }] },
+      ),
+    ).toEqual([]);
+    const auth = {
+      name: "AuthController",
+      kind: "controller",
+      module: "orders",
+      file: "src/modules/orders/raw/auth.controller.ts",
+      importPath: "#modules/orders/raw/auth.controller",
+      options: { path: "/api/auth/*" },
+      deps: [],
+      facets: [],
+      methods: ["handle"],
+      refusals: [],
+      statics: {},
+      traits: [],
+    } as DeclaredClass;
+    const callback = entry("auth.callback", "action", {
+      endpoint: route("POST", "/api/auth/callback", false),
+      from: "@acme/auth",
+    });
+    expect(check([callback], {}, { ...BARE, classes: [auth] })).toEqual([
+      ["endpoint_collision", "AuthController"],
+    ]);
+    expect(check([stream], {}, { ...BARE, classes: [auth] })).toEqual([]);
+  });
+
   // @covers sta-340:FR-004
   it("refuses a whole version segment, and no other segment", () => {
     const versioned = entry("order.create", "action", {

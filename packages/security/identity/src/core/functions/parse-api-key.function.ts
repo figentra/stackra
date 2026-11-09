@@ -40,7 +40,8 @@ export function parseApiKey(
   // The body is base-62 only, so a `test_` or `live_` segment cannot be the start of a body.
   const named = Enum.values(ApiKeyMode).find((code) => rest.startsWith(`${code}_`));
   const tail = named === undefined ? rest : rest.slice(named.length + 1);
-  const mode = named ?? ApiKeyMode.Live;
+  // no segment: a key minted before modes, whose mode is unknown (the verifier refuses it)
+  const mode = named;
   if (!TAIL.test(tail)) return { kind, mode, wellFormed: false };
   const head = key.slice(0, -6);
   return { kind, mode, wellFormed: sameText(base62Of(crc32(head), 6), key.slice(-6)) };

@@ -21,7 +21,12 @@
 import { kindOf } from "@stackra/container";
 import { ActorKind, Enum, mintPublicId } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
-import { ErrorKind, isRefusal, RateLimitedError } from "@stackra/errors";
+import {
+  ErrorKind,
+  IdempotencyKeyInProgressError,
+  isRefusal,
+  RateLimitedError,
+} from "@stackra/errors";
 
 import { coerceQueryInput } from "#server/functions/coerce-query-input.function";
 import { holdCallerToken } from "#server/functions/hold-caller-token.function";
@@ -157,7 +162,13 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   } catch (error) {
     if (!isRefusal(error) || isRefusal(error, RateLimitedError)) throw error;
     return carry(
-      Response.json(error.toEnvelope(), { status: Enum.meta(ErrorKind, error.kind).httpStatus }),
+      Response.json(error.toEnvelope(), {
+        status: Enum.meta(ErrorKind, error.kind).httpStatus,
+        // the first call with this key is still running: ask the client to retry shortly
+        ...(isRefusal(error, IdempotencyKeyInProgressError)
+          ? { headers: { "Retry-After": "1" } }
+          : {}),
+      }),
       visitor,
     );
   }

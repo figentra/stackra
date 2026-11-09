@@ -5114,6 +5114,12 @@ importers:
       '@stackra/actions':
         specifier: workspace:*
         version: link:../../application/actions
+      '@stackra/app':
+        specifier: workspace:*
+        version: link:../../runtime/app
+      '@stackra/clients':
+        specifier: workspace:*
+        version: link:../../application/clients
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
@@ -5244,6 +5250,9 @@ importers:
       '@stackra/support':
         specifier: workspace:*
         version: link:../../foundation/support
+      '@stackra/tokens':
+        specifier: workspace:*
+        version: link:../../design-system/tokens
       '@stackra/ui':
         specifier: workspace:*
         version: link:../../design-system/ui
@@ -9395,6 +9404,9 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/ui':
         specifier: workspace:*
         version: link:../../design-system/ui

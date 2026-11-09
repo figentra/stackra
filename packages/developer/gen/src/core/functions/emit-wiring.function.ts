@@ -455,7 +455,8 @@ export function emitWiring(ir: MemberIR): string {
   }
 
   // A hosted package module's actions and queries are its surface, so the host binds each one whether or not a class
-  // injects it (a test or a client calls it by class), with its constructor tokens from the manifest's `services`.
+  // injects it (a test or a client calls it by class), with its constructor tokens from the manifest's `services`; a
+  // service host binds its raw controllers too.
   const hostedTokens: { readonly module: string; readonly dep: TokenRef }[] = [];
   const hostedKeys: string[] = [];
   const hostedServices = dependencyServices(ir);
@@ -482,6 +483,20 @@ export function emitWiring(ir: MemberIR): string {
       );
       for (const dep of tokens) hostedTokens.push({ module: key, dep });
       hostedKeys.push(`:${listed["from"]}#${type}`);
+    }
+    // Its raw controllers (a `services` row with a `path`), which the host's Encore adapter serves.
+    if (ir.layout !== "service" || !Array.isArray(manifest["services"])) continue;
+    for (const listed of manifest["services"] as unknown[]) {
+      const { class: type, from, path } = (listed ?? {}) as Record<string, unknown>;
+      const tokens = hostedServices.get(`${name}#${String(type)}`);
+      if (typeof type !== "string" || typeof from !== "string" || typeof path !== "string")
+        continue;
+      if (tokens === undefined) continue; // a token the host cannot import, as for a hosted action
+      bindingLines.push(
+        `    { module: ${JSON.stringify(key)}, kind: "controller", provide: ${ref({ name: type, from })}, deps: ${list(tokens.map(token))} },`,
+      );
+      for (const dep of tokens) hostedTokens.push({ module: key, dep });
+      hostedKeys.push(`:${from}#${type}`);
     }
   }
 

@@ -1,0 +1,21 @@
+{
+  "slug": "chapter-title",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "ChapterTitle",
+  "parts": ["ChapterTitle"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 200
+    }
+  ],
+  "related": ["free/heading", "free/statement", "free/station", "free/blueprint-section"],
+  "tokens": ["color.foreground", "color.muted"],
+  "keywords": ["chapter", "title", "heading", "marketing", "landing", "kit"],
+  "status": "new"
+}
