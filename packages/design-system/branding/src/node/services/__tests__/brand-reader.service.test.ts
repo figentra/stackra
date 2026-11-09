@@ -162,6 +162,23 @@ describe("BrandReader", () => {
     expect(mark).toEqual(logo);
   });
 
+  /** A surface that embeds the image reads its bytes from the disk, not its URL. */
+  it("reads a resolved logo's original bytes, and null once the file is gone", async () => {
+    const { reader, store, disk, media } = setup();
+    const pending = await media.createUpload(BrandAssetsBucket, {
+      mediaType: MediaType.Png,
+      size: PNG.length,
+    });
+    await disk.receive(pending.url, pending.headers, PNG);
+    const file = await media.claim(pending.upload, BrandAssetsBucket);
+    store.seed("branding", { logo: file.id });
+    const { logo } = await reader.profile(Locale.En);
+    const read = async () => (logo === null ? undefined : reader.bytes(logo));
+    expect(await read()).toEqual(PNG);
+    await disk.delete(file.path);
+    expect(await read()).toBeNull();
+  });
+
   /** An id whose file is not on the disk (never claimed, or deleted). */
   it("reads an id with no claimed file as null", async () => {
     const { reader, store } = setup();
