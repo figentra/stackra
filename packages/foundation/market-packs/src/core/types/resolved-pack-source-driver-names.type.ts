@@ -11,7 +11,7 @@ import type { RESOLVED_PACK_SOURCE_DRIVERS } from "#core/constants/resolved-pack
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `ResolvedPackSource` (`store`, `memory`). */
+    /** The driver names of `ResolvedPackSource` (`store`, `memory`, `bundled`). */
     "market_packs.ResolvedPackSource": (typeof RESOLVED_PACK_SOURCE_DRIVERS)[number];
   }
 }

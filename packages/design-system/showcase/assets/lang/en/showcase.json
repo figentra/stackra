@@ -1983,6 +1983,21 @@
         "title": "Brand logo",
         "description": "Draws the theme's logo, or yours, in the scheme on screen.",
         "keywords": "logo, brand, wordmark, dark mode, theme"
+      },
+      "scope_picker": {
+        "title": "ScopePicker",
+        "description": "Switches the active scope: a branch, a store or any level of the scope tree.",
+        "keywords": "scope, branch, hierarchy, switcher, picker"
+      },
+      "entitlement_gate": {
+        "title": "EntitlementGate",
+        "description": "Shows part of the screen only while the customer's plan includes a feature.",
+        "keywords": "entitlement, plan, feature, upgrade, paywall"
+      },
+      "i18n_locale_switcher": {
+        "title": "LocaleSwitcher (i18n)",
+        "description": "The language field bound to the app's active locale, switching and remembering the choice.",
+        "keywords": "language, locale, switcher, translation, right-to-left"
       }
     }
   },
@@ -5892,6 +5907,21 @@
         }
       },
       "brand_logo": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "scope_picker": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "entitlement_gate": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "i18n_locale_switcher": {
         "basics": {
           "title": "Basics"
         }
@@ -9954,6 +9984,30 @@
           "what": "The theming module's logo, read from the theme's configuration and the scheme on screen.",
           "when": "In an app bar, a sidebar header, a sign-in page or a branding preview.",
           "rtl": "A logo is a picture, so it is never mirrored; only its place in the row follows the reading direction."
+        },
+        "scope_picker": {
+          "headline": "Work in one part of the organisation at a time.",
+          "intro": "A field over the scopes the signed-in person may enter, nested as a tree; with many of them it becomes a search. Choosing one makes it the active scope every request carries.",
+          "tags": "Scope kit · Scope tree · Field",
+          "what": "The scope module's switcher, a tree select or a search field over the active scope service.",
+          "when": "In the header or a filter bar, where people move between branches, stores or regions.",
+          "rtl": "The field and the tree mirror in Arabic, and each scope's name keeps its own direction."
+        },
+        "entitlement_gate": {
+          "headline": "Show it only when the plan includes it.",
+          "intro": "Wraps a feature and shows it while the customer's plan grants the entitlement, or an upgrade prompt when it does not; the server still checks every call.",
+          "tags": "Entitlements kit · Plans · Visibility",
+          "what": "The entitlements module's plan check for the screen, over the plan's entitlement source.",
+          "when": "Around a paid feature, a report or a panel that only some plans include.",
+          "rtl": "It draws nothing of its own, so what it shows mirrors in Arabic as it would anywhere."
+        },
+        "i18n_locale_switcher": {
+          "headline": "One language field, already wired.",
+          "intro": "Hands the house locale field the app's languages and the active one, then switches and remembers the choice through the app's own route or setter.",
+          "tags": "i18n kit · Languages · Field",
+          "what": "The i18n module's binding of the locale switcher to the active locale and the remembered choice.",
+          "when": "In the header, the account menu or a settings page, wherever people pick the app's language.",
+          "rtl": "Switching to Arabic turns the whole app right to left, and each language is named in itself."
         }
       }
     }
