@@ -26,6 +26,7 @@
   "files": [
     "dist",
     "src",
+    "schema",
     "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
@@ -81,7 +82,8 @@
       "@stackra/source": "./src/metro-transformer/index.ts",
       "types": "./dist/metro-transformer.d.mts",
       "default": "./dist/metro-transformer.mjs"
-    }
+    },
+    "./schema/*.json": "./schema/*.json"
   },
   "publishConfig": {
     "access": "public",
@@ -104,7 +106,8 @@
     "@stackra/money": "workspace:*",
     "@stackra/support": "workspace:*",
     "typescript": "catalog:build",
-    "typescript6": "catalog:tooling"
+    "typescript6": "catalog:tooling",
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@stackra/config": "workspace:*",

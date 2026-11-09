@@ -5,7 +5,8 @@
  * Boundary: data only; a new entry names the reader and why it cannot take JSONC.
  * Runtime: node
  * Governing contract: the JSON vs JSONC rule (STA-299); ADR 0294 (R10); ADR 0305 (rule 1); ADR 0296; ADR 0002
- *                     (2026-10-27 amendment, the docs layout sweep stackra-177).
+ *                     (2026-10-27 amendment, the docs layout sweep stackra-177); ADR 0514 (amendment of 2026-11-09: a docs
+ *                     member's meta.json).
  */
 
 /**
@@ -31,6 +32,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
   [
     /^packages\/developer\/flow-preset\/preset\/surfaces\/settings\.json$/,
     "Flow renders .claude/settings.json from this exact surface name",
+  ],
+  [
+    /^docs\/content\/(?:[\w.-]+\/)*meta\.json$/,
+    "Fumadocs reads each folder's navigation from meta.json by that fixed name (ADR 0514, amendment of 2026-11-09)",
   ],
   [
     /^\.vscode\/(settings|extensions|launch|tasks)\.json$/,
@@ -78,6 +83,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
   [
     /^packages\/developer\/runway\/schema\/[\w-]+\.json$/,
     "runway JSON Schemas: shipped as @stackra/runway/schema/<kind>.json for editors and validators",
+  ],
+  [
+    /^packages\/developer\/gen\/schema\/[\w-]+\.json$/,
+    "gen JSON Schemas (docs.yaml): shipped as @stackra/gen/schema/<name>.json for editors and validators",
   ],
   // shortcut: only docs apps not yet swept to the ADR 0002 (2026-10-27) layout keep src/docs.json (OS, Commerce, the
   // products); a swept app's docs.json is generated into gitignored .stackra/site. Delete the row after the last sweep.
