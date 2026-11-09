@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `checkI18n` and `i18nTree`: a declared package's namespace merged beside the member's, a key
  *          reference found in either (a branch or a leaf), `i18n_key_missing` for a key or namespace no catalogue ships,
- *          `i18n_namespace_clash` for a namespace shipped twice, nothing checked without `@stackra/i18n`, and
+ *          `i18n_namespace_clash` for a namespace shipped twice, a consumed service's namespace the member also has moved
+ *          under the service's client name instead of clashing, nothing checked without `@stackra/i18n`, and
  *          `generateMember` refusing on either code; a derived enum label `<module>::enums.<enum>.<code>` missing from a
  *          base-language locale (STA-1306).
  * Boundary: test only; pure IR in, refusals out.
@@ -93,6 +94,37 @@ describe("checkI18n", () => {
     expect(errors[0]?.fix).toContain(
       `rename ${IR.package}'s assets/lang/<locale>/loyalty_kit.json`,
     );
+  });
+
+  it("moves a consumed service's namespace the member also has under the service's client name", () => {
+    const twoServices: MemberIR = {
+      ...COMMERCE_IR,
+      catalogues: { en: { rates: { card: "Rate card" } } },
+      packageCatalogues: [
+        {
+          package: "@acme/service-geography",
+          service: "geography",
+          from: "../../services/geography/assets/lang",
+          catalogues: { en: { rates: { holiday: "Holiday rate" } } },
+        },
+      ],
+    };
+
+    const { namespaces, clashes } = i18nTree(twoServices);
+
+    expect(clashes).toEqual([]);
+    expect([...namespaces.keys()]).toEqual(["geography.rates", "rates"]);
+    expect(namespaces.get("rates")?.package).toBeUndefined();
+    expect(namespaces.get("geography.rates")).toMatchObject({
+      node: ["holiday"],
+      package: "@acme/service-geography",
+    });
+    expect(
+      checkI18n({
+        ...twoServices,
+        i18nReferences: [ref("rates", "card"), ref("geography.rates", "holiday")],
+      }),
+    ).toEqual([]);
   });
 
   it("refuses a derived enum label missing from a base-language locale that ships the module (STA-1306)", () => {

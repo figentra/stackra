@@ -1,5 +1,68 @@
 # @stackra/tenancy
 
+## 0.29.0
+
+### Minor Changes
+
+- 11a19a7: An implicit many-to-many pivot of tenant-owned models now stores the call's tenant. MikroORM's pivot insert names only
+  the two link columns, so `t.belongsToTenant({ pivot: true })` gives a new pivot's `tenant_id` a default read from
+  `app.tenant_id`, and `t.change(column).defaultSetting(setting)` gives an existing pivot the same default. Outside a
+  tenant call the default is NULL, so the NOT NULL column refuses the row instead of storing it without a tenant.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [8ad5f87]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/scope@0.29.0
+  - @stackra/scheduler@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/ui@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/scheduler@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/scope@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/ui@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+  - @stackra/database@0.27.0
+  - @stackra/scheduler@0.27.0
+  - @stackra/scope@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/ui@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

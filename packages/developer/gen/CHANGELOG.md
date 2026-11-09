@@ -1,5 +1,75 @@
 # @stackra/gen
 
+## 0.29.0
+
+### Minor Changes
+
+- 3361957: An action whose actors are exactly `[ActorKind.Anonymous]` may declare `credentials: "ignore"`, for a public page whose visitors may also be signed in elsewhere. The pipeline then runs a signed-in caller's call as a fresh anonymous actor and drops what the credential gave, and `serveGuardedCall` never verifies or holds that credential, so no user token is forwarded. Without the option such an action still refuses a signed-in caller. `Action({...})` throws, and gen refuses `credentials_ignore_not_anonymous`, when the actors are anything else. Limit: a host's optional `BearerTokenGuard` runs before the adapter, so it can still refuse an expired or invalid token on such an action; a host that serves these actions should let them pass that guard.
+- 1b727b9: Settings fields are never dropped: gen refuses a field no setting type holds with `settings_unsupported_type`, and writes an enum or driver name as a `choice` key and a string or enum array as a `list` key (`SettingType.Choice`, `SettingType.List`, `SettingKeyInput.options`, and `readonly string[]` as a `SettingValue`). Gen derives the group key from the class name as the runtime does (`AccountSettings` is `Settings.account`), refuses `settings_scope_widened`, `settings_too_deep`, `settings_group_key_empty` and `settings_group_conflict`, and records every group and key in a `settings` section of `stackra.manifest.json`; a group or key rename needs `@Renamed`. An enum setting field is now `choice` with its `options`, not `string`, and a group whose key is not its module's carries the group in its label key. Regenerate with `stackra gen`.
+- 45afd22: `Action` and `Query` take an `entitlement` option (one entitlement class or a list), and gen now gates calls by it
+  (STA-2059, ADR 0215). The manifest lists a call in the `gates` of every entitlement it names, of a quota whose meter it
+  feeds (`meter`, `per` on the quota entry; `meter` and `entitlements` on the action entry) and of a limit counting a
+  model it creates, including an entitlement or model a hosted package ships. A name that resolves to nothing fails the
+  build with `entitlement_unknown` or `entitlement_counts_unknown`.
+- 25b99da: The seed entry (`.stackra/entry/seed.ts`) registers the service's factory pairs with `registerModelPartners`, so a
+  demo seeder that uses a factory runs under `stackra db seed`. It also runs the seeders of the packages a service hosts,
+  imported from each package's `./testing` entry, before the service's own, and lists every seeder in module-dependency
+  order instead of file order (STA-2061).
+  
+  `stackra.manifest.json` gains two optional sections, `seeders` (key, module, profile, class, file, in module order) and
+  `factories` (class, file, model), which a host reads from its dependencies. The committed manifests of
+  `@stackra/loyalty-kit` and `@stackra/access-log` now carry them.
+
+### Patch Changes
+
+- f069f95: A consumed service's lang namespace that one of the member's own modules also has no longer clashes: it lives under
+  the service's client name (`geography.rates`, keys `geography.rates::<path>`, loaded from the service's own
+  `rates.json`), and the member's own namespace keeps its name. A package and the member claiming one namespace is still
+  refused (`i18n_namespace_clash`).
+- edc2781: The resource-table index check reads an `@Index` that leads with the scope column (`tenantId` or `scopeId`) as serving
+  its next column too, since row-level security already narrows a scoped table to one scope; a filter or sort on that
+  column is no longer refused as `filter_not_indexed` / `sort_not_indexed`.
+- b26036e: Gen reads `@Setting({ scopes, lockable, approval })` field options again. `Setting` returns `FieldDecorator<unknown>`, which the facet reader did not recognise, so generated setting keys carried only their class scopes and no `approval` or `lockable`.
+- 8ad5f87: In a memory-tier testing app, `ScopeTree` now reads the nodes `ScopeNodeService` writes. `MemoryScopeTreeDriver`
+  gains `readFrom(load)`: until it is seeded, every read goes to the tree `load` resolves to. The new
+  `SCOPE_TESTING_PLUGIN` (registered by `@stackra/scope/testing`) points an unseeded memory tree at the Database's
+  `ScopeNode` rows through `PostgresScopeTreeDriver`, so `node`, `byPath` (with the node's `level`), `ancestors` and
+  `descendants` see a node added through `ScopeNodeService`, as in production. A seeded tree (`fakeScopeTree`) keeps its
+  own list. Gen's Vitest setup imports `@stackra/scope/testing` for a member on `@stackra/scope`.
+- 75ec6eb: Gen loads extensions: `#stackra/registrations` calls `registerExtensions` with each extension on its point's slot and
+  its order, and a service with an extension connects the slots at boot (`connectExtensions(container)`). Until now
+  nothing called `registerExtensions`, so every extension point's slots ran no extension.
+- @stackra/money@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- f0be8d8: A service that runs `@stackra/queue` now connects `QueueWorkerService` in its generated `boot`, so a job that a
+  generated Encore subscription delivers, or that `queue:work` reserves, runs through the pipeline instead of throwing
+  "QueueWorkerService is not connected" (STA-2046).
+- 7a87018: `stackra gen` refuses (`port_unbound`) a class whose constructor takes a port that no driver binds in the member, instead of letting every container-built test fail with `UnresolvedPortError`.
+- @stackra/money@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/support@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- fb1ae38: A service that declares a workflow gets the `WorkflowRunner` driver table in its wiring (`pipelinePorts`), as
+  STA-2573 did for the pipeline's other ports: the pipeline resolves the runner for `ctx.run` and `ctx.signal`, and no
+  constructor injects it, so it was left unbound ("WorkflowRunner is not bound"). The generated Vitest setup also imports
+  `@stackra/workflow/testing` for a member on `@stackra/workflow`, so a `useDrivers("memory")` test connects that runner.
+- @stackra/money@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/support@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

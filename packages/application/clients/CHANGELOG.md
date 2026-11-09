@@ -1,5 +1,68 @@
 # @stackra/clients
 
+## 0.29.0
+
+### Minor Changes
+
+- 0e8f570: Products can read real plans. `@stackra/entitlements` adds `ServicePlanSnapshotsDriver`, a `PlanSnapshots` that asks
+  the plan service through the new `PlanServiceChannel` port and caches each answer for its `maxAgeSeconds`. It fails
+  closed: a failed call, an answer for another scope or an undecodable grant reads as no plan and is not cached.
+  `@stackra/clients` adds `TransportPlanServiceChannelDriver`, the channel over the host's `ClientTransport` calling
+  `entitlements.effective_set.snapshot.get@1`. A product binds both in place of `MemoryPlanSnapshotsDriver`, so
+  `@Requires`, the entitlement check and reserve-then-commit answer from the tenant's actual plan.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [0e8f570]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/entitlements@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/query@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/i18n@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/transport@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/query@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/transport@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/iam@0.27.0
+  - @stackra/query@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/i18n@0.27.0
+  - @stackra/transport@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

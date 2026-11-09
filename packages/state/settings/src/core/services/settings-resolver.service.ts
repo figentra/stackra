@@ -180,6 +180,8 @@ export class SettingsResolver extends Service {
    *
    * @returns the revision: applied, pending (a written key needs approval) or scheduled.
    * @throws SettingValueInvalidError when a name is not a key of the page or its value breaks the key.
+   * @throws SettingScopeRefusedError when a written key's `scopes` leave out the level written: the page's, or
+   *         `user` for a user's own layer. Break-glass does not lift it.
    * @throws TypeError when a break-glass change has no reason.
    * @throws LiveReadOnlyError (`live_read_only`, each refused path as a field error) when, on live and not break-glass,
    *         a written key is not live-editable.
@@ -193,7 +195,7 @@ export class SettingsResolver extends Service {
     target: SettingTarget,
     options: SettingWriteOptions,
   ): Promise<SettingRevision> {
-    const { changes, keys } = settingPageChanges(page, values);
+    const { changes, keys } = settingPageChanges(page, values, target);
     const breakGlass = options.breakGlass === true;
     if (breakGlass && (options.reason ?? "").trim() === "")
       throw new TypeError("A break-glass settings change needs a reason");

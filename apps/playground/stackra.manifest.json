@@ -72,13 +72,19 @@
       "class": "ChallengePasskeyAction",
       "file": "src/node/actions/challenge-passkey.action.ts",
       "permission": "identity.passkey.challenge",
-      "risk": "L0",
+      "risk": "L2",
       "actors": ["anonymous"],
+      "idempotency": "never",
       "rateLimit": {
         "perMinute": 10
       },
       "area": "public",
       "anonymous": true,
+      "endpoint": {
+        "method": "POST",
+        "path": "/public/passkeys/challenge",
+        "derived": true
+      },
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "@stackra/identity#/schemas/identity.ChallengePasskeyInput"
@@ -96,7 +102,7 @@
       "class": "ConfirmPasskeyAction",
       "file": "src/node/actions/confirm-passkey.action.ts",
       "permission": "identity.passkey.confirm",
-      "risk": "L2",
+      "risk": "L4",
       "actors": ["user"],
       "idempotency": "optional",
       "endpoint": {
@@ -271,13 +277,19 @@
       "class": "VerifyPasskeyAction",
       "file": "src/node/actions/verify-passkey.action.ts",
       "permission": "identity.passkey.verify",
-      "risk": "L0",
+      "risk": "L4",
       "actors": ["anonymous"],
+      "idempotency": "never",
       "rateLimit": {
         "perMinute": 10
       },
       "area": "public",
       "anonymous": true,
+      "endpoint": {
+        "method": "POST",
+        "path": "/public/passkeys/verify",
+        "derived": true
+      },
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "@stackra/identity#/schemas/identity.VerifyPasskeyInput"
@@ -495,7 +507,7 @@
     },
     {
       "key": "identity.passkey.challenge",
-      "risk": "L0",
+      "risk": "L2",
       "class": "PasskeyPermissions",
       "module": "identity",
       "member": "challenge",
@@ -504,7 +516,7 @@
     },
     {
       "key": "identity.passkey.verify",
-      "risk": "L0",
+      "risk": "L4",
       "class": "PasskeyPermissions",
       "module": "identity",
       "member": "verify",
@@ -522,7 +534,7 @@
     },
     {
       "key": "identity.passkey.confirm",
-      "risk": "L2",
+      "risk": "L4",
       "class": "PasskeyPermissions",
       "module": "identity",
       "member": "confirm",
@@ -688,6 +700,22 @@
       "from": "@stackra/identity"
     },
     {
+      "code": "service_token_refused",
+      "kind": "internal",
+      "category": "internal",
+      "module": "identity",
+      "class": "ServiceTokenRefusedError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "service_token_unavailable",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "identity",
+      "class": "ServiceTokenUnavailableError",
+      "from": "@stackra/identity"
+    },
+    {
       "code": "session_revoked",
       "kind": "unauthenticated",
       "category": "unauthenticated",
@@ -741,6 +769,14 @@
       "category": "forbidden",
       "module": "payments",
       "class": "AgentConfirmationRefusedError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "application_fee_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "payments",
+      "class": "ApplicationFeeInvalidError",
       "from": "@stackra/payments"
     },
     {
@@ -1832,7 +1868,33 @@
             {
               "class": {
                 "name": "BearerConfig",
-                "from": "@stackra/app"
+                "from": "@stackra/app/server"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/app"
+    },
+    {
+      "port": "ClientSession",
+      "key": "clients.ClientSession",
+      "candidates": ["service"],
+      "classes": {
+        "service": {
+          "class": "ServiceClientSessionDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "ServiceTokens",
+                "from": "@stackra/identity/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "ClientsConfig",
+                "from": "@stackra/clients"
               }
             }
           ]
@@ -2083,6 +2145,54 @@
       "from": "@stackra/identity"
     },
     {
+      "port": "ServicePrincipals",
+      "key": "identity.ServicePrincipals",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryServicePrincipalsDriver",
+          "from": "@stackra/identity"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "ServiceTokens",
+      "key": "identity.ServiceTokens",
+      "candidates": ["memory", "zitadel"],
+      "classes": {
+        "memory": {
+          "class": "MemoryServiceTokensDriver",
+          "from": "@stackra/identity"
+        },
+        "zitadel": {
+          "class": "ZitadelServiceTokensDriver",
+          "from": "@stackra/identity/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ServiceTokensConfig",
+                "from": "@stackra/identity/node"
+              }
+            },
+            {
+              "class": {
+                "name": "SecretStore",
+                "from": "@stackra/config/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
       "port": "StaffPinStore",
       "key": "identity.StaffPinStore",
       "candidates": ["memory", "storage"],
@@ -2204,6 +2314,32 @@
         "expo": {
           "class": "ExpoAppleSignInDriver",
           "from": "@stackra/identity/native"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "StepUpCheck",
+      "key": "actions.StepUpCheck",
+      "candidates": ["identity"],
+      "classes": {
+        "identity": {
+          "class": "IdentityStepUpCheckDriver",
+          "from": "@stackra/identity/node",
+          "deps": [
+            {
+              "class": {
+                "name": "IdentityConfig",
+                "from": "@stackra/identity"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
         }
       },
       "from": "@stackra/identity"

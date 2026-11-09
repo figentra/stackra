@@ -1,5 +1,122 @@
 # @stackra/loyalty-kit
 
+## 0.29.0
+
+### Patch Changes
+
+- 25b99da: The seed entry (`.stackra/entry/seed.ts`) registers the service's factory pairs with `registerModelPartners`, so a
+  demo seeder that uses a factory runs under `stackra db seed`. It also runs the seeders of the packages a service hosts,
+  imported from each package's `./testing` entry, before the service's own, and lists every seeder in module-dependency
+  order instead of file order (STA-2061).
+  
+  `stackra.manifest.json` gains two optional sections, `seeders` (key, module, profile, class, file, in module order) and
+  `factories` (class, file, model), which a host reads from its dependencies. The committed manifests of
+  `@stackra/loyalty-kit` and `@stackra/access-log` now carry them.
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [4cc17e5]
+- Updated dependencies [11a19a7]
+- Updated dependencies [1b727b9]
+- Updated dependencies [b26036e]
+- Updated dependencies [45afd22]
+- Updated dependencies [1b88340]
+- Updated dependencies [9eb3427]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/integrations@0.29.0
+  - @stackra/tenancy@0.29.0
+  - @stackra/settings@0.29.0
+  - @stackra/workflow@0.29.0
+  - @stackra/search@0.29.0
+  - @stackra/panel@0.29.0
+  - @stackra/outbox@0.29.0
+  - @stackra/queue@0.29.0
+  - @stackra/scheduler@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/ledger@0.29.0
+  - @stackra/money@0.29.0
+  - @stackra/versioning@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/ui@0.29.0
+  - @stackra/experience@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/i18n@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/testing@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/scheduler@0.28.0
+  - @stackra/integrations@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/search@0.28.0
+  - @stackra/panel@0.28.0
+  - @stackra/outbox@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/workflow@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/experience@0.28.0
+  - @stackra/ledger@0.28.0
+  - @stackra/settings@0.28.0
+  - @stackra/money@0.28.0
+  - @stackra/versioning@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/ui@0.28.0
+  - @stackra/testing@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [df74e1d]
+- Updated dependencies [8a70552]
+- Updated dependencies [7d284f2]
+- Updated dependencies [5119f3c]
+  - @stackra/database@0.27.0
+  - @stackra/integrations@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/workflow@0.27.0
+  - @stackra/ledger@0.27.0
+  - @stackra/search@0.27.0
+  - @stackra/panel@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/scheduler@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/settings@0.27.0
+  - @stackra/experience@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/money@0.27.0
+  - @stackra/versioning@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/ui@0.27.0
+  - @stackra/testing@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/i18n@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

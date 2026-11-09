@@ -1,5 +1,115 @@
 # @stackra/workflow
 
+## 0.29.0
+
+### Minor Changes
+
+- 9eb3427: The workflow engine's journal is tenant-owned in the platform form (migration `workflow.0012_contract_journal_tenancy`):
+  `runs`, `steps` and `signals` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a NULL row is the
+  platform's), forced row-level security and the platform policies. The worker's tick claims due runs and lapsed signals
+  across tenants through the system functions `workflow.claim_due_runs` and `workflow.claim_expired_signals` (ids,
+  owners and order only), then loads, advances or removes each in its owner's isolation. A run is owned by the tenant of
+  the call that started it, and every save runs in that owner. A claimed run that does not load, or an owned row with no
+  `CallIsolation` bound, fails the tick (`ClaimNotLoadedError`, `RowIsolationMissingError` from `@stackra/outbox`); a
+  claimed row is never skipped. A system or job origin that names no tenant, started in a tenant's session (an event's
+  run), takes that tenant for its steps; an actor that names a scope, a user and an agent are never rewritten.
+  
+  A signal is held under the tenant it is sent or delivered in, and a run takes only signals of its own tenant: a run
+  that waits for acks (such as a provisioning run waiting for `AllServicesAcked`) must start in the tenant the acks are
+  sent in, never as a platform run. `workflow.run.get` keeps its own check, and another tenant's run is now also hidden by row
+  security, with the same `run_not_found`.
+  
+  Upgrade: finish or cancel the workflows running below a tenant node before you migrate. The migration backfills a run at
+  a tenant node (`nlevel(scope_path) = 3`) from its scope and keeps a run with no scope, at the root or at a product node,
+  as a platform run; a step takes its run's tenant, and a held signal the tenant of the waiting run that awaits it (else
+  its own scope's, by the same rule). It refuses, changing nothing, while a run or a held signal sits below a tenant node,
+  naming each count and the remedy: finish or cancel those runs and delete them (their steps go with them); let the
+  waiting runs take those signals, or delete them.
+  
+  Breaking port changes, for a custom `WorkflowJournal` driver:
+  
+  - `due` returns `RunClaim` (id, `ownerId`, `startedAt`) instead of ids; the engine loads each with `find` in its owner.
+  - `expire` is gone: `expired(now, limit)` claims lapsed signals (`SignalClaim`: id, `ownerId`) and `remove(ids)` deletes
+    them in the session's owner.
+  - New `currentOwner()`: the tenant of the caller's session. `WorkflowRun` gains `ownerId`, which the journal reads back
+    and never writes.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/tenancy@0.29.0
+  - @stackra/rules@0.29.0
+  - @stackra/content@0.29.0
+  - @stackra/outbox@0.29.0
+  - @stackra/queue@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/locking@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/rules@0.28.0
+  - @stackra/content@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/outbox@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/locking@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Minor Changes
+
+- 5119f3c: `workflow.run.get@1`: the person who started a run (or an agent acting for them) and the tenant's services read its
+  status, end time and its workflow's output so far, the pull path beside the run's events for a caller whose `ctx.run`
+  answered while the run parked. It is L1 (`workflow.run.get`), scoped to the caller's tenant, and answers
+  `run_not_found` for any run the caller may not see, so a run's existence never leaks. The engine gains `view(id)`.
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [8a70552]
+  - @stackra/database@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/rules@0.27.0
+  - @stackra/content@0.27.0
+  - @stackra/locking@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Minor Changes

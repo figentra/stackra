@@ -1596,6 +1596,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/entitlements':
+        specifier: workspace:*
+        version: link:../../security/entitlements
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
@@ -8141,6 +8144,9 @@ importers:
       '@stackra/events':
         specifier: workspace:*
         version: link:../../foundation/events
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/locking':
         specifier: workspace:*
         version: link:../locking

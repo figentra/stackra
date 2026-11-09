@@ -204,6 +204,11 @@ export interface MemberIR {
   readonly packageCatalogues?: readonly {
     readonly package: string;
     readonly from?: string;
+    /**
+     * The consumed service's member key (`geography`), for a service's catalogues; absent for a package. A service
+     * namespace one of the member's own modules also has lives under it (`geography.rates`, `clientNamespace`).
+     */
+    readonly service?: string;
     readonly catalogues: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   }[];
 

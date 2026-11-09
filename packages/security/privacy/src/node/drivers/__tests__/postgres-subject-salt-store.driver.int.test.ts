@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: integration tests of `PostgresSubjectSaltStoreDriver` on real Postgres: `obtain` creates a 32-byte salt
- *          once and keeps it, `find` never creates one, `destroy` deletes it once, and salts are partitioned by the
- *          session's tenant (`-` outside one).
- * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0001 migration creates the table.
+ *          once and keeps it, `find` never creates one, `destroy` deletes it once, and salts are kept per owner: the
+ *          session's tenant, or the platform outside one.
+ * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0001 to 0003 migrations create
+ *           the table.
  *           Each case runs in a transaction that sets `app.tenant_id`, as a scoped session would.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0212; ADR 0239; gap gov2 (stackra-263).
@@ -13,12 +14,16 @@ import { usePostgres } from "@stackra/database/testing";
 import { describe, expect, it } from "@stackra/testing";
 
 import { CreateSubjectSaltsMigration } from "#node/database/migrations/0001-create-subject-salts.migration";
+import { CreateLegalHoldsMigration } from "#node/database/migrations/0002-create-legal-holds.migration";
+import { ContractPrivacyTenancyMigration } from "#node/database/migrations/0003-contract-privacy-tenancy.migration";
 import { PostgresSubjectSaltStoreDriver } from "#node/drivers/postgres-subject-salt-store.driver";
 
 const postgres = usePostgres({
   entities: [],
   migrations: [
     compileMigration(CreateSubjectSaltsMigration, { schema: "privacy", createsSchema: true }),
+    compileMigration(CreateLegalHoldsMigration, { schema: "privacy" }),
+    compileMigration(ContractPrivacyTenancyMigration, { schema: "privacy" }),
   ],
 });
 
@@ -52,7 +57,7 @@ describe(PostgresSubjectSaltStoreDriver, () => {
     });
   });
 
-  it("keeps one salt per tenant, and a partition for a session in no tenant", async () => {
+  it("keeps one salt per tenant, and the platform's for a session in no tenant", async () => {
     const acme = await inPartition("ten_acme", (store) => store.obtain("usr_2"));
     const globex = await inPartition("ten_globex", (store) => store.obtain("usr_2"));
     const none = await inPartition(undefined, (store) => store.obtain("usr_2"));

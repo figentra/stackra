@@ -29,6 +29,27 @@ function registrationsOf(ir: MemberIR): string | undefined {
   return emitRegistrations(ir, buildManifest(ir).manifest);
 }
 
+/** An extension of the orders module on `OrderExtensionPoint["adjustTotals"]`. */
+const EXTENSION = {
+  name: "TierBonusExtension",
+  kind: "extension",
+  module: "orders",
+  file: "src/modules/orders/extensions/tier-bonus.extension.ts",
+  importPath: "#modules/orders/extensions/tier-bonus.extension",
+  options: { order: 200 },
+  partner: {
+    name: "OrderExtensionPoint",
+    slot: "adjustTotals",
+    from: "#modules/orders/extensions/order.extension-point",
+  },
+  deps: [],
+  facets: [],
+  methods: [],
+  refusals: [],
+  statics: {},
+  traits: [],
+} as const;
+
 describe("emitRegistrations", () => {
   const billing = registrationsOf(BILLING_IR) ?? "";
 
@@ -642,5 +663,18 @@ describe("emitRegistrations of record policies (STA-2045)", () => {
   it("records no policies section and registers none for a member without a policy", () => {
     expect(buildManifest(COMMERCE_IR).manifest["policies"]).toBeUndefined();
     expect(registrationsOf(COMMERCE_IR) ?? "").not.toContain("registerPolicies");
+  });
+});
+
+describe("emitRegistrations for extensions", () => {
+  /** A slot runs only the extensions registered on it; gen read the point and slot from the type argument. */
+  it("registers each extension on its point's slot with its order", () => {
+    const content =
+      registrationsOf({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, EXTENSION] }) ?? "";
+    expect(content).toMatch(/import \{[^}]*registerExtensions[^}]*\} from "@stackra\/actions";/);
+    expect(content).toContain(
+      '  { point: OrderExtensionPoint, slot: "adjustTotals", extension: TierBonusExtension, order: 200 },',
+    );
+    expect(registrationsOf(COMMERCE_IR) ?? "").not.toContain("registerExtensions");
   });
 });

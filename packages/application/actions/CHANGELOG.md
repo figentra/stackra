@@ -1,5 +1,60 @@
 # @stackra/actions
 
+## 0.29.0
+
+### Minor Changes
+
+- 3361957: An action whose actors are exactly `[ActorKind.Anonymous]` may declare `credentials: "ignore"`, for a public page whose visitors may also be signed in elsewhere. The pipeline then runs a signed-in caller's call as a fresh anonymous actor and drops what the credential gave, and `serveGuardedCall` never verifies or holds that credential, so no user token is forwarded. Without the option such an action still refuses a signed-in caller. `Action({...})` throws, and gen refuses `credentials_ignore_not_anonymous`, when the actors are anything else. Limit: a host's optional `BearerTokenGuard` runs before the adapter, so it can still refuse an expired or invalid token on such an action; a host that serves these actions should let them pass that guard.
+- 45afd22: `Action` and `Query` take an `entitlement` option (one entitlement class or a list), and gen now gates calls by it
+  (STA-2059, ADR 0215). The manifest lists a call in the `gates` of every entitlement it names, of a quota whose meter it
+  feeds (`meter`, `per` on the quota entry; `meter` and `entitlements` on the action entry) and of a limit counting a
+  model it creates, including an entitlement or model a hosted package ships. A name that resolves to nothing fails the
+  build with `entitlement_unknown` or `entitlement_counts_unknown`.
+
+### Patch Changes
+
+- Updated dependencies [b4b6422]
+  - @stackra/container@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/cache@0.29.0
+  - @stackra/testing@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Minor Changes
+
+- 2b6f88c: `UsageRecorded` carries optional `dimensions`, a small map the usage service may rate by (`{ market: "eg" }`): at most
+  8 snake_case keys with values of 1 to 64 characters, so a dimension never holds free text. A service that writes usage
+  itself (Notify per channel and market) sets them; existing producers are unchanged.
+
+### Patch Changes
+
+- @stackra/testing@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+  - @stackra/cache@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/testing@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+  - @stackra/cache@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

@@ -3,7 +3,9 @@
  * Purpose: `emitToolConfigs`, the tool configs gen writes into `.stackra/` for a package or a service: tsdown with one
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
  *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database`,
- *          `@stackra/clients` or `@stackra/tenancy`) that package's testing entry, registers the member's wiring for
+ *          `@stackra/clients`, `@stackra/actions`, `@stackra/workflow`, `@stackra/tenancy` or `@stackra/scope`) that
+ *          package's testing entry,
+ *          registers the member's wiring for
  *          `createTestingModule`, imports each generated schemas file statically (through Vite, so its `#` imports and
  *          decorators resolve as in source; STA-2032) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>`
  *          with its model; and the root
@@ -19,6 +21,7 @@
  *                     `@stackra/container`, `usesContainer`, gets a setup without the wiring, the schemas and
  *                     `@stackra/container/testing`).
  */
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
@@ -149,9 +152,8 @@ export function emitToolConfigs(
       : [],
   );
   const pairs: string[] = [];
-  for (const declared of ir.classes) {
+  for (const declared of factoryPairsOf(ir)) {
     const model = declared.partner;
-    if (declared.kind !== "factory" || model === undefined) continue;
     for (const target of [{ name: declared.name, from: declared.importPath }, model])
       imports.set(
         target.from,
@@ -200,9 +202,17 @@ export function emitToolConfigs(
     ...(ir.packages?.includes("@stackra/actions") === true
       ? ['import "@stackra/actions/testing";']
       : []),
+    // The workflow testing plugin, so a `useDrivers("memory")` test that starts a workflow (`ctx.run`) finds its runner.
+    ...(ir.packages?.includes("@stackra/workflow") === true
+      ? ['import "@stackra/workflow/testing";']
+      : []),
     // The memory `CallIsolation`, so a `useDrivers("memory")` call runs as its actor's tenant, as in production.
     ...(ir.packages?.includes("@stackra/tenancy") === true
       ? ['import "@stackra/tenancy/testing";']
+      : []),
+    // The scope testing plugin, so a `useDrivers("memory")` scope tree reads the stored scope nodes.
+    ...(ir.packages?.includes("@stackra/scope") === true
+      ? ['import "@stackra/scope/testing";']
       : []),
     ...(generated.registrations ? ['import "#stackra/registrations";'] : []),
     // Each schemas file registers its shapes. Imported here, the setup Vite transforms loads them through Vite too; a

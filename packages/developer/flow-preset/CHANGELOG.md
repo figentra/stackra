@@ -1,5 +1,24 @@
 # @stackra/flow-preset
 
+## 0.29.0
+
+### Patch Changes
+
+- 6f43cd8: `stackra constitution` writes `.flow/constitution.md` (the file Figentra Flow's `flow-*` commands read) from the docs
+  laws, and `stackra validate --repository` reports it missing or out of date (`constitution`). It was rendered by core's
+  agents-sync script, which retires now that Flow projects `.agents/` (STA-2098 H6).
+  
+  The stackra preset's workspace-layout rule and guard hint name the docs site as Fumadocs on a Worker (ADR 0514), not
+  Mintlify.
+
+## 0.28.0
+
+No changes in this release.
+
+## 0.27.0
+
+No changes in this release.
+
 ## 0.26.0
 
 No changes in this release.

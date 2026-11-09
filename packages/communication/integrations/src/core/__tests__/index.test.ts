@@ -77,6 +77,7 @@ describe("@stackra/integrations", () => {
       "VOICE_METERS",
       "VoiceMeter",
       "VoicePack",
+      "WebhookEventIdMissingError",
       "assertBalanced",
       "assertPayInputs",
       "audioSeconds",

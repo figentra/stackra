@@ -1,5 +1,66 @@
 # @stackra/database
 
+## 0.29.0
+
+### Minor Changes
+
+- 11a19a7: An implicit many-to-many pivot of tenant-owned models now stores the call's tenant. MikroORM's pivot insert names only
+  the two link columns, so `t.belongsToTenant({ pivot: true })` gives a new pivot's `tenant_id` a default read from
+  `app.tenant_id`, and `t.change(column).defaultSetting(setting)` gives an existing pivot the same default. Outside a
+  tenant call the default is NULL, so the NOT NULL column refuses the row instead of storing it without a tenant.
+
+### Patch Changes
+
+- 09b2c41: `CrudService` no longer declares a private `settled` member (0.26.0), which broke any subclass with a member of that name (TS2415 and a runtime override). The read flush is a module function now.
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/cache@0.29.0
+  - @stackra/testing@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/testing@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+  - @stackra/cache@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- 4a4d817: A `CrudService` read treats an entity manager without `isInTransaction` (a unit test's partial one) as outside a transaction, instead of throwing.
+- @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/testing@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+  - @stackra/cache@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

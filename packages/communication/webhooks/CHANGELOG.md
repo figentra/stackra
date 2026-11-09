@@ -1,5 +1,88 @@
 # @stackra/webhooks
 
+## 0.29.0
+
+### Minor Changes
+
+- 1b88340: `webhooks.eventId` can name several parts, `{ parts: [{ path }, { header }] }`, joined with `:` into one inbox id, for a provider whose events carry no unique id of their own (an order id plus its state plus the delivery timestamp). The receiver refuses an event whose named part is missing with `WebhookEventIdMissingError` instead of keying it by an empty id, which would have deduplicated every such event as one; this applies to the single `{ path }` form too.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [4cc17e5]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+- Updated dependencies [1b88340]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/integrations@0.29.0
+  - @stackra/tenancy@0.29.0
+  - @stackra/queue@0.29.0
+  - @stackra/scheduler@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/money@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/scheduler@0.28.0
+  - @stackra/integrations@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/money@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- 7d284f2: `WebhookReceiver` parses a verified body by its recipe's `bodyFormat`: `json` (the default) as before, or `form`, an
+  `application/x-www-form-urlencoded` body read into percent-decoded string values, which route the event
+  (`eventType.path`), key it (`eventId.path`) and create it. A verified form-encoded delivery no longer throws a
+  `SyntaxError` before routing. `WebhookSchemeRecipe.bodyFormat` now documents that it governs both the verifier and the
+  receiver.
+- Updated dependencies [4a4d817]
+- Updated dependencies [df74e1d]
+- Updated dependencies [7d284f2]
+  - @stackra/database@0.27.0
+  - @stackra/integrations@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/scheduler@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/money@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Minor Changes

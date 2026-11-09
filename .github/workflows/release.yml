@@ -55,9 +55,15 @@ on:
         type: string
         default: 0.1.0
 
-# One release run per ref at a time: a second run starting before this one finishes
-# would version the same changesets twice.
-concurrency: release-${{ github.ref }}
+# One release run per ref and kind at a time: a second run starting before this one finishes
+# would version the same changesets twice. The version PR's squash merge publishes, and only its
+# own run can (the gate below), so it gets its own group: GitHub keeps one pending run per group,
+# and a later push to main cancelled a publish run that was pending in the shared group (0.27.0).
+# A publish run versions nothing, so it never races a `pr` run. workflow_dispatch has no
+# head_commit and stays in `pr`.
+concurrency:
+  group: "release-${{ github.ref }}-${{ startsWith(github.event.head_commit.message, 'chore(release): version packages') && 'publish' || 'pr' }}"
+  cancel-in-progress: false
 
 # ADR 0019 D2: nothing by default; the job grants what the provider's jobs ask for.
 permissions: {}

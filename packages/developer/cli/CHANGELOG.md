@@ -1,5 +1,73 @@
 # @stackra/cli
 
+## 0.29.0
+
+### Minor Changes
+
+- 6f43cd8: `stackra constitution` writes `.flow/constitution.md` (the file Figentra Flow's `flow-*` commands read) from the docs
+  laws, and `stackra validate --repository` reports it missing or out of date (`constitution`). It was rendered by core's
+  agents-sync script, which retires now that Flow projects `.agents/` (STA-2098 H6).
+  
+  The stackra preset's workspace-layout rule and guard hint name the docs site as Fumadocs on a Worker (ADR 0514), not
+  Mintlify.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [f069f95]
+- Updated dependencies [edc2781]
+- Updated dependencies [b26036e]
+- Updated dependencies [8ad5f87]
+- Updated dependencies [75ec6eb]
+- Updated dependencies [856207e]
+- Updated dependencies [1b727b9]
+- Updated dependencies [45afd22]
+- Updated dependencies [25b99da]
+- Updated dependencies [6f43cd8]
+  - @stackra/gen@0.29.0
+  - @stackra/repo-checks@0.29.0
+  - @stackra/runway@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/mcp@0.29.0
+  - @stackra/skills@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [f0be8d8]
+- Updated dependencies [7a87018]
+  - @stackra/gen@0.28.0
+  - @stackra/runway@0.28.0
+  - @stackra/mcp@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/repo-checks@0.28.0
+  - @stackra/skills@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [fb1ae38]
+  - @stackra/gen@0.27.0
+  - @stackra/runway@0.27.0
+  - @stackra/mcp@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/repo-checks@0.27.0
+  - @stackra/skills@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes
