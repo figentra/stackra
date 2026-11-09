@@ -18,7 +18,7 @@
 "@stackra/webhooks": minor
 ---
 
-Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+**Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
 action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
 /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
 `openapi.json` and the SDKs move to the prefixed paths.
@@ -36,9 +36,17 @@ Gen also refuses, in its full pass (STA-340):
 - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
   catalogue.
 
-The routes outside their area move under it: loyalty-kit's six overrides to `/app/loyalty/...`, the award
+The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
 verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
 `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
 `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
 `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
 media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+
+The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+that already started with an area moving again is still refused with `identity_changed`.
+
+What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+`openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+pinned to an old path (none before launch) would need the prefixed one.

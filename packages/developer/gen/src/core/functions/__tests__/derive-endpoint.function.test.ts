@@ -105,6 +105,6 @@ describe("deriveEndpoint", () => {
         inputFields: [],
         actors: ["anonymous"],
       }),
-    ).toEqual({ method: "GET", path: "/checkout-pages/load", derived: true });
+    ).toEqual({ method: "GET", path: "/app/checkout-pages/load", derived: true });
   });
 });

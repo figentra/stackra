@@ -126,14 +126,14 @@ describe("emitSdks", () => {
       for (const baseUrl of ["https://example.com/api", "https://example.com/api/"]) {
         const { client, seen } = run(source, baseUrl);
         await client.ordersOrderCancel({ orderId: "ord_1" });
-        expect(seen[0]?.url).toBe("https://example.com/api/orders/ord_1/cancel");
+        expect(seen[0]?.url).toBe("https://example.com/api/app/orders/ord_1/cancel");
       }
     });
 
     it("requests the same URL as before for a host-only base URL", async () => {
       const { client, seen } = run(source, "https://api.example.com");
       await client.ordersOrderCancel({ orderId: "ord_1" });
-      expect(seen[0]?.url).toBe("https://api.example.com/orders/ord_1/cancel");
+      expect(seen[0]?.url).toBe("https://api.example.com/app/orders/ord_1/cancel");
     });
 
     it("generates a fresh UUID key on a write with no key", async () => {
