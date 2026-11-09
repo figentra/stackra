@@ -59,7 +59,8 @@
  *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
  *                     (an unbound approval step does not run); ADR 0406
  *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
- *                     STA-1588 (the default action buckets);
+ *                     STA-1588 (the default action buckets); ADR 0213 (decision 2: a scope's rate-limit caps, through
+ *                     `RateLimitCapSource`, are settings);
  *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
  *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
@@ -85,6 +86,7 @@ import {
   Logger,
   MeterKind,
   mintPublicId,
+  RateLimitCapSource,
   type TraceAttributes,
   Tracer,
 } from "@stackra/contracts";
@@ -963,7 +965,9 @@ export class ActionPipeline {
    * address. The area bucket is keyed by (app, scope) (ADR 0217 decision 2): the app is the origin's id
    * (storefront, API key, agent) or, without one, the actor. A refusal carries
    * the refusing bucket's numbers and, when an `EventOutbox` is bound, writes one `count` usage event on
-   * `RATE_LIMITED_METER` ("limits are metered").
+   * `RATE_LIMITED_METER` ("limits are metered"). When a `RateLimitCapSource` is bound, each bucket's numbers are the
+   * lower of its own and the scope's caps (the scope's settings), so an operator lowers a scope's limits without a
+   * deploy; a failed caps read fails the call, never lets it through unlimited.
    */
   private async limit(call: Call): Promise<void> {
     const { descriptor, options, at } = call;
@@ -979,14 +983,23 @@ export class ActionPipeline {
     const takes: [key: string, bucket: RateLimitBucket][] = [];
     const config = this.optional(RateLimitConfig);
     const area = config?.areas[descriptor.area];
-    const planned = await this.optional(RateLimitBudget)?.areaBucket(descriptor);
-    if (planned !== undefined) takes.push([areaKey, planned]);
-    else if (area !== undefined)
+    // shortcut: a cap only lowers a limit (min), so a scope that writes its own caps can only throttle itself; once the
+    // read-side level source (STA-2631) tells a platform cap from a scope's own, a platform cap may raise one.
+    const caps = await this.optional(RateLimitCapSource)?.caps(descriptor.area, descriptor.scope);
+    const planned =
+      (await this.optional(RateLimitBudget)?.areaBucket(descriptor)) ??
+      (area === undefined
+        ? undefined
+        : {
+            capacity: area.burst,
+            tokensPerSecond: area.requests / (Duration.toMilliseconds(area.per) / 1000),
+          });
+    if (planned !== undefined)
       takes.push([
         areaKey,
         {
-          capacity: area.burst,
-          tokensPerSecond: area.requests / (Duration.toMilliseconds(area.per) / 1000),
+          capacity: Math.min(planned.capacity, caps?.burst ?? Infinity),
+          tokensPerSecond: Math.min(planned.tokensPerSecond, (caps?.perMinute ?? Infinity) / 60),
         },
       ]);
     const own = options.rateLimit;
@@ -998,9 +1011,11 @@ export class ActionPipeline {
         { capacity: own.perMinute, tokensPerSecond: own.perMinute / 60 },
       ]);
     } else if (fallback !== undefined) {
+      const perScope = Math.min(fallback.perScope, caps?.actionPerScope ?? Infinity);
+      const perAddress = Math.min(fallback.perAddress, caps?.actionPerAddress ?? Infinity);
       takes.push([
         `action:${descriptor.key}:scope:${holder}`,
-        { capacity: fallback.perScope, tokensPerSecond: fallback.perScope / 60 },
+        { capacity: perScope, tokensPerSecond: perScope / 60 },
       ]);
       const address = call.request.client?.address;
       // The store sees a hash, never the address (CallClient goes to no port).
@@ -1008,7 +1023,7 @@ export class ActionPipeline {
       if (address !== undefined)
         takes.push([
           `action:${descriptor.key}:address:${await fingerprintOf(address)}`,
-          { capacity: fallback.perAddress, tokensPerSecond: fallback.perAddress / 60 },
+          { capacity: perAddress, tokensPerSecond: perAddress / 60 },
         ]);
     }
     for (const [key, bucket] of takes) {

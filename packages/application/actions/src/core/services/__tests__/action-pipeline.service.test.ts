@@ -57,6 +57,8 @@ import {
   MeterKind,
   Realm,
   type PublicId,
+  RateLimitCapSource,
+  type RateLimitCaps,
   type ScopeRef,
   type TraceAttributes,
   type TraceCarrier,
@@ -1031,6 +1033,94 @@ describe(ActionPipeline, () => {
     expect(keys[0]).toBe("action:order.get:scope:ten_1");
     expect(keys[1]).toMatch(/^action:order\.get:address:[0-9a-f]{64}$/);
     expect(keys.join()).not.toContain("203.0.113.7");
+  });
+
+  describe("scope caps (RateLimitCapSource)", () => {
+    const NO_CAPS: RateLimitCaps = {
+      perMinute: null,
+      burst: null,
+      actionPerScope: null,
+      actionPerAddress: null,
+    };
+    const ACME: ScopeRef = { id: "scp_1", path: "platform.acme" };
+
+    /** Answers `caps` and records what was asked. */
+    class Caps extends Driver(RateLimitCapSource) {
+      readonly asked: unknown[] = [];
+
+      private readonly answer: Partial<RateLimitCaps> | Error;
+
+      constructor(answer: Partial<RateLimitCaps> | Error) {
+        super();
+        this.answer = answer;
+      }
+
+      async caps(area: string, scope: ScopeRef | undefined): Promise<RateLimitCaps> {
+        this.asked.push([area, scope]);
+        if (this.answer instanceof Error) throw this.answer;
+        return { ...NO_CAPS, ...this.answer };
+      }
+    }
+
+    /** A pipeline whose `app` area holds `burst` calls, with `caps` bound. */
+    function capped(
+      burst: number,
+      caps: Caps,
+      actionDefault = { perScope: 1200, perAddress: 300 },
+    ) {
+      const config = Object.assign(new RateLimitConfig(), {
+        areas: { app: { requests: burst, per: Duration.minutes(1), burst } },
+        actionDefault,
+      });
+      const { pipeline } = setup([
+        [RateLimitConfig, config],
+        [RateLimitCapSource, caps],
+      ]);
+      return () =>
+        pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer, scope: ACME });
+    }
+
+    it("keeps the configured bucket when the scope sets no cap", async () => {
+      const caps = new Caps({});
+      const read = capped(2, caps);
+      await read();
+      await read();
+      await expect(read()).rejects.toMatchObject({ code: "rate_limited", limit: 2 });
+      expect(caps.asked[0]).toEqual(["app", ACME]);
+    });
+
+    it("lowers the area bucket to a smaller cap", async () => {
+      const read = capped(5, new Caps({ burst: 1, perMinute: 1 }));
+      await read();
+      await expect(read()).rejects.toMatchObject({
+        code: "rate_limited",
+        limit: 1,
+        retryAfterMs: expect.closeTo(60_000, -1),
+      });
+    });
+
+    it("never raises a limit: a larger cap keeps the configured bucket", async () => {
+      const read = capped(1, new Caps({ burst: 100, perMinute: 100 }));
+      await read();
+      await expect(read()).rejects.toMatchObject({ code: "rate_limited", limit: 1 });
+    });
+
+    it("lowers the default action bucket to a smaller cap, never raises it", async () => {
+      const lowered = capped(100, new Caps({ actionPerScope: 1 }));
+      await lowered();
+      await expect(lowered()).rejects.toMatchObject({ code: "rate_limited", limit: 1 });
+      const raised = capped(100, new Caps({ actionPerScope: 50 }), {
+        perScope: 1,
+        perAddress: 300,
+      });
+      await raised();
+      await expect(raised()).rejects.toMatchObject({ code: "rate_limited", limit: 1 });
+    });
+
+    it("refuses the call when the caps cannot be read", async () => {
+      const read = capped(100, new Caps(new Error("settings store down")));
+      await expect(read()).rejects.toThrow("settings store down");
+    });
   });
 
   it("keys the area bucket by (app, scope) and refuses with the bucket's back-off details", async () => {

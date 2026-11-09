@@ -9,8 +9,15 @@ import type { ToolOutput } from "#node/types/tool-output.type";
 
 /** The outside world of one `stackra testbed` run. */
 export type TestbedDeps = {
-  /** Runs a program without a shell and captures its output; `undefined` when it cannot start. */
-  readonly exec: (command: string, args: readonly string[]) => Promise<ToolOutput | undefined>;
+  /**
+   * Runs a program without a shell and captures its output; `undefined` when it cannot start. With `timeoutMs`, a
+   * program still running then is stopped and answers code 124.
+   */
+  readonly exec: (
+    command: string,
+    args: readonly string[],
+    options?: { readonly timeoutMs?: number },
+  ) => Promise<ToolOutput | undefined>;
 
   /** Runs a program without a shell with its output on the command's io; resolves with its exit code. */
   readonly stream: (command: string, args: readonly string[]) => Promise<number>;

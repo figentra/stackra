@@ -18,6 +18,7 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { TESTBED_PROBE_TIMEOUT_MS } from "#node/constants/testbed-probe-timeout-ms.constant";
 import { captureIo } from "#node/functions/capture-io.function";
 import { runTestbed } from "#node/functions/run-testbed.function";
 import type { TestbedDeps } from "#node/types/testbed-deps.type";
@@ -179,6 +180,22 @@ describe("runTestbed run", () => {
     expect(streams[0]).toContain("--exclude node_modules");
     expect(streams[1]).toContain("testbed-agent job run");
     expect(streams[1]).toContain(" light 'me work' 'app' -- 'pnpm lint'");
+  });
+
+  it("gives every health and slot probe a deadline, so one hung box never stalls a waiting run", async () => {
+    const { deps } = fake({ boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]) });
+    const seen: [command: string, timeoutMs: number | undefined][] = [];
+    const traced: TestbedDeps = {
+      ...deps,
+      exec: async (command, args, options) => {
+        if (command === "ssh") seen.push([String(args.at(-1)), options?.timeoutMs]);
+        return deps.exec(command, args, options);
+      },
+    };
+    expect(await runTestbed(request({}), traced, captureIo().io)).toBe(0);
+    const probes = seen.filter(([command]) => /testbed-agent (health|slot)/.test(command));
+    expect(probes.length).toBeGreaterThan(0);
+    expect(probes.every(([, timeoutMs]) => timeoutMs === TESTBED_PROBE_TIMEOUT_MS)).toBe(true);
   });
 
   it("asks the box for a Postgres beside the job with --postgres", async () => {

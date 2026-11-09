@@ -15,7 +15,7 @@ import { Clock } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { IdentityConfig } from "#config/identity.config";
-import { ApiKeyStore } from "#contracts/index";
+import { ApiKeyMode, ApiKeyStore } from "#contracts/index";
 import type { ApiKeyRecord } from "#contracts/index";
 import { MemoryApiKeyStoreDriver } from "#core/drivers/memory-api-key-store.driver";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
@@ -51,8 +51,12 @@ describe(ApiKeyVerifierService, () => {
   let verifier: ApiKeyVerifierService;
 
   /** Mints a key of `kind`, stores its record with `extra`, and resolves to the key. */
-  async function issue(kind: ApiKeyKind, extra: Partial<ApiKeyRecord> = {}): Promise<string> {
-    const key = mintApiKey(kind, config);
+  async function issue(
+    kind: ApiKeyKind,
+    extra: Partial<ApiKeyRecord> = {},
+    mode: ApiKeyMode = ApiKeyMode.Live,
+  ): Promise<string> {
+    const key = mintApiKey(kind, config, mode);
     store.add({
       id: "key_1",
       hash: await hashApiKey(key),
@@ -78,6 +82,21 @@ describe(ApiKeyVerifierService, () => {
     });
     const publishable = await issue(ApiKeyKind.Publishable);
     expect((await verifier.verify(publishable, SHOP)).kind).toBe(ApiKeyKind.Publishable);
+  });
+
+  it("answers a test key's mode and version pin, and refuses a text whose mode is not the stored one", async () => {
+    const test = await issue(
+      ApiKeyKind.Secret,
+      { mode: ApiKeyMode.Test, versionPin: "2026-11-09" },
+      ApiKeyMode.Test,
+    );
+    expect(await verifier.verify(test)).toMatchObject({
+      mode: ApiKeyMode.Test,
+      record: { versionPin: "2026-11-09" },
+    });
+    expect((await verifier.verify(await issue(ApiKeyKind.Secret))).mode).toBe(ApiKeyMode.Live);
+    const relabelled = await issue(ApiKeyKind.Secret, { mode: ApiKeyMode.Live }, ApiKeyMode.Test);
+    await expect(verifier.verify(relabelled)).rejects.toBeInstanceOf(ApiKeyRejectedError);
   });
 
   it("refuses a malformed key without a lookup", async () => {
