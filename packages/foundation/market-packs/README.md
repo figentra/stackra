@@ -103,6 +103,20 @@ and the subject of each rule kind. It also holds the `sa`, `ae` and `eg` base pa
 document, and the SSN is already `identity.ssn_last_four` (default applied 2026-10-27, owner may override). None of
 it is served until it is reviewed, signed and promoted.
 
+**Interim: the `bundled` source** (ADR 0386, amended 2026-11-09). Until the release service signs packs, a host may set
+`market_packs.source: bundled`. It serves a bundled pack only when the pack is `live` and the host pins its content hash
+in `packHashes`. Copy the pins from `BUNDLED_PACK_HASHES`, which a test keeps equal to the files. An unpinned file is
+never read. In production it refuses to start unless the host also sets `allowBundledInProduction`, and signing comes
+before production.
+
+```ts
+// a host's src/config/market-packs.config.ts
+export class MarketPacksConfig extends BaseMarketPacksConfig {
+  override source = "bundled" as const;
+  override packHashes = [/* from BUNDLED_PACK_HASHES of the same @stackra/market-packs release */];
+}
+```
+
 ## Base-pack keys this package declares
 
 `BASE_PACK_SCHEMAS` holds shapes, never values; pass it to `PackSchemaRegistry.create` with the other owners' schemas.

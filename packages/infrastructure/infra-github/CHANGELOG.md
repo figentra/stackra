@@ -1,5 +1,37 @@
 # @stackra/infra-github
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 5585893: `providers.github` takes the repository metadata: `description` (one sentence, at most 350 characters), `topics`
+  (lower-case GitHub topics, each once, at most 20) and `homepage` (an absolute URL). `githubPlan` carries them and
+  `githubStack` sets them on the repository (`description`, `topics`, `homepageUrl`), so a `preview` of the github
+  stack shows a repository whose metadata drifted from its runway. `@stackra/runway`'s closed `providers.github`
+  schema takes the same three keys, so `parseRunway` accepts them.
+
+### Patch Changes
+
+- Updated dependencies [5585893]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+  - @stackra/runway@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes

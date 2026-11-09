@@ -1973,6 +1973,31 @@
         "title": "Push primer",
         "description": "Explains what push notifications give before the system asks, as a sheet or inside onboarding.",
         "keywords": "push, notifications, permission, onboarding, opt in, mobile"
+      },
+      "appearance_toggle": {
+        "title": "Appearance toggle",
+        "description": "Lets a person choose light, dark or the system's look, kept on their device.",
+        "keywords": "theme, dark mode, light mode, color scheme, appearance"
+      },
+      "brand_logo": {
+        "title": "Brand logo",
+        "description": "Draws the theme's logo, or yours, in the scheme on screen.",
+        "keywords": "logo, brand, wordmark, dark mode, theme"
+      },
+      "scope_picker": {
+        "title": "ScopePicker",
+        "description": "Switches the active scope: a branch, a store or any level of the scope tree.",
+        "keywords": "scope, branch, hierarchy, switcher, picker"
+      },
+      "entitlement_gate": {
+        "title": "EntitlementGate",
+        "description": "Shows part of the screen only while the customer's plan includes a feature.",
+        "keywords": "entitlement, plan, feature, upgrade, paywall"
+      },
+      "i18n_locale_switcher": {
+        "title": "LocaleSwitcher (i18n)",
+        "description": "The language field bound to the app's active locale, switching and remembering the choice.",
+        "keywords": "language, locale, switcher, translation, right-to-left"
       }
     }
   },
@@ -5872,6 +5897,31 @@
         }
       },
       "push_primer": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "appearance_toggle": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "brand_logo": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "scope_picker": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "entitlement_gate": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "i18n_locale_switcher": {
         "basics": {
           "title": "Basics"
         }
@@ -9918,6 +9968,46 @@
           "what": "The notifications module's push permission primer for the app, as a full sheet or an inline card.",
           "when": "In onboarding, after a first order, or wherever push would help the person most.",
           "rtl": "The card mirrors in Arabic, and its buttons keep their order from the inline start."
+        },
+        "appearance_toggle": {
+          "headline": "Light, dark or the system's look, one tap away.",
+          "intro": "Shows the colour schemes the app offers and keeps the one a person picks on their device; set to system, it follows the phone or computer.",
+          "tags": "Theming kit · Colour scheme · Dark mode",
+          "what": "The theming module's scheme picker over the device's chosen scheme: segments for a settings page, a switch for a compact header, or a menu behind a button for a site header.",
+          "when": "In a settings page, an account menu or a marketing site's header, wherever people expect to change the look.",
+          "rtl": "The segments and the menu follow the reading direction, so the first scheme sits on the right in Arabic and the arrow keys move with it."
+        },
+        "brand_logo": {
+          "headline": "Your logo, right in light and in dark.",
+          "intro": "Draws the logo the theme configures, or a logo per scheme you hand it, sized to a height and letterboxed so it never stretches; with no logo it shows your fallback.",
+          "tags": "Theming kit · Branding · Dark mode",
+          "what": "The theming module's logo, read from the theme's configuration and the scheme on screen.",
+          "when": "In an app bar, a sidebar header, a sign-in page or a branding preview.",
+          "rtl": "A logo is a picture, so it is never mirrored; only its place in the row follows the reading direction."
+        },
+        "scope_picker": {
+          "headline": "Work in one part of the organisation at a time.",
+          "intro": "A field over the scopes the signed-in person may enter, nested as a tree; with many of them it becomes a search. Choosing one makes it the active scope every request carries.",
+          "tags": "Scope kit · Scope tree · Field",
+          "what": "The scope module's switcher, a tree select or a search field over the active scope service.",
+          "when": "In the header or a filter bar, where people move between branches, stores or regions.",
+          "rtl": "The field and the tree mirror in Arabic, and each scope's name keeps its own direction."
+        },
+        "entitlement_gate": {
+          "headline": "Show it only when the plan includes it.",
+          "intro": "Wraps a feature and shows it while the customer's plan grants the entitlement, or an upgrade prompt when it does not; the server still checks every call.",
+          "tags": "Entitlements kit · Plans · Visibility",
+          "what": "The entitlements module's plan check for the screen, over the plan's entitlement source.",
+          "when": "Around a paid feature, a report or a panel that only some plans include.",
+          "rtl": "It draws nothing of its own, so what it shows mirrors in Arabic as it would anywhere."
+        },
+        "i18n_locale_switcher": {
+          "headline": "One language field, already wired.",
+          "intro": "Hands the house locale field the app's languages and the active one, then switches and remembers the choice through the app's own route or setter.",
+          "tags": "i18n kit · Languages · Field",
+          "what": "The i18n module's binding of the locale switcher to the active locale and the remembered choice.",
+          "when": "In the header, the account menu or a settings page, wherever people pick the app's language.",
+          "rtl": "Switching to Arabic turns the whole app right to left, and each language is named in itself."
         }
       }
     }

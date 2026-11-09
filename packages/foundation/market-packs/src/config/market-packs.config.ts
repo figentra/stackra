@@ -26,5 +26,5 @@ import { MarketPacksOptions } from "#core/schemas/market-packs-options.schema";
  */
 export class MarketPacksConfig extends Config({
   schema: MarketPacksOptions,
-  env: { source: "STACKRA_MARKET_PACKS_SOURCE" },
+  env: { source: "STACKRA_MARKET_PACKS_SOURCE", environment: "STACKRA_ENVIRONMENT" },
 }) {}

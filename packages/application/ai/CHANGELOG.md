@@ -1,5 +1,47 @@
 # @stackra/ai
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [54db249]
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/search@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 7179d1a: `ChatFormPart` (`@stackra/panel/react`) draws an action's form in a chat turn from its JSON Schema input: one field per key, drawn as a screen draws it, prefilled by the assistant, with uploads through the host's `upload`, and sent as the person's answer. `useZodFormHandle` (`@stackra/ui/form`) runs a form over a zod schema with no class, and `useSchemaFormHandle` now builds on it. `TamoFormPart` gains `id`, which the host answers with the sent values, as a question's.
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/search@0.31.0
+  - @stackra/outbox@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes
