@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `configFindings(context)`, the `config` phase of `stackra check`: JSON versus JSONC versus YAML, YAML flow
- *          mappings (each file must also parse), `.stackra/` in `.gitignore`, golden files git would ignore (STA-1807), the ADR number register (STA-1732), mise npm pins that match the catalogs (STA-1865), gen tasks that carry STACKRA_GEN_STRICT, and the skill and agent source rules (STA-2098 H6).
+ *          mappings (each file must also parse), `.stackra/` in `.gitignore`, golden files git would ignore (STA-1807), the ADR number register (STA-1732), mise npm pins that match the catalogs (STA-1865), gen tasks that carry STACKRA_GEN_STRICT, a current `.flow/constitution.md`, and the skill and agent source rules (STA-2098 H6).
  * Boundary: reads the listed files; returns findings and never prints.
  * Runtime: node
  * Governing contract: the YAML standard (STA-299); ADR 0295 (decision 5); STA-1732.
@@ -16,6 +16,7 @@ import { checkGitignore } from "#node/functions/check-gitignore.function";
 import { checkJsonConfigs } from "#node/functions/check-json-configs.function";
 import { checkToolPins } from "#node/functions/check-tool-pins.function";
 import { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
+import { constitutionFindings } from "#node/functions/constitution-findings.function";
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { ignoredGoldenFindings } from "#node/functions/ignored-golden-findings.function";
 import { isRepoOwnedYaml } from "#node/functions/is-repo-owned-yaml.function";
@@ -56,6 +57,7 @@ export function configFindings(context: RepoContext): RawFinding[] {
       checkGitignore(existsSync(gitignore) ? readFileSync(gitignore, "utf8") : undefined),
     ),
     ...ignoredGoldenFindings(context),
+    ...constitutionFindings(context),
     ...agentSourceFindings(context),
     ...of(
       "adr-numbers",
