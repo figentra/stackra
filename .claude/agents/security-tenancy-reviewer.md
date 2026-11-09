@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: opus
 ---
 
-<!-- generated from .agents/agents/security-tenancy-reviewer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/security-tenancy-reviewer.md by fflow sync — edit the source, not this file -->
 
 # security-tenancy-reviewer
 

@@ -16,6 +16,8 @@
     "**/encore.gen/**",
     // a package's committed entity list, written by `stackra gen` and checked byte-for-byte by `gen --check` (STA-1874)
     "packages/*/*/src/node/entities.gen.ts",
+    // the reviewer list `fflow sync` writes from .agents/agents (projection: true), byte-pinned by `fflow check`
+    ".agents/hooks/_reviewer-agents.mjs",
     "**/dist/**",
     // Expo: generated native projects and the CLI cache
     "**/ios/**",
