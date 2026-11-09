@@ -16,6 +16,7 @@
  */
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
+import type { StoredRefusal } from "@stackra/errors";
 import Valkey from "iovalkey";
 
 import type { StoresConfig } from "#config/stores.config";
@@ -85,6 +86,23 @@ export class ValkeyIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     if (fingerprint === undefined) return;
     const record: IdempotencyRecord = { fingerprint, done: true, output: output ?? null };
     await this.client.set(this.prefix + key, JSON.stringify(record), "KEEPTTL", "XX");
+  }
+
+  /** Writes the refusal that ended a call, claimed or not; see `IdempotencyStore.completeRefused`. */
+  async completeRefused(
+    key: string,
+    fingerprint: string,
+    refusal: StoredRefusal,
+    ttl: Duration,
+  ): Promise<void> {
+    this.held.delete(key);
+    const record: IdempotencyRecord = { fingerprint, done: true, refusal };
+    await this.client.set(
+      this.prefix + key,
+      JSON.stringify(record),
+      "PX",
+      Math.max(1, Math.ceil(Duration.toMilliseconds(ttl))),
+    );
   }
 
   /** Frees the held `key` after a failed call; see `IdempotencyStore.release`. */

@@ -69,7 +69,9 @@ import {
 import {
   ErrorKind,
   ForbiddenError,
+  IdempotencyKeyInProgressError,
   IdempotencyKeyReusedError,
+  isRefusal,
   LiveReadOnlyError,
   RateLimitedError,
   Refusal,
@@ -230,6 +232,31 @@ class LoggingFlags extends Driver(FlagCheck) {
 class OrdersPausedError extends Refusal({ kind: ErrorKind.FailedPrecondition }) {}
 
 class OutOfStockError extends Refusal({ kind: ErrorKind.Conflict }) {}
+
+/** A Required write whose outcome a test chooses: it runs, refuses, crashes, or waits for `release`. */
+class FlakyAction extends Action({
+  key: "flaky.run",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Required,
+}) {
+  ran = 0;
+
+  mode: "ok" | "refuse" | "retryable" | "crash" | "wait" = "ok";
+
+  release: () => void = () => undefined;
+
+  async handle(input: { quantity: number }): Promise<{ ran: number }> {
+    this.ran += 1;
+    if (this.mode === "refuse") throw OutOfStockError.create();
+    if (this.mode === "retryable") throw RateLimitedError.create({ retryAfterMs: 1000 });
+    if (this.mode === "crash") throw new TypeError("boom");
+    if (this.mode === "wait")
+      await new Promise<void>((resolve) => {
+        this.release = resolve;
+      });
+    return { ran: this.ran + input.quantity };
+  }
+}
 
 class Shop {
   open = true;
@@ -602,6 +629,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
   const trail = new Trail();
   const lines = new Lines();
   const send = new SendMessageAction();
+  const flaky = new FlakyAction();
   const workflows = new Workflows();
   const jobs = new Jobs();
   const storage = new AsyncContextStorageDriver();
@@ -622,6 +650,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
     [TracingInterceptor, new TracingInterceptor()],
     [DoubleNextInterceptor, new DoubleNextInterceptor()],
     [CreateOrderAction, new CreateOrderAction(shop)],
+    [FlakyAction, flaky],
     [SendMessageAction, send],
     [InspectAction, new InspectAction()],
     [RedeemPointsAction, new RedeemPointsAction()],
@@ -633,6 +662,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
     ...extra,
   ]);
   return {
+    flaky,
     pipeline: new ActionPipeline(resolver),
     shop,
     access,
@@ -798,7 +828,7 @@ describe(ActionPipeline, () => {
     expect(other).toEqual({ orderId: "ord_2", key: "k1" });
   });
 
-  it("releases the key of a refused call so the retry runs", async () => {
+  it("rolls back a refused call and keeps its refusal as the answer for the same key", async () => {
     const { pipeline, shop } = setup();
     shop.failNext = true;
     await expect(
@@ -810,16 +840,57 @@ describe(ActionPipeline, () => {
     ).rejects.toBeInstanceOf(OutOfStockError);
     expect(log).toContain("rollback");
     expect(log).not.toContain("after-commit:1");
-    expect(
-      await pipeline.execute(
-        CreateOrderAction,
-        { quantity: 1 },
-        { actor: customer, idempotencyKey: "k1" },
-      ),
-    ).toEqual({
-      orderId: "ord_1",
-      key: "k1",
-    });
+    // handle would succeed now, but the key already has its answer
+    const again = await pipeline
+      .execute(CreateOrderAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" })
+      .catch((error: unknown) => error);
+    expect(isRefusal(again, OutOfStockError)).toBe(true);
+    expect(shop.placed).toBe(0);
+  });
+
+  it("answers a second call with the same key and input while the first runs: in progress; other input: reused", async () => {
+    const { pipeline, flaky } = setup();
+    flaky.mode = "wait";
+    const call = (quantity: number) =>
+      pipeline.execute(FlakyAction, { quantity }, { actor: customer, idempotencyKey: "k1" });
+    const first = call(1);
+    await vi.waitFor(() => expect(flaky.ran).toBe(1));
+    await expect(call(1)).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+    await expect(call(2)).rejects.toBeInstanceOf(IdempotencyKeyReusedError);
+    flaky.release();
+    expect(await first).toEqual({ ran: 2 });
+    expect(await call(1)).toEqual({ ran: 2 });
+    expect(flaky.ran).toBe(1);
+  });
+
+  it("replays a non-retryable refusal for a retry, equal but for the request id, and runs handle once", async () => {
+    const { pipeline, flaky } = setup();
+    flaky.mode = "refuse";
+    const call = () =>
+      pipeline.execute(FlakyAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" });
+    const first = await call().catch((error: unknown) => error);
+    const again = await call().catch((error: unknown) => error);
+    expect(first).toBeInstanceOf(OutOfStockError);
+    expect(isRefusal(again, OutOfStockError)).toBe(true);
+    expect((again as Refusal).toEnvelope()).toEqual((first as Refusal).toEnvelope());
+    expect((again as Refusal).kind).toBe(ErrorKind.Conflict);
+    expect(flaky.ran).toBe(1);
+  });
+
+  it("releases the key of a retryable refusal or a plain error, so the retry runs handle again", async () => {
+    const { pipeline, flaky } = setup();
+    const call = () =>
+      pipeline.execute(FlakyAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" });
+    flaky.mode = "retryable";
+    await expect(call()).rejects.toBeInstanceOf(RateLimitedError);
+    await expect(call()).rejects.toBeInstanceOf(RateLimitedError);
+    expect(flaky.ran).toBe(2);
+    flaky.mode = "crash";
+    await expect(call()).rejects.toBeInstanceOf(TypeError);
+    await expect(call()).rejects.toBeInstanceOf(TypeError);
+    expect(flaky.ran).toBe(4);
+    flaky.mode = "ok";
+    expect(await call()).toEqual({ ran: 6 });
   });
 
   it("never stores or replays the output of an Idempotency.Never action, even with a key", async () => {

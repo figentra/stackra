@@ -23,7 +23,7 @@ import { ClientsConfig, HttpClientTransportDriver } from "@stackra/clients";
 import { buildConfig } from "@stackra/config";
 import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
-import { ErrorKind, Refusal } from "@stackra/errors";
+import { ErrorKind, IdempotencyKeyInProgressError, Refusal } from "@stackra/errors";
 import { MemoryServiceTokensDriver } from "@stackra/identity";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -234,6 +234,16 @@ describe(serveGuardedCall, () => {
     );
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({ code: "order_locked", category: "conflict" });
+  });
+
+  it("asks to retry in a second when the first call with the key is still running", async () => {
+    const { serve } = call({ throws: IdempotencyKeyInProgressError.create() });
+    const response = await serve(
+      await forwarded("GET", "/orders/ord_1", "", "", { authorization: "Bearer t" }),
+    );
+    expect(response.status).toBe(409);
+    expect(response.headers.get("Retry-After")).toBe("1");
+    expect(await response.json()).toMatchObject({ code: "idempotency_key_in_progress" });
   });
 
   it("answers 400 for a body that is not a JSON object", async () => {

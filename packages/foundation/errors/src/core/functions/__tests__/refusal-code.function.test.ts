@@ -33,6 +33,7 @@ const CONFORMANCE: ReadonlyArray<readonly [string, string]> = [
   ["ForbiddenError", "forbidden"],
   ["RateLimitedError", "rate_limited"],
   ["NotFoundError", "not_found"],
+  ["IdempotencyKeyInProgressError", "idempotency_key_in_progress"],
   ["IdempotencyKeyReusedError", "idempotency_key_reused"],
   ["ApiKeyRevokedError", "api_key_revoked"],
   ["Http2UnavailableError", "http2_unavailable"],
