@@ -118,9 +118,29 @@ providers.encore.app>, "lang": "typescript" }`, at `services/<name>/encore.app`.
    `encore.dev` to the catalog version.
 6. **The Encore Cloud Root Directory is the member folder**, `services/<name>`.
 
-Open, pending an owner decision: a product with several service members sharing one Encore app. One
-app root cannot be several member roots; the options are a per-product staging build or unique
-aliases. This amendment covers single-service apps only.
+A product with several service members sharing one Encore app takes the staging build (option b,
+decided 2026-11-09). One app root cannot be several member roots, so:
+
+7. **`stackra encore:stage`**, run at the repository root after `stackra gen`, builds the app root at
+   `.stackra/encore-app/` (gitignored with `.stackra/`, replaced whole on every run).
+   - It copies every service that has a generated `encore.app`, and every workspace package those
+     services reach through `workspace:` dependencies: each one's `src/`, `.stackra/`, `assets/` and
+     package.json.
+   - It rewrites each copy's `#` imports as relative paths, resolved through that member's own
+     `imports`. A specifier that no map resolves fails the command.
+   - It writes the root files Encore reads:
+     - `encore.app`: the services' one app id. Services that name two ids are refused.
+     - A package.json that pins `encore.dev` as rule 3 does.
+     - A tsconfig.json whose `paths` map each staged package name and subpath to its staged source
+       (the `@stackra/source` export condition).
+     - A pnpm-workspace.yaml of its own, so the install Encore runs before it parses stays inside the
+       folder.
+   - Each copy's `node_modules` links to the member's own, so third-party packages resolve as they do
+     in the workspace.
+   - Encore builds in that folder; its Cloud Root Directory is `.stackra/encore-app`, so the build
+     runs in CI after gen and staging (ADR 0468 decision 6).
+
+A single-service app keeps rules 1 to 6.
 
 Upstream: the Encore issue on `imports` and `paths` resolution is being filed separately (link to
 follow).

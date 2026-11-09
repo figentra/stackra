@@ -43,6 +43,7 @@ import { AppNativeDepsCommand } from "#node/commands/app-native-deps.command";
 import { ArchitectureMapCommand } from "#node/commands/architecture-map.command";
 import { ConstitutionCommand } from "#node/commands/constitution.command";
 import { EncorePrepareCommand } from "#node/commands/encore-prepare.command";
+import { EncoreStageCommand } from "#node/commands/encore-stage.command";
 import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
 import { CatalogueCompletenessCommand } from "#node/commands/catalogue-completeness.command";
 import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
@@ -136,6 +137,7 @@ export const COMMANDS: CliCommands = [
   ArchitectureMapCommand,
   ConstitutionCommand,
   EncorePrepareCommand,
+  EncoreStageCommand,
   DocStandardCommand,
   CatalogueCompletenessCommand,
   CyclesCommand,
