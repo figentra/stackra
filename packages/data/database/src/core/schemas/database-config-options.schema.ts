@@ -28,7 +28,7 @@ import type { SessionTimeouts } from "#core/types/session-timeouts.type";
  *
  * @example
  * export class DatabaseConfig extends BaseDatabaseConfig {
- *   override health = { timeout: Duration.seconds(1), critical: true };
+ *   override health = { timeout: Duration.seconds(1), critical: true, rowSecurity: true };
  * }
  */
 export class DatabaseConfigOptions extends Schema {
@@ -41,9 +41,9 @@ export class DatabaseConfigOptions extends Schema {
     /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
     critical: boolean;
     /**
-     * Whether readiness also fails when the connected role can bypass row-level security: a superuser, BYPASSRLS
-     * (its own or through a role it belongs to), or the owner of a table with row security. Runway turns it on for
-     * deployed environments.
+     * Whether readiness also fails when the connected role can bypass row-level security, own a table with it, act
+     * as `stackra_system_access` or create roles or databases. Runway turns it on once the service connects as its
+     * own runtime role.
      */
     rowSecurity: boolean;
   } = { timeout: Duration.seconds(2), critical: true, rowSecurity: false };

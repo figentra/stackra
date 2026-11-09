@@ -34,18 +34,18 @@ const SAFE: Role = { bypass: false, owned: 0, system: false, creates: false };
 
 /**
  * An indicator over a fake whose probe resolves, rejects with `error`, or never settles (`"hang"`); the role probe
- * answers `role` (no row when it is undefined).
+ * answers `role` (no row when it is null).
  */
 function indicator(
   outcome: "answer" | Error | "hang",
   health: Partial<DatabaseConfig["health"]> = {},
-  role: Role | undefined = SAFE,
+  role: Role | null = SAFE,
 ): DatabaseHealthIndicatorDriver {
   const probe = (...args: unknown[]): Promise<unknown> => {
     calls.push(args);
     if (outcome === "hang") return new Promise(() => {});
     if (outcome !== "answer") return Promise.reject(outcome);
-    return Promise.resolve(args[0] === "select 1" || role === undefined ? [] : [role]);
+    return Promise.resolve(args[0] === "select 1" || role === null ? [] : [role]);
   };
   const port = { em: () => ({ execute: probe }) } as unknown as Database;
   const config = buildConfig(DatabaseConfig, {
@@ -149,7 +149,7 @@ describe("DatabaseHealthIndicatorDriver", () => {
   });
 
   it("is down when the role can't be read", async () => {
-    const report = await indicator("answer", { rowSecurity: true }, undefined).check();
+    const report = await indicator("answer", { rowSecurity: true }, null).check();
     expect(report).toEqual({
       status: "down",
       detail: "the database is open: its role could not be read",
