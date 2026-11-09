@@ -26,7 +26,9 @@ export class ChapterTitleBlock extends Block({
   })
   level?: number;
 
+  /** The chapter's title. */
   title!: LocalizedText;
 
+  /** The line under the title. */
   subtitle?: LocalizedText;
 }
