@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `openApiOf`, the projection of a member's manifest to its `openapi.json`: OpenAPI 3.1 with one operation
  *          per action or query that has an endpoint (path parameters from `:name` segments, query parameters for a
- *          GET, the input as the JSON body otherwise, the output or 204, and the shared refusal response with the
+ *          GET, the input as the JSON body otherwise, the output, `text/event-stream` for a stream action, or 204, and the shared refusal response with the
  *          ADR 0140 envelope), the manifest's shapes as components, and `x-stackra-*` extensions for the key,
  *          permission, risk, idempotency, cache and refusal codes.
  * Boundary: pure and deterministic: paths and operations follow the manifest's order, so projecting the committed
@@ -127,14 +127,22 @@ export function openApiOf(manifest: StackraManifest): OpenApiDocument {
         content: { "application/json": { schema: rehome(action["input"]) } },
       };
     operation["responses"] = {
-      ...(action["output"] !== undefined
+      ...(action["stream"] === true
         ? {
             "200": {
-              description: "OK",
-              content: { "application/json": { schema: rehome(action["output"]) } },
+              description:
+                "Server-sent events: one JSON chunk per `data:` event (the AI SDK UI message stream), then `data: [DONE]`",
+              content: { "text/event-stream": { schema: { type: "string" } } },
             },
           }
-        : { "204": { description: "No Content" } }),
+        : action["output"] !== undefined
+          ? {
+              "200": {
+                description: "OK",
+                content: { "application/json": { schema: rehome(action["output"]) } },
+              },
+            }
+          : { "204": { description: "No Content" } }),
       default: { $ref: "#/components/responses/Refusal" },
     };
     paths[path] = { ...paths[path], [method]: operation };
