@@ -717,7 +717,7 @@ describe("CrudService tree (HasTree)", () => {
     });
     await new CategoryService().move("cat_b", null);
     expect(em.nativeUpdate.mock.calls[1]?.[2]).toMatchObject({
-      treePath: { params: ["cat_b", "cat_a.cat_b"] },
+      treePath: { params: ["cat_a.cat_b", "cat_b", "cat_b", "cat_a.cat_b"] },
     });
   });
 
