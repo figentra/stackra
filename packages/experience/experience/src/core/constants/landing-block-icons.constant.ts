@@ -25,4 +25,5 @@ export const LANDING_BLOCK_ICONS = Object.freeze({
   siteFooter: "panel-bottom",
   surfaces: "monitor-smartphone",
   pageDock: "panel-bottom-open",
+  capabilityMatrix: "table",
 } as const satisfies Readonly<Record<string, IconName>>);
