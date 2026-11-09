@@ -18,7 +18,9 @@ pre-commit:
         - ".agents/skills/**"
         - ".agents/reference/**"
         - ".agents/hooks/fflow-guard.mjs"
-        # .oxlintrc.jsonc ignores these; oxlint exits 1 when every file it is given is ignored
+        # .oxlintrc.jsonc ignores these. A commit of only ignored files (a test fixture, #945) passes through
+        # --no-error-on-unmatched-pattern below, as oxfmt's step does; these stay excluded so oxlint is not started
+        # for them at all
         - ".opencode/plugins/fflow-guard.mjs"
         # the reviewer list fflow sync writes (projection: true), also ignored by .oxlintrc.jsonc
         - ".agents/hooks/_reviewer-agents.mjs"
@@ -33,7 +35,7 @@ pre-commit:
           exit 0
         fi
         sh -c 'command -v mise >/dev/null 2>&1 || { echo "oxlint skipped: mise not installed; CI lints"; exit 0; };
-        exec mise exec npm:oxlint -- oxlint "$@"' -- {staged_files}
+        exec mise exec npm:oxlint -- oxlint --no-error-on-unmatched-pattern "$@"' -- {staged_files}
     - name: gitleaks
       # --config: the repository's policy wins over a GITLEAKS_CONFIG set on the machine
       run: |
