@@ -76,6 +76,12 @@ export class InboundMailReceived extends WebhookEvent<ResendIntegration>({ type:
 CHATWOOT_WEBHOOK_SIGNATURE }`; the recipe is data, so Chatwoot has no verifier of its own.
 - Gen's entry calls `registerWebhookEvents([{ event, integration, connection }])`; the scheme must be a
   `SignatureScheme` code, and the fields its scheme reads (`signature`, or the `recipe` fields below) must be there.
+- A connector package can ship its own `WebhookEvent<I>` classes beside its Integration and Connection. Its manifest
+  lists them in `webhookEvents`, each with its class, public entry, Integration and that Integration's Connection.
+  A hosting service registers them from that manifest, so the service names no provider. Gen refuses
+  `webhook_event_unpaired` (an event whose Integration or Connection the manifest doesn't pair) and
+  `webhook_route_duplicate` (two classes for one Integration's event type, the host's own copy included). A row with
+  its Connection is what makes a connection URL (`/webhooks/<module>/<integration>/:connectionId`) route, not 404.
 
 ### Signature schemes
 

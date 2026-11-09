@@ -410,6 +410,9 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/mobile/capabilities.json",
       "workers/edge/edge.json",
       "apps/docs/src/docs.json",
+      "docs/content/meta.json",
+      "docs/content/guides/advanced/meta.json",
+      "packages/developer/gen/schema/docs.json",
       ".claude/settings.json",
       ".changeset/config.json",
       "assets/landing/index.json",
@@ -435,6 +438,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     ".agents/models.json",
     "packages/x/brand.json",
     "packages/x/fixtures/order.json",
+    "docs/content/guides/nav.json",
   ];
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
