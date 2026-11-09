@@ -1,5 +1,40 @@
 # @stackra/ui
 
+## 0.32.0
+
+### Patch Changes
+
+- 54db249: `CalendarSystem` (`@stackra/ui/contracts`) is now the list of `@stackra/i18n`'s `CalendarSystem`, the one source the date
+  formatting and a tenant's `DisplaySettings.calendar` read. Same values and the same frozen list, so nothing that uses it
+  changes.
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/shortcuts@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 7179d1a: `ChatFormPart` (`@stackra/panel/react`) draws an action's form in a chat turn from its JSON Schema input: one field per key, drawn as a screen draws it, prefilled by the assistant, with uploads through the host's `upload`, and sent as the person's answer. `useZodFormHandle` (`@stackra/ui/form`) runs a form over a zod schema with no class, and `useSchemaFormHandle` now builds on it. `TamoFormPart` gains `id`, which the host answers with the sent values, as a question's.
+
+### Patch Changes
+
+- Updated dependencies [0f05f60]
+  - @stackra/i18n@0.31.0
+  - @stackra/icons@0.31.0
+  - @stackra/tokens@0.31.0
+  - @stackra/shortcuts@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

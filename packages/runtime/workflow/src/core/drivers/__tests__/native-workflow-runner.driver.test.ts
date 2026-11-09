@@ -297,6 +297,28 @@ function resolverOf(entries: readonly (readonly [AnyClass, object])[]): Resolver
   };
 }
 
+/** A workflow whose output is computed asynchronously, and one whose async output rejects. */
+class AsyncOutputWorkflow extends Workflow<{ readonly amount: number }>({}) {
+  async charge(run: Run<this>): Promise<{ chargeId: string }> {
+    return { chargeId: `chg_${run.input.amount}` };
+  }
+
+  async output(run: Run<this>): Promise<{ chargeId: string }> {
+    await Promise.resolve();
+    return { chargeId: run.results.charge.chargeId };
+  }
+}
+
+class RejectingOutputWorkflow extends Workflow<{ readonly amount: number }>({}) {
+  async charge(): Promise<number> {
+    return 1;
+  }
+
+  async output(): Promise<never> {
+    throw new Error("not reachable yet");
+  }
+}
+
 /** An engine on `journal` (a fresh memory journal by default), connected to `entries`. */
 function engineWith(
   entries: readonly (readonly [AnyClass, object])[],
@@ -341,6 +363,20 @@ describe(NativeWorkflowRunnerDriver, () => {
     ]);
     expect(run?.steps[0]?.result).toEqual({ total: 20, key: `${run?.id}:price` });
     expect(run?.input).toEqual({ sku: "sku_1", quantity: 2 });
+  });
+
+  it("views a run with its awaited async output, and null when that output rejects (workflow.run.get)", async () => {
+    const { runner } = engineWith([
+      [AsyncOutputWorkflow, new AsyncOutputWorkflow()],
+      [RejectingOutputWorkflow, new RejectingOutputWorkflow()],
+    ]);
+    await runner.start(AsyncOutputWorkflow, { amount: 20 }, ORIGIN);
+    const run = await runner.last(AsyncOutputWorkflow);
+    expect((await runner.view(run?.id as never))?.output).toEqual({ chargeId: "chg_20" });
+
+    await runner.start(RejectingOutputWorkflow, { amount: 1 }, ORIGIN).catch(() => undefined);
+    const rejected = await runner.last(RejectingOutputWorkflow);
+    expect((await runner.view(rejected?.id as never))?.output).toBeNull();
   });
 
   it("undoes the completed steps last first when a step is refused, and rejects with the refusal", async () => {

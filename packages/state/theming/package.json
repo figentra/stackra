@@ -1,8 +1,8 @@
 {
   "name": "@stackra/theming",
-  "version": "0.30.0",
+  "version": "0.32.0",
   "private": false,
-  "description": "Stackra theming: the colour scheme a user picks (light, dark, system), persisted per device and resolved against the system preference, the ThemingConfig look over @stackra/tokens themes with its shipped schema, the SystemColorScheme port with its memory, browser and appearance drivers, useColorScheme and fakeColorScheme",
+  "description": "Stackra theming: the colour scheme a user picks (light, dark, system), persisted per device and resolved against the system preference, the ThemingConfig look over @stackra/tokens themes with its shipped schema, the SystemColorScheme port with its memory, browser and appearance drivers, useColorScheme, the AppearanceToggle (web) and BrandLogo (web and native) kit blocks, and fakeColorScheme",
   "keywords": [
     "appearance",
     "color-scheme",
@@ -58,6 +58,7 @@
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
+      "./src/native/*.tsx",
       "./src/native/*/index.ts"
     ],
     "#react/*": [

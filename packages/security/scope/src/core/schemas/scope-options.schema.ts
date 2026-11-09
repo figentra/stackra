@@ -16,7 +16,10 @@ import { ScopeConfig$ } from "#core/constants/scope-config-schema.constant";
 
 /** The options of `ScopeConfig`. */
 export class ScopeOptions extends Schema {
-  /** The levels, root first; a node sits at its parent's level when that level is recursive, else at the next one. */
+  /**
+   * The levels, root first; a node sits at its parent's level when that level is recursive, at a level whose `parents`
+   * name the parent's, or at the next one when that one names no `parents`.
+   */
   // reason: a level is a contracts interface with no `X$`; `ScopeConfig$` holds its rules
   @Field(ScopeConfig$.shape.levels)
   levels: ScopeLevel[] = [

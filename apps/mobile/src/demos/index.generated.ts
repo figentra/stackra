@@ -149,6 +149,8 @@ import FreeBidiDirectionalMotion from "#src/demos/free/bidi/directional-motion";
 import FreeBidiDirectionalMotionCode from "#src/demos/free/bidi/directional-motion.code";
 import FreeBoxPlotChartDelivery from "#src/demos/free/box-plot-chart/delivery";
 import FreeBoxPlotChartDeliveryCode from "#src/demos/free/box-plot-chart/delivery.code";
+import FreeBrandLogoBasics from "#src/demos/free/brand-logo/basics";
+import FreeBrandLogoBasicsCode from "#src/demos/free/brand-logo/basics.code";
 import FreeBreadcrumbsLive from "#src/demos/free/breadcrumbs/live";
 import FreeBreadcrumbsLiveCode from "#src/demos/free/breadcrumbs/live.code";
 import FreeBreadcrumbsBasics from "#src/demos/free/breadcrumbs/basics";
@@ -1017,6 +1019,16 @@ import FreeSchedulerMonth from "#src/demos/free/scheduler/month";
 import FreeSchedulerMonthCode from "#src/demos/free/scheduler/month.code";
 import FreeSchedulerAgenda from "#src/demos/free/scheduler/agenda";
 import FreeSchedulerAgendaCode from "#src/demos/free/scheduler/agenda.code";
+import FreeSchedulingBoardDay from "#src/demos/free/scheduling-board/day";
+import FreeSchedulingBoardDayCode from "#src/demos/free/scheduling-board/day.code";
+import FreeSchedulingBoardWeek from "#src/demos/free/scheduling-board/week";
+import FreeSchedulingBoardWeekCode from "#src/demos/free/scheduling-board/week.code";
+import FreeSchedulingBoardTimeline from "#src/demos/free/scheduling-board/timeline";
+import FreeSchedulingBoardTimelineCode from "#src/demos/free/scheduling-board/timeline.code";
+import FreeSchedulingBoardReadOnly from "#src/demos/free/scheduling-board/read-only";
+import FreeSchedulingBoardReadOnlyCode from "#src/demos/free/scheduling-board/read-only.code";
+import FreeSchedulingBoardDrag from "#src/demos/free/scheduling-board/drag";
+import FreeSchedulingBoardDragCode from "#src/demos/free/scheduling-board/drag.code";
 import FreeScrollAreaTerms from "#src/demos/free/scroll-area/terms";
 import FreeScrollAreaTermsCode from "#src/demos/free/scroll-area/terms.code";
 import FreeScrollAreaChips from "#src/demos/free/scroll-area/chips";
@@ -1601,6 +1613,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/box-plot-chart.json") as ApiDoc,
+  },
+  "free/brand-logo": {
+    examples: {
+      basics: { Demo: FreeBrandLogoBasics, code: FreeBrandLogoBasicsCode },
+    },
   },
   "free/breadcrumbs": {
     examples: {
@@ -3073,6 +3090,17 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/scheduler.json") as ApiDoc,
+  },
+  "free/scheduling-board": {
+    examples: {
+      day: { Demo: FreeSchedulingBoardDay, code: FreeSchedulingBoardDayCode },
+      week: { Demo: FreeSchedulingBoardWeek, code: FreeSchedulingBoardWeekCode },
+      timeline: { Demo: FreeSchedulingBoardTimeline, code: FreeSchedulingBoardTimelineCode },
+      "read-only": { Demo: FreeSchedulingBoardReadOnly, code: FreeSchedulingBoardReadOnlyCode },
+      drag: { Demo: FreeSchedulingBoardDrag, code: FreeSchedulingBoardDragCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/scheduling-board.json") as ApiDoc,
   },
   "free/scroll-area": {
     examples: {

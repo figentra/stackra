@@ -116,6 +116,7 @@ import { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
 import { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
+import { DETACHED_RUNS } from "#contracts/constants/detached-runs.constant";
 import { CallIsolation } from "#contracts/ports/call-isolation.port";
 import { ConsentCheck } from "#contracts/ports/consent-check.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
@@ -139,6 +140,7 @@ import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
 import type { ApprovalBinding } from "#contracts/types/approval-binding.type";
+import type { DetachedStep } from "#contracts/types/detached-step.type";
 import type { ApprovalDraft } from "#contracts/types/approval-draft.type";
 import type { ApprovalRequirement } from "#contracts/types/approval-requirement.type";
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
@@ -1613,26 +1615,36 @@ export class ActionPipeline {
 
   /**
    * The call's isolation held past its transaction (`ctx.detach()`): `run` stores a copy of the call's context, which
-   * `RequestContext.detached()` answers with this call, and `isolated` opens a step through `CallIsolation` with the
-   * descriptor's actor and scope, as `isolated(call, ...)` does for the call itself, so its checks run again per step.
+   * `RequestContext.detached()` answers with this call, inside every wrapper of `DETACHED_RUNS` (the database leaves
+   * the call's finished transaction there and keeps the step for `CrudService`), and `isolated` opens a step through
+   * `CallIsolation` with the descriptor's actor and scope, as `isolated(call, ...)` does for the call itself, so its
+   * checks run again per step. A step opened outside `run` enters the wrappers first; inside `run` it does not, so a
+   * step inside a step joins it.
    */
   private detachedOf(descriptor: CallDescriptor, ctx: ActionContext): DetachedCall {
     const storage = this.optional(ContextStorage);
     // a copy, so the call's own context never reads as detached
     const view: object = Object.freeze({ ...ctx });
-    const within = <T>(work: () => Promise<T>): Promise<T> =>
-      storage === undefined ? work() : storage.run(view, work);
+    const step: DetachedStep = <T>(work: () => Promise<T>): Promise<T> => {
+      const isolation = this.optional(CallIsolation);
+      return isolation === undefined
+        ? work()
+        : isolation.run(descriptor.actor, descriptor.scope, () => work(), { readOnly: false });
+    };
+    const within = <T>(work: () => Promise<T>): Promise<T> => {
+      // the first registered wrapper is the outermost
+      const next = [...DETACHED_RUNS].reduceRight<() => Promise<T>>(
+        (inner, wrapper) => () => wrapper(step, inner),
+        work,
+      );
+      return storage === undefined ? next() : storage.run(view, next);
+    };
     const detached: DetachedCall = Object.freeze({
       actor: descriptor.actor,
       ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
       run: within,
       isolated: <T>(work: () => Promise<T>): Promise<T> =>
-        within(() => {
-          const isolation = this.optional(CallIsolation);
-          return isolation === undefined
-            ? work()
-            : isolation.run(descriptor.actor, descriptor.scope, () => work(), { readOnly: false });
-        }),
+        storage !== undefined && storage.current() === view ? step(work) : within(() => step(work)),
     });
     DETACHED_CALLS.set(view, detached);
     return detached;
