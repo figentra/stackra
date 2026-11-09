@@ -993,19 +993,32 @@ export class ActionPipeline {
     // its output must never be kept (a credential): a sent key is ignored, so nothing is stored or replayed
     if (policy === Idempotency.Never) return undefined;
     const sent = call.request.idempotencyKey;
-    if (sent === undefined && policy === Idempotency.Required)
+    const { descriptor } = call;
+    // An API key's write needs its own key whatever the action declares (Pay FR-004, #850 G2); every other caller,
+    // jobs and workflows included, keeps the declared policy
+    const keyCaller =
+      descriptor.credential !== undefined ||
+      descriptor.actor.kind === ActorKind.ApiClient ||
+      call.request.origin?.kind === CallOriginKind.ApiKey;
+    if (sent === undefined && (policy === Idempotency.Required || keyCaller))
       throw IdempotencyKeyRequiredError.create();
     if (sent === undefined && policy !== Idempotency.Derived) return undefined;
-    const { descriptor } = call;
     const fingerprint = await fingerprintOf(descriptor.key, input);
     // why: a generated client mints a fresh key per call, not per intent, so for any caller but an API key a Derived
     // action keeps deduplicating by its input (a double click on Refund stays one refund); an API key sends its own
-    const derived =
-      sent === undefined ||
-      (policy === Idempotency.Derived && call.request.origin?.kind !== CallOriginKind.ApiKey);
+    const derived = sent === undefined || (policy === Idempotency.Derived && !keyCaller);
     const key = derived || sent === undefined ? `derived:${fingerprint}` : sent;
     call.state.idempotencyKey = key;
-    const scoped = [descriptor.key, descriptor.scopeId ?? "-", descriptor.actor.id, key].join(":");
+    // the API key and the mode belong to the scope, so a principal's test and live keys (or two of its keys) never
+    // share an answer
+    const scoped = [
+      descriptor.key,
+      descriptor.scopeId ?? "-",
+      descriptor.actor.id,
+      descriptor.credential?.id ?? call.request.origin?.id ?? "-",
+      descriptor.sandbox === true ? "test" : "live",
+      key,
+    ].join(":");
     const store = this.required(
       IdempotencyStore,
       `${descriptor.key} has an Idempotency-Key; bind a store (the memory driver ships with @stackra/actions)`,
