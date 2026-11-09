@@ -2363,7 +2363,18 @@ export function createSourceReader(
       target = heritage.call?.arguments?.[0];
     if (target === undefined) return undefined;
     const symbol = host.symbolAt(target);
-    if (symbol === undefined) return undefined;
+    if (symbol === undefined) {
+      // A package the checker cannot load at all gives no symbol; the file's own import still names the class.
+      const local = kindOf(target) === "Identifier" ? nameOf(target) : undefined;
+      const file = host.fileName(target);
+      const from = local === undefined ? undefined : importsOf(file).get(local);
+      if (local === undefined || from === undefined) return undefined;
+      return {
+        name: importedNameOf(file, local) ?? local,
+        ...(slot !== undefined && slot !== "" ? { slot } : {}),
+        from,
+      };
+    }
     const declarations = host.declarations(symbol);
     if (declarations.some((declaration) => host.kind(declaration) === "TypeAliasDeclaration")) {
       fail(

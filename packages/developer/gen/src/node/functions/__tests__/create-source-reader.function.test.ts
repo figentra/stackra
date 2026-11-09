@@ -999,6 +999,19 @@ const HOSTED_WEBHOOK_SOURCES: Readonly<Record<string, string>> = {
     'export class BostaDeliveryUpdated extends WebhookEvent<Bosta>({ type: "delivery" }) {}',
     "",
   ].join("\n"),
+  // installed, but its `/node` types are not built: the import resolves to a module the checker cannot read
+  "node_modules/@figentra/ship-connector-oto/package.json": JSON.stringify({
+    name: "@figentra/ship-connector-oto",
+    type: "module",
+    exports: { "./node": { types: "./dist/node.d.mts", default: "./dist/node.mjs" } },
+  }),
+  "src/core/events/oto-shipment-updated.event.ts": [
+    'import type { OtoIntegration } from "@figentra/ship-connector-oto/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class OtoShipmentUpdated extends WebhookEvent<OtoIntegration>({ type: "shipment" }) {}',
+    "",
+  ].join("\n"),
 };
 
 describe("createSourceReader on a webhook event typed by a hosted package's integration", async () => {
@@ -1018,6 +1031,12 @@ describe("createSourceReader on a webhook event typed by a hosted package's inte
     expect(
       classes.find((candidate) => candidate.name === "BostaDeliveryUpdated")?.partner,
     ).toMatchObject({ name: "BostaIntegration", from: "@figentra/ship-connector-bosta/node" });
+  });
+
+  it("names the integration of an installed package whose types are not built", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "OtoShipmentUpdated")?.partner,
+    ).toMatchObject({ name: "OtoIntegration", from: "@figentra/ship-connector-oto/node" });
   });
 
   it("refuses no partner it could name", () => {
