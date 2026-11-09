@@ -1533,7 +1533,6 @@ export class ActionPipeline {
       market: request.market ?? CALL_DEFAULTS.market,
       ...(descriptor.origin === undefined ? {} : { origin: descriptor.origin }),
       abortSignal: request.abortSignal ?? new AbortController().signal,
-      ...(request.attempt === undefined ? {} : { attempt: request.attempt }),
       now: () => new Date(at),
       authorize: (record: object) =>
         this.required(AccessControl, IAM).authorize(descriptor, record),
@@ -1577,6 +1576,7 @@ export class ActionPipeline {
     if (descriptor.kind === "query") return Object.freeze(query);
     const action: ActionContext = {
       ...query,
+      ...(request.attempt === undefined ? {} : { attempt: request.attempt }),
       ...(request.expectedVersion === undefined
         ? {}
         : { expectedVersion: request.expectedVersion }),
