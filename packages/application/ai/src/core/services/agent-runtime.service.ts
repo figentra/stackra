@@ -26,13 +26,15 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0100 (decisions 2, 3, 5, 9 and 10); ADR 0155 (no hosted gateway); ADR 0227 (no separate
  *                     agent runtime); STA-781; STA-1256 (bypass switch); ADR 0156 (decision 4), ADR 0216 (decision 2),
- *                     STA-1385 (guardrails and meter wired); ADR 0490 (decisions 3 and 4: client tools); STA-1631.
+ *                     STA-1385 (guardrails and meter wired); ADR 0490 (decisions 3 and 4: client tools); STA-1631;
+ *                     STA-2608 (`stream`'s UI message chunks).
  */
 import { type DiscoveryService, Service } from "@stackra/container";
 import type { Actor, Clock, Json } from "@stackra/contracts";
 import { ForbiddenError, NotFoundError } from "@stackra/errors";
 import {
   type AssistantContent,
+  createUIMessageStream,
   generateText,
   jsonSchema,
   type LanguageModel,
@@ -41,6 +43,7 @@ import {
   streamText,
   tool,
   type ToolSet,
+  type UIMessageChunk,
 } from "ai";
 
 import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
@@ -191,6 +194,30 @@ function withoutResult(messages: readonly ModelMessage[], toolCallId: string): M
 }
 
 /**
+ * The UI chunks of a streamed loop as the reply holds them: the parked approval call's placeholder output becomes the
+ * `tool-approval-request` chunk carrying our approval id, and a parked client call's placeholder is dropped (the
+ * surface answers it).
+ */
+function parkedChunks(state: LoopState): TransformStream<UIMessageChunk, UIMessageChunk> {
+  return new TransformStream<UIMessageChunk, UIMessageChunk>({
+    transform: (chunk, controller) => {
+      // `execute` sets the parked call before its output chunk is made, so the state is current here.
+      if (chunk.type === "tool-output-available" && chunk.toolCallId === state.paused?.toolCallId)
+        controller.enqueue({
+          type: "tool-approval-request",
+          approvalId: state.paused.approvalId,
+          toolCallId: chunk.toolCallId,
+        });
+      else if (
+        chunk.type !== "tool-output-available" ||
+        chunk.toolCallId !== state.client?.toolCallId
+      )
+        controller.enqueue(chunk);
+    },
+  });
+}
+
+/**
  * Runs agents: prompts, streams and queued runs, with their tools, approvals and records.
  *
  * @example
@@ -268,7 +295,10 @@ export class AgentRuntime extends Service {
     return this.loop(agent, run, call.locale, call.abortSignal, call.bypass === true);
   }
 
-  /** Runs `text` for `agent`, streaming the model's text; `reply` settles as `prompt` does. */
+  /**
+   * Runs `text` for `agent`, streaming the model's text and its UI message chunks (message id: the run id); `reply`
+   * settles as `prompt` does.
+   */
   async stream(agent: AgentDefinition, text: string, call: PromptCall): Promise<AgentStream> {
     const run = await this.begin(agent, text, call, RunStatus.Running);
     this.attach(run.id, call);
@@ -294,10 +324,22 @@ export class AgentRuntime extends Service {
         throw error;
       }
     })();
+    // A host that serves only `uiStream` may never await `reply`: an abort or failure must not surface unhandled.
+    reply.catch(() => undefined);
+    const uiStream = createUIMessageStream({
+      execute: ({ writer }) => {
+        writer.merge(
+          result
+            .toUIMessageStream({ generateMessageId: () => run.id })
+            .pipeThrough(parkedChunks(state)),
+        );
+      },
+    });
     return {
       runId: run.id,
       conversationId: run.conversationId,
       textStream: result.textStream,
+      uiStream,
       reply,
     };
   }
