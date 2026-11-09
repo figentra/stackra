@@ -148,10 +148,11 @@ was weighed; the owner chose a separate CLI.
 
 figentra/testbed is **private since 2026-11-09** (owner, under [0534](/adr/0534-github-repository-metadata)). The
 organization is on GitHub Enterprise, where a private repository has environment required reviewers, so the Context's
-GitHub Team premise no longer holds. Read back on 2026-11-09: the `testbed` environment (the apply and the image
-build) requires the owner, figentra-usr; the `release` environment (the `@figentra/testbed` publish) has the main
-branch policy and no reviewer, which the owner is deciding. The owner sets environment reviewers by hand; an agent's
-write to an environment's protection rules is refused by the promote guard.
+GitHub Team premise no longer holds. The owner restored the environments' reviewers on 2026-11-09 and decided that
+only an environment that touches the boxes requires one: the `testbed` environment (the apply and the image build)
+requires the owner, figentra-usr; the `release` environment (the `@figentra/testbed` publish) keeps the main branch
+policy and no reviewer. The owner sets environment reviewers by hand; an agent's write to an environment's protection
+rules is refused by the promote guard.
 Lanes install the CLI from the tarball and nothing pulls the repository anonymously, so its users are unaffected. Free
 secret scanning and push protection are lost with public visibility; the owner accepted that.
 
