@@ -177,6 +177,9 @@ catalogs:
       specifier: 7.0.2
       version: 7.0.2
   default:
+    '@aws-sdk/client-ecs':
+      specifier: 3.1149.0
+      version: 3.1149.0
     '@aws-sdk/client-s3':
       specifier: 3.1149.0
       version: 3.1149.0
@@ -7017,6 +7020,9 @@ importers:
 
   packages/infrastructure/infra-aws-runtime:
     dependencies:
+      '@aws-sdk/client-ecs':
+        specifier: 'catalog:'
+        version: 3.1149.0
       '@pulumi/aws':
         specifier: catalog:infra
         version: 7.50.0(supports-color@10.2.2)(typescript@7.0.2)
@@ -10060,6 +10066,10 @@ packages:
 
   '@aws-sdk/checksums@3.1001.5':
     resolution: {integrity: sha512-6erto9nK2OZO/woEgmFIaPh5gChgdNd7nL6jgAf8TAXz3/QHC8Pan2TFe9GYp3IxOIKCCGWPylSjtOHKfNzQlw==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/client-ecs@3.1149.0':
+    resolution: {integrity: sha512-9VsPm02ps4Tt2fpiKVFLFgBPHCV9NzAbI5kNxIKd0P9Ie+QaDBUJa10HQlFatimMv4AFrJ0EGFsmd8zER/Grkg==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-s3@3.1149.0':
@@ -21477,6 +21487,17 @@ snapshots:
       '@aws-sdk/core': 3.978.5
       '@aws-sdk/types': 3.975.0
       '@smithy/core': 3.36.2
+      '@smithy/types': 4.19.0
+      tslib: 2.8.1
+
+  '@aws-sdk/client-ecs@3.1149.0':
+    dependencies:
+      '@aws-sdk/core': 3.978.5
+      '@aws-sdk/credential-provider-node': 3.972.88
+      '@aws-sdk/types': 3.975.0
+      '@smithy/core': 3.36.2
+      '@smithy/fetch-http-handler': 5.8.0
+      '@smithy/node-http-handler': 4.12.1
       '@smithy/types': 4.19.0
       tslib: 2.8.1
 

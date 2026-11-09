@@ -65,6 +65,9 @@ const SERVICE_NAME_LIMIT = 32;
 /** The Postgres major a resource gets when it names none: production's major (ADR 0238, amendment of 2026-10-31). */
 const POSTGRES_VERSION = "18";
 
+/** How long a rollout waits for a workload's `migrate` task when the runway names no timeout. */
+const MIGRATE_TIMEOUT_MINUTES = 15;
+
 /** Days of automated backups, the point-in-time window of ADR 0186 decision 1. */
 const BACKUP_DAYS = 14;
 
@@ -304,6 +307,14 @@ export function runtimePlan(
       ...(workload.health === undefined ? {} : { health: workload.health }),
       healthCommand: workload.healthCommand ?? [],
       command: workload.command ?? [],
+      ...(workload.migrate === undefined
+        ? {}
+        : {
+            migrate: {
+              command: workload.migrate.command,
+              timeoutMinutes: workload.migrate.timeoutMinutes ?? MIGRATE_TIMEOUT_MINUTES,
+            },
+          }),
       public: workload.expose === "public",
       env: workload.env ?? {},
       secrets: workload.secrets ?? [],
