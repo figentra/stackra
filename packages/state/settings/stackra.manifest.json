@@ -509,6 +509,25 @@
           ]
         }
       }
+    },
+    {
+      "port": "RateLimitCapSource",
+      "key": "contracts.RateLimitCapSource",
+      "candidates": ["settings"],
+      "classes": {
+        "settings": {
+          "class": "SettingsRateLimitCapSourceDriver",
+          "from": "@stackra/settings",
+          "deps": [
+            {
+              "class": {
+                "name": "SettingsReader",
+                "from": "@stackra/settings"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],
@@ -644,6 +663,54 @@
           ]
         }
       ]
+    },
+    {
+      "key": "rate_limit",
+      "class": "RateLimitSettings",
+      "module": "settings",
+      "file": "src/core/rate-limit.settings.ts",
+      "keys": [
+        {
+          "path": "publicPerMinute",
+          "type": "integer"
+        },
+        {
+          "path": "publicBurst",
+          "type": "integer"
+        },
+        {
+          "path": "appPerMinute",
+          "type": "integer"
+        },
+        {
+          "path": "appBurst",
+          "type": "integer"
+        },
+        {
+          "path": "adminPerMinute",
+          "type": "integer"
+        },
+        {
+          "path": "adminBurst",
+          "type": "integer"
+        },
+        {
+          "path": "platformPerMinute",
+          "type": "integer"
+        },
+        {
+          "path": "platformBurst",
+          "type": "integer"
+        },
+        {
+          "path": "actionPerScope",
+          "type": "integer"
+        },
+        {
+          "path": "actionPerAddress",
+          "type": "integer"
+        }
+      ]
     }
   ],
   "schemas": {
@@ -690,6 +757,61 @@
             "it",
             "nl"
           ],
+          "default": null
+        }
+      }
+    },
+    "settings.RateLimitSettings": {
+      "type": "object",
+      "properties": {
+        "publicPerMinute": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "publicBurst": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "appPerMinute": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "appBurst": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "adminPerMinute": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "adminBurst": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "platformPerMinute": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "platformBurst": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "actionPerScope": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "default": null
+        },
+        "actionPerAddress": {
+          "type": ["integer", "null"],
+          "minimum": 1,
           "default": null
         }
       }
