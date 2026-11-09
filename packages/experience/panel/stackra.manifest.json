@@ -412,6 +412,10 @@
       "type": "string",
       "enum": ["create", "update", "upsert"]
     },
+    "panel.MetricFormat": {
+      "type": "string",
+      "enum": ["percent"]
+    },
     "panel.Place": {
       "type": "string",
       "enum": ["band", "grid", "aside", "tabs", "banner", "checklist", "line_entry"]
@@ -487,6 +491,30 @@
         "currency": {
           "type": "string",
           "pattern": "^[A-Z]{3}$"
+        }
+      }
+    },
+    "panel.PercentMetric": {
+      "type": "object",
+      "required": ["value", "previous", "series", "target", "format"],
+      "properties": {
+        "value": {
+          "type": ["number", "null"]
+        },
+        "previous": {
+          "type": ["number", "null"]
+        },
+        "series": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "number"
+          }
+        },
+        "target": {
+          "type": ["number", "null"]
+        },
+        "format": {
+          "$ref": "#/schemas/panel.MetricFormat"
         }
       }
     },
