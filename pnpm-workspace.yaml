@@ -30,7 +30,7 @@ catalog:
   # Figentra Flow, the spec gates and the development workflow (ADR 0503), from the Figentra registry's open
   # @figentra-oss scope (.npmrc). It replaces tools/scripts' spec-gate, spec-trace, spec-parse, spec-linear and
   # speckit-sync, which remain as thin shims for the hooks, setup-plan.sh and the docs that name them.
-  "@figentra-oss/flow": 0.9.2
+  "@figentra-oss/flow": 0.10.0
   # YAML reader for repo-owned config (.agents/models.yaml, .mcp.yaml) read by tools/scripts.
   yaml: 2.9.1
   # HTTP client for tools/scripts' GitHub and Linear calls: an Agent with a 30 s connect timeout (STA-302).
@@ -432,7 +432,10 @@ packageExtensions:
 # reviewed; a new one must be, too — install fails (ERR_PNPM_IGNORED_BUILDS) until it is.
 allowBuilds:
   esbuild: true
-  lefthook: true
+  # Off: its install script ran `lefthook install` in every worktree, rewriting the shared .git/hooks with that
+  # worktree's lefthook path. The root `prepare` installs the hooks instead, only from the main checkout, never when
+  # CI is set or in a tree without .git (the Testbed's copy).
+  lefthook: false
   sharp: true
   # Install-time telemetry pinger (pulled in by mint); never needed.
   "@scarf/scarf": false

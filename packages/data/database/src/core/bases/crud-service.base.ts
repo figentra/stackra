@@ -1001,11 +1001,14 @@ export abstract class CrudService<M extends object> extends Service implements R
     const em = this.em();
     const model = this.model();
     const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
-    // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters
+    // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters. The
+    // column is cast to ltree, so a `varchar` path column works as an `ltree` one does (the cast is a no-op there and
+    // keeps its index), and the new path is assigned back through the string I/O cast either way. The moved node's
+    // own row takes `to` itself: `subpath` refuses an offset equal to the path's length ("invalid positions").
     return this.watched(
       "updated",
       [field, ...Object.keys(extra)],
-      filterOf({ $raw: raw(`${column} <@ ?::ltree`, [from]) } as Where<M>),
+      filterOf({ $raw: raw(`${column}::ltree <@ ?::ltree`, [from]) } as Where<M>),
       (filter) =>
         em.nativeUpdate(
           model,
@@ -1013,7 +1016,11 @@ export abstract class CrudService<M extends object> extends Service implements R
           {
             ...stampFields(model, "update"),
             ...extra,
-            [field]: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]),
+            [field]: raw(
+              `case when ${column}::ltree = ?::ltree then ?::ltree ` +
+                `else ?::ltree || subpath(${column}::ltree, nlevel(?::ltree)) end`,
+              [from, to, to, from],
+            ),
           } as never,
         ),
     );

@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
 ---
 
-<!-- generated from .agents/agents/dependency-steward.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/dependency-steward.md by fflow sync — edit the source, not this file -->
 
 # dependency-steward
 

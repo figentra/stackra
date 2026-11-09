@@ -1,5 +1,29 @@
 # @stackra/collaboration
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [33f61e5]
+- Updated dependencies [9ddce28]
+  - @stackra/app@0.32.0
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/realtime@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/entitlements@0.32.0
+  - @stackra/transport@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
 ## 0.31.0
 
 ### Patch Changes

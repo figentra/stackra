@@ -18428,6 +18428,30 @@
   },
   {
     "category": "blocks",
+    "description": "Shows part of the screen only while the customer's plan includes a feature.",
+    "headings": ["Basics"],
+    "key": "free/entitlement-gate",
+    "keywords": ["entitlement", "plan", "feature", "upgrade", "paywall", "show or hide", "kit"],
+    "lang": "en",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "EntitlementGate"
+  },
+  {
+    "category": "blocks",
+    "description": "يعرض جزءًا من الشاشة فقط ما دامت خطة العميل تشمل الميزة.",
+    "headings": ["الأساسيات"],
+    "key": "free/entitlement-gate",
+    "keywords": ["استحقاق", "خطة", "ميزة", "ترقية", "محتوى مدفوع"],
+    "lang": "ar",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "EntitlementGate"
+  },
+  {
+    "category": "blocks",
     "description": "A titled grid of features with icons for a marketing page.",
     "headings": ["Basics"],
     "key": "free/feature-section",
@@ -18484,6 +18508,30 @@
     "propNames": [],
     "tier": "free",
     "title": "واجهة الآلة"
+  },
+  {
+    "category": "blocks",
+    "description": "The language field bound to the app's active locale, switching and remembering the choice.",
+    "headings": ["Basics"],
+    "key": "free/i18n-locale-switcher",
+    "keywords": ["language", "locale", "switcher", "translation", "right-to-left", "kit"],
+    "lang": "en",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "LocaleSwitcher (i18n)"
+  },
+  {
+    "category": "blocks",
+    "description": "حقل اللغة مربوطًا بلغة التطبيق النشطة، يبدّلها ويتذكّر الاختيار.",
+    "headings": ["الأساسيات"],
+    "key": "free/i18n-locale-switcher",
+    "keywords": ["لغة", "لغة الواجهة", "مبدّل", "ترجمة", "من اليمين إلى اليسار"],
+    "lang": "ar",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "LocaleSwitcher (i18n)"
   },
   {
     "category": "blocks",
@@ -18970,6 +19018,30 @@
     "propNames": [],
     "tier": "free",
     "title": "إجراءات الصف"
+  },
+  {
+    "category": "blocks",
+    "description": "Switches the active scope: a branch, a store or any level of the scope tree.",
+    "headings": ["Basics"],
+    "key": "free/scope-picker",
+    "keywords": ["scope", "branch", "hierarchy", "switcher", "picker", "field", "kit"],
+    "lang": "en",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "ScopePicker"
+  },
+  {
+    "category": "blocks",
+    "description": "يبدّل النطاق النشط: فرعًا أو متجرًا أو أي مستوى في شجرة النطاقات.",
+    "headings": ["الأساسيات"],
+    "key": "free/scope-picker",
+    "keywords": ["نطاق", "فرع", "تسلسل هرمي", "مبدّل", "منتقي"],
+    "lang": "ar",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "ScopePicker"
   },
   {
     "category": "blocks",

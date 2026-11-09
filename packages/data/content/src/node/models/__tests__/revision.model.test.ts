@@ -19,6 +19,7 @@ describe("Revision", () => {
       "has_public_id",
       "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(Revision)[0]?.options).toEqual({ prefix: "rev" });
   });

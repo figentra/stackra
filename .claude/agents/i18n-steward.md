@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: haiku
 ---
 
-<!-- generated from .agents/agents/i18n-steward.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/i18n-steward.md by fflow sync — edit the source, not this file -->
 
 # i18n-steward
 

@@ -69,6 +69,12 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   };
   /** The local name a class is printed by, importing it once; a clash gets a prefix. */
   const ref = (target: ClassRef): string => {
+    // An unresolved type reads as `unknown`: importing it would register `undefined`, and nothing typechecks
+    // .stackra/gen, so the run stops here instead of shipping a broken route (SHIP, 0.29).
+    if (target.name === "unknown")
+      throw new TypeError(
+        `gen would import \`unknown\` from ${target.from} into registrations.ts; the reader names no class there`,
+      );
     const key = `${target.from}#${target.name}`;
     const known = local.get(key);
     if (known !== undefined) return known;

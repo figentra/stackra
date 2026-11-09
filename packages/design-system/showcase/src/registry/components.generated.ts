@@ -846,6 +846,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["call to action", "cta", "newsletter", "subscribe", "marketing", "kit"],
     status: "new",
   },
+  // KIT_ENTITLEMENT_GATE: @stackra/entitlements, from its showcase/entitlement-gate.json
+  {
+    slug: "entitlement-gate",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/entitlements",
+    exportName: "EntitlementGate",
+    parts: ["EntitlementGate"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 160 }],
+    related: ["free/can", "free/empty-state", "free/button"],
+    tokens: ["color.surface"],
+    keywords: ["entitlement", "plan", "feature", "upgrade", "paywall", "show or hide", "kit"],
+    status: "new",
+  },
   // KIT_FEATURE_SECTION: @stackra/experience, from its showcase/feature-section.json
   {
     slug: "feature-section",
@@ -876,6 +892,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/blueprint-section", "free/schematic", "free/cta-row"],
     tokens: ["color.core", "color.accent", "color.background"],
     keywords: ["hero", "landing", "blueprint", "schematic", "marketing", "headline", "kit"],
+    status: "new",
+  },
+  // KIT_I18N_LOCALE_SWITCHER: @stackra/i18n, from its showcase/i18n-locale-switcher.json
+  {
+    slug: "i18n-locale-switcher",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/i18n",
+    exportName: "LocaleSwitcher",
+    parts: ["LocaleSwitcher"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 200 }],
+    related: ["free/locale-switcher", "free/select"],
+    tokens: ["color.field"],
+    keywords: ["language", "locale", "switcher", "translation", "right-to-left", "kit"],
     status: "new",
   },
   // KIT_MEMBER_PICKER: @stackra/tenancy, from its showcase/member-picker.json
@@ -1180,6 +1212,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/action-menu", "free/data-table", "free/icon-button"],
     tokens: ["color.surface", "color.danger"],
     keywords: ["row", "actions", "menu", "sdui", "overflow", "kit"],
+    status: "new",
+  },
+  // KIT_SCOPE_PICKER: @stackra/scope, from its showcase/scope-picker.json
+  {
+    slug: "scope-picker",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/scope",
+    exportName: "ScopePicker",
+    parts: ["ScopePicker"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/tree-select", "free/entity-picker", "free/breadcrumbs"],
+    tokens: ["color.field", "color.accent"],
+    keywords: ["scope", "branch", "hierarchy", "switcher", "picker", "field", "kit"],
     status: "new",
   },
   // KIT_SECURITY_PAGE: @stackra/identity, from its showcase/security-page.json

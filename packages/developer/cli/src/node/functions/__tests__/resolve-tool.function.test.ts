@@ -115,6 +115,21 @@ describe("resolveTool", () => {
     });
   });
 
+  it("runs a package's e2e tier with the Playwright config gen wrote, and refuses without one", () => {
+    expect(() => resolveTool("test", member("package"), { tier: "e2e" })).toThrow(
+      "gen wrote no .stackra/playwright.e2e.config.ts",
+    );
+    generated("playwright.e2e.config.ts");
+    expect(resolveTool("test", member("package"), { tier: "e2e" })).toEqual({
+      command: "playwright",
+      args: ["test", "--config", ".stackra/playwright.e2e.config.ts"],
+      cwd: root,
+    });
+    expect(() => resolveTool("test", member("service"), { tier: "e2e" })).toThrow(
+      "e2e tests run in an app or a package",
+    );
+  });
+
   it("builds a package with tsdown and serves and dry-runs a worker with Wrangler", () => {
     expect(resolveTool("build", member("package"), {})).toEqual({
       command: "tsdown",

@@ -1,5 +1,20 @@
 # @stackra/branding
 
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/filesystem@0.32.0
+  - @stackra/media@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/settings@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
 ## 0.31.0
 
 ### Patch Changes

@@ -328,6 +328,8 @@ describe("awsWorkloads", () => {
     expect(all("LoadBalancer").map((entry) => entry.name)).toEqual([
       "academorix-production-zitadel",
     ]);
+    // a streamed answer (60 to 120 s) outlives the ALB's default 60 s idle timeout
+    expect(all("LoadBalancer")[0]?.inputs).toMatchObject({ idleTimeout: 180 });
     expect(all("Target").map((entry) => entry.name)).toEqual(["academorix-production-zitadel"]);
   });
 

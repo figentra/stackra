@@ -31,4 +31,6 @@ export type AwsBaselineOutputs = {
   readonly egressIps: pulumi.Output<string[]> | null;
   /** Their allocation ids, which the network's NAT gateways take. */
   readonly egressAllocationIds: pulumi.Output<string[]> | null;
+  /** The Docker Hub login secret of ECR's pull-through cache, which the owner fills; from the account's first environment. */
+  readonly dockerHubCacheSecretArn: pulumi.Output<string> | null;
 };

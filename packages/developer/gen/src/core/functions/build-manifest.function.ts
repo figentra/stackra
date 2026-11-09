@@ -568,6 +568,18 @@ export function buildManifest(ir: MemberIR): {
     if (entitlementKeys.size > 0) entry["entitlements"] = [...entitlementKeys].sort();
     // An anonymous caller may call it, past the permission and record-policy steps only (STA-2025): listed, so review sees it.
     if (actors?.includes("anonymous") === true) entry["anonymous"] = true;
+    // G1b: a stream action answers server-sent events, and its `handle` says so in its type.
+    const streams = declared.options["stream"] === true;
+    if (streams !== (declared.handle?.stream === true))
+      fail(
+        declared,
+        "stream_output_mismatch",
+        streams
+          ? "the action declares `stream: true`, but `handle` does not answer a ReadableStream"
+          : "`handle` answers a ReadableStream, but the action does not declare `stream: true`",
+        "declare `stream: true` and answer `Promise<ReadableStream<Chunk>>`, or neither",
+      );
+    if (streams) entry["stream"] = true;
     // OS ADR 0039 d2: only an entry marked public forms the published REST and MCP API and its SDKs.
     if (declared.options["public"] === true) {
       entry["public"] = true;

@@ -39,6 +39,12 @@ const EXECUTION_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExec
 /** ALB and target group names allow 32 characters. */
 const BALANCER_NAME_LIMIT = 32;
 
+/**
+ * How long a public workload's load balancer keeps a quiet connection, in seconds: above an AI answer streamed as
+ * server-sent events (60 to 120 s, a ping every 15 s), where the ALB default of 60 would cut a slow stream.
+ */
+const BALANCER_IDLE_TIMEOUT_SECONDS = 180;
+
 /** The CPU a service scales out at, in percent. */
 const SCALE_AT_CPU = 60;
 
@@ -319,6 +325,7 @@ export function awsWorkloads(
         subnets: settings.publicSubnetIds,
         securityGroups: [balancerGroup.id],
         dropInvalidHeaderFields: true,
+        idleTimeout: BALANCER_IDLE_TIMEOUT_SECONDS,
         tags,
       });
       targetGroup = new aws.lb.TargetGroup(workload.name, {

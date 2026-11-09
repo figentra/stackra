@@ -14,7 +14,7 @@ permissions:
     effect: deny
 ---
 
-<!-- generated from .agents/agents/test-engineer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/test-engineer.md by fflow sync — edit the source, not this file -->
 
 # test-engineer
 

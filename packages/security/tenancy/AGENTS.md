@@ -73,8 +73,9 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   registry's row); the deployment's region only from `DatabaseConfig.region` (runway data). Never hard-code a region
   key or a cell, and never let the region guard or the placement resolver pass or fall back when a placement is
   missing: both fail closed.
-- `asTenant(tenantId, work)` (`./testing`) runs the real isolation on the current database; `runAsTenant` stays the
-  database-free fill. Isolation is proven on real Postgres in `*.int.test.ts` (`pnpm --filter @stackra/tenancy test:int`,
+- `asTenant(tenantId, work)` (`./testing`) runs the real isolation on the current database; `runAsTenant` fills the
+  trait and sets `app.tenant_id` transaction-locally in each transaction started inside it (its subscriber, the one
+  testing path on the session-setting allow list), so setup rows pass the policy; it never proves isolation. Isolation is proven on real Postgres in `*.int.test.ts` (`pnpm --filter @stackra/tenancy test:int`,
   Docker), as a role that is neither the owner nor `BYPASSRLS`.
 - `tenantIsolationOptions()` (`./testing`, stackra-258) is data for `@stackra/database/testing`'s
   `assertRowSecurity`; this entry never imports another package's `./testing`, so the generated test joins them.
