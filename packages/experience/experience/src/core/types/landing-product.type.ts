@@ -12,14 +12,18 @@ import type { LocalizedText } from "@stackra/contracts";
 
 /** A product card. */
 export interface LandingProduct {
+  /** The product's id, unique on the cards. */
   readonly id: string;
 
   /** The theme's name in the page's `themes` (`pay`). */
   readonly brand?: string;
 
+  /** The product's name, never translated. */
   readonly name: string;
 
+  /** The product's line under its name. */
   readonly descriptor: LocalizedText;
 
+  /** The product's site; the card is not a link when absent. */
   readonly href?: string;
 }

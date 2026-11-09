@@ -20,7 +20,9 @@ export class StepSwitcherBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.stepSwitcher,
 }) {
+  /** The switcher's spoken name. */
   label!: LocalizedText;
 
+  /** The steps, in order, each with its code. */
   steps!: SwitcherStep[];
 }

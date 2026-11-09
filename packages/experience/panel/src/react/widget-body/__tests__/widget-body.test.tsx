@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `WidgetBody`: a list draws its rows up to the limit with its empty state, a KPI group draws each
- *          KPI, a progress bar binds value and target, a Custom display hands its renderer the answer, and a View
- *          display shows the not-shown state.
+ *          KPI, a progress bar binds value and target, a KPI reads its note field, a percent bar without a target is
+ *          out of one, a Custom display hands its renderer the answer, and a View display shows the not-shown state.
  * Boundary: unit tier, jsdom; the web kit is DOM stand-ins and translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rules 14 and 15); ADR 0164.
@@ -132,7 +132,9 @@ const tileOf = (display: DisplayNode, renderer?: WidgetRenderer) =>
 
 afterEach(cleanup);
 
+/** A widget's display on the web, over the query's answer. */
 describe("WidgetBody", () => {
+  /** A list stops at its limit and shows its empty state without rows. */
   it("draws a list up to its limit, or its empty state", () => {
     const list = tileOf(WidgetDisplay.list({ primary: "variantId", meta: "available", limit: 1 }));
     render(
@@ -154,6 +156,7 @@ describe("WidgetBody", () => {
     expect(screen.getByText("panel::widgets.empty")).toBeTruthy();
   });
 
+  /** Each KPI of a group gets its derived label, and a progress bar binds value and target. */
   it("draws each KPI of a group and a progress bar", () => {
     const metric = { value: 2, previous: 1, target: 4, series: null };
     render(
@@ -182,6 +185,34 @@ describe("WidgetBody", () => {
     expect(bar.max).toBe(4);
   });
 
+  /** A KPI's note reads its own field, and a rate without a target fills a bar out of one. */
+  it("reads a KPI's note field and gives a percent bar a maximum of one", () => {
+    const rate = { value: 0.67, previous: 0.6, target: null, series: null, format: "percent" };
+    render(
+      <WidgetBody
+        widget={tileOf(WidgetDisplay.kpi("deliveredRate", { note: "shipmentCount" }))}
+        data={{ deliveredRate: rate, shipmentCount: 12 }}
+        isRefreshing={false}
+      />,
+    );
+    const note = 'inventory::widgets.low_stock.shipmentCount {"count":12}';
+    expect(screen.getByText(note)).toBeTruthy();
+    cleanup();
+    render(
+      <WidgetBody
+        widget={tileOf(WidgetDisplay.progress("deliveredRate"))}
+        data={{ deliveredRate: rate }}
+        isRefreshing={false}
+      />,
+    );
+    const bar = screen.getByLabelText(
+      "inventory::widgets.low_stock.deliveredRate",
+    ) as HTMLProgressElement;
+    expect(bar.value).toBe(0.67);
+    expect(bar.getAttribute("max")).toBe("1");
+  });
+
+  /** Custom draws the producing package's renderer; a view is not drawn here yet. */
   it("hands a Custom renderer the answer, and shows the not-shown state for a view", () => {
     const seen: CustomWidgetProps[] = [];
     const Renderer = (props: CustomWidgetProps) => {

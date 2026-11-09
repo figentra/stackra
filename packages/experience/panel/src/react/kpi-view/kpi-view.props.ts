@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `KpiViewProps`, what `KpiView` takes: the widget, the KPI and the metric value it binds.
+ * Purpose: `KpiViewProps`, what `KpiView` takes: the widget, the KPI, the metric value it binds and the value of its note
+ *          field.
  * Boundary: a type only, internal to the `./react` entry.
  * Runtime: browser
  * Governing contract: ADR 0305 (rule 12); ADR 0307 (rule 15).
@@ -18,4 +19,7 @@ export interface KpiViewProps {
 
   /** The answer's value at the KPI's path: a metric shape. */
   readonly metric: unknown;
+
+  /** The answer's value at the KPI's note path (a number or a string); unused without a note. */
+  readonly note?: unknown;
 }
