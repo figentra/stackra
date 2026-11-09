@@ -1554,6 +1554,11 @@
         "description": "An event calendar in day, week, month and agenda views, with events placed by time and overlaps side by side.",
         "keywords": "scheduler, event calendar, agenda, bookings, appointments, week view"
       },
+      "scheduling_board": {
+        "title": "Scheduling board",
+        "description": "A resource schedule: rows of pitches, rooms and people, with bookings, holds and closures placed by time, dragged to move and checked for conflicts.",
+        "keywords": "scheduling board, resource schedule, bookings, holds, timeline, rota, drag and drop"
+      },
       "chart_export": {
         "title": "Chart export",
         "description": "Save any chart as a picture, a drawing or its numbers, or share it from a phone.",
@@ -5297,6 +5302,26 @@
         },
         "rtl": {
           "title": "Right to left"
+        }
+      },
+      "scheduling_board": {
+        "day": {
+          "title": "Academy day"
+        },
+        "week": {
+          "title": "Week"
+        },
+        "timeline": {
+          "title": "Timeline"
+        },
+        "rtl": {
+          "title": "Right to left, Hijri"
+        },
+        "read_only": {
+          "title": "Read-only"
+        },
+        "drag": {
+          "title": "Refused move"
         }
       },
       "chart_export": {
@@ -9080,6 +9105,23 @@
           "dont_2": "Do not put long notes in the title; open the event for details.",
           "alternative": {
             "calendar": "To pick a date.",
+            "timeline_chart": "For tasks across weeks on one bar each."
+          }
+        },
+        "scheduling_board": {
+          "headline": "Every pitch, room and coach on one board.",
+          "intro": "Staff see what is booked on each resource across the day, hold a slot while a customer decides, drag a booking to another row or time, and see a clash before they drop it.",
+          "tags": "Day · Week · Timeline · Drag",
+          "what": "A resource schedule with one row per pitch, room or person, and the bookings, holds, closures and working time placed on it.",
+          "when": "For bookings across shared resources: courts, rooms, coaches, vehicles and delivery slots.",
+          "rtl": "Time runs from the right in Arabic, each row keeps its name at the start, and dates can be written in the Hijri calendar with the customer's digits.",
+          "when_not": "For one calendar of appointments without resource rows; use the scheduler.",
+          "do_1": "Pass the branch's time zone, not the viewer's.",
+          "do_2": "Return a promise from `onItemChange` and resolve it to `false` when the server refuses the move.",
+          "dont_1": "Do not refuse a drop in the screen; pass the conflicts on and let the server decide.",
+          "dont_2": "Do not use colour alone to tell a hold from a booking; say it in the title.",
+          "alternative": {
+            "scheduler": "For one calendar of events without resource rows.",
             "timeline_chart": "For tasks across weeks on one bar each."
           }
         },

@@ -255,6 +255,8 @@
     "pending": "جارٍ الحفظ",
     "moving": "نقل {title}. الأسهم تنقله، وShift مع الأسهم تغيّر مدته، وEnter يضعه، وEscape يلغي.",
     "selecting": "تحديد من {time}. Shift مع الأسهم يمدّه، وEnter يؤكد، وEscape يلغي.",
+    "moving_touch": "نقل {title}. اسحبه لنقله، وارفع إصبعك لوضعه.",
+    "selecting_touch": "تحديد من {time}. اسحب لمدّه، وارفع إصبعك للتأكيد.",
     "moved": "{title}: {resource}، {time}",
     "selected": "تم التحديد: {resource}، {time}",
     "cancelled": "أُلغي",

@@ -255,6 +255,8 @@
     "pending": "Wird gespeichert",
     "moving": "{title} wird verschoben. Pfeile verschieben, Umschalt und Pfeile ändern die Dauer, Eingabe legt ab, Escape bricht ab.",
     "selecting": "Auswahl ab {time}. Umschalt und Pfeile erweitern, Eingabe bestätigt, Escape bricht ab.",
+    "moving_touch": "{title} wird verschoben. Ziehen zum Verschieben, loslassen zum Ablegen.",
+    "selecting_touch": "Auswahl ab {time}. Ziehen zum Erweitern, loslassen zum Bestätigen.",
     "moved": "{title}: {resource}, {time}",
     "selected": "Ausgewählt: {resource}, {time}",
     "cancelled": "Abgebrochen",

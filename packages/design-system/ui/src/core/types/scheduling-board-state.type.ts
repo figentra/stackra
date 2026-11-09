@@ -34,6 +34,8 @@ export interface SchedulingBoardState {
   readonly goToday: () => void;
   /** The heading: the day, or the first and last day shown. */
   readonly heading: string;
+  /** Minutes per slot, after the board's checks. */
+  readonly slotMinutes: number;
   /** The columns, earliest first. */
   readonly columns: readonly SchedulingColumn[];
   /** The rows in order, group headings included. */
@@ -83,7 +85,7 @@ export interface SchedulingBoardState {
   readonly snap: (at: Date) => Date;
   /** The moment at a position in columns, snapped. */
   readonly timeAt: (position: number) => Date;
-  /** A draft shifted by whole steps (a slot, or a day in the timeline) and rows; resizing moves only its end. */
+  /** A draft shifted by whole columns (a slot, or a day in the timeline) and rows; resizing moves only its end. */
   readonly nudge: (
     draft: SchedulingBoardDraft,
     steps: number,
@@ -100,8 +102,12 @@ export interface SchedulingBoardState {
   readonly announce: (words: string) => void;
   /** The live region's words. */
   readonly announcement: string;
-  /** The words of a drag's start, for the live region. */
-  readonly startWordsOf: (draft: SchedulingBoardDraft, title: string | null) => string;
+  /** The words of a drag's start, for the live region; `touch` words a drag by finger instead of by keys. */
+  readonly startWordsOf: (
+    draft: SchedulingBoardDraft,
+    title: string | null,
+    touch?: boolean,
+  ) => string;
   /** Looks a resource up by id. */
   readonly resourceOf: (id: string) => SchedulingBoardResource | undefined;
 }

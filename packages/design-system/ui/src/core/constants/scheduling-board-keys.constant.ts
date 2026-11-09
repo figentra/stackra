@@ -35,6 +35,8 @@ export const SCHEDULING_BOARD_KEYS = keys({
       "pending",
       "moving",
       "selecting",
+      "moving_touch",
+      "selecting_touch",
       "moved",
       "selected",
       "cancelled",

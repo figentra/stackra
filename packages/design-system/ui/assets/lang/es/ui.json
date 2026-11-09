@@ -255,6 +255,8 @@
     "pending": "Guardando",
     "moving": "Moviendo {title}. Las flechas lo mueven, Mayús y flechas cambian su duración, Intro lo suelta, Escape cancela.",
     "selecting": "Seleccionando desde {time}. Mayús y flechas amplían, Intro confirma, Escape cancela.",
+    "moving_touch": "Moviendo {title}. Arrastra para moverlo y suelta para dejarlo.",
+    "selecting_touch": "Seleccionando desde {time}. Arrastra para ampliar y suelta para confirmar.",
     "moved": "{title}: {resource}, {time}",
     "selected": "Seleccionado: {resource}, {time}",
     "cancelled": "Cancelado",

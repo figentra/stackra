@@ -4841,6 +4841,32 @@
     "xray": "X-ray, Khalid",
     "holiday": "National Day"
   },
+  "scheduling_board": {
+    "day_label": "Academy schedule, day",
+    "week_label": "Academy schedule, week",
+    "timeline_label": "Academy schedule, two weeks",
+    "read_only_label": "Academy schedule, read-only",
+    "drag_label": "Academy schedule, drag to move",
+    "north": "North branch",
+    "south": "South branch",
+    "pitch_1": "Pitch 1",
+    "pitch_1_half_a": "Pitch 1 – half A",
+    "coach": "Coach Faisal",
+    "pool": "Pool",
+    "training": "Under-12 training",
+    "five_a_side": "Five-a-side, Omar",
+    "swim_class": "Swim class",
+    "held": "Held for Sara",
+    "cleaning": "Pool cleaning",
+    "maintenance": "Pool maintenance",
+    "coach_break": "Coach's break",
+    "coach_leave": "Coach on leave",
+    "selected": "Selected {minutes} minutes on {row}.",
+    "picked": "Picked: {title}",
+    "checking": "Checking the move…",
+    "refused": "The move was refused, so the booking went back.",
+    "coach_leaves": "Coach Faisal leaves at 20:00."
+  },
   "tree_diagram": {
     "org": {
       "label": "Headcount by team",

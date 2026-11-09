@@ -255,6 +255,8 @@
     "pending": "Enregistrement",
     "moving": "Déplacement de {title}. Les flèches le déplacent, Maj et flèches changent sa durée, Entrée le dépose, Échap annule.",
     "selecting": "Sélection à partir de {time}. Maj et flèches l’étendent, Entrée confirme, Échap annule.",
+    "moving_touch": "Déplacement de {title}. Faites glisser pour le déplacer, relâchez pour le déposer.",
+    "selecting_touch": "Sélection à partir de {time}. Faites glisser pour l’étendre, relâchez pour confirmer.",
     "moved": "{title} : {resource}, {time}",
     "selected": "Sélectionné : {resource}, {time}",
     "cancelled": "Annulé",

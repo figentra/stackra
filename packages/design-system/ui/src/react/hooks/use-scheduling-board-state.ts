@@ -189,6 +189,7 @@ export function useSchedulingBoardState(
       view === "day" || !first || !last
         ? full.format(asUtc(date))
         : `${medium.format(asUtc(first.day))} – ${medium.format(asUtc(last.day))}`,
+    slotMinutes,
     columns,
     rows,
     toggleGroup: (group) =>
@@ -271,8 +272,11 @@ export function useSchedulingBoardState(
     snap,
     timeAt: (position) => snap(schedulingTimeAt(position, columns)),
     nudge: (draft, steps, rowSteps, resize) => {
+      // by columns, not by time, so a week's step from its last shown slot lands on the next day's first
+      const along = (at: Date) =>
+        snap(schedulingTimeAt(schedulingPositionOf(at, columns) + steps, columns));
       if (resize) {
-        const end = Math.max(draft.start.getTime() + step, draft.end.getTime() + steps * step);
+        const end = Math.max(draft.start.getTime() + step, along(draft.end).getTime());
         return { ...draft, end: new Date(end) };
       }
       const index = resourceRows.indexOf(draft.resourceId);
@@ -284,8 +288,8 @@ export function useSchedulingBoardState(
       return {
         ...draft,
         resourceId: target,
-        start: new Date(draft.start.getTime() + steps * step),
-        end: new Date(draft.end.getTime() + steps * step),
+        start: along(draft.start),
+        end: new Date(along(draft.start).getTime() + draft.end.getTime() - draft.start.getTime()),
       };
     },
     conflictsOf,
@@ -346,8 +350,10 @@ export function useSchedulingBoardState(
     },
     announce,
     announcement,
-    startWordsOf: (draft, title) =>
-      title === null ? t(K.selecting, { time: rangeWords(draft) }) : t(K.moving, { title }),
+    startWordsOf: (draft, title, touch = false) =>
+      title === null
+        ? t(touch ? K.selecting_touch : K.selecting, { time: rangeWords(draft) })
+        : t(touch ? K.moving_touch : K.moving, { title }),
     resourceOf: (id) => resources.get(id),
   };
 }

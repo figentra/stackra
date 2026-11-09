@@ -255,6 +255,8 @@
     "pending": "Salvataggio",
     "moving": "Spostamento di {title}. Le frecce lo spostano, Maiusc e frecce ne cambiano la durata, Invio lo rilascia, Esc annulla.",
     "selecting": "Selezione da {time}. Maiusc e frecce la estendono, Invio conferma, Esc annulla.",
+    "moving_touch": "Spostamento di {title}. Trascina per spostarlo, rilascia per posarlo.",
+    "selecting_touch": "Selezione da {time}. Trascina per estenderla, rilascia per confermare.",
     "moved": "{title}: {resource}, {time}",
     "selected": "Selezionato: {resource}, {time}",
     "cancelled": "Annullato",

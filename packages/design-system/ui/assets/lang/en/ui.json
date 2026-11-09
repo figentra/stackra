@@ -255,6 +255,8 @@
     "pending": "Saving",
     "moving": "Moving {title}. Arrows move it, Shift and arrows change its length, Enter drops it, Escape cancels.",
     "selecting": "Selecting from {time}. Shift and arrows extend it, Enter confirms, Escape cancels.",
+    "moving_touch": "Moving {title}. Drag to move it, lift to drop it.",
+    "selecting_touch": "Selecting from {time}. Drag to extend it, lift to confirm.",
     "moved": "{title}: {resource}, {time}",
     "selected": "Selected: {resource}, {time}",
     "cancelled": "Cancelled",

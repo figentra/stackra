@@ -255,6 +255,8 @@
     "pending": "Opslaan",
     "moving": "{title} verplaatsen. Pijlen verplaatsen, Shift en pijlen wijzigen de duur, Enter zet neer, Escape annuleert.",
     "selecting": "Selectie vanaf {time}. Shift en pijlen verlengen, Enter bevestigt, Escape annuleert.",
+    "moving_touch": "{title} verplaatsen. Sleep om te verplaatsen, laat los om neer te zetten.",
+    "selecting_touch": "Selectie vanaf {time}. Sleep om te verlengen, laat los om te bevestigen.",
     "moved": "{title}: {resource}, {time}",
     "selected": "Geselecteerd: {resource}, {time}",
     "cancelled": "Geannuleerd",
