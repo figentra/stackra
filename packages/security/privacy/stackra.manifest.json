@@ -273,6 +273,12 @@
                 "name": "Database",
                 "from": "@stackra/database"
               }
+            },
+            {
+              "class": {
+                "name": "Container",
+                "from": "@stackra/container"
+              }
             }
           ]
         }
