@@ -18050,8 +18050,8 @@
   },
   {
     "category": "blocks",
-    "description": "",
-    "headings": [],
+    "description": "A table of subjects by capability, each cell a yes, a no, coming or a short note.",
+    "headings": ["Basics"],
     "key": "free/capability-matrix",
     "keywords": [
       "capability",
@@ -18061,25 +18061,26 @@
       "carriers",
       "marketing",
       "landing",
-      "kit"
+      "kit",
+      "features"
     ],
     "lang": "en",
     "platforms": ["react"],
     "propNames": [],
     "tier": "free",
-    "title": "CapabilityMatrix"
+    "title": "Capability matrix"
   },
   {
     "category": "blocks",
-    "description": "",
-    "headings": [],
+    "description": "جدول يعرض الجهات مقابل القدرات، وكل خلية فيه نعم أو لا أو قريبًا أو ملاحظة قصيرة.",
+    "headings": ["الأساسيات"],
     "key": "free/capability-matrix",
-    "keywords": [],
+    "keywords": ["قدرات", "مصفوفة", "مقارنة", "جدول", "مزايا", "شركات الشحن", "صفحة هبوط"],
     "lang": "ar",
     "platforms": ["react"],
     "propNames": [],
     "tier": "free",
-    "title": "CapabilityMatrix"
+    "title": "مصفوفة القدرات"
   },
   {
     "category": "blocks",
