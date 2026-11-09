@@ -1,5 +1,16 @@
 # @stackra/shipping
 
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/money@0.27.0
+  - @stackra/testing@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Minor Changes

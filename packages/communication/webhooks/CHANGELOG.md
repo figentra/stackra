@@ -1,5 +1,34 @@
 # @stackra/webhooks
 
+## 0.27.0
+
+### Patch Changes
+
+- 7d284f2: `WebhookReceiver` parses a verified body by its recipe's `bodyFormat`: `json` (the default) as before, or `form`, an
+  `application/x-www-form-urlencoded` body read into percent-decoded string values, which route the event
+  (`eventType.path`), key it (`eventId.path`) and create it. A verified form-encoded delivery no longer throws a
+  `SyntaxError` before routing. `WebhookSchemeRecipe.bodyFormat` now documents that it governs both the verifier and the
+  receiver.
+- Updated dependencies [4a4d817]
+- Updated dependencies [df74e1d]
+- Updated dependencies [7d284f2]
+  - @stackra/database@0.27.0
+  - @stackra/integrations@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/scheduler@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/money@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Minor Changes

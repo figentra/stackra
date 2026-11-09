@@ -1,5 +1,26 @@
 # @stackra/notifications
 
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [df74e1d]
+- Updated dependencies [8a70552]
+- Updated dependencies [7d284f2]
+  - @stackra/integrations@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/clients@0.27.0
+  - @stackra/money@0.27.0
+  - @stackra/assets@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/i18n@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes
