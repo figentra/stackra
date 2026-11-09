@@ -17,6 +17,7 @@ import { vi } from "vitest";
 import { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { RetentionUnsupportedError } from "#core/errors/retention-unsupported.error";
 import { GcsFileSystemDriver } from "#node/drivers/gcs-file-system.driver";
 
 /** What the stand-in store holds and records. */
@@ -136,6 +137,12 @@ describe("GcsFileSystemDriver", () => {
     disk();
     expect(store.options).toEqual([{ projectId: "acme-ksa" }, {}]);
     expect(store.buckets).toEqual(["acme-files-sa", "acme-files-sa"]);
+  });
+
+  it("refuses a retained write rather than store an unprotected file", async () => {
+    await expect(
+      disk().write("archive/inv.pdf", "pdf", { retainUntil: new Date("2033-01-01") }),
+    ).rejects.toThrow(RetentionUnsupportedError);
   });
 
   it("refuses a config without a bucket", () => {
