@@ -39,7 +39,7 @@ description: "Accepted, amended by 0135 · 2026-10-20"
 
 ## Enforcement
 
-Planned: a shared id codec with round-trip tests, a generator check (`stackra gen`) that every endpoint declares exactly one area, and the response check of [0032](/adr/0032-rest-api-generated-client-uuidv7-ids) (no unprefixed id). Nothing checks this today.
+`stackra gen` records one area on every action and query (`app` when none is written), prefixes every derived route with `/<area>` and refuses an override outside it (`endpoint_area_mismatch`, STA-340). Planned: a shared id codec with round-trip tests and the response check of [0032](/adr/0032-rest-api-generated-client-uuidv7-ids) (no unprefixed id).
 
 ## Supersedes and sources
 

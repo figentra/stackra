@@ -1,6 +1,6 @@
 {
   "name": "@stackra/pricing",
-  "version": "0.8.0",
+  "version": "0.29.0",
   "private": false,
   "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port; and in ./react the module UI kit (ADR 0504): PricingTable, the plan comparison block with a period switch on @stackra/ui",
   "keywords": [
@@ -92,12 +92,12 @@
   "dependencies": {
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -118,6 +118,7 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@stackra/integrations": "workspace:*",
     "react": "catalog:frontend"
   },
   "peerDependenciesMeta": {

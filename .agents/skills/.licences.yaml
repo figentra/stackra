@@ -13,7 +13,6 @@ skills:
   skills/backend-errors: MIT
   skills/backend-gen-and-encore-target: MIT
   skills/backend-module-and-root-module: MIT
-  skills/changesets: MIT
   skills/code-naming-and-casing: MIT
   skills/db-models-and-migrations: MIT
   skills/docs-adr: MIT
@@ -28,13 +27,15 @@ skills:
   skills/expo-upgrade: MIT
   # Figentra Flow's skills (figentra/flow, MIT; ADR 0510)
   skills/flow-analyze: MIT
+  skills/flow-build: MIT
   skills/flow-checklist: MIT
   skills/flow-clarify: MIT
   skills/flow-converge: MIT
+  skills/flow-gate: MIT
   skills/flow-implement: MIT
   skills/flow-plan: MIT
+  skills/flow-review: MIT
   skills/flow-specify: MIT
-  skills/flow-tasks: MIT
   skills/frontend-design: Apache-2.0
   skills/frontend-resource-console: MIT
   skills/heroui-native: Apache-2.0

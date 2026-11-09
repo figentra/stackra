@@ -3,12 +3,18 @@
  * Purpose: `PostgresScheduleDriver`, the server's `ScheduleDriver`: schedules are rows of `scheduler.schedules` and
  *          watermarks rows of `scheduler.watermarks`, advanced together in one upsert per tick.
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
- *           and every result row read through zod. Inside the tick's lock (a Postgres transaction) each statement joins
- *           it, so the watermarks commit with the jobs the tick pushed or not at all. The tables have no row-level
- *           security: the tick reads every scope, and a scope's reads and deletes bind `scope_id` themselves.
+ *           and every result row read through zod. Inside the tick's lock (a Postgres transaction) the claim and the
+ *           watermark advance join it. `scheduler.schedules` is tenant-owned in the platform form (`scheduler.0002`):
+ *           the tick claims every owner's schedules through the system function `scheduler.claim_schedules` (ids,
+ *           owners and what decides their runs only); every other statement runs under the caller's row-level
+ *           security, so a schedule is loaded, listed or deleted only in its owner's isolation, and a scope's reads and
+ *           deletes still bind `scope_id`. `tenant_id` is never written here: its default takes the call's
+ *           `app.tenant_id`. `scheduler.watermarks` is a platform table. `scheduler.fires` (`scheduler.0003`, platform
+ *           form) records each fire once, in the owner's transaction of its push; its primary key decides a repeat
+ *           across owners.
  * Runtime: node
- * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0160 (raw SQL is parameterised and typed with zod); ADR 0142
- *                     (drivers behind ports); ADR 0294 (decision 16).
+ * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0160 (raw SQL is
+ *                     parameterised and typed with zod); ADR 0142 (drivers behind ports); ADR 0294 (decision 16).
  */
 import { Driver } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -17,7 +23,7 @@ import type { Database } from "@stackra/database";
 import { z } from "zod";
 
 import { Misfire, ScheduleDriver } from "#contracts/index";
-import type { Schedule } from "#contracts/index";
+import type { Schedule, ScheduleClaim } from "#contracts/index";
 
 /** The schedule table, in the package's schema. */
 const SCHEDULES = '"scheduler"."schedules"';
@@ -25,8 +31,27 @@ const SCHEDULES = '"scheduler"."schedules"';
 /** The watermark table, in the package's schema. */
 const WATERMARKS = '"scheduler"."watermarks"';
 
+/** The fire table, in the package's schema. */
+const FIRES = '"scheduler"."fires"';
+
 /** The columns a schedule is read from. */
 const COLUMNS = "id, scope_id, scope_path, job_key, cron, time_zone, input, misfire, created_at";
+
+/** A misfire policy as stored. */
+const MISFIRE = z.enum(Enum.values(Misfire) as [Misfire, ...Misfire[]]);
+
+/** Rows of the claim function. */
+const CLAIMS = z.array(
+  z.object({
+    id: z.string().startsWith("sch_"),
+    tenant_id: z.string().nullable(),
+    job_key: z.string(),
+    cron: z.string(),
+    time_zone: z.string(),
+    misfire: MISFIRE,
+    created_at: z.coerce.date(),
+  }),
+);
 
 /** Rows of `scheduler.schedules`. */
 const ROWS = z.array(
@@ -38,10 +63,26 @@ const ROWS = z.array(
     cron: z.string(),
     time_zone: z.string(),
     input: z.record(z.string(), z.unknown()),
-    misfire: z.enum(Enum.values(Misfire) as [Misfire, ...Misfire[]]),
+    misfire: MISFIRE,
     created_at: z.coerce.date(),
   }),
 );
+
+/** The schedules of `rows`. */
+function schedulesOf(rows: unknown): readonly Schedule[] {
+  return ROWS.parse(rows).map((row) =>
+    Object.freeze({
+      id: row.id as PublicId<"sch">,
+      scope: { id: row.scope_id as PublicId<"scp">, path: row.scope_path },
+      key: row.job_key,
+      cron: row.cron,
+      timeZone: row.time_zone,
+      input: row.input,
+      misfire: row.misfire,
+      createdAt: row.created_at,
+    }),
+  );
+}
 
 /** Rows of `scheduler.watermarks`. */
 const MARKS = z.array(z.object({ schedule_key: z.string(), ticked_at: z.coerce.date() }));
@@ -98,35 +139,79 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
       .em()
       .execute(
         `with gone as (delete from ${SCHEDULES} where id = ? and scope_id = ? returning id), ` +
-          `marks as (delete from ${WATERMARKS} where schedule_key in (select id from gone)) ` +
+          `marks as (delete from ${WATERMARKS} where schedule_key in (select id from gone)), ` +
+          `fired as (delete from ${FIRES} where fire_key in (select id from gone)) ` +
           "select id from gone",
         [id, scope.id],
       );
     return IDS.parse(rows).length > 0;
   }
 
-  /** Lists the schedules of `scope`, or of every scope (see `ScheduleDriver.schedules`). */
-  async schedules(scope?: ScopeRef): Promise<readonly Schedule[]> {
-    const filter = scope === undefined ? "" : " where scope_id = ?";
+  /** Lists the schedules of `scope` (see `ScheduleDriver.schedules`). */
+  async schedules(scope: ScopeRef): Promise<readonly Schedule[]> {
     // raw-sql: the schedule table has no model; ids are UUIDv7, so ordering by id is creation order
+    return schedulesOf(
+      await this.database
+        .em()
+        .execute(`select ${COLUMNS} from ${SCHEDULES} where scope_id = ? order by id`, [scope.id]),
+    );
+  }
+
+  /** Claims every owner's schedules through the system function (see `ScheduleDriver.claim`). */
+  async claim(): Promise<readonly ScheduleClaim[]> {
+    // raw-sql: the system function reads every owner's schedules, which no owner's session may read
     const rows = await this.database
       .em()
       .execute(
-        `select ${COLUMNS} from ${SCHEDULES}${filter} order by id`,
-        scope === undefined ? [] : [scope.id],
+        "select id, tenant_id, job_key, cron, time_zone, misfire, created_at from scheduler.claim_schedules()",
+        [],
       );
-    return ROWS.parse(rows).map((row) =>
+    return CLAIMS.parse(rows).map((row) =>
       Object.freeze({
         id: row.id as PublicId<"sch">,
-        scope: { id: row.scope_id as PublicId<"scp">, path: row.scope_path },
+        ...(row.tenant_id === null ? {} : { ownerId: row.tenant_id as PublicId<"scp"> }),
         key: row.job_key,
         cron: row.cron,
         timeZone: row.time_zone,
-        input: row.input,
         misfire: row.misfire,
         createdAt: row.created_at,
       }),
     );
+  }
+
+  /** Schedule `id` as the caller's isolation reads it (see `ScheduleDriver.load`). */
+  async load(id: PublicId<"sch">): Promise<Schedule | undefined> {
+    // raw-sql: the schedule table has no model; one parameterised read under the caller's row-level security
+    const [schedule] = schedulesOf(
+      await this.database.em().execute(`select ${COLUMNS} from ${SCHEDULES} where id = ?`, [id]),
+    );
+    return schedule;
+  }
+
+  /** Records a fire of `key` at `at` once (see `ScheduleDriver.recordFire`). */
+  async recordFire(key: string, at: Date): Promise<boolean> {
+    // raw-sql: the fire's primary key decides a repeat across every owner, which the ORM's insert cannot target
+    const rows = await this.database
+      .em()
+      .execute(
+        `insert into ${FIRES} (fire_key, fire_at) values (?, ?) ` +
+          "on conflict (fire_key, fire_at) do nothing returning fire_key as id",
+        [key, at],
+      );
+    return IDS.parse(rows).length > 0;
+  }
+
+  /** Deletes the fires of `key` at or before `through` (see `ScheduleDriver.forgetFires`). */
+  async forgetFires(key: string, through: Date): Promise<void> {
+    // raw-sql: the fire table has no model; one parameterised delete under the caller's row-level security
+    await this.database
+      .em()
+      .execute(`delete from ${FIRES} where fire_key = ? and fire_at <= ?`, [key, through]);
+  }
+
+  /** Runs `work` in a `requiresNew` transaction of the database (see `ScheduleDriver.transaction`). */
+  transaction<T>(work: () => Promise<T>): Promise<T> {
+    return this.database.transaction(work, { requiresNew: true });
   }
 
   /** Reads every watermark, by key (see `ScheduleDriver.watermarks`). */
@@ -138,7 +223,7 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
     return new Map(MARKS.parse(rows).map((row) => [row.schedule_key, row.ticked_at]));
   }
 
-  /** Upserts the watermark of each key to `at` (see `ScheduleDriver.advance`). */
+  /** Upserts the watermark of each key to `at`, never back (see `ScheduleDriver.advance`). */
   async advance(keys: readonly string[], at: Date): Promise<void> {
     if (keys.length === 0) return;
     // raw-sql: every key in one upsert, the keys bound as one JSON array
@@ -147,7 +232,8 @@ export class PostgresScheduleDriver extends Driver(ScheduleDriver) {
       .execute(
         `insert into ${WATERMARKS} (schedule_key, ticked_at) ` +
           "select key, ?::timestamptz from jsonb_array_elements_text(?::jsonb) as keys(key) " +
-          "on conflict (schedule_key) do update set ticked_at = excluded.ticked_at",
+          "on conflict (schedule_key) do update " +
+          "set ticked_at = greatest(watermarks.ticked_at, excluded.ticked_at)",
         [at, JSON.stringify(keys)],
       );
   }

@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: `runSmoke(context, drivers?)`, the run of `stackra smoke --env <environment> [--only web,mobile,desktop]
+ * Purpose: `runSmoke(cwd, values, drivers?)`, the run of `stackra smoke --env <environment> [--only web,mobile,desktop]
  *          [--app <key> --ios <.app> --android <.apk> --template-dir <dir>]` at a product root, after a preview
- *          deploy: Runway's `smokePreview` checks each web surface's preview host and the given mobile builds, prints
- *          one line per result with its problems and evidence, and exits 1 when any failed, so the promote job that
- *          needs it does not run.
- * Boundary: the CLI parses the flags and delegates; the drivers are Runway's (`PlaywrightSmokeDriver`,
- *           `MaestroSmokeDriver`, `ElectronSmokeDriver`), and a test passes its own. One CI job runs one `--only`
- *           target: web on Linux, iOS on the Mac runner, Android on Linux with KVM.
+ *          deploy: Runway's `smokePreview` checks each web surface's preview host and the given mobile builds, and it
+ *          resolves with every result and, when one failed, the failure, so `SmokeCommand` exits 1 and the promote job
+ *          that needs it does not run.
+ * Boundary: validates the flags and delegates; prints nothing (`SmokeCommand` draws the results). The drivers are
+ *           Runway's (`PlaywrightSmokeDriver`, `MaestroSmokeDriver`, `ElectronSmokeDriver`), and a test passes its
+ *           own. One CI job runs one `--only` target: web on Linux, iOS on the Mac runner, Android on Linux with KVM.
  * Runtime: node
- * Governing contract: STA-265 spec (D5, D6, FR-009, FR-013).
+ * Governing contract: STA-265 spec (D5, D6, FR-009, FR-013); ADR 0506; STA-1966.
  */
 import { RunwayEnvironment, RunwaySmokeFailedError } from "@stackra/runway";
 import type { SmokeDriver, SmokeResult, SmokeSubject } from "@stackra/runway";
@@ -21,40 +21,34 @@ import {
 } from "@stackra/runway/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
-import type { CliContext } from "#node/types/cli-context.type";
 
 const TARGETS = ["web", "mobile", "desktop"] as const;
 
 /** A string flag, or undefined. */
-function text(value: string | boolean | undefined): string | undefined {
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
-}
-
-/** One result as a line, its problems indented below it. */
-function lineOf(result: SmokeResult): string {
-  const evidence = result.evidence === undefined ? "" : ` (${result.evidence})`;
-  const head = `${result.passed ? "pass" : "FAIL"} ${result.target} ${result.name}${evidence}\n`;
-  return head + result.problems.map((problem) => `  ${problem}\n`).join("");
+function text(value: string | undefined): string | undefined {
+  return value !== undefined && value.trim() !== "" ? value.trim() : undefined;
 }
 
 /**
- * Runs the smoke step and resolves with the exit code: 0 when every subject passed, 1 otherwise.
+ * Runs the smoke step and resolves with every result, and the failure's message when a subject failed.
  *
+ * @param cwd - the product root.
+ * @param values - the flags, by long name.
  * @param drivers - the smoke drivers; Runway's three when absent.
  * @throws CliUsageError when the environment or a target is unknown, or `--ios`/`--android` come without `--app`
  *         and `--template-dir`.
  * @example
- * await runSmoke({ ...context, values: { env: "preview", only: "web" } });
+ * const { results, failure } = await runSmoke(root, { env: "preview", only: "web" });
  */
 export async function runSmoke(
-  context: CliContext,
+  cwd: string,
+  values: Readonly<Record<string, string | undefined>>,
   drivers: readonly SmokeDriver[] = [
     new PlaywrightSmokeDriver(),
     new MaestroSmokeDriver(),
     new ElectronSmokeDriver(),
   ],
-): Promise<number> {
-  const { cwd, io, values } = context;
+): Promise<{ readonly results: readonly SmokeResult[]; readonly failure?: string }> {
   const environment = text(values["env"]);
   if (
     environment === undefined ||
@@ -88,13 +82,9 @@ export async function runSmoke(
       ...(app === undefined ? {} : { builds: { [app]: { ios, android } } }),
       ...(templateDir === undefined ? {} : { templateDir }),
     });
-    for (const result of results) io.out(lineOf(result));
-    io.out(`smoke passed: ${results.length} checked\n`);
-    return 0;
+    return { results };
   } catch (error) {
     if (!(error instanceof RunwaySmokeFailedError)) throw error;
-    for (const result of error.results) io.out(lineOf(result));
-    io.err(`${error.message}\n`);
-    return 1;
+    return { results: error.results, failure: error.message };
   }
 }

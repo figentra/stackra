@@ -7,7 +7,7 @@
  *          also stored there for the proxy alone, read by a role only RDS Proxy may assume.
  * Boundary: declares resources only, inside the Pulumi program that calls it; only the owner applies them. The
  *           password arrives as a Pulumi secret input per database (generated in the deploy job and written blind to
- *           Infisical, ADR 0493 decision 4) and is never logged or returned. Dev and preview databases have no deletion
+ *           the vault, ADR 0493 decision 4, ADR 0525) and is never logged or returned. Dev and preview databases have no deletion
  *           protection and no final snapshot; staging and production keep both.
  * Runtime: node
  * Governing contract: ADR 0493 (decisions 2 and 4), ADR 0238 (RDS by default), ADR 0473 (RDS Proxy), ADR 0186
@@ -158,7 +158,7 @@ export function awsDatabases(
 
     const secret = new aws.secretsmanager.Secret(database.name, {
       name: `${database.name}/rds-proxy`,
-      description: `RDS Proxy login of ${database.key}; Infisical stays the source (ADR 0173)`,
+      description: `RDS Proxy login of ${database.key}; the vault stays the source (ADR 0525)`,
       recoveryWindowInDays: throwaway ? 0 : 7,
       tags,
     });

@@ -13,6 +13,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { QueueDriver } from "#contracts/ports/queue-driver.port";
 import type { ChainedJob } from "#contracts/types/chained-job.type";
+import type { JobClaim } from "#contracts/types/job-claim.type";
 import type { JobThrottle } from "#contracts/types/job-throttle.type";
 import type { QueuedJob } from "#contracts/types/queued-job.type";
 
@@ -22,8 +23,16 @@ class NullQueueDriver extends Driver(QueueDriver) {
     return true;
   }
 
-  async reserve(): Promise<QueuedJob | undefined> {
+  async reserve(): Promise<JobClaim | undefined> {
     return undefined;
+  }
+
+  async load(): Promise<QueuedJob | undefined> {
+    return undefined;
+  }
+
+  async claimDead(): Promise<readonly JobClaim[]> {
+    return [];
   }
 
   async retry(): Promise<void> {}
@@ -63,6 +72,12 @@ describe("QueueDriver", () => {
 
   it("is keyed queue.QueueDriver", () => {
     expectTypeOf<QueueDriver["~key"]>().toEqualTypeOf<"queue.QueueDriver">();
+  });
+
+  it("claims a job across owners by its id and owner only", () => {
+    expectTypeOf<JobClaim["id"]>().toEqualTypeOf<PublicId<"job">>();
+    expectTypeOf<JobClaim["ownerId"]>().toEqualTypeOf<PublicId<"scp"> | undefined>();
+    expectTypeOf<keyof JobClaim>().toEqualTypeOf<"id" | "ownerId">();
   });
 
   it("stores who, where and when for each job", () => {

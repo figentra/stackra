@@ -48,7 +48,8 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@stackra/container": "workspace:*"
+    "@stackra/container": "workspace:*",
+    "encore.dev": "1.58.8"
   },
   "devDependencies": {
     "@stackra/cli": "workspace:*",

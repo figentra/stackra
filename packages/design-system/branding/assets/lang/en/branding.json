@@ -1,0 +1,36 @@
+{
+  "settings": {
+    "title": "Branding",
+    "display_name": {
+      "label": "Business name",
+      "help": "The name your documents, emails and pages show, in each language. At most 80 characters.",
+      "en": {
+        "label": "Name in English"
+      },
+      "ar": {
+        "label": "Name in Arabic"
+      }
+    },
+    "logo": {
+      "label": "Logo",
+      "help": "A PNG or JPEG file, at most 512 KB. SVG files are not accepted."
+    },
+    "mark": {
+      "label": "Square mark",
+      "help": "A square PNG or JPEG, 512 × 512 pixels or larger. Your logo is used when you leave this empty."
+    },
+    "primary_color": {
+      "label": "Primary colour",
+      "help": "A hex colour such as #1D4ED8. White or black text on it must reach a contrast of 4.5:1."
+    },
+    "accent_color": {
+      "label": "Accent colour",
+      "help": "A hex colour for titles and lines. It must reach a contrast of 3:1 against white."
+    }
+  },
+  "errors": {
+    "brand_color_contrast": {
+      "message": "This colour's contrast is {ratio}:1. It needs at least {minimum}:1."
+    }
+  }
+}

@@ -1,0 +1,964 @@
+[
+  {
+    "id": "header",
+    "block": "experience.site_header",
+    "props": {
+      "links": [
+        {
+          "label": {
+            "en": "Docs",
+            "ar": "التوثيق"
+          },
+          "href": "https://docs.stackra.figentra.com"
+        },
+        {
+          "label": {
+            "en": "Decisions",
+            "ar": "القرارات"
+          },
+          "href": "https://docs.stackra.figentra.com/adr"
+        },
+        {
+          "label": {
+            "en": "Packages",
+            "ar": "الحزم"
+          },
+          "href": "https://npm.stackra.figentra.com/"
+        },
+        {
+          "label": {
+            "en": "Runway",
+            "ar": "Runway"
+          },
+          "href": "https://docs.stackra.figentra.com/runbooks/runway"
+        }
+      ],
+      "docsSearch": {
+        "label": {
+          "en": "Search the docs",
+          "ar": "ابحث في التوثيق"
+        },
+        "href": "https://docs.stackra.figentra.com"
+      },
+      "githubHref": "https://github.com/figentra/stackra",
+      "navLabel": {
+        "en": "Site",
+        "ar": "الموقع"
+      }
+    }
+  },
+  {
+    "id": "hero",
+    "block": "experience.hero_machine",
+    "props": {
+      "title": {
+        "en": "One backend, every surface.",
+        "ar": "بنية واحدة. وتجربة متّسقة على كل شاشة."
+      },
+      "lede": {
+        "en": "Write an action once. stackra gen turns it into an endpoint, a typed client and an MCP tool, and one design system draws it on web, desktop and phone, in Arabic and English.",
+        "ar": "اكتب الإجراء مرة واحدة، فيحوّله stackra gen إلى نقطة نهاية وعميل محدّد النوع وأداة MCP، ويرسمه نظام تصميم واحد على الويب وسطح المكتب والجوال، بالعربية والإنجليزية."
+      },
+      "primary": {
+        "label": {
+          "en": "Read the docs",
+          "ar": "اقرأ التوثيق"
+        },
+        "href": "https://docs.stackra.figentra.com"
+      },
+      "copyLink": {
+        "label": {
+          "en": "Copy llms.txt",
+          "ar": "انسخ llms.txt"
+        },
+        "value": "https://docs.stackra.figentra.com/llms.txt"
+      },
+      "art": {
+        "src": "/art/engine",
+        "width": 505,
+        "height": 588
+      },
+      "horizon": {
+        "pattern": "strata",
+        "poster": {
+          "light": "/posters/strata-light.png",
+          "dark": "/posters/strata-dark.png"
+        },
+        "sun": {
+          "x": 0.75,
+          "y": 0.9
+        }
+      },
+      "machine": {
+        "label": {
+          "en": "One action, every surface",
+          "ar": "إجراء واحد على كل شاشة"
+        },
+        "action": {
+          "filename": "cancel-order.action.ts",
+          "code": "import type { CancelOrderInput } from \"#modules/orders/schemas/cancel-order-input.schema\";\nimport type { CancelOrderOutput } from \"#modules/orders/schemas/cancel-order-output.schema\";\n\nexport class CancelOrderAction extends Action({\n  key: \"order.cancel\",\n  actors: [ActorKind.User, ActorKind.Agent],\n}) {\n  constructor(private readonly orders: OrderService) {\n    super();\n  }\n\n  async handle(input: CancelOrderInput, ctx: ActionContext): Promise<CancelOrderOutput> {\n    const order = await this.orders.findOneOrFail(input.orderId);\n    await ctx.authorize(order); // the permission from the key, refined by OrderPolicy#cancel\n    // ...\n  }\n}\n"
+        },
+        "surfaces": [
+          {
+            "id": "web",
+            "kind": "web",
+            "title": "example.com/orders",
+            "button": "Cancel order",
+            "lang": "en"
+          },
+          {
+            "id": "desktop",
+            "kind": "desktop",
+            "title": "Orders",
+            "button": "Cancel order",
+            "lang": "en"
+          },
+          {
+            "id": "phone",
+            "kind": "phone",
+            "title": "الطلبات",
+            "button": "إلغاء الطلب",
+            "lang": "ar"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "statement",
+    "block": "experience.statement",
+    "props": {
+      "text": {
+        "en": "Stackra is a *TypeScript* framework where behaviour is written once, as *typed, authorised actions*, and every screen is drawn from *one design system* in *Arabic and English*. It is the stack under every Figentra product, by figentra_.",
+        "ar": "ستاكرا إطار عمل بلغة *TypeScript* يُكتب فيه السلوك مرة واحدة، *إجراءاتٍ محدّدة النوع ومُصرَّحًا بها*، وتُرسم فيه كل شاشة من *نظام تصميم واحد* *بالعربية والإنجليزية*. وهي الأساس تحت كل منتجات فيجنترا. ستاكرا من فيجنترا."
+      }
+    }
+  },
+  {
+    "id": "follow",
+    "block": "experience.chapter_title",
+    "props": {
+      "title": {
+        "en": "Follow one action.",
+        "ar": "تتبّع إجراءً واحدًا."
+      },
+      "subtitle": {
+        "en": "One action, order.cancel, from the class you write to the button, the agent's tool and the deploy.",
+        "ar": "إجراء واحد، order.cancel، من الصنف الذي تكتبه إلى الزر وأداة الوكيل والنشر."
+      }
+    }
+  },
+  {
+    "id": "write",
+    "block": "experience.station",
+    "props": {
+      "id": "write",
+      "title": {
+        "en": "Write",
+        "ar": "اكتب"
+      },
+      "body": {
+        "en": "Behaviour is an action: a key, a typed input and output, and who may call it. The pipeline checks the tenant, the permission and the idempotency key before handle runs.",
+        "ar": "السلوك إجراء: مفتاح، ومدخلات ومخرجات محدّدة النوع، ومن يحقّ له استدعاؤه. وتتحقّق سلسلة المعالجة من المستأجر والصلاحية ومفتاح منع التكرار قبل أن يعمل handle."
+      },
+      "status": {
+        "en": "wrote cancel-order.action.ts",
+        "ar": "كُتب cancel-order.action.ts"
+      }
+    },
+    "children": [
+      {
+        "id": "write-code",
+        "block": "experience.step_switcher",
+        "props": {
+          "label": {
+            "en": "The action",
+            "ar": "الإجراء"
+          },
+          "steps": [
+            {
+              "id": "action",
+              "label": {
+                "en": "Action",
+                "ar": "الإجراء"
+              },
+              "title": {
+                "en": "The action class",
+                "ar": "صنف الإجراء"
+              },
+              "body": {
+                "en": "Its key, the actors who may call it, and handle. The permission, orders.order.cancel, is derived from the key.",
+                "ar": "مفتاحه، ومن يحقّ له استدعاؤه، ودالة handle. وتُشتقّ الصلاحية orders.order.cancel من المفتاح."
+              },
+              "code": {
+                "filename": "cancel-order.action.ts",
+                "language": "ts",
+                "source": "import type { CancelOrderInput } from \"#modules/orders/schemas/cancel-order-input.schema\";\nimport type { CancelOrderOutput } from \"#modules/orders/schemas/cancel-order-output.schema\";\n\nexport class CancelOrderAction extends Action({\n  key: \"order.cancel\",\n  actors: [ActorKind.User, ActorKind.Agent],\n}) {\n  constructor(private readonly orders: OrderService) {\n    super();\n  }\n\n  async handle(input: CancelOrderInput, ctx: ActionContext): Promise<CancelOrderOutput> {\n    const order = await this.orders.findOneOrFail(input.orderId);\n    await ctx.authorize(order); // the permission from the key, refined by OrderPolicy#cancel\n    // ...\n  }\n}\n"
+              }
+            },
+            {
+              "id": "input",
+              "label": {
+                "en": "Input",
+                "ar": "المدخلات"
+              },
+              "title": {
+                "en": "Its input",
+                "ar": "مدخلاته"
+              },
+              "body": {
+                "en": "A Schema class. Its TypeScript types are the rules, compiled to one Zod schema.",
+                "ar": "صنف Schema، أنواعه في TypeScript هي القواعد، وتُترجَم إلى مخطّط Zod واحد."
+              },
+              "code": {
+                "filename": "cancel-order-input.schema.ts",
+                "language": "ts",
+                "source": "export class CancelOrderInput extends Schema {\n  orderId!: PublicId<\"ord\">;\n}\n"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "expose",
+    "block": "experience.station",
+    "props": {
+      "id": "expose",
+      "title": {
+        "en": "Expose",
+        "ar": "أتِح"
+      },
+      "body": {
+        "en": "stackra gen derives the route from the key: order.cancel becomes PUT /orders/:orderId/cancel. The Encore endpoint is generated, never hand-written.",
+        "ar": "يشتقّ stackra gen المسار من المفتاح، فيصير order.cancel المسار PUT /orders/:orderId/cancel. ونقطة النهاية في Encore مولَّدة، لا تُكتب باليد."
+      },
+      "status": {
+        "en": "generated PUT /orders/:orderId/cancel",
+        "ar": "وُلّد PUT /orders/:orderId/cancel"
+      }
+    },
+    "children": [
+      {
+        "id": "expose-code",
+        "block": "experience.step_switcher",
+        "props": {
+          "label": {
+            "en": "The endpoint",
+            "ar": "نقطة النهاية"
+          },
+          "steps": [
+            {
+              "id": "manifest",
+              "label": {
+                "en": "Manifest",
+                "ar": "البيان"
+              },
+              "title": {
+                "en": "Locked in the manifest",
+                "ar": "مثبّتة في البيان"
+              },
+              "body": {
+                "en": "gen writes each identity once into the committed stackra.manifest.json, so a rename is a reviewed change.",
+                "ar": "يكتب stackra gen كل معرّف مرة واحدة في stackra.manifest.json المحفوظ في المستودع، فتصير إعادة التسمية تغييرًا يُراجَع."
+              },
+              "code": {
+                "filename": "stackra.manifest.json",
+                "language": "json",
+                "source": "{\n  \"key\": \"orders.order.cancel@1\",\n  \"kind\": \"action\",\n  \"module\": \"orders\",\n  \"class\": \"CancelOrderAction\",\n  \"file\": \"src/modules/orders/actions/cancel-order.action.ts\",\n  \"permission\": \"orders.order.cancel\",\n  \"actors\": [\n    \"user\",\n    \"agent\"\n  ],\n  \"endpoint\": {\n    \"method\": \"PUT\",\n    \"path\": \"/orders/:orderId/cancel\",\n    \"derived\": true\n  }\n}\n"
+              }
+            },
+            {
+              "id": "route",
+              "label": {
+                "en": "Route",
+                "ar": "المسار"
+              },
+              "title": {
+                "en": "In the OpenAPI document",
+                "ar": "في مستند OpenAPI"
+              },
+              "body": {
+                "en": "The same route is written to the committed openapi.json, with the Idempotency-Key header every write accepts.",
+                "ar": "ويُكتب المسار نفسه في ملف openapi.json المحفوظ في المستودع، مع ترويسة Idempotency-Key التي تقبلها كل عملية كتابة."
+              },
+              "code": {
+                "filename": "openapi.json",
+                "language": "json",
+                "source": "{\n  \"paths\": {\n    \"/orders/{orderId}/cancel\": {\n      \"put\": {\n        \"operationId\": \"orders.order.cancel\",\n        \"parameters\": [\n          {\n            \"name\": \"orderId\",\n            \"in\": \"path\",\n            \"required\": true,\n            \"schema\": {\n              \"type\": \"string\"\n            }\n          },\n          {\n            \"name\": \"Idempotency-Key\",\n            \"in\": \"header\",\n            \"required\": false,\n            \"schema\": {\n              \"type\": \"string\"\n            }\n          }\n        ]\n      }\n    }\n  }\n}\n"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "call",
+    "block": "experience.station",
+    "props": {
+      "id": "call",
+      "title": {
+        "en": "Call",
+        "ar": "استدعِ"
+      },
+      "body": {
+        "en": "Another service calls it through its generated client, injected by type. The call runs the same pipeline, so permissions, tenancy and audit still apply.",
+        "ar": "تستدعيه أي خدمة أخرى عبر عميلها المولَّد، المحقون حسب نوعه. ويمرّ الاستدعاء بسلسلة المعالجة نفسها، فتبقى الصلاحيات والمستأجر والتدقيق سارية."
+      },
+      "status": {
+        "en": "generated the typed client",
+        "ar": "وُلّد العميل محدّد النوع"
+      }
+    },
+    "children": [
+      {
+        "id": "call-code",
+        "block": "experience.step_switcher",
+        "props": {
+          "label": {
+            "en": "The client",
+            "ar": "العميل"
+          },
+          "steps": [
+            {
+              "id": "client",
+              "label": {
+                "en": "Client",
+                "ar": "العميل"
+              },
+              "title": {
+                "en": "A typed call",
+                "ar": "استدعاء محدّد النوع"
+              },
+              "body": {
+                "en": "The client is a class, so it is its own token. Its input and output are the action's.",
+                "ar": "العميل صنف، فهو رمز حقنه بنفسه. ومدخلاته ومخرجاته هي مدخلات الإجراء ومخرجاته."
+              },
+              "code": {
+                "filename": "refund.service.ts",
+                "language": "ts",
+                "source": "import type { CommerceClient } from \"#stackra/clients/commerce\";\n\nexport class RefundService {\n  constructor(private readonly commerce: CommerceClient) {}\n\n  async refund(orderId: PublicId<\"ord\">): Promise<void> {\n    await this.commerce.order.cancel.call({ orderId });\n  }\n}\n"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "draw",
+    "block": "experience.station",
+    "props": {
+      "id": "draw",
+      "title": {
+        "en": "Draw",
+        "ar": "ارسم"
+      },
+      "body": {
+        "en": "One set of tokens and components draws the cancel button on web, desktop and phone. In Arabic the layout mirrors, and the words come from the module's catalogue.",
+        "ar": "مجموعة واحدة من متغيّرات التصميم والمكوّنات ترسم زر الإلغاء على الويب وسطح المكتب والجوال. وبالعربية تنعكس الواجهة، وتأتي الكلمات من ملف ترجمة الوحدة."
+      },
+      "status": {
+        "en": "drawn on web, desktop and phone",
+        "ar": "رُسم على الويب وسطح المكتب والجوال"
+      }
+    },
+    "children": [
+      {
+        "id": "draw-surfaces",
+        "block": "experience.surfaces",
+        "props": {
+          "label": {
+            "en": "The cancel button on web, desktop and phone",
+            "ar": "زر الإلغاء على الويب وسطح المكتب والجوال"
+          },
+          "surfaces": [
+            {
+              "id": "web",
+              "kind": "web",
+              "title": "example.com/orders",
+              "button": "Cancel order",
+              "lang": "en"
+            },
+            {
+              "id": "desktop",
+              "kind": "desktop",
+              "title": "Orders",
+              "button": "Cancel order",
+              "lang": "en"
+            },
+            {
+              "id": "phone",
+              "kind": "phone",
+              "title": "الطلبات",
+              "button": "إلغاء الطلب",
+              "lang": "ar"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "delegate",
+    "block": "experience.station",
+    "props": {
+      "id": "delegate",
+      "title": {
+        "en": "Delegate",
+        "ar": "فوّض"
+      },
+      "body": {
+        "en": "The same action is an MCP tool, run under the caller's own permissions. A risky write waits for a named person to approve it.",
+        "ar": "الإجراء نفسه أداة MCP تعمل بصلاحيات المستدعي نفسه. وأي كتابة فيها مخاطرة تنتظر موافقة شخص مسمّى."
+      },
+      "status": {
+        "en": "orders.order.cancel waits for approval",
+        "ar": "orders.order.cancel ينتظر الموافقة"
+      }
+    },
+    "children": [
+      {
+        "id": "delegate-code",
+        "block": "experience.step_switcher",
+        "props": {
+          "label": {
+            "en": "The tool",
+            "ar": "الأداة"
+          },
+          "steps": [
+            {
+              "id": "tool",
+              "label": {
+                "en": "Tool",
+                "ar": "الأداة"
+              },
+              "title": {
+                "en": "The tool an agent sees",
+                "ar": "الأداة كما يراها الوكيل"
+              },
+              "body": {
+                "en": "stackra gen collects the action as an MCP tool: its name is derived from the action's key, its input schema is the action's input, and its hints come from the permission's risk. Nobody writes the tool.",
+                "ar": "يجمع stackra gen الإجراء أداةَ MCP: اسمها مشتقّ من مفتاح الإجراء، ومخطّط مدخلاتها مدخلات الإجراء، وتلميحاتها من مستوى خطورة الصلاحية. لا أحد يكتب الأداة."
+              },
+              "code": {
+                "filename": "tools/list",
+                "language": "json",
+                "source": "{\n  \"name\": \"orders_order_cancel\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"required\": [\n      \"orderId\"\n    ],\n    \"properties\": {\n      \"orderId\": {\n        \"type\": \"string\",\n        \"pattern\": \"^ord_[0-9A-Za-z]{26}$\"\n      }\n    }\n  },\n  \"annotations\": {\n    \"readOnlyHint\": false,\n    \"destructiveHint\": false,\n    \"idempotentHint\": false,\n    \"openWorldHint\": false\n  }\n}\n"
+              }
+            },
+            {
+              "id": "approval",
+              "label": {
+                "en": "Approval",
+                "ar": "الموافقة"
+              },
+              "title": {
+                "en": "Approve as…",
+                "ar": "وافق بصفتك…"
+              },
+              "body": {
+                "en": "A risky call waits for a named person, who approves it as themselves. Only then does it run.",
+                "ar": "ينتظر الاستدعاء الذي فيه مخاطرة شخصًا مسمّى يوافق عليه بصفته هو، ولا يعمل إلا بعد ذلك."
+              },
+              "code": {
+                "filename": "approval",
+                "language": "text",
+                "source": "orders.order.cancel is waiting for approval\n\ninput   { \"orderId\": \"ord_01J9Z3K4L5M6N7P8Q9R0S1T2V3\" }\ncaller  an agent, with your permissions\n\n[ Approve as … ]   [ Decline ]\n"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "ship",
+    "block": "experience.station",
+    "props": {
+      "id": "ship",
+      "title": {
+        "en": "Ship",
+        "ar": "أطلق"
+      },
+      "body": {
+        "en": "Runway ships it from dev to staging to production. Production waits for one approval in CI.",
+        "ar": "يطلقه Runway من بيئة التطوير إلى بيئة الاختبار ثم إلى الإنتاج. وينتظر الإنتاج موافقة واحدة في CI."
+      },
+      "status": {
+        "en": "production waits for approval",
+        "ar": "الإنتاج ينتظر الموافقة"
+      }
+    },
+    "children": [
+      {
+        "id": "ship-code",
+        "block": "experience.step_switcher",
+        "props": {
+          "label": {
+            "en": "The deploy",
+            "ar": "النشر"
+          },
+          "steps": [
+            {
+              "id": "runway",
+              "label": {
+                "en": "Runway",
+                "ar": "Runway"
+              },
+              "title": {
+                "en": "Declared, not scripted",
+                "ar": "مُعلَن لا مكتوب بسكربت"
+              },
+              "body": {
+                "en": "Where it runs and how it ships live in runway.yaml. Production deploys from CI, after the approval.",
+                "ar": "مكان تشغيله وطريقة إطلاقه في runway.yaml. ويُنشَر الإنتاج من CI بعد الموافقة."
+              },
+              "code": {
+                "filename": "runway.yaml",
+                "language": "yaml",
+                "source": "environments:\n  production:\n    # A merge to main deploys once the production environment is approved.\n    deploy:\n      on: merge-to-main\n      approval: github-environment\n"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "agents",
+    "block": "experience.chapter_title",
+    "props": {
+      "title": {
+        "en": "Built for agents.",
+        "ar": "مصمّم للوكلاء."
+      },
+      "subtitle": {
+        "en": "An agent uses Stackra the way a person does: through actions, permissions and the CLI.",
+        "ar": "يستخدم الوكيل ستاكرا كما يستخدمها الشخص: عبر الإجراءات والصلاحيات وسطر الأوامر."
+      }
+    }
+  },
+  {
+    "id": "agents-grid",
+    "block": "experience.bento_grid",
+    "props": {
+      "columns": 2
+    },
+    "children": [
+      {
+        "id": "agents-statement",
+        "block": "experience.statement",
+        "props": {
+          "text": {
+            "en": "Every query, and every action a person can call, is an *MCP tool* by default. It runs under the *caller's own permissions*, and a risky write waits for a *named person*.",
+            "ar": "كل استعلام، وكل إجراء يستطيع شخص استدعاءه، هو *أداة MCP* افتراضيًا. تعمل *بصلاحيات المستدعي نفسه*، وتنتظر أي كتابة فيها مخاطرة *شخصًا مسمّى* يوافق عليها."
+          },
+          "facts": [
+            {
+              "en": "stackra mcp is the local developer MCP: your agent runs new, gen, validate and verify through the CLI's own checks.",
+              "ar": "stackra mcp هو خادم MCP المحلي للمطوّر: يشغّل وكيلك new وgen وvalidate وverify عبر فحوص سطر الأوامر نفسها."
+            },
+            {
+              "en": "The docs publish llms.txt, generated from their navigation by stackra gen.",
+              "ar": "ينشر التوثيق ملف llms.txt، ويولّده stackra gen من قائمة التنقّل."
+            }
+          ]
+        }
+      },
+      {
+        "id": "ask-ai",
+        "block": "experience.ask_ai",
+        "props": {
+          "label": {
+            "en": "Ask AI",
+            "ar": "اسأل الذكاء الاصطناعي"
+          },
+          "docsUrl": "https://docs.stackra.figentra.com",
+          "placeholder": {
+            "en": "Ask the docs a question",
+            "ar": "اطرح سؤالك على التوثيق"
+          },
+          "isComingSoon": true,
+          "comingSoonNote": {
+            "en": "Coming soon: ask the docs once the assistant is live.",
+            "ar": "قريبًا: اسأل التوثيق حين يصبح المساعد متاحًا."
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "built-on",
+    "block": "experience.chapter_title",
+    "props": {
+      "title": {
+        "en": "Built on Stackra.",
+        "ar": "مبنية على ستاكرا."
+      },
+      "subtitle": {
+        "en": "Steel underneath, colour on top. Each product keeps its own accent and marks.",
+        "ar": "الفولاذ في الأساس، واللون في الأعلى. يحتفظ كل منتج بلون تمييزه وشعاراته."
+      }
+    }
+  },
+  {
+    "id": "products",
+    "block": "experience.product_cards",
+    "props": {
+      "label": {
+        "en": "Built on Stackra",
+        "ar": "مبنية على ستاكرا"
+      },
+      "layout": "grid",
+      "products": [
+        {
+          "id": "pay",
+          "brand": "pay",
+          "name": "Figentra Pay",
+          "descriptor": {
+            "en": "One payments label for every Figentra product.",
+            "ar": "علامة مدفوعات واحدة لكل منتجات فيجنترا."
+          }
+        },
+        {
+          "id": "billing",
+          "brand": "billing",
+          "name": "Figentra Billing",
+          "descriptor": {
+            "en": "Plans, subscriptions, usage charges and dunning for every Figentra product.",
+            "ar": "الخطط والاشتراكات والرسوم حسب الاستخدام ومتابعة الدفعات المتأخرة، لكل منتجات فيجنترا."
+          }
+        },
+        {
+          "id": "invoicing",
+          "brand": "invoicing",
+          "name": "Figentra Invoicing & Tax",
+          "descriptor": {
+            "en": "Invoices, tax and e-invoicing for every Figentra product.",
+            "ar": "الفواتير والضريبة والفوترة الإلكترونية، لكل منتجات فيجنترا."
+          }
+        },
+        {
+          "id": "commerce",
+          "brand": "commerce",
+          "name": "Figentra Commerce",
+          "descriptor": {
+            "en": "The till, the stock and the online shop, as one count.",
+            "ar": "الكاشير والمخزون والمتجر الإلكتروني بعدّ واحد."
+          }
+        },
+        {
+          "id": "tamo",
+          "brand": "tamo",
+          "name": "Tamo",
+          "descriptor": {
+            "en": "The assistant inside every Figentra product.",
+            "ar": "المساعد الموجود داخل كل منتج من فيجنترا."
+          }
+        },
+        {
+          "id": "organza",
+          "brand": "organza",
+          "name": "Organza",
+          "descriptor": {
+            "en": "The retail edition for fashion, jewellery and beauty, on Figentra Commerce.",
+            "ar": "إصدار البيع بالتجزئة للأزياء والمجوهرات ومستحضرات التجميل، على فيجنترا كومرس."
+          }
+        },
+        {
+          "id": "flow",
+          "brand": "flow",
+          "name": "Figentra Flow",
+          "descriptor": {
+            "en": "The spec CLI for spec-driven development.",
+            "ar": "أداة سطر الأوامر للتطوير القائم على المواصفات."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "try-it-title",
+    "block": "experience.chapter_title",
+    "props": {
+      "title": {
+        "en": "Try it.",
+        "ar": "جرّبه."
+      },
+      "subtitle": {
+        "en": "stackra create has not shipped yet. Once it does, this terminal plays a session recorded from the real CLI.",
+        "ar": "لم يُطلَق الأمر stackra create بعد. وحين يُطلَق، تعرض هذه الطرفية جلسة مسجّلة من سطر الأوامر الحقيقي."
+      }
+    }
+  },
+  {
+    "id": "try-it",
+    "block": "experience.terminal_stage",
+    "props": {
+      "command": "stackra create my-app",
+      "lines": [],
+      "label": {
+        "en": "Try it",
+        "ar": "جرّبه"
+      },
+      "art": {
+        "pattern": "strata",
+        "poster": {
+          "light": "/posters/strata-light.png",
+          "dark": "/posters/strata-dark.png"
+        }
+      },
+      "monitor": {
+        "src": "/art/monitor",
+        "width": 328,
+        "height": 426
+      }
+    }
+  },
+  {
+    "id": "open-source",
+    "block": "experience.chapter_title",
+    "props": {
+      "title": {
+        "en": "Open source.",
+        "ar": "مفتوح المصدر."
+      },
+      "subtitle": {
+        "en": "The code is MIT. The marks are not.",
+        "ar": "الشيفرة بترخيص MIT. أما العلامات فلا."
+      }
+    }
+  },
+  {
+    "id": "build-once",
+    "block": "experience.mono_display",
+    "props": {
+      "title": "BUILD ONCE.",
+      "tagline": {
+        "en": "One backend, every surface.",
+        "ar": "بنية واحدة. وتجربة متّسقة على كل شاشة."
+      },
+      "art": "floors"
+    }
+  },
+  {
+    "id": "closing",
+    "block": "experience.statement",
+    "props": {
+      "text": {
+        "en": "Write the behaviour once, as an *action*. The endpoint, the client, the tool and the screen *follow from it*.",
+        "ar": "اكتب السلوك مرة واحدة، *إجراءً*. ونقطة النهاية والعميل والأداة والشاشة *تتبعه*."
+      },
+      "facts": [
+        {
+          "en": "Typed end to end: input, output and permission on every action.",
+          "ar": "محدّد النوع من البداية إلى النهاية: مدخلات ومخرجات وصلاحية لكل إجراء."
+        },
+        {
+          "en": "Generated, not glued: Encore, clients and docs come from gen.",
+          "ar": "مولَّد لا مُجمَّع باليد: Encore والعملاء والتوثيق كلها من stackra gen."
+        },
+        {
+          "en": "Arabic and English first: right to left in every component.",
+          "ar": "العربية والإنجليزية أولًا: الكتابة من اليمين إلى اليسار في كل مكوّن."
+        }
+      ]
+    }
+  },
+  {
+    "id": "closing-cta",
+    "block": "experience.cta_row",
+    "props": {
+      "primary": {
+        "label": {
+          "en": "Read the docs",
+          "ar": "اقرأ التوثيق"
+        },
+        "href": "https://docs.stackra.figentra.com"
+      },
+      "copyLink": {
+        "label": {
+          "en": "Copy llms.txt",
+          "ar": "انسخ llms.txt"
+        },
+        "value": "https://docs.stackra.figentra.com/llms.txt"
+      }
+    }
+  },
+  {
+    "id": "footer",
+    "block": "experience.site_footer",
+    "props": {
+      "groups": [
+        {
+          "title": {
+            "en": "Framework",
+            "ar": "إطار العمل"
+          },
+          "links": [
+            {
+              "label": {
+                "en": "Docs",
+                "ar": "التوثيق"
+              },
+              "href": "https://docs.stackra.figentra.com"
+            },
+            {
+              "label": {
+                "en": "Quickstart",
+                "ar": "البدء السريع"
+              },
+              "href": "https://docs.stackra.figentra.com/quickstart"
+            },
+            {
+              "label": {
+                "en": "Decisions",
+                "ar": "القرارات"
+              },
+              "href": "https://docs.stackra.figentra.com/adr"
+            },
+            {
+              "label": {
+                "en": "Packages",
+                "ar": "الحزم"
+              },
+              "href": "https://npm.stackra.figentra.com/",
+              "isExternal": true
+            },
+            {
+              "label": {
+                "en": "Runway",
+                "ar": "Runway"
+              },
+              "href": "https://docs.stackra.figentra.com/runbooks/runway"
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Open source",
+            "ar": "المصدر المفتوح"
+          },
+          "links": [
+            {
+              "label": {
+                "en": "Code",
+                "ar": "الشيفرة"
+              },
+              "href": "https://github.com/figentra/stackra",
+              "isExternal": true
+            },
+            {
+              "label": {
+                "en": "Contributing",
+                "ar": "المساهمة"
+              },
+              "href": "https://github.com/figentra/stackra/blob/main/CONTRIBUTING.md",
+              "isExternal": true
+            },
+            {
+              "label": {
+                "en": "Licence",
+                "ar": "الترخيص"
+              },
+              "href": "https://github.com/figentra/stackra/blob/main/LICENSE",
+              "isExternal": true
+            },
+            {
+              "label": {
+                "en": "Brand",
+                "ar": "الهوية"
+              },
+              "href": "https://docs.stackra.figentra.com/brand"
+            }
+          ]
+        }
+      ],
+      "legal": {
+        "en": "Stackra is made by Figentra Technologies L.L.C",
+        "ar": "ستاكرا من Figentra Technologies L.L.C"
+      }
+    }
+  },
+  {
+    "id": "dock",
+    "block": "experience.page_dock",
+    "props": {
+      "label": {
+        "en": "Stations",
+        "ar": "المحطات"
+      },
+      "items": [
+        {
+          "id": "write",
+          "label": {
+            "en": "Write",
+            "ar": "اكتب"
+          },
+          "status": {
+            "en": "wrote cancel-order.action.ts",
+            "ar": "كُتب cancel-order.action.ts"
+          }
+        },
+        {
+          "id": "expose",
+          "label": {
+            "en": "Expose",
+            "ar": "أتِح"
+          },
+          "status": {
+            "en": "generated PUT /orders/:orderId/cancel",
+            "ar": "وُلّد PUT /orders/:orderId/cancel"
+          }
+        },
+        {
+          "id": "call",
+          "label": {
+            "en": "Call",
+            "ar": "استدعِ"
+          },
+          "status": {
+            "en": "generated the typed client",
+            "ar": "وُلّد العميل محدّد النوع"
+          }
+        },
+        {
+          "id": "draw",
+          "label": {
+            "en": "Draw",
+            "ar": "ارسم"
+          },
+          "status": {
+            "en": "drawn on web, desktop and phone",
+            "ar": "رُسم على الويب وسطح المكتب والجوال"
+          }
+        },
+        {
+          "id": "delegate",
+          "label": {
+            "en": "Delegate",
+            "ar": "فوّض"
+          },
+          "status": {
+            "en": "orders.order.cancel waits for approval",
+            "ar": "orders.order.cancel ينتظر الموافقة"
+          }
+        },
+        {
+          "id": "ship",
+          "label": {
+            "en": "Ship",
+            "ar": "أطلق"
+          },
+          "status": {
+            "en": "production waits for approval",
+            "ar": "الإنتاج ينتظر الموافقة"
+          }
+        }
+      ]
+    }
+  }
+]

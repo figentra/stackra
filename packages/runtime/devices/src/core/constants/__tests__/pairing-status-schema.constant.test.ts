@@ -9,28 +9,39 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { PAIRING_CODE_SCHEMA } from "#core/constants/pairing-code-schema.constant";
+import { PAIRING_PICKUP_SCHEMA } from "#core/constants/pairing-pickup-schema.constant";
 import { PAIRING_STATUS_SCHEMA } from "#core/constants/pairing-status-schema.constant";
 
 describe("PAIRING_STATUS_SCHEMA", () => {
-  it("takes a paired answer with its id and token, and a pending one with neither", () => {
-    expect(PAIRING_STATUS_SCHEMA.parse({ state: "paired", deviceId: "dev_1", token: "t" })).toEqual(
-      { state: "paired", deviceId: "dev_1", token: "t" },
-    );
-    expect(
-      PAIRING_STATUS_SCHEMA.parse({ state: "pending", deviceId: null, token: null }).state,
-    ).toBe("pending");
+  it("takes a paired answer with its id, and a pending one without", () => {
+    expect(PAIRING_STATUS_SCHEMA.parse({ state: "paired", deviceId: "dev_1" })).toEqual({
+      state: "paired",
+      deviceId: "dev_1",
+    });
+    expect(PAIRING_STATUS_SCHEMA.parse({ state: "pending", deviceId: null }).state).toBe("pending");
   });
 
-  it("refuses a paired answer without a token and a token on any other", () => {
+  it("never yields a credential, even from an answer that carries one", () => {
     expect(
-      PAIRING_STATUS_SCHEMA.safeParse({ state: "paired", deviceId: "dev_1", token: null }).success,
-    ).toBe(false);
-    expect(
-      PAIRING_STATUS_SCHEMA.safeParse({ state: "expired", deviceId: null, token: "t" }).success,
-    ).toBe(false);
-    expect(
-      PAIRING_STATUS_SCHEMA.safeParse({ state: "done", deviceId: null, token: null }).success,
-    ).toBe(false);
+      PAIRING_STATUS_SCHEMA.parse({ state: "paired", deviceId: "dev_1", token: "t" }),
+    ).not.toHaveProperty("token");
+  });
+
+  it("refuses a paired answer without the id and an unknown state", () => {
+    expect(PAIRING_STATUS_SCHEMA.safeParse({ state: "paired", deviceId: null }).success).toBe(
+      false,
+    );
+    expect(PAIRING_STATUS_SCHEMA.safeParse({ state: "done", deviceId: null }).success).toBe(false);
+  });
+});
+
+describe("PAIRING_PICKUP_SCHEMA", () => {
+  it("takes the id and the token, and refuses an answer without the token", () => {
+    expect(PAIRING_PICKUP_SCHEMA.parse({ deviceId: "dev_1", token: "t" })).toEqual({
+      deviceId: "dev_1",
+      token: "t",
+    });
+    expect(PAIRING_PICKUP_SCHEMA.safeParse({ deviceId: "dev_1", token: null }).success).toBe(false);
   });
 });
 

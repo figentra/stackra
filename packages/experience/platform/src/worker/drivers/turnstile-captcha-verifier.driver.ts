@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `TurnstileCaptchaVerifierDriver` (`turnstile`), the `CaptchaVerifier` driver that checks a token with
  *          Cloudflare Turnstile's siteverify endpoint from a Worker or a Node service, with the secret `TURNSTILE_SECRET_KEY`.
- * Boundary: the secret is read by name from the `SecretStore` the runtime binds (runway syncs it from Infisical) and
+ * Boundary: the secret is read by name from the `SecretStore` the runtime binds (runway syncs it from SOPS) and
  *           sent only to Cloudflare; it is never logged or returned. An empty or over-long token fails without a
  *           call. A missing secret, a failed call or an answer with no verdict throws, so it is never mistaken for a
  *           failed captcha. Each call waits at most five seconds. It uses only `fetch`, `FormData` and `AbortSignal`, so

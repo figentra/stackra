@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: `CreateSynonymAction`, `data_maintenance.synonym.create@1`: add a synonym set for an index and language to the caller's
- *          tenant; also a tool (an action whose actors include a user is one by default).
- * Boundary: single aggregate, inline `handle`. Its permission is `SynonymPermissions.create` (L1); the route is the
+ * Purpose: `CreateSynonymAction`, `data_maintenance.synonym.create@1`: add a synonym set for an index and language to
+ *          the caller's tenant; also a tool (an action whose actors include a user is one by default).
+ * Boundary: single aggregate, inline `handle`. Its permission is `SynonymPermissions.create` (L2); the route is the
  *           convention's `POST /synonyms`. The row belongs to the caller's tenant through the model's `BelongsToTenant`
  *           (never from input), and no search reads it until the next read of that index expands its phrase.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0360 (decision 4: tools by default); ADR 0098; ADR 0492
  *                     (decision 5).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 
 import { SynonymPermissions } from "#core/access/synonym.permissions";
@@ -27,6 +27,7 @@ export class CreateSynonymAction extends Action({
   key: "synonym.create",
   permission: SynonymPermissions.create,
   actors: [ActorKind.User, ActorKind.Agent],
+  idempotency: Idempotency.Optional,
 }) {
   /** Creates the row. */
   private readonly synonyms: SynonymService;

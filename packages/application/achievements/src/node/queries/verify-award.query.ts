@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `VerifyAwardQuery`, `achievements.award.verify@1`: the public check of an award by the token in its QR
- *          code's URL or by the short code printed beside it; `GET /awards/verify?token=` or `?code=`.
+ *          code's URL or by the short code printed beside it; `GET /public/awards/verify?token=` or `?code=`.
  * Boundary: read only, no transaction, in the public API area (`ApiArea.Public`), so an anonymous caller may use it and
  *           the public area's rate-limit bucket bounds guessing. It opens the award's scope session through
  *           `AwardService.verify`/`verifyCode`, which is why it is its own query. Not an MCP tool: an agent reads
@@ -27,7 +27,7 @@ export class VerifyAwardQuery extends Query({
   key: "award.verify",
   actors: [ActorKind.Anonymous, ActorKind.User, ActorKind.Service],
   area: ApiArea.Public,
-  endpoint: { method: HttpMethod.Get, path: "/awards/verify" },
+  endpoint: { method: HttpMethod.Get, path: "/public/awards/verify" },
   // reason: an agent reads awards through the scoped queries of the consumer, not the public check
   tool: false,
 }) {

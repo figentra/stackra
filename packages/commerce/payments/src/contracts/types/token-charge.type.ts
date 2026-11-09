@@ -31,4 +31,7 @@ export interface TokenCharge {
 
   /** What the customer's statement shows. */
   readonly description?: string;
+
+  /** The platform's fee on a direct charge on the connected account; never with a destination share. */
+  readonly applicationFee?: Money;
 }

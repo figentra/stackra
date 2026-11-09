@@ -1253,6 +1253,28 @@
     "shortcut": "الاختصار {keys}",
     "you": "أنت",
     "disclaimer": "قد يخطئ تامو. راجع ما يقترحه.",
-    "close": "أغلق"
+    "close": "أغلق",
+    "approval_title": "يريد تامو تنفيذ هذا",
+    "approval_waiting": "بانتظار موافقتك.",
+    "approve": "وافق",
+    "deny": "ارفض",
+    "approved": "تمت الموافقة",
+    "denied": "تم الرفض",
+    "expired": "انتهت المهلة",
+    "risk": "مستوى الخطورة {level}"
+  },
+  "terminal_demo": {
+    "label": "جرّبه",
+    "copy": "نسخ الأمر"
+  },
+  "props_playground": {
+    "controls": "الخصائص",
+    "preview": "المعاينة",
+    "theme": "السمة",
+    "theme_default": "الافتراضية",
+    "direction": "الاتجاه",
+    "ltr": "من اليسار إلى اليمين",
+    "rtl": "من اليمين إلى اليسار",
+    "reset": "إعادة الضبط"
   }
 }

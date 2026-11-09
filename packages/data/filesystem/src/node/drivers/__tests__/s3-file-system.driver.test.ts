@@ -100,6 +100,45 @@ describe("S3FileSystemDriver", () => {
     });
   });
 
+  it("puts a retained file under Object Lock in COMPLIANCE mode until its retainUntil", async () => {
+    const send = answer(() => ({}));
+    const until = new Date("2033-01-01T00:00:00.000Z");
+    await disk().write("archive/inv.pdf", "pdf", {
+      contentType: "application/pdf",
+      retainUntil: until,
+    });
+    const command = send.mock.calls[0]?.[0] as PutObjectCommand;
+    expect(command.input).toEqual({
+      Bucket: "acme-files",
+      Key: "archive/inv.pdf",
+      Body: "pdf",
+      ContentType: "application/pdf",
+      ObjectLockMode: "COMPLIANCE",
+      ObjectLockRetainUntilDate: until,
+    });
+  });
+
+  it("starts a retained multipart upload under Object Lock too", async () => {
+    const send = answer((command) => {
+      if (command instanceof CreateMultipartUploadCommand) return { UploadId: "up-1" };
+      if (command instanceof UploadPartCommand) return { ETag: `"e${command.input.PartNumber}"` };
+      return {};
+    });
+    const until = new Date("2033-01-01T00:00:00.000Z");
+    const mib = 1024 * 1024;
+    async function* chunks() {
+      for (let i = 0; i < 2; i += 1) yield new Uint8Array(6 * mib);
+    }
+    await disk().writeStream("archive/big.pdf", chunks(), { retainUntil: until });
+    const create = send.mock.calls
+      .map(([command]) => command)
+      .find((command) => command instanceof CreateMultipartUploadCommand);
+    expect((create as CreateMultipartUploadCommand).input).toMatchObject({
+      ObjectLockMode: "COMPLIANCE",
+      ObjectLockRetainUntilDate: until,
+    });
+  });
+
   it("reads the bytes of an object and maps NoSuchKey to FileNotFoundError", async () => {
     answer((command) => {
       if ((command as GetObjectCommand).input.Key === "missing.txt") throw missing("NoSuchKey");

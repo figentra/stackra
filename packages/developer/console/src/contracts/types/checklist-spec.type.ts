@@ -9,7 +9,7 @@ import type { CheckRow } from "#contracts/types/check-row.type";
 
 /** A checklist to draw. */
 export interface ChecklistSpec {
-  /** The rows. */
+  /** The status rows the checklist draws. */
   readonly rows: readonly CheckRow[];
 
   /** The group headings in order; groups not named here follow in first-seen order. */

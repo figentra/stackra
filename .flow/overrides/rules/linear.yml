@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/linear.md
+file: rules/linear.md
+reason: "core's newer text, until the stackra preset carries it: ADR 0525 (2026-11-06): pnpm linear reads its token from the agents scope of figentra/secrets through secrets-exec.mjs, not Infisical"
+owner: figentra-usr
+review: 2027-02-01

@@ -99,3 +99,5 @@ note).
 | Environment and secrets | process memory (config fields) | Read by name into configuration instances; never logged or serialised.   |
 | Bridge call inputs      | Electron main process          | Passed to the bridge as they are; never logged here.                     |
 | Unexpected errors       | `ErrorReporter`                | Passed as they are; the reporter driver scrubs personal data (ADR 0232). |
+
+- `serveGuardedCall` (`./server`) is the one path of every generated HTTP adapter (STA-2577): body read once under `HttpConfig.maxBodyBytes` (413), `handlers.guard` over the exact bytes, `CallAuthenticator` (a present bad `Authorization` is 401, never anonymous), input, pipeline. Failures of a guard or the authenticator are one generic 401 or 403.

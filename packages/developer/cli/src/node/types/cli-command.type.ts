@@ -29,12 +29,6 @@ export type CliCommand = {
   /** Whether it takes positional arguments after its name. */
   readonly positionals?: boolean;
 
-  /**
-   * Whether the CLI skips its own parse: `positionals` gets every argument after the name untouched, `--help`
-   * included, for a command that parses its own line (a `@stackra/console` command).
-   */
-  readonly passthrough?: boolean;
-
   /** Runs it and resolves with the exit code. */
   readonly run: (context: CliContext) => Promise<number>;
 };

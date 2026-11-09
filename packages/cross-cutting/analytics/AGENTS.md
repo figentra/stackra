@@ -25,6 +25,8 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 | The server relay listener             | `src/node/listeners/`                                       |
 | The ingest action, its permission     | `src/node/actions/`, `src/node/access/`                     |
 | Its input, output and outbox event    | `src/node/schemas/`, `src/node/events/`                     |
+| The analytics store port, its query   | `src/contracts/ports/`, `src/contracts/types/`              |
+| An analytics store driver             | `src/node/drivers/<name>-analytics-store.driver.ts`         |
 | A test helper                         | `src/testing/`, `src/testing/functions/`                    |
 | A test                                | `__tests__/<name>.<kind>.test.ts(x)` beside it              |
 
@@ -82,6 +84,9 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
   snapshot, drops deliveries of another subject, strips `denyProperties` and forwards only the validated envelope (no
   address, user agent or header). One `AnalyticsBatchAccepted` per destination, so retries stay per destination; the
   fan-out listener never widens what the event holds. `context.device` stays coarse: OS, OS version, build, type.
+- The analytics store (`AnalyticsStore`, STA-1436) is server only: `append` keeps a delivery once per `eventId`, and
+  `erasePerson` deletes the subject's anonymous deliveries too, never only the identified ones. An OLAP driver
+  (ClickHouse, DuckDB) is Pro and waits on ADR 0227; never add one here.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

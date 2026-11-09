@@ -26,6 +26,7 @@ import type { CallAssurance } from "#contracts/types/call-assurance.type";
 import type { CallClient } from "#contracts/types/call-client.type";
 import type { CallOrigin } from "#contracts/types/call-origin.type";
 import type { DeviceOrder } from "#contracts/types/device-order.type";
+import type { CallCredential } from "#contracts/types/call-credential.type";
 
 /** The call-level facts of one invocation. */
 export interface CallOptions {
@@ -70,6 +71,9 @@ export interface CallOptions {
    * from the verified credential or the sandbox host, never from request input. Absent is a live call.
    */
   readonly sandbox?: boolean;
+
+  /** The API key the call came with, set by the transport from the verified key (an `api_client` actor); never input. */
+  readonly credential?: CallCredential;
 
   /** The network client the call came from, from the connection or the edge's trusted forwarding; never input. */
   readonly client?: CallClient;

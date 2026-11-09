@@ -10,5 +10,7 @@
 | 4    | `deploy()` `kinds` filter (FR-008)                                                                           | its unit tests |
 | 5    | `stackra deploy` without `--product`: `runRunwayDeploy` (FR-008)                                             | its unit tests |
 | 6    | changesets for `@stackra/runway` and `@stackra/cli`                                                          | changeset      |
+| 7    | second PR: smoke checks retried (with a bearer from a variable), a secret mapped to another variable         | its unit tests |
+| 8    | second PR: core's `members` in runway.yaml; the three Worker workflows call `stackra deploy`                 | CI on main     |
 
 Tests run on a ci box (`vitest run` in each member), never on the Mac.

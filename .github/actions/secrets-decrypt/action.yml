@@ -1,0 +1,121 @@
+# Stackra file contract:
+# Purpose: the one CI step that reads secrets (ADR 0525, P4): it signs in to Google Cloud as the job
+#          itself (direct Workload Identity Federation through figentra/infra's `callers` provider, no service account),
+#          copies one scope's ciphertext (`<NAME>.enc.yaml` under the flat prefix `<scope with . for />/`, published
+#          by figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts
+#          each file with Cloud KMS in memory and exports the values, masked, into the job's environment.
+# Boundary: no GitHub token and no stored credential: figentra/infra grants the job's principal
+#           (`<repo>.<environment>.<workflow repo>.<workflow file>`, main only outside ci/build) a viewer condition on
+#           its scope's prefix and decrypt on its scope's key (estate/secret-callers.mjs). Values are never echoed; the
+#           ciphertext folder is removed after the decrypt. The job needs `permissions: id-token: write` and mise on
+#           PATH (jdx/mise-action) for sops.
+# Runtime: GitHub Actions (composite)
+# Governing contract: ADR 0525 (SOPS and Cloud KMS; CI decrypts in place); ADR 0019; ADR 0257.
+name: Secrets decrypt
+description: Decrypt one figentra/secrets scope into the job's environment (masked) with Workload Identity.
+inputs:
+  scope:
+    description: The scope, e.g. ci/build/registry, ci/deploy or ci/production/release.
+    required: true
+  names:
+    description: Only these names, comma-separated; the whole scope when empty.
+    required: false
+    default: ""
+  workload-identity-provider:
+    description: The Workload Identity provider CI callers sign in through (figentra/infra stacks/secrets `callers`).
+    required: false
+    default: projects/330719355948/locations/global/workloadIdentityPools/github/providers/callers
+  bucket:
+    description: The ciphertext bucket sync.yml publishes to.
+    required: false
+    default: figentra-secrets-ciphertext
+  runway-version:
+    description: >-
+      The @stackra/runway version whose `secrets decrypt` runs (from the Stackra registry). Empty means the version of
+      packages/developer/runway at the same core ref as this action, so the two never drift; while that version is not
+      fully published (just after a version PR), the newest stable version that is, with a notice.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Google Cloud (Workload Identity)
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+      with:
+        workload_identity_provider: ${{ inputs.workload-identity-provider }}
+        create_credentials_file: true
+
+    - name: sops
+      shell: bash
+      run: |
+        set -euo pipefail
+        mise install aqua:getsops/sops@3.10.2
+        dirname "$(mise which --tool aqua:getsops/sops@3.10.2 sops)" >> "$GITHUB_PATH"
+
+    # sync.yml publishes each scope under a flat prefix, "/" replaced by "." (ci/production/release becomes
+    # ci.production.release/), so a viewer grant on one scope never covers a nested one (ADR 0525 decision 6).
+    # The files land in <dir>/<scope>/, the layout `runway secrets decrypt` reads.
+    - name: Ciphertext
+      shell: bash
+      env:
+        BUCKET: ${{ inputs.bucket }}
+        SCOPE: ${{ inputs.scope }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$RUNNER_TEMP/secrets/$SCOPE"
+        gcloud storage cp "gs://$BUCKET/${SCOPE//\//.}/*.enc.yaml" "$RUNNER_TEMP/secrets/$SCOPE/"
+
+    - name: Decrypt
+      shell: bash
+      env:
+        SCOPE: ${{ inputs.scope }}
+        NAMES: ${{ inputs.names }}
+        RUNWAY_VERSION: ${{ inputs.runway-version }}
+      run: |
+        set -euo pipefail
+        # @stackra/* reads anonymously from the Stackra registry, so this needs no token before any secret exists.
+        registry=https://npm.stackra.figentra.com/
+        # A version is usable once runway and every @stackra/* package it pins are on the registry. The fixed group's
+        # release publishes them one at a time, so runway can be there before its dependencies.
+        usable() {
+          local deps dep
+          deps="$(npm view --registry "$registry" "@stackra/runway@$1" dependencies --json 2>/dev/null)" || return 1
+          [ -n "$deps" ] || return 1
+          for dep in $(jq -r 'to_entries[] | select(.key | startswith("@stackra/")) | "\(.key)@\(.value)"' <<<"$deps"); do
+            [ -n "$(npm view --registry "$registry" "$dep" version 2>/dev/null)" ] || return 1
+          done
+        }
+        # A remote action is the whole repository at its ref, so the runway package beside it names the version that
+        # ref released. Right after a version PR merges, that version is not fully published yet: fall back to the
+        # newest stable version that is. An explicit `runway-version` input is used as given.
+        if [ -z "$RUNWAY_VERSION" ]; then
+          wanted="$(jq -r .version "$GITHUB_ACTION_PATH/../../../packages/developer/runway/package.json")"
+          if usable "$wanted"; then
+            RUNWAY_VERSION="$wanted"
+          else
+            for version in $(npm view --registry "$registry" @stackra/runway versions --json |
+              jq -r 'if type == "string" then [.] else . end | map(select(test("-") | not)) | reverse[]'); do
+              if usable "$version"; then
+                RUNWAY_VERSION="$version"
+                break
+              fi
+            done
+            if [ -z "$RUNWAY_VERSION" ]; then
+              echo "::error title=secrets-decrypt::no published @stackra/runway has all its @stackra dependencies"
+              exit 1
+            fi
+            echo "::notice title=secrets-decrypt::@stackra/runway $wanted is not fully published yet; using $RUNWAY_VERSION"
+          fi
+        fi
+        args=(secrets decrypt --scope "$SCOPE" --dir "$RUNNER_TEMP/secrets")
+        if [ -n "$NAMES" ]; then args+=(--names "$NAMES"); fi
+        npx --yes --@stackra:registry="$registry" -p "@stackra/runway@$RUNWAY_VERSION" runway "${args[@]}"
+
+    # The auth step writes its credentials file into the workspace (gha-creds-*.json), where a caller's format or
+    # secrets scan would find it. Nothing needs it after the decrypt, so it goes now, not at the end of the job.
+    - name: Ciphertext and credentials cleanup
+      if: always()
+      shell: bash
+      run: |
+        rm -rf "$RUNNER_TEMP/secrets"
+        if [ -n "${GOOGLE_GHA_CREDS_PATH:-}" ]; then rm -f "$GOOGLE_GHA_CREDS_PATH"; fi

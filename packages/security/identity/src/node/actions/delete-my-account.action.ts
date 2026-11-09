@@ -13,7 +13,7 @@
  * Governing contract: App Store Review Guideline 5.1.1(v); ADR 0207 (decision 1: step-up); ADR 0189 (decision 2);
  *                     ADR 0462; ADR 0294 (decisions 16 and 21); STA-1567.
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind, AssuranceLevel, mintPublicId } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 
@@ -35,6 +35,7 @@ const DAY = 86_400_000;
 export class DeleteMyAccountAction extends Action({
   key: "account_deletion.request",
   actors: [ActorKind.User],
+  idempotency: Idempotency.Optional,
   stepUp: AssuranceLevel.Aal2,
   // reason: deleting an account is the person's own decision, never an agent's
   tool: false,

@@ -1,7 +1,17 @@
 ---
 title: "0412 — Inherited row policy: rows on the path above the session are read only to it"
-description: "Proposed · 2026-10-26"
+description: "Proposed · 2026-10-26 · partly superseded by 0239 (RLS part) · 2026-11-07"
 ---
+
+<Note>
+  Partly superseded 2026-11-07 by the amendment of
+  [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) ("platform tables
+  and system readers", item 8): the row-level-security part, decisions 1 to 3 (the `ancestor` and
+  `inherited` policies that show rows through the tree), no longer holds, because equality on the
+  tenant is the one permissive policy. The need stays: a tenant reads platform-seeded templates read
+  only, through the platform form of that amendment's gap C. IAM grants that apply down the scope
+  tree are authorization, not row-level security, and are not affected.
+</Note>
 
 <Note>
   Proposed (STA-842). It extends

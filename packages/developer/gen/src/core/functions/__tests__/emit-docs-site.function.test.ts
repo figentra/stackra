@@ -5,7 +5,9 @@
  *          `llms.txt` in navigation order and an API reference tab from a service manifest; and each refusal
  *          (`docs_source_misplaced`, `docs_page_outside`, `docs_page_missing`, `docs_page_unlisted`,
  *          `docs_asset_missing`, `docs_asset_unreferenced`, `docs_owned_key`, `docs_service_unknown`) returns nothing
- *          to write.
+ *          to write; with `locales`, translations served under their locale with a page tree, font and interface
+ *          strings per locale, an untranslated page only warned, and an orphan translation, a page in a locale's
+ *          folder and malformed locales refused, while an empty `locales` leaves the site byte-identical.
  * Boundary: test only; plain inputs, no file system.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0002 (2026-10-27 amendment); STA-1316.
@@ -35,6 +37,7 @@ const CONFIG: DocsSiteInput["config"] = {
     },
   ],
   apiReference: [],
+  redirects: [],
   raw: { fonts: { family: "Geist" } },
 };
 
@@ -206,5 +209,458 @@ describe("emitDocsSite", () => {
     expect(
       codes({ config: { ...CONFIG, raw: { navigation: {} }, apiReference: ["billing"] } }),
     ).toEqual(["docs_owned_key", "docs_service_unknown"]);
+  });
+});
+
+describe("emitDocsSite with the fumadocs renderer", () => {
+  const FUMADOCS_FILES: DocsSiteInput["files"] = [
+    { path: "config/docs.config.ts" },
+    {
+      path: "docs/index.mdx",
+      content: page("Introduction", "![hero](/assets/hero.png)\n\n<Note>Read this first.</Note>"),
+    },
+    {
+      path: "docs/quickstart.mdx",
+      content: page(
+        "Quickstart",
+        [
+          'import Steps from "/snippets/steps.mdx";',
+          "",
+          "<Steps />",
+          "",
+          "```mdx",
+          'import Steps from "/snippets/steps.mdx";',
+          "<Widget />",
+          "```",
+          "",
+          "Write `Array<Order>` as code.",
+        ].join("\n"),
+      ),
+    },
+    { path: "docs/adr/0002-docs.mdx", content: page("0002") },
+    { path: "docs/adr/0001-layout.mdx", content: page("0001") },
+    { path: "docs/adr/index.mdx", content: page("Decisions") },
+    { path: "assets/hero.png" },
+    { path: "assets/logo/light.svg" },
+    { path: "assets/logo/dark.svg" },
+    { path: "assets/favicon.svg" },
+    { path: "snippets/steps.mdx", content: "<Tip>Install first.</Tip>\n" },
+  ];
+
+  const fumadocs = (patch: Partial<DocsSiteInput> = {}) =>
+    emitDocsSite({ config: CONFIG, files: FUMADOCS_FILES, services: [], ...patch }, "fumadocs");
+
+  const fumadocsCodes = (patch: Partial<DocsSiteInput>) =>
+    fumadocs(patch).errors.map((error) => error.code);
+
+  const text = (site: ReturnType<typeof fumadocs>, path: string): string =>
+    site.files.find((file) => file.path === path)?.content ?? "";
+
+  it("assembles the Fumadocs site, and no docs.json", () => {
+    const site = fumadocs();
+    expect(site.errors).toEqual([]);
+    expect(site.files.map((file) => file.path)).toEqual([
+      "app/app.css",
+      "app/components/footer.tsx",
+      "app/components/search.tsx",
+      "app/entry.server.tsx",
+      "app/lib/layout.tsx",
+      "app/lib/source.ts",
+      "app/mdx-components.tsx",
+      "app/root.tsx",
+      "app/routes.ts",
+      "app/routes/not-found.tsx",
+      "app/routes/page.tsx",
+      "app/routes/search.ts",
+      "app/site.json",
+      "app/theme.css",
+      "content/adr/0001-layout.mdx",
+      "content/adr/0002-docs.mdx",
+      "content/adr/index.mdx",
+      "content/index.mdx",
+      "content/quickstart.mdx",
+      "public/_redirects",
+      "public/llms-full.txt",
+      "public/llms.txt",
+      "react-router.config.ts",
+      "snippets/steps.mdx",
+      "tsconfig.json",
+      "vite.config.ts",
+    ]);
+    expect(site.copies.map((copy) => copy.to)).toEqual([
+      "public/assets/favicon.svg",
+      "public/assets/hero.png",
+      "public/assets/logo/dark.svg",
+      "public/assets/logo/light.svg",
+    ]);
+    expect(fumadocs()).toEqual(site);
+  });
+
+  /** The splat does not match "/"; without the index route the home page prerendered as an empty shell. */
+  it("routes the site root to the page module and fails a build that prerenders a bare shell", () => {
+    const site = fumadocs();
+    const routes = text(site, "app/routes.ts");
+    const config = text(site, "react-router.config.ts");
+    expect(routes).toContain('index("routes/page.tsx", { id: "routes/home" })');
+    expect(routes.indexOf("index(")).toBeLessThan(routes.indexOf('route("*"'));
+    expect(config).toContain('.includes("<title>")');
+    expect(config).toContain("throw new Error(");
+  });
+
+  it("writes the navigation as a page tree, and every page path to prerender", () => {
+    const site = JSON.parse(text(fumadocs(), "app/site.json"));
+    expect(Object.keys(site)).toEqual([
+      "name",
+      "description",
+      "logo",
+      "favicon",
+      "links",
+      "footer",
+      "layout",
+      "paths",
+      "tree",
+    ]);
+    expect(site.paths).toEqual(["/", "/adr", "/adr/0001-layout", "/adr/0002-docs", "/quickstart"]);
+    expect(site.logo).toEqual({
+      light: "/assets/logo/light.svg",
+      dark: "/assets/logo/dark.svg",
+      href: "/",
+    });
+    expect(site.tree).toEqual({
+      name: "Handbook",
+      children: [
+        {
+          $id: "tab.0",
+          type: "folder",
+          name: "Guides",
+          root: true,
+          children: [
+            { $id: "tab.0.0", type: "separator", name: "Start" },
+            { type: "page", name: "Introduction", url: "/" },
+            { type: "page", name: "Quickstart", url: "/quickstart" },
+            { $id: "tab.0.1", type: "separator", name: "Decisions" },
+            { type: "page", name: "Decisions", url: "/adr" },
+            { type: "page", name: "0001", url: "/adr/0001-layout" },
+            { type: "page", name: "0002", url: "/adr/0002-docs" },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("keeps llms.txt as the Mintlify site had it, and adds llms-full.txt and the redirects", () => {
+    const site = fumadocs({
+      config: { ...CONFIG, redirects: [{ from: "/licensing", to: "/quickstart" }] },
+    });
+    expect(text(site, "public/llms.txt")).toBe(
+      run().files.find((file) => file.path === "llms.txt")?.content,
+    );
+    const full = text(site, "public/llms-full.txt");
+    expect(full.startsWith("# Handbook\n\n# Introduction\n\nSource: /\n\n![hero]")).toBe(true);
+    expect(full).toContain("# 0002\n\nSource: /adr/0002-docs\n");
+    expect(text(site, "public/_redirects")).toBe("/licensing /quickstart 301\n");
+  });
+
+  it("turns a snippet import into an include, outside code only", () => {
+    const quickstart = text(fumadocs(), "content/quickstart.mdx");
+    expect(quickstart).toContain("<include>../snippets/steps.mdx</include>");
+    expect(quickstart.slice(0, quickstart.indexOf("```"))).not.toContain("import Steps");
+    expect(quickstart).toContain(
+      '```mdx\nimport Steps from "/snippets/steps.mdx";\n<Widget />\n```',
+    );
+  });
+
+  it("writes the colours and the Mintlify component map", () => {
+    const site = fumadocs();
+    expect(text(site, "app/theme.css")).toContain("--color-fd-primary: #0B0D0F;");
+    const map = text(site, "app/mdx-components.tsx");
+    for (const name of [
+      "Note",
+      "Info",
+      "Tip",
+      "Warning",
+      "Card",
+      "CardGroup",
+      "Steps",
+      "Step",
+      "Tabs",
+      "Tab",
+      "Accordion",
+      "AccordionGroup",
+      "Frame",
+      "CodeGroup",
+    ])
+      expect(map).toMatch(new RegExp(`^  ${name}[:,]`, "m"));
+    expect(text(site, "vite.config.ts").startsWith("// generated by stackra gen")).toBe(true);
+  });
+
+  it("adds a page for the API reference of a consumed service", () => {
+    const manifest = {
+      member: "orders",
+      package: "@acme/service-orders",
+      actions: [],
+      schemas: {},
+    };
+    const site = fumadocs({
+      config: { ...CONFIG, apiReference: ["orders"] },
+      services: [{ member: "orders", manifest: manifest as unknown as StackraManifest }],
+    });
+    expect(site.errors).toEqual([]);
+    expect(site.files.map((file) => file.path)).toEqual(
+      expect.arrayContaining([
+        "content/api-reference/orders.mdx",
+        "public/api-reference/orders/openapi.json",
+      ]),
+    );
+    expect(JSON.parse(text(site, "app/site.json")).paths).toContain("/api-reference/orders");
+  });
+
+  it("refuses an unknown component, but not an imported one or one in code", () => {
+    const refused = fumadocs({
+      files: [
+        ...FUMADOCS_FILES,
+        { path: "docs/extra.mdx", content: page("Extra", "<Widget />\n\n<Panel.Body />") },
+      ],
+      config: {
+        ...CONFIG,
+        navigation: [
+          {
+            tab: "Guides",
+            groups: [
+              { group: "Start", pages: ["index", "quickstart", "extra", { folder: "adr" }] },
+            ],
+          },
+        ],
+      },
+    });
+    expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["docs_component_unknown", "Widget"],
+      ["docs_component_unknown", "Panel"],
+    ]);
+    expect(refused.files).toEqual([]);
+    const imported = fumadocs({
+      files: [
+        ...FUMADOCS_FILES,
+        {
+          path: "docs/extra.mdx",
+          content: page("Extra", 'import { Chart, type Row } from "@acme/charts";\n\n<Chart />'),
+        },
+      ],
+      config: {
+        ...CONFIG,
+        navigation: [
+          {
+            tab: "Guides",
+            groups: [
+              { group: "Start", pages: ["index", "quickstart", "extra", { folder: "adr" }] },
+            ],
+          },
+        ],
+      },
+    });
+    expect(imported.errors).toEqual([]);
+  });
+
+  it("refuses a redirect from a page and one to nowhere, and an owned layout key", () => {
+    expect(
+      fumadocsCodes({
+        config: {
+          ...CONFIG,
+          raw: { nav: {} },
+          redirects: [
+            { from: "/quickstart", to: "/" },
+            { from: "/old", to: "/gone" },
+            { from: "/site", to: "https://example.com" },
+          ],
+        },
+      }),
+    ).toEqual(["docs_owned_key", "docs_redirect_shadows_page", "docs_redirect_target_missing"]);
+  });
+});
+
+/** A Fumadocs site in English and Arabic: the home page and the quickstart translated, the decisions not. */
+describe("emitDocsSite with locales", () => {
+  const LOCALES: NonNullable<DocsSiteInput["config"]["locales"]> = [
+    { code: "en", label: "English", default: true },
+    { code: "ar", label: "العربية", dir: "rtl", labels: { Guides: "الأدلة", Start: "البداية" } },
+  ];
+  const FILES_EN_AR: DocsSiteInput["files"] = [
+    { path: "config/docs.config.ts" },
+    { path: "docs/index.mdx", content: page("Introduction", "![hero](/assets/hero.png)") },
+    { path: "docs/index.ar.mdx", content: page("مقدمة", "اقرأ <bdi>RAGI2929</bdi> أولًا.") },
+    { path: "docs/quickstart.mdx", content: page("Quickstart") },
+    { path: "docs/quickstart.ar.mdx", content: page("البدء السريع") },
+    { path: "docs/adr/0001-layout.mdx", content: page("0001") },
+    { path: "docs/adr/index.mdx", content: page("Decisions") },
+    { path: "assets/hero.png" },
+    { path: "assets/logo/light.svg" },
+    { path: "assets/logo/dark.svg" },
+    { path: "assets/favicon.svg" },
+  ];
+  const site = (patch: Partial<DocsSiteInput["config"]> = {}, files = FILES_EN_AR) =>
+    emitDocsSite(
+      { config: { ...CONFIG, raw: {}, locales: LOCALES, ...patch }, files, services: [] },
+      "fumadocs",
+    );
+  const text = (result: ReturnType<typeof site>, path: string): string =>
+    result.files.find((file) => file.path === path)?.content ?? "";
+
+  /** An empty `locales` is the single-language site, byte for byte. */
+  it("keeps a single-language site byte-identical when locales is empty", () => {
+    const files = FILES_EN_AR.filter((file) => !file.path.includes(".ar."));
+    expect(site({ locales: [] }, files)).toEqual(
+      emitDocsSite({ config: { ...CONFIG, raw: {} }, files, services: [] }, "fumadocs"),
+    );
+  });
+
+  /** Translations become pages under their locale; the shell switches to the multi-language files. */
+  it("serves each translation under its locale, with the multi-language shell", () => {
+    const result = site();
+    expect(result.errors).toEqual([]);
+    expect(result.files.map((file) => file.path)).toEqual([
+      "app/app.css",
+      "app/components/footer.tsx",
+      "app/components/search.tsx",
+      "app/entry.server.tsx",
+      "app/lib/layout.tsx",
+      "app/lib/locale.ts",
+      "app/lib/source.ts",
+      "app/mdx-components.tsx",
+      "app/root.tsx",
+      "app/routes.ts",
+      "app/routes/not-found.tsx",
+      "app/routes/page.tsx",
+      "app/routes/search.ts",
+      "app/site.json",
+      "app/theme.css",
+      "content/adr/0001-layout.mdx",
+      "content/adr/index.mdx",
+      "content/ar/index.mdx",
+      "content/ar/quickstart.mdx",
+      "content/index.mdx",
+      "content/quickstart.mdx",
+      "public/_redirects",
+      "public/llms-full.txt",
+      "public/llms.txt",
+      "react-router.config.ts",
+      "tsconfig.json",
+      "vite.config.ts",
+    ]);
+    expect(text(result, "content/ar/index.mdx")).toContain("<bdi>RAGI2929</bdi>");
+    expect(text(result, "app/root.tsx")).toContain("dir={locale.dir}");
+    expect(text(result, "app/lib/layout.tsx")).toContain("i18n: true");
+    expect(text(result, "app/theme.css")).toContain(
+      'html[lang="ar"] body {\n  font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;',
+    );
+    // llms.txt stays the default locale's.
+    expect(text(result, "public/llms.txt")).not.toContain("/ar");
+  });
+
+  /** One tree per locale: translated pages under /ar with their own titles, the rest linking to English. */
+  it("writes the locales, a page tree per locale and every path to prerender", () => {
+    const json = JSON.parse(text(site(), "app/site.json"));
+    expect(Object.keys(json)).toEqual([
+      "name",
+      "description",
+      "logo",
+      "favicon",
+      "links",
+      "footer",
+      "layout",
+      "paths",
+      "tree",
+      "locales",
+      "trees",
+      "translations",
+    ]);
+    expect(json.paths).toEqual([
+      "/",
+      "/adr",
+      "/adr/0001-layout",
+      "/ar",
+      "/ar/quickstart",
+      "/quickstart",
+    ]);
+    expect(json.locales).toEqual([
+      { code: "en", label: "English", dir: "ltr", prefix: "", font: null },
+      {
+        code: "ar",
+        label: "العربية",
+        dir: "rtl",
+        prefix: "ar",
+        font: {
+          family: "IBM Plex Sans Arabic",
+          href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap",
+        },
+      },
+    ]);
+    expect(json.trees.en).toEqual(json.tree);
+    expect(json.trees.ar.children[0].name).toBe("الأدلة");
+    expect(json.trees.ar.children[0].children).toEqual([
+      { $id: "tab.0.0", type: "separator", name: "البداية" },
+      { type: "page", name: "مقدمة", url: "/ar" },
+      { type: "page", name: "البدء السريع", url: "/ar/quickstart" },
+      { $id: "tab.0.1", type: "separator", name: "Decisions" },
+      { type: "page", name: "Decisions", url: "/adr" },
+      { type: "page", name: "0001", url: "/adr/0001-layout" },
+    ]);
+    expect(json.translations.ar.toc).toBe("في هذه الصفحة");
+    expect(json.translations.en).toEqual({});
+  });
+
+  /** An untranslated default page is a warning, never a refusal: the site is still written. */
+  it("warns, without refusing, for each default page that has no translation", () => {
+    const result = site();
+    expect(result.files.length).toBeGreaterThan(0);
+    expect(
+      result.warnings?.map((warning) => [warning.code, warning.subject, warning.severity]),
+    ).toEqual([
+      ["docs_locale_page_untranslated", "ar/adr/index", "warning"],
+      ["docs_locale_page_untranslated", "ar/adr/0001-layout", "warning"],
+    ]);
+  });
+
+  /** A translation without its default page, a page in a locale's folder, and malformed locales are refused. */
+  it("refuses an orphan translation, a page in a locale's folder and malformed locales", () => {
+    const refusals = (patch: Partial<DocsSiteInput["config"]>, files = FILES_EN_AR) =>
+      site(patch, files).errors.map((error) => error.code);
+    expect(
+      refusals({}, [...FILES_EN_AR, { path: "docs/pricing.ar.mdx", content: page("الأسعار") }]),
+    ).toEqual(["docs_locale_page_orphan"]);
+    expect(
+      refusals(
+        {
+          navigation: [
+            {
+              tab: "Guides",
+              groups: [
+                { group: "Start", pages: ["index", "quickstart", "ar/legacy"] },
+                { group: "Decisions", pages: [{ folder: "adr" }] },
+              ],
+            },
+          ],
+        },
+        [...FILES_EN_AR, { path: "docs/ar/legacy.mdx", content: page("Legacy") }],
+      ),
+    ).toEqual(["docs_locale_path_taken"]);
+    const english = FILES_EN_AR.filter((file) => !file.path.includes(".ar."));
+    expect(
+      refusals({ locales: [{ code: "EN", label: "English", default: true }] }, english),
+    ).toEqual(["docs_locales_invalid"]);
+    expect(
+      refusals({
+        locales: [
+          { code: "en", label: "English" },
+          { code: "ar", label: "العربية" },
+        ],
+      }),
+    ).toEqual(["docs_locales_invalid"]);
+    expect(
+      emitDocsSite({
+        config: { ...CONFIG, locales: LOCALES },
+        files: FILES,
+        services: [],
+      }).errors.map((error) => error.code),
+    ).toContain("docs_locales_unsupported");
   });
 });

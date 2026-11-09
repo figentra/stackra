@@ -7,9 +7,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0278 (decisions 4 and 5).
  */
+import { Enum } from "@stackra/contracts";
 import { crc32 } from "@stackra/support";
 
 import type { IdentityConfig } from "#config/identity.config";
+import { ApiKeyMode } from "#contracts/enums/api-key-mode.enum";
 import type { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { base62Of } from "#core/functions/base62-of.function";
 import { sameText } from "#core/functions/same-text.function";
@@ -34,8 +36,13 @@ export function parseApiKey(
     .sort(([, a], [, b]) => b.length - a.length)[0];
   if (match === undefined) return undefined;
   const [kind, prefix] = match;
-  const tail = key.slice(prefix.length + 1);
-  if (!TAIL.test(tail)) return { kind, wellFormed: false };
+  const rest = key.slice(prefix.length + 1);
+  // The body is base-62 only, so a `test_` or `live_` segment cannot be the start of a body.
+  const named = Enum.values(ApiKeyMode).find((code) => rest.startsWith(`${code}_`));
+  const tail = named === undefined ? rest : rest.slice(named.length + 1);
+  // no segment: a key minted before modes, whose mode is unknown (the verifier refuses it)
+  const mode = named;
+  if (!TAIL.test(tail)) return { kind, mode, wellFormed: false };
   const head = key.slice(0, -6);
-  return { kind, wellFormed: sameText(base62Of(crc32(head), 6), key.slice(-6)) };
+  return { kind, mode, wellFormed: sameText(base62Of(crc32(head), 6), key.slice(-6)) };
 }

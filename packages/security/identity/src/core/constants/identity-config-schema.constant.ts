@@ -114,6 +114,7 @@ export const IDENTITY_CONFIG_SCHEMA = z.object({
       [ApiKeyKind.Publishable]: "stackra_pk",
     })),
   apiKeyLastUsedSeconds: z.number().int().min(0).max(86_400).default(60),
+  apiKeyCacheSeconds: z.number().int().min(0).max(300).default(30),
   verificationPackKey: z.string().regex(PACK_KEY).default("verification.drivers"),
   signInTimeoutMinutes: z.number().int().min(1).max(60).default(10),
   signInMethodsKey: z.string().regex(PACK_KEY).default("identity.sign_in_methods"),

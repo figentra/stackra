@@ -25,10 +25,11 @@ const endpointOf = (data: Partial<WebhookEndpoint>): WebhookEndpoint =>
   });
 
 describe("WebhookEndpoint", () => {
-  it("is a model with the whe public id and the timestamps", () => {
+  it("is a model with the whe public id, the tenant and the timestamps", () => {
     expect(new WebhookEndpoint()).toBeInstanceOf(Model);
     expect(traitsOf(WebhookEndpoint).map((trait) => trait.name)).toEqual([
       "has_public_id",
+      "belongs_to_tenant",
       "timestamps",
     ]);
     expect(traitsOf(WebhookEndpoint)[0]?.options).toEqual({ prefix: "whe" });

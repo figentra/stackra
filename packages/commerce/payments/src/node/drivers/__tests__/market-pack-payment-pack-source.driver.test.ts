@@ -25,7 +25,7 @@ const PACK: MarketPack = {
   market: "xa",
   version: "1.0.0",
   status: PackStatus.Live,
-  entries: [{ key: "payments.byo-providers", value: ["stripe"], from: "2000-01-01" }],
+  entries: [{ key: "payments.byo_providers", value: ["stripe"], from: "2000-01-01" }],
   reviews: [],
   checklist: [],
 };
@@ -47,7 +47,7 @@ describe("MarketPackPaymentPackSourceDriver", () => {
   it("resolves the Market's pack from the deployment's packs", async () => {
     expect(source()).toBeInstanceOf(PaymentPackSource);
     const resolved = await source().resolve("xa");
-    expect(valueOf(resolved, "payments.byo-providers", "2026-10-31")?.value).toEqual(["stripe"]);
+    expect(valueOf(resolved, "payments.byo_providers", "2026-10-31")?.value).toEqual(["stripe"]);
   });
 
   it("refuses a Market with no pack", async () => {

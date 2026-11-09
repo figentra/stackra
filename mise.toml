@@ -23,8 +23,10 @@ shfmt = "3.14.1"
 "aqua:google/osv-scanner" = "2.7.0"
 # Developer-machine CLIs the repo calls. Not pinned here (no mise backend carries them):
 #   opencode (v2 installer: https://opencode.ai/install), encore (brew install encoredev/tap/encore), aws, claude.
-# mise `infisical` reads .infisical.yaml from 0.44 on; maestro also needs a JDK on PATH.
-"github:Infisical/cli" = "0.44.2"
+# maestro needs a JDK on PATH.
+# SOPS and age: figentra/secrets (ADR 0525); `secrets:*` scripts and `secrets-exec.mjs` call them with output captured.
+"aqua:getsops/sops" = "3.10.2"
+"aqua:FiloSottile/age" = "1.2.1"
 "aqua:astral-sh/uv" = "0.11.16"
 "github:mobile-dev-inc/maestro" = "cli-2.10.0"
 # The aws CLI's Session Manager plugin: `stackra testbed` reaches the boxes by SSH through SSM (STA-1953).

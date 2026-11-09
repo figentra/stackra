@@ -1,4 +1,4 @@
-<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout, deploy and the owner runbook (deploy with the custom-domain detach step and its dry run, first publish of the presets). Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0173; ADR 0007. -->
+<!-- Stackra file contract. Purpose: the README of @figentra/worker-registry, the Stackra npm registry Worker: routes, storage, publishing, read rules, the licence engine and its API, settings, layout, deploy and the owner runbook (deploy through Runway's cloudflare-workers provider, first publish of the presets). Boundary: documentation only; ADR 0453 is the decision. Runtime: documentation. Governing contract: ADR 0453; ADR 0284; ADR 0289; ADR 0173; ADR 0007. -->
 
 # @figentra/worker-registry
 
@@ -106,8 +106,8 @@ licence is 409. Every call writes an `audit_events` row (`licence.<action>`, the
 
 ### Issuer tokens
 
-The owner makes one per caller (OS billing), stores its value in Infisical `os` `prod` `/runtime/licensing` (the OS licensing service reads it, ADR 0512;
-migration 0002's "`/registry`" means the issuer token's Infisical home) as
+The owner makes one per caller (OS billing), stores its value in the sops scope `products/os/production` (the OS licensing service reads it, ADR 0525;
+migration 0002's "`/registry`" means the issuer token's old vault home) as
 `REGISTRY_ISSUER_TOKEN` (the name `@stackra/licensing`'s `IssuerConfig` reads) and inserts only its hash:
 `INSERT INTO issuer_tokens (hash, label, created_at) VALUES ('<sha256 hex>', 'os-billing', '<now>')`, through the
 migration CI job or the Cloudflare dashboard. Rotate by inserting the new hash, then setting `revoked_at` on the old row.
@@ -123,8 +123,8 @@ API grants only `licensed` scopes, so the owner also inserts an internal scope's
 
 Only the release workflows publish (`publishers` rows: `figentra/stackra` for `@stackra`, `figentra/stackra-pro` for
 `@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`;
-`figentra/brand`, `figentra/commerce`, `figentra/os`, `figentra/pay`, `figentra/invoicing` and `figentra/billing` for
-`@figentra`, same workflow and ref, environments `brand-registry`, `release`, `release`, `release`, `release` and `release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
+`figentra/brand`, `figentra/commerce`, `figentra/os`, `figentra/pay`, `figentra/invoicing`, `figentra/billing` and
+`figentra/figentra` for `@figentra`, same workflow and ref, environments `brand-registry`, `release`, `release`, `release`, `release`, `release` and `release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
 repository and owner ids too). A publisher covers its whole scope, not single names. The job asks GitHub for an ID token with audience
 `npm:npm.stackra.figentra.com` and exchanges it for a `stkp_` publish token bound to one package for
 `REGISTRY_PUBLISH_TOKEN_SECONDS`. A publish is refused when the version exists, the tarball is over the size limit,
@@ -160,7 +160,7 @@ Every limit is a Worker var in `wrangler.jsonc` (`src/settings/read-settings.ts`
 | `REGISTRY_OIDC_AUDIENCES`         | —                              | `""` (only `npm:<REGISTRY_HOST>`)             |
 | `REGISTRY_READ_ONLY`              | —                              | `""` (`"true"`: every write answers 503)      |
 
-Secret: `REGISTRY_SIGNING_KEY`, the PKCS#8 PEM of the ECDSA P-256 key (Infisical `prod` `/ci/registry`). To rotate, move
+Secret: `REGISTRY_SIGNING_KEY`, the PKCS#8 PEM of the ECDSA P-256 key (sops scope `ci/production/registry`). To rotate, move
 the old key's SPKI (base64, from `/-/npm/v1/keys`) into `REGISTRY_RETIRED_KEYS` with its `expires`, then set the new
 secret.
 
@@ -169,7 +169,7 @@ secret.
 | Path                      | Holds                                                                                                                                                                                                                                                           |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                                                                                                                                          |
-| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os`, `0008` `figentra/pay` and `figentra/invoicing`, `0009` `figentra/billing` |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os`, `0008` `figentra/pay` and `figentra/invoicing`, `0009` `figentra/billing`, `0011` `figentra/figentra` |
 | `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                                                                                                                                        |
 | `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                                                                                                                                      |
 | `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                                                                                                                                                  |
@@ -240,19 +240,19 @@ pnpm exec wrangler kv namespace create stackra-registry-cache   # prints id
 Put the two ids into the GitHub environment `registry` (Settings, Environments) as **variables**, not secrets, and
 never into `wrangler.jsonc` (it keeps the zero ids; CI substitutes them on the runner):
 
-| Variable                         | Value                                       |
-| -------------------------------- | ------------------------------------------- |
-| `REGISTRY_D1_DATABASE_ID`        | the D1 uuid                                 |
-| `REGISTRY_KV_NAMESPACE_ID`       | the KV namespace id (32 hex)                |
-| `INFISICAL_REGISTRY_IDENTITY_ID` | the Infisical machine identity the job uses |
+| Variable                   | Value                        |
+| -------------------------- | ---------------------------- |
+| `REGISTRY_D1_DATABASE_ID`  | the D1 uuid                  |
+| `REGISTRY_KV_NAMESPACE_ID` | the KV namespace id (32 hex) |
 
-Restrict the `registry` environment to `main`. The Infisical identity trusts GitHub OIDC for the subject in the
-repository's immutable form, `repo:figentra@314302700/stackra@1425140001:environment:registry` (the plain
-`repo:figentra/stackra:...` form is refused), and reads `prod` `/ci` (`CLOUDFLARE_API_TOKEN`) and `prod` `/ci/registry`
-(`REGISTRY_SIGNING_KEY`). The Cloudflare token in `/ci` needs D1, Workers R2 Storage, Workers KV Storage and Workers
+Restrict the `registry` environment to `main`. The job decrypts its secrets as itself with the shared
+`secrets-decrypt` action (ADR 0525): `figentra/infra` grants the GitHub OIDC subject in the repository's immutable
+form, `repo:figentra@314302700/stackra@1425140001:environment:registry` (the plain `repo:figentra/stackra:...` form is
+refused), the sops scopes `ci/production` (`CLOUDFLARE_API_TOKEN`) and `ci/production/registry`
+(`REGISTRY_SIGNING_KEY`). The Cloudflare token in `ci/production` needs D1, Workers R2 Storage, Workers KV Storage and Workers
 Scripts edit on the account, and Workers Routes edit on the `figentra.com` zone. The custom domain
-`npm.stackra.figentra.com` must leave the npflared `npm-registry` Worker first (decision 17), or `wrangler deploy`
-refuses the route; the workflow now does that itself (step 4), so nothing is detached by hand.
+`npm.stackra.figentra.com` had to leave the npflared `npm-registry` Worker first (decision 17); that one-off move is
+done, and the workflow no longer carries its detach step.
 
 ### 2. Signing key
 
@@ -261,21 +261,19 @@ straight into the secrets inbox:
 
 ```sh
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ~/Secrets-inbox/REGISTRY_SIGNING_KEY.pem
-printf 'project: registry\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_SIGNING_KEY.target.yaml
-pnpm secrets:import --dry-run   # then the import with the printed --confirm token
+pnpm secrets:import --scope ci/production/registry --dry-run   # then again without --dry-run
 ```
 
 ### 3. Issuer token
 
 One per licence API caller (OS billing). Make the value, keep only its SHA-256 hex for D1, and import the value to
-Infisical `os` `prod` `/runtime/licensing` as `REGISTRY_ISSUER_TOKEN` the same way (never `registry`: the deploy
-identity must not read it):
+the sops scope `products/os/production` as `REGISTRY_ISSUER_TOKEN` the same way (never `ci/production/registry`: the
+deploy job must not read it):
 
 ```sh
 openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN
-printf 'project: os\nenv: prod\npath: /runtime/licensing\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN.target.yaml
 shasum -a 256 < ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN | cut -d' ' -f1   # the hash, safe to show
-pnpm secrets:import --dry-run   # then the import with the printed --confirm token
+pnpm secrets:import --scope products/os/production --dry-run   # then again without --dry-run
 ```
 
 After the first deploy (step 4 creates the tables), insert the hash:
@@ -287,27 +285,13 @@ pnpm exec wrangler d1 execute stackra-registry --remote --command \
 
 ### 4. Deploy
 
-Run "Deploy registry" on `main`. It tests and builds this member, puts the ids into the runner's `wrangler.jsonc`,
-applies the migrations (`wrangler d1 migrations apply stackra-registry --remote`), runs `wrangler deploy`, sets
-`REGISTRY_SIGNING_KEY` from Infisical through stdin, and waits for `/-/ping` and `/-/npm/v1/keys` to answer 200 with at
-least one key. Without `INFISICAL_REGISTRY_IDENTITY_ID` it builds, tests and deploys nothing.
-
-Right before `wrangler deploy`, the step "Custom domain (detach from another Worker)" (owner decision D13) lists the
-account's Workers custom domains (`GET /accounts/<id>/workers/domains`, the account id read from `wrangler.jsonc`) and
-looks for `npm.stackra.figentra.com` by exact hostname:
-
-| Found                                         | The step does                                                          |
-| --------------------------------------------- | ---------------------------------------------------------------------- |
-| not bound (or the list answers 404)           | nothing; `wrangler deploy` attaches it                                 |
-| bound to `stackra-registry`                   | nothing                                                                |
-| bound to any other Worker (`npm-registry`, …) | detaches it (`DELETE …/workers/domains/<id>`), logs that Worker's name |
-
-It never touches `npm.figentra.com`, the `npm-registry` Worker or its bucket (they stay until 0.1.0, decision D13). Any
-other non-2xx answer fails the job. The Cloudflare token reaches curl through stdin and is never printed.
-
-A **dispatch** run has the input `detach_dry_run`, on by default: the step prints what it would do (`would detach … from
-Worker …`), and the job stops there, before the migrations, the deploy and the secret, so the account is not changed.
-Turn it off to deploy by hand. A push to `main` has no inputs and always runs the full deploy. Check by hand too:
+Run "Deploy registry" on `main` (a `sha` input redeploys an earlier commit of main). It tests this member, then hands
+over to `stackra deploy --env production --kind web --member registry`, Runway's `cloudflare-workers` provider, which
+reads the `registry` entry of the root `runway.yaml`: it builds the member, puts the ids into the runner's
+`wrangler.jsonc` (restored afterwards), applies the migrations (`wrangler d1 migrations apply stackra-registry
+--remote`), deploys with the commit as the message and `REGISTRY_READ_ONLY`, sets `REGISTRY_SIGNING_KEY` through stdin,
+and retries `/-/ping` and `/-/npm/v1/keys` for up to ten minutes until each answers 200 (the keys route only does once
+the signing key is readable). Check by hand too:
 
 ```sh
 curl -fsS https://npm.stackra.figentra.com/-/ping
@@ -354,6 +338,5 @@ and drop their `packages/tooling` copies, one follow-up batch per product.
 - `@stackra/skills/contracts` (`StackraKind`, `StackraManifest`, `CatalogueItem`, `CataloguePage`): stackra-184. The
   same shapes live in `src/interfaces/` (`stackra-kind.type.ts`, `catalogue-item.interface.ts`, …) and
   `src/constants/stackra-kinds.constant.ts` until then.
-- The runway placement of this member (the deploy is its own workflow, not a `runway-cloudflare-workers.yml` caller:
-  that provider has no D1 migration step and no Worker secret) and the Pulumi stack call of `registryWorker`. The move
-  of the custom domain from the npflared Worker is in the deploy workflow (D13, runbook step 4).
+- The Pulumi stack call of `registryWorker`: the D1 database and KV namespace are still created by hand (runbook
+  step 1) until Runway's infra step (STA-1921).

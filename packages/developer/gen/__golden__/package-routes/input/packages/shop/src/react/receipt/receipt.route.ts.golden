@@ -1,0 +1,4 @@
+import { Route } from "@stackra/navigation";
+
+/** One order's receipt. */
+export class ReceiptRoute extends Route({ path: "/orders/:orderId/receipt" }) {}

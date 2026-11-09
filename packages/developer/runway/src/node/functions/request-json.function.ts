@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `requestJson(fetcher, request)`, one JSON request of a store driver (App Store Connect, Google, Firebase,
- *          Play, Expo, Sentry, Infisical): sends it, parses the answer, and throws on a status the caller does not
+ *          Play, Expo, Sentry): sends it, parses the answer, and throws on a status the caller does not
  *          accept, naming the step, the status and the API's own message.
  * Boundary: the request's headers carry the bearer token and its body may carry a secret: neither is ever put in an
  *           error or a log. The error text is the step, the status and the API's error message, which never echoes
@@ -12,7 +12,7 @@
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { JsonAnswer } from "#node/types/json-answer.type";
 
-/** The API's own error message, from the shapes Google, Apple, Sentry, Expo and Infisical use. */
+/** The API's own error message, from the shapes Google, Apple, Sentry and Expo use. */
 function messageOf(body: Record<string, unknown>): string | undefined {
   const error = body["error"];
   const errors = body["errors"];

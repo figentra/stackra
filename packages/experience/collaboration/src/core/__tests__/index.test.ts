@@ -14,6 +14,7 @@ import * as collaboration from "#core/index";
 describe("@stackra/collaboration", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(collaboration).sort()).toEqual([
+      "ClientRoomTokensDriver",
       "CollaborationConfig",
       "CollaborationConfig$",
       "CollaborationOptions",

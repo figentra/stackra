@@ -20,6 +20,7 @@ import { FREE_APP_SHELL } from "#src/registry/components/free/app-shell";
 import { FREE_AREA_CHART } from "#src/registry/components/free/area-chart";
 import { FREE_ASPECT_RATIO } from "#src/registry/components/free/aspect-ratio";
 import { FREE_ATTACHMENT_CARD } from "#src/registry/components/free/attachment-card";
+import { FREE_AUTOCOMPLETE } from "#src/registry/components/free/autocomplete";
 import { FREE_AVATAR } from "#src/registry/components/free/avatar";
 import { FREE_AVATAR_GROUP } from "#src/registry/components/free/avatar-group";
 import { FREE_BACK_TO_TOP } from "#src/registry/components/free/back-to-top";
@@ -56,7 +57,9 @@ import { FREE_COACH_MARK } from "#src/registry/components/free/coach-mark";
 import { FREE_CODE } from "#src/registry/components/free/code";
 import { FREE_CODE_BLOCK } from "#src/registry/components/free/code-block";
 import { FREE_COLLECTION_ENGINE } from "#src/registry/components/free/collection-engine";
+import { FREE_COLOR_FIELD } from "#src/registry/components/free/color-field";
 import { FREE_COLOR_PICKER } from "#src/registry/components/free/color-picker";
+import { FREE_COLOR_SWATCH } from "#src/registry/components/free/color-swatch";
 import { FREE_COMBO_BOX } from "#src/registry/components/free/combo-box";
 import { FREE_COMMAND_PALETTE } from "#src/registry/components/free/command-palette";
 import { FREE_COMMENT_THREAD } from "#src/registry/components/free/comment-thread";
@@ -94,6 +97,7 @@ import { FREE_FAB } from "#src/registry/components/free/fab";
 import { FREE_FILE_TRIGGER } from "#src/registry/components/free/file-trigger";
 import { FREE_FILTER_BAR } from "#src/registry/components/free/filter-bar";
 import { FREE_FILTER_PANEL } from "#src/registry/components/free/filter-panel";
+import { FREE_FLAG } from "#src/registry/components/free/flag";
 import { FREE_FLIP_CARD } from "#src/registry/components/free/flip-card";
 import { FREE_FLOATING_PANEL } from "#src/registry/components/free/floating-panel";
 import { FREE_FOOTER } from "#src/registry/components/free/footer";
@@ -135,6 +139,7 @@ import { FREE_LIST } from "#src/registry/components/free/list";
 import { FREE_LISTBOX } from "#src/registry/components/free/listbox";
 import { FREE_LOADING_OVERLAY } from "#src/registry/components/free/loading-overlay";
 import { FREE_LOCALE_SWITCHER } from "#src/registry/components/free/locale-switcher";
+import { FREE_MARKER_MAP } from "#src/registry/components/free/marker-map";
 import { FREE_MARQUEE } from "#src/registry/components/free/marquee";
 import { FREE_MASKED_FIELD } from "#src/registry/components/free/masked-field";
 import { FREE_MEDIA_PLAYER } from "#src/registry/components/free/media-player";
@@ -301,6 +306,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_BIDI,
   FREE_CODE,
   FREE_COLLECTION_ENGINE,
+  FREE_FLAG,
   FREE_FOUNDATIONS,
   FREE_HEADING,
   FREE_ICON,
@@ -327,6 +333,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_ADDRESS_FIELD,
   FREE_ANGLE_SLIDER,
   FREE_CHECKBOX_FIELD,
+  FREE_COLOR_FIELD,
   FREE_COLOR_PICKER,
   FREE_DROP_ZONE,
   FREE_FILE_TRIGGER,
@@ -360,6 +367,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_TEXT_AREA_FIELD,
   FREE_TEXT_FIELD,
   FREE_TURNSTILE,
+  FREE_AUTOCOMPLETE,
   FREE_CASCADER,
   FREE_CHECKBOX,
   FREE_CHECKBOX_BUTTON_GROUP,
@@ -445,6 +453,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_CAROUSEL,
   FREE_CHIP,
   FREE_CODE_BLOCK,
+  FREE_COLOR_SWATCH,
   FREE_COMMENT_THREAD,
   FREE_DATA_GRID,
   FREE_DATA_TABLE,
@@ -464,6 +473,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_ITEM_CARD,
   FREE_KPI,
   FREE_LIST,
+  FREE_MARKER_MAP,
   FREE_MARQUEE,
   FREE_MEDIA_PLAYER,
   FREE_NUMBER_TICKER,
@@ -579,6 +589,54 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["account", "user menu", "profile", "sign out", "avatar", "kit"],
     status: "new",
   },
+  // KIT_ACTION_BUTTON: @stackra/panel, from its showcase/action-button.json
+  {
+    slug: "action-button",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/panel",
+    exportName: "ActionButton",
+    parts: ["ActionButton"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 240 }],
+    related: ["free/button", "free/page-header", "free/use-confirmation"],
+    tokens: ["color.accent", "color.danger"],
+    keywords: ["action", "button", "sdui", "run", "confirm", "shortcut", "kit"],
+    status: "new",
+  },
+  // KIT_ACTION_INPUT_MODAL: @stackra/panel, from its showcase/action-input-modal.json
+  {
+    slug: "action-input-modal",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ActionInputModal",
+    parts: ["ActionInputModal"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 520 }],
+    related: ["free/modal", "free/form", "free/text-area"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["action", "modal", "dialog", "input", "confirm", "panel", "kit"],
+    status: "new",
+  },
+  // KIT_BULK_ACTIONS: @stackra/panel, from its showcase/bulk-actions.json
+  {
+    slug: "bulk-actions",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/panel",
+    exportName: "BulkActions",
+    parts: ["BulkActions"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 240 }],
+    related: ["free/bulk-action-bar", "free/data-table"],
+    tokens: ["color.accent", "color.surface"],
+    keywords: ["bulk", "selection", "actions", "sdui", "toolbar", "kit"],
+    status: "new",
+  },
   // KIT_CAN: @stackra/iam, from its showcase/can.json
   {
     slug: "can",
@@ -686,9 +744,25 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     parts: ["MembersPage"],
     hero: {},
     examples: [{ id: "basics", card: true, minHeight: 720 }],
-    related: ["free/page-header", "free/table", "free/modal", "free/status-badge"],
+    related: ["free/page-header", "free/table", "free/modal"],
     tokens: ["color.surface", "color.border", "color.danger"],
     keywords: ["members", "team", "invite", "invitation", "role", "settings", "kit"],
+    status: "new",
+  },
+  // KIT_MODULE_MENU: @stackra/navigation, from its showcase/module-menu.json
+  {
+    slug: "module-menu",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react", "native"],
+    packageName: "@stackra/navigation",
+    exportName: "ModuleMenu",
+    parts: ["ModuleMenu"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 420 }],
+    related: ["free/sidebar", "free/navigation-list", "free/tab-bar"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["menu", "navigation", "sidebar", "module", "modules", "kit"],
     status: "new",
   },
   // KIT_ORGANIZATION_PAGE: @stackra/tenancy, from its showcase/organization-page.json
@@ -755,6 +829,54 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["pricing", "plans", "subscription", "billing", "monthly", "yearly", "kit"],
     status: "new",
   },
+  // KIT_RESOURCE_FORM_PAGE: @stackra/panel, from its showcase/resource-form-page.json
+  {
+    slug: "resource-form-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ResourceFormPage",
+    parts: ["ResourceFormPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 620 }],
+    related: ["free/form", "free/form-field", "free/page-header"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["resource", "form", "create", "edit", "crud", "admin", "panel", "kit"],
+    status: "new",
+  },
+  // KIT_RESOURCE_LIST_PAGE: @stackra/panel, from its showcase/resource-list-page.json
+  {
+    slug: "resource-list-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ResourceListPage",
+    parts: ["ResourceListPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 640 }],
+    related: ["free/data-table", "free/filter-bar", "free/page-header"],
+    tokens: ["color.surface", "color.separator"],
+    keywords: ["resource", "list", "table", "crud", "admin", "panel", "kit"],
+    status: "new",
+  },
+  // KIT_RESOURCE_VIEW_PAGE: @stackra/panel, from its showcase/resource-view-page.json
+  {
+    slug: "resource-view-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ResourceViewPage",
+    parts: ["ResourceViewPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 560 }],
+    related: ["free/property-list", "free/page-header", "free/section"],
+    tokens: ["color.surface", "color.separator"],
+    keywords: ["resource", "record", "detail", "view", "crud", "admin", "panel", "kit"],
+    status: "new",
+  },
   // KIT_ROLE_PICKER: @stackra/iam, from its showcase/role-picker.json
   {
     slug: "role-picker",
@@ -785,6 +907,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/permissions-matrix", "free/page-header"],
     tokens: ["color.surface", "color.separator"],
     keywords: ["roles", "permissions", "access", "matrix", "rbac", "kit"],
+    status: "new",
+  },
+  // KIT_ROW_ACTIONS: @stackra/panel, from its showcase/row-actions.json
+  {
+    slug: "row-actions",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/panel",
+    exportName: "RowActions",
+    parts: ["RowActions"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/action-menu", "free/data-table", "free/icon-button"],
+    tokens: ["color.surface", "color.danger"],
+    keywords: ["row", "actions", "menu", "sdui", "overflow", "kit"],
     status: "new",
   },
   // KIT_SECURITY_PAGE: @stackra/identity, from its showcase/security-page.json

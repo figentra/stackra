@@ -1,0 +1,32 @@
+{
+  "member": "workflow",
+  "package": "@stackra/workflow",
+  "version": "0.19.0",
+  "events": [
+    {
+      "name": "workflow.service.acked.v1",
+      "module": "workflow",
+      "class": "ServiceAcked",
+      "file": "src/contracts/events/service-acked.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": { "$ref": "#/schemas/workflow.ServiceAcked" }
+    },
+    {
+      "name": "workflow.workflow_run_ended",
+      "module": "workflow",
+      "class": "WorkflowRunEnded",
+      "file": "src/core/events/workflow-run-ended.event.ts",
+      "kind": "domain"
+    }
+  ],
+  "models": [
+    {
+      "key": "workflow.run",
+      "table": "runs",
+      "publicId": "run",
+      "traits": []
+    }
+  ],
+  "permissions": [{ "key": "workflow.run.read", "risk": "L0" }]
+}

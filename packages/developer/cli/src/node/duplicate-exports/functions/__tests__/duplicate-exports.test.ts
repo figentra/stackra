@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: hold `stackra duplicate-exports` (was `duplicate-exports.mjs`) to its contract: a name declared in two packages' `src/` is a finding naming
- *          both; re-exports, tests, `.d.ts` files, one package declaring a value and a type of one name, and members
+ *          both; re-exports, tests, `.d.ts` and `.template.ts` files, one package declaring a value and a type of one name, and members
  *          outside `packages/` do not count; `ALLOWED` and `PENDING` exempt a name; stale allow-list entries are listed;
  *          a `PENDING` entry with no duplicate left is a finding (shrink-only, rule-gap N-6);
  *          the shipped lists keep the copies stackra-224 removed out of them.
@@ -62,7 +62,7 @@ test("a name declared in two packages is a finding naming both", () => {
   ]);
 });
 
-test("re-exports, tests, declaration files, apps and one package's value and type of one name do not count", () => {
+test("re-exports, tests, declaration files, templates, apps and one package's value and type of one name do not count", () => {
   const root = workspace(MEMBERS, {
     "packages/foundation/support/src/core/functions/escape-html.function.ts":
       "export function escapeHtml(value: unknown): string {\n  return String(value);\n}\n",
@@ -73,6 +73,8 @@ test("re-exports, tests, declaration files, apps and one package's value and typ
     "packages/experience/experience/src/edge/types/globals.d.ts":
       "export declare const escapeHtml: string;\n",
     "apps/web/src/escape-html.ts": "export const escapeHtml = 1;\n",
+    "packages/data/documents/src/core/templates/footer.template.ts":
+      "export const FOOTER_TEMPLATE = `\nexport function escapeHtml() {}\n`;\n",
     "packages/data/documents/src/core/enums/tone.enum.ts":
       "export const Tone = Enum.of({});\nexport type Tone = Enum.Value<typeof Tone>;\n",
   });

@@ -168,7 +168,7 @@ Each case's pack options carry the authority's published sandbox (simulation, pr
 `runCertification(case)` runs it offline on recorded answers and returns every mismatch;
 `runCertification(case, { sandbox, ports })` takes the issued endpoints, the registered seller and buyer from config and
 the host's real ports, and submits. The `.int` tier (`certification.int.test.ts`) runs the configured cases when
-`STACKRA_FISCAL_SANDBOX` holds the sandbox config (from Infisical on ci-box). Plain fetch serves the header-credential
+`STACKRA_FISCAL_SANDBOX` holds the sandbox config (from sops on the testbed). Plain fetch serves the header-credential
 case (ETA e-receipt); Verifactu (mutual TLS), ZATCA (XAdES with the CSID key), RKSV (signature unit) and TSE (device) run
 from the host's suite with its bindings. A driver leaves certification pending only after its sandbox run passes; each
 fix that run forces is recorded against its case here.

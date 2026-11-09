@@ -2,15 +2,18 @@
  * Stackra file contract:
  * Purpose: `resolveTool(task, member, options)`, the one tool process a member command starts, chosen by the
  *          member's layout and target: Vite for a web or PWA target, Expo for iOS and Android, tsdown for a package,
- *          Wrangler for a worker, the generated Encore app for a service, Mintlify for the docs app (`dev`,
- *          `validate` and `broken-links`, in the `.stackra/site/` gen assembles, or in `src/` for a docs app not yet
- *          moved to that layout, STA-1316), and vitest, tsc
+ *          Wrangler for a worker, the generated Encore app for a service, for the docs app React Router when gen
+ *          assembled a Fumadocs site (`react-router dev`, and `react-router build` for `build` and for `lint`, whose
+ *          link check reads the build, STA-2026) and Mintlify otherwise (`dev`, `validate` and `broken-links`, in the
+ *          `.stackra/site/` gen assembles, or in `src/` for a docs app not yet moved to that layout, STA-1316),
+ *          and vitest, tsc
  *          and oxlint everywhere (`--tier int` runs the `.stackra/vitest.int.config.ts` gen writes for a member with an
  *          `.int.test.ts`). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
  *          member-root config it finds itself.
- * Boundary: pure apart from checking which generated configs exist and reading a docs app's dev port from its
- *           `runway.yaml` (`environments.dev.port`, the one place a port is written); starts nothing. A combination with no tool is
- *           refused with the reason, never guessed.
+ * Boundary: pure apart from checking which generated configs exist, whether a Fumadocs site's dependencies are
+ *           installed, and reading a docs app's dev port from its `runway.yaml` (`environments.dev.port`, the one place
+ *           a port is written); starts nothing. A combination with no tool is refused with the reason, never guessed,
+ *           and a Fumadocs site with no installed dependencies with the one command to run first (STA-2026, FR-008).
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 2 and 5: targets pick the outputs; tool configs live in `.stackra/`); ADR
  *                     0091 and 0124 (Encore is generated into `.stackra/encore`); ADR 0182 (test tiers); ADR 0284
@@ -86,20 +89,27 @@ export function resolveTool(
     const site = existsSync(join(root, DOCS_CONFIG_FILE))
       ? join(root, DOCS_SITE_DIR)
       : join(root, "src");
-    if (task === "dev") {
+    const port = (): readonly string[] => {
       const runway = join(root, "runway.yaml");
       const { environments } = existsSync(runway)
         ? ((parse(readFileSync(runway, "utf8")) ?? {}) as {
             environments?: { dev?: { port?: unknown } };
           })
         : {};
-      const port = environments?.dev?.port;
-      return at(
-        "mint",
-        ["dev", ...(typeof port === "number" ? ["--port", String(port)] : [])],
-        site,
+      const value = environments?.dev?.port;
+      return typeof value === "number" ? ["--port", String(value)] : [];
+    };
+    if (existsSync(join(site, "react-router.config.ts"))) {
+      // The Fumadocs site imports its packages from the member's dependencies (STA-2026).
+      if (!existsSync(join(root, "node_modules", "@react-router", "dev")))
+        return refuse("the docs site's dependencies are not installed: run `pnpm install` first");
+      if (task === "dev") return at("react-router", ["dev", ...port()], site);
+      if (task === "build" || task === "lint") return at("react-router", ["build"], site);
+      return refuse(
+        "the docs app runs React Router, which serves `dev`, `build` and `lint` (the link check reads the build)",
       );
     }
+    if (task === "dev") return at("mint", ["dev", ...port()], site);
     if (task === "build") return at("mint", ["validate"], site);
     if (task === "lint") return at("mint", ["broken-links"], site);
     return refuse("the docs app runs Mintlify, which serves `dev`, `build` and `lint`");

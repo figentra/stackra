@@ -148,6 +148,7 @@ describe("runMobileJob", () => {
     expect(manifest.expo.autolinking.exclude).toEqual(["expo-dev-menu", "expo-camera"]);
 
     expect(calls).toEqual([
+      "pnpm install --ignore-workspace --no-frozen-lockfile --ignore-scripts",
       "git rev-parse HEAD",
       "eas build --profile production --platform all --non-interactive --no-wait --json",
     ]);
@@ -267,6 +268,7 @@ describe("runMobileJob", () => {
       ["git", "add"],
       ["git", "-c"],
       ["git", "rev-parse"],
+      ["pnpm", "install"],
       ["git", "add"],
       ["git", "-c"],
       ["git", "rev-parse"],
@@ -274,6 +276,41 @@ describe("runMobileJob", () => {
       ["eas", "build"],
     ]);
     expect(result.record.sha).toBe(SHA);
+  });
+
+  it("installs a checkout without node_modules under the product's .npmrc, and leaves an installed one alone", async () => {
+    writeFileSync(
+      join(repository, ".npmrc"),
+      "@figentra:registry=https://npm.stackra.figentra.com/\n",
+    );
+    await runMobileJob(request());
+    expect(readFileSync(join(templateDir, ".npmrc"), "utf8")).toContain("@figentra:registry");
+    expect(calls.filter((call) => call.startsWith("pnpm "))).toHaveLength(1);
+
+    calls = [];
+    mkdirSync(join(templateDir, "node_modules"));
+    await runMobileJob(request());
+    expect(calls.some((call) => call.startsWith("pnpm "))).toBe(false);
+  });
+
+  it("builds on the environment's mobile channel, falling back to the app's EAS channel", async () => {
+    writeFileSync(
+      join(repository, "runway.yaml"),
+      JSON.stringify({
+        version: 3,
+        project: "commerce",
+        environments: { staging: { mobile: { channel: "staging" } } },
+        mobile: { shopper: APP },
+      }),
+    );
+    await runMobileJob(request({ environment: "staging" }));
+    expect(calls.at(-1)).toContain("eas build --profile staging");
+    const eas = JSON.parse(readFileSync(join(templateDir, "eas.json"), "utf8"));
+    expect(eas.build.staging.channel).toBe("staging");
+
+    calls = [];
+    await runMobileJob(request());
+    expect(calls.at(-1)).toContain("eas build --profile production");
   });
 
   it("refuses a job with neither a commit nor a line", async () => {

@@ -89,7 +89,8 @@ The rules in full, and what enforces each one, are in [`AGENTS.md`](../AGENTS.md
 | `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)   |
 | `pnpm pr:merge <n>`                          | the only way an agent merges: green gate and an `AI-REVIEW: PASS` for the head's diff |
 
-`pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from Infisical. One line per
+`pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from sops through
+`tools/scripts/secrets-exec.mjs`. One line per
 script: [`tools/scripts`](../tools/scripts).
 
 ## How work flows
@@ -104,10 +105,11 @@ script: [`tools/scripts`](../tools/scripts).
    In Progress. Commits are conventional, and `feat`, `fix`, `refactor` and `perf` commits carry `Refs: STA-n`.
 4. **Pull request.** `pnpm verify` is green, the PR follows the template, and `pnpm linear review STA-n <url>` moves
    the issue to In Review. CI's `Quality Gate` is the only required check.
-5. **Independent review.** A separate AI reviewer, never the author, posts `AI-REVIEW: PASS <head sha> base=<base ref> patch=<patch id>` as the
-   `stackra-reviewer` app through `pnpm bot:review`
-   ([ADR 0230](../apps/docs/src/docs/adr/0230-reviewer-identity-separate-from-builder.mdx)). Design PRs
-   and change-risk R3 also need the owner's approval.
+5. **Independent review.** A separate AI reviewer, never the author, posts an advisory
+   `Review (advisory): PASS <head sha> base=<base ref>` through `pnpm bot:gh`. The `stackra-reviewer` app is retired
+   ([ADR 0523](../apps/docs/src/docs/adr/0523-humans-approve-policy-not-instances.mdx) decision 6); `AI-REVIEW:`
+   verdicts come from Figentra Flow in CI once it posts them. Design PRs and change-risk R3 also need the owner's
+   approval.
 6. **Merge.** `pnpm pr:merge` enqueues the PR in the merge queue, which squash-merges after the gate passes on the group
    ([ADR 0119](../apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx)); the issue moves to Done. Packages
    release through changesets in CI.

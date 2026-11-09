@@ -196,8 +196,11 @@ Every driver also reads `jitter`, `fill.wait` and `fill.poll`, and takes the `Ca
   are cheap, a crash empties them, and a read replica does not see them. Keys sort in the "C" collation, so `forget`'s
   prefix `like` (wildcards escaped) reads the primary key. Each entry write sweeps up to `postgres.sweep` dead rows
   (`0` leaves them). Statements run through the `CacheSql` port, which @stackra/database binds over the service's
-  database, each on its own outside the caller's transaction, every value bound. `postgresCacheTables(schema)` gives
-  the create statements and their inverses for the migration that makes the tables.
+  database, each on its own outside the caller's transaction, every value bound. The driver never creates a table: in
+  the default schema `cache` they come from @stackra/database's migration `database.0005_create_cache_tables`, which
+  adopts tables made earlier. They are platform tables (no `tenant_id`, no row-level security): every key already
+  carries its namespace. For another `postgres.schema`, `postgresCacheTables(schema)` gives the create statements and
+  their inverses for the service's own migration.
 - `memory`, `storage`, `postgres` and `workers` list the keys under a prefix for `forget`, so they write no index; a tag's members
   are an in-memory set (`memory`) or one empty marker key per member under `#` that expires with its entry (`storage`,
   `workers`).

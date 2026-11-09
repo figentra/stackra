@@ -73,6 +73,10 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - An action with no `rateLimit` takes from `RateLimitConfig.actionDefault` (per scope, and per client address when
   the call has a client); its own `rateLimit` replaces both. The store gets the address's SHA-256, never the address
   (`CallClient` reaches no port) (STA-1588).
+- A bound `RateLimitCapSource` (a scope's settings) only lowers a bucket: take the minimum of each number, never its
+  value alone. A failed caps read fails the call.
+- A bound `IdempotencyRetentionSource` sets the idempotency window, capped at `IDEMPOTENCY_TTL` (24 hours); an action's
+  own shorter `idempotencyTtl` wins over it. A failed read fails the call.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.
@@ -133,7 +137,7 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 
 | Data         | Where                                   | Handling                                                                     |
 | ------------ | --------------------------------------- | ---------------------------------------------------------------------------- |
-| Call input   | `fingerprintOf`, the idempotency store  | Hashed (SHA-256) for the fingerprint; the output is stored for 24 hours.     |
+| Call input   | `fingerprintOf`, the idempotency store  | Hashed (SHA-256) for the fingerprint; the output is stored for 24 hours (or `idempotencyTtl`), never its `@ShownOnce` fields. |
 | Audit fields | `ctx.audit(...)`, the `AuditTrail` port | Whatever the handler adds; never add a classified field. Stored by the port. |
 | Client IP    | `ctx.client` (`CallClient`)             | Held for the call only; a handler that keeps it hashes or truncates it.      |
 | Query output | the `Cache` port (`cache.ttl`)          | Kept for the query's `ttl` under a key per caller unless `per` widens it.    |

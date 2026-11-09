@@ -1,6 +1,6 @@
 {
   "name": "@stackra/database",
-  "version": "0.8.0",
+  "version": "0.29.0",
   "private": false,
   "description": "Stackra database: the MikroORM layer on Postgres. CrudService<M> with table and metrics reads, repositories, the graph reader, the Migration, Macro and Seeder kinds with the migration compiler, the idx_/fk_/ck_ naming strategy, the unit of work and scope sessions, gapless Sequence numbers, the record-visibility filter seam, and the Factory, usePostgres and PGlite memory-driver test helpers",
   "keywords": [
@@ -120,6 +120,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "catalog:",
     "@electric-sql/pglite-pgvector": "catalog:",
+    "@electric-sql/pglite-postgis": "catalog:",
     "@faker-js/faker": "catalog:",
     "@mikro-orm/pglite": "catalog:",
     "@stackra/events": "workspace:*",
@@ -138,38 +139,14 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
-    "@electric-sql/pglite": "catalog:",
-    "@electric-sql/pglite-pgvector": "catalog:",
-    "@faker-js/faker": "catalog:",
-    "@mikro-orm/pglite": "catalog:",
     "@stackra/events": "workspace:*",
-    "@stackra/testing": "workspace:*",
-    "@testcontainers/postgresql": "catalog:",
-    "testcontainers": "catalog:"
+    "@stackra/testing": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@electric-sql/pglite": {
-      "optional": true
-    },
-    "@electric-sql/pglite-pgvector": {
-      "optional": true
-    },
-    "@faker-js/faker": {
-      "optional": true
-    },
-    "@mikro-orm/pglite": {
-      "optional": true
-    },
     "@stackra/events": {
       "optional": true
     },
     "@stackra/testing": {
-      "optional": true
-    },
-    "@testcontainers/postgresql": {
-      "optional": true
-    },
-    "testcontainers": {
       "optional": true
     }
   },

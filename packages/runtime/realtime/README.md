@@ -159,7 +159,9 @@ document, mayEdit })`; the raw endpoint at `REALTIME_ROOM_PATH` calls `rooms.acc
 `{ t: "presence" | "awareness" | "update", data }`; the server stamps the sender, relays to the others (and through the
 fanout), answers a viewer's `update` with `{ t: "refused", code: "forbidden" }`, and drops a member over a cap with
 `room_limit_reached` (`RoomLimitReachedError`, close code 4429). The caps are `realtime.rooms` (members, message bytes,
-messages per second, idle seconds).
+messages per second, idle seconds). A grant may carry `recheckEdit`: the room asks it before relaying each
+`update`, and a `false` answer (or a failed check) refuses that update and every later one with `forbidden`, so a right
+revoked mid-session drops the member's next edit (`@stackra/collaboration`'s room-token action sets it).
 
 Where a socket cannot open, the member streams the room instead: the raw endpoint answers a plain GET of
 `REALTIME_ROOM_PATH` with `rooms.stream(request)`, a `text/event-stream` of `event: frame` lines (401 for a bad token,
@@ -200,7 +202,7 @@ venue's one scope. Which device hosts, and the peer list, are settings per venue
 
 - Pub/sub is at most once: a refresh or room frame published while an instance reconnects is lost to it, and the
   cross-instance member count is eventually consistent.
-- Gen's raw room endpoint calls `rooms.accept` only; it must call `rooms.stream(request)` for a plain GET before the
-  stream fallback is reachable.
+- The generated raw room endpoint (`@stackra/collaboration`'s `RoomController`) serves `rooms.stream(request)`; the
+  generated Encore adapter cannot upgrade a socket, so members there use the stream.
 - The venue relay finds peers from a configured list; there is no multicast discovery, and the relay does not queue
   messages for a device that is away.

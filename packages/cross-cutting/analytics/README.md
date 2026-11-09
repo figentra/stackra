@@ -40,9 +40,11 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds  |
 | `.`           | `RelayAnalyticsDriver`                                                                             | the `relay` driver: one batch to the analytics service, with the consent snapshot       |
 | `./native`    | `RelayAnalyticsDriver`                                                                             | the `relay` driver for React Native: buffered like PostHog's, stamps `context.device`   |
-| `./contracts` | `ANALYTICS_INGEST_PATH`                                                                            | `/analytics/batches`, the ingest path under the public API origin                       |
+| `./contracts` | `ANALYTICS_INGEST_PATH`                                                                            | `/public/analytics/batches`, the ingest path under the public API origin                       |
 | `./node`      | `IngestAnalyticsBatchAction`, `IngestAnalyticsBatchInput`, `IngestAnalyticsBatchOutput`            | the analytics service's ingest endpoint (`analytics_batch.ingest`)                      |
-| `./node`      | `AnalyticsBatchAccepted`, `FanOutAnalyticsListener`, `AnalyticsBatchPermissions`                   | one outbox event per granted destination, sent to its driver; the L0 permission         |
+| `./node`      | `AnalyticsBatchAccepted`, `FanOutAnalyticsListener`, `AnalyticsBatchPermissions`                   | one outbox event per granted destination, sent to its driver; the L2 permission         |
+| `./contracts` | `AnalyticsStore`, `AnalyticsStoreQuery`                                                            | the port of Stackra's own delivery store (`append`, `scan`, `erasePerson`) and its scan |
+| `./node`      | `MemoryAnalyticsStoreDriver`                                                                       | the `memory` store driver: in-process, for tests and previews                           |
 | `./testing`   | `fakeAnalytics`                                                                                    | a real client over memory and its own consent ledger, recording every tracked event     |
 | `./testing`   | `AnalyticsFake`                                                                                    | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`        |
 
@@ -205,7 +207,7 @@ from `@stackra/analytics/native`: it buffers and sends one batch at 20 events or
 
 Figentra's apps send product analytics only to the product's analytics service. Set `driver: "relay"` and
 `ingestOrigin` to the public API origin. The client keeps every rule above (consent, queue, lanes, retries, sampling,
-offline); the relay posts the envelope deliveries unchanged to `<ingestOrigin>/analytics/batches` with the
+offline); the relay posts the envelope deliveries unchanged to `<ingestOrigin>/public/analytics/batches` with the
 `Stackra-Consent` header of a snapshot asked for the batch's anonymous id (`consentSnapshotHeaders` over
 `ConsentLedger.snapshotRequest`). The app holds no vendor key, SDK or host. On a phone take it from `./native`: it
 buffers like the native PostHog driver and stamps `context.device` with the OS and its version.
@@ -258,6 +260,20 @@ ADR 0189 decision 2) reaches the vendor through `EraseAnalyticsPersonListener` (
 - `none` deletes nothing (0 persons); `memory` records the subject (`erased()`) and drops its deliveries. Any other
   driver rejects by default.
 - A visitor who never signed in is only an anonymous id PostHog cannot tie to the subject, so nothing finds it.
+
+## Analytics store
+
+`AnalyticsStore` (`./contracts`) is Stackra's own store of deliveries, beside the vendor destinations (ADR 0190
+decision 3 as amended 2026-10-29). `append(deliveries)` keeps each delivery once per `eventId`, so an outbox
+redelivery adds nothing. `scan({ from, to, names? })` reads one capture-time window, `from` inclusive and `to`
+exclusive, compared as instants, oldest first; a bound that is not an ISO 8601 instant throws a `RangeError`.
+`erasePerson(subject)` deletes the deliveries that carry the subject as `userId` and those of every anonymous id that
+ever carried it, and resolves how many it deleted.
+
+`memory` (`MemoryAnalyticsStoreDriver`, `./node`) is the only driver: unbounded and in-process, so never a production
+store. ClickHouse (SaaS) and DuckDB over Parquet (on-prem) are Pro drivers that wait on ADR 0227, which still defers an
+OLAP engine. Nothing writes to the store yet: binding it to the fan-out and the erasure listener comes with its first
+production driver.
 
 ## Not here yet
 

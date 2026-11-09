@@ -6,15 +6,22 @@
  *          pack when the caller passes it, else from the fail-closed floor guard.
  * Boundary: the connection string is the `DATABASE_URL` the member's runway and config put in the environment, never
  *           an argument. Every read and write runs inside `withScope(scope)`, so row-level security limits it to that
- *           node and its ancestors, and one transaction holds the whole run.
+ *           node and its ancestors, and one transaction holds the whole run. The settings rows are owned
+ *           (`BelongsToTenantOrPlatform`), so the run acts, inside that transaction, through
+ *           `TenantIsolationService.withTenant` as a system actor in the owner the tenant-level rule names (ADR 0327
+ *           decision 8): a node at `nlevel` 3 is a tenant and is its own owner, the root and a product node are the
+ *           platform's (no tenant). Tenants are recursive, so a node deeper than a tenant node is refused before any
+ *           connection: the runner cannot read its tenant without the scope tree yet.
  * Runtime: node
  * Governing contract: ADR 0213 (decision 4: `settings:diff` and `settings:apply`); ADR 0395 (decision 5); ADR 0327
- *                     (decisions 3 and 9); ADR 0419 (decision 2: the runner takes the holder's market).
+ *                     (decisions 3, 8 and 9); ADR 0419 (decision 2: the runner takes the holder's market); ADR 0239
+ *                     (decision 1: `withTenant`; 2026-11-07 amendment, gap C); ADR 0495 (decision 3).
  */
 import { Container } from "@stackra/container";
-import { Clock, type ScopeRef } from "@stackra/contracts";
+import { type Actor, ActorKind, Clock, type PublicId, type ScopeRef } from "@stackra/contracts";
 import type { ResolvedPack } from "@stackra/market-packs";
 import { PostgresDatabaseDriver } from "@stackra/database/node";
+import { TenantIsolationService } from "@stackra/tenancy/node";
 
 import {
   MarketPackSettingFloorSourceDriver,
@@ -28,9 +35,24 @@ import { StoredSettingRevisionService } from "#node/services/stored-setting-revi
 import { StoredSettingService } from "#node/services/stored-setting.service";
 
 /**
+ * The owner of `scope`'s rows: the node's own id at a tenant node (`nlevel` 3), none (the platform's) above it.
+ *
+ * @throws TypeError for a node below a tenant node, whose tenant the runner cannot read yet.
+ */
+function ownerOf(scope: ScopeRef): PublicId<"scp"> | undefined {
+  const depth = scope.path.split(".").length;
+  if (depth > 3)
+    throw new TypeError(
+      `settings:diff and settings:apply cannot resolve the tenant of ${scope.path} yet: it is below a tenant node, and a branch and a child tenant look alike without the scope tree. Run them at the tenant node (nlevel 3) or above.`,
+    );
+  return depth === 3 ? scope.id : undefined;
+}
+
+/**
  * Opens a settings session at `scope` for `run`, with `market` the holder's resolved pack when known.
  *
  * @throws Error when `DATABASE_URL` is not set or Postgres refuses the connection.
+ * @throws TypeError when `scope` is below a tenant node.
  * @example
  * await openSettingsSession(scope, (packs) => packs.exportPack({ scope }, ["orders"]));
  */
@@ -39,22 +61,34 @@ export async function openSettingsSession<T>(
   run: (packs: SettingsPackService) => Promise<T>,
   market?: ResolvedPack,
 ): Promise<T> {
+  const owner = ownerOf(scope);
+  // the runner has no verified caller: a system principal acting in the owner the nlevel rule names
+  const actor: Actor = {
+    kind: ActorKind.System,
+    id: "sys_settings_cli",
+    ...(owner === undefined ? {} : { scopeId: owner }),
+  };
   const url = process.env["DATABASE_URL"];
   if (url === undefined || url === "") throw new Error("DATABASE_URL is not set for this member");
   // the container's default Clock: the system driver is not exported, so a host can replace it without being named
   const clock = (await Container.create([])).get(Clock);
   const database = await PostgresDatabaseDriver.connect({ url });
   try {
-    return await database.withScope(scope, () => {
-      const store = new PostgresSettingValueStoreDriver(new StoredSettingService());
-      const revisions = new PostgresSettingRevisionStoreDriver(new StoredSettingRevisionService());
-      const floors =
-        market === undefined
-          ? new RegisteredFloorGuardDriver()
-          : MarketPackSettingFloorSourceDriver.over(market, clock);
-      const resolver = new SettingsResolver(store, floors, revisions, clock);
-      return run(new SettingsPackService(store, resolver));
-    });
+    // withTenant joins withScope's transaction as a savepoint, so both settings hold for every write
+    return await database.withScope(scope, () =>
+      new TenantIsolationService(database).withTenant(actor, async () => {
+        const store = new PostgresSettingValueStoreDriver(new StoredSettingService());
+        const revisions = new PostgresSettingRevisionStoreDriver(
+          new StoredSettingRevisionService(),
+        );
+        const floors =
+          market === undefined
+            ? new RegisteredFloorGuardDriver()
+            : MarketPackSettingFloorSourceDriver.over(market, clock);
+        const resolver = new SettingsResolver(store, floors, revisions, clock);
+        return run(new SettingsPackService(store, resolver));
+      }),
+    );
   } finally {
     await database.close();
   }

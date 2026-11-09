@@ -76,3 +76,15 @@ yet.
 
 Supersedes: none. Sources: `notes/handover/build-wave10-2026-10-25.md` (identity builder, not built item 5 and question
 1); `notes/handover/config-model.md` section 1 (sign-in and verification); `packages/security/identity/src/core/functions/sign-in-providers-of.function.ts`.
+
+## Amendment 2026-11-08: an Enterprise merchant's own identity provider
+
+**Context.** Decision 3 lets a tenant setting hide a pack method but never add one. The owner decided that an
+Enterprise merchant may bring its own identity provider (SAML or OIDC: Entra, Okta, Google Workspace) for its staff,
+with SCIM later. Source: the owner's decision and answers of 2026-11-08 (owner ledger).
+
+**Decision.** Decision 3 gains one exception: **an Enterprise-tier merchant may add its own organisation-level SAML or
+OIDC IdP for its staff**, on a dedicated staff organisation ([0361](/adr/0361-principals-and-parties) amendment
+2026-11-08), and may enforce it as the only method for its verified domains. It is an L3 setting: the merchant's owner
+role sets it, with step-up, audited. It never adds a method to the customer realm, and the pack's floors still hold.
+Free and paid tiers below Enterprise keep decision 3 as written.

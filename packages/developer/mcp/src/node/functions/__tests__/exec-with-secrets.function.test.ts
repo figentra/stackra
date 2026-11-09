@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `execWithSecrets`: a command naming no secret starts directly in the given directory and its
- *          exit code comes back; a program that cannot start rejects. The Infisical path is `mcpExecCommand`'s test.
- * Boundary: test only; starts this Node binary, never `infisical`, and touches no secret.
+ *          exit code comes back; a program that cannot start rejects. The sops path is `mcpExecCommand`'s test.
+ * Boundary: test only; starts this Node binary, never `sops`, and touches no secret.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 3).
  */

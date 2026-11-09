@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `UploadRejectedError`, what `MediaLibrary` raises for a file its bucket does not take: a media type outside
- *          `accept`, or a size of zero or above `maxBytes`. Raised when an upload is asked for, and again at claim for
- *          what the store actually received.
+ *          `accept`, a size of zero or above `maxBytes`, or (at claim) bytes that are not the media type the upload
+ *          declared. Raised when an upload is asked for, and again at claim for what the store actually received.
  * Boundary: kind `Validation`, code `upload_rejected`. The details name the bucket and the broken rule, never the file.
  *           At claim the received file is deleted before this is raised.
  * Runtime: isomorphic
@@ -18,6 +18,6 @@ export class UploadRejectedError extends Refusal({
   /** The bucket key. */
   bucket!: string;
 
-  /** Which rule the file broke: its media type, or its size. */
-  reason!: "media_type" | "size";
+  /** Which rule the file broke: its declared media type, its size, or its content (bytes of another type). */
+  reason!: "media_type" | "size" | "content";
 }

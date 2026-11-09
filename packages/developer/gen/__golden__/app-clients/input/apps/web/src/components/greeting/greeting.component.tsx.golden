@@ -1,0 +1,10 @@
+import { Component } from "#stackra/ui";
+
+import type { GreetingProps } from "./greeting.props";
+
+/** A class component whose base comes from the generated `#stackra/ui` facade (STA-2069). */
+export class Greeting extends Component<GreetingProps> {
+  render(): string {
+    return `Hello, ${this.props.name}`;
+  }
+}

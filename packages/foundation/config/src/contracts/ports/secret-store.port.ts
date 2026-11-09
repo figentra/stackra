@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the SecretStore port: where a `@Secret("NAME")` field's value comes from. The runtime binds the driver of
- *          its target (Encore secrets, the Worker's bindings, Infisical in local dev), so config never knows the store.
+ *          its target (Encore secrets, the Worker's bindings, AWS Secrets Manager), so config never knows the store.
  * Boundary: an abstract class that is its own token. It resolves one name to one value and lists nothing, so no caller
  *           can enumerate secrets. Lives in `contracts/`, the `./contracts` entry (the other entries
  *           are `.`, `./react`, `./testing`; ADR 0294 decision 15).

@@ -40,6 +40,7 @@ describe("@stackra/identity/node", () => {
       "EndedSessionsOutput",
       "EraseDueAccountsAction",
       "EraseDueAccountsOutput",
+      "IdentityStepUpCheckDriver",
       "ListMySessionsQuery",
       "OperatorPermissions",
       "PasskeyPermissions",
@@ -47,6 +48,10 @@ describe("@stackra/identity/node", () => {
       "RegisterPasskeyAction",
       "RegisterPasskeyInput",
       "RegisterPasskeyOutput",
+      "ServiceApiKeyStoreDriver",
+      "ServiceTokensConfig",
+      "ServiceTokensConfig$",
+      "ServiceTokensOptions",
       "SessionLine",
       "SessionPermissions",
       "SessionsInput",
@@ -56,6 +61,7 @@ describe("@stackra/identity/node", () => {
       "VerifyPasskeyInput",
       "VerifyPasskeyOutput",
       "ZitadelAuthEventsService",
+      "ZitadelServiceTokensDriver",
     ]);
   });
 });

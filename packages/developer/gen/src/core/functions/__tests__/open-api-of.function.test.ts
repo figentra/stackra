@@ -35,13 +35,13 @@ describe("openApiOf", () => {
   });
 
   it("projects an action with a path parameter and a body", () => {
-    expect(document.paths["/orders/{orderId}/cancel"]?.["put"]).toMatchObject({
+    expect(document.paths["/app/orders/{orderId}/cancel"]?.["put"]).toMatchObject({
       operationId: "orders_order_cancel",
       tags: ["orders"],
       "x-stackra-action": "orders.order.cancel@1",
       "x-stackra-permission": "orders.order.cancel",
       "x-stackra-risk": "L2",
-      "x-stackra-idempotency": { ttl: "PT24H" },
+      "x-stackra-idempotency": "required",
       "x-stackra-refusals": ["order_not_cancellable"],
       parameters: [
         {
@@ -72,7 +72,7 @@ describe("openApiOf", () => {
   });
 
   it("projects a query with query parameters and a public endpoint", () => {
-    expect(document.paths["/orders"]?.["get"]).toMatchObject({
+    expect(document.paths["/app/orders"]?.["get"]).toMatchObject({
       parameters: [
         { name: "cursor", in: "query", required: false, schema: { type: "string" } },
         {
@@ -83,12 +83,12 @@ describe("openApiOf", () => {
         },
       ],
     });
-    expect(document.paths["/orders"]?.["get"]).not.toHaveProperty("requestBody");
+    expect(document.paths["/app/orders"]?.["get"]).not.toHaveProperty("requestBody");
     const open = openApiOf({
       ...manifest,
       actions: (manifest.actions ?? []).map((action) => ({ ...action, anonymous: true })),
     });
-    expect(open.paths["/orders"]?.["get"]).toMatchObject({ security: [] });
+    expect(open.paths["/app/orders"]?.["get"]).toMatchObject({ security: [] });
   });
 
   it("is deterministic", () => {

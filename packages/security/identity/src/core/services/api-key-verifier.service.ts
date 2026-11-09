@@ -70,11 +70,15 @@ export class ApiKeyVerifierService extends Service {
     if (record === undefined || !sameText(record.hash, hash)) throw ApiKeyRejectedError.create();
     const expired = record.expiresAt !== undefined && record.expiresAt <= this.clock.now();
     if (record.revokedAt !== undefined || expired) throw ApiKeyRejectedError.create();
+    // a mode is never assumed: live comes only from a key issued live, and a text naming another mode than its record
+    // is not that key
+    const { mode } = parsed;
+    if (mode === undefined || record.mode !== mode) throw ApiKeyRejectedError.create();
     const browser = origin !== null && origin !== undefined;
     if (parsed.kind === ApiKeyKind.Secret ? browser : !isOriginAllowed(origin, record.origins))
       throw ApiKeyRejectedError.create();
     await this.recordUse(record);
-    return { kind: parsed.kind, record };
+    return { kind: parsed.kind, mode, record };
   }
 
   /** Writes `record`'s last use when it is older than the configured interval; a failure is swallowed. */
