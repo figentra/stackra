@@ -59,7 +59,8 @@ export interface DeclaredClass {
 
   /**
    * The input and output shape classes of `handle(input): Promise<Output>`; `replica` when the output is
-   * `ReplicaPage` from `@stackra/actions` (a replica query, ADR 0338), which has no shape class of the member. For a
+   * `ReplicaPage` from `@stackra/actions` (a replica query, ADR 0338), which has no shape class of the member; `stream`
+   * when it is `ReadableStream<…>` (a `stream: true` action's server-sent events, G1b), which has none either. For a
    * listener: `event`, the event class its `handle` parameter is typed with (its own, or a consumed service's from
    * `#stackra/clients/<service>`), or `relay` when that parameter is `EventEnvelope` (every event, envelope only).
    */
@@ -67,6 +68,7 @@ export interface DeclaredClass {
     readonly input?: string;
     readonly output?: string;
     readonly replica?: true;
+    readonly stream?: true;
     readonly event?: ClassRef;
     readonly relay?: true;
   };
