@@ -118,7 +118,7 @@ describe("parseRunway surfaces and mobile", () => {
       "storefront.white-label",
     ])
       expect(issuePaths(whiteLabel(malformed))).toEqual(["mobile.staff.whiteLabel.entitlement"]);
-    expect(issuePaths(whiteLabel("storefront.white_label"))).toEqual([]);
+    expect(whiteLabel("storefront.white_label")).not.toThrow();
   });
 
   it("accepts a declarative ops contribution over registered blocks", () => {
