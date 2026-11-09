@@ -115,7 +115,7 @@ describe(emitEncoreApi, () => {
   it("writes the endpoints file of a service, importing the pipeline, Encore, the helper and the server app", () => {
     expect(emitEncoreApi(ir, manifest)?.path).toBe(".stackra/encore/commerce/api.ts");
     for (const line of [
-      'import { ActionPipeline } from "@stackra/actions";',
+      'import { ActionPipeline, requestCallOptions } from "@stackra/actions";',
       'import { api } from "encore.dev/api";',
       'import { CancelOrderAction } from "#modules/orders/actions/cancel-order.action";',
       'import { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";',
