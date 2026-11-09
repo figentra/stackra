@@ -80,6 +80,28 @@ its calls default to; an explicit `Stackra-Version` header still wins. The gatew
 call (the actor, `CallOptions.sandbox` for a test key, the pin for versioning) is the next part of STA-2646 and amends
 this ADR again when it lands.
 
+## Amendment, 2026-11-09 (draft): the gateway's API-key path (STA-2646 B)
+
+Status: proposed in a draft PR for review (CHECKOUT, the leader); not built yet.
+
+1. **Where a key goes.** `Authorization: Bearer <key>`. `CallAuthenticator` tells a key from a JWT by
+   `IdentityConfig.apiKeyPrefixes` (a key starts with a configured prefix and an underscore); there is no second header.
+2. **How it is verified.** `ApiKeyVerifierService.verify(key, origin)` (parse and checksum before any lookup, origin rules
+   for publishable and secret keys, revocation, expiry, mode), over an `ApiKeyStore` driver that calls the identity
+   service's `principals.api_key.verify@1` by the key's SHA-256 as the gateway's own service. A verified record is cached
+   for `IdentityConfig.apiKeyCacheSeconds` (default 30, a setting), keyed by the hash; a revoke takes effect within that.
+3. **The caller.** An `api_client` actor (ADR 0098 amendment of 2026-11-09): `id` the key's principal, `scopeId` the
+   key's tenant, no realm, no `onBehalfOf`. It is never a `service` actor, so the pipeline, idempotency and audit can
+   tell a merchant's server from another Figentra service.
+4. **What a key may call.** Only an action or query declared `public: true` (or `public: { scopes: [...] }`); every
+   other operation refuses an `api_client` actor with the usual actor refusal. A public operation's required scope is
+   its permission key unless `scopes` names others.
+5. **Its grants.** The key's `scopes` are its grants: exact permission keys or the role selectors access already
+   understands (`orders.@read`). The IAM step checks the operation's permission against them in the key's tenant; a key
+   never holds more than its issuer could grant (checked at issue by identity).
+6. **Mode and version.** The adapter sets `CallOptions.sandbox: true` for a `test` key. The key's `versionPin` goes to
+   the versioning step as `pin`; an explicit `Stackra-Version` header still wins.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2,

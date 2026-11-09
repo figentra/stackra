@@ -126,6 +126,15 @@ made decorated controllers the primary HTTP pattern, written before actions were
 7. **An action refuses an actor type it does not list in `actors`.** The audit record, the evidence record and the integration
    event envelope carry the full `onBehalfOf` chain.
 
+### Amendment, 2026-11-09 (draft): an `api_client` actor
+
+Status: proposed with ADR 0278's gateway API-key path (STA-2646 B); not built yet.
+
+A ninth actor kind, `api_client`: a tenant's own server calling with an API key the tenant issued (ADR 0278). `id` is
+the key's principal, `scopeId` the key's tenant; it has no realm and acts for no one. It differs from `service` (another
+Figentra service with its service token) so a step can tell them apart without reading the credential: idempotency may
+require a key only from `api_client` callers, and an operation is reachable by one only when it is declared `public`.
+
 ## Consequences
 
 - A human, an agent, a job and a CLI user go through the same checks, approval and audit.
