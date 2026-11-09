@@ -21,6 +21,20 @@
       "category": "not_found",
       "module": "filesystem",
       "class": "FileNotFoundError"
+    },
+    {
+      "code": "file_retained",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "filesystem",
+      "class": "FileRetainedError"
+    },
+    {
+      "code": "retention_unsupported",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "filesystem",
+      "class": "RetentionUnsupportedError"
     }
   ],
   "models": [],

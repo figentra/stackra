@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "2ade85b59e2d0314",
+    "hash": "e73b6de2971de02d",
     "propsFiles": ["ui/src/react/voice-input/voice-input.props.ts"]
   },
   "importLine": "import { VoiceInput } from \"@stackra/ui/react\";",
@@ -20,7 +20,7 @@
           "name": "onStateChange",
           "required": false,
           "source": "stackra",
-          "type": "(state: \"error\" | \"idle\" | \"requesting\" | \"listening\" | \"processing\" | \"denied\") => void"
+          "type": "(state: \"denied\" | \"error\" | \"idle\" | \"requesting\" | \"listening\" | \"processing\") => void"
         }
       ],
       "name": "VoiceInput",
