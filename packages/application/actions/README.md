@@ -99,11 +99,20 @@ relay and inbox and workflow runner run each unit through the same port as the a
 except permission, which fails closed. Approval runs only when an `ApprovalGate` is bound; an action that declares
 `approval: true` fails closed without one (ADR 0397 as amended by STA-813). An action that declares
 `stepUp: AssuranceLevel.Aal2` (`AssuranceLevel` and the meter's `MeterKind` are `@stackra/contracts`', shared with
-identity and model) is checked right after the permission by the bound `StepUpCheck` (a driver over
+identity and model) is checked for a user caller right after the permission by the bound `StepUpCheck` (a driver over
 `@stackra/identity`'s `requireAssurance`) against `CallOptions.assurance` (`amr`, `authTime`, `level` from the verified
-token), and fails closed without one; handlers read the same facts as `ctx.assurance`. An action that declares
+token), and fails closed without one; a service, job, system or agent caller carries no assurance and is not asked
+(ADR 0406 as amended, STA-340). Handlers read the same facts as `ctx.assurance`. An action that declares
 `timeout: Duration.minutes(2)` hands it to `UnitOfWork.transaction(work, { timeout })`, so the database driver bounds
 each statement of that transaction by it instead of the configured session timeout.
+
+An action whose `actors` are exactly `[ActorKind.Anonymous]` refuses a signed-in caller (`ForbiddenError`), which a
+sign-up relies on. For a public page whose visitors may also be signed in elsewhere, the action declares
+`credentials: "ignore"`: the pipeline then runs a signed-in caller's call as a fresh anonymous actor and drops what the
+credential gave (scope, assurance, device, approval, read-your-writes mark, an origin other than the storefront), so
+the handler, `ctx`, the audit entry and the span see only the anonymous visitor. `serveGuardedCall` of `@stackra/app`
+never verifies or holds the credential of such a call, so no user token is forwarded. An unauthenticated call runs as
+before. `Action({...})` throws, and gen refuses `credentials_ignore_not_anonymous`, when the actors are anything else.
 
 The rate-limit step takes one token from the call's area bucket, keyed by (app, scope): `area:<area>:<app>[:<scope>]`,
 where the app is the origin's id (storefront, API key, agent) or, without one, the actor (ADR 0217 decision 2). It also
@@ -119,6 +128,17 @@ the transport passed `CallOptions.client`, one per action and client address (`p
 keys the address by its SHA-256, never the address itself. An action's own `rateLimit` replaces both; there is no
 per-action opt-out, so an action that needs more declares a larger `rateLimit`. Like the area buckets, the defaults
 apply only while a `RateLimitStore` and `RateLimitConfig` are bound.
+
+When a `RateLimitCapSource` (`@stackra/contracts`) is bound, the step reads the call's scope caps before it takes: each
+area bucket number and each default action bucket is the lower of its own and the cap, so an operator lowers a scope's
+limits without a deploy. `@stackra/settings` binds `SettingsRateLimitCapSourceDriver` over its `RateLimitSettings`
+group (`rate_limit.<area>PerMinute`, `rate_limit.<area>Burst`, `rate_limit.actionPerScope`,
+`rate_limit.actionPerAddress`; `null` caps nothing). A cap never raises a limit, and a failed read fails the call.
+
+The idempotency window is 24 hours (ADR 0136). When an `IdempotencyRetentionSource` (`@stackra/contracts`) is bound,
+the step uses its answer instead, never more than 24 hours; `@stackra/settings` binds
+`SettingsIdempotencyRetentionSourceDriver` over `idempotency.retentionHours` (1 to 24). An action's own shorter
+`idempotencyTtl` still wins, and a failed read fails the call.
 
 A refusal is `RateLimitedError` with the refusing bucket's `retryAfterMs` (absent when it never refills), `limit` and
 `remaining`, which travel as the envelope's `details` (the MCP answer) and become `Retry-After` and `RateLimit-*`
@@ -210,6 +230,12 @@ only costs a replica read. `reads` is not the offline `replica` option.
 over its budget, or one that runs one statement shape more than the configured repeats (an N+1 loop), is reported with
 its key, as a warning in production and a failure in strict mode. With none bound nothing is counted.
 
+`onBehalfOf: { secondHop: true }` (on `Action`) lets a service that calls the action for a user forward that user's
+access token to the services the action itself calls. Without it a user's token travels one hop only: a user's own call
+forwards the user's token, but an action called by a service for a user makes its own outgoing calls with the service
+token alone, so the next service runs them as the calling service only (ADR 0209, amendment of 2026-11-07, condition
+5). `serveGuardedCall` of `@stackra/app/server` reads the option; the pipeline itself never sees a token.
+
 `ctx.memo(key, load)` is the call's request memo: the first read of a key runs `load`, every later read in the same call
 shares the answer (a rejected load is forgotten). Nothing outlives the call, so put the scope or any id the answer
 depends on in the key.
@@ -255,6 +281,9 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
   allows it; in live it is refused `live_read_only`.
 - **Meters**: `meter: { name, kind, field? }` writes one `UsageRecorded` (`usage.recorded`) event through the
   `EventOutbox` in the action's unit of work, so a metered call never commits without its usage.
+- **Entitlements**: `entitlement: ExportsEntitlement` (or a list) on an `Action` or `Query` names the plan right a call
+  needs; gen lists the call in that entitlement's `gates` and `PlanEntitlementCheckDriver` checks it. A class that is
+  not an entitlement does not compile, and one that resolves to no entitlement fails gen (`entitlement_unknown`).
 - **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
   `OutboxListenerAuditTrailDriver` does the same for each listener delivery (`@stackra/events`' `ListenerAuditTrail`,
   key `listener:<Listener>`, the event's id as the call id, `ctx.audit` fields; STA-1715).

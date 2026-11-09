@@ -1,43 +1,48 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: the `runway` binary (package.json `bin`, built to `dist/runway.mjs`; `pnpm runway` is its alias): runs
- *          `runRunway` (`plan`, `deploy`, `promote`) or `runRunwaySecrets` (`secrets sync`) in the repository the
- *          working directory is in, with the real git, gh and command runner, and prints `runway: <reason>` and exits 1
- *          on an error.
- * Boundary: the only file with a side effect on import; nothing imports it. git runs in the repository root; gh
- *           inherits the terminal and uses the person's own login; the secret sync writes only in CI and prints names
- *           only.
+ * Purpose: the `runway` binary, deprecated for `stackra runway` (ADR 0529 decision 4, STA-2214) and kept as an alias
+ *          for one minor release (package.json `bin`, built to `dist/runway.mjs`; `pnpm runway` is its alias): runs
+ *          `RUNWAY_COMMANDS` on @stackra/console (ADR 0506 decision 8): plan, deploy, promote, rollback, status,
+ *          validate, drift and `secrets sync`, in the repository the working directory is in. Usage errors exit 2,
+ *          failures 1, drift and validation findings 1; `--json` gives each command's data in the envelope.
+ * Boundary: the only file with a side effect on import; nothing imports it. git and gh run through the commands
+ *           (`runwayIo`); the secret sync writes only in a proved CI job and prints names only.
  * Runtime: node
- * Governing contract: ADR 0170; ADR 0173; STA-268; STA-606.
+ * Governing contract: ADR 0170; ADR 0173; ADR 0352; ADR 0506; STA-268; STA-606; STA-2100.
  */
-import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { repositoryRoot } from "#node/functions/repository-root.function";
-import { runRunway } from "#node/functions/run-runway.function";
-import { runRunwaySecrets } from "#node/functions/run-runway-secrets.function";
+import { createConsole } from "@stackra/console";
+import { nodePorts } from "@stackra/console/node";
 
-const log = (line: string): void => {
-  process.stdout.write(`${line}\n`);
-};
+import { RUNWAY_COMMANDS } from "#node/constants/runway-commands.constant";
 
-try {
-  const root = repositoryRoot();
-  const [command, ...rest] = process.argv.slice(2);
-  if (command === "secrets") await runRunwaySecrets(rest, { root, log });
-  else
-    runRunway(process.argv.slice(2), {
-      root,
-      git: (args) =>
-        execFileSync("git", [...args], {
-          cwd: root,
-          encoding: "utf8",
-          stdio: ["ignore", "pipe", "pipe"],
-        }).trim(),
-      gh: (args) => execFileSync("gh", [...args], { stdio: "inherit" }),
-      log,
-    });
-} catch (error) {
-  process.stderr.write(`runway: ${(error as Error).message}\n`);
-  process.exitCode = 1;
+/** The version of the @stackra/runway package this binary ships in (`dist/` or `src/node/`). */
+function runwayVersion(): string {
+  for (let folder = dirname(fileURLToPath(import.meta.url)); ; folder = dirname(folder)) {
+    const file = join(folder, "package.json");
+    if (existsSync(file)) {
+      const { name, version } = JSON.parse(readFileSync(file, "utf8")) as {
+        name?: unknown;
+        version?: unknown;
+      };
+      if (name === "@stackra/runway" && typeof version === "string") return version;
+    }
+    if (dirname(folder) === folder) return "0.0.0";
+  }
 }
+
+// ADR 0529 decision 4 (STA-2214): Runway folds into `stackra runway`; this binary is an alias for one minor release.
+process.stderr.write(
+  "runway: deprecated, use `stackra runway <command>`; this alias goes in the next minor release (ADR 0529)\n",
+);
+
+process.exitCode = await createConsole({
+  name: "runway",
+  version: runwayVersion(),
+  commands: RUNWAY_COMMANDS,
+  requireCommand: true,
+}).run(process.argv.slice(2), nodePorts());

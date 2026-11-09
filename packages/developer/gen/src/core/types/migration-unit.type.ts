@@ -23,6 +23,9 @@ export interface MigrationUnit {
   /** The migration ids, of any member, it declared it needs first (`Migration({ after })`). */
   readonly after: readonly string[];
 
+  /** The module keys whose migrations must all run first: module dependencies and the owners of the macros it calls. */
+  readonly needs?: readonly string[];
+
   /** The compiled steps in apply order. */
   readonly steps: readonly {
     readonly sql: readonly string[];

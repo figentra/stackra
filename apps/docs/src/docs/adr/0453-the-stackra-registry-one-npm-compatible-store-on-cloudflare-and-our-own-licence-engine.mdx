@@ -1,9 +1,14 @@
 ---
 title: "0453 — The Stackra registry: one npm-compatible store on Cloudflare for packages, skills, agents, MCP servers and plugins, with our own licence engine"
-description: "Accepted, amended by 0461, 0514, 0522 · 2026-10-27"
+description: "Accepted, amended by 0461, 0514, 0522, 0527 · 2026-10-27"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0453, the Stackra registry: its host, the workers/registry member, the R2, D1 and KV split, the npm protocol surface, CI-only publish through GitHub OIDC, integrity and registry signatures, the read rules of the @stackra and @stackra-pro scopes, the `stackra.kind` values and the catalogue API, the licence model and the OS billing hook, the optional npmjs mirror and the retirement of npm.figentra.com. Boundary: decision text only; the Worker is built by stackra-182, the licence engine by stackra-183, the CLI kinds by stackra-184, the release and template switch by stackra-185. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0024, 0077, 0173, 0177, 0178, 0284, 0316, 0349; STA-1333. Amendment note from ADR 0461 added by stackra-90 (2026-10-28). */}
+
+<Note>
+  Amended 2026-11-06 by [0527](/adr/0527-operated-workers-and-namespaces-as-data) (repo standards):
+  scopes are rows in D1, and the registry Worker lives in figentra/figentra.
+</Note>
 
 <Note>
   Decision 11 amended 2026-11-02 (STA-1920) by [0514](/adr/0514-self-hosted-docs-replace-mintlify)
@@ -329,12 +334,12 @@ Figentra Flow is MIT, so it cannot publish to `@figentra`, which is `internal` w
 added an open scope for Figentra's open products (migration `0005_figentra_oss.sql`); this amendment is the ADR decision
 10 asks for before another scope is added. The scope rows are now:
 
-| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                                                                                                                                              |
-| --------------- | ---------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                                                                                                                                                |
-| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                                                                                                                                            |
-| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`), `figentra/os` (`release`), `figentra/pay` (`release`), `figentra/invoicing` (`release`), `figentra/billing` (`release`) |
-| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                                                                                                                                                   |
+| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                                                                                                                                                                               |
+| --------------- | ---------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                                                                                                                                                                                 |
+| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                                                                                                                                                                             |
+| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`), `figentra/os` (`release`), `figentra/pay` (`release`), `figentra/invoicing` (`release`), `figentra/billing` (`release`), `figentra/figentra` (`release`) |
+| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                                                                                                                                                                                    |
 
 Every publisher uses `.github/workflows/release.yml` on `refs/heads/main` and is matched on its numeric repository and
 owner ids (decision 6).
@@ -379,6 +384,22 @@ On 2026-11-03 the owner decided that figentra/testbed (`release`) joins the trus
 `@figentra/testbed`, the testbed's package and CLI ([0522](/adr/0522-testbed-own-repo) decision 2). The publisher row
 is added by migration `0010_figentra_testbed.sql`, with the repository's numeric id and owner id, as
 `0009_figentra_billing.sql` did. STA-2073.
+
+On 2026-11-06 figentra/figentra became a trusted publisher of `@figentra` too (migration
+`0011_figentra_figentra.sql`; 0007 was never applied), so its release workflow publishes `@figentra/cli`
+([0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decisions 1 to 3). Linear STA-1861.
+
+On 2026-11-07 figentra/notify (`release`) joined them (migration `0012_figentra_notify.sql`), so its release
+workflow publishes `@figentra/notify-service-{notifications,messaging,realtime-presence}-contract`, the contracts of
+the three services that moved from figentra/os to Figentra Notify. Linear STA-2176.
+
+On 2026-11-07 figentra/geo (`release`) joined them (migration `0013_figentra_geo.sql`), so its release workflow
+publishes `@figentra/geo-service-{places,routing}-contract`, the contracts of the two services that moved from
+figentra/os to Figentra Geo. Linear STA-2168.
+
+On 2026-11-07 figentra/ship (`release`) joined them (migration `0014_figentra_ship.sql`), so its release workflow
+publishes `@figentra/ship-service-shipping-contract`, the contract of the logistics service that moved from figentra/os
+to Figentra Ship. Linear STA-2183.
 
 ## Supersedes and sources
 

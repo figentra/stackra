@@ -4,8 +4,9 @@
  *          `node:util.parseArgs` (strict, negatable flags, repeated list options, `--`), with numbers converted and
  *          bounds, missing arguments and surplus tokens reported as a `UsageError`.
  * Boundary: pure apart from `parseArgs`; never constructs a command. With no structure only global options are
- *           accepted. A missing argument is not an error when `--help` is given.
- * Runtime: isomorphic (`node:util` is in every runtime Stackra targets for a CLI)
+ *           accepted. A missing argument is not an error when `--help` is given. Isomorphic because `node:util` is in
+ *           every runtime Stackra targets for a CLI.
+ * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-009, FR-010 and FR-015; spec 030 Requirement 3.
  */
 import { parseArgs } from "node:util";

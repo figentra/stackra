@@ -115,6 +115,7 @@ describe("parseCloudflareStack", () => {
       script: "figentra-edge",
       namespaces: { edge: {} },
       routes: {},
+      exclusions: {},
       origins: {},
       signingKeys: ["k1"],
     });

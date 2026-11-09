@@ -8,9 +8,9 @@
  *          of noncurrent versions from `shared.buckets`). Every resource is tagged with the environment, the member
  *          and the topology group that runs it. Then the runway's own `resources` (Postgres, and queues, topics, caches
  *          and buckets by name) and `workloads`, sized per environment from the catalogues, with the consumers each
- *          resource admits and, per Postgres server, the approved extensions its member consumers name and those it
- *          preloads (ADR 0160 note of 2026-11-03); the monthly estimate is checked against the environment's cap
- *          (ADR 0493).
+ *          resource admits (a workload's `aliases` may name only a variable of a Postgres resource it uses) and, per
+ *          Postgres server, the approved extensions its member consumers name and those it preloads (ADR 0160 note of
+ *          2026-11-03); the monthly estimate is checked against the environment's cap (ADR 0493).
  * Boundary: pure; parsed runways in, plain data out. Reading the files is `readRuntimePlan`'s and declaring the
  *           resources `awsRuntime`'s (`./node`). `requires` matters here for `valkey` only: a member's queues and
  *           buckets are its own already, and a dedicated `postgres` server is the database stack's, not this one's.
@@ -39,6 +39,7 @@ import { PRELOADED_EXTENSIONS } from "#core/constants/preloaded-extensions.const
 import { WORKLOAD_SIZES } from "#core/constants/workload-sizes.constant";
 import { cacheNodeType } from "#core/functions/cache-node-type.function";
 import { resourceName } from "#core/functions/resource-name.function";
+import { resourceVariables } from "#core/functions/resource-variables.function";
 import type { BucketPlan } from "#core/types/bucket-plan.type";
 import type { CachePlan } from "#core/types/cache-plan.type";
 import type { DatabasePlan } from "#core/types/database-plan.type";
@@ -280,6 +281,20 @@ export function runtimePlan(
 
   const workloads: WorkloadPlan[] = Object.entries(root.workloads ?? {}).map(([name, workload]) => {
     const sized = WORKLOAD_SIZES[sizeOf(workload.size)];
+    // An alias reads a variable only a used Postgres resource publishes (ADR 0493 decision 4).
+    const published = new Set(
+      (workload.uses ?? [])
+        .filter((used) => resources[used]?.kind === ResourceKind.Postgres)
+        .flatMap((used) => Object.values(resourceVariables(used))),
+    );
+    for (const [alias, variable] of Object.entries(workload.aliases ?? {}))
+      if (!published.has(variable))
+        throw new RunwayInvalidError("runway.yaml", [
+          {
+            path: `workloads.${name}.aliases.${alias}`,
+            message: `${variable} is not a variable of a Postgres resource this workload uses`,
+          },
+        ]);
     return {
       key: `workloads.${name}`,
       workload: name,
@@ -287,10 +302,12 @@ export function runtimePlan(
       image: workload.image,
       port: workload.port,
       health: workload.health,
+      command: workload.command ?? [],
       public: workload.expose === "public",
       env: workload.env ?? {},
       secrets: workload.secrets ?? [],
       uses: workload.uses ?? [],
+      aliases: workload.aliases ?? {},
       cpu: sized.cpu,
       memoryMb: sized.memoryMb,
       scale: workload.scale?.[environment] ?? { min: 1, max: 1 },

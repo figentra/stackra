@@ -98,7 +98,7 @@ The drivers of `@stackra/query`'s offline ports send through the bound `ClientTr
 - `ClientReplicaSourceDriver` sends a replica query with the device's slice and the change cursor as its input
   (`{ legalEntityId, cursor }`, no cursor on the first fill) and checks the answer's wire form: `{ rows, removed,
 cursor, asOf, full }`.
-- `ClientAcknowledgementReaderDriver` asks `GET /devices/acknowledged` (`devices.device.acknowledged@1`) with the
+- `ClientAcknowledgementReaderDriver` asks `GET /app/devices/acknowledged` (`devices.device.acknowledged@1`) with the
   device header and reads `{ sequence }`, the device's last acknowledged sequence; an answer counts as a sync.
 
 ## Calls from a service
@@ -135,6 +135,9 @@ const answer = await this.dynamic.call(
 - **Base URL.** The `http` driver sends every call to its producer's base URL: `ClientsOptions.producers` maps a
   module key (`orders` of `orders.order.import_rows@1`) to a URL, and a module not listed goes to `baseUrl`
   (`producerBaseUrl`). A host behind one gateway sets nothing.
+- **Audience.** In a service, the `ClientSession` gets each call before it is sent: `ServiceClientSessionDriver` of
+  `@stackra/app/server` sends the service's own token for `ClientsOptions.audiences[<module>]`, the producer's project.
+  A module with no audience is a configuration error, never an unauthenticated call.
 - **Scope.** `CallOptions.scope` (a scope path, `platform.acme`) travels in `ClientsOptions.scopeHeader`
   (`X-Scope-Path`, what `@stackra/scope` reads) and replaces the session's scope header for that call. The producer
   accepts it only inside the caller's grants. Without it the session's scope applies, so a job with no session passes

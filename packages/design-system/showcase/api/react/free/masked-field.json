@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "efbfd62c90f7b55f",
+    "hash": "e5177f69fd04e5d0",
     "propsFiles": ["ui/src/react/masked-field/masked-field.props.ts"]
   },
   "importLine": "import { MaskedField } from \"@stackra/ui/react\";",
@@ -69,13 +69,6 @@
           "type": "string"
         },
         {
-          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
-          "name": "name",
-          "required": false,
-          "source": "stackra",
-          "type": "string"
-        },
-        {
           "description": "Hint text drawn inside the empty input. It never replaces the label: it is gone once the user types.",
           "name": "placeholder",
           "required": false,
@@ -116,6 +109,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",

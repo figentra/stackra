@@ -33,4 +33,12 @@ describe("providerCodeOf", () => {
     expect(providerCodeOf("plain text")).toBeUndefined();
     expect(providerCodeOf(undefined)).toBeUndefined();
   });
+
+  it("takes only a code-like value of at most 64 characters", () => {
+    expect(providerCodeOf({ code: "a".repeat(64) })).toBe("a".repeat(64));
+    expect(providerCodeOf({ code: "a".repeat(65) })).toBeUndefined();
+    expect(providerCodeOf({ code: "urn:provider:denied" })).toBeUndefined();
+    expect(providerCodeOf({ code: "key/with/slashes" })).toBeUndefined();
+    expect(providerCodeOf({ code: "rate.limit-hit_2" })).toBe("rate.limit-hit_2");
+  });
 });

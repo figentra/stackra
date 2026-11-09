@@ -3,11 +3,14 @@
  * Purpose: `generateMember`, gen-core's whole output for one member as a pure function of what discovery read: the
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
- *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
+ *          registrations, a service's boot and inbound webhook route, the cross-app inbox (`#stackra/inbox` and its
+ *          Encore `api.raw` adapter, for a listener of a contract-only producer's event) and relay configuration
+ *          (`#stackra/events-relay`, for a runway `events` block; STA-1910), a service's Encore service declaration and its `api()` endpoints per action and query (STA-2063), its Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
  *          (CORS preflights and headers, STA-1385), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
- *          (the setting keys of its settings classes, stackra-209), `#stackra/reports` (one query per report,
+ *          (the setting keys of its settings classes, stackra-209), `#stackra/ui` (the class components' `Component`
+ *          base, STA-2069), `#stackra/reports` (one query per report,
  *          ADR 0470), `#stackra/commands` and `.stackra/entry/console.ts` (the console commands, ADR 0506, STA-1731),
  *          `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
  *          kinds of generated query are declared beside the authored ones, so each gets its manifest entry, endpoint,
@@ -22,16 +25,20 @@
  *           a `@stackra/*` package (a schema file also zod) the member does not declare is refused (`client_dependency_missing`,
  *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296), and so is a lang namespace clash
  *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
- *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
+ *           convention (`checkConventions`, STA-1306), a route or surface option that breaks the endpoint convention or
+ *           ADR 0305 rule 30 (`checkEndpoints`, STA-340), a semantic `@Searchable` over an `ai: never` field
  *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
  *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
- *           `model_tenancy_missing`, stackra-258) or a site-cached query that reads its caller
+ *           `model_tenancy_missing`, stackra-258; a package's warns until 0.20) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
- *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
+ *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
- *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) on the full pass only. An app that hosts the panel
+ *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) or an adapter that reaches a workflow directly
+ *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) on the full pass only. A warning
+ *           (`severity: "warning"`, such as `action_without_workflow`) never blocks: the full pass returns it in
+ *           `warnings` beside the files (STA-340). An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
  *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
@@ -48,6 +55,7 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkConventions } from "#core/functions/check-conventions.function";
+import { checkEndpoints } from "#core/functions/check-endpoints.function";
 import { checkBlindIndexes } from "#core/functions/check-blind-indexes.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
@@ -55,8 +63,11 @@ import { checkApproval } from "#core/functions/check-approval.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
+import { checkShownOnce } from "#core/functions/check-shown-once.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
+import { checkActionFirst } from "#core/functions/check-action-first.function";
+import { unboundPorts } from "#core/functions/unbound-ports.function";
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
 import { checkTableIndexes } from "#core/functions/check-table-indexes.function";
 import { checkSurfaces } from "#core/functions/check-surfaces.function";
@@ -69,14 +80,20 @@ import { emitEncoreSqldbTypes } from "#core/functions/emit-encore-sqldb-types.fu
 import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitClientTools } from "#core/functions/emit-client-tools.function";
+import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
+import { emitEncoreInbox } from "#core/functions/emit-encore-inbox.function";
+import { emitEventsRelay } from "#core/functions/emit-events-relay.function";
+import { emitInbox } from "#core/functions/emit-inbox.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
+import { emitEncoreService } from "#core/functions/emit-encore-service.function";
 import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
+import { STAGED_REFUSAL_CODES } from "#core/constants/staged-refusal-codes.constant";
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { emitI18n } from "#core/functions/emit-i18n.function";
@@ -89,6 +106,7 @@ import { emitReports } from "#core/functions/emit-reports.function";
 import { emitSearchQueries } from "#core/functions/emit-search-queries.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
 import { emitResources } from "#core/functions/emit-resources.function";
+import { emitPackageRoutes } from "#core/functions/emit-package-routes.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
@@ -96,6 +114,7 @@ import { emitExpoConfig } from "#core/functions/emit-expo-config.function";
 import { emitSdks } from "#core/functions/emit-sdks.function";
 import { emitSettings } from "#core/functions/emit-settings.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
+import { emitUiFacade } from "#core/functions/emit-ui-facade.function";
 import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
 import { usesContainer } from "#core/functions/uses-container.function";
@@ -104,6 +123,7 @@ import { openApiOf } from "#core/functions/open-api-of.function";
 import { reportQueriesOf } from "#core/functions/report-queries-of.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { searchQueriesOf } from "#core/functions/search-queries-of.function";
+import { transitiveRefusals } from "#core/functions/transitive-refusals.function";
 import { undeclaredPackages } from "#core/functions/undeclared-packages.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -127,10 +147,11 @@ const json = formatJson;
 export function generateMember(
   authored: MemberIR,
   previous?: StackraManifest,
-  options: { readonly pass?: "manifests" | "clients" } = {},
+  options: { readonly pass?: "manifests" | "clients"; readonly strict?: boolean } = {},
 ): {
   readonly files: readonly GeneratedFile[];
   readonly errors: readonly GenError[];
+  readonly warnings?: readonly GenError[];
   readonly manifest: StackraManifest;
 } {
   // The generated report and search queries are queries like any authored one (STA-1459).
@@ -176,6 +197,7 @@ export function generateMember(
     ...clients.errors,
     ...checkI18n(ir),
     ...checkConventions(ir, manifest),
+    ...checkEndpoints(ir, manifest),
     ...checkSemanticSearch(ir),
     ...checkSearchableDrift(ir),
     ...checkEncryptedFields(ir),
@@ -183,9 +205,15 @@ export function generateMember(
     ...checkModelScope(ir),
     ...checkApproval(ir),
     ...checkQueryCache(ir),
+    ...checkShownOnce(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
-    ...checkTableIndexes(ir, previous),
+    // This run's recorded trees, so an unindexed path is refused in the run that adds it (ADR 0307 rule 2).
+    ...checkTableIndexes(ir, manifest),
+    // ADR 0101: an action crossing a boundary without a workflow warns; an adapter reaching a workflow refuses.
+    ...checkActionFirst(ir),
+    // A port a constructor takes that no driver binds would fail every container-built test at boot.
+    ...unboundPorts(ir),
     // One panel resource key recorded by two classes across the host's dependencies (STA-1947).
     ...(ir.layout === "app" ? hostResourcesOf(ir).errors : []),
     // One route or menu key two owners ship, or the app's own too (STA-1947).
@@ -197,7 +225,14 @@ export function generateMember(
   // An app's client tools, from its routes, resources, placements, theming, tours and anchors (ADR 0490).
   const clientTools = emitClientTools(ir);
   all.push(...clientTools.errors);
-  if (all.length > 0) return { files: [], errors: all, manifest };
+  // The staged checks warn until gen runs strict (0.19 warns, 0.20 refuses; STAGED_REFUSAL_CODES).
+  if (options.strict !== true)
+    for (const [index, error] of all.entries())
+      if (STAGED_REFUSAL_CODES.has(error.code)) all[index] = { ...error, severity: "warning" };
+  // A warning prints and never stops writing (STA-340); only the refusals below block.
+  const warnings = all.filter((error) => error.severity === "warning");
+  const refusals = all.filter((error) => error.severity !== "warning");
+  if (refusals.length > 0) return { files: [], errors: refusals, warnings, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];
   if (
@@ -212,7 +247,7 @@ export function generateMember(
   }));
   // A schemas file also imports zod, which a member with schemas to compile declares (most enum-only ones have none).
   const missing = undeclaredPackages(ir, schemas, "schema_dependency_missing", ["zod"]);
-  if (missing.length > 0) return { files: [], errors: missing, manifest };
+  if (missing.length > 0) return { files: [], errors: missing, warnings, manifest };
   files.push(...schemas);
   const entityFiles: GeneratedFile[] = [];
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
@@ -236,6 +271,7 @@ export function generateMember(
           fix: "keep a package's models in its one module (the package folder's key)",
         },
       ],
+      warnings,
       manifest,
     };
   files.push(...entityFiles);
@@ -252,11 +288,16 @@ export function generateMember(
     // Boot imports the generated Encore database file; its types stand in for encore.dev here (STA-1795).
     [".stackra/gen/encore-sqldb.d.ts", emitEncoreSqldbTypes(ir)],
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
+    // The cross-app relay (STA-1910): a consumer's inbox route and key table, a producer's relay configuration.
+    [".stackra/gen/inbox.ts", emitInbox(ir)],
+    [".stackra/gen/events-relay.ts", emitEventsRelay(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/client-tools.ts", clientTools.content],
     [".stackra/gen/queues.ts", emitQueues(ir, manifest)],
     [".stackra/gen/settings.ts", emitSettings(ir)],
+    // The class components' `Component` base, for a member that declares `@stackra/ui` (STA-2069).
+    [".stackra/gen/ui.ts", emitUiFacade(ir)],
     [".stackra/gen/commands.ts", emitCommands(ir, manifest)],
     [".stackra/gen/reports.ts", emitReports(authored)],
     [".stackra/gen/search.ts", emitSearchQueries(authored)],
@@ -264,14 +305,23 @@ export function generateMember(
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [
+    emitEncoreService(ir),
+    emitEncoreApi(ir, manifest),
     emitEncoreCronJobs(ir, manifest),
     emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),
     emitEncoreHttp(ir),
+    emitEncoreInbox(ir),
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
-  files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
+  files.push(
+    ...clients.files,
+    ...emitRoutes(ir),
+    ...emitPackageRoutes(ir),
+    ...emitBlocks(ir),
+    ...expo.files,
+  );
   // The composed panel resources' route constants, for an app that hosts the panel (STA-1947).
   const resources = emitResources(ir);
   if (resources !== undefined) files.push(resources);
@@ -299,7 +349,8 @@ export function generateMember(
     );
   }
   // Every other generated file is held to the same rule: the wiring's driver entries (`@stackra/content/node`), the
-  // test setup's testing subpaths, the tool configs (STA-1296).
+  // test setup's testing subpaths, the tool configs (STA-1296), and the Encore files' `encore.dev`, which Encore Cloud
+  // installs from the service's own package.json (STA-2194).
   const elsewhere = undeclaredPackages(
     ir,
     files.filter(
@@ -308,9 +359,21 @@ export function generateMember(
         !file.path.startsWith(".stackra/gen/schemas/"),
     ),
     "generated_dependency_missing",
+    ["encore.dev"],
   );
-  if (elsewhere.length > 0) return { files: [], errors: elsewhere, manifest };
+  if (elsewhere.length > 0) {
+    // The packages those undeclared ones bring in the same way, so the member adds them all in one go.
+    const seeds = elsewhere
+      .map((error) => error.subject)
+      .filter((name) => name.startsWith("@stackra/"));
+    return {
+      files: [],
+      errors: [...elsewhere, ...transitiveRefusals(ir, seeds, "generated_dependency_missing")],
+      warnings,
+      manifest,
+    };
+  }
   // The member's part of the system graph, read by the repo step (ADR 0452).
   files.push({ path: ".stackra/graph.json", content: json(memberGraphOf(ir, manifest)) });
-  return { files, errors: [], manifest };
+  return { files, errors: [], warnings, manifest };
 }

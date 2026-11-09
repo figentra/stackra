@@ -7,8 +7,10 @@
  *          `TransportError`.
  * Boundary: internal to the HTTP transport driver and the public clients; not exported from an entry. A queued call
  *           sends `Prefer: respond-async` (RFC 7240) and reads no answer body. A query-string value that is not text,
- *           a number or a boolean is sent as JSON. A call that acts on behalf of a principal is service-to-service
- *           and never goes through this function. A caller's abort rejects with the platform's abort error.
+ *           a number or a boolean is sent as JSON. A request naming a bare principal in `onBehalfOf` is refused: a
+ *           service call proves its user with the user's own token, which the service's session puts in the headers
+ *           with the service token (ADR 0209, amendment of 2026-11-07), never with an id. A caller's abort rejects
+ *           with the platform's abort error.
  * Runtime: isomorphic
  * Governing contract: ADR 0140 (envelope); ADR 0142 (transport through drivers); ADR 0138 (Idempotency-Key); ADR 0338
  *                     (decision 1: device order); ADR 0260 (2026-10-26 note: scope of a dynamic key); the HTTP

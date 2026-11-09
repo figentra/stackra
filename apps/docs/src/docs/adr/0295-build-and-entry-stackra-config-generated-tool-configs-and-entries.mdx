@@ -1,7 +1,22 @@
 ---
 title: "0295 — Build and entry: stackra.config.ts, generated tool configs and entries"
-description: "Accepted, amended by 0305, 0326, 0345 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428) · amended 2026-11-01 (STA-1874)"
+description: "Accepted, amended by 0305, 0326, 0345 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428) · amended 2026-11-01 (STA-1874) and 2026-11-03 (STA-2081)"
 ---
+
+<Note>
+  Amended 2026-11-03 (STA-2081). Decision 5 gains one exception: the dev-server lists that editors
+  and agents read at a fixed path are committed generated files at the repository root, not files in
+  `.stackra/`. They are Claude Code's `.claude/launch.json` and the `dev: <name>` tasks of
+  `.vscode/tasks.json`. `stackra gen` at the workspace root writes both from the runways: one entry
+  per web surface of the root runway (`stackra preview serve`, until `stackra dev --surface` runs
+  without an OS checkout) and one per app or Worker member whose runway declares a dev port, each
+  building first so it starts on a clean checkout. They are committed because a Claude session opens
+  in a fresh worktree, where gen has not run, and a gitignored list would show no server there.
+  `stackra validate --repository` refuses a file that differs from what gen writes (parsed JSON),
+  and `stackra gen --check` fails on a stale one. Rejected: a gitignored file (empty in every new
+  worktree); a hand-written file (it drifted from Runway: `worker-static` started before its build
+  and the root runway's surfaces were missing). The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-11-01 (STA-1874), with the amendment of the same date on
@@ -191,6 +206,7 @@ Nothing generates these files yet: `packages/developer` holds only a README. Two
 
 Planned, all tracked in STA-339:
 
+- `stackra gen` at the workspace root writes `.claude/launch.json` and the `dev: …` tasks of `.vscode/tasks.json` from the runways; `stackra validate --repository` (`launchConfigFindings`) refuses drift and a port two servers share (STA-2081, amendment of 2026-11-03).
 - planned — STA-339: gen writes the tool files, the runtime entries and the root shims, and `stackra gen --check` runs in `pnpm verify`.
 - planned — STA-339: the `tool-configs` validator check. A tracked tool config inside a member fails; a `*.extend.ts` outside the closed set, or without a `Reason:` header, fails; a hatch that touches an owned key fails at gen.
 - planned — STA-339: the `member-root` validator check. A missing `stackra.config.ts` or root module fails, and so do an authored `src/main.ts` and an authored package barrel. The docs app and the `tier:config` presets are exempt ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12).

@@ -15,6 +15,7 @@
  */
 import { Duration } from "@stackra/contracts";
 
+import { settingsKeyOf } from "#core/functions/settings-key-of.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -25,7 +26,11 @@ const ALLOWED_ACTORS: ReadonlySet<string> = new Set(["user", "agent", "external_
 /** The longest approval window: 30 days (ADR 0509, L-03). */
 const MAX_WINDOW_MS = Duration.toMilliseconds(Duration.days(30));
 
-/** The setting keys marked `approval`, as `<module>.<section.>name`. */
+/** Whether a `@Setting` `approval` option asks for one: `true` (four-eyes) or `{ by: role }` (role-gated). */
+const needsApproval = (approval: unknown): boolean =>
+  approval === true || (typeof approval === "object" && approval !== null);
+
+/** The setting keys marked `approval`, as `<group>.<section.>name`. */
 function approvalKeys(ir: MemberIR): ReadonlySet<string> {
   const keys = new Set<string>();
   const marked = (owner: { name: string; module: string }, member: string): boolean =>
@@ -38,19 +43,19 @@ function approvalKeys(ir: MemberIR): ReadonlySet<string> {
           facet.member === member &&
           typeof facet.options === "object" &&
           facet.options !== null &&
-          (facet.options as Record<string, unknown>)["approval"] === true,
+          needsApproval((facet.options as Record<string, unknown>)["approval"]),
       ) === true;
   for (const shape of ir.shapes.filter((candidate) => candidate.kind === "settings"))
     for (const field of shape.fields) {
       if (field.type.kind !== "schema") {
-        if (marked(shape, field.name)) keys.add(`${shape.module}.${field.name}`);
+        if (marked(shape, field.name)) keys.add(`${settingsKeyOf(shape)}.${field.name}`);
         continue;
       }
       const { name, module } = field.type;
       const section = ir.shapes.find((c) => c.name === name && c.module === module);
       for (const inner of section?.fields ?? [])
         if (marked(shape, field.name) || marked({ name, module }, inner.name))
-          keys.add(`${shape.module}.${field.name}.${inner.name}`);
+          keys.add(`${settingsKeyOf(shape)}.${field.name}.${inner.name}`);
     }
   return keys;
 }

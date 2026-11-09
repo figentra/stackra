@@ -1753,6 +1753,201 @@
         "title": "Members page",
         "description": "The members settings page: roles, removals, invitations.",
         "keywords": "members, team, invite, invitation, role, settings"
+      },
+      "module_menu": {
+        "title": "Module menu",
+        "description": "Every module's declared navigation menu, as the sidebar on the web and a list in the app.",
+        "keywords": "menu, navigation, sidebar, modules, places, nav"
+      },
+      "resource_list_page": {
+        "title": "Resource list page",
+        "description": "Any resource's records as a searchable, sortable list with paging, row actions and pull to refresh.",
+        "keywords": "resource, list, table, records, crud, admin, panel"
+      },
+      "resource_view_page": {
+        "title": "Resource view page",
+        "description": "One record of any resource: its fields, its sections and its actions.",
+        "keywords": "resource, record, detail, view, crud, admin, panel"
+      },
+      "resource_form_page": {
+        "title": "Resource form page",
+        "description": "The Create and Edit form of any resource, drawn from its action's input.",
+        "keywords": "resource, form, create, edit, crud, admin, panel"
+      },
+      "action_input_modal": {
+        "title": "Action input modal",
+        "description": "The form an action opens when it needs more than the record it runs on.",
+        "keywords": "action, modal, dialog, input, confirm, panel"
+      },
+      "action_button": {
+        "title": "Action button",
+        "description": "A button that runs a server action, drawn from its spec.",
+        "keywords": "action, button, run, confirm, shortcut, server-driven"
+      },
+      "row_actions": {
+        "title": "Row actions",
+        "description": "A row's actions in one menu, grouped and with hover buttons.",
+        "keywords": "row, actions, menu, overflow, table, server-driven"
+      },
+      "bulk_actions": {
+        "title": "Bulk actions",
+        "description": "The bar of actions over a selection of records.",
+        "keywords": "bulk, selection, actions, toolbar, export, server-driven"
+      },
+      "autocomplete": {
+        "title": "Autocomplete",
+        "description": "A select whose list opens with a search box that narrows it.",
+        "keywords": "autocomplete, select, search, filter, picker"
+      },
+      "color_field": {
+        "title": "Colour field",
+        "description": "A field that takes a colour as a typed hex code, with a swatch of it.",
+        "keywords": "colour, color, hex, field, input"
+      },
+      "color_swatch": {
+        "title": "Colour swatch",
+        "description": "A small preview of one colour, named for screen readers.",
+        "keywords": "colour, color, swatch, preview, chip"
+      },
+      "flag": {
+        "title": "Flag",
+        "description": "A country's flag, from its ISO code.",
+        "keywords": "flag, country, region, locale, emoji"
+      },
+      "marker_map": {
+        "title": "Marker map",
+        "description": "Places pinned on a map, with their list beside it.",
+        "keywords": "map, marker, pin, location, places"
+      },
+      "dither_art": {
+        "title": "Dither art",
+        "description": "A brand pattern drawn as steel dots on the ground, with a champagne core where the engine is.",
+        "keywords": "dither, brand pattern, generative art, strata, hero art"
+      },
+      "frame": {
+        "title": "Frame",
+        "description": "A window, schematic, phone or plain frame around a screenshot or a live widget.",
+        "keywords": "frame, window, phone, mockup, screenshot"
+      },
+      "bento_card": {
+        "title": "Bento card",
+        "description": "One card of a marketing bento grid: a title, a line or two, pill links and a live widget.",
+        "keywords": "bento, feature card, marketing card, product card"
+      },
+      "package_list": {
+        "title": "Package list",
+        "description": "A list of packages with their names in mono, fading out after a few rows.",
+        "keywords": "packages, npm, dependencies, libraries"
+      },
+      "terminal_demo": {
+        "title": "Terminal demo",
+        "description": "A terminal that plays a recorded CLI session one whole line at a time.",
+        "keywords": "terminal, cli, shell, command line, try it"
+      },
+      "props_playground": {
+        "title": "Props playground",
+        "description": "A live component over a panel of its props, with a theme and a direction switch.",
+        "keywords": "playground, props, controls, live preview, theme, rtl"
+      },
+      "blueprint_section": {
+        "title": "Blueprint section",
+        "description": "One ruled band of a blueprint page, with + marks at its top corners.",
+        "keywords": "blueprint, section, band, rule, crosshair, landing"
+      },
+      "schematic": {
+        "title": "Schematic",
+        "description": "Named parts joined by measured pipes, so one thing visibly turns into many.",
+        "keywords": "schematic, pipeline, pipes, connectors, diagram, flow"
+      },
+      "section_dock": {
+        "title": "Section dock",
+        "description": "A sticky bar of section links that follows the page and says what each section is doing.",
+        "keywords": "dock, scroll spy, section links, status line, in-page navigation"
+      },
+      "button_link": {
+        "title": "Button link",
+        "description": "A link drawn as a button: the Button's variants, the core pill included, on a real anchor that navigates.",
+        "keywords": "button link, link, call to action, cta, href, pill, core"
+      },
+      "site_header": {
+        "title": "Site header",
+        "description": "A marketing site's top bar: the brand, section links, a docs search and the code host link.",
+        "keywords": "site header, top bar, navigation, docs search, marketing, landing"
+      },
+      "hero_machine": {
+        "title": "Hero machine",
+        "description": "The landing's hero: the headline and its actions, the machine, and the engine on a dither horizon.",
+        "keywords": "hero, headline, call to action, engine, horizon, blueprint, landing"
+      },
+      "cta_row": {
+        "title": "Call-to-action row",
+        "description": "The one primary link as a champagne pill, a copy link and a command chip.",
+        "keywords": "call to action, cta, copy, command, primary button, landing"
+      },
+      "statement": {
+        "title": "Statement",
+        "description": "One large paragraph with its keywords in steel, and short facts under it.",
+        "keywords": "statement, paragraph, keywords, facts, manifesto, landing"
+      },
+      "chapter_title": {
+        "title": "Chapter title",
+        "description": "A chapter's large heading in the core tone, with a muted subtitle.",
+        "keywords": "chapter, heading, title, subtitle, section title, landing"
+      },
+      "station": {
+        "title": "Station",
+        "description": "One station on the landing's pipe: a rail, a title and its line, and the window it shows.",
+        "keywords": "station, pipeline, rail, blueprint, section, landing"
+      },
+      "step_switcher": {
+        "title": "Step switcher",
+        "description": "Steps joined by arrows, each showing its title, a line and its code in a schematic frame.",
+        "keywords": "steps, tabs, code, switcher, walkthrough, landing"
+      },
+      "bento_grid": {
+        "title": "Bento grid",
+        "description": "One or two columns of cards that stack on a narrow screen.",
+        "keywords": "bento, grid, cards, columns, features, landing"
+      },
+      "terminal_stage": {
+        "title": "Terminal stage",
+        "description": "A recorded terminal session on a dithered horizon, ending on the monitor drawing.",
+        "keywords": "terminal, cli, try it, recording, horizon, landing"
+      },
+      "mono_display": {
+        "title": "Mono display",
+        "description": "A closing wordmark in large mono and champagne, with rising floors or a glyph field.",
+        "keywords": "wordmark, mono, display, closing, floors, glyphs, landing"
+      },
+      "ask_ai": {
+        "title": "Ask AI",
+        "description": "A link drawn as a search field that opens the docs, quiet until the assistant is live.",
+        "keywords": "ask ai, docs search, assistant, search field, coming soon, landing"
+      },
+      "product_cards": {
+        "title": "Product cards",
+        "description": "The products built on Stackra, each a card in its own theme, in a strip or a grid.",
+        "keywords": "products, cards, showcase, marquee, themes, built on, landing"
+      },
+      "site_footer": {
+        "title": "Site footer",
+        "description": "A marketing site's footer: link columns, the legal line and a locale switcher.",
+        "keywords": "footer, site footer, links, legal, locale, landing"
+      },
+      "illustration": {
+        "title": "Illustration",
+        "description": "A brand drawing in four tone layers, coloured by the theme in light and dark.",
+        "keywords": "illustration, drawing, art, mask, tone layers, dither, landing"
+      },
+      "surfaces": {
+        "title": "Surfaces",
+        "description": "One action's button on every surface: web, desktop and phone frames in a row that wraps.",
+        "keywords": "surfaces, web, desktop, phone, frames, right to left, landing"
+      },
+      "page_dock": {
+        "title": "Page dock",
+        "description": "The landing's section dock: a sticky bar of section links with the page's status line.",
+        "keywords": "dock, sections, scroll spy, status, navigation, landing"
       }
     }
   },
@@ -5387,6 +5582,231 @@
         }
       },
       "members_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "module_menu": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_list_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_view_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_form_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "action_input_modal": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "action_button": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "row_actions": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "bulk_actions": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "autocomplete": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "color_field": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "color_swatch": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "flag": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "marker_map": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "dither_art": {
+        "strata": {
+          "title": "Strata"
+        },
+        "core": {
+          "title": "Core"
+        },
+        "glyphs": {
+          "title": "Glyphs"
+        }
+      },
+      "frame": {
+        "window": {
+          "title": "Window"
+        },
+        "phone": {
+          "title": "Phone"
+        },
+        "schematic": {
+          "title": "Schematic"
+        }
+      },
+      "bento_card": {
+        "feature": {
+          "title": "Feature"
+        },
+        "brand": {
+          "title": "In a product's colours"
+        }
+      },
+      "package_list": {
+        "packages": {
+          "title": "Packages"
+        }
+      },
+      "terminal_demo": {
+        "create": {
+          "title": "stackra create"
+        },
+        "verify": {
+          "title": "stackra verify"
+        }
+      },
+      "props_playground": {
+        "button": {
+          "title": "Button"
+        }
+      },
+      "blueprint_section": {
+        "band": {
+          "title": "Ruled band"
+        },
+        "plain": {
+          "title": "Without marks"
+        }
+      },
+      "schematic": {
+        "split": {
+          "title": "One into three"
+        },
+        "chain": {
+          "title": "A chain"
+        }
+      },
+      "section_dock": {
+        "dock": {
+          "title": "Dock"
+        }
+      },
+      "button_link": {
+        "variants": {
+          "title": "Variants"
+        },
+        "core_pill": {
+          "title": "Core pill"
+        }
+      },
+      "site_header": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "hero_machine": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "cta_row": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "statement": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "chapter_title": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "station": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "step_switcher": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "bento_grid": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "terminal_stage": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "mono_display": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "ask_ai": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "product_cards": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "site_footer": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "illustration": {
+        "engine": {
+          "title": "The engine, named"
+        },
+        "decorative": {
+          "title": "Decoration only"
+        }
+      },
+      "surfaces": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "page_dock": {
         "basics": {
           "title": "Basics"
         }
@@ -9045,6 +9465,344 @@
           "what": "The tenancy module's members settings page, over the TenantMembers client port.",
           "when": "Under the settings of an organisation's admin area, for whoever manages access.",
           "rtl": "The tables mirror in Arabic; names keep their own direction and email addresses stay left to right."
+        },
+        "module_menu": {
+          "headline": "Each module brings its own places.",
+          "intro": "Modules declare their navigation menus once; the module menu lists them all, in order, with the current place marked on the web and entries behind a switched-off flag left out.",
+          "tags": "Navigation kit · Declared menus · Sidebar",
+          "what": "The navigation module's menu of every installed module: the sidebar on the web, a list of places in the app.",
+          "when": "As the console's side navigation, or in the app's More screen or drawer; pass items for a menu of your own.",
+          "rtl": "The sidebar sits on the start edge and mirrors in Arabic; each place keeps its own text direction."
+        },
+        "resource_list_page": {
+          "headline": "Every resource gets its list.",
+          "intro": "Reads a resource's list query and draws its records with search, filters, sort, cursor paging, the views as tabs, row and bulk actions and pull to refresh; every button runs through the action runner.",
+          "tags": "Panel kit · Resources · Lists",
+          "what": "The panel's generic List page on mobile, with the same props as the web page.",
+          "when": "For a back-office screen that lists one resource's records on a phone.",
+          "rtl": "The page mirrors in Arabic; the columns, the menus and the paging follow the reading direction."
+        },
+        "resource_view_page": {
+          "headline": "One record, laid out.",
+          "intro": "Reads a record with its resource's get query and shows its entries and sections, money in its currency and codes by their labels, with the edit, delete and placed actions in the header.",
+          "tags": "Panel kit · Resources · Records",
+          "what": "The panel's generic View page on mobile, with the same props as the web page.",
+          "when": "When a person opens one record from a list on a phone.",
+          "rtl": "Labels and values swap sides in Arabic; numbers and codes keep their own direction."
+        },
+        "resource_form_page": {
+          "headline": "Forms from the action itself.",
+          "intro": "Builds the Create or Edit form from the action's input: each field drawn by its type, checked by the same schema the server uses, saved through the action runner, and the server's errors shown on their fields.",
+          "tags": "Panel kit · Resources · Forms",
+          "what": "The panel's generic Create and Edit page on mobile, with the same props as the web page.",
+          "when": "When a person adds or changes a record on a phone.",
+          "rtl": "Fields and their labels mirror in Arabic; typed values keep their own direction."
+        },
+        "action_input_modal": {
+          "headline": "Ask only what the action needs.",
+          "intro": "Opens a form with the action's own input fields, the record filled in, and runs it once per chosen record; a refused record stays in the form with its errors.",
+          "tags": "Panel kit · Actions · Dialogs",
+          "what": "The panel's action form on mobile: the dialog itself is the confirmation.",
+          "when": "For a row, bulk or header action whose input has fields besides the record id.",
+          "rtl": "The dialog mirrors in Arabic, its buttons in reading order."
+        },
+        "action_button": {
+          "headline": "One button for one action, as the server describes it.",
+          "intro": "Runs an action through the panel's action runner with its declared or its own confirmation, or follows a link; it hides without its permission and while its record predicate is false.",
+          "tags": "Panel kit · Actions · Server-driven",
+          "what": "The panel's action button: the icons, variant, size, shortcut, disabled reason and tone of an action spec on the design system's Button.",
+          "when": "In a page header, an empty state or a card, wherever one action of a resource is offered as a button.",
+          "rtl": "Icons sit on the inline start and end sides, so they swap in Arabic; the label keeps its own direction."
+        },
+        "row_actions": {
+          "headline": "Every action of a row, one press away.",
+          "intro": "Lists a record's actions in a menu, in the sections the spec names, and can show the actions that have an icon as buttons while the row is hovered or focused.",
+          "tags": "Panel kit · Actions · Tables",
+          "what": "The panel's row menu over a row's action specs, each with its icon, description, shortcut, tone and disabled reason.",
+          "when": "At the end of a table row, a list item or a card that offers several actions on one record.",
+          "rtl": "The menu opens from the inline end and the hover buttons sit before the trigger in reading order, so both mirror in Arabic."
+        },
+        "bulk_actions": {
+          "headline": "Act on many records at once.",
+          "intro": "Shows how many records are selected and the actions that apply to all of them, run once per record or once over the whole selection, with the export when asked for.",
+          "tags": "Panel kit · Actions · Selection",
+          "what": "The panel's bulk bar over a selection's action specs, on the design system's BulkActionBar.",
+          "when": "Above a table or a list whose rows can be selected, while at least one is selected.",
+          "rtl": "The count, the actions and the clear button follow the reading order, so they run right to left in Arabic."
+        },
+        "autocomplete": {
+          "headline": "A long list, found in a few letters.",
+          "intro": "The field stays a tidy select until it opens; then a search box narrows the choices as people type.",
+          "tags": "Search · Keyboard · Clear",
+          "what": "A single-choice select with a search box in its list.",
+          "when": "Use it when the list is long enough to search but the choice should still read as a select; for typing straight into the field, use the combo box.",
+          "rtl": "The label, the value and the clear button flow from the start; the search box follows the reading direction."
+        },
+        "color_field": {
+          "headline": "A colour, typed the way designers say it.",
+          "intro": "Type or paste a hex code; the swatch beside it shows what you will save, and the arrow keys nudge it.",
+          "tags": "Hex · Swatch · Form field",
+          "what": "A text field for one colour.",
+          "when": "Use it when people know the exact colour; when they need to look for one, use the colour picker.",
+          "rtl": "The hex code stays left to right; the swatch sits at the start of the field."
+        },
+        "color_swatch": {
+          "headline": "One colour, at a glance.",
+          "intro": "A round or square chip of a colour, on a checkered ground so transparency shows, with a name people can hear.",
+          "tags": "Sizes · Shapes · Accessible name",
+          "what": "A preview of one colour.",
+          "when": "Use it beside a colour value, in a legend or in a list of themes.",
+          "rtl": "A swatch has no direction; it sits where the layout puts it."
+        },
+        "flag": {
+          "headline": "Where in the world, in one glyph.",
+          "intro": "Give a country code or a language tag with a region, and the flag shows beside a name, a phone number or a price.",
+          "tags": "ISO 3166 · Sizes · Decorative or named",
+          "what": "A country's flag drawn as its emoji.",
+          "when": "Use it next to a country or a region's language; give it a label when it stands alone.",
+          "rtl": "A flag is never mirrored."
+        },
+        "marker_map": {
+          "headline": "Every place, on the map and in the list.",
+          "intro": "Pins sit where the places are and grow with their count; choosing one on the map or in the list selects it in both.",
+          "tags": "Pins · List · Keyboard",
+          "what": "A map of pins with a selectable list of them.",
+          "when": "Use it to show where things are, such as job sites, stores or visits, and to pick one.",
+          "rtl": "The map is never mirrored; the list panel moves to the left."
+        },
+        "dither_art": {
+          "headline": "Quiet art that still moves.",
+          "intro": "Six brand patterns dithered on a canvas, drifting slowly, still when motion is reduced, with the kit's poster underneath.",
+          "tags": "Canvas · Bayer 8×8 · Reduced motion",
+          "what": "Decorative art drawn from the brand's pattern fields.",
+          "when": "Behind a hero, a band or a feature card on a marketing page.",
+          "rtl": "The art is not mirrored; it reads the same both ways.",
+          "when_not": "For anything people need to read; it is hidden from screen readers."
+        },
+        "frame": {
+          "headline": "Put the product in a frame.",
+          "intro": "A quiet window bar, a phone or a plain border, on the frame radius, that can run past the card edge and dock a switcher.",
+          "tags": "Window · Schematic · Phone · Bleed",
+          "what": "Chrome around a screenshot or a live widget.",
+          "when": "To show a screen of the product on a marketing page.",
+          "rtl": "A bleed runs past the inline end, so it mirrors in Arabic.",
+          "when_not": "Around a form people use; frames are for showing, not doing."
+        },
+        "bento_card": {
+          "headline": "One idea per card.",
+          "intro": "A title, one or two lines, up to two pill links and a live widget at the bottom, in the kit or a product's own colours.",
+          "tags": "Span · Media · Brand",
+          "what": "A card of a marketing bento grid.",
+          "when": "To present features side by side on a marketing page.",
+          "rtl": "Text, links and media follow the reading direction.",
+          "when_not": "For product data; use Card."
+        },
+        "package_list": {
+          "headline": "Show the shape of the stack.",
+          "intro": "Package names in mono with one line each, cut after a few rows and fading out to say the list goes on.",
+          "tags": "Mono · Fade · Links",
+          "what": "A short list of packages.",
+          "when": "To show what a framework ships, in a feature card.",
+          "rtl": "Package names stay left to right inside Arabic text.",
+          "when_not": "For a full package index; use a table."
+        },
+        "terminal_demo": {
+          "headline": "Show the command, then what it does.",
+          "intro": "A recorded session from the real CLI, played line by line once it scrolls into view, with the command one click from the clipboard.",
+          "tags": "Recorded · Line by line · Copy",
+          "what": "A framed terminal that plays a recorded session.",
+          "when": "To show how a command feels on a marketing or docs page.",
+          "rtl": "Terminal text is code: it stays left to right and is never translated.",
+          "when_not": "For output people must read to act; use a code block."
+        },
+        "props_playground": {
+          "headline": "Change the props, keep the controls.",
+          "intro": "Edit a component's props live, try it in a product's colours and in Arabic, and reset in one press.",
+          "tags": "Live · Theme · Direction",
+          "what": "A live preview driven by a panel of props.",
+          "when": "In docs and on a landing page, to let people try a component.",
+          "rtl": "The direction switch turns only the preview right to left.",
+          "when_not": "Inside product screens."
+        },
+        "blueprint_section": {
+          "headline": "Rule the page like a drawing.",
+          "intro": "Each section is a band bounded by hairline rules, with + marks at its top corners, in the theme's own blueprint colours.",
+          "tags": "Rules · Marks · Dock-aware",
+          "what": "A ruled band of a blueprint page.",
+          "when": "For each section of a landing page in the blueprint direction.",
+          "rtl": "Rules and marks sit on logical sides, so the band mirrors in Arabic.",
+          "when_not": "Inside product screens; use Card or Surface."
+        },
+        "schematic": {
+          "headline": "Draw the pipeline, not a picture of it.",
+          "intro": "Lay out the parts yourself; the schematic measures them and joins them with pipes that draw in once, step by step.",
+          "tags": "Measured · Orthogonal · Floor steps",
+          "what": "A machine of named parts joined by pipes.",
+          "when": "To show one input becoming many outputs on a marketing or docs page.",
+          "rtl": "The pipes are measured, never flipped, so they follow the mirrored layout.",
+          "when_not": "For data people must read from the lines; use a chart or a tree diagram."
+        },
+        "section_dock": {
+          "headline": "Let the page narrate itself.",
+          "intro": "A dock of section links that marks the one in view and shows its status line, changing only when the section does.",
+          "tags": "Scroll spy · Status · Sticky",
+          "what": "A sticky bar of in-page links with a status line.",
+          "when": "At the bottom of a long blueprint page.",
+          "rtl": "Links and the status line follow the reading direction.",
+          "when_not": "For a docs page's contents; use TocRail."
+        },
+        "button_link": {
+          "headline": "A call to action that goes somewhere.",
+          "intro": "A real link that opens without script and through the nearest router, drawn in the Button's variants, sizes and pill shape, so a link and a button share one look.",
+          "tags": "Real link · Button looks · Router",
+          "what": "A link with the Button's look.",
+          "when": "For a call to action that navigates: read the docs, get started.",
+          "rtl": "The words follow the reading direction; the shape never mirrors.",
+          "when_not": "For an action on this page; use Button."
+        },
+        "site_header": {
+          "headline": "A top bar that stays out of the way.",
+          "intro": "The brand, the site's sections, a link drawn as a docs search, the ask-AI and GitHub links, and the locale and theme switchers, on a header that stays clear until the page scrolls.",
+          "tags": "Landing kit · Sticky · Links",
+          "what": "The site header block of the experience module.",
+          "when": "At the top of a marketing or landing page.",
+          "rtl": "The bar mirrors in Arabic; the section links scroll sideways on a narrow screen.",
+          "when_not": "Inside the product; use AppHeader."
+        },
+        "hero_machine": {
+          "headline": "Say it plainly, then show the machine.",
+          "intro": "A ruled blueprint band with the page's one h1, its lede and the call-to-action row, the schematic at the inline end, and the engine drawing standing on a dithered horizon.",
+          "tags": "Landing kit · Blueprint · Illustration",
+          "what": "The hero block of the experience module.",
+          "when": "Once, at the top of a landing page.",
+          "rtl": "The layout mirrors in Arabic; the engine drawing never does.",
+          "when_not": "On an inner page; use ChapterTitle."
+        },
+        "cta_row": {
+          "headline": "One action, and the next two.",
+          "intro": "The page's one champagne action as a real link, then a button that copies a URL and a shell command with its own copy button.",
+          "tags": "Landing kit · Link · Copy",
+          "what": "The call-to-action row of the experience module.",
+          "when": "Under a hero's headline or at the close of a landing page.",
+          "rtl": "The row mirrors in Arabic; the command stays left to right and is never translated.",
+          "when_not": "For a form's submit; use Button."
+        },
+        "statement": {
+          "headline": "Make the point in one paragraph.",
+          "intro": "A large paragraph whose words between asterisks are drawn in steel, with a short list of facts under it.",
+          "tags": "Landing kit · Text · Emphasis",
+          "what": "The statement block of the experience module.",
+          "when": "Right under the hero, or as a page's closing line.",
+          "rtl": "The paragraph and its facts follow the reading direction.",
+          "when_not": "For body copy; use Text."
+        },
+        "chapter_title": {
+          "headline": "Name the chapter.",
+          "intro": "A large heading in champagne, kept to large sizes by the tone rule, with a quiet line under it.",
+          "tags": "Landing kit · Heading · Core tone",
+          "what": "The chapter title block of the experience module.",
+          "when": "To open each chapter of a landing page.",
+          "rtl": "The heading and subtitle follow the reading direction.",
+          "when_not": "For a heading inside a card; use Heading."
+        },
+        "station": {
+          "headline": "One stop on the pipe.",
+          "intro": "A ruled blueprint band with the pipe on its inline start and a junction at the title, the station's words, and its window, which a document gives as children.",
+          "tags": "Landing kit · Blueprint · Dock-aware",
+          "what": "The station block of the experience module.",
+          "when": "For each step of the story a landing page tells.",
+          "rtl": "The rail and the junction sit on the inline start, so they mirror in Arabic.",
+          "when_not": "For a numbered procedure; use Stepper."
+        },
+        "step_switcher": {
+          "headline": "From one file to the next.",
+          "intro": "Plain words joined by arrows switch between steps; each shows its title and line beside its code in a schematic window.",
+          "tags": "Landing kit · Tabs · Code",
+          "what": "The step switcher block of the experience module.",
+          "when": "To walk through what one change produces, file by file.",
+          "rtl": "The arrow keys follow the mirrored steps; the code stays left to right.",
+          "when_not": "For unrelated views; use Tabs."
+        },
+        "bento_grid": {
+          "headline": "Cards, in a calm grid.",
+          "intro": "One or two equal columns of cards from medium screens up, one column below; a card can span both.",
+          "tags": "Landing kit · Grid · Cards",
+          "what": "The bento grid block of the experience module.",
+          "when": "To group a few feature cards on a landing page.",
+          "rtl": "Cards fill in reading order, so the grid mirrors in Arabic.",
+          "when_not": "For a dashboard's widgets; use DashboardGrid."
+        },
+        "terminal_stage": {
+          "headline": "Run it, then show where it lands.",
+          "intro": "The recorded TerminalDemo full width over a dithered band, with the monitor drawing appearing once the session has played.",
+          "tags": "Landing kit · Recorded · Illustration",
+          "what": "The try-it scene of the experience module.",
+          "when": "For the try-it moment of a landing page.",
+          "rtl": "The terminal stays left to right and the drawing is never mirrored.",
+          "when_not": "For a terminal alone; use TerminalDemo."
+        },
+        "mono_display": {
+          "headline": "End on the name.",
+          "intro": "The wordmark in large mono in the core tone, a tagline, and three floors that rise one floor step at a time once in view, or a code-glyph field behind it.",
+          "tags": "Landing kit · Wordmark · Floor steps",
+          "what": "The closing wordmark block of the experience module.",
+          "when": "Once, near the end of a landing page.",
+          "rtl": "The wordmark is a name: it stays left to right and is never translated.",
+          "when_not": "For a page title; use Heading."
+        },
+        "ask_ai": {
+          "headline": "Ask the docs.",
+          "intro": "A link shaped like a search field, with a greyed sample question and an Enter hint; until the assistant answers on the page it is drawn quiet, with a coming-soon note.",
+          "tags": "Landing kit · Link · Coming soon",
+          "what": "The ask-the-docs block of the experience module.",
+          "when": "Where a landing page invites questions about the docs.",
+          "rtl": "The field and its note mirror in Arabic.",
+          "when_not": "For a real search; use SearchField."
+        },
+        "product_cards": {
+          "headline": "Show what is built on it.",
+          "intro": "One BentoCard per product, each drawn in its own brand's tokens, in a marquee that pauses on hover and focus or in a grid.",
+          "tags": "Landing kit · Marquee · Themes",
+          "what": "The product cards block of the experience module.",
+          "when": "For a \"built on\" chapter of a landing page.",
+          "rtl": "The strip and the grid follow the reading direction.",
+          "when_not": "For a catalogue people shop from; use a product list."
+        },
+        "site_footer": {
+          "headline": "Close the page properly.",
+          "intro": "The link columns, the legal line and a locale switcher on Footer, as the page's content info.",
+          "tags": "Landing kit · Footer · Links",
+          "what": "The site footer block of the experience module.",
+          "when": "At the bottom of a marketing or landing page.",
+          "rtl": "The columns' order mirrors in Arabic.",
+          "when_not": "Inside the product; use Footer directly."
+        },
+        "illustration": {
+          "headline": "Art that wears the theme.",
+          "intro": "A drawing shipped as four single-tone layers (ground, dots, line and core), stacked as masks over the theme's colour roles, so one file serves light and dark and never needs a fetch.",
+          "tags": "Masks · Tone layers · Theme roles",
+          "what": "A brand drawing coloured by the theme.",
+          "when": "For the landing's engine, stack and monitor drawings, or any art drawn in the brand's tones.",
+          "rtl": "The drawing is never mirrored; it reads the same both ways.",
+          "when_not": "For a photo or a screenshot; use Image or Frame."
+        },
+        "surfaces": {
+          "headline": "The same button, everywhere.",
+          "intro": "A named group of frames, a window for web and desktop and a phone, each showing the real Button with the action's words; a surface with its own language takes that language's direction.",
+          "tags": "Landing kit · Frames · Bidirectional",
+          "what": "The Draw station block of the experience module.",
+          "when": "To show one action reaching every surface, in every language.",
+          "rtl": "An Arabic surface mirrors inside an English page; the frames never mirror their drawing.",
+          "when_not": "For a single screenshot; use Frame."
+        },
+        "page_dock": {
+          "headline": "The page tells you where you are.",
+          "intro": "SectionDock on a landing page: one link per section, the current one marked as the page scrolls, and a status line in the CLI's voice.",
+          "tags": "Landing kit · Navigation · Scroll spy",
+          "what": "The section dock block of the experience module.",
+          "when": "For a long page of named sections, such as the landing's stations.",
+          "rtl": "The links follow the reading order, so the dock mirrors in Arabic.",
+          "when_not": "For the site's own navigation; use SiteHeader."
         }
       }
     }

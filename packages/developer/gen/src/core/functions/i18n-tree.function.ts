@@ -6,10 +6,13 @@
  * Boundary: pure. A catalogue set's base locale is `en` when present, else the first locale by name; every namespace
  *           is a file name, every nested object a branch, every other value a leaf; a `$`-prefixed name (`$comment`)
  *           is a note, not a key. On a clash the first owner keeps the namespace (the member, then package.json
- *           order); `checkI18n` refuses the clash, so a clashing tree is never written.
+ *           order); `checkI18n` refuses the clash, so a clashing tree is never written. A consumed service's namespace
+ *           that one of the member's own modules also has is no clash: it moves under the service's client name
+ *           (`geography.rates`, `clientNamespace`), and the member's own keeps its name.
  * Runtime: isomorphic
  * Governing contract: ADR 0268 (R15: typed keys); ADR 0231 (`<module>::<path>` lookups); STA-1293; STA-1298.
  */
+import { clientNamespace } from "#core/functions/client-namespace.function";
 import type { I18nNamespace } from "#core/types/i18n-namespace.type";
 import type { I18nNode } from "#core/types/i18n-node.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -47,17 +50,24 @@ export function i18nTree(ir: MemberIR): {
   readonly clashes: readonly { readonly namespace: string; readonly owners: readonly string[] }[];
 } {
   const sets = [
-    ...(ir.catalogues !== undefined ? [{ owner: undefined, catalogues: ir.catalogues }] : []),
+    ...(ir.catalogues !== undefined
+      ? [{ owner: undefined, service: undefined, catalogues: ir.catalogues }]
+      : []),
     ...(ir.packageCatalogues ?? []).map((shipped) => ({
       owner: shipped.package,
+      service: shipped.service,
       catalogues: shipped.catalogues,
     })),
   ];
+  const own = new Set(
+    ir.catalogues === undefined ? [] : Object.keys(ir.catalogues[baseOf(ir.catalogues)] ?? {}),
+  );
   const namespaces = new Map<string, I18nNamespace>();
   const owners = new Map<string, string[]>();
-  for (const { owner, catalogues } of sets) {
+  for (const { owner, service, catalogues } of sets) {
     const base = baseOf(catalogues);
-    for (const [namespace, catalogue] of Object.entries(catalogues[base] ?? {})) {
+    for (const [shippedAs, catalogue] of Object.entries(catalogues[base] ?? {})) {
+      const namespace = clientNamespace(own, service, shippedAs);
       owners.set(namespace, [...(owners.get(namespace) ?? []), owner ?? ir.package]);
       if (namespaces.has(namespace)) continue;
       const node =

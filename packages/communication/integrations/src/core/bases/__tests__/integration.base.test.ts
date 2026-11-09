@@ -107,7 +107,7 @@ describe("Integration", () => {
       refuse({ auth: { type: AuthType.ApiKey, header: "Authorization", query: "key" } }),
     ).toThrow(/exactly one/);
     expect(refuse({ auth: { type: AuthType.ApiKey } })).toThrow(/exactly one/);
-    expect(refuse({ auth: { type: AuthType.Basic, username: "{sid}", password: "" } })).toThrow(
+    expect(refuse({ auth: { type: AuthType.Basic, username: "", password: "{token}" } })).toThrow(
       /Basic/,
     );
     expect(

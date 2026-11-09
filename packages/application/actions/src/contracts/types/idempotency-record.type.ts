@@ -7,8 +7,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0136 (decision 3: key, payload hash and result for 24 hours).
  */
+import type { StoredRefusal } from "@stackra/errors";
 
-/** A claimed Idempotency-Key: still running, or done with its output. */
+/** A claimed Idempotency-Key: still running, done with its output, or done with the refusal that ended it. */
 export type IdempotencyRecord =
   | {
       /** The SHA-256 of the call's identity and input, hex. */
@@ -23,4 +24,12 @@ export type IdempotencyRecord =
       readonly done: true;
       /** Its output, replayed to every later call with the same key and fingerprint. */
       readonly output: unknown;
+    }
+  | {
+      /** The SHA-256 of the call's identity and input, hex. */
+      readonly fingerprint: string;
+      /** The first call was refused for a reason a retry cannot change. */
+      readonly done: true;
+      /** The refusal, raised again for every later call with the same key and fingerprint. */
+      readonly refusal: StoredRefusal;
     };

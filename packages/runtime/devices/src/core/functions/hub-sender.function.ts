@@ -5,7 +5,8 @@
  * Boundary: internal to the package. The token is read once per call, outside the retries, and never logged. A 401 or
  *           403 throws `DeviceUnauthorizedError`; any other failure status throws `DeviceHubRefusedError` once `retry`
  *           has given up; a network failure or `RequestTimedOutError` from the last attempt passes through as it is.
- *           A refused body is cancelled unread.
+ *           A refused body is cancelled unread. `{ idempotencyKey: false }` sends no key, for a call whose answer the
+ *           hub must never keep (the credential pickup).
  * Runtime: isomorphic
  * Governing contract: ADR 0235 (decisions 1 and 2); ADR 0260 (clients call through the transport); ADR 0138
  *                     (idempotency).
@@ -21,6 +22,7 @@ import { DeviceUnauthorizedError } from "#core/errors/device-unauthorized.error"
 /**
  * The sender of hub calls, `path` relative to the hub URL and starting with `/`.
  *
+ * @param options - `idempotencyKey: false` leaves the `Idempotency-Key` off every write.
  * @throws TypeError when `config.hubUrl` is `null`.
  * @example
  * const send = hubSender(config, credential);
@@ -29,6 +31,7 @@ import { DeviceUnauthorizedError } from "#core/errors/device-unauthorized.error"
 export function hubSender(
   config: DevicesConfig,
   credential: DeviceCredential,
+  options: { readonly idempotencyKey?: boolean } = {},
 ): (path: string, init?: RequestInit) => Promise<Response> {
   if (config.hubUrl === null)
     throw new TypeError(
@@ -37,7 +40,7 @@ export function hubSender(
   const base = config.hubUrl.replace(/\/+$/, "");
   const send = createTransport({
     middleware: [
-      idempotencyKey(),
+      ...(options.idempotencyKey === false ? [] : [idempotencyKey()]),
       bearerToken(() => credential.token()),
       retry({ attempts: config.attempts }),
       timeout(Duration.seconds(config.timeoutMs / 1000)),

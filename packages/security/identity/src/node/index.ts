@@ -5,8 +5,9 @@
  *          permissions and schemas, the account deletion actions, query, job, permissions and schemas with its
  *          Postgres store and migration, the session list and sign-out-everywhere actions with their permissions
  *          and schemas, the listener that ends an erased subject's provider sessions, and the BFF's login, callback,
- *          session and logout routes (`BffService`) with their configuration, and the receiver of ZITADEL's auth
- *          events into the audit chain (`ZitadelAuthEventsService`) until `stackra gen` writes the entry barrels
+ *          session and logout routes (`BffService`) with their configuration, the receiver of ZITADEL's auth
+ *          events into the audit chain (`ZitadelAuthEventsService`), and this service's own tokens from its ZITADEL
+ *          service account (`ZitadelServiceTokensDriver`) with their configuration until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `contracts` and `core`, never `testing`.
  * Runtime: node
@@ -15,6 +16,9 @@
 export { BffConfig } from "#config/bff.config";
 export { BFF_CONFIG_SCHEMA as BffConfig$ } from "#core/constants/bff-config-schema.constant";
 export { BffOptions } from "#core/schemas/bff-options.schema";
+export { ServiceTokensConfig } from "#config/service-tokens.config";
+export { SERVICE_TOKENS_CONFIG_SCHEMA as ServiceTokensConfig$ } from "#core/constants/service-tokens-config-schema.constant";
+export { ServiceTokensOptions } from "#core/schemas/service-tokens-options.schema";
 export { AccountDeletionPermissions } from "#node/access/account-deletion.permissions";
 export { OperatorPermissions } from "#node/access/operator.permissions";
 export { PasskeyPermissions } from "#node/access/passkey.permissions";
@@ -31,7 +35,10 @@ export { EndUserSessionsAction } from "#node/actions/end-user-sessions.action";
 export { RegisterPasskeyAction } from "#node/actions/register-passkey.action";
 export { VerifyPasskeyAction } from "#node/actions/verify-passkey.action";
 export { CreateAccountDeletionsMigration } from "#node/database/migrations/0001-create-account-deletions.migration";
+export { IdentityStepUpCheckDriver } from "#node/drivers/identity-step-up-check.driver";
 export { PostgresAccountDeletionsDriver } from "#node/drivers/postgres-account-deletions.driver";
+export { ServiceApiKeyStoreDriver } from "#node/drivers/service-api-key-store.driver";
+export { ZitadelServiceTokensDriver } from "#node/drivers/zitadel-service-tokens.driver";
 export { EndErasedSubjectSessionsListener } from "#node/listeners/end-erased-subject-sessions.listener";
 export { BffService } from "#node/services/bff.service";
 export { ZitadelAuthEventsService } from "#node/services/zitadel-auth-events.service";

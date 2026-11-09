@@ -27,7 +27,7 @@
     },
     "secrets": {
       "type": "array",
-      "description": "Every @Secret of src/config/*, by NAME; gen fails on a missing one. Values live in Infisical (ADR 0173).",
+      "description": "Every @Secret of src/config/*, by NAME; gen fails on a missing one. Values live in figentra/secrets as sops files (ADR 0525).",
       "items": { "$ref": "#/$defs/secretName" },
       "uniqueItems": true
     },
@@ -251,6 +251,64 @@
           "additionalProperties": {
             "type": "object",
             "description": "Overrides of one config class."
+          }
+        },
+        "events": { "$ref": "#/$defs/events" }
+      }
+    },
+    "events": {
+      "type": "object",
+      "description": "The cross-app relay of a producer in this environment (ADR 0511 decisions 11 to 15): its signing key's secret NAME, its public keys and the consumers in other apps it delivers to.",
+      "additionalProperties": false,
+      "required": ["keys", "subscribers"],
+      "properties": {
+        "signingKey": {
+          "$ref": "#/$defs/secretName",
+          "default": "STACKRA_EVENTS_SIGNING_KEY",
+          "description": "The secret name of the private signing key; never a value. Default `STACKRA_EVENTS_SIGNING_KEY`."
+        },
+        "keys": {
+          "type": "array",
+          "description": "The public keys a consumer verifies deliveries with: the current one first, then the next one during a rotation. Gen copies them into the manifest's `relay` section.",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "publicKey"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+              "publicKey": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+={0,2}$",
+                "description": "A base64url Ed25519 public key; not a secret."
+              }
+            }
+          }
+        },
+        "subscribers": {
+          "type": "array",
+          "description": "The consumers in other apps this producer delivers to.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["member", "inbox", "events"],
+            "properties": {
+              "member": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+              "inbox": {
+                "type": "string",
+                "format": "uri",
+                "description": "The consumer's origin: https, or http to a loopback host for a dev run; no path."
+              },
+              "events": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+\\.v\\d+$"
+                }
+              }
+            }
           }
         }
       }

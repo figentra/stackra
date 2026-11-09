@@ -65,6 +65,9 @@ export interface SettingRevision {
   /** Who approved or rejected it; null until then, or when it needed no approval. */
   readonly decidedBy: string | null;
 
+  /** The role its approver must hold (`owner`), when a changed key is role-gated; absent for four-eyes or none. */
+  readonly approvalRole?: string | null;
+
   /** When it applied; null until then. */
   readonly appliedAt: string | null;
 }

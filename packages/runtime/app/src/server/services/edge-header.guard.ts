@@ -2,17 +2,22 @@
  * Stackra file contract:
  * Purpose: `EdgeHeaderGuard`, the first check of ADR 0437's server-check order: a `RequestGuard` that trusts
  *          the edge Worker's identity headers only with a valid HMAC under one of the active signing keys (two during
- *          a rotation), a timestamp inside the validity window and a request id not seen inside it. A request with no
- *          signature reaches only a public path, and only when it carries no edge identity header.
+ *          a rotation), a timestamp inside the validity window and a request id not seen inside it. A request that
+ *          carries any edge header (an identity header, the signature, the request id or the timestamp) must verify;
+ *          one that carries none is not edge traffic (a service call, a cross-app delivery, a provider's webhook) and
+ *          goes on to authentication or its endpoint's own signature check.
  * Boundary: stateless; the keys come from the bound `EdgeSigningKeys` and the seen ids from the bound `EdgeNonceStore`
  *           (both configuration: the driver is chosen by wiring). Every failure is one `EdgeSignatureInvalidError`.
- *           The nonce is claimed only after the signature verifies, so unsigned traffic cannot fill the store. The
- *           validity window and the public paths are getters a host overrides (ADR 0306). Rate limits, CSRF and the
- *           later checks of the order are other guards and the actions pipeline, not this one.
+ *           The nonce is claimed only after the signature verifies, so unsigned traffic cannot fill the store. Replays
+ *           are refused per instance while the nonce store is the memory driver. The validity window is a getter a host
+ *           overrides (ADR 0306). Rate limits, CSRF and the later checks of the order are other guards and the actions
+ *           pipeline, not this one; a request with no edge header is authenticated there (ADR 0437 note of 2026-11-09).
  * Runtime: node
  * Governing contract: ADR 0437 (decisions 4 and 8; Enforcement); ADR 0457 (RequestGuard); ADR 0306 (overrides).
  */
 import { createHash, timingSafeEqual } from "node:crypto";
+
+import { Enum } from "@stackra/contracts";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import type { EdgeNonceStore } from "#contracts/ports/edge-nonce-store.port";
@@ -21,16 +26,13 @@ import { signEdgeRequest } from "#core/functions/sign-edge-request.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { EdgeSignatureInvalidError } from "#server/errors/edge-signature-invalid.error";
 
-/** The identity headers an unsigned request must not carry. */
-const IDENTITY = [EdgeHeader.Scope, EdgeHeader.Product, EdgeHeader.Surface, EdgeHeader.Realm];
-
 /**
  * Verifies the signed edge headers on every inbound request.
  *
  * @example
  * // a host override, src/overrides/app/edge-header.guard.ts
  * export class EdgeHeaderGuard extends BaseEdgeHeaderGuard {
- *   override get publicPaths() { return ["/public/"]; }
+ *   override get maxAge() { return 30; }
  * }
  */
 export class EdgeHeaderGuard extends RequestGuard {
@@ -60,25 +62,19 @@ export class EdgeHeaderGuard extends RequestGuard {
     return 60;
   }
 
-  /** Path prefixes that answer an unsigned request; none by default. */
-  get publicPaths(): readonly string[] {
-    return [];
-  }
-
   /**
    * Lets `request` through when its edge signature holds.
    *
-   * @throws EdgeSignatureInvalidError when the signature is missing (off a public path), wrong, stale or replayed.
+   * @throws EdgeSignatureInvalidError when a request carrying an edge header has no signature, or one that is wrong,
+   *         stale or replayed.
    */
   async check(request: Request): Promise<void> {
     const url = new URL(request.url);
     const header = (name: EdgeHeader) => request.headers.get(name);
+    // no edge header at all: not edge traffic, so authentication (or the endpoint's own signature) decides
+    if (Enum.values(EdgeHeader).every((name) => header(name) === null)) return;
     const signature = header(EdgeHeader.Signature);
-    if (signature === null) {
-      const isPublic = this.publicPaths.some((prefix) => url.pathname.startsWith(prefix));
-      if (isPublic && IDENTITY.every((name) => header(name) === null)) return;
-      throw EdgeSignatureInvalidError.create();
-    }
+    if (signature === null) throw EdgeSignatureInvalidError.create();
     const product = header(EdgeHeader.Product);
     const surface = header(EdgeHeader.Surface);
     const realm = header(EdgeHeader.Realm);

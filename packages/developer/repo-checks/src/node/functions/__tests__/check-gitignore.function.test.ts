@@ -27,4 +27,11 @@ describe("checkGitignore", () => {
     expect(checkGitignore(undefined)).toHaveLength(1);
     expect(checkGitignore("node_modules\n.stackra-old/\n")).toHaveLength(1);
   });
+
+  it("asks a repository with services to ignore the encore.app gen writes at a service root", () => {
+    expect(checkGitignore(".stackra/*\n", true)).toHaveLength(1);
+    expect(checkGitignore(".stackra/*\nservices/*/encore.app\n", true)).toEqual([]);
+    expect(checkGitignore(".stackra/*\n**/encore.app\n", true)).toEqual([]);
+    expect(checkGitignore(".stackra/*\n", false)).toEqual([]);
+  });
 });

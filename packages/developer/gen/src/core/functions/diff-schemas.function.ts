@@ -7,22 +7,27 @@
  * Boundary: pure. Only the given modules are compared (a declared package's tables are its own models'). The columns
  *           and indexes the migrations write that no model field declares are implied, never `undeclared_*`: every
  *           `varchar(33)` column but `id` (a link, a foreign key, the tenant column, `parent_id`) carries an automatic
- *           `idx_<table>_<column>` index, and `search_*`, `tree_path` and `metadata` come from macros and traits, so
- *           an index over implied columns only is tolerated and a `search_*` column is not undeclared. A predicate
- *           compares without parentheses, casts, case and spaces (shortcut: a predicate Postgres rewrites beyond
- *           that is reported as `index_shape`; widen the normaliser then). Primary keys and partitions are not
- *           compared.
+ *           `idx_<table>_<column>` index, `tree_path` and `metadata` come from traits, and on a table that expects
+ *           `search_text` (a `@Searchable` model) the search macro's vectors and `__v<n>` shadows are implied too, so
+ *           an index over implied columns only is tolerated. A search column on any other table is undeclared. A
+ *           predicate compares as Postgres renders it: without parentheses, casts, double quotes, case and spaces,
+ *           with `!=`, `in`, `not in`, `like`, `ilike` and `between` folded to `<>`, `= any`, `<> all`, `~~`, `~~*`
+ *           and two comparisons. Primary keys and partitions are not compared.
  * Runtime: isomorphic
  * Governing contract: ADR 0159 (the migration owns the schema; the model is the declaration); ADR 0231 (`idx_` and
- *                     `fk_` names); ADR 0282 (decision 3: `stackra db diff`); STA-1808.
+ *                     `fk_` names); ADR 0282 (decision 3: `stackra db diff`); ADR 0221 (search
+ *                     columns); STA-1808; STA-2071.
  */
 import { normalizePostgresType } from "#core/functions/normalize-postgres-type.function";
 import { postgresTypeAgrees } from "#core/functions/postgres-type-agrees.function";
 import type { SchemaDifference } from "#core/types/schema-difference.type";
 import type { SchemaSnapshot } from "#core/types/schema-snapshot.type";
 
-/** Columns macros and traits write that no model field names. */
-const IMPLIED_COLUMN = /^(search_vector.*|search_text.*|search_filters.*|tree_path|metadata)$/;
+/** Columns traits write that no model field names. */
+const IMPLIED_COLUMN = /^(tree_path|metadata)$/;
+
+/** Columns the search macro writes: a vector (per locale), the text and the filters, each with a rebuild shadow. */
+const SEARCH_COLUMN = /^(search_vector(_[a-z0-9_]+)?|search_text|search_filters)(__v\d+)?$/;
 
 /** A column of either side. */
 type Column = SchemaSnapshot["columns"][number];
@@ -30,12 +35,29 @@ type Column = SchemaSnapshot["columns"][number];
 /** An index of either side. */
 type Index = SchemaSnapshot["indexes"][number];
 
-/** A predicate without parentheses, casts, case and spaces, so Postgres's rendering compares with the source. */
+/** A cast, multi-word, sized and array types included, and never the words after it. */
+const CAST =
+  /::(character varying|bit varying|double precision|(timestamp|time) with(out)? time zone|[a-z_][a-z0-9_.]*)(\(\d+(,\s*\d+)?\))?(\[\])*/g;
+
+/**
+ * A predicate as `pg_get_expr` renders it, so the source compares with Postgres's rewrite.
+ * shortcut: folds only what a model's `where` states (FR-007 of STA-2071); a literal Postgres retypes (a date) or an
+ * operand of `between` with spaces still reads as `index_shape`, widen this when one bites.
+ */
 const predicateKey = (predicate: string | undefined): string =>
   (predicate ?? "")
     .toLowerCase()
-    .replaceAll(/::[a-z_]+( [a-z_]+)*/g, "")
-    .replaceAll(/[()\s]/g, "");
+    .replaceAll('"', "")
+    .replaceAll(CAST, "")
+    .replaceAll("!=", "<>")
+    .replaceAll(/\bnot\s+ilike\b/g, "!~~*")
+    .replaceAll(/\bnot\s+like\b/g, "!~~")
+    .replaceAll(/\bilike\b/g, "~~*")
+    .replaceAll(/\blike\b/g, "~~")
+    .replaceAll(/([^\s()]+)\s+between\s+([^\s()]+)\s+and\s+([^\s()]+)/g, "$1 >= $2 and $1 <= $3")
+    .replaceAll(/[()\s]/g, "")
+    .replaceAll(/=anyarray\[([^\]]*)\]/g, "in$1")
+    .replaceAll(/<>allarray\[([^\]]*)\]/g, "notin$1");
 
 /** An index as one comparable and printable string. */
 const shapeOf = (index: Index): string =>
@@ -117,6 +139,9 @@ export function diffSchemas(
 
     const migratedColumns = byName(migrated);
     const modelledColumns = byName(modelled);
+    const searchable = modelledColumns.has("search_text");
+    const impliedColumn = (name: string): boolean =>
+      IMPLIED_COLUMN.test(name) || (searchable && SEARCH_COLUMN.test(name));
     for (const column of modelled) {
       const found = migratedColumns.get(column.name);
       if (found === undefined) {
@@ -136,7 +161,7 @@ export function diffSchemas(
         add("column_type", column.name, column.type, normalizePostgresType(found.type ?? ""));
     }
     for (const column of migrated)
-      if (!modelledColumns.has(column.name) && !IMPLIED_COLUMN.test(column.name))
+      if (!modelledColumns.has(column.name) && !impliedColumn(column.name))
         add("undeclared_column", column.name, "-", columnText(column));
 
     const implied = new Set(
@@ -162,7 +187,7 @@ export function diffSchemas(
     for (const index of migratedIndexes.values())
       if (
         !modelledIndexes.has(index.name) &&
-        !index.columns.every((column) => implied.has(column) || IMPLIED_COLUMN.test(column))
+        !index.columns.every((column) => implied.has(column) || impliedColumn(column))
       )
         add("undeclared_index", index.name, "-", shapeOf(index));
 

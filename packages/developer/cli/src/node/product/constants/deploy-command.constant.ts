@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `DEPLOY_COMMAND`. Two modes:
- *          - `stackra deploy --env <environment> [--kind <k,…>] [--member <key,…>] [--sha <sha>] [--dry-run]
- *            [--approved]` ships a commit to the environment's runway targets (`runRunwayDeploy`, STA-1921, STA-1969);
- *            in a product repository its web and mobile kinds run the product publish below with the same flags, so
- *            one command ships everything (STA-1972);
+ *          - `stackra deploy --env <environment> [--kind <k,…>] [--member <key,…>] [--sha <sha>]
+ *            [--dry-run] [--approved]` ships a commit to the environment's runway targets (`runRunwayDeploy`,
+ *            STA-1921, STA-1969); in a product repository its web and mobile kinds run the product publish below with
+ *            the same flags, so one command ships everything (STA-1972), unless `--member` names Worker members.
+ *            The secret sync always reads the job's environment (a decrypted sops scope, ADR 0525); `--from-env` is
+ *            accepted and ignored (deprecated);
  *          - `stackra deploy --product --env <environment> [--dry-run] [--surfaces-only|--mobile-only] [--approved]
  *            [--first-release] [--assets-bucket <b>] [--assets-origin <url>] [--kv-namespace <id>] [--served <lines>]
  *            [--canary-scopes <ids>] [--region <r>]` deploys a built product only (`runDeployProduct`); kept as the
@@ -32,6 +34,9 @@ export const DEPLOY_COMMAND: CliCommand = {
     kind: { type: "string" },
     member: { type: "string" },
     sha: { type: "string" },
+    // Deprecated and ignored: the secret sync always reads the job's environment (ADR 0525). figentra/tamo still
+    // passes it; it goes in the next minor release.
+    "from-env": { type: "boolean" },
     "dry-run": { type: "boolean" },
     "surfaces-only": { type: "boolean" },
     "mobile-only": { type: "boolean" },

@@ -49,7 +49,11 @@ import type { Resolver } from "#core/types/resolver.type";
 const EXECUTOR_ACTOR_ID = "sys_approval_executor";
 
 /** Answers that mean "another run holds it", which never settle `failed`. */
-const IN_FLIGHT: ReadonlySet<string> = new Set(["idempotency_key_reused", "approval_consumed"]);
+const IN_FLIGHT: ReadonlySet<string> = new Set([
+  "idempotency_key_reused",
+  "idempotency_key_in_progress",
+  "approval_consumed",
+]);
 
 /** Connection and timeout failures that are not refusals: the infrastructure, not the call, failed. */
 const TRANSIENT_CODES: ReadonlySet<string> = new Set([

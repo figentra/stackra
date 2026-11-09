@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "4a0a6eb31ca9bcae",
+    "hash": "4d6f50365b67eaa0",
     "heroDoc": "vendor/heroui/react/tag-group.json",
     "propsFiles": ["ui/src/react/tag-group/tag-group.props.ts"]
   },
@@ -54,7 +54,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "default": "md",

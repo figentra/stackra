@@ -21,4 +21,6 @@ export type EdgeRelease = {
   readonly modulepreload: readonly string[];
   /** The stylesheet URLs. */
   readonly css: readonly string[];
+  /** Each bundle file's URL to its SRI value, `sha384-<base64>`; absent for a bundle built before SRI (STA-2562). */
+  readonly integrity?: Readonly<Record<string, string>>;
 };

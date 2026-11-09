@@ -1,5 +1,683 @@
 # @stackra/tenancy
 
+## 0.29.0
+
+### Minor Changes
+
+- 11a19a7: An implicit many-to-many pivot of tenant-owned models now stores the call's tenant. MikroORM's pivot insert names only
+  the two link columns, so `t.belongsToTenant({ pivot: true })` gives a new pivot's `tenant_id` a default read from
+  `app.tenant_id`, and `t.change(column).defaultSetting(setting)` gives an existing pivot the same default. Outside a
+  tenant call the default is NULL, so the NOT NULL column refuses the row instead of storing it without a tenant.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [8ad5f87]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/scope@0.29.0
+  - @stackra/scheduler@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/ui@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/scheduler@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/scope@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/ui@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+  - @stackra/database@0.27.0
+  - @stackra/scheduler@0.27.0
+  - @stackra/scope@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/ui@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [93e358e]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [e5da198]
+  - @stackra/database@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/scheduler@0.26.0
+  - @stackra/scope@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/console@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- 1d7bbc1: The contract migrations (database 0007, achievements 0004, rules 0005, segments 0003, content 0006, collaboration
+  0004, workflow 0011 and webhooks 0003) now carry a reviewed squawk ignore, with its reason, above each `SET NOT NULL`
+  that the migration's pre-flight checked, so a product that hosts them lints clean. The runner hashes a migration
+  without its lint lines, so no checksum changes, and nothing runs differently.
+  
+  New contract steps can set NOT NULL without scanning the table under an exclusive lock:
+  `t.belongsToTenant({ contract: true, safeNotNull: true })`, or `t.change(column).notNull({ safe: true })`, adds a
+  `NOT VALID` check, then validates it, sets NOT NULL and drops the check in a later step. The released migrations keep
+  their form.
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/scheduler@0.25.0
+  - @stackra/scope@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/scope@0.24.0
+  - @stackra/scheduler@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/ui@0.24.0
+  - @stackra/console@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The tenancy contract step. A new migration in each package (`achievements.0004`, `rules.0005`, `segments.0003`,
+  `content.0006`, `collaboration.0004`, `workflow.0011`) makes `tenant_id` NOT NULL on the tables the expand step gave
+  it, makes the tenant equality `pol_<table>_tenant_id` each table's one permissive policy, and keeps the scope path only
+  as a restrictive policy, which narrows a session inside its tenant and never widens it. The models of those tables now
+  carry `BelongsToTenant`, so a row is filled from the running tenant call.
+  
+  Each migration first counts the rows with no tenant. If any table has one, it refuses before changing anything and
+  names each table's count. An environment that wrote rows in the expand step outside a tenant call runs the tenant
+  backfill (RUNWAY 4c) first, then migrates again. After this step, these tables are written only inside a tenant call.
+  
+  `t.belongsToTenant({ contract: true })` is the macro's form for that step: `SET NOT NULL` on the existing column and
+  the equality policy. `{ contract: true, nullable: true }` is the platform form's contract step: the column stays
+  nullable under the `platform` policy, as search uses it. The packages ship an int test tier (`test:int`) for these migrations.
+
+### Patch Changes
+
+- 1083617: Memory-tier tests now run actions in the actor's tenant, as production does, so `runAsTenant` wraps around `run()`
+  become optional. Under `createTestingModule(...).useDrivers("memory")` the tenancy testing plugin binds
+  `MemoryCallIsolationDriver` as `CallIsolation`: a `BelongsToTenant` row built inside the call carries the actor's
+  tenant before it is flushed. An actor with no tenant stays a platform call. Inside `runAsTenant(T)`, an actor of
+  another tenant is refused with `TenantSwitchRefusedError`, as the real driver refuses a tenant switch. An explicit
+  `.override(CallIsolation, …)` still wins. The driver is test-only: production wiring never lists it. Gen's Vitest setup
+  now loads `@stackra/tenancy/testing` for a member on `@stackra/tenancy`, as it loads the database and clients testing
+  entries.
+  
+  **Upgrading.** A product's memory-tier tests now run each action inside its actor's tenant, so a test that relied on
+  no isolation can fail after the bump:
+  
+  - Arrange each tenant's rows under that tenant: `await runAsTenant(tenantA, () => Factory.new().create(...))`, then
+    `runAsTenant(tenantB, …)` for B's rows. A row built inside `runAsTenant(A)` by an actor of B is refused
+    (`TenantSwitchRefusedError`), and a row whose `tenantId` differs from the `runAsTenant` tenant throws.
+  - Call `run(Action, input, { as: actor })` outside any `runAsTenant`, or inside the actor's own tenant. A
+    `runAsTenant(tenant, () => run(...))` wrap around an action of that same tenant still works but is no longer needed.
+  - `drainOutbox()` delivers each event in its actor's tenant. Call it outside `runAsTenant`: inside `runAsTenant(T)`, an
+    event of another tenant is refused in the memory tier (production's own transaction would not refuse it).
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/scheduler@0.23.0
+  - @stackra/scope@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Minor Changes
+
+- 940e198: Calls from branch users now work, directly and through a service or an agent. A user's token is often issued for a
+  branch, so the user's `scopeId` is the branch's id, not the tenant's. `CallIsolationDriver` used to compare those ids
+  as they were, so a branch user was refused in its own tenant, and so was a service or an agent of the tenant acting
+  for that user. It now reads every scope a user, an agent or a service claims through the scope tree and compares
+  tenants: a branch counts as the tenant above it, and the call runs with that tenant set, never the branch id. A user
+  from another tenant's branch is still refused, and so is a claimed scope the tree does not show or one above every
+  tenant (`tenant_scope_mismatch`). A tree read that fails fails the call; it never lets the call through.
+  
+  `CallAuthenticator` no longer compares the service's and the user's scope ids itself, since it cannot see the tree;
+  `CallIsolationDriver` now owns that rule.
+
+### Patch Changes
+
+- 786848c: A branch user can now complete an action that needs approval. The isolation already ran a branch user's call as the
+  tenant above the branch, but the pipeline still labelled what the call wrote with the branch id, so the approval
+  binding was refused by the tenant's row policy and the request could not be parked.
+  
+  `CallIsolation.run` now hands its work the actor it runs as, with the tenant from the scope tree. The pipeline takes
+  that tenant as the call's `scopeId`, on the descriptor and on `ctx`, before any step inside the isolation runs. So the
+  approval binding and request, usage and analytics events, published events, audit entries and the query cache key
+  all carry the tenant. The branch the user acts from stays on the new `CallDescriptor.branchScopeId`, and the actor is
+  unchanged. With no isolation bound, nothing changes: `scopeId` and `branchScopeId` are both the actor's own claim.
+  
+  Rate limits and idempotency keys are now per tenant for a branch user: all branches of one tenant share the tenant's
+  buckets and keys, as tenant-level users already did.
+  
+  The access log and the Postgres audit trail now store a branch user's records in the tenant's chain, not under the
+  branch id. `AccessRecord` has an optional `scopeId`, which `AccessLogExplorer` fills from the call's context, and
+  `AccessLogService.record` takes it as an optional last argument.
+- 227dd7a: `runAsTenant(T, work)` now refuses a new `BelongsToTenant` row that `work` saves with a `tenantId` other than `T`.
+  Before, a model factory whose `definition()` set `tenantId` silently replaced the tenant `runAsTenant` gives, so a
+  test arranged its rows in a random tenant and failed far from the cause. The flush now throws, for example
+  `Member was created in runAsTenant(scp_A) with tenantId scp_X: does its factory definition() set tenantId? Leave it
+  to runAsTenant.` It catches every way of setting it: the factory definition, `create({ tenantId })` and a direct
+  insert through the entity manager. A `tenantId` equal to `T` is fine; a test that needs another tenant's row creates
+  it in `runAsTenant(B, …)`. Outside `runAsTenant`, and in production, nothing changes: the check lives in `./testing`.
+  
+  Fix these factories before taking this version, or their tests fail: OS scheduling-calendar `booking.factory.ts` and
+  `resource-record.factory.ts`, and OS tenancy `membership.factory.ts`.
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/scheduler@0.22.0
+  - @stackra/scope@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- f184d12: A service can now call for a user (ADR 0209, amendment of 2026-11-07). The calling service sends its own token as
+  `Authorization: Bearer` and the user's own access token in `Stackra-On-Behalf-Of`. `CallAuthenticator` verifies both
+  with the same issuer, audience and leeway, and the call becomes the service acting for that user:
+  `{ kind: "service", id: "svc_…", scopeId?, onBehalfOf: <the user> }`. The forwarded token itself is never kept; only
+  the user it names travels. A forward is refused when it sits beside a user token or no token, when it has expired or
+  names another audience, when it is a service's token, or when the service is bound to a tenant other than the user's.
+  
+  The call then runs in the user's tenant: `actingScopeId` gives a service with no tenant of its own the tenant of the
+  user it calls for, as it already did for an agent. `CallIsolationDriver` treats a service like an agent: it refuses
+  one whose own tenant differs from its user's, and one with a tenant whose scope sits above every tenant or is not in
+  the scope tree (`tenant_scope_mismatch`). A service with no tenant and no user stays a platform call, as before.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/scheduler@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/console@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/scope@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/scheduler@0.20.0
+  - @stackra/scope@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- 58e3066: `actingScopeId(actor)` and `claimedScopeIds(actor)` move to `@stackra/contracts`: the one answer to which tenant a call acts
+  in (an agent's own `scopeId`, else the tenant of the human it acts for; any other actor's own `scopeId`). Every place
+  that read `actor.scopeId` as the call's tenant now reads it: the pipeline's `CallDescriptor.scopeId` and `ctx.scopeId`
+  (so rate limits, meters, idempotency, query cache keys, approvals and audit entries follow), the queue's job actor and
+  unique key, IAM's node lookup, the automation principal check, the access-log outbox sink's `scopeId` stamp, and
+  `PostgresAuditTrailDriver`, which now records an agent with no tenant of its own in its human's tenant instead of
+  skipping it. A platform agent and every other actor kind are unchanged.
+- e5ac3d0: Agents with no tenant of their own now run in the tenant of the human they act for. An agent actor with no `scopeId`
+  (such as a background agent acting for its owner) used to run with `app.tenant_id = ''` and see none of its owner's
+  tenant rows; `TenantIsolationService.withTenant` now sets its human's tenant, and `CallIsolationDriver` checks the scope
+  and a running transaction's tenant against the same one. What products will see: `@stackra/panel` saved views now show
+  that agent the human's tenant's views (it saw none before), and `@stackra/access-log` records of that agent's calls now
+  store in the human's tenant (before, they had no tenant and were not stored). An agent with a tenant of its own keeps
+  it, one with no tenant anywhere stays a platform call, and every other actor kind keeps its own `scopeId`.
+- d2b3d22: A column can default to a transaction setting: `.defaultSetting("app.x")` writes
+  `default nullif(current_setting('app.x', true), '')`, so a writer that names no value stores the call's setting and
+  rows that predate the column stay null (refused on a `uuid` column for now). `t.belongsToTenant({ expand: true })` uses
+  it for the expand step of an existing table: a nullable, indexed `tenant_id` filled from `app.tenant_id`, and no
+  policy, so the table keeps the one it has until the contract step makes the tenant equality its one permissive policy
+  (ADR 0347 decision 1; tenancy audit 2026-11-07, gap D).
+- eafb209: `CallIsolationDriver` refuses an agent actor with a tenant (its own `scopeId`, or else that of the human it acts for)
+  whose scope the tree does not show at that path, whose granted scopes are all unknown, or whose scope sits above every
+  tenant (`tenant_scope_mismatch`), before any transaction or setting, the same as a tenant user. It used to run such a
+  call in the agent's own tenant. An agent that carries only its human's tenant is now also refused in another tenant's
+  scope. An agent with no tenant (acting for a platform user) stays a platform call; service actors are unchanged.
+- d22e767: `CallIsolationDriver` refuses several granted scopes that span tenants with `tenant_scope_mismatch`. They are one
+  session, so paths in two tenants (or in a tenant and above every tenant) read both through the ancestor policies.
+  Several scopes that all resolve alike now follow the single-scope rules of the first: a job or system call takes
+  their tenant, and a user is held to its own.
+- e283a31: `CallIsolationDriver` refuses a user actor that claims a tenant but calls in a scope the tree shows above every
+  tenant (the platform root, a product), with `tenant_scope_mismatch`, before the isolation transaction opens. Such a
+  call kept its own `app.tenant_id` while its scope paths covered every tenant's ancestor-RLS rows. A platform user (no
+  `scopeId`) in that scope stays a platform call, and job, system and agent actors keep their rules.
+- 27f2b3f: `CallIsolationDriver` refuses a user with a tenant whose scope the scope tree does not show at that path
+  (`tenant_scope_mismatch`), also when several granted scopes are all unknown. It used to run such a call in the user's own
+  tenant, so a forged reference above the tenant (its own id with the path `platform`) set `app.scope_paths` over more
+  than the tenant. A platform user (no `scopeId`) stays a platform call; job and system actors keep their
+  `tenant_scope_unresolved` refusal. `asTenant` now shows each scope option in its tree as the tenant's own node or a
+  branch under it, so a scoped `asTenant` call keeps running.
+- 15d8a1b: A nested `TenantIsolationService.withTenant` flushes its own writes before it puts the enclosing tenant back. The ORM
+  writes a savepoint's pending changes only after its callback returns, so they used to be checked by row security and
+  read `app.tenant_id` as the enclosing tenant, which refused or misplaced a row the nested call created.
+- bc5a0ab: `TenantIsolationService.withTenant` puts the enclosing tenant back when it runs inside a running transaction. A
+  released savepoint keeps a `set_config(…, true)` until the outer transaction ends, so a nested call used to leave
+  `app.tenant_id` on the inner tenant for the rest of the caller's transaction while `ACTIVE_TENANT` had reverted.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/scheduler@0.19.0
+  - @stackra/scope@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/scheduler@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/ui@0.18.1
+  - @stackra/console@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/scope@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/scheduler@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/ui@0.18.0
+  - @stackra/console@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/scope@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/scheduler@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/ui@0.17.2
+  - @stackra/console@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/scope@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/actions@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/ui@0.17.1
+  - @stackra/console@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/scheduler@0.17.1
+  - @stackra/scope@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/ui@0.17.0
+  - @stackra/console@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/scheduler@0.17.0
+  - @stackra/scope@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/scheduler@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/ui@0.16.0
+  - @stackra/console@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/scope@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/scope@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/scheduler@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/scheduler@0.14.4
+  - @stackra/scope@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/console@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/scheduler@0.14.3
+  - @stackra/scope@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/ui@0.14.2
+  - @stackra/console@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/scheduler@0.14.2
+  - @stackra/scope@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/scheduler@0.14.1
+  - @stackra/scope@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/scheduler@0.14.0
+  - @stackra/scope@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/scheduler@0.13.0
+  - @stackra/scope@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/scheduler@0.12.0
+  - @stackra/scope@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/console@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/scheduler@0.11.1
+  - @stackra/scope@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/scheduler@0.11.0
+  - @stackra/scope@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/scheduler@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/scope@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [be4a198]
+- Updated dependencies [9bb5d55]
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [681d01a]
+- Updated dependencies [f9c825d]
+  - @stackra/console@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/ui@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/scheduler@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/scope@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

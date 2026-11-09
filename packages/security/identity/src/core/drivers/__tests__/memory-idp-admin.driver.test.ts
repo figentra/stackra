@@ -151,9 +151,12 @@ describe(MemoryIdpAdminDriver, () => {
   it("signs in with a passkey on a known login and a live session only", async () => {
     const idp = new MemoryIdpAdminDriver();
     await idp.createUser(RANA);
-    await expect(idp.startPasskeySignIn("nobody")).rejects.toBeInstanceOf(UnauthenticatedError);
-    const { sessionId } = await idp.startPasskeySignIn("rana");
     const credential = { id: "c", rawId: "c", type: "public-key", response: {} } as const;
+    const decoy = await idp.startPasskeySignIn("nobody");
+    await expect(idp.finishPasskeySignIn(decoy.sessionId, credential)).rejects.toBeInstanceOf(
+      UnauthenticatedError,
+    );
+    const { sessionId } = await idp.startPasskeySignIn("rana");
     expect((await idp.finishPasskeySignIn(sessionId, credential)).sessionId).toBe(sessionId);
     await idp.endSession(sessionId);
     await expect(idp.finishPasskeySignIn(sessionId, credential)).rejects.toBeInstanceOf(
@@ -178,5 +181,15 @@ describe(MemoryIdpAdminDriver, () => {
     await expect(
       new MemoryIdpAdminDriver().startPasskeyRegistration("idp_9"),
     ).rejects.toBeInstanceOf(UnauthenticatedError);
+  });
+
+  /** Like the provider: a key on the first install only, the same target after. */
+  it("installs the claims action once and repoints it after", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    const first = await idp.installClaimsAction({ endpoint: "https://a.example/claims" });
+    expect(first.signingKey).toEqual(expect.any(String));
+    const again = await idp.installClaimsAction({ endpoint: "https://b.example/claims" });
+    expect(again).toEqual({ targetId: first.targetId });
+    expect(idp.claimsAction?.endpoint).toBe("https://b.example/claims");
   });
 });

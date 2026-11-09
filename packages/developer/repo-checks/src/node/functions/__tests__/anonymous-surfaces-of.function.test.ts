@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `anonymousSurfacesOf`: a member's own anonymous-callable calls are listed by their locked keys
- *          (from `anonymous: true` or an older manifest's `actors`), a hosted row is left to its owner; and the
- *          committed manifests of this repository list exactly today's five, so a new one fails here and is reviewed.
+ *          (from `anonymous: true` or an older manifest's `actors`), a hosted row is left to its owner; and every
+ *          anonymous-callable call in this repository's committed manifests is in REVIEWED_ANONYMOUS_SURFACES, so a
+ *          new one fails here until it is reviewed and recorded. The list also records product repositories' calls,
+ *          which this repository cannot see; the checkout ones are checked present with a reason.
  * Boundary: test only; the last case reads the repository's committed `stackra.manifest.json` files.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); STA-2025.
+ * Governing contract: ADR 0022 (test placement); STA-2025, STA-2515.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -13,6 +15,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "@stackra/testing";
 
+import { REVIEWED_ANONYMOUS_SURFACES } from "#node/constants/reviewed-anonymous-surfaces.constant";
 import { anonymousSurfacesOf } from "#node/functions/anonymous-surfaces-of.function";
 
 /** The repository root. */
@@ -33,7 +36,7 @@ describe("anonymousSurfacesOf", () => {
     expect(anonymousSurfacesOf({})).toEqual([]);
   });
 
-  it("finds exactly today's five anonymous-callable calls in this repository", () => {
+  it("finds every anonymous-callable call in this repository reviewed", () => {
     const manifests = ["packages", "services", "apps"].flatMap((top) =>
       (top === "packages"
         ? readdirSync(join(ROOT, top), { withFileTypes: true })
@@ -52,12 +55,17 @@ describe("anonymousSurfacesOf", () => {
       .flatMap((file) => anonymousSurfacesOf(JSON.parse(readFileSync(file, "utf8"))))
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds
       .sort();
-    expect(keys).toEqual([
-      "achievements.award.verify@1",
-      "analytics.analytics_batch.ingest@1",
-      "consent.consent_snapshot.issue@1",
-      "identity.passkey.challenge@1",
-      "identity.passkey.verify@1",
-    ]);
+    expect(keys.filter((key) => !(key in REVIEWED_ANONYMOUS_SURFACES))).toEqual([]);
+    expect(keys).toHaveLength(5);
+  });
+
+  it("records the product checkout calls this repository cannot see, each with its reason", () => {
+    for (const key of [
+      "checkouts.checkout_page.choose_method@1",
+      "checkouts.checkout_page.framers@1",
+      "checkouts.checkout_page.load@1",
+      "payment_links.payment_link.open@1",
+    ])
+      expect(REVIEWED_ANONYMOUS_SURFACES[key]).toMatch(/\w/);
   });
 });

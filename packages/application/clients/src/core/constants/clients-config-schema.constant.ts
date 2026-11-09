@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `CLIENTS_CONFIG_SCHEMA`, the shipped schema of `ClientsOptions`: the API base URL, the base URL per producer
- *          module, the scope header, the pinned API version, the request timeout and the attempts per call, each with
+ *          module, the token audience per producer module, the scope header, the pinned API version, the request timeout and the attempts per call, each with
  *          its safe default.
  * Boundary: authored until gen compiles `ClientsOptions` into `#stackra/schemas` (STA-339); exported as
  *           `ClientsConfig$`. The base URL is empty (same origin), an absolute `http(s)` URL or a path; a trailing
@@ -23,6 +23,12 @@ export const CLIENTS_CONFIG_SCHEMA = z.object({
     .record(
       z.string().regex(/^[a-z][a-z0-9_]*$/, "Expected a module key (orders)"),
       z.string().regex(/^(|https?:\/\/\S+|\/\S*)$/, "Expected empty, an http(s) URL or a path"),
+    )
+    .default({}),
+  audiences: z
+    .record(
+      z.string().regex(/^[a-z][a-z0-9_]*$/, "Expected a module key (orders)"),
+      z.string().min(1, "Expected the producer's project id"),
     )
     .default({}),
   scopeHeader: z

@@ -4,7 +4,7 @@
  *          class name carries as `PascalCase(module) + "Settings"` (`LoyaltyKitSettings` is `loyalty_kit`); a host
  *          override keeps its base's name and key.
  * Boundary: reads the class name of the class directly below the `Settings(...)` call, as `configKey` reads a
- *           configuration's; gen derives the same key from the folder and locks it in the manifest. A server build
+ *           configuration's; gen derives the same key from the class name (its own `settingsKeyOf`) and locks it in the manifest. A server build
  *           keeps class names; a minifying client build reads settings through pages, never through this. Internal:
  *           not exported from the entry.
  * Runtime: isomorphic

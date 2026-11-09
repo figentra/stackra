@@ -47,6 +47,8 @@ export function AppHeader({
   userMenu,
   label,
   className,
+  // A transparent bar is the web landing's; native draws the solid one.
+  variant: _variant,
   ...rest
 }: AppHeaderProps): ReactElement {
   return (

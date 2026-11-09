@@ -18,6 +18,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { isRefusal } from "@stackra/errors";
 
 import { JobStatus } from "#contracts/index";
+import type { QueuedJob } from "#contracts/index";
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
 import { ScopeNotPlatformWrittenError } from "#core/errors/scope-not-platform-written.error";
 import { QueueService } from "#core/services/queue.service";
@@ -51,6 +52,16 @@ const caller: Actor = { kind: ActorKind.Service, id: "svc_commerce", scopeId: "o
 
 const user: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
 
+/** The job `driver` reserves of `queue` at `now`, loaded as its claim names it. */
+async function reserved(
+  driver: MemoryQueueDriver,
+  queue: string | undefined,
+  now: Date,
+): Promise<QueuedJob | undefined> {
+  const claim = await driver.reserve(queue, now);
+  return claim === undefined ? undefined : driver.load(claim.id);
+}
+
 /** A service over a fresh memory driver. */
 function setup() {
   const driver = new MemoryQueueDriver();
@@ -66,7 +77,7 @@ describe(QueueService, () => {
       { scope, origin: caller, idempotencyKey: "k1", causedBy: "call-1" },
     );
     expect(id).toMatch(/^job_/);
-    expect(await driver.reserve("maintenance", NOON)).toEqual({
+    expect(await reserved(driver, "maintenance", NOON)).toEqual({
       id,
       queue: "maintenance",
       key: "order.expire_unpaid",
@@ -100,8 +111,8 @@ describe(QueueService, () => {
     await queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, { origin: caller });
     await queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 });
     const keys = [
-      (await driver.reserve(undefined, NOON))?.uniqueKey,
-      (await driver.reserve(undefined, NOON))?.uniqueKey,
+      (await reserved(driver, undefined, NOON))?.uniqueKey,
+      (await reserved(driver, undefined, NOON))?.uniqueKey,
     ];
     expect(keys.sort()).toEqual(["order.expire_unpaid:-", "order.expire_unpaid:org_1"]);
   });
@@ -110,7 +121,7 @@ describe(QueueService, () => {
     const { driver, queue } = setup();
     await expect(queue.push(VoidPaymentAction, { paymentId: "pay_1" })).rejects.toThrow(TypeError);
     await queue.push(VoidPaymentAction, { paymentId: "pay_1" }, { origin: user });
-    expect(await driver.reserve("default", NOON)).toMatchObject({
+    expect(await reserved(driver, "default", NOON)).toMatchObject({
       key: "payment.void",
       origin: user,
       lease: Duration.minutes(6),
@@ -121,19 +132,19 @@ describe(QueueService, () => {
     const { driver, queue } = setup();
     const id = await queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, { scope });
     if (id === undefined) throw new Error("not queued");
-    await driver.reserve(undefined, NOON);
+    await reserved(driver, undefined, NOON);
     await driver.deadLetter(id, { code: "internal", message: "boom" });
     expect((await queue.deadLetters("maintenance")).map((job) => job.id)).toEqual([id]);
     expect(await queue.deadLetters("delivery")).toEqual([]);
     expect(await queue.redrive(id)).toBe(true);
     expect(await queue.deadLetters()).toEqual([]);
-    expect(await driver.reserve(undefined, NOON)).toMatchObject({ id, attempts: 1 });
+    expect(await reserved(driver, undefined, NOON)).toMatchObject({ id, attempts: 1 });
   });
 
   it("stores a push's priority over the action's, and refuses a fractional one", async () => {
     const { driver, queue } = setup();
     await queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, { scope, priority: 7 });
-    expect(await driver.reserve(undefined, NOON)).toMatchObject({ priority: 7 });
+    expect(await reserved(driver, undefined, NOON)).toMatchObject({ priority: 7 });
     await expect(
       queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, { priority: 1.5 }),
     ).rejects.toThrow(RangeError);
@@ -148,7 +159,7 @@ describe(QueueService, () => {
       ],
       { scope, origin: caller },
     );
-    expect(await driver.reserve(undefined, NOON)).toMatchObject({
+    expect(await reserved(driver, undefined, NOON)).toMatchObject({
       id,
       key: "order.expire_unpaid",
       chain: [{ key: "payment.void", input: { paymentId: "pay_1" } }],
@@ -172,7 +183,7 @@ describe(QueueService, () => {
     expect(jobs[0]).toMatch(/^job_/);
     expect(jobs[1]).toBeUndefined();
     expect(await queue.progress(id)).toEqual({ id, total: 2, done: 1, failed: 0 });
-    expect(await driver.reserve(undefined, NOON)).toMatchObject({ batchId: id });
+    expect(await reserved(driver, undefined, NOON)).toMatchObject({ batchId: id });
     await expect(queue.batch([])).rejects.toThrow(TypeError);
     expect(await queue.progress("jbt_missing")).toBeUndefined();
   });
@@ -203,7 +214,7 @@ describe(QueueService, () => {
         const refused = await attempt().catch((error: unknown) => error);
         expect(isRefusal(refused, ScopeNotPlatformWrittenError)).toBe(true);
       }
-      expect(await driver.reserve(undefined, NOON)).toBeUndefined();
+      expect(await reserved(driver, undefined, NOON)).toBeUndefined();
     }
   });
 

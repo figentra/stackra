@@ -16,12 +16,13 @@
  *           the container can build it as a wiring candidate; the ORM is made on first use, so entities registered
  *           after the driver was built are still in it. One database per instance, gone on `close`. Each migration
  *           file runs as the runner would run it (a transactional file in one transaction) without the
- *           `schema_migrations` bookkeeping. shortcut: PGlite is one connection, so a `requiresNew` transaction runs
- *           on the same session as the one around it; a test that needs true parallel sessions uses `usePostgres`.
+ *           `schema_migrations` bookkeeping. PGlite is one connection, so a second transaction would wait forever on
+ *           the one around it: a `requiresNew` transaction inside a running one is a savepoint here, which commits with
+ *           the caller under PGlite. The independent commit is proven only in `.int` tests on Postgres
+ *           (`usePostgres`), as is anything else that needs true parallel sessions.
  *           pgvector comes from PGlite's own extension package (`@electric-sql/pglite-pgvector`, the release paired with
- *           the catalog's PGlite). shortcut: no PostGIS here (PGlite's PostGIS package needs PGlite 0.5.9 or later);
- *           a member with geography columns tests them in the integration tier (`usePostgres`) until the catalog
- *           moves.
+ *           the catalog's PGlite); PostGIS from `@electric-sql/pglite-postgis` when the member installs it (a member
+ *           with geography columns does, ADR 0314).
  * Runtime: node
  * Governing contract: ADR 0266 (one option, one driver, memory first); ADR 0014; ADR 0097; ADR 0159; ADR 0160
  *                     (decision 2: the approved extensions); ADR 0269 (decision 3); gap db19
@@ -40,7 +41,7 @@ import type { ScopeRef } from "@stackra/contracts";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { deleteFilters } from "#core/functions/delete-filters.function";
-import { scopeSettings } from "#core/functions/scope-settings.function";
+import { runInScope } from "#core/functions/run-in-scope.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { StampSubscriber } from "#core/orm/stamp.subscriber";
 import { Database } from "#core/ports/database.port";
@@ -84,7 +85,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
 
   /** The MikroORM instance on PGlite. */
   get orm(): MikroORM {
-    const { orm, extensions } = loadPglitePeers();
+    const { orm } = loadPglitePeers();
     this.instance ??= new orm.MikroORM({
       // PGlite reads an in-memory data directory from the database name.
       dbName: "memory://",
@@ -101,9 +102,14 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       ensureDatabase: false,
       // A member with migrations starts each instance from the shared snapshot; one without creates its schema.
       // reason: PGlite's Extensions and the ORM driver's option type come from separately versioned packages
-      driverOptions: (existsSync(join(process.cwd(), MIGRATIONS_FOLDER))
-        ? { pglite: () => this.startFromSnapshot() }
-        : { extensions }) as never,
+      // Always this package's PGlite: the ORM driver pins its own older PGlite, which cannot load the extension
+      // bundles paired with the catalog's (pgvector, PostGIS).
+      driverOptions: {
+        pglite: () =>
+          existsSync(join(process.cwd(), MIGRATIONS_FOLDER))
+            ? this.startFromSnapshot()
+            : this.startEmpty(),
+      } as never,
       // Kysely opens PGlite's one connection on the first query and awaits this before running it.
       onCreateConnection: () => this.prepare(),
     });
@@ -125,30 +131,30 @@ export class MemoryDatabaseDriver extends Driver(Database) {
   }
 
   /**
-   * Implements `Database.transaction`, documented there, through `runTransaction`.
+   * Implements `Database.transaction`, documented there, through `runTransaction`. Inside a running transaction,
+   * `requiresNew` is a savepoint that commits with the caller (PGlite has one connection); its timeouts still apply,
+   * and `isolation`, `readOnly` and `retry`, which a savepoint cannot take, are left to the transaction around it.
    *
    * @throws TypeError when `isolation`, `readOnly` or `retry` is asked inside a running transaction without
    *         `requiresNew`.
    */
   transaction<T>(work: () => Promise<T>, options: TransactionOptions = {}): Promise<T> {
-    return runTransaction(this.em(), work, options);
+    const em = this.em();
+    if (options.requiresNew === true && em.isInTransaction())
+      return runTransaction(em, work, {
+        ...(options.timeout === undefined ? {} : { timeout: options.timeout }),
+        ...(options.lockTimeout === undefined ? {} : { lockTimeout: options.lockTimeout }),
+      });
+    return runTransaction(em, work, options);
   }
 
   /**
-   * Implements `Database.withScope`, documented there.
+   * Implements `Database.withScope`, documented there, through `runInScope`.
    *
    * @throws TypeError for a scope path that is not an `ltree` path.
    */
   withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T> {
-    const settings = scopeSettings(scopes);
-    return this.transaction(async () => {
-      // raw-sql: set_config is how a transaction carries the scope the row-level-security policies compare with
-      await this.em().execute(
-        `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
-        settings.flat(),
-      );
-      return work();
-    });
+    return runInScope(this, scopes, work);
   }
 
   /** See `Database.close`; the in-memory database is gone afterwards. */
@@ -184,6 +190,13 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     return this.pglite;
   }
 
+  /** A fresh, empty PGlite of this instance's own with the approved extensions (a member with no migrations). */
+  private startEmpty(): Promise<PGlite> {
+    const { PGlite, extensions } = loadPglitePeers();
+    this.pglite ??= PGlite.create({ extensions });
+    return this.pglite;
+  }
+
   /** Creates the extensions and the entity schema once (a member with no migrations), on PGlite itself. */
   private prepare(): Promise<void> {
     this.prepared ??= (async () => {
@@ -191,7 +204,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       const connection = this.orm.em.getConnection() as unknown as PgliteConnection;
       const pglite = await connection.getNativeClient();
       // raw-sql: extensions are DDL the schema owns, not a query a model makes
-      await pglite.exec(extensionsSql());
+      await pglite.exec(extensionsSql(Object.keys(loadPglitePeers().extensions)));
       await pglite.exec(await this.orm.schema.getCreateSchemaSQL());
     })();
     return this.prepared;

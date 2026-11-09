@@ -14,6 +14,7 @@
 import { z } from "zod";
 
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
+import { WORKER_SETTINGS_SCHEMA } from "#core/constants/worker-settings-schema.constant";
 
 /** Caller workflows by member or purpose (`docs: deploy-docs.yml`). */
 const WORKFLOWS_SCHEMA = z.record(
@@ -55,6 +56,7 @@ export const TARGETS_SCHEMA = z
           .regex(/^\d{4}-\d{2}-\d{2}$/)
           .optional(),
         observability: z.strictObject({ headSamplingRate: z.number().min(0).max(1) }).optional(),
+        defaults: WORKER_SETTINGS_SCHEMA.optional(),
         members: z.record(z.string(), OPEN_OBJECT_SCHEMA).optional(),
         workflows: WORKFLOWS_SCHEMA.optional(),
       })

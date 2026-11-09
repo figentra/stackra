@@ -6,7 +6,8 @@
  *           and one per group and user (unique indexes in the migration). A node row carries `scopeId` and
  *           `scopePath`, a user row `userId`; never both. `values` holds what `SettingsReader#write` or a generated
  *           settings operation checked, never a secret. Rows are written through `StoredSettingService.store`, never
- *           with `new`; the ORM loads rows without running the constructor.
+ *           with `new`; the ORM loads rows without running the constructor. A row is owned
+ *           (`BelongsToTenantOrPlatform`): the running `withTenant` call's tenant, `null` in a platform call.
  * Runtime: node
  * Governing contract: ADR 0213 (decisions 1 and 2); ADR 0327 (decisions 3 and 9: a consumer's own table keyed by
  *                     `scope_id`); ADR 0294 (decisions 4, 11, 20 and 27); ADR 0135 (public ids).
@@ -14,14 +15,19 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenantOrPlatform } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 
 import type { SettingValue } from "#contracts/index";
 import { SETTING_VALUES_SCHEMA } from "#node/constants/setting-values-schema.constant";
 
-/** One holder's values of one group. Traits add `id` and the timestamps; the indexes are the migration's. */
+/** One holder's values of one group. Traits add `id`, the owner and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class StoredSetting extends Model.with(HasPublicId("sst"), Timestamps) {
+export class StoredSetting extends Model.with(
+  HasPublicId("sst"),
+  BelongsToTenantOrPlatform,
+  Timestamps,
+) {
   /** The holder's values by path in the group. */
   // reason: SettingValue is a union of scalars, which no shape type states
   @Field(SETTING_VALUES_SCHEMA)
@@ -43,11 +49,11 @@ export class StoredSetting extends Model.with(HasPublicId("sst"), Timestamps) {
   locked!: readonly string[];
 }
 
-/** Lets an insert of `StoredSetting` leave out the trait timestamps. */
+/** Lets an insert of `StoredSetting` leave out the trait timestamps and owner. */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps
 // out; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface StoredSetting {
-  /** The trait timestamps an insert may leave out. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  /** The trait timestamps and owner an insert may leave out. */
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

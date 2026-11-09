@@ -12,11 +12,11 @@
  *                     note: waits, timeouts, heartbeats).
  */
 import type { AnyClass } from "@stackra/container";
-import type { RetryPolicy } from "@stackra/contracts";
 import type { Event } from "@stackra/events";
 
 import type { Signal } from "#core/bases/signal.base";
 import type { Run } from "#core/types/run.type";
+import type { StepRetry } from "#core/types/step-retry.type";
 
 /** The options of one step. */
 export interface StepOptions<W> {
@@ -30,11 +30,12 @@ export interface StepOptions<W> {
   readonly heartbeat?: string;
 
   /**
-   * Attempts (a whole number from 1) and the `Backoff` curve (exponential when absent) of the shared `RetryPolicy`;
-   * one attempt when absent. The waits are the queue's `JOB_BACKOFF`. A refusal that is not retryable fails the
-   * step at once whatever the budget.
+   * Attempts (a whole number from 1), the first wait (the queue's `JOB_BACKOFF` base when absent) and the `Backoff`
+   * curve (exponential when absent) of the shared `RetryPolicy`; one attempt when absent. `live` reads replacements
+   * each time the step fails, so they can be settings (STA-2610). A refusal that is not retryable fails the step at
+   * once whatever the budget.
    */
-  readonly retry?: Pick<RetryPolicy, "attempts" | "backoff">;
+  readonly retry?: StepRetry<W>;
 
   /** The signal or event the run parks for before this step; the step receives it as its third argument. */
   readonly waitFor?: AnyClass<Signal> | AnyClass<Event>;

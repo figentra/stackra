@@ -443,6 +443,9 @@ export const STACKRA_THEME = defineTheme({
     // A selection indicator sliding between items (tabs, segments, the active nav pill).
     indicator: { duration: "250ms", easing: "cubic-bezier(0.32, 0.72, 0, 1)" },
     blink: { duration: "1000ms", easing: "steps(1)" },
+    // One floor of a build-log reveal: a pipe segment or a terminal line appearing whole, never eased (the brand kit's
+    // floor step, motion principles; ADR 0501 section 9 as amended 2026-11-03).
+    floor: { duration: "80ms", easing: "steps(1)" },
     // A looping attention cue (a live dot, a beacon).
     pulse: { duration: "1200ms", easing: "ease-in-out" },
     // An attention move that settles (a bell wiggle, rings sweeping in).

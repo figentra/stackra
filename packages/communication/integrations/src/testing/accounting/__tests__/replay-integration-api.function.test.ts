@@ -7,6 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (decision 3); ADR 0443 (decision 8).
  */
+import { HttpMethod } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { ProviderRefusedError } from "#core/index";
@@ -72,5 +73,24 @@ describe("replayIntegrationApi", () => {
     expect(refused).toBeInstanceOf(ProviderRefusedError);
     expect((refused as ProviderRefusedError).status).toBe(404);
     expect(() => api.done()).toThrow(/GET \/accounts \(call 2\) was never made/);
+  });
+
+  it("answers send with a recorded refusal's status and an answer as a 200", async () => {
+    const api = replayIntegrationApi("ledger", [
+      { method: "POST", path: "/journals", refusal: { status: 409, code: "duplicate" } },
+      { method: "GET", path: "/accounts", answer: [] },
+    ]);
+
+    await expect(api.send({ method: HttpMethod.Post, path: "/journals" })).resolves.toEqual({
+      status: 409,
+      headers: {},
+      body: '{"code":"duplicate"}',
+    });
+    await expect(api.send({ method: HttpMethod.Get, path: "/accounts" })).resolves.toEqual({
+      status: 200,
+      headers: {},
+      body: "[]",
+    });
+    expect(() => api.done()).not.toThrow();
   });
 });

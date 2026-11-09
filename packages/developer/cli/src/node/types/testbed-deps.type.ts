@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `TestbedDeps`, everything `runTestbed` takes from outside: the processes it starts, the clock, the claim folder and this Mac's public IP, so tests fake all of it.
+ * Purpose: `TestbedDeps`, everything `runTestbed` takes from outside: the processes it starts, the clock, the claim folder, this Mac's public IP and the Session Manager plugin, so tests fake all of it.
  * Boundary: type only; the command builds the real one, a test builds a fake.
  * Runtime: node
  * Governing contract: ADR 0484 (the testbed); ADR 0282 (decision 3).
@@ -9,8 +9,15 @@ import type { ToolOutput } from "#node/types/tool-output.type";
 
 /** The outside world of one `stackra testbed` run. */
 export type TestbedDeps = {
-  /** Runs a program without a shell and captures its output; `undefined` when it cannot start. */
-  readonly exec: (command: string, args: readonly string[]) => Promise<ToolOutput | undefined>;
+  /**
+   * Runs a program without a shell and captures its output; `undefined` when it cannot start. With `timeoutMs`, a
+   * program still running then is stopped and answers code 124.
+   */
+  readonly exec: (
+    command: string,
+    args: readonly string[],
+    options?: { readonly timeoutMs?: number },
+  ) => Promise<ToolOutput | undefined>;
 
   /** Runs a program without a shell with its output on the command's io; resolves with its exit code. */
   readonly stream: (command: string, args: readonly string[]) => Promise<number>;
@@ -32,4 +39,13 @@ export type TestbedDeps = {
 
   /** The folder of the Mac-side claims. */
   readonly claimRoot: string;
+
+  /** Calls `handler` once on SIGINT or SIGTERM; the returned function removes it. */
+  readonly onInterrupt: (handler: () => void) => () => void;
+
+  /**
+   * Makes the aws CLI's Session Manager plugin reachable for the processes started after it (SSM needs it): resolves
+   * `undefined` when it is, else the reason it is not.
+   */
+  readonly ssmPlugin: () => Promise<string | undefined>;
 };

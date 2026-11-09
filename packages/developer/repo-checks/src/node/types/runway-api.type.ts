@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `RunwayApi`, the three names of the built `@stackra/runway` entry the runway-file check calls. The check
+ * Purpose: `RunwayApi`, the names of the built `@stackra/runway` entry the runway-file check calls. The check
  *          loads that entry at run time, so this structural type stands in for an import of the package.
  * Boundary: type only; `checkRunwayFiles` receives a value of it, so tests pass a fake.
  * Runtime: node
@@ -23,4 +23,20 @@ export type RunwayApi = {
     root: unknown,
     services: readonly string[],
   ) => readonly { readonly code: string; readonly message: string }[];
+
+  /** The destinations and target blocks of a parsed root runway that no driver serves (absent before 0.10). */
+  readonly checkDestinations?: (
+    root: unknown,
+  ) => readonly { readonly path: string; readonly message: string }[];
+
+  /** A product root runway's staging or production that names no `region` (ADR 0524; absent before 0.11). */
+  readonly checkEnvironmentRegion?: (
+    root: unknown,
+  ) => readonly { readonly path: string; readonly message: string }[];
+
+  /** The `requires` entries of a parsed service runway that no driver serves, at their document path. */
+  readonly checkRequires: (
+    root: unknown,
+    service: unknown,
+  ) => readonly { readonly path: string; readonly message: string }[];
 };

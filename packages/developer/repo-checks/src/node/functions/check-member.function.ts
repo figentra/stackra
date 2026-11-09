@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: `checkMember(member)`, the manifest findings of one member: its name by placement, catalog-only versions,
  *          forbidden dependencies, no `@stackra-pro/*` dependency at all, no HeroUI Pro anywhere, one tier tag
- *          matching its directory and a @stackra/typescript-config preset.
+ *          matching its directory and a @stackra/typescript-config preset; a `"kind": "docs"` member only its place,
+ *          the repository's `docs/` (ADR 0514).
  * Boundary: pure: the caller passes the parsed package.json, turbo.jsonc and tsconfig.json (undefined when absent).
  * Runtime: node
- * Governing contract: ADR 0011; ADR 0019; ADR 0310; ADR 0461 (decision 3); ADR 0469; ADR 0003 (tiers).
+ * Governing contract: ADR 0011; ADR 0514 (decision 10); ADR 0019; ADR 0310; ADR 0461 (decision 3); ADR 0469; ADR 0003 (tiers).
  */
 import { DEPENDENCY_FIELDS } from "#node/constants/dependency-fields.constant";
 import { FORBIDDEN_DEPENDENCIES } from "#node/constants/forbidden-dependencies.constant";
@@ -54,6 +55,9 @@ export function checkMember(member: {
         );
       // peerDependencies state a compatible range for consumers; they cannot name a catalog.
       if (field === "peerDependencies") continue;
+      // A service pins encore.dev literally; `checkEncoreService` holds it to the catalog's version (ADR 0091).
+      if (dep === "encore.dev" && field === "dependencies" && tierFor(dir) === "tier:service")
+        continue;
       if (!version.startsWith("catalog:") && !version.startsWith("workspace:"))
         out.push(
           `${field}.${dep} = "${version}" — add it to a catalog in pnpm-workspace.yaml and use catalog:<name>`,
@@ -61,6 +65,11 @@ export function checkMember(member: {
     }
   }
 
+  // ADR 0514 decision 10: a docs package is content only, at the repository's docs/, with no tier, turbo or tsconfig.
+  if (pkg.stackra?.kind === "docs") {
+    if (dir !== "docs") out.push(`a docs package lives at docs/, not ${dir}/ (ADR 0514)`);
+    return out;
+  }
   const tier = tierFor(dir);
   if (tier === null) return out;
   if (tier === "unknown")

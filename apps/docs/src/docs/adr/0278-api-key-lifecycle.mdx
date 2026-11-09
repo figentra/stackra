@@ -67,6 +67,29 @@ The owner did not give these; the conservative default below applies until an AD
 5. **Last-used IP retention.** Follows the access-log retention of
    [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention).
 
+## Amendment, 2026-11-09: a key's mode and version pin (STA-2646)
+
+A key is test or live, chosen when it is issued and written into its text after the kind's prefix:
+`stackra_sk_test_…`, `stackra_pk_live_…` (open detail 1's `<env>` segment). The body is base-62, so the segment
+cannot be read as part of it. A mode is never assumed: a key with no segment, or whose record has no mode, is refused
+(CHECKOUT's review, leader 2026-11-09; no live keys existed), so live comes only from a key issued live. The checksum covers the segment, so
+it cannot be edited, and the verifier refuses a key whose text names another mode than its stored record
+(`ApiKeyRecord.mode`). `VerifiedApiKey.mode` carries it to the caller.
+
+A key also records a version pin, the API's `Stackra-Version` date when it was issued (`ApiKeyRecord.versionPin`), which
+its calls default to; an explicit `Stackra-Version` header still wins. The gateway path that turns a verified key into a
+call (the actor, `CallOptions.sandbox` for a test key, the pin for versioning) is the next part of STA-2646 and amends
+this ADR again when it lands.
+
+## Amendment, 2026-11-09: the gateway reads keys from identity, cached (STA-2646 B2)
+
+A service that answers API-key calls reads a presented key's record from the identity service by its SHA-256
+(`principals.api_key.verify@1`) through `ServiceApiKeyStoreDriver`, as its own service. It keeps a verified record for
+`IdentityConfig.apiKeyCacheSeconds` (30 by default, at most 300), so every call is not a round trip; a key identity does
+not know is never cached. A revoke takes effect at once when identity's `principals.api_key.revoked.v1` reaches the
+service (`evictPrincipal`); **the worst case is the cache window**, 30 seconds by default, when the event has not
+arrived. The listener that calls `evictPrincipal` is bound with the gateway path (B3).
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2,

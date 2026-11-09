@@ -13,8 +13,10 @@ import { describe, expect, it } from "@stackra/testing";
 import { crc32 } from "@stackra/support";
 
 import { IdentityConfig } from "#config/identity.config";
+import { ApiKeyMode } from "#contracts/enums/api-key-mode.enum";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { ApiKeyRejectedError } from "#core/errors/api-key-rejected.error";
+import { base62Of } from "#core/functions/base62-of.function";
 import { checkPublishableKey } from "#core/functions/check-publishable-key.function";
 import { isOriginAllowed } from "#core/functions/is-origin-allowed.function";
 import { mintApiKey } from "#core/functions/mint-api-key.function";
@@ -29,11 +31,32 @@ describe("API keys", () => {
 
   it("mints a well-formed key of each kind", () => {
     const publishable = mintApiKey(ApiKeyKind.Publishable, identity);
-    expect(publishable).toMatch(/^stackra_pk_[0-9A-Za-z]{36}$/);
-    expect(parseApiKey(publishable, identity)).toEqual({ kind: "publishable", wellFormed: true });
+    expect(publishable).toMatch(/^stackra_pk_live_[0-9A-Za-z]{36}$/);
+    expect(parseApiKey(publishable, identity)).toEqual({
+      kind: "publishable",
+      mode: "live",
+      wellFormed: true,
+    });
     const secret = mintApiKey(ApiKeyKind.Secret, identity);
-    expect(parseApiKey(secret, identity)).toEqual({ kind: "secret", wellFormed: true });
+    expect(parseApiKey(secret, identity)).toEqual({
+      kind: "secret",
+      mode: "live",
+      wellFormed: true,
+    });
     expect(mintApiKey(ApiKeyKind.Secret, identity)).not.toBe(secret);
+  });
+
+  it("names the mode in the key, and names none for a key minted before modes", () => {
+    const test = mintApiKey(ApiKeyKind.Secret, identity, ApiKeyMode.Test);
+    expect(test).toMatch(/^stackra_sk_test_[0-9A-Za-z]{36}$/);
+    expect(parseApiKey(test, identity)).toEqual({ kind: "secret", mode: "test", wellFormed: true });
+    const head = `stackra_sk_${"a".repeat(30)}`;
+    const legacy = `${head}${base62Of(crc32(head), 6)}`;
+    expect(parseApiKey(legacy, identity)).toEqual({
+      kind: "secret",
+      mode: undefined,
+      wellFormed: true,
+    });
   });
 
   it("catches a typo and ignores an unknown prefix", () => {

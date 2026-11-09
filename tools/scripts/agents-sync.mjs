@@ -2,8 +2,8 @@
 /**
  * Stackra file contract:
  * Purpose: `agents-sync` — project `.agents/` into Claude Code and OpenCode directories.
- * Boundary: writes only the symlinks and generated files it owns under `.claude/`, `.opencode/`, the AGENTS.md rules
- *           block and `.mcp.json`; a real file in their place is a conflict, never overwritten.
+ * Boundary: writes only the symlinks and generated files it owns under `.claude/`, `.opencode/` and `.mcp.json`, and
+ *           removes the retired AGENTS.md rules block; a real file in their place is a conflict, never overwritten.
  * Runtime: node
  * Governing contract: ADR 0258 (agent roster v2 and skill fencing); ADR 0293; ADR 0061.
  *
@@ -21,9 +21,9 @@
  *
  *   GENERATE — agents. Claude Code and OpenCode each read a Markdown agent
  *   with their own frontmatter dialect; the body is identical, only the
- *   frontmatter differs. Rules are rendered into a marked block of the root
- *   AGENTS.md (read by both assistants — Claude via CLAUDE.md → @AGENTS.md,
- *   OpenCode natively).
+ *   frontmatter differs. Rules are not projected: Flow renders them and lists
+ *   each in AGENTS.md's "Rules index" (path, description, when it applies), read
+ *   by both assistants — Claude via CLAUDE.md → @AGENTS.md, OpenCode natively.
  *
  *   MCP — `.mcp.yaml` (annotated, the source) is rendered to `.mcp.json`
  *   (comment-free, gitignored, rendered locally), the only project MCP file Claude Code reads.
@@ -45,8 +45,9 @@
  * Precedence: `manual` wins over `always`, which wins over `applies_to`. If none
  * of the three is meaningfully set, the rule is treated as `always`.
  *
- * Rules are rendered into a marked block of the root AGENTS.md: always-on rules
- * in full, file-scoped and manual rules as an index pointing at their source.
+ * Every rule's frontmatter is validated on each run (exit 2 when malformed). The
+ * marked rules block earlier versions wrote into AGENTS.md (every always-on rule
+ * in full, 66 KB in core) is retired: a run removes it, `--check` reports it.
  *
  * ---------------------------------------------------------------------------
  * Neutral agent frontmatter schema (`.agents/agents/*.md`):
@@ -125,8 +126,7 @@ const SCRIPT_REL = "tools/scripts/agents-sync.mjs";
 const ASSISTANTS = {
   claude: {
     dir: ".claude",
-    // Rules are not projected to .claude/rules — they render into the AGENTS.md
-    // block, which Claude reads via CLAUDE.md → @AGENTS.md.
+    // Rules are not projected to .claude/rules: AGENTS.md's Rules index (Flow) points at each.
     map: {
       skills: "skills",
       agents: "agents",
@@ -138,7 +138,7 @@ const ASSISTANTS = {
   opencode: {
     dir: ".opencode",
     // Skills are NOT projected: OpenCode V2 searches `.agents/skills` natively.
-    // Rules have no directory in OpenCode V2 — rendered into the AGENTS.md block.
+    // Rules have no directory in OpenCode V2; AGENTS.md's Rules index (Flow) points at each.
     map: {
       skills: null,
       agents: "agents",
@@ -913,91 +913,12 @@ function normalizeNeutral(data, label) {
 }
 
 // ---------------------------------------------------------------------------
-// INSTRUCTIONS BLOCK — rules rendered into a marked block of the root
-// AGENTS.md (read by both Claude Code and OpenCode). Everything outside the
-// markers is hand-written and never touched.
+// RULES — validated here; Flow renders them and AGENTS.md's Rules index points at each (flow#179). The marked
+// block earlier versions wrote into AGENTS.md is retired: everything outside its markers is kept.
 // ---------------------------------------------------------------------------
 
-const BLOCK_BEGIN = `<!-- BEGIN generated from ${SOURCE}/rules by ${SCRIPT_REL} — edit the sources, not this block -->`;
 const BLOCK_END = `<!-- END generated from ${SOURCE}/rules -->`;
 const BLOCK_BEGIN_PREFIX = `<!-- BEGIN generated from ${SOURCE}/rules`;
-
-/** Demote every Markdown heading two levels, outside fenced code, so a rule nests under the block's `##`. */
-function demoteHeadings(body, by = "##") {
-  let fenced = false;
-  return body
-    .split("\n")
-    .map((line) => {
-      if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
-      return !fenced && /^#{1,4} /.test(line) ? `${by}${line}` : line;
-    })
-    .join("\n");
-}
-
-// ---------------------------------------------------------------------------
-// CONSTITUTION — Figentra Flow's `flow-*` commands read `.flow/constitution.md` (ADR 0510); its single source is the
-// docs laws in apps/docs/src/docs/constitution/*.mdx. Generated whole, drift-checked like the rest.
-// ---------------------------------------------------------------------------
-
-const CONSTITUTION_SRC = "apps/docs/src/docs/constitution";
-const CONSTITUTION_OUT = ".flow/constitution.md";
-
-function renderConstitution(files) {
-  const laws = files.map((f) => {
-    const raw = readFileSync(join(ROOT, CONSTITUTION_SRC, f), "utf8");
-    const { data, body } = parseNeutralFrontmatter(raw, `${CONSTITUTION_SRC}/${f}`);
-    // Docs components (<Note>, <Steps>…) are Mintlify-only; keep their text, drop the tags. oxfmt wraps a
-    // component's body onto indented lines, so a <Step> joins into one list item and other bodies are dedented
-    // (left indented, they would render as code blocks).
-    let text = body.replaceAll(
-      /^[ \t]*<Step title="([^"]*)">([\s\S]*?)<\/Step>[ \t]*$/gm,
-      (_, title, inner) =>
-        `- **${title}**: ${inner
-          .trim()
-          .split(/\s*\n\s*/)
-          .join(" ")}`,
-    );
-    const block = /^([ \t]*)<([A-Z][A-Za-z]*)\b[^>\n]*>\n([\s\S]*?)\n\1<\/\2>[ \t]*$/gm;
-    while (block.test(text))
-      text = text.replace(block, (_, _indent, _tag, inner) => {
-        const pad = Math.min(
-          ...inner
-            .split("\n")
-            .filter((l) => l.trim())
-            .map((l) => /^ */.exec(l)[0].length),
-        );
-        return `\n${inner.replaceAll(new RegExp(`^ {0,${pad}}`, "gm"), "")}\n`;
-      });
-    text = text
-      .replaceAll(/^\s*<\/?[A-Z][A-Za-z]*[^>\n]*>\s*$/gm, "")
-      .replaceAll(/\n{3,}/g, "\n\n");
-    return `## ${unquote(String(data.title ?? f))}\n\n${demoteHeadings(text.trim(), "#")}`;
-  });
-  return [
-    "# Stackra Constitution",
-    "",
-    `<!-- generated from ${CONSTITUTION_SRC}/*.mdx by ${SCRIPT_REL} — edit the sources, not this file -->`,
-    "",
-    ...laws.flatMap((l) => [l, ""]),
-  ].join("\n");
-}
-
-function ensureConstitution() {
-  const dir = join(ROOT, CONSTITUTION_SRC);
-  if (!existsSync(dir)) return;
-  // index first (the hierarchy), then the laws alphabetically
-  const files = readdirSync(dir)
-    .filter((f) => f.endsWith(".mdx"))
-    .toSorted((a, b) => (a === "index.mdx" ? -1 : b === "index.mdx" ? 1 : a.localeCompare(b)));
-  const rendered = renderConstitution(files);
-  const out = join(ROOT, CONSTITUTION_OUT);
-  if (existsSync(out) && readFileSync(out, "utf8") === rendered) return void results.ok++;
-  if (CHECK)
-    return void results.drift.push(`${CONSTITUTION_OUT}: ${existsSync(out) ? "stale" : "missing"}`);
-  mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, rendered);
-  results.generated++;
-}
 
 const REVIEWERS_OUT = `${SOURCE}/hooks/_reviewer-agents.mjs`;
 
@@ -1041,71 +962,37 @@ function ensureReviewerAgents(agentEntries) {
   results.generated++;
 }
 
-/** Always-on rules in full; file-scoped and manual rules as an index pointing at their source. */
-function renderRulesBlock(ruleEntries) {
-  const rules = ruleEntries.map((entry) => {
+/** Exits 2 on the first rule whose frontmatter is malformed, as the block renderer did. */
+function validateRules(ruleEntries) {
+  for (const entry of ruleEntries) {
     const sourceRel = `${SOURCE}/rules/${entry}`;
     const raw = readFileSync(join(ROOT, SOURCE, "rules", entry), "utf8");
-    const { data, body } = parseNeutralFrontmatter(raw, sourceRel);
-    return { sourceRel, neutral: normalizeNeutral(data, sourceRel), body };
-  });
-  const always = rules.filter((r) => r.neutral.always && !r.neutral.manual);
-  const scoped = rules.filter((r) => !r.neutral.always && !r.neutral.manual);
-  const manual = rules.filter((r) => r.neutral.manual);
-
-  const out = [
-    "## Repository rules",
-    "",
-    "Always-on rules follow in full. Read a file-scoped rule before touching a file its",
-    "globs match.",
-  ];
-  for (const r of always) {
-    out.push("", `<!-- source: ${r.sourceRel} -->`, "", demoteHeadings(r.body.trim()));
+    normalizeNeutral(parseNeutralFrontmatter(raw, sourceRel).data, sourceRel);
   }
-  if (scoped.length) {
-    out.push("", "### Read before touching matching files", "");
-    // A list, not a table: the repository formatter re-aligns table columns, and a block
-    // it rewrites would never again equal what this renders — permanent drift.
-    for (const r of scoped)
-      out.push(
-        `- **${r.neutral.title}** — ${r.neutral.applies_to.map((g) => `\`${g}\``).join(", ")}: read \`${r.sourceRel}\``,
-      );
-  }
-  if (manual.length) {
-    out.push("", "### On request", "");
-    for (const r of manual)
-      out.push(`- ${r.neutral.title} — ${r.neutral.description} (\`${r.sourceRel}\`)`);
-  }
-  return `${BLOCK_BEGIN}\n\n${out.join("\n")}\n\n${BLOCK_END}`;
 }
 
-function ensureInstructionsBlock(file, ruleEntries) {
+/** Removes the retired rules block from `file`, keeping the text around it; `--check` reports a leftover one. */
+function retireInstructionsBlock(file) {
   const path = join(ROOT, file);
-  const rendered = renderRulesBlock(ruleEntries);
-  const current = existsSync(path) ? readFileSync(path, "utf8") : "";
+  if (!existsSync(path)) return;
+  const current = readFileSync(path, "utf8");
   const begin = current.indexOf(BLOCK_BEGIN_PREFIX);
   const endAt = current.indexOf(BLOCK_END);
-
-  if ((begin === -1) !== (endAt === -1) || (begin !== -1 && endAt < begin)) {
+  if (begin === -1 && endAt === -1) {
+    results.ok++;
+    return;
+  }
+  if (begin === -1 || endAt === -1 || endAt < begin) {
     results.conflict.push(`${file}: unbalanced generated-rules markers; fix by hand`);
     return;
   }
-  let next;
-  if (begin === -1) {
-    next = `${current.replace(/\s*$/, "")}${current ? "\n\n" : ""}${rendered}\n`;
-  } else {
-    const existing = current.slice(begin, endAt + BLOCK_END.length);
-    if (existing === rendered) {
-      results.ok++;
-      return;
-    }
-    next = current.slice(0, begin) + rendered + current.slice(endAt + BLOCK_END.length);
-  }
   if (CHECK) {
-    results.drift.push(`${file}: generated rules block ${begin === -1 ? "missing" : "stale"}`);
+    results.drift.push(`${file}: retired generated rules block present; run agents-sync`);
     return;
   }
-  writeFileSync(path, next);
+  const before = current.slice(0, begin).replace(/\s*$/, "");
+  const after = current.slice(endAt + BLOCK_END.length).replace(/^\s*/, "");
+  writeFileSync(path, `${before}${before && after ? "\n\n" : ""}${after}`.replace(/\s*$/, "\n"));
   results.generated++;
 }
 
@@ -1386,14 +1273,12 @@ function main() {
     return 0;
   }
 
-  ensureConstitution();
   ensureMcpJson();
   ensureReviewerAgents(agentEntries);
-  const ruleSources = sourceEntries("rules");
+  validateRules(sourceEntries("rules"));
   for (const name of assistants) {
     const { dir, map, instructionsBlock } = ASSISTANTS[name];
-    if (instructionsBlock && ruleSources.length)
-      ensureInstructionsBlock(instructionsBlock, ruleSources);
+    if (instructionsBlock) retireInstructionsBlock(instructionsBlock);
     for (const kind of KINDS) {
       const dest = map[kind];
       if (dest === null) {

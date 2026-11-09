@@ -21,12 +21,14 @@ const env = (vars: Record<string, string | number> = {}): EdgeEnv => ({
   EDGE_OIDC_AUDIENCE: "project-1",
   EDGE_OIDC_KEYS_SECONDS: 3600,
   EDGE_TOKEN_LEEWAY_SECONDS: 60,
+  EDGE_CSP: "{}",
+  EDGE_FRAME_ANCESTORS_SECONDS: 60,
   ...vars,
 });
 
 describe("readSettings", () => {
   it("parses the origin, the host map and the token settings", () => {
-    expect(readSettings(env())).toEqual({
+    expect(readSettings(env())).toMatchObject({
       origin: "https://api.acme.example",
       hosts: {
         "app.acme.example": {
@@ -41,7 +43,27 @@ describe("readSettings", () => {
       audience: "project-1",
       keysSeconds: 3600,
       leewaySeconds: 60,
+      csp: {},
+      frameAncestorsSeconds: 60,
     });
+  });
+
+  it("validates each surface's policy and keeps the baseline for the rest", () => {
+    const settings = readSettings(
+      env({
+        EDGE_CSP: JSON.stringify({ "pay.checkout": { frameAncestors: { "/c/*": "request" } } }),
+      }),
+    );
+    expect(settings.csp["pay.checkout"]?.frameAncestors).toEqual({ "/c/*": "request" });
+    expect(settings.baselineCsp.frameAncestors).toEqual({});
+    expect(() =>
+      readSettings(
+        env({
+          EDGE_CSP: JSON.stringify({ "pay.checkout": { frameAncestors: { "/c/*": ["*"] } } }),
+        }),
+      ),
+    ).toThrow(/EDGE_CSP\["pay.checkout"\]/);
+    expect(() => readSettings(env({ EDGE_CSP: "[]" }))).toThrow(RangeError);
   });
 
   it("refuses a missing issuer", () => {

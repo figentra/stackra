@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `StoredSetting`: a model with the `sst` public id and the timestamps, a fresh id per
- *          created row, no `@Index` (the indexes are the migration's), and a node or a user as its holder.
+ * Purpose: unit and type tests of `StoredSetting`: a model with the `sst` public id, the owner
+ *          (`BelongsToTenantOrPlatform`) and the timestamps, a fresh id per created row, no `@Index` (the indexes are
+ *          the migration's), and a node or a user as its holder.
  * Boundary: test only; no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0327 (decisions 3 and 9); ADR 0135.
@@ -14,10 +15,11 @@ import type { SettingValue } from "#contracts/index";
 import { StoredSetting } from "#node/models/stored-setting.model";
 
 describe("StoredSetting", () => {
-  it("is a model with the sst public id and the timestamps", () => {
+  it("is an owned model with the sst public id and the timestamps", () => {
     expect(new StoredSetting()).toBeInstanceOf(Model);
     expect(traitsOf(StoredSetting).map((trait) => trait.name)).toEqual([
       "has_public_id",
+      "belongs_to_tenant_or_platform",
       "timestamps",
     ]);
     expect(traitsOf(StoredSetting)[0]?.options).toEqual({ prefix: "sst" });

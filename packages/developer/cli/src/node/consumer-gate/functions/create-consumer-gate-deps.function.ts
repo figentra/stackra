@@ -3,7 +3,8 @@
  * Purpose: `createConsumerGateDeps()`, the real `ConsumerGateDeps`: `exec` starts a program without a shell with its
  *          output in the step's log file, and `head` reads `git rev-parse HEAD`.
  * Boundary: starts `pnpm`, `turbo` (through pnpm), `sh` and `git`; passes the caller's environment through untouched
- *           (tokens come from Infisical on the box) and never reads, prints or logs a value from it.
+ *           (the box's job decrypts its tokens from figentra/secrets, ADR 0525) and never reads, prints or logs a
+ *           value from it.
  * Runtime: node
  * Governing contract: ADR 0500 (decision 3); ADR 0484; STA-1813.
  */
