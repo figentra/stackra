@@ -20,3 +20,10 @@ rules:
   # self-repository, on each `uses: ./…` line: local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168,
   # called by SHA from other repositories); the `$/…` form is not adopted until a run on GitHub has proven it for these
   # callers. The same holds for the local secrets-decrypt action (ADR 0525, called by SHA from other repositories).
+  #
+  # dangerous-triggers, on regen-push.yml's `workflow_run:` line: it runs in main's context to push a pull request's
+  # regenerated files with the bot App, and never runs the pull request's code: it reads the patch Regen uploaded,
+  # refuses any path that is not generated and a head that moved, and skips forks and main.
+  #
+  # artipacked, on regen-push.yml's `persist-credentials: true`: the job pushes the regenerated commit with the bot
+  # App's token, and uploads nothing, so the persisted credential never leaves the runner.
