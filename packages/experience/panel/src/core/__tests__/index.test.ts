@@ -89,6 +89,7 @@ describe("@stackra/panel", () => {
       "describeResource",
       "describeWidget",
       "document",
+      "fieldKindOf",
       "fieldsForMode",
       "fillSlot",
       "groupRows",
