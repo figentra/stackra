@@ -44,6 +44,7 @@ describe("emitBoot", () => {
     );
     expect(boot).toContain('import { EventBus } from "@stackra/events";');
     expect(boot).toContain('import { SegmentService } from "@stackra/segments/node";');
+    expect(boot).toContain('import { QueueWorkerService } from "@stackra/queue/node";');
     expect(boot).toContain(
       [
         "export async function boot(",
@@ -72,6 +73,7 @@ describe("emitBoot", () => {
         // Native CrudService writes reach the change log through the writer (STA-2047).
         "  connectNativeWriteWatcher(container.get(OutboxWriterService));",
         "  container.get(SegmentService).connect(container);",
+        "  container.get(QueueWorkerService).connect(container);",
         "  const bus = container.get(EventBus);",
         "  bus.connect(container);",
         "  const inbox = container.get(InboxService);",
