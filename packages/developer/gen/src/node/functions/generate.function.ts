@@ -17,8 +17,9 @@
  *           `tsdown.config.ts` the same way when gen writes a tsdown config (STA-1306). A root `*.extend.ts` hatch
  *           outside the closed set (vite, expo, metro, desktop, pwa) or without
  *           a `Reason:` header is refused as `tool_reason_missing` (STA-1306); whether a hatch changes an owned key is
- *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) takes the
- *           docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
+ *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) and, since
+ *           ADR 0514 amendment of 2026-11-09, a docs member (`"stackra": { "kind": "docs" }`, the second input) take
+ *           the docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
  *           `.stackra/site/`, and its manifest pass writes nothing. A service's full run also writes
  *           `encore.app` at the member root from the root runway's `providers.encore.app` (`encore_app_missing` without
  *           it), and any run refuses an `encore.app` at the repository root (`encore_app_stray`, STA-1322).
@@ -38,7 +39,7 @@
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
  *                     allowed at the manifest level); ADR 0091 (decision 2) and ADR 0029 (the Encore app file); ADR 0159
- *                     (the compiled migrations).
+ *                     (the compiled migrations); ADR 0514 (amendment of 2026-11-09: the docs member).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -62,6 +63,7 @@ import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
 import { hasE2ePages } from "#node/functions/has-e2e-pages.function";
+import { isDocsMember } from "#node/functions/is-docs-member.function";
 import { hasIntTests } from "#node/functions/has-int-tests.function";
 import { readResourceTrees } from "#node/functions/read-resource-trees.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
@@ -201,8 +203,9 @@ export async function generate(
   } = {},
 ): Promise<GenerateResult> {
   const strict = options.strict ?? process.env["STACKRA_GEN_STRICT"] === "1";
-  // A docs app has no classes to discover: its run assembles the Mintlify site (ADR 0002, 2026-10-27 amendment).
-  if (existsSync(join(root, DOCS_CONFIG_FILE)))
+  // A docs app or a docs member has no classes to discover: its run assembles the site (ADR 0002, 2026-10-27
+  // amendment; ADR 0514 amendment of 2026-11-09).
+  if (existsSync(join(root, DOCS_CONFIG_FILE)) || isDocsMember(root))
     return options.pass === "manifests"
       ? { errors: [], files: [], changed: [] }
       : generateDocsSite(root, options.check === undefined ? {} : { check: options.check });

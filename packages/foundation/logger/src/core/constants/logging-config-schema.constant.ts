@@ -11,11 +11,14 @@
  */
 import { z } from "zod";
 
+import { LOG_REPORTER_DRIVERS } from "#core/constants/log-reporter-drivers.constant";
+
 /** The `LogLevel` codes, lowest first. */
 const LEVEL = z.enum(["debug", "info", "warn", "error"]);
 
 /** The shipped `LoggingConfig$`. */
 export const LOGGING_CONFIG_SCHEMA = z.object({
+  reporter: z.enum(LOG_REPORTER_DRIVERS).default("console"),
   level: LEVEL.default("info"),
   channels: z.record(z.string(), LEVEL).default(() => ({})),
   sampleRate: z.number().min(0).max(1).default(1),

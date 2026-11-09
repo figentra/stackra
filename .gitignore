@@ -77,3 +77,6 @@ expo-env.d.ts
 
 # generated locally from .mcp.yaml by `fflow sync`
 .mcp.json
+
+# a hand lint run's file list (#803 committed one); scratch, never tracked
+.lint-files.txt

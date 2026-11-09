@@ -7,7 +7,7 @@
  *          `CrudService<M>` (and of every `CrudService<M>` its packages' manifests list with its model, `services[].partner`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
- *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
+ *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events (its own, each with its Integration's Connection even when a hosted package ships it, and those its hosted packages' manifests list in `webhookEvents`), the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
  *          the `@Searchable` models, each report with its source model (`registerReportSources`, ADR 0470), and the
  *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
  *          then `registerRoles`; without
@@ -38,6 +38,7 @@ import { emitHostedEntities } from "#core/functions/emit-hosted-entities.functio
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hostedWebhookEvents } from "#core/functions/hosted-webhook-events.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { ownClass } from "#core/functions/own-class.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
@@ -281,22 +282,46 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }),
   );
 
-  call(
-    "registerWebhookEvents",
-    "@stackra/webhooks",
-    ir.classes
+  // why: an own event typed against a hosted package's Integration finds that Integration's Connection in the package's
+  // merged manifest row; without it the row has no connection and every connection URL answers 404
+  const hostedConnection = (partner: ClassRef): string | undefined => {
+    const entry = integrations.find((item) => {
+      const from = item["from"];
+      return (
+        typeof from === "string" &&
+        typeof item["connection"] === "string" &&
+        item["class"] === partner.name &&
+        (partner.from === from || partner.from.startsWith(`${from}/`))
+      );
+    });
+    return entry === undefined ? undefined : classOf(entry, "connection", "connectionFile");
+  };
+  call("registerWebhookEvents", "@stackra/webhooks", [
+    ...ir.classes
       .filter((declared) => declared.kind === "webhook_event" && declared.partner !== undefined)
       .map((declared) => {
         const partner = declared.partner;
         if (partner === undefined) return undefined;
-        const connection = connectionOf(ir.classes, partner.name);
+        // why: `ref` prefixes a clashing name by first use, so the event and Integration are named before the Connection
+        const event = ref({ name: declared.name, from: declared.importPath });
+        const integration = ref({ name: partner.name, from: partner.from });
+        const ownConnection = connectionOf(ir.classes, partner.name);
+        const connection =
+          ownConnection === undefined
+            ? hostedConnection(partner)
+            : ref({ name: ownConnection.name, from: ownConnection.importPath });
         return (
-          `{ event: ${ref({ name: declared.name, from: declared.importPath })}, ` +
-          `integration: ${ref({ name: partner.name, from: partner.from })}` +
-          `${connection !== undefined ? `, connection: ${ref({ name: connection.name, from: connection.importPath })}` : ""} }`
+          `{ event: ${event}, integration: ${integration}` +
+          `${connection !== undefined ? `, connection: ${connection}` : ""} }`
         );
       }),
-  );
+    // Each hosted package's own webhook events, paired by its manifest (a half-paired one is refused, never listed).
+    ...hostedWebhookEvents(ir).events.map(
+      (hosted) =>
+        `{ event: ${ref(hosted.event)}, integration: ${ref(hosted.integration)}` +
+        `${hosted.connection !== undefined ? `, connection: ${ref(hosted.connection)}` : ""} }`,
+    ),
+  ]);
 
   call(
     "registerOutboundWebhooks",

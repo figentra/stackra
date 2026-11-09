@@ -28,7 +28,9 @@ describe("@stackra/gen", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(gen).sort()).toEqual([
       "CLIENTS_SPECIFIER",
+      "DOCS_APP_SOURCE",
       "DOCS_CONFIG_FILE",
+      "DOCS_MEMBER_SOURCE",
       "DOCS_SITE_DIR",
       "DocsConfig",
       "EFFECT_TAGS",
@@ -101,6 +103,7 @@ describe("@stackra/gen", () => {
       "migrationId",
       "modelKey",
       "modulepreloadOf",
+      "navigationOfMeta",
       "openApiOf",
       "orderMigrations",
       "permissionKey",

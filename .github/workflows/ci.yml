@@ -75,7 +75,7 @@ jobs:
       # needed to keep a fork from writing to the remote cache.
       - name: Turborepo remote cache (sops)
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build/turbo
 
@@ -225,7 +225,7 @@ jobs:
       # it (ADR 0310 decision 11, ADR 0525). The names filter keeps every other ci/build value out. A fork pull request
       # has no OIDC token, so this fails there.
       - name: Uniwind Pro token (sops)
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build
           names: UNIWIND_AUTH_TOKEN
