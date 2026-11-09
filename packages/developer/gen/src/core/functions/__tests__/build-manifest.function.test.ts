@@ -1148,12 +1148,22 @@ const hosted = (name: string, kind: string) => ({
 const build = (classes: DeclaredClass[], dependencies: MemberIR["dependencies"] = []) =>
   buildManifest({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, ...classes], dependencies });
 
+/** A hosted kit action entry, with the fields a manifest action entry requires. */
+const kitAction = (key: string, cls: string, extra: Record<string, unknown> = {}) => ({
+  key,
+  kind: "action",
+  module: "content",
+  class: cls,
+  permission: "content.custom_field.create",
+  risk: "L2",
+  ...extra,
+});
 const kit = (
   gates: string[] = [],
-  kitActions: Record<string, unknown>[] = [
-    { key: "content.custom_field.create@1", kind: "action", class: "CreateCustomFieldAction" },
+  kitActions: readonly ReturnType<typeof kitAction>[] = [
+    kitAction("content.custom_field.create@1", "CreateCustomFieldAction"),
   ],
-) => ({
+): NonNullable<MemberIR["dependencies"]>[number] => ({
   package: "@acme/kit",
   manifest: {
     member: "kit",
@@ -1175,11 +1185,13 @@ const call = (kind: string, name: string, key: string, options: Record<string, u
     ...options,
   });
 const action = (name: string, key: string, options: Record<string, unknown>) =>
-  call("action", name, key, options);
+  call("action", name, key, { idempotency: "optional", ...options });
 const entitlement = (name: string, options: Record<string, unknown>) =>
   kindClass(name, "entitlement", `src/modules/orders/access/${name}.entitlement.ts`, options);
 const gatesOf = (built: ReturnType<typeof build>, key: string) =>
-  built.manifest.entitlements?.find((e) => e["key"] === key)?.["gates"];
+  (built.manifest.entitlements as readonly Record<string, unknown>[] | undefined)?.find(
+    (e) => e["key"] === key,
+  )?.["gates"];
 
 describe("buildManifest's entitlement gates (STA-2059)", () => {
   it("gates the action that names a local entitlement and records the key", () => {
@@ -1236,7 +1248,7 @@ describe("buildManifest's entitlement gates (STA-2059)", () => {
         kind: "limit",
         counts: { $class: "Order", from: "#modules/orders/models/order.model", kind: "model" },
       }),
-      call("query", "PreviewOrderQuery", "order.create", {}),
+      call("query", "PreviewOrderQuery", "order.create", { permission: "orders.order.read" }),
     ]);
     expect(built.errors).toEqual([]);
     expect(gatesOf(built, "orders.order_limit")).toEqual([]);
@@ -1278,12 +1290,9 @@ describe("buildManifest's entitlement gates (STA-2059)", () => {
         kit(
           ["content.custom_field.archive@1", "content.custom_field.create@1"],
           [
-            {
-              key: "content.custom_field.create@1",
-              kind: "action",
-              class: "CreateCustomFieldAction",
+            kitAction("content.custom_field.create@1", "CreateCustomFieldAction", {
               entitlements: ["collaboration.live_collaboration"],
-            },
+            }),
           ],
         ),
       ],
@@ -1334,12 +1343,9 @@ describe("buildManifest's entitlement gates (STA-2059)", () => {
         kit(
           [],
           [
-            {
-              key: "content.custom_field.create@1",
-              kind: "action",
-              class: "CreateCustomFieldAction",
+            kitAction("content.custom_field.create@1", "CreateCustomFieldAction", {
               entitlements: ["billing.premium"],
-            },
+            }),
           ],
         ),
       ],
