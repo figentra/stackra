@@ -32,6 +32,11 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 
 - The only package that imports `@mikro-orm/*` (ADR 0097). Re-export what consumers need (`EntitySchema`,
   `OptionalProps`, `UniqueViolation`) instead of letting them import the ORM.
+- A detached call (`ctx.detach()`) reaches this package only through `DETACHED_RUNS` (@stackra/actions/contracts,
+  registered by `connectDetachedRuns` when a driver connects) and `Database.detached()`. A driver's `runDetached`
+  starts the work on a fresh fork, because MikroORM keeps a committed transaction in the context of a continuation
+  started inside it; each instance keeps its own step store. `CrudService.step` wraps an operation only outside a
+  transaction; never make it refuse (a strict refusal is a later contract step).
 - `Blueprint` is an interface so macros merge into it; never `implements Blueprint` on a class (a consumer's merged
   macros would break the typecheck of this package's source).
 - No scope levels here: levels are deployment data (ADR 0327 d2). Scope hooks take the contracts `ScopeRef` (an id
