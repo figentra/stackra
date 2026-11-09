@@ -62,7 +62,9 @@ export function readCallOptions(
   const version = options.version ?? 1;
   if (!Number.isInteger(version) || version < 1)
     throw new RangeError(`${base}({ version }) must be a whole number from 1, got ${version}`);
-  const area = options.area ?? ApiArea.App;
+  // An anonymous-only call runs without a principal, so it defaults to the public area, as gen derives it (STA-2650).
+  const anonymousOnly = options.actors.length === 1 && options.actors[0] === ActorKind.Anonymous;
+  const area = options.area ?? (anonymousOnly ? ApiArea.Public : ApiArea.App);
   if (!Enum.values(ApiArea).includes(area))
     throw new RangeError(`${base}({ area }) takes an ApiArea, got ${JSON.stringify(area)}`);
   const { endpoint } = options;

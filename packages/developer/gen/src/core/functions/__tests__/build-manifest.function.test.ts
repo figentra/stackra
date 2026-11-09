@@ -132,6 +132,21 @@ const cancelEntryOf = (ir: MemberIR) =>
 const codesOf = (ir: MemberIR): string[] =>
   buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`);
 
+/** The commerce member in the `admin` area, with `options` added to CancelOrderAction's. */
+const withCancelOptions = (options: Record<string, unknown>): MemberIR => ({
+  ...COMMERCE_IR,
+  area: "admin",
+  classes: COMMERCE_IR.classes.map((cls) =>
+    cls.name === "CancelOrderAction" ? { ...cls, options: { ...cls.options, ...options } } : cls,
+  ),
+});
+
+/** CancelOrderAction's manifest entry when `options` are added to it. */
+const cancelOf = (options: Record<string, unknown>) =>
+  buildManifest(withCancelOptions(options)).manifest.actions?.find(
+    (action) => action.class === "CancelOrderAction",
+  );
+
 describe("buildManifest", () => {
   const { manifest, errors } = buildManifest(COMMERCE_IR);
 
@@ -235,6 +250,15 @@ describe("buildManifest", () => {
     );
     expect(redeem?.["area"]).toBe("app");
     expect(redeem?.["endpoint"]).toMatchObject({ path: expect.stringMatching(/^\/app\//) });
+  });
+
+  it("puts an anonymous-only call in the public area unless it writes one (STA-2650)", () => {
+    expect(cancelOf({ actors: ["anonymous"] })).toMatchObject({
+      area: "public",
+      endpoint: { path: "/public/orders/:orderId/cancel" },
+    });
+    expect(cancelOf({ actors: ["anonymous"], area: "app" })).toMatchObject({ area: "app" });
+    expect(cancelOf({ actors: ["user", "anonymous"] })).toMatchObject({ area: "admin" });
   });
 
   it("derives models, drivers, modules and facets", () => {
