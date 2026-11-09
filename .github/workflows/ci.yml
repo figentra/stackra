@@ -136,11 +136,13 @@ jobs:
       # dependencies-successful runs every task whose dependencies passed instead of stopping at the first failure, so
       # one run shows every failing member; turbo still exits 1 when any task fails (STA-1937, as os#105).
       # STA-2064: on a pull request only the members the change affects, against the base commit (fetch-depth 0 above).
+      # Two at a time: turbo's default of ten typecheck processes ran the hosted runner out of memory whenever a change
+      # affected most members (a gen change), and the runner then lost contact mid-step.
       - name: Typecheck
         env:
           AFFECTED: ${{ github.event_name == 'pull_request' && '1' || '' }}
           TURBO_SCM_BASE: HEAD~1 # a PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own
-        run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --filter='!@figentra/mobile' --filter='!@figentra/playground' --continue=dependencies-successful
+        run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --filter='!@figentra/mobile' --filter='!@figentra/playground' --continue=dependencies-successful --concurrency=2
 
       # On a pull request: the affected members (`...[base]`, what `--affected` selects) plus the CLI, whose dist
       # `pnpm validate` runs. Two `--filter`s are a union; `--affected` with a `--filter` would intersect them.
