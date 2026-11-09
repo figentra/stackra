@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: integration tests of `PostgresSubjectHoldsDriver` on real Postgres: a live hold on a subject's public id
- *          holds it, a released one or a hold on another subject does not, and a hold in one tenant's partition is
- *          invisible to another's and to a session in no tenant.
- * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0002 migration creates the table.
+ *          holds it, a released one or a hold on another subject does not, and a hold of one tenant is invisible to
+ *          another's and to a session in no tenant.
+ * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0001 to 0003 migrations create
+ *           the table.
  *           Each case runs in a transaction that sets `app.tenant_id`, as a scoped session would.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0134; ADR 0239; STA-1567.
@@ -12,13 +13,17 @@ import { compileMigration } from "@stackra/database";
 import { usePostgres } from "@stackra/database/testing";
 import { describe, expect, it } from "@stackra/testing";
 
+import { CreateSubjectSaltsMigration } from "#node/database/migrations/0001-create-subject-salts.migration";
 import { CreateLegalHoldsMigration } from "#node/database/migrations/0002-create-legal-holds.migration";
+import { ContractPrivacyTenancyMigration } from "#node/database/migrations/0003-contract-privacy-tenancy.migration";
 import { PostgresSubjectHoldsDriver } from "#node/drivers/postgres-subject-holds.driver";
 
 const postgres = usePostgres({
   entities: [],
   migrations: [
-    compileMigration(CreateLegalHoldsMigration, { schema: "privacy", createsSchema: true }),
+    compileMigration(CreateSubjectSaltsMigration, { schema: "privacy", createsSchema: true }),
+    compileMigration(CreateLegalHoldsMigration, { schema: "privacy" }),
+    compileMigration(ContractPrivacyTenancyMigration, { schema: "privacy" }),
   ],
 });
 
@@ -39,11 +44,11 @@ function inPartition<T>(
   });
 }
 
-/** Places a hold on `recordId` in the session's partition. */
+/** Places a hold on `recordId` in the session's owner (the column's default). */
 function place(sql: Sql, id: string, recordId: string, releasedAt: Date | null = null) {
   return sql.execute(
-    "insert into privacy.legal_holds (id, scope_id, model, record_id, reason, placed_at, released_at) " +
-      "values (?, coalesce(nullif(current_setting('app.tenant_id', true), ''), '-'), 'User', ?, 'Matter 1', now(), ?)",
+    "insert into privacy.legal_holds (id, model, record_id, reason, placed_at, released_at) " +
+      "values (?, 'User', ?, 'Matter 1', now(), ?)",
     [id, recordId, releasedAt],
   );
 }
@@ -59,7 +64,7 @@ describe(PostgresSubjectHoldsDriver, () => {
     });
   });
 
-  it("answers from the session's partition only", async () => {
+  it("answers from the session's own owner only", async () => {
     await inPartition("ten_acme", (_holds, sql) => place(sql, "lgh_3", "usr_4"));
     await expect(inPartition("ten_acme", (holds) => holds.isHeld("usr_4"))).resolves.toBe(true);
     await expect(inPartition("ten_globex", (holds) => holds.isHeld("usr_4"))).resolves.toBe(false);
