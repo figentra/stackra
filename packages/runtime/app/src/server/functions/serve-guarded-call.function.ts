@@ -32,6 +32,7 @@ import { coerceQueryInput } from "#server/functions/coerce-query-input.function"
 import { holdCallerToken } from "#server/functions/hold-caller-token.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
 import { readCappedBody } from "#server/functions/read-capped-body.function";
+import type { CallAuthCredential } from "#server/types/call-auth-credential.type";
 import type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
 import type { VisitorIdentity } from "#server/types/visitor-identity.type";
 
@@ -106,15 +107,15 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   const ignored =
     options.action !== undefined && kindOf(options.action)?.options["credentials"] === "ignore";
   let actor: Actor;
+  let credential: CallAuthCredential | undefined;
   let visitor: VisitorIdentity | undefined;
   if (!ignored && (authorization !== null || onBehalfOf !== null)) {
     try {
-      actor = (
-        await options.authenticate({
-          ...(authorization === null ? {} : { authorization }),
-          ...(onBehalfOf === null ? {} : { onBehalfOf }),
-        })
-      ).actor;
+      const verified = await options.authenticate({
+        ...(authorization === null ? {} : { authorization }),
+        ...(onBehalfOf === null ? {} : { onBehalfOf }),
+      });
+      ({ actor, credential } = verified);
     } catch (error) {
       if (isRefusal(error) && error.kind === ErrorKind.Unauthenticated) return refused(401);
       throw error;
@@ -157,7 +158,7 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   try {
     // The one place a call's forwardable user token is held: for this call only, emptied when it ends (ADR 0209).
     output = await holdCallerToken(guarded.headers, actor, options.action, () =>
-      options.execute(input, actor, guarded),
+      options.execute(input, actor, guarded, credential),
     );
   } catch (error) {
     if (!isRefusal(error) || isRefusal(error, RateLimitedError)) throw error;

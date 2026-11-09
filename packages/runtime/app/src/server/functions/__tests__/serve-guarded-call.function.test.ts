@@ -124,6 +124,27 @@ describe(serveGuardedCall, () => {
     expect(execute).toHaveBeenCalledOnce();
   });
 
+  it("hands the verified key's credential to the call, and none for a caller without one", async () => {
+    const { serve, execute, authenticate } = call();
+    const body = "{}";
+    await serve(
+      await forwarded("POST", "/orders/ord_1", body, body, { authorization: "Bearer t" }),
+    );
+    expect((execute.mock.calls[0] as unknown[] | undefined)?.[3]).toBeUndefined();
+    const credential = {
+      kind: "api_key" as const,
+      id: "key_1",
+      scopes: [],
+      publishable: false,
+      versionPin: "2026-10-01",
+    };
+    authenticate.mockResolvedValueOnce({ actor: USER, credential } as never);
+    await serve(
+      await forwarded("POST", "/orders/ord_1", body, body, { authorization: "Bearer t" }),
+    );
+    expect((execute.mock.calls[1] as unknown[] | undefined)?.[3]).toEqual(credential);
+  });
+
   it("refuses a body swapped after signing and never runs the call", async () => {
     const { serve, execute, authenticate } = call();
     const response = await serve(

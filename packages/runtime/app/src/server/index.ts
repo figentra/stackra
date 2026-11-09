@@ -43,6 +43,7 @@ export { EdgeHeaderGuard } from "#server/services/edge-header.guard";
 export { OriginGuard } from "#server/services/origin.guard";
 export { VerifiedToken } from "#server/services/verified-token.service";
 export { VisitorIdentityService } from "#server/services/visitor-identity.service";
+export type { CallAuthCredential } from "#server/types/call-auth-credential.type";
 export type { CallAuthData } from "#server/types/call-auth-data.type";
 export type { CallCredentials } from "#server/types/call-credentials.type";
 export type { ControllerClass } from "#server/types/controller-class.type";
