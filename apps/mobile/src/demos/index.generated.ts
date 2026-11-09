@@ -149,6 +149,8 @@ import FreeBidiDirectionalMotion from "#src/demos/free/bidi/directional-motion";
 import FreeBidiDirectionalMotionCode from "#src/demos/free/bidi/directional-motion.code";
 import FreeBoxPlotChartDelivery from "#src/demos/free/box-plot-chart/delivery";
 import FreeBoxPlotChartDeliveryCode from "#src/demos/free/box-plot-chart/delivery.code";
+import FreeBrandLogoBasics from "#src/demos/free/brand-logo/basics";
+import FreeBrandLogoBasicsCode from "#src/demos/free/brand-logo/basics.code";
 import FreeBreadcrumbsLive from "#src/demos/free/breadcrumbs/live";
 import FreeBreadcrumbsLiveCode from "#src/demos/free/breadcrumbs/live.code";
 import FreeBreadcrumbsBasics from "#src/demos/free/breadcrumbs/basics";
@@ -1611,6 +1613,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/box-plot-chart.json") as ApiDoc,
+  },
+  "free/brand-logo": {
+    examples: {
+      basics: { Demo: FreeBrandLogoBasics, code: FreeBrandLogoBasicsCode },
+    },
   },
   "free/breadcrumbs": {
     examples: {

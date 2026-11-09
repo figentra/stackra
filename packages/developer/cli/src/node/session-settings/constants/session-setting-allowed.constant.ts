@@ -23,4 +23,7 @@ export const SESSION_SETTING_ALLOWED: Readonly<Record<string, string>> = Object.
   // `withTenant`, and iam must not depend on tenancy; it sets the tenant transaction-locally in a transaction of its own
   "packages/security/iam/src/node/drivers/postgres-policy-snapshot-store.driver.ts":
     "the snapshot store sets its own tenant transaction-locally in its requiresNew transaction (ADR 0495)",
+  // ./testing only, which never ships to a server: a test's setup rows pass the tenant policy without an action
+  "packages/security/tenancy/src/testing/orm/run-as-tenant.subscriber.ts":
+    "runAsTenant's test-setup seam: app.tenant_id transaction-local in each transaction started inside runAsTenant (ADR 0495, testing entry)",
 });

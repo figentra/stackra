@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./e2e` entry of @stackra/testing (the end-to-end tier over Playwright: `test` with the
  *          API-call recorder, `expect` with `toHaveNoViolations`, `axe`, `apiCalls`, `seed`, `loginAs`, `evictShell`,
- *          `launchDesktop`, and the config preset `e2ePreset`) until `stackra gen` writes the entry barrels (STA-339).
+ *          `launchDesktop`, the config presets `e2ePreset` and `packageE2ePreset`, and the page server config `packageE2eVite`) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Runs in the Playwright runner only, never under vitest or in a
  *           bundle; `@playwright/test` and `@axe-core/playwright` are optional peers. No workspace import.
  * Runtime: node
@@ -24,5 +24,9 @@ export { launchDesktop } from "#e2e/launch-desktop/launch-desktop.function";
 export type { LaunchDesktopOptions } from "#e2e/launch-desktop/launch-desktop-options.type";
 export { loginAs } from "#e2e/login-as/login-as.function";
 export type { TestActor } from "#e2e/login-as/test-actor.type";
+export { packageE2ePreset } from "#e2e/package-e2e-preset/package-e2e-preset.function";
+export type { PackageE2ePresetOptions } from "#e2e/package-e2e-preset/package-e2e-preset-options.type";
+export { packageE2eVite } from "#e2e/package-e2e-vite/package-e2e-vite.function";
+export type { PackageE2eViteOptions } from "#e2e/package-e2e-vite/package-e2e-vite-options.type";
 export { seed } from "#e2e/seed/seed.function";
 export { test } from "#e2e/test/test.constant";

@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: proves the default Tamo part renderers through `renderChatParts`: a table draws its headers and cells, a KPI
  *          its value, a question answers through `onAnswer` (and is read-only without it), suggestions send through
- *          `onSend`, each chart kind draws its captioned data table, a host renderer wins over the default, and a
- *          malformed part draws nothing without throwing.
+ *          `onSend`, each chart kind draws its captioned data table, an artifact is a file card that opens and
+ *          downloads through the host with its id and version, a host renderer wins over the default, and a malformed
+ *          part draws nothing without throwing.
  * Boundary: unit tier, jsdom, the real @stackra/ui components; Recharts measures nothing in jsdom, so a chart is proven
  *           by the data table it carries, as @stackra/ui's own chart tests do.
  * Runtime: node (vitest)
@@ -95,6 +96,20 @@ describe("defaultChatPartRenderers", () => {
     expect(onSend).toHaveBeenCalledWith("Show last month");
   });
 
+  it("draws an artifact as a file card that opens and downloads through the host", () => {
+    const onOpenArtifact = vi.fn();
+    const onDownloadArtifact = vi.fn();
+    draw(
+      "artifact",
+      { artifactId: "art_1", name: "Open orders", kind: "csv", version: 2, bytes: 2048 },
+      { onOpenArtifact, onDownloadArtifact },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open orders.csv" }));
+    expect(onOpenArtifact).toHaveBeenCalledWith("art_1", 2);
+    fireEvent.click(screen.getByRole("button", { name: "Download Open orders.csv" }));
+    expect(onDownloadArtifact).toHaveBeenCalledWith("art_1", 2);
+  });
+
   it("draws each chart kind with its data table", () => {
     const rows = [
       { month: "Jan", sales: 10, units: 2 },
@@ -132,6 +147,8 @@ describe("defaultChatPartRenderers", () => {
       { type: "data-tamo-suggestions", data: { items: [1, null] } },
       { type: "data-tamo-widget_ref", data: { widgetKey: "orders.kpis" } },
       { type: "data-tamo-form", data: { actionKey: "orders.order.create", values: {} } },
+      { type: "data-tamo-artifact", data: { artifactId: "art_1", name: "x", version: 0 } },
+      { type: "data-tamo-artifact", data: { name: "x", kind: "csv", version: 1 } },
       { type: "data-tamo-kpi", data: null },
       { type: "data-tamo-question" },
     ] as unknown as Parts;

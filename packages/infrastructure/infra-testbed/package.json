@@ -1,6 +1,6 @@
 {
   "name": "@stackra/infra-testbed",
-  "version": "0.30.0",
+  "version": "0.32.0",
   "private": false,
   "description": "Pulumi program for the testbed (ADR 0484): disposable, image-built EC2 test boxes in two Auto Scaling groups, an EC2 Image Builder pipeline that bakes the job image and the box agent into an AMI, and the grants that let a box read its job secrets from Infisical; the plan is pure data, the program only declares",
   "keywords": [
