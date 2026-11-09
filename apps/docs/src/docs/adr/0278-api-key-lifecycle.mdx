@@ -67,6 +67,19 @@ The owner did not give these; the conservative default below applies until an AD
 5. **Last-used IP retention.** Follows the access-log retention of
    [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention).
 
+## Amendment, 2026-11-09: a key's mode and version pin (STA-2646)
+
+A key is test or live, chosen when it is issued and written into its text after the kind's prefix:
+`stackra_sk_test_…`, `stackra_pk_live_…` (open detail 1's `<env>` segment). The body is base-62, so the segment
+cannot be read as part of it; a key minted before modes has no segment and is live. The checksum covers the segment, so
+it cannot be edited, and the verifier refuses a key whose text names another mode than its stored record
+(`ApiKeyRecord.mode`). `VerifiedApiKey.mode` carries it to the caller.
+
+A key also records a version pin, the API's `Stackra-Version` date when it was issued (`ApiKeyRecord.versionPin`), which
+its calls default to; an explicit `Stackra-Version` header still wins. The gateway path that turns a verified key into a
+call (the actor, `CallOptions.sandbox` for a test key, the pin for versioning) is the next part of STA-2646 and amends
+this ADR again when it lands.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2,

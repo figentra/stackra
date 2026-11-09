@@ -41,6 +41,12 @@ skills:
     source: "github:remotion-dev/skills"
     licence: "none declared (Remotion company licence)"
     machineOnly: true
+  # oakoss's: the front matter says MIT, but oakoss/agent-skills ships no licence file, so there is no grant and no
+  # copy is committed (leader, STA-2097, 2026-11-09).
+  - id: changesets
+    source: "github:oakoss/agent-skills"
+    licence: "none shipped (front matter says MIT)"
+    machineOnly: true
   # The owner's own Claude skills, the 13 of the local library: that is their recorded source (D1).
   - id: svg-logo-designer
     source: "the owner's skill library (~/.claude/skills)"

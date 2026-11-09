@@ -1493,6 +1493,10 @@
     }
   ],
   "schemas": {
+    "identity.ApiKeyMode": {
+      "type": "string",
+      "enum": ["test", "live"]
+    },
     "identity.AppApprovalPurpose": {
       "type": "string",
       "enum": ["sign_in", "step_up"]

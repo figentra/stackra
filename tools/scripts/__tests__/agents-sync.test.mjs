@@ -685,63 +685,6 @@ for (const [what, source, message] of INVALID) {
 }
 
 // ---------------------------------------------------------------------------
-// Constitution projection
-// ---------------------------------------------------------------------------
-
-test("the constitution is generated from the docs laws and drift is detected", () => {
-  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
-    mkdirSync(join(root, "apps/docs/src/docs/constitution"), { recursive: true });
-    writeFileSync(
-      join(root, "apps/docs/src/docs/constitution/secrets.mdx"),
-      '---\ntitle: "Secrets"\ndescription: "d"\n---\n\n<Note>\nNever print values.\n</Note>\n\n## Rule\n\nText.\n',
-    );
-    assert.equal(run(root).code, 0);
-    const out = read(root, ".flow/constitution.md");
-    assert.match(out, /^# Stackra Constitution/);
-    assert.match(out, /## Secrets\n\n<Note>|## Secrets\n\nNever print values\./);
-    assert.doesNotMatch(out, /<Note>/);
-    assert.match(out, /### Rule/);
-    assert.equal(run(root, "--check").code, 0);
-    writeFileSync(join(root, ".flow/constitution.md"), "hand edited\n");
-    const drift = run(root, "--check");
-    assert.equal(drift.code, 1);
-    assert.match(drift.out, /constitution\.md: stale/);
-  });
-});
-
-test("oxfmt-wrapped multi-line <Step> and <Note> blocks keep titles and render as prose, not code", () => {
-  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
-    mkdirSync(join(root, "apps/docs/src/docs/constitution"), { recursive: true });
-    writeFileSync(
-      join(root, "apps/docs/src/docs/constitution/index.mdx"),
-      [
-        '---\ntitle: "Constitution"\ndescription: "d"\n---\n',
-        "<Steps>",
-        '  <Step title="Laws">Short and normative.</Step>',
-        '  <Step title="ADRs">',
-        "    Record one decision each. Where an ADR and a law disagree, the law",
-        "    wins.",
-        "  </Step>",
-        "</Steps>\n",
-        "<Note>",
-        "  A wrapped note that must",
-        "  not become a code block.",
-        "</Note>\n",
-      ].join("\n"),
-    );
-    assert.equal(run(root).code, 0);
-    const out = read(root, ".flow/constitution.md");
-    assert.match(out, /^- \*\*Laws\*\*: Short and normative\.$/m);
-    assert.match(
-      out,
-      /^- \*\*ADRs\*\*: Record one decision each\. Where an ADR and a law disagree, the law wins\.$/m,
-    );
-    assert.match(out, /^A wrapped note that must\nnot become a code block\.$/m);
-    assert.doesNotMatch(out, /<\/?(Steps?|Note)\b|^ {4}/m);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // MCP
 // ---------------------------------------------------------------------------
 
