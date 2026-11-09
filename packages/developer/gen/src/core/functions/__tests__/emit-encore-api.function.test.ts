@@ -141,8 +141,8 @@ describe(emitEncoreApi, () => {
         "      anonymous: false,",
         "      action: CancelOrderAction,",
         "      input: CancelOrderInput,",
-        "      execute: (container, input, actor, request) =>",
-        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request) }),",
+        "      execute: (container, input, actor, request, call) =>",
+        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request), ...call }),",
         "    }),",
         ");",
       ].join("\n"),
@@ -155,7 +155,7 @@ describe(emitEncoreApi, () => {
     expect(content).toContain("export const ordersOrderListV1 = api.raw(");
     expect(content).toContain(`  { method: "GET", path: "${path}", expose: true, auth: false },`);
     expect(content).toContain(
-      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor, ...requestCallOptions(request) }),",
+      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor, ...requestCallOptions(request), ...call }),",
     );
   });
 
@@ -188,7 +188,7 @@ describe(emitEncoreApi, () => {
     for (const line of [
       'import { CancelOrderAction as CancelOrderAction2, RoomController } from "@acme/kit/node";',
       "export const kitOrderCancelV1 = api.raw(",
-      "        new ActionPipeline(container).execute(CancelOrderAction2, input as never, { actor, ...requestCallOptions(request) }),",
+      "        new ActionPipeline(container).execute(CancelOrderAction2, input as never, { actor, ...requestCallOptions(request), ...call }),",
       "export const roomController = api.raw(",
       '  { method: "*", path: "/realtime/room", expose: true, auth: false },',
       "      execute: (container, _input, _actor, request) => container.get(RoomController).handle(request),",

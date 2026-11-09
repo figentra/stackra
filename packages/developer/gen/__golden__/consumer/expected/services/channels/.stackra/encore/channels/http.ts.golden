@@ -15,6 +15,7 @@ import {
   CorsConfig,
   corsHeaders,
   HttpConfig,
+  type KeyCallOptions,
   serveGuardedCall,
   VisitorConfig,
   VisitorIdentityService,
@@ -62,7 +63,13 @@ interface Call {
   action?: AnyClass;
   input?: AnyClass;
   raw?: boolean;
-  execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;
+  execute: (
+    container: Container,
+    input: unknown,
+    actor: Actor,
+    request: Request,
+    call: KeyCallOptions | undefined,
+  ) => Promise<unknown>;
 }
 
 /**
@@ -91,7 +98,7 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
       guard: (guarded) => app.handlers.guard(guarded, container),
       authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),
       visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),
-      execute: (input, actor, guarded) => call.execute(container, input, actor, guarded),
+      execute: (input, actor, guarded, options) => call.execute(container, input, actor, guarded, options),
     }),
   );
   for (const [name, value] of response.headers)

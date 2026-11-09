@@ -24,7 +24,7 @@ export const shopOrderCancelV1 = api.raw(
       anonymous: true,
       action: CancelOrderAction,
       input: CancelOrderInput,
-      execute: (container, input, actor, request) =>
-        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request) }),
+      execute: (container, input, actor, request, call) =>
+        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request), ...call }),
     }),
 );
