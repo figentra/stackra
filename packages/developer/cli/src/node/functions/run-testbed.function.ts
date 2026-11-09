@@ -25,6 +25,7 @@ import { resolve } from "node:path";
 import { TESTBED_CLI_DEFAULTS } from "#node/constants/testbed-cli-defaults.constant";
 import { TESTBED_EXIT } from "#node/constants/testbed-exit.constant";
 import { TESTBED_POLL_MS } from "#node/constants/testbed-poll-ms.constant";
+import { TESTBED_PROBE_TIMEOUT_MS } from "#node/constants/testbed-probe-timeout-ms.constant";
 import { TESTBED_PRESETS } from "#node/constants/testbed-presets.constant";
 import { TESTBED_REATTACH_MS } from "#node/constants/testbed-reattach-ms.constant";
 import { TESTBED_REATTACH_TRIES } from "#node/constants/testbed-reattach-tries.constant";
@@ -193,10 +194,25 @@ export async function runTestbed(
   };
 
   const target = (box: TestbedBox): string => `${settings.user}@${direct ? box.ip : box.id}`;
-  const remote = async (box: TestbedBox, command: string): Promise<ToolOutput> => {
+  const remote = async (
+    box: TestbedBox,
+    command: string,
+    timeoutMs?: number,
+  ): Promise<ToolOutput> => {
     await allowMe(box.region);
-    return (await deps.exec("ssh", [...sshArgs(box), target(box), command])) ?? NOT_STARTED;
+    return (
+      (await deps.exec(
+        "ssh",
+        [...sshArgs(box), target(box), command],
+        timeoutMs === undefined ? undefined : { timeoutMs },
+      )) ?? NOT_STARTED
+    );
   };
+
+  // A health or slot probe has a deadline: one box that keeps its session open without answering (still booting after
+  // a scale-up, or a wedged session) must not hold every later look, or a waiting run never sees a free slot.
+  const probe = (box: TestbedBox, command: string): Promise<ToolOutput> =>
+    remote(box, command, TESTBED_PROBE_TIMEOUT_MS);
   const remoteStream = async (box: TestbedBox, command?: string): Promise<number> => {
     await allowMe(box.region);
     return deps.stream("ssh", [
@@ -305,8 +321,8 @@ export async function runTestbed(
         const look = async (box: TestbedBox): Promise<TestbedBoxState> => {
           const hosted = kinds.filter((kind) => hostsSlot(box.group, kind));
           const [health, slots] = await Promise.all([
-            remote(box, "testbed-agent health"),
-            Promise.all(hosted.map((kind) => remote(box, `testbed-agent slot ${kind}`))),
+            probe(box, "testbed-agent health"),
+            Promise.all(hosted.map((kind) => probe(box, `testbed-agent slot ${kind}`))),
           ]);
           const healthy = health.code === 0;
           const state = (index: number): "free" | "busy" =>
@@ -375,7 +391,7 @@ export async function runTestbed(
         if (step.action !== "run") break;
         const name = `${step.box.id}-${slot}`;
         if (claimTestbedSlot(deps.claimRoot, name, deps.pid, deps.isAlive)) {
-          const out = await remote(step.box, `testbed-agent slot ${slot}`);
+          const out = await probe(step.box, `testbed-agent slot ${slot}`);
           if (out.stdout.trim() === "free") {
             const { box } = step;
             return { box, number: numbered.findIndex((other) => other.id === box.id) + 1 };
