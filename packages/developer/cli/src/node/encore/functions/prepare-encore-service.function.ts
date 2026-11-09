@@ -5,17 +5,16 @@
  *          catalog's literal version, and tsconfig.json gets `paths` equal to package.json `imports`, resolved from the
  *          tsconfig's own folder (no `baseUrl`, which TypeScript 7 removed; an existing one is deleted).
  * Boundary: writes the service's package.json and tsconfig.json, and only when their content changes, laid out as the
- *           repository's formatter leaves them (`formatJson`); a tsconfig's leading `//` comment lines are kept. Does
- *           not touch pnpm-lock.yaml: run `pnpm install` after a pin change.
+ *           repository's formatter leaves them (gen's `formatJson`); a tsconfig's leading `//` comment lines are
+ *           kept. Does not touch pnpm-lock.yaml: run `pnpm install` after a pin change.
  * Runtime: node
  * Governing contract: ADR 0091 (decision 2, amendment of 2026-11-09).
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { formatJson } from "@stackra/gen";
 import { catalogEncoreVersion, pathsOfImports, readJsonc } from "@stackra/repo-checks/node";
-
-import { formatJson } from "#node/encore/functions/format-json.function";
 
 /**
  * Prepare one service for Encore.
