@@ -100,9 +100,12 @@ jobs:
           # Only the title is linted: a squash merge lands the title, and a lane cannot amend a pushed commit, so a
           # bad commit in the range would stay red for good. check-pr above already holds the PR to its Linear key,
           # so the per-commit `Refs:` footer rule is off for the title.
-          printf 'extends:\n  - %s/.commitlintrc.yaml\nrules:\n  refs-issue-key: [0]\n' "$GITHUB_WORKSPACE" > "$RUNNER_TEMP/commitlint-title.yaml"
+          # .commitlintrc.yaml is the preset plus that rule, so the title's config is the preset with the rule off. It sits
+          # under node_modules so the preset resolves, and out of the format check's way.
+          mkdir -p node_modules/.cache
+          printf 'extends:\n  - "@stackra/commitlint-config"\nrules:\n  refs-issue-key: [0]\n' > node_modules/.cache/commitlint-title.yaml
           # The preset builds to dist for its tarball; here, before any build, Node reads its src (ADR 0025).
-          printf '%s\n' "$PR_TITLE" | NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --config "$RUNNER_TEMP/commitlint-title.yaml"
+          printf '%s\n' "$PR_TITLE" | NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --config node_modules/.cache/commitlint-title.yaml
 
       # oxfmt on every supported file, then shfmt on *.sh (CONTRIBUTING.md, "Formatting").
       - name: Format check
