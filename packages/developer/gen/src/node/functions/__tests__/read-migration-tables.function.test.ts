@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `readMigrationTables`: one entry per `schema.create`/`schema.table` block of a service's
  *          migrations per module in file order, `tenant` set only for the block that calls `t.belongsToTenant(...)`
- *          (either form); a package's under `src/node` with the member as module.
+ *          (either form) or writes the `tenant_id` policy itself; a package's under `src/node` with the member as module.
  * Boundary: test only; writes small fixtures under `.cache/`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159; ADR 0239 (decision 1).
@@ -58,6 +58,24 @@ describe("readMigrationTables", () => {
       ["notes", false],
       ["run_steps", true],
       ["run_notes", false],
+    ]);
+  });
+
+  it("counts a block that writes the tenant_id policy itself, and no other column's policy", () => {
+    const root = writeFixtureMember("relay", {
+      "src/node/database/migrations/0002-contract-relay-tenancy.migration.ts": [
+        'schema.table("messages", (t: Blueprint) => {',
+        '  t.rowLevelSecurity("tenant_id", { setting: "app.tenant_id", match: "platform" });',
+        "});",
+        'schema.table("routes", (t: Blueprint) => {',
+        '  t.rowLevelSecurity("scope_id", { setting: "app.tenant_id", match: "equals" });',
+        "});",
+      ].join("\n"),
+    });
+    const file = "src/node/database/migrations/0002-contract-relay-tenancy.migration.ts";
+    expect(readMigrationTables(root, "package", "relay")).toEqual([
+      { file, module: "relay", table: "messages", ownerColumn: true },
+      { file, module: "relay", table: "routes", ownerColumn: false },
     ]);
   });
 
