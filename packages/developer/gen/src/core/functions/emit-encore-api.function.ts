@@ -60,16 +60,18 @@ const RESERVED = [
 /**
  * The `execute` of a versioned endpoint: the pipeline run inside `serveVersioned`, which picks the version, shapes the
  * output through `subject` and names the version in the answer. The key's pin is read from `call?.credential`, the
- * `KeyCallOptions` the guarded call passes; the pipeline gets the same `call` as in an unversioned adapter.
+ * `KeyCallOptions` the guarded call passes; the pipeline gets the same `call` as in an unversioned adapter, plus the
+ * resolved version as `apiVersion`, which the audit entry records.
  */
 function versionedExecute(type: string, subject: string | undefined): string[] {
   return [
     "      execute: (container, input, actor, request, call) =>",
-    `        serveVersioned(request, { container, actor, credential: call?.credential${subject === undefined ? "" : `, subject: ${subject}`} }, () =>`,
+    `        serveVersioned(request, { container, actor, credential: call?.credential${subject === undefined ? "" : `, subject: ${subject}`} }, (apiVersion) =>`,
     `          new ActionPipeline(container).execute(${type}, input as never, {`,
     "            actor,",
     "            ...requestCallOptions(request),",
     "            ...call,",
+    "            ...(apiVersion === undefined ? {} : { apiVersion }),",
     "          }),",
     "        ),",
   ];

@@ -246,10 +246,11 @@ describe(emitEncoreApi, () => {
       'import { serveVersioned } from "@stackra/versioning";',
       'import { CancelOrderOutput } from "#modules/orders/schemas/cancel-order-output.schema";',
       "      execute: (container, input, actor, request, call) =>",
-      "        serveVersioned(request, { container, actor, credential: call?.credential, subject: CancelOrderOutput }, () =>",
+      "        serveVersioned(request, { container, actor, credential: call?.credential, subject: CancelOrderOutput }, (apiVersion) =>",
       "          new ActionPipeline(container).execute(CancelOrderAction, input as never, {",
       "            ...requestCallOptions(request),",
       "            ...call,",
+      "            ...(apiVersion === undefined ? {} : { apiVersion }),",
     ])
       expect(versioned).toContain(line);
     // a member without the package is unchanged

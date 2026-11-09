@@ -120,6 +120,17 @@ describe("serveVersioned", () => {
     const header = await serveVersioned(request("2027-03-01"), call, () => Promise.resolve(LATEST));
     expect(header.headers.get("Stackra-Version")).toBe("2027-03-01");
     expect(await header.json()).toEqual(LATEST);
+    // the call runs knowing the version it resolved to, for CallOptions.apiVersion and its audit entry
+    const seen: (string | undefined)[] = [];
+    await serveVersioned(request(), call, (apiVersion) => {
+      seen.push(apiVersion);
+      return Promise.resolve(LATEST);
+    });
+    await serveVersioned(request("2027-03-01"), call, (apiVersion) => {
+      seen.push(apiVersion);
+      return Promise.resolve(LATEST);
+    });
+    expect(seen).toEqual(["2026-10-01", "2027-03-01"]);
   });
 
   it("downgrades a header date to its shape and carries the notice-period headers", async () => {

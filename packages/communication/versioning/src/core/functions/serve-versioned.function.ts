@@ -50,7 +50,8 @@ function refused(error: unknown): Response {
  *
  * @param request - the inbound request, whose `Stackra-Version` header names the version.
  * @param call - the container, the verified caller and the output schema class.
- * @param run - runs the call on the latest shape and returns its output (or a `Response`).
+ * @param run - runs the call on the latest shape, given the version the call resolved to (for the pipeline's
+ *              `CallOptions.apiVersion`, so the audit entry names it), and returns its output (or a `Response`).
  * @throws RateLimitedError or a non-refusal error `run` threw, for the adapter's answer.
  * @example
  * return serveVersioned(request, { container, actor, credential: key?.credential, subject: OrderView }, () =>
@@ -60,7 +61,7 @@ function refused(error: unknown): Response {
 export async function serveVersioned(
   request: Request,
   call: VersionedCall,
-  run: () => Promise<unknown>,
+  run: (apiVersion: string | undefined) => Promise<unknown>,
 ): Promise<Response> {
   const { container } = call;
   const served = container.has(VersioningConfig) ? container.get(VersioningConfig).supported : [];
@@ -90,8 +91,7 @@ export async function serveVersioned(
 
   let response: Response;
   try {
-    // next: pass the resolved version as CallOptions.apiVersion
-    const output = await run();
+    const output = await run(resolved?.version);
     if (output instanceof Response) response = new Response(output.body, output);
     else {
       const shaped =
