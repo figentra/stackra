@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0170 (decision 6); ADR 0173 (decisions 5 and 6); ADR 0284.
  */
-import { parseRunway } from "@stackra/runway";
+import { parseRunway, RunwayInvalidError } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
 
 import { GithubInfraInvalidError } from "#core/errors/github-infra-invalid.error";
@@ -103,8 +103,7 @@ describe("githubPlan", () => {
   it("takes the repository metadata: description, topics and homepage", () => {
     const plan = githubPlan(
       root({
-        org: "acme",
-        repo: "acme-platform",
+        ...GITHUB,
         description: "Acme Platform: the services every Acme product runs on.",
         topics: ["acme", "typescript", "multi-tenant"],
         homepage: "https://docs.acme.example",
@@ -119,7 +118,7 @@ describe("githubPlan", () => {
   });
 
   it("leaves the metadata out of a plan whose runway states none", () => {
-    const plan = githubPlan(root({ org: "acme", repo: "acme-platform" }));
+    const plan = githubPlan(root(GITHUB));
 
     expect(plan).not.toHaveProperty("description");
     expect(plan).not.toHaveProperty("topics");
@@ -134,7 +133,7 @@ describe("githubPlan", () => {
       { topics: Array.from({ length: 21 }, (_, i) => `t${i}`) },
       { homepage: "docs.acme.example" },
     ])
-      expect(() => githubPlan(root({ org: "acme", repo: "acme-platform", ...github }))).toThrow();
+      expect(() => githubPlan(root({ ...GITHUB, ...github }))).toThrow(RunwayInvalidError);
   });
 
   it("takes a stated visibility, literal values, tag-only refs and environment variables", () => {
