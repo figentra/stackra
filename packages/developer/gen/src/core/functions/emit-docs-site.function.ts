@@ -25,21 +25,27 @@
  *          folder (`docs_locale_path_taken`) and malformed locales (`docs_locales_invalid`,
  *          `docs_locales_unsupported` on Mintlify) are refused; a default page with no translation is a warning
  *          (`docs_locale_page_untranslated`). An empty `locales` writes the site byte for byte as before.
+ *          The paths above are a docs app's; every message, `file` field and generated-file header names the paths of
+ *          `input.source` instead (a docs member: `content/`, `content/assets`, `content/snippets`, `docs.yaml` for
+ *          the settings and `content/**\/meta.json` for the navigation; ADR 0514 amendment of 2026-11-09), and a docs
+ *          app's (`DOCS_APP_SOURCE`) when it is absent, so a docs app's output is byte for byte as before.
  * Boundary: pure and deterministic: files sorted by path, `docs.json` and `site.json` keys in a fixed order with
  *           `raw` in authored order. When there is a refusal nothing is returned to write. Nothing it returns lands in
- *           `src/`.
+ *           the source.
  * Runtime: isomorphic
  * Governing contract: ADR 0002 (2026-10-27 amendment: the clean source layout and the generated site); ADR 0295
  *                     (decisions 3 and 5); ADR 0039 (the API reference on Mintlify); ADR 0158 (from the manifest,
  *                     never a hand-kept openapi.json); ADR 0514 (decisions 1, 9 and 10: Fumadocs, prerendered, the
- *                     transitional Mintlify component map); STA-1316; STA-2026.
+ *                     transitional Mintlify component map; amendment of 2026-11-09: the docs member); STA-1316;
+ *                     STA-2026.
  */
 import { kebabCase } from "@stackra/support";
 
-import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
+import { DOCS_APP_SOURCE } from "#core/constants/docs-app-source.constant";
 import { DOCS_LOCALE_UI } from "#core/constants/docs-locale-ui.constant";
 import { DOCS_OWNED_KEYS } from "#core/constants/docs-owned-keys.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
+import { byIndexThenPath } from "#core/functions/by-index-then-path.function";
 import { openApiOf } from "#core/functions/open-api-of.function";
 import { APP_CSS_TEMPLATE } from "#core/templates/docs-site/app-css.template";
 import { ENTRY_SERVER_TEMPLATE } from "#core/templates/docs-site/entry-server.template";
@@ -169,13 +175,6 @@ const folderOf = (id: string): string => id.slice(0, Math.max(0, id.lastIndexOf(
 /** The site path of a page id: `index` pages serve their folder. */
 const urlOf = (id: string): string => `/${id.replace(/(?:^|\/)index$/, "")}`;
 
-/** `index` first, then by path. */
-function byIndexThenPath(a: string, b: string): number {
-  const ai = a.endsWith("index") ? 0 : 1;
-  const bi = b.endsWith("index") ? 0 : 1;
-  return ai - bi || (a < b ? -1 : a > b ? 1 : 0);
-}
-
 /** A comparator by the string `key` gives. */
 const byPath =
   <T>(key: (item: T) => string) =>
@@ -283,18 +282,17 @@ function apiReferencePage(service: Service): string {
   ].join("\n");
 }
 
-/** `text` under the generated-file notice, in the comment syntax of `path`'s kind. */
-function noticed(path: string, text: string): string {
-  if (path.endsWith(".css")) return `/* ${GENERATED_NOTICE}; from ${DOCS_CONFIG_FILE} */\n${text}`;
-  if (/\.(?:tsx?|json)$/.test(path))
-    return `// ${GENERATED_NOTICE}; from ${DOCS_CONFIG_FILE}\n${text}`;
+/** `text` under the generated-file notice naming `from`, in the comment syntax of `path`'s kind. */
+function noticed(path: string, text: string, from: string): string {
+  if (path.endsWith(".css")) return `/* ${GENERATED_NOTICE}; from ${from} */\n${text}`;
+  if (/\.(?:tsx?|json)$/.test(path)) return `// ${GENERATED_NOTICE}; from ${from}\n${text}`;
   return text;
 }
 
 /**
- * The site of a docs app.
+ * The site of a docs app or a docs member.
  *
- * @param input - the config fields, the `src/` files and the found service manifests.
+ * @param input - the settings and navigation, the source files, the found service manifests and where the source lives.
  * @param renderer - the site to write: the Mintlify root (default) or the Fumadocs site.
  * @example
  * const { errors, files, copies } = emitDocsSite({ config, files: [{ path: "docs/index.mdx", content }], services: [] });
@@ -305,6 +303,16 @@ export function emitDocsSite(
   renderer: "mintlify" | "fumadocs" = "mintlify",
 ): DocsSite {
   const { config } = input;
+  const source = input.source ?? DOCS_APP_SOURCE;
+  // A source file's own path, from its path in the docs app layout (`docs/x.mdx` is `src/docs/x.mdx` in a docs app).
+  const whereOf = (path: string): string =>
+    path.startsWith("docs/")
+      ? `${source.pages}/${path.slice("docs/".length)}`
+      : path.startsWith("assets/")
+        ? `${source.assets}/${path.slice("assets/".length)}`
+        : path.startsWith("snippets/")
+          ? `${source.snippets}/${path.slice("snippets/".length)}`
+          : `${source.root}/${path}`;
   const fumadocs = renderer === "fumadocs";
   const errors: GenError[] = [];
   const refuse = (code: string, file: string, subject: string, message: string, fix: string) =>
@@ -319,7 +327,7 @@ export function emitDocsSite(
     if (!fumadocs)
       refuse(
         "docs_locales_unsupported",
-        DOCS_CONFIG_FILE,
+        source.config,
         "locales",
         "`locales` is set, but only a Fumadocs site serves more than one language",
         "add fumadocs-ui to the docs app's dependencies, or remove `locales`",
@@ -329,7 +337,7 @@ export function emitDocsSite(
     ))
       refuse(
         "docs_locales_invalid",
-        DOCS_CONFIG_FILE,
+        source.config,
         `locales.${code}`,
         `the locale code ${code} is malformed or listed twice`,
         "write each code once, lower case with an optional upper-case region (`ar`, `ar-SA`)",
@@ -337,7 +345,7 @@ export function emitDocsSite(
     if (defaults.length !== 1)
       refuse(
         "docs_locales_invalid",
-        DOCS_CONFIG_FILE,
+        source.config,
         "locales",
         `${defaults.length} locales are marked default; a site has exactly one`,
         "set `default: true` on the one locale whose pages are the source pages",
@@ -354,7 +362,7 @@ export function emitDocsSite(
   const snippets: { readonly path: string; readonly content?: string }[] = [];
   const assets: string[] = [];
   for (const file of input.files) {
-    const where = `src/${file.path}`;
+    const where = whereOf(file.path);
     const name = file.path.slice(file.path.lastIndexOf("/") + 1);
     if (name === "docs.json" || name === "README.md")
       refuse(
@@ -362,10 +370,10 @@ export function emitDocsSite(
         where,
         name,
         name === "docs.json"
-          ? "a docs.json sits under src/: gen writes docs.json from the DocsConfig"
-          : "a README.md sits under src/, where it would be published as a page",
+          ? `a docs.json sits under ${source.root}/: gen writes docs.json from the DocsConfig`
+          : `a README.md sits under ${source.root}/, where it would be published as a page`,
         name === "docs.json"
-          ? `move its settings into ${DOCS_CONFIG_FILE} and delete it`
+          ? `move its settings into ${source.config} and delete it`
           : "move it to the member root, beside package.json",
       );
     else if (file.path.startsWith("docs/")) {
@@ -388,8 +396,8 @@ export function emitDocsSite(
           "docs_source_misplaced",
           where,
           name,
-          `${where} is not a page: src/docs holds .mdx and .md pages only`,
-          `move it to src/assets/ and reference it as /assets/${name}`,
+          `${where} is not a page: ${source.pages} holds .mdx and .md pages only`,
+          `move it to ${source.assets}/ and reference it as /assets/${name}`,
         );
     } else if (file.path.startsWith("snippets/")) snippets.push(file);
     else if (PAGE.test(file.path))
@@ -397,8 +405,8 @@ export function emitDocsSite(
         "docs_page_outside",
         where,
         name,
-        `${where} is a page outside src/docs`,
-        `move it under src/docs/ (a reusable fragment goes in src/snippets/)`,
+        `${where} is a page outside ${source.pages}`,
+        `move it under ${source.pages}/ (a reusable fragment goes in ${source.snippets}/)`,
       );
     else if (file.path.startsWith("assets/")) assets.push(file.path.slice("assets/".length));
     else if (!(file.path.startsWith("config/") && file.path.endsWith(".ts")))
@@ -406,8 +414,8 @@ export function emitDocsSite(
         "docs_source_misplaced",
         where,
         name,
-        `${where} is outside the docs layout: src/ holds docs/, assets/, snippets/ and config/ only`,
-        "move it into one of those folders, or out of src/ when it is not part of the site",
+        `${where} is outside the docs layout: ${source.root}/ holds docs/, assets/, snippets/ and config/ only`,
+        `move it into one of those folders, or out of ${source.root}/ when it is not part of the site`,
       );
   }
 
@@ -415,7 +423,7 @@ export function emitDocsSite(
     if ((fumadocs ? FUMADOCS_OWNED_KEYS : DOCS_OWNED_KEYS).has(key))
       refuse(
         "docs_owned_key",
-        DOCS_CONFIG_FILE,
+        source.config,
         `raw.${key}`,
         `\`raw\` sets \`${key}\`, which gen writes from the typed fields`,
         fumadocs
@@ -435,10 +443,10 @@ export function emitDocsSite(
       if (!pages.has(entry))
         refuse(
           "docs_page_missing",
-          DOCS_CONFIG_FILE,
+          source.navigation,
           entry,
-          `the navigation lists ${entry}, which has no src/docs/${entry}.mdx`,
-          `create src/docs/${entry}.mdx, or remove the entry`,
+          `the navigation lists ${entry}, which has no ${source.pages}/${entry}.mdx`,
+          `create ${source.pages}/${entry}.mdx, or remove the entry`,
         );
       list(entry);
       return [entry];
@@ -451,10 +459,10 @@ export function emitDocsSite(
       if (ids.length === 0)
         refuse(
           "docs_page_missing",
-          DOCS_CONFIG_FILE,
+          source.navigation,
           `folder:${entry.folder}`,
-          `the navigation lists the folder ${entry.folder}, which holds no page under src/docs`,
-          `add a page to src/docs/${entry.folder}/, or remove the entry`,
+          `the navigation lists the folder ${entry.folder}, which holds no page under ${source.pages}`,
+          `add a page to ${source.pages}/${entry.folder}/, or remove the entry`,
         );
       ids.forEach(list);
       return ids;
@@ -476,10 +484,10 @@ export function emitDocsSite(
     if (!listed.has(id))
       refuse(
         "docs_page_unlisted",
-        `src/docs/${page.path}`,
+        `${source.pages}/${page.path}`,
         id,
-        `src/docs/${page.path} is in no navigation group, so no reader can reach it`,
-        `list "${id}" (or its folder) in a group of ${DOCS_CONFIG_FILE}, or delete the page`,
+        `${source.pages}/${page.path} is in no navigation group, so no reader can reach it`,
+        `list "${id}" (or its folder) in a group of ${source.navigation}, or delete the page`,
       );
 
   // Translations: each has its default page; a default page in a locale's folder would collide with the locale's paths.
@@ -489,16 +497,16 @@ export function emitDocsSite(
         "docs_locale_page_orphan",
         translation.source,
         id,
-        `${translation.source} translates src/docs/${translation.base}.mdx, which does not exist`,
-        `add src/docs/${translation.base}.mdx in the default locale, or delete the translation`,
+        `${translation.source} translates ${source.pages}/${translation.base}.mdx, which does not exist`,
+        `add ${source.pages}/${translation.base}.mdx in the default locale, or delete the translation`,
       );
   for (const id of pages.keys())
     if (others.has(id.split("/")[0] ?? ""))
       refuse(
         "docs_locale_path_taken",
-        `src/docs/${pages.get(id)?.path ?? id}`,
+        `${source.pages}/${pages.get(id)?.path ?? id}`,
         id,
-        `src/docs/${pages.get(id)?.path ?? id} sits in the folder of the locale ${id.split("/")[0]}, whose pages are served there`,
+        `${source.pages}/${pages.get(id)?.path ?? id} sits in the folder of the locale ${id.split("/")[0]}, whose pages are served there`,
         "move the page to another folder, or write it as a translation (`<page>.<code>.mdx`) beside its default page",
       );
   for (const code of others)
@@ -506,12 +514,12 @@ export function emitDocsSite(
       if (!translations.has(`${code}/${id}`))
         warnings.push({
           code: "docs_locale_page_untranslated",
-          file: `src/docs/${pages.get(id)?.path ?? id}`,
+          file: `${source.pages}/${pages.get(id)?.path ?? id}`,
           line: 0,
           column: 0,
           subject: `${code}/${id}`,
-          message: `src/docs/${pages.get(id)?.path ?? id} has no ${code} translation, so the ${code} site links to it`,
-          fix: `add src/docs/${id}.${code}.mdx when the translation is ready`,
+          message: `${source.pages}/${pages.get(id)?.path ?? id} has no ${code} translation, so the ${code} site links to it`,
+          fix: `add ${source.pages}/${id}.${code}.mdx when the translation is ready`,
           severity: "warning",
         });
 
@@ -525,10 +533,10 @@ export function emitDocsSite(
     if (path !== undefined && !known.has(path))
       refuse(
         "docs_asset_missing",
-        DOCS_CONFIG_FILE,
+        source.config,
         field,
-        `${field} names ${path}, which is not in src/assets`,
-        `add src/assets/${path}, or name an asset that exists`,
+        `${field} names ${path}, which is not in ${source.assets}`,
+        `add ${source.assets}/${path}, or name an asset that exists`,
       );
   const corpus = [
     ...[...pages.values(), ...translations.values()].map((page) => page.content),
@@ -541,9 +549,9 @@ export function emitDocsSite(
     if (MEDIA.test(asset) && !corpus.includes(`assets/${asset}`))
       refuse(
         "docs_asset_unreferenced",
-        `src/assets/${asset}`,
+        `${source.assets}/${asset}`,
         asset,
-        `src/assets/${asset} is referenced by no page, snippet or config field`,
+        `${source.assets}/${asset} is referenced by no page, snippet or config field`,
         `reference it as /assets/${asset}, or delete it`,
       );
 
@@ -554,7 +562,7 @@ export function emitDocsSite(
     if (found === undefined)
       refuse(
         "docs_service_unknown",
-        DOCS_CONFIG_FILE,
+        source.config,
         `apiReference.${key}`,
         `apiReference names ${key}, whose committed stackra.manifest.json was not found in services/`,
         `run stackra gen in services/${kebabCase(key)} and commit its manifest, or remove the key`,
@@ -588,7 +596,7 @@ export function emitDocsSite(
     if (urls.has(redirect.from))
       refuse(
         "docs_redirect_shadows_page",
-        DOCS_CONFIG_FILE,
+        source.config,
         `redirects.${redirect.from}`,
         `a redirect leaves ${redirect.from}, which is a page, so the page could never be reached`,
         `remove the redirect, or move the page and redirect its old path`,
@@ -596,7 +604,7 @@ export function emitDocsSite(
     if (!/^https?:\/\//.test(redirect.to) && !urls.has(redirect.to.replace(/[?#].*$/, "")))
       refuse(
         "docs_redirect_target_missing",
-        DOCS_CONFIG_FILE,
+        source.config,
         `redirects.${redirect.from}`,
         `the redirect from ${redirect.from} goes to ${redirect.to}, which is neither a page nor an absolute URL`,
         `point it at a page path (such as /quickstart) or an https:// URL`,
@@ -608,7 +616,7 @@ export function emitDocsSite(
   const content = new Map<string, string>();
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [id, page] of [...pages].sort(([a], [b]) => (a < b ? -1 : 1))) {
-    const where = `src/docs/${page.path}`;
+    const where = `${source.pages}/${page.path}`;
     const prose = proseOf(page.content);
     const names = new Set(MDX_COMPONENTS);
     const includes = new Map<string, string>();
@@ -756,6 +764,7 @@ function fumadocsSite(
   translated: readonly string[] = [],
 ): DocsSite {
   const { config } = input;
+  const from = (input.source ?? DOCS_APP_SOURCE).config;
   const locales: readonly DocsLocale[] = config.locales ?? [];
   const reference = services.map((service) => ({
     id: `api-reference/${kebabCase(service.key)}`,
@@ -881,9 +890,9 @@ function fumadocsSite(
           ]),
           ["app/lib/locale.ts", LOCALE_LIB_TEMPLATE] as const,
         ]
-    ).map(([path, text]) => ({ path, content: noticed(path, text) })),
+    ).map(([path, text]) => ({ path, content: noticed(path, text, from) })),
     { path: "app/site.json", content: `${JSON.stringify(site, null, 2)}\n` },
-    { path: "app/theme.css", content: noticed("app/theme.css", theme) },
+    { path: "app/theme.css", content: noticed("app/theme.css", theme, from) },
     { path: "public/llms.txt", content: `${llms.join("\n")}\n` },
     { path: "public/llms-full.txt", content: `# ${config.name}\n\n${full.join("\n")}` },
     {

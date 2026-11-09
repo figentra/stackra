@@ -4611,6 +4611,9 @@ importers:
       typescript6:
         specifier: catalog:tooling
         version: typescript@6.0.3
+      yaml:
+        specifier: 'catalog:'
+        version: 2.9.1
     devDependencies:
       '@stackra/config':
         specifier: workspace:*

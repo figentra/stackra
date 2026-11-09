@@ -75,6 +75,11 @@
             }
           ]
         }
+      },
+      "selectedBy": "config:logger.logging.reporter",
+      "config": {
+        "class": "LoggingConfig",
+        "from": "@stackra/logger"
       }
     },
     {
