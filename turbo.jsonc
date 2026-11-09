@@ -104,6 +104,9 @@
       "description": "Run a member's `.e2e.test.ts` files in a real browser: `stackra test --tier e2e`. Defined only by members that have e2e tests. After gen and //#gen:workspace, as test.",
       "dependsOn": ["^build", "gen", "//#gen:workspace"],
       "cache": false,
+      // The testbed image's browsers (`PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`) and its virtual display: without
+      // them Playwright looks in the user's cache, where no browser is installed.
+      "passThroughEnv": ["PLAYWRIGHT_*", "DISPLAY", "CI"],
       "outputs": [],
     },
     // `stackra gen` once at the root (`gen:workspace`) over every member with a stackra.config.ts. One root task, not
