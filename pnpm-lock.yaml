@@ -9401,6 +9401,9 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
       '@stackra/ui':
         specifier: workspace:*
         version: link:../../design-system/ui

@@ -95,7 +95,7 @@
       "file": "src/node/models/stored-setting-revision.model.ts",
       "table": "settings.stored_setting_revisions",
       "publicId": "ssr",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenantOrPlatform", "Timestamps"],
       "entity": {
         "module": "settings",
         "fields": [
@@ -267,6 +267,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
@@ -294,7 +303,7 @@
       "file": "src/node/models/stored-setting.model.ts",
       "table": "settings.stored_settings",
       "publicId": "sst",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenantOrPlatform", "Timestamps"],
       "entity": {
         "module": "settings",
         "fields": [
@@ -362,6 +371,15 @@
             "type": {
               "kind": "public_id",
               "prefix": "sst"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
             }
           },
           {
