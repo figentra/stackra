@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the `EdgeKvWriter` port: writes and removes rows of the edge KV copy (Cloudflare Workers KV) from outside
+ * Purpose: the `EdgeKvWriter` port: writes, reads back and removes rows of the edge KV copy (Cloudflare Workers KV) from outside
  *          the Worker, the way Runway and the edge projector keep `host:`, `boot:`, `release:`, `canary:`,
  *          `wellknown:` and `shell:` rows current.
  * Boundary: an abstract class that is its own token, keyed `app.EdgeKvWriter`; a driver (the Cloudflare API, memory
@@ -24,6 +24,9 @@ export abstract class EdgeKvWriter extends Port {
 
   /** Stores `value` under `key`, replacing any row there; with `ttlSeconds` the row expires that long from now. */
   abstract put(key: string, value: string, ttlSeconds?: number): Promise<void>;
+
+  /** The row under `key`, or `null` when there is none; a writer checks who owns a row before replacing it. */
+  abstract read(key: string): Promise<string | null>;
 
   /** Removes `key`; removing a missing key is not an error. */
   abstract delete(key: string): Promise<void>;

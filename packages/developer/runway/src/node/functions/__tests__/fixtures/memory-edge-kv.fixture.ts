@@ -34,6 +34,11 @@ export class MemoryEdgeKv extends Driver(EdgeKvWriter) {
     this.rows.delete(key);
   }
 
+  /** The row at `key`, or `null`. */
+  override async read(key: string): Promise<string | null> {
+    return this.rows.get(key) ?? null;
+  }
+
   /** The parsed JSON row at `key`. */
   json(key: string): unknown {
     const value = this.rows.get(key);

@@ -4,7 +4,7 @@
  *          the surface it serves, and how long its KV rows live.
  * Boundary: data only; `publishProduct` and `pullRequestPreviewHost` read it.
  * Runtime: node
- * Governing contract: ADR 0289 (decision 7 and the 2026-11-01 note, STA-1908): `pr-<n>.figentra.cloud`, the console
+ * Governing contract: ADR 0289 (decision 7 and the 2026-11-01 and 2026-11-09 notes): `<product>-pr-<n>.figentra.cloud`, the console
  *                     at `/`, 7 days; ADR 0170 (decision 7).
  */
 

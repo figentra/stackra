@@ -37,6 +37,9 @@ import { deployFact } from "#node/product/functions/deploy-fact.function";
 import { proveApproval } from "#node/runway-deploy/functions/prove-approval.function";
 import type { CliContext } from "#node/types/cli-context.type";
 
+/** A pull request number: a positive integer in plain digits. */
+const PULL_REQUEST_NUMBER = /^[1-9]\d*$/;
+
 /** A comma list; a list with no item counts as missing. */
 function list(value: string | undefined): string[] | undefined {
   const items =
@@ -111,9 +114,10 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
       : undefined);
   const canaryScopes = list(deployFact(values, "canary-scopes", "STACKRA_CANARY_SCOPES"));
   const pr = deployFact(values, "pr", "STACKRA_PULL_REQUEST");
-  const pullRequest = pr === undefined ? undefined : Number(pr);
-  if (pullRequest !== undefined && (!Number.isInteger(pullRequest) || pullRequest < 1))
+  // Digits only: Number() would also take "1e3" and "0x10".
+  if (pr !== undefined && !PULL_REQUEST_NUMBER.test(pr))
     throw new CliUsageError(`--pr is a pull request number, not "${pr}"`);
+  const pullRequest = pr === undefined ? undefined : Number(pr);
   const mobileOnly = values["mobile-only"] === true;
   if (mobileOnly && values["surfaces-only"] === true)
     throw new CliUsageError("pass --surfaces-only or --mobile-only, not both");

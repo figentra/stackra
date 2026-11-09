@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `publishPullRequest(request, pullRequest)`, `publishProduct`'s path for one pull request's preview: uploads
- *          the console bundle, then writes the one `host:pr-<n>.figentra.cloud` row and the console's
+ *          the console bundle, then writes the one `host:<product>-pr-<n>.figentra.cloud` row and the console's
  *          `release:<product>:console:pr-<n>` row, both with a 7-day expiry. There is no canary (a preview has no
  *          tenants to judge against), no app-link file and no ops review; the router Worker reads these rows.
- * Boundary: every check runs before the first upload or write. The bundle's asset keys are versioned by commit, so a
+ * Boundary: every check runs before the first upload or write, including the guard that refuses a host row another
+ *           product already holds. The bundle's asset keys are versioned by commit, so a
  *           pull request never overwrites another's bundle. The shared `preview` environment's rows are untouched.
  * Runtime: node
  * Governing contract: ADR 0289 (decision 7, the 2026-11-01 note; STA-1907); ADR 0437 (the KV copy); ADR 0170 (decision 7).
@@ -35,7 +36,7 @@ import type { ProductPublishResult } from "#node/types/product-publish-result.ty
  * What the preview publish uploaded and wrote.
  *
  * @throws RunwayInvalidError before any upload or write when the environment is not `preview`, the number is not a
- *         pull request's, the region is unknown, the console ships no bundle or its target is not served.
+ *         pull request's, the product or the region is unknown, another product holds the host, the console ships no bundle or its target is not served.
  * @example
  * await publishProduct({ repository: ".", environment: "preview", pullRequest: 412, kv, assets, served: ["console@3"] });
  */
@@ -45,9 +46,11 @@ export async function publishPullRequest(
 ): Promise<ProductPublishResult> {
   const { surface, ttlSeconds } = PULL_REQUEST_PREVIEW_SETTINGS;
   const root = readRunway(join(request.repository, "runway.yaml"), "root");
-  const product = root.product?.key as string;
+  const product = root.product?.key;
   const region = request.region ?? root.environments.preview?.regions?.[0];
   const issues: RunwayIssue[] = [];
+  if (product === undefined)
+    issues.push({ path: "product.key", message: "Name the product the preview belongs to" });
   if (!Number.isInteger(pullRequest) || pullRequest < 1)
     issues.push({ path: "pullRequest", message: "Name the pull request number" });
   if (request.environment !== RunwayEnvironment.Preview)
@@ -65,7 +68,20 @@ export async function publishPullRequest(
       path: `surfaces.${surface}`,
       message: `A pull-request preview serves the ${surface} surface, and it ships no bundle`,
     });
-  if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
+  if (issues.length > 0 || product === undefined || region === undefined)
+    throw new RunwayInvalidError("runway.yaml", issues);
+
+  const host = pullRequestPreviewHost(product, pullRequest);
+  // The host row is shared ground: refuse one another product holds, rather than take its preview over.
+  const existing = await request.kv.read(`${EdgeKvPrefix.Host}:${host}`);
+  const owner = existing === null ? undefined : (JSON.parse(existing) as EdgeHostRow).product;
+  if (owner !== undefined && owner !== product)
+    throw new RunwayInvalidError("runway.yaml", [
+      {
+        path: "product.key",
+        message: `${host} serves ${owner}'s preview, not ${product}'s`,
+      },
+    ]);
 
   const [bundle] = readBundles(request.repository, [surface]);
   if (bundle === undefined)
@@ -93,12 +109,11 @@ export async function publishPullRequest(
     env,
   );
 
-  const host = pullRequestPreviewHost(pullRequest);
   const preset = root.surfaces?.[surface]?.preset;
   const hostRow: EdgeHostRow = {
     product,
     surface,
-    region: region as string,
+    region,
     status: EDGE_PUBLISH_SETTINGS.hostStatus,
     realm: EDGE_PUBLISH_SETTINGS.realms[surface] ?? preset ?? EDGE_PUBLISH_SETTINGS.defaultRealm,
     canonical: host,
