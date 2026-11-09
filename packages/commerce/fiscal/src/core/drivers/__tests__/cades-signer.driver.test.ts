@@ -3,14 +3,13 @@
  * Purpose: unit tests of `CadesSignerDriver`: a CMS `SignedData` whose signed attributes (content type, message
  *          digest, `ESSCertIDv2`, signing time) verify under the certificate's RSA or EC key, the signer named by the
  *          certificate's issuer and serial, no signing time without `signedAt`, and the refusals.
- * Boundary: test only; deliberately fake units (`__fixtures__/cades-test-units.json`: throwaway keys and self-signed
+ * Boundary: test only; deliberately fake units (`__fixtures__/cades-test-units.ts`: throwaway keys and self-signed
  *           TEST-ONLY certificates), signed with node:crypto standing in for a token or an e-seal provider. Not a
  *           certification test (stackra-31).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0364 (decision 4).
  */
 import { createPrivateKey, sign, verify, X509Certificate } from "node:crypto";
-import { readFileSync } from "node:fs";
 
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
@@ -19,6 +18,7 @@ import { SignatureFormat } from "#contracts/enums/signature-format.enum";
 import { FiscalSigner } from "#contracts/ports/fiscal-signer.port";
 import { FiscalSigningKey } from "#contracts/ports/fiscal-signing-key.port";
 import type { SigningCertificate } from "#contracts/types/signing-certificate.type";
+import { CADES_TEST_UNITS } from "#core/drivers/__tests__/__fixtures__/cades-test-units";
 import { CadesSignerDriver } from "#core/drivers/cades-signer.driver";
 import { FiscalCredentialMissingError } from "#core/errors/fiscal-credential-missing.error";
 import { FiscalSignatureUnsupportedError } from "#core/errors/fiscal-signature-unsupported.error";
@@ -33,9 +33,7 @@ import { FiscalSigningKeyFake } from "#testing/fiscal-signing-key.fake";
 type TestUnit = { readonly privateKey: string; readonly certificate: string };
 
 /** The fake units: one RSA (ETA's usual seal), one EC P-256. */
-const UNITS = JSON.parse(
-  readFileSync(new URL("__fixtures__/cades-test-units.json", import.meta.url), "utf8"),
-) as { readonly rsa: TestUnit; readonly ec: TestUnit };
+const UNITS: { readonly rsa: TestUnit; readonly ec: TestUnit } = CADES_TEST_UNITS;
 
 /** A key store over one fake unit, signing as a token would: SHA-256 with the unit's key. */
 class TestUnitKey extends FiscalSigningKey {

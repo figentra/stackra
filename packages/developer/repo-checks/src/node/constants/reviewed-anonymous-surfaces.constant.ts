@@ -11,7 +11,7 @@
  *                     Pay's checkout calls reviewed 2026-11-07 (STA-2515); the checkout's framers 2026-11-08 (STA-2564);
  *                     the checkout's method choice 2026-11-08; the checkout's details and terms submit 2026-11-09
  *                     (figentra/pay#194); Figentra Geo's three places reads 2026-11-09; Figentra Notify's marketing
- *                     opt-out link 2026-11-09.
+ *                     opt-out link 2026-11-09; the OS landing lead form 2026-11-09 (os#233, os#267).
  */
 
 /** Locked key to why an anonymous caller may make the call. */
@@ -48,6 +48,12 @@ export const REVIEWED_ANONYMOUS_SURFACES: Readonly<Record<string, string>> = Obj
   "identity.passkey.verify@1":
     "finishes a passkey sign-in (ADR 0206 d7-8); the identity provider checks the signature against the challenge " +
     "session, a refusal is UnauthenticatedError, and the bearer token it answers is never logged; 10 calls a minute",
+  "leads.lead.submit@1":
+    "a Figentra landing's lead form (STA-2041): anonymous only through the landing's edge Worker, which checks the " +
+    "challenge, maps the host to its tenant and signs the forwarded form, so the call runs in that verified tenant " +
+    "with row security and a call without a signed scope has no tenant; 60 calls a minute per tenant; writes the " +
+    "person, the consent answer with the words' SHA-256 and the lead, queues one escaped email to the product's " +
+    "support address, and answers only that it arrived",
   "payment_links.payment_link.open@1":
     "a Figentra Pay link's page (STA-2515): takes only a short unguessable link id, resolved to its tenant through " +
     "the ids-only route table, opens a session there with row security; the same refusal for an unknown, paid, " +
