@@ -214,7 +214,7 @@ the token with `useValue` when the container builds it.
 `AgentRuntime` runs every bound `GuardrailLayer` (`DiscoveryService.getAll`, wiring order) on the prompt before it is
 stored and on the final answer before it is stored: a redaction is what the conversation keeps and the reply carries,
 and a block throws `GuardrailBlockedError` (a blocked prompt opens no run; a blocked answer fails the run with
-`guardrail_blocked`). A stream's `textStream` has already shown the unredacted answer; only its `reply` is checked.
+`guardrail_blocked`). A stream's `textStream` and `uiStream` have already shown the unredacted answer; only its `reply` is checked.
 
 ```ts
 const layers = [
