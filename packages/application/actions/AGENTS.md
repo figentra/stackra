@@ -50,6 +50,10 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   write a query's refusal needs (the rate-limit usage event) waits for the read-only transaction to end. Name no
   tenant here; the port takes the `Actor` and a `ScopeRef`.
   `propose` runs the steps up to validation and meters a draft; it never reaches approval or `handle`.
+- `ctx.detach()` holds the call's isolation past its transaction for a stream or a long loop: each
+  `detached.isolated(...)` is a new `CallIsolation.run` with the descriptor's actor and scope (never from input), so
+  the isolation's checks run again per step. `DetachedCall` is frozen: never add a setter or a way to change its
+  actor. `RequestContext.detached()` answers only inside `detached.run`, never in the call's own transaction.
 - The approval stage (ADR 0509) trusts the store for status and votes only: `verifyApproval` compares every other
   field with the owning service's `ApprovalBinding`, and an execution is built from the binding, never from the store
   or the event. A declared stage fails closed without its ports. Never update a binding, never take an assurance,

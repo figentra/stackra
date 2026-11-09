@@ -20,6 +20,7 @@ export class SiteFooterBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.siteFooter,
 }) {
+  /** The footer's link columns, in order. */
   groups!: FooterGroup[];
 
   /** "Stackra is made by Figentra Technologies L.L.C". */
