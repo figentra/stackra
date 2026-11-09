@@ -130,6 +130,19 @@ export class BrandReader extends Service {
   }
 
   /**
+   * The original bytes of `image` (PNG or JPEG, at most the bucket's 512 KiB), read from the disk, for a surface that
+   * embeds the image (a printed document); `null` when the file has gone since `profile` resolved it. The variants are
+   * resized on request from the URL and are not stored, so there is no variant to read.
+   *
+   * @example
+   * const bytes = brand.logo === null ? null : await this.brand.bytes(brand.logo);
+   */
+  async bytes(image: BrandImage): Promise<Uint8Array | null> {
+    const path = pathOf(image.id, image.mediaType);
+    return (await this.disk.exists(path)) ? this.disk.read(path) : null;
+  }
+
+  /**
    * The colour at `path` with its on-colour: `resolved` when it passes its rule, else the innermost stored layer's
    * value that does, else `null`.
    */
@@ -149,19 +162,6 @@ export class BrandReader extends Service {
       }
     }
     return color === null ? null : { color, onColor: onColor(color) };
-  }
-
-  /**
-   * The original bytes of `image` (PNG or JPEG, at most the bucket's 512 KiB), read from the disk, for a surface that
-   * embeds the image (a printed document); `null` when the file has gone since `profile` resolved it. The variants are
-   * resized on request from the URL and are not stored, so there is no variant to read.
-   *
-   * @example
-   * const bytes = brand.logo === null ? null : await this.brand.bytes(brand.logo);
-   */
-  async bytes(image: BrandImage): Promise<Uint8Array | null> {
-    const path = pathOf(image.id, image.mediaType);
-    return (await this.disk.exists(path)) ? this.disk.read(path) : null;
   }
 
   /** The claimed file of upload `id` with its variants, or `null` when unset or not on the disk. */
