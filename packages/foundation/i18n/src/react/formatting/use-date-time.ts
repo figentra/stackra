@@ -15,7 +15,7 @@ import { formatDateTime } from "#core/functions/format-date-time.function";
 import { useI18nState } from "#react/i18n-provider/use-i18n-state";
 
 /**
- * The date and time formatter of the active locale.
+ * The date and time formatter of the active locale, in the tenant's calendar.
  *
  * @throws Error outside an `I18nProvider`.
  * @example
@@ -26,7 +26,7 @@ export function useDateTime(): (
   value: Date | string | number,
   options?: Intl.DateTimeFormatOptions,
 ) => string {
-  const { intlLocale, numerals, timeZone } = useI18nState();
+  const { intlLocale, numerals, calendar, timeZone } = useI18nState();
   return useMemo(
     () => (value: Date | string | number, options?: Intl.DateTimeFormatOptions) =>
       formatDateTime(
@@ -34,7 +34,8 @@ export function useDateTime(): (
         intlLocale,
         timeZone === null ? options : { timeZone, ...options },
         numerals,
+        calendar,
       ),
-    [intlLocale, numerals, timeZone],
+    [intlLocale, numerals, calendar, timeZone],
   );
 }
