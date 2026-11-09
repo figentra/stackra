@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `QueueWorkerService`: a due job runs through the real pipeline as the system actor on behalf
  *          of its caller and is removed; a retryable failure waits for its backoff and is dead-lettered after the last
- *          attempt with one `onDeadLetter` call; a refusal that is not retryable ends the job at once; a job without a
+ *          attempt with one `onDeadLetter` call, each attempt's `ctx.attempt` saying its number and whether it is the
+ *          last; a refusal that is not retryable ends the job at once; a job without a
  *          dead letter is dropped and logged; a queued call runs as its caller under its Idempotency-Key; a job
  *          derives its own key when a store is bound; an attempt past its timeout is aborted and retried; an unknown
  *          key is dead-lettered; a scoped job runs through the bound `CallIsolation` with its scope as the call's (`ctx.scope`) and is dead-lettered at once, its hook not run, when none is bound (`job_isolation_missing`);
@@ -285,6 +286,12 @@ describe(QueueWorkerService, () => {
     const [third] = await worker.drain(undefined, second?.retryAt);
     expect(third).toMatchObject({ outcome: JobOutcome.DeadLettered, job: { attempts: 3 } });
     expect(deliver.failed).toEqual([{ messageId: "msg_1" }]);
+    // each attempt knows its number and whether a retry follows (retries: 2, so the third is the last)
+    expect(deliver.contexts.map((ctx) => ctx.attempt)).toEqual([
+      { number: 1, last: false },
+      { number: 2, last: false },
+      { number: 3, last: true },
+    ]);
     expect(await queue.deadLetters("delivery")).toMatchObject([
       { id, status: JobStatus.Dead, lastError: { code: "provider_down" } },
     ]);

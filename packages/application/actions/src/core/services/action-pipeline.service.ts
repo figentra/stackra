@@ -1527,6 +1527,7 @@ export class ActionPipeline {
       market: request.market ?? CALL_DEFAULTS.market,
       ...(descriptor.origin === undefined ? {} : { origin: descriptor.origin }),
       abortSignal: request.abortSignal ?? new AbortController().signal,
+      ...(request.attempt === undefined ? {} : { attempt: request.attempt }),
       now: () => new Date(at),
       authorize: (record: object) =>
         this.required(AccessControl, IAM).authorize(descriptor, record),

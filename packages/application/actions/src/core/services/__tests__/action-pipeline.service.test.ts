@@ -32,7 +32,8 @@
  *          bound `CallIsolation` a branch user's descriptor and context carry the tenant the isolation runs as as
  *          `scopeId`, and its approval binding and draft are written under it, with the branch on `branchScopeId`;
  *          a tenant-level user, a job and a system actor keep their tenant in both, a platform call has neither, and
- *          with no isolation bound the branch stays the `scopeId`.
+ *          with no isolation bound the branch stays the `scopeId`. And `ctx.attempt`: a queued job's attempt from the call
+ *          options, none on a direct call.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -3991,6 +3992,28 @@ describe("ActionPipeline tree tenant (STA-2561)", () => {
     expect(access.calls[0]).toMatchObject({
       scopeId: TREE_BRANCH.id,
       branchScopeId: TREE_BRANCH.id,
+    });
+  });
+});
+
+/** An action that answers which attempt of a job it runs as. */
+class AttemptAction extends Action({
+  key: "order.attempt",
+  actors: [ActorKind.User, ActorKind.Job],
+}) {
+  async handle(_input: object, ctx: ActionContext): Promise<object> {
+    return { attempt: ctx.attempt ?? null };
+  }
+}
+
+describe("ActionPipeline job attempt (ctx.attempt)", () => {
+  it("hands a queued job's attempt to the context, and none to a direct call", async () => {
+    const { pipeline } = setup([[AttemptAction, new AttemptAction()]]);
+    await expect(
+      pipeline.execute(AttemptAction, {}, { actor: customer, attempt: { number: 3, last: true } }),
+    ).resolves.toEqual({ attempt: { number: 3, last: true } });
+    await expect(pipeline.execute(AttemptAction, {}, { actor: customer })).resolves.toEqual({
+      attempt: null,
     });
   });
 });
