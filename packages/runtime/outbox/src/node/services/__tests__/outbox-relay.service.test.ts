@@ -17,6 +17,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decision 4); ADR 0221 (decision 5); ADR 0327 (decision 9).
  */
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import { buildConfig } from "@stackra/config";
@@ -44,8 +45,6 @@ import { EventPublisher, MessageKind, RowChangeKind } from "#contracts/index";
 import type { EventEnvelope, OutboxMessage, RowChange } from "#contracts/index";
 import { MemoryChangeFeedDriver } from "#core/drivers/memory-change-feed.driver";
 import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { RowIsolationMissingError } from "#core/errors/row-isolation-missing.error";
 import { registerChangeConsumers } from "#core/functions/register-change-consumers.function";
 import { registerEventNames } from "#core/functions/register-event-names.function";
 import { OutboxRelayService } from "#node/services/outbox-relay.service";

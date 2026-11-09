@@ -31,9 +31,10 @@
       "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/synonyms",
+        "path": "/app/synonyms",
         "derived": true
       },
       "tool": {
@@ -63,9 +64,10 @@
       "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "DELETE",
-        "path": "/synonyms/:synonymId",
+        "path": "/app/synonyms/:synonymId",
         "derived": true
       },
       "tool": {
@@ -95,6 +97,7 @@
       "permission": "data_maintenance.change_log.maintain",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "5m",
@@ -118,6 +121,7 @@
       "permission": "data_maintenance.partition.maintain",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "10m",
@@ -141,6 +145,7 @@
       "permission": "data_maintenance.outbox_message.prune",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "5m",
@@ -164,6 +169,7 @@
       "permission": "data_maintenance.record.prune",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "10m",
@@ -188,6 +194,7 @@
       "permission": "data_maintenance.query.record",
       "risk": "L2",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "timeout": "30s",
         "retries": 3
@@ -205,6 +212,7 @@
       "permission": "data_maintenance.index.reindex",
       "risk": "L2",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "1h",
@@ -226,6 +234,7 @@
       "permission": "data_maintenance.index.reindex_semantic",
       "risk": "L2",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "2h",
@@ -247,6 +256,7 @@
       "permission": "data_maintenance.timeseries.rollup",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "10m",
@@ -272,9 +282,10 @@
       "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "PATCH",
-        "path": "/synonyms/:synonymId",
+        "path": "/app/synonyms/:synonymId",
         "derived": true
       },
       "tool": {
@@ -303,9 +314,10 @@
       "permission": "data_maintenance.synonym.read",
       "risk": "L0",
       "actors": ["user", "agent"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/synonyms",
+        "path": "/app/synonyms",
         "derived": true
       },
       "tool": {

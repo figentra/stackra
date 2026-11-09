@@ -16,6 +16,7 @@ import { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import { MemoryFileSystemDriver } from "#core/drivers/memory-file-system.driver";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { FileRetainedError } from "#core/errors/file-retained.error";
 
 const NOW = new Date("2026-10-24T09:00:00.000Z");
 
@@ -111,6 +112,30 @@ describe("MemoryFileSystemDriver", () => {
       "https://files.test/a.png?expires=2026-10-24T09%3A10%3A00.000Z",
     );
     expect(disk(null).url("a.png")).toBe("https://files.invalid/a.png");
+  });
+
+  it("refuses to overwrite, move or delete a retained file until its retainUntil, then allows it", async () => {
+    const until = new Date(NOW.getTime() + 60_000);
+    const files = disk();
+    await files.write("archive/inv.pdf", "v1", {
+      contentType: "application/pdf",
+      retainUntil: until,
+    });
+    await expect(files.write("archive/inv.pdf", "v2")).rejects.toThrow(FileRetainedError);
+    await expect(files.move("archive/inv.pdf", "archive/other.pdf")).rejects.toThrow(
+      FileRetainedError,
+    );
+    await expect(files.delete("archive/inv.pdf")).rejects.toThrow(FileRetainedError);
+    await files.write("archive/plain.pdf", "x");
+    await expect(files.move("archive/plain.pdf", "archive/inv.pdf")).rejects.toThrow(
+      FileRetainedError,
+    );
+    expect(new TextDecoder().decode(await files.read("archive/inv.pdf"))).toBe("v1");
+
+    const past = disk();
+    await past.write("archive/old.pdf", "v1", { retainUntil: new Date(NOW.getTime() - 1) });
+    await past.write("archive/old.pdf", "v2");
+    expect(await past.delete("archive/old.pdf")).toBe(true);
   });
 
   it("moves a file with its media type and refuses to move nothing", async () => {

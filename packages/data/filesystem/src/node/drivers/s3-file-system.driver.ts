@@ -68,6 +68,19 @@ const secondsOf = (duration: Duration): number =>
   Math.ceil(Duration.toMilliseconds(duration) / 1000);
 
 /**
+ * The Object Lock fields of a retained write: COMPLIANCE mode until `retainUntil`, which no user, root included, can
+ * shorten or lift. The bucket must have Object Lock on (set at its creation); S3 refuses the write otherwise.
+ */
+function lockOf(options: WriteOptions | undefined): {
+  ObjectLockMode?: "COMPLIANCE";
+  ObjectLockRetainUntilDate?: Date;
+} {
+  return options?.retainUntil === undefined
+    ? {}
+    : { ObjectLockMode: "COMPLIANCE", ObjectLockRetainUntilDate: options.retainUntil };
+}
+
+/**
  * Keeps files in an S3-compatible bucket.
  *
  * @example
@@ -150,6 +163,7 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
         Key: normalizePath(path),
         Body: contents,
         ...(options?.contentType === undefined ? {} : { ContentType: options.contentType }),
+        ...lockOf(options),
       }),
     );
   }
@@ -175,6 +189,7 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
             Bucket: this.bucket,
             Key: key,
             ...(options?.contentType === undefined ? {} : { ContentType: options.contentType }),
+            ...lockOf(options),
           }),
         )
       ).UploadId;

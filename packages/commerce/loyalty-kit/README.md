@@ -100,7 +100,7 @@ The memory driver keeps the same contract in one turn of the event loop.
 
 ## Stamp cards: earning by visit count
 
-A stamp card counts visits, not money. `EarnVisitAction` (`loyalty_kit.points.earn_visit@1`, `POST /loyalty/visits`,
+A stamp card counts visits, not money. `EarnVisitAction` (`loyalty_kit.points.earn_visit@1`, `POST /app/loyalty/visits`,
 permission `LoyaltyAccountPermissions.stamp`, staff and services only) stamps a member's card for one visit through
 `AccountService.earnVisit`: one ledger entry per visit reference, no spend rate and no tier multiplier.
 
@@ -196,11 +196,11 @@ membership tag; today every live person is a member.
   action and query names its permission. `LoyaltyAccountPolicy` refines `read`, `redeem` and `freeze` per record: a
   customer subject (`actor.onBehalfOf ?? actor`) reads and redeems only their own account, nobody redeems from a frozen
   one, and a deleted account is never frozen.
-- **Redemption:** `RedeemPointsAction` (idempotency required, 30 a minute, `POST /loyalty/redemptions`) runs
+- **Redemption:** `RedeemPointsAction` (idempotency required, 30 a minute, `POST /app/loyalty/redemptions`) runs
   `RedeemPointsWorkflow`: `quote` (the `redeemVerify` slot, then membership and balance), `debit` (one covered debit,
   recording `points.redeemed.v1`) and `confirm`, which parks the run for `RedemptionConfirmed` correlated on member and
   reference, for fifteen minutes. The engine answers the call as soon as the run parks, with the debit and the balance
-  after it. `ConfirmRedemptionAction` (`PUT /loyalty/redemptions/:reference/confirm`) sends the signal for the actor's
+  after it. `ConfirmRedemptionAction` (`PUT /app/loyalty/redemptions/:reference/confirm`) sends the signal for the actor's
   member; without it the wait times out, `undoDebit` credits the points back once under `revert:<reference>`, and the
   run ends `compensated` with `workflow_timed_out`.
 - **Panel:** `LoyaltyAccountResource` is the admin list, View page, enrol form and bulk Freeze; `LoyaltyOverviewDocument`

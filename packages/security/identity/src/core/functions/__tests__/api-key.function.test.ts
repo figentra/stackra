@@ -46,7 +46,7 @@ describe("API keys", () => {
     expect(mintApiKey(ApiKeyKind.Secret, identity)).not.toBe(secret);
   });
 
-  it("names the mode in the key, and reads a key minted before modes as live", () => {
+  it("names the mode in the key, and names none for a key minted before modes", () => {
     const test = mintApiKey(ApiKeyKind.Secret, identity, ApiKeyMode.Test);
     expect(test).toMatch(/^stackra_sk_test_[0-9A-Za-z]{36}$/);
     expect(parseApiKey(test, identity)).toEqual({ kind: "secret", mode: "test", wellFormed: true });
@@ -54,7 +54,7 @@ describe("API keys", () => {
     const legacy = `${head}${base62Of(crc32(head), 6)}`;
     expect(parseApiKey(legacy, identity)).toEqual({
       kind: "secret",
-      mode: "live",
+      mode: undefined,
       wellFormed: true,
     });
   });

@@ -7,7 +7,8 @@
     {
       "key": "collaboration",
       "class": "CollaborationModule",
-      "exports": [],
+      "file": "src/node/collaboration.module.ts",
+      "exports": ["CommentService"],
       "dependsOn": []
     }
   ],
@@ -22,15 +23,41 @@
       "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/rooms/publish",
+        "path": "/app/rooms/publish",
         "derived": true
       },
       "toolOff": "a room message is a live editor's, not something an agent sends as a tool call",
       "input": {
         "$ref": "#/schemas/collaboration.RoomPublishInput"
       }
+    },
+    {
+      "key": "collaboration.room.token@1",
+      "kind": "action",
+      "module": "collaboration",
+      "class": "RoomTokenAction",
+      "file": "src/node/actions/room-token.action.ts",
+      "permission": "collaboration.room.token",
+      "risk": "L2",
+      "actors": ["user"],
+      "idempotency": "optional",
+      "area": "app",
+      "endpoint": {
+        "method": "POST",
+        "path": "/app/rooms/token",
+        "derived": true
+      },
+      "toolOff": "a room token is a live editor's connection credential, not something an agent asks for as a tool call",
+      "input": {
+        "$ref": "#/schemas/collaboration.RoomTokenInput"
+      },
+      "output": {
+        "$ref": "#/schemas/collaboration.RoomTokenOutput"
+      },
+      "refusals": ["not_found", "entitlement_required", "forbidden"]
     }
   ],
   "events": [
@@ -58,6 +85,14 @@
     }
   ],
   "permissions": [
+    {
+      "key": "collaboration.room.token",
+      "risk": "L2",
+      "class": "RoomPermissions",
+      "module": "collaboration",
+      "member": "token",
+      "file": "src/node/access/room.permissions.ts"
+    },
     {
       "key": "collaboration.room.publish",
       "risk": "L2",
@@ -557,6 +592,25 @@
   ],
   "drivers": [
     {
+      "port": "RoomTokens",
+      "key": "collaboration.RoomTokens",
+      "candidates": ["client"],
+      "classes": {
+        "client": {
+          "class": "ClientRoomTokensDriver",
+          "from": "@stackra/collaboration",
+          "deps": [
+            {
+              "class": {
+                "name": "DynamicClient",
+                "from": "@stackra/clients"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "PresenceChannel",
       "key": "collaboration.PresenceChannel",
       "candidates": ["realtime", "memory"],
@@ -670,7 +724,14 @@
       "gates": []
     }
   ],
-  "roles": [],
+  "roles": [
+    {
+      "key": "collaboration.room_member",
+      "class": "RoomMemberRole",
+      "module": "collaboration",
+      "file": "src/node/access/room-member.role.ts"
+    }
+  ],
   "config": [
     {
       "key": "collaboration",
@@ -730,6 +791,49 @@
     {
       "class": "RoomPublishAction",
       "from": "@stackra/collaboration/node",
+      "deps": [
+        {
+          "class": {
+            "name": "RealtimeRooms",
+            "from": "@stackra/realtime"
+          }
+        }
+      ]
+    },
+    {
+      "class": "RoomTokenAction",
+      "from": "@stackra/collaboration/node",
+      "deps": [
+        {
+          "class": {
+            "name": "RealtimeRooms",
+            "from": "@stackra/realtime"
+          }
+        },
+        {
+          "class": {
+            "name": "RealtimeConfig",
+            "from": "@stackra/realtime"
+          }
+        },
+        {
+          "class": {
+            "name": "AccessControl",
+            "from": "@stackra/actions/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "EntitlementSource",
+            "from": "@stackra/entitlements"
+          }
+        }
+      ]
+    },
+    {
+      "class": "RoomController",
+      "from": "@stackra/collaboration/node",
+      "path": "/realtime/room",
       "deps": [
         {
           "class": {
@@ -1093,6 +1197,30 @@
           "default": null
         },
         "key": {
+          "type": "string"
+        }
+      }
+    },
+    "collaboration.RoomTokenInput": {
+      "type": "object",
+      "required": ["document"],
+      "properties": {
+        "document": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64
+        }
+      }
+    },
+    "collaboration.RoomTokenOutput": {
+      "type": "object",
+      "required": ["token", "origin"],
+      "properties": {
+        "token": {
+          "type": "string",
+          "minLength": 1
+        },
+        "origin": {
           "type": "string"
         }
       }

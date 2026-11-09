@@ -11,12 +11,12 @@
  * Governing contract: ADR 0078 and ADR 0221 (2026-10-28 amendment: retention by whole partitions); ADR 0239
  *                     (2026-11-07 amendment, gaps A and C); ADR 0462 (decision 1).
  */
+import { ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { CallIsolation } from "@stackra/actions/contracts";
 import { Duration } from "@stackra/contracts";
 
 import type { ChangeClaim, ChangeFeed, ChangeLogReport } from "#contracts/index";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 
 /** Expired entries one claim takes. */
 const BATCH = 500;
@@ -47,7 +47,9 @@ export async function maintainChangeLog(
       byOwner.set(claim.ownerId, [...(byOwner.get(claim.ownerId) ?? []), claim.position]);
     }
     for (const [ownerId, positions] of byOwner)
-      await inRowOwner(isolation, ownerId, positions[0] ?? "", () => feed.remove(positions));
+      await inRowOwner(isolation, OUTBOX_ACTOR_ID, ownerId, positions[0] ?? "", () =>
+        feed.remove(positions),
+      );
     if (claims.length < BATCH) break;
   }
   return report;

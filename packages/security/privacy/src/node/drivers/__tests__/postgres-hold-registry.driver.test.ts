@@ -12,12 +12,12 @@
  * Governing contract: ADR 0022; ADR 0134 (holds); ADR 0239 (2026-11-07 amendment, gap A); data-layer gap gov20
  *                     (stackra-332).
  */
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import type { Container } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { Disposal } from "@stackra/database/contracts";
-import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/outbox";
 import { describe, expect, it } from "@stackra/testing";
 
 import { PostgresHoldRegistryDriver } from "#node/drivers/postgres-hold-registry.driver";

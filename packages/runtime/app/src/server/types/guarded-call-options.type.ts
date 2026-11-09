@@ -14,6 +14,7 @@ import type { Actor } from "@stackra/contracts";
 
 import type { CallAuthData } from "#server/types/call-auth-data.type";
 import type { CallCredentials } from "#server/types/call-credentials.type";
+import type { VisitorIdentity } from "#server/types/visitor-identity.type";
 
 /** The inputs of one guarded call. */
 export interface GuardedCallOptions {
@@ -46,6 +47,11 @@ export interface GuardedCallOptions {
 
   /** Verifies the credential headers (`CallAuthenticator#authenticate`); throws a refusal when they are bad. */
   readonly authenticate: (credentials: CallCredentials) => Promise<Pick<CallAuthData, "actor">>;
+  /**
+   * Who an anonymous call's visitor is (`VisitorIdentityService#resolve`): the id its signed token names, or a new
+   * visitor. Absent, every anonymous call is a new visitor.
+   */
+  readonly visitor?: (request: Request) => Promise<VisitorIdentity>;
 
   /** Runs the call with its parsed input (`{}` when raw) and the verified actor; a raw call gets the guarded request. */
   readonly execute: (input: unknown, actor: Actor, request: Request) => Promise<unknown>;

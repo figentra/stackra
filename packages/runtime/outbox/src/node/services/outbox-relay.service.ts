@@ -36,6 +36,7 @@
  *                     OS-289 (the audit read trail's five-second batch); ADR 0078 and ADR 0221 (2026-10-28 amendment:
  *                     per-consumer cursors on the retained change log); data-layer gap se3 (batches and coalescing).
  */
+import { ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
@@ -63,9 +64,8 @@ import type {
   RowChange,
 } from "#contracts/index";
 import { CHANGE_CONSUMERS } from "#core/constants/change-consumers.constant";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 import { coalesceChanges } from "#core/functions/coalesce-changes.function";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
 import { loadChanges } from "#core/functions/load-changes.function";
 import { olderEnvelopes } from "#core/functions/older-envelopes.function";
 import { pauseFor } from "#core/functions/pause-for.function";
@@ -82,7 +82,7 @@ interface Run {
 }
 
 /** The platform actor of a message or change stored with no actor: no scope, so it matches no tenant row. */
-const PLATFORM_ACTOR: Actor = Object.freeze({ kind: ActorKind.System, id: "sys_outbox_relay" });
+const PLATFORM_ACTOR: Actor = Object.freeze({ kind: ActorKind.System, id: OUTBOX_ACTOR_ID });
 
 /** The actor a stored message or change runs as: the one stored with it, else the platform actor. */
 function actorOf(meta: OutboxMessage["meta"]): Actor {
@@ -254,7 +254,7 @@ export class OutboxRelayService extends Service {
   private async deliver(claim: OutboxClaim, now: Date, resolver: Resolver): Promise<void> {
     const isolation = resolver.has(CallIsolation) ? resolver.get(CallIsolation) : undefined;
     const inOwner = <T>(work: () => Promise<T>) =>
-      inRowOwner(isolation, claim.ownerId, claim.id, work);
+      inRowOwner(isolation, OUTBOX_ACTOR_ID, claim.ownerId, claim.id, work);
     const message = await inOwner(() => this.driver.load(claim.id));
     if (message === undefined) throw ClaimNotLoadedError.create({ id: claim.id });
     try {

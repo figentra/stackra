@@ -40,7 +40,7 @@ acceptance and discarded unsent on refusal. Global Privacy Control counts as a r
 | `./native`    | `PosthogAnalyticsDriver`                                                                           | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds  |
 | `.`           | `RelayAnalyticsDriver`                                                                             | the `relay` driver: one batch to the analytics service, with the consent snapshot       |
 | `./native`    | `RelayAnalyticsDriver`                                                                             | the `relay` driver for React Native: buffered like PostHog's, stamps `context.device`   |
-| `./contracts` | `ANALYTICS_INGEST_PATH`                                                                            | `/analytics/batches`, the ingest path under the public API origin                       |
+| `./contracts` | `ANALYTICS_INGEST_PATH`                                                                            | `/public/analytics/batches`, the ingest path under the public API origin                       |
 | `./node`      | `IngestAnalyticsBatchAction`, `IngestAnalyticsBatchInput`, `IngestAnalyticsBatchOutput`            | the analytics service's ingest endpoint (`analytics_batch.ingest`)                      |
 | `./node`      | `AnalyticsBatchAccepted`, `FanOutAnalyticsListener`, `AnalyticsBatchPermissions`                   | one outbox event per granted destination, sent to its driver; the L2 permission         |
 | `./contracts` | `AnalyticsStore`, `AnalyticsStoreQuery`                                                            | the port of Stackra's own delivery store (`append`, `scan`, `erasePerson`) and its scan |
@@ -207,7 +207,7 @@ from `@stackra/analytics/native`: it buffers and sends one batch at 20 events or
 
 Figentra's apps send product analytics only to the product's analytics service. Set `driver: "relay"` and
 `ingestOrigin` to the public API origin. The client keeps every rule above (consent, queue, lanes, retries, sampling,
-offline); the relay posts the envelope deliveries unchanged to `<ingestOrigin>/analytics/batches` with the
+offline); the relay posts the envelope deliveries unchanged to `<ingestOrigin>/public/analytics/batches` with the
 `Stackra-Consent` header of a snapshot asked for the batch's anonymous id (`consentSnapshotHeaders` over
 `ConsentLedger.snapshotRequest`). The app holds no vendor key, SDK or host. On a phone take it from `./native`: it
 buffers like the native PostHog driver and stamps `context.device` with the OS and its version.

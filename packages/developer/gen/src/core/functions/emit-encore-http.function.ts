@@ -5,7 +5,7 @@
  *          of every action, query and controller endpoint: Node's request becomes a Fetch `Request` with a streamed
  *          body, `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
  *          over the exact bytes, authenticates through `CallAuthenticator` and runs the call, and the answer is written
- *          to the `ServerResponse` (STA-2577). It answers an `OPTIONS` preflight with 204
+ *          to the `ServerResponse` (STA-2577), its body piped as it is produced, so a server-sent-events answer streams. It answers an `OPTIONS` preflight with 204
  *          and `corsHeaders(request, CorsConfig)`, and adds the same CORS headers to every other answer, with
  *          `Cache-Control: private, no-store` where `apiCacheControl` forces it (ADR 0325 rule 22), inside
  *          `app.handlers.run` so a drain waits for it. When the service declares `@stackra/errors`, a
@@ -66,6 +66,8 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  corsHeaders,",
       "  HttpConfig,",
       "  serveGuardedCall,",
+      "  VisitorConfig,",
+      "  VisitorIdentityService,",
       '} from "@stackra/app/server";',
       'import type { AnyClass, Container } from "@stackra/container";',
       'import type { Actor } from "@stackra/contracts";',
@@ -144,6 +146,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
+      "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",
       "      execute: (input, actor, guarded) => call.execute(container, input, actor, guarded),",
       "    }),",
       "  );",
@@ -152,7 +155,9 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  const cookies = response.headers.getSetCookie();",
       '  if (cookies.length > 0) resp.setHeader("set-cookie", cookies);',
       "  resp.writeHead(response.status);",
-      "  resp.end(Buffer.from(await response.arrayBuffer()));",
+      "  // Streamed, not buffered: an event stream (a room member's fallback) never ends on its own.",
+      "  if (response.body === null) resp.end();",
+      "  else Readable.fromWeb(response.body as never).pipe(resp);",
       "}",
       "",
     ].join("\n"),

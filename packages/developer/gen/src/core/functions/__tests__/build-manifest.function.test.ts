@@ -198,7 +198,7 @@ describe("buildManifest", () => {
       risk: "L2",
       actors: ["user", "agent"],
       idempotency: "required",
-      endpoint: { method: "PUT", path: "/orders/:orderId/cancel", derived: true },
+      endpoint: { method: "PUT", path: "/app/orders/:orderId/cancel", derived: true },
       input: { $ref: "#/schemas/orders.CancelOrderInput" },
       output: { $ref: "#/schemas/orders.CancelOrderOutput" },
       refusals: ["order_not_cancellable"],
@@ -218,9 +218,23 @@ describe("buildManifest", () => {
       key: "orders.order.list@1",
       permission: "orders.order.read",
       risk: "L0",
-      endpoint: { method: "GET", path: "/orders" },
+      endpoint: { method: "GET", path: "/app/orders" },
       tool: { name: "orders_order_list", default: true },
     });
+  });
+
+  it("takes a service's `defineService({ area })` for an action with no area; a package keeps `app` (STA-340)", () => {
+    const cancel = buildManifest({ ...COMMERCE_IR, area: "admin" }).manifest.actions?.[0];
+    expect(cancel).toMatchObject({
+      key: "orders.order.cancel@1",
+      area: "admin",
+      endpoint: { method: "PUT", path: "/admin/orders/:orderId/cancel" },
+    });
+    const redeem = buildManifest({ ...LOYALTY_KIT_IR, area: "admin" }).manifest.actions?.find(
+      (action) => action.class === "RedeemPointsAction",
+    );
+    expect(redeem?.["area"]).toBe("app");
+    expect(redeem?.["endpoint"]).toMatchObject({ path: expect.stringMatching(/^\/app\//) });
   });
 
   it("derives models, drivers, modules and facets", () => {

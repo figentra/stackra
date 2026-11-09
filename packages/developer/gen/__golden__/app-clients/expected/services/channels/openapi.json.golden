@@ -7,7 +7,7 @@
     "x-stackra-member": "channels"
   },
   "paths": {
-    "/channelses/publish": {
+    "/app/channelses/publish": {
       "post": {
         "operationId": "channels_channels_publish",
         "summary": "PublishChannelsAction",

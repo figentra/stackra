@@ -21,9 +21,10 @@
       "permission": "workflow.run.get",
       "risk": "L1",
       "actors": ["user", "agent", "service"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/runs/:runId",
+        "path": "/app/runs/:runId",
         "derived": true
       },
       "tool": {

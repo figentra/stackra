@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `buildManifest`, the derivation of a member's `stackra.manifest.json` from what discovery read: every
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
- *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module
+ *          port keys), the endpoint, area (written, else a service's own, else `app`, STA-340), tool and refusal list of each action (and a query's `reads`, STA-1504), the module
  *          graph, the facets, and the JSON Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's
  *          output, ADR 0338, and the package input and output of a generated search or report query, STA-1459); a
  *          service or app also lists what its hosted packages contribute, marked `from`; each Integration's key,
@@ -70,6 +70,7 @@ import type { Json, StackraManifest } from "@stackra/contracts";
 import { ErrorKind, refusalCode } from "@stackra/errors";
 import { camelCase, snakeCase } from "@stackra/support";
 
+import { DEFAULT_AREA } from "#core/constants/default-area.constant";
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
@@ -430,12 +431,17 @@ export function buildManifest(ir: MemberIR): {
       ? declared.options["actors"].map(String)
       : undefined;
     const input = shapeNamed(declared.handle?.input);
+    // The written area, else a service's own (`defineService({ area })`), else `app` (ADR 0082 decision 3).
+    const area =
+      typeof declared.options["area"] === "string"
+        ? declared.options["area"]
+        : ((ir.layout === "service" ? ir.area : undefined) ?? DEFAULT_AREA);
     const endpoint = deriveEndpoint({
       key: written,
       kind,
       inputFields: fieldsOf(input).map((field) => field.name),
       ...(actors !== undefined ? { actors } : {}),
-      ...(typeof declared.options["area"] === "string" ? { area: declared.options["area"] } : {}),
+      area,
       ...(declared.options["endpoint"] !== undefined
         ? { endpoint: declared.options["endpoint"] }
         : {}),
@@ -529,7 +535,11 @@ export function buildManifest(ir: MemberIR): {
         "use a `DataClassification` value or a `DataClass({ key })` class from an `access/` group",
       );
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
-    for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
+    // Every entry records its area, written or the default, so the gateway and review read it (STA-340).
+    for (const option of ["idempotency", "rateLimit", "cache"])
+      if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
+    entry["area"] = area;
+    for (const option of ["job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     // The meter it feeds and the entitlements it names, so a quota or an entitlement gates it (STA-2059).
     const meter = declared.options["meter"];
@@ -1058,7 +1068,8 @@ export function buildManifest(ir: MemberIR): {
   // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686), and the
   // model a `CrudService<M>` is typed against (`partner`), so the host registers the pair (ADR 0305 rule 5). Its
   // extension points too: its services inject them, so a host binds them alongside (`LoyaltyKitExtensionPoint`).
-  // Its actions and queries too: they are its module's surface, which a host that imports the module binds.
+  // Its actions and queries too: they are its module's surface, which a host that imports the module binds. And its
+  // raw controllers with their `path`, which a host binds and serves as it serves its own.
   const services: Entry[] = published
     ? ir.classes
         .filter(
@@ -1066,12 +1077,14 @@ export function buildManifest(ir: MemberIR): {
             (candidate.kind === "service" ||
               candidate.kind === "extension_point" ||
               candidate.kind === "action" ||
-              candidate.kind === "query") &&
+              candidate.kind === "query" ||
+              (candidate.kind === "controller" && typeof candidate.options["path"] === "string")) &&
             candidate.abstract !== true,
         )
         .map((declared) => ({
           class: declared.name,
           from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
+          ...(declared.kind === "controller" ? { path: String(declared.options["path"]) } : {}),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
           ...(declared.partner === undefined
             ? {}

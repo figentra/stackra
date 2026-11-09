@@ -21,6 +21,7 @@
       "permission": "webhooks.webhook_delivery.send",
       "risk": "L4",
       "actors": ["job"],
+      "area": "app",
       "job": {
         "retries": 80,
         "backoff": "exponential",

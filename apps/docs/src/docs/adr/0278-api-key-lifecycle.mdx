@@ -71,7 +71,8 @@ The owner did not give these; the conservative default below applies until an AD
 
 A key is test or live, chosen when it is issued and written into its text after the kind's prefix:
 `stackra_sk_test_…`, `stackra_pk_live_…` (open detail 1's `<env>` segment). The body is base-62, so the segment
-cannot be read as part of it; a key minted before modes has no segment and is live. The checksum covers the segment, so
+cannot be read as part of it. A mode is never assumed: a key with no segment, or whose record has no mode, is refused
+(CHECKOUT's review, leader 2026-11-09; no live keys existed), so live comes only from a key issued live. The checksum covers the segment, so
 it cannot be edited, and the verifier refuses a key whose text names another mode than its stored record
 (`ApiKeyRecord.mode`). `VerifiedApiKey.mode` carries it to the caller.
 

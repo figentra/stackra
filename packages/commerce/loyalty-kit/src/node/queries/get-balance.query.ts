@@ -44,7 +44,7 @@ export class GetBalanceQuery extends Query({
   key: "points.balance",
   permission: LoyaltyAccountPermissions.read,
   actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
-  endpoint: { method: HttpMethod.Get, path: "/loyalty/accounts/:accountId/balance" },
+  endpoint: { method: HttpMethod.Get, path: "/app/loyalty/accounts/:accountId/balance" },
   intent: true,
   cache: {
     ttl: "1m",

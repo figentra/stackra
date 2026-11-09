@@ -65,7 +65,7 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
   the run's actor. The tick claims across tenants only through `workflow.claim_due_runs` and
   `workflow.claim_expired_signals` (ids, owner, order), then loads, advances or removes each row in its owner. A claim
   that does not load throws `ClaimNotLoadedError` and an owned row with no `CallIsolation` `RowIsolationMissingError`
-  (both @stackra/outbox's): never skip one. `find`, `last`, `byAutomation` and `workflow.run.get` read in the caller's
+  (both @stackra/actions'): never skip one. `find`, `last`, `byAutomation` and `workflow.run.get` read in the caller's
   session, so another tenant's run is simply not there.
 - One runner per run (`Locks`, key `workflow.run:<id>`). A tick takes over a running or compensating run only when its
   lock is free, and counts only runs it really advanced, so an idle worker pauses.

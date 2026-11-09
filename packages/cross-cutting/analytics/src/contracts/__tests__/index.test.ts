@@ -50,7 +50,7 @@ describe("@stackra/analytics/contracts", () => {
   });
 
   it("names the ingest path", () => {
-    expect(contracts.ANALYTICS_INGEST_PATH).toBe("/analytics/batches");
+    expect(contracts.ANALYTICS_INGEST_PATH).toBe("/public/analytics/batches");
   });
 
   it("names the delivery kinds and types the kept identity", () => {

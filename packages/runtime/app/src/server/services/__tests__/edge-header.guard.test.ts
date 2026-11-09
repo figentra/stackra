@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `EdgeHeaderGuard`: it runs first (order -100); it lets through a request signed with
- *          either active key, a platform host's request without a scope, and an unsigned request on a public path
- *          that carries no identity header; it refuses a missing signature off a public path, unsigned identity
- *          headers on a public path, an unknown key, a tampered body or path, a timestamp outside the window either
- *          side (on a pinned clock, both edges accepted), a missing identity header, a replayed request id, and every
- *          signature when no key is active.
+ *          either active key, a platform host's request without a scope, and a request with no edge header at all (not
+ *          edge traffic: authentication decides); it refuses any edge header without a signature (an identity header,
+ *          or only a request id or timestamp), an unknown key, a tampered body or path, a timestamp outside the window
+ *          either side (on a pinned clock, both edges accepted), a missing identity header, a replayed request id, and
+ *          every signature when no key is active.
  * Boundary: test only; real Web Crypto, the memory drivers, and requests built as the edge Worker forwards them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0437 (decisions 4 and 8; Enforcement); ADR 0457.
@@ -142,27 +142,35 @@ describe("EdgeHeaderGuard", () => {
     expect(await refuses(guard(), request)).toBe(true);
   });
 
-  it("refuses an unsigned request off a public path", async () => {
-    const request = new Request("https://api.example.test/api/orders");
-    expect(await refuses(guard(), request)).toBe(true);
+  it("lets through a request with no edge header, which authentication then decides", async () => {
+    const call = new Request("https://api.example.test/api/orders", {
+      method: "POST",
+      headers: { authorization: "Bearer service-token" },
+      body: "{}",
+    });
+    await expect(guard([]).check(call)).resolves.toBeUndefined();
   });
 
-  it("lets an unsigned request reach a public path only without identity headers", async () => {
-    class PublicGuard extends EdgeHeaderGuard {
-      override get publicPaths() {
-        return ["/api/public/"];
-      }
+  it("refuses an identity header without a signature, even with no key active", async () => {
+    for (const name of [
+      EdgeHeader.Scope,
+      EdgeHeader.Product,
+      EdgeHeader.Surface,
+      EdgeHeader.Realm,
+    ]) {
+      const spoofed = new Request("https://api.example.test/api/orders", {
+        headers: { [name]: "x" },
+      });
+      expect(await refuses(guard([]), spoofed)).toBe(true);
     }
-    const subject = new PublicGuard(
-      new MemoryEdgeSigningKeysDriver(),
-      new MemoryEdgeNonceStoreDriver(),
-    );
-    await expect(
-      subject.check(new Request("https://api.example.test/api/public/status")),
-    ).resolves.toBeUndefined();
-    const spoofed = new Request("https://api.example.test/api/public/status", {
-      headers: { [EdgeHeader.Scope]: "scope-1" },
-    });
-    expect(await refuses(subject, spoofed)).toBe(true);
+  });
+
+  it("refuses a lone request id or timestamp without a signature", async () => {
+    for (const name of [EdgeHeader.RequestId, EdgeHeader.Timestamp]) {
+      const partial = new Request("https://api.example.test/api/orders", {
+        headers: { [name]: "1" },
+      });
+      expect(await refuses(guard(), partial)).toBe(true);
+    }
   });
 });

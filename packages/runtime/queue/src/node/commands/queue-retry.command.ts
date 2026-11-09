@@ -6,7 +6,7 @@
  *           `--force`, else it exits 2 naming the flag. A job that is not dead, or whose unique key a live job holds,
  *           is refused (one id: exit 2; `--all`: counted as skipped). A platform operator's command over every
  *           tenant's jobs: `QueueDriver.claimDead` claims the dead letters' owners (the one id's too) through a system
- *           function, and each redrive runs in its owner's isolation (`inRowOwner`, the bound `CallIsolation`, read
+ *           function, and each redrive runs in its owner's isolation (`inJobOwner`, the bound `CallIsolation`, read
  *           optionally from the injected `Container`); an owned job with no isolation bound fails the command.
  * Runtime: node
  * Governing contract: STA-1731 spec FR-012 and FR-013; ADR 0506; ADR 0148; ADR 0239 (2026-11-07 amendment, gap A).
@@ -19,7 +19,7 @@ import type { Clock, PublicId } from "@stackra/contracts";
 import { Str } from "@stackra/validation";
 
 import type { QueueDriver } from "#contracts/ports/queue-driver.port";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { inJobOwner } from "#core/functions/in-job-owner.function";
 
 /** The most failed jobs one `--all` run takes. */
 const ALL_LIMIT = 10_000;
@@ -89,7 +89,7 @@ export class QueueRetryCommand extends Command({
     const retried: string[] = [];
     const skipped: string[] = this.id !== undefined && claims.length === 0 ? [this.id] : [];
     for (const claim of claims) {
-      const done = await inRowOwner(isolation, claim.ownerId, claim.id, () =>
+      const done = await inJobOwner(isolation, claim.ownerId, claim.id, () =>
         this.driver.redrive(claim.id, this.clock.now()),
       );
       (done ? retried : skipped).push(claim.id);

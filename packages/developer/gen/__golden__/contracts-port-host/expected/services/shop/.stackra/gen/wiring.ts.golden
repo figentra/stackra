@@ -20,7 +20,8 @@ import { OrderFactory } from "#node/database/factories/order.factory";
 import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.listener";
 import { ShopModule as ImportedShopModule } from "#node/shop.module";
 import { ShopModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
+import { EdgeNonceStore, EdgeSigningKeys } from "@stackra/app/contracts";
+import { CorsConfig, CsrfConfig, CsrfGuard, EdgeConfig, EdgeHeaderGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import { DiscoveryService, Lifetime, named, type Wiring } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
 import { Database, DatabaseConfig } from "@stackra/database";
@@ -56,6 +57,7 @@ export const wiring = {
     { module: "shop", kind: "service", provide: ShopService, lifetime: Lifetime.Request, deps: [Clock, PaymentGateway, named(PaymentGateway, "fallback")] },
     { module: "shop", kind: "action", provide: CancelOrderAction, deps: [ShopService] },
     { module: "shop", kind: "listener", provide: ShipOnOrderPaidListener, deps: [] },
+    { module: "shop", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },
     { module: "shop", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },
     { module: "shop", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },
     { module: "shop", kind: "service", provide: DatabaseHealthIndicatorDriver, deps: [Database, DatabaseConfig] },
@@ -64,6 +66,7 @@ export const wiring = {
   ],
   config: [
     { key: "shop", provide: ShopConfig, schema: ShopOptions, env: {"gateway":"STACKRA_SHOP_GATEWAY"} },
+    { key: "app.edge", provide: EdgeConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
     { key: "app.http", provide: HttpConfig },

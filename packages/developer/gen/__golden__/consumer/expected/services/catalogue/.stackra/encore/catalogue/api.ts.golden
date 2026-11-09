@@ -14,12 +14,12 @@ import { api } from "encore.dev/api";
 import { app } from "../../entry/server";
 import { answerCall } from "./http";
 
-/** POST /catalogues/publish: catalogue.catalogue.publish@1 through the action pipeline. */
+/** POST /app/catalogues/publish: catalogue.catalogue.publish@1 through the action pipeline. */
 export const catalogueCataloguePublishV1 = api.raw(
-  { method: "POST", path: "/catalogues/publish", expose: true, auth: false },
+  { method: "POST", path: "/app/catalogues/publish", expose: true, auth: false },
   (req, resp) =>
     answerCall(req, resp, {
-      path: "/catalogues/publish",
+      path: "/app/catalogues/publish",
       anonymous: false,
       action: PublishCatalogueAction,
       input: PublishCatalogueInput,

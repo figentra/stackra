@@ -8,11 +8,12 @@
  * Governing contract: ADR 0022 (test placement); ADR 0163 and ADR 0190 (2026-10-29 amendments); ADR 0078 and ADR 0221
  *                     (2026-10-28 amendment).
  */
+import { RowIsolationMissingError } from "@stackra/actions";
 import { Driver } from "@stackra/container";
 import type { Container } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
 import type { ScopeRef } from "@stackra/contracts";
-import { MemoryChangeFeedDriver, RowIsolationMissingError } from "@stackra/outbox";
+import { MemoryChangeFeedDriver } from "@stackra/outbox";
 import { RowChangeKind } from "@stackra/outbox/contracts";
 import type { RowChange } from "@stackra/outbox/contracts";
 import { describe, expect, it } from "@stackra/testing";

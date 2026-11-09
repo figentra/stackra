@@ -16,11 +16,11 @@
  *                     kept no longer than needed); ADR 0305 (rule 28: the job surface); ADR 0462 (decision 1); ADR
  *                     0239 (2026-11-07 amendment, gap A).
  */
-import { Action } from "@stackra/actions";
+import { Action, boundIsolation } from "@stackra/actions";
 import type { ActionContext } from "@stackra/actions";
 import type { Container } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
-import { boundIsolation, pruneOutbox } from "@stackra/outbox";
+import { pruneOutbox } from "@stackra/outbox";
 import type { OutboxConfig } from "@stackra/outbox";
 import type { InboxDriver, OutboxDriver } from "@stackra/outbox/contracts";
 
