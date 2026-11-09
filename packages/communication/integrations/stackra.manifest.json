@@ -77,6 +77,13 @@
       "category": "validation",
       "module": "integrations",
       "class": "UnbalancedJournalError"
+    },
+    {
+      "code": "webhook_event_id_missing",
+      "kind": "validation",
+      "category": "validation",
+      "module": "integrations",
+      "class": "WebhookEventIdMissingError"
     }
   ],
   "models": [],
