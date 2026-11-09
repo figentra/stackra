@@ -5,6 +5,7 @@
     "retry": "Riprova",
     "range": "Periodo",
     "change": "{change} rispetto al periodo precedente",
+    "change_points": "{change} p.p. rispetto al periodo precedente",
     "target": "Obiettivo {target}",
     "not_rendered": "Questo riquadro non può essere mostrato qui."
   },

@@ -24,7 +24,7 @@ import type { MetricPath } from "#core/types/metric-path.type";
  */
 export interface Display<O> {
   /** One metric field. */
-  kpi: (path: MetricPath<O>) => KpiBuilder;
+  kpi: (path: MetricPath<O>) => KpiBuilder<O>;
 
   /** Several KPIs in one tile. */
   kpiGroup: (kpis: readonly KpiBuilder[]) => Built<DisplayNode>;

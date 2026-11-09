@@ -5,6 +5,7 @@
     "retry": "Erneut versuchen",
     "range": "Zeitraum",
     "change": "{change} gegenüber dem Vorzeitraum",
+    "change_points": "{change} Prozentpunkte gegenüber dem Vorzeitraum",
     "target": "Ziel {target}",
     "not_rendered": "Diese Kachel kann hier nicht angezeigt werden."
   },

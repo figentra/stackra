@@ -5,6 +5,7 @@
     "retry": "Réessayer",
     "range": "Période",
     "change": "{change} par rapport à la période précédente",
+    "change_points": "{change} pts par rapport à la période précédente",
     "target": "Objectif {target}",
     "not_rendered": "Cette vignette ne peut pas s’afficher ici."
   },

@@ -19,8 +19,8 @@ import type { MetricPath } from "#core/types/metric-path.type";
 /** Builds a widget's display over query output `O`. */
 export class DisplayRecord<O> implements Display<O> {
   /** One metric field. */
-  kpi(path: MetricPath<O>): KpiRecord {
-    return new KpiRecord(path);
+  kpi(path: MetricPath<O>): KpiRecord<O> {
+    return new KpiRecord<O>(path);
   }
 
   /**
