@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `WidgetDisplay`: KPI, KPI group, progress, list (on `items` by default), view and custom nodes.
+ * Purpose: unit tests of `WidgetDisplay`: KPI (with its note field), KPI group, progress, list (on `items` by default),
+ *          view and custom nodes.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rules 14 and 15).
@@ -15,7 +16,9 @@ const TestIcons = {
   Banknote: "banknote",
 } as const;
 
+/** The data constructors gen writes into a widget ref. */
 describe("WidgetDisplay", () => {
+  /** Each constructor returns a frozen node holding exactly what it was given. */
   it("builds frozen display nodes", () => {
     const kpi = WidgetDisplay.kpi("revenue", {
       icon: TestIcons.Banknote,
@@ -28,6 +31,11 @@ describe("WidgetDisplay", () => {
       tones: [{ belowTarget: 0.8, tone: "danger" }],
     });
     expect(WidgetDisplay.kpiGroup([kpi])).toEqual({ kind: "kpi_group", kpis: [kpi] });
+    expect(WidgetDisplay.kpi("spend", { note: "spendOtherCurrencies" })).toEqual({
+      kind: "kpi",
+      path: "spend",
+      note: "spendOtherCurrencies",
+    });
     expect(WidgetDisplay.progress("revenue")).toEqual({ kind: "progress", path: "revenue" });
     expect(WidgetDisplay.list({ primary: "variantId" })).toEqual({
       kind: "list",

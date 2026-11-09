@@ -1,8 +1,8 @@
 {
   "name": "@stackra/notifications",
-  "version": "0.30.0",
+  "version": "0.32.0",
   "private": false,
-  "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the mail, SMS, WhatsApp, push, in-app and chat channel ports, connection transports that send through the provider chosen per tenant and Market over the host's vendor connectors (OS integrations), Web Push with dead-device revocation, the template cascade with content-free variants, quiet hours with mandatory categories, escalation, the .mail.tsx class-component bodies rendered with useMail, and the notifications Notifier driver (./node)",
+  "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the mail, SMS, WhatsApp, push, in-app and chat channel ports, connection transports that send through the provider chosen per tenant and Market over the host's vendor connectors (OS integrations), Web Push with dead-device revocation, the template cascade with content-free variants, quiet hours with mandatory categories, escalation, the .mail.tsx class-component bodies rendered with useMail, the notifications Notifier driver (./node), and the kit blocks: NotificationInbox and NotificationPreferences (./react), NotificationInbox and PushPrimer (./native)",
   "keywords": [
     "communication",
     "email",
@@ -52,6 +52,12 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
+    ],
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
@@ -97,6 +103,11 @@
       "types": "./dist/react.d.mts",
       "default": "./dist/react.mjs"
     },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    },
     "./testing": {
       "@stackra/source": "./src/testing/index.ts",
       "types": "./dist/testing.d.mts",
@@ -130,6 +141,7 @@
     "@stackra/money": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/support": "workspace:*",
+    "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
@@ -139,14 +151,18 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
     "@types/node": "catalog:",
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
@@ -154,10 +170,14 @@
   "peerDependencies": {
     "@stackra/integrations": "workspace:*",
     "react": "catalog:frontend",
-    "react-dom": "catalog:frontend"
+    "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "react-native": {
       "optional": true
     }
   },
@@ -170,7 +190,8 @@
     "category": "communication",
     "runtimes": [
       "isomorphic",
-      "node"
+      "node",
+      "react-native"
     ],
     "summary": "Use when a module must tell a person something by mail, SMS, WhatsApp, push, in-app or chat; it owns the Notification kind, channel ports, templates, quiet hours and escalation, while the host picks the provider."
   }

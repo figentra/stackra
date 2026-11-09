@@ -175,7 +175,13 @@ describe(ScopeNodeService, () => {
     );
     expect(moved.scopePath).toBe("platform.shop");
     const data = em.nativeUpdate.mock.calls[0]?.[2] as { scopePath: { params: unknown[] } };
-    expect(data.scopePath.params).toEqual(["platform.shop", "platform.a.shop"]);
+    // the moved node's own row takes the new path itself; the rows below keep their tail
+    expect(data.scopePath.params).toEqual([
+      "platform.a.shop",
+      "platform.shop",
+      "platform.shop",
+      "platform.a.shop",
+    ]);
     const [event] = takeRecordedEvents(moved);
     expect(event).toBeInstanceOf(ScopeMoved);
     expect(event).toMatchObject({ scopeId: shop.id, from: "platform.a.shop", to: "platform.shop" });

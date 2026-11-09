@@ -39,7 +39,7 @@ A tenant is the scope node at the tenant level, and its tenant id is that node's
 | `./node`    | `CallIsolationDriver`                                                              | `CallIsolation` (`@stackra/actions`): scope and tenant settings, one transaction, for every call and background unit                                    |
 | `./react`   | `useTenant`, `useTenantSwitcher`                                                   | the active membership; the memberships and the switch                                                                                                   |
 | `./react`   | `TenantMembership`                                                                 | one membership: tenant id, path, name, roles                                                                                                            |
-| `./testing` | `fakeTenantId`, `tenantActor`, `runAsTenant`, `asTenant`, `tenantIsolationOptions` | a fresh tenant id, a tenant user, a tenant call without a database, a tenant call through the real isolation, the tenant options of `assertRowSecurity` |
+| `./testing` | `fakeTenantId`, `tenantActor`, `runAsTenant`, `asTenant`, `tenantIsolationOptions` | a fresh tenant id, a tenant user, a tenant call (and its setup transactions' tenant setting), a tenant call through the real isolation, the tenant options of `assertRowSecurity` |
 
 ## Sandbox tenants
 
@@ -256,8 +256,10 @@ const ticket = runAsTenant(tenantId, () => new Ticket()); // ticket.tenantId ===
 await tenancy.withTenant(tenantActor(tenantId), work);
 ```
 
-`runAsTenant` sets no `app.tenant_id`, so it proves nothing about isolation; an isolation test calls `asTenant`, which
-runs the real isolation on the current database.
+On a connected database, `runAsTenant` also sets `app.tenant_id` transaction-locally in every transaction that starts
+inside it (a factory's flush, a `database.transaction`), so a test's setup rows pass the tenant policy even as a role
+without `BYPASSRLS`. A read outside any transaction sees no tenant row, and it sets no scope setting. It still proves
+nothing about isolation; an isolation test calls `asTenant`, which runs the real isolation on the current database.
 
 ### Booting a module on real Postgres
 

@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `WORKLOAD_SCHEMA`, one container of the root runway's `workloads`: the image pinned by digest, its port and
  *          health path (or, for a worker with no port, the command that checks it), the arguments it starts with,
- *          `internal` or `public`, the resources it uses, its public env,
- *          secret NAMES and the names it reads a resource variable under, a size and a task count per environment, and
- *          the reason no managed option fits.
+ *          `internal` or `public`, the resources it uses, its public env, secret NAMES and the names it reads a resource
+ *          variable under, a size and a task count per environment, the one-off `migrate` command run before each
+ *          rollout, and the reason no managed option fits.
  * Boundary: internal; the root runway schema composes it, and checks `uses` against `resources`. Strict. An image tag
  *           can change under us, so a digest is required; `reason` is required (ADR 0493 decision 5). A public
  *           workload needs a port and a health path, which its load balancer uses; a health path needs a port; an
@@ -24,6 +24,9 @@ import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
 /** A SCREAMING_SNAKE variable name. */
 const VARIABLE = z.string().regex(/^[A-Z][A-Z0-9_]*$/, "Expected a SCREAMING_SNAKE name");
+
+/** The longest a `migrate` task may run: a migration past an hour belongs in its own maintenance window. */
+const MIGRATE_TIMEOUT_MAX_MINUTES = 60;
 
 /** How many tasks run. */
 const SCALE = z
@@ -45,6 +48,16 @@ export const WORKLOAD_SCHEMA = z
     healthCommand: z.array(z.string().min(1)).min(1).optional(),
     /** The container's arguments, replacing the image's default command (ZITADEL starts with `start-from-init …`). */
     command: z.array(z.string().min(1)).min(1).optional(),
+    /**
+     * A one-off task run with the same image, env, secrets and resources before each rollout (Chatwoot's
+     * `db:chatwoot_prepare`); the rollout waits for it and stops when it fails. `timeoutMinutes` defaults to the plan's.
+     */
+    migrate: z
+      .strictObject({
+        command: z.array(z.string().min(1)).min(1),
+        timeoutMinutes: z.int().min(1).max(MIGRATE_TIMEOUT_MAX_MINUTES).optional(),
+      })
+      .optional(),
     expose: z.enum(["internal", "public"]).optional(),
     uses: z.array(KEY_SCHEMA).optional(),
     env: z.record(VARIABLE, z.string()).optional(),

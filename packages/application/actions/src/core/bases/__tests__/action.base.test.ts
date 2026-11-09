@@ -7,7 +7,8 @@
  *          `extends Action` and a missing `handle` fail to compile; the tool default matches gen (a user action is a
  *          tool unless it says `tool: false`) and `effects` takes distinct `Effect` tags only; `onBehalfOf` takes
  *          `{ secondHop: boolean }` only; `credentials: "ignore"` is recorded on an action whose actors are exactly
- *          `[ActorKind.Anonymous]` and refused anywhere else.
+ *          `[ActorKind.Anonymous]` and refused anywhere else; `stream: true` is recorded with no job, offline, tool or
+ *          replayable idempotency, and refused with any of them (`stream_not_replayable`).
  * Boundary: test only; the options are the template's create, expire and freeze actions.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 30); ADR
@@ -293,6 +294,31 @@ describe("Action", () => {
       );
     expect(() => Action({ ...anonymous, credentials: "keep" } as unknown as ActionOptions)).toThrow(
       /credentials/,
+    );
+  });
+
+  /** A stream reaches one live caller once, so nothing may queue it, replay it or hand it to a model. */
+  it("records stream: true alone, and refuses it with a job, offline, a tool or a replayable key", () => {
+    const stream = {
+      key: "message.send",
+      actors: [ActorKind.User],
+      stream: true,
+      tool: false,
+      idempotency: Idempotency.Never,
+    } as const;
+    expect(kindOf(Action(stream))?.options).toMatchObject({ stream: true, tool: false });
+    // a user action is a tool by default, so leaving `tool` out is refused too
+    const { tool: _tool, ...toolByDefault } = stream;
+    expect(() => Action(toolByDefault)).toThrow(/takes no tool.*stream_not_replayable/);
+    expect(() => Action({ ...stream, idempotency: Idempotency.Optional })).toThrow(
+      /idempotency other than Never/,
+    );
+    expect(() =>
+      Action({ ...stream, actors: [ActorKind.User, ActorKind.Job], job: { queue: "default" } }),
+    ).toThrow(/takes no job/);
+    expect(() => Action({ ...stream, offline: OFFLINE })).toThrow(/takes no offline/);
+    expect(() => Action({ ...stream, stream: "yes" } as unknown as ActionOptions)).toThrow(
+      TypeError,
     );
   });
 

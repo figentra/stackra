@@ -89,6 +89,18 @@ Sidekiq) leaves both out and may name `healthCommand`, which runs in the contain
 healthy when it exits 0. On AWS such a task gets no port mapping and the command as its container health check; it is
 still registered in the private namespace. Found by INFRA-CODE planning self-hosted Chatwoot for Notify.
 
+## Amendment, 2026-11-09: a workload's migrate task runs before each rollout
+
+A workload may name `migrate: { command, timeoutMinutes? }`: a one-off task with the workload's own image, env, secrets
+and resources, run once before the service rolls to a new revision, so two web tasks never race a schema change
+(Chatwoot's `db:chatwoot_prepare`). On AWS it is a second task definition, the same container with the migration's
+arguments and no port, and a Pulumi dynamic resource that runs it on Fargate in the workload's subnets and security
+group, waits for it, and fails the apply unless the container exits 0; the service depends on it, so a failed or
+timed-out migration (stopped at `timeoutMinutes`, 15 by default, an hour at most) leaves the running revision serving.
+It runs again only for a new revision of its task definition: a new image, command, env or secret name. ECS has no
+pre-deploy hook, so the dynamic resource calls ECS through `@aws-sdk/client-ecs` with the deploy job's credentials,
+and the stacks repository lists that package beside `@pulumi/aws`. Found by INFRA-CODE planning self-hosted Chatwoot.
+
 ## Supersedes and sources
 
 `Supersedes: none`. Amends

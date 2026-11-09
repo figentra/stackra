@@ -964,6 +964,40 @@ describe("buildManifest", () => {
       expect(codesOf(withClasses(hidden))).toContain("public_without_endpoint CancelOrderAction");
     });
 
+    it("marks a stream action and refuses a stream option and output that disagree (G1b)", () => {
+      const streamed = {
+        ...cancel,
+        options: {
+          ...cancel.options,
+          stream: true,
+          tool: false,
+          toolReason: "a stream reaches one live caller",
+          idempotency: "never",
+        },
+        handle: {
+          ...(cancel.handle?.input === undefined ? {} : { input: cancel.handle.input }),
+          stream: true as const,
+        },
+      };
+      expect(codesOf(withClasses(streamed))).toEqual([]);
+      const entry = buildManifest(withClasses(streamed)).manifest.actions?.find(
+        (action) => action.class === "CancelOrderAction",
+      );
+      expect(entry?.["stream"]).toBe(true);
+      expect(entry?.["output"]).toBeUndefined();
+      const optionOnly = {
+        ...streamed,
+        handle: cancel.handle?.input === undefined ? {} : { input: cancel.handle.input },
+      };
+      expect(codesOf(withClasses(optionOnly))).toContain(
+        "stream_output_mismatch CancelOrderAction",
+      );
+      const outputOnly = { ...streamed, options: cancel.options };
+      expect(codesOf(withClasses(outputOnly))).toContain(
+        "stream_output_mismatch CancelOrderAction",
+      );
+    });
+
     it("keeps a system-only action off the tool list without a reason", () => {
       const system = { ...cancel, options: { ...cancel.options, actors: ["system"] } };
       const { manifest: built, errors: found } = buildManifest(withClasses(system));

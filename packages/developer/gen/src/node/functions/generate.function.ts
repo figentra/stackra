@@ -29,6 +29,8 @@
  *           leftover one.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
+ *           and `.stackra/playwright.e2e.config.ts` (`emitE2ePageFiles`, ADR 0022 amendment of 2026-11-09).
  *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
  *           A member that declares a resource has each tree read through `loader` before the manifest is built
  *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
@@ -48,6 +50,7 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
+import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
@@ -58,6 +61,7 @@ import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
+import { hasE2ePages } from "#node/functions/has-e2e-pages.function";
 import { hasIntTests } from "#node/functions/has-int-tests.function";
 import { readResourceTrees } from "#node/functions/read-resource-trees.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
@@ -333,6 +337,9 @@ export async function generate(
     )
   )
     files.push(emitIntTierConfig(ir.package));
+  // A package with a `<name>.e2e.page.tsx` gets the Vite app that renders it and the Playwright config that runs the
+  // `.e2e.test.ts` specs against it (`stackra test --tier e2e`; ADR 0022, 2026-11-09).
+  if (ir.layout === "package" && hasE2ePages(root)) files.push(...emitE2ePageFiles(ir.package));
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
     if (
