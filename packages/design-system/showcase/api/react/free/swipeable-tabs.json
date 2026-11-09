@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "da0781c4b1d5ce57",
+    "hash": "5860860a8504e7a6",
     "propsFiles": ["ui/src/react/swipeable-tabs/swipeable-tabs.props.ts"]
   },
   "importLine": "import { SwipeableTabs } from \"@stackra/ui/react\";",
@@ -34,11 +34,11 @@
         },
         {
           "default": "primary",
-          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`.",
+          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one, and `steps` plain words\njoined by arrows with the selected step in the accent (a marketing switcher, such as Action → Endpoint → Client;\nnative draws it as `secondary`). Defaults to `primary`.",
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"primary\""
+          "type": "\"secondary\" | \"primary\" | \"steps\""
         },
         {
           "description": "True to show every tab but refuse selecting any of them.",

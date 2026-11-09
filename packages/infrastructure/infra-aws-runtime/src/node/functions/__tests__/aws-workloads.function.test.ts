@@ -5,7 +5,8 @@
  *          alias, and starts with its own arguments (none for an image's default); every workload is
  *          registered in the private namespace; a public workload gets an ALB admitting HTTPS from Cloudflare only,
  *          a TLS 1.3 listener on the given certificate, a target group checking its health path, and CPU autoscaling
- *          between its bounds; an internal one gets none of them; a public workload without a certificate is refused.
+ *          between its bounds; an internal one gets none of them; a worker with no port gets no port mapping and its
+ *          health command as the container's health check; a public workload without a certificate is refused.
  * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 2 and 4, owner answers Q5 and Q6); spec sta-1640.
@@ -41,6 +42,7 @@ function workload(
     image: DIGEST,
     port: 8080,
     health: "/debug/healthz",
+    healthCommand: [],
     command: isPublic ? ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"] : [],
     public: isPublic,
     env: { ZITADEL_EXTERNALSECURE: "true" },
@@ -50,6 +52,27 @@ function workload(
     cpu: 1024,
     memoryMb: 2048,
     scale,
+    tags: { env: "production", service: name },
+  };
+}
+
+/** A queue worker named `name`: no port, checked by `healthCommand`. */
+function worker(name: string, healthCommand: readonly string[]): WorkloadPlan {
+  return {
+    key: `workloads.${name}`,
+    workload: name,
+    name: `academorix-production-${name}`,
+    image: DIGEST,
+    healthCommand,
+    command: [],
+    public: false,
+    env: {},
+    secrets: [],
+    uses: [],
+    aliases: {},
+    cpu: 512,
+    memoryMb: 1024,
+    scale: { min: 1, max: 1 },
     tags: { env: "production", service: name },
   };
 }
@@ -72,12 +95,15 @@ const PLAN: RuntimePlan = {
       storageGb: 100,
       backupDays: 14,
       consumers: ["zitadel"],
+      extensions: [],
+      preloadLibraries: [],
       tags: { env: "production", service: "main-db" },
     },
   ],
   workloads: [
     workload("zitadel", true, { min: 2, max: 4 }),
     workload("ocr", false, { min: 1, max: 1 }),
+    worker("sidekiq", ["pgrep", "-f", "sidekiq"]),
   ],
   cost: { items: [], monthlyUsd: 0 },
 };
@@ -184,6 +210,26 @@ describe("awsWorkloads", () => {
     const [container] = JSON.parse(String(task["containerDefinitions"])) as { command?: unknown }[];
 
     expect(container).not.toHaveProperty("command");
+  });
+
+  it("gives a worker with no port no port mapping and its health command as the container's check", () => {
+    const task = resource("TaskDefinition", "academorix-production-sidekiq").inputs;
+    const [container] = JSON.parse(String(task["containerDefinitions"])) as Record<
+      string,
+      unknown
+    >[];
+    const ocr = resource("TaskDefinition", "academorix-production-ocr").inputs;
+    const [served] = JSON.parse(String(ocr["containerDefinitions"])) as Record<string, unknown>[];
+
+    expect(container).not.toHaveProperty("portMappings");
+    expect(container?.["healthCheck"]).toMatchObject({
+      command: ["CMD", "pgrep", "-f", "sidekiq"],
+    });
+    expect(served).not.toHaveProperty("healthCheck");
+    expect(served?.["portMappings"]).toEqual([{ containerPort: 8080, protocol: "tcp" }]);
+    expect(all("TargetGroup").map((group) => group.name)).not.toContain(
+      "academorix-production-sidekiq",
+    );
   });
 
   // @covers sta-1640:FR-009

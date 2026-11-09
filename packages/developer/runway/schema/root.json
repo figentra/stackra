@@ -2400,9 +2400,16 @@
     },
     "workload": {
       "type": "object",
-      "description": "One container workload; reason is required (ADR 0493 d5).",
+      "description": "One container workload; reason is required (ADR 0493 d5). A public workload needs a port and a health path; a health path needs a port; an internal worker may have neither.",
       "additionalProperties": false,
-      "required": ["image", "port", "health", "reason"],
+      "required": ["image", "reason"],
+      "allOf": [
+        {
+          "if": { "required": ["expose"], "properties": { "expose": { "const": "public" } } },
+          "then": { "required": ["port", "health"] }
+        },
+        { "if": { "required": ["health"] }, "then": { "required": ["port"] } }
+      ],
       "properties": {
         "image": {
           "type": "string",
@@ -2417,6 +2424,16 @@
         "health": {
           "type": "string",
           "pattern": "^/"
+        },
+        "healthCommand": {
+          "type": "array",
+          "description": "A worker's own health check: the command the container runs, healthy when it exits 0.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["pgrep", "-f", "sidekiq"]]
         },
         "command": {
           "type": "array",
