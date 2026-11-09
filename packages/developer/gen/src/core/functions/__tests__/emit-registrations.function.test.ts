@@ -7,7 +7,10 @@
  *          entitlements with the calls they gate (STA-903) and searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
  *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
  *          to register; every Permission static (system and restricted included) and module role by its locked key,
- *          permissions first (STA-1702); each record policy with its model, own and hosted (STA-2045).
+ *          permissions first (STA-1702); each record policy with its model, own and hosted (STA-2045); a hosted
+ *          package's webhook events with their Integration and Connection from its manifest, an own event typed
+ *          against a hosted Integration with that Integration's hosted Connection, a service listener of a hosted
+ *          event, and no change for a host without hosted webhook events.
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 22); ADR 0097; ADR 0141; ADR 0308;
@@ -17,11 +20,13 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
+import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { CONNECTOR_PACKAGES } from "#core/__tests__/fixtures/connector-packages.fixture";
+import { COURIER_PACKAGE_IR } from "#core/__tests__/fixtures/courier-package-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 /** The registrations of `ir` against its own derived manifest. */
@@ -697,5 +702,113 @@ describe("emitRegistrations for extensions", () => {
       '  { point: OrderExtensionPoint, slot: "adjustTotals", extension: TierBonusExtension, order: 200 },',
     );
     expect(registrationsOf(COMMERCE_IR) ?? "").not.toContain("registerExtensions");
+  });
+});
+
+/** The courier carrier package's manifest, as gen writes it for the package. */
+const COURIER = buildManifest(COURIER_PACKAGE_IR).manifest;
+
+/** The billing service hosting the courier package by `manifest`, with `classes` added to its own. */
+function hostingCourier(
+  manifest: MemberIR["dependencies"][number]["manifest"],
+  classes: readonly DeclaredClass[] = [],
+): MemberIR {
+  return {
+    ...BILLING_IR,
+    classes: [...BILLING_IR.classes, ...classes],
+    dependencies: [...BILLING_IR.dependencies, { package: "@acme/ship-courier", manifest }],
+  };
+}
+
+/** A billing class typed against the courier package's classes, imported from its `./node` entry. */
+function billingClass(name: string, kind: string, more: Partial<DeclaredClass>): DeclaredClass {
+  return {
+    name,
+    kind,
+    module: "billing",
+    file: `src/modules/billing/${kind === "listener" ? "listeners" : "events"}/${name}.ts`,
+    importPath: `#modules/billing/${kind === "listener" ? "listeners" : "events"}/${name}`,
+    options: {},
+    deps: [],
+    facets: [],
+    methods: [],
+    refusals: [],
+    statics: {},
+    traits: [],
+    ...more,
+  };
+}
+
+/** A hosted package's `WebhookEvent<I>` classes, registered from its manifest with their Connection. */
+describe("emitRegistrations for a hosted package's webhook events", () => {
+  /** The package ships the event; the service names no carrier class, yet the receiver routes it. */
+  it("registers a hosted event with its Integration and Connection, imported from the package entry", () => {
+    const content = registrationsOf(hostingCourier(COURIER)) ?? "";
+    expect(content).toContain(
+      [
+        "registerWebhookEvents([",
+        "  { event: StripePaymentSucceeded, integration: StripeIntegration, connection: StripeConnection },",
+        "  { event: CourierShipmentUpdated, integration: CourierIntegration, connection: CourierConnection },",
+        "]);",
+      ].join("\n"),
+    );
+    for (const name of ["CourierShipmentUpdated", "CourierIntegration", "CourierConnection"])
+      expect(content).toMatch(
+        new RegExp(`import \\{[^}]*\\b${name}\\b[^}]*\\} from "@acme/ship-courier/node";`),
+      );
+    expect(content).not.toMatch(/ImportedCourier/);
+  });
+
+  /**
+   * An own event typed against a hosted Integration used to register with no `connection`, so the receiver answered
+   * 404 for `/webhooks/<module>/<integration>/:connectionId`; it now carries the Connection the package's manifest
+   * lists, even from a manifest written before `webhookEvents`.
+   */
+  it("pairs an own event typed against a hosted Integration with that Integration's hosted Connection", () => {
+    const older = Object.fromEntries(
+      Object.entries(COURIER).filter(([key]) => key !== "webhookEvents"),
+    ) as typeof COURIER;
+    const own = billingClass("ParcelLost", "webhook_event", {
+      options: { type: "parcel.lost" },
+      partner: { name: "CourierIntegration", kind: "integration", from: "@acme/ship-courier/node" },
+    });
+    const ir = hostingCourier(older, [own]);
+    const content = registrationsOf(ir) ?? "";
+    expect(content).toContain(
+      "  { event: ParcelLost, integration: CourierIntegration, connection: CourierConnection },",
+    );
+    expect(content).not.toContain("CourierShipmentUpdated");
+    expect(emitWebhooks(ir)).toContain('  "ship-courier/courier": CourierIntegration,');
+    expect(emitWebhooks(ir)).toMatch(
+      /import \{[^}]*\bCourierIntegration\b[^}]*\} from "@acme\/ship-courier\/node";/,
+    );
+  });
+
+  /** Listeners stay in the service: one typed with the hosted event is wired like one typed with its own. */
+  it("wires a service listener typed with a hosted event, sharing the event's import", () => {
+    const listening = billingClass("NotifyOnShipmentUpdatedListener", "listener", {
+      methods: ["handle"],
+      handle: { event: { name: "CourierShipmentUpdated", from: "@acme/ship-courier/node" } },
+    });
+    const content = registrationsOf(hostingCourier(COURIER, [listening])) ?? "";
+    expect(content).toContain(
+      "registerListeners([\n  [CourierShipmentUpdated, NotifyOnShipmentUpdatedListener],\n]);",
+    );
+    expect(content).not.toMatch(/ImportedCourierShipmentUpdated/);
+  });
+
+  /** A host with no hosted webhook event writes exactly what it wrote before, and its manifest gains no section. */
+  it("leaves a host without hosted webhook events unchanged", () => {
+    const older = Object.fromEntries(
+      Object.entries(COURIER).filter(([key]) => key !== "webhookEvents"),
+    ) as typeof COURIER;
+    const before = registrationsOf(hostingCourier(older));
+    expect(before).not.toContain("CourierShipmentUpdated");
+    expect(registrationsOf(hostingCourier({ ...older, webhookEvents: [] }))).toBe(before);
+    expect(registrationsOf(BILLING_IR)).toContain(
+      "registerWebhookEvents([\n  { event: StripePaymentSucceeded, integration: StripeIntegration, connection: StripeConnection },\n]);",
+    );
+    expect(buildManifest(hostingCourier(COURIER)).manifest).not.toHaveProperty("webhookEvents");
+    expect(buildManifest(BILLING_IR).manifest).not.toHaveProperty("webhookEvents");
   });
 });
