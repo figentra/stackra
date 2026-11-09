@@ -3,7 +3,8 @@
  * Purpose: unit tests of `MediaLibrary` over a `FileSystem` disk (ADR 0465): an upload is signed with its media type
  *          and its bucket key and expiry are recorded beside it, a bucket's type and size rules hold at signing and
  *          again at claim, a claim moves the file to its bucket path once and drops the record, a disk that cannot sign
- *          refuses, and a foreign, expired, missing, malformed or oversized upload is refused.
+ *          refuses, and a foreign, expired, missing, malformed or oversized upload, or one whose bytes are not its
+ *          declared type, is refused.
  * Boundary: test only; the memory `FileSystem` disk stands in for S3 and receives the bytes as a browser's signed `PUT`
  *           would. A hand-moved clock drives expiry.
  * Runtime: node (vitest)
@@ -59,11 +60,18 @@ function setup(values: { uploadExpiresIn?: Duration } = {}) {
   return { clock, disk, media };
 }
 
-/** Puts `bytes` to the pending upload's signed URL as a browser would. */
+/** The first bytes of a real file of each media type these tests upload. */
+const HEADS: Readonly<Record<string, readonly number[]>> = {
+  "image/png": [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  "image/jpeg": [0xff, 0xd8, 0xff, 0xe0],
+  "application/pdf": [0x25, 0x50, 0x44, 0x46, 0x2d],
+};
+
+/** Puts `bytes` (by default a real head of the signed media type) to the pending upload's signed URL as a browser would. */
 async function put(
   disk: MemoryFileSystemDriver,
   pending: PendingUpload,
-  bytes = new Uint8Array(4),
+  bytes = new Uint8Array(HEADS[pending.headers["content-type"] ?? ""] ?? [0, 0, 0, 0]),
 ): Promise<void> {
   expect(await disk.receive(pending.url, pending.headers, bytes)).toBe(200);
 }
@@ -161,10 +169,10 @@ describe("MediaLibrary.claim", () => {
       path,
       url: `https://cdn.test/${path}`,
       mediaType: MediaType.Png,
-      size: 4,
+      size: 8,
     });
     expect(await disk.list("uploads/")).toEqual([]);
-    expect(await disk.stat(path)).toMatchObject({ size: 4, contentType: "image/png" });
+    expect(await disk.stat(path)).toMatchObject({ size: 8, contentType: "image/png" });
   });
 
   it("uses the key gen registered", async () => {
@@ -277,6 +285,21 @@ describe("MediaLibrary.claim", () => {
     await expect(media.claim(pending.upload, ProductImagesBucket)).rejects.toMatchObject({
       code: "upload_rejected",
       reason: "media_type",
+    });
+    expect(await disk.list("uploads/")).toEqual([]);
+  });
+
+  it("refuses and deletes a file whose bytes are not the media type it declared", async () => {
+    const { disk, media } = setup();
+    const pending = await media.createUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 4,
+    });
+    // an SVG renamed to a PNG: the store keeps the signed type, the bytes say otherwise
+    await put(disk, pending, new TextEncoder().encode("<svg/>"));
+    await expect(media.claim(pending.upload, ProductImagesBucket)).rejects.toMatchObject({
+      code: "upload_rejected",
+      reason: "content",
     });
     expect(await disk.list("uploads/")).toEqual([]);
   });
