@@ -32,6 +32,7 @@ import { checkMemberMetadata } from "#node/functions/check-member-metadata.funct
 import { checkRawSql } from "#node/functions/check-raw-sql.function";
 import { checkForkingPeers } from "#node/functions/check-forking-peers.function";
 import { checkHostedPeers } from "#node/functions/check-hosted-peers.function";
+import { checkOptionalPeerImports } from "#node/functions/check-optional-peer-imports.function";
 import { checkEncoreService } from "#node/functions/check-encore-service.function";
 import { catalogEncoreVersion } from "#node/functions/catalog-encore-version.function";
 import { checkMember } from "#node/functions/check-member.function";
@@ -318,6 +319,23 @@ export async function structureFindings(
               (p) => p.startsWith(`${dir}/src/`) && /\.tsx?$/.test(p) && !p.includes("/__tests__/"),
             )
             .map((p) => readFileSync(join(root, p), "utf8")),
+        }),
+      );
+    // A library's general entries load without its optional peers installed (the 0.32.0 lazy-peer gap).
+    if (tierFor(dir) === "tier:lib")
+      report(
+        "optional-peers",
+        dir,
+        checkOptionalPeerImports({
+          pkg,
+          sources: files
+            .filter(
+              (p) => p.startsWith(`${dir}/src/`) && /\.tsx?$/.test(p) && !p.includes("/__tests__/"),
+            )
+            .map((p) => ({
+              path: p.slice(dir.length + 1),
+              text: readFileSync(join(root, p), "utf8"),
+            })),
         }),
       );
     if (tierFor(dir) === "tier:service")

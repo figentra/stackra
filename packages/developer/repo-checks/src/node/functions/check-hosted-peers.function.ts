@@ -9,31 +9,17 @@
  * Governing contract: ADR 0308; the payments 0.21.0 packaging regression (2026-11-08).
  */
 import { HOSTED_PEER_PACKAGES } from "#node/constants/hosted-peer-packages.constant";
+import { valueImportsOf } from "#node/functions/value-imports-of.function";
 import type { PackageManifest } from "#node/types/package-manifest.type";
-
-/** `import … from "<spec>"` and `export … from "<spec>"`, with what sits between the keyword and `from`. */
-const FROM = /\b(import|export)\s+([^;]*?)\s+from\s+["']([^"']+)["']/g;
-
-/** Whether an import or export clause brings in only types (`type X`, `{ type A, type B }`). */
-function typesOnly(clause: string): boolean {
-  if (/^type\b/.test(clause)) return true;
-  const named = /^\{([^}]*)\}$/.exec(clause.trim())?.[1];
-  if (named === undefined) return false;
-  const items = named
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  return items.length > 0 && items.every((item) => item.startsWith("type "));
-}
 
 /** Whether `sources` use a value of `name` (outside its `exempt` subpaths). */
 function usesValue(sources: readonly string[], name: string, exempt: readonly string[]): boolean {
   return sources.some((source) =>
-    [...source.matchAll(FROM)].some(([, , clause = "", spec = ""]) => {
-      if (spec !== name && !spec.startsWith(`${name}/`)) return false;
-      if (exempt.some((sub) => spec === `${name}/${sub}`)) return false;
-      return !typesOnly(clause);
-    }),
+    valueImportsOf(source).some(
+      (spec) =>
+        (spec === name || spec.startsWith(`${name}/`)) &&
+        !exempt.some((sub) => spec === `${name}/${sub}`),
+    ),
   );
 }
 
