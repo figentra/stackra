@@ -980,6 +980,51 @@ describe("createSourceReader on a driver over another package's base", async () 
   });
 });
 
+/**
+ * SHIP's webhook events typed by a hosted connector's integration, `import type`d from its `/node` entry, whose types
+ * the checker cannot resolve here (no such package is installed): the regression of `integration: Importedunknown3`.
+ */
+const HOSTED_WEBHOOK_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/events/quiqup-order-updated.event.ts": [
+    'import type { QuiqupIntegration } from "@figentra/ship-connector-quiqup/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class QuiqupOrderUpdated extends WebhookEvent<QuiqupIntegration>({ type: "order" }) {}',
+    "",
+  ].join("\n"),
+  "src/core/events/bosta-delivery-updated.event.ts": [
+    'import type { BostaIntegration as Bosta } from "@figentra/ship-connector-bosta/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class BostaDeliveryUpdated extends WebhookEvent<Bosta>({ type: "delivery" }) {}',
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a webhook event typed by a hosted package's integration", async () => {
+  const root = writeFixtureMember("hosted-webhook-events", HOSTED_WEBHOOK_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("names the integration as imported, never `unknown`, from the package's entry", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "QuiqupOrderUpdated")?.partner,
+    ).toMatchObject({ name: "QuiqupIntegration", from: "@figentra/ship-connector-quiqup/node" });
+  });
+
+  it("names an aliased import by the name the package exports", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "BostaDeliveryUpdated")?.partner,
+    ).toMatchObject({ name: "BostaIntegration", from: "@figentra/ship-connector-bosta/node" });
+  });
+
+  it("refuses no partner it could name", () => {
+    expect(reader.errors.map((error) => error.code)).not.toContain("partner_unresolved");
+  });
+});
+
 /** Per-locale and upload fields (STA-1218), with stand-ins for `@stackra/model` and `@stackra/media`. */
 const VOCABULARY_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/model/package.json": JSON.stringify({
