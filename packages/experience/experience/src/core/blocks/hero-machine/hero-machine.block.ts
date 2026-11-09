@@ -24,14 +24,19 @@ export class HeroMachineBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.heroMachine,
 }) {
+  /** The headline, the page's `h1`. */
   title!: LocalizedText;
 
+  /** The paragraph under the headline. */
   lede!: LocalizedText;
 
+  /** The hero's one primary link. */
   primary!: LandingLink;
 
+  /** A button that copies a value, such as the llms.txt URL. */
   copyLink?: CopyLink;
 
+  /** A command shown as a chip, copied on press. */
   command?: string;
 
   /** The engine drawing (`/art/engine`). */

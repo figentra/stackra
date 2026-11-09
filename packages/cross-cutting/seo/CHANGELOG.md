@@ -1,5 +1,17 @@
 # @stackra/seo
 
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [0f05f60]
+  - @stackra/i18n@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes

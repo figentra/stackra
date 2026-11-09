@@ -52,6 +52,10 @@ export function githubStack(
     {
       name: plan.repo,
       visibility: plan.visibility,
+      // The repository metadata standard: every repository declares all three, so a preview shows their drift.
+      ...(plan.description === undefined ? {} : { description: plan.description }),
+      ...(plan.topics === undefined ? {} : { topics: [...plan.topics] }),
+      ...(plan.homepage === undefined ? {} : { homepageUrl: plan.homepage }),
       allowMergeCommit: false,
       allowRebaseMerge: false,
       allowSquashMerge: true,

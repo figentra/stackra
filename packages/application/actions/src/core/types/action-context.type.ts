@@ -3,7 +3,8 @@
  * Purpose: `ActionContext`, the second parameter of an action's `handle`: the query context plus what a write needs:
  *          the Idempotency-Key, work after commit, audit fields, a workflow behind the same key, a workflow signal,
  *          a queued job, an integration event that no model owns (`publish`, ADR 0456 decision 2) and the record
- *          version the client last read (`expectedVersion`, from If-Match).
+ *          version the client last read (`expectedVersion`, from If-Match), and the call's isolation held past its
+ *          transaction for a stream or a long loop (`detach`).
  * Boundary: a type only; the pipeline builds it per call. `run` and `signal` reach `WorkflowRunner`, `dispatch` reaches
  *           `JobDispatcher`, `publish` reaches `EventOutbox`; calling one in an app that does not bind its port is an error
  *           naming the package. An event a model owns is recorded on the model (`record(event)`), never published here. External calls
@@ -17,6 +18,7 @@ import type { Json } from "@stackra/contracts";
 import type { Event } from "@stackra/events";
 
 import type { CallInput } from "#core/types/call-input.type";
+import type { DetachedCall } from "#core/types/detached-call.type";
 import type { QueryContext } from "#core/types/query-context.type";
 
 /** The context of one action call. */
@@ -65,4 +67,11 @@ export interface ActionContext extends QueryContext {
    * @throws Error when no `EventOutbox` is bound (`@stackra/outbox` is not installed).
    */
   publish: (event: Event) => Promise<void>;
+
+  /**
+   * The call's isolation, held past its transaction: a stream or a long loop that outlives `handle` runs each step in
+   * `detached.isolated(...)`, one short transaction with the call's tenant and scope, and holds no connection between
+   * steps. The actor and scope are the ones the isolation settled; nothing comes from input.
+   */
+  detach: () => DetachedCall;
 }
