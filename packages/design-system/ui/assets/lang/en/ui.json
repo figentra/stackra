@@ -865,6 +865,11 @@
     "failed": "Upload failed",
     "retry": "Retry {name}"
   },
+  "pdf_preview": {
+    "title": "Preview of {name}",
+    "download": "Download {name}",
+    "unavailable": "If the file does not show here, download it."
+  },
   "share_button": {
     "share": "Share",
     "copied": "Link copied",

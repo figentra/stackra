@@ -865,6 +865,11 @@
     "failed": "Uploaden mislukt",
     "retry": "{name} opnieuw proberen"
   },
+  "pdf_preview": {
+    "title": "Voorbeeld van {name}",
+    "download": "{name} downloaden",
+    "unavailable": "Als het bestand hier niet wordt getoond, download het dan."
+  },
   "share_button": {
     "share": "Delen",
     "copied": "Link gekopieerd",

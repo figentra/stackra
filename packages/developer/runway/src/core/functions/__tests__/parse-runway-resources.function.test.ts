@@ -169,6 +169,21 @@ describe("root runway resources and workloads", () => {
     ).toContain("workloads.zitadel.migrate.timeoutMinutes");
   });
 
+  it("takes one gotenberg resource, and refuses a second", () => {
+    const db = { kind: "postgres" };
+    expect(
+      parseRunway("root", root({ resources: { "main-db": db, pdf: { kind: "gotenberg" } } }))
+        .resources?.["pdf"],
+    ).toEqual({ kind: "gotenberg" });
+    expect(
+      pathsOf(
+        root({
+          resources: { "main-db": db, pdf: { kind: "gotenberg" }, print: { kind: "gotenberg" } },
+        }),
+      ),
+    ).toContain("resources.print.kind");
+  });
+
   // @covers sta-1640:FR-003
   it("refuses a workload that uses a resource the runway does not declare", () => {
     expect(pathsOf(root({ resources: {} }))).toContain("workloads.zitadel.uses.0");

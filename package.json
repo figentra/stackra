@@ -64,6 +64,7 @@
     "@commitlint/cli": "catalog:release",
     "@figentra-oss/flow": "catalog:",
     "@stackra/commitlint-config": "workspace:*",
+    "@stackra/flow-preset": "workspace:*",
     "@types/node": "catalog:",
     "jscpd": "catalog:quality",
     "knip": "catalog:quality",

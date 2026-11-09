@@ -3,7 +3,8 @@
 #          (`zizmor --config .github/zizmor.yml .github/workflows`). ADR 0019 D1: every action and reusable workflow is
 #          pinned to a full commit SHA, including the `actions/*` and `github/*` namespaces zizmor would accept at a
 #          tag; the Runway workflows (ADR 0168) are called by local path here and by SHA from other repositories.
-#          An accepted finding is an `ignore:` entry naming one `file:line` and its reason, never a whole rule or file.
+#          An accepted finding is an inline `# zizmor: ignore[<audit>]` comment on its line, with the reason here; never
+#          a whole audit or file.
 # Scope: .github/workflows
 # Owner: release-operations
 # Secrets: forbidden
@@ -12,27 +13,10 @@ rules:
     config:
       policies:
         "*": hash-pin
-  # zizmor 1.31 audits; each accepted finding names one file:line and its reason.
-  artipacked:
-    ignore:
-      # The checkout persists the App token on purpose: changesets pushes the version branch and tags with it. The only
-      # uploads are named files, never .git: the published list (published-packages.json) in this job, and the SBOM and
-      # its sigstore bundle in the next.
-      - runway-npm.yml:108
-  self-repository:
-    ignore:
-      # Local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168, called by SHA from other repositories);
-      # the `$/…` form is not adopted until a run on GitHub has proven it for these callers. The same holds for the
-      # local secrets-decrypt action (ADR 0525, called by SHA from other repositories).
-      - apply-observability.yml:106
-      - ci.yml:76
-      - ci.yml:231
-      - deploy-docs.yml:55
-      - deploy-registry.yml:65
-      - deploy-static.yml:62
-      - deploy-turbo-cache.yml:64
-      - release.yml:117
-      - release.yml:201
-      - runway-drift.yml:54
-      - testbed-fallback.yml:52
-      - testbed-fallback.yml:60
+  # zizmor 1.31 audits. An accepted finding is an inline `# zizmor: ignore[<audit>]` comment on the line zizmor
+  # reports, with its reason here, never a whole audit or file: a file:line entry here drifted with every edit above
+  # it (#941, #958) and failed every pull request's workflow lint.
+  #
+  # self-repository, on each `uses: ./…` line: local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168,
+  # called by SHA from other repositories); the `$/…` form is not adopted until a run on GitHub has proven it for these
+  # callers. The same holds for the local secrets-decrypt action (ADR 0525, called by SHA from other repositories).
