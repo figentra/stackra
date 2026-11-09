@@ -7,10 +7,11 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0098 (decisions 6 and 7); ADR 0269 (decision 3).
  */
-import { ActorKind, type PublicId, Realm } from "@stackra/contracts";
+import { actingScopeId, ActorKind, type PublicId, Realm } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { actors } from "#testing/constants/actors.constant";
+import { TEST_SCOPE_ID } from "#testing/constants/test-scope-id.constant";
 
 describe("actors", () => {
   it("builds customer and staff users, with fixed defaults", () => {
@@ -20,9 +21,30 @@ describe("actors", () => {
       kind: ActorKind.User,
       id: "usr_staff",
       realm: Realm.Staff,
+      scopeId: TEST_SCOPE_ID,
     });
     expect(Object.isFrozen(actors.staff())).toBe(true);
     expectTypeOf(actors.customer().id).toEqualTypeOf<PublicId<"usr">>();
+  });
+
+  it("acts in the test tenant by default, so a pipeline call has a tenant", () => {
+    expect(TEST_SCOPE_ID).toMatch(/^scp_[0-9a-z]{26}$/);
+    expect(actingScopeId(actors.staff())).toBe(TEST_SCOPE_ID);
+    expect(actingScopeId(actors.customer())).toBe(TEST_SCOPE_ID);
+  });
+
+  it("acts in a named tenant, or at the root for scopeId null", () => {
+    const other = "scp_01j9z3k4m5n6p7q8r9s0t1v2t2" as PublicId<"scp">;
+    expect(actors.staff(undefined, { scopeId: other }).scopeId).toBe(other);
+    expect(actors.customer("usr_1", { scopeId: other }).scopeId).toBe(other);
+    expect("scopeId" in actors.staff(undefined, { scopeId: null })).toBe(false);
+  });
+
+  it("gives a service no tenant of its own: it claims one through onBehalfOf", () => {
+    expect(actingScopeId(actors.service("billing"))).toBeUndefined();
+    expect(actingScopeId(actors.service("billing", { onBehalfOf: actors.staff() }))).toBe(
+      TEST_SCOPE_ID,
+    );
   });
 
   it("refuses an id that is not a user's public id", () => {
