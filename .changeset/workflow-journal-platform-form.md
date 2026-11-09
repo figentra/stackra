@@ -9,7 +9,12 @@ across tenants through the system functions `workflow.claim_due_runs` and `workf
 owners and order only), then loads, advances or removes each in its owner's isolation. A run is owned by the tenant of
 the call that started it, and every save runs in that owner. A claimed run that does not load, or an owned row with no
 `CallIsolation` bound, fails the tick (`ClaimNotLoadedError`, `RowIsolationMissingError` from `@stackra/outbox`); a
-claimed row is never skipped. `workflow.run.get` keeps its own check, and another tenant's run is now also hidden by row
+claimed row is never skipped. A system or job origin that names no tenant, started in a tenant's session (an event's
+run), takes that tenant for its steps; an actor that names a scope, a user and an agent are never rewritten.
+
+A signal is held under the tenant it is sent or delivered in, and a run takes only signals of its own tenant: a run
+that waits for acks (such as a provisioning run waiting for `AllServicesAcked`) must start in the tenant the acks are
+sent in, never as a platform run. `workflow.run.get` keeps its own check, and another tenant's run is now also hidden by row
 security, with the same `run_not_found`.
 
 Upgrade: finish or cancel the workflows running below a tenant node before you migrate. The migration backfills a run at

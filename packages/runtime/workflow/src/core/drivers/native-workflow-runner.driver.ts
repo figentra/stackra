@@ -49,8 +49,8 @@ import { CallIsolation, ContextStorage, WorkflowRunner } from "@stackra/actions/
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { backoffDelay, Duration, Logger } from "@stackra/contracts";
-import type { Clock, Json, PublicId, RetryPolicy } from "@stackra/contracts";
+import { ActorKind, backoffDelay, Duration, Logger } from "@stackra/contracts";
+import type { Clock, Json, PublicId, RetryPolicy, ScopeRef } from "@stackra/contracts";
 import { isRefusal, WorkflowTimedOutError } from "@stackra/errors";
 import { EventBus } from "@stackra/events";
 import type { Event } from "@stackra/events";
@@ -287,6 +287,30 @@ const sleep = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
   });
+
+/**
+ * The origin a run launched in a session of `scope` and tenant `ownerId` keeps. A run an event starts has no call
+ * scope: its steps run in, and read, the session's. A system or job actor that names no tenant takes the run's owner
+ * (it only narrows: the steps' isolation then runs in the tenant that owns the run's rows); an actor that names a
+ * scope, a user or an agent, and a platform launch (no owner) keep the actor as it is.
+ */
+function originIn(
+  origin: RunOrigin,
+  scope: ScopeRef | undefined,
+  ownerId: PublicId<"scp"> | undefined,
+): RunOrigin {
+  const { actor } = origin;
+  const unowned =
+    ownerId !== undefined &&
+    actor.scopeId === undefined &&
+    (actor.kind === ActorKind.System || actor.kind === ActorKind.Job);
+  if (!unowned && (origin.scope !== undefined || scope === undefined)) return origin;
+  return Object.freeze({
+    ...origin,
+    ...(origin.scope === undefined && scope !== undefined ? { scope } : {}),
+    ...(unowned ? { actor: Object.freeze({ ...actor, scopeId: ownerId }) } : {}),
+  });
+}
 
 /**
  * Runs workflows in this process, keeping each run, step and held signal in the journal.
@@ -627,11 +651,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           ...(automation === undefined ? {} : { automation }),
           status: WorkflowRunStatus.Running,
           input,
-          // A run an event starts has no call scope: its steps run in, and read, the session's.
-          origin:
-            origin.scope === undefined && scope !== undefined
-              ? Object.freeze({ ...origin, scope })
-              : origin,
+          origin: originIn(origin, scope, ownerId),
           ...(scope === undefined ? {} : { scope }),
           ...(ownerId === undefined ? {} : { ownerId }),
           startedAt,

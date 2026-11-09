@@ -689,6 +689,44 @@ describe(NativeWorkflowRunnerDriver, () => {
     expect(new Set(owners)).toEqual(new Set(["scp_acme"]));
   });
 
+  it("gives a system or job origin that names no tenant the run's owner, and never rewrites another", async () => {
+    class OwnedJournal extends MemoryWorkflowJournalDriver {
+      override currentOwner(): Promise<PublicId<"scp"> | undefined> {
+        return Promise.resolve("scp_acme" as PublicId<"scp">);
+      }
+    }
+    class Passing extends Driver(CallIsolation) {
+      run<T>(_actor: Actor, _scope: unknown, work: () => Promise<T>): Promise<T> {
+        return work();
+      }
+    }
+    /** The origin actor a run started by `actor` keeps, on a journal of `owned` (else the platform's). */
+    const kept = async (actor: Actor, owned: boolean): Promise<Actor | undefined> => {
+      const { runner } = engineWith(
+        [
+          [OrderWorkflow, new OrderWorkflow()],
+          [CallIsolation, new Passing()],
+        ],
+        owned ? new OwnedJournal() : new MemoryWorkflowJournalDriver(),
+      );
+      await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, { ...ORIGIN, actor });
+      return (await runner.last(OrderWorkflow))?.origin.actor;
+    };
+    const system = { kind: ActorKind.System, id: "sys_workflow" } as Actor;
+    const job = { kind: ActorKind.Job, id: "job_nightly" } as unknown as Actor;
+    expect(await kept(system, true)).toEqual({ ...system, scopeId: "scp_acme" });
+    expect(await kept(job, true)).toEqual({ ...job, scopeId: "scp_acme" });
+    // an actor that names a scope, the run's tenant or another, is never rewritten
+    for (const scopeId of ["scp_acme", "scp_globex"])
+      expect(await kept({ ...system, scopeId } as Actor, true)).toEqual({ ...system, scopeId });
+    const user = { kind: ActorKind.User, id: "usr_1" } as unknown as Actor;
+    const agent = { kind: ActorKind.Agent, id: "agt_1" } as unknown as Actor;
+    expect(await kept(user, true)).toEqual(user);
+    expect(await kept(agent, true)).toEqual(agent);
+    // a platform launch (no owner) keeps the actor as it is
+    expect(await kept(system, false)).toEqual(system);
+  });
+
   it("refuses to save or advance an owned run when no isolation is bound", async () => {
     class OwnedJournal extends MemoryWorkflowJournalDriver {
       override currentOwner(): Promise<PublicId<"scp"> | undefined> {

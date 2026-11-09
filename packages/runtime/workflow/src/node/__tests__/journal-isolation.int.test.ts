@@ -9,7 +9,8 @@
  *          refuses an owned run with no isolation bound and fails on a claimed run that does not load, never skipping
  *          either. Expiry claims lapsed signals of every owner and removes them per owner, the system-access role
  *          holding no DELETE. `workflow.run.get` answers `run_not_found` to another owner's session, as to a caller the
- *          query's own check refuses.
+ *          query's own check refuses. A run a system actor that names no tenant starts in an owner's session (an
+ *          event's run) takes that owner for its steps and completes there.
  * Boundary: integration tier (`.int`): runs only where `TESTBED_POSTGRES_HOST` names a Postgres and is skipped elsewhere.
  *           One fresh database for the file (`ownerPostgres`); the superuser seeds and reads, everything under test
  *           runs as the service role (`asService`, `OwnerIsolation`). Tests share the database and run in order.
@@ -71,6 +72,16 @@ class ShipWorkflow extends Workflow<{ readonly orderId: string }>({ timeout: "1h
 
   async close(run: Run<this>): Promise<string> {
     return `closed:${run.results.ship}`;
+  }
+}
+
+class NoteWorkflow extends Workflow<{ readonly text: string }>({ timeout: "1h" }) {
+  async write(run: Run<this>): Promise<string> {
+    return run.input.text;
+  }
+
+  async seal(run: Run<this>): Promise<string> {
+    return `sealed:${run.results.write}`;
   }
 }
 
@@ -146,6 +157,7 @@ describe.skipIf(HOST === undefined)("workflow journal row security on Postgres",
     runner.connect(
       resolverOf([
         [ShipWorkflow, new ShipWorkflow()],
+        [NoteWorkflow, new NoteWorkflow()],
         ...(bound === undefined ? [] : [[CallIsolation, bound] as const]),
       ]),
     );
@@ -309,5 +321,26 @@ describe.skipIf(HOST === undefined)("workflow journal row security on Postgres",
     await expect(
       asService(postgres, GLOBEX, () => query.handle({ runId: ran.acme } as never, ctx)),
     ).rejects.toBeInstanceOf(RunNotFoundError);
+  });
+  it("runs a system origin that names no tenant, started in an owner, in that owner to completion", async () => {
+    const runner = engineOf(isolation);
+    const units = isolation.actors.length;
+    // as the explorer starts a run for an event with no actor: the system actor, no scope, in the delivery's owner
+    await asService(postgres, ACME, () =>
+      runner.start(NoteWorkflow, { text: "hello" }, originOf(undefined)),
+    );
+    const [row] = await superuser(
+      "select id, status, tenant_id, origin -> 'actor' ->> 'scopeId' as actor_owner from workflow.runs where workflow = 'NoteWorkflow'",
+    );
+    expect(row).toMatchObject({ status: "completed", tenant_id: ACME, actor_owner: ACME });
+    expect(await ownersOf(String(row?.["id"]))).toMatchObject({
+      steps: [
+        { name: "write", tenant_id: ACME },
+        { name: "seal", tenant_id: ACME },
+      ],
+    });
+    const steps = isolation.actors.slice(units).filter((actor) => actor.id === "sys_test");
+    expect(steps.length).toBe(2);
+    for (const actor of steps) expect(actor.scopeId).toBe(ACME);
   });
 });
