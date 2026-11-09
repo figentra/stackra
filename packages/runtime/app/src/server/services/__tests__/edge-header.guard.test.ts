@@ -6,7 +6,8 @@
  *          or only a request id or timestamp), an unknown key, a tampered body or path, a timestamp outside the window
  *          either side (on a pinned clock, both edges accepted), a missing identity header, a replayed request id, and
  *          every signature when no key is active. It records a request's signed tenant only once the signature and
- *          the request id verified: never for a platform host, a request with no edge header or a refused one.
+ *          the request id verified: never for a platform host, a request with no edge header or a refused one; a
+ *          correctly signed scope that is not an `scp_` public id is refused (fail closed).
  * Boundary: test only; real Web Crypto, the memory drivers, and requests built as the edge Worker forwards them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0437 (decisions 4 and 8; Enforcement); ADR 0457.
@@ -42,7 +43,7 @@ let next = 0;
 async function forwarded(options: Forwarded = {}): Promise<Request> {
   const body = options.body ?? '{"total":10}';
   const path = options.path ?? "/api/orders?page=1";
-  const scope = options.scope === undefined ? "scope-1" : options.scope;
+  const scope = options.scope === undefined ? "scp_01j9z3k4m5n6p7q8r9s0t1v2wa" : options.scope;
   const input = {
     scope,
     product: "commerce",
@@ -200,5 +201,11 @@ describe("EdgeHeaderGuard", () => {
     const replayed = await forwarded({ requestId: "req-twice" });
     expect(await refuses(subject, replayed)).toBe(true);
     expect(VERIFIED_EDGE_SCOPE.has(replayed)).toBe(false);
+  });
+
+  it("refuses a correctly signed scope that is not a tenant's public id, and records nothing", async () => {
+    const request = await forwarded({ scope: "scope-1" });
+    expect(await refuses(guard(), request)).toBe(true);
+    expect(VERIFIED_EDGE_SCOPE.has(request)).toBe(false);
   });
 });

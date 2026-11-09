@@ -18,8 +18,7 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 
-import { Enum } from "@stackra/contracts";
-import type { PublicId } from "@stackra/contracts";
+import { Enum, isPublicId } from "@stackra/contracts";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import type { EdgeNonceStore } from "#contracts/ports/edge-nonce-store.port";
@@ -69,7 +68,7 @@ export class EdgeHeaderGuard extends RequestGuard {
    * Lets `request` through when its edge signature holds.
    *
    * @throws EdgeSignatureInvalidError when a request carrying an edge header has no signature, or one that is wrong,
-   *         stale or replayed.
+   *         stale or replayed, or when its signed scope is not a tenant's public id (`scp_…`).
    * @remarks A verified request's signed tenant is recorded in `VERIFIED_EDGE_SCOPE` for `serveGuardedCall`.
    */
   async check(request: Request): Promise<void> {
@@ -111,7 +110,11 @@ export class EdgeHeaderGuard extends RequestGuard {
     // twice the window: a timestamp may sit up to maxAge either side of now
     if (!(await this.nonces.claim(requestId, this.maxAge * 2)))
       throw EdgeSignatureInvalidError.create();
-    // only now is the tenant the Worker resolved from the host trusted (ADR 0437)
-    if (input.scope !== null) VERIFIED_EDGE_SCOPE.set(request, input.scope as PublicId);
+    // only now is the tenant the Worker resolved from the host trusted (ADR 0437); a signed scope that is not a
+    // tenant's public id fails closed, never as a call with no tenant
+    if (input.scope !== null) {
+      if (!isPublicId(input.scope, "scp")) throw EdgeSignatureInvalidError.create();
+      VERIFIED_EDGE_SCOPE.set(request, input.scope);
+    }
   }
 }
