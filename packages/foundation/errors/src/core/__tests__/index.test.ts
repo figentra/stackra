@@ -28,6 +28,7 @@ describe("@stackra/errors", () => {
       "EntitlementRequiredError",
       "ErrorKind",
       "ForbiddenError",
+      "IdempotencyKeyInProgressError",
       "IdempotencyKeyReusedError",
       "LiveReadOnlyError",
       "MemoryErrorReporterDriver",
@@ -43,6 +44,8 @@ describe("@stackra/errors", () => {
       "isRefusal",
       "rateLimitHeaders",
       "refusalCode",
+      "refusalFromStored",
+      "storedRefusal",
     ]);
     expect("ErrorReporter" in errors).toBe(false);
   });

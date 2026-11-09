@@ -186,6 +186,19 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "approval_card": {
+      "ApprovalCard": {
+        "className": "Classes added to the root.",
+        "fields": "The call's input, in order.",
+        "isPending": "True while the answer is being sent: Approve and Deny are disabled.",
+        "onApprove": "Called when the person approves the call.",
+        "onDeny": "Called when the person denies the call.",
+        "reason": "Why the call was denied, shown under a denied status.",
+        "risk": "A short risk level, for example \"L3\"; left out, no risk is shown.",
+        "status": "Where the approval stands: only `requested` shows Approve and Deny.",
+        "title": "What will run, for example the action's label; defaults to \"Tamo wants to run this\"."
+      }
+    },
     "area_chart": {
       "AreaChart": {
         "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",

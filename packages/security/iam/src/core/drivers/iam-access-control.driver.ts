@@ -18,7 +18,7 @@
  */
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
-import { actingScopeId, type PublicId, type ScopeRef } from "@stackra/contracts";
+import { ActorKind, actingScopeId, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { RuleFacts } from "@stackra/rules";
 import type { ScopeTree } from "@stackra/scope/contracts";
@@ -26,7 +26,9 @@ import type { ScopeTree } from "@stackra/scope/contracts";
 import { Decision } from "#core/enums/decision.enum";
 import { decidePolicy } from "#core/functions/decide-policy.function";
 import { isAnonymousCall } from "#core/functions/is-anonymous-call.function";
+import { keyCovers } from "#core/functions/key-covers.function";
 import { policyRowOf } from "#core/functions/policy-row-of.function";
+import type { CheckOptions } from "#core/types/check-options.type";
 import type { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 
 /**
@@ -59,6 +61,13 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    * @throws ForbiddenError when it does not, or when the call's scope node does not exist.
    */
   async require(call: CallDescriptor): Promise<void> {
+    if (call.actor.kind === ActorKind.ApiClient) {
+      if (!keyCovers(call)) throw ForbiddenError.create();
+      const scope = await this.scopeOf(call);
+      if (await this.keyDenied(call, scope === undefined ? {} : { scope }))
+        throw ForbiddenError.create();
+      return;
+    }
     if (call.permission === undefined) throw ForbiddenError.create();
     if (isAnonymousCall(call)) return;
     const scope = await this.scopeOf(call);
@@ -76,6 +85,8 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
     const { permission } = call;
     if (permission === undefined) throw ForbiddenError.create();
     if (isAnonymousCall(call)) return;
+    const viaKey = call.actor.kind === ActorKind.ApiClient;
+    if (viaKey && !keyCovers(call)) throw ForbiddenError.create();
     const row = policyRowOf(record);
     if (
       row !== undefined &&
@@ -88,7 +99,26 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
         ? null
         : { rules: row.rules, facts: { record: record as RuleFacts[string] } };
     const options = scope === undefined ? { record: facts } : { scope, record: facts };
+    // an API key's grants are its scopes (checked above); its tenant's deny rules still bind it, against the record
+    if (viaKey) {
+      if (await this.keyDenied(call, options)) throw ForbiddenError.create();
+      return;
+    }
     if (!(await this.pdp.check(call.actor, permission, options))) throw ForbiddenError.create();
+  }
+
+  /**
+   * Whether a deny rule refuses an `api_client` call: the operation's permission or any scope its key had to cover.
+   */
+  private async keyDenied(call: CallDescriptor, options: CheckOptions): Promise<boolean> {
+    const keys = new Set([
+      ...(call.permission === undefined ? [] : [call.permission]),
+      ...(call.public?.scopes ?? []),
+    ]);
+    for (const key of keys)
+      // oxlint-disable-next-line no-await-in-loop -- reason: the snapshot is read once per key; a call names one or two
+      if (await this.pdp.denied(call.actor, key, options)) return true;
+    return false;
   }
 
   /**

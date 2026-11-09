@@ -39,6 +39,8 @@ catalog:
   zod: 4.6.7
   # The Encore runtime a service's generated Encore files import, at the Encore CLI version the products pin; gen
   # refuses a service that does not declare it (STA-2194).
+  # A service pins this same version as a literal (Encore rewrites catalog: specs); bump both together:
+  # `stackra encore:prepare` in each service, and `stackra validate --repository` refuses a mismatch (ADR 0091).
   encore.dev: 1.58.8
   # Apple Wallet pass signing in @stackra/integrations (stackra-41): PKCS#7 detached signatures over the pass manifest.
   # pkijs 3.x and its asn1js 3.x peer; BSD-3-Clause. Bump the pair together.

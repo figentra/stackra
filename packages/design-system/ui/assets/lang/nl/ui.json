@@ -1262,5 +1262,19 @@
     "denied": "Geweigerd",
     "expired": "Verlopen",
     "risk": "Risico {level}"
+  },
+  "terminal_demo": {
+    "label": "Probeer het",
+    "copy": "Opdracht kopiëren"
+  },
+  "props_playground": {
+    "controls": "Eigenschappen",
+    "preview": "Voorbeeld",
+    "theme": "Thema",
+    "theme_default": "Standaard",
+    "direction": "Richting",
+    "ltr": "Links naar rechts",
+    "rtl": "Rechts naar links",
+    "reset": "Herstellen"
   }
 }

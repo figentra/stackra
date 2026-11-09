@@ -52,6 +52,7 @@ import {
   Clock,
   Duration,
   Enum,
+  IdempotencyRetentionSource,
   IdentityResolver,
   Logger,
   MeterKind,
@@ -69,7 +70,9 @@ import {
 import {
   ErrorKind,
   ForbiddenError,
+  IdempotencyKeyInProgressError,
   IdempotencyKeyReusedError,
+  isRefusal,
   LiveReadOnlyError,
   RateLimitedError,
   Refusal,
@@ -230,6 +233,48 @@ class LoggingFlags extends Driver(FlagCheck) {
 class OrdersPausedError extends Refusal({ kind: ErrorKind.FailedPrecondition }) {}
 
 class OutOfStockError extends Refusal({ kind: ErrorKind.Conflict }) {}
+
+/** A Required write whose outcome a test chooses: it runs, refuses, crashes, or waits for `release`. */
+class FlakyAction extends Action({
+  key: "flaky.run",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Required,
+}) {
+  ran = 0;
+
+  mode: "ok" | "refuse" | "retryable" | "crash" | "wait" = "ok";
+
+  release: () => void = () => undefined;
+
+  async handle(input: { quantity: number }): Promise<{ ran: number }> {
+    this.ran += 1;
+    if (this.mode === "refuse") throw OutOfStockError.create();
+    if (this.mode === "retryable") throw RateLimitedError.create({ retryAfterMs: 1000 });
+    if (this.mode === "crash") throw new TypeError("boom");
+    if (this.mode === "wait")
+      await new Promise<void>((resolve) => {
+        this.release = resolve;
+      });
+    return { ran: this.ran + input.quantity };
+  }
+}
+
+/** FlakyAction's behaviour on a Derived action, whose key a non-API-key caller never sends. */
+class DerivedFlakyAction extends Action({
+  key: "flaky.derived",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Derived,
+}) {
+  ran = 0;
+
+  mode: "ok" | "refuse" = "ok";
+
+  async handle(input: { quantity: number }): Promise<{ ran: number }> {
+    this.ran += 1;
+    if (this.mode === "refuse") throw OutOfStockError.create();
+    return { ran: this.ran + input.quantity };
+  }
+}
 
 class Shop {
   open = true;
@@ -602,6 +647,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
   const trail = new Trail();
   const lines = new Lines();
   const send = new SendMessageAction();
+  const flaky = new FlakyAction();
   const workflows = new Workflows();
   const jobs = new Jobs();
   const storage = new AsyncContextStorageDriver();
@@ -622,6 +668,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
     [TracingInterceptor, new TracingInterceptor()],
     [DoubleNextInterceptor, new DoubleNextInterceptor()],
     [CreateOrderAction, new CreateOrderAction(shop)],
+    [FlakyAction, flaky],
     [SendMessageAction, send],
     [InspectAction, new InspectAction()],
     [RedeemPointsAction, new RedeemPointsAction()],
@@ -633,6 +680,7 @@ function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
     ...extra,
   ]);
   return {
+    flaky,
     pipeline: new ActionPipeline(resolver),
     shop,
     access,
@@ -798,7 +846,7 @@ describe(ActionPipeline, () => {
     expect(other).toEqual({ orderId: "ord_2", key: "k1" });
   });
 
-  it("releases the key of a refused call so the retry runs", async () => {
+  it("rolls back a refused call and keeps its refusal as the answer for the same key", async () => {
     const { pipeline, shop } = setup();
     shop.failNext = true;
     await expect(
@@ -810,16 +858,94 @@ describe(ActionPipeline, () => {
     ).rejects.toBeInstanceOf(OutOfStockError);
     expect(log).toContain("rollback");
     expect(log).not.toContain("after-commit:1");
+    // handle would succeed now, but the key already has its answer
+    const again = await pipeline
+      .execute(CreateOrderAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" })
+      .catch((error: unknown) => error);
+    expect(isRefusal(again, OutOfStockError)).toBe(true);
+    expect(shop.placed).toBe(0);
+  });
+
+  it("answers a second call with the same key and input while the first runs: in progress; other input: reused", async () => {
+    const { pipeline, flaky } = setup();
+    flaky.mode = "wait";
+    const call = (quantity: number) =>
+      pipeline.execute(FlakyAction, { quantity }, { actor: customer, idempotencyKey: "k1" });
+    const first = call(1);
+    await vi.waitFor(() => expect(flaky.ran).toBe(1));
+    await expect(call(1)).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+    await expect(call(2)).rejects.toBeInstanceOf(IdempotencyKeyReusedError);
+    flaky.release();
+    expect(await first).toEqual({ ran: 2 });
+    expect(await call(1)).toEqual({ ran: 2 });
+    expect(flaky.ran).toBe(1);
+  });
+
+  it("replays a non-retryable refusal for a retry, equal but for the request id, and runs handle once", async () => {
+    const { pipeline, flaky } = setup();
+    flaky.mode = "refuse";
+    const call = () =>
+      pipeline.execute(FlakyAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" });
+    const first = await call().catch((error: unknown) => error);
+    const again = await call().catch((error: unknown) => error);
+    expect(first).toBeInstanceOf(OutOfStockError);
+    expect(isRefusal(again, OutOfStockError)).toBe(true);
+    expect((again as Refusal).toEnvelope()).toEqual((first as Refusal).toEnvelope());
+    expect((again as Refusal).kind).toBe(ErrorKind.Conflict);
+    expect(flaky.ran).toBe(1);
+  });
+
+  it("stores a refusal only under a key the caller sent; an input-derived key is released, so a later call runs", async () => {
+    const derived = new DerivedFlakyAction();
+    const { pipeline } = setup([[DerivedFlakyAction, derived]]);
+    // A console user's call: Derived, keyed by its input. Out of stock now, in stock later: the retry must run.
+    derived.mode = "refuse";
+    await expect(
+      pipeline.execute(
+        DerivedFlakyAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-click" },
+      ),
+    ).rejects.toBeInstanceOf(OutOfStockError);
+    derived.mode = "ok";
     expect(
       await pipeline.execute(
-        CreateOrderAction,
+        DerivedFlakyAction,
         { quantity: 1 },
-        { actor: customer, idempotencyKey: "k1" },
+        { actor: customer, idempotencyKey: "k-click-2" },
       ),
-    ).toEqual({
-      orderId: "ord_1",
-      key: "k1",
-    });
+    ).toEqual({ ran: 3 });
+    expect(derived.ran).toBe(2);
+    // An API key sends its own key: its refusal is the answer for that key.
+    const origin = { kind: CallOriginKind.ApiKey, id: "key_1" };
+    derived.mode = "refuse";
+    const call = () =>
+      pipeline.execute(
+        DerivedFlakyAction,
+        { quantity: 5 },
+        { actor: customer, idempotencyKey: "k-api", origin },
+      );
+    await expect(call()).rejects.toBeInstanceOf(OutOfStockError);
+    derived.mode = "ok";
+    const again = await call().catch((error: unknown) => error);
+    expect(isRefusal(again, OutOfStockError)).toBe(true);
+    expect(derived.ran).toBe(3);
+  });
+
+  it("releases the key of a retryable refusal or a plain error, so the retry runs handle again", async () => {
+    const { pipeline, flaky } = setup();
+    const call = () =>
+      pipeline.execute(FlakyAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" });
+    flaky.mode = "retryable";
+    await expect(call()).rejects.toBeInstanceOf(RateLimitedError);
+    await expect(call()).rejects.toBeInstanceOf(RateLimitedError);
+    expect(flaky.ran).toBe(2);
+    flaky.mode = "crash";
+    await expect(call()).rejects.toBeInstanceOf(TypeError);
+    await expect(call()).rejects.toBeInstanceOf(TypeError);
+    expect(flaky.ran).toBe(4);
+    flaky.mode = "ok";
+    expect(await call()).toEqual({ ran: 6 });
   });
 
   it("never stores or replays the output of an Idempotency.Never action, even with a key", async () => {
@@ -849,6 +975,88 @@ describe(ActionPipeline, () => {
     expect(again).toEqual({ token: "token-2" });
     expect(action.picked).toBe(2);
     expect(claimed).toEqual([]);
+  });
+
+  describe("retention window (IdempotencyRetentionSource)", () => {
+    /** Records the ttl each claim passes. */
+    class Recording extends MemoryIdempotencyStoreDriver {
+      readonly ttls: unknown[] = [];
+
+      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
+        this.ttls.push(args[2]);
+        return super.claim(...args);
+      }
+    }
+
+    /** Answers a fixed window, or fails. */
+    class Retention extends Driver(IdempotencyRetentionSource) {
+      private readonly answer: Duration | Error;
+
+      constructor(answer: Duration | Error) {
+        super();
+        this.answer = answer;
+      }
+
+      async retention(): Promise<Duration> {
+        if (this.answer instanceof Error) throw this.answer;
+        return this.answer;
+      }
+    }
+
+    /** The ttl a keyed `CreateOrderAction` call claims with `source` bound (none when absent). */
+    async function claimedWith(source?: Retention): Promise<unknown[]> {
+      const store = new Recording(new FixedClock());
+      const { pipeline } = setup([
+        [IdempotencyStore, store],
+        ...(source === undefined ? [] : [[IdempotencyRetentionSource, source] as const]),
+      ]);
+      await pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k1" },
+      );
+      return store.ttls;
+    }
+
+    it("keeps a key 24 hours when no source is bound", async () => {
+      expect(await claimedWith()).toEqual([Duration.hours(24)]);
+    });
+
+    it("shortens the window to the bound source's answer", async () => {
+      expect(await claimedWith(new Retention(Duration.hours(2)))).toEqual([Duration.hours(2)]);
+    });
+
+    it("never lengthens the window past 24 hours", async () => {
+      expect(await claimedWith(new Retention(Duration.hours(48)))).toEqual([Duration.hours(24)]);
+    });
+
+    it("fails the call when the source cannot be read", async () => {
+      await expect(claimedWith(new Retention(new Error("down")))).rejects.toThrow("down");
+    });
+
+    it("lets an action's own shorter window win over the setting", async () => {
+      onTestFinished(() => {
+        ACTION_REGISTRY.delete(RegisterEndpointAction);
+      });
+      registerActions([
+        {
+          type: RegisterEndpointAction,
+          key: "webhooks.endpoint.register@1",
+          // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes these registrations
+          permission: "webhooks.endpoint.register",
+          risk: "L2",
+          output: RegisterEndpointOutput,
+        },
+      ]);
+      const store = new Recording(new FixedClock());
+      const { pipeline } = setup([
+        [IdempotencyStore, store],
+        [IdempotencyRetentionSource, new Retention(Duration.hours(2))],
+        [RegisterEndpointAction, new RegisterEndpointAction()],
+      ]);
+      await pipeline.execute(RegisterEndpointAction, {}, { actor: customer, idempotencyKey: "k1" });
+      expect(store.ttls).toEqual([Duration.minutes(10)]);
+    });
   });
 
   it("never keeps a @ShownOnce output field: the replay omits it and says so", async () => {

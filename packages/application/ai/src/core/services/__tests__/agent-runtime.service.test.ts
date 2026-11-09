@@ -10,12 +10,14 @@
  *          blocked answer fails the run with `guardrail_blocked`; a client tool call parks the run without dispatching,
  *          emits the part to the surface, and `resolveClientTool` resumes it with the answer, a refusal or
  *          `client_result_invalid`, `expireClientTool` with `client_unavailable`, a repeat answer is refused with
- *          `client_tool_not_pending`, and a timer is armed while parked and cleared once answered.
+ *          `client_tool_not_pending`, and a timer is armed while parked and cleared once answered; `uiStream` carries the
+ *          text and reasoning deltas in order, a tool call's input then output, a parked call as a
+ *          `tool-approval-request` with the approval id, and closes with `abort` when the call is aborted.
  * Boundary: test only; the model is AI SDK's `MockLanguageModelV4`, the stores are the memory drivers, and the
  *           dispatcher, models, instructions, queue, outbox, discovery and guardrail layers are stand-ins.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 2, 3, 9 and 10); STA-781; STA-1256; ADR 0156
- *                     (decision 4); ADR 0216 (decision 2); STA-1385; ADR 0490 (decision 4); STA-1631.
+ *                     (decision 4); ADR 0216 (decision 2); STA-1385; ADR 0490 (decision 4); STA-1631; STA-2608.
  */
 import { type DiscoveryService, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Clock, Realm } from "@stackra/contracts";
@@ -23,7 +25,7 @@ import { ForbiddenError } from "@stackra/errors";
 import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import { describe, expect, it } from "@stackra/testing";
-import type { LanguageModel } from "ai";
+import type { LanguageModel, UIMessageChunk } from "ai";
 import { simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { vi } from "vitest";
@@ -119,6 +121,44 @@ const surface: SurfaceDescriptor = {
   route: "orders",
   locale: "en-US",
 };
+
+const finish = (unified: "stop" | "tool-calls") => ({
+  type: "finish" as const,
+  finishReason: { unified, raw: undefined },
+  usage,
+});
+const streamedCall = (toolCallId: string) => ({
+  stream: simulateReadableStream({
+    chunks: [
+      {
+        type: "tool-call" as const,
+        toolCallId,
+        toolName: "legal_letter_send",
+        input: JSON.stringify({ to: "client" }),
+      },
+      finish("tool-calls"),
+    ],
+  }),
+});
+const streamedText = (value: string) => ({
+  stream: simulateReadableStream({
+    chunks: [
+      { type: "text-start" as const, id: "t1" },
+      { type: "text-delta" as const, id: "t1", delta: value },
+      { type: "text-end" as const, id: "t1" },
+      finish("stop"),
+    ],
+  }),
+});
+
+/** Every chunk of `stream`, read to its end. */
+async function chunksOf(stream: ReadableStream<UIMessageChunk>): Promise<UIMessageChunk[]> {
+  const chunks: UIMessageChunk[] = [];
+  const reader = stream.getReader();
+  for (let next = await reader.read(); !next.done; next = await reader.read())
+    chunks.push(next.value);
+  return chunks;
+}
 
 class FixedClock extends Clock {
   now(): Date {
@@ -328,6 +368,129 @@ describe(AgentRuntime, () => {
     for await (const delta of streaming.textStream) streamed += delta;
     expect(streamed).toBe("Hello");
     expect(await streaming.reply).toMatchObject({ status: RunStatus.Completed, text: "Hello" });
+  });
+
+  it("streams text and reasoning deltas in order as UI message chunks, with the run id as message id", async () => {
+    const model = new MockLanguageModelV4({
+      doStream: {
+        stream: simulateReadableStream({
+          chunks: [
+            { type: "reasoning-start", id: "r1" },
+            { type: "reasoning-delta", id: "r1", delta: "Think" },
+            { type: "reasoning-end", id: "r1" },
+            { type: "text-start", id: "t1" },
+            { type: "text-delta", id: "t1", delta: "Hel" },
+            { type: "text-delta", id: "t1", delta: "lo" },
+            { type: "text-end", id: "t1" },
+            finish("stop"),
+          ],
+        }),
+      },
+    });
+    const { runtime } = setup(model);
+    const streaming = await runtime.stream(agent, "Hi", { actor });
+    const [chunks, texts] = await Promise.all([
+      chunksOf(streaming.uiStream),
+      (async () => {
+        let streamed = "";
+        for await (const delta of streaming.textStream) streamed += delta;
+        return streamed;
+      })(),
+    ]);
+    expect(texts).toBe("Hello");
+    expect(chunks[0]).toEqual({ type: "start", messageId: streaming.runId });
+    expect(chunks.at(-1)).toMatchObject({ type: "finish", finishReason: "stop" });
+    expect(
+      chunks.flatMap((chunk) =>
+        chunk.type === "text-delta" || chunk.type === "reasoning-delta"
+          ? [`${chunk.type}:${chunk.delta}`]
+          : [],
+      ),
+    ).toEqual(["reasoning-delta:Think", "text-delta:Hel", "text-delta:lo"]);
+    expect(JSON.stringify(chunks)).not.toContain("You help with matters.");
+    expect(await streaming.reply).toMatchObject({ status: RunStatus.Completed, text: "Hello" });
+  });
+
+  it("streams a tool call that runs as its input, then the output the model saw", async () => {
+    const model = new MockLanguageModelV4({
+      doStream: [streamedCall("call_s1"), streamedText("Sent.")],
+    });
+    const { runtime, dispatcher } = setup(model);
+    vi.spyOn(dispatcher, "call").mockResolvedValue({
+      outcome: ToolCallOutcome.Ok,
+      output: { sent: true },
+    });
+    const streaming = await runtime.stream(agent, "Send the letter", { actor });
+    const chunks = await chunksOf(streaming.uiStream);
+    const tool = chunks.filter((chunk) => chunk.type.startsWith("tool-"));
+    expect(tool).toEqual([
+      expect.objectContaining({
+        type: "tool-input-available",
+        toolCallId: "call_s1",
+        toolName: "legal_letter_send",
+        input: { to: "client" },
+      }),
+      expect.objectContaining({
+        type: "tool-output-available",
+        toolCallId: "call_s1",
+        output: { sent: true },
+      }),
+    ]);
+    expect(chunks.at(-1)?.type).toBe("finish");
+    expect(await streaming.reply).toMatchObject({ status: RunStatus.Completed, text: "Sent." });
+  });
+
+  it("ends a parked tool call with an approval request carrying the approval id", async () => {
+    const model = new MockLanguageModelV4({ doStream: [streamedCall("call_s2")] });
+    const { runtime } = setup(model);
+    const streaming = await runtime.stream(agent, "Send the letter", { actor });
+    const chunks = await chunksOf(streaming.uiStream);
+    const tool = chunks.filter((chunk) => chunk.type.startsWith("tool-"));
+    expect(tool.map(({ type }) => type)).toEqual(["tool-input-available", "tool-approval-request"]);
+    expect(tool[1]).toEqual({
+      type: "tool-approval-request",
+      approvalId: "apr_1",
+      toolCallId: "call_s2",
+    });
+    expect(JSON.stringify(chunks)).not.toContain("approval_required");
+    expect(chunks.at(-1)?.type).toBe("finish");
+    expect(await streaming.reply).toMatchObject({
+      status: RunStatus.WaitingApproval,
+      pending: { approvalId: "apr_1", toolCallId: "call_s2" },
+    });
+  });
+
+  it("closes the UI stream with an abort chunk when the call is aborted", async () => {
+    const model = new MockLanguageModelV4({
+      doStream: {
+        stream: simulateReadableStream({
+          chunkDelayInMs: 20,
+          chunks: [
+            { type: "text-start", id: "t1" },
+            { type: "text-delta", id: "t1", delta: "Hel" },
+            { type: "text-delta", id: "t1", delta: "lo" },
+            { type: "text-end", id: "t1" },
+            finish("stop"),
+          ],
+        }),
+      },
+    });
+    const { runtime, runs } = setup(model);
+    const controller = new AbortController();
+    const streaming = await runtime.stream(agent, "Hi", {
+      actor,
+      abortSignal: controller.signal,
+    });
+    const chunks: UIMessageChunk[] = [];
+    const reader = streaming.uiStream.getReader();
+    for (let next = await reader.read(); !next.done; next = await reader.read()) {
+      chunks.push(next.value);
+      if (next.value.type === "text-delta") controller.abort();
+    }
+    expect(chunks.at(-1)?.type).toBe("abort");
+    expect(chunks.some((chunk) => chunk.type === "finish")).toBe(false);
+    await expect(streaming.reply).rejects.toBeDefined();
+    expect((await runs.get(streaming.runId))?.status).toBe(RunStatus.Failed);
   });
 
   it("meters each settled loop's tokens with the model as subject", async () => {

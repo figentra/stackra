@@ -59,6 +59,11 @@
     "propsCount": 20,
     "react": true
   },
+  "free/approval-card": {
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
   "free/area-chart": {
     "native": true,
     "partsCount": 1,

@@ -1262,5 +1262,19 @@
     "denied": "Rechazado",
     "expired": "Caducado",
     "risk": "Riesgo {level}"
+  },
+  "terminal_demo": {
+    "label": "Pruébalo",
+    "copy": "Copiar comando"
+  },
+  "props_playground": {
+    "controls": "Propiedades",
+    "preview": "Vista previa",
+    "theme": "Tema",
+    "theme_default": "Predeterminado",
+    "direction": "Dirección",
+    "ltr": "De izquierda a derecha",
+    "rtl": "De derecha a izquierda",
+    "reset": "Restablecer"
   }
 }

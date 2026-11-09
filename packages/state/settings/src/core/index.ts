@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/settings (the `Settings` kind, `@Setting`, `AccountSettings`,
- *          `RateLimitSettings`, the scope, type and mode enums, the reader, the floor-aware resolver and the pack
+ *          `RateLimitSettings`, `IdempotencySettings`, `VersioningSettings` (with their source drivers), the scope, type and mode enums, the reader, the floor-aware resolver and the pack
  *          service, the memory drivers, the settings `Promotable` and rate-limit cap drivers, the pack schemas and YAML
  *          helpers, the refusals and the generated-key helpers) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports and their types are the `./contracts` entry's and are
@@ -23,7 +23,9 @@ export { MemorySettingRevisionStoreDriver } from "#core/drivers/memory-setting-r
 export { MemorySettingValueStoreDriver } from "#core/drivers/memory-setting-value-store.driver";
 export { SettingsApprovalSourceDriver } from "#core/drivers/settings-approval-source.driver";
 export { SettingsPromotableDriver } from "#core/drivers/settings-promotable.driver";
+export { SettingsIdempotencyRetentionSourceDriver } from "#core/drivers/settings-idempotency-retention-source.driver";
 export { SettingsRateLimitCapSourceDriver } from "#core/drivers/settings-rate-limit-cap-source.driver";
+export { SettingsVersionSupportSourceDriver } from "#core/drivers/settings-version-support-source.driver";
 export { SettingScope } from "#core/enums/setting-scope.enum";
 export { SettingType } from "#core/enums/setting-type.enum";
 export { SettingsMode } from "#core/enums/settings-mode.enum";
@@ -44,10 +46,12 @@ export { settingsPackFromYaml } from "#core/functions/settings-pack-from-yaml.fu
 export { settingsPackToYaml } from "#core/functions/settings-pack-to-yaml.function";
 export { settingsPage } from "#core/functions/settings-page.function";
 export { visibleSettingFields } from "#core/functions/visible-setting-fields.function";
+export { IdempotencySettings } from "#core/idempotency.settings";
 export { RateLimitSettings } from "#core/rate-limit.settings";
 export { SettingsPackService } from "#core/services/settings-pack.service";
 export { SettingsReader } from "#core/services/settings-reader.service";
 export { SettingsResolver } from "#core/services/settings-resolver.service";
+export { VersioningSettings } from "#core/versioning.settings";
 export type { ResolvedSetting } from "#core/types/resolved-setting.type";
 export type { SettingApproval } from "#core/types/setting-approval.type";
 export type { SettingChangeSet } from "#core/types/setting-change-set.type";

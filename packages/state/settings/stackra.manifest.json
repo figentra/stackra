@@ -397,6 +397,15 @@
             "type": {
               "kind": "date"
             }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
           }
         ],
         "relations": [],
@@ -510,6 +519,25 @@
       }
     },
     {
+      "port": "IdempotencyRetentionSource",
+      "key": "contracts.IdempotencyRetentionSource",
+      "candidates": ["settings"],
+      "classes": {
+        "settings": {
+          "class": "SettingsIdempotencyRetentionSourceDriver",
+          "from": "@stackra/settings",
+          "deps": [
+            {
+              "class": {
+                "name": "SettingsReader",
+                "from": "@stackra/settings"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "Promotable",
       "key": "settings.Promotable",
       "candidates": ["settings"],
@@ -535,6 +563,25 @@
       "classes": {
         "settings": {
           "class": "SettingsRateLimitCapSourceDriver",
+          "from": "@stackra/settings",
+          "deps": [
+            {
+              "class": {
+                "name": "SettingsReader",
+                "from": "@stackra/settings"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "VersionSupportSource",
+      "key": "contracts.VersionSupportSource",
+      "candidates": ["settings"],
+      "classes": {
+        "settings": {
+          "class": "SettingsVersionSupportSourceDriver",
           "from": "@stackra/settings",
           "deps": [
             {
@@ -683,6 +730,18 @@
       ]
     },
     {
+      "key": "idempotency",
+      "class": "IdempotencySettings",
+      "module": "settings",
+      "file": "src/core/idempotency.settings.ts",
+      "keys": [
+        {
+          "path": "retentionHours",
+          "type": "integer"
+        }
+      ]
+    },
+    {
       "key": "rate_limit",
       "class": "RateLimitSettings",
       "module": "settings",
@@ -726,6 +785,18 @@
         },
         {
           "path": "actionPerAddress",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "key": "versioning",
+      "class": "VersioningSettings",
+      "module": "settings",
+      "file": "src/core/versioning.settings.ts",
+      "keys": [
+        {
+          "path": "supportMonths",
           "type": "integer"
         }
       ]
@@ -776,6 +847,17 @@
             "nl"
           ],
           "default": null
+        }
+      }
+    },
+    "settings.IdempotencySettings": {
+      "type": "object",
+      "properties": {
+        "retentionHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24,
+          "default": 24
         }
       }
     },
@@ -834,6 +916,16 @@
         }
       }
     },
+    "settings.VersioningSettings": {
+      "type": "object",
+      "properties": {
+        "supportMonths": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 12
+        }
+      }
+    },
     "settings.StoredSettingRevision": {
       "type": "object",
       "required": [
@@ -855,6 +947,7 @@
         "approvalRole",
         "appliedAt",
         "id",
+        "tenantId",
         "createdAt",
         "updatedAt"
       ],
@@ -924,6 +1017,10 @@
           "type": "string",
           "pattern": "^ssr_[0-9A-Za-z]{26}$"
         },
+        "tenantId": {
+          "type": ["string", "null"],
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -945,7 +1042,8 @@
         "locked",
         "id",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "tenantId"
       ],
       "properties": {
         "values": {
@@ -982,6 +1080,10 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "tenantId": {
+          "type": ["string", "null"],
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
         }
       }
     }

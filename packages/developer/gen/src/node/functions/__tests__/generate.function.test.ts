@@ -8,7 +8,7 @@
  *          `shim_authored` (STA-1296); a check fails `manifest_unshipped` when a package's `files` leaves the manifest
  *          out, and reports a missing manifest as stale (STA-1308), but not missing gitignored output (STA-1742); an authored root tsdown.config.ts that does not
  *          merge the generated one is `shim_authored`, and a `*.extend.ts` hatch outside the closed set or without its
- *          `Reason:` header is `tool_reason_missing` (STA-1306); an `encore.app` at the member root is
+ *          `Reason:` header is `tool_reason_missing` (STA-1306); an `encore.app` at the repository root is
  *          `encore_app_stray` (STA-1322); an authored `app.json` or root `app.config.ts` beside an iOS app's Expo
  *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
  *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
@@ -211,15 +211,6 @@ describe("generate's tool configs and code hatches (STA-1306)", () => {
       "tool_reason_missing webpack.extend.ts",
     ]);
   });
-
-  it("refuses a hand-made encore.app at the member root (STA-1322)", async () => {
-    const root = writeFixtureMember("shop", { ...SHOP_SOURCES, "encore.app": "{}\n" });
-    const result = await generate(root);
-    expect(result.errors.map((error) => `${error.code} ${error.file}`)).toEqual([
-      "encore_app_stray encore.app",
-    ]);
-    expect(existsSync(join(root, ".stackra/encore/encore.app"))).toBe(false);
-  });
 });
 
 /**
@@ -258,7 +249,7 @@ describe("generate's v2 services (authored src/main.ts, until STA-344)", () => {
       ".stackra/entry/server.ts",
       ".stackra/vitest.config.ts",
       ".stackra/tsdown.config.ts",
-      ".stackra/encore/encore.app",
+      "encore.app",
       "vitest.config.ts",
     ])
       expect(existsSync(join(root, path))).toBe(false);

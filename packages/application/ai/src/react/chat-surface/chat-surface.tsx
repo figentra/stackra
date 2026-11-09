@@ -42,6 +42,7 @@ export function ChatSurface({
   suggestions = NONE,
   onRetry,
   renderers,
+  onAnswer,
   onApprovalResponse,
   toolLabels,
   labels,
@@ -75,6 +76,8 @@ export function ChatSurface({
               {turn.parts ? (
                 renderChatParts(turn.parts, {
                   renderers,
+                  onAnswer,
+                  onSend,
                   onApprovalResponse,
                   toolLabels,
                   reasoningLabel: labels.reasoning,

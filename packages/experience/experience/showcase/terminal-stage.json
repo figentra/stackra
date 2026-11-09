@@ -1,0 +1,21 @@
+{
+  "slug": "terminal-stage",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "TerminalStage",
+  "parts": ["TerminalStage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 480
+    }
+  ],
+  "related": ["free/terminal-demo", "free/dither-art", "free/illustration"],
+  "tokens": ["font.mono", "color.accent", "color.background"],
+  "keywords": ["terminal", "cli", "demo", "try it", "recording", "landing", "kit"],
+  "status": "new"
+}

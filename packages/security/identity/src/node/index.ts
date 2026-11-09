@@ -37,6 +37,7 @@ export { VerifyPasskeyAction } from "#node/actions/verify-passkey.action";
 export { CreateAccountDeletionsMigration } from "#node/database/migrations/0001-create-account-deletions.migration";
 export { IdentityStepUpCheckDriver } from "#node/drivers/identity-step-up-check.driver";
 export { PostgresAccountDeletionsDriver } from "#node/drivers/postgres-account-deletions.driver";
+export { ServiceApiKeyStoreDriver } from "#node/drivers/service-api-key-store.driver";
 export { ZitadelServiceTokensDriver } from "#node/drivers/zitadel-service-tokens.driver";
 export { EndErasedSubjectSessionsListener } from "#node/listeners/end-erased-subject-sessions.listener";
 export { BffService } from "#node/services/bff.service";

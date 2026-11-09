@@ -13,7 +13,7 @@
  * Governing contract: ADR 0269 (decision 3); ADR 0266 (memory first); ADR 0138 (as amended: permission step).
  */
 import { Driver, PERMISSION_REGISTRY } from "@stackra/container";
-import { Realm } from "@stackra/contracts";
+import { ActorKind, Realm } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 
 import { AccessControl } from "#contracts/index";
@@ -65,6 +65,14 @@ export class MemoryAccessControlDriver extends Driver(AccessControl) {
   /** Throws `ForbiddenError` for a denied permission, and for a restricted one a customer was not granted. */
   private check(call: CallDescriptor): void {
     const { permission, actor } = call;
+    // an API key's caller: its key holds every required scope exactly (iam's driver also honours selectors)
+    if (actor.kind === ActorKind.ApiClient) {
+      const needed = call.public?.scopes ?? [];
+      const held = call.credential?.scopes ?? [];
+      if (needed.length === 0 || !needed.every((scope) => held.includes(scope)))
+        throw ForbiddenError.create();
+      return;
+    }
     if (permission === undefined) return;
     if (this.denied.has(permission)) throw ForbiddenError.create();
     if (

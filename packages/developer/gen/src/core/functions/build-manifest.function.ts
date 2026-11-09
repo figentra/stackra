@@ -431,11 +431,16 @@ export function buildManifest(ir: MemberIR): {
       ? declared.options["actors"].map(String)
       : undefined;
     const input = shapeNamed(declared.handle?.input);
-    // The written area, else a service's own (`defineService({ area })`), else `app` (ADR 0082 decision 3).
+    // The written area, else `public` for an anonymous-only call (served with `auth: false`, so it sits where no gate
+    // asks for a principal; STA-2650), else a service's own (`defineService({ area })`), else `app` (ADR 0082
+    // decision 3).
+    const anonymousOnly = actors?.length === 1 && actors[0] === "anonymous";
     const area =
       typeof declared.options["area"] === "string"
         ? declared.options["area"]
-        : ((ir.layout === "service" ? ir.area : undefined) ?? DEFAULT_AREA);
+        : anonymousOnly
+          ? "public"
+          : ((ir.layout === "service" ? ir.area : undefined) ?? DEFAULT_AREA);
     const endpoint = deriveEndpoint({
       key: written,
       kind,

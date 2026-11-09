@@ -37,6 +37,13 @@
       "class": "ForbiddenError"
     },
     {
+      "code": "idempotency_key_in_progress",
+      "kind": "conflict",
+      "category": "conflict",
+      "module": "errors",
+      "class": "IdempotencyKeyInProgressError"
+    },
+    {
       "code": "idempotency_key_reused",
       "kind": "conflict",
       "category": "conflict",

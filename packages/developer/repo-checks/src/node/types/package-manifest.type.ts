@@ -25,6 +25,9 @@ export type PackageManifest = {
   /** Must be `false` in a library. */
   readonly sideEffects?: unknown;
 
+  /** The `#` import aliases (a service mirrors them in its tsconfig `paths`). */
+  readonly imports?: unknown;
+
   /** The conditional exports map, or a plain string. */
   readonly exports?: unknown;
 

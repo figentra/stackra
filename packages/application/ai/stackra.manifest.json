@@ -1107,6 +1107,29 @@
       "type": "string",
       "enum": ["screen", "mcp_host", "messaging", "background"]
     },
+    "ai.TamoChartKind": {
+      "type": "string",
+      "enum": ["bar", "line", "area", "pie", "donut", "scatter"]
+    },
+    "ai.TamoMetricFormat": {
+      "type": "string",
+      "enum": ["number", "money", "percent", "duration"]
+    },
+    "ai.TamoPartKind": {
+      "type": "string",
+      "enum": [
+        "table",
+        "chart",
+        "kpi",
+        "form",
+        "question",
+        "report",
+        "artifact",
+        "widget_ref",
+        "suggestions",
+        "answer"
+      ]
+    },
     "ai.ToolCallOutcome": {
       "type": "string",
       "enum": ["ok", "refused", "approval_required", "proposed", "client_tool"]

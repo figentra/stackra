@@ -55,6 +55,9 @@ export function checkMember(member: {
         );
       // peerDependencies state a compatible range for consumers; they cannot name a catalog.
       if (field === "peerDependencies") continue;
+      // A service pins encore.dev literally; `checkEncoreService` holds it to the catalog's version (ADR 0091).
+      if (dep === "encore.dev" && field === "dependencies" && tierFor(dir) === "tier:service")
+        continue;
       if (!version.startsWith("catalog:") && !version.startsWith("workspace:"))
         out.push(
           `${field}.${dep} = "${version}" — add it to a catalog in pnpm-workspace.yaml and use catalog:<name>`,

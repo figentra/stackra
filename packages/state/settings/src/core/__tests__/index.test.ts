@@ -34,6 +34,7 @@ describe("@stackra/settings", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(settings).sort()).toEqual([
       "AccountSettings",
+      "IdempotencySettings",
       "MarketPackSettingFloorSourceDriver",
       "MemorySettingEntitlementSourceDriver",
       "MemorySettingFloorSourceDriver",
@@ -54,6 +55,7 @@ describe("@stackra/settings", () => {
       "Settings",
       "SettingsApprovalSourceDriver",
       "SettingsChange$",
+      "SettingsIdempotencyRetentionSourceDriver",
       "SettingsLockedError",
       "SettingsMode",
       "SettingsPack$",
@@ -62,6 +64,8 @@ describe("@stackra/settings", () => {
       "SettingsRateLimitCapSourceDriver",
       "SettingsReader",
       "SettingsResolver",
+      "SettingsVersionSupportSourceDriver",
+      "VersioningSettings",
       "diffSettingsPacks",
       "settingFloorsOf",
       "settingKeys",
