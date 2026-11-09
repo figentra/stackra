@@ -2196,9 +2196,9 @@
       "properties": {
         "entitlement": {
           "type": "string",
-          "minLength": 1,
-          "examples": ["entitlement:academorix:white-label"],
-          "description": "The entitlement a scope must hold for a white-label build; the mobile job refuses the build without it."
+          "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$",
+          "examples": ["storefront.white_label"],
+          "description": "The entitlement key (`<module>.<name>`, snake_case) a scope must hold for a white-label build; the mobile job refuses the build without it."
         },
         "modes": {
           "type": "array",
