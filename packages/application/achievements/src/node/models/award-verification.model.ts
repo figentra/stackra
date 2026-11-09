@@ -12,11 +12,11 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 
 /** A verify token's index row. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class AwardVerification extends Model.with(HasPublicId("awv"), Timestamps) {
+export class AwardVerification extends Model.with(HasPublicId("awv"), Timestamps, MovesWithScope) {
   /** The SHA-256 of the verify token, lowercase hex. */
   tokenHash!: string;
 

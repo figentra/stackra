@@ -154,7 +154,7 @@
       "file": "src/node/models/rule-set.model.ts",
       "table": "rules.rule_sets",
       "publicId": "rset",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "HasRevisions"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "HasRevisions", "MovesWithScope"],
       "entity": {
         "module": "rules",
         "fields": [

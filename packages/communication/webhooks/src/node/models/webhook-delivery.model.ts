@@ -13,13 +13,18 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Int } from "@stackra/validation";
 
 /** One delivery attempt. Traits add `id`, the owning tenant and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class WebhookDelivery extends Model.with(HasPublicId("whd"), BelongsToTenant, Timestamps) {
+export class WebhookDelivery extends Model.with(
+  HasPublicId("whd"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The endpoint's HTTP status; `null` when it did not answer. */
   @Int
   responseStatus!: number | null;

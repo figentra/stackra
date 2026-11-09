@@ -63,7 +63,7 @@
       "file": "src/node/models/webhook-delivery.model.ts",
       "table": "webhooks.webhook_deliveries",
       "publicId": "whd",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "webhooks",
         "fields": [
@@ -172,7 +172,7 @@
       "file": "src/node/models/webhook-endpoint.model.ts",
       "table": "webhooks.webhook_endpoints",
       "publicId": "whe",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "webhooks",
         "fields": [

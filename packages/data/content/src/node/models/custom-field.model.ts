@@ -13,7 +13,14 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps, Translatable, type Translated } from "@stackra/model";
+import {
+  HasPublicId,
+  Model,
+  MovesWithScope,
+  Timestamps,
+  Translatable,
+  type Translated,
+} from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 import { z } from "zod";
@@ -27,6 +34,7 @@ export class CustomField extends Model.with(
   BelongsToTenant,
   Timestamps,
   Translatable(["label"]),
+  MovesWithScope,
 ) {
   /** The type's choices and bounds, as `checkCustomFieldDefinition` accepted them. */
   // reason: checkCustomFieldDefinition checks the whole definition before it is stored, and the refinements of

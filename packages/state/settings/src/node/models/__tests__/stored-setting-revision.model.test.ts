@@ -20,6 +20,7 @@ describe("StoredSettingRevision", () => {
       "has_public_id",
       "belongs_to_tenant_or_platform",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(StoredSettingRevision)[0]?.options).toEqual({ prefix: "ssr" });
     expect(new StoredSettingRevision().id).toMatch(/^ssr_[0-9a-z]{26}$/);

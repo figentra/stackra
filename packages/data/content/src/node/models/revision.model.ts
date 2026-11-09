@@ -14,14 +14,19 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field, Int } from "@stackra/validation";
 import { z } from "zod";
 
 /** A revision of one record. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Revision extends Model.with(HasPublicId("rev"), BelongsToTenant, Timestamps) {
+export class Revision extends Model.with(
+  HasPublicId("rev"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The revision's number for its record, from 1. */
   @Int({ min: 1 })
   number!: number;

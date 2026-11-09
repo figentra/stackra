@@ -229,7 +229,7 @@
       "file": "src/node/models/automation.model.ts",
       "table": "workflow.automations",
       "publicId": "wfa",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "HasRevisions"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "HasRevisions", "MovesWithScope"],
       "entity": {
         "module": "workflow",
         "fields": [
@@ -374,7 +374,7 @@
       "file": "src/node/models/checklist-progress.model.ts",
       "table": "workflow.checklist_progresses",
       "publicId": "wfp",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "workflow",
         "fields": [
@@ -476,7 +476,7 @@
       "file": "src/node/models/checklist.model.ts",
       "table": "workflow.checklists",
       "publicId": "wfc",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "workflow",
         "fields": [

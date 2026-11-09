@@ -16,7 +16,7 @@
 import { HasRevisions } from "@stackra/content/node";
 import type { Actor, PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Int } from "@stackra/validation";
 
@@ -27,6 +27,7 @@ export class Automation extends Model.with(
   BelongsToTenant,
   Timestamps,
   HasRevisions,
+  MovesWithScope,
 ) {
   /** The revision in force; null until published. */
   @Int({ min: 1 })
