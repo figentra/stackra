@@ -57,6 +57,11 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
   an unknown key dead-letters the job, never drops it.
 - Raw SQL only in `PostgresQueueDriver`, every value bound, every row read through zod, each statement with a
   `// raw-sql:` reason (ADR 0160). A released migration is frozen; a change is a new migration.
+- `queue.jobs` is tenant-owned in the platform form (`queue.0003`, ADR 0239 amendment). Cross-owner reads go only
+  through its system functions (`reserve_job`, `claim_dead_jobs`, `unique_key_holders`), which return ids and owners;
+  everything else runs in the caller's isolation. The worker and the operator commands load and settle a claimed job
+  in its owner (`inRowOwner`), and a claim that does not load, or an owned one with no `CallIsolation`, throws; never
+  skip one. Never write `tenant_id`: its default takes the call's tenant. `queue.job_batches` stays a platform table.
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`.
 - No `@Job` or `@Queue`: job, queue and cron are typed sub-options of `Action({...})` (R-13).
 - A broker publisher never imports `encore.dev`: generated topics reach the `topic` driver as structural objects
