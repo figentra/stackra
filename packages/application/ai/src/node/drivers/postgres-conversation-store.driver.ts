@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresConversationStoreDriver`, the `ConversationStore` over `ai.conversations` and `ai.messages`: opens
- *          conversations, appends messages in order and reads them back; `Message.content` rests sealed and bound
+ *          conversations, appends messages in order and reads them back, and forgets a person's conversations with
+ *          their messages and their runs (a run references its conversation with no cascade, ai.0001); `Message.content` rests sealed and bound
  *          to the owning tenant by `HasEncryptedFields({ scope })`, so this driver handles only plain text.
  * Boundary: a driver over `Repository<Conversation>` and `Repository<Message>`, so every read and write runs in the
  *           caller's tenant session under row-level security; a conversation of another tenant is never visible. A
@@ -20,7 +21,13 @@ import { ConversationStore } from "#contracts/ports/conversation-store.port";
 import type { ConversationRecord } from "#contracts/types/conversation-record.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
 import type { Conversation } from "#node/models/conversation.model";
+import { purgeRuns } from "#node/functions/purge-runs.function";
 import type { Message } from "#node/models/message.model";
+import type { RunApproval } from "#node/models/run-approval.model";
+import type { RunStep } from "#node/models/run-step.model";
+import type { Run } from "#node/models/run.model";
+import type { ToolCall } from "#node/models/tool-call.model";
+import type { RunTables } from "#node/types/run-tables.type";
 
 /** A conversation row as the port's record. */
 function recordOf(row: Conversation): ConversationRecord {
@@ -49,14 +56,28 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
 
   private readonly rows: Repository<Message>;
 
+  private readonly runTables: RunTables;
+
   /**
    * @param conversations - the conversation rows.
    * @param rows - the message rows.
+   * @param runs - the run rows, erased with their conversation.
+   * @param steps - the runs' step rows.
+   * @param calls - the runs' tool call rows.
+   * @param decisions - the runs' approval rows.
    */
-  constructor(conversations: Repository<Conversation>, rows: Repository<Message>) {
+  constructor(
+    conversations: Repository<Conversation>,
+    rows: Repository<Message>,
+    runs: Repository<Run>,
+    steps: Repository<RunStep>,
+    calls: Repository<ToolCall>,
+    decisions: Repository<RunApproval>,
+  ) {
     super();
     this.conversations = conversations;
     this.rows = rows;
+    this.runTables = { runs, steps, calls, decisions };
   }
 
   /** Implements `ConversationStore.open`, documented there. */
@@ -137,6 +158,19 @@ export class PostgresConversationStoreDriver extends Driver(ConversationStore) {
       ),
     );
     const free = ids.filter((id) => !held.has(id));
-    return free.length === 0 ? 0 : this.conversations.purge({ id: { $in: free } } as never);
+    if (free.length === 0) return 0;
+    // the runs go first, since each references its conversation; a held run keeps its conversation
+    const runs = (await this.runTables.runs.find({
+      conversationId: { $in: free },
+    } as never)) as Run[];
+    const keptRuns = await purgeRuns(
+      this.runTables,
+      runs.map((row) => row.id),
+    );
+    const keptBy = new Set(
+      runs.filter((row) => keptRuns.has(row.id)).map((row) => row.conversationId),
+    );
+    const gone = free.filter((id) => !keptBy.has(id));
+    return gone.length === 0 ? 0 : this.conversations.purge({ id: { $in: gone } } as never);
   }
 }

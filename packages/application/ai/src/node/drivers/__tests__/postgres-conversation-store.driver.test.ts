@@ -18,6 +18,10 @@ import { ConversationStore } from "#contracts/ports/conversation-store.port";
 import { PostgresConversationStoreDriver } from "#node/drivers/postgres-conversation-store.driver";
 import type { Conversation } from "#node/models/conversation.model";
 import { Message } from "#node/models/message.model";
+import type { RunApproval } from "#node/models/run-approval.model";
+import type { RunStep } from "#node/models/run-step.model";
+import type { Run } from "#node/models/run.model";
+import type { ToolCall } from "#node/models/tool-call.model";
 
 /**
  * An in-memory repository: equality and `$in` `where`, one `orderBy` key, ids minted with `prefix`, and a `purge` that
@@ -70,6 +74,25 @@ function rowsOf<M extends object>(
   } as unknown as Repository<M> & { readonly rows: M[]; readonly held: Set<string> };
 }
 
+/** A store over in-memory rows, with the four run tables beside it. */
+function storeOf() {
+  const conversations = rowsOf<Conversation>("aiconv");
+  const messages = rowsOf<Message>("aimsg");
+  const runs = rowsOf<Run>("airun");
+  const steps = rowsOf<RunStep>("aistep");
+  const calls = rowsOf<ToolCall>("aicall");
+  const decisions = rowsOf<RunApproval>("aiappr");
+  const store = new PostgresConversationStoreDriver(
+    conversations,
+    messages,
+    runs,
+    steps,
+    calls,
+    decisions,
+  );
+  return { store, conversations, messages, runs, calls };
+}
+
 describe(PostgresConversationStoreDriver, () => {
   it("declares a message's content encrypted and bound to its tenant", () => {
     expect(encryptedFieldsOf(Message)).toEqual(["content"]);
@@ -77,9 +100,7 @@ describe(PostgresConversationStoreDriver, () => {
   });
 
   it("appends messages at the next positions and reads them back in order", async () => {
-    const conversations = rowsOf<Conversation>("aiconv");
-    const messages = rowsOf<Message>("aimsg");
-    const store = new PostgresConversationStoreDriver(conversations, messages);
+    const { store, messages } = storeOf();
     expect(store).toBeInstanceOf(ConversationStore);
     const opened = await store.open({
       agent: "matter_assistant",
@@ -108,9 +129,7 @@ describe(PostgresConversationStoreDriver, () => {
   });
 
   it("forgets a principal's conversations and messages, keeping a held message's conversation", async () => {
-    const conversations = rowsOf<Conversation>("aiconv");
-    const messages = rowsOf<Message>("aimsg");
-    const store = new PostgresConversationStoreDriver(conversations, messages);
+    const { store, conversations, messages } = storeOf();
     const first = await store.open({ agent: "assistant", principalId: "usr_1" });
     const second = await store.open({ agent: "assistant", principalId: "usr_1" });
     const other = await store.open({ agent: "assistant", principalId: "usr_2" });
@@ -123,5 +142,28 @@ describe(PostgresConversationStoreDriver, () => {
     expect(conversations.rows.map((row) => row.id)).toEqual([second.id, other.id]);
     expect(messages.rows.map((row) => row.conversationId)).toEqual([second.id, other.id]);
     expect(await store.forget("usr_9")).toBe(0);
+  });
+
+  it("forgets a conversation's runs and their tool calls first, since a run references its conversation", async () => {
+    const { store, conversations, runs, calls } = storeOf();
+    const mine = await store.open({ agent: "assistant", principalId: "usr_1" });
+    const theirs = await store.open({ agent: "assistant", principalId: "usr_2" });
+    const run = await runs.insert({ conversationId: mine.id } as never);
+    const kept = await runs.insert({ conversationId: theirs.id } as never);
+    await calls.insert({ runId: run.id } as never);
+    await calls.insert({ runId: kept.id } as never);
+    expect(await store.forget("usr_1")).toBe(1);
+    expect(conversations.rows.map((row) => row.id)).toEqual([theirs.id]);
+    expect(runs.rows.map((row) => row.id)).toEqual([kept.id]);
+    expect(calls.rows.map((row) => row.runId)).toEqual([kept.id]);
+  });
+
+  it("keeps a conversation whose run a legal hold covers", async () => {
+    const { store, conversations, runs } = storeOf();
+    const mine = await store.open({ agent: "assistant", principalId: "usr_1" });
+    const run = await runs.insert({ conversationId: mine.id } as never);
+    runs.held.add(run.id);
+    expect(await store.forget("usr_1")).toBe(0);
+    expect(conversations.rows.map((row) => row.id)).toEqual([mine.id]);
   });
 });

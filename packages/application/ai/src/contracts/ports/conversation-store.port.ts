@@ -50,8 +50,11 @@ export abstract class ConversationStore extends Port {
   ): Promise<void>;
 
   /**
-   * Erases every visible conversation of `principalId` with its messages, for a subject's erasure; a message a legal
-   * hold covers stays, and so does its conversation. Idempotent.
+   * Erases every visible conversation of `principalId` with its messages, for a subject's erasure; a store that also
+   * holds runs (the Postgres one) removes each erased conversation's runs with their steps, tool calls and approvals
+   * first, in the same unit of work, since a run references its conversation. A message or run row a legal hold covers
+   * stays, and so does its conversation. Idempotent. A caller erasing a person also calls `RunStore.forget`, which
+   * reaches the runs that acted for them in other conversations.
    *
    * @returns how many conversations it removed.
    */
