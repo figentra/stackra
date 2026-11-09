@@ -9,7 +9,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0278 (amendment of 2026-11-09); ADR 0098 (the `api_client` actor).
  */
 import { type AnyClass, Driver } from "@stackra/container";
-import { type Actor, ActorKind, AssuranceLevel, Clock } from "@stackra/contracts";
+import { type Actor, ActorKind, AssuranceLevel, Clock, Realm } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -216,7 +216,12 @@ describe("ActionPipeline public", () => {
 
   it("keeps the declared policy for any other caller: a user's write runs without a key", async () => {
     const { pipeline, refunds } = setup();
-    const user: Actor = { kind: ActorKind.User, id: "usr_1", scopeId: "scp_tenant" };
+    const user: Actor = {
+      kind: ActorKind.User,
+      id: "usr_01ja0000000000000000000001",
+      realm: Realm.Customer,
+      scopeId: "scp_tenant",
+    };
     await pipeline.execute(IssueRefundAction, {}, { actor: user });
     await pipeline.execute(IssueRefundAction, {}, { actor: user });
     expect(refunds.issued).toBe(2);
