@@ -215,9 +215,10 @@ describe(SettingsResolver, () => {
 
   it("refuses a key at a level its scopes leave out, and writes nothing", async () => {
     const { values, revisions, resolver } = setup();
-    for (const [page, level] of [
-      [STORE_PAGE, "store"],
-      [PAGE, SettingScope.Product],
+    // A product page holds the Platform+Product key but not the Platform-only one; a store page holds neither.
+    for (const [page, level, paths] of [
+      [PAGE, SettingScope.Product, ["refundCeilingMinor"]],
+      [STORE_PAGE, "store", ["refundCeilingMinor", "windowDays"]],
     ] as const) {
       const refused = await resolver
         .write(page, { refundCeilingMinor: 500, windowDays: 30 }, { scope: ACME }, LIVE)
@@ -226,8 +227,8 @@ describe(SettingsResolver, () => {
       expect(refused).toMatchObject({
         code: "setting_scope_refused",
         level,
-        paths: ["refundCeilingMinor"],
-        fieldErrors: { refundCeilingMinor: "setting_scope_refused" },
+        paths,
+        fieldErrors: Object.fromEntries(paths.map((path) => [path, "setting_scope_refused"])),
       });
     }
     // The class's scopes bind too: a store page cannot write a Platform+Product key, nor a user a key no user holds.
