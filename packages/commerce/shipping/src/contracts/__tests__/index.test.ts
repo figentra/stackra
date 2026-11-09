@@ -165,15 +165,16 @@ describe("@stackra/shipping/contracts", () => {
       recipient: party,
       parcels: [parcel],
       format: LabelFormat.Pdf,
-      incoterm: rates.incoterm,
+      incoterm: Incoterm.Ddp,
       customsIds: ids,
     };
 
-    expect([request.incoterm, quote.incoterm, request.customsIds?.[1]?.country]).toEqual([
-      "ddp",
-      "ddp",
-      "GB",
-    ]);
+    expect([
+      rates.incoterm,
+      request.incoterm,
+      quote.incoterm,
+      request.customsIds?.[1]?.country,
+    ]).toEqual(["ddp", "ddp", "ddp", "GB"]);
     expectTypeOf<RateRequest["incoterm"]>().toEqualTypeOf<IncotermCode | undefined>();
   });
 
