@@ -12,8 +12,9 @@ import { ActorKind } from "@stackra/contracts";
 
 /**
  * Whether `call` is an anonymous caller's call of a class that opts into anonymous callers (its `actors` list
- * `ActorKind.Anonymous`): the one call the permission and record-policy steps let through. A signed-in caller of the
- * same class is checked as usual, and a call with no permission (never registered) is refused (STA-2025).
+ * `ActorKind.Anonymous`): the one call the permission step lets through. Its record policy still runs (STA-2025, as
+ * amended 2026-11-09). A signed-in caller of the same class is checked as usual, and a call with no permission (never
+ * registered) is refused.
  */
 export function isAnonymousCall(call: CallDescriptor): boolean {
   const actors = kindOf(call.type)?.options["actors"];

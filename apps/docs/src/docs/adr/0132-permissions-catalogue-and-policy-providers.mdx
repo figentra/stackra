@@ -4,6 +4,16 @@ description: "Accepted, amended by 0263, 0294, 0513 · 2026-10-20"
 ---
 
 <Note>
+  Amended 2026-11-09 (STA-2025 follow-up): a record policy runs for an anonymous caller too. A class
+  whose `actors` list `ActorKind.Anonymous` lets a visitor past the permission check, because a
+  visitor holds no grant, but `ctx.authorize(record)` still calls the record's policy and any deny
+  wins. A policy that keys a record to its visitor (a cart's `ownerId`) therefore refuses another
+  visitor who holds the record's id. Before this note the anonymous call skipped the policy as well,
+  so a record id alone read or changed the record. Enforcement: `IamAccessControlDriver.authorize`
+  and the iam testing plugin's record-policy hook, with their tests.
+</Note>
+
+<Note>
   Amended 2026-11-01 by [0513](/adr/0513-permission-vocabulary-moves-to-contracts-and-container)
   (STA-1890): the `Permissions` kind base lives in `@stackra/container`, and the `Permission` value
   in `@stackra/contracts`. Iam re-exports both. Keys, the catalogue and the policy decisions stand.

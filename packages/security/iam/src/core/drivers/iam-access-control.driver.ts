@@ -6,8 +6,9 @@
  *          decision point again with the record, so a conditional deny is tested).
  * Boundary: refuses with `ForbiddenError` only, carrying no reason (the explanation is for the audit, never for the
  *           caller). A call with no permission was never registered (`registerActions`) and is refused; an anonymous
- *           caller of a class whose `actors` list `ActorKind.Anonymous` skips the permission and record-policy checks,
- *           and every other step of its call still runs (STA-2025). Fails closed: an unknown scope node, a
+ *           caller of a class whose `actors` list `ActorKind.Anonymous` skips the permission check only: the record's
+ *           policy still runs, so a policy that keys a record to its visitor (a cart's `ownerId`) refuses another
+ *           visitor holding its id, and every other step of its call still runs (STA-2025, as amended 2026-11-09). Fails closed: an unknown scope node, a
  *           record whose policy cannot be resolved (`connectPolicies` not called) or a policy that answers something
  *           other than a `Decision` is an error, never an allowed call. Any deny wins; `Allow` and `Abstain` leave the
  *           permission as the answer. The node is the call's `scope`; only a call without one reads the caller's node
@@ -67,7 +68,8 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
   }
 
   /**
-   * Resolves when the record's policy does not deny the call and no deny rule matches the record.
+   * Resolves when the record's policy does not deny the call and no deny rule matches the record. An anonymous call
+   * of a class that lists anonymous callers is checked by the policy alone.
    *
    * @throws ForbiddenError when the policy denies, a deny rule matches, or the call's scope node does not exist.
    * @throws Error when the record's policy is registered but not connected.
@@ -75,13 +77,14 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
   async authorize(call: CallDescriptor, record: object): Promise<void> {
     const { permission } = call;
     if (permission === undefined) throw ForbiddenError.create();
-    if (isAnonymousCall(call)) return;
     const row = policyRowOf(record);
     if (
       row !== undefined &&
       (await decidePolicy(row, permission, call.actor, record)) === Decision.Deny
     )
       throw ForbiddenError.create();
+    // A visitor holds no grant, so only the permission check is skipped; the policy above has already run.
+    if (isAnonymousCall(call)) return;
     const scope = await this.scopeOf(call);
     const facts =
       row?.rules === undefined

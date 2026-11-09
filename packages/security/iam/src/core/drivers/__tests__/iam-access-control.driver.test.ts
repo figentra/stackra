@@ -132,6 +132,96 @@ class OpenAction extends Action({
   }
 }
 
+/** A guest cart, keyed to the visitor who opened it, as commerce's cart is. */
+class Cart {
+  readonly ownerId: string;
+
+  constructor(ownerId: string) {
+    this.ownerId = ownerId;
+  }
+}
+
+class CartPermissions extends Permissions {
+  static readonly read = Permission.L0;
+
+  static readonly set_line = Permission.L1;
+
+  static readonly price = Permission.L1;
+
+  static readonly checkout = Permission.L1;
+
+  static readonly pay = Permission.L2;
+
+  static readonly discard = Permission.L1;
+}
+
+/** Only the cart's own visitor or customer reaches it, for every verb (commerce's CartPolicy). */
+class CartPolicy extends Policy<Cart> {
+  read(actor: Actor, cart: Cart): Decision {
+    return this.owner(actor, cart);
+  }
+
+  set_line(actor: Actor, cart: Cart): Decision {
+    return this.owner(actor, cart);
+  }
+
+  price(actor: Actor, cart: Cart): Decision {
+    return this.owner(actor, cart);
+  }
+
+  checkout(actor: Actor, cart: Cart): Decision {
+    return this.owner(actor, cart);
+  }
+
+  pay(actor: Actor, cart: Cart): Decision {
+    return this.owner(actor, cart);
+  }
+
+  discard(actor: Actor, cart: Cart): Decision {
+    return this.owner(actor, cart);
+  }
+
+  private owner(actor: Actor, cart: Cart): Decision {
+    return cart.ownerId === (actor.onBehalfOf ?? actor).id ? Decision.Allow : Decision.Deny;
+  }
+}
+
+/** A personalisation (engraving text, artwork) a visitor made for a line of their cart. */
+class Personalisation {
+  readonly ownerId: string;
+
+  constructor(ownerId: string) {
+    this.ownerId = ownerId;
+  }
+}
+
+class PersonalisationPermissions extends Permissions {
+  static readonly read = Permission.L0;
+
+  static readonly update = Permission.L1;
+}
+
+/** Only its own visitor reads or changes a personalisation. */
+class PersonalisationPolicy extends Policy<Personalisation> {
+  read(actor: Actor, item: Personalisation): Decision {
+    return item.ownerId === (actor.onBehalfOf ?? actor).id ? Decision.Allow : Decision.Deny;
+  }
+
+  update(actor: Actor, item: Personalisation): Decision {
+    return item.ownerId === (actor.onBehalfOf ?? actor).id ? Decision.Allow : Decision.Deny;
+  }
+}
+
+/** A storefront call open to visitors, as commerce's cart and personalisation actions are. */
+class GuestCartAction extends Action({
+  key: "cart.get",
+  actors: [ActorKind.Anonymous, ActorKind.User],
+}) {
+  async handle(): Promise<string> {
+    return "cart";
+  }
+}
+
 /** A support session a support agent asked to open in a tenant, shaped as OS access's model. */
 class SupportSession {
   readonly supportPrincipalId: string;
@@ -181,6 +271,12 @@ const customer: Actor = {
 };
 const stranger: Actor = { ...customer, id: "usr_01j9z3k4m5n6p7q8r9s0t1v2c2" };
 
+/** A second visitor, who learned another visitor's cart id (it travels in checkout links). */
+const otherVisitor: Actor = {
+  kind: ActorKind.Anonymous,
+  id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a2" as PublicId,
+};
+
 const ORDER_FACTS = Rules.create({
   key: "orders.order",
   sources: [
@@ -221,6 +317,16 @@ function driverOver(state: MemoryPolicyState, bindings: Map<AnyClass, object> = 
   connectPolicies(resolver);
   return { driver, resolver };
 }
+
+/** A driver with no grant at all: a visitor holds none, so only the policy can let it in. */
+const visitorsDriver = () =>
+  driverOver(
+    { grants: [], roles: {} },
+    new Map<AnyClass, object>([
+      [CartPolicy, new CartPolicy()],
+      [PersonalisationPolicy, new PersonalisationPolicy()],
+    ]),
+  ).driver;
 
 /** The descriptor the pipeline builds for a call of `permission` by `actor`, acting in `scope` when given. */
 function callOf(
@@ -333,6 +439,73 @@ describe("IamAccessControlDriver", () => {
         ),
       ).rejects.toBeInstanceOf(ForbiddenError);
     });
+  });
+
+  describe("authorize, an anonymous call (STA-2025, as amended 2026-11-09)", () => {
+    beforeEach(() => {
+      registerPermissions([
+        {
+          type: CartPermissions,
+          keys: Object.fromEntries(
+            ["read", "set_line", "price", "checkout", "pay", "discard"].map((verb) => [
+              verb,
+              `carts.cart.${verb}`,
+            ]),
+          ),
+        },
+        {
+          type: PersonalisationPermissions,
+          keys: {
+            read: "personalisation.personalisation.read",
+            update: "personalisation.personalisation.update",
+          },
+        },
+      ]);
+      registerPolicies([
+        { model: Cart, policy: CartPolicy },
+        { model: Personalisation, policy: PersonalisationPolicy },
+      ]);
+    });
+
+    it.each(["read", "set_line", "price", "checkout", "pay", "discard"])(
+      "lets a visitor %s their own cart and refuses another visitor holding its id",
+      async (verb) => {
+        const driver = visitorsDriver();
+        const cart = new Cart(visitor.id);
+        const permission = `carts.cart.${verb}`;
+        await expect(
+          driver.authorize(callOf(visitor, permission, undefined, GuestCartAction), cart),
+        ).resolves.toBeUndefined();
+        await expect(
+          driver.authorize(callOf(otherVisitor, permission, undefined, GuestCartAction), cart),
+        ).rejects.toBeInstanceOf(ForbiddenError);
+      },
+    );
+
+    it("refuses a visitor holding a signed-in customer's cart id", async () => {
+      const driver = visitorsDriver();
+      await expect(
+        driver.authorize(
+          callOf(visitor, "carts.cart.read", undefined, GuestCartAction),
+          new Cart(customer.id),
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
+    it.each(["read", "update"])(
+      "lets a visitor %s their own personalisation and refuses another visitor",
+      async (verb) => {
+        const driver = visitorsDriver();
+        const item = new Personalisation(visitor.id);
+        const permission = `personalisation.personalisation.${verb}`;
+        await expect(
+          driver.authorize(callOf(visitor, permission, undefined, GuestCartAction), item),
+        ).resolves.toBeUndefined();
+        await expect(
+          driver.authorize(callOf(otherVisitor, permission, undefined, GuestCartAction), item),
+        ).rejects.toBeInstanceOf(ForbiddenError);
+      },
+    );
   });
 
   describe("authorize", () => {

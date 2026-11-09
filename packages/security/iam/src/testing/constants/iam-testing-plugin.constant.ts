@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `IAM_TESTING_PLUGIN`, the testing-module plugin of @stackra/iam: on every compiled testing app it connects
  *          the policies to the app, hands the memory `AccessControl` the record-policy check (`connectRecordPolicies`,
- *          the same decision `IamAccessControlDriver.authorize` makes before the decision point), and, when the
+ *          the same decision `IamAccessControlDriver.authorize` makes before the decision point, an anonymous call's
+ *          included), and, when the
  *          app's `PolicySource` is the memory driver, loads a policy where every principal is owner at the root, so a
  *          module's tests exercise its policies and handlers while IAM's own rules are tested here.
  * Boundary: registered on import of `./testing`. Holds no state. A test that needs exact grants replaces the policy
@@ -21,7 +22,6 @@ import type { TestingApp, TestingPlugin } from "@stackra/container/testing";
 import { PolicySource } from "#contracts/index";
 import { Decision } from "#core/enums/decision.enum";
 import { decidePolicy } from "#core/functions/decide-policy.function";
-import { isAnonymousCall } from "#core/functions/is-anonymous-call.function";
 import { policyRowOf } from "#core/functions/policy-row-of.function";
 import { connectPolicies, MemoryPolicySourceDriver, SystemRole } from "#core/index";
 
@@ -34,7 +34,7 @@ export const IAM_TESTING_PLUGIN: TestingPlugin = {
   app(app: TestingApp) {
     connectPolicies(app);
     connectRecordPolicies(async (call, record) => {
-      if (call.permission === undefined || isAnonymousCall(call)) return true;
+      if (call.permission === undefined) return true;
       const row = policyRowOf(record);
       if (row === undefined) return true;
       return (await decidePolicy(row, call.permission, call.actor, record)) !== Decision.Deny;
