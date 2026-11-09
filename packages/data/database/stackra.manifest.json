@@ -442,7 +442,16 @@
     },
     "database.Extension": {
       "type": "string",
-      "enum": ["vector", "pg_trgm", "ltree", "citext", "pgcrypto", "postgis", "pg_stat_statements"]
+      "enum": [
+        "vector",
+        "pg_trgm",
+        "ltree",
+        "citext",
+        "pgcrypto",
+        "postgis",
+        "pg_stat_statements",
+        "btree_gist"
+      ]
     },
     "database.Isolation": {
       "type": "string",
