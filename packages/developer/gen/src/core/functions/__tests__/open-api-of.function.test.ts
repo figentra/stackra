@@ -95,7 +95,7 @@ describe("openApiOf", () => {
   it("answers a stream action as text/event-stream (G1b)", () => {
     const streamed = {
       ...manifest,
-      actions: manifest.actions?.map((action) =>
+      actions: (manifest.actions ?? []).map((action) =>
         action["key"] === "orders.order.cancel@1" ? { ...action, stream: true } : action,
       ),
     };

@@ -967,18 +967,28 @@ describe("buildManifest", () => {
     it("marks a stream action and refuses a stream option and output that disagree (G1b)", () => {
       const streamed = {
         ...cancel,
-        options: { ...cancel.options, stream: true, tool: false, idempotency: "never" },
+        options: {
+          ...cancel.options,
+          stream: true,
+          tool: false,
+          toolReason: "a stream reaches one live caller",
+          idempotency: "never",
+        },
         handle: {
           ...(cancel.handle?.input === undefined ? {} : { input: cancel.handle.input }),
           stream: true as const,
         },
       };
-      const { manifest: built, errors: found } = buildManifest(withClasses(streamed));
-      expect(found).toEqual([]);
-      const entry = built.actions?.find((action) => action.class === "CancelOrderAction");
+      expect(codesOf(withClasses(streamed))).toEqual([]);
+      const entry = buildManifest(withClasses(streamed)).manifest.actions?.find(
+        (action) => action.class === "CancelOrderAction",
+      );
       expect(entry?.["stream"]).toBe(true);
       expect(entry?.["output"]).toBeUndefined();
-      const optionOnly = { ...streamed, handle: cancel.handle };
+      const optionOnly = {
+        ...streamed,
+        handle: cancel.handle?.input === undefined ? {} : { input: cancel.handle.input },
+      };
       expect(codesOf(withClasses(optionOnly))).toContain(
         "stream_output_mismatch CancelOrderAction",
       );
