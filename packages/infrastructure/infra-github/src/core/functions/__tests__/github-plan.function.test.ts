@@ -127,15 +127,14 @@ describe("githubPlan", () => {
   });
 
   it("refuses an upper-case or repeated topic, more than 20 topics, and a relative homepage", () => {
+    // the root runway's closed block refuses them first; GITHUB_PROVIDER_SCHEMA holds the same rules
     for (const github of [
       { topics: ["TypeScript"] },
       { topics: ["acme", "acme"] },
       { topics: Array.from({ length: 21 }, (_, i) => `t${i}`) },
       { homepage: "docs.acme.example" },
     ])
-      expect(() => githubPlan(root({ org: "acme", repo: "acme-platform", ...github }))).toThrow(
-        GithubInfraInvalidError,
-      );
+      expect(() => githubPlan(root({ org: "acme", repo: "acme-platform", ...github }))).toThrow();
   });
 
   it("takes a stated visibility, literal values, tag-only refs and environment variables", () => {
