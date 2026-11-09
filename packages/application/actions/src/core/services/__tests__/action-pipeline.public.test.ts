@@ -9,13 +9,15 @@
  * Governing contract: ADR 0022 (test placement); ADR 0278 (amendment of 2026-11-09); ADR 0098 (the `api_client` actor).
  */
 import { type AnyClass, Driver } from "@stackra/container";
-import { type Actor, ActorKind, AssuranceLevel, Clock } from "@stackra/contracts";
+import { type Actor, ActorKind, AssuranceLevel, Clock, Realm } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
-import { AccessControl } from "#contracts/index";
+import { AccessControl, IdempotencyStore } from "#contracts/index";
 import type { CallCredential, CallDescriptor } from "#contracts/index";
 import { Action } from "#core/bases/action.base";
+import { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
+import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { Query } from "#core/bases/query.base";
 import { ActionPipeline } from "#core/services/action-pipeline.service";
 import type { Resolver } from "#core/types/resolver.type";
@@ -91,6 +93,20 @@ class ResolvePaymentAction extends Action({
   }
 }
 
+/** A public write that counts its effects, for the idempotency rules of a key caller. */
+class IssueRefundAction extends Action({
+  key: "refund.issue",
+  actors: [ActorKind.User],
+  public: { scopes: ["payments.refund.create"] },
+}) {
+  issued = 0;
+
+  async handle(): Promise<{ count: number }> {
+    this.issued += 1;
+    return { count: this.issued };
+  }
+}
+
 /** Not public: a key never reaches it. */
 class CloseAccountAction extends Action({
   key: "account.close",
@@ -103,8 +119,11 @@ class CloseAccountAction extends Action({
 
 function setup() {
   const access = new RecordingAccess();
+  const refunds = new IssueRefundAction();
   const map = new Map<AnyClass, object>([
     [Clock, new FixedClock()],
+    [IdempotencyStore, new MemoryIdempotencyStoreDriver(new FixedClock())],
+    [IssueRefundAction, refunds],
     [AccessControl, access],
     [GetPaymentQuery, new GetPaymentQuery()],
     [CreateRefundAction, new CreateRefundAction()],
@@ -116,7 +135,7 @@ function setup() {
     has: (token) => map.has(token),
     get: <T extends object>(token: AnyClass<T>): T => map.get(token) as T,
   };
-  return { pipeline: new ActionPipeline(resolver), access };
+  return { pipeline: new ActionPipeline(resolver), access, refunds };
 }
 
 describe("ActionPipeline public", () => {
@@ -148,7 +167,11 @@ describe("ActionPipeline public", () => {
 
   it("refuses a publishable key on a write unless the write opts in, and admits it on a read", async () => {
     const { pipeline } = setup();
-    const browser = { actor: merchant, credential: { ...KEY, publishable: true } };
+    const browser = {
+      actor: merchant,
+      credential: { ...KEY, publishable: true },
+      idempotencyKey: "k-visit",
+    };
     await expect(pipeline.execute(CreateRefundAction, {}, browser)).rejects.toBeInstanceOf(
       ForbiddenError,
     );
@@ -158,10 +181,49 @@ describe("ActionPipeline public", () => {
 
   it("marks a step-up operation exact-only, so a selector on a key never covers it", async () => {
     const { pipeline, access } = setup();
-    await pipeline.execute(ResolvePaymentAction, {}, { actor: merchant, credential: KEY });
+    await pipeline.execute(
+      ResolvePaymentAction,
+      {},
+      { actor: merchant, credential: KEY, idempotencyKey: "k-resolve" },
+    );
     expect(access.calls.at(-1)?.public).toEqual({
       scopes: ["payments.payment.resolve"],
       exactOnly: true,
     });
+  });
+
+  it("requires a key on a key caller's write, and keeps a key per API key and mode", async () => {
+    const { pipeline, refunds } = setup();
+    await expect(
+      pipeline.execute(IssueRefundAction, {}, { actor: merchant, credential: KEY }),
+    ).rejects.toBeInstanceOf(IdempotencyKeyRequiredError);
+    const live = { actor: merchant, credential: KEY, idempotencyKey: "k1" };
+    expect(await pipeline.execute(IssueRefundAction, {}, live)).toEqual({ count: 1 });
+    expect(await pipeline.execute(IssueRefundAction, {}, live)).toEqual({ count: 1 });
+    // The same string from the principal's test key, or from another of its keys, is another answer.
+    expect(await pipeline.execute(IssueRefundAction, {}, { ...live, sandbox: true })).toEqual({
+      count: 2,
+    });
+    expect(
+      await pipeline.execute(
+        IssueRefundAction,
+        {},
+        { ...live, credential: { ...KEY, id: "key_2" } },
+      ),
+    ).toEqual({ count: 3 });
+    expect(refunds.issued).toBe(3);
+  });
+
+  it("keeps the declared policy for any other caller: a user's write runs without a key", async () => {
+    const { pipeline, refunds } = setup();
+    const user: Actor = {
+      kind: ActorKind.User,
+      id: "usr_01ja0000000000000000000001",
+      realm: Realm.Customer,
+      scopeId: "scp_tenant",
+    };
+    await pipeline.execute(IssueRefundAction, {}, { actor: user });
+    await pipeline.execute(IssueRefundAction, {}, { actor: user });
+    expect(refunds.issued).toBe(2);
   });
 });

@@ -32,6 +32,8 @@ describe("@stackra/experience", () => {
       "BentoGridBlock",
       "Block",
       "BlockCategory",
+      "CapabilityMatrixBlock",
+      "CapabilityState",
       "ChapterTitleBlock",
       "CtaRowBlock",
       "HeroMachineBlock",

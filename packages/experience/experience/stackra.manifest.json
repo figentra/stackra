@@ -72,6 +72,26 @@
       "type": "string",
       "enum": ["layout", "content", "media", "marketing", "commerce"]
     },
+    "experience.CapabilityState": {
+      "type": "string",
+      "enum": ["yes", "no", "coming"]
+    },
+    "experience.MonoDisplayArt": {
+      "type": "string",
+      "enum": ["floors", "glyphs", "none"]
+    },
+    "experience.ProductCardsLayout": {
+      "type": "string",
+      "enum": ["grid", "strip"]
+    },
+    "experience.SurfaceKind": {
+      "type": "string",
+      "enum": ["web", "desktop", "phone"]
+    },
+    "experience.TerminalLineKind": {
+      "type": "string",
+      "enum": ["command", "output", "prompt", "choice", "success"]
+    },
     "experience.EdgeRenderFailure": {
       "type": "string",
       "enum": ["invalid_document", "over_budget", "block_failed"]

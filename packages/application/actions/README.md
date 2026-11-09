@@ -135,6 +135,11 @@ limits without a deploy. `@stackra/settings` binds `SettingsRateLimitCapSourceDr
 group (`rate_limit.<area>PerMinute`, `rate_limit.<area>Burst`, `rate_limit.actionPerScope`,
 `rate_limit.actionPerAddress`; `null` caps nothing). A cap never raises a limit, and a failed read fails the call.
 
+The idempotency window is 24 hours (ADR 0136). When an `IdempotencyRetentionSource` (`@stackra/contracts`) is bound,
+the step uses its answer instead, never more than 24 hours; `@stackra/settings` binds
+`SettingsIdempotencyRetentionSourceDriver` over `idempotency.retentionHours` (1 to 24). An action's own shorter
+`idempotencyTtl` still wins, and a failed read fails the call.
+
 A refusal is `RateLimitedError` with the refusing bucket's `retryAfterMs` (absent when it never refills), `limit` and
 `remaining`, which travel as the envelope's `details` (the MCP answer) and become `Retry-After` and `RateLimit-*`
 through `rateLimitHeaders` of `@stackra/errors` (the generated HTTP adapter). When an `EventOutbox` is bound, each

@@ -66,6 +66,9 @@ export { checkIsolationTier } from "#node/functions/check-isolation-tier.functio
 export { checkJsonConfigs } from "#node/functions/check-json-configs.function";
 export { checkMemberFiles } from "#node/functions/check-member-files.function";
 export { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
+export { catalogEncoreVersion } from "#node/functions/catalog-encore-version.function";
+export { checkEncoreService } from "#node/functions/check-encore-service.function";
+export { pathsOfImports } from "#node/functions/paths-of-imports.function";
 export { checkMember } from "#node/functions/check-member.function";
 export { checkNativeModules } from "#node/functions/check-native-modules.function";
 export { checkPublicIdPrefixes } from "#node/functions/check-public-id-prefixes.function";

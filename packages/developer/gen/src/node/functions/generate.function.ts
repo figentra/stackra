@@ -20,8 +20,8 @@
  *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) takes the
  *           docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
  *           `.stackra/site/`, and its manifest pass writes nothing. A service's full run also writes
- *           `.stackra/encore/encore.app` from the root runway's `providers.encore.app` (`encore_app_missing` without
- *           it), and any run refuses an `encore.app` at the member or repository root (`encore_app_stray`, STA-1322).
+ *           `encore.app` at the member root from the root runway's `providers.encore.app` (`encore_app_missing` without
+ *           it), and any run refuses an `encore.app` at the repository root (`encore_app_stray`, STA-1322).
  *           A service's full run also refuses a job queue its `runway.yaml` leaves out of an environment
  *           (`queue_unprovisioned`, STA-1727).
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
@@ -48,7 +48,6 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
-import { emitEncorePackage } from "#core/functions/emit-encore-package.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
@@ -274,8 +273,8 @@ export async function generate(
   // An authored root tool config is never overwritten. One that merges the generated config is kept (and the vitest
   // shim is not written); any other is refused (STA-1296, STA-1297; every generated tool config since STA-1306). A
   // code hatch outside the closed set or without its `Reason:` header is refused too.
-  // The Encore app file of a service, from the root runway's `providers.encore.app`; a stray encore.app outside
-  // `.stackra/encore` is refused (STA-1322).
+  // The Encore app file of a service, from the root runway's `providers.encore.app`; a stray encore.app at the repository root
+  // is refused (STA-1322).
   // A v2 service (authored src/main.ts, STA-344) is not an Encore app yet, so it gets no encore.app.
   const encore = encoreApp(
     root,
@@ -307,14 +306,13 @@ export async function generate(
         ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
       ]
     : migrations.files;
-  // The Encore app root needs a package.json to start, and Encore reads migrations only from a local folder, so a
+  // Encore reads migrations only from a local folder, so a
   // service's compiled files are copied under its Encore service too.
   const encoreFiles =
     encore.files.length === 0
       ? []
       : [
           ...encore.files,
-          emitEncorePackage(ir.package),
           ...migrations.files.map((file) => ({
             ...file,
             path: file.path.replace(

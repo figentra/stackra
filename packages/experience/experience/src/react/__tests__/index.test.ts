@@ -22,6 +22,7 @@ describe("@stackra/experience/react", () => {
     expect(Object.keys(react).sort()).toEqual([
       "AskAi",
       "BentoGrid",
+      "CapabilityMatrix",
       "ChapterTitle",
       "CtaRow",
       "CtaSection",

@@ -81,6 +81,15 @@ its calls default to; an explicit `Stackra-Version` header still wins. The gatew
 call (the actor, `CallOptions.sandbox` for a test key, the pin for versioning) is the next part of STA-2646 and amends
 this ADR again when it lands.
 
+## Amendment, 2026-11-09: the gateway reads keys from identity, cached (STA-2646 B2)
+
+A service that answers API-key calls reads a presented key's record from the identity service by its SHA-256
+(`principals.api_key.verify@1`) through `ServiceApiKeyStoreDriver`, as its own service. It keeps a verified record for
+`IdentityConfig.apiKeyCacheSeconds` (30 by default, at most 300), so every call is not a round trip; a key identity does
+not know is never cached. A revoke takes effect at once when identity's `principals.api_key.revoked.v1` reaches the
+service (`evictPrincipal`); **the worst case is the cache window**, 30 seconds by default, when the event has not
+arrived. The listener that calls `evictPrincipal` is bound with the gateway path (B3).
+
 ## Amendment, 2026-11-09: a tenant's deny rules bind an API key (STA-2646)
 
 An `api_client` call's grants are its key's scopes, so it skips the grant search of the decision point, but its

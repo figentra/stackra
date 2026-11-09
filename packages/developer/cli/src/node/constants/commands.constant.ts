@@ -42,6 +42,7 @@ import { RowSecurityDeclarationsCommand } from "#node/commands/row-security-decl
 import { AppNativeDepsCommand } from "#node/commands/app-native-deps.command";
 import { ArchitectureMapCommand } from "#node/commands/architecture-map.command";
 import { ConstitutionCommand } from "#node/commands/constitution.command";
+import { EncorePrepareCommand } from "#node/commands/encore-prepare.command";
 import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
 import { CatalogueCompletenessCommand } from "#node/commands/catalogue-completeness.command";
 import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
@@ -134,6 +135,7 @@ export const COMMANDS: CliCommands = [
   StructureCommand,
   ArchitectureMapCommand,
   ConstitutionCommand,
+  EncorePrepareCommand,
   DocStandardCommand,
   CatalogueCompletenessCommand,
   CyclesCommand,

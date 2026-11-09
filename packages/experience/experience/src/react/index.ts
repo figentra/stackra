@@ -13,6 +13,8 @@ export { AskAi } from "#react/ask-ai/ask-ai";
 export type { AskAiProps } from "#react/ask-ai/ask-ai.props";
 export { BentoGrid } from "#react/bento-grid/bento-grid";
 export type { BentoGridProps } from "#react/bento-grid/bento-grid.props";
+export { CapabilityMatrix } from "#react/capability-matrix/capability-matrix";
+export type { CapabilityMatrixProps } from "#react/capability-matrix/capability-matrix.props";
 export { ChapterTitle } from "#react/chapter-title/chapter-title";
 export type { ChapterTitleProps } from "#react/chapter-title/chapter-title.props";
 export { CtaRow } from "#react/cta-row/cta-row";

@@ -699,11 +699,35 @@
     {
       "port": "ApiKeyStore",
       "key": "identity.ApiKeyStore",
-      "candidates": ["memory"],
+      "candidates": ["memory", "service"],
       "classes": {
         "memory": {
           "class": "MemoryApiKeyStoreDriver",
           "from": "@stackra/identity"
+        },
+        "service": {
+          "class": "ServiceApiKeyStoreDriver",
+          "from": "@stackra/identity/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ClientTransport",
+                "from": "@stackra/clients/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "IdentityConfig",
+                "from": "@stackra/identity"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
         }
       }
     },
@@ -1417,6 +1441,18 @@
           "class": {
             "name": "IdpAdmin",
             "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "IdentityKeysClient",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "ClientTransport",
+            "from": "@stackra/clients/contracts"
           }
         }
       ]
