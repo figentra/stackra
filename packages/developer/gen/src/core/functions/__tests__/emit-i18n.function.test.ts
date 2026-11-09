@@ -91,6 +91,27 @@ describe("emitI18n", () => {
     );
   });
 
+  it("loads a consumed service's namespace the member also has under the service's client name", () => {
+    const merged =
+      emitI18n({
+        ...COMMERCE_IR,
+        catalogues: { en: { rates: { title: "Rate cards" } } },
+        packageCatalogues: [
+          {
+            package: "@acme/service-geography",
+            service: "geography",
+            from: "../../services/geography/assets/lang",
+            catalogues: { en: { rates: { holiday: "Holiday rate" } } },
+          },
+        ],
+      })?.content ?? "";
+    expect(merged).toContain('"rates": [\n    "title"\n  ]');
+    expect(merged).toContain('"geography.rates": [\n    "holiday"\n  ]');
+    expect(merged).toContain(
+      '"geography.rates": {\n    "en": () => import("../../../../services/geography/assets/lang/en/rates.json", { with: { type: "json" } }),',
+    );
+  });
+
   it("lists the locales, sorted", () => {
     expect(content).toContain('export const locales = ["ar","en","fr"] as const;');
   });
