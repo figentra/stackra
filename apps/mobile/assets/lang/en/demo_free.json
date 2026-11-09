@@ -5024,5 +5024,30 @@
       "quantity": "Quantity",
       "note": "Note"
     }
+  },
+  "notification_inbox": {
+    "basics": {
+      "title": "Notifications",
+      "empty": "You're all caught up",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "order_paid": "Order #1042 paid",
+      "order_paid_detail": "SAR 86.50 by card",
+      "low_stock": "Low stock: oat milk",
+      "shift_report": "Shift report ready",
+      "minutes_ago": "{count, plural, one {# min ago} other {# min ago}}",
+      "hours_ago": "{count, plural, one {# hour ago} other {# hours ago}}"
+    }
+  },
+  "push_primer": {
+    "basics": {
+      "title": "Stay in the loop",
+      "description": "We'll tell you when an order is ready, a payment arrives or stock runs low.",
+      "enable": "Turn on notifications",
+      "later": "Not now",
+      "failed": "Notifications could not be turned on. Try again.",
+      "granted": "Notifications are on.",
+      "postponed": "You can turn them on later in settings."
+    }
   }
 }
