@@ -1,5 +1,109 @@
 # @stackra/settings
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [54db249]
+  - @stackra/ui@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/market-packs@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 0f05f60: Dates follow the tenant's calendar. `@stackra/i18n` adds `CalendarSystem` (`gregory`, `islamic-umalqura`, Intl's
+  names). `formatDateTime` and `dateTimeFormatIn` take a `calendar` (Gregorian by default; an explicit
+  `options.calendar` wins), and `I18nProvider` takes a `calendar` prop that `useDateTime` writes in. `@stackra/settings`
+  adds `DisplaySettings` (key `display`, platform, product and tenant scopes, sent to clients) with `calendar`,
+  Gregorian by default: the server reads it and passes it to `formatDateTime`, and an app passes it to `I18nProvider`.
+
+### Patch Changes
+
+- Updated dependencies [6473cf1]
+- Updated dependencies [0f05f60]
+- Updated dependencies [7179d1a]
+  - @stackra/database@0.31.0
+  - @stackra/i18n@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/icons@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/market-packs@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 8c17109: Two new platform-scope settings groups with their source drivers. `IdempotencySettings` (`idempotency.retentionHours`,
+  1 to 24, default 24, the cap of ADR 0136) is served by `SettingsIdempotencyRetentionSourceDriver`; `VersioningSettings`
+  (`versioning.supportMonths`, at least 1, default 12) is served by `SettingsVersionSupportSourceDriver`.
+- ef49e63: The rate-limit step can read a scope's limits from settings, so an operator lowers them without a deploy. When a
+  `RateLimitCapSource` (new port in `@stackra/contracts`) is bound, each area bucket number and each default action
+  bucket is the lower of its own and the scope's cap; a cap never raises a limit, and a failed read fails the call.
+  `@stackra/settings` ships the driver, `SettingsRateLimitCapSourceDriver`, over the new `RateLimitSettings` group
+  (`rate_limit.<area>PerMinute`, `<area>Burst`, `actionPerScope`, `actionPerAddress`; `null` caps nothing). With no
+  source bound, nothing changes.
+- 11def65: The settings tables are tenant-owned in the platform form (migration `settings.0004_contract_settings_tenancy`):
+  `stored_settings` and `stored_setting_revisions` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a
+  NULL row is the platform's), forced row-level security and the platform policies. The migration backfills a row at a
+  tenant node (`nlevel(scope_path) = 3`) from its scope and keeps a row at the root or a product node as a platform row.
+  A user's row is now keyed `(tenant_id, group_key, user_id)` (NULLs not distinct), and every user lookup names the
+  session's own owner. New system function `settings.claim_due_revisions` (no runtime caller yet).
+  
+  The `settings:diff` and `settings:apply` runner (`openSettingsSession`) now sets `app.tenant_id` by the same rule: a
+  tenant node is its own owner, the root and a product node are the platform's, and a node below a tenant node is refused
+  (the runner cannot read its tenant without the scope tree yet). `@stackra/cli`'s session-settings check allows that one
+  write.
+  
+  Upgrade: the migration refuses, changing nothing, while a setting or revision sits below a tenant node or belongs to a
+  user (a user row names no scope, so its tenant cannot be read, and as a platform row every tenant could read it).
+  Record those values, delete the rows (`nlevel(scope_path) > 3`, or `user_id is not null`) from both tables, migrate,
+  then write the values again from a session in each node's or user's tenant.
+
+### Patch Changes
+
+- c8e7592: `StoredSetting` and `StoredSettingRevision` are owned: both take `BelongsToTenantOrPlatform`, so a row's `tenant_id` is the running `withTenant` call's tenant, or NULL in a platform call. `@stackra/settings` now depends on `@stackra/tenancy`. The `settings:diff` and `settings:apply` runner writes through `TenantIsolationService.withTenant` as a system actor inside its `withScope` transaction, at a tenant node as that tenant and at the root or a product node as the platform, and no longer sets `app.tenant_id` itself. `@stackra/cli` drops the runner from `SESSION_SETTING_ALLOWED`.
+- Updated dependencies [85cd1b5]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/tenancy@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/i18n@0.30.0
+  - @stackra/market-packs@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/icons@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

@@ -19,8 +19,8 @@ import type { MetricPath } from "#core/types/metric-path.type";
 /** Builds a widget's display over query output `O`. */
 export class DisplayRecord<O> implements Display<O> {
   /** One metric field. */
-  kpi(path: MetricPath<O>): KpiRecord {
-    return new KpiRecord(path);
+  kpi(path: MetricPath<O>): KpiRecord<O> {
+    return new KpiRecord<O>(path);
   }
 
   /**
@@ -28,7 +28,7 @@ export class DisplayRecord<O> implements Display<O> {
    *
    * @throws RangeError when no KPI is given.
    */
-  kpiGroup(kpis: readonly KpiBuilder[]): Built<DisplayNode> {
+  kpiGroup(kpis: readonly KpiBuilder<O>[]): Built<DisplayNode> {
     if (kpis.length === 0) throw new RangeError("kpiGroup(kpis) needs at least one KPI");
     return { toNode: () => WidgetDisplay.kpiGroup(kpis.map((kpi) => kpi.toNode())) };
   }

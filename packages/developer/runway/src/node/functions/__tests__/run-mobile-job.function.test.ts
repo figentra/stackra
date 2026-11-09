@@ -220,6 +220,19 @@ describe("runMobileJob", () => {
     ]);
   });
 
+  it("refuses a white-label build whose scope does not hold the app's entitlement", async () => {
+    writeRoot({
+      ...APP,
+      whiteLabel: { ...APP.whiteLabel, entitlement: "storefront.white_label" },
+    });
+    const variant = { scope: "scope_42", identity: {} };
+    expect(await issuePaths(runMobileJob(request({ stores: OWN, variant })))).toEqual([
+      "mobile.shopper.whiteLabel.entitlement",
+    ]);
+    const held = { ...variant, entitlements: ["storefront.white_label"] };
+    expect((await runMobileJob(request({ stores: OWN, variant: held }))).scope).toBe("scope_42");
+  });
+
   it("checks the template line out, commits the written config and builds that commit", async () => {
     const local = join(repository, "os-mobile");
     mkdirSync(local);

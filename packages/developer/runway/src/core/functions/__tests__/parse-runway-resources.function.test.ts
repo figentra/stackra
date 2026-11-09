@@ -5,7 +5,8 @@
  *          kind (kafka), an engine on a non-Postgres kind, a workload without a reason or with a tagged image, an
  *          inverted scale, an empty command, an alias that is not SCREAMING_SNAKE, and a `uses` naming no resource are
  *          refused with their paths; an internal worker with no port or health path passes with its health command, and
- *          a public workload without a port or health path, or a health path without a port, is refused.
+ *          a public workload without a port or health path, or a health path without a port, is refused; a workload's
+ *          `migrate` command passes, and an empty one or a timeout past an hour is refused.
  * Boundary: test only; plain objects through `parseRunway`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 1, 3 and 5); spec sta-1640.
@@ -146,6 +147,41 @@ describe("root runway resources and workloads", () => {
     expect(pathsOf(root({ workloads: { zitadel: { ...worker, health: "/healthz" } } }))).toContain(
       "workloads.zitadel.health",
     );
+  });
+
+  it("takes a migrate command run before each rollout, and refuses an empty one or a timeout past an hour", () => {
+    const zitadel = (root({}) as { workloads: { zitadel: Record<string, unknown> } }).workloads
+      .zitadel;
+    const migrate = { command: ["setup", "--masterkeyFromEnv"], timeoutMinutes: 20 };
+
+    const parsed = parseRunway("root", root({ workloads: { zitadel: { ...zitadel, migrate } } }));
+    expect(parsed.workloads?.["zitadel"]?.migrate).toEqual(migrate);
+
+    expect(
+      pathsOf(root({ workloads: { zitadel: { ...zitadel, migrate: { command: [] } } } })),
+    ).toContain("workloads.zitadel.migrate.command");
+    expect(
+      pathsOf(
+        root({
+          workloads: { zitadel: { ...zitadel, migrate: { ...migrate, timeoutMinutes: 90 } } },
+        }),
+      ),
+    ).toContain("workloads.zitadel.migrate.timeoutMinutes");
+  });
+
+  it("takes one gotenberg resource, and refuses a second", () => {
+    const db = { kind: "postgres" };
+    expect(
+      parseRunway("root", root({ resources: { "main-db": db, pdf: { kind: "gotenberg" } } }))
+        .resources?.["pdf"],
+    ).toEqual({ kind: "gotenberg" });
+    expect(
+      pathsOf(
+        root({
+          resources: { "main-db": db, pdf: { kind: "gotenberg" }, print: { kind: "gotenberg" } },
+        }),
+      ),
+    ).toContain("resources.print.kind");
   });
 
   // @covers sta-1640:FR-003

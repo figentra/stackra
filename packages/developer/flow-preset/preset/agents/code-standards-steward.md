@@ -16,7 +16,7 @@ own the package shape.
 
 ## Must read
 
-`apps/docs/src/docs/standards/code-style.mdx`, `apps/docs/src/docs/standards/packages.mdx`, ADRs 0006 (naming, exports, imports),
+[standards/code-style](https://docs.stackra.figentra.com/standards/code-style), [standards/packages](https://docs.stackra.figentra.com/standards/packages), ADRs 0006 (naming, exports, imports),
 0007 (docblocks), 0126 (member shapes and entries), 0128 (enums, classes, components, kind folders), 0129 (house lint
 plugin), 0231 (naming and casing), 0232 (errors), 0233 (`#` aliases only), and the skill `code-naming-and-casing`.
 
@@ -33,7 +33,7 @@ plugin), 0231 (naming and casing), 0232 (errors), 0233 (`#` aliases only), and t
 1. `pnpm validate`, `pnpm lint` and `pnpm knip` for structure, filename and dead-export findings.
 2. Constants and unions instead of `enum`; `private` instead of `#private`; components as folders (0128).
 3. No `../` imports; a cross-folder import uses a declared `#` alias (0233).
-4. Plan leaves first, then importers, then barrels; after the move `pnpm --filter <pkg> typecheck test build` passes and
+4. Plan leaves first, then importers, then barrels; after the move `pnpm turbo run typecheck test build --filter=<pkg>` passes and
    the public surface is identical.
 
 ## Never

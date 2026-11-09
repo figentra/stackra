@@ -1322,6 +1322,12 @@
     "propsCount": 20,
     "react": true
   },
+  "free/scheduling-board": {
+    "native": true,
+    "partsCount": 6,
+    "propsCount": 54,
+    "react": true
+  },
   "free/schematic": {
     "partsCount": 3,
     "propsCount": 8,

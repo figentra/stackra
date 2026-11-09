@@ -1,5 +1,140 @@
 # @stackra/panel
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [54db249]
+  - @stackra/config@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/documents@0.32.0
+  - @stackra/filesystem@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/navigation@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/access-log@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/query@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/pricing@0.32.0
+  - @stackra/experience@0.32.0
+  - @stackra/data-transfer@0.32.0
+  - @stackra/entitlements@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 7179d1a: `ChatFormPart` (`@stackra/panel/react`) draws an action's form in a chat turn from its JSON Schema input: one field per key, drawn as a screen draws it, prefilled by the assistant, with uploads through the host's `upload`, and sent as the person's answer. `useZodFormHandle` (`@stackra/ui/form`) runs a form over a zod schema with no class, and `useSchemaFormHandle` now builds on it. `TamoFormPart` gains `id`, which the host answers with the sent values, as a question's.
+- 29af13d: `PercentMetric` (with `PercentMetric$`) holds a rate as a ratio, and a KPI bound to it shows a percent in the reader's
+  locale with its trend in percentage points. A KPI takes `.note(path)`, a muted line under the value worded by the
+  derived key `<module>::widgets.<widget>.<path>` with `{count}`, so a main-currency tile can say "+2 other currencies".
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [0f05f60]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/i18n@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/clients@0.31.0
+  - @stackra/data-transfer@0.31.0
+  - @stackra/documents@0.31.0
+  - @stackra/access-log@0.31.0
+  - @stackra/entitlements@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/query@0.31.0
+  - @stackra/experience@0.31.0
+  - @stackra/navigation@0.31.0
+  - @stackra/pricing@0.31.0
+  - @stackra/money@0.31.0
+  - @stackra/filesystem@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/icons@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 7fad9a3: `fieldKindOf(jsonSchema, path)` draws a form field from an input's JSON Schema with the same kinds `inputKind` gives from zod, plus long text, several choices, money, record references and uploads, so the chat's forms match the console's.
+
+### Patch Changes
+
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [85cd1b5]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [88fb0eb]
+- Updated dependencies [0394e56]
+- Updated dependencies [2307506]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [8084b3a]
+- Updated dependencies [a426842]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a03990d]
+- Updated dependencies [a3a3190]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/actions@0.30.0
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/iam@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/documents@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/experience@0.30.0
+  - @stackra/filesystem@0.30.0
+  - @stackra/data-transfer@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/clients@0.30.0
+  - @stackra/access-log@0.30.0
+  - @stackra/tenancy@0.30.0
+  - @stackra/entitlements@0.30.0
+  - @stackra/query@0.30.0
+  - @stackra/pricing@0.30.0
+  - @stackra/navigation@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/i18n@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/icons@0.30.0
+  - @stackra/support@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

@@ -5,6 +5,7 @@
     "retry": "Riprova",
     "range": "Periodo",
     "change": "{change} rispetto al periodo precedente",
+    "change_points": "{change} p.p. rispetto al periodo precedente",
     "target": "Obiettivo {target}",
     "not_rendered": "Questo riquadro non può essere mostrato qui."
   },
@@ -86,6 +87,16 @@
     "empty": "Nessun risultato.",
     "loading": "Ricerca in {source}",
     "failed": "Impossibile cercare in {source}."
+  },
+  "chat_form": {
+    "send": "Invia",
+    "sent": "Inviato",
+    "loading": "Caricamento del modulo",
+    "unavailable": "Questo modulo non può essere mostrato qui.",
+    "upload": "Scegli un file",
+    "uploading": "Caricamento di {name}",
+    "upload_failed": "Impossibile caricare {name}.",
+    "no_upload": "Qui non è possibile aggiungere file."
   },
   "checklist": {
     "title": "Per iniziare",
@@ -191,6 +202,9 @@
       "create": "Crea nuovi",
       "update": "Aggiorna esistenti",
       "upsert": "Crea o aggiorna"
+    },
+    "metric_format": {
+      "percent": "Percentuale"
     },
     "place": {
       "band": "Fascia KPI",

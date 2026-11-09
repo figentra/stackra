@@ -6,17 +6,38 @@
  *          registered in the private namespace; a public workload gets an ALB admitting HTTPS from Cloudflare only,
  *          a TLS 1.3 listener on the given certificate, a target group checking its health path, and CPU autoscaling
  *          between its bounds; an internal one gets none of them; a worker with no port gets no port mapping and its
- *          health command as the container's health check; a public workload without a certificate is refused.
- * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`).
+ *          health command as the container's health check; a public workload without a certificate is refused; a
+ *          workload with `migrate` gets a migration task (the same image and secrets, its own arguments, no port) and
+ *          one migration run of that revision with its timeout, and a workload without one gets neither.
+ * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`); `dynamic.Resource` is
+ *           mocked so the migration run registers without closure serialisation.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 2 and 4, owner answers Q5 and Q6); spec sta-1640.
  */
 import * as pulumi from "@pulumi/pulumi";
 import { beforeAll, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import type { WorkloadPlan } from "#core/types/workload-plan.type";
 import { awsWorkloads } from "#node/functions/aws-workloads.function";
+
+// Vitest rewrites the provider's code, so Pulumi's closure serialisation of it never settles under the mocks; the
+// dynamic resource registers here without its serialised provider.
+vi.mock("@pulumi/pulumi", async (original) => {
+  const actual = await original<typeof pulumi>();
+  class Resource extends actual.CustomResource {
+    constructor(
+      _provider: unknown,
+      name: string,
+      props: pulumi.Inputs,
+      opts?: pulumi.CustomResourceOptions,
+    ) {
+      super("pulumi-nodejs:dynamic:Resource", name, props, opts);
+    }
+  }
+  return { ...actual, dynamic: { ...actual.dynamic, Resource } };
+});
 
 /** One resource the program registered. */
 type Registered = {
@@ -44,6 +65,9 @@ function workload(
     health: "/debug/healthz",
     healthCommand: [],
     command: isPublic ? ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"] : [],
+    ...(isPublic
+      ? { migrate: { command: ["setup", "--masterkeyFromEnv"], timeoutMinutes: 20 } }
+      : {}),
     public: isPublic,
     env: { ZITADEL_EXTERNALSECURE: "true" },
     secrets: isPublic ? ["ZITADEL_MASTERKEY"] : [],
@@ -232,6 +256,42 @@ describe("awsWorkloads", () => {
     );
   });
 
+  it("runs a workload's migration as its own task, once per revision, before the service", () => {
+    const task = resource("TaskDefinition", "academorix-production-zitadel-migrate").inputs;
+    const [container] = JSON.parse(String(task["containerDefinitions"])) as {
+      name: string;
+      image: string;
+      command?: string[];
+      portMappings?: unknown;
+      secrets: { name: string }[];
+    }[];
+
+    expect(task).toMatchObject({ family: "academorix-production-zitadel-migrate", cpu: "1024" });
+    expect(container).toMatchObject({
+      name: "zitadel",
+      image: DIGEST,
+      command: ["setup", "--masterkeyFromEnv"],
+    });
+    expect(container).not.toHaveProperty("portMappings");
+    expect(container?.secrets.map((secret) => secret.name)).toEqual(
+      expect.arrayContaining(["ZITADEL_MASTERKEY", "ZITADEL_DATABASE_POSTGRES_DSN"]),
+    );
+    expect(resource("Resource", "academorix-production-zitadel-migrate").inputs).toMatchObject({
+      name: "academorix-production-zitadel",
+      taskDefinition: "arn:mock:academorix-production-zitadel-migrate",
+      container: "zitadel",
+      subnets: ["subnet-a"],
+      securityGroups: ["sg-workloads"],
+      timeoutMinutes: 20,
+    });
+  });
+
+  it("gives a workload without migrate no migration task and no run", () => {
+    expect(
+      registered.filter((entry) => entry.name === "academorix-production-ocr-migrate"),
+    ).toEqual([]);
+  });
+
   // @covers sta-1640:FR-009
   it("puts a public workload behind an HTTPS ALB open to Cloudflare only, with autoscaling", () => {
     const group = resource("SecurityGroup", "academorix-production-workloads-alb").inputs;
@@ -268,6 +328,8 @@ describe("awsWorkloads", () => {
     expect(all("LoadBalancer").map((entry) => entry.name)).toEqual([
       "academorix-production-zitadel",
     ]);
+    // a streamed answer (60 to 120 s) outlives the ALB's default 60 s idle timeout
+    expect(all("LoadBalancer")[0]?.inputs).toMatchObject({ idleTimeout: 180 });
     expect(all("Target").map((entry) => entry.name)).toEqual(["academorix-production-zitadel"]);
   });
 

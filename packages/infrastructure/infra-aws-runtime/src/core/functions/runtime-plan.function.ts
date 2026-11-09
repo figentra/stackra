@@ -7,7 +7,7 @@
  *          `requires` where its cache driver is `valkey`, and each bucket a member sizes (versioning and the expiry
  *          of noncurrent versions from `shared.buckets`). Every resource is tagged with the environment, the member
  *          and the topology group that runs it. Then the runway's own `resources` (Postgres, and queues, topics, caches
- *          and buckets by name) and `workloads`, sized per environment from the catalogues, with the consumers each
+ *          and buckets by name, and one `gotenberg` PDF engine as an internal workload) and `workloads`, sized per environment from the catalogues, with the consumers each
  *          resource admits (a workload's `aliases` may name only a variable of a Postgres resource it uses) and, per
  *          Postgres server, the approved extensions its member consumers name and those it preloads (ADR 0160 note of
  *          2026-11-03); the monthly estimate is checked against the environment's cap (ADR 0493).
@@ -36,8 +36,10 @@ import { HOURS_PER_MONTH } from "#core/constants/hours-per-month.constant";
 import { LOAD_BALANCER_MONTHLY_USD } from "#core/constants/load-balancer-monthly-usd.constant";
 import { POSTGRES_SIZES } from "#core/constants/postgres-sizes.constant";
 import { PRELOADED_EXTENSIONS } from "#core/constants/preloaded-extensions.constant";
+import { GOTENBERG_SIZES } from "#core/constants/gotenberg-sizes.constant";
 import { WORKLOAD_SIZES } from "#core/constants/workload-sizes.constant";
 import { cacheNodeType } from "#core/functions/cache-node-type.function";
+import { gotenbergWorkload } from "#core/functions/gotenberg-workload.function";
 import { resourceName } from "#core/functions/resource-name.function";
 import { resourceVariables } from "#core/functions/resource-variables.function";
 import type { BucketPlan } from "#core/types/bucket-plan.type";
@@ -64,6 +66,9 @@ const SERVICE_NAME_LIMIT = 32;
 
 /** The Postgres major a resource gets when it names none: production's major (ADR 0238, amendment of 2026-10-31). */
 const POSTGRES_VERSION = "18";
+
+/** How long a rollout waits for a workload's `migrate` task when the runway names no timeout. */
+const MIGRATE_TIMEOUT_MINUTES = 15;
 
 /** Days of automated backups, the point-in-time window of ADR 0186 decision 1. */
 const BACKUP_DAYS = 14;
@@ -219,6 +224,7 @@ export function runtimePlan(
     use(name, workload.uses ?? [], "runway.yaml", `workloads.${name}.uses`);
 
   const databases: DatabasePlan[] = [];
+  const engines: WorkloadPlan[] = [];
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const [name, resource] of Object.entries(resources).sort(([left], [right]) =>
     left.localeCompare(right),
@@ -259,6 +265,15 @@ export function runtimePlan(
         replicas: 0,
         tags,
       });
+    else if (resource.kind === ResourceKind.Gotenberg)
+      engines.push(
+        gotenbergWorkload(
+          name,
+          resourceName([root.project, environment, name], SERVICE_NAME_LIMIT),
+          size,
+          environment,
+        ),
+      );
     else if (resource.kind === ResourceKind.Bucket)
       buckets.push({
         key,
@@ -304,6 +319,14 @@ export function runtimePlan(
       ...(workload.health === undefined ? {} : { health: workload.health }),
       healthCommand: workload.healthCommand ?? [],
       command: workload.command ?? [],
+      ...(workload.migrate === undefined
+        ? {}
+        : {
+            migrate: {
+              command: workload.migrate.command,
+              timeoutMinutes: workload.migrate.timeoutMinutes ?? MIGRATE_TIMEOUT_MINUTES,
+            },
+          }),
       public: workload.expose === "public",
       env: workload.env ?? {},
       secrets: workload.secrets ?? [],
@@ -345,6 +368,12 @@ export function runtimePlan(
           Math.max(workload.scale.min, 1) +
         (workload.public ? LOAD_BALANCER_MONTHLY_USD : 0),
     })),
+    ...engines.map((engine) => ({
+      key: engine.key,
+      monthlyUsd:
+        GOTENBERG_SIZES[sizeOf(resources[engine.workload]?.size)].monthlyUsd *
+        Math.max(engine.scale.min, 1),
+    })),
     ...[...toolMonthly].map(([tool, monthlyUsd]) => ({
       key: `tools.${tool}`,
       monthlyUsd: Math.round(monthlyUsd * 100) / 100,
@@ -370,7 +399,7 @@ export function runtimePlan(
     caches,
     buckets,
     databases,
-    workloads,
+    workloads: [...workloads, ...engines],
     cost: { items, monthlyUsd, ...(limit === undefined ? {} : { limit }) },
   };
 }

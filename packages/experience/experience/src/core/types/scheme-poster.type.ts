@@ -10,7 +10,9 @@
 
 /** One poster per scheme. */
 export interface SchemePoster {
+  /** The poster's URL for the light scheme. */
   readonly light: string;
 
+  /** The poster's URL for the dark scheme. */
   readonly dark: string;
 }

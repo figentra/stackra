@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the native `WidgetContent`: a list draws its rows, a Custom display hands its renderer the answer,
- *          and a View display shows the not-shown state.
+ * Purpose: unit tests of the native `WidgetContent`: a list draws its rows, a KPI draws its value and note line, a Custom
+ *          display hands its renderer the answer, and a View display shows the not-shown state.
  * Boundary: unit tier, jsdom; `react-native` and `@stackra/ui/native` are DOM stand-ins and translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 14); ADR 0164.
@@ -129,7 +129,9 @@ class WidgetStub {
 
 afterEach(cleanup);
 
+/** A widget's display on native, over the query's answer. */
 describe("WidgetContent", () => {
+  /** A list draws one row per item with its secondary text. */
   it("draws a list's rows", () => {
     const list = widget(WidgetStub, {
       key: "inventory.low_stock",
@@ -146,6 +148,27 @@ describe("WidgetContent", () => {
     expect(screen.getByText("var_1 | loc_1")).toBeTruthy();
   });
 
+  /** A KPI shows its note line, read from its own field of the answer. */
+  it("draws a KPI with its note line", () => {
+    const kpis = widget(WidgetStub, {
+      key: "shipping.shipment_kpis",
+      query: OrderKpisQuery,
+      display: WidgetDisplay.kpi("spend", { note: "spendOtherCurrencies" }),
+    });
+    const spend = { value: 5000, previous: null, target: null, series: null, currency: "USD" };
+    render(
+      <WidgetContent
+        widget={kpis}
+        data={{ spend, spendOtherCurrencies: 2 }}
+        isRefreshing={false}
+      />,
+    );
+    expect(screen.getByText("USD 5000")).toBeTruthy();
+    const note = 'shipping::widgets.shipment_kpis.spendOtherCurrencies {"count":2}';
+    expect(screen.getByText(note).getAttribute("data-tone")).toBe("muted");
+  });
+
+  /** Custom draws the producing package's renderer; a view is not drawn here yet. */
   it("hands a Custom renderer the answer and shows the not-shown state for a view", () => {
     const seen: CustomWidgetProps[] = [];
     const Renderer = (props: CustomWidgetProps) => {

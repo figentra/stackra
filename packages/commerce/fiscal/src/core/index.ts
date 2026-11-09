@@ -20,6 +20,7 @@ export { RT_OPTIONS } from "#core/constants/rt-options.constant";
 export { TSE_OPTIONS } from "#core/constants/tse-options.constant";
 export { VERIFACTU_OPTIONS } from "#core/constants/verifactu-options.constant";
 export { ZATCA_OPTIONS } from "#core/constants/zatca-options.constant";
+export { CadesSignerDriver } from "#core/drivers/cades-signer.driver";
 export { DeviceOnboardingDriver } from "#core/drivers/device-onboarding.driver";
 export { EtaDriver } from "#core/drivers/eta.driver";
 export { EtaOnboardingDriver } from "#core/drivers/eta-onboarding.driver";

@@ -29,6 +29,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
   ],
   [/^\.claude\/[\w.-]+\.json$/, "Claude Code settings/launch: fixed .json names"],
   [
+    /^packages\/developer\/flow-preset\/preset\/surfaces\/settings\.json$/,
+    "Flow renders .claude/settings.json from this exact surface name",
+  ],
+  [
     /^\.vscode\/(settings|extensions|launch|tasks)\.json$/,
     "VS Code reads these fixed names (JSONC inside)",
   ],

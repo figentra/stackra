@@ -1,5 +1,112 @@
 # @stackra/cli
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [597e3e8]
+- Updated dependencies [ba6eed7]
+  - @stackra/config@0.32.0
+  - @stackra/gen@0.32.0
+  - @stackra/repo-checks@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/mcp@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/skills@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [73ea174]
+- Updated dependencies [5585893]
+- Updated dependencies [2ba26cd]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+- Updated dependencies [137a7f9]
+  - @stackra/gen@0.31.0
+  - @stackra/runway@0.31.0
+  - @stackra/repo-checks@0.31.0
+  - @stackra/mcp@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/skills@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 5b064da: New `stackra encore:prepare`: in a service, pins `encore.dev` to the default catalog's version and writes tsconfig `baseUrl` and `paths` from package.json `imports`, the two things Encore needs to build the app at the member root. Run `pnpm install` after a pin change.
+- 0765ecc: Runway publishes a pull request's preview (STA-1907, ADR 0289 decision 7).
+  
+  - `publishProduct({ environment: "preview", pullRequest: n })` uploads the console bundle and writes
+    `host:<product>-pr-<n>.figentra.cloud` and `release:<product>:console:pr-<n>`, both expiring after 7 days, with no canary; the
+    answer carries `host`. A host row another product holds is refused before any upload. `pullRequestPreviewHost(product, n)` and `PULL_REQUEST_PREVIEW_SETTINGS` are exported.
+  - `EdgeKvWriter.put(key, value, ttlSeconds?)` takes an optional expiry; `WranglerEdgeKvDriver` passes it as `--ttl`.
+  - `EdgeKvWriter.read(key)` answers the row or `null`; every driver implements it (wrangler's `kv key get --text`,
+    where the API's 404 is `null`).
+  - The product command takes `--pr <n>` (or `STACKRA_PULL_REQUEST`) with `--env preview` (digits only), and prints the host.
+
+### Patch Changes
+
+- be079e7: `stackra testbed run` gives every health and slot probe a 60 s deadline, as `testbed` does since figentra/testbed#22.
+  One box that keeps its SSH session open without answering (still booting, or a wedged Session Manager session) no
+  longer stalls a waiting run forever: that box counts as unhealthy for one look, and the next look tries it again.
+- c8e7592: `StoredSetting` and `StoredSettingRevision` are owned: both take `BelongsToTenantOrPlatform`, so a row's `tenant_id` is the running `withTenant` call's tenant, or NULL in a platform call. `@stackra/settings` now depends on `@stackra/tenancy`. The `settings:diff` and `settings:apply` runner writes through `TenantIsolationService.withTenant` as a system actor inside its `withScope` transaction, at a tenant node as that tenant and at the root or a product node as the platform, and no longer sets `app.tenant_id` itself. `@stackra/cli` drops the runner from `SESSION_SETTING_ALLOWED`.
+- 11def65: The settings tables are tenant-owned in the platform form (migration `settings.0004_contract_settings_tenancy`):
+  `stored_settings` and `stored_setting_revisions` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a
+  NULL row is the platform's), forced row-level security and the platform policies. The migration backfills a row at a
+  tenant node (`nlevel(scope_path) = 3`) from its scope and keeps a row at the root or a product node as a platform row.
+  A user's row is now keyed `(tenant_id, group_key, user_id)` (NULLs not distinct), and every user lookup names the
+  session's own owner. New system function `settings.claim_due_revisions` (no runtime caller yet).
+  
+  The `settings:diff` and `settings:apply` runner (`openSettingsSession`) now sets `app.tenant_id` by the same rule: a
+  tenant node is its own owner, the root and a product node are the platform's, and a node below a tenant node is refused
+  (the runner cannot read its tenant without the scope tree yet). `@stackra/cli`'s session-settings check allows that one
+  write.
+  
+  Upgrade: the migration refuses, changing nothing, while a setting or revision sits below a tenant node or belongs to a
+  user (a user row names no scope, so its tenant cannot be read, and as a platform row every tenant could read it).
+  Record those values, delete the rows (`nlevel(scope_path) > 3`, or `user_id is not null`) from both tables, migrate,
+  then write the values again from a session in each node's or user's tenant.
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [04d04e4]
+- Updated dependencies [0bf0a7f]
+- Updated dependencies [7d60f82]
+- Updated dependencies [418e195]
+- Updated dependencies [e1e95d1]
+- Updated dependencies [5b064da]
+- Updated dependencies [dab9009]
+- Updated dependencies [e1e1b5e]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+- Updated dependencies [5b064da]
+- Updated dependencies [a3a3190]
+- Updated dependencies [0765ecc]
+- Updated dependencies [f4df473]
+- Updated dependencies [cd2496b]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+  - @stackra/gen@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/repo-checks@0.30.0
+  - @stackra/runway@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/mcp@0.30.0
+  - @stackra/skills@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/support@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

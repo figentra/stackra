@@ -5,7 +5,7 @@
  *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
  *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316, `cloudflare-workers`, STA-1921) with the command runner they share (ADR 0352 decision 3),
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
- *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
+ *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439; `startWhiteLabelJob` for the OS event) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
  *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), the smoke step after a preview deploy (`smokePreview`, with the
  *          `PlaywrightSmokeDriver`, `MaestroSmokeDriver` and placeholder `ElectronSmokeDriver`) and the mobile launch
@@ -53,6 +53,7 @@ export { MemoryVaultWriterDriver } from "#node/drivers/memory-vault-writer.drive
 export { EdgeKvConfig } from "#node/config/edge-kv.config";
 export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
+export { PULL_REQUEST_PREVIEW_SETTINGS } from "#node/constants/pull-request-preview-settings.constant";
 export { RUNWAY_COMMANDS } from "#node/constants/runway-commands.constant";
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
@@ -85,6 +86,7 @@ export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";
 export { promoteCanary } from "#node/functions/promote-canary.function";
 export { publishProduct } from "#node/functions/publish-product.function";
+export { pullRequestPreviewHost } from "#node/functions/pull-request-preview-host.function";
 export { publishShell } from "#node/functions/publish-shell.function";
 export { readBundles } from "#node/functions/read-bundles.function";
 export { launchCheckJob } from "#node/functions/launch-check-job.function";
@@ -100,6 +102,8 @@ export { runProgram } from "#node/functions/run-program.function";
 export { runBrandStep } from "#node/functions/run-brand-step.function";
 export { runLaunchCheck } from "#node/functions/run-launch-check.function";
 export { runMobileJob } from "#node/functions/run-mobile-job.function";
+export { startWhiteLabelJob } from "#node/functions/start-white-label-job.function";
+export { whiteLabelVariantOf } from "#node/functions/white-label-variant-of.function";
 export { runScreenshotCapture } from "#node/functions/run-screenshot-capture.function";
 export { screenshotCaptureJob } from "#node/functions/screenshot-capture-job.function";
 export { shellReleaseOf } from "#node/functions/shell-release-of.function";
@@ -161,6 +165,8 @@ export type { MobileOnboard } from "#node/types/mobile-onboard.type";
 export type { MobileOnboardRequest } from "#node/types/mobile-onboard-request.type";
 export type { MobileStoreAccount } from "#node/types/mobile-store-account.type";
 export type { MobileVariant } from "#node/types/mobile-variant.type";
+export type { WhiteLabelBuildRequested } from "#node/types/white-label-build-requested.type";
+export type { WhiteLabelJobRequest } from "#node/types/white-label-job-request.type";
 export type { LaunchCheckJob } from "#node/types/launch-check-job.type";
 export type { LaunchCheckRequest } from "#node/types/launch-check-request.type";
 export type { SmokePreviewRequest } from "#node/types/smoke-preview-request.type";

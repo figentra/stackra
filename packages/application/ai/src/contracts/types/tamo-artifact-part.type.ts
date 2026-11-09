@@ -15,9 +15,12 @@ export interface TamoArtifactPart {
   /** The artifact's name. */
   readonly name: string;
 
-  /** What the artifact is, for example `report` or `document`. */
+  /** What the artifact is: `pdf`, `csv`, `xlsx`, `jsonl` or `svg` (its file extension). */
   readonly kind: string;
 
   /** The version this turn shows. */
   readonly version: number;
+
+  /** The version's size in bytes, when known. */
+  readonly bytes?: number;
 }

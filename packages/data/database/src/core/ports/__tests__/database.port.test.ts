@@ -1,7 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `Database` port: `Database.current()` returns the connected driver and says what to do
- *          when none is connected; `onReplica` runs the work as it is on a driver with no replica.
+ *          when none is connected; `onReplica` runs the work as it is on a driver with no replica; a driver keeps no detached
+ *          step by default and runs detached work as it is, and `Database.detached()` answers none with no database or a
+ *          partial stand-in connected.
  * Boundary: test only; the driver is a stand-in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0014; ADR 0238; ADR 0022; ADR 0269.
@@ -43,6 +45,23 @@ describe("Database", () => {
 
   it("runs replica work in the running context by default", async () => {
     expect(await new StandInDatabase().onReplica(async () => "read")).toBe("read");
+  });
+
+  it("keeps no detached step by default, and runs detached work as it is", async () => {
+    const database = new StandInDatabase();
+    ACTIVE_DATABASE.current = database;
+    expect(
+      await database.runDetached(
+        (work) => work(),
+        async () => [database.detached(), Database.detached()],
+      ),
+    ).toEqual([undefined, undefined]);
+  });
+
+  it("answers no detached step with no database, or a partial stand-in, connected", () => {
+    expect(Database.detached()).toBeUndefined();
+    ACTIVE_DATABASE.current = { em: () => undefined } as unknown as Database;
+    expect(Database.detached()).toBeUndefined();
   });
 
   it("refuses before a database is connected", () => {

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: hold the SOPS secrets scripts to their contract (ADR 0525): `secrets-sops.mjs` (publish, scopes, names),
- *          `secrets-put`, `secrets-generate`, `secrets-import --scope`, `secrets-catalog`
+ *          `secrets-put`, `secrets-generate` (an ed25519 name rotates as a new pair), `secrets-import --scope`, `secrets-catalog`
  *          and `secrets-age-init` (`secrets-exec` has its own file). Every path asserts that no canary value reaches
  *          the output, the audit log, any CLI's argv or a written file.
  * Boundary: a throwaway HOME and a fake sops, git, gh and age-keygen runner; no real repository, key or vault.
@@ -397,6 +397,62 @@ test("generate: an ed25519 key is PKCS#8 for Web Crypto; only its public half an
   assert.ok(
     !JSON.stringify(entry.public).includes(entry.value.toString()),
     "the public part holds no private key",
+  );
+});
+
+test("generate --rotate: an ed25519 catalog name gets a new pair and prints only its public half and a dated id", () => {
+  const catalog = [
+    "STACKRA_EVENTS_SIGNING_KEY:",
+    "  scopes: [products/invoicing/staging]",
+    "  kind: generated",
+    "  generator: ed25519",
+    "WEB_PUSH_VAPID_PRIVATE_KEY:",
+    "  scopes: [products/os/production]",
+    "  kind: generated",
+    "  generator: vapid",
+    "",
+  ].join("\n");
+  const cli = fakeCli({
+    existing: [
+      "products/invoicing/staging/STACKRA_EVENTS_SIGNING_KEY.enc.yaml",
+      "products/os/production/WEB_PUSH_VAPID_PRIVATE_KEY.enc.yaml",
+    ],
+    seed: { "catalog.yaml": catalog },
+  });
+  const h = home();
+  const out = sink();
+  const args = ["STACKRA_EVENTS_SIGNING_KEY", "--scope", "products/invoicing/staging", "--rotate"];
+  assert.equal(generate(args, { home: h, run: cli.run, env: AGENT, write: out.write }), 0);
+  assert.match(
+    out.lines[0],
+    /STACKRA_EVENTS_SIGNING_KEY {2}products\/invoicing\/staging {2}rotated/,
+  );
+  // the new public half and a day-dated id, so it never shares the id of the key it replaces
+  assert.match(
+    out.lines[1],
+    /^ {2}public key [A-Za-z0-9_-]{43} {2}key id invoicing-staging-\d{8}\n?$/,
+  );
+  const written = JSON.parse(cli.stdins.at(-1)).STACKRA_EVENTS_SIGNING_KEY;
+  assert.equal(
+    Buffer.from(written, "base64url")[0],
+    0x30,
+    "the stored value is a PKCS#8 key, not random bytes",
+  );
+  assertNoLeak(written, { lines: out.lines, cli, homeDir: h });
+  const refused = sink();
+  assert.equal(
+    generate(["WEB_PUSH_VAPID_PRIVATE_KEY", "--scope", "products/os/production", "--rotate"], {
+      home: h,
+      run: cli.run,
+      env: AGENT,
+      write: refused.write,
+    }),
+    1,
+  );
+  assert.match(refused.lines[0], /refused: a VAPID pair rotates both halves together/);
+  assert.equal(
+    keyIdFor("products/invoicing/staging", undefined, new Date("2026-11-09"), { day: true }),
+    "invoicing-staging-20261109",
   );
 });
 

@@ -10,10 +10,12 @@
  *           acting alone, or a service acting for a user through an action without the second hop) holds nothing, so
  *           a second hop is impossible by construction. The token is never put on the actor, the call's options, its
  *           context, a log, an error or an event: it lives only in `ON_BEHALF_OF_TOKEN`'s run, emptied when `work`
- *           settles, so work the call left running reads nothing after it ends.
+ *           settles, so work the call left running reads nothing after it ends. A `stream: true` action's call ends
+ *           with its stream, not with `handle`: the token is emptied when the stream closes, fails or the caller
+ *           cancels it, so the loop that writes the stream forwards it while the caller listens and never after.
  * Runtime: node
  * Governing contract: ADR 0209 (decision 3 and its 2026-11-07 amendment, conditions 4 and 5); ADR 0098 (the actor from
- *                     the credential).
+ *                     the credential); Tamo spec generative-ui-tools-artifacts (G1b: a streamed call's end).
  */
 import { kindOf } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
@@ -33,6 +35,34 @@ function headerOf(headers: CallHeaders, name: string): string | undefined {
   const found = Object.entries(headers).filter(([key]) => key.toLowerCase() === name);
   const values = found.flatMap(([, value]) => (value === undefined ? [] : [value].flat()));
   return values.length === 1 ? values[0] : undefined;
+}
+
+/** Whether `action` declares `stream: true`, so its call ends with the stream it answers. */
+function streams(action: object | undefined): boolean {
+  return action !== undefined && kindOf(action)?.options["stream"] === true;
+}
+
+/** `source`, calling `release` once when it closes, fails or its reader cancels it. */
+function releasedAtEnd<C>(source: ReadableStream<C>, release: () => void): ReadableStream<C> {
+  const reader = source.getReader();
+  return new ReadableStream<C>({
+    async pull(controller) {
+      try {
+        const next = await reader.read();
+        if (next.done) {
+          release();
+          controller.close();
+        } else controller.enqueue(next.value);
+      } catch (error) {
+        release();
+        controller.error(error);
+      }
+    },
+    async cancel(reason) {
+      release();
+      await reader.cancel(reason);
+    },
+  });
 }
 
 /** Whether `action` declares `onBehalfOf: { secondHop: true }`; a controller (no action) never does. */
@@ -62,7 +92,8 @@ function forwardable(
 }
 
 /**
- * Runs `work` with the token `actor`'s call may forward held for it, and empties the holder once `work` settles.
+ * Runs `work` with the token `actor`'s call may forward held for it, and empties the holder once `work` settles, or,
+ * for a `stream: true` action's stream, once that stream ends.
  *
  * @param headers - the call's headers as sent, the ones `CallAuthenticator` verified.
  * @param actor - the verified caller.
@@ -79,9 +110,16 @@ export async function holdCallerToken<T>(
   work: () => Promise<T>,
 ): Promise<T> {
   let held = forwardable(headers, actor, action);
-  try {
-    return await ON_BEHALF_OF_TOKEN.run(() => held, work);
-  } finally {
+  const release = () => {
     held = undefined;
+  };
+  let streamed = false;
+  try {
+    const output = await ON_BEHALF_OF_TOKEN.run(() => held, work);
+    if (!streams(action) || !(output instanceof ReadableStream)) return output;
+    streamed = true;
+    return releasedAtEnd(output, release) as T;
+  } finally {
+    if (!streamed) release();
   }
 }

@@ -1,0 +1,10 @@
+{
+  "basics": {
+    "ocean": "Ocean blue",
+    "sand": "Sand",
+    "forest": "Forest green",
+    "ruby": "Ruby",
+    "ocean_faded": "Ocean blue at 40 percent",
+    "accent": "The theme's accent"
+  }
+}

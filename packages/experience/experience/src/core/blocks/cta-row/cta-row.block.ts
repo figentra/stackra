@@ -19,9 +19,12 @@ export class CtaRowBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.ctaRow,
 }) {
+  /** The row's one primary link. */
   primary!: LandingLink;
 
+  /** A button that copies a value, such as the llms.txt URL. */
   copyLink?: CopyLink;
 
+  /** A command shown as a chip, copied on press. */
   command?: string;
 }

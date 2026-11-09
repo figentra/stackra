@@ -4841,6 +4841,32 @@
     "xray": "X-ray, Khalid",
     "holiday": "National Day"
   },
+  "scheduling_board": {
+    "day_label": "Academy schedule, day",
+    "week_label": "Academy schedule, week",
+    "timeline_label": "Academy schedule, two weeks",
+    "read_only_label": "Academy schedule, read-only",
+    "drag_label": "Academy schedule, drag to move",
+    "north": "North branch",
+    "south": "South branch",
+    "pitch_1": "Pitch 1",
+    "pitch_1_half_a": "Pitch 1 – half A",
+    "coach": "Coach Faisal",
+    "pool": "Pool",
+    "training": "Under-12 training",
+    "five_a_side": "Five-a-side, Omar",
+    "swim_class": "Swim class",
+    "held": "Held for Sara",
+    "cleaning": "Pool cleaning",
+    "maintenance": "Pool maintenance",
+    "coach_break": "Coach's break",
+    "coach_leave": "Coach on leave",
+    "selected": "Selected {minutes} minutes on {row}.",
+    "picked": "Picked: {title}",
+    "checking": "Checking the move…",
+    "refused": "The move was refused, so the booking went back.",
+    "coach_leaves": "Coach Faisal leaves at 20:00."
+  },
   "tree_diagram": {
     "org": {
       "label": "Headcount by team",
@@ -5023,6 +5049,38 @@
       "restock": "Restock",
       "quantity": "Quantity",
       "note": "Note"
+    }
+  },
+  "notification_inbox": {
+    "basics": {
+      "title": "Notifications",
+      "empty": "You're all caught up",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "order_paid": "Order #1042 paid",
+      "order_paid_detail": "SAR 86.50 by card",
+      "low_stock": "Low stock: oat milk",
+      "shift_report": "Shift report ready",
+      "minutes_ago": "{count, plural, one {# min ago} other {# min ago}}",
+      "hours_ago": "{count, plural, one {# hour ago} other {# hours ago}}"
+    }
+  },
+  "push_primer": {
+    "basics": {
+      "title": "Stay in the loop",
+      "description": "We'll tell you when an order is ready, a payment arrives or stock runs low.",
+      "enable": "Turn on notifications",
+      "later": "Not now",
+      "failed": "Notifications could not be turned on. Try again.",
+      "granted": "Notifications are on.",
+      "postponed": "You can turn them on later in settings."
+    }
+  },
+  "brand_logo": {
+    "basics": {
+      "brand": "Acme Studio",
+      "with_logo": "The logo for the scheme on screen",
+      "without_logo": "No logo yet: the brand name instead"
     }
   }
 }

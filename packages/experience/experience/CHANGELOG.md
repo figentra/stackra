@@ -1,5 +1,87 @@
 # @stackra/experience
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [54db249]
+  - @stackra/ui@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/documents@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [0f05f60]
+- Updated dependencies [7179d1a]
+  - @stackra/i18n@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/clients@0.31.0
+  - @stackra/documents@0.31.0
+  - @stackra/icons@0.31.0
+  - @stackra/tokens@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 2307506: New landing block `experience.capability_matrix` (`CapabilityMatrixBlock`, `CapabilityMatrix`): subjects by capability
+  (carriers by rates, labels, pickups…) as a captioned table with row and column headers. Each cell is a
+  `CapabilityState` (yes, no, coming), drawn as an icon with its word so a state never rests on colour, or a short note.
+  The table scrolls inside a focusable, named region on narrow screens.
+- d3c8b27: The fifteen blocks of the Stackra landing. `./react` has the components `SiteHeader`, `HeroMachine`, `CtaRow`,
+  `Statement`, `ChapterTitle`, `Station`, `StepSwitcher`, `Surfaces`, `BentoGrid`, `TerminalStage`, `MonoDisplay`,
+  `AskAi`, `ProductCards`, `SiteFooter` and `PageDock`; `.` has each one's `Block` class (`HeroMachineBlock`,
+  `SurfacesBlock`, `TerminalStageBlock`, `PageDockBlock` and so on), each in its own folder so gen's key rule gives it
+  `experience.<name>` (`experience.hero_machine`). The classes declare the document props: words as `LocalizedText`,
+  nested shapes as plain types and closed choices as enums. Nothing registers the blocks yet: gen does not compile the
+  block kind, so a page registers them itself. The hero draws its machine, a group named by its `label`: the action
+  window piped into web, desktop and phone surfaces; the dock narrates the stations. They draw the blueprint direction (ruled sections, schematic windows, the station rail) on `@stackra/ui`
+  and its blueprint token roles; art is drawn by `Illustration` from token-coloured mask layers, a dither band's poster
+  comes per scheme, and every word comes in props.
+
+### Patch Changes
+
+- d3c8b27: `SiteHeader` and the `experience.site_header` block take `githubHref` as optional. A product's customer-facing landing
+  leaves it out, and the bar then shows no code-host link.
+- Updated dependencies [85cd1b5]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [88fb0eb]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/documents@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/clients@0.30.0
+  - @stackra/tokens@0.30.0
+  - @stackra/i18n@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/icons@0.30.0
+  - @stackra/support@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

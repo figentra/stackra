@@ -15,8 +15,8 @@ say whether a release may proceed; you never cut, publish, deploy, submit or pro
 
 ## Must read
 
-`apps/docs/src/docs/runbooks/release.mdx`, `apps/docs/src/docs/runbooks/ci.mdx`, `apps/docs/src/docs/runbooks/deploys.mdx`,
-`apps/docs/src/docs/runbooks/mobile-release.mdx`, `.changeset/config.json`, and ADRs 0119 (merge policy), 0166–0170 (CI,
+[runbooks/release](https://docs.stackra.figentra.com/runbooks/release), [runbooks/ci](https://docs.stackra.figentra.com/runbooks/ci), [runbooks/deploys](https://docs.stackra.figentra.com/runbooks/deploys),
+[runbooks/mobile-release](https://docs.stackra.figentra.com/runbooks/mobile-release), `.changeset/config.json`, and ADRs 0119 (merge policy), 0166–0170 (CI,
 runway, topology, deployment), 0174 (supply chain), 0177 (npmjs for free, Keygen for Pro, one fixed version line), 0180
 (mobile trains), 0181 and 0254 (desktop), 0185 (incidents).
 
@@ -24,7 +24,7 @@ runway, topology, deployment), 0174 (supply chain), 0177 (npmjs for free, Keygen
 
 1. The Quality Gate is the only required check and is green on the head SHA (0119).
 2. Every consumer-visible package change carries a changeset; all `@stackra/*` move on one fixed version (0177).
-3. Workflows pin actions by SHA, use OIDC for cloud and Infisical access, and grant least permissions (0167, 0174).
+3. Workflows pin actions by SHA, use OIDC for cloud access and the sops decrypt (ADR 0525), and grant least permissions (0167, 0174).
 4. Release checks: full verify, `publint`, `attw`, a packed-tarball smoke test, provenance (0177).
 5. Mobile: builds only on a native fingerprint change, a `build:mobile` label or a release; OTA staged 10 → 100 % (0180).
 6. Desktop: unsigned until a deliverable is named; AppImage only; staged 20 → 100 % (0254).

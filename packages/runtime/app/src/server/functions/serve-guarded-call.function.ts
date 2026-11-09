@@ -6,21 +6,24 @@
  *          anonymous actor only where the call lists it, else 401; an action that declares `credentials: "ignore"` reads
  *          no credential and runs anonymous; an anonymous actor is the visitor its signed token names, and an answer to
  *          a new or re-signed visitor carries the token back in a header and an httpOnly cookie; an API key's call
- *          carries its key's call options to the call), parse the input (JSON body, or the query string for
+ *          carries its key's call options to the call; an anonymous call acts in the tenant the edge signed, and a
+ *          credential whose tenant differs from it is 403), parse the input (JSON body, or the query string for
  *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
- *          kind's status with its envelope.
+ *          kind's status with its envelope, and a `stream: true` action's stream as server-sent events
+ *          (`eventStreamResponse`), which still carries the visitor's token.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
  *           nothing about which check failed; it never logs or echoes the body, the signature or the credential. A
  *           `RateLimitedError`, any non-refusal error and an authenticator outage propagate, for `answerHttp` (429) and
  *           Encore (500). A refusal of the call is mapped by `Enum.meta(ErrorKind, kind).httpStatus`. The call runs
  *           inside `holdCallerToken`, so its service-to-service calls forward the user's token only as ADR 0209's
- *           amendment allows (a first hop, or a second into an action that declares it), never past the call.
+ *           amendment allows (a first hop, or a second into an action that declares it), never past the call; a
+ *           streamed call ends when its stream does.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order and the
  *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
  */
 import { kindOf } from "@stackra/container";
-import { ActorKind, Enum, mintPublicId } from "@stackra/contracts";
+import { ActorKind, actingScopeId, Enum, mintPublicId } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
 import {
   ErrorKind,
@@ -29,7 +32,9 @@ import {
   RateLimitedError,
 } from "@stackra/errors";
 
+import { VERIFIED_EDGE_SCOPE } from "#server/constants/verified-edge-scope.constant";
 import { coerceQueryInput } from "#server/functions/coerce-query-input.function";
+import { eventStreamResponse } from "#server/functions/event-stream-response.function";
 import { holdCallerToken } from "#server/functions/hold-caller-token.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
 import { readCappedBody } from "#server/functions/read-capped-body.function";
@@ -108,6 +113,8 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   // `credentials: "ignore"`: the credential is never verified or held, so no user token is forwarded either
   const ignored =
     options.action !== undefined && kindOf(options.action)?.options["credentials"] === "ignore";
+  // Set by the edge guard above only for a verified signature; a raw tenant header never counts.
+  const signedScope = VERIFIED_EDGE_SCOPE.get(guarded);
   let actor: Actor;
   let call: KeyCallOptions | undefined;
   let visitor: VisitorIdentity | undefined;
@@ -122,10 +129,19 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
       if (isRefusal(error) && error.kind === ErrorKind.Unauthenticated) return refused(401);
       throw error;
     }
+    // The token's tenant wins; a signed host tenant that differs means the token was sent to another tenant's host.
+    const tokenScope = actingScopeId(actor);
+    if (signedScope !== undefined && tokenScope !== undefined && tokenScope !== signedScope)
+      return refused(403);
   } else if (options.anonymous) {
     // One visitor across requests, so a record keyed to it (a guest cart) stays its own (STA-2025, 2026-11-09).
     visitor = await options.visitor?.(guarded);
-    actor = { kind: ActorKind.Anonymous, id: visitor?.id ?? mintPublicId("anon") };
+    // A visitor's tenant is the host's, and only when the edge signed it (ADR 0437); unsigned, there is none.
+    actor = {
+      kind: ActorKind.Anonymous,
+      id: visitor?.id ?? mintPublicId("anon"),
+      ...(signedScope === undefined ? {} : { scopeId: signedScope }),
+    };
   } else {
     return refused(401);
   }
@@ -175,5 +191,12 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
       visitor,
     );
   }
+  // a `stream: true` action answers its stream as server-sent events (holdCallerToken already wrapped its end)
+  if (
+    output instanceof ReadableStream &&
+    options.action !== undefined &&
+    kindOf(options.action)?.options["stream"] === true
+  )
+    return carry(eventStreamResponse(output), visitor);
   return carry(output instanceof Response ? output : Response.json(output ?? null), visitor);
 }

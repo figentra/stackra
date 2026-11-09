@@ -4,7 +4,9 @@
  *          (`MailTransport`, `SmsTransport`, `WhatsAppTransport`, `PushTransport`, `InAppStore`, `ChatTransport`), the
  *          inbound `WhatsAppInbound` port (ADR 0448), the
  *          `ContentFreeData` (STA-964), the service ports (`PushTokenStore`, `SendLog`, `TemplateOverrides`), the provider interfaces and the types they
- *          exchange (`NotificationDeliveryEvent` among them, stackra-207; the `PreferenceStore` port, `MailAttachment` and `MailFeature`, stackra-218), until `stackra gen` writes the entry barrels (STA-339).
+ *          exchange (`NotificationDeliveryEvent` among them, stackra-207; the `PreferenceStore` port, `MailAttachment` and `MailFeature`, stackra-218), the client ports of the kit blocks
+ *          (`NotificationPreferencesClient` with `NotificationPreferenceRow`, `PushRegistration` with `PushPermission` and
+ *          `PrimerTrigger`, STA-1983), until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf: it imports no other entry of this package. Each is
  *           exported here only, never from `.` (ADR 0294 decision 15).
  * Runtime: isomorphic
@@ -15,8 +17,10 @@ export { TemplateVariant } from "#contracts/enums/template-variant.enum";
 export { ChatTransport } from "#contracts/ports/chat-transport.port";
 export { InAppStore } from "#contracts/ports/in-app-store.port";
 export { MailTransport } from "#contracts/ports/mail-transport.port";
+export { NotificationPreferencesClient } from "#contracts/ports/notification-preferences-client.port";
 export { PreferenceStore } from "#contracts/ports/preference-store.port";
 export { PushTokenStore } from "#contracts/ports/push-token-store.port";
+export { PushRegistration } from "#contracts/ports/push-registration.port";
 export { PushTransport } from "#contracts/ports/push-transport.port";
 export { SendLog } from "#contracts/ports/send-log.port";
 export { SmsTransport } from "#contracts/ports/sms-transport.port";
@@ -34,6 +38,7 @@ export type { MailAttachment } from "#contracts/types/mail-attachment.type";
 export type { MailFeature } from "#contracts/types/mail-feature.type";
 export type { MailSender } from "#contracts/types/mail-sender.type";
 export type { NotificationDeliveryEvent } from "#contracts/types/notification-delivery-event.type";
+export type { NotificationPreferenceRow } from "#contracts/types/notification-preference-row.type";
 export type { NotificationTemplate } from "#contracts/types/notification-template.type";
 export type { MessageAction } from "#contracts/types/message-action.type";
 export type { OutboundChatMessage } from "#contracts/types/outbound-chat-message.type";
@@ -41,7 +46,9 @@ export type { OutboundMail } from "#contracts/types/outbound-mail.type";
 export type { OutboundPush } from "#contracts/types/outbound-push.type";
 export type { OutboundSms } from "#contracts/types/outbound-sms.type";
 export type { OutboundWhatsApp } from "#contracts/types/outbound-whatsapp.type";
+export type { PrimerTrigger } from "#contracts/types/primer-trigger.type";
 export type { PushOutcome } from "#contracts/types/push-outcome.type";
+export type { PushPermission } from "#contracts/types/push-permission.type";
 export type { PushTarget } from "#contracts/types/push-target.type";
 export type { QuietHours } from "#contracts/types/quiet-hours.type";
 export type { SmsSender } from "#contracts/types/sms-sender.type";

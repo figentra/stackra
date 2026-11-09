@@ -64,6 +64,7 @@ describe("anonymousSurfacesOf", () => {
       "checkouts.checkout_page.choose_method@1",
       "checkouts.checkout_page.framers@1",
       "checkouts.checkout_page.load@1",
+      "checkouts.checkout_page.submit@1",
       "payment_links.payment_link.open@1",
     ])
       expect(REVIEWED_ANONYMOUS_SURFACES[key]).toMatch(/\w/);

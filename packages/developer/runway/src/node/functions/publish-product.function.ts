@@ -25,6 +25,7 @@ import { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
 import { checkOpsReview } from "#node/functions/check-ops-review.function";
 import { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 import { platformRows } from "#node/functions/platform-rows.function";
+import { publishPullRequest } from "#node/functions/publish-pull-request.function";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { releaseOf } from "#node/functions/release-of.function";
@@ -37,6 +38,8 @@ import type { ProductPublishResult } from "#node/types/product-publish-result.ty
 
 /**
  * What the publish uploaded and wrote.
+ *
+ * With `pullRequest` it is a pull request's preview instead (`publishPullRequest`).
  *
  * @throws RunwayInvalidError before any upload or write when the review, a bundle, a target, a host or a canary
  *         setting is wrong.
@@ -51,6 +54,7 @@ import type { ProductPublishResult } from "#node/types/product-publish-result.ty
 export async function publishProduct(
   request: ProductPublishRequest,
 ): Promise<ProductPublishResult> {
+  if (request.pullRequest !== undefined) return publishPullRequest(request, request.pullRequest);
   const root = readRunway(join(request.repository, "runway.yaml"), "root");
   if (root.surfaces?.ops !== undefined) checkOpsReview(request.review);
   const rows = platformRows(root, request.environment, {

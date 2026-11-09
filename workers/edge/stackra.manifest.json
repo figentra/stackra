@@ -155,6 +155,44 @@
       "from": "@stackra/app"
     },
     {
+      "port": "Signer",
+      "key": "contracts.Signer",
+      "candidates": ["ephemeral", "kms"],
+      "classes": {
+        "ephemeral": {
+          "class": "EphemeralSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "kms": {
+          "class": "KmsSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            },
+            {
+              "class": {
+                "name": "KmsClient",
+                "from": "@stackra/config/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/config"
+    },
+    {
       "port": "SecretStore",
       "key": "config.SecretStore",
       "candidates": ["memory", "aws_secrets_manager"],
@@ -170,6 +208,26 @@
             {
               "class": {
                 "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/config"
+    },
+    {
+      "port": "KmsClient",
+      "key": "config.KmsClient",
+      "candidates": ["aws_sdk"],
+      "classes": {
+        "aws_sdk": {
+          "class": "AwsSdkKmsClientDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
                 "from": "@stackra/config"
               }
             }

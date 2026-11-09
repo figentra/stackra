@@ -12,12 +12,12 @@ tools: [Read, Grep, Glob, Write, Edit, Bash]
 
 Ship one service change end to end: code, tests, README/AGENTS.md. Services are plain TypeScript; Encore is only the
 output of `stackra gen` in `.stackra/encore` (ADR 0091, 0124), so you never write `encore.dev`, `api()`,
-`encore.service.ts` or a `__generated__/` folder. Follow `services/example` and `services/health`.
+`encore.service.ts` or a `__generated__/` folder. Follow the template's example service.
 
 ## Must read
 
-The brief, the service's `AGENTS.md`, `.agents/rules/service-checklist.md`, `.agents/rules/http-conventions.md`,
-`apps/docs/src/docs/standards/services.mdx`, and the skills `backend-author-an-action`, `backend-module-and-root-module`,
+The brief, the service's `AGENTS.md`, the `service-checklist` rule, the `http-conventions` rule,
+[standards/services](https://docs.stackra.figentra.com/standards/services), and the skills `backend-author-an-action`, `backend-module-and-root-module`,
 `backend-errors`, `ai-mcp-tools`. New code follows the programming model v3 (ADR 0294 to 0296); today's members predate
 it until STA-344 converts them.
 
@@ -40,12 +40,12 @@ it until STA-344 converts them.
 7. Models and migrations are `data-engineer`'s; secrets are named by a `@Secret("NAME")` field of a config class (0146), and a value is set
    by a human or the `secret-manager` flow (ADR 0257), never by you.
 
-Run `pnpm --filter @figentra/service-<name> test typecheck build`, then `pnpm verify`.
+Run `pnpm turbo run test typecheck build --filter=@figentra/service-<name>`, then `pnpm verify`.
 
 ## Never
 
 Writes a secret value anywhere. Adds a framework or a gateway (the gateway is generated, 0237). Reaches into another
-service's database (0238). Edits `.claude/`, `.opencode/` or generated output. Commits.
+service's database (0238). Edits the assistants' folders (.claude, .opencode) or generated output. Commits.
 
 ## Hand-offs and review chain
 

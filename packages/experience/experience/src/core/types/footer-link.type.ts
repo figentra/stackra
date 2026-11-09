@@ -9,9 +9,12 @@ import type { LocalizedText } from "@stackra/contracts";
 
 /** A footer link. */
 export interface FooterLink {
+  /** The link's words. */
   readonly label: LocalizedText;
 
+  /** Where the link goes. */
   readonly href: string;
 
+  /** Whether the link leaves the site, so it opens in a new tab and says so. */
   readonly isExternal?: boolean;
 }

@@ -5107,6 +5107,97 @@
         "view": "The view, for a controlled scheduler."
       }
     },
+    "scheduling_board": {
+      "SchedulingBoard": {
+        "Block": {
+          "ancestors": "The row's parents, for an inherited item's \"From\" words.",
+          "isDragging": "True while this block is being dragged; the preview is drawn where it would land.",
+          "isFirstRow": "True for the first resource row: no \"move up\".",
+          "isLastRow": "True for the last resource row: no \"move down\".",
+          "isLifted": "True while a drag carries it; it stays behind, dimmed.",
+          "isTabStop": "True when it is the one stop Tab reaches.",
+          "onDraft": "Reports a drag's would-be result, or null when it ends.",
+          "onItemPress": "Called when an item is pressed, for example to open its register.",
+          "onPress": "Called when it is pressed.",
+          "placed": "The item as placed on this row.",
+          "renderItem": "Its content; the title, time, fill and countdown by default.",
+          "resource": "The row's resource, for the spoken name.",
+          "rowStepsOf": "How many resource rows a vertical movement of `dy` points crosses from a row.",
+          "sign": "1 when columns run left to right, -1 in right-to-left, so a finger's movement reads as time.",
+          "state": "The shared state.",
+          "stopKey": "Its focus stop's key.",
+          "width": "A column's width in points."
+        },
+        "Grid": {
+          "label": "The grid's spoken name.",
+          "locale": "The BCP 47 locale, for the words announced while dragging.",
+          "onItemPress": "Called when an item is pressed.",
+          "renderItem": "A block's content; the default when left out.",
+          "selectable": "True when an empty slot is a button that selects.",
+          "state": "The shared state.",
+          "timeZone": "The IANA time zone the columns are read in, for the hour labels."
+        },
+        "Lane": {
+          "ancestors": "Its parents' ids, nearest first; their items show here, faded.",
+          "canSelect": "True to make each empty slot a button that selects a range.",
+          "conflicts": "The conflicts at the drag in progress, for the preview's colour.",
+          "dayShade": "The days shaded as rest days or holidays, in columns.",
+          "draft": "The drag in progress anywhere on the board, or null.",
+          "isFirstRow": "True for the first resource row.",
+          "isLastRow": "True for the last resource row.",
+          "onDraft": "Reports a drag's would-be result, or null when it ends.",
+          "onItemPress": "Called when an item is pressed, for example to open its register.",
+          "renderItem": "A block's content; the title, the time, the fill and a hold's countdown by default.",
+          "resource": "The row.",
+          "rowStepsOf": "How many resource rows a vertical movement of `dy` points crosses from a row.",
+          "sign": "1 when columns run left to right, -1 in right-to-left.",
+          "state": "The shared state.",
+          "width": "A column's width in points."
+        },
+        "Preview": {
+          "drag": "The drag in progress; the preview is drawn on its draft's row.",
+          "state": "The shared state."
+        },
+        "Row": {
+          "edges": "Each column's leading edge: a day's border, an hour's lighter one, or none.",
+          "input": "The grid's input, without the grid's own callback ref.",
+          "lane": "The row, laid out.",
+          "renderItem": "A block's content; the default when left out.",
+          "selectable": "True when an empty slot is a button that selects.",
+          "state": "The shared state."
+        },
+        "TimeHeader": {
+          "edges": "Each column's leading edge: a day's border, an hour's lighter one (with its label), or none.",
+          "state": "The shared state."
+        },
+        "calendar": "The calendar the headers write dates in; `islamic-umalqura` for Hijri. Gregorian by default.",
+        "className": "Styles the root.",
+        "conflictsOf": "A screen's own conflicts for a drag's would-be result, merged with the board's; called as the preview moves.",
+        "date": "The day the view holds, for a controlled board.",
+        "dayMarks": "Each day's standing, for the header; a rest day or holiday is shaded.",
+        "defaultDate": "The starting day, for an uncontrolled one; today by default.",
+        "defaultView": "The starting view, for an uncontrolled one; `day` by default.",
+        "endHour": "The hour the day and week views end at, 1 to 24; 24 by default.",
+        "isLoading": "True to show a skeleton instead of the rows.",
+        "items": "The blocks; those that overlap on a row lie side by side.",
+        "label": "The spoken name of the board, for example \"Branch schedule\".",
+        "now": "The moment taken as now, for the current-time line, Today and the past's shading; the clock at mount by default.",
+        "onDateChange": "Called with the day the view holds after previous, next or Today.",
+        "onItemChange": "Called when an item is moved or resized. A promise holds the item where it was dropped, pending, until it settles;\n`false` puts it back. Anything else is taken as accepted: the screen passes the new items.",
+        "onItemPress": "Called when an item is pressed, for example to open its register.",
+        "onSelectRange": "Called with an empty range selected, by dragging across slots or from the keyboard.",
+        "onViewChange": "Called with each view chosen.",
+        "readOnly": "True to let nothing be selected, moved or resized; items stay pressable.",
+        "renderItem": "A block's content; the title, the time, the fill and a hold's countdown by default.",
+        "resources": "The rows, in order within their group.",
+        "slotMinutes": "The length of a slot in minutes, the step every drag snaps to: 5 to 60, a divisor of 60; 15 by default.",
+        "startHour": "The first hour the day and week views show, 0 to 23; 0 by default.",
+        "timeZone": "The IANA time zone of the node the board shows; the device's by default.",
+        "timelineDays": "The days the timeline view spans, 1 to 62; 14 by default.",
+        "view": "The view, for a controlled board.",
+        "workingTime": "Working time, expanded for the range shown; time outside a row's stretches is shaded. None shades nothing."
+      }
+    },
     "schematic": {
       "Schematic": {
         "Node": {

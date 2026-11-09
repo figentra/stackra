@@ -1,5 +1,85 @@
 # @stackra/ui
 
+## 0.32.0
+
+### Patch Changes
+
+- 54db249: `CalendarSystem` (`@stackra/ui/contracts`) is now the list of `@stackra/i18n`'s `CalendarSystem`, the one source the date
+  formatting and a tenant's `DisplaySettings.calendar` read. Same values and the same frozen list, so nothing that uses it
+  changes.
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/shortcuts@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 7179d1a: `ChatFormPart` (`@stackra/panel/react`) draws an action's form in a chat turn from its JSON Schema input: one field per key, drawn as a screen draws it, prefilled by the assistant, with uploads through the host's `upload`, and sent as the person's answer. `useZodFormHandle` (`@stackra/ui/form`) runs a form over a zod schema with no class, and `useSchemaFormHandle` now builds on it. `TamoFormPart` gains `id`, which the host answers with the sent values, as a question's.
+
+### Patch Changes
+
+- Updated dependencies [0f05f60]
+  - @stackra/i18n@0.31.0
+  - @stackra/icons@0.31.0
+  - @stackra/tokens@0.31.0
+  - @stackra/shortcuts@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 85cd1b5: `@stackra/ui` adds `ApprovalCard`, a tool call that waits for a person: what will run, its input and risk, and Approve
+  and Deny until it is answered or expires. `@stackra/ai`'s `ChatSurface` now also draws a turn's AI SDK UI message parts
+  in order (text, reasoning, sources, a tool approval as an `ApprovalCard`, and each `data-tamo-<kind>` part through the
+  host's `renderers`), and `./contracts` adds the typed data of Tamo's chat parts (`TamoPartKind`, `TamoPartData`).
+- d3c8b27: Blueprint primitives for marketing pages on the web (STA-2041), drawn from the `--blueprint-*` roles:
+  `BlueprintSection` (a ruled band with `+` marks at its top corners), `Frame variant="schematic"` (a striped title bar
+  on the blueprint frame radius), `Schematic` and `SchematicNode` (named parts joined by measured orthogonal pipes with
+  junction squares, drawn in on 80 ms floor steps at the full motion level, mirrored in right-to-left by measuring) and
+  `SectionDock` (a sticky bar of section links with scroll-spy and a status line that is not a live region; under `md`
+  the other links stay reachable and show while focused). `Illustration` draws a landing drawing in four token-coloured
+  mask layers (`<src>.<tone>.svg` for ground, dots, line and core) and never mirrors. `useFloorSteps` is the one
+  whole-step reveal behind `Schematic`, `TerminalDemo` and other floor-step motion. `DitherArt` gains `mode="glyphs"`
+  (code characters in the mono font), `glyphs` and `sun` (moves the core glow, measured from the inline start); in
+  right-to-left a dot field now mirrors as a whole, while glyphs never mirror. In left-to-right its defaults draw exactly
+  as before.
+  
+  `ButtonLink`: a link drawn as a Stackra button (the `core` variant and `pill` shape included), for a call to action
+  that navigates without script.
+- d3c8b27: Landing components for marketing pages on the web (STA-2041): `DitherArt` (the six brand patterns as a Bayer 8×8
+  dither on a canvas, still under reduced motion, over a required poster), `Frame` (window, phone or plain, on a 10 px
+  frame radius), `BentoCard` (with an optional product theme), `PackageList`, `TerminalDemo` (a recorded CLI session
+  played a whole line at a time) and `PropsPlayground` (live props with a theme and direction switch scoped to the
+  preview). Tabs gain `variant="steps"` and AppHeader `variant="transparent"` (sticky, clear until the page scrolls).
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [d3c8b27]
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/tokens@0.30.0
+  - @stackra/shortcuts@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/i18n@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/icons@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

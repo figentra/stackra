@@ -1,5 +1,110 @@
 # @stackra/database
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/cache@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 6473cf1: A detached call (`ctx.detach()`) now works with the database. `detached.run` enters every wrapper registered in the new `DETACHED_RUNS` (`@stackra/actions/contracts`), and the database registers one when a driver connects: the loop's work runs on a fresh fork, outside the call's committed transaction (which MikroORM otherwise keeps in the context of a continuation started inside it), and `Database.detached()` answers the call's step, per database instance. Inside a detached call, every `CrudService` operation that runs outside a transaction runs as its own step: a short transaction with the call's isolation (`each`, `chunk` and `metrics` excepted). Outside a detached call nothing changes.
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+  - @stackra/cache@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 0394e56: The Postgres idempotency store keeps a refusal: migration `0008_add_idempotency_refusal` adds a nullable `refusal` jsonb column to `database.idempotency_keys`, and `completeRefused` upserts it outside the refused call's rolled-back transaction.
+- d8d78f0: `DatabaseConfig.health.rowSecurity` (off by default): `/readyz`'s `database` probe also reads the connected role and is
+  `down`, whatever `critical` says, when that role can bypass row-level security. That covers a superuser, BYPASSRLS
+  (its own or through a role it belongs to), the owner of a table with row security (which could turn FORCE off), a
+  member of `stackra_system_access`, or a role with CREATEROLE or CREATEDB: the runtime role of the runtime-role design
+  holds none of these.
+  Runway turns it on for deployed environments, so a deploy whose runtime role could bypass `FORCE ROW LEVEL SECURITY`
+  never goes ready (tenancy audit gap J).
+  
+  Turn it on only once the service connects as its own runtime role: today a service on Encore connects as the role that
+  runs its migrations and owns its tables, so the probe is rightly `down` there until that role exists.
+  
+  A host that overrides `health` whole (`override health = { timeout, critical }`) now also states `rowSecurity`.
+- 15dba8d: The tenancy contract step's two checks are now errors (ADR 0239):
+  
+  - `assertRowSecurity`: a table without the owner column that no platform list names is a gap, by default. It no longer
+    reads `STACKRA_GEN_STRICT`; only the audit's own tests pass `strict: false` to read such tables back as warnings with
+    their group. A service's generated isolation test therefore fails on one.
+  - gen's `model_tenancy_missing` (and `model_tenancy_migration_missing`) are errors for a package's models, as they
+    already were for a service running `@stackra/tenancy`.
+  
+  Before taking this version, a product must have zero such tables and models: list a table that holds no tenant data
+  with `t.platformTable(reason)` (or `t.reviewedPolicy(reason, policies)`), give a tenant table its owner column, and
+  mark each model `BelongsToTenant`, `BelongsToTenantOrPlatform` or `Model.global`. Core itself has none.
+
+### Patch Changes
+
+- 7b5a381: `t.change().type()` writes `-- squawk-ignore changing-column-type`, with its reason, when the change only widens a `varchar` or turns one into `text` with no custom conversion: Postgres changes only the catalog. Narrowing and every other type change stay flagged.
+- a3a3190: A service runway's `environments.<env>.database.extensions` now takes only the Postgres extensions ADR 0160 approves:
+  vector, pg_trgm, ltree, citext, pgcrypto, postgis, pg_stat_statements and btree_gist. `@stackra/runway` exports them
+  as the `PostgresExtension` enum and the frozen `APPROVED_POSTGRES_EXTENSIONS` list, and the shipped
+  `schema/service.json` carries them as an `enum` on `extensions.items`. Any other name is refused with its path.
+  
+  The AWS runtime plan carries each Postgres server's extensions (`DatabasePlan.extensions`, the names its member
+  consumers list, once and sorted) and those it preloads (`preloadLibraries`). A server that preloads one gets its own
+  parameter group (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot.
+  
+  `@stackra/database`'s `Extension` adds `BtreeGist`, so a migration may run `schema.createExtension(Extension.BtreeGist)`.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/cache@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

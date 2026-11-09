@@ -24,10 +24,10 @@ import type { MetricPath } from "#core/types/metric-path.type";
  */
 export interface Display<O> {
   /** One metric field. */
-  kpi: (path: MetricPath<O>) => KpiBuilder;
+  kpi: (path: MetricPath<O>) => KpiBuilder<O>;
 
   /** Several KPIs in one tile. */
-  kpiGroup: (kpis: readonly KpiBuilder[]) => Built<DisplayNode>;
+  kpiGroup: (kpis: readonly KpiBuilder<O>[]) => Built<DisplayNode>;
 
   /** One metric field against its target. */
   progress: (path: MetricPath<O>) => Built<DisplayNode>;

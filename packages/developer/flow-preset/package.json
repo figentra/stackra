@@ -1,6 +1,6 @@
 {
   "name": "@stackra/flow-preset",
-  "version": "0.29.0",
+  "version": "0.32.0",
   "private": false,
   "description": "Stackra's Figentra Flow preset: the flow-* command texts, templates, agents, rules, skills, guard tables and surfaces that fflow sync renders into a Stackra repository",
   "keywords": [
@@ -38,7 +38,7 @@
     "@figentra-oss/flow": "catalog:"
   },
   "peerDependencies": {
-    "@figentra-oss/flow": "catalog:"
+    "@figentra-oss/flow": ">=0.11.0"
   },
   "engines": {
     "node": ">=24.0.0"

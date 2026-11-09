@@ -21,6 +21,16 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   libraryPreset:
     "tooling presets (tsdown, vitest) are tier:config with no workspace dependency (ADR 0300); each preset owns its factory",
   // Two concepts that share a name.
+  FooterLink:
+    "@stackra/experience's authored footer link (a LocalizedText label, content) vs @stackra/ui's Footer render prop (a resolved string label); the content layer resolves one into the other",
+  RawBody:
+    "@stackra/actions' raw response body of a query (an iCalendar feed, a CSV) vs @stackra/integrations' raw request body of a managed client call (a SOAP envelope); opposite directions",
+  Surface:
+    "@stackra/ui's Surface component vs @stackra/experience's landing surface type; different things",
+  SurfaceKind:
+    "@stackra/ai's kind of surface that opened an AI turn (screen, mcp_host, messaging, background) vs @stackra/experience's frame a landing surface is drawn in (web, desktop, phone)",
+  settingsKeyOf:
+    "the same derivation twice by design: gen keys a settings class from its source shape and never loads @stackra/settings, whose internal copy keys it from the runtime class; the two tests share their cases",
   AddressField:
     "@stackra/ui's native address field component vs @stackra/validation's address field type; different things",
   CATEGORIES:

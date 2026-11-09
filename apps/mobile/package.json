@@ -79,6 +79,7 @@
     "@stackra/native-customer-display": "workspace:*",
     "@stackra/native-share": "workspace:*",
     "@stackra/navigation": "workspace:*",
+    "@stackra/notifications": "workspace:*",
     "@stackra/panel": "workspace:*",
     "@stackra/platform": "workspace:*",
     "@stackra/query": "workspace:*",

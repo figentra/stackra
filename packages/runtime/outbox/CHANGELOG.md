@@ -1,5 +1,94 @@
 # @stackra/outbox
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/locking@0.32.0
+  - @stackra/queue@0.32.0
+  - @stackra/versioning@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/queue@0.31.0
+  - @stackra/locking@0.31.0
+  - @stackra/versioning@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- 98a8940: Migration `outbox.0007_revoke_secure_change_partition` revokes `outbox.secure_change_partition(text)` from `PUBLIC`
+  (defence in depth: it has invoker rights, and its owner, the migrating role, still runs it on each new partition).
+- 82dccb3: One shared owner-isolation helper. `@stackra/actions` now exports `inRowOwner(isolation, actorId, ownerId, id, work,
+  missing?)`, `boundIsolation(resolver)`, `ClaimNotLoadedError` (`claim_not_loaded`) and `RowIsolationMissingError`
+  (`row_isolation_missing`) from its `.` entry, so the tenancy families no longer each keep a copy. Every caller keeps
+  its own system actor id (`sys_outbox_relay`, `sys_queue_worker`, `sys_scheduler`, `sys_workflow_runner`,
+  `sys_privacy_holds`), the same refusals and the same rule: an owned row with no isolation bound is refused, never
+  skipped. Queue and scheduler keep their prefixed refusals and codes (`job_row_isolation_missing`,
+  `schedule_row_isolation_missing`, and their claim-not-loaded ones) and pass them to `inRowOwner`.
+  
+  `@stackra/outbox` still re-exports `boundIsolation`, `ClaimNotLoadedError` and `RowIsolationMissingError` from its `.`
+  entry for this release only; the re-exports go away in the next minor, so import them from `@stackra/actions`. The two
+  refusals now appear under `@stackra/actions` in the manifests, with the same codes. `@stackra/workflow` no longer
+  depends on `@stackra/outbox`; `@stackra/data-transfer` now depends on `@stackra/actions`.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [98a8940]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/queue@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/versioning@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/locking@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

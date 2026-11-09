@@ -1,0 +1,15 @@
+{
+  "variants": {
+    "variants": "Variants",
+    "sizes": "Sizes",
+    "start": "Start a trial",
+    "plans": "See plans",
+    "compare": "Compare plans",
+    "sales": "Talk to sales",
+    "docs": "Read the docs"
+  },
+  "core_pill": {
+    "docs": "Read the docs",
+    "changelog": "See the changelog"
+  }
+}

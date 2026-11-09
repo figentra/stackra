@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `WidgetContent`, a widget's display on native: a KPI or a KPI group (value from the metric type, change against
- *          the previous period, threshold tone, target), a progress bar, the rows of a list, or the Custom renderer.
+ *          the previous period, threshold tone, target, note line), a progress bar, the rows of a list, or the Custom
+ *          renderer.
  * Boundary: internal to the `./native` entry; the display and each KPI's words are the web's platform-free
  *           `useWidgetDisplay` and `useKpi`; presents the answer and computes nothing beyond the change ratio. shortcut:
  *           a View display shows the "not shown here" state until the resource table renderer is built.
@@ -19,18 +20,25 @@ import { useWidgetDisplay } from "#react/widget-body/use-widget-display";
 
 /** One KPI of `widget` over `metric`. */
 function Kpi(props: KpiViewProps): ReactElement {
-  const { label, value, tone, change, target } = useKpi(props);
+  const { label, note, value, tone, change, target } = useKpi(props);
+  const noteLine = note !== undefined && (
+    <Text type="small" tone="muted">
+      {note}
+    </Text>
+  );
   if (value === undefined)
     return (
       <View className="flex-1 gap-1">
         <Text tone="muted">{label}</Text>
         <Text>{"—"}</Text>
+        {noteLine}
       </View>
     );
   return (
     <View className="flex-1 gap-1">
       <Text tone="muted">{label}</Text>
       <Text tone={tone ?? "default"}>{value}</Text>
+      {noteLine}
       {change !== undefined && (
         <Chip size="sm" tone={change.tone}>
           {change.text}
@@ -55,8 +63,8 @@ export function WidgetContent(props: WidgetContentProps): ReactElement {
   const display = useWidgetDisplay(props);
   switch (display.kind) {
     case "kpis": {
-      const kpis = display.kpis.map(({ kpi, metric }) => (
-        <Kpi key={kpi.path} widget={props.widget} kpi={kpi} metric={metric} />
+      const kpis = display.kpis.map(({ kpi, metric, note }) => (
+        <Kpi key={kpi.path} widget={props.widget} kpi={kpi} metric={metric} note={note} />
       ));
       return display.isGroup ? <View className="flex-row gap-3">{kpis}</View> : <>{kpis}</>;
     }

@@ -1,5 +1,186 @@
 # @stackra/privacy
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [918c766]
+  - @stackra/config@0.32.0
+  - @stackra/workflow@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/filesystem@0.32.0
+  - @stackra/search@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/queue@0.32.0
+  - @stackra/scheduler@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/data-transfer@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [137a7f9]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/workflow@0.31.0
+  - @stackra/data-transfer@0.31.0
+  - @stackra/search@0.31.0
+  - @stackra/outbox@0.31.0
+  - @stackra/queue@0.31.0
+  - @stackra/scheduler@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/filesystem@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 265a3ee: The search index registry and the privacy tables are tenant-owned in the platform form: a nullable `tenant_id`,
+  filled from `app.tenant_id` by default (a NULL row is the platform's), forced row-level security and the platform
+  policies. Cross-tenant readers go through audited system functions that return ids, owners and status columns only.
+  
+  `@stackra/search` (migration `search.0010_contract_search_index_tenancy`): `search.indexes` backfills a row at a tenant
+  node (`nlevel(scope_path) = 3`) from its scope and keeps a row with no scope, at the root or at a product node, as a
+  platform row. A NULL scope key replaces the `-` of a platform-wide index under the key `(tenant_id, model, scope_key)`
+  (NULLs not distinct). `SearchIndexRegistry.list` (`search:status`) reads every tenant's indexes through
+  `search.index_statuses`, and `SearchIndexStatus` gains `ownerId`. `begin`, `progress` and `finish` change only the
+  call's own row.
+  
+  Upgrade, search: the migration refuses, changing nothing, while an index registry row sits below a tenant node; delete
+  those rows (they hold only a rebuild's state and counts), migrate, then run `search:reindex` in each node's tenant.
+  
+  `@stackra/privacy` (migration `privacy.0003_contract_privacy_tenancy`): `subject_salts`, `legal_holds` and
+  `legal_hold_refusals` copy their `scope_id` partition exactly into `tenant_id` (`-` becomes NULL) and drop its policy;
+  no driver or action reads or writes the `-` partition any more. A salt is keyed `(tenant_id, subject)` (NULLs not
+  distinct).
+  
+  Breaking, privacy: `PostgresHoldRegistryDriver` takes the `Container` as its second argument and reads the
+  `CallIsolation` from it optionally. In a system run (no tenant, as `maintainPartitions` runs) it claims the live holds
+  of every tenant through `privacy.claim_live_holds`, then checks and logs each owner's holds in that owner; a claimed
+  hold that does not load throws `ClaimNotLoadedError` and a tenant's hold with no isolation bound throws
+  `RowIsolationMissingError` (both from `@stackra/outbox`): a held record is never let go by a skip. An app without
+  tenancy still boots; its platform holds run as before.
+  
+  Rolling deploy: both migrations are expand steps, so the previous release keeps working beside this one for one
+  release.
+  
+  - Search keeps a plain unique index on `(model, scope_key)` (NULLs distinct) for the previous release's
+    `on conflict (model, scope_key)`, and `-` stays a valid key.
+  - Privacy keeps `scope_id` (now nullable, unused by this release). `privacy.fill_legacy_scope_id` fills it on insert
+    from `tenant_id` (`-` for a platform row), and the salts' primary key becomes a unique index on
+    `(scope_id, subject)`.
+  
+  Later contract step, once no previous release runs:
+  
+  - Search: set each remaining `-` key to NULL (deleting one whose owner already has a NULL row), then drop
+    `idx_indexes_model_scope_key`.
+  - Privacy: drop the three `trg_*_legacy_scope_id` triggers, `privacy.fill_legacy_scope_id`,
+    `idx_subject_salts_scope_id_subject` and the `scope_id` columns.
+- d5a7d0a: **Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+  action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
+  /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
+  `openapi.json` and the SDKs move to the prefixed paths.
+  
+  Gen also refuses, in its full pass (STA-340):
+  
+  - `endpoint_collision`: two calls on one method and path once parameter names are erased (`GET /app/orders/:orderId`
+    and `GET /app/orders/:id`). Until now `openapi.json` silently kept only one of them.
+  - `endpoint_versioned`: a `v<digits>` path segment (paths stay unversioned; API versions are dates).
+  - `endpoint_area_mismatch`: an `endpoint: { method, path }` override outside its area's prefix.
+  - `endpoint_method_mismatch`: a query not on `GET`, an action on `GET`, or a transition overridden away from `PUT`.
+  - `job_without_system_actor`: a `job` without the `system` or `job` actor.
+  - `cron_input_invalid`: a `job.cron.input` property the input schema does not have, a required one it omits, or a
+    value of another JSON type.
+  - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
+    catalogue.
+  
+  The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
+  verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
+  `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
+  `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
+  `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
+  media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+  
+  The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+  path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+  that already started with an area moving again is still refused with `identity_changed`.
+  
+  What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+  `openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+  pinned to an old path (none before launch) would need the prefixed one.
+
+### Patch Changes
+
+- 82dccb3: One shared owner-isolation helper. `@stackra/actions` now exports `inRowOwner(isolation, actorId, ownerId, id, work,
+  missing?)`, `boundIsolation(resolver)`, `ClaimNotLoadedError` (`claim_not_loaded`) and `RowIsolationMissingError`
+  (`row_isolation_missing`) from its `.` entry, so the tenancy families no longer each keep a copy. Every caller keeps
+  its own system actor id (`sys_outbox_relay`, `sys_queue_worker`, `sys_scheduler`, `sys_workflow_runner`,
+  `sys_privacy_holds`), the same refusals and the same rule: an owned row with no isolation bound is refused, never
+  skipped. Queue and scheduler keep their prefixed refusals and codes (`job_row_isolation_missing`,
+  `schedule_row_isolation_missing`, and their claim-not-loaded ones) and pass them to `inRowOwner`.
+  
+  `@stackra/outbox` still re-exports `boundIsolation`, `ClaimNotLoadedError` and `RowIsolationMissingError` from its `.`
+  entry for this release only; the re-exports go away in the next minor, so import them from `@stackra/actions`. The two
+  refusals now appear under `@stackra/actions` in the manifests, with the same codes. `@stackra/workflow` no longer
+  depends on `@stackra/outbox`; `@stackra/data-transfer` now depends on `@stackra/actions`.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [8084b3a]
+- Updated dependencies [a426842]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [98a8940]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [98a8940]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a03990d]
+- Updated dependencies [a3a3190]
+- Updated dependencies [265a3ee]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/iam@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/filesystem@0.30.0
+  - @stackra/outbox@0.30.0
+  - @stackra/queue@0.30.0
+  - @stackra/scheduler@0.30.0
+  - @stackra/workflow@0.30.0
+  - @stackra/data-transfer@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/search@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

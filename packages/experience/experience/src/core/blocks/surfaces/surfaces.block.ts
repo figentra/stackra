@@ -20,7 +20,9 @@ export class SurfacesBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.surfaces,
 }) {
+  /** The group's spoken name. */
   label!: LocalizedText;
 
+  /** The frames the action's button is drawn in, in order. */
   surfaces!: Surface[];
 }

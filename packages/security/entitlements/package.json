@@ -1,8 +1,8 @@
 {
   "name": "@stackra/entitlements",
-  "version": "0.29.0",
+  "version": "0.32.0",
   "private": false,
-  "description": "Stackra entitlements: the Entitlement({ kind, counts }) kind for plan rights (feature, limit, module), the EntitlementSource, EntitlementUsage, PlanSnapshots and SeatLedger ports, the plan driver of the action pipeline's entitlement step with soft limits and grace, the plan-snapshot source, reserve-then-commit at a limit, the seat-kind meter, LimitReachedError, SeatLimitReachedError and fakeEntitlements",
+  "description": "Stackra entitlements: the Entitlement({ kind, counts }) kind for plan rights (feature, limit, module), the EntitlementSource, EntitlementUsage, PlanSnapshots and SeatLedger ports, the plan driver of the action pipeline's entitlement step with soft limits and grace, the plan-snapshot source, reserve-then-commit at a limit, the seat-kind meter, LimitReachedError, SeatLimitReachedError, the EntitlementGate kit block (./react) and fakeEntitlements",
   "keywords": [
     "billing",
     "entitlements",
@@ -45,6 +45,12 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ],
     "#testing/*": [
       "./src/testing/*",
       "./src/testing/*.ts",
@@ -67,6 +73,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
     },
     "./testing": {
       "@stackra/source": "./src/testing/index.ts",
@@ -101,13 +112,28 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
     "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "react": "catalog:frontend"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"

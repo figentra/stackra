@@ -5,6 +5,7 @@
     "retry": "Try again",
     "range": "Period",
     "change": "{change} vs previous period",
+    "change_points": "{change} pts vs previous period",
     "target": "Target {target}",
     "not_rendered": "This tile cannot be shown here."
   },
@@ -86,6 +87,16 @@
     "empty": "No results.",
     "loading": "Searching {source}",
     "failed": "{source} could not be searched."
+  },
+  "chat_form": {
+    "send": "Send",
+    "sent": "Sent",
+    "loading": "Loading the form",
+    "unavailable": "This form cannot be shown here.",
+    "upload": "Choose a file",
+    "uploading": "Uploading {name}",
+    "upload_failed": "{name} could not be uploaded.",
+    "no_upload": "Files cannot be added here."
   },
   "checklist": {
     "title": "Get started",
@@ -191,6 +202,9 @@
       "create": "Create new",
       "update": "Update existing",
       "upsert": "Create or update"
+    },
+    "metric_format": {
+      "percent": "Percent"
     },
     "place": {
       "band": "KPI band",

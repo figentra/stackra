@@ -1,5 +1,65 @@
 # @stackra/theming
 
+## 0.32.0
+
+### Minor Changes
+
+- 245069e: The theming kit's first blocks (ADR 0504). `AppearanceToggle` in `@stackra/theming/react` picks the colour scheme
+  (the schemes `ThemingConfig` offers) through `useColorScheme`: as segments, as a dark-mode switch or as a menu behind a
+  button for a site header, with an optional controlled `value` and `onChange`. `BrandLogo`, in `@stackra/theming/react`
+  and `@stackra/theming/native`, draws the theme's own logo through the container's `AssetLibrary`, or the host's logo
+  for the scheme on screen, with a fallback while there is none. Every word comes from the host. The showcase lists both
+  under Blocks.
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [54db249]
+  - @stackra/config@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/assets@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/storage@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [7179d1a]
+  - @stackra/ui@0.31.0
+  - @stackra/assets@0.31.0
+  - @stackra/storage@0.31.0
+  - @stackra/tokens@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [85cd1b5]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/tokens@0.30.0
+  - @stackra/assets@0.30.0
+  - @stackra/storage@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

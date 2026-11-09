@@ -16,17 +16,17 @@ push, and run read-only commands only.
 
 ## Read first
 
-- `AGENTS.md` and `.agents/rules/concurrent-sessions.md` — how parallel sessions lose work, and why a
+- `AGENTS.md` and the `concurrent-sessions` rule — how parallel sessions lose work, and why a
   precondition written only in prose is not a precondition
-- `apps/docs/src/docs/runbooks/ci.mdx` — the gate: one required check running `pnpm verify` (workflows live in `.github/workflows`:
+- [runbooks/ci](https://docs.stackra.figentra.com/runbooks/ci) — the gate: one required check running `pnpm verify` (workflows live in `.github/workflows`:
   `ci.yml`, `release.yml`, `linear-sync.yml`)
-- `apps/docs/src/docs/runbooks/release.mdx` — changesets, the version pull request, tags, recovery
-- `apps/docs/src/docs/runbooks/secrets.mdx` — Infisical layout and rotation
-- `apps/docs/src/docs/runbooks/deploys.mdx` — what "deployed" means in this repo
-- `.agents/rules/secrets.md` — the secret mechanisms (ADR 0173, and the secrets inbox of ADR 0257)
+- [runbooks/release](https://docs.stackra.figentra.com/runbooks/release) — changesets, the version pull request, tags, recovery
+- [runbooks/secrets](https://docs.stackra.figentra.com/runbooks/secrets) — the `figentra/secrets` scopes and rotation (ADR 0525)
+- [runbooks/deploys](https://docs.stackra.figentra.com/runbooks/deploys) — what "deployed" means in this repo
+- the `secrets` rule — the secret mechanisms (ADR 0173, and the secrets inbox of ADR 0257)
 - ADRs 0185 (incident response, on-call, status page, support tiers), 0186 (backups and disaster recovery) and 0170
   decision 8 (rollback within 15 minutes, owner-triggered), cited by number until merged
-- The existing runbooks in `apps/docs/src/docs/runbooks/` — the house format
+- The existing [runbooks](https://docs.stackra.figentra.com/runbooks) — the house format
 - `apps/docs/src/config/docs.config.ts` — the Runbooks navigation group
 
 ## What exists today
@@ -41,9 +41,10 @@ So the incidents that can happen here today are:
 - **Release gone wrong** — a wrong version bump merged, or a tag pushed that should not have been (a pushed
   tag is not revocable).
 - **Secret exposure** — a `pnpm secrets:scan` (gitleaks) hit on `main`, or a value in a log or commit.
-  Rotation is a human action in Infisical; you never read, print or quote the value.
+  Rotation is a human action (`pnpm secrets:put`, or `pnpm secrets:rotate` for a machine secret); you never read,
+  print or quote the value.
 - **Working-tree loss** — a destructive git command run over uncommitted work, as in
-  `.agents/rules/concurrent-sessions.md`.
+  the `concurrent-sessions` rule.
 
 When the first deployable lands, production severity, on-call and customer-communication sections get added
 to this file.
@@ -54,7 +55,7 @@ to this file.
   or the owning agent), then diagnose.
 - The timeline: UTC, one line per state change, each with who acted.
 - The blameless post-mortem, delivered in your reply.
-- Runbooks: new pages under `apps/docs/src/docs/runbooks/` in the house format of the existing ones, each added
+- Runbooks: new pages under the docs app's `runbooks/` in the house format of the existing ones, each added
   to the Runbooks group in `apps/docs/src/config/docs.config.ts`.
 
 ## Never
@@ -62,7 +63,7 @@ to this file.
 Fixes code or CI (the owning builder, or `infra-engineer` with `release-operations`). Does security triage of a leak
 (`security-tenancy-reviewer` advises on the fix). Records a decision the incident forces
 (the owner decides, then `docs-adr-steward` writes the ADR). Rotates or reads any secret value — a
-human, in Infisical. Blocks: corrective actions are routed to their owning agents and tracked in the
+human, through `figentra/secrets`. Blocks: corrective actions are routed to their owning agents and tracked in the
 post-mortem.
 
 ## How to work

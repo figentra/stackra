@@ -19,6 +19,15 @@ generated runtime folder is named `.stackra/runtime`.
 </Note>
 
 <Note>
+  2026-11-09 (leader decision, STA-1907 review): decision 7's host becomes `<product>-pr-<n>.figentra.cloud`.
+  Products now live in their own repositories, and each one numbers its pull requests from 1, so `pay#412` and
+  `commerce#412` would both have written `host:pr-412.figentra.cloud`, and the second would silently take over the
+  first's preview. Putting the product key in the one label keeps every preview apart, and it still sits one label under
+  the zone, so the `*.figentra.cloud` wildcard certificate covers it. The publish also refuses to replace a host row
+  that another product holds. The release row stays `release:<product>:console:pr-<n>`.
+</Note>
+
+<Note>
   2026-11-01 (owner decision, STA-1908): decision 7 stands for per-pull-request previews, which keep
   `pr-<n>.figentra.cloud`. A separate registrable domain keeps preview cookies and storage apart
   from figentra.com production, and one label under one zone takes one wildcard certificate, which a

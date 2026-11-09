@@ -1,5 +1,51 @@
 # @stackra/filesystem
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 8084b3a: `FileSystem.write` (and `writeStream`) take `retainUntil`: the file is kept unchangeable until then (WORM). The `s3` disk
+  stores it under Object Lock in COMPLIANCE mode, which needs a bucket created with Object Lock on. The memory and local
+  disks record it and refuse a write, move or delete before then with `FileRetainedError`. The Encore bucket, GCS and Expo
+  disks refuse a retained write with `RetentionUnsupportedError` rather than store an unprotected file.
+
+### Patch Changes
+
+- a03990d: The committed manifests catch up with the source: `stackra gen` regenerated them from current main, so
+  `stackra gen --check` is clean before the release.
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

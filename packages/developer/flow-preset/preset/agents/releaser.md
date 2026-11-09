@@ -5,25 +5,6 @@ tier: executor
 assistants: [claude]
 blocks: false
 tools: [Read, Grep, Glob, Bash]
-permissions:
-  - action: shell
-    resource: "*"
-    effect: deny
-  - action: shell
-    resource: "pnpm store*"
-    effect: allow
-  - action: shell
-    resource: "gh workflow run store.yml*"
-    effect: allow
-  - action: shell
-    resource: "gh run *"
-    effect: allow
-  - action: edit
-    resource: "*"
-    effect: deny
-  - action: webfetch
-    resource: "*"
-    effect: deny
 ---
 
 # releaser
@@ -33,11 +14,11 @@ permissions:
 Make a launch a sequence of workflow dispatches plus two owner approvals (ADR 0480). The product's root `runway.yaml`
 `mobile.<app>` entry and its `assets/store/<app>/` folder are the source of truth (ADR 0441); you read them, report what
 is missing, and run each step through the product's store workflow, which calls core's `.github/workflows/runway-store.yml`
-from main. You never hold a credential: the workflow reads the store root kit from Infisical over OIDC.
+from main. You never hold a credential: the workflow decrypts the store root kit from its sops scope over OIDC (ADR 0525).
 
 ## Must read
 
-ADR 0480, ADR 0257, `.agents/skills/mobile-store-listing/SKILL.md`, ADR 0441, the product's
+ADR 0480, ADR 0257, the `mobile-store-listing` skill, ADR 0441, the product's
 `runway.yaml` `mobile` map, `assets/store/<app>/` (store.yaml and each locale), and `.stackra/store/<app>/checklist.md`
 after a build.
 

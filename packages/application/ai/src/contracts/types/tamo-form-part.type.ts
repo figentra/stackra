@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `TamoFormPart`, the data of a `data-tamo-form` part: an action's form, prefilled for the person to
- *          check and send.
+ *          check and send; the sent values come back as the answer to its `id`, as a question's do.
  * Boundary: a type only; the data of one AI SDK data part, drawn by the host's renderer, never markup from the
  *           model.
  * Runtime: isomorphic
@@ -9,6 +9,9 @@
  */
 /** A prefilled action form in a chat turn. */
 export interface TamoFormPart {
+  /** The form's id; the host answers it with the sent values (`onAnswer(id, values)`). */
+  readonly id: string;
+
   /** The key of the action the form sends. */
   readonly actionKey: string;
 

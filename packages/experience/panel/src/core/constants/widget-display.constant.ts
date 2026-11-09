@@ -20,6 +20,7 @@ import type { ToneRule } from "#core/types/tone-rule.type";
  *
  * @example
  * WidgetDisplay.kpi("revenue", { icon: "banknote", tones: [{ belowTarget: 0.8, tone: Tone.Danger }] });
+ * WidgetDisplay.kpi("spend", { note: "spendOtherCurrencies" });
  * WidgetDisplay.list({ primary: "variantId", secondary: "available" });
  */
 export const WidgetDisplay = Object.freeze({
@@ -31,6 +32,7 @@ export const WidgetDisplay = Object.freeze({
       readonly tones?: readonly ToneRule[];
       readonly drill?: DrillNode;
       readonly lowerIsBetter?: boolean;
+      readonly note?: string;
     } = {},
   ): KpiNode =>
     Object.freeze({

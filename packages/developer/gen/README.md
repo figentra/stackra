@@ -109,8 +109,8 @@ like a relation) and the manifest's JSON Schema, so it never reaches an action o
 
 `model_tenancy_missing` (`checkModelScope`, full pass only, stackra-258): in a service that declares
 `@stackra/tenancy`, a model with neither `BelongsToTenant`/`BelongsToTenantOrPlatform` nor a `Model.global(...)` base is
-refused (a model extending an own model takes its base's answer). A package's models are checked too, as warnings
-until 0.20; a table an ADR names (`MODEL_SCOPE_EXEMPTIONS`, today `achievements.award_verifications`, ADR 0368 d5) is
+refused (a model extending an own model takes its base's answer). A package's models are checked too, as errors
+(since the tenancy contract step); a table an ADR names (`MODEL_SCOPE_EXEMPTIONS`, today `achievements.award_verifications`, ADR 0368 d5) is
 skipped. `model_tenancy_migration_missing` (staged: a warning until 0.20 or `STACKRA_GEN_STRICT=1`) flags an owned model
 whose table some own migration touches but none calls `t.belongsToTenant()`. The reader reads the traits of `Model.global(...)`
 and marks the class `global`, which the manifest's model records. Such a service with an owned model and

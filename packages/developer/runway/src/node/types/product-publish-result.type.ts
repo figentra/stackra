@@ -21,4 +21,6 @@ export type ProductPublishResult = {
   readonly releases: Readonly<Record<string, EdgeRelease>>;
   /** Per surface key: the canary started. */
   readonly canaries: Readonly<Record<string, EdgeCanary<EdgeRelease>>>;
+  /** A pull request's preview host (`<product>-pr-<n>.figentra.cloud`); absent for any other publish. */
+  readonly host?: string;
 };

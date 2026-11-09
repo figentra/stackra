@@ -1,5 +1,94 @@
 # @stackra/iam
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [2c6be3c]
+- Updated dependencies [54db249]
+  - @stackra/scope@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/rules@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/rules@0.31.0
+  - @stackra/scope@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 17fafdd: A ninth actor kind, `ActorKind.ApiClient` (`api_client`): a tenant's server calling with an API key. An action or query
+  declares `public: true` or `public: { scopes, publishable }` to answer one; every other operation refuses it, and so
+  does a call without a key. `CallOptions.credential` carries the verified key (id, scopes, publishable, version pin) onto
+  the descriptor with `descriptor.public` (the required scopes and whether only exact keys count: L3 and above, approval
+  or step-up). iam's `AccessControl` checks an `api_client` call's scopes (`keyCovers`: exact keys, or selectors below
+  L3); a publishable key calls a public write only when it opts in.
+- a426842: A tenant's deny rules bind an API key's caller: `PolicyDecisionPointService.denied` checks the deny rules of a
+  principal's own snapshot (breakable ones too), and `IamAccessControlDriver` runs it for an `api_client` call after its
+  scopes pass, in `require` and against the record in `authorize`. A key principal with no published snapshot is refused.
+
+### Patch Changes
+
+- f6a087c: A record policy's method is found by the name of the `Permission` static behind the call's permission
+  (`static readonly confirmByCode` → `confirmByCode()`), so a multi-word verb's method runs. `registerPermissions`
+  records each key's static name in `PERMISSION_MEMBERS`. For one release the old lookup by the key's last segment
+  (`confirm_by_code`) is still tried when the policy has no method of the static's name.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [85cd1b5]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [15dba8d]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/actions@0.30.0
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/rules@0.30.0
+  - @stackra/scope@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

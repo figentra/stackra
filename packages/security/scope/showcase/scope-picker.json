@@ -1,0 +1,21 @@
+{
+  "slug": "scope-picker",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/scope",
+  "exportName": "ScopePicker",
+  "parts": ["ScopePicker"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 320
+    }
+  ],
+  "related": ["free/tree-select", "free/entity-picker", "free/breadcrumbs"],
+  "tokens": ["color.field", "color.accent"],
+  "keywords": ["scope", "branch", "hierarchy", "switcher", "picker", "field", "kit"],
+  "status": "new"
+}

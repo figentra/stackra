@@ -19,6 +19,7 @@ describe("WebhookDelivery", () => {
       "has_public_id",
       "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(WebhookDelivery)[0]?.options).toEqual({ prefix: "whd" });
     expect(new WebhookDelivery().id).toMatch(/^whd_[0-9a-z]{26}$/);

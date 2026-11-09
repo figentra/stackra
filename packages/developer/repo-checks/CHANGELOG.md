@@ -1,5 +1,29 @@
 # @stackra/repo-checks
 
+## 0.32.0
+
+### Patch Changes
+
+- ba6eed7: `catalogEncoreVersion` now also reads pnpm's `catalogs.default` form of the default catalog, which is where fflow keeps its pin. Before this, `stackra encore:prepare` and the service check found no `encore.dev` version in such a repository. The top-level `catalog:` form still wins when a file has both.
+
+## 0.31.0
+
+### Patch Changes
+
+- 2ba26cd: `checkouts.checkout_page.submit@1` is a reviewed anonymous surface. Figentra Pay's hosted page sends the payer's
+  details and terms acceptance with the session's HMAC client token, checked as `load` checks it. A per-session bucket
+  (10 a minute) bounds the calls, and a row lock binds the session once. The details reach payments in the call and are
+  never stored; the acceptance's IP address and user agent come from the call, never from input.
+- ebfd942: `runMobileJob` reads mobile `whiteLabel.entitlement`: a scope-started white-label build is refused unless the
+  variant's new `entitlements` list holds it. The field leaves `RUNWAY_UNREAD_FIELDS` and its schema description no longer
+  says "Not read yet".
+
+## 0.30.0
+
+### Minor Changes
+
+- 5b064da: `stackra validate --repository` holds a service to what Encore needs at the member root: `dependencies.encore.dev` is the one allowed literal and must equal the default catalog's `encore.dev` (`catalog:` is refused), and its tsconfig carries `baseUrl` "." and `paths` equal to its package.json `imports`. A repository with services must gitignore `services/*/encore.app`. New exports: `checkEncoreService`, `catalogEncoreVersion`, `pathsOfImports`.
+
 ## 0.29.0
 
 ### Minor Changes

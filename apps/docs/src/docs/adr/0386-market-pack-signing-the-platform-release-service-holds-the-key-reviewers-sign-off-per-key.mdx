@@ -54,8 +54,31 @@ would trust several keys and a product could ship a section the platform never s
 planned — the release service's sign step refuses a draft or a version with unreviewed keys; deployments read trusted
 keys from configuration only. Nothing checks either yet.
 
+## Amendment 2026-11-09: an interim bundled source until the release service signs
+
+The release service's sign step is not built, so no deployment can resolve a live pack: `store` serves only signed
+packs, and nothing signs them or publishes their hashes. Until it is built, a deployment may run the interim `bundled`
+source (`market_packs.source: bundled`), owner ruling of 2026-11-09:
+
+1. **The pin replaces the signature.** `bundled` serves only the packs `@stackra/market-packs` ships in
+   `assets/data/packs/` whose content hash (`contentHash` of the pack as shipped, the hash `verifyPack` checks) the host
+   names in `packHashes`. An unpinned file is never read. `BUNDLED_PACK_HASHES` lists the live bundled packs so a host
+   can copy its pins, but it is never a default.
+2. **Live only.** A pinned pack that is not `live` is refused (`not_live`). Turning a bundled pack live is a reviewed
+   change of its own, beside the hash it produces. Drafts stay for authoring only (0385 decision 7).
+3. **Not production by default.** In production (`STACKRA_ENVIRONMENT=production`) the driver refuses when it is built
+   (`BundledPackSourceRefusedError`) unless the host sets `allowBundledInProduction`, and it warns once when that is
+   set.
+4. **Signing comes before production.** This decision's release-service signing (decisions 1 to 3) is still the
+   target. A production deployment moves to `store` with signed packs once the sign step exists, and this amendment
+   lapses then.
+
+Decisions 1 to 3 and the consequences above stand. Enforcement: the `bundled` driver and its tests; still planned for
+the release service's sign step.
+
 ## Supersedes and sources
 
 Supersedes: none. Settles 0363 open question 2; fills 0370 decisions 2 and 8. Sources:
 `notes/handover/stackra-package-needs.md` (market-pack loader row); `notes/handover/answers-as-config.md`
-(CAP-pack-review, CAP-pack-launch-gate); STA-666.
+(CAP-pack-review, CAP-pack-launch-gate); STA-666. Amendment 2026-11-09: the owner's ruling on the interim pack source
+(relayed by the LEADER), CORE-GAPS' review conditions; STA-2607.

@@ -12,12 +12,17 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** A membership. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class SegmentMembership extends Model.with(HasPublicId("sgm"), BelongsToTenant, Timestamps) {
+export class SegmentMembership extends Model.with(
+  HasPublicId("sgm"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The segment this membership is in. */
   segmentId!: PublicId<"seg">;
 

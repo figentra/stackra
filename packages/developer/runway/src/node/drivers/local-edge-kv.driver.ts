@@ -40,6 +40,11 @@ export class LocalEdgeKvDriver extends Driver(EdgeKvWriter) {
   }
 
   /** The row at `key`, or `null`. */
+  override async read(key: string): Promise<string | null> {
+    return this.get(key);
+  }
+
+  /** The row at `key`, or `null`. */
   get(key: string): string | null {
     return this.rows()[key] ?? null;
   }

@@ -93,7 +93,7 @@ The rule behind the table: this repository must not presume a product domain, a 
 
 ### The rejected-technology check
 
-`pnpm agents:check` (and `pnpm exec figentra agents sync --lint`) scans every skill in `.agents/skills/` for technology the [not-built-yet list](/adr/0227-rejected-and-deferred-technologies-refreshed) rejects: other ORMs, Nest, `reflect-metadata`, `encore.dev`, expo-router, Next.js, Jest, ESLint, Prettier, Zustand, i18next, class-validator, Express, Fastify, Sanity, Tauri, Better Auth, XState, Storybook, GraphQL, and `.spec` test files or a root `tests/` folder. A hit fails the check unless `SKILL_TECH_ALLOWED` in `tools/scripts/agents-sync.mjs` records why the mention is harmless, for example turborepo's example task names. A vendored skill is never edited in place, so the exception lives in the script, with its reason.
+`pnpm validate` (`stackra validate --repository`) scans every skill in `.agents/skills/` for technology the [not-built-yet list](/adr/0227-rejected-and-deferred-technologies-refreshed) rejects: other ORMs, Nest, `reflect-metadata`, `encore.dev`, expo-router, Next.js, Jest, ESLint, Prettier, Zustand, i18next, class-validator, Express, Fastify, Sanity, Tauri, Better Auth, XState, Storybook, GraphQL, and `.spec` test files or a root `tests/` folder. A hit fails the check unless `SKILL_TECH_ALLOWED` in `tools/scripts/agents-sync.mjs` records why the mention is harmless, for example turborepo's example task names. A vendored skill is never edited in place, so the exception lives in the script, with its reason.
 
 ### The licence check
 

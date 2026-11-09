@@ -1,6 +1,6 @@
 {
   "name": "@stackra/testing",
-  "version": "0.29.0",
+  "version": "0.32.0",
   "private": false,
   "description": "The generic Stackra test kit: vitest re-exports, a frozen clock and ids, the Fake base, typed matchers, plain fixture factories, thin React and React Native render helpers with the route helpers, and the Playwright end-to-end kit",
   "keywords": [
@@ -119,6 +119,7 @@
     "react-native": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
+    "vite": "catalog:frontend",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
@@ -130,6 +131,7 @@
     "@testing-library/user-event": "catalog:frontend",
     "react": "catalog:frontend",
     "react-native": "catalog:mobile",
+    "vite": "catalog:frontend",
     "vitest": "catalog:quality"
   },
   "peerDependenciesMeta": {
@@ -155,6 +157,9 @@
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   },

@@ -1,5 +1,39 @@
 # @stackra/contracts
 
+## 0.32.0
+
+No changes in this release.
+
+## 0.31.0
+
+No changes in this release.
+
+## 0.30.0
+
+### Minor Changes
+
+- 17fafdd: A ninth actor kind, `ActorKind.ApiClient` (`api_client`): a tenant's server calling with an API key. An action or query
+  declares `public: true` or `public: { scopes, publishable }` to answer one; every other operation refuses it, and so
+  does a call without a key. `CallOptions.credential` carries the verified key (id, scopes, publishable, version pin) onto
+  the descriptor with `descriptor.public` (the required scopes and whether only exact keys count: L3 and above, approval
+  or step-up). iam's `AccessControl` checks an `api_client` call's scopes (`keyCovers`: exact keys, or selectors below
+  L3); a publishable key calls a public write only when it opts in.
+- 4ce80a2: An anonymous call acts in the tenant the edge Worker signed (`EdgeHeader.Scope`, ADR 0437): `EdgeHeaderGuard` records
+  the scope once the signature and the request id verify, and `serveGuardedCall` gives it to the anonymous actor as its
+  `scopeId`, its visitor id kept. A credential's tenant wins; a token or an API key whose tenant differs from the signed
+  one is refused with the generic 403; no signed scope means no tenant. A signed scope that is not an `scp_` public id
+  is refused (fail closed). `@stackra/contracts` adds `isPublicId(value, prefix)`, a type guard for a string in public id
+  form.
+- 8c17109: Two new ports, `IdempotencyRetentionSource` (how long an Idempotency-Key is kept) and `VersionSupportSource` (how many
+  months an API version stays supported), so an operator's settings can set both without `@stackra/actions` or
+  `@stackra/versioning` depending on `@stackra/settings`.
+- ef49e63: The rate-limit step can read a scope's limits from settings, so an operator lowers them without a deploy. When a
+  `RateLimitCapSource` (new port in `@stackra/contracts`) is bound, each area bucket number and each default action
+  bucket is the lower of its own and the scope's cap; a cap never raises a limit, and a failed read fails the call.
+  `@stackra/settings` ships the driver, `SettingsRateLimitCapSourceDriver`, over the new `RateLimitSettings` group
+  (`rate_limit.<area>PerMinute`, `<area>Burst`, `actionPerScope`, `actionPerAddress`; `null` caps nothing). With no
+  source bound, nothing changes.
+
 ## 0.29.0
 
 No changes in this release.

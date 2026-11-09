@@ -4,7 +4,7 @@
  *          pinned to the environment's account and region with the cost tags as default tags, then the data key, the
  *          files bucket (with replication to the backup account), the Postgres backups (with their failure alerts),
  *          the static egress addresses, the GitHub OIDC infra role, and, from the account's first environment, the
- *          Encore Cloud role and the budget with its stop action.
+ *          Encore Cloud role, the budget with its stop action and ECR's pull-through cache for Docker Hub.
  * Boundary: creates resources only through Pulumi; agents run it under `stackra infra preview` or Pulumi's mocks and
  *           never apply it (`pulumi up` is the owner's or the deploy job's). The VPC, the database server, caches and
  *           queues are Encore Cloud's or the runtime stack's, not this program's. The provider refuses any account but
@@ -18,6 +18,7 @@ import * as pulumi from "@pulumi/pulumi";
 import type { AwsBaselineConfig } from "#core/types/aws-baseline-config.type";
 import { accountId } from "#node/functions/account-id.function";
 import { accountProvider } from "#node/functions/account-provider.function";
+import { dockerHubCache } from "#node/functions/docker-hub-cache.function";
 import { backupAlerts } from "#node/functions/backup-alerts.function";
 import { backupTargets } from "#node/functions/backup-targets.function";
 import { ciAccess } from "#node/functions/ci-access.function";
@@ -156,6 +157,9 @@ export function awsBaseline(
           options,
         );
 
+  // Runway workloads pull third-party images through it (`<account>.dkr.ecr.<region>.amazonaws.com/docker-hub/…`).
+  const dockerHub = config.ownsAccount ? dockerHubCache(prefix, options) : null;
+
   return {
     dataKeyArn: key.arn,
     filesBucket: files?.bucket ?? null,
@@ -166,5 +170,6 @@ export function awsBaseline(
     budgetTopicArn: topic?.arn ?? null,
     egressIps: egress?.publicIps ?? null,
     egressAllocationIds: egress?.allocationIds ?? null,
+    dockerHubCacheSecretArn: dockerHub?.secret.arn ?? null,
   };
 }

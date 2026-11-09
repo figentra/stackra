@@ -1,5 +1,58 @@
 # @stackra/builder
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [918c766]
+  - @stackra/workflow@0.32.0
+  - @stackra/collaboration@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/rules@0.32.0
+  - @stackra/experience@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [137a7f9]
+  - @stackra/workflow@0.31.0
+  - @stackra/rules@0.31.0
+  - @stackra/collaboration@0.31.0
+  - @stackra/experience@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0bf0a7f]
+- Updated dependencies [0394e56]
+- Updated dependencies [2307506]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d5a7d0a]
+  - @stackra/contracts@0.30.0
+  - @stackra/collaboration@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/experience@0.30.0
+  - @stackra/workflow@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/rules@0.30.0
+  - @stackra/validation@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

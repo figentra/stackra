@@ -1,5 +1,56 @@
 # @stackra/fiscal
 
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/errors@0.32.0
+  - @stackra/market-packs@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- 2b1dac5: `EtaDriver` now reads a rejected submission's reference from `submissionUUID`, the name ETA's SDK uses, and falls back to `submissionId`. Before this, a real ETA answer left the reference empty.
+- @stackra/money@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/market-packs@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- c6c1d21: `CadesSignerDriver`, the `FiscalSigner` for ETA's detached CAdES-BES: a CMS `SignedData` over the request's digest
+  with the content type, message digest, `ESSCertIDv2` and signing time as signed attributes and the certificate
+  inside, signed by the host's `FiscalSigningKey` (RSA or EC, as the certificate says), so a token, an HSM or a cloud
+  e-seal provider signs and the private key never reaches the package. `EtaDriver` now passes the sealing time as
+  `signedAt`, so ETA's signature carries it.
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/market-packs@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

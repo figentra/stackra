@@ -308,7 +308,7 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   - `approval_condition_dependency`: an `ApprovalCondition` with any constructor dependency.
   - `approval_condition_reads_unmarked`: a condition `reads` key that is not a setting marked `approval`.
 - `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
-  `@stackra/tenancy` and for every package (a warning until 0.20: drop the `shortcut:` map in the function), minus
+  `@stackra/tenancy` and for every package (an error in both since the tenancy contract step), minus
   the ADR-named tables of `MODEL_SCOPE_EXEMPTIONS`; `model_tenancy_migration_missing` (staged) over
   `MemberIR.migrationTables` (`readMigrationTables`) for an owned model whose table never gets `t.belongsToTenant()`. `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.

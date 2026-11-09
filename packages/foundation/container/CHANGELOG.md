@@ -1,5 +1,34 @@
 # @stackra/container
 
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/contracts@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/contracts@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- f6a087c: A record policy's method is found by the name of the `Permission` static behind the call's permission
+  (`static readonly confirmByCode` → `confirmByCode()`), so a multi-word verb's method runs. `registerPermissions`
+  records each key's static name in `PERMISSION_MEMBERS`. For one release the old lookup by the key's last segment
+  (`confirm_by_code`) is still tried when the policy has no method of the static's name.
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes
