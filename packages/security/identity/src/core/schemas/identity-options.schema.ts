@@ -124,6 +124,16 @@ export class IdentityOptions extends Schema {
   })
   apiKeyLastUsedSeconds = 60;
 
+  /**
+   * Seconds a gateway keeps a verified API key's record before asking identity again: the longest a revoked key can
+   * still pass when its revocation event has not reached the gateway (0 turns the cache off).
+   */
+  @Int({
+    min: 0,
+    max: 300,
+  })
+  apiKeyCacheSeconds = 30;
+
   /** Minutes a desktop sign-in waits for the browser to come back before it counts as closed. */
   @Int({
     min: 1,

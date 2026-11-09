@@ -48,6 +48,7 @@ describe("@stackra/identity/node", () => {
       "RegisterPasskeyAction",
       "RegisterPasskeyInput",
       "RegisterPasskeyOutput",
+      "ServiceApiKeyStoreDriver",
       "ServiceTokensConfig",
       "ServiceTokensConfig$",
       "ServiceTokensOptions",
