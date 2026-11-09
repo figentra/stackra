@@ -30,6 +30,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { COURIER_PACKAGE_IR } from "#core/__tests__/fixtures/courier-package-ir.fixture";
 import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import {
   CONNECTOR_PACKAGES,
