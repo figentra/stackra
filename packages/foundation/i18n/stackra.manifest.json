@@ -32,6 +32,10 @@
     }
   ],
   "schemas": {
+    "i18n.CalendarSystem": {
+      "type": "string",
+      "enum": ["gregory", "islamic-umalqura"]
+    },
     "i18n.DisplayUnit": {
       "type": "string",
       "enum": ["g", "kg", "oz", "lb", "mm", "cm", "m", "in", "ft", "yd", "ml", "l", "fl_oz", "gal"]
