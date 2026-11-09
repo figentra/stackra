@@ -3,7 +3,8 @@
  * Purpose: unit tests of `public` in `ActionPipeline` (STA-2646 B1): an `api_client` caller reaches only a `public`
  *          operation and only with a key; a publishable key calls a public write only when it opts in, and a read
  *          unless it opts out; the descriptor carries the key and what it must hold, exact-only for a gated operation;
- *          every other caller still goes by `actors`.
+ *          every other caller still goes by `actors`; an API key's write and read are each audited once with the key
+ *          the call ran under, the API version and the duration, never a body (AC-008).
  * Boundary: test only; every port is a stand-in in a map resolver, and AccessControl records what it was asked.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0278 (amendment of 2026-11-09); ADR 0098 (the `api_client` actor).
@@ -13,8 +14,8 @@ import { type Actor, ActorKind, AssuranceLevel, Clock, Realm } from "@stackra/co
 import { ForbiddenError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
-import { AccessControl, IdempotencyStore } from "#contracts/index";
-import type { CallCredential, CallDescriptor } from "#contracts/index";
+import { AccessControl, AuditTrail, IdempotencyStore } from "#contracts/index";
+import type { AuditEntry, CallCredential, CallDescriptor } from "#contracts/index";
 import { Action } from "#core/bases/action.base";
 import { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
@@ -35,6 +36,25 @@ const KEY: CallCredential = {
 class FixedClock extends Clock {
   now(): Date {
     return new Date(NOW);
+  }
+}
+
+/** A clock that moves 5 ms on every reading, so a call's duration is visible. */
+class TickingClock extends Clock {
+  private ticks = 0;
+
+  now(): Date {
+    this.ticks += 1;
+    return new Date(NOW.getTime() + this.ticks * 5);
+  }
+}
+
+/** Keeps every audit entry it is handed. */
+class ListAuditTrail extends Driver(AuditTrail) {
+  readonly entries: AuditEntry[] = [];
+
+  async record(entry: AuditEntry): Promise<void> {
+    this.entries.push(entry);
   }
 }
 
@@ -117,11 +137,13 @@ class CloseAccountAction extends Action({
   }
 }
 
-function setup() {
+function setup(clock: Clock = new FixedClock()) {
   const access = new RecordingAccess();
   const refunds = new IssueRefundAction();
+  const trail = new ListAuditTrail();
   const map = new Map<AnyClass, object>([
-    [Clock, new FixedClock()],
+    [Clock, clock],
+    [AuditTrail, trail],
     [IdempotencyStore, new MemoryIdempotencyStoreDriver(new FixedClock())],
     [IssueRefundAction, refunds],
     [AccessControl, access],
@@ -135,7 +157,7 @@ function setup() {
     has: (token) => map.has(token),
     get: <T extends object>(token: AnyClass<T>): T => map.get(token) as T,
   };
-  return { pipeline: new ActionPipeline(resolver), access, refunds };
+  return { pipeline: new ActionPipeline(resolver), access, refunds, trail };
 }
 
 describe("ActionPipeline public", () => {
@@ -212,6 +234,39 @@ describe("ActionPipeline public", () => {
       ),
     ).toEqual({ count: 3 });
     expect(refunds.issued).toBe(3);
+  });
+
+  it("audits an API key's write and read once each, with its key, version and duration, and no body (AC-008)", async () => {
+    const { pipeline, trail } = setup(new TickingClock());
+    const call = { actor: merchant, credential: KEY, apiVersion: "2026-11-09" };
+    await pipeline.execute(IssueRefundAction, {}, { ...call, idempotencyKey: "k-ac8" });
+    await pipeline.execute(GetPaymentQuery, {}, call);
+    expect(trail.entries).toHaveLength(2);
+    const [write, read] = trail.entries;
+    expect(write).toMatchObject({
+      outcome: "ok",
+      idempotencyKey: "k-ac8",
+      apiVersion: "2026-11-09",
+      call: { kind: "action", key: "refund.issue", credential: { id: "key_1" } },
+    });
+    expect(read).toMatchObject({
+      outcome: "ok",
+      apiVersion: "2026-11-09",
+      call: { kind: "query", key: "payment.get", credential: { id: "key_1" } },
+    });
+    expect(read?.idempotencyKey).toBeUndefined();
+    for (const entry of trail.entries) expect(entry.durationMs).toBeGreaterThan(0);
+    // neither the input nor the output (`{ count: 1 }`, `{ ok: true }`) is on an entry
+    expect(JSON.stringify(trail.entries)).not.toMatch(/"count"|"ok":true/);
+    // a user's read is still not audited
+    const user: Actor = {
+      kind: ActorKind.User,
+      id: "usr_01ja0000000000000000000002",
+      realm: Realm.Customer,
+      scopeId: "scp_tenant",
+    };
+    await pipeline.execute(GetPaymentQuery, {}, { actor: user });
+    expect(trail.entries).toHaveLength(2);
   });
 
   it("keeps the declared policy for any other caller: a user's write runs without a key", async () => {

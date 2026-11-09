@@ -75,6 +75,13 @@ export interface CallOptions {
   /** The API key the call came with, set by the transport from the verified key (an `api_client` actor); never input. */
   readonly credential?: CallCredential;
 
+  /**
+   * The dated API version the call is answered in (`2026-11-09`): the `Stackra-Version` header, else the key's pin,
+   * else the default, as the generated adapter resolved it. Recorded on the audit entry; absent for a call no adapter
+   * versioned.
+   */
+  readonly apiVersion?: string;
+
   /** The network client the call came from, from the connection or the edge's trusted forwarding; never input. */
   readonly client?: CallClient;
 
