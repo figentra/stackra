@@ -7,7 +7,7 @@
     "digest": "sha256:f4847f51b3467ae9c701b8af5e559c0690515b8b92ddd7e6576df663b3b137bf"
   },
   "profile": "framework",
-  "overrides": "sha256:ee73d8d3d478bca712f099f2034d8050e33a78f93eb1d08509664ff3782c4347",
+  "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:74f5eab1d015840bf7178f0ed5a608ab6af7f160d4c4f9d0066cf26c36cb01c8",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:1c478a37fc9f460a7dc8593ea657248041c0aeed0d698b5e1a6e6d9928f431f4",
@@ -118,7 +118,7 @@
     ".mcp.yaml": "sha256:b3c77a2da9dbe8b30e5ba5a39d950ab84bee7445d1a2691d6a76bb4c22d7797a",
     "AGENTS.md": "sha256:4b258e4bc91d38023d243c01f597ee9042ce7904d236fe43371f6e21a357be3b",
     "CLAUDE.md": "sha256:055e624e6d483b0694e6a8ca6d44d6979353a65d5c1b93d5e9db74f034f5fa7f",
-    "lefthook.yml": "sha256:c1c21b26899f86314f4fa93f52d68278137f3d54272b3ea68ec10e209b9b9bab",
+    "lefthook.yml": "sha256:112dc1a8979a37bdda4fb4abac36762e7451c8dadaa0a05143551c1ef44d3151",
     "README.md": "sha256:7ba62cb6e9410c7af86ef5df056a0ad06c99d9cd4807b8251901617a77efd9d6",
     ".github/workflows/fflow-baseline.yml": "sha256:8e453c500517790bd74fc1553995fa9034d57f40e185498cb80755b3d7afa3dc",
     ".github/workflows/fflow-approve.yml": "sha256:2a2af764184738557e409e9444a6c85a07341b3437c9f131248c8a9e4a001046",
