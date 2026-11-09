@@ -7,7 +7,9 @@
  * Governing contract: ADR 0302 (decision 3: one API); ADR 0303 (decision 7).
  */
 
+/** The button shapes: `default` takes the theme's corner, `pill` is fully rounded. */
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the shapes carry no labels.
 export const ButtonShape = Object.freeze(["default", "pill"] as const);
 
+/** One button shape. */
 export type ButtonShape = (typeof ButtonShape)[number];

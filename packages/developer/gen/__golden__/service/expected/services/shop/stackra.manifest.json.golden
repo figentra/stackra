@@ -38,10 +38,10 @@
       "permission": "shop.order.cancel",
       "risk": "L2",
       "actors": ["user"],
-      "area": "app",
+      "idempotency": "optional",
       "endpoint": {
         "method": "PUT",
-        "path": "/app/orders/:orderId/cancel",
+        "path": "/orders/:orderId/cancel",
         "derived": true
       },
       "tool": {
@@ -257,6 +257,18 @@
   "passes": [],
   "entitlements": [],
   "roles": [],
+  "env": [
+    {
+      "name": "STACKRA_SHOP_GATEWAY",
+      "kind": "config",
+      "type": "enum",
+      "values": ["stripe"],
+      "required": false,
+      "config": "shop",
+      "class": "ShopConfig",
+      "field": "gateway"
+    }
+  ],
   "schemas": {
     "shop.OrderStatus": {
       "type": "string",

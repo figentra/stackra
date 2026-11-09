@@ -86,6 +86,8 @@ import { isAppendOnly } from "#core/functions/is-append-only.function";
 import { isTree } from "#core/functions/is-tree.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { readRowSecuritySettings } from "#core/functions/read-row-security-settings.function";
+import { replayRowSecuritySettings } from "#core/functions/replay-row-security-settings.function";
 import { rowKey } from "#core/functions/row-key.function";
 import { stampFields } from "#core/functions/stamp-fields.function";
 import { tableCount } from "#core/functions/table-count.function";
@@ -132,6 +134,18 @@ function nest(path: string, value: unknown): Record<string, unknown> {
 }
 
 /**
+ * `em`, once it has written the unit of work's pending changes when a transaction is running, so a read sees a value set
+ * earlier in that transaction. MikroORM's auto flush misses a field set on a loaded row, through `update` (`assign`) or
+ * a plain setter. Outside a transaction nothing is written early. A module function, not a member, so a subclass may
+ * declare any member name.
+ */
+async function settled(em: EntityManager): Promise<EntityManager> {
+  // reason: a unit test may hand the service a partial entity manager with no `isInTransaction`; it runs outside one
+  if (typeof em.isInTransaction === "function" && em.isInTransaction()) await em.flush();
+  return em;
+}
+
+/**
  * The base of a module service over `M`.
  *
  * @example
@@ -152,7 +166,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>[]> {
     const [filter, rest] = await this.readOf(where, options);
-    return this.em().find(this.model(), filter, rest);
+    return (await settled(this.em())).find(this.model(), filter, rest);
   }
 
   /**
@@ -164,7 +178,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H> | null> {
     const [filter, rest] = await this.readOf(where, options);
-    const em = this.em();
+    const em = await settled(this.em());
     const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
     return em.findOne(this.model(), filter, cache === undefined ? rest : { cache });
   }
@@ -179,7 +193,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>> {
     const [filter, rest] = await this.readOf(where, options);
-    const em = this.em();
+    const em = await settled(this.em());
     const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
     return em.findOneOrFail(this.model(), filter, {
       ...rest,
@@ -191,9 +205,10 @@ export abstract class CrudService<M extends object> extends Service implements R
   /** Implements `Repository.count`, documented there; `DeletedReadOptions` count the rows a delete policy hides. */
   async count(where: Where<M> = {} as Where<M>, options?: DeletedReadOptions): Promise<number> {
     const [filter, rest] = await this.readOf<CountOptions<M>>(where, options);
+    const em = await settled(this.em());
     return rest === undefined
-      ? this.em().count(this.model(), filter)
-      : this.em().count(this.model(), filter, rest);
+      ? em.count(this.model(), filter)
+      : em.count(this.model(), filter, rest);
   }
 
   /** Implements `Repository.sum`, documented there. */
@@ -208,7 +223,8 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /**
    * Implements `Repository.lock`, documented there: exclusive (`for update`) unless `shared` (`for share`), and waiting
-   * for a held row unless `nowait` (fail at once) or `skipLocked` (take the next free match, or null).
+   * for a held row unless `nowait` (fail at once) or `skipLocked` (take the next free match, or null). It flushes the
+   * unit of work's pending changes before it reads the row again, so a value assigned since an earlier lock survives.
    *
    * @throws NotFoundError when no row matches, or none the caller may see (not with `skipLocked`, which returns null).
    * @throws TypeError when both `nowait` and `skipLocked` are given.
@@ -235,9 +251,16 @@ export abstract class CrudService<M extends object> extends Service implements R
         : shared
           ? LockMode.PESSIMISTIC_READ
           : LockMode.PESSIMISTIC_WRITE;
-    // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it.
-    if (skipLocked) return this.findOne(where, { lockMode, refresh: true }) as Promise<M | null>;
-    return this.findOneOrFail(where, { lockMode, refresh: true }) as Promise<M>;
+    // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it. The flush
+    // first writes this unit's own pending changes, which the refresh would otherwise overwrite: locking a row twice
+    // in one transaction dropped an assigned, unflushed value (every document numbered 1).
+    return this.em()
+      .flush()
+      .then(() =>
+        skipLocked
+          ? (this.findOne(where, { lockMode, refresh: true }) as Promise<M | null>)
+          : (this.findOneOrFail(where, { lockMode, refresh: true }) as Promise<M>),
+      );
   }
 
   /**
@@ -486,7 +509,9 @@ export abstract class CrudService<M extends object> extends Service implements R
       limit: perPage,
       offset: (page - 1) * perPage,
     });
-    const [items, total] = await this.em().findAndCount(this.model(), filter, rest);
+    const [items, total] = await (
+      await settled(this.em())
+    ).findAndCount(this.model(), filter, rest);
     return { items, total, page, perPage, pages: Math.ceil(total / perPage) };
   }
 
@@ -588,7 +613,8 @@ export abstract class CrudService<M extends object> extends Service implements R
   }
 
   /**
-   * Changes the one row matching `where`; written when the caller's unit of work commits. With `requiresNew` it is read,
+   * Changes the one row matching `where`; written when the caller's unit of work flushes, at the latest when it commits
+   * (a later read through this service in the transaction flushes first, so it sees the change). With `requiresNew` it is read,
    * changed and written now in a transaction of its own that commits even if the caller's rolls back (an attempt
    * counter kept across a failed delivery), as `insert` does. With `expectedVersion` (a `Versioned` model), a row at
    * another version is refused before anything changes; the ORM's own version check at flush catches a change made
@@ -605,8 +631,12 @@ export abstract class CrudService<M extends object> extends Service implements R
     if (options.requiresNew === true) {
       const model = this.model();
       const filter = await visibleFilter(model, where);
+      const settings = await readRowSecuritySettings(this.em());
       return this.em().transactional(
         async (em) => {
+          await replayRowSecuritySettings(settings, (sql, params) =>
+            (em as EntityManager).execute(sql, params),
+          );
           const row = await em.findOneOrFail(model, filter, {
             failHandler: () => NotFoundError.create(),
           });
@@ -719,7 +749,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     input: TableQuery,
     options: TableOptions<M, H> = {},
   ): Promise<TablePage<Loaded<M, H>>> {
-    const em = this.em();
+    const em = await settled(this.em());
     const model = this.model();
     const orderBy = this.orderOf(input.sort);
     const filters = Object.entries(input.filter ?? {})
@@ -794,17 +824,30 @@ export abstract class CrudService<M extends object> extends Service implements R
     ] as NonNullable<FindOptions<M>["orderBy"]>;
   }
 
-  /** Runs `work` now on its own entity manager: in a savepoint of the caller's transaction, or one of its own. */
-  private writeNow<T>(
+  /**
+   * Runs `work` now on its own entity manager: in a savepoint of the caller's transaction, or one of its own. A
+   * transaction of its own runs on another connection, so the caller's row-security settings (scope, tenant) are
+   * replayed in it first, as `Database.transaction` does with `requiresNew` (STA-2565).
+   */
+  private async writeNow<T>(
     options: Pick<TransactionOptions, "requiresNew">,
     work: (em: EntityManager) => Promise<T>,
   ): Promise<T> {
-    return this.em().transactional((em) => work(em as EntityManager), {
-      propagation:
-        options.requiresNew === true
-          ? TransactionPropagation.REQUIRES_NEW
-          : TransactionPropagation.NESTED,
-    });
+    const settings = options.requiresNew === true ? await readRowSecuritySettings(this.em()) : [];
+    return this.em().transactional(
+      async (em) => {
+        await replayRowSecuritySettings(settings, (sql, params) =>
+          (em as EntityManager).execute(sql, params),
+        );
+        return work(em as EntityManager);
+      },
+      {
+        propagation:
+          options.requiresNew === true
+            ? TransactionPropagation.REQUIRES_NEW
+            : TransactionPropagation.NESTED,
+      },
+    );
   }
 
   /**
@@ -982,7 +1025,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     field: string,
     where: Where<M>,
   ): Promise<number> {
-    const em = this.em();
+    const em = await settled(this.em());
     const model = this.model();
     const column = `row.${quoteIdentifier(columnOf(em.getMetadata(model), field))}`;
     const row = (await em

@@ -87,9 +87,10 @@ export class GatewayService extends Service {
 
 ```ts
 // the device (a till): show a code, poll until a person enters it
-const pairing = await devicePairing.begin(); // POST /device-pairings { deviceId: <install id> }
-let status = await devicePairing.check(pairing); // GET /device-pairings/:pairingId
-// once paired, the token is in the secrets area and StoredDeviceCredentialDriver answers it
+const pairing = await devicePairing.begin(); // POST /device-pairings { deviceId: <install id>, secret }
+let status = await devicePairing.check(pairing); // GET /device-pairings/:pairingId?deviceId= (state only)
+// once paired, check picks the token up once (POST /device-pairings/:pairingId/pickup { secret }); it is then in
+// the secrets area and StoredDeviceCredentialDriver answers it
 
 // the devices service: open, claim, list, retire
 const code = await registry.openPairing({ deviceId, at: clock.now(), expiresAt }); // the lifetime is a setting
@@ -103,6 +104,9 @@ await registry.retire(device.id, clock.now()); // then identity revokes the cred
 ```
 
 - The device's id is its install id, registered as is, so the offline queue's order (below) survives pairing.
+- The pairing secret (32 random bytes, minted by `begin`) travels only in request bodies, never a URL; the hub keeps
+  its hash. The status never carries a credential. The pickup succeeds once; before the credential is issued the hub
+  answers 409 and `check` reads pending; a wrong or spent secret is refused (`DeviceHubRefusedError`).
 - A code is single use; an unknown, used or expired code refuses with `PairingCodeInvalidError`, which never says
   which.
 - A driver over another store draws its codes with `newPairingCode` (from `PAIRING_CODE_ALPHABET`), so every registry

@@ -41,7 +41,9 @@
       "integer": "Whole number",
       "number": "Number",
       "string": "Text",
-      "connection": "Connection"
+      "connection": "Connection",
+      "choice": "Choice",
+      "list": "List"
     },
     "settings_mode": {
       "developer": "Developer",

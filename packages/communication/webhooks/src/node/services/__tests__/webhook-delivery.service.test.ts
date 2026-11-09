@@ -23,6 +23,7 @@ describe(WebhookDeliveryService, () => {
     const em = {
       create: vi.fn((_model: unknown, data: object) => Object.assign(new WebhookDelivery(), data)),
       flush: vi.fn(async () => undefined),
+      isInTransaction: vi.fn(() => false),
       transactional: vi.fn(
         async (work: (manager: unknown) => Promise<unknown>, _options?: object) => work(em),
       ),

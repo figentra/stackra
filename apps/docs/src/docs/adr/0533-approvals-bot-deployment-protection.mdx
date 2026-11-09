@@ -1,0 +1,119 @@
+---
+title: "0533 — The approvals bot: a deterministic deployment protection rule with an owner-only floor"
+description: "Accepted · 2026-11-07, amended 2026-11-07"
+---
+
+## Context
+
+Every deploy and infra apply waits on the owner's click today. GitHub environments name the owner, or the platform
+team, as a required reviewer, so agents stall on routine work. The owner decided on 2026-11-07 (ledger) that routine
+deploys approve themselves by rule, and that a fixed set of changes, the floor, always waits for him.
+
+GitHub supports this as a **custom deployment protection rule**: a GitHub App subscribed to the
+`deployment_protection_rule` webhook, which approves or rejects each waiting deployment through the API. The rule has
+to be deterministic and owner-controlled. An AI, or anything an agent can steer, can't stand between a change and
+production.
+
+## Decision
+
+1. **A GitHub App, `figentra-approvals`, is the custom deployment protection rule** on every environment that deploys or
+   applies in the figentra organization.
+   - Its permissions: Deployments read and write, Actions read, Checks read, Contents read, Pull requests read. It
+     writes no code and holds no other repository permission.
+   - It is deterministic code. No model decides anything, and no agent can trigger an approval.
+2. **The rules are one owner-only file, `policy/approvals.yaml` in figentra/infra.** It maps each repository and
+   environment to a class (below) and names the floor's evidence sources. CODEOWNERS and a ruleset make the owner its
+   only approver. The bot reads it from main, and a change to it is itself a floor item.
+3. **Every waiting deployment is classified by the table below.** Auto items are approved as soon as their evidence
+   holds. Floor items stay pending until the owner approves. **Anything unknown is floor:** an environment not in the
+   file, a missing or unreadable artifact, an error, or a timeout. The bot never rejects on its own; only the owner
+   rejects.
+
+   | Request                                                                                 | Class | Evidence the bot checks                                                                                                                       |
+   | --------------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+   | dev and preview deploys                                                                 | auto  | none beyond the environment                                                                                                                   |
+   | staging deploys                                                                         | auto  | the commit's required checks are green                                                                                                        |
+   | production deploy of a product already live                                             | auto  | required checks green; the job declares gradual rollout with automatic rollback (Runway's rollout settings); the change set has no floor item |
+   | a product's **first** production deploy                                                 | floor | no earlier successful production deployment in the repository                                                                                 |
+   | infra apply (`infra-apply`) whose plan only creates or updates                          | auto  | the preview JSON artifact, classified by `policy/check.mjs`: no delete or replace, no protected type, no policy-gate violation                |
+   | infra apply with any delete or replace, or a policy-gate violation                      | floor | the same artifact                                                                                                                             |
+   | infra apply carrying the github or secrets stack                                        | floor | the same artifact names the stack as not previewed (see the second amendment)                                                                 |
+   | deleting accounts, data or databases (destructive migrations included)                  | floor | the plan; gen's migration classification                                                                                                      |
+   | IAM, organization or root changes (AWS IAM and Organizations, Identity Center, GCP IAM) | floor | the plan's resource types, even when they're only created                                                                                     |
+   | DNS for live domains                                                                    | floor | Cloudflare DNS record changes on a zone the rules file marks live                                                                             |
+   | secret values (figentra/secrets `publish`)                                              | floor | the environment                                                                                                                               |
+   | money movement (live payment, payout and billing configuration)                         | floor | environments the rules file tags `money`                                                                                                      |
+   | package releases (registry, core and any npm release)                                   | floor | the environment (`release`, `registry`)                                                                                                       |
+   | changes to `policy/approvals.yaml`                                                      | floor | the commit touches the file                                                                                                                   |
+
+4. **The owner is reached where he is, through a notification port with two drivers** (owner decision, 2026-11-07:
+   Figentra Notify is the one notification path, so the bot's floor items, reminders and digests go through it too):
+   - `notify`: Figentra Notify, once it is live;
+   - `direct`: GitHub Mobile, through the pending deployment itself and an @-mention of the owner on the pull request
+     or commit, plus a Slack incoming webhook carrying **Approve** and **Reject** buttons.
+
+   The bot sends through `notify` while Notify answers its health check, and falls back to `direct` otherwise. The
+   owner's approvals never depend on our own stack being up. The bot ships with `direct` only; `notify` is added once
+   Notify is live.
+
+   A button lands on the bot's callback. The bot then:
+   - verifies the Slack signature;
+   - signs the owner in with GitHub OAuth, and checks that the user id is the owner's (309341538);
+   - only then calls the protection rule API.
+
+   Each button carries a signed, single-use token bound to the run and environment, and it expires after 24 hours.
+   Reminders go out every 4 hours while an item waits, and a daily digest lists everything pending.
+
+5. **The bot is a Cloudflare Worker**, `figentra-approvals`, in the Figentra account. It has a webhook endpoint, the
+   callback, and cron triggers for reminders and the digest. Pending items live in its own storage. It's deployed like
+   the other Workers. The App's private key and webhook secret come from SOPS, and no agent can read them.
+6. **Switching over happens repository by repository.** An environment moves from required reviewers to the custom rule
+   only after the bot is live and its fixtures pass. Until then, today's approvals stay. The owner can always approve or
+   reject any item himself through the callback.
+
+## Consequences
+
+- Agents no longer wait on the owner for dev, staging, routine production deploys or additive infra applies. The
+  owner's attention goes to the floor.
+- Production deploys of a live product ship without a human click. The guards are green checks, gradual rollout with
+  automatic rollback, and the floor. The owner accepted this trade on 2026-11-07.
+- The rules file is now the most sensitive file in the estate: whoever can change it changes what needs the owner.
+  CODEOWNERS, the ruleset and its floor class guard it.
+- New chores: keep the classification fixtures current, and keep each product's live/first-launch state right.
+- The owner's hands, once: create the GitHub App and put its key in SOPS, connect Slack, and authorize the App's GitHub
+  OAuth on his account.
+
+## Enforcement
+
+Planned:
+
+- a fixture suite in figentra/infra that runs every row of the table through the bot's classifier, in infra CI;
+- CODEOWNERS and a ruleset on `policy/approvals.yaml`;
+- the bot itself, which fails closed.
+
+Until the bot is live, the existing required reviewers enforce everything.
+
+## Amendment 2026-11-07: link buttons
+
+Decision 4 checks a Slack signature. The `direct` driver posts through a Slack incoming webhook, whose buttons are
+plain links, so no Slack request reaches the bot to sign. With an incoming webhook, a link is gated by the GitHub
+sign-in (the owner's user id checked) plus the signed, single-use, 24-hour token bound to one item and one decision.
+Slack request signing becomes the upgrade path if a Slack app with interactive buttons is installed later (leader,
+2026-11-07; infra#58).
+
+## Amendment 2026-11-07: the github and secrets stacks are floor
+
+The infra evidence comes from a read-only plan job outside `infra-apply` (`policy/evidence.mjs`, artifact
+`infra-evidence-infra-apply`), since the rule fires when the apply job is queued. The github and secrets stacks need
+the figentra-infra App's token, which only `infra-apply` holds, so the plan job lists them as not previewed, and a
+preview that fails is listed the same way; each is a floor reason. That is also their class: they change repository
+settings, environments, reviewers and secret-access grants, which is access control, and access control is floor with
+IAM. No read-only token is added to preview them outside the environment (2026-11-07; infra#58).
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends how ADR 0170's production approval is given: the floor keeps the owner's approval, and the
+rest follows this table.
+
+Sources: the owner's decision in the stackra-notes owner-requests ledger (2026-11-07); Linear STA-2563; GitHub's
+custom deployment protection rules documentation.

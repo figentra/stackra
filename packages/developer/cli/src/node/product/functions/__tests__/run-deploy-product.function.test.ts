@@ -30,6 +30,7 @@ vi.mock("@stackra/runway/node", async (original) => ({
 }));
 
 const VARIABLES = [
+  "CLOUDFLARE_ACCOUNT_ID",
   "STACKRA_ASSETS_BUCKET",
   "STACKRA_ASSETS_ORIGIN",
   "STACKRA_EDGE_KV_NAMESPACE",
@@ -110,7 +111,8 @@ describe("runDeployProduct", () => {
     expect(options).toMatchObject({
       repository: folder,
       environment: "staging",
-      approved: true,
+      // staging declares no approval, and the flag proves none (STA-2100).
+      approved: false,
       assets: { bucket: "acme-assets", origin: "https://assets.staging.figentra.com" },
       served: ["console", "landing"],
       canaryScopes: ["tenant-a", "tenant-b"],
@@ -155,6 +157,33 @@ describe("runDeployProduct", () => {
       androidCertificates: { staff: ["AA:BB", "CC:DD"] },
     });
     expect(options).toHaveProperty("kv.env", { CLOUDFLARE_ACCOUNT_ID: "acct-1" });
+  });
+
+  // @covers sta-2124:FR-002 sta-2124:FR-003 sta-2124:FR-004
+  it("leaves the job's CLOUDFLARE_ACCOUNT_ID to the KV writer for a ref: account, and refuses without it", async () => {
+    vi.mocked(readRunway).mockReturnValue({
+      ...ROOT,
+      providers: { cloudflare: { accountId: "ref:cloudflare.accountId" } },
+    } as unknown as RootRunway);
+    const values = {
+      product: true,
+      env: "staging",
+      "assets-bucket": "b",
+      "assets-origin": "https://a.test",
+      "kv-namespace": "0123456789abcdef0123456789abcdef",
+      served: "console",
+    };
+    process.env["CLOUDFLARE_ACCOUNT_ID"] = "acct-1";
+    await run(values).code;
+    const options = vi.mocked(deployProduct).mock.calls[0]?.[0];
+    expect(options).toHaveProperty("kv");
+    // The driver declares `env` as a field, so it exists as undefined: no override reaches wrangler.
+    expect((options?.kv as { env?: unknown } | undefined)?.env).toBeUndefined();
+
+    vi.mocked(deployProduct).mockClear();
+    Reflect.deleteProperty(process.env, "CLOUDFLARE_ACCOUNT_ID");
+    await expect(run(values).code).rejects.toThrow(/CLOUDFLARE_ACCOUNT_ID is not set/);
+    expect(deployProduct).not.toHaveBeenCalled();
   });
 
   // @covers sta-1623:FR-008

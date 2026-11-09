@@ -1,5 +1,238 @@
 # @stackra/icons
 
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+  - @stackra/validation@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/config@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [cb26737]
+  - @stackra/config@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/container@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/config@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

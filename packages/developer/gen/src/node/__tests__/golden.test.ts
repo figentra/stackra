@@ -3,7 +3,8 @@
  * Purpose: the golden snapshot tests of gen's frozen interface (STA-1320): each fixture workspace under
  *          `packages/developer/gen/__golden__/<fixture>/input/` is copied to `.cache/golden/<fixture>/`, `generate`
  *          runs over its members in order, and every file the runs wrote or changed (outside `node_modules`) must
- *          equal the committed tree in `<fixture>/expected/`, and the refusals must equal `<fixture>/refusals.json`.
+ *          equal the committed tree in `<fixture>/expected/`, and the refusals and warnings must equal
+ *          `<fixture>/refusals.json`.
  *          A clean member is also checked again (`check: true`) and must report nothing stale. With
  *          `UPDATE_GOLDEN=1` the run rewrites `expected/` and `refusals.json` instead of comparing; that is the only
  *          way the expected output changes, and its diff is reviewed like code.
@@ -64,11 +65,35 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "consumer", members: ["services/catalogue", "services/channels"] },
   { name: "i18n-packages", members: ["packages/customers"] },
   { name: "member-module-alias", members: ["services/payments"] },
+  // The cross-app relay (STA-1910): a listener of a contract-only producer's event gets the inbox; a runway `events`
+  // block makes the service a producer. The plain `consumer` and `service` fixtures stay byte-identical.
+  {
+    name: "cross-app-consumer",
+    base: "consumer",
+    members: ["services/catalogue", "services/channels"],
+  },
+  { name: "cross-app-producer", base: "service", members: ["services/shop"] },
+  // A dependency imported only through `<package>/contracts` is hosted contracts-only (STA-2567): its event is in the
+  // manifest, none of its models or permissions.
+  { name: "contracts-only-host", base: "service", members: ["services/shop"] },
+  // A port injected from `<package>/contracts` keeps the package hosted: its memory driver binds the port.
+  { name: "contracts-port-host", base: "service", members: ["services/shop"] },
+  // An anonymous-only action still gets its route, served with `auth: false` (STA-2578).
+  { name: "anonymous-route", base: "service", members: ["services/shop"] },
+  // A package imported only through ./contracts that drives a port gen binds without injection stays hosted (STA-2584):
+  // the shop publishes OrderPaid, so its EventOutbox table comes from the outbox it reaches only by a type.
+  { name: "contracts-pipeline-port", base: "service", members: ["services/shop"] },
+  // The pipeline's own ports are bound from what the service declares, not from a constructor (STA-2573): its
+  // integration event reaches EventOutbox, its idempotent action IdempotencyStore.
+  { name: "pipeline-ports", base: "service", members: ["services/shop"] },
+  // A package's own routes get the `Routes` ref table (`#stackra/routes`), keyed as its manifest records them.
+  { name: "package-routes", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-shim-authored", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-tool-reason", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-encore-stray", base: "service", members: ["services/shop"] },
   { name: "refusal-encore-missing", base: "service", members: ["services/shop"] },
+  { name: "refusal-identity-changed", base: "service", members: ["services/shop"] },
   // A second action on the derived route's shape: `endpoint_collision` for both, nothing written (STA-340).
   { name: "refusal-endpoint-collision", base: "service", members: ["services/shop"] },
   { name: "refusal-docs-misplaced", base: "docs", members: ["apps/handbook"] },
@@ -116,12 +141,13 @@ function snapshot(workspace: string): Map<string, string> {
   );
 }
 
-/** One refusal as the golden records it: the frozen code and where, never the wording. */
+/** One refusal or warning as the golden records it: the frozen code and where, never the wording. */
 interface GoldenRefusal {
   readonly member: string;
   readonly code: string;
   readonly file: string;
   readonly subject: string;
+  readonly severity?: "warning";
 }
 
 describe("gen golden snapshots (STA-1320)", () => {
@@ -141,12 +167,14 @@ describe("gen golden snapshots (STA-1320)", () => {
         for (const member of fixture.members) {
           const root = join(workspace, member);
           const result = await generate(root);
-          for (const error of result.errors) {
+          // A warning is recorded too, so a new one shows up here (STA-340); a refusal carries no severity.
+          for (const error of [...(result.warnings ?? []), ...result.errors]) {
             refusals.push({
               member,
               code: error.code,
               file: error.file.replaceAll(workspace, "<workspace>"),
               subject: error.subject,
+              ...(error.severity === undefined ? {} : { severity: error.severity }),
             });
           }
           // Determinism: a clean run leaves nothing stale for `stackra gen --check`.

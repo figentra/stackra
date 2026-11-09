@@ -14,6 +14,7 @@ import { isDeepStrictEqual } from "node:util";
 
 import { Cache } from "@stackra/cache/contracts";
 import type { AnyClass } from "@stackra/container";
+import { actingScopeId } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 
 import { ActionPipeline, type CallInput, type Query } from "#core/index";
@@ -41,7 +42,7 @@ export async function expectScopeCacheSafe<C extends AnyClass<Query>>(
   const { as: callers, ...request } = options;
   if (callers.length < 2)
     throw new TypeError("expectScopeCacheSafe compares two or more callers of one scope");
-  if (new Set(callers.map((caller) => caller.scopeId)).size > 1)
+  if (new Set(callers.map((caller) => actingScopeId(caller))).size > 1)
     throw new TypeError("expectScopeCacheSafe compares callers of one tenant only");
   const { app } = current;
   const uncached = new ActionPipeline({

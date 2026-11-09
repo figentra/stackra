@@ -50,8 +50,8 @@ is an optional peer of `./react`.
 | `./contracts` | `ConsentSnapshot`, `ConsentSnapshotRequest`, `ConsentSnapshotKeys`, `CONSENT_SNAPSHOT_HEADER`       | the signed payload, what the client sends to get one, the trusted-keys port, the `Stackra-Consent` header    |
 | `./contracts` | `CONSENT_SNAPSHOT_PATH`                                                                             | the consent endpoint's route, `/public/consent/snapshots`                                                           |
 | `.`           | `consentSnapshotHeaders`, `ConsentSnapshotHeadersOptions`                                           | the client half: fetches a snapshot and answers the `Stackra-Consent` header for a session's `headers()`     |
-| `./node`      | `IssueConsentSnapshotAction`, `IssueConsentSnapshotInput`, `IssueConsentSnapshotOutput`             | the consent endpoint, `POST /public/consent/snapshots` (`consent.consent_snapshot.issue@1`, public, L0)             |
-| `./node`      | `ConsentSnapshotPermissions`                                                                        | its permission, `consent.consent_snapshot.issue` (L0, open to every visitor)                                 |
+| `./node`      | `IssueConsentSnapshotAction`, `IssueConsentSnapshotInput`, `IssueConsentSnapshotOutput`             | the consent endpoint, `POST /public/consent/snapshots` (`consent.consent_snapshot.issue@1`, public, L2)             |
+| `./node`      | `ConsentSnapshotPermissions`                                                                        | its permission, `consent.consent_snapshot.issue` (L2, open to every visitor)                                 |
 | `./ui`        | `ConsentBanner`, `ConsentPreferences`                                                               | the cookie banner (accept all, reject all, manage) and the category switches                                 |
 | `./ui`        | `LegalPage`, `TermsPrompt`                                                                          | one legal text (plain paragraphs); versioned terms acceptance                                                |
 

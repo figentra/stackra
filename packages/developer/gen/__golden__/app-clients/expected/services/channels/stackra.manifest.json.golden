@@ -21,10 +21,10 @@
       "permission": "channels.channels.publish",
       "risk": "L2",
       "actors": ["user"],
-      "area": "app",
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
-        "path": "/app/channelses/publish",
+        "path": "/channelses/publish",
         "derived": true
       },
       "tool": {

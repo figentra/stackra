@@ -1,0 +1,62 @@
+# Stackra file contract:
+# Purpose: the nightly drift check of Runway's `cloudflare-workers` provider (ADR 0519 decision 7, STA-1992): runs
+#          `pnpm runway drift`, which compares the rendered Worker config of runway.yaml with what Cloudflare reports,
+#          and fails the run, listing each differing setting, on any drift. It only runs the CLI (ADR 0352 decision 1).
+# Secrets: CLOUDFLARE_API_TOKEN_READ only (a read-only token), from the sops scope ci/deploy, decrypted by the job as
+#          itself (ADR 0525). No repository secret. The token was never stored, so the run fails at its decrypt
+#          until the owner adds it to ci/deploy.
+# Owner: release-operations
+name: Runway drift
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs.
+permissions: {}
+
+concurrency:
+  group: runway-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Worker drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The `static` environment's name is in the caller principal figentra/infra grants ci/deploy to (STA-1968).
+    environment: static
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
+          install_args: node pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter=@stackra/runway...
+
+      - name: Build runway
+        run: pnpm turbo run build --filter=@stackra/runway
+
+      - name: Read-only Cloudflare token (sops)
+        uses: ./.github/actions/secrets-decrypt
+        with:
+          scope: ci/deploy
+          names: CLOUDFLARE_API_TOKEN_READ
+
+      # Exits 1, and so fails the run, when any Worker drifted.
+      - name: runway drift
+        working-directory: packages/developer/runway
+        run: node dist/runway.mjs drift production

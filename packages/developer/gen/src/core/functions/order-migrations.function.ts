@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `orderMigrations`, the apply order of a host's migrations, its own and its declared packages': each
- *          module's migrations in number order, every `Migration({ after })` id before the migration naming it, ties
+ *          module's migrations in number order, every `Migration({ after })` id and every migration of a module in the
+ *          unit's `needs` (module dependencies, macro owners) before the migration naming it, ties
  *          broken by package migrations first and then by id, so the order is the same on every run.
  * Boundary: pure. Refuses an `after` id no loaded migration has (`migration_after_unknown`), a migration id loaded
  *           twice (`migration_id_duplicate`) and a cycle (`migration_cycle`); with a refusal the order is empty.
@@ -54,11 +55,17 @@ export function orderMigrations(units: readonly MigrationUnit[]): {
   const needs = new Map<string, Set<string>>();
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const sorted = [...byId.keys()].sort();
+  const lastOf = new Map<string, string>(sorted.map((id) => [moduleOf(id), id]));
   for (const [index, id] of sorted.entries()) {
     const unit = byId.get(id) as MigrationUnit;
     const before = new Set<string>();
     const previous = sorted[index - 1];
     if (previous !== undefined && moduleOf(previous) === moduleOf(id)) before.add(previous);
+    // The module's last migration stands for all of it: the in-module chain carries the rest. No migration: no edge.
+    for (const need of unit.needs ?? []) {
+      const last = lastOf.get(need);
+      if (last !== undefined && need !== moduleOf(id)) before.add(last);
+    }
     for (const after of unit.after) {
       if (byId.has(after)) before.add(after);
       else

@@ -13,7 +13,7 @@ type Ask = Omit<PromptRequest, "kind">;
 
 /** The questions a command can ask. */
 export interface ConsolePrompt {
-  /** Free text. */
+  /** Asks for free text. */
   readonly text: (request: Ask) => Promise<string>;
 
   /** Hidden text; no character is echoed. */

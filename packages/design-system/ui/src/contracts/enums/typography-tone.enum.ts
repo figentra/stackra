@@ -9,7 +9,9 @@
  */
 import { TextTone } from "#contracts/enums/text-tone.enum";
 
+/** The tones of Text and Heading: every text tone plus `core`, the brand's engine colour. */
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the tones carry no labels.
 export const TypographyTone = Object.freeze([...TextTone, "core"] as const);
 
+/** One Text or Heading tone. */
 export type TypographyTone = (typeof TypographyTone)[number];

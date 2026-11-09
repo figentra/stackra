@@ -1,0 +1,78 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of `readMigrationTables`: one entry per `schema.create`/`schema.table` block of a service's
+ *          migrations per module in file order, `tenant` set only for the block that calls `t.belongsToTenant(...)`
+ *          (either form); a package's under `src/node` with the member as module.
+ * Boundary: test only; writes small fixtures under `.cache/`.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); ADR 0159; ADR 0239 (decision 1).
+ */
+import { describe, expect, it } from "@stackra/testing";
+
+import { readMigrationTables } from "#node/functions/read-migration-tables.function";
+import { writeFixtureMember } from "#node/__tests__/fixtures/write-fixture-member";
+
+describe("readMigrationTables", () => {
+  it("reads a service's blocks per module and file, with the tenant call of each", () => {
+    const root = writeFixtureMember("shop", {
+      "src/modules/orders/database/migrations/0001-create-orders.migration.ts": [
+        'schema.create("orders", (t: Blueprint) => {',
+        "  t.belongsToTenant();",
+        "});",
+        'schema.create("order_notes", (t: Blueprint) => {',
+        '  t.string("body");',
+        "});",
+      ].join("\n"),
+      "src/modules/orders/database/migrations/0002-own-notes.migration.ts": [
+        'schema.table("order_notes", (t: Blueprint) => t.belongsToTenant({ nullable: true }));',
+      ].join("\n"),
+    });
+    const first = "src/modules/orders/database/migrations/0001-create-orders.migration.ts";
+    expect(readMigrationTables(root, "service", "shop")).toEqual([
+      { file: first, module: "orders", table: "orders", ownerColumn: true },
+      { file: first, module: "orders", table: "order_notes", ownerColumn: false },
+      {
+        file: "src/modules/orders/database/migrations/0002-own-notes.migration.ts",
+        module: "orders",
+        table: "order_notes",
+        ownerColumn: true,
+      },
+    ]);
+  });
+
+  it("carries the tenant column through a raw table rename, never reading its inverse", () => {
+    const root = writeFixtureMember("ai", {
+      "src/node/database/migrations/0001-create-steps.migration.ts":
+        'schema.create("steps", (t: Blueprint) => { t.belongsToTenant(); });\nschema.create("notes", (t: Blueprint) => {});',
+      "src/node/database/migrations/0002-rename.migration.ts": [
+        'schema.sql(\'alter table "ai"."steps" rename to "run_steps"\', {',
+        '  inverse: \'alter table "ai"."run_steps" rename to "steps"\',',
+        "});",
+        'schema.sql(\'alter table "ai"."notes" rename to "run_notes"\');',
+      ].join("\n"),
+    });
+    expect(
+      readMigrationTables(root, "package", "ai").map((block) => [block.table, block.ownerColumn]),
+    ).toEqual([
+      ["steps", true],
+      ["notes", false],
+      ["run_steps", true],
+      ["run_notes", false],
+    ]);
+  });
+
+  it("reads a package's migrations with the member as module", () => {
+    const root = writeFixtureMember("loyalty-kit", {
+      "src/node/database/migrations/0001-create-loyalty-tables.migration.ts":
+        'schema.create("loyalty_accounts", (t: Blueprint) => { t.string("tier"); });',
+    });
+    expect(readMigrationTables(root, "package", "loyalty_kit")).toEqual([
+      {
+        file: "src/node/database/migrations/0001-create-loyalty-tables.migration.ts",
+        module: "loyalty_kit",
+        table: "loyalty_accounts",
+        ownerColumn: false,
+      },
+    ]);
+  });
+});

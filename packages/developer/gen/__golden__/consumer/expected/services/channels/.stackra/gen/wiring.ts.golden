@@ -13,7 +13,7 @@ import { ListOnCataloguePublishedListener } from "#core/listeners/list-on-catalo
 import { SyncService } from "#core/services/sync.service";
 import { CatalogueClient } from "#stackra/clients/catalogue";
 import { ChannelsModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, OriginGuard } from "@stackra/app/server";
+import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import { ClientTransport } from "@stackra/clients/contracts";
 import type { Wiring } from "@stackra/container";
 import { QueueConfig, QueueHealthIndicatorDriver } from "@stackra/queue";
@@ -39,6 +39,7 @@ export const wiring = {
   config: [
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
+    { key: "app.http", provide: HttpConfig },
     { key: "queue", provide: QueueConfig },
   ],
   drivers: [

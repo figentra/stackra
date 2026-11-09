@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `hasIntTests`: true for an `.int.test.ts(x)` in a `__tests__/` folder at any depth under
- *          `src/`, false for unit tests, an int-named file outside `__tests__/`, and a member with no `src/`.
+ *          `src/` or one gen writes under `.stackra/tests/`, false for unit tests, an int-named file outside
+ *          `__tests__/`, and a member with no `src/`.
  * Boundary: test only; writes a throwaway member in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0182; STA-1819.
@@ -35,6 +36,18 @@ describe("hasIntTests", () => {
     expect(hasIntTests(root)).toBe(true);
     touch("src/b/c/__tests__/y.int.test.tsx");
     expect(hasIntTests(root)).toBe(true);
+  });
+
+  it("counts an int test gen writes under .stackra/tests, with no src at all", () => {
+    expect(hasIntTests(root, [".stackra/tests/tenant-isolation.int.test.ts"])).toBe(true);
+    expect(hasIntTests(root, [".stackra/tests/migrations/x.int.test.ts"])).toBe(true);
+    expect(
+      hasIntTests(root, [
+        ".stackra/tests/migrations.test.ts",
+        ".stackra/gen/x.int.test.ts",
+        "tests/x.int.test.ts",
+      ]),
+    ).toBe(false);
   });
 
   it("ignores unit tests, int-named files outside __tests__ and a member with no src", () => {

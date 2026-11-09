@@ -15,12 +15,14 @@
  *                     ADR 0159; ADR 0160; ADR 0314; gap db19 (stackra-284).
  */
 import { afterAll, beforeAll } from "@stackra/testing";
+import type * as PostgresContainers from "@testcontainers/postgresql";
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
 import { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
 import { RecordedEventsSubscriber } from "#testing/orm/recorded-events.subscriber";
 import { buildPostgresTestImage } from "#testing/functions/build-postgres-test-image.function";
+import { requireTestPeer } from "#testing/functions/require-test-peer.function";
 import type { PostgresFixture } from "#testing/types/postgres-fixture.type";
 import type { UsePostgresOptions } from "#testing/types/use-postgres-options.type";
 
@@ -36,8 +38,10 @@ const BOOT_TIMEOUT_MS = 300_000;
 export function usePostgres(options: UsePostgresOptions = {}): PostgresFixture {
   const state: { container?: StartedPostgreSqlContainer; database?: PostgresDatabaseDriver } = {};
   beforeAll(async () => {
-    // An optional peer, loaded here so that importing `./testing` never needs it (STA-1950).
-    const { PostgreSqlContainer } = await import("@testcontainers/postgresql");
+    // A test-only package, loaded here from the member's devDependencies, so importing `./testing` never needs it.
+    const { PostgreSqlContainer } = requireTestPeer<typeof PostgresContainers>(
+      "@testcontainers/postgresql",
+    );
     state.container = await new PostgreSqlContainer(
       options.image ?? (await buildPostgresTestImage()),
     ).start();

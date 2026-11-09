@@ -1,0 +1,5 @@
+{
+  "name": "@golden/service-payments-encore",
+  "private": true,
+  "type": "module"
+}

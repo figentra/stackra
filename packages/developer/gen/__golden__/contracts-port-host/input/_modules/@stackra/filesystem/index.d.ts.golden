@@ -1,0 +1,6 @@
+export declare abstract class FileSystem {
+  abstract read(path: string): Promise<string>;
+}
+export declare class MemoryFileSystemDriver extends FileSystem {
+  read(path: string): Promise<string>;
+}

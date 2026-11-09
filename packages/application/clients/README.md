@@ -135,6 +135,9 @@ const answer = await this.dynamic.call(
 - **Base URL.** The `http` driver sends every call to its producer's base URL: `ClientsOptions.producers` maps a
   module key (`orders` of `orders.order.import_rows@1`) to a URL, and a module not listed goes to `baseUrl`
   (`producerBaseUrl`). A host behind one gateway sets nothing.
+- **Audience.** In a service, the `ClientSession` gets each call before it is sent: `ServiceClientSessionDriver` of
+  `@stackra/app/server` sends the service's own token for `ClientsOptions.audiences[<module>]`, the producer's project.
+  A module with no audience is a configuration error, never an unauthenticated call.
 - **Scope.** `CallOptions.scope` (a scope path, `platform.acme`) travels in `ClientsOptions.scopeHeader`
   (`X-Scope-Path`, what `@stackra/scope` reads) and replaces the session's scope header for that call. The producer
   accepts it only inside the caller's grants. Without it the session's scope applies, so a job with no session passes

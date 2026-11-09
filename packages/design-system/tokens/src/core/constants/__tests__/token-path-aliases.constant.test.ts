@@ -142,6 +142,7 @@ const PUBLISHED: Readonly<Record<string, readonly string[]>> = {
     "slow",
     "indicator",
     "blink",
+    "floor",
     "pulse",
     "count",
     "reveal",

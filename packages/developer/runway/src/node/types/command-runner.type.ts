@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `CommandRunner`, how a provider runs one command: the program, its arguments, the folder and what to write
  *          to its standard input, answering its standard output or throwing when it exits with an error.
- * Boundary: type only; `runCommand` is the real one, a test passes a fake. Credentials are never arguments: each CLI
+ * Boundary: type only; `runProgram` is the real one, a test passes a fake. Credentials are never arguments: each CLI
  *           reads its own login (OIDC in CI, the owner's session in a terminal), and a value a command must receive
  *           (a Worker secret) goes in `input`.
  * Runtime: node

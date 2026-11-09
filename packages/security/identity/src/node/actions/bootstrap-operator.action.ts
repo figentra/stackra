@@ -13,8 +13,15 @@
  * Governing contract: ADR 0208 (decisions 1 and 2); ADR 0462; ADR 0237 (the platform area is audited); ADR 0294
  *                     (decisions 16 and 21); STA-1586.
  */
-import { Action, type ActionContext } from "@stackra/actions";
-import { ActorKind, ApiArea, HttpMethod, type PublicId, Realm } from "@stackra/contracts";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
+import {
+  ActorKind,
+  ApiArea,
+  AssuranceLevel,
+  HttpMethod,
+  type PublicId,
+  Realm,
+} from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import { SystemRole } from "@stackra/iam";
 import type { RoleGrants, RolesAtNode } from "@stackra/iam/contracts";
@@ -38,6 +45,8 @@ export class BootstrapOperatorAction extends Action({
   key: "operator.bootstrap",
   // reason: `User` only so the route exists for the gateway; the system permission refuses every user
   actors: [ActorKind.Service, ActorKind.User],
+  idempotency: Idempotency.Optional,
+  stepUp: AssuranceLevel.Aal2,
   area: ApiArea.Platform,
   endpoint: { method: HttpMethod.Post, path: "/platform/operators/bootstrap" },
   // reason: handing out the platform is never an agent's call
@@ -52,7 +61,10 @@ export class BootstrapOperatorAction extends Action({
   /** Writes the grant. */
   private readonly grants: RoleGrants;
 
-  /** Finds the platform node. */
+  /**
+   * Finds the platform node. TODO(STA-2561): the one action ADR 0239 (amendment of 2026-11-07) lets take `ScopeTree`;
+   * move this read into an identity service.
+   */
   private readonly tree: ScopeTree;
 
   /**

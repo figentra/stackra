@@ -21,10 +21,10 @@
       "permission": "catalogue.catalogue.publish",
       "risk": "L2",
       "actors": ["user"],
-      "area": "app",
+      "idempotency": "optional",
       "endpoint": {
         "method": "POST",
-        "path": "/app/catalogues/publish",
+        "path": "/catalogues/publish",
         "derived": true
       },
       "tool": {

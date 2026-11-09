@@ -1,6 +1,6 @@
 {
   "name": "@stackra/webhooks",
-  "version": "0.8.0",
+  "version": "0.28.0",
   "private": false,
   "description": "Stackra webhooks: Standard Webhooks signing and verification (HMAC-SHA256, webhook-id, webhook-timestamp, webhook-signature, a five-minute tolerance, dual-secret rotation), provider HMAC signatures verified from the Integration's recipe data (Stripe, Checkout.com), SignatureScheme, the WebhookReceiver that verifies an inbound provider webhook against the secret its Integration names and routes it to its WebhookEvent class through the outbox, and outbound delivery of webhook integration events to the endpoints a scope registers as a queue job with retries, a delivery log and automatic disable, plus the deliverWebhook test helper",
   "keywords": [
@@ -94,6 +94,7 @@
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
@@ -108,15 +109,17 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/iam": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/money": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/scheduler": "workspace:*",
     "@stackra/support": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -128,6 +131,9 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/integrations": "workspace:*"
   },
   "engines": {
     "node": ">=24.0.0"

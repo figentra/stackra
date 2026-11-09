@@ -3,12 +3,13 @@
  * Purpose: `awsWorkloads(plan, options, securityGroup)`, the Pulumi program part that declares a runtime plan's
  *          container workloads on ECS Fargate: one cluster, a private DNS namespace and a log group per environment,
  *          the task execution role (reads only the environment's own SSM parameters), and per workload a task
- *          definition, a service registered in the namespace, and CPU target-tracking autoscaling when its maximum is
- *          above its minimum. A public workload also gets an ALB in the public subnets, HTTPS only, admitting
- *          Cloudflare's ranges alone, with a target group that checks the workload's health path.
+ *          definition (its arguments, and each `aliases` name reading its resource variable's parameter), a service
+ *          registered in the namespace, and CPU target-tracking autoscaling when its maximum is above its minimum.
+ *          A public workload also gets an ALB in the public subnets, HTTPS only, admitting Cloudflare's ranges alone,
+ *          with a target group that checks the workload's health path.
  * Boundary: declares resources only, inside the Pulumi program that calls it; only the owner applies them. No secret
  *           value is created or read: each secret, its own and those of the resources it uses, is an SSM parameter
- *           the Infisical sync fills (`workloadParameter`). Tasks get no public address. The shared workload security
+ *           the secrets sync fills (`workloadParameter`). Tasks get no public address. The shared workload security
  *           group comes from `awsRuntime`, which also lets the databases admit it. A container health command is not
  *           added (images such as ZITADEL's have no shell); the load balancer checks public workloads.
  * Runtime: node
@@ -153,6 +154,15 @@ export function awsWorkloads(
             valueFrom: workloadParameter(plan, `runtime/${resource}`, name),
           })),
       ),
+      // The same parameters under the names the image reads (`runtimePlan` checked each target is published).
+      ...Object.entries(workload.aliases).flatMap(([name, variable]) =>
+        workload.uses
+          .filter((resource) => Object.values(resourceVariables(resource)).includes(variable))
+          .map((resource) => ({
+            name,
+            valueFrom: workloadParameter(plan, `runtime/${resource}`, variable),
+          })),
+      ),
     ];
     const task = new aws.ecs.TaskDefinition(workload.name, {
       family: workload.name,
@@ -165,6 +175,7 @@ export function awsWorkloads(
         {
           name: workload.workload,
           image: workload.image,
+          ...(workload.command.length > 0 ? { command: workload.command } : {}),
           essential: true,
           portMappings: [{ containerPort: workload.port, protocol: "tcp" }],
           environment: Object.entries(workload.env).map(([name, value]) => ({ name, value })),

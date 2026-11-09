@@ -1,7 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `emitEncoreHttp`, a service's HTTP adapter (`.stackra/encore/<member>/http.ts`): `answerHttp(request,
- *          handle)`, which every generated raw endpoint answers through. It answers an `OPTIONS` preflight with 204
+ *          handle)`, which every generated raw endpoint answers through, and `answerCall(req, resp, call)`, the bridge
+ *          of every action, query and controller endpoint: Node's request becomes a Fetch `Request` with a streamed
+ *          body, `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
+ *          over the exact bytes, authenticates through `CallAuthenticator` and runs the call, and the answer is written
+ *          to the `ServerResponse` (STA-2577). It answers an `OPTIONS` preflight with 204
  *          and `corsHeaders(request, CorsConfig)`, and adds the same CORS headers to every other answer, with
  *          `Cache-Control: private, no-store` where `apiCacheControl` forces it (ADR 0325 rule 22), inside
  *          `app.handlers.run` so a drain waits for it. When the service declares `@stackra/errors`, a
@@ -12,7 +16,7 @@
  *           `OriginGuard` refuses the request. `Vary: Origin` is appended to what the handler set, never replacing it.
  *           Only the rate-limited refusal is answered here; any other error propagates as before.
  * Runtime: isomorphic
- * Governing contract: ADR 0437 (server-check order); ADR 0325 (rule 22: the gateway marks signed-in answers); ADR 0295
+ * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order); ADR 0325 (rule 22: the gateway marks signed-in answers); ADR 0295
  *                     (decision 8: the adapters reach the member through `handlers`); ADR 0091 and 0124 (Encore is
  *                     generated); STA-1374 (stackra-216); STA-1385; ADR 0217 (decision 2: the `RateLimit-*` headers
  *                     are sent), STA-1477.
@@ -52,8 +56,19 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
     content: [
       header,
       ...encoreDatabaseImport(ir),
-      'import { apiCacheControl, CorsConfig, corsHeaders } from "@stackra/app/server";',
-      'import type { Container } from "@stackra/container";',
+      'import { Readable } from "node:stream";',
+      'import type { IncomingMessage, ServerResponse } from "node:http";',
+      "",
+      "import {",
+      "  apiCacheControl,",
+      "  CallAuthenticator,",
+      "  CorsConfig,",
+      "  corsHeaders,",
+      "  HttpConfig,",
+      "  serveGuardedCall,",
+      '} from "@stackra/app/server";',
+      'import type { AnyClass, Container } from "@stackra/container";',
+      'import type { Actor } from "@stackra/contracts";',
       ...(errors
         ? ['import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";']
         : []),
@@ -92,6 +107,52 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
       "    return response;",
       "  });",
+      "}",
+      "",
+      "/** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */",
+      "interface Call {",
+      "  path: string;",
+      "  anonymous: boolean;",
+      "  action?: AnyClass;",
+      "  input?: AnyClass;",
+      "  raw?: boolean;",
+      "  execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;",
+      "}",
+      "",
+      "/**",
+      " * Answers one Encore raw request through `serveGuardedCall`: the body is read once under the cap, every request",
+      " * guard runs over its exact bytes, then the caller is authenticated and the call runs (STA-2577).",
+      " */",
+      "export async function answerCall(req: IncomingMessage, resp: ServerResponse, call: Call): Promise<void> {",
+      "  const headers = new Headers();",
+      "  for (const [name, value] of Object.entries(req.headers))",
+      '    if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(", ") : value);',
+      '  const method = req.method ?? "GET";',
+      '  const request = new Request(new URL(req.url ?? "/", "http://encore"), {',
+      "    method,",
+      "    headers,",
+      '    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),',
+      "  } as RequestInit);",
+      "  const response = await answerHttp(request, (incoming, container) =>",
+      "    serveGuardedCall({",
+      "      request: incoming,",
+      "      path: call.path,",
+      "      anonymous: call.anonymous,",
+      "      action: call.action,",
+      "      input: call.input,",
+      "      raw: call.raw === true,",
+      "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
+      "      guard: (guarded) => app.handlers.guard(guarded, container),",
+      "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
+      "      execute: (input, actor, guarded) => call.execute(container, input, actor, guarded),",
+      "    }),",
+      "  );",
+      "  for (const [name, value] of response.headers)",
+      '    if (name !== "set-cookie") resp.setHeader(name, value);',
+      "  const cookies = response.headers.getSetCookie();",
+      '  if (cookies.length > 0) resp.setHeader("set-cookie", cookies);',
+      "  resp.writeHead(response.status);",
+      "  resp.end(Buffer.from(await response.arrayBuffer()));",
       "}",
       "",
     ].join("\n"),

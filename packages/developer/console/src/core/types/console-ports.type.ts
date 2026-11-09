@@ -19,10 +19,10 @@ import type { RenderContext } from "#core/types/render-context.type";
 
 /** What a run may touch. */
 export interface ConsolePorts {
-  /** Standard output. */
+  /** The standard output stream. */
   readonly stdout: WritableText;
 
-  /** Standard error. */
+  /** The standard error stream. */
   readonly stderr: WritableText;
 
   /** Whether standard output is a terminal. */
@@ -31,7 +31,7 @@ export interface ConsolePorts {
   /** Whether standard input is a terminal. */
   readonly stdinIsTTY: boolean;
 
-  /** The environment. */
+  /** The environment variables of the run. */
   readonly env: Readonly<Record<string, string | undefined>>;
 
   /** The directory commands work in (`io.cwd`). */

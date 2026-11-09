@@ -1,19 +1,24 @@
 /**
  * Stackra file contract:
- * Purpose: `ColumnChangeRecord`, the runtime side of `ColumnChange`: records a nullability or type change of one
- *          existing column and compiles it to `ALTER COLUMN` statements, each with its inverse.
+ * Purpose: `ColumnChangeRecord`, the runtime side of `ColumnChange`: records a nullability, type or setting-default
+ *          change of one existing column and compiles it to `ALTER COLUMN` statements, each with its inverse. `notNull({ safe: true })`
+ *          compiles to ADR 0159's sequence instead: a `NOT VALID` check in the transactional step, then a later step
+ *          that validates it, sets NOT NULL (which Postgres proves from the check, without a scan) and drops it.
  * Boundary: internal. It checks each value as it comes (a known SQL type, no second change of the same kind); the
  *           blueprint decides that a change is only made on an existing table.
  * Runtime: node
  * Governing contract: ADR 0159 as amended by ADR 0305 (decision 3; the 2026-10-23 note: gen derives every inverse).
  */
+import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { sqlLiteral } from "#core/functions/sql-literal.function";
 import type { ColumnChange } from "#core/types/column-change.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
+import type { CompiledStep } from "#core/types/compiled-step.type";
 
 /** The SQL types a blueprint writes, and so the ones a change converts between. */
 const SQL_TYPE =
-  /^(text|integer|bigint|boolean|timestamptz|uuid|jsonb|tsvector|ltree|varchar\([1-9]\d{0,7}\)|char\([1-9]\d{0,7}\)|numeric\([1-9]\d{0,3}, \d{1,4}\))$/;
+  /^(text|integer|bigint|boolean|timestamptz|uuid|jsonb|tsvector|ltree|geography\((Point|Polygon|LineString),4326\)|varchar\([1-9]\d{0,7}\)|char\([1-9]\d{0,7}\)|numeric\([1-9]\d{0,3}, \d{1,4}\))$/;
 
 /** Refuses a type the blueprint does not write. */
 function assertType(column: string, type: string): void {
@@ -29,10 +34,16 @@ export class ColumnChangeRecord implements ColumnChange {
   /** The new nullability, when it changes. */
   private nullability: "null" | "not null" | undefined = undefined;
 
+  /** Whether NOT NULL is set through a validated check, `notNull({ safe: true })`. */
+  private safe = false;
+
   /** The type change, when there is one. */
   private conversion:
     | { readonly to: string; readonly from: string; readonly using: string | undefined }
     | undefined = undefined;
+
+  /** The custom setting the column's new default reads, when there is one. */
+  private setting: string | undefined = undefined;
 
   /**
    * @param name - the column name, snake_case.
@@ -49,8 +60,10 @@ export class ColumnChangeRecord implements ColumnChange {
   }
 
   /** Records `SET NOT NULL` on the column, as `ColumnChange.notNull` describes. */
-  notNull(): this {
-    return this.setNullability("not null");
+  notNull(options: { readonly safe?: boolean } = {}): this {
+    this.setNullability("not null");
+    this.safe = options.safe === true;
+    return this;
   }
 
   /**
@@ -72,11 +85,27 @@ export class ColumnChangeRecord implements ColumnChange {
   }
 
   /**
-   * The `ALTER COLUMN` statements, type first, each with its inverse.
+   * Records a default read from a custom setting, as `ColumnChange.defaultSetting` describes.
    *
+   * @throws TypeError for a setting that is not `<prefix>.<name>`, or a second default of the column.
+   */
+  defaultSetting(setting: string): this {
+    if (this.setting !== undefined)
+      throw new TypeError(`${this.name} already changes its default in this blueprint`);
+    if (!/^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/.test(setting))
+      throw new TypeError(`"${setting}" is not a custom setting: <prefix>.<name>`);
+    this.setting = setting;
+    return this;
+  }
+
+  /**
+   * The `ALTER COLUMN` statements, type first, each with its inverse; a safe NOT NULL adds its `NOT VALID` check here.
+   *
+   * @param table - the table name, without its schema, which names the check.
+   * @param qualified - the quoted, schema-qualified table.
    * @throws TypeError when the change changes nothing.
    */
-  statements(qualified: string): readonly CompiledStatement[] {
+  statements(table: string, qualified: string): readonly CompiledStatement[] {
     const column = quoteIdentifier(this.name);
     const alter = `alter table ${qualified} alter column ${column}`;
     const statements: CompiledStatement[] = [];
@@ -87,17 +116,61 @@ export class ColumnChangeRecord implements ColumnChange {
         inverse: [`${alter} type ${from} using ${column}::${from}`],
       });
     }
-    if (this.nullability !== undefined)
+    if (this.safe) {
+      const check = this.checkName(table);
+      statements.push({
+        sql: `alter table ${qualified} add constraint ${check} check (${column} is not null) not valid`,
+        inverse: [`alter table ${qualified} drop constraint if exists ${check}`],
+      });
+    } else if (this.nullability !== undefined)
       statements.push(
         this.nullability === "null"
           ? { sql: `${alter} drop not null`, inverse: [`${alter} set not null`] }
           : { sql: `${alter} set not null`, inverse: [`${alter} drop not null`] },
       );
+    // No cast, unlike ColumnRecord's: the change does not know the column's type, and Postgres casts text on assignment.
+    if (this.setting !== undefined)
+      statements.push({
+        sql: `${alter} set default nullif(current_setting(${sqlLiteral(this.setting)}, true), '')`,
+        inverse: [`${alter} drop default`],
+      });
     if (statements.length === 0)
       throw new TypeError(
-        `t.change("${this.name}") changes nothing: call nullable(), notNull() or type()`,
+        `t.change("${this.name}") changes nothing: call nullable(), notNull(), type() or defaultSetting()`,
       );
     return statements;
+  }
+
+  /**
+   * The later step of a safe NOT NULL: validate the check (SHARE UPDATE EXCLUSIVE, so writes go on while it scans),
+   * set NOT NULL (proven by the valid check, so no second scan) and drop the check. None for any other change.
+   *
+   * @param table - the table name, without its schema, which names the check.
+   * @param qualified - the quoted, schema-qualified table.
+   */
+  laterSteps(table: string, qualified: string): readonly CompiledStep[] {
+    if (!this.safe) return [];
+    const check = this.checkName(table);
+    const alter = `alter table ${qualified} alter column ${quoteIdentifier(this.name)}`;
+    return [
+      {
+        sql: [
+          `alter table ${qualified} validate constraint ${check}`,
+          `${alter} set not null`,
+          `alter table ${qualified} drop constraint ${check}`,
+        ],
+        transactional: true,
+        inverse: [
+          `${alter} drop not null`,
+          `alter table ${qualified} add constraint ${check} check (${quoteIdentifier(this.name)} is not null) not valid`,
+        ],
+      },
+    ];
+  }
+
+  /** The quoted name of a safe NOT NULL's check, `ck_<table>_<column>_not_null`. */
+  private checkName(table: string): string {
+    return quoteIdentifier(constraintName("ck", table, [this.name, "not_null"]));
   }
 
   /** Records the new nullability, refusing a second one. */

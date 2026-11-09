@@ -14,16 +14,17 @@ import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 /**
  * The repository root.
  *
+ * @param from - where to start looking; the working directory by default.
  * @throws RunwayUnresolvedError when no ancestor of the working directory holds `pnpm-workspace.yaml`.
  * @example
  * repositoryRoot(); // "/work/acme-platform" from /work/acme-platform/apps/console
  */
-export function repositoryRoot(): string {
-  for (let directory = process.cwd(); ; directory = dirname(directory)) {
+export function repositoryRoot(from: string = process.cwd()): string {
+  for (let directory = from; ; directory = dirname(directory)) {
     if (existsSync(join(directory, "pnpm-workspace.yaml"))) return directory;
     if (dirname(directory) === directory) {
       throw new RunwayUnresolvedError(
-        `No repository root above ${process.cwd()}: no directory holds pnpm-workspace.yaml`,
+        `No repository root above ${from}: no directory holds pnpm-workspace.yaml`,
       );
     }
   }

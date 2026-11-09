@@ -42,8 +42,10 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
   `append` or `settle`), so it leaves no run behind; keep any new write path behind the same check.
 - The Parquet writer has no dependency: `encodeThrift` (compact protocol) and `encodeParquetColumn` (plain values,
   RLE definition levels) stay internal. Keep it uncompressed and flat until a consumer needs more.
-- The warehouse sink reads the change log only (`@stackra/outbox/contracts`, types only), never a model's table, and
-  keeps its own cursor `WarehouseChangeSink`; never register it with the relay. A partition is `scope=` (ADR 0323),
+- The warehouse sink reads the change log only (`@stackra/outbox/contracts` types, and `claim` then
+  `@stackra/outbox`'s `loadChanges` so each owner's entries load in its own isolation, read optionally through
+  `boundIsolation` from the injected `Container`), never a model's table, and keeps its own cursor
+  `WarehouseChangeSink`; never register it with the relay. A partition is `scope=` (ADR 0323),
   never `tenant=`. The batch size, models, prefix and row group size are the caller's settings.
 - `writeZip` streams: never collect an entry or the archive. ZIP64 is written only when a field overflows, so a small
   archive stays readable by every unzip tool.

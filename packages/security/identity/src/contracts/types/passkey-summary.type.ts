@@ -8,7 +8,7 @@
  */
 
 /**
- * A passkey.
+ * One passkey on the signed-in user's account, as the SecurityPage lists it.
  *
  * @example
  * const passkey: PasskeySummary = { id: "pk_1", name: "iPhone", createdAt, lastUsedAt: null };

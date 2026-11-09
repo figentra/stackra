@@ -23,6 +23,7 @@ import { dotColors } from "#react/dot-loader/dot-colors.function";
 import { useDotLoader } from "#react/hooks/use-dot-loader";
 import type { ProgressCircleProps } from "#react/progress-circle/progress-circle.props";
 
+/** The dot loader as a progress circle: a 3×3 cell filled to the value, or looping when there is none. */
 export function ProgressCircle({
   value,
   minValue = 0,

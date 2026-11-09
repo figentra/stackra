@@ -8,10 +8,16 @@
  *           append takes a transaction-level advisory lock on the partition before it reads the head, so two appends
  *           never take one position; it runs in the producer's unit of work, so a change and its record commit
  *           together. A read below the oldest kept position (once a retention job prunes) or above the head answers
- *           `undefined`, and the client fills again. A change without a scope reaches only a caller without one.
+ *           `undefined`, and the client fills again. A change without a scope reaches only a caller without one. The
+ *           table is tenant-owned in the platform form (`outbox.0006`): a row takes the call's tenant (`tenant_id`
+ *           defaults to `app.tenant_id`, never written here) and a read shows the caller's tenant's rows and the
+ *           platform's. A partition is shared across tenants and numbered globally, so its head and oldest position
+ *           come from the system function `outbox.replica_bounds`, which sees every tenant's rows and returns only
+ *           those two numbers; a tenant session alone would see a lower head and take a position another tenant holds.
  * Runtime: node
  * Governing contract: ADR 0338 (decision 3: incremental refresh by an opaque monotonic cursor, scoped replicas, as
- *                     amended with ADR 0347); ADR 0343 (decision 4); ADR 0160; ADR 0142.
+ *                     amended with ADR 0347); ADR 0343 (decision 4); ADR 0160; ADR 0142; ADR 0239 (2026-11-07
+ *                     amendment, gaps A and C).
  */
 import { ReplicaLog } from "@stackra/actions/contracts";
 import type { ReplicaChange, ReplicaRead } from "@stackra/actions/contracts";
@@ -128,13 +134,10 @@ export class PostgresReplicaLogDriver extends Driver(ReplicaLog) {
   private async bounds(
     partition: string,
   ): Promise<{ readonly head: number; readonly first: number }> {
-    // raw-sql: two aggregates over one partition's key range
+    // raw-sql: the system function's two aggregates over every tenant's rows of one partition; the partition is bound
     const rows = await this.database
       .em()
-      .execute(
-        `select coalesce(max(position), 0) as head, coalesce(min(position), 1) as first from ${TABLE} where partition = ?`,
-        [partition],
-      );
+      .execute("select head, oldest as first from outbox.replica_bounds(?::varchar)", [partition]);
     return BOUNDS.parse(rows)[0] ?? { head: 0, first: 1 };
   }
 }

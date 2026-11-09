@@ -9,7 +9,7 @@
 
 /** How the dev tunnel is started. */
 export const DEV_TUNNEL_SETTINGS = Object.freeze({
-  /** The token's name in Infisical `/agents`, one per developer machine (the tunnel `figentra-<dev>`). */
+  /** The token's name in the `agents` scope of figentra/secrets, one per developer machine (the tunnel `figentra-<dev>`). */
   tokenVariable: "CLOUDFLARE_TUNNEL_TOKEN",
   /** The variable `cloudflared tunnel run` reads its token from, so the token never appears on its command line. */
   cloudflaredTokenVariable: "TUNNEL_TOKEN",

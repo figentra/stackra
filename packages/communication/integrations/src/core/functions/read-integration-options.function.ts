@@ -121,10 +121,11 @@ export function readIntegrationOptions(
       break;
     }
     case AuthType.Basic: {
+      // RFC 7617 allows an empty password (an API key as the user name, Medusa and Stripe): only the user name is required.
       ensure(
-        isText(auth.username) && isText(auth.password),
+        isText(auth.username) && typeof auth.password === "string",
         "auth",
-        "of Basic needs username and password",
+        "of Basic needs a username and a password, which may be empty",
       );
       break;
     }
@@ -263,9 +264,15 @@ export function readIntegrationOptions(
       isText(options.webhooks.scheme) &&
         isText(options.webhooks.secret) &&
         isText(options.webhooks.eventType?.path) &&
-        (options.webhooks.eventId === undefined || isText(options.webhooks.eventId.path)),
+        (options.webhooks.eventId === undefined ||
+          ("path" in options.webhooks.eventId
+            ? isText(options.webhooks.eventId.path)
+            : options.webhooks.eventId.parts.length > 0 &&
+              options.webhooks.eventId.parts.every(
+                (part) => isText(part.path) !== isText(part.header),
+              ))),
       "webhooks",
-      "need a scheme, a secret placeholder and an eventType path",
+      "need a scheme, a secret placeholder, an eventType path, and an eventId of one path or of parts that each name one path or one header",
     );
     const signature = options.webhooks.signature;
     if (signature !== undefined) {

@@ -16,7 +16,11 @@
  *           plugin in a test). `run` resolves to the workflow's `output(run)` once the run completes, or once it parks
  *           on a wait (over the results so far, so the calling action answers while the run waits durably), and rejects
  *           with the failing step's error (`workflow_timed_out` for a timeout) after compensating. A sent signal is
- *           held in the sender's transaction and taken by the next tick, never by the sender's call. A step's
+ *           held in the sender's transaction and taken by the next tick, never by the sender's call. The journal is
+ *           tenant-owned (ADR 0239 amendment, gaps A and C): a run is owned by its starting call's tenant (`ownerId`),
+ *           each save runs in that owner's isolation, and the tick claims due runs and lapsed signals across tenants
+ *           and loads, advances or removes each in its owner; a claim that does not load, or an owned row with no
+ *           `CallIsolation` bound, fails the tick (`ClaimNotLoadedError`, `RowIsolationMissingError`). A step's
  *           integration events go to the outbox in the step's transaction and its domain events to the bus after it
  *           commits, with the run's scope id as the envelope's scope field and no `scope` key; events a model records
  *           reach the outbox through its own flush. Staging the events of a whole run until it succeeds (ADR 0102
@@ -45,8 +49,8 @@ import { CallIsolation, ContextStorage, WorkflowRunner } from "@stackra/actions/
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { backoffDelay, Duration, Logger } from "@stackra/contracts";
-import type { Clock, Json, PublicId } from "@stackra/contracts";
+import { ActorKind, backoffDelay, Duration, Logger } from "@stackra/contracts";
+import type { Clock, Json, PublicId, RetryPolicy, ScopeRef } from "@stackra/contracts";
 import { isRefusal, WorkflowTimedOutError } from "@stackra/errors";
 import { EventBus } from "@stackra/events";
 import type { Event } from "@stackra/events";
@@ -54,6 +58,7 @@ import { EventOutbox } from "@stackra/events/contracts";
 import type { EventMeta, RecordedEvent } from "@stackra/events/contracts";
 import type { Locks } from "@stackra/locking";
 import { JOB_BACKOFF } from "@stackra/queue";
+import { ClaimNotLoadedError } from "@stackra/outbox";
 import { duration } from "@stackra/validation";
 
 import type { WorkflowConfig } from "#config/workflow.config";
@@ -69,6 +74,7 @@ import { WorkflowRunStarted } from "#core/events/workflow-run-started.event";
 import { checkAutomation } from "#core/functions/check-automation.function";
 import { correlationKey } from "#core/functions/correlation-key.function";
 import { documentPlan } from "#core/functions/document-plan.function";
+import { inRowOwner } from "#core/functions/in-row-owner.function";
 import { lookupRef } from "#core/functions/lookup-ref.function";
 import { mintId } from "#core/functions/mint-id.function";
 import { planOf } from "#core/functions/plan-of.function";
@@ -82,9 +88,12 @@ import type { DocumentInput } from "#core/types/document-input.type";
 import type { DocumentRoots } from "#core/types/document-roots.type";
 import type { DocumentView } from "#core/types/document-view.type";
 import type { RunChain } from "#core/types/run-chain.type";
+import type { RunClaim } from "#core/types/run-claim.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
+import type { RunView } from "#core/types/run-view.type";
 import type { StepPlan } from "#core/types/step-plan.type";
+import type { StepRetryValues } from "#core/types/step-retry-values.type";
 import type { WorkflowError } from "#core/types/workflow-error.type";
 import type { WorkflowPlan } from "#core/types/workflow-plan.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
@@ -94,6 +103,7 @@ import type { WorkflowStepRecord } from "#core/types/workflow-step-record.type";
 type Attempt =
   | { readonly kind: "done"; readonly run: WorkflowRun }
   | { readonly kind: "parked" }
+  | { readonly kind: "retry"; readonly run: WorkflowRun }
   | { readonly kind: "failed"; readonly run: WorkflowRun; readonly error: unknown };
 
 /** How an advance ended: where the run stands, and, when it compensated or failed, the error a caller refuses with. */
@@ -199,6 +209,32 @@ function viewOf(run: WorkflowRun): object {
 const signalOf = (type: AnyClass, payload: object): object =>
   Object.freeze(Object.assign(Object.create(type.prototype as object) as object, payload));
 
+/** Whether `record` is a step parked until its next attempt: waiting, with the failure it keeps (STA-2613). */
+const parkedRetry = (record: WorkflowStepRecord | undefined): record is WorkflowStepRecord =>
+  record?.status === StepStatus.Waiting &&
+  record.error !== undefined &&
+  record.signal === undefined;
+
+/**
+ * `step`'s retry for this failure: the declared attempts, first wait and curve, each replaced by a valid `live` value
+ * (STA-2610). A live count that is not a whole number from 1 is ignored.
+ */
+function retryOf(
+  step: StepPlan,
+  live: StepRetryValues | undefined,
+): Pick<RetryPolicy, "attempts" | "backoff" | "base"> {
+  const attempts =
+    live?.attempts !== undefined && Number.isInteger(live.attempts) && live.attempts >= 1
+      ? live.attempts
+      : step.attempts;
+  const base = live?.base ?? step.base;
+  return {
+    attempts,
+    backoff: live?.backoff ?? step.backoff,
+    ...(base === undefined ? {} : { base }),
+  };
+}
+
 /**
  * Calls `method` of `instance` with `args`.
  *
@@ -253,6 +289,30 @@ const sleep = (milliseconds: number): Promise<void> =>
   });
 
 /**
+ * The origin a run launched in a session of `scope` and tenant `ownerId` keeps. A run an event starts has no call
+ * scope: its steps run in, and read, the session's. A system or job actor that names no tenant takes the run's owner
+ * (it only narrows: the steps' isolation then runs in the tenant that owns the run's rows); an actor that names a
+ * scope, a user or an agent, and a platform launch (no owner) keep the actor as it is.
+ */
+function originIn(
+  origin: RunOrigin,
+  scope: ScopeRef | undefined,
+  ownerId: PublicId<"scp"> | undefined,
+): RunOrigin {
+  const { actor } = origin;
+  const unowned =
+    ownerId !== undefined &&
+    actor.scopeId === undefined &&
+    (actor.kind === ActorKind.System || actor.kind === ActorKind.Job);
+  if (!unowned && (origin.scope !== undefined || scope === undefined)) return origin;
+  return Object.freeze({
+    ...origin,
+    ...(origin.scope === undefined && scope !== undefined ? { scope } : {}),
+    ...(unowned ? { actor: Object.freeze({ ...actor, scopeId: ownerId }) } : {}),
+  });
+}
+
+/**
  * Runs workflows in this process, keeping each run, step and held signal in the journal.
  *
  * @example
@@ -280,6 +340,9 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   /** How deep an event chain of triggered runs may grow (config `workflow.maxChainDepth`). */
   private readonly maxChainDepth: number;
 
+  /** The longest backoff a retry waits out in process; a longer one parks the run (config `workflow.retryInlineMax`). */
+  private readonly retryInlineMax: number;
+
   /** Set by `connect`. */
   private resolver: Resolver | undefined;
 
@@ -301,6 +364,10 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         : Duration.toMilliseconds(duration(config.signalRetention));
     this.forEachLimit = config?.forEachLimit ?? WORKFLOW_DEFAULTS.forEachLimit;
     this.maxChainDepth = config?.maxChainDepth ?? WORKFLOW_DEFAULTS.maxChainDepth;
+    this.retryInlineMax =
+      config?.retryInlineMax === undefined
+        ? 0
+        : Duration.toMilliseconds(duration(config.retryInlineMax));
   }
 
   /** Builds workflows and reads the event and context ports from `resolver`; a later call replaces it. */
@@ -345,6 +412,25 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     return typeof (instance as { output?: unknown }).output === "function"
       ? invoke(instance, "output", [viewOf(outcome.run)])
       : undefined;
+  }
+
+  /**
+   * Run `id` as its caller may see it (STA-2613): the journalled run, for the caller's access checks, and its
+   * workflow's `output` over the results so far, as JSON; null when the workflow has none, it is not deployed here, or
+   * its output cannot be computed from the results yet. `undefined` when no run has the id.
+   */
+  async view(id: PublicId<"wfr">): Promise<RunView | undefined> {
+    const run = await this.journal.find(id);
+    if (run === undefined) return undefined;
+    const instance = this.targetOf(run)?.instance;
+    if (instance === undefined || typeof (instance as { output?: unknown }).output !== "function")
+      return { run, output: null };
+    try {
+      return { run, output: toJson(invoke(instance, "output", [viewOf(run)])) ?? null };
+    } catch {
+      // an output that reads a result the run has not reached yet
+      return { run, output: null };
+    }
   }
 
   /**
@@ -479,17 +565,18 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
 
   /**
    * Drops lapsed signals, then advances each due run whose lock is free: a wait whose signal came or whose time
-   * passed, a run past its timeout, and a running or compensating run whose runner died.
+   * passed, a run past its timeout, and a running or compensating run whose runner died. Both are claimed across
+   * tenants and each row is loaded, advanced or removed in its owner's isolation.
    *
    * @param now - the instant the tick acts at; the clock's when absent.
    * @returns how many runs it advanced.
    */
   async tick(now: Date = this.clock.now()): Promise<number> {
-    await this.journal.transaction(undefined, () => this.journal.expire(now));
+    await this.expire(now);
     let advanced = 0;
-    for (const id of await this.journal.due(now, WORKFLOW_DEFAULTS.batch))
+    for (const claim of await this.journal.due(now, WORKFLOW_DEFAULTS.batch))
       // oxlint-disable-next-line no-await-in-loop -- one run at a time, each under its own lock
-      if (await this.resume(id, now)) advanced += 1;
+      if (await this.resume(claim, now)) advanced += 1;
     return advanced;
   }
 
@@ -504,6 +591,35 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         // oxlint-disable-next-line no-await-in-loop -- see above
         await pause(options.signal);
       }
+  }
+
+  /**
+   * Removes the held signals that lapsed at `now`, claimed across tenants and removed per owner, each owner's in its
+   * isolation inside a transaction of its own.
+   *
+   * @throws ClaimNotLoadedError when a removed signal is claimed again (its owner's removal did not reach it).
+   * @throws RowIsolationMissingError when a tenant's signal lapsed and no isolation is bound.
+   */
+  private async expire(now: Date): Promise<void> {
+    const removed = new Set<string>();
+    for (;;) {
+      // oxlint-disable-next-line no-await-in-loop -- one batch after another
+      const claims = await this.journal.expired(now, WORKFLOW_DEFAULTS.batch);
+      const owners = new Map<PublicId<"scp"> | undefined, PublicId<"wfs">[]>();
+      for (const claim of claims) {
+        if (removed.has(claim.id)) throw ClaimNotLoadedError.create({ id: claim.id });
+        removed.add(claim.id);
+        owners.set(claim.ownerId, [...(owners.get(claim.ownerId) ?? []), claim.id]);
+      }
+      for (const [ownerId, ids] of owners)
+        // oxlint-disable-next-line no-await-in-loop -- one owner's removal at a time
+        await this.journal.transaction(undefined, () =>
+          inRowOwner(this.optional(CallIsolation), ownerId, ids[0] ?? "", () =>
+            this.journal.remove(ids),
+          ),
+        );
+      if (claims.length < WORKFLOW_DEFAULTS.batch) return;
+    }
   }
 
   /**
@@ -523,6 +639,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   ): Promise<Outcome | undefined> {
     const id = await mintId("wfr", key);
     const scope = await this.journal.currentScope();
+    const ownerId = await this.journal.currentOwner();
     return this.locks.with(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
       if (key !== undefined && (await this.journal.find(id)) !== undefined) return undefined;
       const startedAt = this.clock.now();
@@ -534,12 +651,9 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           ...(automation === undefined ? {} : { automation }),
           status: WorkflowRunStatus.Running,
           input,
-          // A run an event starts has no call scope: its steps run in, and read, the session's.
-          origin:
-            origin.scope === undefined && scope !== undefined
-              ? Object.freeze({ ...origin, scope })
-              : origin,
+          origin: originIn(origin, scope, ownerId),
           ...(scope === undefined ? {} : { scope }),
+          ...(ownerId === undefined ? {} : { ownerId }),
           startedAt,
           ...(plan.timeout === undefined ? {} : { deadlineAt: later(startedAt, plan.timeout) }),
           steps: Object.freeze([]),
@@ -563,12 +677,23 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     });
   }
 
-  /** Advances run `id` when its lock is free and its workflow version is known here; `true` when it did. */
-  private async resume(id: PublicId<"wfr">, now: Date): Promise<boolean> {
+  /**
+   * Advances the claimed run when its lock is free and its workflow version is known here; `true` when it did. The
+   * run is loaded in its owner's isolation.
+   *
+   * @throws ClaimNotLoadedError when the claimed run does not load in its owner.
+   * @throws RowIsolationMissingError when the run has an owner and no isolation is bound.
+   */
+  private async resume(claim: RunClaim, now: Date): Promise<boolean> {
     let advanced = false;
-    await this.locks.tryWith(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
-      const run = await this.journal.find(id);
-      if (run === undefined || !ACTIVE.has(run.status)) return;
+    await this.locks.tryWith(lockKey(claim.id), WORKFLOW_DEFAULTS.lease, async () => {
+      const run = await this.journal.transaction(undefined, () =>
+        inRowOwner(this.optional(CallIsolation), claim.ownerId, claim.id, () =>
+          this.journal.find(claim.id),
+        ),
+      );
+      if (run === undefined) throw ClaimNotLoadedError.create({ id: claim.id });
+      if (!ACTIVE.has(run.status)) return;
       const target = this.targetOf(run);
       if (target === undefined) return;
       await this.advance(run, target.instance, target.plan, now);
@@ -690,9 +815,17 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         );
         continue;
       }
+      // A parked retry (a waiting step that kept its failure) runs its next attempt once its time has come.
+      if (
+        parkedRetry(record) &&
+        record.wakeAt !== undefined &&
+        at.getTime() < record.wakeAt.getTime()
+      )
+        return { run, failed: false };
       const wait = this.waitOf(run, step, record, at);
       // oxlint-disable-next-line no-await-in-loop -- see above
       let attempt = await this.attempt(run, instance, step, record, at, wait);
+      if (attempt.kind === "retry") return { run: attempt.run, failed: false };
       if (attempt.kind === "parked" && wait !== undefined) {
         if (wait.wakeAt !== undefined && at.getTime() >= wait.wakeAt.getTime())
           return this.timeOut(run, instance, plan, step, record, at);
@@ -713,6 +846,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         // oxlint-disable-next-line no-await-in-loop -- see above
         attempt = await this.attempt(run, instance, step, recordOf(run, step.name), at, wait);
       }
+      if (attempt.kind === "retry") return { run: attempt.run, failed: false };
       if (attempt.kind === "failed")
         return this.fail(attempt.run, instance, plan, attempt.error, at);
       if (attempt.kind === "parked") return { run, failed: false };
@@ -828,11 +962,15 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           ...(progress === undefined ? {} : { progress }),
           startedAt: latest.record?.startedAt ?? at,
         };
-        const delay = backoffDelay({ ...JOB_BACKOFF, backoff: step.backoff }, attempt);
+        // Read per failure, so a changed setting applies to the next retry; a failed read keeps the declared values.
+        // oxlint-disable-next-line no-await-in-loop -- see above
+        const live = await step.live?.(instance as never).catch(() => undefined);
+        const { attempts, ...curve } = retryOf(step, live);
+        const delay = backoffDelay({ ...JOB_BACKOFF, ...curve }, attempt);
         const late =
           current.deadlineAt !== undefined &&
           this.clock.now().getTime() + delay >= current.deadlineAt.getTime();
-        if (!retryable(error) || attempt >= step.attempts || late)
+        if (!retryable(error) || attempt >= attempts || late)
           return {
             kind: "failed",
             run: withStep(current, {
@@ -842,11 +980,25 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
             }),
             error,
           };
+        // A retry parks like a timed wait (STA-2613): the run waits with the step's next attempt at `wakeAt`, the
+        // caller answers now with the output so far, and the worker's tick runs the attempt when it is due.
+        // shortcut: a step that waits for a signal still waits out its retry in process, since its `wakeAt` is the
+        // wait's timeout; park it too once the step record has a field of its own for the retry time.
+        if (delay > this.retryInlineMax && step.waitFor === undefined) {
+          // oxlint-disable-next-line no-await-in-loop -- the attempt count and its time survive a crash
+          const parked = await this.save({
+            ...withStep(current, {
+              ...failure,
+              status: StepStatus.Waiting,
+              wakeAt: new Date(this.clock.now().getTime() + delay),
+            }),
+            status: WorkflowRunStatus.Waiting,
+          });
+          return { kind: "retry", run: parked };
+        }
         // oxlint-disable-next-line no-await-in-loop -- the attempt count survives a crash
         run = await this.save(withStep(current, failure));
         latest.record = failure;
-        // shortcut: a retry waits in process, bounded by the run timeout; park it through the worker once a step's
-        // retries may outlive the calling action.
         // oxlint-disable-next-line no-await-in-loop -- see above
         await sleep(delay);
       } finally {
@@ -1058,9 +1210,11 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    */
   private isolated<T>(run: WorkflowRun, work: () => Promise<T>): Promise<T> {
     const isolation = this.optional(CallIsolation);
-    return isolation === undefined
-      ? work()
-      : isolation.run(run.origin.actor, run.origin.scope ?? run.scope, work, { readOnly: false });
+    // An owned run with no isolation would write as no tenant and miss its own rows: refused, never skipped.
+    if (isolation === undefined) return inRowOwner(undefined, run.ownerId, run.id, work);
+    return isolation.run(run.origin.actor, run.origin.scope ?? run.scope, work, {
+      readOnly: false,
+    });
   }
 
   /** Runs `work` as the running call of `ctx`, so `RequestContext.current()` inside a step reads it. */
@@ -1095,9 +1249,15 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     return run;
   }
 
-  /** Stores `run` in a transaction of its own, in its scope, and gives it back. */
+  /**
+   * Stores `run` in a transaction of its own, in its scope and its owner's isolation, and gives it back.
+   *
+   * @throws RowIsolationMissingError when the run has an owner and no isolation is bound.
+   */
   private async save(run: WorkflowRun): Promise<WorkflowRun> {
-    await this.journal.transaction(run.scope, () => this.journal.save(run));
+    await this.journal.transaction(run.scope, () =>
+      inRowOwner(this.optional(CallIsolation), run.ownerId, run.id, () => this.journal.save(run)),
+    );
     return run;
   }
 

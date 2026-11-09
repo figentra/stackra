@@ -96,4 +96,15 @@ describe("deriveEndpoint", () => {
       }),
     ).toBeDefined();
   });
+
+  it("routes an anonymous-only call, which the emitter answers with auth: false", () => {
+    expect(
+      deriveEndpoint({
+        key: "checkout_page.load",
+        kind: "query",
+        inputFields: [],
+        actors: ["anonymous"],
+      }),
+    ).toEqual({ method: "GET", path: "/checkout-pages/load", derived: true });
+  });
 });

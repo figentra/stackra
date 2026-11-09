@@ -9,12 +9,12 @@ Runtime: none
 Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0299; ADR 0452; ADR 0024 (brand NOTICE); stackra-177; STA-1373; STA-1575.
 -->
 
-The Stackra documentation site, built with [Mintlify](https://mintlify.com). You write the source; `stackra gen`
-assembles the site Mintlify reads into `.stackra/site/` (gitignored, never edited).
+The Stackra documentation site, built with [Fumadocs](https://fumadocs.dev) (ADR 0514). You write the source;
+`stackra gen` assembles the React Router site into `.stackra/site/` (gitignored, never edited).
 
 | Path                        | Holds                                                                                                         |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `src/config/docs.config.ts` | the site (`StackraDocsConfig`): name, colours, logo, favicon, tabs and navigation, `raw` Mintlify keys        |
+| `src/config/docs.config.ts` | the site (`StackraDocsConfig`): name, colours, logo, favicon, tabs and navigation, `redirects`                |
 | `src/docs/`                 | every page; `src/docs/guides/x.mdx` is served at `/guides/x`, the ADRs in `src/docs/adr/` at `/adr/<file>`    |
 | `src/assets/`               | logo, favicon and the brand kit (`brand/`); a page references a file as `/assets/<path>`                      |
 | `src/docs/customers/`       | the customer-facing "For customers" tab: install, support, security, residency, changelog, API reference      |
@@ -24,9 +24,9 @@ assembles the site Mintlify reads into `.stackra/site/` (gitignored, never edite
 
 | Command                                   | Does                                                              |
 | ----------------------------------------- | ----------------------------------------------------------------- |
-| `pnpm dev` (or `pnpm docs` from the root) | gen in watch mode, then `mint dev` in `.stackra/site` (port 3333) |
-| `pnpm build`                              | gen, then `mint validate`, a strict build that fails on warnings  |
-| `pnpm lint`                               | gen, then `mint broken-links` and `mint a11y`                     |
+| `pnpm dev` (or `pnpm docs` from the root) | gen in watch mode, then the React Router dev server (port 3333) |
+| `pnpm build`                              | gen, then React Router prerenders every page into `build/client` |
+| `pnpm lint`                               | gen, then the same build                                         |
 | `pnpm format`                             | `oxfmt --write .` (`pnpm format:check` verifies)                  |
 
 Add a page: create the `.mdx` under `src/docs/`, then list it in a group of `src/config/docs.config.ts`. A new ADR needs
@@ -34,8 +34,9 @@ no entry: the `{ folder: "adr" }` group lists every page in `src/docs/adr/`. Gen
 page that does not exist, a media file in `src/assets` no page references, and a `docs.json` or `README.md` under
 `src/`.
 
-Deploy: runway's `mintlify` provider pushes `.stackra/site` to the `docs-site` branch (root `runway.yaml`), which the
-Mintlify GitHub app builds; `.github/workflows/deploy-docs.yml` runs the checks and the Mintlify update.
+Deploy: the root `runway.yaml` places this member on `cloudflare-workers`; `.github/workflows/deploy-docs.yml` ships
+`.stackra/site/build/client` as the `stackra-docs` Worker (`wrangler.jsonc`) at docs.stackra.figentra.com, behind the
+production approval. `llms.txt` and `llms-full.txt` are served at the site root.
 
 ## System map
 

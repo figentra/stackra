@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the requirement driver check (`checkRequires`, STA-2049), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
@@ -16,9 +16,12 @@
  */
 export { RunwayConfig } from "#config/runway.config";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
+export { TIER_SIZES } from "#core/constants/tier-sizes.constant";
 export { AppleCapability } from "#core/enums/apple-capability.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
+export { CacheMode } from "#core/enums/cache-mode.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
+export { EnvironmentTier } from "#core/enums/environment-tier.enum";
 export { GoogleProjectState } from "#core/enums/google-project-state.enum";
 export { OnboardStepState } from "#core/enums/onboard-step-state.enum";
 export { PreviewDatabaseSource } from "#core/enums/preview-database-source.enum";
@@ -26,8 +29,10 @@ export { ResourceKind } from "#core/enums/resource-kind.enum";
 export { ResourceSize } from "#core/enums/resource-size.enum";
 export { RequirementEngine } from "#core/enums/requirement-engine.enum";
 export { RunwayCloud } from "#core/enums/runway-cloud.enum";
+export { RegionKey } from "#core/enums/region-key.enum";
 export { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 export { RunwayKind } from "#core/enums/runway-kind.enum";
+export { WorkerPreset } from "#core/enums/worker-preset.enum";
 export { TopologyMode } from "#core/enums/topology-mode.enum";
 export { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 export { RunwayInvalidError } from "#core/errors/runway-invalid.error";
@@ -36,10 +41,16 @@ export { RunwaySmokeFailedError } from "#core/errors/runway-smoke-failed.error";
 export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
+export { checkDestinations } from "#core/functions/check-destinations.function";
+export { checkEnvironmentRegion } from "#core/functions/check-environment-region.function";
+export { deprecatedFields } from "#core/functions/deprecated-fields.function";
 export { checkHosts } from "#core/functions/check-hosts.function";
+export { environmentSizesOf } from "#core/functions/environment-sizes-of.function";
 export { surfaceHosts } from "#core/functions/surface-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
+export { checkRequires } from "#core/functions/check-requires.function";
 export { checkRegions } from "#core/functions/check-regions.function";
+export { checkZoneOwners } from "#core/functions/check-zone-owners.function";
 export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
 export { devPorts } from "#core/functions/dev-ports.function";
@@ -52,7 +63,11 @@ export { productOf } from "#core/functions/product-of.function";
 export { promote } from "#core/functions/promote.function";
 export { regionsOf } from "#core/functions/regions-of.function";
 export { rollback } from "#core/functions/rollback.function";
+export { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";
+export { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
+export { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
+export { workerSettingsOf } from "#core/functions/worker-settings-of.function";
 export { updateFeed } from "#core/functions/update-feed.function";
 export { withDeployLock } from "#core/functions/with-deploy-lock.function";
 export { AppleDeveloper } from "#core/ports/apple-developer.port";
@@ -72,6 +87,9 @@ export type { DeployRecord } from "#core/types/deploy-record.type";
 export type { DeployResult } from "#core/types/deploy-result.type";
 export type { DeployStep } from "#core/types/deploy-step.type";
 export type { DeployTarget } from "#core/types/deploy-target.type";
+export type { DriftRow } from "#core/types/drift-row.type";
+export type { EnvironmentSizes } from "#core/types/environment-sizes.type";
+export type { WorkerDrift } from "#core/types/worker-drift.type";
 export type { DevPorts } from "#core/types/dev-ports.type";
 export type { EnvironmentCloud } from "#core/types/environment-cloud.type";
 export type { ExpoCredentials } from "#core/types/expo-credentials.type";
@@ -83,6 +101,7 @@ export type { PortIssue } from "#core/types/port-issue.type";
 export type { PreviewDatabase } from "#core/types/preview-database.type";
 export type { Product } from "#core/types/product.type";
 export type { RegionIssue } from "#core/types/region-issue.type";
+export type { ZoneOwnerIssue } from "#core/types/zone-owner-issue.type";
 export type { RootRunway } from "#core/types/root-runway.type";
 export type { RunwayDocument } from "#core/types/runway-document.type";
 export type { RunwayFacts } from "#core/types/runway-facts.type";

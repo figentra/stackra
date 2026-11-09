@@ -40,8 +40,14 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `@stackra/ai/contracts` only when the app declares it. A tool never calls a server action (L0, screen only).
 
 - The committed `stackra.manifest.json` is the IR; a dependency is described by its manifest, never its `.d.ts`.
+- A dependency the member imports only through its `./contracts` entry is hosted contracts-only (STA-2567, ADR 0294
+  amendment 2026-11-07): it leaves `packages`, `runtimePackages` and `dependencies`, so no model, migration, wiring or
+  action of it is hosted, and `contractsDependencies` carries just its `src/contracts/` integration events into the
+  manifest. `discoverMember` decides it from `reader.packageImports()`; a dynamic `import()` is not seen.
 - Output is deterministic: files sorted by path, stable key order. Every refusal has a snake_case code, a position and
-  a fix; when there is one, nothing is written.
+  a fix; when there is one, nothing is written. A warning (`GenError.severity: "warning"`) has the same shape but never
+  blocks writing: `generateMember` and `generate` return it in `warnings`, and `stackra gen` (and `--check`) prints it
+  and exits 0 (STA-340). Only the full pass reports warnings.
 - Identity formulas live in one place each (ADR 0294 decision 20); other packages call them, never copy them.
 - The case helpers (`snakeCase`, `kebabCase`, `camelCase`, `pascalCase`) are `@stackra/support`'s (stackra-224); gen
   imports them and never keeps a copy, so its word breaks are the ones every package uses.
@@ -67,6 +73,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   member with nothing to register (only enums, configs, or shapes whose `X$` the member ships), so an enum-only
   package needs no zod; the registrations and entry barrels read the same list. When a target starts importing a new platform package, expect members to need that
   dependency, and update the fixtures (`GENERATED_IMPORTS`, `writeFixtureMember`'s package.json) in the same change.
+- Transitive refusals: when `generated_dependency_missing` fires, `transitiveRefusals` adds every `@stackra/*` package
+  the undeclared ones' own manifests wire from (`ir.transitiveDependencies`, read by `readTransitiveDependencies` from
+  the real folder of the package that brought each in), plus one `package.json` hint of lines to paste. Those manifests
+  only discover what is missing; nothing is emitted from an undeclared package.
 - Client modules and permissions (STA-1296): `emitClients` writes a `moduleRef` class per manifest module and a
   `permissionsRef` class per Permissions class (the manifest's permission `class`, else derived from the key). Service
   keys match in snake or kebab case (`readServiceManifests`).
@@ -153,6 +163,13 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   (`client_event_unknown`); `emitRegistrations` writes `registerListeners`, the consumed events' wire names into
   `registerEventNames` (imported from @stackra/events, below @stackra/actions, so a package below the outbox needs no
   outbox dependency, STA-1387) and `registerRelays`. Never add a subscription by wire name.
+- Cross-app events (ADR 0511 d11-19, STA-1910): a listener of a contract-only producer's event is registered like a
+  sibling's and never gets an Encore subscription; `inboxProducersOf` is the one place that finds those producers, and
+  only it decides whether a service gets `#stackra/inbox`, its Encore `api.raw` adapter and the `RelayInboxService`
+  bindings. A runway `events` block (`readRunwayEvents`, through `yamlValue`, since gen does not depend on
+  `@stackra/runway`) makes a producer: the manifest `relay` section (never an origin), `#stackra/events-relay` and the
+  cross-app relay loop. A member with neither keeps byte-identical output. `client_event_unsubscribed` is a warning
+  (`GenerateResult.warnings`), never a refusal.
 - Change consumers (data-layer gap cdc2): a service's `@ConsumesChanges(Model)` or `([A, B])` facet carries the
   models as class values; `emitRegistrations` writes one `registerChangeConsumers` row per model and service. Never
   emit a pair for a facet whose argument is not a class value.
@@ -171,7 +188,7 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - Server contributions (STA-1385): request guards and `HealthIndicator` drivers a service binds are rows of
   `SERVER_CONTRIBUTIONS` (package, class, constructor tokens, config rows), gated on the declared package; add a new
   one there, never a branch in `emitWiring`. Their config rows come after the packages' own rows, so a manifest's
-  row or a host override wins. `emitEncoreHttp` writes the CORS adapter (`answerHttp`); headers come only from
+  row or a host override wins. `emitEncoreHttp` writes the CORS adapter (`answerHttp`) and `answerCall`, the bridge every raw action, query and controller endpoint of `emitEncoreApi` goes through (`serveGuardedCall`: capped body, guards over the exact bytes, `CallAuthenticator`; no typed `api()`, no `auth.ts`, STA-2577); headers come only from
   `corsHeaders` over the bound `CorsConfig` and `apiCacheControl` (ADR 0325 rule 22); with `@stackra/errors` declared
   it also answers a `RateLimitedError` as 429 with `rateLimitHeaders` (the one source of the rate-limit headers;
   STA-1477).
@@ -223,6 +240,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `base-matches-suffix` lint table of `@stackra/coding-standard` in step when it learns the suffix.
 - `agent` and `pass` (STA-903) are binding kinds: a row in `BINDING_KINDS`, `KIND_FILES` and `KIND_BASES` each, and a
   written, locked `key`. An Agent with no constructor gets `AgentRuntime` (its deps are a `PLATFORM_BINDINGS` row).
+- `menu`, `shortcut`, `store`, `bridge` and `extension_point` (STA-2055) are binding kinds too: an owner injects its
+  point, a Store is a singleton and a Bridge is request-scoped (`KIND_LIFETIMES` in `emit-wiring`), unless `@Lifetime`
+  says otherwise. A config override keeps its base's key (`configKeyFor`), so a host never gets a second row.
 - Entitlement keys come from `entitlementKey(module, class)` only, and must equal `@stackra/entitlements`'s runtime
   `entitlementKey`; the `entitlements` section's `gates` feed the `registerEntitlements` call of the registrations.
 - The inbound webhook route (`emitWebhooks`) hands `WebhookReceiver.receive` the raw body untouched and the decoded
@@ -258,6 +278,10 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   lint when either changes. An abstract class is never `event_base_abstract` and its constructor is never read; a
   class without one inherits its chain's nearest. `usesContainer` false (a member declaring packages without
   `@stackra/container`) means no wiring, no member module and a container-free setup.
+- Shown-once output (STA-2568): `checkShownOnce` (core, full pass only) warns `secret_output_kept` when an action
+  that is not `Idempotency.Never` returns a secret-named output field with neither `@ShownOnce` nor `@Hidden`.
+  `registerActions` rows carry the output class, so the pipeline leaves `@ShownOnce` fields out of the idempotency
+  store.
 - The endpoint checks (STA-340): `deriveEndpoint` prefixes every derived path with `/<area>` (`DEFAULT_AREA`, `app`,
   when none is written; a service's own `defineService({ area })` first); `buildManifest` records `area` on every
   action entry. `checkEndpoints` (core, full pass only) reads the built manifest: `endpoint_collision` over every
@@ -270,6 +294,11 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `cache.invalidateOn`; the evictor binding is a `SERVER_CONTRIBUTIONS` row; the live queries' refresh is written into
   `emitBoot` (which now takes the manifest) and resolves each wire name through `EVENT_NAMES`, so a name the
   registrations never registered fails at boot, never silently.
+- Action first (STA-340, ADR 0101): `checkActionFirst` (core, full pass only) warns `action_without_workflow` (an
+  action with a `#stackra/clients/*` client, a sibling module's service or `ConnectionStore`, and no workflow in
+  `DeclaredClass.workflows`) and refuses `workflow_without_action` (a controller, command or listener with
+  `WorkflowRunner`, a `*Workflow` token or a started workflow). `workflows` is a text scan of the class body for a
+  `*Workflow` class passed first to `.run(`.
 - `checkApproval` (core, full pass only, STA-1724, ADR 0509), one code each:
   - `approval_not_constant`: an `approval` option gen cannot read as a constant.
   - `approval_on_query`: `approval` on a query.
@@ -279,7 +308,9 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   - `approval_condition_dependency`: an `ApprovalCondition` with any constructor dependency.
   - `approval_condition_reads_unmarked`: a condition `reads` key that is not a setting marked `approval`.
 - `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
-  `@stackra/tenancy` only (packages' platform tables are not checked). `emitIsolationTest` writes
+  `@stackra/tenancy` and for every package (a warning until 0.20: drop the `shortcut:` map in the function), minus
+  the ADR-named tables of `MODEL_SCOPE_EXEMPTIONS`; `model_tenancy_migration_missing` (staged) over
+  `MemberIR.migrationTables` (`readMigrationTables`) for an owned model whose table never gets `t.belongsToTenant()`. `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.
 - `checkEncryptedFields` (core, full pass only, stackra-262): `encrypted_field_unknown`, `encrypted_field_unclassified`,
   `credential_field_not_encrypted` (a `credential` field outside `HasEncryptedFields`, ADR 0494)

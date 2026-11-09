@@ -329,11 +329,16 @@ describe("emitClients for a service read from a contract package (STA-1820)", ()
     expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
   });
 
-  it("refuses a listener of its event: cross-app events have no transport yet", () => {
-    const refused = emitClients(consumer({ classes: [listenerOf("OrderPaid")], services: remote }));
-    expect(refused.files).toEqual([]);
+  it("takes a listener of its event, delivered through the inbox (STA-1910)", () => {
+    const taken = emitClients(consumer({ classes: [listenerOf("OrderPaid")], services: remote }));
+    expect(taken.errors).toEqual([]);
+    expect(taken.files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
+  });
+
+  it("still refuses a listener of an event the contract does not publish", () => {
+    const refused = emitClients(consumer({ classes: [listenerOf("OrderLost")], services: remote }));
     expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
-      ["client_event_remote_transport", "SyncOnOrderPaidListener.handle"],
+      ["client_event_unknown", "SyncOnOrderPaidListener.handle"],
     ]);
   });
 
