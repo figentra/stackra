@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0170 (decision 6); ADR 0173 (decisions 5 and 6); ADR 0284.
  */
-import { parseRunway } from "@stackra/runway";
+import { parseRunway, RunwayInvalidError } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
 
 import { GithubInfraInvalidError } from "#core/errors/github-infra-invalid.error";
@@ -98,6 +98,42 @@ describe("githubPlan", () => {
       ],
       ciSecrets: ["EXPO_TOKEN", "TURBO_TOKEN"],
     });
+  });
+
+  it("takes the repository metadata: description, topics and homepage", () => {
+    const plan = githubPlan(
+      root({
+        ...GITHUB,
+        description: "Acme Platform: the services every Acme product runs on.",
+        topics: ["acme", "typescript", "multi-tenant"],
+        homepage: "https://docs.acme.example",
+      }),
+    );
+
+    expect(plan).toMatchObject({
+      description: "Acme Platform: the services every Acme product runs on.",
+      topics: ["acme", "typescript", "multi-tenant"],
+      homepage: "https://docs.acme.example",
+    });
+  });
+
+  it("leaves the metadata out of a plan whose runway states none", () => {
+    const plan = githubPlan(root(GITHUB));
+
+    expect(plan).not.toHaveProperty("description");
+    expect(plan).not.toHaveProperty("topics");
+    expect(plan).not.toHaveProperty("homepage");
+  });
+
+  it("refuses an upper-case or repeated topic, more than 20 topics, and a relative homepage", () => {
+    // the root runway's closed block refuses them first; GITHUB_PROVIDER_SCHEMA holds the same rules
+    for (const github of [
+      { topics: ["TypeScript"] },
+      { topics: ["acme", "acme"] },
+      { topics: Array.from({ length: 21 }, (_, i) => `t${i}`) },
+      { homepage: "docs.acme.example" },
+    ])
+      expect(() => githubPlan(root({ ...GITHUB, ...github }))).toThrow(RunwayInvalidError);
   });
 
   it("takes a stated visibility, literal values, tag-only refs and environment variables", () => {
