@@ -5,6 +5,7 @@
     "retry": "Reintentar",
     "range": "Periodo",
     "change": "{change} frente al periodo anterior",
+    "change_points": "{change} p. p. frente al periodo anterior",
     "target": "Objetivo {target}",
     "not_rendered": "Este panel no se puede mostrar aquí."
   },
@@ -86,6 +87,16 @@
     "empty": "No hay resultados.",
     "loading": "Buscando en {source}",
     "failed": "No se pudo buscar en {source}."
+  },
+  "chat_form": {
+    "send": "Enviar",
+    "sent": "Enviado",
+    "loading": "Cargando el formulario",
+    "unavailable": "Este formulario no se puede mostrar aquí.",
+    "upload": "Elegir un archivo",
+    "uploading": "Subiendo {name}",
+    "upload_failed": "No se pudo subir {name}.",
+    "no_upload": "Aquí no se pueden añadir archivos."
   },
   "checklist": {
     "title": "Primeros pasos",
@@ -191,6 +202,9 @@
       "create": "Crear nuevos",
       "update": "Actualizar existentes",
       "upsert": "Crear o actualizar"
+    },
+    "metric_format": {
+      "percent": "Porcentaje"
     },
     "place": {
       "band": "Banda de KPI",

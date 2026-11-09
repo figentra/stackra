@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `WorkloadPlan`, one container workload of a runtime plan: its service name, image, port, health path,
- *          arguments, exposure, public env, secret names, the resources it uses and the names it reads their variables
+ *          arguments, the one-off migration run before each rollout, exposure, public env, secret names, the resources it uses and the names it reads their variables
  *          under, task size and count, and its tags.
  * Boundary: type only. Secret values never appear; only names.
  * Runtime: isomorphic
@@ -26,6 +26,8 @@ export type WorkloadPlan = {
   readonly healthCommand: readonly string[];
   /** The container's arguments; empty runs the image's default command. */
   readonly command: readonly string[];
+  /** The task run with the same image, env and secrets before each rollout; none when the runway sets no `migrate`. */
+  readonly migrate?: { readonly command: readonly string[]; readonly timeoutMinutes: number };
   /** An ALB behind Cloudflare in front of it. */
   readonly public: boolean;
   /** Public environment values. */

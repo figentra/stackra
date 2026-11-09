@@ -1,5 +1,30 @@
 # @stackra/gen
 
+## 0.32.0
+
+### Patch Changes
+
+- 597e3e8: A generated docs site titles its home page (`index.mdx`, or a language's `index.<lang>.mdx`) by the page's own
+  words alone, not followed by the site name it already names ("Figentra Geo · Figentra Geo"). The build now also fails
+  when a prerendered title repeats a part.
+- @stackra/errors@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- 73ea174: A model whose last word is already plural keeps it in its derived table name and resource path. `OpeningHours` is now `opening_hours`, no longer `opening_hourses`. The same goes for `news`, `series`, `settings`, `analytics`, `species`, `preferences` and the rest of `INVARIANT_PLURALS`. Regular nouns that end in `s` (`address`, `class`, `bus`) still take `es`.
+- 137a7f9: Every automation run a trigger or a schedule starts is now checked against the new `AutomationQuota` port, which `AutomationService` injects, so a host that runs automations must select a driver. Over the quota, the run is skipped and `AutomationRunSkipped` (`quota_exceeded`) is recorded; that is not a failure. A quota that cannot be read starts nothing and records `quota_unavailable` (fail closed); `triggered` never throws for a quota. `AutomationService.triggered(block, startedBy)` takes an `AutomationStart`, kept on the skip. Gen's platform binding of `AutomationService` gains the port.
+  
+  Release order: this core release first; then Figentra Billing publishes its usage client package with the driver (`credits.quota.check@1` on `automation.runs`, called as the host member inside the automation's tenant); then os bumps and selects that driver in the same pull request. No host takes `UnlimitedAutomationQuotaDriver` as a stopgap: it is only for a host that sells no automation quota.
+- @stackra/money@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/support@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

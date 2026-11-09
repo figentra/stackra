@@ -25,8 +25,8 @@ export function WidgetBody(props: WidgetBodyProps): ReactElement {
   const display = useWidgetDisplay(props);
   switch (display.kind) {
     case "kpis": {
-      const kpis = display.kpis.map(({ kpi, metric }) => (
-        <KpiView key={kpi.path} widget={props.widget} kpi={kpi} metric={metric} />
+      const kpis = display.kpis.map(({ kpi, metric, note }) => (
+        <KpiView key={kpi.path} widget={props.widget} kpi={kpi} metric={metric} note={note} />
       ));
       return display.isGroup ? (
         <div className="grid gap-4 sm:grid-cols-2">{kpis}</div>
