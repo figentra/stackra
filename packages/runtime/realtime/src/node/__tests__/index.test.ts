@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: `LanRealtimeLocalRelayDriver` and
- *          `ValkeyRealtimeFanoutDriver` are its only values.
+ *          `ValkeyRealtimeFanoutDriver` and `ValkeyRealtimeTokenLedgerDriver` are its only values.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -15,6 +15,7 @@ describe("@stackra/realtime/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "LanRealtimeLocalRelayDriver",
       "ValkeyRealtimeFanoutDriver",
+      "ValkeyRealtimeTokenLedgerDriver",
     ]);
   });
 });

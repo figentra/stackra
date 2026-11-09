@@ -24,7 +24,9 @@ const PAID = {
 
 describe("MemoryRealtimeDriver", () => {
   it("is a driver of RealtimeDriver", () => {
-    const driver = new MemoryRealtimeDriver(new RealtimeHub(buildConfig(RealtimeConfig)));
+    const driver = new MemoryRealtimeDriver(
+      new RealtimeHub(buildConfig(RealtimeConfig), new MemoryRealtimeTokenLedgerDriver()),
+    );
     expect(driver).toBeInstanceOf(RealtimeDriver);
     expect(kindOf(MemoryRealtimeDriver)).toEqual({
       kind: "driver",
@@ -33,17 +35,17 @@ describe("MemoryRealtimeDriver", () => {
   });
 
   it("delivers to joined listeners until they leave", async () => {
-    const hub = new RealtimeHub(buildConfig(RealtimeConfig));
+    const hub = new RealtimeHub(buildConfig(RealtimeConfig), new MemoryRealtimeTokenLedgerDriver());
     const driver = new MemoryRealtimeDriver(hub);
     const received: RealtimeMessage[] = [];
-    const { token } = hub.issueToken({
+    const { token } = await hub.issueToken({
       principalId: "usr_1",
       scopeId: "ten_1",
       realm: Realm.Staff,
       permissions: ["orders.order.read"],
     });
-    const leave = driver.connect(token, (message) => received.push(message));
-    expect(driver.connect(token, () => undefined)).toBeUndefined();
+    const leave = await driver.connect(token, (message) => received.push(message));
+    await expect(driver.connect(token, () => undefined)).resolves.toBeUndefined();
     await expect(driver.publish(PAID)).resolves.toBe(1);
     leave?.();
     await expect(driver.publish(PAID)).resolves.toBe(0);

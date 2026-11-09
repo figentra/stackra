@@ -118,7 +118,7 @@ export class RoomTokenAction extends Action({
         },
       );
     const subject = ctx.actor.onBehalfOf ?? ctx.actor;
-    const { token } = this.rooms.issueToken({
+    const { token } = await this.rooms.issueToken({
       session: {
         principalId: subject.id,
         ...(ctx.scopeId === undefined ? {} : { scopeId: ctx.scopeId }),

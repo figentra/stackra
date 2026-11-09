@@ -26,6 +26,7 @@ import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 import type { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 import type { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
 import type { RealtimeLocalRelay } from "#contracts/ports/realtime-local-relay.port";
+import type { RealtimeTokenLedger } from "#contracts/ports/realtime-token-ledger.port";
 import { REALTIME_CONFIG_SCHEMA } from "#core/constants/realtime-config-schema.constant";
 import "#core/types/realtime-local-relay-name.type";
 
@@ -50,6 +51,13 @@ export class RealtimeOptions extends Schema {
   /** The key every device of one venue shares to link to its relay; empty until the secret is set. */
   @Secret("REALTIME_LOCAL_RELAY_KEY")
   localRelayKey = "";
+
+  /**
+   * The key subscribe and room tokens are signed with, so any instance verifies a token another issued; empty keeps
+   * tokens in the issuing process (one instance only). At least 32 bytes when set.
+   */
+  @Secret("REALTIME_TOKEN_KEY")
+  tokenKey = "";
 
   /** The port a hosting device serves the relay on. */
   @Int({
@@ -117,6 +125,9 @@ export class RealtimeOptions extends Schema {
 
   /** The Valkey pub/sub channel the instances of one service share. */
   fanoutChannel = "realtime:fanout";
+
+  /** Where redeemed signed tokens are recorded: `memory` for one instance, `valkey` for several (`./node`). */
+  tokenLedger: DriverName<RealtimeTokenLedger> = "memory";
 
   /** The venue relay's driver: `lan` serves and probes over the local network (`./node`). */
   localRelay: DriverName<RealtimeLocalRelay> = "lan";

@@ -31,7 +31,7 @@ const STREAM_HEADERS = {
  *
  * @example
  * // in the generated raw endpoint for GET /realtime
- * return driver.open(request);
+ * return await driver.open(request);
  */
 export class SseRealtimeDriver extends Driver(RealtimeDriver) {
   /** The hub that holds this driver's sessions. */
@@ -55,7 +55,7 @@ export class SseRealtimeDriver extends Driver(RealtimeDriver) {
    *
    * @returns 200 with the stream; 426 for a WebSocket upgrade; 401 for a bad token.
    */
-  open(request: Request): Response {
+  async open(request: Request): Promise<Response> {
     if (request.headers.get("upgrade")?.toLowerCase() === "websocket")
       return new Response(null, { status: 426 });
     const token = new URL(request.url).searchParams.get("token") ?? "";
@@ -86,7 +86,7 @@ export class SseRealtimeDriver extends Driver(RealtimeDriver) {
         leave?.();
       },
     });
-    leave = this.hub.join(token, {
+    leave = await this.hub.join(token, {
       deliver: (message) =>
         send(`id: ${message.id}\nevent: refresh\ndata: ${JSON.stringify(message)}\n\n`),
       close: end,

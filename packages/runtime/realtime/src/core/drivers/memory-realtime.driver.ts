@@ -19,7 +19,7 @@ import type { RealtimeHub } from "#core/services/realtime-hub.service";
  *
  * @example
  * const { token } = hub.issueToken(session);
- * const leave = driver.connect(token, (message) => received.push(message));
+ * const leave = await driver.connect(token, (message) => received.push(message));
  */
 export class MemoryRealtimeDriver extends Driver(RealtimeDriver) {
   private readonly hub: RealtimeHub;
@@ -42,7 +42,10 @@ export class MemoryRealtimeDriver extends Driver(RealtimeDriver) {
    *
    * @returns leaves the hub; `undefined` when the token is unknown, used or expired.
    */
-  connect(token: string, listener: (message: RealtimeMessage) => void): (() => void) | undefined {
+  connect(
+    token: string,
+    listener: (message: RealtimeMessage) => void,
+  ): Promise<(() => void) | undefined> {
     return this.hub.join(token, { deliver: listener, close: () => undefined });
   }
 }

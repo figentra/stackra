@@ -18,7 +18,7 @@ describe(RoomController, () => {
     expect(kindOf(RoomController)?.kind).toBe("controller");
     expect(kindOf(RoomController)?.options).toEqual({ path: REALTIME_ROOM_PATH });
     const answer = new Response("stream");
-    const stream = vi.fn(() => answer);
+    const stream = vi.fn(async () => answer);
     const controller = new RoomController({ stream } as unknown as RealtimeRooms);
     const request = new Request(`https://api.example.test${REALTIME_ROOM_PATH}?token=t1`);
     expect(await controller.handle(request)).toBe(answer);

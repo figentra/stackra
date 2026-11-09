@@ -25,6 +25,7 @@ describe("@stackra/realtime/contracts", () => {
       "RealtimeDriver",
       "RealtimeFanout",
       "RealtimeLocalRelay",
+      "RealtimeTokenLedger",
       "RealtimeTransport",
     ]);
   });

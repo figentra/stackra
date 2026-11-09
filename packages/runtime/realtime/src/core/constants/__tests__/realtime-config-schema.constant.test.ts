@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `REALTIME_CONFIG_SCHEMA`: every field defaults so `.parse({})` is complete, each field
  *          unwraps for a host's `.extend(...)`, and the rules refuse a pathful origin, an unknown realm, a short token
- *          lifetime, out-of-range seconds and a `maxBackoff` under a second. `maxBackoff` replaced `maxBackoffSeconds`
+ *          lifetime, out-of-range seconds, a `maxBackoff` under a second, and a `tokenKey` under 32 bytes; `tokenLedger` is `memory`
+ *          or `valkey`. `maxBackoff` replaced `maxBackoffSeconds`
  *          in stackra-223; its default stays 30 seconds.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -39,6 +40,8 @@ describe("REALTIME_CONFIG_SCHEMA", () => {
       localRelayAddress: "",
       localRelayPeers: [],
       localRelayProbeMs: 1500,
+      tokenKey: "",
+      tokenLedger: "memory",
       health: { timeout: Duration.seconds(2), critical: true },
     });
   });
@@ -47,6 +50,17 @@ describe("REALTIME_CONFIG_SCHEMA", () => {
     const first = REALTIME_CONFIG_SCHEMA.parse({});
     first.channelRealms.pop();
     expect(REALTIME_CONFIG_SCHEMA.parse({}).channelRealms).toHaveLength(3);
+  });
+
+  it("accepts an empty token key or one of 32 bytes and refuses a shorter one", () => {
+    expect(REALTIME_CONFIG_SCHEMA.safeParse({ tokenKey: "" }).success).toBe(true);
+    expect(REALTIME_CONFIG_SCHEMA.safeParse({ tokenKey: "k".repeat(32) }).success).toBe(true);
+    expect(REALTIME_CONFIG_SCHEMA.safeParse({ tokenKey: "k".repeat(31) }).success).toBe(false);
+  });
+
+  it("accepts the memory and valkey token ledgers only", () => {
+    expect(REALTIME_CONFIG_SCHEMA.safeParse({ tokenLedger: "valkey" }).success).toBe(true);
+    expect(REALTIME_CONFIG_SCHEMA.safeParse({ tokenLedger: "redis" }).success).toBe(false);
   });
 
   it("accepts an origin without a path", () => {

@@ -19,6 +19,7 @@ import { RealtimeConfig } from "#config/realtime.config";
 import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 import type { RealtimeBroadcast } from "#contracts/types/realtime-broadcast.type";
 import type { RealtimeMessage } from "#contracts/types/realtime-message.type";
+import { MemoryRealtimeTokenLedgerDriver } from "#core/drivers/memory-realtime-token-ledger.driver";
 import { MemoryRealtimeDriver } from "#core/drivers/memory-realtime.driver";
 import { RealtimeBroadcaster } from "#core/services/realtime-broadcaster.service";
 import { RealtimeHub } from "#core/services/realtime-hub.service";
@@ -88,13 +89,16 @@ describe("RealtimeBroadcaster", () => {
   it("reaches the matching sessions end to end", async () => {
     const hub = new RealtimeHub(
       buildConfig(RealtimeConfig, { values: { channelRealms: [Realm.Staff] } }),
+      new MemoryRealtimeTokenLedgerDriver(),
     );
     const driver = new MemoryRealtimeDriver(hub);
     const staff: RealtimeMessage[] = [];
     const customer: RealtimeMessage[] = [];
     const base = { principalId: "usr_1", scopeId: "ten_1", permissions: ["orders.order.read"] };
-    driver.connect(hub.issueToken({ ...base, realm: Realm.Staff }).token, (m) => staff.push(m));
-    driver.connect(hub.issueToken({ ...base, realm: Realm.Customer }).token, (m) =>
+    await driver.connect((await hub.issueToken({ ...base, realm: Realm.Staff })).token, (m) =>
+      staff.push(m),
+    );
+    await driver.connect((await hub.issueToken({ ...base, realm: Realm.Customer })).token, (m) =>
       customer.push(m),
     );
     await expect(new RealtimeBroadcaster(driver).broadcast(PAID, ORDER_PAID)).resolves.toBe(1);

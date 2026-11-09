@@ -16,6 +16,7 @@ import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 import type { RealtimeBroadcast } from "#contracts/types/realtime-broadcast.type";
 import type { RoomFrame } from "#contracts/types/room-frame.type";
 import { LocalRealtimeFanoutDriver } from "#core/drivers/local-realtime-fanout.driver";
+import { MemoryRealtimeTokenLedgerDriver } from "#core/drivers/memory-realtime-token-ledger.driver";
 import { RealtimeRelay } from "#core/services/realtime-relay.service";
 import { RealtimeRooms } from "#core/services/realtime-rooms.service";
 
@@ -38,7 +39,11 @@ describe(RealtimeRelay, () => {
   it("fans broadcasts and room frames out to this instance", async () => {
     const fanout = new LocalRealtimeFanoutDriver();
     const driver = new RecordingDriver();
-    const rooms = new RealtimeRooms(buildConfig(RealtimeConfig), fanout);
+    const rooms = new RealtimeRooms(
+      buildConfig(RealtimeConfig),
+      fanout,
+      new MemoryRealtimeTokenLedgerDriver(),
+    );
     const relay = new RealtimeRelay(fanout, driver, rooms);
     const stop = relay.start();
     await relay.broadcast(
@@ -54,12 +59,14 @@ describe(RealtimeRelay, () => {
       },
     );
     const frames: RoomFrame[] = [];
-    rooms.join(
-      rooms.issueToken({
-        session: { principalId: "usr_a", scopeId: "ten_1", realm: Realm.Staff, permissions: [] },
-        document: "pag_1",
-        mayEdit: true,
-      }).token,
+    await rooms.join(
+      (
+        await rooms.issueToken({
+          session: { principalId: "usr_a", scopeId: "ten_1", realm: Realm.Staff, permissions: [] },
+          document: "pag_1",
+          mayEdit: true,
+        })
+      ).token,
       { deliver: (frame) => frames.push(frame), close: () => undefined },
     );
     await fanout.publish({

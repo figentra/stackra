@@ -15,6 +15,7 @@ import { vi } from "vitest";
 
 import { RealtimeConfig } from "#config/realtime.config";
 import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
+import { MemoryRealtimeTokenLedgerDriver } from "#core/drivers/memory-realtime-token-ledger.driver";
 import { SseRealtimeDriver } from "#core/drivers/sse-realtime.driver";
 import { WebSocketRealtimeDriver } from "#core/drivers/web-socket-realtime.driver";
 import { RealtimeHub } from "#core/services/realtime-hub.service";
@@ -56,7 +57,10 @@ class RecordingSocket implements RealtimeSocket {
 
 /** A hub and its driver with tokens of `ttl`. */
 function setup(ttl = Duration.minutes(15)) {
-  const hub = new RealtimeHub(buildConfig(RealtimeConfig, { values: { subscribeTokenTtl: ttl } }));
+  const hub = new RealtimeHub(
+    buildConfig(RealtimeConfig, { values: { subscribeTokenTtl: ttl } }),
+    new MemoryRealtimeTokenLedgerDriver(),
+  );
   return { hub, driver: new WebSocketRealtimeDriver(hub) };
 }
 
@@ -78,31 +82,31 @@ describe("WebSocketRealtimeDriver", () => {
   it("joins a socket and sends each refresh as a JSON frame until it closes", async () => {
     const { hub, driver } = setup();
     const socket = new RecordingSocket();
-    const { token } = hub.issueToken(SESSION);
-    expect(driver.accept(socket, `/realtime?token=${token}`)).toBe(true);
+    const { token } = await hub.issueToken(SESSION);
+    expect(await driver.accept(socket, `/realtime?token=${token}`)).toBe(true);
     await expect(driver.publish(PAID)).resolves.toBe(1);
     expect(socket.sent).toEqual([JSON.stringify(PAID.message)]);
     socket.close(1000, "bye");
     expect(hub.size).toBe(0);
   });
 
-  it("closes with 4401 on a bad or reused token", () => {
+  it("closes with 4401 on a bad or reused token", async () => {
     const { hub, driver } = setup();
-    const { token } = hub.issueToken(SESSION);
-    driver.accept(new RecordingSocket(), `wss://api.acme.example/realtime?token=${token}`);
+    const { token } = await hub.issueToken(SESSION);
+    await driver.accept(new RecordingSocket(), `wss://api.acme.example/realtime?token=${token}`);
     const reused = new RecordingSocket();
-    expect(driver.accept(reused, `/realtime?token=${token}`)).toBe(false);
+    expect(await driver.accept(reused, `/realtime?token=${token}`)).toBe(false);
     expect(reused.closedWith).toEqual([4401, "unauthorised"]);
     const anonymous = new RecordingSocket();
-    expect(driver.accept(anonymous, "/realtime")).toBe(false);
+    expect(await driver.accept(anonymous, "/realtime")).toBe(false);
     expect(anonymous.closedWith).toEqual([4401, "unauthorised"]);
   });
 
-  it("closes with 4001 when the token expires", () => {
+  it("closes with 4001 when the token expires", async () => {
     vi.useFakeTimers();
     const { hub, driver } = setup(Duration.minutes(5));
     const socket = new RecordingSocket();
-    driver.accept(socket, `/realtime?token=${hub.issueToken(SESSION).token}`);
+    await driver.accept(socket, `/realtime?token=${(await hub.issueToken(SESSION)).token}`);
     vi.advanceTimersByTime(5 * 60_000);
     expect(socket.closedWith).toEqual([4001, "token_expired"]);
     expect(hub.size).toBe(0);

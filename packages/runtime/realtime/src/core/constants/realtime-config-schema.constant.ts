@@ -51,6 +51,13 @@ export const REALTIME_CONFIG_SCHEMA = z.object({
     .default(Duration.seconds(30)),
   fanout: z.enum(["local", "memory", "valkey"]).default("local"),
   fanoutValkeyUrl: z.string().default(""),
+  tokenKey: z
+    .string()
+    .refine((key) => key === "" || new TextEncoder().encode(key).length >= 32, {
+      message: "tokenKey is empty or at least 32 bytes",
+    })
+    .default(""),
+  tokenLedger: z.enum(["memory", "valkey"]).default("memory"),
   fanoutChannel: z.string().min(1).default("realtime:fanout"),
   rooms: z
     .object({

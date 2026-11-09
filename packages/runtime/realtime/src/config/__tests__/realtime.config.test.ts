@@ -44,10 +44,13 @@ describe("RealtimeConfig", () => {
 
   it("builds with the dev-safe defaults", () => {
     const config = buildConfig(RealtimeConfig);
-    const { fanoutValkeyUrl, localRelayKey, ...defaults } = REALTIME_CONFIG_SCHEMA.parse({});
+    const { fanoutValkeyUrl, localRelayKey, tokenKey, ...defaults } = REALTIME_CONFIG_SCHEMA.parse(
+      {},
+    );
     expect({ ...config }).toEqual(defaults);
     expect(config.fanoutValkeyUrl).toBe(fanoutValkeyUrl);
     expect(config.localRelayKey).toBe(localRelayKey);
+    expect(config.tokenKey).toBe(tokenKey);
     expect(config.driver).toBe("memory");
     expect(config.origin).toBe("");
     expect(config.channelRealms).toEqual(["platform", "tenant", "customer"]);
@@ -95,6 +98,7 @@ describe("RealtimeConfig", () => {
     const {
       fanoutValkeyUrl: _mobileSecret,
       localRelayKey: _mobileKey,
+      tokenKey: _mobileToken,
       ...mobile
     } = Mobile$.parse({});
     expect(mobile).toEqual({ ...buildConfig(MobileRealtimeConfig) });
@@ -105,6 +109,7 @@ describe("RealtimeConfig", () => {
     const {
       fanoutValkeyUrl: _commerceSecret,
       localRelayKey: _commerceKey,
+      tokenKey: _commerceToken,
       ...commerce
     } = Commerce$.parse({});
     expect(commerce).toEqual({ ...buildConfig(CommerceRealtimeConfig) });

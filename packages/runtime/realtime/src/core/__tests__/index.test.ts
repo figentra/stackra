@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/realtime`
  *          (`RealtimeConfig`, `RealtimeStatus`; the generated `RealtimeConfig$` and `MemoryRealtimeDriver`), the gen
- *          samples' other drivers and `liveQueryRoutes` are exported, nothing else is, the `$` name is the shipped
+ *          samples' other drivers and `liveQueryRoutes` (and `MemoryRealtimeTokenLedgerDriver`) are exported, nothing else is, the `$` name is the shipped
  *          schema, the ports stay in `./contracts`, and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -33,6 +33,7 @@ describe("@stackra/realtime", () => {
       "LocalRealtimeFanoutDriver",
       "MemoryRealtimeDriver",
       "MemoryRealtimeFanoutDriver",
+      "MemoryRealtimeTokenLedgerDriver",
       "MemoryRealtimeTransportDriver",
       "REALTIME_PATH",
       "REALTIME_ROOM_PATH",

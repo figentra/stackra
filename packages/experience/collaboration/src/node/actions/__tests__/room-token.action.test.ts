@@ -22,6 +22,7 @@ import { EntitlementRequiredError, ForbiddenError, NotFoundError } from "@stackr
 import { HasPublicId, Model } from "@stackra/model";
 import {
   LocalRealtimeFanoutDriver,
+  MemoryRealtimeTokenLedgerDriver,
   RealtimeConfig,
   RealtimeRooms,
   type RoomSocket,
@@ -104,7 +105,11 @@ function host(
     em: () => em as unknown as ReturnType<Database["em"]>,
   } as unknown as Database);
   const realtime = buildConfig(RealtimeConfig, { values: { origin: ORIGIN } });
-  const rooms = new RealtimeRooms(realtime, new LocalRealtimeFanoutDriver());
+  const rooms = new RealtimeRooms(
+    realtime,
+    new LocalRealtimeFanoutDriver(),
+    new MemoryRealtimeTokenLedgerDriver(),
+  );
   const access = new MemoryAccessControlDriver();
   const action = new RoomTokenAction(rooms, realtime, access, entitlements);
   const issue = (as: Actor, document = DOC): Promise<RealtimeTarget> =>
@@ -149,11 +154,11 @@ describe(RoomTokenAction, () => {
     const target = await issue(ALICE);
     expect(target.origin).toBe(ORIGIN);
     const a = peer();
-    const member = rooms.join(target.token, a);
+    const member = await rooms.join(target.token, a);
     expect(member?.self.principalId).toBe(ALICE.id);
     expect(rooms.size(`${SCOPE}:${DOC}`)).toBe(1);
     expect(rooms.size(`${SCOPE}:${OTHER}`)).toBe(0);
-    expect(rooms.join(target.token, peer())).toBeUndefined();
+    await expect(rooms.join(target.token, peer())).resolves.toBeUndefined();
     const key = (a.frames[0] as { key: string }).key;
     await expect(rooms.publishFrom(key, BOB.id, { t: "presence", data: {} })).rejects.toThrow(
       ForbiddenError,
@@ -165,18 +170,18 @@ describe(RoomTokenAction, () => {
     const { issue, rooms, realtime } = host();
     const { token } = await issue(ALICE);
     vi.advanceTimersByTime(Duration.toMilliseconds(realtime.subscribeTokenTtl) + 1);
-    expect(rooms.join(token, peer())).toBeUndefined();
+    await expect(rooms.join(token, peer())).resolves.toBeUndefined();
   });
 
   it("sets mayEdit from the edit permission and drops the next edit once it is revoked", async () => {
     const { issue, rooms, access } = host();
     access.deny(EDIT);
-    const viewer = rooms.join((await issue(BOB)).token, peer());
+    const viewer = await rooms.join((await issue(BOB)).token, peer());
     expect(() => viewer?.publish({ t: "update", data: "AAE=" })).toThrow(ForbiddenError);
     access.allow(EDIT);
-    const editor = rooms.join((await issue(ALICE)).token, peer());
+    const editor = await rooms.join((await issue(ALICE)).token, peer());
     const b = peer();
-    rooms.join((await issue(BOB)).token, b);
+    await rooms.join((await issue(BOB)).token, b);
     await editor?.publish({ t: "update", data: "AAE=" });
     expect(b.frames.at(-1)).toMatchObject({ t: "update", data: "AAE=" });
     access.deny(EDIT);
@@ -244,7 +249,7 @@ class BridgedSocket {
           this.server.set(type, listener);
         }) as RoomSocket["addEventListener"],
       };
-      HUB?.accept(socket, url);
+      void HUB?.accept(socket, url);
     });
   }
 

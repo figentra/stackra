@@ -10,3 +10,4 @@
  */
 export { LanRealtimeLocalRelayDriver } from "#node/drivers/lan-realtime-local-relay.driver";
 export { ValkeyRealtimeFanoutDriver } from "#node/drivers/valkey-realtime-fanout.driver";
+export { ValkeyRealtimeTokenLedgerDriver } from "#node/drivers/valkey-realtime-token-ledger.driver";

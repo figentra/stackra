@@ -10,6 +10,7 @@
 export { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
 export { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
 export { RealtimeLocalRelay } from "#contracts/ports/realtime-local-relay.port";
+export { RealtimeTokenLedger } from "#contracts/ports/realtime-token-ledger.port";
 export { RealtimeTransport } from "#contracts/ports/realtime-transport.port";
 export type { FanoutMessage } from "#contracts/types/fanout-message.type";
 export type { RealtimeBroadcast } from "#contracts/types/realtime-broadcast.type";

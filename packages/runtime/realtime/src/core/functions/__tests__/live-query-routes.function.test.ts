@@ -15,6 +15,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { RealtimeConfig } from "#config/realtime.config";
 import type { RealtimeMessage } from "#contracts/types/realtime-message.type";
+import { MemoryRealtimeTokenLedgerDriver } from "#core/drivers/memory-realtime-token-ledger.driver";
 import { MemoryRealtimeDriver } from "#core/drivers/memory-realtime.driver";
 import { liveQueryRoutes } from "#core/functions/live-query-routes.function";
 import { RealtimeBroadcaster } from "#core/services/realtime-broadcaster.service";
@@ -61,16 +62,19 @@ describe("liveQueryRoutes", () => {
   it("refreshes a session that may read the query, not the event, without the payload", async () => {
     const hub = new RealtimeHub(
       buildConfig(RealtimeConfig, { values: { channelRealms: [Realm.Staff] } }),
+      new MemoryRealtimeTokenLedgerDriver(),
     );
     const driver = new MemoryRealtimeDriver(hub);
     const till: RealtimeMessage[] = [];
     const other: RealtimeMessage[] = [];
     const session = { principalId: "usr_1", scopeId: "ten_1", realm: Realm.Staff };
-    driver.connect(hub.issueToken({ ...session, permissions: ["sales.sale.read"] }).token, (m) =>
-      till.push(m),
+    await driver.connect(
+      (await hub.issueToken({ ...session, permissions: ["sales.sale.read"] })).token,
+      (m) => till.push(m),
     );
-    driver.connect(hub.issueToken({ ...session, permissions: ["orders.order.read"] }).token, (m) =>
-      other.push(m),
+    await driver.connect(
+      (await hub.issueToken({ ...session, permissions: ["orders.order.read"] })).token,
+      (m) => other.push(m),
     );
     const [route] = liveQueryRoutes({
       permission: "sales.sale.read",

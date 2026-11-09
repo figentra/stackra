@@ -7,7 +7,11 @@
  *          a stream member's messages from the `collaboration.room.publish` action by its publish key (on whichever
  *          instance holds it), and enforces the caps: members per room (counted over every instance by default),
  *          message size, messages per second and idle.
- * Boundary: a singleton service. It never reads a request or a permission: the endpoint resolves the grant (view
+ * Boundary: a singleton service. With `tokenKey` set a room token is signed, so any instance verifies it, and the
+ *           `RealtimeTokenLedger` lets it be redeemed once across instances (a token in a captured URL cannot be
+ *           replayed); without one, tokens live in this process (one instance). A grant's `recheckEdit` is a closure,
+ *           so it holds only on the instance that issued the token; redeemed on another, `mayEdit` holds until the
+ *           token expires. It never reads a request or a permission: the endpoint resolves the grant (view
  *           permission at the document's scope, visibility, the live-collaboration entitlement, and `mayEdit` from the
  *           edit permission). A room is keyed by the session's tenant and the document, so it never spans tenants. A
  *           viewer's `update` is refused `forbidden` and the member stays; a member over a cap is dropped with
@@ -26,12 +30,15 @@ import { ForbiddenError, isRefusal } from "@stackra/errors";
 
 import type { RealtimeConfig } from "#config/realtime.config";
 import type { RealtimeFanout } from "#contracts/ports/realtime-fanout.port";
+import type { RealtimeTokenLedger } from "#contracts/ports/realtime-token-ledger.port";
 import type { FanoutMessage } from "#contracts/types/fanout-message.type";
 import type { RoomFrame } from "#contracts/types/room-frame.type";
 import type { RoomGrant } from "#contracts/types/room-grant.type";
 import type { RoomPeerRef } from "#contracts/types/room-peer-ref.type";
 import type { RoomPublish } from "#contracts/types/room-publish.type";
 import { RoomLimitReachedError } from "#core/errors/room-limit-reached.error";
+import { redeemRealtimeToken } from "#core/functions/redeem-realtime-token.function";
+import { signRealtimeToken } from "#core/functions/sign-realtime-token.function";
 import type { RealtimeToken } from "#core/types/realtime-token.type";
 import type { RoomMember } from "#core/types/room-member.type";
 import type { RoomPeer } from "#core/types/room-peer.type";
@@ -61,6 +68,9 @@ const STREAM_HEADERS = {
 
 /** The kinds a member may publish. */
 const KINDS: ReadonlySet<string> = new Set(["presence", "awareness", "update"]);
+
+/** The purpose a signed room token is made for. */
+const PURPOSE = "realtime.room";
 
 /** A token waiting to be redeemed. */
 interface Pending {
@@ -97,8 +107,8 @@ function isPublish(value: unknown): value is RoomPublish {
  * Holds the rooms of this instance.
  *
  * @example
- * const { token } = rooms.issueToken({ session, document: page.id, mayEdit }); // in the room-token endpoint
- * rooms.accept(socket, request.url); // in the generated raw endpoint of the room path
+ * const { token } = await rooms.issueToken({ session, document: page.id, mayEdit }); // in the room-token endpoint
+ * await rooms.accept(socket, request.url); // in the generated raw endpoint of the room path
  */
 export class RealtimeRooms extends Service {
   /** This instance's id: room frames it relayed come back through the fanout under it and are skipped. */
@@ -108,7 +118,13 @@ export class RealtimeRooms extends Service {
 
   private readonly fanout: RealtimeFanout;
 
+  private readonly ledger: RealtimeTokenLedger;
+
+  /** Unsigned tokens of this process, used while no `tokenKey` is set (one instance). */
   private readonly pending = new Map<string, Pending>();
+
+  /** The `recheckEdit` of each signed token this instance issued, by the grant's own id, until it expires. */
+  private readonly rechecks = new Map<string, Pending>();
 
   private readonly rooms = new Map<string, Set<Entry>>();
 
@@ -121,11 +137,13 @@ export class RealtimeRooms extends Service {
   /**
    * @param config - the token lifetime and the room caps.
    * @param fanout - carries frames to this service's other instances.
+   * @param ledger - records redeemed signed tokens, so each is redeemed once on any instance.
    */
-  constructor(config: RealtimeConfig, fanout: RealtimeFanout) {
+  constructor(config: RealtimeConfig, fanout: RealtimeFanout, ledger: RealtimeTokenLedger) {
     super();
     this.config = config;
     this.fanout = fanout;
+    this.ledger = ledger;
   }
 
   /** How many members room `<tenant>:<document>` holds on this instance. */
@@ -134,16 +152,35 @@ export class RealtimeRooms extends Service {
   }
 
   /**
-   * Issues a one-time room token for `grant`, valid for `subscribeTokenTtl`.
+   * Issues a one-time room token for `grant`, valid for `subscribeTokenTtl`: signed with `tokenKey`, so any instance
+   * redeems it once (through the `RealtimeTokenLedger`), or kept in this process while no key is set.
    *
    * @param grant - built by the server after its checks, never from the client.
    */
-  issueToken(grant: RoomGrant): RealtimeToken {
+  async issueToken(grant: RoomGrant): Promise<RealtimeToken> {
     const now = Date.now();
-    for (const [token, entry] of this.pending)
-      if (entry.expiresAt <= now) this.pending.delete(token);
-    const token = crypto.randomUUID();
     const expiresAt = now + Duration.toMilliseconds(this.config.subscribeTokenTtl);
+    for (const map of [this.pending, this.rechecks])
+      for (const [key, entry] of map) if (entry.expiresAt <= now) map.delete(key);
+    if (this.config.tokenKey !== "") {
+      const id = crypto.randomUUID();
+      // The re-check is a closure: it holds on this instance only. Elsewhere `mayEdit` holds until the token expires.
+      if (grant.recheckEdit !== undefined) this.rechecks.set(id, { grant, expiresAt });
+      const signed = {
+        session: grant.session,
+        document: grant.document,
+        mayEdit: grant.mayEdit,
+        id,
+      };
+      const token = await signRealtimeToken(
+        this.config.tokenKey,
+        PURPOSE,
+        signed,
+        new Date(expiresAt),
+      );
+      return { token, expiresAt: new Date(expiresAt) };
+    }
+    const token = crypto.randomUUID();
     this.pending.set(token, { grant, expiresAt });
     return { token, expiresAt: new Date(expiresAt) };
   }
@@ -154,9 +191,8 @@ export class RealtimeRooms extends Service {
    * @returns the membership; `undefined` when the token is unknown, already used or expired.
    * @throws RoomLimitReachedError when the room is full.
    */
-  join(token: string, peer: RoomPeer): RoomMember | undefined {
-    const found = this.pending.get(token);
-    this.pending.delete(token);
+  async join(token: string, peer: RoomPeer): Promise<RoomMember | undefined> {
+    const found = await this.redeem(token);
     const remaining = found === undefined ? 0 : found.expiresAt - Date.now();
     if (found === undefined || remaining <= 0) return undefined;
     const { grant } = found;
@@ -214,11 +250,11 @@ export class RealtimeRooms extends Service {
    * @param url - the upgrade request's URL, absolute or path-relative.
    * @returns whether the socket was joined.
    */
-  accept(socket: RoomSocket, url: string): boolean {
+  async accept(socket: RoomSocket, url: string): Promise<boolean> {
     const token = new URL(url, "http://realtime.invalid").searchParams.get("token") ?? "";
     let member: RoomMember | undefined;
     try {
-      member = this.join(token, {
+      member = await this.join(token, {
         deliver: (frame) => socket.send(JSON.stringify(frame)),
         close: (code, reason) => socket.close(code, reason),
       });
@@ -264,7 +300,7 @@ export class RealtimeRooms extends Service {
    * @returns 200 with the stream; 426 for a WebSocket upgrade (the token is left unused); 401 for a bad token; 429 for
    *          a full room.
    */
-  stream(request: Request): Response {
+  async stream(request: Request): Promise<Response> {
     if (request.headers.get("upgrade")?.toLowerCase() === "websocket")
       return new Response(null, { status: 426 });
     const token = new URL(request.url).searchParams.get("token") ?? "";
@@ -295,7 +331,7 @@ export class RealtimeRooms extends Service {
       },
     });
     try {
-      member = this.join(token, {
+      member = await this.join(token, {
         deliver: (frame) => send(`event: frame\ndata: ${JSON.stringify(frame)}\n\n`),
         close: (code, reason) => {
           send(`event: close\ndata: ${JSON.stringify({ code, reason })}\n\n`);
@@ -453,5 +489,26 @@ export class RealtimeRooms extends Service {
     } catch {
       // The connection is already gone.
     }
+  }
+
+  /**
+   * The grant of `token`: verified and claimed when signed (with this instance's `recheckEdit` when it issued the
+   * token), else taken from this process's map.
+   */
+  private async redeem(token: string): Promise<Pending | undefined> {
+    if (this.config.tokenKey === "") {
+      const found = this.pending.get(token);
+      this.pending.delete(token);
+      return found;
+    }
+    const redeemed = await redeemRealtimeToken(this.config.tokenKey, this.ledger, PURPOSE, token);
+    if (redeemed === undefined) return undefined;
+    const { id, ...grant } = redeemed.grant as RoomGrant & { readonly id: string };
+    const local = this.rechecks.get(id);
+    this.rechecks.delete(id);
+    return {
+      grant: local?.grant ?? grant,
+      expiresAt: redeemed.expiresAt.getTime(),
+    };
   }
 }

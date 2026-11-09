@@ -17,6 +17,7 @@ import { readServerSentEvents } from "@stackra/transport";
 
 import { RealtimeConfig } from "#config/realtime.config";
 import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";
+import { MemoryRealtimeTokenLedgerDriver } from "#core/drivers/memory-realtime-token-ledger.driver";
 import { SseRealtimeDriver } from "#core/drivers/sse-realtime.driver";
 import { RealtimeHub } from "#core/services/realtime-hub.service";
 
@@ -33,9 +34,12 @@ const PAID = {
 };
 
 /** A hub, its driver and a token for `SESSION`. */
-function setup(ttl = Duration.minutes(15)) {
-  const hub = new RealtimeHub(buildConfig(RealtimeConfig, { values: { subscribeTokenTtl: ttl } }));
-  return { hub, driver: new SseRealtimeDriver(hub), token: hub.issueToken(SESSION).token };
+async function setup(ttl = Duration.minutes(15)) {
+  const hub = new RealtimeHub(
+    buildConfig(RealtimeConfig, { values: { subscribeTokenTtl: ttl } }),
+    new MemoryRealtimeTokenLedgerDriver(),
+  );
+  return { hub, driver: new SseRealtimeDriver(hub), token: (await hub.issueToken(SESSION)).token };
 }
 
 /** The GET a client sends with `token`. */
@@ -47,8 +51,8 @@ afterEach(() => {
 });
 
 describe("SseRealtimeDriver", () => {
-  it("is a driver of RealtimeDriver", () => {
-    expect(setup().driver).toBeInstanceOf(RealtimeDriver);
+  it("is a driver of RealtimeDriver", async () => {
+    expect((await setup()).driver).toBeInstanceOf(RealtimeDriver);
     expect(kindOf(SseRealtimeDriver)).toEqual({
       kind: "driver",
       options: { port: RealtimeDriver },
@@ -56,8 +60,8 @@ describe("SseRealtimeDriver", () => {
   });
 
   it("streams each refresh as an event with its id", async () => {
-    const { hub, driver, token } = setup();
-    const response = driver.open(get(token));
+    const { hub, driver, token } = await setup();
+    const response = await driver.open(get(token));
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("text/event-stream; charset=utf-8");
     expect(response.headers.get("cache-control")).toBe("no-store");
@@ -76,8 +80,8 @@ describe("SseRealtimeDriver", () => {
 
   it("heartbeats and closes at token expiry", async () => {
     vi.useFakeTimers();
-    const { hub, driver, token } = setup(Duration.minutes(1));
-    const response = driver.open(get(token));
+    const { hub, driver, token } = await setup(Duration.minutes(1));
+    const response = await driver.open(get(token));
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
     const opened = await reader?.read();
@@ -91,11 +95,11 @@ describe("SseRealtimeDriver", () => {
     expect(hub.size).toBe(0);
   });
 
-  it("refuses a bad token with 401 and an upgrade with 426, keeping the token", () => {
-    const { driver, token } = setup();
-    expect(driver.open(get("forged")).status).toBe(401);
-    expect(driver.open(get(token, { upgrade: "websocket" })).status).toBe(426);
-    expect(driver.open(get(token)).status).toBe(200);
-    expect(driver.open(get(token)).status).toBe(401);
+  it("refuses a bad token with 401 and an upgrade with 426, keeping the token", async () => {
+    const { driver, token } = await setup();
+    expect((await driver.open(get("forged"))).status).toBe(401);
+    expect((await driver.open(get(token, { upgrade: "websocket" }))).status).toBe(426);
+    expect((await driver.open(get(token))).status).toBe(200);
+    expect((await driver.open(get(token))).status).toBe(401);
   });
 });

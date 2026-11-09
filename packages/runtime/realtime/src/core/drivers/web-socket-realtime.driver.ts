@@ -23,7 +23,7 @@ const TOKEN_EXPIRED = 4001;
  *
  * @example
  * // in the generated raw endpoint, after the runtime upgraded the request
- * driver.accept(socket, request.url);
+ * await driver.accept(socket, request.url);
  */
 export class WebSocketRealtimeDriver extends SseRealtimeDriver {
   /**
@@ -32,9 +32,9 @@ export class WebSocketRealtimeDriver extends SseRealtimeDriver {
    * @param url - the upgrade request's URL, absolute or path-relative.
    * @returns whether the socket was joined.
    */
-  accept(socket: RealtimeSocket, url: string): boolean {
+  async accept(socket: RealtimeSocket, url: string): Promise<boolean> {
     const token = new URL(url, "http://realtime.invalid").searchParams.get("token") ?? "";
-    const leave = this.hub.join(token, {
+    const leave = await this.hub.join(token, {
       deliver: (message) => socket.send(JSON.stringify(message)),
       close: () => socket.close(TOKEN_EXPIRED, "token_expired"),
     });
