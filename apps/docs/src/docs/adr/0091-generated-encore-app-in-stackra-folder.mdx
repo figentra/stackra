@@ -1,6 +1,6 @@
 ---
 title: "0091 — The Encore app is generated into .stackra/encore; services hold no Encore files"
-description: "Accepted, amended by 0158, 0268, 0294, 0295 · 2026-10-19"
+description: "Accepted, amended by 0158, 0268, 0294, 0295 and its own amendment of 2026-11-09 · 2026-10-19"
 ---
 
 <Note>
@@ -20,6 +20,12 @@ description: "Accepted, amended by 0158, 0268, 0294, 0295 · 2026-10-19"
 <Note>
   Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R7: `.stackra/encore` is not a
   workspace member.
+</Note>
+
+<Note>
+  Amended 2026-11-09 (below): for a single-service app, the Encore app root is the service member's
+  root, `encore.app` is generated and gitignored there, and the generated services stay in
+  `.stackra/encore/`.
 </Note>
 
 ## Context
@@ -76,6 +82,48 @@ Encore one target among possible others.
 
 Planned: `stackra gen --check` in CI and in `pnpm verify`. A validator check that no `encore.*` file or `__generated__/`
 folder exists under `services/`, and that `.stackra/` is gitignored. Nothing checks this today.
+
+## Amendment 2026-11-09: the Encore app root is the member root (single-service apps)
+
+Decision 2 put `encore.app` inside `.stackra/encore/`. On the testbed (tamo, Encore 1.58.8) that
+root could not resolve the member's `#` imports or its `node_modules` packages. With the three
+conditions below, `encore check` built the application graph and topology and `encore build docker`
+produced an image.
+
+1. **The app root is the service member's root.** Gen writes `encore.app`, `{ "id": <runway
+providers.encore.app>, "lang": "typescript" }`, at `services/<name>/encore.app`. It is a
+   generated file and is gitignored (`services/*/encore.app`; `stackra validate --repository`
+   asks a repository with services to ignore it). Gen no longer writes `.stackra/encore/encore.app`
+   or `.stackra/encore/package.json`. An `encore.app` at the repository root is still refused
+   (`encore_app_stray`).
+2. **The generated services stay in `.stackra/encore/<svc>/`.** Encore discovers them there. A
+   service's migrations path stays `{ path: "./migrations" }`, relative to its folder under
+   `.stackra/encore`.
+3. **`encore.dev` is a literal exact version equal to the default catalog's.** Encore's
+   `package_mgmt` step (`update_package_json`) rewrites any `encore.dev` spec that is not the exact
+   version (or `^`, `=` or `~` plus it) to `^<version>`. `catalog:` is rewritten too, and the
+   rewrite breaks pnpm's frozen install. This is the one literal the versions rule allows, in a
+   `tier:service` member's `dependencies`; `stackra validate --repository` refuses a service whose
+   pin differs from the catalog's. A catalog bump of `encore.dev` is a bump of every service's
+   literal in the same change (`stackra encore:prepare`); no Renovate configuration exists in the
+   repository, so nothing automates it yet.
+4. **The service's tsconfig carries `compilerOptions.baseUrl` "." and `paths` equal to its
+   package.json `imports`.** Encore's parser ignores package.json `imports`, and reads
+   `compilerOptions.paths` only when written directly in the app root's own tsconfig.json, not
+   through `extends` and not with `${configDir}`. Each key and its target array equal the
+   `imports` entry (a string target is a one-element array). The tsconfig still extends its one
+   `@stackra/typescript-config` preset. `stackra validate --repository` refuses a service whose
+   `paths` differ from its `imports`.
+5. **`stackra encore:prepare`** rewrites a service's tsconfig `paths` from its `imports` and pins
+   `encore.dev` to the catalog version.
+6. **The Encore Cloud Root Directory is the member folder**, `services/<name>`.
+
+Open, pending an owner decision: a product with several service members sharing one Encore app. One
+app root cannot be several member roots; the options are a per-product staging build or unique
+aliases. This amendment covers single-service apps only.
+
+Upstream: the Encore issue on `imports` and `paths` resolution is being filed separately (link to
+follow).
 
 ## Supersedes and sources
 

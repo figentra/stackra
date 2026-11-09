@@ -62,7 +62,7 @@ describe("encoreApp", () => {
   it("writes the service's app file from providers.encore.app", () => {
     const { errors, files } = encoreApp(repository({ "runway.yaml": RUNWAY }), true);
     expect(errors).toEqual([]);
-    expect(files.map((file) => file.path)).toEqual([".stackra/encore/encore.app"]);
+    expect(files.map((file) => file.path)).toEqual(["encore.app"]);
     expect(JSON.parse(files[0]?.content ?? "")).toEqual({
       id: "figentra-commerce",
       lang: "typescript",
@@ -88,7 +88,7 @@ describe("encoreApp", () => {
     });
   });
 
-  it("refuses an encore.app at the repository or the member root", () => {
+  it("refuses an encore.app at the repository root, and leaves the member's own to gen", () => {
     const root = repository({
       "runway.yaml": RUNWAY,
       "encore.app": '{ "id": "commerce-9v52" }\n',
@@ -96,7 +96,6 @@ describe("encoreApp", () => {
     });
     for (const service of [true, false])
       expect(encoreApp(root, service).errors.map((error) => [error.code, error.file])).toEqual([
-        ["encore_app_stray", "encore.app"],
         ["encore_app_stray", "../../encore.app"],
       ]);
   });
