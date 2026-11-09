@@ -137,7 +137,8 @@
     {
       "name": "STACKRA_ENVIRONMENT",
       "kind": "config",
-      "type": "string",
+      "type": "enum",
+      "values": ["dev", "preview", "test", "staging", "production"],
       "required": false,
       "config": "market_packs",
       "class": "MarketPacksConfig",
@@ -158,6 +159,10 @@
     "market_packs.FloorBound": {
       "type": "string",
       "enum": ["min", "max", "list"]
+    },
+    "market_packs.PackEnvironment": {
+      "type": "string",
+      "enum": ["dev", "preview", "test", "staging", "production"]
     },
     "market_packs.PackIssueCode": {
       "type": "string",
