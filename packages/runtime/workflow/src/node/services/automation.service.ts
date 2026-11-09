@@ -40,6 +40,7 @@ import { AutomationExceedsPublisherError } from "#core/errors/automation-exceeds
 import { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 import { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
 import { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
+import { AutomationQuotaUnavailableError } from "#core/errors/automation-quota-unavailable.error";
 import { AutomationPaused } from "#core/events/automation-paused.event";
 import { AutomationRunSkipped } from "#core/events/automation-run-skipped.event";
 import { checkAutomation } from "#core/functions/check-automation.function";
@@ -218,10 +219,14 @@ export class AutomationService extends CrudService<Automation> {
    *
    * @param startedBy - what starts the runs, kept on a skip: a trigger event's delivery (the default) or a schedule's
    *   tick.
+   * @param options - `last: false` when a retry follows (a queued start's attempt that is not its last): an unreadable
+   *   quota then throws instead of recording the skip, so the retry tries again. Default `last: true`.
+   * @throws AutomationQuotaUnavailableError for an event start whose quota cannot be read when `last` is false.
    */
   async triggered(
     block: string,
     startedBy: AutomationStart = AutomationStart.Event,
+    options: { readonly last?: boolean } = {},
   ): Promise<TriggeredAutomation[]> {
     const automations = await this.find({
       trigger: block,
@@ -246,7 +251,7 @@ export class AutomationService extends CrudService<Automation> {
       // oxlint-disable-next-line no-await-in-loop -- one access check per automation, in the delivery's transaction
       if (await this.pauseWithoutAccess(automation, document)) continue;
       // oxlint-disable-next-line no-await-in-loop -- one quota check per automation, in the delivery's transaction
-      if (!(await this.withinQuota(automation, startedBy))) continue;
+      if (!(await this.withinQuota(automation, startedBy, options.last ?? true))) continue;
       started.push({ automationId: automation.id, document, principal: automation.principal });
     }
     return started;
@@ -461,11 +466,18 @@ export class AutomationService extends CrudService<Automation> {
   /**
    * Whether `automation`'s scope may start one more run. Otherwise it records `AutomationRunSkipped` and answers
    * `false`: `quota_exceeded` over the quota, `quota_unavailable` when the quota cannot be read (an `unavailable`
-   * answer, an answer this version does not know, or a driver that throws), which fails closed. It never throws: a
-   * trigger's listener runs once per delivery (a throw is only recorded on it, never redelivered), so the skip is what
-   * keeps the occurrence in the run history.
+   * answer, an answer this version does not know, or a driver that throws), which fails closed. An unreadable quota
+   * throws only for an event start that a retry follows (`last` false, a queued start's earlier attempt), so the queue
+   * tries again; on the last attempt, and for an in-process start, the skip is what keeps the occurrence in the run
+   * history.
+   *
+   * @throws AutomationQuotaUnavailableError for an event start whose quota cannot be read when `last` is false.
    */
-  private async withinQuota(automation: Automation, startedBy: AutomationStart): Promise<boolean> {
+  private async withinQuota(
+    automation: Automation,
+    startedBy: AutomationStart,
+    last: boolean,
+  ): Promise<boolean> {
     let answer: AutomationQuotaAnswer;
     try {
       answer = await this.quota.check(
@@ -477,6 +489,9 @@ export class AutomationService extends CrudService<Automation> {
     }
     if (answer === AutomationQuotaAnswer.Allow) return true;
     const exceeded = answer === AutomationQuotaAnswer.Exceeded;
+    // a queued event start that a retry follows tries the quota again rather than skip the occurrence
+    if (!exceeded && !last && startedBy === AutomationStart.Event)
+      throw AutomationQuotaUnavailableError.create();
     automation.record(
       AutomationRunSkipped.create({
         automationId: automation.id,

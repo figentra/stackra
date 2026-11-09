@@ -13,6 +13,26 @@
   ],
   "actions": [
     {
+      "key": "workflow.automation.start_triggered@1",
+      "kind": "action",
+      "module": "workflow",
+      "class": "StartTriggeredAutomationsAction",
+      "file": "src/node/actions/start-triggered-automations.action.ts",
+      "permission": "workflow.automation.start_triggered",
+      "risk": "L2",
+      "actors": ["system", "job"],
+      "area": "app",
+      "job": {
+        "queue": "default",
+        "retries": 6,
+        "backoff": "exponential",
+        "deadLetter": true
+      },
+      "input": {
+        "$ref": "#/schemas/workflow.StartTriggeredAutomationsInput"
+      }
+    },
+    {
       "key": "workflow.run.get@1",
       "kind": "query",
       "module": "workflow",
@@ -121,6 +141,14 @@
   ],
   "permissions": [
     {
+      "key": "workflow.automation.start_triggered",
+      "risk": "L2",
+      "class": "AutomationPermissions",
+      "module": "workflow",
+      "member": "start_triggered",
+      "file": "src/node/access/automation.permissions.ts"
+    },
+    {
       "key": "workflow.run.get",
       "risk": "L1",
       "class": "RunPermissions",
@@ -164,6 +192,13 @@
       "category": "forbidden",
       "module": "workflow",
       "class": "AutomationPrincipalMismatchError"
+    },
+    {
+      "code": "automation_quota_unavailable",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "workflow",
+      "class": "AutomationQuotaUnavailableError"
     },
     {
       "code": "checklist_invalid",
@@ -766,6 +801,24 @@
   ],
   "services": [
     {
+      "class": "StartTriggeredAutomationsAction",
+      "from": "@stackra/workflow/node",
+      "deps": [
+        {
+          "class": {
+            "name": "AutomationService",
+            "from": "@stackra/workflow/node"
+          }
+        },
+        {
+          "class": {
+            "name": "WorkflowRunner",
+            "from": "@stackra/actions/contracts"
+          }
+        }
+      ]
+    },
+    {
       "class": "GetRunQuery",
       "from": "@stackra/workflow/node",
       "deps": [
@@ -1315,6 +1368,22 @@
             }
           ]
         }
+      }
+    },
+    "workflow.StartTriggeredAutomationsInput": {
+      "type": "object",
+      "required": ["block", "eventId", "occurrence"],
+      "properties": {
+        "block": {
+          "type": "string"
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        },
+        "occurrence": {}
       }
     }
   }
