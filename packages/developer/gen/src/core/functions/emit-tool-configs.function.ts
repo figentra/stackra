@@ -21,6 +21,7 @@
  *                     `@stackra/container`, `usesContainer`, gets a setup without the wiring, the schemas and
  *                     `@stackra/container/testing`).
  */
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
@@ -151,9 +152,8 @@ export function emitToolConfigs(
       : [],
   );
   const pairs: string[] = [];
-  for (const declared of ir.classes) {
+  for (const declared of factoryPairsOf(ir)) {
     const model = declared.partner;
-    if (declared.kind !== "factory" || model === undefined) continue;
     for (const target of [{ name: declared.name, from: declared.importPath }, model])
       imports.set(
         target.from,
