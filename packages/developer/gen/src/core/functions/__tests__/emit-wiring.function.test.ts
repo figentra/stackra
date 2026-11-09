@@ -888,14 +888,16 @@ describe("emitWiring", () => {
     expect(content).not.toContain("provide: SearchIndexConfig }");
   });
 
-  it("binds a service's request guards and health indicators with their config rows (STA-1385)", () => {
+  it("binds a service's request guards and health indicators with their config rows (STA-1385, STA-2577)", () => {
     const billing = emitWiring(BILLING_IR);
     for (const line of [
+      '    { module: "billing", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },',
       '    { module: "billing", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },',
       '    { module: "billing", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },',
       '    { module: "billing", kind: "service", provide: DatabaseHealthIndicatorDriver, deps: [Database, DatabaseConfig] },',
       '    { module: "billing", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },',
       '    { module: "billing", kind: "service", provide: SearchHealthIndicatorDriver, deps: [SearchDriver, SearchConfig] },',
+      '    { key: "app.edge", provide: EdgeConfig },',
       '    { key: "app.cors", provide: CorsConfig },',
       '    { key: "app.csrf", provide: CsrfConfig },',
       '    { key: "app.http", provide: HttpConfig },',
