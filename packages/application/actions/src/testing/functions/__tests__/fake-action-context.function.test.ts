@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `fakeActionContext`: `authorize` allows and records, `afterCommit`, `audit` and `publish` are
  *          recorded (never run or written), `period` and `startOfDay` use the frozen clock and time zone, `run`, `signal` and `dispatch`
- *          reject unless overridden, and the actor can be set.
+ *          reject unless overridden, `detach()` runs each step as it is, and the actor can be set.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (testing helpers); ADR 0136.
@@ -46,6 +46,16 @@ describe(fakeActionContext, () => {
     expect(ctx.recorded.audit).toEqual({ reason: "count", by: "staff" });
     expect(ctx.recorded.published).toEqual([event]);
     expect(ctx.idempotencyKey).toBeUndefined();
+  });
+
+  it("detaches with its own actor and runs each step as it is", async () => {
+    const actor: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
+    const detached = fakeActionContext({ actor }).detach();
+    expect(detached.actor).toBe(actor);
+    expect(detached).not.toHaveProperty("scope");
+    await expect(detached.run(async () => detached.isolated(async () => "step"))).resolves.toBe(
+      "step",
+    );
   });
 
   it("reads periods on its frozen clock and time zone", () => {
