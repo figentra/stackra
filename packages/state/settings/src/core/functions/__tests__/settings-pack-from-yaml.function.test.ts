@@ -17,6 +17,14 @@ describe("settingsPackFromYaml", () => {
     });
   });
 
+  it("reads a list value (STA-2056)", () => {
+    expect(
+      settingsPackFromYaml(
+        "groups:\n  orders:\n    values:\n      tags:\n        - a\n        - b\n",
+      ),
+    ).toEqual({ groups: { orders: { values: { tags: ["a", "b"] }, locked: [] } } });
+  });
+
   it("refuses what is not a pack", () => {
     expect(() =>
       settingsPackFromYaml("groups:\n  orders:\n    values:\n      a:\n        b: 1\n"),

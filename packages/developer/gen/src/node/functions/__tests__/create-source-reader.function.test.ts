@@ -1898,6 +1898,20 @@ const SETTINGS_SOURCES: Readonly<Record<string, string>> = {
     "]) {}",
     "",
   ].join("\n"),
+  "src/core/shipping-rules.settings.ts": [
+    'import { Int } from "@stackra/validation";',
+    'import { Settings } from "@stackra/settings";',
+    'export class ShippingRulesSettings extends Settings({ scopes: ["platform"] }) {',
+    "  @Int({ min: 0 })",
+    "  flatRate = 3;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/shipping-form.schema.ts": [
+    'import { Settings } from "#stackra/settings";',
+    "export class ShippingForm extends Settings.pick([Settings.shipping_rules.flatRate]) {}",
+    "",
+  ].join("\n"),
   "src/core/schemas/bad-policy-form.schema.ts": [
     'import { Settings } from "#stackra/settings";',
     "export class BadPolicyForm extends Settings.pick([Settings.orders.unknownKey]) {}",
@@ -1946,6 +1960,14 @@ describe("createSourceReader on Settings.pick over the member's own settings (st
       ["windowDays", "number", 14],
     ]);
     expect(form?.fields[1]?.rules).toEqual([{ name: "Int", options: { min: 0 } }]);
+  });
+
+  it("resolves a picked key by the group the class name derives, not the module key", () => {
+    const form = shapes.find((shape) => shape.name === "ShippingForm");
+    expect(form?.fields.map((field) => [field.name, field.default?.value])).toEqual([
+      ["flatRate", 3],
+    ]);
+    expect(reader.errors.map((error) => error.subject)).not.toContain("ShippingForm");
   });
 
   it("refuses a picked key no own settings class declares, and compiles no shape for it", () => {
