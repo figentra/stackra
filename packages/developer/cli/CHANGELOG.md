@@ -1,5 +1,26 @@
 # @stackra/cli
 
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [73ea174]
+- Updated dependencies [5585893]
+- Updated dependencies [2ba26cd]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+- Updated dependencies [137a7f9]
+  - @stackra/gen@0.31.0
+  - @stackra/runway@0.31.0
+  - @stackra/repo-checks@0.31.0
+  - @stackra/mcp@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/skills@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

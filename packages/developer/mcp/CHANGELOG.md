@@ -1,5 +1,15 @@
 # @stackra/mcp
 
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [5585893]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+  - @stackra/runway@0.31.0
+  - @stackra/contracts@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes
