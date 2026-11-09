@@ -140,8 +140,8 @@ describe(emitEncoreApi, () => {
         "      anonymous: false,",
         "      action: CancelOrderAction,",
         "      input: CancelOrderInput,",
-        "      execute: (container, input, actor) =>",
-        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor }),",
+        "      execute: (container, input, actor, request) =>",
+        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request) }),",
         "    }),",
         ");",
       ].join("\n"),
@@ -154,7 +154,7 @@ describe(emitEncoreApi, () => {
     expect(content).toContain("export const ordersOrderListV1 = api.raw(");
     expect(content).toContain(`  { method: "GET", path: "${path}", expose: true, auth: false },`);
     expect(content).toContain(
-      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor }),",
+      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor, ...requestCallOptions(request) }),",
     );
   });
 

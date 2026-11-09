@@ -935,7 +935,13 @@ export class ActionPipeline {
     if (sent === undefined && policy !== Idempotency.Derived) return undefined;
     const { descriptor } = call;
     const fingerprint = await fingerprintOf(descriptor.key, input);
-    const key = sent ?? `derived:${fingerprint}`;
+    // why: a generated client mints a fresh key per call, not per intent, so for any caller but an API key a Derived
+    // action keeps deduplicating by its input (a double click on Refund stays one refund); an API key sends its own
+    const key =
+      sent === undefined ||
+      (policy === Idempotency.Derived && call.request.origin?.kind !== CallOriginKind.ApiKey)
+        ? `derived:${fingerprint}`
+        : sent;
     call.state.idempotencyKey = key;
     const scoped = [descriptor.key, descriptor.scopeId ?? "-", descriptor.actor.id, key].join(":");
     const store = this.required(
