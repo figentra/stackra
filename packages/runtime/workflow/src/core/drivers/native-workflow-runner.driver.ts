@@ -84,6 +84,7 @@ import type { DocumentView } from "#core/types/document-view.type";
 import type { RunChain } from "#core/types/run-chain.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
+import type { RunView } from "#core/types/run-view.type";
 import type { StepPlan } from "#core/types/step-plan.type";
 import type { StepRetryValues } from "#core/types/step-retry-values.type";
 import type { WorkflowError } from "#core/types/workflow-error.type";
@@ -380,6 +381,25 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     return typeof (instance as { output?: unknown }).output === "function"
       ? invoke(instance, "output", [viewOf(outcome.run)])
       : undefined;
+  }
+
+  /**
+   * Run `id` as its caller may see it (STA-2613): the journalled run, for the caller's access checks, and its
+   * workflow's `output` over the results so far, as JSON; null when the workflow has none, it is not deployed here, or
+   * its output cannot be computed from the results yet. `undefined` when no run has the id.
+   */
+  async view(id: PublicId<"wfr">): Promise<RunView | undefined> {
+    const run = await this.journal.find(id);
+    if (run === undefined) return undefined;
+    const instance = this.targetOf(run)?.instance;
+    if (instance === undefined || typeof (instance as { output?: unknown }).output !== "function")
+      return { run, output: null };
+    try {
+      return { run, output: toJson(invoke(instance, "output", [viewOf(run)])) ?? null };
+    } catch {
+      // an output that reads a result the run has not reached yet
+      return { run, output: null };
+    }
   }
 
   /**

@@ -1,5 +1,36 @@
 # @stackra/integrations
 
+## 0.27.0
+
+### Minor Changes
+
+- df74e1d: The managed client gains `api.send({ method, path, headers, body, idempotencyKey, signal })`, which answers
+  `{ status, headers, body }` as the provider sent it, at every status, for a caller that must read a refusal's body (a
+  fiscal authority's validation result). Auth, the egress rule (the path stays under the Integration's `baseUrl`), rate
+  limits and the transient retries are those of the typed calls; once retries are spent the last answer is returned, and
+  `ProviderUnavailableError` is thrown only when nothing came back. `fakeIntegrationApi` answers `send` from its routes
+  (STA-2607).
+
+### Patch Changes
+
+- 7d284f2: `WebhookReceiver` parses a verified body by its recipe's `bodyFormat`: `json` (the default) as before, or `form`, an
+  `application/x-www-form-urlencoded` body read into percent-decoded string values, which route the event
+  (`eventType.path`), key it (`eventId.path`) and create it. A verified form-encoded delivery no longer throws a
+  `SyntaxError` before routing. `WebhookSchemeRecipe.bodyFormat` now documents that it governs both the verifier and the
+  receiver.
+- Updated dependencies [8a70552]
+  - @stackra/data-transfer@0.27.0
+  - @stackra/clients@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/money@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/market-packs@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Minor Changes

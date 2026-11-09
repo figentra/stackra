@@ -980,7 +980,8 @@ export abstract class CrudService<M extends object> extends Service implements R
    */
   private async settled(): Promise<EntityManager> {
     const em = this.em();
-    if (em.isInTransaction()) await em.flush();
+    // reason: a unit test may hand the service a partial entity manager with no `isInTransaction`; it runs outside one
+    if (typeof em.isInTransaction === "function" && em.isInTransaction()) await em.flush();
     return em;
   }
 

@@ -2,13 +2,18 @@
  * Stackra file contract:
  * Purpose: proves `outbox:relay-deliveries` lists the cross-app deliveries with subscriber, type, state and error code,
  *          narrowed by `--subscriber` and `--state` (refusing another state), and says so when there are none; and
- *          `outbox:relay-replay` makes one dead delivery pending again and exits 2 for a live or unknown one.
+ *          `outbox:relay-replay` makes one dead delivery pending again and exits 2 for a live or unknown one. Each
+ *          claimed delivery is loaded (or replayed) in its owner through the container's `CallIsolation`, read
+ *          optionally; an owned delivery with no isolation bound fails the command, never skipped.
  * Boundary: test only; runs through `runCommandForTest` over a `MemoryDeliveryDriver` and a fixed clock.
  * Runtime: node (vitest)
  * Governing contract: ADR 0511 (decision 12); STA-1910 spec FR-014; ADR 0022 (test placement).
  */
 import { runCommandForTest } from "@stackra/console/testing";
+import { CallIsolation } from "@stackra/actions/contracts";
+import type { Container } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
+import type { Actor } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { DeliveryState } from "#contracts/index";
@@ -24,8 +29,17 @@ class FixedClock extends Clock {
 }
 
 /** A memory store with a pending delivery to billing and a dead one to os, and the container serving the commands. */
-async function setup() {
+async function setup(options: { owned?: string; isolation?: CallIsolation } = {}) {
   const driver = new MemoryDeliveryDriver();
+  if (options.owned !== undefined) {
+    const list = driver.list.bind(driver);
+    driver.list = async (filter) =>
+      (await list(filter)).map((claim) => ({ ...claim, ownerId: options.owned as never }));
+  }
+  const bound = {
+    has: (token: unknown) => token === CallIsolation && options.isolation !== undefined,
+    get: () => options.isolation,
+  } as unknown as Container;
   await driver.write([
     deliveryOf(),
     deliveryOf({ id: "dlv_2", eventId: "evt_2", subscriber: "os" }),
@@ -34,7 +48,9 @@ async function setup() {
   const container = () => ({
     get: <T extends object>(type: abstract new (...args: never[]) => T): T => {
       const args: unknown[] =
-        type === (RelayReplayCommand as unknown) ? [driver, new FixedClock()] : [driver];
+        type === (RelayReplayCommand as unknown)
+          ? [driver, new FixedClock(), bound]
+          : [driver, bound];
       return Reflect.construct(type, args) as T;
     },
     close: async () => {},
@@ -80,6 +96,39 @@ describe(RelayDeliveriesCommand, () => {
       { container },
     );
     expect(result.exitCode).toBe(2);
+  });
+});
+
+describe("the relay commands across owners", () => {
+  it("loads and replays each owned delivery in its owner", async () => {
+    const owners: unknown[] = [];
+    const isolation = {
+      run: (actor: Actor, _scope: unknown, work: () => Promise<unknown>) => {
+        owners.push(actor.scopeId);
+        return work();
+      },
+    } as unknown as CallIsolation;
+    const { container } = await setup({ owned: "scp_acme", isolation });
+    const listed = await runCommandForTest([RelayDeliveriesCommand], ["outbox:relay-deliveries"], {
+      container,
+    });
+    expect(listed.stdout).toContain("dlv_1");
+    const replayed = await runCommandForTest(
+      [RelayReplayCommand],
+      ["outbox:relay-replay", "dlv_2"],
+      { container },
+    );
+    expect(replayed.exitCode).toBe(0);
+    expect(owners).toEqual(["scp_acme", "scp_acme", "scp_acme"]);
+  });
+
+  it("fails on an owned delivery with no isolation bound", async () => {
+    const { container } = await setup({ owned: "scp_acme" });
+    const listed = await runCommandForTest([RelayDeliveriesCommand], ["outbox:relay-deliveries"], {
+      container,
+    });
+    expect(listed.exitCode).not.toBe(0);
+    expect(listed.stdout).not.toContain("dlv_1");
   });
 });
 

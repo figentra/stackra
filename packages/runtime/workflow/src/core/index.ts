@@ -40,6 +40,7 @@ export { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 export { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
 export { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
 export { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
+export { RunNotFoundError } from "#core/errors/run-not-found.error";
 export { ChecklistInvalidError } from "#core/errors/checklist-invalid.error";
 export { AutomationPaused } from "#core/events/automation-paused.event";
 export { ChecklistCompleted } from "#core/events/checklist-completed.event";

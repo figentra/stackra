@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresDeliveryDriver`: a write is one insert-or-ignore on (event id, subscriber, type) of a
- *          bound JSON array, and none for an empty batch; `lease` ranks each subscriber's live due rows so each takes at
- *          most the limit and moves their due time to the lease's end in one statement, read back sorted; `remove`,
- *          `retry`, `deadLetter` and `replay` are one bound statement each, `replay` touching dead rows only; `list` narrows by subscriber and state with fixed
- *          conditions and bound values.
+ *          bound JSON array, and none for an empty batch; `lease` and `list` call their system functions with every
+ *          value bound and read back claims (id, owner, subscriber, state; a NULL tenant is a platform claim) in the
+ *          relay's order; `load` reads one row back into a delivery or undefined; `remove`, `retry`, `deadLetter` and
+ *          `replay` are one bound statement each, `replay` touching dead rows only.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -81,32 +81,43 @@ describe(PostgresDeliveryDriver, () => {
     expectBound(statements);
   });
 
-  it("leases each subscriber's due rows up to the limit in one statement and reads them back sorted", async () => {
-    const { database, statements } = databaseWith([{ ...ROW, id: "dlv_2", subscriber: "os" }, ROW]);
+  it("leases each subscriber's due rows of every owner through the system function, in the relay's order", async () => {
+    const { database, statements } = databaseWith([
+      { id: "dlv_1", tenant_id: "scp_acme", subscriber: "billing", attempts: 2, dead_at: null },
+      { id: "dlv_2", tenant_id: null, subscriber: "os", attempts: 0, dead_at: null },
+    ]);
     const due = await new PostgresDeliveryDriver(database).lease(NOON, 10, LATER);
     const [statement] = statements;
     expect(statement?.sql).toContain(
-      "row_number() over (partition by subscriber order by created_at, id)",
+      "from outbox.lease_due_deliveries(?::timestamptz, ?::integer, ?::timestamptz) as l",
     );
-    expect(statement?.sql).toContain("where dead_at is null and available_at <= ?");
-    expect(statement?.sql).toContain("where rank <= ?");
-    expect(statement?.sql).toContain('update "outbox"."deliveries" as d set available_at = ?');
-    expect(statement?.sql).toContain("returning d.id, d.event_id");
+    expect(statement?.sql).toContain("order by l.subscriber, l.created_at, l.id");
     expect(statement?.params).toEqual([NOON, 10, LATER]);
-    expect(due.map((each) => each.id)).toEqual(["dlv_1", "dlv_2"]);
-    expect(due.slice(0, 1)).toEqual([
-      {
-        id: "dlv_1",
-        eventId: "evt_1",
-        subscriber: "billing",
-        type: "payments.payment.captured.v1",
-        envelope: ROW.envelope,
-        attempts: 2,
-        availableAt: NOON,
-        lastError: { code: "http_status", status: 503 },
-        createdAt: NOON,
-      },
+    expect(due).toEqual([
+      { id: "dlv_1", ownerId: "scp_acme", subscriber: "billing", state: DeliveryState.Failing },
+      { id: "dlv_2", subscriber: "os", state: DeliveryState.Pending },
     ]);
+    expectBound(statements);
+  });
+
+  it("loads one delivery under the caller's row-level security and reads it back", async () => {
+    const { database, statements } = databaseWith([ROW]);
+    const delivery = await new PostgresDeliveryDriver(database).load("dlv_1");
+    expect(statements[0]?.sql).toContain('from "outbox"."deliveries" where id = ?');
+    expect(delivery).toEqual({
+      id: "dlv_1",
+      eventId: "evt_1",
+      subscriber: "billing",
+      type: "payments.payment.captured.v1",
+      envelope: ROW.envelope,
+      attempts: 2,
+      availableAt: NOON,
+      lastError: { code: "http_status", status: 503 },
+      createdAt: NOON,
+    });
+    await expect(
+      new PostgresDeliveryDriver(databaseWith().database).load("dlv_1"),
+    ).resolves.toBeUndefined();
     expectBound(statements);
   });
 
@@ -135,26 +146,22 @@ describe(PostgresDeliveryDriver, () => {
     await expect(new PostgresDeliveryDriver(database).replay("dlv_1", NOON)).resolves.toBe(false);
   });
 
-  it("lists by subscriber and state with fixed conditions and bound values", async () => {
-    const { database, statements } = databaseWith([{ ...ROW, dead_at: NOON, last_error: null }]);
+  it("lists every owner's deliveries through the system function, every filter bound", async () => {
+    const { database, statements } = databaseWith([
+      { id: "dlv_1", tenant_id: "scp_acme", subscriber: "billing", attempts: 3, dead_at: NOON },
+    ]);
     const driver = new PostgresDeliveryDriver(database);
-    const [dead] = await driver.list({
-      subscriber: "billing",
-      state: DeliveryState.Dead,
-      limit: 20,
-    });
-    expect(dead?.deadAt).toEqual(NOON);
-    expect(dead?.lastError).toBeUndefined();
-    await driver.list({ state: DeliveryState.Pending, limit: 5 });
-    await driver.list({ state: DeliveryState.Failing, limit: 5 });
-    await driver.list({ limit: 5 });
+    await expect(
+      driver.list({ subscriber: "billing", state: DeliveryState.Dead, limit: 20 }),
+    ).resolves.toEqual([
+      { id: "dlv_1", ownerId: "scp_acme", subscriber: "billing", state: DeliveryState.Dead },
+    ]);
+    await driver.list({ id: "dlv_1", limit: 1 });
     expect(statements[0]?.sql).toContain(
-      "where subscriber = ? and dead_at is not null order by created_at, id limit ?",
+      "from outbox.list_deliveries(?::varchar, ?::varchar, ?::text, ?::integer)",
     );
-    expect(statements[0]?.params).toEqual(["billing", 20]);
-    expect(statements[1]?.sql).toContain("where dead_at is null and attempts = 0");
-    expect(statements[2]?.sql).toContain("where dead_at is null and attempts > 0");
-    expect(statements[3]?.sql).not.toContain("where");
+    expect(statements[0]?.params).toEqual([null, "billing", "dead", 20]);
+    expect(statements[1]?.params).toEqual(["dlv_1", null, null, 1]);
     expectBound(statements);
   });
 });
