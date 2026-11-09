@@ -150,6 +150,10 @@ const acme = scopeRefOf("platform.acme");
 `MemoryScopeTreeDriver` takes no constructor argument, since gen reads every constructor parameter as an injected
 class: `new MemoryScopeTreeDriver().seed(entries)` sets its nodes and returns the tree.
 
+In a `useDrivers("memory")` testing app, `@stackra/scope/testing` (loaded by gen's Vitest setup) points the unseeded
+memory tree at the Database's `ScopeNode` rows, so a node added through `ScopeNodeService` is the node `ScopeTree`
+reads, by id, by path and along the path. A tree a test seeds or overrides (`fakeScopeTree`) keeps its own list.
+
 ## Not here
 
 - Grants and their inheritance: `@stackra/iam` implements `GrantedScopes`.
