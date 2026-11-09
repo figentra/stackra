@@ -328,7 +328,7 @@ describe("reportQueriesOf", () => {
       key: "orders.report.order_sales@1",
       kind: "query",
       permission: "orders.order.report",
-      endpoint: { method: "GET", path: "/reports/order-sales", derived: true },
+      endpoint: { method: "GET", path: "/app/reports/order-sales", derived: true },
     });
     expect(entry?.["tool"]).toBeDefined();
     expect(entry?.["input"]).toEqual({ $ref: "#/schemas/orders.ReportRequest" });

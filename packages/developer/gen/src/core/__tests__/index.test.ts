@@ -47,6 +47,7 @@ describe("@stackra/gen", () => {
       "checkApproval",
       "checkCallShape",
       "checkEncryptedFields",
+      "checkEndpoints",
       "checkIdentityLock",
       "checkModelScope",
       "checkQueryCache",

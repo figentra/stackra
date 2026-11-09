@@ -14,12 +14,12 @@ import { api } from "encore.dev/api";
 import { app } from "../../entry/server";
 import { answerCall } from "./http";
 
-/** POST /channelses/publish: channels.channels.publish@1 through the action pipeline. */
+/** POST /app/channelses/publish: channels.channels.publish@1 through the action pipeline. */
 export const channelsChannelsPublishV1 = api.raw(
-  { method: "POST", path: "/channelses/publish", expose: true, auth: false },
+  { method: "POST", path: "/app/channelses/publish", expose: true, auth: false },
   (req, resp) =>
     answerCall(req, resp, {
-      path: "/channelses/publish",
+      path: "/app/channelses/publish",
       anonymous: false,
       action: PublishChannelsAction,
       input: PublishChannelsInput,

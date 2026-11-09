@@ -21,9 +21,10 @@
       "permission": "devices.device.read",
       "risk": "L0",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/devices/acknowledged",
+        "path": "/app/devices/acknowledged",
         "derived": true
       },
       "toolOff": "a device's own sync bookkeeping, asked by the device runtime; nothing an agent decides on",

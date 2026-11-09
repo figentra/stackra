@@ -84,7 +84,7 @@ describe("emitClients", () => {
   it("names each descriptor after the producer's class, with its key and route", () => {
     expect(content).toContain(
       'export const CancelOrderAction = remoteAction("orders.order.cancel@1", { input: CancelOrderInput, ' +
-        'output: CancelOrderOutput, endpoint: { method: HttpMethod.Put, path: "/orders/:orderId/cancel" } });',
+        'output: CancelOrderOutput, endpoint: { method: HttpMethod.Put, path: "/app/orders/:orderId/cancel" } });',
     );
     expect(content).toContain('export const ListOrdersQuery = remoteQuery("orders.order.list@1",');
   });

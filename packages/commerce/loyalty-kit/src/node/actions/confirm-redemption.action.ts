@@ -34,7 +34,7 @@ export class ConfirmRedemptionAction extends Action({
   actors: [ActorKind.User, ActorKind.Service],
   idempotency: Idempotency.Optional,
   stepUp: AssuranceLevel.Aal2,
-  endpoint: { method: HttpMethod.Put, path: "/loyalty/redemptions/:reference/confirm" },
+  endpoint: { method: HttpMethod.Put, path: "/app/loyalty/redemptions/:reference/confirm" },
   // reason: a confirmation is the host's, after its own step succeeded, not an agent's
   tool: false,
 }) {

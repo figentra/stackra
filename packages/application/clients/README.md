@@ -98,7 +98,7 @@ The drivers of `@stackra/query`'s offline ports send through the bound `ClientTr
 - `ClientReplicaSourceDriver` sends a replica query with the device's slice and the change cursor as its input
   (`{ legalEntityId, cursor }`, no cursor on the first fill) and checks the answer's wire form: `{ rows, removed,
 cursor, asOf, full }`.
-- `ClientAcknowledgementReaderDriver` asks `GET /devices/acknowledged` (`devices.device.acknowledged@1`) with the
+- `ClientAcknowledgementReaderDriver` asks `GET /app/devices/acknowledged` (`devices.device.acknowledged@1`) with the
   device header and reads `{ sequence }`, the device's last acknowledged sequence; an answer counts as a sync.
 
 ## Calls from a service

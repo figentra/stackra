@@ -30,6 +30,7 @@
       "permission": "tenancy.approval_binding.prune",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "5m",

@@ -22,9 +22,10 @@
       "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/uploads",
+        "path": "/app/uploads",
         "derived": true
       },
       "tool": {
