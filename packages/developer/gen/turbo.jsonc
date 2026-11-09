@@ -5,4 +5,29 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tags": ["tier:lib", "category:developer", "runtime:isomorphic", "runtime:node"],
+  // gen-codes-documented.test.ts reads these docs, so an edit to them reruns the tests (STA-2068).
+  "tasks": {
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../../apps/docs/src/docs/adr/0263-*.mdx",
+        "../../../apps/docs/src/docs/adr/0294-*.mdx",
+        "../../../apps/docs/src/docs/adr/0305-*.mdx",
+        "../../../apps/docs/src/docs/adr/0307-*.mdx",
+        "../../../.agents/rules/ai-tools.md",
+        "../../../.agents/rules/naming-and-casing.md",
+      ],
+    },
+    "test:coverage": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../../apps/docs/src/docs/adr/0263-*.mdx",
+        "../../../apps/docs/src/docs/adr/0294-*.mdx",
+        "../../../apps/docs/src/docs/adr/0305-*.mdx",
+        "../../../apps/docs/src/docs/adr/0307-*.mdx",
+        "../../../.agents/rules/ai-tools.md",
+        "../../../.agents/rules/naming-and-casing.md",
+      ],
+    },
+  },
 }

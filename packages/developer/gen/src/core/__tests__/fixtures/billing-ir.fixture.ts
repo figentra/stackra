@@ -61,7 +61,7 @@ export const BILLING_IR: MemberIR = {
       "permissions",
       "billing",
       "src/modules/billing/access/invoice.permissions.ts",
-      { statics: { read: "Permission.L0", sendReminders: "Permission.L1" } },
+      { statics: { read: "Permission.L0", sendReminders: "Permission.L2" } },
     ),
     declared(
       "SendRemindersAction",

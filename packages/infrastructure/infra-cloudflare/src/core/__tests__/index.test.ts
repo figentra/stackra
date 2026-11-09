@@ -34,6 +34,7 @@ describe("@stackra/infra-cloudflare", () => {
       "OriginLock",
       "WafMode",
       "ZonePlan",
+      "ZonePolicy",
       "customHostnameRequest",
       "customHostnameState",
       "devPortsOf",

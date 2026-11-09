@@ -5,7 +5,7 @@
  * Boundary: an `Enum.of` value plus the type of the same name. The set is exactly ADR 0453 decision 11's; a new kind
  *           needs an ADR.
  * Runtime: isomorphic
- * Governing contract: ADR 0453 (decision 11); ADR 0231 (snake_case codes).
+ * Governing contract: ADR 0453 (decision 11, amended by ADR 0514 decision 10); ADR 0231 (snake_case codes).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -23,6 +23,8 @@ export const StackraKind = Enum.of({
   Plugin: "plugin",
   /** A producer service's published contract (manifest, OpenAPI, lang; no source), a consumer's devDependency that gen reads; never installed by `stackra add`. */
   Contract: "contract",
+  /** A product's docs package (MDX pages, `meta.json` navigation, assets; no code) that the docs hub depends on; never installed by `stackra add` (ADR 0514). */
+  Docs: "docs",
 });
 
 /** One of the codes above. */

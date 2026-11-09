@@ -1,5 +1,220 @@
 # @stackra/infra-testbed
 
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/contracts@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/contracts@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/contracts@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/contracts@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/contracts@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/contracts@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/contracts@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- 5d6448a: `stackra doctor` no longer checks for the Infisical CLI and login (ADR 0525). A workspace whose root scripts run
+  `secrets-exec.mjs` is checked for the sops CLI, the Google Application Default Credentials file sops decrypts with
+  (its presence only; the credential is never read) and a `figentra/secrets` clone with an `agents` folder. The
+  `infisical` doctor need and the `DoctorWorkspace.infisical` field are gone. The testbed's toolchain test no longer
+  expects the Infisical CLI in `mise.toml`; the boxes keep their own pin until they read sops.
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/contracts@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/contracts@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/contracts@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/contracts@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/contracts@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/contracts@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/contracts@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/contracts@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/contracts@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/contracts@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/contracts@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/contracts@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/contracts@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/contracts@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- f5fa82c: `stackra testbed run` no longer uploads a worktree's `.cache` (its pnpm store, about 7.5 GB); the box agent's seed
+  refresh leaves it out too.
+- ff36aea: The job image's base, `ubuntu:24.04`, is pinned by its index digest.
+- ff36aea: Both testbed groups replace any box older than a day and publish their in-service count each minute, for the cost
+  alarm.
+- ff36aea: `awsTestbed` takes an optional `permissionsBoundary` and sets it on the box's and Image Builder's roles; the Pulumi
+  program reads it from the `permissionsBoundary` config key.
+- cfb684e: Every project's box job can read the registry: the plan grants `prod` `/ci/registry` of the CI project to every
+  project (the `*` key of `grants.json`, which the agent adds to each project's own paths), and the agent gives pnpm the
+  token under both names (`FIGENTRA_REGISTRY_TOKEN` first, `STACKRA_REGISTRY_TOKEN` second) with the repository's own
+  `.npmrc` as its auth file, since pnpm 12 ignores `${...}` in a project `.npmrc`. The agent is byte for byte
+  figentra/testbed's. Changes a hashed image input: the image is rebuilt.
+- 04d5dfd: testbed-agent: a job stopped while it cleans up (Ctrl-C, SIGTERM, `job stop`) still removes its workspace and drops
+  the box's scale-in protection, byte for byte as figentra/testbed#13. Seen live on 2026-11-05: a cancelled job left
+  both. A hashed image input: boxes get it with the next image build.
+- ff36aea: The testbed groups use only the default subnets in zones that offer the heavy instance type, so us-east-1e (none of
+  the three types) is left out.
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- b493bde: The image keeps pnpm's metadata cache on `/data/pnpm-cache` beside the store. pnpm 12's release-age check reads each
+  package's metadata even for a lockfile install, and the image's Clean step empties `/root/.cache`, so the validate
+  phase's offline fetch failed (`ERR_PNPM_NO_OFFLINE_META`, image 1.224117217.0). The box agent's fetch fills the same
+  cache, and each job container mounts it and installs with `--prefer-offline`, so a package the store lacks is fetched
+  instead of failing the job. The pull-request check now empties the home cache as Clean does and runs a job install in
+  the job image against the store mounted read-only.
+- 56fecf0: The image warms its pnpm store with `pnpm fetch --ignore-scripts`, and the validate phase's offline check runs the same
+  way. Filling the store needs no lifecycle scripts, and the build instance has no job tokens, so a licence-gated
+  postinstall (uniwind-pro) failed the build.
+  
+  The box agent's per-job fetch now works the same way: it fills the store without scripts, from a copy of the lockfile,
+  workspace file, pnpmfile and `.npmrc` instead of the job's workspace. Run in the workspace, it left a `node_modules`
+  that made the container skip its install, and it loaded the job's `mise.toml` on the host. The job container gets
+  `CI=true`, as CI does, so the repository's mise environment no longer sets `NODE_ENV=development` for its tests.
+  Each job's own install still runs the scripts, with its tokens.
+  
+  The job image adds Playwright's Firefox and WebKit beside Chromium, a virtual display (`xvfb-run`) with Electron's
+  runtime libraries for desktop end-to-end tests, and ffmpeg. The image's check opens a page in all three browsers and
+  starts a headed Chromium on the display.
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

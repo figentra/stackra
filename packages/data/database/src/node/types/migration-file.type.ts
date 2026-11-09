@@ -27,8 +27,14 @@ export interface MigrationFile {
   /** The statement text. */
   readonly sql: string;
 
-  /** The SHA-256 hex digest of `sql`, recorded on apply so an edited frozen file is refused. */
+  /**
+   * The SHA-256 hex digest of `sql` without its lint comment lines (`-- squawk-ignore …`, `-- lint: …`), recorded on
+   * apply so an edited frozen file is refused while a lint comment can be added to it.
+   */
   readonly checksum: string;
+
+  /** The SHA-256 hex digest of the whole `sql`, as recorded before lint lines were left out; still accepted. */
+  readonly legacyChecksum: string;
 
   /** The inverse text, or `undefined` when the step is irreversible. */
   readonly inverse: string | undefined;

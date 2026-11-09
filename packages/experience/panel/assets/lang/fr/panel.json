@@ -146,12 +146,46 @@
       "jsonl": "JSON Lines",
       "pdf": "PDF"
     },
+    "field_control": {
+      "text": "Texte",
+      "textarea": "Zone de texte",
+      "email": "E-mail",
+      "password": "Mot de passe",
+      "url": "URL",
+      "number": "Nombre",
+      "money": "Montant",
+      "select": "Sélection",
+      "multi-select": "Sélection multiple",
+      "radio": "Boutons radio",
+      "switch": "Interrupteur",
+      "checkbox": "Case à cocher",
+      "date": "Date",
+      "date-range": "Plage de dates",
+      "time": "Heure",
+      "slider": "Curseur",
+      "combo-box": "Liste déroulante",
+      "entity": "Sélecteur d’enregistrement",
+      "upload": "Téléversement",
+      "repeater": "Répéteur",
+      "setting": "Réglage"
+    },
     "filter_comparison": {
       "gt": "Supérieur à",
       "gte": "Supérieur ou égal à",
       "lt": "Inférieur à",
       "lte": "Inférieur ou égal à",
       "ne": "Différent de"
+    },
+    "filter_kind": {
+      "text": "Texte",
+      "number": "Nombre",
+      "date": "Date",
+      "date-range": "Plage de dates",
+      "boolean": "Oui ou non",
+      "choice": "Choix",
+      "multi-choice": "Plusieurs choix",
+      "principal": "Personne",
+      "time-range": "Période"
     },
     "import_mode": {
       "create": "Créer",

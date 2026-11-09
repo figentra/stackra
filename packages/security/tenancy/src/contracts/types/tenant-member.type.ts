@@ -13,7 +13,7 @@ import type { PublicId } from "@stackra/contracts";
 export interface TenantMember {
   /** The membership, the key every change names. */
   readonly membershipId: PublicId<"mbr">;
-  /** The person. */
+  /** The user who holds the membership. */
   readonly userId: PublicId<"usr">;
   /** The person's name, or null while identity cannot say it. */
   readonly name: string | null;

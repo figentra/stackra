@@ -10,7 +10,12 @@ import type { ConsumerGateSummary } from "#node/consumer-gate/types/consumer-gat
 
 /** The outcome of one gate run. */
 export type ConsumerGateRun = {
+  /** The exit code: 0 green, 1 red, 2 setup error. */
   readonly code: number;
+
+  /** The setup error text, on code 2. */
   readonly error?: string;
+
+  /** The summary, when the run got as far as writing one. */
   readonly summary?: ConsumerGateSummary;
 };

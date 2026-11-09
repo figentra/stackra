@@ -20,6 +20,10 @@ or the environment's deploy job.
 | `./node`    | `stateBackend(accounts)`                     | the Pulumi state bucket and key in the shared tooling account                                     |
 | `./node`    | `backupAccount(accounts)`                    | the vault and replica bucket in the backup account                                                |
 | `./node`    | `resolveRef(value)`                          | a `ref:<path>` value read from the stack config                                                   |
+| `.`         | `regionLock({ sid, regions, exempt })`       | the SCP that denies regional actions outside `regions`, except `GLOBAL_ACTIONS` and `exempt`      |
+| `./node`    | `organizationLayout(name, args)`             | the Organization: trusted services, policy types, root access, units by path, policies, targets   |
+| `./node`    | `productAccount(name, args)`                 | account vending: account in its unit, opt-in region, budget, sign-in roles and their entitlements |
+| `./node`    | `accessRoles(name, args)`                    | sign-in roles trusted by Account Access Manager, each with one entitlement                        |
 | `./testing` | `mockPulumi(config?)`, `outputOf(output)`    | Pulumi's mocks and an output reader, for tests of a composed program                              |
 
 `.` never loads Pulumi, so gen can derive the config without it.
@@ -56,6 +60,26 @@ where the program runs: the owner's SSO session, or the deploy job's OIDC role. 
 
 Roles that another stack trusts have fixed names (`<project>-<env>-infra`, `-replication`), and policies name them in
 an `aws:PrincipalArn` condition, so the stacks can be applied in any order.
+
+## The management account's stacks
+
+`organizationLayout` and `productAccount` run in an organization's management account, from a stacks repository that
+holds the ids and the list of accounts (for Figentra, `figentra/infra`). Nothing here names an account.
+
+- The organization is `protect`ed and kept on delete; a vended account is `protect`ed and never closed by Pulumi.
+- An account's billing access and creation role are not readable afterwards, so they are ignored on diff; an
+  imported account shows no change.
+- A vended account gets a provider that assumes the role Organizations made in it (`OrganizationAccountAccessRole`
+  by default). Its budget and sign-in roles go through that provider; the entitlements go through the management
+  account's provider, in the Account Access application's region.
+- `reader` adds a read-only role trusted by the management account's preview role; with `readOnly`, the account's
+  provider assumes it instead of the access role, so a pull-request preview never holds admin in a member account.
+- `regionLock` gives the account its own region SCP (`regionLock` above), attached to the account. One account
+  serves a product in all its regions, so the lock is per account, not per unit.
+- Each sign-in role trusts `account-access.amazonaws.com` with `sts:AssumeRole` and `sts:SetContext`. AWS's
+  examples add `sts:TagSession`; add it when a sign-in needs session tags.
+- `regionLock` keeps the global services open (IAM, Organizations, STS, Route 53, CloudFront, WAF, billing,
+  support). An action a region lock refuses that a global service needs joins `GLOBAL_ACTIONS` in the same change.
 
 ## What the root runway must hold
 
@@ -159,5 +183,4 @@ The VPC, the database server, caches and queues are Encore Cloud's or the runtim
 Cloud SQL. The connection proxy on AWS is RDS Proxy (ADR 0473 decision 1), not built here for the same reason:
 the proxy targets the Encore-owned instance and its credentials secret. Until it exists, `DATABASE_URL` and
 `DATABASE_DIRECT_URL` are the same server and each service keeps to its pool budget on its own (`poolMaxOf`). Serving
-`public/` media through a CDN, a pull-request preview role, organisation service control policies and the Bedrock
-budget are open (see the spec).
+`public/` media through a CDN, a pull-request preview role and the Bedrock budget are open (see the spec).

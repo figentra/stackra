@@ -100,6 +100,14 @@ describe("checkMemberMetadata", () => {
     ]);
   });
 
+  it("asks a docs package only for its kind and its content/ folder, outside every tier (ADR 0514)", () => {
+    const docs = { dir: "docs", pkg: { name: "d", stackra: { kind: "docs" } } };
+    expect(checkMemberMetadata({ ...docs, files: ["package.json", "content"] })).toEqual([]);
+    expect(checkMemberMetadata({ ...docs, files: ["package.json"] })).toEqual([
+      "a docs package must hold its pages and meta.json in content/",
+    ]);
+  });
+
   it("requires the kind written out", () => {
     expect(
       checkMemberMetadata({ ...storage, pkg: { ...storage.pkg, stackra: undefined } }),

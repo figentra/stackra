@@ -3,7 +3,7 @@
 # Purpose: install as `~/.local/bin/ci-box`: maps the old `ci-box run|status|unlock|ip|ssh|sync` calls to
 #          `stackra testbed ...` so every session keeps working during the migration (plan.md phases 5 and 6). `run`
 #          passes `--no-wait`; when it exits 75 (no healthy testbed box) the call goes to the old script, kept as
-#          `~/.local/bin/ci-box.legacy`. `put-env` is retired: tokens come from Infisical.
+#          `~/.local/bin/ci-box.legacy`. `put-env` is retired: a box never holds a token.
 # Boundary: POSIX sh; starts only `stackra` and the legacy script; reads and prints no secret. Deleted with the legacy
 #           script at phase 7.
 # Runtime: sh
@@ -38,7 +38,7 @@ case "$verb" in
     exec stackra testbed ssh "$@"
     ;;
   put-env)
-    echo "ci-box: put-env is retired; testbed jobs get their tokens from Infisical (ADR 0484)" >&2
+    echo "ci-box: put-env is retired; the testbed sets up its own job environment (ADR 0484)" >&2
     exit 2
     ;;
   *)

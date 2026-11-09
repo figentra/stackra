@@ -289,6 +289,29 @@ describe("Container", () => {
       expect(memory).not.toHaveBeenCalled();
     });
 
+    it("builds a replacement with the constructor tokens its row lists", async () => {
+      class ConfiguredLedgerDriver extends Driver(Ledger) {
+        readonly config: PointsConfig;
+
+        constructor(config: PointsConfig) {
+          super();
+          this.config = config;
+        }
+
+        balance(): number {
+          return this.config.ledger.length;
+        }
+      }
+      const wiring = points({
+        replaces: [{ provide: Ledger, override: ConfiguredLedgerDriver, deps: [PointsConfig] }],
+      });
+      const container = await Container.create([wiring]);
+      const ledger = container.get(Ledger) as ConfiguredLedgerDriver;
+      expect(ledger).toBeInstanceOf(ConfiguredLedgerDriver);
+      expect(ledger.config).toBe(container.get(PointsConfig));
+      expect(container.get(PointsService).ledger).toBe(ledger);
+    });
+
     it("answers for the selected driver class with the port's instance", async () => {
       const container = await Container.create([points()]);
       expect(container.get(MemoryLedgerDriver)).toBe(container.get(Ledger));

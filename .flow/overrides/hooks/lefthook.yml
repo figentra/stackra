@@ -1,0 +1,6 @@
+kind: replace
+target: lefthook.yml
+file: hooks/lefthook.yml.txt
+reason: "core's hooks, until the stackra preset carries them: gitleaks reads .gitleaks.toml explicitly, oxlint skips the in-repo preset and the OpenCode guard plugin and the gen output that .oxlintrc.jsonc ignores, and core's shfmt job"
+owner: figentra-usr
+review: 2027-02-01

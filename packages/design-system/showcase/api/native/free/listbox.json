@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "f40bfdbf7f07ffb3",
+    "hash": "3fa6a908daed22b8",
     "propsFiles": ["ui/src/native/listbox/listbox.props.ts"]
   },
   "importLine": "import { Listbox } from \"@stackra/ui/native\";",
@@ -37,7 +37,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\""
         },
         {
           "description": "The list's spoken name when it has no visible label.",

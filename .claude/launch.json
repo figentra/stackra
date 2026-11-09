@@ -2,36 +2,48 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "docs",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@figentra/docs", "dev"],
-      "port": 3333
-    },
-    {
-      "name": "playground",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@figentra/playground", "dev"],
-      "port": 3710
+      "name": "surface-landing",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "pnpm turbo run build --output-logs=errors-only --filter=@stackra/cli... && node packages/developer/cli/dist/stackra.mjs build --product --surfaces-only && exec node packages/developer/cli/dist/stackra.mjs preview serve --surface landing --port 4173"
+      ],
+      "port": 4173
     },
     {
       "name": "mobile",
-      "runtimeExecutable": "pnpm",
+      "runtimeExecutable": "sh",
       "runtimeArgs": [
-        "--filter",
-        "@figentra/mobile",
-        "exec",
-        "expo",
-        "start",
-        "--dev-client",
-        "--port",
-        "8081"
+        "-c",
+        "pnpm turbo run build --output-logs=errors-only --filter=@figentra/mobile^... && exec pnpm --filter @figentra/mobile run dev"
       ],
       "port": 8081
     },
     {
+      "name": "playground",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "pnpm turbo run build --output-logs=errors-only --filter=@figentra/playground^... && exec pnpm --filter @figentra/playground run dev"
+      ],
+      "port": 3710
+    },
+    {
+      "name": "worker-docs",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "pnpm turbo run build --output-logs=errors-only --filter=@figentra/docs... && exec pnpm --filter @figentra/docs run dev"
+      ],
+      "port": 3333
+    },
+    {
       "name": "worker-static",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@figentra/worker-static", "dev"],
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "pnpm turbo run build --output-logs=errors-only --filter=@figentra/worker-static... && exec pnpm --filter @figentra/worker-static run dev"
+      ],
       "port": 8787
     }
   ]

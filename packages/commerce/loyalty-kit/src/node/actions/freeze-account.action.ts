@@ -8,7 +8,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0305 (rule 28); ADR 0098; ADR 0099 (risk).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind, HttpMethod } from "@stackra/contracts";
 
 import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
@@ -26,6 +26,7 @@ export class FreezeAccountAction extends Action({
   key: "account.freeze",
   permission: LoyaltyAccountPermissions.freeze,
   actors: [ActorKind.User, ActorKind.Agent],
+  idempotency: Idempotency.Optional,
   endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId/freeze" },
   tool: true,
 }) {

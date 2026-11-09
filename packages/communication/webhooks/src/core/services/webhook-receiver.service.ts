@@ -13,7 +13,8 @@
  *           its `webhooks.signature` (then the event id is the recipe's id header or the payload's `eventId` path, and
  *           the event occurred when it was received), or a regional gateway scheme with its data in `webhooks.recipe`
  *           (`authenticBody` picks the verifier; an `aes_gcm_body` request is parsed from its plaintext; the event id
- *           is the payload's `eventId` path and the event occurred when it was received).
+ *           is the payload's `eventId` path and the event occurred when it was received). The verified body is parsed
+ *           as JSON, or as an `application/x-www-form-urlencoded` body when the recipe's `bodyFormat` is `form`.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 15, 16 and 20); ADR 0224 (decision 4, as amended); ADR 0078 (decision 4: inbox
  *                     dedup); ADR 0173 (secrets read blind); STA-1357 (the regional gateway schemes).
@@ -111,7 +112,11 @@ export class WebhookReceiver extends Service {
     const now = this.clock.now();
     const text = await authenticBody(request, webhooks, [secret], now);
     if (text === undefined) throw InvalidSignatureError.create();
-    const payload: unknown = JSON.parse(text);
+    // a form body is parsed as its verifier read it: keys to percent-decoded string values
+    const payload: unknown =
+      webhooks.recipe?.bodyFormat === "form"
+        ? Object.fromEntries(new URLSearchParams(text))
+        : JSON.parse(text);
     const type = valueAt(payload, webhooks.eventType.path);
     const eventClass = typeof type === "string" ? route.types.get(type) : undefined;
     if (eventClass === undefined) return undefined;

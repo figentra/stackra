@@ -29,7 +29,9 @@ import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { deleteFilters } from "#core/functions/delete-filters.function";
 import { poolConfig } from "#core/functions/pool-config.function";
-import { scopeSettings } from "#core/functions/scope-settings.function";
+import { readRowSecuritySettings } from "#core/functions/read-row-security-settings.function";
+import { replayRowSecuritySettings } from "#core/functions/replay-row-security-settings.function";
+import { runInScope } from "#core/functions/run-in-scope.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
 import { runTransaction } from "#core/functions/run-transaction.function";
 import { EntityResultCacheAdapter } from "#core/orm/entity-result-cache.adapter";
@@ -113,20 +115,12 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   }
 
   /**
-   * Implements `Database.withScope`, documented there.
+   * Implements `Database.withScope`, documented there, through `runInScope`.
    *
    * @throws TypeError for a scope path that is not an `ltree` path.
    */
   withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T> {
-    const settings = scopeSettings(scopes);
-    return this.transaction(async () => {
-      // raw-sql: set_config is how a transaction carries the scope the row-level-security policies compare with
-      await this.em().execute(
-        `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
-        settings.flat(),
-      );
-      return work();
-    });
+    return runInScope(this, scopes, work);
   }
 
   /**
@@ -136,27 +130,15 @@ export class PostgresDatabaseDriver extends Driver(Database) {
    */
   override async onReplica<T>(work: () => Promise<T>): Promise<T> {
     if ((this.orm.config.get("replicas") ?? []).length === 0) return work();
-    const current = this.em();
-    // raw-sql: the `app.*` settings the row-level-security policies read, by name, because Postgres keeps custom
-    // settings out of pg_settings; an unset one is null and is not replayed
-    const settings: readonly { name: string; setting: string }[] = current.isInTransaction()
-      ? await current.execute(
-          "select name, setting from (select name, current_setting(name, true) as setting from unnest(array['app.scope_id', 'app.scope_path', 'app.scope_paths', 'app.tenant_id', 'app.owner_id', 'app.workspace_id']) as name) as s where setting is not null",
-        )
-      : [];
+    const settings = await readRowSecuritySettings(this.em());
     const connection = this.orm.em.getConnection("read");
     return connection.transactional(
       async (trx) => {
         const em = this.orm.em.fork();
         em.setTransactionContext(trx);
-        if (settings.length > 0)
-          // raw-sql: the same set_config withScope writes, replayed in the replica's transaction
-          await connection.execute(
-            `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
-            settings.flatMap(({ name, setting }) => [name, setting]),
-            "all",
-            trx,
-          );
+        await replayRowSecuritySettings(settings, (sql, params) =>
+          connection.execute(sql, params, "all", trx),
+        );
         return TransactionContext.create(em, work);
       },
       { readOnly: true },

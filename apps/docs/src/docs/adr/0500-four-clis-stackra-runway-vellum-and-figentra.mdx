@@ -1,9 +1,27 @@
 ---
-title: "0500 — Four CLIs: stackra, runway, figentra-flow, figentra"
-description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510 · 2026-10-31"
+title: "0500 — Four CLIs: stackra, runway, fflow, figentra"
+description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510, 0522, 0526, 0529 (decision 1: runway folds into stackra) · 2026-10-31"
 ---
 
 <Note>Vellum is now Figentra Flow (renamed 2026-11-01).</Note>
+
+<Note>
+  Amended 2026-11-04 (STA-2097): Figentra Flow's package is `@figentra-oss/flow`, not
+  `@stackra/vellum`; its repository is the public figentra/flow and its CLI is `fflow`. Its core is
+  neutral and its CLI layer runs on `@stackra/console` ([0506](/adr/0506-console-command-kind),
+  amendment of 2026-11-02, item 8). Read decisions 1 to 3 and 9 with the [amendment of
+  2026-11-04](#amendment-2026-11-04-figentra-flows-current-names-sta-2097) below; the decisions
+  themselves stay as written.
+</Note>
+
+<Note>
+  Amended 2026-11-03 (STA-2073) by [0522](/adr/0522-testbed-own-repo): decisions 1 and 3 gain a
+  fifth CLI, `testbed`, the bin of `@figentra/testbed`. Its source lives in the public repository
+  figentra/testbed, and its package is internal (`@figentra`, read with Figentra's own tokens), so
+  its publishing follows decision 2. It is not part of `figentra`: the testbed's CLI and its box
+  agent share constants that one package keeps in one place. `stackra testbed` in `@stackra/cli`
+  stays for one release with a deprecation note. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-11-01 by [0510](/adr/0510-flow-replaces-spec-kit): decision 10's `.specify/` folder
@@ -12,6 +30,12 @@ description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510 · 202
 </Note>
 
 {/* Stackra file contract. Purpose: ADR 0500, the four CLIs (`stackra`, `runway`, `figentra-flow`, `figentra`): each CLI's scope, visibility, home repository and registry, the map of all 33 `tools/scripts` commands, the alias rule for `package.json` scripts, the move rules (behaviour kept, secret guards in the same commit), Figentra Flow's `.specify/` folder, no Claude Code plugin, and the rollout order. Boundary: decision text only; the moves are built per CLI on their own branches after Stackra 0.1.1 publishes. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0282, 0453, 0461; plan notes/plans/clis-and-vellum.md. */}
+
+<Note>
+  Amended 2026-11-06 by [0526](/adr/0526-repository-layout) and
+  [0529](/adr/0529-naming-product-keys-and-one-figentra-cli) (repo standards); since 2026-11-06
+  (STA-2214) `runway` folds into `stackra runway`, with `runway` an alias for a transition period.
+</Note>
 
 <Note>
   Accepted 2026-10-31: the owner decided the four CLIs and the script map on 2026-10-31 ("all 33+
@@ -181,13 +205,30 @@ installed like any dependency, with `package.json` scripts as aliases and Turbor
   (0453 decisions 6 and 10).
 - planned — a validator check in `stackra validate` that fails when a root `package.json` script for a moved command is
   more than one CLI call (decision 6), or when `tools/scripts/` holds a script decision 4 has moved.
-- planned — a packed-tarball test of `@stackra/cli`, `@stackra/runway` and `@stackra/vellum` that fails if a `figentra`
-  command (decision 3) is present.
+- planned — a packed-tarball test of `@stackra/cli`, `@stackra/runway` and `@figentra-oss/flow` (was `@stackra/vellum`)
+  that fails if a `figentra` command (decision 3) is present.
 - planned — a check that every package of decision 1 has `publishConfig.registry` set to
   `https://npm.stackra.figentra.com/`.
 - planned — the parity run of decision 7 as a ci-box job per moved command; until it exists, the run is a manual gate
   step recorded in the PR.
 - Nothing checks the `legacy-2026-10-30` tag or the rollout order; they are owner and lane steps tracked in Linear.
+
+## Amendment 2026-11-04: Figentra Flow's current names (STA-2097)
+
+Decisions 1, 2, 3 and 9 name Figentra Flow as it was planned on 2026-10-31, as `@stackra/vellum` with the binary
+`figentra-flow`. It shipped under other names, and it is now sold to anyone
+([0510](/adr/0510-flow-replaces-spec-kit), amendment of 2026-11-04). Read the Flow rows as:
+
+1. **Names.** The product is Figentra Flow. The package is `@figentra-oss/flow`, not `@stackra/vellum`; the
+   repository is figentra/flow, public; the CLI is `fflow` (`figentra-flow` above). "Vellum" stays retired.
+2. **Registry.** `@figentra-oss/flow` publishes from figentra/flow's release workflow to the Stackra registry's open
+   `@figentra-oss` scope (core's `.npmrc`). Decision 2's trusted publisher "for `@stackra/vellum` only" reads as the
+   trusted publisher of `@figentra-oss/flow`; figentra/flow publishes nothing under `@stackra`.
+3. **Layers.** Flow's core is neutral: it knows no Stackra repository, and after the preset move it ships only the
+   `neutral` preset (Stackra's is `@stackra/flow-preset`). Its CLI layer runs on `@stackra/console`
+   ([0506](/adr/0506-console-command-kind), amendment of 2026-11-02, item 8).
+
+The scope of each CLI, the script map and the rollout order stand.
 
 ## Supersedes and sources
 

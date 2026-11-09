@@ -8,8 +8,13 @@
 
 /** The result of one step. */
 export type ConsumerGateStepResult = {
+  /** The step id, such as `typecheck` or `test:int/billing`. */
   readonly id: string;
+
+  /** The step's exit code, when it ran. */
   readonly code?: number;
+
+  /** How the step ended. */
   readonly status: "pass" | "allowed" | "fail" | "skipped";
 
   /** The STA issues that excused an `allowed` step. */

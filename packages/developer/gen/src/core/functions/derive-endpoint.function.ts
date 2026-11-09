@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `deriveEndpoint`, the endpoint convention: the HTTP route of an action or a query derived from its written
  *          key the way Rails resource routing does, or the `endpoint: { method, path }` override, or none.
- * Boundary: pure. No route when `endpoint: false`, or when the actors include neither a user nor an agent. A
+ * Boundary: pure. No route when `endpoint: false`, or when the actors include no user, agent or anonymous caller. A
  *           `public` area prefixes the path with `/public` (ADR 0082).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 21: endpoints follow a convention); ADR 0305 (rule 28); ADR 0082.
@@ -12,8 +12,8 @@ import { camelCase, kebabCase, snakeCase } from "@stackra/support";
 import { plural } from "#core/functions/plural.function";
 import type { Endpoint } from "#core/types/endpoint.type";
 
-/** The actor codes that reach a public endpoint. */
-const PUBLIC_ACTORS = new Set(["user", "agent"]);
+/** The actor codes that reach a public endpoint; an anonymous-only call is answered with `auth: false` (STA-2578). */
+const PUBLIC_ACTORS = new Set(["user", "agent", "anonymous"]);
 
 /** A derived route. */
 function route(method: string, path: string): Endpoint {

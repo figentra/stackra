@@ -10,7 +10,7 @@
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0360 (decision 4: tools by default); ADR 0098; ADR 0099
  *                     (risk); ADR 0492 (decision 5).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
@@ -29,6 +29,7 @@ export class DeleteSynonymAction extends Action({
   key: "synonym.delete",
   permission: SynonymPermissions.delete,
   actors: [ActorKind.User, ActorKind.Agent],
+  idempotency: Idempotency.Optional,
 }) {
   /** Removes the row. */
   private readonly synonyms: SynonymService;

@@ -17,6 +17,7 @@
  * Governing contract: ADR 0268 (R15: typed keys); ADR 0231 (`<module>::<path>` lookups); registry v3.1 section 5
  *                     item 7 (`#stackra/i18n`); STA-1293; STA-1298 (package namespaces merged).
  */
+import { clientNamespace } from "#core/functions/client-namespace.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { i18nTree } from "#core/functions/i18n-tree.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -27,23 +28,35 @@ const OWN_LANG = "../../assets/lang";
 
 /** Namespace to locale to the import specifier of its file, sorted: the member's own, then each package's. */
 function loaderSpecifiers(ir: MemberIR): Map<string, Map<string, string>> {
-  const sets = [
+  const sets: {
+    from: string;
+    service?: string;
+    catalogues: NonNullable<MemberIR["catalogues"]>;
+  }[] = [
     { from: OWN_LANG, catalogues: ir.catalogues ?? {} },
     ...(ir.packageCatalogues ?? []).map((shipped) => ({
       // A consumed service's lang is a folder of the repo, imported relative to `.stackra/gen/` (STA-1363).
       from: shipped.from === undefined ? `${shipped.package}/assets/lang` : `../../${shipped.from}`,
+      ...(shipped.service === undefined ? {} : { service: shipped.service }),
       catalogues: shipped.catalogues,
     })),
   ];
+  const own = new Set(
+    [...i18nTree(ir).namespaces].flatMap(([namespace, entry]) =>
+      entry.package === undefined ? [namespace] : [],
+    ),
+  );
   const loaders = new Map<string, Map<string, string>>();
-  for (const { from, catalogues } of sets)
+  for (const { from, service, catalogues } of sets)
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const locale of Object.keys(catalogues).sort())
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      for (const namespace of Object.keys(catalogues[locale] ?? {}).sort()) {
+      for (const shippedAs of Object.keys(catalogues[locale] ?? {}).sort()) {
+        // why: a service namespace the member also has loads under its client name, from the service's own file
+        const namespace = clientNamespace(own, service, shippedAs);
         const byLocale = loaders.get(namespace) ?? new Map<string, string>();
         // A clash is refused by checkI18n before this runs; the first owner keeps the namespace, as in i18nTree.
-        if (!byLocale.has(locale)) byLocale.set(locale, `${from}/${locale}/${namespace}.json`);
+        if (!byLocale.has(locale)) byLocale.set(locale, `${from}/${locale}/${shippedAs}.json`);
         loaders.set(namespace, byLocale);
       }
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022

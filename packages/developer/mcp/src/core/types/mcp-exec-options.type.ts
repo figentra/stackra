@@ -1,16 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `McpExecOptions`, where `stackra mcp exec` takes secret values from: the Infisical environment and folder
- *          of the project linked by `.infisical.yaml`.
+ * Purpose: `McpExecOptions`, where `stackra mcp exec` takes secret values from: a local clone of figentra/secrets,
+ *          whose `agents` scope holds one sops file per secret (ADR 0525).
  * Boundary: type only; names a location, never a value.
  * Runtime: isomorphic
- * Governing contract: ADR 0173; ADR 0257 (default environment `dev`, default folder `/agents`).
+ * Governing contract: ADR 0173; ADR 0257; ADR 0525.
  */
 
 /** The secret store location `stackra mcp exec` reads. */
 export type McpExecOptions = {
-  /** The Infisical environment; defaults to `dev`. */
-  readonly environment?: string;
-  /** The Infisical folder; defaults to `/agents`. */
-  readonly path?: string;
+  /** The figentra/secrets clone; `execWithSecrets` defaults it to `$STACKRA_SECRETS_DIR` or `~/.stackra/secrets`. */
+  readonly secretsDir?: string;
 };

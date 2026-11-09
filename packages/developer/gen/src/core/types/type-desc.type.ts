@@ -22,6 +22,11 @@ export type TypeDesc =
   | { readonly kind: "money" }
   /** `Json`: any JSON value. */
   | { readonly kind: "json" }
+  /**
+   * `@stackra/contracts`' `GeoPoint`, `GeoPolygon` or `GeoLine`: `{ latitude, longitude }` or a list of them on the
+   * wire, a PostGIS `geography(<shape>,4326)` column in a model (ADR 0314).
+   */
+  | { readonly kind: "geo"; readonly shape: "point" | "polygon" | "line" }
   /** `Duration`: a canonical ISO 8601 duration. */
   | { readonly kind: "duration" }
   /**

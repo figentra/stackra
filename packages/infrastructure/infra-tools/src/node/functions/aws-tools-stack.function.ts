@@ -9,10 +9,10 @@
  *          stays at zero, one GPU per task) for the tools flagged `gpu`, whose services start asleep and scale back to
  *          zero after 30 idle minutes (an Application Auto Scaling target, a step policy and a CPU alarm), a Valkey
  *          replication group when a tool reads a cache URL, the one-shot task that creates the tools' databases on
- *          the shared Postgres server, the role Infisical assumes to sync the parameters, and per tool a task
+ *          the shared Postgres server, the role the secrets sync assumes to write the parameters, and per tool a task
  *          definition and service, registered in the namespace when it serves an endpoint.
  * Boundary: declares resources only, inside the Pulumi program that calls it; agents only preview, the owner applies.
- *           No secret value is created or read: each secret variable is an SSM parameter the Infisical sync writes
+ *           No secret value is created or read: each secret variable is an SSM parameter the secrets sync writes
  *           (ADR 0173), so the Valkey runs without an auth token, reachable only in the VPC and over TLS. The deploy
  *           runs the database task (`aws ecs run-task`); Pulumi never runs it. Services get no public address. A
  *           region on another cloud is refused (the GCP program is not built yet).
@@ -204,7 +204,7 @@ export function awsToolsStack(
       opts,
     );
 
-  // The role Infisical's AWS Parameter Store sync assumes: it writes only under the stack's parameter folders.
+  // The role the secrets sync assumes to fill Parameter Store: it writes only under the stack's parameter folders.
   const sync = region.secretsSync;
   const syncRole =
     sync === undefined

@@ -41,7 +41,7 @@ describe("openApiOf", () => {
       "x-stackra-action": "orders.order.cancel@1",
       "x-stackra-permission": "orders.order.cancel",
       "x-stackra-risk": "L2",
-      "x-stackra-idempotency": { ttl: "PT24H" },
+      "x-stackra-idempotency": "required",
       "x-stackra-refusals": ["order_not_cancellable"],
       parameters: [
         {

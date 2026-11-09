@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ROOT_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of the root runway: where each kind of member
  *          runs (`destinations`), the dev containers, lanes (with the repository index table `checkPorts` reads), https and proxy, the Encore environment, a preview's ttl
- *          and data, the shared resources, the defaults members start from, the topology, the domains, the deploy
+ *          and data, its tier (`TIER_SIZES`), the shared resources (database, cache and NAT sizes typed over the tier),
+ *          the defaults members start from, the topology, the domains, the deploy
  *          rule, the mobile and desktop channels, the regions it deploys to, in release order, the cloud its foundation
  *          runs on, and the dedicated deployments that ride its release train.
  * Boundary: internal. Strict at its top and in `shared` and `defaults.service`, as the canonical schema is; the
@@ -21,7 +22,10 @@ import { ENVIRONMENT_CLOUD_SCHEMA } from "#core/constants/environment-cloud-sche
 import { KEY_SCHEMA } from "#core/constants/key-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { TOPOLOGY_SCHEMA } from "#core/constants/topology-schema.constant";
+import { CacheMode } from "#core/enums/cache-mode.enum";
 import { DeployKind } from "#core/enums/deploy-kind.enum";
+import { EnvironmentTier } from "#core/enums/environment-tier.enum";
+import { RegionKey } from "#core/enums/region-key.enum";
 
 /** One root environment. */
 export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
@@ -54,11 +58,29 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
   data: z.string().optional(),
   // ADR 0493 decision 3: the plan's monthly estimate cap in US dollars; no cap only warns.
   limits: z.strictObject({ monthly: z.number().positive() }).optional(),
+  // The size the environment runs at (`TIER_SIZES`); production defaults to launch, every other environment to staging.
+  tier: z.enum(Enum.values(EnvironmentTier) as [EnvironmentTier, ...EnvironmentTier[]]).optional(),
   shared: z
     .strictObject({
-      network: OPEN_OBJECT_SCHEMA.optional(),
-      database: OPEN_OBJECT_SCHEMA.optional(),
-      cache: OPEN_OBJECT_SCHEMA.optional(),
+      network: z.looseObject({ natGateways: z.int().min(0).optional() }).optional(),
+      // Typed keys override the tier; other keys (the preview `from`, `profile`, `branch`) stay open.
+      database: z
+        .looseObject({
+          class: z.string().min(1).optional(),
+          multiAz: z.boolean().optional(),
+          storageGb: z.int().min(20).optional(),
+        })
+        .optional(),
+      cache: z
+        .looseObject({
+          mode: z.enum(Enum.values(CacheMode) as [CacheMode, ...CacheMode[]]).optional(),
+          class: z
+            .string()
+            .regex(/^cache\.[a-z0-9]+\.[a-z0-9]+$/, "Expected a node class such as cache.m7g.large")
+            .optional(),
+          nodes: z.int().min(1).optional(),
+        })
+        .optional(),
       queues: OPEN_OBJECT_SCHEMA.optional(),
       buckets: OPEN_OBJECT_SCHEMA.optional(),
     })
@@ -75,6 +97,8 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
     })
     .optional(),
   topology: TOPOLOGY_SCHEMA.optional(),
+  // The tenant region this environment lives in, inside the product's one account (`ref:aws.account`, ADR 0524).
+  region: z.enum(Enum.values(RegionKey) as [RegionKey, ...RegionKey[]]).optional(),
   regions: z
     .array(z.string())
     .refine((keys) => new Set(keys).size === keys.length, "A region is listed more than once")

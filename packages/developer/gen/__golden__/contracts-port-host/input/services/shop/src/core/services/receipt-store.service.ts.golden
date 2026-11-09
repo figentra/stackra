@@ -1,0 +1,12 @@
+import { Service } from "@stackra/container";
+import { FileSystem } from "@stackra/filesystem/contracts";
+
+export class ReceiptStoreService extends Service {
+  constructor(private readonly disk: FileSystem) {
+    super();
+  }
+
+  async read(path: string): Promise<string> {
+    return this.disk.read(path);
+  }
+}

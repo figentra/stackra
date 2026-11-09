@@ -3,7 +3,7 @@
  * Purpose: `PostgresAccessLogSinkDriver`, the `postgres` sink and the package default: each record becomes the next
  *          `AccessLogEntry` of its tenant's hash chain.
  * Boundary: implements the port only. It writes in a transaction of its own (`requiresNew`), so a rolled-back read
- *           still leaves its record, and runs it inside `withTenant(record.actor, ...)`, because the new transaction
+ *           still leaves its record, and runs it inside `withTenant` of the record's tenant (`record.scopeId`, else the actor's own), because the new transaction
  *           does not carry the caller's tenant setting: the policy then shows only that tenant's chain, and the trait
  *           fills the row's tenant. The chain head is the tenant's highest sequence; two writers that read the same
  *           head collide on the unique (tenant, sequence) index, and the loser reads the new head and tries again, up
@@ -69,7 +69,13 @@ export class PostgresAccessLogSinkDriver extends Driver(AccessLogSink) {
    */
   write(record: AccessRecord): Promise<void> {
     return this.database.transaction(
-      () => this.tenancy.withTenant(record.actor, () => this.append(record, 1)),
+      () =>
+        this.tenancy.withTenant(
+          record.scopeId === undefined
+            ? record.actor
+            : { ...record.actor, scopeId: record.scopeId },
+          () => this.append(record, 1),
+        ),
       { requiresNew: true },
     );
   }

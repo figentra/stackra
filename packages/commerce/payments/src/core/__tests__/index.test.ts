@@ -15,6 +15,7 @@ describe("@stackra/payments", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
       "AgentConfirmationRefusedError",
+      "ApplicationFeeInvalidError",
       "BalanceExceededError",
       "CapabilityUnsupportedError",
       "ConnectedAccountLimitsMissingError",

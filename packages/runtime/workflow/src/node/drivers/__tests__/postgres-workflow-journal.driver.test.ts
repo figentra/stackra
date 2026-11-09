@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresWorkflowJournalDriver`: a transaction is a new one in the run's scope session;
- *          `currentScope` reads the session settings; `save` upserts the run, then its steps in one batch; `find` reads
- *          the run and its ordered steps back into a record; `last`, `byAutomation` (newest first, paged by start, its
- *          automation read back), `hold`, `take`, `due` and `expire` are bound statements; every statement binds its
- *          values.
+ *          `currentScope` reads the session settings and `currentOwner` the tenant setting; `save` upserts the run,
+ *          then its steps in one batch, and never writes the owner; `find` reads the run (its owner included) and its
+ *          ordered steps back into a record; `last`, `byAutomation` (newest first, paged by start, its automation read
+ *          back), `hold` and `take` are bound statements; `due` and `expired` claim through the system functions and
+ *          `remove` deletes by id; every statement binds its values.
  * Boundary: test only; a stand-in database records each statement and the transactions and scopes it opens, and
  *           answers queued rows, so no database runs. The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -40,6 +41,7 @@ const RUN_ROW = {
   error: null,
   scope_id: "scp_1",
   scope_path: "platform.acme",
+  tenant_id: "scp_1",
   started_at: NOON,
   deadline_at: NOON,
   ended_at: null,
@@ -165,12 +167,22 @@ describe(PostgresWorkflowJournalDriver, () => {
     expect(await journal.currentScope()).toBeUndefined();
   });
 
+  it("reads the session's owner, an empty setting as none", async () => {
+    const { database, statements } = databaseWith([{ owner: "scp_1" }], [{ owner: null }]);
+    const journal = new PostgresWorkflowJournalDriver(database);
+    expect(await journal.currentOwner()).toBe("scp_1");
+    expect(await journal.currentOwner()).toBeUndefined();
+    expect(statements[0]?.sql).toContain("nullif(current_setting('app.tenant_id', true), '')");
+  });
+
   it("upserts the run, then all its steps in one batch", async () => {
     const { database, statements } = databaseWith();
     await new PostgresWorkflowJournalDriver(database).save(RUN);
     expect(statements).toHaveLength(2);
     expect(statements[0]?.sql).toContain('insert into "workflow"."runs"');
     expect(statements[0]?.sql).toContain("on conflict (id) do update");
+    // the owner comes from the column's default (the session's tenant), never from the record
+    for (const statement of statements) expect(statement.sql).not.toContain("tenant_id");
     // a run journaled without a version is pinned to version 1
     expect(statements[0]?.params.slice(0, 5)).toEqual([
       "wfr_a",
@@ -203,6 +215,7 @@ describe(PostgresWorkflowJournalDriver, () => {
       input: { points: 300 },
       origin: RUN_ROW.origin,
       scope: SCOPE,
+      ownerId: "scp_1",
       startedAt: NOON,
       deadlineAt: NOON,
       steps: [
@@ -276,14 +289,31 @@ describe(PostgresWorkflowJournalDriver, () => {
     expectBound(statements);
   });
 
-  it("lists due runs and drops lapsed signals with bound statements", async () => {
-    const { database, statements } = databaseWith([{ id: "wfr_a" }]);
+  it("claims due runs and lapsed signals through the system functions, and removes signals by id", async () => {
+    const { database, statements } = databaseWith(
+      [
+        { id: "wfr_a", tenant_id: "scp_1", started_at: NOON },
+        { id: "wfr_b", tenant_id: null, started_at: NOON },
+      ],
+      [{ id: "wfs_a", tenant_id: null }],
+    );
     const journal = new PostgresWorkflowJournalDriver(database);
-    expect(await journal.due(NOON, 100)).toEqual(["wfr_a"]);
-    await journal.expire(NOON);
-    expect(statements[0]?.sql).toContain("r.status in ('running', 'compensating')");
-    expect(statements[0]?.params).toEqual([NOON, NOON, 100]);
-    expect(statements[1]?.sql).toBe('delete from "workflow"."signals" where expires_at <= ?');
-    expectBound(statements);
+    expect(await journal.due(NOON, 100)).toEqual([
+      { id: "wfr_a", ownerId: "scp_1", startedAt: NOON },
+      { id: "wfr_b", startedAt: NOON },
+    ]);
+    expect(await journal.expired(NOON, 50)).toEqual([{ id: "wfs_a" }]);
+    await journal.remove(["wfs_a"]);
+    await journal.remove([]);
+    expect(statements.map((statement) => statement.sql)).toEqual([
+      "select id, tenant_id, started_at from workflow.claim_due_runs(?, ?)",
+      "select id, tenant_id from workflow.claim_expired_signals(?, ?)",
+      'delete from "workflow"."signals" where id in (select jsonb_array_elements_text(?::jsonb))',
+    ]);
+    expect(statements.map((statement) => statement.params)).toEqual([
+      [NOON, 100],
+      [NOON, 50],
+      ['["wfs_a"]'],
+    ]);
   });
 });

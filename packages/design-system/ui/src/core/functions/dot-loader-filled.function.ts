@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: how many dots of a determinate dot loader a value fills.
  * Boundary: pure maths.
- * Runtime: any
+ * Runtime: isomorphic
  * Governing contract: .agents/specs/sta-2017-dot-loader/spec.md (FR-001)
  */
 

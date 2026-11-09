@@ -3,10 +3,13 @@
  * Purpose: unit tests of `buildManifest`: every derived identity (permissions with risks, event wire names with their
  *          broadcast, refusal codes with categories, action and query keys with endpoints, tools and refusals, model
  *          keys and tables, driver port keys and selectors, integration keys with their connection and webhook path,
- *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a
- *          config's schema, merged package sections marked `from`, and the checks `identity_collision`,
- *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
- *          `prefix_duplicate`; `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`,
+ *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a config's
+ *          schema, merged package sections marked `from`, and the checks `identity_collision`, `override_duplicate`,
+ *          `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and `prefix_duplicate`;
+ *          `event_name_prefixed` (STA-1255); the v3 tool default (L3 and L4 actions off) with `tool_reason_missing`,
+ *          an action's `dataClass` with `data_class_unknown` (STA-2594), the public flag with
+ *          `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound`
+ *          (STA-2063),
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
  *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308); the `agents`,
@@ -23,8 +26,10 @@ import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { buildManifest } from "#core/functions/build-manifest.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+import type { TypeDesc } from "#core/types/type-desc.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import {
   CONNECTOR_PACKAGES,
   connectorPackage,
@@ -90,6 +95,10 @@ const billingNumberedBy = (sequence: string): MemberIR => ({
   ),
 });
 
+/** The manifest entry of `CancelOrderAction` in `ir`. */
+const cancelEntryOf = (ir: MemberIR) =>
+  buildManifest(ir).manifest.actions?.find((action) => action.class === "CancelOrderAction");
+
 /** `code subject` of each error the manifest build reports for `ir`. */
 const codesOf = (ir: MemberIR): string[] =>
   buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`);
@@ -112,7 +121,7 @@ describe("buildManifest", () => {
       },
       {
         key: "orders.order.create",
-        risk: "L1",
+        risk: "L2",
         class: "OrderPermissions",
         module: "orders",
         member: "create",
@@ -159,7 +168,7 @@ describe("buildManifest", () => {
       permission: "orders.order.cancel",
       risk: "L2",
       actors: ["user", "agent"],
-      idempotency: { ttl: "PT24H" },
+      idempotency: "required",
       endpoint: { method: "PUT", path: "/orders/:orderId/cancel", derived: true },
       input: { $ref: "#/schemas/orders.CancelOrderInput" },
       output: { $ref: "#/schemas/orders.CancelOrderOutput" },
@@ -257,7 +266,7 @@ describe("buildManifest", () => {
             member: "loyalty_kit",
             package: "@acme/loyalty-kit",
             version: "0.4.0",
-            permissions: [{ key: "loyalty_kit.loyalty_account.redeem", risk: "L1" }],
+            permissions: [{ key: "loyalty_kit.loyalty_account.redeem", risk: "L3" }],
             actions: [
               {
                 key: "loyalty_kit.loyalty_account.redeem@1",
@@ -265,7 +274,7 @@ describe("buildManifest", () => {
                 module: "loyalty_kit",
                 class: "RedeemPointsAction",
                 permission: "loyalty_kit.loyalty_account.redeem",
-                risk: "L1",
+                risk: "L3",
                 input: { $ref: "#/schemas/loyalty_kit.RedeemPointsInput" },
               },
             ],
@@ -570,6 +579,7 @@ describe("buildManifest", () => {
           {
             key: "order.create",
             actors: ["user"],
+            idempotency: "optional",
           },
         ),
         kindClass(
@@ -736,6 +746,25 @@ describe("buildManifest", () => {
     expect(codes).not.toContain("override_duplicate");
   });
 
+  it("refuses an action whose permission is L0 or L1, and lets a query read at L1", () => {
+    const permissions = declared("OrderPermissions");
+    const ir = (cancel: string): MemberIR => ({
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes.filter((item) => item.name !== permissions.name),
+        { ...permissions, statics: { ...permissions.statics, read: "Permission.L1", cancel } },
+      ],
+    });
+    expect(codesOf(ir("Permission.L1"))).toContain("action_risk_below_write CancelOrderAction");
+    expect(codesOf(ir("Permission.L0"))).toContain("action_risk_below_write CancelOrderAction");
+    expect(codesOf(ir("Permission.L2.system()"))).not.toContain(
+      "action_risk_below_write CancelOrderAction",
+    );
+    expect(codesOf(ir("Permission.L2")).filter((code) => code.startsWith("action_risk"))).toEqual(
+      [],
+    );
+  });
+
   it("gives a query its own verb only when its Permissions class declares it", () => {
     const list = declared("ListOrdersQuery");
     const permissions = declared("OrderPermissions");
@@ -786,6 +815,19 @@ describe("buildManifest", () => {
       classes: [...COMMERCE_IR.classes.filter((item) => item.name !== cancel.name), ...classes],
     });
 
+    it("records an action's data class and refuses one gen cannot read (STA-2594)", () => {
+      const financial = { ...cancel, options: { ...cancel.options, dataClass: "financial" } };
+      const { errors: found } = buildManifest(withClasses(financial));
+      expect(found).toEqual([]);
+      expect(cancelEntryOf(withClasses(financial))?.["dataClass"]).toBe("financial");
+      expect(cancelEntryOf(withClasses(cancel))?.["dataClass"]).toBeUndefined();
+      const unread = {
+        ...cancel,
+        options: { ...cancel.options, dataClass: { $class: "LocalClass", from: "#node/x" } },
+      };
+      expect(codesOf(withClasses(unread))).toContain("data_class_unknown CancelOrderAction");
+    });
+
     it("refuses `tool: false` on a user action without a reason, and records the reason", () => {
       const off = { ...cancel, options: { ...cancel.options, tool: false } };
       expect(codesOf(withClasses(off))).toContain("tool_reason_missing CancelOrderAction");
@@ -795,6 +837,36 @@ describe("buildManifest", () => {
       const entry = built.actions?.find((action) => action.class === "CancelOrderAction");
       expect(entry?.["tool"]).toBeUndefined();
       expect(entry?.["toolOff"]).toBe("needs a card reader");
+    });
+
+    it("makes an L3 or L4 user action a tool only with `tool: true` and a reason", () => {
+      const permissions = COMMERCE_IR.classes.find(
+        (item) => item.name === "OrderPermissions",
+      ) as DeclaredClass;
+      const atL3 = (action: DeclaredClass): MemberIR => ({
+        ...COMMERCE_IR,
+        classes: [
+          ...COMMERCE_IR.classes.filter(
+            (item) => item.name !== cancel.name && item.name !== permissions.name,
+          ),
+          { ...permissions, statics: { ...permissions.statics, cancel: "Permission.L3" } },
+          action,
+        ],
+      });
+
+      // An L3 action a user calls needs a step-up anyway (step_up_missing).
+      const stepped = { ...cancel, options: { ...cancel.options, stepUp: "aal2" } };
+      expect(buildManifest(atL3(stepped)).errors).toEqual([]);
+      expect(cancelEntryOf(atL3(stepped))?.["tool"]).toBeUndefined();
+      expect(cancelEntryOf(atL3(stepped))?.["toolOff"]).toContain("risk L3");
+      const on = { ...stepped, options: { ...stepped.options, tool: true } };
+      expect(codesOf(atL3(on))).toContain("tool_reason_missing CancelOrderAction");
+      const reasoned = { ...on, options: { ...on.options, toolReason: "staff cancel by chat" } };
+      expect(buildManifest(atL3(reasoned)).errors).toEqual([]);
+      expect(cancelEntryOf(atL3(reasoned))?.["tool"]).toMatchObject({
+        default: false,
+        reason: "staff cancel by chat",
+      });
     });
 
     it("marks a public action and refuses one with no endpoint to publish", () => {
@@ -840,6 +912,27 @@ describe("buildManifest", () => {
       });
       const unknown = { ...cancel, options: { ...cancel.options, effects: ["spooky"] } };
       expect(codesOf(withClasses(unknown))).toContain("effect_unknown CancelOrderAction");
+    });
+
+    it("refuses a route whose path parameter is no field of the input (endpoint_param_unbound, STA-2063)", () => {
+      // CancelOrderInput declares orderId, so PUT /orders/:orderId/cancel binds.
+      expect(codesOf(withClasses(cancel))).not.toContain(
+        "endpoint_param_unbound CancelOrderAction",
+      );
+      const renamed = {
+        ...cancel,
+        options: { ...cancel.options, endpoint: { method: "PUT", path: "/orders/:id/cancel" } },
+      };
+      expect(codesOf(withClasses(renamed))).toContain("endpoint_param_unbound CancelOrderAction");
+      const get = {
+        ...declared("ListOrdersQuery"),
+        name: "GetOrderQuery",
+        options: { key: "order.get" },
+      };
+      // GET /orders/:orderId with ListOrdersInput, then with no input at all.
+      expect(codesOf(withClasses(cancel, get))).toContain("endpoint_param_unbound GetOrderQuery");
+      const bare = { ...get, handle: { output: "ListOrdersOutput" } };
+      expect(codesOf(withClasses(cancel, bare))).toContain("endpoint_param_unbound GetOrderQuery");
     });
 
     it("records an Integration's roles and listing, and refuses an unknown role", () => {
@@ -900,6 +993,38 @@ describe("buildManifest", () => {
         },
       ]);
     });
+  });
+});
+
+/** A manifest's `LoyaltyService` entries alone; the kit's actions and queries sit beside them in `services`. */
+function servicesOf(manifest: Record<string, unknown>): readonly { class: string }[] {
+  return (manifest["services"] as readonly { class: string }[]).filter(
+    (entry) => entry.class === "LoyaltyService",
+  );
+}
+
+describe("buildManifest's package services", () => {
+  it("records the model a CrudService<M> is typed against, so a host registers the pair", () => {
+    const ir: MemberIR = {
+      ...LOYALTY_KIT_IR,
+      classes: LOYALTY_KIT_IR.classes.map((candidate) =>
+        candidate.name === "LoyaltyService"
+          ? {
+              ...candidate,
+              partner: { name: "LoyaltyAccount", from: "#node/models/loyalty-account.model" },
+            }
+          : candidate,
+      ),
+    };
+    expect(servicesOf(buildManifest(ir).manifest)).toEqual([
+      expect.objectContaining({
+        class: "LoyaltyService",
+        partner: { name: "LoyaltyAccount", from: expect.stringMatching(/^@acme\/loyalty-kit/) },
+      }),
+    ]);
+    expect(servicesOf(buildManifest(LOYALTY_KIT_IR).manifest)).toEqual([
+      expect.not.objectContaining({ partner: expect.anything() }),
+    ]);
   });
 });
 
@@ -1001,6 +1126,68 @@ describe("buildManifest's package config section (STA-1308)", () => {
 
   it("writes no config section for a service", () => {
     expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("config");
+  });
+});
+
+/** The commerce member plus one settings class whose `mode` field is of `type`. */
+const withMode = (type: TypeDesc): MemberIR => ({
+  ...COMMERCE_IR,
+  shapes: [
+    ...COMMERCE_IR.shapes,
+    {
+      name: "OrdersSettings",
+      kind: "settings",
+      module: "orders",
+      file: "src/modules/orders/orders.settings.ts",
+      importPath: "#modules/orders/orders.settings",
+      fields: [{ name: "mode", optional: false, nullable: false, type, rules: [] }],
+      relations: [],
+    },
+  ],
+});
+
+describe("buildManifest's settings section (STA-2056)", () => {
+  it("writes one entry per own settings class", () => {
+    const { manifest, errors } = buildManifest(withMode({ kind: "boolean" }));
+    expect(errors).toEqual([]);
+    expect(manifest["settings"]).toEqual([
+      {
+        key: "orders",
+        class: "OrdersSettings",
+        module: "orders",
+        file: "src/modules/orders/orders.settings.ts",
+        keys: [{ path: "mode", type: "boolean" }],
+      },
+    ]);
+  });
+
+  it("joins the settings refusals", () => {
+    expect(buildManifest(withMode({ kind: "json" })).errors.map((error) => error.code)).toEqual([
+      "settings_unsupported_type",
+    ]);
+  });
+
+  it("writes no section for a member with no settings class", () => {
+    expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("settings");
+  });
+});
+
+describe("buildManifest's relay section (STA-1910)", () => {
+  it("lists the keys and subscribers of each runway environment, without origins", () => {
+    expect(buildManifest(PRODUCER_IR).manifest.relay).toEqual({
+      keys: {
+        dev: [{ id: "pay-dev-1", publicKey: "cGF5LWRldi1wdWJsaWM" }],
+        prod: [{ id: "pay-prod-1", publicKey: "cGF5LXByb2QtcHVibGlj" }],
+      },
+      subscribers: {
+        dev: [{ member: "billing", events: ["payments.payment.captured.v1"] }],
+        prod: [],
+      },
+    });
+  });
+
+  it("is absent when no environment has an events block", () => {
+    expect("relay" in buildManifest(INBOX_IR).manifest).toBe(false);
   });
 });
 

@@ -6,7 +6,7 @@
  * Runtime: node
  * Governing contract: the YAML standard (STA-299).
  */
-import { LineCounter, parseDocument, visit } from "yaml";
+import { LineCounter, parseAllDocuments, visit } from "yaml";
 
 /**
  * The flow-mapping findings of one YAML file, each with its line.
@@ -18,16 +18,18 @@ import { LineCounter, parseDocument, visit } from "yaml";
  */
 export function checkYamlFlowMaps(path: string, text: string): string[] {
   const lineCounter = new LineCounter();
-  const doc = parseDocument(text, { lineCounter });
-  const [error] = doc.errors;
+  // Every document of a multi-document file (a Maestro flow is its config, `---`, then its commands).
+  const docs = parseAllDocuments(text, { lineCounter });
+  const [error] = (Array.isArray(docs) ? docs : [docs]).flatMap((doc) => doc.errors);
   if (error) return [`${path}: not valid YAML (${error.message.split("\n")[0]})`];
   const out: string[] = [];
-  visit(doc, {
-    Map(_, node) {
-      if (!node.flow || node.items.length === 0) return;
-      const { line } = lineCounter.linePos(node.range?.[0] ?? 0);
-      out.push(`${path}:${line}: flow mapping; write a block mapping (YAML standard, STA-299)`);
-    },
-  });
+  for (const doc of Array.isArray(docs) ? docs : [docs])
+    visit(doc, {
+      Map(_, node) {
+        if (!node.flow || node.items.length === 0) return;
+        const { line } = lineCounter.linePos(node.range?.[0] ?? 0);
+        out.push(`${path}:${line}: flow mapping; write a block mapping (YAML standard, STA-299)`);
+      },
+    });
   return out;
 }

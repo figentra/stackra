@@ -17,11 +17,17 @@ import { HasRevisions } from "@stackra/content/node";
 import type { Actor, PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Int } from "@stackra/validation";
 
 /** An automation. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Automation extends Model.with(HasPublicId("wfa"), Timestamps, HasRevisions) {
+export class Automation extends Model.with(
+  HasPublicId("wfa"),
+  BelongsToTenant,
+  Timestamps,
+  HasRevisions,
+) {
   /** The revision in force; null until published. */
   @Int({ min: 1 })
   publishedRevision: number | null = null;
@@ -66,6 +72,7 @@ export interface Automation {
   /** The fields that have a default, so an insert may leave them out. */
   [OptionalProps]?:
     | "createdAt"
+    | "tenantId"
     | "updatedAt"
     | "trigger"
     | "publishedRevision"

@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export type { RecordPolicyRun } from "#core/types/record-policy-run.type";
 export { RateLimitConfig } from "#config/rate-limit.config";
 export { StoresConfig } from "#config/stores.config";
 export { Action } from "#core/bases/action.base";
@@ -56,6 +57,7 @@ export { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 export { UsageRecorded } from "#core/events/usage-recorded.event";
 export { approverRefusal } from "#core/functions/approver-refusal.function";
 export { connectExtensions } from "#core/functions/connect-extensions.function";
+export { connectRecordPolicies } from "#core/functions/connect-record-policies.function";
 export { isRawBody } from "#core/functions/is-raw-body.function";
 export { limitedSettingsReader } from "#core/functions/limited-settings-reader.function";
 export { mergeApprovalRequirements } from "#core/functions/merge-approval-requirements.function";
@@ -85,6 +87,7 @@ export type { AnySlot } from "#core/types/any-slot.type";
 export type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 export type { BeforeSlot } from "#core/types/before-slot.type";
 export type { CallAnalytics } from "#core/types/call-analytics.type";
+export type { CallDataClass } from "#core/types/call-data-class.type";
 export type { CallInput } from "#core/types/call-input.type";
 export type { CallOptions } from "#core/types/call-options.type";
 export type { EndpointOptions } from "#core/types/endpoint-options.type";
@@ -99,6 +102,7 @@ export type { JobCron } from "#core/types/job-cron.type";
 export type { JobOptions } from "#core/types/job-options.type";
 export type { OfflineCap } from "#core/types/offline-cap.type";
 export type { OfflineOptions } from "#core/types/offline-options.type";
+export type { OnBehalfOfOptions } from "#core/types/on-behalf-of-options.type";
 export type { OutputOf } from "#core/types/output-of.type";
 export type { Period } from "#core/types/period.type";
 export type { PeriodInput } from "#core/types/period-input.type";

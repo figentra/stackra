@@ -8,15 +8,17 @@
  *          and a paused programme earns, stamps and enrolls nothing; a take-back is cut at the balance, once per
  *          reference, records `points.taken_back` with the shortfall and marks a reference that found nothing; an
  *          imported balance credits its exact points once, raises (never lowers) the tier, records `points.imported`
- *          and not `points.earned`, and goes on while the programme is paused.
+ *          and not `points.earned`, and goes on while the programme is paused; the kit's test container builds the
+ *          service with its extension point injected (STA-2055).
  * Boundary: test only; the service runs over the memory ledger, a real `LoyaltyService`, an extension point whose slot
  *           calls the tier extension, and an in-memory stand-in for the two repository calls it makes, so no database
  *           runs. Recorded events are read with `takeRecordedEvents`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0105 as amended; ADR 0141; ADR 0265; STA-1323.
  */
-import type { ExtensionContext, RequestContext } from "@stackra/actions";
+import { type ExtensionContext, RequestContext } from "@stackra/actions";
 import { fakeExtensionContext } from "@stackra/actions/testing";
+import { createTestingModule } from "@stackra/container/testing";
 import type { Clock, PublicId } from "@stackra/contracts";
 import { takeRecordedEvents } from "@stackra/events";
 import { refusal } from "@stackra/errors/testing";
@@ -24,6 +26,7 @@ import { fakeSettings } from "@stackra/settings/testing";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
+import { LoyaltyMembers } from "#contracts/ports/loyalty-members.port";
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
 import type { EarnDraft } from "#contracts/types/earn-draft.type";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
@@ -35,8 +38,9 @@ import type { AccountFrozen } from "#node/events/account-frozen.event";
 import { PointsEarned } from "#node/events/points-earned.event";
 import { PointsImported } from "#node/events/points-imported.event";
 import { PointsTakenBack } from "#node/events/points-taken-back.event";
-import type { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
+import { LoyaltyKitExtensionPoint } from "#node/extensions/loyalty-kit.extension-point";
 import { TierMultiplierExtension } from "#node/extensions/tier-multiplier.extension";
+import { LoyaltyKitModule } from "#node/loyalty-kit.module";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import { LoyaltyAccount } from "#node/models/loyalty-account.model";
 import { AccountService } from "#node/services/account.service";
@@ -294,5 +298,38 @@ describe("AccountService", () => {
       accounts.importBalance(member, { points: 10, reference: "r3" }),
     ).rejects.toRefuseWith(refusal(AccountFrozenError, { accountId: account.id }));
     expect(await ledger.balance(member)).toBe(10);
+  });
+});
+
+describe("AccountService in the kit's container", () => {
+  it("resolves with the kit's extension point injected (STA-2055)", async () => {
+    // RequestContext reads the running call's storage, so it is the one token a test outside a call stands in for
+    const app = await createTestingModule(LoyaltyKitModule)
+      .useDrivers("memory")
+      .override(RequestContext, {
+        current: () => fakeExtensionContext(),
+      } as unknown as RequestContext)
+      // the kit's one LoyaltyMembers driver is abstract: the host supplies it, so the test does
+      .override(LoyaltyMembers, LoyaltyMembersFake.with([]))
+      .compile();
+    const accounts = app.get(AccountService);
+    expect(accounts).toBeInstanceOf(AccountService);
+    expect(Reflect.get(accounts, "extensions")).toBeInstanceOf(LoyaltyKitExtensionPoint);
+  });
+
+  /** Gen's registrations put the kit's own extension on its slot, so the real point runs it: gold earns double. */
+  it("runs the kit's tier multiplier on the earnAdjust slot of the real point", async () => {
+    const app = await createTestingModule(LoyaltyKitModule)
+      .useDrivers("memory")
+      .override(LoyaltyMembers, LoyaltyMembersFake.with([]))
+      .compile();
+    const point = app.get(LoyaltyKitExtensionPoint);
+    const draft = {
+      memberId: memberId("usr_gold"),
+      amount: { minor: 10_000, currency: "SAR" },
+      tier: LoyaltyTier.Gold,
+    } as EarnDraft;
+
+    expect(await point.earnAdjust(100, draft, fakeExtensionContext())).toBe(200);
   });
 });

@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresAccessLogSinkDriver`: each write runs in a transaction of its own under the record's
- *          tenant and inserts the next verifiable link after the head; a lost race reads the new head and retries;
+ *          tenant (the call's, so a branch user's record joins its tenant's chain) and inserts the next verifiable link after the head; a lost race reads the new head and retries;
  *          five lost races refuse with `access_log_write_failed`; any other failure propagates.
  * Boundary: test only; the table, the database and tenant isolation are in-memory stand-ins of the three calls the
  *           driver makes, so no Postgres runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decision 3); ADR 0239.
  */
-import { ActorKind, DataClassification } from "@stackra/contracts";
+import { ActorKind, DataClassification, Realm } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
 import { UniqueViolation } from "@stackra/database";
 import type { Database, Repository } from "@stackra/database";
@@ -85,6 +85,21 @@ describe("PostgresAccessLogSinkDriver", () => {
       [2, "call_2"],
     ]);
     await expect(findChainBreak(rows)).resolves.toBeUndefined();
+  });
+
+  it("writes a branch user's record under the call's tenant, not the branch it claims", async () => {
+    const { driver, tenancy } = driverWith();
+    const branchUser: Actor = {
+      kind: ActorKind.User,
+      id: "usr_1",
+      realm: Realm.Customer,
+      scopeId: "scp_riyadh",
+    };
+    await driver.write({ ...recordOf("call_1"), actor: branchUser, scopeId: "scp_acme" });
+    expect(tenancy.withTenant).toHaveBeenCalledWith(
+      { ...branchUser, scopeId: "scp_acme" },
+      expect.any(Function),
+    );
   });
 
   it("reads the new head and retries after a lost race", async () => {

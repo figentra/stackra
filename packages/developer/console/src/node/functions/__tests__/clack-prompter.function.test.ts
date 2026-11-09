@@ -102,6 +102,23 @@ describe("clackPrompter", () => {
     expect(validate("acme")).toBeUndefined();
   });
 
+  it("checks the default, not the empty input, when Enter accepts a text default", async () => {
+    fake.next = "first-release";
+    await prompter.ask({
+      kind: "text",
+      message: "Release name?",
+      default: "first-release",
+      validate: (text) => (text.length < 3 ? `at least 3 characters, got "${text}"` : undefined),
+    });
+    const validate = calls[0]?.options["validate"] as (
+      value: string | undefined,
+    ) => string | undefined;
+    expect(calls[0]?.options).toMatchObject({ defaultValue: "first-release" });
+    expect(validate("")).toBeUndefined();
+    expect(validate(undefined)).toBeUndefined();
+    expect(validate("ab")).toBe('at least 3 characters, got "ab"');
+  });
+
   it("throws PromptCancelledError when the Operator cancels", async () => {
     fake.next = CANCEL;
     await expect(prompter.ask({ kind: "text", message: "Name?" })).rejects.toBeInstanceOf(

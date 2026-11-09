@@ -168,6 +168,27 @@ describe("emitRuntimeEntries", () => {
       expect(content).toContain("    argv: process.argv.slice(2),");
     });
 
+    it("lists the constructor tokens of a seeder that injects (STA-1698)", () => {
+      const injecting = {
+        ...seeder("OrdersMinimalSeeder", "minimal"),
+        deps: [
+          {
+            class: { name: "Order", from: "#modules/orders/models/order.model" },
+            of: { name: "repositoryOf", from: "@stackra/database" },
+          },
+        ],
+      };
+      const content =
+        emitRuntimeEntries({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, injecting] }, [
+          ".stackra/gen/boot.ts",
+        ]).find((file) => file.path === ".stackra/entry/seed.ts")?.content ?? "";
+      expect(content).toContain('import { Database, repositoryOf } from "@stackra/database";');
+      expect(content).toContain('import { Order } from "#modules/orders/models/order.model";');
+      expect(content).toContain(
+        '      { key: "orders.minimal", module: "orders", profile: "minimal", type: OrdersMinimalSeeder, deps: [repositoryOf(Order)] },',
+      );
+    });
+
     it("writes none without seeders or without a boot", () => {
       expect(paths(emitRuntimeEntries(ir))).toEqual([".stackra/entry/server.ts"]);
       expect(paths(emitRuntimeEntries(COMMERCE_IR, [".stackra/gen/boot.ts"]))).toEqual([

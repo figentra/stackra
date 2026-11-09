@@ -9,16 +9,11 @@
  * Governing contract: ADR 0294 (decisions 14 and 16); ADR 0297 (decision 4).
  */
 import type { AnyClass } from "@stackra/container";
-import { useContainer } from "@stackra/container/react";
-import { useMemo } from "react";
 
-import { createMenuBuilder } from "#core/functions/create-menu-builder.function";
-import { instanceOf } from "#core/functions/instance-of.function";
-import { resolveMenuItems } from "#core/functions/resolve-menu-items.function";
-import type { ResolvedMenuItem } from "#core/types/resolved-menu-item.type";
+import type { MenuEntries } from "#core/types/menu-entries.type";
 import type { RunnableMenu } from "#core/types/runnable-menu.type";
-import { useFlagCheck } from "#react/flags/use-flag-check";
-import { useHrefResolver } from "#react/href/use-href-resolver";
+import { useMenuFrom } from "#react/menu/use-menu-from";
+import { useMenuResolver } from "#react/menu/use-menu-resolver";
 
 /**
  * The drawable entries of `type`.
@@ -29,21 +24,6 @@ import { useHrefResolver } from "#react/href/use-href-resolver";
 export function useMenu<M extends RunnableMenu<V>, V = unknown>(
   type: AnyClass<M>,
   value?: V,
-): readonly Extract<ResolvedMenuItem, { readonly kind: ReturnType<M["items"]>[number]["kind"] }>[] {
-  const container = useContainer();
-  const href = useHrefResolver();
-  const isOn = useFlagCheck();
-  const menu = useMemo(() => instanceOf(type, container), [type, container]);
-  return useMemo(
-    () =>
-      resolveMenuItems(menu.items(createMenuBuilder<V>()), {
-        value,
-        href,
-        isOn,
-      }) as readonly Extract<
-        ResolvedMenuItem,
-        { readonly kind: ReturnType<M["items"]>[number]["kind"] }
-      >[],
-    [menu, value, href, isOn],
-  );
+): MenuEntries<M, V> {
+  return useMenuFrom<M, V>(useMenuResolver(), type, value);
 }

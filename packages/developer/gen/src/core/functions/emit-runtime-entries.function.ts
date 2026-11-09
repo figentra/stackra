@@ -29,6 +29,7 @@ import { importLines } from "#core/functions/import-lines.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { seedersOf } from "#core/functions/seeders-of.function";
+import { tokenExpression } from "#core/functions/token-expression.function";
 import { topological } from "#core/functions/topological.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -205,10 +206,27 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
     models.set(key, modelLocal);
     return `  [${use(factory)}, ${modelLocal}],`;
   });
+  // An own seeder is not a binding, so its row lists the tokens its constructor takes (STA-1698); a hosted
+  // package's manifest records no constructor tokens, so a hosted seeder's row has none.
+  const seederDeps = new Map(
+    ir.classes
+      .filter((declared) => declared.kind === "seeder")
+      .map((declared) => [declared.importPath, declared.deps]),
+  );
   const rows = [...hosted.rows, ...own].map((row) => {
     const local = use({ name: row.name, from: row.importPath });
-    return `  { key: ${JSON.stringify(row.key)}, module: ${JSON.stringify(row.module)}, profile: ${JSON.stringify(row.profile)}, type: ${local} },`;
+    const deps = seederDeps.get(row.importPath) ?? [];
+    const tokens =
+      deps.length > 0 ? `, deps: [${deps.map((dep) => tokenExpression(dep, use)).join(", ")}]` : "";
+    return `  { key: ${JSON.stringify(row.key)}, module: ${JSON.stringify(row.module)}, profile: ${JSON.stringify(row.profile)}, type: ${local}${tokens} },`;
   });
+  // `Database` comes from @stackra/database already; a token from there joins that import.
+  const database = [
+    "Database",
+    ...(pairLines.length > 0 ? ["registerModelPartners"] : []),
+    ...(imports.get("@stackra/database")?.keys() ?? []),
+  ];
+  imports.delete("@stackra/database");
   const header = generatedHeader({
     from: "stackra.config.ts, the root module, #stackra/wiring, the seeders and factories under src/ and the hosted packages' manifests",
     purpose: `the seed entry of ${ir.package}: boots the container, registers the factory pairs and runs the seeders \`stackra db seed\` asks for.`,
@@ -225,7 +243,7 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
         ? ['import "#stackra/registrations";']
         : []),
       'import { bootApp } from "@stackra/app";',
-      `import { Database${pairLines.length > 0 ? ", registerModelPartners" : ""} } from "@stackra/database";`,
+      `import { ${database.join(", ")} } from "@stackra/database";`,
       'import { directDatabaseUrl, runSeedEntry } from "@stackra/database/node";',
       'import { boot } from "#stackra/boot";',
       'import { wiring } from "#stackra/wiring";',

@@ -7,28 +7,15 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 24: sibling modules); ADR 0263 (module graph).
  */
+import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /**
- * The module edges of `ir`.
+ * Each own module's dependencies, keyed by module (`moduleDependsOn` per module).
  *
- * @param ir - the member read by discovery.
  * @example
- * moduleEdges(ir).get("orders"); // ["catalogue"]
+ * moduleEdges(ir); // Map { "billing" => ["tenants"], "tenants" => [] }
  */
 export function moduleEdges(ir: MemberIR): Map<string, string[]> {
-  const moduleOf = new Map(ir.classes.map((declared) => [declared.name, declared.module]));
-  const edges = new Map<string, string[]>();
-  for (const key of ir.modules) {
-    const dependsOn = new Set<string>();
-    for (const declared of ir.classes.filter((candidate) => candidate.module === key))
-      for (const dep of declared.deps) {
-        const target = moduleOf.get(dep.class.name);
-        if (target !== undefined && target !== key && dep.class.from.startsWith("#"))
-          dependsOn.add(target);
-      }
-    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-    edges.set(key, [...dependsOn].sort());
-  }
-  return edges;
+  return new Map(ir.modules.map((key) => [key, moduleDependsOn(ir, key)]));
 }

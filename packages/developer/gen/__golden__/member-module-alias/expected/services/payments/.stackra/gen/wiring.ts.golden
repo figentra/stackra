@@ -10,7 +10,7 @@
  * Runtime: isomorphic
  */
 import { PaymentsModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, OriginGuard } from "@stackra/app/server";
+import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import type { Wiring } from "@stackra/container";
 import { Database, DatabaseConfig } from "@stackra/database";
 import { DatabaseHealthIndicatorDriver } from "@stackra/database/node";
@@ -37,6 +37,7 @@ export const wiring = {
   config: [
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
+    { key: "app.http", provide: HttpConfig },
     { key: "database", provide: DatabaseConfig },
     { key: "queue", provide: QueueConfig },
   ],

@@ -9,27 +9,29 @@ A new machine needs only this repository, a few logins and the commands below. N
 ## Steps
 
 1. **Clone** `figentra/stackra` and `cd` into it.
-2. **Toolchain:** `mise trust && mise install`. `mise.toml` pins Node, pnpm, gitleaks, the Infisical CLI, uv and Maestro, and sets `AWS_PROFILE=bedrock`.
+2. **Toolchain:** `mise trust && mise install`. `mise.toml` pins Node, pnpm, gitleaks, sops, age, uv and Maestro, and sets `AWS_PROFILE=bedrock`.
 3. **Dependencies:** `pnpm install`.
-4. **Tools mise does not pin** (no mise backend carries them): OpenCode v2 (`https://opencode.ai/install`), the Claude Code CLI, the AWS CLI (`brew install awscli`) and, once a service adopts it, Encore (`brew install encoredev/tap/encore`). Maestro also needs a JDK on `PATH`.
+4. **Tools mise does not pin** (no mise backend carries them): OpenCode v2 (`https://opencode.ai/install`), the Claude Code CLI, the AWS CLI (`brew install awscli`), the Google Cloud CLI (`gcloud`) and, once a service adopts it, Encore (`brew install encoredev/tap/encore`). Maestro also needs a JDK on `PATH`.
 5. **Logins:**
-   - `infisical login` (the project config is the committed `.infisical.yaml`).
+   - `gcloud auth application-default login` as the owner's Google account: sops uses it to decrypt the `agents` scope of `figentra/secrets` (ADR 0525), and only that account can.
+   - Clone `figentra/secrets` to `~/.stackra/secrets` (or set `STACKRA_SECRETS_DIR`). It holds encrypted files only.
    - Add a `bedrock` profile to `~/.aws/config`, then `aws sso login --profile bedrock`. OpenCode reaches Kimi K3 on Amazon Bedrock through it.
    - Sign in to Claude Code.
-6. **MCP servers:** `pnpm agents:sync` renders the gitignored `.mcp.json` from the committed `.mcp.yaml` (`pnpm install` does it too). Tokens come from Infisical through `tools/scripts/mcp.sh`, never from a file.
+6. **MCP servers:** `pnpm agents:sync` renders the gitignored `.mcp.json` from the committed `.mcp.yaml` (`pnpm install` does it too). Tokens come from the `agents` scope through `tools/scripts/mcp.sh` and `tools/scripts/secrets-exec.mjs`, decrypted in memory, never from a file.
 7. **Check:** `pnpm doctor`.
 
 ## What `pnpm doctor` checks
 
-| Check                                                    | Fix when it fails                 |
-| -------------------------------------------------------- | --------------------------------- |
-| mise tools installed                                     | `mise trust && mise install`      |
-| `pnpm install` done                                      | `pnpm install`                    |
-| Infisical has an active login (`infisical profile list`) | `infisical login`                 |
-| `aws sts get-caller-identity --profile bedrock` works    | `aws sso login --profile bedrock` |
-| `claude` and `opencode` on `PATH`                        | install them (step 4)             |
-| `pnpm agents:check` clean                                | `pnpm agents:sync`                |
-| `.mcp.json` present (warning only)                       | step 6                            |
+| Check                                                     | Fix when it fails                                       |
+| --------------------------------------------------------- | ------------------------------------------------------- |
+| mise tools installed                                      | `mise trust && mise install`                            |
+| `pnpm install` done                                       | `pnpm install`                                          |
+| `sops` installed; the Google login file sops reads exists | `mise install`; `gcloud auth application-default login` |
+| a `figentra/secrets` clone with an `agents` folder        | clone it to `~/.stackra/secrets`                        |
+| `aws sts get-caller-identity --profile bedrock` works     | `aws sso login --profile bedrock`                       |
+| `claude` and `opencode` on `PATH`                         | install them (step 4)                                   |
+| `pnpm agents:check` clean                                 | `pnpm agents:sync`                                      |
+| `.mcp.json` present (warning only)                        | step 6                                                  |
 
 Doctor prints a ✔ / ✖ / ! line per check with the fix beneath each failure, and exits 1 if any required check fails. It runs only non-secret status commands and never prints a value.
 

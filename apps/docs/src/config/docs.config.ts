@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: the site configuration of @figentra/docs, the Stackra docs: name, theme, colours, logo and favicon, the tabs
- *          and their navigation groups, and the Mintlify keys gen does not own (`raw`). Gen renders
- *          `.stackra/site/docs.json` from it; it replaces the hand-written `src/docs.json`.
+ *          and their navigation groups, and the paths that moved (`redirects`). Gen renders the Fumadocs site in
+ *          `.stackra/site/` from it (ADR 0514, STA-2026).
  * Boundary: data only (field initializers); gen imports the file and reads the fields of the one exported class.
  *           Logo and favicon are paths under `src/assets`; a page is its path under `src/docs` without the extension,
  *           and `{ folder }` lists every page of one folder (`adr` keeps every ADR at `/adr/<file>`).
  * Runtime: node
  * Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decisions 3 and 4); stackra-177 (STA-1317); STA-1575
- *                     (the customer tab and the /licensing redirect).
+ *                     (the customer tab and the /licensing redirect); ADR 0514; STA-2026.
  */
 import { DocsConfig } from "@stackra/gen";
 
@@ -34,7 +34,7 @@ export class StackraDocsConfig extends DocsConfig {
   override readonly navigation = [
     {
       tab: "Guides",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "book-open",
       groups: [
         { group: "Get started", pages: ["index", "roadmap", "quickstart", "development"] },
@@ -59,7 +59,7 @@ export class StackraDocsConfig extends DocsConfig {
     },
     {
       tab: "For customers",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "briefcase",
       groups: [
         {
@@ -77,7 +77,7 @@ export class StackraDocsConfig extends DocsConfig {
     },
     {
       tab: "Constitution",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "shield",
       groups: [
         {
@@ -96,14 +96,14 @@ export class StackraDocsConfig extends DocsConfig {
     },
     {
       tab: "Architecture",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "landmark",
       // `adr/index` first, then every ADR by number (and the template), each at `/adr/<file>`.
       groups: [{ group: "Decisions", pages: [{ folder: "adr" }] }],
     },
     {
       tab: "Standards",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "check-circle",
       groups: [
         {
@@ -126,7 +126,7 @@ export class StackraDocsConfig extends DocsConfig {
     },
     {
       tab: "Runbooks",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "zap",
       groups: [
         {
@@ -135,6 +135,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runbooks/setup",
             "runbooks/secrets",
             "runbooks/token-rotation",
+            "runbooks/cross-app-event-relay",
             "runbooks/github-identities",
             "runbooks/ci",
             "runbooks/release",
@@ -150,11 +151,28 @@ export class StackraDocsConfig extends DocsConfig {
             "runbooks/fresh-machine",
           ],
         },
+        {
+          group: "Runway commands",
+          pages: [
+            "runway/plan",
+            "runway/deploy",
+            "runway/promote",
+            "runway/rollback",
+            "runway/status",
+            "runway/validate",
+            "runway/drift",
+            "runway/secrets-sync",
+            "runway/secrets-decrypt",
+            "runway/env-check",
+            "runway/env-orphans",
+            "runway/evidence",
+          ],
+        },
       ],
     },
     {
       tab: "Agents",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "cpu",
       groups: [
         {
@@ -174,7 +192,7 @@ export class StackraDocsConfig extends DocsConfig {
     },
     {
       tab: "Writing docs",
-      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Mintlify (Lucide) icon name in docs.json, not a Stackra icon key
+      // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: a Lucide icon name for the site navigation, not a Stackra icon key
       icon: "pen-line",
       groups: [
         {
@@ -194,24 +212,6 @@ export class StackraDocsConfig extends DocsConfig {
     },
   ];
 
-  /** The Mintlify keys gen does not model (background, fonts, appearance, search, SEO and the like), copied into docs.json as they are. */
-  override readonly raw = {
-    background: { color: { light: "#F5F6F3", dark: "#0B0D0F" } },
-    fonts: { family: "Geist" },
-    appearance: { default: "system", strict: false },
-    icons: { library: "lucide" },
-    styling: { eyebrows: "section", codeblocks: "system" },
-    search: { prompt: "Search the Stackra docs" },
-    seo: { indexing: "navigable", metatags: { "og:site_name": "Stackra" } },
-    contextual: { options: ["copy", "view", "chatgpt", "claude"] },
-    // The registry points `npm login` at /licensing (workers/registry wrangler.jsonc REGISTRY_LICENCE_DOCS_URL).
-    redirects: [{ source: "/licensing", destination: "/customers/install" }],
-    errors: {
-      "404": {
-        redirect: false,
-        title: "Page not found",
-        description: "This page moved or never existed. Try search.",
-      },
-    },
-  };
+  /** Paths that moved; the site writes them to `_redirects`. The registry points `npm login` at /licensing. */
+  override readonly redirects = [{ from: "/licensing", to: "/customers/install" }];
 }

@@ -22,7 +22,7 @@
     },
     "secrets": {
       "$ref": "#/$defs/secretList",
-      "description": "Every @Secret of the env and config classes, by NAME. Values live in Infisical and runway syncs them on deploy (ADR 0173). A native client holds none (ADR 0206 d8)."
+      "description": "Every @Secret of the env and config classes, by NAME. Values live in figentra/secrets as sops files and runway syncs them on deploy (ADR 0525). A native client holds none (ADR 0206 d8)."
     },
     "health": {
       "type": "object",
@@ -291,7 +291,7 @@
           "properties": {
             "devtools": {
               "type": "boolean",
-              "description": "Not read yet (STA-2029). Open devtools in dev."
+              "description": "Open devtools in dev."
             },
             "remoteDebugPort": {
               "$ref": "#/$defs/port",
