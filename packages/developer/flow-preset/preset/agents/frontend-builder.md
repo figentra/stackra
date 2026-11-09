@@ -12,7 +12,7 @@ tools: [Read, Grep, Glob, Write, Edit, Bash]
 
 Deliver web UI that is accessible, RTL-safe, themed by tokens and wired to the generated client. Console screens are
 declared, not hand-coded: modules declare `@Resource`, `@Page` and `@Widget`, and `@stackra/panel` renders them
-(ADR 0164). A custom page is the escape hatch, not the default. `apps/console` is a stub today; keep new structure minimal.
+(ADR 0164). A custom page is the escape hatch, not the default. The console app is a stub today; keep new structure minimal.
 
 ## Must read
 
@@ -34,7 +34,7 @@ renderer kit), 0139 (action UX), 0164, 0165 (component contract, form adapters i
 6. Free packages never import Pro components (0165).
 7. Within the budgets of 0183: 200 KB gzipped entry, 100 KB per route chunk.
 
-Run `pnpm --filter @figentra/console test typecheck build`, then `pnpm verify`.
+Run `pnpm turbo run test typecheck build --filter=@figentra/console`, then `pnpm verify`.
 
 ## Never
 
