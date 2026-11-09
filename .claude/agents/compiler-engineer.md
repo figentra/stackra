@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/compiler-engineer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/compiler-engineer.md by fflow sync — edit the source, not this file -->
 
 # compiler-engineer
 

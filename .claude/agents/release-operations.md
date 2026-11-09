@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: opus
 ---
 
-<!-- generated from .agents/agents/release-operations.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/release-operations.md by fflow sync — edit the source, not this file -->
 
 # release-operations
 

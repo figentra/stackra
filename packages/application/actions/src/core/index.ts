@@ -93,6 +93,7 @@ export type { ApprovalSettingsReader } from "#core/types/approval-settings-reade
 export type { BeforeSlot } from "#core/types/before-slot.type";
 export type { CallAnalytics } from "#core/types/call-analytics.type";
 export type { CallDataClass } from "#core/types/call-data-class.type";
+export type { CallAttempt } from "#core/types/call-attempt.type";
 export type { CallInput } from "#core/types/call-input.type";
 export type { CallOptions } from "#core/types/call-options.type";
 export type { EndpointOptions } from "#core/types/endpoint-options.type";

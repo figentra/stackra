@@ -45,7 +45,7 @@
       "file": "src/node/models/custom-field-value-set.model.ts",
       "table": "content.custom_field_value_sets",
       "publicId": "cfv",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "content",
         "fields": [
@@ -141,7 +141,7 @@
       "file": "src/node/models/custom-field.model.ts",
       "table": "content.custom_fields",
       "publicId": "cfd",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "Translatable"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "Translatable", "MovesWithScope"],
       "entity": {
         "module": "content",
         "fields": [
@@ -285,7 +285,7 @@
       "file": "src/node/models/revision.model.ts",
       "table": "content.revisions",
       "publicId": "rev",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "content",
         "fields": [

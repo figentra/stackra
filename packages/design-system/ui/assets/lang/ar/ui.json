@@ -865,6 +865,11 @@
     "failed": "تعذّر الرفع",
     "retry": "إعادة رفع {name}"
   },
+  "pdf_preview": {
+    "title": "معاينة {name}",
+    "download": "تنزيل {name}",
+    "unavailable": "إن لم يظهر الملف هنا، فنزّله."
+  },
   "share_button": {
     "share": "مشاركة",
     "copied": "نُسخ الرابط",

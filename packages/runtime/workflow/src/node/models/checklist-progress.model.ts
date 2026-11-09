@@ -10,12 +10,17 @@
  */
 import type { Actor, PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** One completed step. Traits add `id` and the timestamps (`createdAt` is when it was completed). */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class ChecklistProgress extends Model.with(HasPublicId("wfp"), BelongsToTenant, Timestamps) {
+export class ChecklistProgress extends Model.with(
+  HasPublicId("wfp"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The scope node the progress belongs to. */
   scopeId!: PublicId<"scp">;
 

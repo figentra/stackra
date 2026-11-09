@@ -15,7 +15,7 @@
 import { HasRevisions } from "@stackra/content/node";
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** A rule set. Traits add `id` and the timestamps; the indexes are the migration's. */
@@ -25,6 +25,7 @@ export class RuleSet extends Model.with(
   BelongsToTenant,
   Timestamps,
   HasRevisions,
+  MovesWithScope,
 ) {
   /** The scope node the rule set belongs to. */
   scopeId!: PublicId<"scp">;

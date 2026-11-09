@@ -39,6 +39,12 @@ const EXECUTION_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExec
 /** ALB and target group names allow 32 characters. */
 const BALANCER_NAME_LIMIT = 32;
 
+/**
+ * How long a public workload's load balancer keeps a quiet connection, in seconds: above an AI answer streamed as
+ * server-sent events (60 to 120 s, a ping every 15 s), where the ALB default of 60 would cut a slow stream.
+ */
+const BALANCER_IDLE_TIMEOUT_SECONDS = 180;
+
 /** The CPU a service scales out at, in percent. */
 const SCALE_AT_CPU = 60;
 
@@ -83,6 +89,10 @@ export function awsWorkloads(
     throw new TypeError(
       "A public workload needs workloads.publicSubnetIds and workloads.certificateArn",
     );
+  if (plan.workloads.some((workload) => workload.registryImage) && settings?.registry === undefined)
+    throw new TypeError(
+      "A gotenberg resource pulls through ECR: name workloads.registry (<account>.dkr.ecr.<region>.amazonaws.com)",
+    );
 
   const prefix = resourceName([plan.project, plan.environment, "workloads"], BALANCER_NAME_LIMIT);
   const baseTags = { ...options.tags, env: plan.environment, service: "workloads" };
@@ -91,6 +101,13 @@ export function awsWorkloads(
     settings: [{ name: "containerInsights", value: "enabled" }],
     tags: baseTags,
   });
+  // FARGATE_SPOT for the workloads that may take an interruption (dev and staging engines); the rest stay on FARGATE.
+  const capacity = plan.workloads.some((workload) => workload.spot)
+    ? new aws.ecs.ClusterCapacityProviders(prefix, {
+        clusterName: cluster.name,
+        capacityProviders: ["FARGATE", "FARGATE_SPOT"],
+      })
+    : undefined;
   const domain = `${plan.environment}.workloads.${plan.project}.internal`;
   const namespace = new aws.servicediscovery.PrivateDnsNamespace(prefix, {
     name: domain,
@@ -151,6 +168,32 @@ export function awsWorkloads(
 
   for (const workload of plan.workloads) {
     const tags = { ...options.tags, ...workload.tags };
+    const image =
+      workload.registryImage && settings?.registry !== undefined
+        ? pulumi.interpolate`${settings.registry}/${workload.image}`
+        : workload.image;
+    // A PDF engine gets its own group: in from the consumers and the other workloads on its port, out on 443 only.
+    const groups: pulumi.Input<string>[] =
+      workload.httpsEgressOnly && workload.port !== undefined
+        ? [
+            new aws.ec2.SecurityGroup(`${workload.name}-sg`, {
+              vpcId,
+              description: `${workload.key}: in on ${workload.port} from the consumers, out on 443 only`,
+              ingress: [
+                {
+                  protocol: "tcp",
+                  fromPort: workload.port,
+                  toPort: workload.port,
+                  securityGroups: pulumi
+                    .all([securityGroup, options.network.securityGroupIds])
+                    .apply(([own, consumers]) => [own, ...consumers]),
+                },
+              ],
+              egress: [{ protocol: "tcp", fromPort: 443, toPort: 443, cidrBlocks: ["0.0.0.0/0"] }],
+              tags,
+            }).id,
+          ]
+        : [securityGroup];
     // Its own secrets, then the variables of each resource it uses, each from the folder the sync mirrors.
     const secrets = [
       ...workload.secrets.map((name) => ({
@@ -183,7 +226,7 @@ export function awsWorkloads(
       healthCommand: readonly string[] = [],
     ) => ({
       name: workload.workload,
-      image: workload.image,
+      image,
       ...(command.length > 0 ? { command } : {}),
       essential: true,
       ...(port === undefined ? {} : { portMappings: [{ containerPort: port, protocol: "tcp" }] }),
@@ -282,6 +325,7 @@ export function awsWorkloads(
         subnets: settings.publicSubnetIds,
         securityGroups: [balancerGroup.id],
         dropInvalidHeaderFields: true,
+        idleTimeout: BALANCER_IDLE_TIMEOUT_SECONDS,
         tags,
       });
       targetGroup = new aws.lb.TargetGroup(workload.name, {
@@ -321,10 +365,12 @@ export function awsWorkloads(
         cluster: cluster.arn,
         taskDefinition: task.arn,
         desiredCount: workload.scale.min,
-        launchType: "FARGATE",
+        ...(workload.spot
+          ? { capacityProviderStrategies: [{ capacityProvider: "FARGATE_SPOT", weight: 1 }] }
+          : { launchType: "FARGATE" }),
         networkConfiguration: {
           subnets: options.network.subnetIds,
-          securityGroups: [securityGroup],
+          securityGroups: groups,
           assignPublicIp: false,
         },
         serviceRegistries: { registryArn: registry.arn },
@@ -345,6 +391,7 @@ export function awsWorkloads(
         dependsOn: [
           ...(listener === undefined ? [] : [listener]),
           ...(migration === undefined ? [] : [migration]),
+          ...(workload.spot && capacity !== undefined ? [capacity] : []),
         ],
       },
     );

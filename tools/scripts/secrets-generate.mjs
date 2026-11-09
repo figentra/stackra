@@ -11,12 +11,14 @@
  * Input: NAME, `--scope <scope>`, `--bytes <16..128>` (default 32), `--encoding base64url|hex` (default base64url),
  *   `--rotate`, `--actor <agent>`; or `--missing [--dry-run]`: every `kind: generated` catalog name with no file in
  *   one of its `scopes`, in one pull request (`generator: vapid` makes a Web Push key pair; `generator: ed25519`
- *   a signing key, printing only its public half and key id).
+ *   a signing key, printing only its public half and key id). NAME takes its catalog entry's generator: an ed25519
+ *   name (with `--rotate`, a rotation) is a new pair whose public half and day-dated key id are printed; a vapid name
+ *   is refused (its halves rotate together through `--missing`).
  * Output: one line with the name, the scope, "added" or "rotated" and the pull request URL; exit 1 on a refusal.
  * Secrets: the value exists only in this process and on sops' stdin; it is never printed, logged or on argv.
  */
 import { generateKeyPairSync, randomBytes } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -75,11 +77,18 @@ export function ed25519Pair() {
   };
 }
 
-/** `<keyIdPrefix or the scope's product>-<env>-<yyyymm>`, kebab-case: the key id a producer's `events.keys` names. */
-export const keyIdFor = (scope, prefix, now = new Date()) => {
+/**
+ * `<keyIdPrefix or the scope's product>-<env>-<yyyymm>`, kebab-case: the key id a producer's `events.keys` names. A
+ * rotation (`day`) takes `<yyyymmdd>`, so the new key never shares the id of the one it replaces, which a producer
+ * keeps listed until its consumers move.
+ */
+export const keyIdFor = (scope, prefix, now = new Date(), { day = false } = {}) => {
   const parts = scope.split("/");
   const owner = prefix ?? (parts[0] === "products" ? parts[1] : parts.slice(0, -1).join("-"));
-  return `${owner}-${parts.at(-1)}-${now.toISOString().slice(0, 7).replace("-", "")}`;
+  return `${owner}-${parts.at(-1)}-${now
+    .toISOString()
+    .slice(0, day ? 10 : 7)
+    .replaceAll("-", "")}`;
 };
 
 /**
@@ -132,19 +141,25 @@ export function missingEntries(
   return out;
 }
 
-/** `--missing`: read the catalog and files from a shallow clone, then write every missing value in one PR. */
-function generateMissing({ dryRun, actor, home, run = cliRunner, env, say }) {
+/** The catalog and the file names of `figentra/secrets`, from a shallow clone removed before it returns. */
+function readSecretsRepo(run) {
   const clone = mkdtempSync(join(tmpdir(), "figentra-secrets-read-"));
-  let catalog;
-  let files;
   try {
     const r = run("gh", ["repo", "clone", SECRETS_REPO, clone, "--", "--depth", "1"]);
     if (r.status !== 0) throw cliFailure("clone", "gh", r);
-    catalog = parse(readFileSync(join(clone, "catalog.yaml"), "utf8")) ?? {};
-    files = listNames(clone);
+    const file = join(clone, "catalog.yaml");
+    return {
+      catalog: existsSync(file) ? (parse(readFileSync(file, "utf8")) ?? {}) : {},
+      files: listNames(clone),
+    };
   } finally {
     rmSync(clone, { recursive: true, force: true });
   }
+}
+
+/** `--missing`: read the catalog and files from a shallow clone, then write every missing value in one PR. */
+function generateMissing({ dryRun, actor, home, run = cliRunner, env, say }) {
+  const { catalog, files } = readSecretsRepo(run);
   const entries = missingEntries(catalog, files).map((e) => ({
     ...checkTarget(e, { agent: isAgentRun(env) }),
     value: e.value,
@@ -227,10 +242,28 @@ export function main(
   try {
     const t = checkTarget({ scope: o.scope, name: positionals[0] }, { agent: isAgentRun(env) });
     label = `${t.name}  ${t.scope}`;
-    const value = generateValue(
-      o.bytes === undefined ? 32 : Number(o.bytes),
-      o.encoding ?? "base64url",
-    );
+    // The catalog's generator decides the shape: a signing key is never replaced by a random value.
+    const entry = readSecretsRepo(run ?? cliRunner).catalog[t.name];
+    if (entry?.generator === "vapid")
+      throw new Refusal(
+        "a VAPID pair rotates both halves together: remove both, then run --missing",
+      );
+    let value;
+    let signing;
+    if (entry?.generator === "ed25519") {
+      if (o.bytes !== undefined || o.encoding !== undefined)
+        throw new Refusal("an ed25519 key takes no --bytes or --encoding");
+      const k = ed25519Pair();
+      value = k.privateKey;
+      signing = {
+        key: k.publicKey,
+        keyId: keyIdFor(t.scope, entry.keyIdPrefix, new Date(), { day: Boolean(o.rotate) }),
+      };
+    } else
+      value = generateValue(
+        o.bytes === undefined ? 32 : Number(o.bytes),
+        o.encoding ?? "base64url",
+      );
     const { written, url } = publish([{ ...t, value }], {
       actor,
       run,
@@ -239,6 +272,9 @@ export function main(
     });
     audit(home, { actor, name: t.name, scope: t.scope, action, result: "ok" });
     say(`${label}  ${written[0].replaced ? "rotated" : "added"}  ${url}`);
+    // The public half only (not secret): list it first in the producer's `events.keys`, keeping the old key until
+    // its consumers move.
+    if (signing) say(`  public key ${signing.key}  key id ${signing.keyId}`);
     return 0;
   } catch (error) {
     if (!(error instanceof Refusal)) throw error;

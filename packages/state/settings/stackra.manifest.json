@@ -95,7 +95,7 @@
       "file": "src/node/models/stored-setting-revision.model.ts",
       "table": "settings.stored_setting_revisions",
       "publicId": "ssr",
-      "traits": ["HasPublicId", "BelongsToTenantOrPlatform", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenantOrPlatform", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "settings",
         "fields": [
@@ -303,7 +303,7 @@
       "file": "src/node/models/stored-setting.model.ts",
       "table": "settings.stored_settings",
       "publicId": "sst",
-      "traits": ["HasPublicId", "BelongsToTenantOrPlatform", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenantOrPlatform", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "settings",
         "fields": [

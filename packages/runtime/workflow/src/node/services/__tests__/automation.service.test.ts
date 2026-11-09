@@ -7,7 +7,8 @@
  *          published one; `triggered` lists the published automations of a block with their documents and pauses one
  *          whose publisher lost access, and checks each against its scope's `AutomationQuota` (allowed starts; exceeded
  *          skips with `quota_exceeded`; unavailable, unreachable or unknown skips with
- *          `quota_unavailable` and never throws, for an event or a schedule start); `recheck` pauses the same; `pause` pauses for a host's reason once and refuses
+ *          `quota_unavailable` and never throws, for an event or a schedule start; with `last: false` an event start's
+ *          unreadable quota throws a retryable refusal instead, while an exceeded one and a schedule start still record); `recheck` pauses the same; `pause` pauses for a host's reason once and refuses
  *          a reason that is not a code; `seed` creates, skips, keeps a tenant's edit and updates; `seedPack` seeds each
  *          template.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
@@ -34,6 +35,7 @@ import {
   AutomationPrincipalMismatchError,
   AutomationQuota,
   AutomationQuotaAnswer,
+  AutomationQuotaUnavailableError,
   AutomationStart,
   BlockKind,
   DryRunOutcome,
@@ -468,6 +470,41 @@ describe("AutomationService automation quota", () => {
         );
       }
     });
+
+  it("throws a retryable refusal for an unreadable quota on an event start a retry follows, and records nothing", async () => {
+    const { record } = published();
+    const refused = await serviceOf(new FixedQuota(AutomationQuotaAnswer.Unavailable))
+      .triggered("orders.order_paid", AutomationStart.Event, { last: false })
+      .catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(AutomationQuotaUnavailableError);
+    expect(isRefusal(refused) && refused.retryable).toBe(true);
+    expect(record).not.toHaveBeenCalled();
+  });
+
+  it("still records an exceeded quota, and a schedule start's unreadable one, when a retry follows", async () => {
+    const exceeded = published();
+    await expect(
+      serviceOf(new FixedQuota(AutomationQuotaAnswer.Exceeded)).triggered(
+        "orders.order_paid",
+        AutomationStart.Event,
+        { last: false },
+      ),
+    ).resolves.toEqual([]);
+    expect(exceeded.record).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "quota_exceeded" }),
+    );
+    const scheduled = published();
+    await expect(
+      serviceOf(new FixedQuota(AutomationQuotaAnswer.Unavailable)).triggered(
+        "orders.order_paid",
+        AutomationStart.Schedule,
+        { last: false },
+      ),
+    ).resolves.toEqual([]);
+    expect(scheduled.record).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "quota_unavailable" }),
+    );
+  });
 
   it("allows every run with the unlimited driver a host picks on purpose", async () => {
     const quota: AutomationQuota = new UnlimitedAutomationQuotaDriver();

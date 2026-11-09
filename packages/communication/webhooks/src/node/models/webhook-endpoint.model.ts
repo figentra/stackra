@@ -14,7 +14,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** How long the secret a rotation replaced still signs, in milliseconds. */
@@ -22,7 +22,12 @@ const ROTATION_OVERLAP_MS = 24 * 60 * 60 * 1000;
 
 /** A registered receiver. Traits add `id`, the owning tenant and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class WebhookEndpoint extends Model.with(HasPublicId("whe"), BelongsToTenant, Timestamps) {
+export class WebhookEndpoint extends Model.with(
+  HasPublicId("whe"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The scope node whose events the endpoint receives. */
   scopeId!: PublicId<"scp">;
 

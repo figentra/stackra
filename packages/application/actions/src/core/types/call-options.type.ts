@@ -7,7 +7,8 @@
  *          whether the call runs in a sandbox, the network client it came from (STA-1248), and the product surface it
  *          arrived through (`origin`: storefront, console, API key, agent; ADR 0456), and the signed consent snapshot
  *          the client sent (`consentSnapshot`, ADR 0472), and the caller's last write the transport carried
- *          (`lastWriteAt`, the read-your-writes window of a replica query).
+ *          (`lastWriteAt`, the read-your-writes window of a replica query), and, for a queued job, which attempt it is
+ *          (`attempt`, set by the queue worker only).
  * Boundary: a type only. The actor comes from the verified credential, never from a request body (ADR 0098); the scope
  *           is the one the resolver chain settled on, never request input (ADR 0327 decision 7); the device order is
  *           set only once the transport matched its device id to the verified session's device (the header names are
@@ -27,6 +28,7 @@ import type { CallClient } from "#contracts/types/call-client.type";
 import type { CallOrigin } from "#contracts/types/call-origin.type";
 import type { DeviceOrder } from "#contracts/types/device-order.type";
 import type { CallCredential } from "#contracts/types/call-credential.type";
+import type { CallAttempt } from "#core/types/call-attempt.type";
 
 /** The call-level facts of one invocation. */
 export interface CallOptions {
@@ -102,4 +104,7 @@ export interface CallOptions {
    * the read-your-writes window, so a forged value costs a replica read and nothing else. Absent when none was sent.
    */
   readonly lastWriteAt?: Date;
+
+  /** Which attempt of a queued job the call is; set by the queue worker only, absent for a direct call. */
+  readonly attempt?: CallAttempt;
 }

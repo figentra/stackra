@@ -434,7 +434,7 @@
     },
     "runway.ResourceKind": {
       "type": "string",
-      "enum": ["postgres", "queue", "topic", "cache", "bucket"]
+      "enum": ["postgres", "queue", "topic", "cache", "bucket", "gotenberg"]
     },
     "runway.ResourceSize": {
       "type": "string",
