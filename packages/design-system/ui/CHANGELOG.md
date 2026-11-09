@@ -1,5 +1,22 @@
 # @stackra/ui
 
+## 0.32.0
+
+### Patch Changes
+
+- 54db249: `CalendarSystem` (`@stackra/ui/contracts`) is now the list of `@stackra/i18n`'s `CalendarSystem`, the one source the date
+  formatting and a tenant's `DisplaySettings.calendar` read. Same values and the same frozen list, so nothing that uses it
+  changes.
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/shortcuts@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
 ## 0.31.0
 
 ### Minor Changes
