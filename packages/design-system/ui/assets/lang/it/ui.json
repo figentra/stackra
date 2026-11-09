@@ -1253,6 +1253,28 @@
     "shortcut": "Scorciatoia {keys}",
     "you": "Tu",
     "disclaimer": "Tamo può sbagliare. Controlla le sue bozze.",
-    "close": "Chiudi"
+    "close": "Chiudi",
+    "approval_title": "Tamo vuole eseguire questo",
+    "approval_waiting": "In attesa della tua approvazione.",
+    "approve": "Approva",
+    "deny": "Rifiuta",
+    "approved": "Approvato",
+    "denied": "Rifiutato",
+    "expired": "Scaduto",
+    "risk": "Rischio {level}"
+  },
+  "terminal_demo": {
+    "label": "Provalo",
+    "copy": "Copia comando"
+  },
+  "props_playground": {
+    "controls": "Proprietà",
+    "preview": "Anteprima",
+    "theme": "Tema",
+    "theme_default": "Predefinito",
+    "direction": "Direzione",
+    "ltr": "Da sinistra a destra",
+    "rtl": "Da destra a sinistra",
+    "reset": "Reimposta"
   }
 }

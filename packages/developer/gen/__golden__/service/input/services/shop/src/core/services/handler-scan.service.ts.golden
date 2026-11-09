@@ -1,0 +1,12 @@
+import { DiscoveryService, Service } from "@stackra/container";
+
+/** Injects a platform binding the container builds itself: gen references it and never binds it (STA-2553). */
+export class HandlerScanService extends Service {
+  constructor(private readonly discovery: DiscoveryService) {
+    super();
+  }
+
+  count(): number {
+    return 0;
+  }
+}

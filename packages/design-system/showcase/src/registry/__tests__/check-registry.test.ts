@@ -144,6 +144,7 @@ describe("checkRegistry", () => {
         "free/box-plot-chart",
         "free/choropleth-map",
         "free/chord-diagram",
+        "free/marker-map",
         "free/network-graph",
         "free/sankey-chart",
         "free/sunburst-chart",

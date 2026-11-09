@@ -1253,6 +1253,28 @@
     "shortcut": "Raccourci {keys}",
     "you": "Vous",
     "disclaimer": "Tamo peut se tromper. Vérifiez ce qu'il propose.",
-    "close": "Fermer"
+    "close": "Fermer",
+    "approval_title": "Tamo veut exécuter ceci",
+    "approval_waiting": "En attente de votre approbation.",
+    "approve": "Approuver",
+    "deny": "Refuser",
+    "approved": "Approuvé",
+    "denied": "Refusé",
+    "expired": "Expiré",
+    "risk": "Risque {level}"
+  },
+  "terminal_demo": {
+    "label": "Essayer",
+    "copy": "Copier la commande"
+  },
+  "props_playground": {
+    "controls": "Propriétés",
+    "preview": "Aperçu",
+    "theme": "Thème",
+    "theme_default": "Par défaut",
+    "direction": "Sens",
+    "ltr": "De gauche à droite",
+    "rtl": "De droite à gauche",
+    "reset": "Réinitialiser"
   }
 }

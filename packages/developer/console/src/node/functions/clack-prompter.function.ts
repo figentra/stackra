@@ -90,7 +90,9 @@ export function clackPrompter(input: Readable, output: Writable): Prompter {
           const value = await text({
             ...streams,
             message: request.message,
-            validate,
+            // Clack validates what was typed before it falls back to defaultValue: an empty answer takes the default,
+            // so the default is what gets checked.
+            validate: (typed) => validate(typed === undefined || typed === "" ? initial : typed),
             ...(request.placeholder === undefined ? {} : { placeholder: request.placeholder }),
             ...(initial === undefined
               ? {}

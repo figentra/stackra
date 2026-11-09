@@ -19,11 +19,12 @@ import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
 import { PULL_REQUEST_PREVIEW_SETTINGS } from "#node/constants/pull-request-preview-settings.constant";
 import { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
+import { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 import { pullRequestPreviewHost } from "#node/functions/pull-request-preview-host.function";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { releaseOf } from "#node/functions/release-of.function";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import { uploadBundle } from "#node/functions/upload-bundle.function";
 import type { EdgeHostRow } from "#node/types/edge-host-row.type";
 import type { EdgeRelease } from "#node/types/edge-release.type";
@@ -79,11 +80,17 @@ export async function publishPullRequest(
       },
     ]);
 
+  // A `ref:` id is the job's to resolve; an unresolved one refuses here, before the first upload (STA-2124).
+  const env =
+    request.dryRun === true
+      ? undefined
+      : cloudflareAccountEnv(root.providers?.cloudflare?.accountId);
   const uploaded = await uploadBundle(
     bundle,
     product,
     request.assets.bucket,
-    request.run ?? runCommand,
+    request.run ?? runProgram,
+    env,
   );
 
   const host = pullRequestPreviewHost(pullRequest);

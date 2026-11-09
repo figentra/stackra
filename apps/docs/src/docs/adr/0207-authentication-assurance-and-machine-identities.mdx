@@ -37,7 +37,8 @@ Some actions need a stronger proof of identity than a session. The owner's answe
 
 ## Enforcement
 
-planned — the pipeline checks the AAL claim against the action's level (ADR 0138); the validator checks that every L3 action declares its step-up.
+The pipeline checks a user caller's assurance against the action's `stepUp` (ADR 0406 as amended 2026-11-03); gen
+refuses an L3 or L4 action a user can call with no `stepUp`, `step_up_missing` (`checkCallShape`, STA-340).
 
 ## Open questions
 

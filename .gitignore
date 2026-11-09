@@ -25,6 +25,8 @@ packages/*/*/vitest.config.ts
 services/*/vitest.config.ts
 # Gen's root Expo config shim of an app (ADR 0295 decision 5).
 apps/*/app.config.ts
+# The Encore app file gen writes at a service's root, so the member is the Encore app root (ADR 0091, amendment of 2026-11-09).
+services/*/encore.app
 # A docs app's generated Mintlify root, in any member (ADR 0002, 2026-10-27 amendment).
 **/.stackra/site/
 

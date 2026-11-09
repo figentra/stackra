@@ -63,6 +63,11 @@ const byChannel = await paid.breakdown("channel", Aggregate.Sum, "total.minor", 
 
 - The model comes from the type argument (gen registers it with `registerModelPartners`); the entity manager is the
   running context's, so every write joins the action's unit of work (`DatabaseUnitOfWorkDriver`).
+- Inside a transaction, each read verb (`find`, `findOne`, `findOneOrFail`, `count`, `sum`, `countDistinct`, `page`,
+  `table`) flushes the unit of work first, so it sees a field set earlier in the same transaction, by `update` or by a
+  plain set on a loaded row. MikroORM's own auto flush misses both. A raw `em.find` or `em.execute` after a plain set
+  does not flush: call `em.flush()` first, or write the change through `update`. Outside a transaction a read writes
+  nothing early.
 - `findOneOrFail` refuses with `not_found`; `insert` writes now and throws `UniqueViolation` without spoiling the
   caller's transaction; a money `sum` over two currencies refuses with `mixed_currency`.
 - Raw SQL is a parameterised condition, or a list of them ANDed: `{ $raw: sql\`${StockLevels.columns.onHand} <= ${n}\` }`,
@@ -251,11 +256,27 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
   `pol_<table>_<column>`. `equals` compares the column with `current_setting(setting, true)` (`@stackra/tenancy` uses
   it for its isolation column, ADR 0239); `ancestor` matches an `ltree` column at or below any of the setting's
   `|`-separated paths, through the GiST index. An unset or `''` setting matches no row, so a pooled connection that
-  ran an earlier scope sees nothing. A blueprint takes one `rowLevelSecurity` call: Postgres ORs permissive policies.
+  ran an earlier scope sees nothing. A blueprint takes one permissive policy, as Postgres ORs permissive policies, and
+  one policy per column. `restrictive: true` writes the policy `AS RESTRICTIVE`: it narrows the permissive one, and a
+  session with the setting unset is not narrowed (ADR 0347 d2 and d3). On an existing table (`schema.table`) the
+  column may be one an earlier migration wrote.
   `inherited` is `ancestor` plus a select-only policy `pol_<table>_<column>_inherited` for the rows on the path above a
   granted path, so a template seeded at the platform or product node is read by every tenant below it and written by
   none of them (ADR 0412). `equalsOrUnset` is `equals` through `is not distinct from`: a nullable id column's null
   rows (platform rows) match a session with the setting unset; a scoped session sees only its own (STA-1300).
+- `platform` is the platform form of a nullable id column (ADR 0239 amendment, gap C): a session with the setting
+  reads its rows and the null rows (the platform's) and writes only its own; one with the setting unset reads and
+  writes only the null rows. It also writes the restrictive `pol_<table>_<column>_write_update` and `_write_delete`,
+  because the permissive `USING` would otherwise let a tenant update, delete or take over a platform row. A restrictive
+  path policy's `exemptNull: column` also lets through that column's null rows whose path is at or above a granted
+  path (the scope path of a platform-form table: the root's and the session's product's corpus, not another's).
+  `schema.refuseNulls(..., { where })` counts only the null rows that also meet `where`.
+- A contract step swaps a table's policy: `schema.refuseNulls(column, tables, remedy)` first refuses the migration,
+  before any change, while a row of `tables` holds a null `column`, naming each table's count and the remedy (the
+  backfill); then `t.dropRowLevelSecurity(column, options)` drops the policy an earlier migration created with
+  `options` (`options.table` for a renamed table's original name), `t.change(column).notNull()` and the new policies
+  follow. `database.0007_contract_isolation_scope` is one: the sequence and projection tables take
+  `pol_<table>_isolation_scope_id` (equality with `app.tenant_id`) and keep the scope path restrictive.
 - `service.repath(from, to)` (every `CrudService` over a model with `scopePath`) moves a scope subtree's rows: each
   path at or below `from` takes `to` in place of that prefix, in one statement in the caller's transaction. A service
   calls it from its listener of `@stackra/scope`'s `ScopeMoved`, in a scope that reaches both paths (ADR 0411).
@@ -383,6 +404,15 @@ const page = await book.list({ after: lastId, limit: 500 });
 Their tables come from `database.0002_create_action_store_tables`; each call commits in its own transaction, so a
 claim holds before the action's unit of work starts. Selecting them in runway (`config.actions.stores`) needs
 `@stackra/actions` to list `postgres` among its store driver names.
+
+## Cache tables on Postgres
+
+`database.0005_create_cache_tables` makes the two unlogged tables of `@stackra/cache`'s `postgres` driver in its
+default schema, `cache.entries` and `cache.set_members` (this package hosts them because `@stackra/cache` cannot
+depend on it). Every statement is `if not exists`, so it adopts tables a service made earlier from
+`postgresCacheTables("cache")` and keeps their rows. They are platform tables: no `tenant_id` and no row-level
+security, because each key already carries its `CacheNamespace` prefix and the driver runs outside the caller's
+transaction. The driver never creates a table; a missing one rejects each call.
 
 ## Seed runner
 
@@ -543,7 +573,7 @@ await database.transaction(() => seats.book(showId, seat), {
 
 | Option        | Effect                                                                                             | Inside a running transaction |
 | ------------- | -------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `requiresNew` | a transaction of its own that commits even if the caller's rolls back                              | starts one                   |
+| `requiresNew` | a transaction of its own, in the caller's scope and tenant, that commits even if the caller's rolls back | starts one |
 | `timeout`     | `set local statement_timeout`                                                                      | yes, until the outermost end |
 | `lockTimeout` | `set local lock_timeout`: a lock wait longer than this fails with `55P03`                          | yes, until the outermost end |
 | `isolation`   | `Isolation.ReadCommitted` (the default), `RepeatableRead` or `Serializable`                        | refused (`TypeError`)        |
@@ -663,7 +693,7 @@ schema.create("parties", (t) => {
 
 ## Health check
 
-`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds `health`, `timeouts` and `pool`; the connection URL is the Encore database's, handed over by the generated boot. Bind it and
+`DatabaseHealthIndicatorDriver` (`./node`) is this package's `HealthIndicator` driver, named `database`: it runs `select 1`. With `health.rowSecurity` (off by default; Runway turns it on for deployed environments) it also fails readiness, whatever `critical` says, when the connected role is or may become a superuser or BYPASSRLS role, or may become the owner of a table with row security, so a deploy whose runtime could bypass `FORCE ROW LEVEL SECURITY` never goes ready. The configuration is `DatabaseConfig` (key `database`, exported with `DatabaseConfig$` and `DatabaseConfigOptions` from `.`), which holds `health`, `timeouts` and `pool`; the connection URL is the Encore database's, handed over by the generated boot. Bind it and
 `@stackra/app`'s `/readyz` runs it with the other bound indicators. `health` in this package's config tunes it:
 
 | Field      | Default | Meaning                                                                   |
@@ -774,12 +804,59 @@ running call's actor, id and scope, and `drainOutbox()` delivers each one as the
 that actor in that scope through the app's `CallIsolation` (`withScope` without one), the platform for an event with no
 actor (`deliverInIsolation`, STA-1789). The testing entry needs `@stackra/events` for this, an optional peer.
 
-`assertRowSecurity(database, { column, setting, role, probe })` checks a migrated database: every table holding
-`column` has row-level security enabled and forced with the policy `pol_<table>_<column>`, `role` is neither a
-superuser nor BYPASSRLS (created `NOLOGIN NOBYPASSRLS` when missing), and a probe as `role` with `setting` at
-`probe[0]` sees no other owner's row and cannot move one to `probe[1]`, inside a rolled-back transaction. It throws
-one error listing every gap (stackra-258). `@stackra/tenancy/testing`'s `tenantIsolationOptions()` gives the tenant
-form; gen writes a service's `.stackra/tests/tenant-isolation.int.test.ts` with both.
+`assertRowSecurity(database, { column, setting, role, probe, platform })` audits a migrated database (ADR 0347 d5).
+It walks every table of every non-system schema (an extension's own tables aside). A table without `column` must be
+named, with its reason, in `PLATFORM_TABLES` (the framework's: the migration ledger, `database.idempotency_keys` and
+`rate_limit_buckets`, `cache.entries` and `set_members`, `locking.lock_tokens`, and the platform-list tables of ADR
+0239's group (c)), in the caller's `platform` map, or by a `t.platformTable(reason)` of the compiled migrations in
+`migrationsDirectory`; any
+other is returned as a warning naming its group (an ancestor `scope_path` table awaiting the contract step, a
+`scope_id` table whose policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or
+unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. The
+tables in `ISOLATION_SCOPE_TABLES` (the sequence and projection tables, group (b) by name) are audited by their own
+owner column, `isolation_scope_id`, in place of `column`, and a table whose `pol_<table>_scope_id` is exactly the
+`equals` or `equalsOrUnset` policy `t.rowLevelSecurity` writes on `setting` by `scope_id` (group (b) by shape: the
+catalogue's text of its policy equals that of the generated one, created on the table in a rolled-back transaction, so
+a looser variant is not accepted). A listed table that holds `column` is always a gap, and a declared one that holds a
+scope id or an isolation scope id too. A `t.reviewedPolicy(reason, policies)` table must enable and force row-level
+security and hold every policy it names, and is not held to the owner policy or probed. A table with it has row-level security enabled and
+forced, exactly one permissive policy, `pol_<table>_<column>`, `FOR ALL` and testing `column` against `setting`, and
+only restrictive policies beside it, each named `pol_<table>_<column>` after one of its columns. A platform-form owner
+policy (its `USING` also shows the null rows) also needs its restrictive `pol_<table>_<column>_write_update` and
+`_write_delete`, and its null rows, the platform's, count against no probe. `role` is neither a
+superuser nor BYPASSRLS (created `NOLOGIN NOBYPASSRLS` when missing, and granted the owned tables each call). Then,
+per owned table and inside a rolled-back transaction, it seeds a row of `probe[0]` and of `probe[1]` itself (dropping
+the table's checks and its non-key NOT NULLs there and skipping foreign keys, so only a key needs a value: a string,
+number, UUID or instant), and as `role` proves a session with `setting` unset sees no row, a session at `probe[0]`
+sees its own row and not the other, and cannot move its row to `probe[1]`. A table it cannot seed is a gap. It throws
+one error listing every gap (stackra-258), and otherwise returns the warnings. `@stackra/tenancy/testing`'s `tenantIsolationOptions()` gives the tenant
+form; gen writes a service's `.stackra/tests/tenant-isolation.int.test.ts` with both, listing the service's global
+models' tables and gen's `MODEL_SCOPE_EXEMPTIONS` as `platform`, passing its migrations folder as
+`migrationsDirectory`, and prints each warning.
+
+A migration declares a table's row security with `t.platformTable(reason)` (no row of it can belong to a tenant: no
+scope id, isolation scope id, setting-filled column or policy beside it) or `t.reviewedPolicy(reason, policies)`. The
+reason is required and one line, and compiles to a `-- stackra:platform-table` or `-- stackra:reviewed-policy` comment
+line. `stackra row-security-declarations` lists every declaration for review against
+`tools/scripts/row-security-declarations.yaml`.
+
+A system worker or a pre-tenant route that must find tenant rows before it knows the tenant (ADR 0239 amendment, gap
+A: a webhook's id-to-tenant lookup, the outbox relay, queue worker, scheduler or workflow tick claiming due rows) does
+it through the `stackra_system_access` role: `NOLOGIN`, `NOBYPASSRLS` and granted to no one, so no session can become
+it. `t.systemAccess({ select, update, reason })` grants the role `SELECT` on the `select` columns and `UPDATE` on the
+`update` columns of a tenant table (column grants only) and writes the permissive policies
+`pol_<table>_system_access_select` and `_update` `TO` the role `USING (true)`. `schema.systemFunction({ name, args,
+returns, sql, reason })` writes the package's lookup or claim body as a `language sql` function in the module's schema,
+`SECURITY DEFINER` owned by the role, with `search_path = pg_catalog, pg_temp` (the body names its schema), returning
+the declared columns (ids and the tenant id, never a payload), `EXECUTE` revoked from `PUBLIC` and granted to the
+migrating role. The caller then loads each row in its tenant (`withTenant`). Both create the role when missing, so the
+migrating user needs `CREATEROLE` (a managed Postgres's master user has it); a non-superuser holds the role and the
+schema's `CREATE` only for the function's owner change, inside the migration's transaction. Their reasons compile to
+`-- stackra:system-access` and `-- stackra:system-function` lines, which `stackra row-security-declarations` lists.
+`assertRowSecurity` holds them to that exact shape: the policies are the role's only, the role has no member (beyond
+the ADMIN-only grant Postgres 16+ gives its creator), no BYPASSRLS and no grant beyond the declared columns, every
+function it owns is declared, `SECURITY DEFINER`, pinned and not executable by `PUBLIC`, and the service role cannot
+`SET ROLE` to it.
 
 ```ts
 import { createTestingModule } from "@stackra/container/testing";
@@ -808,8 +885,10 @@ const order = await OrderFactory.new().paid().has(OrderLineFactory.new().count(2
   connected: `usePostgres()` (connected before the module compiles) or a driver the container built for the module
   wins. The memory database an earlier module left is closed.
 - **`app.repository(Model)`** is the model's `Repository`, the `repositoryOf(Model)` binding when the wiring has one.
-- **Limits.** PGlite is one connection: a `requiresNew` transaction shares the surrounding session, and tests of
-  concurrent sessions, row-level security under an unprivileged role, or geography columns stay in the integration tier.
+- **Limits.** PGlite is one connection, so `Database.transaction(work, { requiresNew: true })` inside a running
+  transaction is a savepoint under the memory driver: it commits with the caller under PGlite, and a failure inside it
+  rolls back only the savepoint. The independent commit is proven only in `.int` tests on Postgres. Tests of concurrent
+  sessions, row-level security under an unprivileged role, or geography columns stay in the integration tier too.
 
 Faker, Testcontainers (`@testcontainers/postgresql` and `testcontainers`, which builds the test image), PGlite
 (`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) and `@mikro-orm/pglite` are optional peers of `./testing`; a

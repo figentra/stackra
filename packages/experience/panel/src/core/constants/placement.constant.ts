@@ -3,7 +3,8 @@
  * Purpose: `Placement`, the data constructors of a resource's placed buttons, as a generated resource writes them
  *          (`Placement.run(CancelOrderAction, { places: [ActionPlace.Row, ActionPlace.Bulk] })`).
  * Boundary: pure: each returns a frozen `PlacementNode`; the actions builder records through them. `layer` carries the
- *           placement layer (ADR 0306, 0336 layer 2b).
+ *           placement layer (ADR 0306, 0336 layer 2b); the `ActionButtonSpec` look fields (`variant`, `startIcon`,
+ *           `confirm`, ...) pass through.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 3, 4 and 10); ADR 0306 (rules 7 and 8); ADR 0336 (decision 4).
  */
@@ -14,10 +15,11 @@ import type { ExportFormat } from "#core/enums/export-format.enum";
 import type { ImportMode } from "#core/enums/import-mode.enum";
 import type { PlacementLayer } from "#core/enums/placement-layer.enum";
 import type { ResourcePage } from "#core/enums/resource-page.enum";
+import type { ActionButtonSpec } from "#core/types/action-button-spec.type";
 import type { PlacementNode } from "#core/types/placement-node.type";
 
-/** What every placement may carry. */
-interface PlacementOptions {
+/** What every placement may carry: its places, its layer and its button look. */
+interface PlacementOptions extends Omit<ActionButtonSpec, "action" | "place"> {
   readonly places?: readonly ActionPlace[];
   readonly layer?: PlacementLayer;
 }
@@ -48,7 +50,6 @@ export const Placement = Object.freeze({
     options: PlacementOptions & {
       readonly formats: readonly ExportFormat[];
       readonly columns?: readonly string[];
-      readonly permission?: string;
     },
   ): PlacementNode => Object.freeze({ kind: "export", ...frozen(options) }),
 
@@ -58,7 +59,6 @@ export const Placement = Object.freeze({
       readonly mode: ImportMode;
       readonly match: string;
       readonly maxRows?: number;
-      readonly permission?: string;
     },
   ): PlacementNode => Object.freeze({ kind: "import", ...frozen(options) }),
 

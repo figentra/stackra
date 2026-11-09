@@ -6,21 +6,27 @@
  * Boundary: data only. Key `settings.stored_setting_revision`, table `settings.stored_setting_revisions`. A node
  *           revision carries `scopeId` and `scopePath`, a user revision `userId`; a root revision carries neither.
  *           Rows are written through `StoredSettingRevisionService`, never with `new`. Values are configuration, never
- *           a secret.
+ *           a secret. A revision is owned (`BelongsToTenantOrPlatform`): the running `withTenant` call's tenant,
+ *           `null` in a platform call.
  * Runtime: node
- * Governing contract: ADR 0213 (decision 5); ADR 0359 (decisions 4 and 9); ADR 0327 (decisions 3 and 9); ADR 0135.
+ * Governing contract: ADR 0213 (decision 5); ADR 0359 (decisions 4 and 9); ADR 0327 (decisions 3, 8 and 9); ADR 0135.
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenantOrPlatform } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 
 import type { SettingEnvironment, SettingRevisionStatus, SettingValue } from "#contracts/index";
 import { SETTING_VALUES_SCHEMA } from "#node/constants/setting-values-schema.constant";
 
-/** One revision. Traits add `id` and the timestamps; the indexes are the migration's. */
+/** One revision. Traits add `id`, the owner and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class StoredSettingRevision extends Model.with(HasPublicId("ssr"), Timestamps) {
+export class StoredSettingRevision extends Model.with(
+  HasPublicId("ssr"),
+  BelongsToTenantOrPlatform,
+  Timestamps,
+) {
   /** The values it sets, by path in the group. */
   // reason: SettingValue is a union of scalars, which no shape type states
   @Field(SETTING_VALUES_SCHEMA)
@@ -70,15 +76,18 @@ export class StoredSettingRevision extends Model.with(HasPublicId("ssr"), Timest
   /** Who approved or rejected it; `null` until then. */
   decidedBy!: string | null;
 
+  /** The role its approver must hold, for a role-gated key; `null` for four-eyes or none. */
+  approvalRole!: string | null;
+
   /** When it applied; `null` until then. */
   appliedAt!: Date | null;
 }
 
-/** Lets an insert of `StoredSettingRevision` leave out the trait timestamps. */
+/** Lets an insert of `StoredSettingRevision` leave out the trait timestamps and owner. */
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps
 // out; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface StoredSettingRevision {
-  /** The trait timestamps an insert may leave out. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  /** The trait timestamps and owner an insert may leave out. */
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

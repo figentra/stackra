@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `publishProduct(request)`, Runway's publish step for one product checkout and one environment: checks the
- *          ops second-reviewer gate, reads every web surface's built bundle and refuses one whose `targets` the edge
- *          does not serve, builds the platform `host:` and `wellknown:` rows, then uploads each bundle to the asset
- *          store and writes the rows, and for each surface either the `release:` pointer (a first release) or the
- *          `canary:` row with the canary scopes (D6), and answers what it wrote.
+ *          ops second-reviewer gate, reads every web surface's built bundle and the `ops` contributions bundle
+ *          `buildProduct` writes, refuses one whose `targets` the edge does not serve, builds the platform `host:` and
+ *          `wellknown:` rows, then uploads each bundle to the asset store and writes the rows, and for each surface
+ *          either the `release:` pointer (a first release, or dev and staging without canary scopes) or the
+ *          `canary:` row with the canary scopes (D6; production must name them), and
+ *          answers what it wrote.
  * Boundary: every check runs before the first upload or write, so a refused publish changes nothing. Writes through
  *           the `EdgeKvWriter` port and uploads with wrangler only. Bundles upload before any pointer moves. Runway
  *           writes these rows by hand until the OS edge projector exists (app-shells 16.10); the registry manifest
- *           publish (ADR 0109) and the ops release are not here.
+ *           publish (ADR 0109) is not here.
  * Runtime: node
  * Governing contract: ADR 0436 (decisions 4 and 10); ADR 0437 (the KV copy); app-shells 4.2, 5.3, 8.3, 15 (points 7
  *                     and 8) and 16 (points 4, 7 and 10); owner decisions D2, D6 and D9; ADR 0289; ADR 0323 and R-59.
@@ -21,12 +23,13 @@ import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
 import { checkOpsReview } from "#node/functions/check-ops-review.function";
+import { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 import { platformRows } from "#node/functions/platform-rows.function";
 import { publishPullRequest } from "#node/functions/publish-pull-request.function";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { releaseOf } from "#node/functions/release-of.function";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import { uploadBundle } from "#node/functions/upload-bundle.function";
 import type { EdgeCanary } from "#node/types/edge-canary.type";
 import type { EdgeRelease } from "#node/types/edge-release.type";
@@ -59,7 +62,8 @@ export async function publishProduct(
     appLinks: request.appLinks,
   });
   const product = root.product?.key as string;
-  const bundles = readBundles(request.repository, bundleSurfaces(root));
+  const ops = root.surfaces?.ops?.contributes === undefined ? [] : ["ops"];
+  const bundles = readBundles(request.repository, [...bundleSurfaces(root), ...ops]);
   const issues: RunwayIssue[] = [];
   for (const bundle of bundles)
     if (!request.served.includes(bundle.manifest.targets))
@@ -68,17 +72,23 @@ export async function publishProduct(
         message: `The bundle targets ${bundle.manifest.targets}, which the edge does not serve (${request.served.join(", ") || "none"})`,
       });
   const scopes = request.canaryScopes ?? [];
-  if (request.firstRelease !== true && bundles.length > 0 && scopes.length === 0)
+  // D6 stages a release for real tenants: only production must name canary scopes; dev and staging without them release.
+  const direct =
+    request.firstRelease === true || (request.environment !== "production" && scopes.length === 0);
+  if (!direct && bundles.length > 0 && scopes.length === 0)
     issues.push({
       path: "canaryScopes",
       message:
-        "Name the internal and demo scopes the release goes to first (D6), or mark a first release",
+        "Name the internal and demo scopes a production release goes to first (D6), or mark a first release",
     });
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
-  const run = request.run ?? runCommand;
-  const accountId = root.providers?.cloudflare?.accountId;
-  const env = accountId === undefined ? undefined : { CLOUDFLARE_ACCOUNT_ID: String(accountId) };
+  const run = request.run ?? runProgram;
+  // A `ref:` id is the job's to resolve; an unresolved one refuses here, before the first upload (STA-2124).
+  const env =
+    request.dryRun === true
+      ? undefined
+      : cloudflareAccountEnv(root.providers?.cloudflare?.accountId);
   const uploaded: string[] = [];
   for (const bundle of bundles)
     uploaded.push(...(await uploadBundle(bundle, product, request.assets.bucket, run, env)));
@@ -94,7 +104,7 @@ export async function publishProduct(
   const since = (request.now ?? new Date()).toISOString();
   for (const bundle of bundles) {
     const release = releaseOf(bundle, product, request.assets.origin);
-    if (request.firstRelease === true) {
+    if (direct) {
       releases[bundle.surface] = release;
       await put(`${EdgeKvPrefix.Release}:${product}:${bundle.surface}`, release);
     } else {

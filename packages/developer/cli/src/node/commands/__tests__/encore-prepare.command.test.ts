@@ -1,0 +1,64 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of `EncorePrepareCommand`: in a service folder it pins `encore.dev` to the default catalog's
+ *          version, writes tsconfig `baseUrl` and `paths` from `imports` (keeping the header comments), and a second
+ *          run changes nothing.
+ * Boundary: test only; writes a temporary workspace.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); ADR 0091 (decision 2, amendment of 2026-11-09).
+ */
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { runCommandForTest } from "@stackra/console/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+
+import { EncorePrepareCommand } from "#node/commands/encore-prepare.command";
+
+let root = "";
+afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+describe("EncorePrepareCommand", () => {
+  it("pins encore.dev and mirrors imports into tsconfig paths, then changes nothing", async () => {
+    root = mkdtempSync(join(tmpdir(), "stackra-cli-encore-"));
+    const service = join(root, "services/orders");
+    mkdirSync(service, { recursive: true });
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "catalog:\n  encore.dev: 1.58.8\n");
+    writeFileSync(
+      join(service, "package.json"),
+      JSON.stringify({
+        name: "@figentra/service-orders",
+        imports: { "#src/*": ["./src/*", "./src/*.ts"], "#stackra/*": "./.stackra/gen/*" },
+        dependencies: { "encore.dev": "catalog:" },
+      }),
+    );
+    writeFileSync(
+      join(service, "tsconfig.json"),
+      '// header\n{ "extends": "@stackra/typescript-config/node" }\n',
+    );
+
+    const first = await runCommandForTest([EncorePrepareCommand], ["encore:prepare", "--json"], {
+      cwd: service,
+    });
+    expect(first.json).toEqual({ ok: true, data: { changed: ["package.json", "tsconfig.json"] } });
+    const pkg = JSON.parse(readFileSync(join(service, "package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    expect(pkg.dependencies["encore.dev"]).toBe("1.58.8");
+    const tsconfig = readFileSync(join(service, "tsconfig.json"), "utf8");
+    expect(tsconfig.startsWith("// header\n")).toBe(true);
+    expect(JSON.parse(tsconfig.replace(/^\/\/.*\n/, ""))).toEqual({
+      extends: "@stackra/typescript-config/node",
+      compilerOptions: {
+        baseUrl: ".",
+        paths: { "#src/*": ["./src/*", "./src/*.ts"], "#stackra/*": ["./.stackra/gen/*"] },
+      },
+    });
+
+    const second = await runCommandForTest([EncorePrepareCommand], ["encore:prepare", "--json"], {
+      cwd: service,
+    });
+    expect(second.json).toEqual({ ok: true, data: { changed: [] } });
+  });
+});

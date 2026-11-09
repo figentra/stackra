@@ -35,6 +35,7 @@ export type { MailFeature } from "#contracts/types/mail-feature.type";
 export type { MailSender } from "#contracts/types/mail-sender.type";
 export type { NotificationDeliveryEvent } from "#contracts/types/notification-delivery-event.type";
 export type { NotificationTemplate } from "#contracts/types/notification-template.type";
+export type { MessageAction } from "#contracts/types/message-action.type";
 export type { OutboundChatMessage } from "#contracts/types/outbound-chat-message.type";
 export type { OutboundMail } from "#contracts/types/outbound-mail.type";
 export type { OutboundPush } from "#contracts/types/outbound-push.type";

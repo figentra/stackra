@@ -7,16 +7,21 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 4 and the packed-tarball enforcement).
  */
+import { readCommand } from "@stackra/console";
 import { describe, expect, it } from "@stackra/testing";
 
 import { COMMANDS } from "#node/constants/commands.constant";
 
-const names = COMMANDS.map((command) => command.name);
+/** A command class's own name, or a legacy command's words joined with `:` as the console names them. */
+const names = COMMANDS.map((command) =>
+  typeof command === "function" ? readCommand(command).name : command.name.replaceAll(" ", ":"),
+);
 
 describe("COMMANDS", () => {
   it("has unique names, each with a summary and a usage that starts with its name", () => {
     expect(new Set(names).size).toBe(names.length);
     for (const command of COMMANDS) {
+      if (typeof command === "function") continue;
       expect(command.summary.length).toBeGreaterThan(0);
       expect(command.usage.startsWith(`stackra ${command.name}`)).toBe(true);
     }
@@ -33,19 +38,19 @@ describe("COMMANDS", () => {
       "lint",
       "ls",
       "mcp",
-      "mcp sync",
+      "mcp:sync",
     ]) {
       expect(names).toContain(name);
     }
     expect(names).toEqual(
       expect.arrayContaining([
-        "mcp exec",
-        "agents sync",
-        "agents check",
-        "db migrate",
-        "db rollback",
-        "db seed",
-        "db diff",
+        "mcp:exec",
+        "agents:sync",
+        "agents:check",
+        "db:migrate",
+        "db:rollback",
+        "db:seed",
+        "db:diff",
         "new",
         "seed-pack",
         "settings:diff",
@@ -53,8 +58,9 @@ describe("COMMANDS", () => {
         "search:reindex",
         "search:status",
         "audit:verify",
-        "ops bootstrap-operator",
+        "ops:bootstrap-operator",
         "smoke",
+        "promote",
         "add",
         "publish",
         "testbed",
@@ -76,6 +82,7 @@ describe("COMMANDS", () => {
         "app-native-deps",
         "duplicate-exports",
         "any-ratchet",
+        "row-security-declarations",
         "duplication",
         "skill-licences",
       ]),
@@ -90,7 +97,7 @@ describe("COMMANDS", () => {
 
   it("holds no Figentra-internal operation", () => {
     for (const internal of ["linear", "bot", "merge", "secrets", "delegate", "spend"]) {
-      expect(names.some((name) => name.split(" ")[0] === internal)).toBe(false);
+      expect(names.some((name) => name.split(":")[0] === internal)).toBe(false);
     }
   });
 });

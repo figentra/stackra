@@ -85,7 +85,9 @@ describe("@stackra/actions/contracts", () => {
     expectTypeOf<AuditEntry["fields"]>().toEqualTypeOf<Readonly<Record<string, Json>>>();
     expectTypeOf<AuditEntry["outcome"]>().toEqualTypeOf<"ok" | "refused">();
     expectTypeOf<IdempotencyRecord["fingerprint"]>().toEqualTypeOf<string>();
-    expectTypeOf<Extract<IdempotencyRecord, { done: true }>["output"]>().toEqualTypeOf<unknown>();
+    expectTypeOf<
+      Extract<IdempotencyRecord, { output: unknown }>["output"]
+    >().toEqualTypeOf<unknown>();
     expectTypeOf<RateLimitBucket["tokensPerSecond"]>().toEqualTypeOf<number>();
     expectTypeOf<RateLimitDecision["allowed"]>().toEqualTypeOf<boolean>();
     expectTypeOf<DeviceOrder["sequence"]>().toEqualTypeOf<number | undefined>();

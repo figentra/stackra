@@ -34,15 +34,18 @@ export function undeclaredPackages(
   code: string,
   also: readonly string[] = [],
 ): GenError[] {
-  const declared = ir.packages;
-  if (declared === undefined) return [];
+  if (ir.packages === undefined) return [];
+  const declared = new Set([
+    ...ir.packages,
+    ...(ir.contractsDependencies ?? []).map((dependency) => dependency.package),
+  ]);
   const errors: GenError[] = [];
   for (const file of files) {
     const missing = new Set(
       [...file.content.matchAll(PACKAGE_IMPORT)]
         .map((match) => match[1] ?? "")
         .filter((name) => name.startsWith("@stackra/") || also.includes(name))
-        .filter((name) => name !== ir.package && !declared.includes(name)),
+        .filter((name) => name !== ir.package && !declared.has(name)),
     );
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     for (const name of [...missing].sort())

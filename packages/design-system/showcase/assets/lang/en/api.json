@@ -186,6 +186,19 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "approval_card": {
+      "ApprovalCard": {
+        "className": "Classes added to the root.",
+        "fields": "The call's input, in order.",
+        "isPending": "True while the answer is being sent: Approve and Deny are disabled.",
+        "onApprove": "Called when the person approves the call.",
+        "onDeny": "Called when the person denies the call.",
+        "reason": "Why the call was denied, shown under a denied status.",
+        "risk": "A short risk level, for example \"L3\"; left out, no risk is shown.",
+        "status": "Where the approval stands: only `requested` shows Approve and Deny.",
+        "title": "What will run, for example the action's label; defaults to \"Tamo wants to run this\"."
+      }
+    },
     "area_chart": {
       "AreaChart": {
         "annotations": "Notes pinned to categories (a launch, an outage): a dashed guide through each with its label at the top.",
@@ -233,6 +246,62 @@
         "progress": "How far an upload is, 0 to 100; given, the card shows the upload's bar in place of the type and size.",
         "size": "The size in bytes, written in the locale's digits and unit.",
         "type": "The MIME type, which picks the type mark; left out, the extension picks it."
+      }
+    },
+    "autocomplete": {
+      "Autocomplete": {
+        "allowsEmptyCollection": "Whether the autocomplete allows an empty collection. When true, the autocomplete can function even with no items.",
+        "aria-describedby": "Identifies the element (or elements) that describes the object.",
+        "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+        "aria-label": "Defines a string value that labels the current element.",
+        "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+        "autoComplete": "Describes the type of autocomplete functionality the input should provide if any. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#htmlattrdefautocomplete).",
+        "autoFocus": "Whether the element should receive focus on render.",
+        "className": "Additional CSS classes",
+        "defaultOpen": "Sets the default open state of the popover (uncontrolled)",
+        "defaultSelectedKey": "The initial selected key in the collection (uncontrolled).",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "disabledKeys": "Keys of disabled items",
+        "emptyMessage": "What the list says when no choice matches, for example \"No results\"; without it the list stays closed.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "excludeFromTabOrder": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+        "form": "The `<form>` element to associate the input with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#form).",
+        "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "inputValue": "The text typed to filter the list, for a controlled search box; pair it with `onInputChange`.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isFullWidth": "True to fill the width of the parent instead of the width of the content.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isLoading": "True while items load: a spinner shows under the list.",
+        "isOpen": "Sets the open state of the popover (controlled)",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "isServerFiltered": "True when the app has already narrowed `items` to the text, so the field shows them all and filters nothing.",
+        "items": "The choices that match the text; with `isServerFiltered` the app narrows them as the text changes.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "labels": "The words of the search box in the list and of the clear button; each defaults to the package's own.",
+        "loadingLabel": "The spoken name of the spinner while items load, for example \"Loading more countries\"; without it the spinner is silent.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onBlur": "Handler that is called when the element loses focus.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "onFocus": "Handler that is called when the element receives focus.",
+        "onFocusChange": "Handler that is called when the element's focus status changes.",
+        "onInputChange": "Called with the text each time the user types, which is where an async ComboBox starts its search.",
+        "onKeyDown": "Handler that is called when a key is pressed.",
+        "onKeyUp": "Handler that is called when a key is released.",
+        "onLoadMore": "Called when the user scrolls to the end of the list, to fetch the next page of choices.",
+        "onOpenChange": "Handler called when the open state changes",
+        "onSelectionChange": "Handler that is called when the selection changes.",
+        "placeholder": "Text shown while the field is empty; it hints at what to pick and never replaces the label.",
+        "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+        "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "selectedKey": "The currently selected key in the collection (controlled).",
+        "shouldCloseOnSelect": "Whether the Select should close when an item is selected. Defaults to true if selectionMode is\nsingle, false otherwise.",
+        "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+        "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+        "validate": "A function that returns an error message if a given value is invalid.\nValidation errors are displayed to the user when the form is submitted\nif `validationBehavior=\"native\"`. For realtime validation, use the `isInvalid`\nprop instead.",
+        "validationBehavior": "Whether to use native HTML form validation to prevent form submission\nwhen the value is missing or invalid, or mark the field as required\nor invalid via ARIA.",
+        "value": "The current value, for a controlled field; pair it with `onChange`."
       }
     },
     "avatar": {
@@ -452,6 +521,7 @@
         "formMethod": "Indicates the HTTP method used to submit the form.",
         "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
         "formTarget": "Overrides the target attribute of the button's form owner.",
+        "href": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isAnimatedStyleActive": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
         "isDisabled": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -483,6 +553,7 @@
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "startIcon": "An element drawn before the label, on the inline-start side: an icon name or any icon element.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+        "target": "The browsing context of the link (`_blank`); read only with `href`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The value associated with the button's name when it's submitted with the form data.",
@@ -1018,6 +1089,56 @@
         "source": "The Markdown text to render."
       }
     },
+    "color_field": {
+      "ColorField": {
+        "aria-describedby": "Identifies the element (or elements) that describes the object.",
+        "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+        "aria-errormessage": "Identifies the element that provides an error message for the object.",
+        "aria-label": "Defines a string value that labels the current element.",
+        "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+        "autoFocus": "Whether the element should receive focus on render.",
+        "channel": "The color channel that this field edits. If not provided,\nthe color is edited as a hex value.",
+        "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+        "colorSpace": "The color space that the color field operates in if a `channel` prop is provided.\nIf no `channel` is provided, the color field always displays the color as an RGB hex value.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "excludeFromTabOrder": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+        "form": "The `<form>` element to associate the input with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#form).",
+        "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isFullWidth": "True to fill the width of the parent instead of the width of the content.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "isWheelDisabled": "Enables or disables changing the value with scroll.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onBeforeInput": "Handler that is called when the input value is about to be modified. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforeinput_event).",
+        "onBlur": "Handler that is called when the element loses focus.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "onCompositionEnd": "Handler that is called when a text composition system completes or cancels the current text\ncomposition session. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event).",
+        "onCompositionStart": "Handler that is called when a text composition system starts a new text composition session.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event).",
+        "onCompositionUpdate": "Handler that is called when a new character is received in the current text composition\nsession. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionupdate_event).",
+        "onCopy": "Handler that is called when the user copies text. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/oncopy).",
+        "onCut": "Handler that is called when the user cuts text. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/oncut).",
+        "onFocus": "Handler that is called when the element receives focus.",
+        "onFocusChange": "Handler that is called when the element's focus status changes.",
+        "onInput": "Handler that is called when the input value is modified. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/input_event).",
+        "onKeyDown": "Handler that is called when a key is pressed.",
+        "onKeyUp": "Handler that is called when a key is released.",
+        "onPaste": "Handler that is called when the user pastes text. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/onpaste).",
+        "onSelect": "Handler that is called when text in the input is selected. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/select_event).",
+        "placeholder": "Text shown while the field is empty, for example `#000000`.",
+        "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+        "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+        "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+        "validate": "A function that returns an error message if a given value is invalid.\nValidation errors are displayed to the user when the form is submitted\nif `validationBehavior=\"native\"`. For realtime validation, use the `isInvalid`\nprop instead.",
+        "validationBehavior": "Whether to use native HTML form validation to prevent form submission\nwhen the value is missing or invalid, or mark the field as required\nor invalid via ARIA.",
+        "value": "The current value, for a controlled field; pair it with `onChange`."
+      }
+    },
     "color_picker": {
       "ColorPicker": {
         "className": "Styles the root.",
@@ -1033,6 +1154,23 @@
         "onChange": "Called with the new value each time the user changes it.",
         "swatches": "Ready-made colours, as `#rrggbb`; defaults to the house set.",
         "value": "The current value, for a controlled field; pair it with `onChange`."
+      }
+    },
+    "color_swatch": {
+      "ColorSwatch": {
+        "aria-describedby": "Identifies the element (or elements) that describes the object.",
+        "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+        "aria-label": "Accessible label for the swatch",
+        "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+        "className": "Additional CSS classes",
+        "color": "The colour shown: any CSS colour, for example `#0485f7`, `rgb(4 133 247)` or `var(--accent)`.",
+        "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "label": "The colour's accessible name, for example \"Ocean blue\"; without it a parsable colour is described by React Aria in the user's language.",
+        "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+        "render": "Overrides the default DOM element with a custom render function.",
+        "size": "The size. Defaults to `md`.",
+        "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+        "style": "Inline styles or render props function with access to color"
       }
     },
     "column_chooser": {
@@ -1264,6 +1402,7 @@
         "formMethod": "Indicates the HTTP method used to submit the form.",
         "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
         "formTarget": "Overrides the target attribute of the button's form owner.",
+        "href": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isAnimatedStyleActive": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
         "isDisabled": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -1292,6 +1431,7 @@
         "size": "The height, padding and text size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+        "target": "The browsing context of the link (`_blank`); read only with `href`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The text copied to the clipboard.",
@@ -2361,6 +2501,7 @@
         "formMethod": "Indicates the HTTP method used to submit the form.",
         "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
         "formTarget": "Overrides the target attribute of the button's form owner.",
+        "href": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isAnimatedStyleActive": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
         "isDisabled": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -2392,6 +2533,7 @@
         "source": "What the button opens. Defaults to `files`; `photos` and `camera` accept images only.",
         "startIcon": "An element drawn before the label, on the inline-start side: an icon name or any icon element.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+        "target": "The browsing context of the link (`_blank`); read only with `href`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The value associated with the button's name when it's submitted with the form data.",
@@ -2438,6 +2580,14 @@
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "resultCount": "How many records match; it rolls to its new value when it changes. Defaults to the engine's `totalCount`.",
         "testID": "Used to locate this view in end-to-end tests."
+      }
+    },
+    "flag": {
+      "Flag": {
+        "className": "Styles the root.",
+        "code": "An ISO 3166-1 alpha-2 country code (`sa`), or a language tag with a region (`ar-SA`), which shows the region's flag.\nA code with no flag shows the code itself.",
+        "label": "The accessible name, for example the country's name; without it the flag is decorative and hidden from assistive technology.",
+        "size": "The size. Defaults to `md`."
       }
     },
     "flip_card": {
@@ -2705,6 +2855,7 @@
         "formMethod": "Indicates the HTTP method used to submit the form.",
         "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
         "formTarget": "Overrides the target attribute of the button's form owner.",
+        "href": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
         "icon": "The icon the button shows: an icon name or any icon element.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isAnimatedStyleActive": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
@@ -2735,6 +2886,7 @@
         "size": "The height, padding and text size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+        "target": "The browsing context of the link (`_blank`); read only with `href`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The value associated with the button's name when it's submitted with the form data.",
@@ -3198,6 +3350,17 @@
         "value": "The active locale."
       }
     },
+    "marker_map": {
+      "MarkerMap": {
+        "className": "Styles the root.",
+        "height": "The map's height in pixels. Defaults to 360.",
+        "label": "The map's accessible name, for example \"Today's job sites\".",
+        "listLabel": "The title and spoken name of the list of pins beside the map, for example \"Sites\". Defaults to `label`.",
+        "markers": "The pins to draw, in the order the list shows them.",
+        "onSelect": "Called with a pin's id when it is chosen on the map or in the list.",
+        "selectedId": "The selected pin, for a controlled map; pair it with `onSelect`. Null for none."
+      }
+    },
     "marquee": {
       "Marquee": {
         "children": "The items, in reading order, for example brand logos or short announcements.",
@@ -3582,6 +3745,7 @@
         "formMethod": "Indicates the HTTP method used to submit the form.",
         "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
         "formTarget": "Overrides the target attribute of the button's form owner.",
+        "href": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isAnimatedStyleActive": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
         "isDisabled": "True to refuse presses.",
@@ -3614,6 +3778,7 @@
         "state": "The state shown. Defaults to `idle`.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
         "successDuration": "How long the success check shows before the button settles back to its label, in ms. Defaults to 1500.",
+        "target": "The browsing context of the link (`_blank`); read only with `href`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The value associated with the button's name when it's submitted with the form data.",
@@ -4312,6 +4477,7 @@
         "formMethod": "Indicates the HTTP method used to submit the form.",
         "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
         "formTarget": "Overrides the target attribute of the button's form owner.",
+        "href": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isAnimatedStyleActive": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
         "isDisabled": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -4344,6 +4510,7 @@
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "startIcon": "An element drawn before the label, on the inline-start side: an icon name or any icon element.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+        "target": "The browsing context of the link (`_blank`); read only with `href`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The value associated with the button's name when it's submitted with the form data.",
@@ -5473,6 +5640,7 @@
           "formMethod": "Indicates the HTTP method used to submit the form.",
           "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
           "formTarget": "Overrides the target attribute of the button's form owner.",
+          "href": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
           "icon": "The icon the button shows: an icon name or any icon element.",
           "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
           "isDisabled": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -5502,6 +5670,7 @@
           "size": "The height, padding and text size. Defaults to `md`.",
           "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
           "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "target": "The browsing context of the link (`_blank`); read only with `href`.",
           "type": "The behavior of the button when used in an HTML form.",
           "value": "The value associated with the button's name when it's submitted with the form data.",
           "variant": "The emphasis and colour of the button. Defaults to `primary`."

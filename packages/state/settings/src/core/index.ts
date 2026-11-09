@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `.` entry of @stackra/settings (the `Settings` kind, `@Setting`, `AccountSettings`, the scope, type
- *          and mode enums, the reader, the floor-aware resolver and the pack service, the memory drivers, the settings
- *          `Promotable` driver, the pack schemas and YAML helpers, the refusals and the generated-key helpers) until
- *          `stackra gen` writes the entry barrels (STA-339).
+ * Purpose: Stand-in barrel: the `.` entry of @stackra/settings (the `Settings` kind, `@Setting`, `AccountSettings`,
+ *          `RateLimitSettings`, `IdempotencySettings`, `VersioningSettings` (with their source drivers), the scope, type and mode enums, the reader, the floor-aware resolver and the pack
+ *          service, the memory drivers, the settings `Promotable` and rate-limit cap drivers, the pack schemas and YAML
+ *          helpers, the refusals and the generated-key helpers) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports and their types are the `./contracts` entry's and are
  *           not re-exported here (one symbol, one entry). The layer, lock, floor, path, value and key-derivation
  *           functions and the key registry stay internal. The schemas are re-exported under their generated names
@@ -23,14 +23,19 @@ export { MemorySettingRevisionStoreDriver } from "#core/drivers/memory-setting-r
 export { MemorySettingValueStoreDriver } from "#core/drivers/memory-setting-value-store.driver";
 export { SettingsApprovalSourceDriver } from "#core/drivers/settings-approval-source.driver";
 export { SettingsPromotableDriver } from "#core/drivers/settings-promotable.driver";
+export { SettingsIdempotencyRetentionSourceDriver } from "#core/drivers/settings-idempotency-retention-source.driver";
+export { SettingsRateLimitCapSourceDriver } from "#core/drivers/settings-rate-limit-cap-source.driver";
+export { SettingsVersionSupportSourceDriver } from "#core/drivers/settings-version-support-source.driver";
 export { SettingScope } from "#core/enums/setting-scope.enum";
 export { SettingType } from "#core/enums/setting-type.enum";
 export { SettingsMode } from "#core/enums/settings-mode.enum";
 export { PromotionBaseStaleError } from "#core/errors/promotion-base-stale.error";
 export { PromotionReleaseTooOldError } from "#core/errors/promotion-release-too-old.error";
+export { SettingApproverRoleError } from "#core/errors/setting-approver-role.error";
 export { SettingBelowFloorError } from "#core/errors/setting-below-floor.error";
 export { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
 export { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
+export { SettingScopeRefusedError } from "#core/errors/setting-scope-refused.error";
 export { SettingValueInvalidError } from "#core/errors/setting-value-invalid.error";
 export { SettingsLockedError } from "#core/errors/settings-locked.error";
 export { diffSettingsPacks } from "#core/functions/diff-settings-packs.function";
@@ -41,10 +46,14 @@ export { settingsPackFromYaml } from "#core/functions/settings-pack-from-yaml.fu
 export { settingsPackToYaml } from "#core/functions/settings-pack-to-yaml.function";
 export { settingsPage } from "#core/functions/settings-page.function";
 export { visibleSettingFields } from "#core/functions/visible-setting-fields.function";
+export { IdempotencySettings } from "#core/idempotency.settings";
+export { RateLimitSettings } from "#core/rate-limit.settings";
 export { SettingsPackService } from "#core/services/settings-pack.service";
 export { SettingsReader } from "#core/services/settings-reader.service";
 export { SettingsResolver } from "#core/services/settings-resolver.service";
+export { VersioningSettings } from "#core/versioning.settings";
 export type { ResolvedSetting } from "#core/types/resolved-setting.type";
+export type { SettingApproval } from "#core/types/setting-approval.type";
 export type { SettingChangeSet } from "#core/types/setting-change-set.type";
 export type { SettingKey } from "#core/types/setting-key.type";
 export type { SettingKeyInput } from "#core/types/setting-key-input.type";

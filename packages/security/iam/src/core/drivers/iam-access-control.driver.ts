@@ -17,71 +17,19 @@
  *                     ADR 0132 (as amended by 0294 and 0263); ADR 0208 (decision 3); ADR 0327 (decision 7).
  */
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
-import { type AnyClass, Driver, kindOf } from "@stackra/container";
-import { type Actor, ActorKind, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
+import { Driver } from "@stackra/container";
+import { ActorKind, actingScopeId, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { RuleFacts } from "@stackra/rules";
 import type { ScopeTree } from "@stackra/scope/contracts";
 
-import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
 import { Decision } from "#core/enums/decision.enum";
+import { decidePolicy } from "#core/functions/decide-policy.function";
+import { isAnonymousCall } from "#core/functions/is-anonymous-call.function";
+import { keyCovers } from "#core/functions/key-covers.function";
+import { policyRowOf } from "#core/functions/policy-row-of.function";
+import type { CheckOptions } from "#core/types/check-options.type";
 import type { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
-import type { PolicyRegistration } from "#core/types/policy-registration.type";
-
-/**
- * Whether `call` is an anonymous caller's call of a class that opts into anonymous callers (its `actors` list
- * `ActorKind.Anonymous`): the one call the permission and record-policy steps let through. A signed-in caller of the
- * same class is checked as usual, and a call with no permission (never registered) is refused (STA-2025).
- */
-function isAnonymousCall(call: CallDescriptor): boolean {
-  const actors = kindOf(call.type)?.options["actors"];
-  return (
-    call.actor.kind === ActorKind.Anonymous &&
-    Array.isArray(actors) &&
-    actors.includes(ActorKind.Anonymous)
-  );
-}
-
-/** The three answers a policy method may give. */
-const DECISIONS: ReadonlySet<unknown> = new Set(Enum.values(Decision));
-
-/** The policy row of `record`'s model, walking up its class chain so a subclass model finds its base's policy. */
-function rowOf(record: object): PolicyRegistration | undefined {
-  for (
-    let type: unknown = record.constructor;
-    typeof type === "function" && type !== Function.prototype;
-    type = Object.getPrototypeOf(type)
-  ) {
-    const row = POLICY_REGISTRY.rows.get(type as AnyClass);
-    if (row !== undefined) return row;
-  }
-  return undefined;
-}
-
-/** The answer of the policy method named after the verb of `permission`; `Abstain` when the policy has none. */
-async function decide(
-  row: PolicyRegistration,
-  permission: string,
-  actor: Actor,
-  record: object,
-): Promise<Decision> {
-  const { resolver } = POLICY_REGISTRY;
-  if (resolver === undefined)
-    throw new Error(
-      `${row.policy.name} cannot run: call connectPolicies(container) once the container is booted`,
-    );
-  const policy = resolver.get(row.policy);
-  const method: unknown = Reflect.get(policy, permission.slice(permission.lastIndexOf(".") + 1));
-  if (typeof method !== "function") return Decision.Abstain;
-  const decision: unknown = await (method as (...args: unknown[]) => unknown).call(
-    policy,
-    actor,
-    record,
-  );
-  if (!DECISIONS.has(decision))
-    throw new TypeError(`${row.policy.name} answered ${String(decision)}, not a Decision`);
-  return decision as Decision;
-}
 
 /**
  * Enforces permissions and record rules for the pipeline.
@@ -113,6 +61,13 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    * @throws ForbiddenError when it does not, or when the call's scope node does not exist.
    */
   async require(call: CallDescriptor): Promise<void> {
+    if (call.actor.kind === ActorKind.ApiClient) {
+      if (!keyCovers(call)) throw ForbiddenError.create();
+      const scope = await this.scopeOf(call);
+      if (await this.keyDenied(call, scope === undefined ? {} : { scope }))
+        throw ForbiddenError.create();
+      return;
+    }
     if (call.permission === undefined) throw ForbiddenError.create();
     if (isAnonymousCall(call)) return;
     const scope = await this.scopeOf(call);
@@ -130,8 +85,13 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
     const { permission } = call;
     if (permission === undefined) throw ForbiddenError.create();
     if (isAnonymousCall(call)) return;
-    const row = rowOf(record);
-    if (row !== undefined && (await decide(row, permission, call.actor, record)) === Decision.Deny)
+    const viaKey = call.actor.kind === ActorKind.ApiClient;
+    if (viaKey && !keyCovers(call)) throw ForbiddenError.create();
+    const row = policyRowOf(record);
+    if (
+      row !== undefined &&
+      (await decidePolicy(row, permission, call.actor, record)) === Decision.Deny
+    )
       throw ForbiddenError.create();
     const scope = await this.scopeOf(call);
     const facts =
@@ -139,7 +99,26 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
         ? null
         : { rules: row.rules, facts: { record: record as RuleFacts[string] } };
     const options = scope === undefined ? { record: facts } : { scope, record: facts };
+    // an API key's grants are its scopes (checked above); its tenant's deny rules still bind it, against the record
+    if (viaKey) {
+      if (await this.keyDenied(call, options)) throw ForbiddenError.create();
+      return;
+    }
     if (!(await this.pdp.check(call.actor, permission, options))) throw ForbiddenError.create();
+  }
+
+  /**
+   * Whether a deny rule refuses an `api_client` call: the operation's permission or any scope its key had to cover.
+   */
+  private async keyDenied(call: CallDescriptor, options: CheckOptions): Promise<boolean> {
+    const keys = new Set([
+      ...(call.permission === undefined ? [] : [call.permission]),
+      ...(call.public?.scopes ?? []),
+    ]);
+    for (const key of keys)
+      // oxlint-disable-next-line no-await-in-loop -- reason: the snapshot is read once per key; a call names one or two
+      if (await this.pdp.denied(call.actor, key, options)) return true;
+    return false;
   }
 
   /**
@@ -148,7 +127,7 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    */
   private async scopeOf(call: CallDescriptor): Promise<ScopeRef | undefined> {
     if (call.scope !== undefined) return call.scope;
-    const id = call.actor.scopeId;
+    const id = actingScopeId(call.actor);
     if (id === undefined) return undefined;
     const node = await this.tree.node(id as PublicId<"scp">);
     if (node === undefined) throw ForbiddenError.create();

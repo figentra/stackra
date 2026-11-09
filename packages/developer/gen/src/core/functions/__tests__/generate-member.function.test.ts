@@ -7,7 +7,8 @@
  *          of a package (no openapi, entry barrels), no file at all when discovery, the manifest or the identity lock
  *          refuses, and `@Renamed` accepted by the lock. A generated search query gets its manifest entry (with the
  *          package input and output schemas), endpoint, tool and wiring binding like an authored query, and no
- *          empty `X$` in the schemas file (STA-1459). Every full run ends with the member graph (ADR 0452).
+ *          empty `X$` in the schemas file (STA-1459). Every full run ends with the member graph (ADR 0452). A warning
+ *          never stops writing and comes back in `warnings`, beside a refusal too (STA-340).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
@@ -41,6 +42,24 @@ const packageWithModels = (...modules: string[]) => ({
 });
 
 describe("generateMember", () => {
+  it("warns on a staged check in 0.19, and refuses it when run strict (STA-2096, STA-340)", () => {
+    const permissions = COMMERCE_IR.classes.find((item) => item.name === "OrderPermissions");
+    if (permissions === undefined) throw new Error("the fixture has no OrderPermissions");
+    const ir = {
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes.filter((item) => item.name !== permissions.name),
+        { ...permissions, statics: { ...permissions.statics, cancel: "Permission.L1" } },
+      ],
+    };
+    const staged = generateMember(ir);
+    expect(staged.errors.map((error) => error.code)).not.toContain("action_risk_below_write");
+    expect(staged.warnings?.map((warning) => warning.code)).toContain("action_risk_below_write");
+    expect(staged.files.length).toBeGreaterThan(0);
+    const strict = generateMember(ir, undefined, { strict: true });
+    expect(strict.errors.map((error) => error.code)).toContain("action_risk_below_write");
+  });
+
   it("writes every file of a service", () => {
     const { files, errors, manifest } = generateMember(COMMERCE_IR);
     expect(errors).toEqual([]);
@@ -55,6 +74,8 @@ describe("generateMember", () => {
       ".stackra/gen/boot.ts",
       ".stackra/gen/encore-sqldb.d.ts",
       ".stackra/gen/prefixes.ts",
+      ".stackra/encore/commerce/encore.service.ts",
+      ".stackra/encore/commerce/api.ts",
       ".stackra/encore/commerce/database.ts",
       ".stackra/encore/commerce/events.ts",
       ".stackra/entry/server.ts",
@@ -88,6 +109,8 @@ describe("generateMember", () => {
       ".stackra/gen/prefixes.ts",
       ".stackra/gen/queues.ts",
       ".stackra/gen/search.ts",
+      ".stackra/encore/billing/encore.service.ts",
+      ".stackra/encore/billing/api.ts",
       ".stackra/encore/billing/cron.ts",
       ".stackra/encore/billing/database.ts",
       ".stackra/encore/billing/queues.ts",
@@ -117,7 +140,7 @@ describe("generateMember", () => {
       file: ".stackra/gen/search.ts",
       permission: "billing.invoice.read",
       actors: ["user", "agent", "service"],
-      endpoint: { method: "GET", path: "/invoices/search", derived: true },
+      endpoint: { method: "GET", path: "/app/invoices/search", derived: true },
     });
     expect(entry?.["tool"]).toBeDefined();
     // Its input and output are the package shapes, described under the module, so the tool and clients see `q`.
@@ -209,6 +232,20 @@ describe("generateMember", () => {
       files: [],
       errors: [{ code: "shape_number_kind" }],
     });
+  });
+
+  it("writes every file beside a warning, returns it in `warnings`, and keeps it beside a refusal (STA-340)", () => {
+    const finding = { file: "x.ts", line: 0, column: 0, subject: "X", message: "m", fix: "f" };
+    const warning = { ...finding, code: "action_without_workflow", severity: "warning" as const };
+    const refusal = { ...finding, code: "shape_number_kind" };
+    const warned = generateMember({ ...COMMERCE_IR, errors: [warning] });
+    expect(warned.errors).toEqual([]);
+    expect(warned.warnings).toEqual([warning]);
+    expect(warned.files.map((file) => file.path)).toEqual(
+      generateMember(COMMERCE_IR).files.map((file) => file.path),
+    );
+    const refused = generateMember({ ...COMMERCE_IR, errors: [warning, refusal] });
+    expect(refused).toMatchObject({ files: [], errors: [refusal], warnings: [warning] });
   });
 
   it("locks identities against the committed manifest unless renamed", () => {

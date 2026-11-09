@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `TenantScopeMismatchError`, the refusal of a call whose actor acts in one tenant and whose scope belongs to
- *          another (`tenant_scope_mismatch`): neither tenant is picked.
+ *          another, or whose several granted scopes span tenants (`tenant_scope_mismatch`): neither tenant is picked.
  * Boundary: raised by `CallIsolationDriver` before the isolation transaction opens, for an actor that is not a job or
  *           system actor (those take the tenant of their platform-written scope). Kind `Forbidden` (HTTP 403), not
  *           retryable. It carries no details, never a tenant id.

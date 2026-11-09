@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `readIntegrationOptions` for `baseUrl`: a literal http(s) URL and an https template are
  *          accepted, a single `{field}` that is the whole URL is accepted, and an http template is refused; a written
- *          `key` of two snake_case parts is kept, any other is refused (STA-1739).
+ *          `key` of two snake_case parts is kept, any other is refused (STA-1739); Basic auth needs a user name and
+ *          takes an empty password (RFC 7617).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0308 (rule 6); STA-1665.
@@ -60,4 +61,30 @@ describe("readIntegrationOptions key (STA-1739)", () => {
       expect(() => keyed(key)).toThrow(/key/);
     },
   );
+});
+
+const basic = (username: string, password: string) =>
+  readIntegrationOptions({
+    provider: "medusa",
+    category: IntegrationCategory.Other,
+    levels: [],
+    auth: { type: AuthType.Basic, username, password },
+  });
+
+describe("readIntegrationOptions Basic auth (RFC 7617)", () => {
+  it("accepts a user name with a password", () => {
+    expect(basic("{accountSid}", "{authToken}").auth).toEqual({
+      type: AuthType.Basic,
+      username: "{accountSid}",
+      password: "{authToken}",
+    });
+  });
+
+  it("accepts an empty password, for a provider whose key is the whole credential", () => {
+    expect(basic("{apiKey}", "").auth).toMatchObject({ username: "{apiKey}", password: "" });
+  });
+
+  it("refuses an empty user name", () => {
+    expect(() => basic("", "{authToken}")).toThrow(/Basic needs a username/);
+  });
 });

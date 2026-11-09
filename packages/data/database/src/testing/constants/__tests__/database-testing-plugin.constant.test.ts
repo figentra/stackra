@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DATABASE_TESTING_PLUGIN`: `.seed(...)` runs each seeder in its own transaction when the
- *          module compiles, a wired seeder with its injected service (STA-1698), `app.transaction(work)` runs work in a transaction of the connected database, a compile
+ *          module compiles, a wired seeder with its injected service (STA-1698), an unbound one with the tokens the test
+ *          setup registered, `app.transaction(work)` runs work in a transaction of the connected database, a compile
  *          with no database connects a fresh memory one (replacing the one an earlier module left, keeping any other),
  *          and `app.repository(Model)` hands out the model's repository; and every compile connects the app as the
  *          reads' visibility resolver (STA-2044), so on PGlite a read inside a call returns only the rows the bound
@@ -24,6 +25,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { CrudService } from "#core/bases/crud-service.base";
 import { Seeder } from "#core/bases/seeder.base";
+import { registerSeederDeps } from "#testing/functions/register-seeder-deps.function";
 import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
 import type { Where } from "#contracts/types/where.type";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
@@ -96,6 +98,20 @@ class GreetingSeeder extends Seeder {
     await Promise.resolve();
   }
 }
+
+/** A seeder no wiring binds; the generated test setup registers its constructor's tokens. */
+class UnboundGreetingSeeder extends Seeder {
+  constructor(private readonly greeter: Greeter) {
+    super();
+  }
+
+  async run(): Promise<void> {
+    seeded.push(`unbound:${this.greeter.greet()}`);
+    await Promise.resolve();
+  }
+}
+
+registerSeederDeps([[UnboundGreetingSeeder, [Greeter]]]);
 
 class WiredModule extends Module {}
 
@@ -194,6 +210,13 @@ describe("DATABASE_TESTING_PLUGIN", () => {
     ACTIVE_DATABASE.current = new CountingDatabase();
     await createTestingModule(WiredModule).seed(GreetingSeeder).compile();
     expect(seeded).toEqual(["hello"]);
+  });
+
+  it("builds an unbound seeder with the tokens the test setup registered", async () => {
+    seeded.length = 0;
+    ACTIVE_DATABASE.current = new CountingDatabase();
+    await createTestingModule(WiredModule).seed(UnboundGreetingSeeder).compile();
+    expect(seeded).toEqual(["unbound:hello"]);
   });
 
   it("connects a fresh memory database per module and keeps one connected another way", async () => {

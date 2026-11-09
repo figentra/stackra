@@ -4,12 +4,13 @@
  *          one, lists a holder's revisions of a group newest first, answers the due scheduled ones, and moves a
  *          revision's state.
  * Boundary: a `CrudService<StoredSettingRevision>`, so every read and write runs in the caller's transaction. A list
- *           names its holder exactly (the node's id, the user, or neither for the root); no read is ever widened by
- *           request input.
+ *           names its holder exactly (the node's id, the user in the session's own tenant, or neither for the root);
+ *           no read is ever widened by request input. `dueAt` reads in the caller's session: across tenants the due
+ *           revisions are claimed through `settings.claim_due_revisions` (no runtime caller yet).
  * Runtime: node
  * Governing contract: ADR 0213 (decision 5); ADR 0327 (decisions 3 and 9); ADR 0105 as amended by ADR 0294.
  */
-import { CrudService } from "@stackra/database";
+import { CrudService, sql } from "@stackra/database";
 
 import { SettingRevisionStatus } from "#contracts/index";
 import type { SettingRevision, SettingTarget } from "#contracts/index";
@@ -48,6 +49,7 @@ export class StoredSettingRevisionService extends CrudService<StoredSettingRevis
       status: revision.status,
       effectiveAt: new Date(revision.effectiveAt),
       decidedBy: revision.decidedBy,
+      approvalRole: revision.approvalRole ?? null,
       appliedAt: revision.appliedAt === null ? null : new Date(revision.appliedAt),
     });
   }
@@ -55,7 +57,12 @@ export class StoredSettingRevisionService extends CrudService<StoredSettingRevis
   /** The revisions of `group` at exactly `target`'s holder, newest first. */
   async listOf(group: string, target: SettingTarget): Promise<StoredSettingRevision[]> {
     const { scopeId, userId } = holderOf(target);
-    return this.find({ groupKey: group, scopeId, userId }, { orderBy: { createdAt: "desc" } });
+    // raw-sql: a user's revisions are kept per tenant, so the list names the session's own owner; unmapped column
+    const own = sql`tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')`;
+    return this.find(
+      { groupKey: group, scopeId, userId, ...(userId === null ? {} : { $raw: own }) },
+      { orderBy: { createdAt: "desc" } },
+    );
   }
 
   /** The scheduled revisions due at `at`, oldest first. */

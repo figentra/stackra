@@ -20,4 +20,7 @@ export type ToolRun = {
 
   /** Variables added to the inherited environment (`STACKRA_DEV_SURFACE` for a local shell). */
   readonly env?: Readonly<Record<string, string>>;
+
+  /** How long it may run before it is stopped and answers 124; no limit when omitted. */
+  readonly timeoutMs?: number;
 };

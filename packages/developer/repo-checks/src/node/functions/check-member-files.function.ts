@@ -32,13 +32,18 @@ export function checkMemberFiles(member: {
   const { dir, pkg, files, agents, licenseText, rootLicense, stackra = true } = member;
   const out: string[] = [];
   // ADR 0195 decision 7: @stackra/* is MIT with a LICENSE; @figentra/* apps and services are UNLICENSED with none.
-  const unlicensed = ["tier:app", "tier:service"].includes(tierFor(dir) ?? "");
+  // A docs package (ADR 0514 decision 10) is a product's own content, licensed like its apps.
+  const unlicensed =
+    ["tier:app", "tier:service"].includes(tierFor(dir) ?? "") || pkg.stackra?.kind === "docs";
   for (const f of ["README.md", "AGENTS.md", "CHANGELOG.md", ...(unlicensed ? [] : ["LICENSE"])])
     if (!files.includes(f)) out.push(`${f} missing`);
   if (files.includes("AGENTS.md") && !/^## PII/m.test(agents ?? ""))
     out.push('AGENTS.md has no "## PII" section');
   if (unlicensed && files.includes("LICENSE")) out.push("LICENSE must not exist (ADR 0195)");
-  if (!unlicensed && files.includes("LICENSE") && licenseText !== rootLicense)
+  // An @figentra-oss/* member (a public SDK or widget inside a private product repository) carries its own open-source
+  // LICENSE: the registry's @figentra-oss scope refuses the commercial licence (0005_figentra_oss.sql).
+  const ownLicence = pkg.name?.startsWith("@figentra-oss/") === true;
+  if (!unlicensed && !ownLicence && files.includes("LICENSE") && licenseText !== rootLicense)
     out.push("LICENSE differs from the root LICENSE");
   if (!pkg.description?.trim()) out.push("package.json has no description");
   if (!stackra) return out;

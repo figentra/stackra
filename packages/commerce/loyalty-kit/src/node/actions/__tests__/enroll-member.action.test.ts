@@ -48,7 +48,7 @@ describe("EnrollMemberAction", () => {
       key: "account.enroll",
       permission: LoyaltyAccountPermissions.enroll,
       actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
-      endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId" },
+      endpoint: { method: HttpMethod.Put, path: "/app/loyalty/accounts/:accountId" },
       tool: true,
       intent: true,
     });

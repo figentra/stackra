@@ -19,13 +19,17 @@ import type { RootRunway, RunwayIssue } from "@stackra/runway";
 
 import { ZONE_OPTIONS_SCHEMA } from "#core/constants/zone-options-schema.constant";
 import { CloudflareConfigInvalidError } from "#core/errors/cloudflare-config-invalid.error";
+import { edgeRoutes } from "#core/functions/edge-routes.function";
 import { parseEdge } from "#core/functions/parse-edge.function";
 import { tunnelIngress } from "#core/functions/tunnel-ingress.function";
 import { workersCacheNamespaces } from "#core/functions/workers-cache-namespaces.function";
 import { zoneOf } from "#core/functions/zone-of.function";
+import type { ZonePlan } from "#core/enums/zone-plan.enum";
+import type { ZonePolicy } from "#core/enums/zone-policy.enum";
 import type { CloudflareStack } from "#core/types/cloudflare-stack.type";
 import type { StorefrontPolicy } from "#core/types/storefront-policy.type";
 import { accessGate } from "#node/functions/access-gate.function";
+import { workerAccess } from "#node/functions/worker-access.function";
 import { cloudflareZone } from "#node/functions/cloudflare-zone.function";
 import { devTunnel } from "#node/functions/dev-tunnel.function";
 import { edgeWorker } from "#node/functions/edge-worker.function";
@@ -65,6 +69,7 @@ export function cloudflareCoreStack(args: {
   >;
   tunnels: Record<string, ReturnType<typeof devTunnel>>;
   access: ReturnType<typeof accessGate> | undefined;
+  internalTools: ReturnType<typeof workerAccess> | undefined;
   buckets: Record<string, ReturnType<typeof r2Bucket>>;
   edgeWorker: ReturnType<typeof edgeWorker> | undefined;
   caches: Record<string, cloudflare.WorkersKvNamespace>;
@@ -100,12 +105,13 @@ export function cloudflareCoreStack(args: {
           message: `${campaign.host} is not under ${zone}`,
         });
   }
-  for (const zone of Object.keys(stack.edgeWorker?.routes ?? {}))
-    if (!(zone in runwayZones))
-      issues.push({
-        path: `edgeWorker.routes.${zone}`,
-        message: `${zone} is not a zone the root runway names`,
-      });
+  for (const key of ["routes", "exclusions"] as const)
+    for (const zone of Object.keys(stack.edgeWorker?.[key] ?? {}))
+      if (!(zone in runwayZones))
+        issues.push({
+          path: `edgeWorker.${key}.${zone}`,
+          message: `${zone} is not a zone the root runway names`,
+        });
   for (const [region, origin] of Object.entries(stack.edgeWorker?.origins ?? {}))
     if (zoneOf(origin.hostname, Object.keys(runwayZones)) === undefined)
       issues.push({
@@ -118,7 +124,16 @@ export function cloudflareCoreStack(args: {
   const accountId = resolveRef(provider.accountId, "providers.cloudflare.accountId");
   const edge = parseEdge(root);
   const zones = Object.fromEntries(
-    Object.entries(runwayZones).map(([name, id]) => {
+    Object.entries(runwayZones).map(([name, entry]) => {
+      const {
+        id,
+        plan,
+        policy: zonePolicy,
+      }: {
+        id: typeof entry;
+        plan?: ZonePlan | undefined;
+        policy?: ZonePolicy | undefined;
+      } = typeof entry === "object" ? entry : { id: entry };
       const options = stack.zones[name] ?? ZONE_OPTIONS_SCHEMA.parse({});
       const zoneId = resolveRef(id, `providers.cloudflare.zones.${name}`);
       const zone = cloudflareZone({ accountId, name, zoneId, options, proxy: edge.proxy });
@@ -131,9 +146,10 @@ export function cloudflareCoreStack(args: {
         ? zoneEdge({
             name,
             zoneId: zone.zone.id,
-            plan: options.plan,
+            plan: plan ?? options.plan,
             edge,
             shopperRules: shop?.rules,
+            policy: zonePolicy,
           })
         : undefined;
       return [name, { ...zone, edge: edgeResources, storefront: shop?.rooms }] as const;
@@ -176,6 +192,23 @@ export function cloudflareCoreStack(args: {
           ),
           access: stack.access,
         });
+  const identityProviderId =
+    stack.access === undefined
+      ? undefined
+      : resolveRef(stack.access.identityProviderId, "access.identityProviderId");
+  const internalTools =
+    stack.access === undefined ||
+    stack.internalTools === undefined ||
+    identityProviderId === undefined
+      ? undefined
+      : workerAccess({
+          accountId,
+          project: root.project,
+          identityProviderId,
+          access: stack.access,
+          workersDevSubdomain: stack.internalTools.workersDevSubdomain,
+          members: stack.internalTools.members,
+        });
   const buckets = Object.fromEntries(
     Object.entries(stack.buckets).map(
       ([name, bucket]) =>
@@ -191,7 +224,11 @@ export function cloudflareCoreStack(args: {
           zoneIds: Object.fromEntries(
             Object.entries(zones).map(([name, zone]) => [name, zone.zone.id]),
           ),
-          worker: stack.edgeWorker,
+          // The host map generates a route per surface host; the stack's own patterns stay (STA-267).
+          worker: {
+            ...stack.edgeWorker,
+            routes: edgeRoutes(root, stack.edgeWorker.routes, Object.keys(runwayZones)),
+          },
         });
   const caches = Object.fromEntries(
     Object.entries(workersCacheNamespaces(root)).map(
@@ -202,5 +239,13 @@ export function cloudflareCoreStack(args: {
         ] as const,
     ),
   );
-  return { zones, tunnels, access, buckets, edgeWorker: edgeWorkerResources, caches };
+  return {
+    zones,
+    tunnels,
+    access,
+    internalTools,
+    buckets,
+    edgeWorker: edgeWorkerResources,
+    caches,
+  };
 }

@@ -31,7 +31,7 @@ export interface MemberFacts {
   /** `app` when `stackra.config.ts` calls `defineApp`. */
   readonly kind?: "app";
 
-  /** The `area` of `defineApp`. */
+  /** The `area` of `defineApp` (the area it calls) or `defineService` (its endpoints' default area). */
   readonly area?: string;
 
   /** The `targets` of `defineApp`. */
@@ -45,4 +45,7 @@ export interface MemberFacts {
    * whose lang catalogues reach the runtime, so the only ones `#stackra/i18n` merges and loads (STA-1309).
    */
   readonly runtimeDependencies?: readonly string[];
+
+  /** The version specifier of the member's first `@stackra/*` dependency (`workspace:*`, `catalog:stackra`), if any. */
+  readonly stackraSpecifier?: string;
 }

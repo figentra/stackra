@@ -6,5 +6,5 @@
  * Governing contract: ADR 0500 (decision 3); STA-1813.
  */
 
-/** Thirty days. */
+/** The most days an allow-list entry's `expires` may fall after its `added`. */
 export const CONSUMER_GATE_MAX_ALLOW_DAYS = 30;

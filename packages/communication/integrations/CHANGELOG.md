@@ -1,5 +1,570 @@
 # @stackra/integrations
 
+## 0.29.0
+
+### Minor Changes
+
+- 4cc17e5: `IntegrationCategory.Tax` (`tax`): the marketplace shelf for tax authorities, e-invoicing clearance and reporting
+  networks and tax engines, so Invoicing & Tax finds a fiscal unit's Connection with `connectionsOf` (ADR 0447 as
+  amended, STA-2607).
+- 1b88340: `webhooks.eventId` can name several parts, `{ parts: [{ path }, { header }] }`, joined with `:` into one inbox id, for a provider whose events carry no unique id of their own (an order id plus its state plus the delivery timestamp). The receiver refuses an event whose named part is missing with `WebhookEventIdMissingError` instead of keying it by an empty id, which would have deduplicated every such event as one; this applies to the single `{ path }` form too.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [0e8f570]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/clients@0.29.0
+  - @stackra/money@0.29.0
+  - @stackra/data-transfer@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/market-packs@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/clients@0.28.0
+  - @stackra/data-transfer@0.28.0
+  - @stackra/money@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/market-packs@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Minor Changes
+
+- df74e1d: The managed client gains `api.send({ method, path, headers, body, idempotencyKey, signal })`, which answers
+  `{ status, headers, body }` as the provider sent it, at every status, for a caller that must read a refusal's body (a
+  fiscal authority's validation result). Auth, the egress rule (the path stays under the Integration's `baseUrl`), rate
+  limits and the transient retries are those of the typed calls; once retries are spent the last answer is returned, and
+  `ProviderUnavailableError` is thrown only when nothing came back. `fakeIntegrationApi` answers `send` from its routes
+  (STA-2607).
+
+### Patch Changes
+
+- 7d284f2: `WebhookReceiver` parses a verified body by its recipe's `bodyFormat`: `json` (the default) as before, or `form`, an
+  `application/x-www-form-urlencoded` body read into percent-decoded string values, which route the event
+  (`eventType.path`), key it (`eventId.path`) and create it. A verified form-encoded delivery no longer throws a
+  `SyntaxError` before routing. `WebhookSchemeRecipe.bodyFormat` now documents that it governs both the verifier and the
+  receiver.
+- Updated dependencies [8a70552]
+  - @stackra/data-transfer@0.27.0
+  - @stackra/clients@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/money@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/market-packs@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Minor Changes
+
+- ceceef3: A managed client call can send a raw body with its own media type (`RequestOptions.body: { content, contentType }`,
+  a SOAP envelope) and read the answer as text (`text: true`); auth, retries, rate limits and the egress rule are
+  unchanged, and `fakeIntegrationApi` hands the raw body to the route as its text (STA-2617).
+
+### Patch Changes
+
+- 031a1f7: `keyed_field_digest` takes four optional recipe fields, each defaulting to today's behaviour so existing recipes are
+  unchanged: `secretAt: "start" | "end"` (default `end`), `separator` (default nothing), `algorithm` now also `SHA-1`,
+  and `bodyFormat: "json" | "form"` (default `json`), where a form body is read as
+  `application/x-www-form-urlencoded` with its values percent-decoded. A missing value is an empty string.
+  `WebhookSchemeRecipe` gains the fields.
+- 9d0dd67: A new `labelled_field_hmac` signature scheme: a hex HMAC (SHA-256 or SHA-512) over each label followed by its body
+  field's value, in order, carried in a header or a query parameter and compared in constant time
+  (`verifyLabelledFieldHmac`). The recipe names the fields as `labelledFields: [{ label, path }]` and may set
+  `currencyDecimals: { path, currencyPath }`, which writes that amount with the minor-unit decimals of the ISO 4217
+  currency at `currencyPath` from `@stackra/money`'s table (3 for KWD, BHD and OMR, 0 for JPY). A missing field, or an
+  amount the currency cannot hold, does not verify. `WebhookSchemeRecipe` gains both fields.
+- Updated dependencies [9cee75d]
+  - @stackra/actions@0.26.0
+  - @stackra/clients@0.26.0
+  - @stackra/data-transfer@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/market-packs@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/data-transfer@0.25.0
+  - @stackra/clients@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/money@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/market-packs@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+  - @stackra/actions@0.24.0
+  - @stackra/clients@0.24.0
+  - @stackra/data-transfer@0.24.0
+  - @stackra/money@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/market-packs@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- d002763: `./testing` adds `liveConnection(ConnectionClass, { integration, fields, secrets })`: a connection whose `api` is the
+  real managed client (the Integration's auth, base URL, headers, retry and rate limits over memory stores and the system
+  clock), so a connector certification suite in a product can run a connector against a provider sandbox without a
+  service or a ConnectionStore.
+
+### Patch Changes
+
+- c0237a4: A provider's error code no longer carries a credential into `ProviderRefusedError`. The managed client and
+  `requestToken` replace a code that equals or contains a value the call sent with `"[redacted]"`. For the managed client
+  that means a connection's or an Integration's `@Secret` value, a placeholder value filled into the auth, the Basic
+  credential, the signed JWT or the OAuth bearer; for `requestToken`, the client secret or a grant's code, verifier, refresh
+  token or assertion. `providerCodeOf` now takes only letters, digits, `_`, `.` and `-`, at most 64 characters.
+- 1d76993: `RegionMapProviderDefaultsDriver` is `internal`: `SpeechService` builds it, so a host's `ProviderDefaults` has one
+  candidate, the market-pack driver. With two and no config to choose, a host that reached the port failed at boot with
+  `UnresolvedPortError` (Commerce channels).
+- Updated dependencies [a42a80c]
+  - @stackra/clients@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/data-transfer@0.23.0
+  - @stackra/money@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- 41f3da5: `Integration({ auth: { type: AuthType.Basic } })` takes an empty password, as RFC 7617 allows: a provider whose API key is
+  the whole credential (Medusa, Stripe) sends `key:`. A user name is still required.
+- ae24e3c: `RequestOptions.bytes`: a managed client call can read the answer as raw bytes (a `Uint8Array`) instead of parsing it
+  as JSON, for a provider that returns a label PDF or an image. The call asks for any media type unless it sets
+  `accept`. A refusal's body is still read for the provider's code.
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/clients@0.22.0
+  - @stackra/data-transfer@0.22.0
+  - @stackra/money@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/market-packs@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/clients@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/data-transfer@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/market-packs@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/clients@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/data-transfer@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- cb26737: Secrets now come from SOPS files keyed by Google Cloud KMS, not Infisical (ADR 0525). `@stackra/config` no longer
+  ships the Infisical secret store: `InfisicalSecretStoreDriver`, `InfisicalConfig`, `InfisicalConfig$` and
+  `InfisicalOptions` are removed, with the `infisical` candidate of the `SecretStore` port and the
+  `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` env rows. The `SecretStore` candidates are now `memory` and
+  `aws_secrets_manager`; a deployed runtime still reads the platform's own store through `envSecrets`. Re-run
+  `stackra gen` after upgrading so a committed `stackra.manifest.json` drops the `infisical` candidate. The other
+  packages only update comments and docs that named Infisical as the runtime store.
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/clients@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/data-transfer@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/market-packs@0.19.0
+  - @stackra/validation@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/clients@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/money@0.18.1
+  - @stackra/data-transfer@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/market-packs@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/clients@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/money@0.18.0
+  - @stackra/data-transfer@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/market-packs@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/clients@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/money@0.17.2
+  - @stackra/data-transfer@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/market-packs@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- Updated dependencies [0b917cf]
+  - @stackra/market-packs@0.17.1
+  - @stackra/clients@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/money@0.17.1
+  - @stackra/data-transfer@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/clients@0.17.0
+  - @stackra/money@0.17.0
+  - @stackra/data-transfer@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/market-packs@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/clients@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/market-packs@0.16.0
+  - @stackra/data-transfer@0.16.0
+  - @stackra/money@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/data-transfer@0.15.0
+  - @stackra/clients@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/money@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/market-packs@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/clients@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/money@0.14.4
+  - @stackra/data-transfer@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/market-packs@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/clients@0.14.3
+  - @stackra/money@0.14.3
+  - @stackra/data-transfer@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/market-packs@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/clients@0.14.2
+  - @stackra/money@0.14.2
+  - @stackra/data-transfer@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/market-packs@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/clients@0.14.1
+  - @stackra/money@0.14.1
+  - @stackra/data-transfer@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/market-packs@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/clients@0.14.0
+  - @stackra/money@0.14.0
+  - @stackra/data-transfer@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/market-packs@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/clients@0.13.0
+  - @stackra/money@0.13.0
+  - @stackra/data-transfer@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/market-packs@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/clients@0.12.0
+  - @stackra/money@0.12.0
+  - @stackra/data-transfer@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/market-packs@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/clients@0.11.1
+  - @stackra/money@0.11.1
+  - @stackra/data-transfer@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/market-packs@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/clients@0.11.0
+  - @stackra/money@0.11.0
+  - @stackra/data-transfer@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/market-packs@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/clients@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/market-packs@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/data-transfer@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [681d01a]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/clients@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/market-packs@0.9.0
+  - @stackra/money@0.9.0
+  - @stackra/data-transfer@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

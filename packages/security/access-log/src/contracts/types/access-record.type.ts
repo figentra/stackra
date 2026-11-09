@@ -7,7 +7,7 @@
  * Governing contract: ADR 0212 (decision 5); ADR 0134 (classification); ADR 0098 (the actor chain); ADR 0294
  *                     (decision 15).
  */
-import type { Actor, DataClassification } from "@stackra/contracts";
+import type { Actor, DataClassification, PublicId } from "@stackra/contracts";
 
 /** One access to classified data. */
 export interface AccessRecord {
@@ -16,6 +16,12 @@ export interface AccessRecord {
 
   /** The full actor with its `onBehalfOf` chain. */
   readonly actor: Actor;
+
+  /**
+   * The tenant the call runs in (its `ctx.scopeId`: a branch user's parent tenant), which the record is stored and
+   * sent under; absent when the caller named none, and then the actor's own claim (`actingScopeId`) is used.
+   */
+  readonly scopeId?: PublicId;
 
   /** `<Class>.<method>` that was called. */
   readonly target: string;

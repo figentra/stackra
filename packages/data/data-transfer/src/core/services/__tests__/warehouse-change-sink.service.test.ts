@@ -8,7 +8,9 @@
  * Governing contract: ADR 0022 (test placement); ADR 0163 and ADR 0190 (2026-10-29 amendments); ADR 0078 and ADR 0221
  *                     (2026-10-28 amendment).
  */
+import { RowIsolationMissingError } from "@stackra/actions";
 import { Driver } from "@stackra/container";
+import type { Container } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 import { MemoryChangeFeedDriver } from "@stackra/outbox";
@@ -22,6 +24,9 @@ import type { WarehouseWriteOptions } from "#contracts/types/warehouse-write-opt
 import { WarehouseChangeSink } from "#core/services/warehouse-change-sink.service";
 
 const NOW = new Date("2026-10-29T12:00:00.000Z");
+
+/** A container that binds no `CallIsolation`: an app without tenancy, whose rows are all the platform's. */
+const NO_ISOLATION = { has: () => false, get: () => undefined } as unknown as Container;
 const ACME: ScopeRef = { id: "scp_acme" as ScopeRef["id"], path: "platform.acme" };
 
 /** A clock fixed at `NOW`. */
@@ -65,7 +70,11 @@ async function setup() {
     { change: change("Order", "ord_2"), meta: {}, occurredAt: NOW, scope: ACME },
   ]);
   const sink = new RecordingSink();
-  return { feed, sink, service: new WarehouseChangeSink(feed, sink, new FixedClock()) };
+  return {
+    feed,
+    sink,
+    service: new WarehouseChangeSink(feed, sink, new FixedClock(), NO_ISOLATION),
+  };
 }
 
 describe(WarehouseChangeSink, () => {
@@ -109,6 +118,38 @@ describe(WarehouseChangeSink, () => {
     await service.replay();
     expect((await service.sync({ models: ["Order"], limit: 1, prefix: "w" })).records).toBe(1);
     expect(sink.calls.at(-1)?.[1]).toEqual({ prefix: "w" });
+  });
+
+  it("loads each owner's entries in its isolation, and refuses an owned entry with no isolation bound", async () => {
+    const { feed, sink } = await setup();
+    const [first] = await feed.claim(undefined, ["Order"], 1);
+    const owned = Object.assign(Object.create(feed) as MemoryChangeFeedDriver, {
+      claim: async () => [{ position: first?.position ?? "", ownerId: "scp_acme" }],
+    });
+    await expect(
+      new WarehouseChangeSink(owned, sink, new FixedClock(), NO_ISOLATION).sync({
+        models: ["Order"],
+        limit: 10,
+        prefix: "w",
+      }),
+    ).rejects.toBeInstanceOf(RowIsolationMissingError);
+    await expect(feed.cursor("WarehouseChangeSink")).resolves.toBeUndefined();
+    const owners: unknown[] = [];
+    const isolation = {
+      run: (actor: { scopeId?: string }, _scope: unknown, work: () => Promise<unknown>) => {
+        owners.push(actor.scopeId);
+        return work();
+      },
+    };
+    // binds only the isolation, the one port the sink asks for
+    const container = { has: () => true, get: () => isolation } as unknown as Container;
+    const report = await new WarehouseChangeSink(owned, sink, new FixedClock(), container).sync({
+      models: ["Order"],
+      limit: 10,
+      prefix: "w",
+    });
+    expect(report.records).toBe(1);
+    expect(owners).toEqual(["scp_acme"]);
   });
 
   it("refuses bad options", async () => {

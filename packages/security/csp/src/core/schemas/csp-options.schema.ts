@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `CspOptions`, the fields of `CspConfig`: the sources a host adds to `connect-src`, `frame-src` and
  *          `img-src`, whether the policy is sent report-only, and the other security headers every response carries
- *          (HSTS, the referrer policy and the features the permissions policy allows).
+ *          (HSTS, the referrer policy and the features the permissions policy allows), and who may frame which path.
  * Boundary: a plain shape class with defaults (no additions, enforcing, HSTS on for two years with subdomains, a strict
  *           referrer policy, every baseline feature off). Additions only: there is no field for `script-src` or
  *           `style-src` (both are nonce-based) or for any fixed directive or header. It registers this package's own
@@ -38,6 +38,26 @@ export class CspOptions extends Schema {
   // reason: a partial record keyed by feature name; the shipped schema checks each source
   @Field(CSP_OPTIONS_SCHEMA.shape.permissionsAllow)
   permissionsAllow: Partial<Record<PermissionsFeature, string[]>> = {};
+
+  /**
+   * Who may frame which path: `self` or https origins (`{ "/preview": ["https://console.pay.example"] }`), or
+   * `"request"` for framers a per-request resolver passes (`{ "/c/*": "request" }`). A key is an exact path or a
+   * `/*` prefix, which matches below the slash only (`/c/*` takes `/c/cs_1`, not `/c`). Every other path, and a
+   * `"request"` path with nothing resolved, stays `frame-ancestors 'none'`. While `reportOnly`, `X-Frame-Options: DENY`
+   * stays on every path, framed ones included, since a report-only policy enforces nothing.
+   */
+  // reason: a record keyed by path whose value is a list or the "request" literal; the shipped schema checks both
+  @Field(CSP_OPTIONS_SCHEMA.shape.frameAncestors)
+  frameAncestors: Record<string, string[] | "request"> = {};
+
+  /**
+   * Third-party script origins, each with the consent category that gates it: `necessary` always loads (a payment
+   * SDK, `{ "https://js.stripe.com": "necessary" }`), any other loads only when the viewer granted that category
+   * (`{ "https://connect.facebook.net": "marketing" }`). Exact https origins only; an unlisted script never loads.
+   */
+  // reason: a record keyed by origin whose value is a consent category code; the shipped schema checks both
+  @Field(CSP_OPTIONS_SCHEMA.shape.thirdPartyScripts)
+  thirdPartyScripts: Record<string, string> = {};
 
   /** `connect-src` additions beyond the origins the runtime passes (the API gateway, realtime). */
   extraConnectSrc: string[] = [];

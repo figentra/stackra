@@ -15,7 +15,7 @@
  */
 import { Service } from "@stackra/container";
 import { DataClassification } from "@stackra/contracts";
-import type { Actor, Clock, Logger } from "@stackra/contracts";
+import type { Actor, Clock, Logger, PublicId } from "@stackra/contracts";
 
 import type { AccessLogConfig } from "#config/access-log.config";
 import type { AccessLogSink } from "#contracts/ports/access-log-sink.port";
@@ -65,6 +65,7 @@ export class AccessLogService extends Service {
    * @param target - `<Class>.<method>` that was called.
    * @param options - the class's `@AccessLogged` options.
    * @param values - the call's arguments, then its result when it returned one.
+   * @param scopeId - the tenant the call runs in (`ctx.scopeId`); absent: the actor's own.
    * @throws AccessLogWriteFailedError when the sink failed and the class fails closed.
    */
   async record(
@@ -73,6 +74,7 @@ export class AccessLogService extends Service {
     target: string,
     options: AccessLoggedOptions,
     values: readonly unknown[],
+    scopeId?: PublicId | undefined,
   ): Promise<void> {
     const subjects = this.subjectsOf(options, actor, values);
     if (subjects.length === 0) return; // the call exposed nobody's data
@@ -80,6 +82,7 @@ export class AccessLogService extends Service {
       await this.sink.write({
         callId,
         actor,
+        ...(scopeId === undefined ? {} : { scopeId }),
         target,
         classification: options.classification,
         subjects,

@@ -3,7 +3,7 @@
  * Purpose: `ActionsRecord<R, V>`, the builder a resource's `actions(a)` member receives: the runtime side of
  *          `Actions<R, V>`.
  * Boundary: internal: the runtime side of the public builder type; no entry exports it. A run placement keeps `bulk` and `places`; the export, import and create
- *           placements keep `places` and, for create, `after`.
+ *           placements keep `places` and, for create, `after`. Every placement keeps its button look (`with`).
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 3, 4 and 10).
  */
@@ -20,12 +20,7 @@ import type { Path } from "#core/types/path.type";
 export class ActionsRecord<R, V = R> implements Actions<R, V> {
   /** A button that runs `action`. */
   run(action: AnyClass): PlacementRecord {
-    return new PlacementRecord(({ bulk, places }) =>
-      Placement.run(action, {
-        ...(bulk === undefined ? {} : { bulk }),
-        ...(places === undefined ? {} : { places }),
-      }),
-    );
+    return new PlacementRecord(({ after: _after, ...flags }) => Placement.run(action, flags));
   }
 
   /** The queued export. */
@@ -33,8 +28,8 @@ export class ActionsRecord<R, V = R> implements Actions<R, V> {
     readonly formats: readonly ExportFormat[];
     readonly columns?: readonly Path<R>[];
   }): PlacementRecord {
-    return new PlacementRecord(({ places }) =>
-      Placement.export({ ...options, ...(places === undefined ? {} : { places }) }),
+    return new PlacementRecord(({ bulk: _bulk, after: _after, ...flags }) =>
+      Placement.export({ ...options, ...flags }),
     );
   }
 
@@ -44,18 +39,13 @@ export class ActionsRecord<R, V = R> implements Actions<R, V> {
     readonly match: Path<V>;
     readonly maxRows?: number;
   }): PlacementRecord {
-    return new PlacementRecord(({ places }) =>
-      Placement.import({ ...options, ...(places === undefined ? {} : { places }) }),
+    return new PlacementRecord(({ bulk: _bulk, after: _after, ...flags }) =>
+      Placement.import({ ...options, ...flags }),
     );
   }
 
   /** The create button. */
   create(): PlacementRecord {
-    return new PlacementRecord(({ places, after }) =>
-      Placement.create({
-        ...(places === undefined ? {} : { places }),
-        ...(after === undefined ? {} : { after }),
-      }),
-    );
+    return new PlacementRecord(({ bulk: _bulk, ...flags }) => Placement.create(flags));
   }
 }

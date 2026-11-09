@@ -61,7 +61,7 @@ export const BILLING_IR: MemberIR = {
       "permissions",
       "billing",
       "src/modules/billing/access/invoice.permissions.ts",
-      { statics: { read: "Permission.L0", sendReminders: "Permission.L1" } },
+      { statics: { read: "Permission.L0", sendReminders: "Permission.L2" } },
     ),
     declared(
       "SendRemindersAction",
@@ -116,7 +116,7 @@ export const BILLING_IR: MemberIR = {
       "integration",
       "billing",
       "src/modules/billing/integrations/stripe.integration.ts",
-      { options: { webhooks: { scheme: "stripe" } } },
+      { options: { webhooks: { scheme: "stripe", eventId: { path: "id" } } } },
     ),
     declared("InvoiceLine", "model", "billing", "src/modules/billing/models/invoice-line.model.ts"),
     declared("Invoice", "model", "billing", "src/modules/billing/models/invoice.model.ts", {

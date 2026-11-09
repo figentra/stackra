@@ -5,6 +5,16 @@ description: "Accepted · 2026-11-01"
 
 <Note>Vellum is now Figentra Flow (renamed 2026-11-01).</Note>
 
+<Note>
+  Amended 2026-11-04 (STA-2097, STA-2098; the owner's decisions of that date): a preset is an npm
+  package named in `flow.config.json`, Flow keeps only `neutral` built in, and Stackra's preset is
+  `@stackra/flow-preset` in core. Templates name capabilities that a harness adapter renders with
+  each tool's own question UI, an `fflow mcp` server records clarifications, and the spec stays the
+  record. It amends decisions 2, 4 and 6; read them with the [amendment of
+  2026-11-04](#amendment-2026-11-04-presets-are-packages-and-questions-use-each-tools-own-ui-sta-2097-sta-2098)
+  below.
+</Note>
+
 ## Context
 
 ADR 0067 made GitHub spec-kit the SDLC, and ADR 0121 D15 pinned its CLI. ADRs 0282 and 0286 planned a
@@ -68,9 +78,82 @@ pending changesets take the package from `0.0.0` to `0.1.0`. The owner decided t
 first release, `0.1.0`, and that core pins `0.1.0` in the catalog and in `.flow/lock.json`. Everything else in
 decision 10 stands.
 
+## Amendment 2026-11-04: presets are packages, and questions use each tool's own UI (STA-2097, STA-2098)
+
+The owner, 2026-11-04: Figentra Flow is sold to anyone, so Stackra's preset moves out of Flow into a package Stackra
+owns; and Flow should ask the user its questions with each tool's own question UI and work the same in Claude Code,
+OpenCode, VS Code and the rest. Today `/flow-clarify` asks in plain chat text everywhere. The plan is stackra-notes
+`src/plans/flow-e2e/PLAN.md`, sections 9 (P0 to P6) and 10 (H0 to H6); this amendment is P0 and H0.
+
+### Presets are packages (amends decisions 2 and 4)
+
+1. **A preset is an npm package.** `flow.config.json` `"preset"` names a built-in preset (`neutral`) or a package
+   (`"@stackra/flow-preset"`). Flow resolves the package from the repository root and reads the folder that its
+   `package.json` names in `"flow": { "preset": "./preset" }`; the folder has the bundled presets' layout. A name
+   resolves as a built-in, then an installed package, then a folder of the repository.
+2. **No auto-patching on install.** A preset package has no postinstall: pnpm blocks lifecycle scripts by default,
+   and a preset ships guard code (`guard/*.mjs`), so Flow loads code only from the preset the configuration names.
+   `fflow preset add <pkg>` installs the package as a dev dependency and writes the configuration line in one step.
+   An upgrade is a package upgrade, then `fflow update`, which shows the diff before it adopts the new content.
+3. **Compatibility is declared and checked.** A preset declares the Flow versions it runs on in `peerDependencies`
+   (`@figentra-oss/flow`) and in `preset.yml` `requires.flow`. `fflow doctor` fails its `preset` row, and `sync` and
+   `update` refuse to render, when the installed Flow is outside either range. A preset's guard tables import only
+   `node:` built-ins, their own folder and Flow's public `@figentra-oss/flow/guard` and
+   `@figentra-oss/flow/guard/neutral` entries.
+4. **Flow keeps only `neutral`.** Decision 2's bundled `stackra` preset moves to `@stackra/flow-preset`, a core
+   package at `packages/developer/flow-preset` released with core's changesets. The Stackra repositories switch
+   `"preset": "stackra"` to `"@stackra/flow-preset"` (P3); after that, Flow drops `presets/stackra` and bundles
+   `neutral` alone.
+5. **Third-party skills are not vendored** (owner default O9). A preset lists each one by source and licence
+   (`third-party.yml`), and `sync` installs it pinned to a commit and a folder digest.
+6. **A Claude Code marketplace comes later (P6).** figentra/flow will publish `.claude-plugin/marketplace.json` with
+   the neutral `flow-*` skills for teams that do not use npm; the npm package stays the source of truth. This is the
+   later plugin that [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decision 11 left open.
+
+### Questions through each tool's own UI (amends decision 6)
+
+7. **Templates name capabilities, not tools.** A command text or template marks a step with a capability (`ask`,
+   `todo`, `docs`, `subagent`) instead of naming a tool.
+8. **A harness adapter per tool** fills each capability in when the commands are rendered, as the tracker adapters do
+   for trackers. Claude Code renders `ask` as its question tool, AskUserQuestion (up to four questions of two to four
+   options, the recommended option first). OpenCode uses its question tool where it has one, and the text table
+   otherwise. VS Code (Copilot), Cursor and Codex get prompt files in their own folders, with the text table. The
+   fallback in every tool is today's text table. What each tool supports is checked before its adapter is built.
+9. **An `fflow mcp` server** carries what must behave the same in every tool. It has one writer, which records a
+   clarification (an answer into the spec's Clarifications section); its other tools only read: the open questions
+   and a lookup in the project's docs. It uses MCP elicitation, a form shown to the user, where the client supports it.
+10. **Asynchronous questions go through the tracker.** For an agent that runs unattended, the question goes to the
+    tracker issue (Linear or GitHub Issues), the spec gets a "needs clarification" marker, and work resumes on the
+    answer.
+11. **The spec is the record.** Every question and answer lives in the spec, never only in a chat tool.
+12. **Flow owns the rendering into each tool's folders.** Decision 6's projector step goes: `sync` renders each
+    tool's own files itself, and core's `.agents` sync script is deleted once it does (H6, after P3).
+
+### Consequences
+
+- Stackra's agents, rules, skills and guard tables change in core and reach a repository as a package release it
+  adopts with `fflow update`; Flow releases no longer carry Stackra content.
+- A Flow major needs a preset release that widens `requires.flow` and the peer range before repositories upgrade.
+- The guard tables' tests have to move into core with the preset before Flow drops its copy (P3); until then Flow's
+  tests cover the bundled copy only.
+- A command reads the same in every tool; only the adapter differs, and the text table never goes away.
+
+### Enforcement
+
+- figentra/flow: preset resolution by package name, `fflow preset add` and the range checks of `doctor`, `sync` and
+  `update`, with their tests (P1, figentra/flow #124).
+- planned — the `@figentra-oss/flow/guard` entries (figentra/flow #130) and core's `packages/developer/flow-preset`
+  (P2).
+- planned — P3: the ten Stackra repositories name `@stackra/flow-preset`, then Flow drops `presets/stackra`.
+- planned — H1 to H6 (STA-2098): the capability markers and adapter interface with the text fallback, the Claude Code,
+  OpenCode, VS Code, Cursor and Codex adapters, `fflow mcp`, tracker questions, and the removal of core's `.agents`
+  sync.
+
 ## Supersedes and sources
 
 `Supersedes: 0067`, and decision D15 of `0121`. Amends `0500` decision 10 (`.specify/` stays), `0282` decisions 12
 to 14 and `0286` (the STA-298 spike bar, waived), and `0120` (the bug-lane path).
 
-Sources: the owner's questionnaire and `plan.md`; STA-1729 (figentra/flow); STA-298.
+Sources: the owner's questionnaire and `plan.md`; STA-1729 (figentra/flow); STA-298; for the amendment of
+2026-11-04, the owner's decisions of that date, stackra-notes `src/plans/flow-e2e/PLAN.md` sections 9 and 10,
+STA-2097 and STA-2098.

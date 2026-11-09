@@ -27,6 +27,32 @@
         "layout": [["lines"], ["district"], ["locality", "region", "postalCode"], ["country"]]
       },
       "from": "2000-01-01"
+    },
+    {
+      "key": "payments.byo_providers",
+      "value": [
+        {
+          "provider": "paymob",
+          "status": "live"
+        },
+        {
+          "provider": "fawry",
+          "status": "live"
+        },
+        {
+          "provider": "valu",
+          "status": "live"
+        },
+        {
+          "provider": "souhoola",
+          "status": "live"
+        },
+        {
+          "provider": "sympl",
+          "status": "live"
+        }
+      ],
+      "from": "2026-11-01"
     }
   ],
   "reviews": [],

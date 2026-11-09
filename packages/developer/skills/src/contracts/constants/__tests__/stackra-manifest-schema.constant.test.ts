@@ -17,7 +17,7 @@ describe("STACKRA_MANIFEST_SCHEMA", () => {
   });
 
   it("parses each kind", () => {
-    for (const kind of ["package", "skill", "agent", "plugin", "contract"]) {
+    for (const kind of ["package", "skill", "agent", "plugin", "contract", "docs"]) {
       expect(STACKRA_MANIFEST_SCHEMA.parse({ kind })).toEqual({ kind });
     }
     expect(STACKRA_MANIFEST_SCHEMA.parse({ kind: "mcp", mcp: { command: "npx" } })).toEqual({

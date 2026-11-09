@@ -8,13 +8,20 @@
  *           and nothing an encrypted or `@Classified` field holds. At least once: a failed write leaves the cursor
  *           where it was, the next run rewrites the batches it reaches, and a reader dedupes on `_position`. It is not
  *           registered with the relay (the relay would read the same cursor); the app's scheduled job calls `sync`
- *           with options from its settings.
+ *           with options from its settings. The log is tenant-owned: a page is claimed across tenants (positions and
+ *           owners only) and each owner's entries are loaded in its own isolation (`loadChanges`), the `CallIsolation`
+ *           read optionally from the injected `Container` (`boundIsolation`), so an app without tenancy still boots
+ *           and exports its platform rows; a claimed entry that does not load fails the run and moves no cursor.
  * Runtime: isomorphic
  * Governing contract: ADR 0163 (decision 5) and ADR 0190 (decision 3), both amended 2026-10-29 (STA-1430); ADR 0078
- *                     and ADR 0221 (2026-10-28 amendment: the retained change feed with per-consumer cursors).
+ *                     and ADR 0221 (2026-10-28 amendment: the retained change feed with per-consumer cursors); ADR 0239
+ *                     (2026-11-07 amendment, gap A).
  */
+import { boundIsolation } from "@stackra/actions";
 import { Service } from "@stackra/container";
+import type { Container } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
+import { loadChanges } from "@stackra/outbox";
 import type { ChangeFeed } from "@stackra/outbox/contracts";
 
 import type { WarehouseSink } from "#contracts/ports/warehouse-sink.port";
@@ -41,16 +48,21 @@ export class WarehouseChangeSink extends Service {
   /** The time a moved cursor is due at. */
   private readonly clock: Clock;
 
+  /** The container the bound `CallIsolation`, if any, is read from at run time. */
+  private readonly container: Container;
+
   /**
    * @param feed - the change log.
    * @param sink - the warehouse driver.
    * @param clock - the time source.
+   * @param container - the container whose `CallIsolation` each owner's entries are loaded in.
    */
-  constructor(feed: ChangeFeed, sink: WarehouseSink, clock: Clock) {
+  constructor(feed: ChangeFeed, sink: WarehouseSink, clock: Clock, container: Container) {
     super();
     this.feed = feed;
     this.sink = sink;
     this.clock = clock;
+    this.container = container;
   }
 
   /**
@@ -58,6 +70,8 @@ export class WarehouseChangeSink extends Service {
    *
    * @throws TypeError when no model is named or the limit is not a whole number of at least 1.
    * @throws the sink's error when a write fails; the cursor stays where it was.
+   * @throws ClaimNotLoadedError when a claimed entry does not load in its owner; the cursor stays where it was.
+   * @throws RowIsolationMissingError when an owned entry is claimed and no `CallIsolation` is bound.
    */
   async sync(options: WarehouseSyncOptions): Promise<WarehouseSyncReport> {
     if (options.models.length === 0)
@@ -67,7 +81,11 @@ export class WarehouseChangeSink extends Service {
         `A warehouse sync limit is a whole number of at least 1, got ${options.limit}`,
       );
     const cursor = await this.feed.cursor(CURSOR);
-    const records = await this.feed.read(cursor?.position, options.models, options.limit);
+    const records = await loadChanges(
+      this.feed,
+      boundIsolation(this.container),
+      await this.feed.claim(cursor?.position, options.models, options.limit),
+    );
     const last = records.at(-1);
     if (last === undefined) return { records: 0, files: [] };
     const write = {

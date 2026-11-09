@@ -45,12 +45,12 @@ export class OpenApprovalGateDriver extends Driver(ApprovalGate) {
     return undefined;
   }
 
-  /** Moves nothing. */
+  /** Never begins a request; always resolves false. */
   async begin(_approvalId: string, _executionKey: string): Promise<boolean> {
     return false;
   }
 
-  /** Settles nothing. */
+  /** Never settles a request; always resolves false. */
   async settle(): Promise<boolean> {
     return false;
   }

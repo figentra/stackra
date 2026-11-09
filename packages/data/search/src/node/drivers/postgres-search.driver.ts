@@ -108,8 +108,15 @@ const quote = (name: string): string => `"${name.replaceAll('"', '""')}"`;
 const qualified = (table: SearchTable): string =>
   table.schema === undefined ? quote(table.table) : `${quote(table.schema)}.${quote(table.table)}`;
 
-/** The tsquery text of `request`'s words: each as a prefix, its alternatives ORed in, all ANDed. */
-const prefixesOf = (request: Pick<SearchRequest, "words" | "alternatives">): string =>
+/**
+ * The tsquery text of `request`'s words: each as a prefix, its alternatives ORed in, all ANDed; with `" | "` any of
+ * them, the partial lane's query, so a row holding only some of a multi-word query's words still comes back after
+ * every full match (ADR 0221, note of 2026-11-07).
+ */
+const prefixesOf = (
+  request: Pick<SearchRequest, "words" | "alternatives">,
+  joiner: " & " | " | " = " & ",
+): string =>
   request.words
     .map((word) => {
       const spellings = [word, ...(request.alternatives?.[word] ?? [])].map(
@@ -117,7 +124,7 @@ const prefixesOf = (request: Pick<SearchRequest, "words" | "alternatives">): str
       );
       return spellings.length === 1 ? spellings[0] : `(${spellings.join(" | ")})`;
     })
-    .join(" & ");
+    .join(joiner);
 
 /** The trigram lane's phrases: the words, then each with one word swapped for one of its alternatives, capped. */
 const phrasesOf = (request: Pick<SearchRequest, "words" | "alternatives">): readonly string[] => {
@@ -298,6 +305,7 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
     const ctes: string[] = [];
     const params: unknown[] = [];
     const lanes: string[] = [];
+    let partial = false;
     if (request.words.length > 0) {
       const vectors = await this.vectorsOf(table);
       const phrases = phrasesOf(request);
@@ -325,6 +333,20 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
         ...laneParams,
       );
       lanes.push("fts", "trigram");
+      // A multi-word query also reads the rows that hold only some of its words; they rank after every full match.
+      if (request.words.length > 1) {
+        ctes.push(
+          `part as (
+  select ${key} as id, row_number() over (order by greatest(${vectors.map((vector) => `ts_rank_cd(t.${quote(vector.name)}, to_tsquery('${vector.config}', ?))`).join(", ")}) desc, ${key}) as rank
+  from ${qualified(table)} t
+  where (${vectors.map((vector) => `t.${quote(vector.name)} @@ to_tsquery('${vector.config}', ?)`).join(" or ")})${narrowing}
+  order by rank limit ${CANDIDATES}
+)`,
+        );
+        const any = prefixesOf(request, " | ");
+        params.push(...vectors.map(() => any), ...vectors.map(() => any), ...laneParams);
+        partial = true;
+      }
     }
     if (request.vector !== undefined) {
       const { values, passages } = request.vector;
@@ -362,7 +384,7 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
       );
       params.push([...pinned], [...pinned], ...laneParams);
     }
-    const joined = pinned.length > 0 ? [...lanes, "pin"] : lanes;
+    const joined = [...lanes, ...(partial ? ["part"] : []), ...(pinned.length > 0 ? ["pin"] : [])];
     const [first = "", ...rest] = joined;
     const ids = (upTo: number): string =>
       upTo === 1
@@ -388,10 +410,10 @@ export class PostgresSearchDriver extends Driver(SearchDriver) {
       `with ${ctes.join(",\n")}
 select fused.id from (
   select ${ids(joined.length)} as id,
-    ${lanes.map((lane) => `coalesce(1.0 / (${FUSION} + ${lane}.rank), 0)`).join(" + ")} as score${pinned.length > 0 ? ",\n    pin.rank as pin" : ""}
+    ${lanes.map((lane) => `coalesce(1.0 / (${FUSION} + ${lane}.rank), 0)`).join(" + ")} as score${partial ? `,\n    case when coalesce(${lanes.map((lane) => `${lane}.id`).join(", ")}) is null then 1 else 0 end as tier,\n    part.rank as part` : ""}${pinned.length > 0 ? ",\n    pin.rank as pin" : ""}
   from ${first}${rest.map((lane, at) => ` full join ${lane} on ${lane}.id = ${ids(at + 1)}`).join("")}
 ) fused${sorted.from}
-order by ${pinned.length > 0 ? "fused.pin asc nulls last, " : ""}${sorted.order}fused.score${factor.sql} desc, fused.id
+order by ${pinned.length > 0 ? "fused.pin asc nulls last, " : ""}${partial ? "fused.tier asc, " : ""}${sorted.order}fused.score${factor.sql} desc, ${partial ? "fused.part asc nulls last, " : ""}fused.id
 limit ? offset ?`,
       [...params, ...sort.map((by) => by.path), ...factor.params, request.limit, request.offset],
     )) as unknown as readonly { readonly id: unknown }[];

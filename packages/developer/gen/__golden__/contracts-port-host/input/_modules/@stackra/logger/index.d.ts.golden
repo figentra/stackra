@@ -1,0 +1,9 @@
+export declare abstract class LogReporter {
+  abstract report(line: string): void;
+}
+export declare class ConsoleLogReporterDriver extends LogReporter {
+  report(line: string): void;
+}
+export declare class OtlpLogReporterDriver extends LogReporter {
+  report(line: string): void;
+}

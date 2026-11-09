@@ -44,9 +44,10 @@ describe("@stackra/skills/contracts", () => {
       "mcp",
       "plugin",
       "contract",
+      "docs",
     ]);
     expectTypeOf<StackraKind>().toEqualTypeOf<
-      "package" | "skill" | "agent" | "mcp" | "plugin" | "contract"
+      "package" | "skill" | "agent" | "mcp" | "plugin" | "contract" | "docs"
     >();
   });
 
@@ -93,7 +94,7 @@ describe("@stackra/skills/contracts", () => {
     expectTypeOf<CataloguePage["next"]>().toEqualTypeOf<string | null>();
     expectTypeOf<ItemsLock["lockfileVersion"]>().toEqualTypeOf<1>();
     expectTypeOf<ItemsLockEntry["kind"]>().toEqualTypeOf<
-      "skill" | "agent" | "mcp" | "plugin" | "contract"
+      "skill" | "agent" | "mcp" | "plugin" | "contract" | "docs"
     >();
   });
 });

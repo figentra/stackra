@@ -12,7 +12,7 @@ Durable workflows: the `Workflow` and `Signal` kind bases, `@Step`, `Run<W>` and
 `WorkflowRunner` driver behind `ctx.run` and `ctx.signal`), the `WorkflowJournal` port with memory and Postgres
 journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151, 0152, 0292). Member at
 `packages/runtime/workflow` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./node`,
-`./testing`.
+`./contracts`, `./testing`.
 
 ## Where code goes
 
@@ -36,8 +36,13 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 
 - `src/{core,node,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
-- There is no `./contracts`: the template imports `StepStatus` and `WorkflowRunStatus` from `.`, and the journal port
-  and records name them, so the port sits in `src/core/ports/` beside the engine (one symbol, one entry).
+- `./contracts` holds only the cross-service ack contract: `ServiceAcked`, `KeptRecords` and their schemas
+  (`src/contracts/`, a leaf that imports nothing of `core` or `node`); `.` re-exports them. A product service that
+  sends the ack imports it from `@stackra/workflow/contracts` and nothing else, so gen hosts it contracts-only: the
+  event and its wire name `workflow.service.acked.v1`, none of the runs, automations, checklists or migrations
+  (STA-2567). Any other import of `@stackra/workflow` in that service makes gen host all of it. The template imports
+  `StepStatus` and `WorkflowRunStatus` from `.`, and the journal port and records name them, so the port sits in
+  `src/core/ports/` beside the engine (one symbol, one entry).
 - `WorkflowConfig$` mirrors `WorkflowEngineOptions` by hand until gen compiles this package's schemas; change both.
 - `WORKFLOW_JOURNALS` names each journal driver by its file prefix (`postgres`, `memory`).
 
@@ -52,7 +57,16 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - A step's and an undo's work runs in the bound `CallIsolation` as the run's stored `origin.actor` in its scope, inside the
   journal's transaction (ADR 0495); with none bound it runs in the journal's scope session alone.
 - The engine writes the journal only inside `WorkflowJournal.transaction` (a new transaction in the run's scope), so a
-  run's progress commits whatever the calling action does; `hold` and `currentScope` join the caller's transaction.
+  run's progress commits whatever the calling action does; `hold`, `currentScope` and `currentOwner` join the caller's
+  transaction.
+- `runs`, `steps` and `signals` are tenant-owned in the platform form (migration 0012, ADR 0239 amendment): `tenant_id`
+  comes from the session by its default, never from a record. A run is owned by its starting call's tenant
+  (`WorkflowRun.ownerId`); every save runs in that owner (`inRowOwner`, the runner's system actor), a step's work as
+  the run's actor. The tick claims across tenants only through `workflow.claim_due_runs` and
+  `workflow.claim_expired_signals` (ids, owner, order), then loads, advances or removes each row in its owner. A claim
+  that does not load throws `ClaimNotLoadedError` and an owned row with no `CallIsolation` `RowIsolationMissingError`
+  (both @stackra/actions'): never skip one. `find`, `last`, `byAutomation` and `workflow.run.get` read in the caller's
+  session, so another tenant's run is simply not there.
 - One runner per run (`Locks`, key `workflow.run:<id>`). A tick takes over a running or compensating run only when its
   lock is free, and counts only runs it really advanced, so an idle worker pauses.
 - A step's integration events go to `EventOutbox` in its transaction; its domain events to `EventBus` after the commit.
@@ -73,7 +87,7 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
   starts it; a lost block pauses it (ADR 0423). Never skip the check for a seed: its publisher is the seed principal.
 - Checklist steps, lock flags and industry profiles are seed data; no step is coded here. A customization never hides
   or reorders a locked step (ADR 0424).
-- `ServiceAckSet` is platform data with no scope policy, like the journal; `expect` runs before the request leaves.
+- `ServiceAckSet` is platform data with no scope policy (a listed platform table); `expect` runs before the request leaves.
   `ServiceAcked.kept` carries kinds and counts only, never record ids or contents (STA-1312).
 - A document step's call id is its step key (`<run id>:<step>`, `:<index>` per for-each item), so the events its block
   records name the run as their correlation; `runOfCall` parses it back and `chained` reads the causing run's chain.
@@ -104,5 +118,5 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 | Failures      | `workflow.runs.error`, `workflow.steps.error` (jsonb) | The refusal code (`internal` otherwise) and message; never a stack or the step's input |
 | Documents     | `content.revisions.data`, `workflow.runs.input`       | Scope configuration; inputs may hold literal values (a phone, a text); never logged    |
 | Principal     | `workflow.automations.principal`, `publisher` (jsonb) | The actor kind and public id an automation runs as, and who published it               |
-| Progress      | `workflow.checklist_progress` (owner, completed by)   | A user's public id and the completing actor; read only by the scope's own sessions     |
+| Progress      | `workflow.checklist_progresses` (owner, completed by) | A user's public id and the completing actor; read only by the scope's own sessions     |
 | Held events   | `workflow.signals.payload` (jsonb)                    | A waitable trigger's occurrence, dropped after seven days untaken                      |

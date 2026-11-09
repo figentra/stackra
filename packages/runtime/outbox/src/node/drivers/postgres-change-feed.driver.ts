@@ -1,26 +1,41 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresChangeFeedDriver`, the server's `ChangeFeed`: entries are rows of the day-partitioned
- *          `outbox.changes`, appended in the caller's transaction with its scope, listed in `(tx, seq)` order once no
- *          running transaction can still precede them; cursors are rows of `outbox.change_cursors`; maintenance makes
- *          the next days' partitions and drops whole expired ones.
+ *          `outbox.changes`, appended in the caller's transaction with its scope and tenant, claimed in `(tx, seq)`
+ *          order across tenants once no running transaction can still precede them and loaded per tenant; cursors are
+ *          rows of `outbox.change_cursors`; maintenance makes the next days' partitions, each under the log's row-level
+ *          security, and drops whole expired ones, and the expired default-partition rows are claimed for a per-tenant
+ *          delete.
  * Boundary: raw SQL on the running context's entity manager, every value a bound parameter and every result row read
- *           through zod. A position is `<tx>:<seq>`, opaque to callers. `read` lists only entries whose transaction is
- *           older than the snapshot's `xmin`: every such transaction has ended, so nothing can later appear before the
- *           cursor (an entry of a still-running one waits for a later tick). Partitions are made from tomorrow on, so a
- *           day whose rows already sit in `changes_default` never blocks one; expired default rows are deleted. A change
- *           names a row, not a record a legal hold covers, so retention asks no `HoldRegistry`.
+ *           through zod. A position is `<tx>:<seq>`, opaque to callers. The log is tenant-owned in the platform form
+ *           (`outbox.0006`): `claim`, `positionAt` and `expired` go through the system functions
+ *           `outbox.claim_changes`, `outbox.change_position_at` and `outbox.claim_expired_changes`, which return
+ *           positions and tenants only; `load` and `remove` run under the caller's row-level security. `tenant_id` is
+ *           never written here: its default takes the call's `app.tenant_id`. A claim lists only entries whose
+ *           transaction is older than the snapshot's `xmin`: every such transaction has ended, so nothing can later
+ *           appear before the cursor (an entry of a still-running one waits for a later tick). Partitions are made from
+ *           tomorrow on, so a day whose rows already sit in `changes_default` never blocks one; a partition keeps no
+ *           policy of its parent's, so each new one is secured by `outbox.secure_change_partition` in the statement
+ *           after it, or a direct read of it would be open. A change names a row, not a record a legal hold covers, so
+ *           retention asks no `HoldRegistry`.
  * Runtime: node
- * Governing contract: ADR 0078 and ADR 0221 (2026-10-28 amendment); ADR 0160 (raw SQL is parameterised and typed
+ * Governing contract: ADR 0078 and ADR 0221 (2026-10-28 amendment); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0160 (raw SQL is parameterised and typed
  *                     with zod); ADR 0142 (drivers behind ports); data-layer gaps cdc1 and cdc6.
  */
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
+import type { PublicId } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { z } from "zod";
 
 import { ChangeFeed } from "#contracts/index";
-import type { ChangeCursor, ChangeLogReport, ChangeRecord, RowChange } from "#contracts/index";
+import type {
+  ChangeClaim,
+  ChangeCursor,
+  ChangeLogReport,
+  ChangeRecord,
+  RowChange,
+} from "#contracts/index";
 import { STORED_MESSAGE_COLUMNS } from "#node/constants/stored-message-columns.constant";
 import { insertChanges } from "#node/functions/insert-changes.function";
 import { scopeOfRow } from "#node/functions/scope-of-row.function";
@@ -52,8 +67,21 @@ const ROW = z.object({
   ...STORED_MESSAGE_COLUMNS,
 });
 
-/** A position row. */
-const AT = z.array(z.object({ tx: z.string(), seq: BIGINT }));
+/** Rows of a claim function. */
+const CLAIMS = z.array(z.object({ tx: z.string(), seq: BIGINT, tenant_id: z.string().nullable() }));
+
+/** The rows of `outbox.change_position_at`: the first entry at or after an instant, and the latest. */
+const AT = z.array(z.object({ tx: z.string(), seq: BIGINT, latest: z.boolean() }));
+
+/** The claims of `rows`, a claim function's result. */
+function claimsOf(rows: unknown): readonly ChangeClaim[] {
+  return CLAIMS.parse(rows).map((row) =>
+    Object.freeze({
+      position: `${row.tx}:${row.seq}`,
+      ...(row.tenant_id === null ? {} : { ownerId: row.tenant_id as PublicId<"scp"> }),
+    }),
+  );
+}
 
 /** One row of `outbox.change_cursors`. */
 const CURSOR = z.object({
@@ -70,6 +98,16 @@ function parsePosition(position: string): readonly [string, string] {
   const match = POSITION.exec(position);
   if (match === null) throw new TypeError(`"${position}" is not a change log position`);
   return [match[1] as string, match[2] as string];
+}
+
+/** `positions` as one bound JSON array of `{ tx, seq }`. */
+function positionsJson(positions: readonly string[]): string {
+  return JSON.stringify(
+    positions.map((position) => {
+      const [tx, seq] = parsePosition(position);
+      return { tx, seq };
+    }),
+  );
 }
 
 /** The entry of one row. */
@@ -112,48 +150,64 @@ export class PostgresChangeFeedDriver extends Driver(ChangeFeed) {
   }
 
   /**
-   * Implements `ChangeFeed.read`, documented there.
+   * Implements `ChangeFeed.claim`, documented there.
    *
    * @throws TypeError for a position this driver did not write.
    */
-  async read(
+  async claim(
     after: string | undefined,
     models: readonly string[],
     limit: number,
-  ): Promise<readonly ChangeRecord[]> {
+  ): Promise<readonly ChangeClaim[]> {
     if (models.length === 0) return [];
-    const from = after === undefined ? undefined : parsePosition(after);
-    // raw-sql: the snapshot horizon (pg_snapshot_xmin) and the (tx, seq) row comparison have no ORM form; all bound
+    const [tx, seq] = after === undefined ? [null, null] : parsePosition(after);
+    // raw-sql: the system function claims committed entries of every tenant (positions and tenants); all bound
+    return claimsOf(
+      await this.database
+        .em()
+        .execute(
+          "select tx::text as tx, seq, tenant_id " +
+            "from outbox.claim_changes(?::xid8, ?::bigint, ?::jsonb, ?::integer)",
+          [tx, seq, JSON.stringify(models), limit],
+        ),
+    );
+  }
+
+  /**
+   * Implements `ChangeFeed.load`, documented there.
+   *
+   * @throws TypeError for a position this driver did not write.
+   */
+  async load(positions: readonly string[]): Promise<readonly ChangeRecord[]> {
+    if (positions.length === 0) return [];
+    // raw-sql: the (tx, seq) pairs are one bound JSON array; read under the caller's row-level security, in log order
     const rows = await this.database
       .em()
       .execute(
-        "select tx::text as tx, seq, data, meta, occurred_at, scope_id, scope_path::text as scope_path " +
-          `from ${TABLE} where tx < pg_snapshot_xmin(pg_current_snapshot()) ` +
-          "and type in (select jsonb_array_elements_text(?::jsonb)) " +
-          (from === undefined ? "" : "and (tx, seq) > (?::xid8, ?::bigint) ") +
-          "order by tx, seq limit ?",
-        [JSON.stringify(models), ...(from ?? []), limit],
+        "select c.tx::text as tx, c.seq, c.data, c.meta, c.occurred_at, c.scope_id, " +
+          `c.scope_path::text as scope_path from ${TABLE} c ` +
+          "join jsonb_to_recordset(?::jsonb) as p(tx text, seq bigint) on c.tx = p.tx::xid8 and c.seq = p.seq " +
+          "order by c.tx, c.seq",
+        [positionsJson(positions)],
       );
     return z.array(ROW).parse(rows).map(recordOf);
   }
 
   /** Implements `ChangeFeed.positionAt`, documented there: just before the first entry at or after `at`. */
   async positionAt(at: Date): Promise<string | undefined> {
-    const em = this.database.em();
-    // raw-sql: the first entry at or after `at`, in log order; the instant is bound
-    const [first] = AT.parse(
-      await em.execute(
-        `select tx::text as tx, seq from ${TABLE} where occurred_at >= ? order by tx, seq limit 1`,
-        [at],
-      ),
+    // raw-sql: the system function reads the whole log's first entry at or after `at` and its latest; the instant is bound
+    const rows = AT.parse(
+      await this.database
+        .em()
+        .execute(
+          "select tx::text as tx, seq, latest from outbox.change_position_at(?::timestamptz)",
+          [at],
+        ),
     );
+    const first = rows.find((row) => !row.latest);
     if (first !== undefined) return `${first.tx}:${BigInt(first.seq) - 1n}`;
-    // raw-sql: nothing since `at`: the cursor starts after the last entry
-    const [last] = AT.parse(
-      await em.execute(
-        `select tx::text as tx, seq from ${TABLE} order by tx desc, seq desc limit 1`,
-      ),
-    );
+    // nothing since `at`: the cursor starts after the last entry
+    const last = rows.find((row) => row.latest);
     return last === undefined ? undefined : `${last.tx}:${last.seq}`;
   }
 
@@ -219,6 +273,8 @@ export class PostgresChangeFeedDriver extends Driver(ChangeFeed) {
       await em.execute(
         `create table if not exists outbox.${name} partition of ${TABLE} for values from ('${start.toISOString()}') to ('${new Date(start.getTime() + DAY).toISOString()}')`,
       );
+      // raw-sql: the log's owner policies, enabled and forced on the new partition, which inherits none; the name is bound
+      await em.execute("select outbox.secure_change_partition(?)", [name]);
       created += 1;
     }
     const cutoff = new Date(now.getTime() - Duration.toMilliseconds(retain));
@@ -243,8 +299,38 @@ export class PostgresChangeFeedDriver extends Driver(ChangeFeed) {
       await em.execute(`drop table outbox.${name}`);
       dropped += 1;
     }
-    // raw-sql: rows written before their day's partition existed sit in the default partition; the cutoff is bound
-    await em.execute("delete from outbox.changes_default where occurred_at < ?", [cutoff]);
     return { created, dropped };
+  }
+
+  /** Implements `ChangeFeed.expired`, documented there: the default partition's rows older than `before`. */
+  async expired(before: Date, limit: number): Promise<readonly ChangeClaim[]> {
+    // raw-sql: rows written before their day's partition existed sit in the default partition; the system function
+    // claims them across tenants (positions and tenants), and each tenant's are deleted in its isolation
+    return claimsOf(
+      await this.database
+        .em()
+        .execute(
+          "select tx::text as tx, seq, tenant_id " +
+            "from outbox.claim_expired_changes(?::timestamptz, ?::integer)",
+          [before, limit],
+        ),
+    );
+  }
+
+  /**
+   * Implements `ChangeFeed.remove`, documented there.
+   *
+   * @throws TypeError for a position this driver did not write.
+   */
+  async remove(positions: readonly string[]): Promise<void> {
+    if (positions.length === 0) return;
+    // raw-sql: the (tx, seq) pairs are one bound JSON array; deleted under the caller's row-level security
+    await this.database
+      .em()
+      .execute(
+        `delete from ${TABLE} c using jsonb_to_recordset(?::jsonb) as p(tx text, seq bigint) ` +
+          "where c.tx = p.tx::xid8 and c.seq = p.seq",
+        [positionsJson(positions)],
+      );
   }
 }

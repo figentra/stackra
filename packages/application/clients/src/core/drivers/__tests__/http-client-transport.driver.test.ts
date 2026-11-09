@@ -3,7 +3,8 @@
  * Purpose: unit tests of `HttpClientTransportDriver`: a call reaches the configured base URL with the session's headers,
  *          the pinned `Stackra-Version` and a minted Idempotency-Key on a write; a queued call asks to run
  *          asynchronously; no version header when none is pinned; a module listed in `producers` goes to its own base
- *          URL; a call's scope replaces the session's scope header.
+ *          URL; a call's scope replaces the session's scope header; the session is asked for the headers of the very
+ *          call sent or queued.
  * Boundary: test only; `fetch` is stubbed, so nothing reaches a network.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0142; ADR 0118; ADR 0138.
@@ -72,6 +73,23 @@ describe("HttpClientTransportDriver", () => {
     expect(seen[0]?.headers.get("Authorization")).toBe("Bearer token-1");
     expect(seen[0]?.headers.get("Stackra-Version")).toBe("2027-03-01");
     expect(seen[0]?.headers.get("Idempotency-Key")).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("asks the session for the headers of the very call it sends and queues", async () => {
+    stubFetch({ status: "cancelled" });
+    const asked: (ClientRequest | undefined)[] = [];
+    /** A session that records the call it is asked for, as a service's session reads its producer. */
+    class RecordingSession extends StubSession {
+      override headers(request?: ClientRequest): Promise<Readonly<Record<string, string>>> {
+        asked.push(request);
+        return super.headers();
+      }
+    }
+    const driver = new HttpClientTransportDriver(configWith({}), new RecordingSession());
+    await driver.send(cancel);
+    stubFetch(undefined, 202);
+    await driver.queue(cancel);
+    expect(asked).toEqual([cancel, cancel]);
   });
 
   it("queues a call and pins no version when none is configured", async () => {

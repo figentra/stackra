@@ -10,7 +10,8 @@
  *          typed listeners; a local listener of the service's own integration event gets one on its own topic too
  *          (STA-1302), so the broker driver still delivers it once, after commit.
  * Boundary: pure; reads the manifest's integration events (hosted packages' included, as the outbox publishes them)
- *           and `ir.publishers`. No producer is edited to add a subscriber: the relay service imports each producer's
+ *           and `ir.publishers`. A producer read from a contract package gets no subscription: its events reach the
+ *           service through the generated inbox (`emitInbox`, ADR 0511 decisions 14 and 18). No producer is edited to add a subscriber: the relay service imports each producer's
  *           generated topic, so a new publishing service is heard on the relay's next gen run. A wire name two
  *           publishers share is subscribed once (the first, by service key). Delivery is at least once; the inbox
  *           claims the envelope id, so a redelivery runs nothing twice. Which `EventPublisher` driver runs is runtime
@@ -200,7 +201,7 @@ function emitSubscriptions(
     const service = event.from.startsWith(CLIENTS_SPECIFIER)
       ? event.from.slice(CLIENTS_SPECIFIER.length)
       : ir.member;
-    // A service from a contract package has no sibling folder to import a topic from; `emitClients` refuses it.
+    // A contract-only producer lives in another app: its events come through the inbox, never a topic (ADR 0511 d14).
     if (ir.services?.find((candidate) => candidate.member === service)?.package !== undefined)
       continue;
     const events = service === ir.member ? manifest.events : serviceManifest(ir, service)?.events;

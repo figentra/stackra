@@ -22,6 +22,7 @@ import { join } from "node:path";
 import { buildConfig } from "@stackra/config";
 import { RunwayEnvironment } from "@stackra/runway";
 import {
+  cloudflareAccountEnv,
   deployProduct,
   EdgeKvConfig,
   GooglePlayConsoleDriver,
@@ -33,6 +34,7 @@ import type { MobileStoreAccount, ProductBuild } from "@stackra/runway/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { deployFact } from "#node/product/functions/deploy-fact.function";
+import { proveApproval } from "#node/runway-deploy/functions/prove-approval.function";
 import type { CliContext } from "#node/types/cli-context.type";
 
 /** A comma list; a list with no item counts as missing. */
@@ -55,12 +57,19 @@ function pairs(value: string | undefined): [string, string][] {
   });
 }
 
-/** The wrangler KV writer, run with the Cloudflare account the runway names. */
-function edgeKv(namespace: string, accountId: string | undefined): WranglerEdgeKvDriver {
+/**
+ * The wrangler KV writer, run with the Cloudflare account the runway names: a literal id is set, a `ref:` id leaves
+ * the job's `CLOUDFLARE_ACCOUNT_ID` in place, and an unresolved one refuses (STA-2124).
+ */
+function edgeKv(
+  namespace: string,
+  accountId: string | number | boolean | undefined,
+): WranglerEdgeKvDriver {
   const kv = new WranglerEdgeKvDriver(
     buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
   );
-  if (accountId !== undefined) kv.env = { CLOUDFLARE_ACCOUNT_ID: accountId };
+  const env = cloudflareAccountEnv(accountId);
+  if (env !== undefined) kv.env = env;
   return kv;
 }
 
@@ -159,13 +168,13 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
           ),
         }),
   };
-  const cloudflare = root.providers?.cloudflare?.accountId;
-  const accountId = cloudflare === undefined ? undefined : String(cloudflare);
+  const accountId = root.providers?.cloudflare?.accountId;
   const region = deployFact(values, "region", "STACKRA_REGION");
   const deploy = await deployProduct({
     repository: cwd,
     environment: environment as RunwayEnvironment,
-    approved: values["approved"] === true,
+    // The job's OIDC token proves the approval, never the `--approved` flag (STA-2100).
+    approved: !dryRun && (await proveApproval(root, environment, "deploys")),
     ...(namespace === undefined || dryRun || mobileOnly
       ? {}
       : { kv: edgeKv(namespace, accountId) }),

@@ -16,7 +16,7 @@ import { Driver } from "@stackra/container";
 
 import { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
 import type { EdgeKvConfig } from "#node/config/edge-kv.config";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
 /**
@@ -27,8 +27,8 @@ import type { CommandRunner } from "#node/types/command-runner.type";
  * await publishProduct({ repository, environment: "staging", kv, assets, served, canaryScopes });
  */
 export class WranglerEdgeKvDriver extends Driver(EdgeKvWriter) {
-  /** The command runner, `runCommand`; a test or a dry run replaces it. */
-  run: CommandRunner = runCommand;
+  /** The command runner, `runProgram`; a test or a dry run replaces it. */
+  run: CommandRunner = runProgram;
 
   /** Variables wrangler runs with, such as `CLOUDFLARE_ACCOUNT_ID`. */
   env?: Readonly<Record<string, string>>;

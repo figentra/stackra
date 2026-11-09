@@ -10,7 +10,7 @@
  * Runtime: node
  * Governing contract: App Store Review Guideline 5.1.1(v); ADR 0462; ADR 0294 (decisions 16 and 21); STA-1567.
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 
@@ -28,6 +28,7 @@ import { AccountDeletionOutput } from "#node/schemas/account-deletion-output.sch
 export class CancelAccountDeletionAction extends Action({
   key: "account_deletion.cancel",
   actors: [ActorKind.User],
+  idempotency: Idempotency.Optional,
   // reason: the account owner's own decision, never an agent's
   tool: false,
 }) {

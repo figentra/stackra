@@ -13,9 +13,13 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { Revision } from "#node/models/revision.model";
 
 describe("Revision", () => {
-  it("is a model with the rev public id and the timestamps", () => {
+  it("is a model with the rev public id, the tenant and the timestamps", () => {
     expect(new Revision()).toBeInstanceOf(Model);
-    expect(traitsOf(Revision).map((trait) => trait.name)).toEqual(["has_public_id", "timestamps"]);
+    expect(traitsOf(Revision).map((trait) => trait.name)).toEqual([
+      "has_public_id",
+      "belongs_to_tenant",
+      "timestamps",
+    ]);
     expect(traitsOf(Revision)[0]?.options).toEqual({ prefix: "rev" });
   });
 

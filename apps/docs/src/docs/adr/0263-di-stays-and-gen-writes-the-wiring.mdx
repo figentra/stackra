@@ -100,8 +100,12 @@ defaults)` returns a value with a same-named type. A constructor parameter typed
 
 ## Enforcement
 
-planned — `stackra gen` fails on an unresolved constructor parameter type, on an injection of a non-exported class, on a module cycle, on a
-policy verb with no permission, and on a string injection token. Planned: `pnpm validate` rejects a `providers` array in a `*.module.ts`
+automated — `stackra gen` (`check-conventions.function.ts` and `create-source-reader.function.ts` in
+`packages/developer/gen`) fails on a module cycle (`module_cycle`), on an injection of a class its module does not
+export (`sibling_not_exported`), and on a constructor parameter that is not typed with a class, which covers an
+unresolved parameter type and a string injection token (`token_not_a_class`).
+
+planned — `stackra gen` fails on a policy verb with no permission. Planned: `pnpm validate` rejects a `providers` array in a `*.module.ts`
 file and a `name` field in a `@Module`, and the conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that
 `wiring.ts` agrees with the Explorers.
 

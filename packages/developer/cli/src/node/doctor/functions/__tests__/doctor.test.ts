@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: hold `stackra doctor`'s checks to their contract: missing mise tools, an active Infisical session, the AWS
+ * Purpose: hold `stackra doctor`'s checks to their contract: missing mise tools, where sops finds the Google login, the AWS
  *          identity without echoing it, a report that fails only on a required check, and the machine-readiness
  *          parsers: needs by workspace (a web-only app asks for nothing more), dropped edge addresses, the Docker
  *          engine state and an available iOS simulator.
@@ -17,8 +17,8 @@ import { dockerState } from "#node/doctor/functions/docker-state.function";
 import { doctorExitCode } from "#node/doctor/functions/doctor-exit-code.function";
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
 import { droppedAddresses } from "#node/doctor/functions/dropped-addresses.function";
+import { googleCredentialsPath } from "#node/doctor/functions/google-credentials-path.function";
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
-import { infisicalLoggedIn } from "#node/doctor/functions/infisical-logged-in.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { renderDoctor } from "#node/doctor/functions/render-doctor.function";
 import { simulatorAvailable } from "#node/doctor/functions/simulator-available.function";
@@ -36,10 +36,17 @@ test("missingMiseTools lists tools with an uninstalled version", () => {
   assert.deepEqual(missingMiseTools(null), []);
 });
 
-test("infisicalLoggedIn needs an active session row", () => {
-  assert.ok(infisicalLoggedIn("CURRENT NAME SESSION\n* me@x.com active"));
-  assert.ok(!infisicalLoggedIn("CURRENT NAME SESSION\n* me@x.com expired"));
-  assert.ok(!infisicalLoggedIn(""));
+test("googleCredentialsPath follows GOOGLE_APPLICATION_CREDENTIALS, then CLOUDSDK_CONFIG, then ~/.config/gcloud", () => {
+  const file = "application_default_credentials.json";
+  assert.equal(googleCredentialsPath({}, "/h"), `/h/.config/gcloud/${file}`);
+  assert.equal(googleCredentialsPath({ CLOUDSDK_CONFIG: "/c" }, "/h"), `/c/${file}`);
+  assert.equal(
+    googleCredentialsPath(
+      { GOOGLE_APPLICATION_CREDENTIALS: "/k.json", CLOUDSDK_CONFIG: "/c" },
+      "/h",
+    ),
+    "/k.json",
+  );
 });
 
 test("awsIdentityOk checks status and an Account without echoing it", () => {
@@ -66,7 +73,6 @@ test("render shows fixes for failures only; warn does not fail the run", () => {
 const workspace = (patch: Partial<DoctorWorkspace>): DoctorWorkspace => ({
   manifests: [],
   scripts: {},
-  infisical: false,
   devPorts: [],
   ...patch,
 });
@@ -83,7 +89,7 @@ test("doctorNeeds asks a web-only app for nothing beyond the base checks", () =>
   assert.deepEqual([...doctorNeeds(web)], []);
 });
 
-test("doctorNeeds finds services, mobile, infra, agents, Infisical and the registry scopes", () => {
+test("doctorNeeds finds services, mobile, infra, agents and the registry scopes", () => {
   const needs = doctorNeeds(
     workspace({
       manifests: [
@@ -98,17 +104,9 @@ test("doctorNeeds finds services, mobile, infra, agents, Infisical and the regis
       ],
       scripts: { "agents:check": "stackra agents check" },
       runway: { providers: { aws: { region: "eu-west-1" } } },
-      infisical: true,
     }),
   );
-  assert.deepEqual([...needs].sort(), [
-    "agents",
-    "figentra",
-    "infisical",
-    "infra",
-    "mobile",
-    "services",
-  ]);
+  assert.deepEqual([...needs].sort(), ["agents", "figentra", "infra", "mobile", "services"]);
 });
 
 test("publishedDependency skips workspace members and matches the scope", () => {

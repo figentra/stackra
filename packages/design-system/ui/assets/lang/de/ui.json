@@ -1253,6 +1253,28 @@
     "shortcut": "Tastenkürzel {keys}",
     "you": "Sie",
     "disclaimer": "Tamo kann sich irren. Prüfen Sie seine Entwürfe.",
-    "close": "Schließen"
+    "close": "Schließen",
+    "approval_title": "Tamo möchte das ausführen",
+    "approval_waiting": "Wartet auf Ihre Freigabe.",
+    "approve": "Freigeben",
+    "deny": "Ablehnen",
+    "approved": "Freigegeben",
+    "denied": "Abgelehnt",
+    "expired": "Abgelaufen",
+    "risk": "Risiko {level}"
+  },
+  "terminal_demo": {
+    "label": "Ausprobieren",
+    "copy": "Befehl kopieren"
+  },
+  "props_playground": {
+    "controls": "Eigenschaften",
+    "preview": "Vorschau",
+    "theme": "Design",
+    "theme_default": "Standard",
+    "direction": "Richtung",
+    "ltr": "Links nach rechts",
+    "rtl": "Rechts nach links",
+    "reset": "Zurücksetzen"
   }
 }

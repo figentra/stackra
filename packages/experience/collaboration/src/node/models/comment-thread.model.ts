@@ -13,12 +13,13 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 
 import type { ThreadStatus } from "#contracts/enums/thread-status.enum";
 
 /** A comment thread. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class CommentThread extends Model.with(HasPublicId("cth"), Timestamps) {
+export class CommentThread extends Model.with(HasPublicId("cth"), BelongsToTenant, Timestamps) {
   /** The scope node the record belongs to. */
   scopeId!: PublicId<"scp">;
 
@@ -53,5 +54,5 @@ export class CommentThread extends Model.with(HasPublicId("cth"), Timestamps) {
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface CommentThread {
   /** The trait timestamps an insert may leave out. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

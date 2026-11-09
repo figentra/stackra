@@ -232,6 +232,13 @@ test("missing files, PII, license drift, manifest hygiene", () => {
   assert.equal(f.length, 9); // the replaced manifest also lacks repository and publishConfig
 });
 
+test("an @figentra-oss member keeps its own open-source LICENSE in a product repository", () => {
+  const widget = { ...filesOk, licenseText: "MIT", rootLicense: "Proprietary", stackra: false };
+  const check = (name: string) => checkMemberFiles({ ...widget, pkg: { ...filesOk.pkg, name } });
+  assert.deepEqual(check("@figentra-oss/pay-widget"), []);
+  assert.deepEqual(check("@figentra/pay-sdk"), ["LICENSE differs from the root LICENSE"]);
+});
+
 test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {
   const app = { dir: "apps/console", pkg: { description: "x", license: "UNLICENSED" } };
   assert.deepEqual(
@@ -281,6 +288,19 @@ test("a product repository keeps its own names, licence and publish settings (AD
   const member = { dir: "packages/application/example", pkg: { name: pkg.name } };
   assert.equal(packageNameFindings(checkMember(member)).length, 1);
   assert.deepEqual(packageNameFindings(checkMember({ ...member, stackra: false })), []);
+});
+
+test("a docs package sits at docs/ with no tier, turbo or tsconfig, and is UNLICENSED (ADR 0514)", () => {
+  const pkg = { name: "@figentra/pay-docs", description: "Pay docs.", stackra: { kind: "docs" } };
+  assert.deepEqual(checkMember({ dir: "docs", pkg, stackra: false }), []);
+  assert.deepEqual(checkMember({ dir: "apps/docs", pkg, stackra: false }), [
+    "a docs package lives at docs/, not apps/docs/ (ADR 0514)",
+  ]);
+  const files = ["README.md", "AGENTS.md", "CHANGELOG.md", "content"];
+  assert.deepEqual(
+    checkMemberFiles({ dir: "docs", pkg, files, agents: "# A\n\n## PII\n", stackra: false }),
+    [],
+  );
 });
 
 test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are static assets", () => {
@@ -395,6 +415,8 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/mobile/brand.json",
       "apps/playground/src/constants/brand-themes/jute.json",
       "packages/design-system/showcase/api/react/free/button.json",
+      "packages/connectors/here/src/node/drivers/__tests__/fixtures/here-matrix-dubai.json",
+      "src/__tests__/fixtures/v2/order.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
       ".oxlintrc.jsonc",
@@ -408,6 +430,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     "knip.json",
     ".agents/models.json",
     "packages/x/brand.json",
+    "packages/x/fixtures/order.json",
   ];
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
@@ -474,6 +497,7 @@ type Issue = { readonly path: string; readonly message: string };
 /** A stand-in for the built @stackra/runway entry: records its calls and refuses documents with `bad: true`. */
 function stubRunway(
   placement: readonly { readonly code: string; readonly message: string }[] = [],
+  requires: readonly Issue[] = [],
 ) {
   class RunwayInvalidError extends Error {
     readonly issues: readonly Issue[];
@@ -501,11 +525,15 @@ function stubRunway(
       calls.push(["checkPlacement", (root as { readonly project?: string }).project, services]);
       return placement;
     },
+    checkRequires(root: unknown, service: unknown) {
+      calls.push(["checkRequires", (root as { readonly project?: string }).project, service]);
+      return requires;
+    },
   };
   return { calls, runway };
 }
 
-test("checkRunwayFiles: each file is parsed for its kind; only the root reaches checkPlacement", () => {
+test("checkRunwayFiles: each file is parsed for its kind; the root reaches checkPlacement, each service checkRequires", () => {
   const files: Record<string, string> = {
     "runway.yaml": "version: 3\nproject: acme\nenvironments: {}\n",
     "apps/docs/runway.yaml": "version: 3\nenvironments: {}\n",
@@ -524,7 +552,28 @@ test("checkRunwayFiles: each file is parsed for its kind; only the root reaches 
     ["checkPlacement", "acme", ["commerce"]],
     ["parseRunway", "app", "apps/docs/runway.yaml"],
     ["parseRunway", "service", "services/commerce/runway.yaml"],
+    ["checkRequires", "acme", { version: 3, environments: {} }],
   ]);
+});
+
+test("checkRunwayFiles: an unserved requirement names the service file and its requires path", () => {
+  const files: Record<string, string> = {
+    "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+    "runway.yaml": "version: 3\nproject: acme\n",
+  };
+  const { runway } = stubRunway(
+    [],
+    [{ path: "requires.cache", message: "No driver serves this valkey requirement" }],
+  );
+  assert.deepEqual(
+    checkRunwayFiles({
+      files: Object.keys(files),
+      read: (p) => files[p] ?? "",
+      runway,
+      services: ["commerce"],
+    }),
+    ["services/commerce/runway.yaml: requires.cache: No driver serves this valkey requirement"],
+  );
 });
 
 test("checkRunwayFiles: schema issues name file and path; placement issues name the code", () => {
@@ -596,6 +645,19 @@ test("checkYamlFlowMaps: names file and line of a flow mapping; allows block map
     (checkYamlFlowMaps("x.yml", "a: [")[0] ?? "").startsWith("x.yml: not valid YAML"),
     true,
   );
+});
+
+test("checkJsonConfigs: a service's assets/defaults JSON stays JSON (imported as a JSON module)", () => {
+  assert.deepEqual(checkJsonConfigs(["services/notifications/assets/defaults/rule-sets.json"]), []);
+  assert.equal(checkJsonConfigs(["services/notifications/config.json"]).length, 1);
+});
+
+test("checkYamlFlowMaps: reads every document of a multi-document file (a Maestro flow)", () => {
+  const flow = "appId: com.figentra.os\n---\n- launchApp\n- tapOn:\n    text: Sign in\n";
+  assert.deepEqual(checkYamlFlowMaps("flow.yaml", flow), []);
+  assert.deepEqual(checkYamlFlowMaps("flow.yaml", "appId: x\n---\n- tapOn: { text: Go }\n"), [
+    "flow.yaml:3: flow mapping; write a block mapping (YAML standard, STA-299)",
+  ]);
 });
 
 test("isRepoOwnedYaml: skips generated and vendored YAML", () => {

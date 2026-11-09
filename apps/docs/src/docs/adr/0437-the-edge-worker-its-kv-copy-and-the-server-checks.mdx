@@ -135,9 +135,11 @@ probed before any limit applied.
 
 ## Enforcement
 
-- built — `EdgeHeaderGuard` (`@stackra/app/server`, order -100) rejects a request whose edge signature is missing,
-  invalid, older than the window or already seen, on a non-public endpoint (its unit tests); the test in the OS service
-  template is still planned.
+- built — `EdgeHeaderGuard` (`@stackra/app/server`, order -100) rejects a request that carries any edge header whose
+  signature is missing, invalid, older than the window or already seen (its unit tests); gen binds it in every service
+  (`SERVER_CONTRIBUTIONS`, STA-2577). The test in the OS service template is still planned.
+- planned — a shared nonce store (`Cache.add`, an atomic set-if-absent): until it ships, a replay is refused per
+  instance only. Acceptable only while no edge is live; it must land before any edge goes live (leader, 2026-11-09).
 - built — core's `workers/edge` (`@figentra/worker-edge`, STA-1566) resolves the host from a host-map var, refuses a bad
   JWT by JWKS, strips inbound edge headers and signs with `signEdgeRequest`; its tests cover unknown hosts, header
   stripping and the signing round trip against `EdgeHeaderGuard`.
@@ -147,6 +149,19 @@ probed before any limit applied.
 - planned — the regional origin refuses a connection that does not come through the tunnel or present the Worker's
   client certificate.
 - planned — the KSA market pack's launch-gate list holds the edge TLS and localisation item.
+
+## Note, 2026-11-09: which requests must be signed
+
+Decision 4 said that without a valid signature "only public endpoints answer". Services also reach each other's
+endpoints over HTTP with a service token, and cross-app deliveries, provider webhooks and the ZITADEL claims call carry
+their own signatures, none of them through the edge. So the guard now splits on the edge headers themselves: a request
+that carries any edge header (an identity header, the signature, the request id or the timestamp) must verify, failing
+closed; a request that carries none is not edge traffic and goes on to authentication, or to its raw endpoint's own
+signature check. Nothing can claim a tenant, product, surface or realm without the Worker's HMAC, because the Worker
+strips every inbound edge header before it signs (`stripEdgeHeaders`, tested in `workers/edge`). Decision 4's
+"only public endpoints answer unsigned" is now carried by authentication together with decision 5's origin lock, and
+`publicPaths` is removed from the guard. The keys come from `EdgeConfig` (`app.edge`): the `env` driver reads the
+`STACKRA_EDGE_SIGNING_KEYS` secret, the same keys the edge Worker signs with, newest first.
 
 ## Supersedes and sources
 
