@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves `renderChatParts` draws text and reasoning in order, turns a tool call that waits for approval into
  *          an ApprovalCard whose buttons answer with the approval id, draws a `data-tamo-<kind>` part through the
- *          registered renderer, and draws nothing for an unknown or malformed part.
+ *          registered renderer (over the default) with the turn's options, and draws nothing for an unknown or
+ *          malformed part.
  * Boundary: unit tier, jsdom, the real @stackra/ui ApprovalCard and Text; Reasoning and Sources are DOM stand-ins, as in
  *           the ChatSurface test.
  * Runtime: node (vitest)
@@ -125,7 +126,13 @@ describe("renderChatParts", () => {
     };
     render(<>{renderChatParts([part], { renderers: { table }, isWriting: false })}</>);
     expect(screen.getByText("2 rows")).toBeTruthy();
-    expect(table).toHaveBeenCalledWith(part.data, part);
+    expect(table).toHaveBeenCalledWith(
+      part.data,
+      part,
+      expect.objectContaining({ isWriting: false }),
+    );
+    // the host's renderer wins over the default table
+    expect(screen.queryByRole("grid")).toBeNull();
   });
 
   it("draws nothing for an unknown, unregistered or malformed part", () => {

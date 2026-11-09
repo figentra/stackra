@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the ChatSurface draws each turn by its role, gives answers their reasoning, sources and actions,
  *          offers starters only while empty, sends a starter's prompt, passes the streaming state to the composer, draws
- *          a turn's AI SDK parts in their place and answers a tool approval.
+ *          a turn's AI SDK parts in their place, answers a tool approval and hands its handlers to the default part
+ *          renderers.
  * Boundary: unit tier, jsdom, the real @stackra/ui components, except ChatMessage, PromptInput, Reasoning and Sources,
  *           which are DOM stand-ins shaped by their feat/c6-gap-ui contracts until that branch lands in this one.
  * Runtime: node (vitest)
@@ -144,6 +145,39 @@ describe("ChatSurface", () => {
     expect(screen.getByText("Cancelling 2048.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
     expect(onApprovalResponse).toHaveBeenCalledWith("appr-1", true);
+  });
+
+  it("hands its onSend and onAnswer to the default part renderers", () => {
+    const onSend = vi.fn();
+    const onAnswer = vi.fn();
+    render(
+      <ChatSurface
+        labels={LABELS}
+        onSend={onSend}
+        onAnswer={onAnswer}
+        messages={[
+          {
+            id: "1",
+            role: "assistant",
+            text: "",
+            parts: [
+              {
+                type: "data-tamo-question",
+                data: {
+                  id: "q1",
+                  prompt: "Which branch?",
+                  choices: [{ value: "olaya", label: "Olaya" }],
+                },
+              },
+              { type: "data-tamo-suggestions", data: { items: ["Show last month"] } },
+            ],
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("radio", { name: "Olaya" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Show last month/ }));
+    expect(onSend).toHaveBeenCalledWith("Show last month");
   });
 
   it("draws a text-only turn as before", () => {

@@ -48,8 +48,10 @@ export interface ChatSurfaceProps {
   readonly suggestions?: readonly PromptSuggestion[] | undefined;
   /** Asks again for an assistant turn. */
   readonly onRetry?: ((turnId: string) => void) | undefined;
-  /** How each Tamo data part (`data-tamo-<kind>`) is drawn; a kind left out draws nothing. */
+  /** How each Tamo data part (`data-tamo-<kind>`) is drawn; a kind left out uses `defaultChatPartRenderers`. */
   readonly renderers?: ChatPartRenderers | undefined;
+  /** Called with a question part's id and the person's answer, keyed by field; left out, questions are read-only. */
+  readonly onAnswer?: ((questionId: string, values: Record<string, unknown>) => void) | undefined;
   /** Called with a tool call's approval id and whether the person approved it. */
   readonly onApprovalResponse?: ((approvalId: string, approved: boolean) => void) | undefined;
   /** Each tool name to the label its approval card shows; a tool left out shows its name. */
