@@ -5,6 +5,7 @@
     "retry": "حاول مرة أخرى",
     "range": "الفترة",
     "change": "{change} مقارنة بالفترة السابقة",
+    "change_points": "{change} نقطة مئوية مقارنة بالفترة السابقة",
     "target": "الهدف {target}",
     "not_rendered": "لا يمكن عرض هذه البطاقة هنا."
   },
@@ -86,6 +87,16 @@
     "empty": "لا توجد نتائج.",
     "loading": "جارٍ البحث في {source}",
     "failed": "تعذّر البحث في {source}."
+  },
+  "chat_form": {
+    "send": "إرسال",
+    "sent": "تم الإرسال",
+    "loading": "جارٍ تحميل النموذج",
+    "unavailable": "لا يمكن عرض هذا النموذج هنا.",
+    "upload": "اختر ملفًا",
+    "uploading": "جارٍ رفع {name}",
+    "upload_failed": "تعذّر رفع {name}.",
+    "no_upload": "لا يمكن إضافة ملفات هنا."
   },
   "checklist": {
     "title": "ابدأ",
@@ -191,6 +202,9 @@
       "create": "إنشاء سجلات جديدة",
       "update": "تحديث السجلات الحالية",
       "upsert": "إنشاء أو تحديث"
+    },
+    "metric_format": {
+      "percent": "نسبة مئوية"
     },
     "place": {
       "band": "شريط المؤشرات",

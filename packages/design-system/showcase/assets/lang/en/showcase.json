@@ -1954,6 +1954,21 @@
         "description": "The landing's section dock: a sticky bar of section links with the page's status line.",
         "keywords": "dock, sections, scroll spy, status, navigation, landing"
       },
+      "notification_inbox": {
+        "title": "Notification inbox",
+        "description": "The person's notifications behind a bell with the unread count, or listed in place, on the web and in the app.",
+        "keywords": "notifications, inbox, bell, unread, in-app, mobile"
+      },
+      "notification_preferences": {
+        "title": "Notification preferences",
+        "description": "Each kind of notification with a switch per channel; channels that must stay on show locked.",
+        "keywords": "notifications, preferences, settings, email, push, unsubscribe"
+      },
+      "push_primer": {
+        "title": "Push primer",
+        "description": "Explains what push notifications give before the system asks, as a sheet or inside onboarding.",
+        "keywords": "push, notifications, permission, onboarding, opt in, mobile"
+      },
       "appearance_toggle": {
         "title": "Appearance toggle",
         "description": "Lets a person choose light, dark or the system's look, kept on their device.",
@@ -5827,6 +5842,21 @@
         }
       },
       "page_dock": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "notification_inbox": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "notification_preferences": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "push_primer": {
         "basics": {
           "title": "Basics"
         }
@@ -9842,6 +9872,30 @@
           "when": "For a long page of named sections, such as the landing's stations.",
           "rtl": "The links follow the reading order, so the dock mirrors in Arabic.",
           "when_not": "For the site's own navigation; use SiteHeader."
+        },
+        "notification_inbox": {
+          "headline": "Every update, one bell away.",
+          "intro": "Shows the person's notifications grouped by day, with unread marks, mark-all-read and dismiss; your app loads the inbox and keeps its read state.",
+          "tags": "Notifications kit · Inbox · In-app",
+          "what": "The notifications module's inbox, on the design system's notifications panel, on the web and on mobile.",
+          "when": "In the header of an app, or on a notifications screen or dashboard tile when shown in place.",
+          "rtl": "The panel mirrors in Arabic: the bell sits at the inline end and each notification keeps its own direction."
+        },
+        "notification_preferences": {
+          "headline": "Let people choose how they hear from you.",
+          "intro": "Lists each topic with a switch for every channel it can use, saves only what changed, and keeps locked channels, such as security mail, switched on.",
+          "tags": "Notifications kit · Preferences · Settings",
+          "what": "The notifications module's preferences editor, read and saved through its client port.",
+          "when": "In account settings, or in an organisation's settings for its defaults.",
+          "rtl": "Rows mirror in Arabic: the topic reads from the right and its switches line up at the inline end."
+        },
+        "push_primer": {
+          "headline": "Ask for push at the right moment.",
+          "intro": "Says what notifications will bring before the system prompt appears; one button asks, the other leaves it for later, and a retry never registers the device twice.",
+          "tags": "Notifications kit · Push · Onboarding",
+          "what": "The notifications module's push permission primer for the app, as a full sheet or an inline card.",
+          "when": "In onboarding, after a first order, or wherever push would help the person most.",
+          "rtl": "The card mirrors in Arabic, and its buttons keep their order from the inline start."
         },
         "appearance_toggle": {
           "headline": "Light, dark or the system's look, one tap away.",

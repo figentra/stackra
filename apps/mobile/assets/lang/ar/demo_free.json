@@ -5025,6 +5025,31 @@
       "note": "ملاحظة"
     }
   },
+  "notification_inbox": {
+    "basics": {
+      "title": "الإشعارات",
+      "empty": "لا جديد لديك",
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "order_paid": "تم دفع الطلب رقم 1042",
+      "order_paid_detail": "86.50 ريال بالبطاقة",
+      "low_stock": "مخزون منخفض: حليب الشوفان",
+      "shift_report": "تقرير الوردية جاهز",
+      "minutes_ago": "{count, plural, zero {الآن} one {قبل دقيقة} two {قبل دقيقتين} few {قبل # دقائق} many {قبل # دقيقة} other {قبل # دقيقة}}",
+      "hours_ago": "{count, plural, zero {الآن} one {قبل ساعة} two {قبل ساعتين} few {قبل # ساعات} many {قبل # ساعة} other {قبل # ساعة}}"
+    }
+  },
+  "push_primer": {
+    "basics": {
+      "title": "ابقَ على اطلاع",
+      "description": "سنخبرك عندما يجهز طلب، أو تصل دفعة، أو ينخفض المخزون.",
+      "enable": "تفعيل الإشعارات",
+      "later": "ليس الآن",
+      "failed": "تعذّر تفعيل الإشعارات. حاول مرة أخرى.",
+      "granted": "الإشعارات مفعّلة.",
+      "postponed": "يمكنك تفعيلها لاحقًا من الإعدادات."
+    }
+  },
   "brand_logo": {
     "basics": {
       "brand": "استوديو أكمي",

@@ -751,6 +751,8 @@ import FreeNavigationListRefused from "#src/demos/free/navigation-list/refused";
 import FreeNavigationListRefusedCode from "#src/demos/free/navigation-list/refused.code";
 import FreeNetworkGraphTeam from "#src/demos/free/network-graph/team";
 import FreeNetworkGraphTeamCode from "#src/demos/free/network-graph/team.code";
+import FreeNotificationInboxBasics from "#src/demos/free/notification-inbox/basics";
+import FreeNotificationInboxBasicsCode from "#src/demos/free/notification-inbox/basics.code";
 import FreeNotificationsPanelInbox from "#src/demos/free/notifications-panel/inbox";
 import FreeNotificationsPanelInboxCode from "#src/demos/free/notifications-panel/inbox.code";
 import FreeNotificationsPanelArrival from "#src/demos/free/notifications-panel/arrival";
@@ -907,6 +909,8 @@ import FreePropertyListCopy from "#src/demos/free/property-list/copy";
 import FreePropertyListCopyCode from "#src/demos/free/property-list/copy.code";
 import FreePullToRefreshBasics from "#src/demos/free/pull-to-refresh/basics";
 import FreePullToRefreshBasicsCode from "#src/demos/free/pull-to-refresh/basics.code";
+import FreePushPrimerBasics from "#src/demos/free/push-primer/basics";
+import FreePushPrimerBasicsCode from "#src/demos/free/push-primer/basics.code";
 import FreeQrCodePayment from "#src/demos/free/qr-code/payment";
 import FreeQrCodePaymentCode from "#src/demos/free/qr-code/payment.code";
 import FreeQrCodeWifi from "#src/demos/free/qr-code/wifi";
@@ -2587,6 +2591,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/network-graph.json") as ApiDoc,
   },
+  "free/notification-inbox": {
+    examples: {
+      basics: { Demo: FreeNotificationInboxBasics, code: FreeNotificationInboxBasicsCode },
+    },
+  },
   "free/notifications-panel": {
     examples: {
       inbox: { Demo: FreeNotificationsPanelInbox, code: FreeNotificationsPanelInboxCode },
@@ -2853,6 +2862,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/pull-to-refresh.json") as ApiDoc,
+  },
+  "free/push-primer": {
+    examples: {
+      basics: { Demo: FreePushPrimerBasics, code: FreePushPrimerBasicsCode },
+    },
   },
   "free/qr-code": {
     examples: {

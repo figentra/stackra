@@ -11,7 +11,9 @@ import type { FooterLink } from "#core/types/footer-link.type";
 
 /** A footer column. */
 export interface FooterGroup {
+  /** The column's title. */
   readonly title: LocalizedText;
 
+  /** The column's links, in order. */
   readonly links: FooterLink[];
 }
