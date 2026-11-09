@@ -40,7 +40,7 @@ const misePluginFolder = (): string =>
  */
 export function createTestbedDeps(cwd: string, io: CliIo): TestbedDeps {
   return {
-    exec: (command, args) => runCaptured(command, args, cwd),
+    exec: (command, args, options) => runCaptured(command, args, cwd, options?.timeoutMs),
     stream: (command, args) => runProcess({ command, args, cwd }, io),
     sleep: (milliseconds) =>
       new Promise((done) => {
