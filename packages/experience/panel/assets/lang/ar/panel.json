@@ -87,6 +87,16 @@
     "loading": "جارٍ البحث في {source}",
     "failed": "تعذّر البحث في {source}."
   },
+  "chat_form": {
+    "send": "إرسال",
+    "sent": "تم الإرسال",
+    "loading": "جارٍ تحميل النموذج",
+    "unavailable": "لا يمكن عرض هذا النموذج هنا.",
+    "upload": "اختر ملفًا",
+    "uploading": "جارٍ رفع {name}",
+    "upload_failed": "تعذّر رفع {name}.",
+    "no_upload": "لا يمكن إضافة ملفات هنا."
+  },
   "checklist": {
     "title": "ابدأ",
     "progress": "تم {done} من {total}",
