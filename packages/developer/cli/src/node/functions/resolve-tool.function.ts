@@ -3,8 +3,8 @@
  * Purpose: `resolveTool(task, member, options)`, the one tool process a member command starts, chosen by the
  *          member's layout and target: Vite for a web or PWA target, Expo for iOS and Android, tsdown for a package,
  *          Wrangler for a worker, the generated Encore app for a service, for the docs app React Router when gen
- *          assembled a Fumadocs site (`react-router dev`, and `react-router build` for `build` and for `lint`, whose
- *          link check reads the build, STA-2026) and Mintlify otherwise (`dev`, `validate` and `broken-links`, in the
+ *          assembled a Fumadocs site (`react-router dev`, and `react-router build` for `build` and, into `.lint-build/`,
+ *          for `lint`, whose link check reads that build, STA-2026) and Mintlify otherwise (`dev`, `validate` and `broken-links`, in the
  *          `.stackra/site/` gen assembles, or in `src/` for a docs app not yet moved to that layout, STA-1316),
  *          and vitest, tsc
  *          and oxlint everywhere (`--tier int` runs the `.stackra/vitest.int.config.ts` gen writes for a member with an
@@ -25,6 +25,7 @@ import { join } from "node:path";
 import { DOCS_CONFIG_FILE, DOCS_SITE_DIR } from "@stackra/gen";
 import { parse } from "yaml";
 
+import { DOCS_LINT_BUILD_DIR } from "#node/constants/docs-lint-build-dir.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import type { Member } from "#node/types/member.type";
 import type { ToolRun } from "#node/types/tool-run.type";
@@ -104,7 +105,13 @@ export function resolveTool(
       if (!existsSync(join(root, "node_modules", "@react-router", "dev")))
         return refuse("the docs site's dependencies are not installed: run `pnpm install` first");
       if (task === "dev") return at("react-router", ["dev", ...port()], site);
-      if (task === "build" || task === "lint") return at("react-router", ["build"], site);
+      if (task === "build") return at("react-router", ["build"], site);
+      // Apart from `build/`, so a lint turbo runs beside a build never empties its output.
+      if (task === "lint")
+        return {
+          ...at("react-router", ["build"], site),
+          env: { STACKRA_DOCS_BUILD_DIR: DOCS_LINT_BUILD_DIR },
+        };
       return refuse(
         "the docs app runs React Router, which serves `dev`, `build` and `lint` (the link check reads the build)",
       );

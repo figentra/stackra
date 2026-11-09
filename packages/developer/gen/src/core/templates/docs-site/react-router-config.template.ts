@@ -7,7 +7,8 @@
  *          matched it, and the site would ship a blank page; or when a title repeats a part (the home page's own
  *          words followed by the same site name).
  * Boundary: a constant; the emitted config reads `app/site.json`, moves one file and reads the prerendered pages in its
- *           build folder.
+ *           build folder: `build/`, or `STACKRA_DOCS_BUILD_DIR` when set (`stackra lint` builds apart, so a lint and a
+ *           build side by side never empty each other's output).
  * Runtime: isomorphic
  * Governing contract: ADR 0514 (decisions 1 and 9: prerendered static files on a Worker); ADR 0284; STA-2026; the blank root page found in Geo's docs (2026-11-08).
  */
@@ -24,6 +25,8 @@ const site = JSON.parse(readFileSync(new URL("./app/site.json", import.meta.url)
 
 export default {
   appDirectory: "app",
+  // \`stackra lint\` builds into its own folder, so it never empties a \`build\` running beside it.
+  buildDirectory: process.env["STACKRA_DOCS_BUILD_DIR"] ?? "build",
   ssr: false,
   prerender: [...site.paths, "/404", "/api/search"],
   buildEnd({ reactRouterConfig }) {

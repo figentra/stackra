@@ -111,24 +111,32 @@ describe("toolCommand", () => {
     expect(await toolCommand("lint", "Lint").run(context())).toBe(7);
   });
 
-  it("builds a Fumadocs docs site for lint, then names each broken link", async () => {
+  it("builds a Fumadocs docs site for lint into its own folder, then names each broken link", async () => {
     mkdirSync(join(root, "src", "config"), { recursive: true });
     writeFileSync(join(root, "src", "config", "docs.config.ts"), "");
     mkdirSync(join(root, "node_modules", "@react-router", "dev"), { recursive: true });
     const site = join(root, ".stackra", "site");
+    mkdirSync(join(site, ".lint-build", "client"), { recursive: true });
     mkdirSync(join(site, "build", "client"), { recursive: true });
     writeFileSync(join(site, "react-router.config.ts"), "");
-    writeFileSync(join(site, "build", "client", "index.html"), '<a href="/gone">Gone</a>');
+    writeFileSync(join(site, ".lint-build", "client", "index.html"), '<a href="/gone">Gone</a>');
+    // The build's own output is not what lint reads: a build beside it may be writing it.
+    writeFileSync(join(site, "build", "client", "index.html"), '<a href="/">Home</a>');
     const { io, output } = captureIo();
     expect(await toolCommand("lint", "Lint").run({ ...context(), io })).toBe(1);
     expect(gen).toHaveBeenCalled();
     expect(spawn).toHaveBeenCalledTimes(1);
     expect(spawn).toHaveBeenCalledWith(
-      { command: "react-router", args: ["build"], cwd: site },
+      {
+        command: "react-router",
+        args: ["build"],
+        cwd: site,
+        env: { STACKRA_DOCS_BUILD_DIR: ".lint-build" },
+      },
       expect.anything(),
     );
     expect(output()).toContain("/: /gone (no page or file)");
-    writeFileSync(join(site, "build", "client", "index.html"), '<a href="/">Home</a>');
+    writeFileSync(join(site, ".lint-build", "client", "index.html"), '<a href="/">Home</a>');
     expect(await toolCommand("lint", "Lint").run(context())).toBe(0);
   });
 

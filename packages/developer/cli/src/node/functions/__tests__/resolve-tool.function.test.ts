@@ -211,12 +211,18 @@ describe("resolveTool", () => {
       args: ["dev", "--port", "3334"],
       cwd: site,
     });
-    for (const task of ["build", "lint"] as const)
-      expect(resolveTool(task, member("docs"), {})).toEqual({
-        command: "react-router",
-        args: ["build"],
-        cwd: site,
-      });
+    expect(resolveTool("build", member("docs"), {})).toEqual({
+      command: "react-router",
+      args: ["build"],
+      cwd: site,
+    });
+    // lint builds apart, so a build turbo runs beside it keeps its own output.
+    expect(resolveTool("lint", member("docs"), {})).toEqual({
+      command: "react-router",
+      args: ["build"],
+      cwd: site,
+      env: { STACKRA_DOCS_BUILD_DIR: ".lint-build" },
+    });
     expect(() => resolveTool("typecheck", member("docs"), {})).toThrow(/React Router/);
   });
 
