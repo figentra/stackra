@@ -1,0 +1,21 @@
+{
+  "slug": "timeline-hero",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "TimelineHero",
+  "parts": ["TimelineHero"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 560
+    }
+  ],
+  "related": ["free/hero-machine", "free/cta-row", "free/illustration"],
+  "tokens": ["color.accent", "color.border", "color.muted"],
+  "keywords": ["hero", "timeline", "tracking", "route", "landing", "marketing", "kit"],
+  "status": "new"
+}
