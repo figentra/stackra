@@ -41,6 +41,8 @@ describe("@stackra/app/server", () => {
       "RequestGuard",
       "ServiceClientSessionDriver",
       "VerifiedToken",
+      "VisitorConfig",
+      "VisitorIdentityService",
       "apiCacheControl",
       "corsHeaders",
       "createApp",
