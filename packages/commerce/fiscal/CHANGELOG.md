@@ -1,5 +1,18 @@
 # @stackra/fiscal
 
+## 0.31.0
+
+### Patch Changes
+
+- 2b1dac5: `EtaDriver` now reads a rejected submission's reference from `submissionUUID`, the name ETA's SDK uses, and falls back to `submissionId`. Before this, a real ETA answer left the reference empty.
+- @stackra/money@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/market-packs@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

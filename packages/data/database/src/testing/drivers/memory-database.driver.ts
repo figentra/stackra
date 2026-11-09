@@ -32,14 +32,18 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import type { PGlite } from "@electric-sql/pglite";
+import { AsyncLocalStorage } from "node:async_hooks";
+
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import type { MikroORM, PgliteConnection } from "@mikro-orm/pglite";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Driver } from "@stackra/container";
+import type { DetachedStep } from "@stackra/actions/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
+import { connectDetachedRuns } from "#core/functions/connect-detached-runs.function";
 import { deleteFilters } from "#core/functions/delete-filters.function";
 import { runInScope } from "#core/functions/run-in-scope.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
@@ -77,10 +81,14 @@ export class MemoryDatabaseDriver extends Driver(Database) {
   /** The schema setup, run once before the first query. */
   private prepared: Promise<void> | undefined;
 
-  /** Makes the driver `Database.current()`; nothing starts until the first query. */
+  /** The step of each detached call running in this database (`runDetached`). */
+  private readonly detachedSteps = new AsyncLocalStorage<DetachedStep>();
+
+  /** Makes the driver `Database.current()` and registers the detached-run wrapper; nothing starts until the first query. */
   constructor() {
     super();
     ACTIVE_DATABASE.current = this;
+    connectDetachedRuns();
   }
 
   /** The MikroORM instance on PGlite. */
@@ -119,6 +127,19 @@ export class MemoryDatabaseDriver extends Driver(Database) {
   /** The container's shutdown hook: `app.close()` closes the database it built. */
   onApplicationShutdown(): Promise<void> {
     return this.close();
+  }
+
+  /** Implements `Database.detached`, documented there: this instance's own store, never another database's. */
+  override detached(): DetachedStep | undefined {
+    return this.detachedSteps.getStore();
+  }
+
+  /**
+   * Implements `Database.runDetached`, documented there: `work` runs on a fresh fork as the transaction context, so
+   * neither it nor a step it opens joins the call's committed transaction, which MikroORM keeps in the context.
+   */
+  override runDetached<T>(step: DetachedStep, work: () => Promise<T>): Promise<T> {
+    return this.detachedSteps.run(step, () => TransactionContext.create(this.orm.em.fork(), work));
   }
 
   /** Implements `Database.em`, documented there. */
