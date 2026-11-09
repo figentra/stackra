@@ -25,7 +25,7 @@ and `yaml`.
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `stackra new <kind> <name>`                               | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                                   |
 | `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                               |
-| `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest                                                          |
+| `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest; a warning prints and exits 0, a refusal exits 1         |
 | `stackra dev [--target <t>]`                              | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                                         |
 | `stackra dev --surface <surface>`                         | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                                  |
 | `stackra dev --mobile <app> --os <c>`                     | a product mobile app from its template line, Release build on the iOS simulator (`--device`)                                              |
@@ -36,6 +36,7 @@ and `yaml`.
 | `stackra mobile onboard [--app <key>]`                    | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI                                             |
 | `stackra preview serve --surface <s>`                     | serve a built surface on 127.0.0.1 as the edge would, with an `--api` proxy (STA-1676)                                                    |
 | `stackra smoke --env <e> [--only <targets>]`              | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265)             |
+| `stackra promote --to <e> [--from <e>] [--sha <sha>]`     | ship what `--from` (default staging) runs to `--to` through runway's providers; `--approved` behind an approval                           |
 | `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                            |
 | `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                                  |
 | `stackra test [--tier unit\|int\|e2e]`                    | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
@@ -54,14 +55,14 @@ and `yaml`.
 | `stackra ls [section]`                                    | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)                                                  |
 | `stackra mcp`                                             | the local developer MCP over stdio; its tools run these commands in-process                                                               |
 | `stackra mcp sync`                                        | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                                                                            |
-| `stackra mcp exec [--env] [--path] --`                    | start an MCP server with its secrets, expanded by its own shell under `infisical run`                                                     |
+| `stackra mcp exec --`                                     | start an MCP server with its secrets, decrypted by `sops exec-env` from the figentra/secrets clone, expanded by its own shell              |
 | `stackra agents sync`                                     | write the project's generated agent files (`.mcp.json`)                                                                                   |
 | `stackra agents check`                                    | fail when `.mcp.json` drifted from `.mcp.yaml`                                                                                            |
 | `stackra add <kind> <name>[@version]`                     | install a registry skill, agent, MCP server, plugin or package (see below)                                                                |
 | `stackra publish [--dry-run]`                             | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                                   |
 | `stackra testbed <verb>`                                  | the shared test boxes: `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale`, `image` (below)                                           |
 | `stackra consumer-gate --core --checkout --product --out` | run a consumer product's services against a core tree: link or pack core, gen, typecheck, test; summaries under `--out` (below)           |
-| `stackra doctor`                                          | fresh-machine checklist: toolchain, install, Infisical login, CLIs, agent sync                                                            |
+| `stackra doctor`                                          | fresh-machine checklist: toolchain, install, CLIs, agent sync, sops with its Google login                                                 |
 | `stackra eas-preflight check\|record`                     | before a local EAS build: clean tree, deployed sha, free disk; `record` logs the build id                                                 |
 | `stackra structure [--write-docs]`                        | print or write the generated repository structure standards page                                                                          |
 | `stackra architecture-map [--check]`                      | write the docs architecture map (archify), or fail when it drifted                                                                        |
@@ -95,15 +96,19 @@ most 30 days each; a `security`, `tenant-isolation`, `data-integrity` or `leak` 
 It never fetches: the caller clones the product at its pin.
 
 `stackra testbed` (ADR 0484) replaces the Mac script `ci-box`; it starts `aws`, `ssh`, `rsync` and `gh` without a shell
-and never prints or passes a secret value. Defaults: AWS profile `academorix`, region `eu-west-1`, key
+and never prints or passes a secret value. Defaults: AWS profile `academorix`, regions eu-west-1, eu-west-2 and
+eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change), key
 `~/.ssh/academorix-ci.pem`, user `ubuntu`; override with `STACKRA_TESTBED_AWS_PROFILE`, `STACKRA_TESTBED_REGION`,
 `STACKRA_TESTBED_SSH_KEY` or `--profile`, `--region`, `--key`.
 
 - `run "<session> <what>" <dir> "<cmd>"` claims a free slot (heavy for `encore test`, `playwright`, `e2e`, `act `,
   `build`; else light), rsyncs `<dir>` into the box's job directory and runs the command there under the slot's lock.
+  The job runs detached on the box and the CLI follows its log: when the SSH-over-SSM connection drops, the job keeps
+  running and the CLI reattaches (three tries, 10 s apart) and exits with the job's code; Ctrl-C stops the job.
   A command naming `ci-box` or `stackra testbed` is refused (exit 2). With every slot busy it prints "every box busy,
   waiting", polls every 20 s and, after 2 minutes, raises the group's desired count by one. `--no-wait` exits 75 when
-  no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
+  no box is healthy; `--on-demand` runs any command in the heavy slot, which is never spot; `--postgres` starts a throwaway Postgres beside the job and sets
+  `TESTBED_POSTGRES_HOST`; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
   never runs on the Mac.
 - `status`, `unlock [--box N|id] [--slot heavy|light]`, `ip`, `ssh [--box] [cmd]`, `sync [--box] <dir>`; box numbers
   are by launch time.
@@ -272,8 +277,8 @@ last rebuild (`searchStatus` of `@stackra/search/node`). Both connect with `dire
 (STA-1586) calls the environment's own `identity.operator.bootstrap@1` (`POST /platform/operators/bootstrap`); it opens
 no database connection. The origin is `https://<edge.apiHost>.<environments.<env>.domains.zone>` from the root
 `runway.yaml`, or `--api`; the environment is `--env`, else `STACKRA_ENVIRONMENT`, else `dev`. The credential is the
-environment's bootstrap token in `STACKRA_OPS_TOKEN`, sent as a bearer token and never printed (run it under
-`infisical run`; the deploys runbook says how the owner mints it). The action finds the user by email, gives the role
+environment's bootstrap token in `STACKRA_OPS_TOKEN`, sent as a bearer token and never printed (the owner starts
+it with the token in its environment; the deploys runbook says how the owner mints it). The action finds the user by email, gives the role
 (`owner` by default) at the platform node unless held, and audits the call. It prints `granted`, `already holds`
 (nothing written) or `would grant` (`--dry-run`) and exits 0; no user with the email, an error status or an unreachable
 origin exits 1.
@@ -283,7 +288,11 @@ origin exits 1.
 `stackra db diff [--json]` compares the member's models with the schema its migrations build, with no database and no
 network: it compiles the member's migrations (its own and its declared packages', in gen's order), replays them on an
 in-memory PGlite through the member's own `@stackra/database/node`, and compares tables, columns (type and
-nullability), indexes and foreign keys with what the models declare. One line per difference,
+nullability), indexes and foreign keys with what the models declare: each many-to-many relation's pivot table (its
+two keys, the owner's `tenant_id` and their foreign keys) and a `@Searchable` model's `search_text` and
+`search_filters` included, its vectors and rebuild shadows tolerated (search columns on another table are undeclared),
+and a partial index's predicate compared as Postgres rewrites it (`in` as `= ANY`, `like` as `~~`, casts dropped). One
+line per difference,
 `<module>  <table>  <kind>  <subject>  <expected>  <actual>`; `--json` prints the same as an array. Exit 0 when they
 agree, 1 on a difference, 2 when a migration does not compile or replay, or `@stackra/database` or PGlite
 (`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) is not installed in the member. Only the member's own modules

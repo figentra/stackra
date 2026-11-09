@@ -46,6 +46,17 @@ own cursor; the inbox runs each received event once.
 | `OutboxDriver`, `InboxDriver`, `ChangeFeed`, `EventPublisher`          | `./contracts` | the ports                                                                      |
 | `ChangeRecord`, `ChangeCursor`, `ChangeLogReport`                      | `./contracts` | a retained change, a consumer's place in the log, a maintenance run            |
 | `OutboxMessage`, `EventEnvelope`, `RowChange`, `ChangeConsumer`, enums | `./contracts` | the stored message, the wire form, a row change and what a consumer implements |
+| `CrossAppRelayService`                                                 | `./node`      | the cross-app relay: `connect(container)`, then `work({ signal })` or `relay()` |
+| `CrossAppFanOut`                                                       | `./node`      | bound: `OutboxRelayService` writes a delivery per subscriber after publishing  |
+| `RelayInboxService`                                                    | `./node`      | `receive({ method, headers, body })` behind `/events/inbox`: 204, 401, 405, 422 |
+| `PostgresDeliveryDriver`                                               | `./node`      | the default delivery store: `outbox.deliveries`                                |
+| `RelayDeliveriesCommand`, `RelayReplayCommand`                         | `./node`      | `outbox:relay-deliveries`, `outbox:relay-replay <dlv_id>`                      |
+| `ConfigSubscriberSourceDriver`                                               | `.`           | subscribers from one environment's `EventsRelayConfig` (gen binds it)          |
+| `Ed25519EventSignerDriver`, `ContractInboxVerifierDriver`                          | `.`           | sign as the producer; verify against the pinned producers' keys                |
+| `MemoryDeliveryDriver`                                                 | `.`           | the delivery store of a test or a single process                               |
+| `DeliveryDriver`, `SubscriberSource`, `EventSigner`, `InboxVerifier`   | `./contracts` | the cross-app relay's ports                                                    |
+| `CrossAppEnvelope`, `Delivery`, `RelayKey`, `PinnedProducer`           | `./contracts` | the cross-app envelope, a stored delivery, a public key, a pinned producer     |
+| `EventsRelayConfig`, `RelayInboxConfig`                                | `.`           | keys `outbox.events_relay` (keys, subscribers) and `outbox.relay_inbox`         |
 
 ## Writing in the producer's transaction
 
@@ -137,13 +148,49 @@ Gen writes `registerChangeConsumers([[Product, ProductIndexConsumer]])` from the
   `outbox.changes_default` and are deleted past the window. Change messages already in `outbox.messages` from before
   the log still drain the old way.
 
+## Delivering to other apps
+
+A producer delivers an integration event to a consumer in another app over HTTP (ADR 0511 decisions 11 to 19,
+STA-1910). After `OutboxRelayService` publishes an event in its own app, a bound `CrossAppFanOut` writes one row of
+`outbox.deliveries` (migration `outbox.0005_create_deliveries`) per subscriber whose events include each published
+version, unique on (event id, subscriber, type), so a retried message writes nothing twice; a fan-out failure fails the
+message, which retries. Without a bound fan-out nothing changes. Subscribers come from a `SubscriberSource`; the first
+driver, `ConfigSubscriberSourceDriver`, reads `EventsRelayConfig` (key `outbox.events_relay`), the
+producer's runway `events` block of the running environment, which gen emits at build time.
+
+`CrossAppRelayService` runs beside the outbox relay with its own lock (`outbox.cross-app`), held only while a tick
+leases up to ten due deliveries per subscriber in one statement (their due time moves 110 seconds ahead, past a whole
+batch at the timeout each). The lock and transaction are released before anything is sent; subscribers go in parallel,
+each one's deliveries in order, a subscriber stops at its first failure, and each outcome is recorded on its own. A
+row left unsent (after a failure, or by a crashed relay) is due again when its lease ends. A delivery is one `POST <inbox origin>/events/inbox` of the envelope (with
+`envelopeVersion: 1`, without `producer`), signed by `Ed25519EventSignerDriver` in the Standard Webhooks layout:
+`webhook-id` (the `dlv_` id), `webhook-timestamp`, `webhook-signature: v1a,<key id>,<base64>` over
+`<id>.<timestamp>.<body>`. The private key is the PKCS#8 DER key as base64url, read by its secret name
+(`STACKRA_EVENTS_SIGNING_KEY` by default) from the bound `SecretStore`; the current key is the first listed. Ten
+seconds per request, no redirect followed. A network error, a timeout, a redirect, a 5xx, 408 or 429 backs off as the
+outbox does; any other 4xx dead-letters at once; the tenth failure dead-letters; each dead letter is logged
+(`outbox.delivery_dead`) with subscriber, type and code. `stackra outbox:relay-deliveries [--subscriber] [--state]`
+lists them and `stackra outbox:relay-replay <dlv_id>` sends a dead one again.
+
+On the consumer, gen's raw `/events/inbox` route hands the request to `RelayInboxService`. `ContractInboxVerifierDriver`
+checks the headers, a five-minute window either way, a key id the pinned producer lists for the running environment
+(raw base64url Ed25519 public keys; `RelayInboxConfig`, key `outbox.relay_inbox`, holds each pinned producer's keys
+and events and the environment, `STACKRA_ENVIRONMENT`) and the signature, before the body is parsed. The envelope's
+`producer` is then the verified service, never the body's, and `InboxService.receive` claims the id and runs the
+listeners in one transaction. Answers: 204 handled, already received or a newer version that waits; 401 unverified
+(the reason is logged, never the body); 403 an event the verified producer does not publish (`RelayInboxConfig` lists
+each pinned producer's events, any version of a listed name passes), so one producer's key never runs another's
+listeners; 422 a broken envelope or data, or an event this consumer does not know yet (nothing recorded). The producer
+dead-letters a 403 or 422; replay a 422 for an unknown event with `outbox:relay-replay` once the consumer ships it. A
+listener that throws propagates as a 5xx, so the producer retries.
+
 ## Drivers and tables
 
 - **Postgres** (`./node`, default): `outbox.messages` (migration `outbox.0001_create_messages`, with the `ltree`
   extension), `outbox.inbox` (`outbox.0002_create_inbox`) and `outbox.changes` with `outbox.change_cursors`
-  (`outbox.0004_create_changes`). The relay reads messages across scopes, so neither table
+  (`outbox.0004_create_changes`), and `outbox.deliveries` (`outbox.0005_create_deliveries`). The relay reads messages across scopes, so neither table
   has a row-level-security policy; a message's scope is data the relay opens for each delivery.
-- **Memory** (`.`): the three stores in process memory, with no transaction.
+- **Memory** (`.`): the four stores in process memory, with no transaction.
 - **Transports**: `InboxEventPublisherDriver` in process; the Encore Pub/Sub and Postgres queue transports between
   services are drivers gen supplies (ADR 0142).
 
@@ -165,7 +212,8 @@ revoke and wipe are the client's (`@stackra/query`, `@stackra/storage`).
 ## Not here
 
 - Outbox staging per workflow run (ADR 0102 decision 3) waits for @stackra/workflow.
-- Listing and redriving dead messages wait for the console. `data_maintenance.outbox_message.prune` (03:15 UTC, a job of
+- Listing and redriving dead messages wait for the console. Dead cross-app deliveries are not pruned yet (a
+  `shortcut:` in `pruneOutbox`). `data_maintenance.outbox_message.prune` (03:15 UTC, a job of
   `@stackra/data-maintenance` over `pruneOutbox`) deletes dead letters and received event ids older than
   `outbox.pruneAfterDays` (30 by default).
 - A `stackra changes:replay|resume|backfill` command and a panel for stalled cursors; `ChangeFeedService` is the API.

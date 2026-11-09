@@ -1,5 +1,383 @@
 # @stackra/vite-plugin
 
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [f0be8d8]
+- Updated dependencies [7a87018]
+  - @stackra/gen@0.28.0
+  - @stackra/runway@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/i18n@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [fb1ae38]
+  - @stackra/gen@0.27.0
+  - @stackra/runway@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/i18n@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [ec00fd8]
+- Updated dependencies [081989b]
+- Updated dependencies [b1603a7]
+- Updated dependencies [5c0aafc]
+- Updated dependencies [9b02a7c]
+  - @stackra/gen@0.26.0
+  - @stackra/runway@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/i18n@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [689c37b]
+- Updated dependencies [8a8fa6f]
+  - @stackra/gen@0.25.0
+  - @stackra/runway@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/i18n@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [b4c2501]
+- Updated dependencies [2df7162]
+  - @stackra/gen@0.24.0
+  - @stackra/runway@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/i18n@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [7ff4969]
+- Updated dependencies [926faa4]
+- Updated dependencies [96374f4]
+- Updated dependencies [557809c]
+- Updated dependencies [c26fb86]
+- Updated dependencies [8b42c02]
+- Updated dependencies [1083617]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [f790fa1]
+- Updated dependencies [fb6e2b3]
+  - @stackra/gen@0.23.0
+  - @stackra/runway@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/i18n@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [e41d9a1]
+- Updated dependencies [4663a61]
+  - @stackra/gen@0.22.0
+  - @stackra/runway@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/i18n@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- 2974e54: Subresource Integrity for extension bundles. The bundle build records a sha384 for every emitted file in
+  `bundle.manifest.json` (`integrity`). Runway refuses to publish a bundle whose file is missing or changed since the
+  build, carries each value by URL on the edge release, and the shell page pins every bundle URL with it: an
+  `integrity` attribute on each modulepreload and stylesheet link, and the import map's `integrity` block for the
+  chunks no link names. A bundle built before this has no `integrity` and renders as before.
+
+### Patch Changes
+
+- Updated dependencies [2974e54]
+- Updated dependencies [ae9cb23]
+- Updated dependencies [d25a7a0]
+- Updated dependencies [9feea9d]
+- Updated dependencies [00a2477]
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+- Updated dependencies [4242bbb]
+  - @stackra/gen@0.21.0
+  - @stackra/runway@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/i18n@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [671c9fd]
+- Updated dependencies [3b48b0f]
+- Updated dependencies [6623da1]
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+  - @stackra/runway@0.20.0
+  - @stackra/gen@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [2933e48]
+- Updated dependencies [bac874e]
+- Updated dependencies [e105174]
+- Updated dependencies [ee00741]
+- Updated dependencies [5830168]
+- Updated dependencies [ef04935]
+- Updated dependencies [1cc3bd3]
+- Updated dependencies [afd7846]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [fc845f4]
+- Updated dependencies [c239773]
+- Updated dependencies [414586e]
+- Updated dependencies [7a83de3]
+- Updated dependencies [1f33c82]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/gen@0.19.0
+  - @stackra/runway@0.19.0
+  - @stackra/i18n@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- Updated dependencies [2a7bc6d]
+- Updated dependencies [baee3a3]
+  - @stackra/gen@0.18.1
+  - @stackra/runway@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/i18n@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- Updated dependencies [15cd10c]
+- Updated dependencies [79dcafb]
+- Updated dependencies [dbf1c33]
+  - @stackra/runway@0.18.0
+  - @stackra/gen@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/i18n@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- Updated dependencies [2da4d9d]
+  - @stackra/gen@0.17.2
+  - @stackra/runway@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/i18n@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/runway@0.17.1
+  - @stackra/gen@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/i18n@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- Updated dependencies [4c6bf13]
+  - @stackra/runway@0.17.0
+  - @stackra/gen@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/i18n@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [89d4633]
+- Updated dependencies [6ed8ab1]
+- Updated dependencies [08be546]
+- Updated dependencies [c6e4715]
+- Updated dependencies [64cfc1d]
+- Updated dependencies [5bf8ad3]
+  - @stackra/runway@0.16.0
+  - @stackra/gen@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/runway@0.15.0
+  - @stackra/gen@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/i18n@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [fda1d53]
+  - @stackra/runway@0.14.4
+  - @stackra/gen@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/i18n@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- Updated dependencies [3ccf74a]
+- Updated dependencies [64e4840]
+  - @stackra/runway@0.14.3
+  - @stackra/gen@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/i18n@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/gen@0.14.2
+  - @stackra/runway@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/gen@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/i18n@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [54e05c6]
+  - @stackra/runway@0.14.0
+  - @stackra/gen@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/i18n@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [dc4b3f0]
+- Updated dependencies [5d10209]
+- Updated dependencies [6e61084]
+  - @stackra/runway@0.13.0
+  - @stackra/gen@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/i18n@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [e36505c]
+  - @stackra/runway@0.12.0
+  - @stackra/gen@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/i18n@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/gen@0.11.1
+  - @stackra/runway@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/i18n@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/gen@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/i18n@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [a15cacf]
+- Updated dependencies [4c0eead]
+- Updated dependencies [4749967]
+- Updated dependencies [f511762]
+- Updated dependencies [e57b9a1]
+- Updated dependencies [05da3d4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [ea40871]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [242ebe4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [c4348cd]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+  - @stackra/runway@0.10.0
+  - @stackra/gen@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/i18n@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [b210fc8]
+- Updated dependencies [2aeaec8]
+- Updated dependencies [3db6529]
+- Updated dependencies [5030040]
+- Updated dependencies [e80a99b]
+- Updated dependencies [93bb1e7]
+- Updated dependencies [c19ca9c]
+- Updated dependencies [b0d6fcc]
+- Updated dependencies [2e43c48]
+- Updated dependencies [2e43c48]
+- Updated dependencies [ca1614e]
+- Updated dependencies [c00ae11]
+- Updated dependencies [502cba1]
+- Updated dependencies [94354cc]
+- Updated dependencies [dbe1e9d]
+- Updated dependencies [b174a17]
+- Updated dependencies [2ae4f65]
+- Updated dependencies [f9c825d]
+- Updated dependencies [bd3f314]
+  - @stackra/gen@0.9.0
+  - @stackra/runway@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/i18n@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

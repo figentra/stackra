@@ -192,6 +192,7 @@ describe("@stackra/database", () => {
       "EntitySchema",
       "Extension",
       "GraphQuery",
+      "HasLocation",
       "HasMetadata",
       "HoldSubscriber",
       "Isolation",
@@ -222,6 +223,7 @@ describe("@stackra/database", () => {
       "UniqueViolation",
       "ValidateOnFlushSubscriber",
       "ancestorOf",
+      "areaCovers",
       "compileMigration",
       "connectHoldRegistry",
       "connectNativeWriteWatcher",
@@ -230,6 +232,7 @@ describe("@stackra/database", () => {
       "descendantOf",
       "disposableIds",
       "formatSequenceNumber",
+      "intersectsArea",
       "jsonContains",
       "jsonPath",
       "maintainAllPartitions",
@@ -251,6 +254,7 @@ describe("@stackra/database", () => {
       "table",
       "translateDbError",
       "visibleKeysQuery",
+      "withinMetresOf",
     ]);
     for (const internal of [
       "BlueprintRecord",

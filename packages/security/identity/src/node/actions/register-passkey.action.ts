@@ -8,7 +8,7 @@
  * Runtime: node
  * Governing contract: ADR 0206 (decision 8); ADR 0462; ADR 0294 (decisions 16 and 21); STA-1538.
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 import { UnauthenticatedError } from "@stackra/errors";
 
@@ -25,6 +25,7 @@ import { RegisterPasskeyOutput } from "#node/schemas/register-passkey-output.sch
 export class RegisterPasskeyAction extends Action({
   key: "passkey.register",
   actors: [ActorKind.User],
+  idempotency: Idempotency.Optional,
   // reason: a passkey is created on the person's own device, never by an agent
   tool: false,
 }) {

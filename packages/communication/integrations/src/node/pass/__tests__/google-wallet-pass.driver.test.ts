@@ -52,6 +52,10 @@ function fakeApi(postStatus?: number): IntegrationApi & { calls: string[] } {
     post: (path) => answer("POST", path),
     put: (path) => answer("PUT", path),
     patch: (path) => answer("PATCH", path),
+    send: async ({ method, path }) => {
+      calls.push(`${method} ${path}`);
+      return { status: 200, headers: {}, body: "" };
+    },
   };
 }
 

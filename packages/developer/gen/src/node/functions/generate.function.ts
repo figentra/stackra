@@ -29,6 +29,7 @@
  *           leftover one.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
  *           A member that declares a resource has each tree read through `loader` before the manifest is built
  *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
  * Runtime: node
@@ -47,8 +48,10 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
+import { emitEncorePackage } from "#core/functions/emit-encore-package.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
+import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -147,18 +150,28 @@ function write(root: string, files: readonly GeneratedFile[], check: boolean): s
   return changed;
 }
 
+/** The merged `Blueprint` augmentation `compileMigrations` writes for a service's own macros. */
+const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
+
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
- * unless `check`, so the runner never applies a stale file. `--check` reports them as changed.
+ * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
  */
-function staleMigrations(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
+function staleMigrations(
+  root: string,
+  files: readonly GeneratedFile[],
+  check: boolean,
+  compiled: boolean,
+): string[] {
   const dir = join(root, MIGRATIONS_DIR);
-  if (!existsSync(dir)) return [];
   const kept = new Set(files.map((file) => file.path));
-  const stale = readdirSync(dir)
+  const stale = (existsSync(dir) ? readdirSync(dir) : [])
     .filter((name) => name.endsWith(".sql"))
     .map((name) => `${MIGRATIONS_DIR}/${name}`)
     .filter((path) => !kept.has(path));
+  if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))
+    stale.push(BLUEPRINT_FILE);
   if (!check) for (const path of stale) rmSync(join(root, path));
   return stale;
 }
@@ -180,8 +193,11 @@ export async function generate(
     readonly backend?: "tsgo" | "ts6";
     readonly pass?: "manifests";
     readonly loader?: ModuleLoader;
+    /** The staged checks refuse instead of warning; default `STACKRA_GEN_STRICT=1` (STAGED_REFUSAL_CODES). */
+    readonly strict?: boolean;
   } = {},
 ): Promise<GenerateResult> {
+  const strict = options.strict ?? process.env["STACKRA_GEN_STRICT"] === "1";
   // A docs app has no classes to discover: its run assembles the Mintlify site (ADR 0002, 2026-10-27 amendment).
   if (existsSync(join(root, DOCS_CONFIG_FILE)))
     return options.pass === "manifests"
@@ -211,22 +227,27 @@ export async function generate(
   let result = generateMember(
     ir,
     previous,
-    options.pass === undefined ? {} : { pass: options.pass },
+    options.pass === undefined ? { strict } : { pass: options.pass, strict },
   );
   const partial: string[] = [];
   if (result.errors.length > 0 && !check && options.pass === undefined) {
-    const clients = generateMember(ir, previous, { pass: "clients" });
+    const clients = generateMember(ir, previous, { pass: "clients", strict });
     if (clients.errors.length === 0) partial.push(...write(root, clients.files, false));
     if (partial.length > 0) {
       ir = await discover();
-      result = generateMember(ir, previous);
+      result = generateMember(ir, previous, { strict });
     }
     // Still refused: the manifest alone, when only workspace services still to come stand in its way.
     const manifest =
-      result.errors.length > 0 ? generateMember(ir, previous, { pass: "manifests" }) : undefined;
+      result.errors.length > 0
+        ? generateMember(ir, previous, { pass: "manifests", strict })
+        : undefined;
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }
-  if (result.errors.length > 0) return { errors: result.errors, files: [], changed: partial };
+  // A warning of the full pass prints beside the outcome and never blocks it (STA-340).
+  const warnings = result.warnings ?? [];
+  if (result.errors.length > 0)
+    return { errors: result.errors, warnings, files: [], changed: partial };
   // A package ships its manifest: a host's gen reads it under node_modules (ADR 0158, STA-1308).
   if (check && ir.layout === "package") {
     const { files } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
@@ -245,6 +266,7 @@ export async function generate(
             fix: `add "${MANIFEST_FILE}" to \`files\` in package.json`,
           },
         ],
+        warnings,
         files: [],
         changed: partial,
       };
@@ -285,10 +307,33 @@ export async function generate(
         ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
       ]
     : migrations.files;
+  // The Encore app root needs a package.json to start, and Encore reads migrations only from a local folder, so a
+  // service's compiled files are copied under its Encore service too.
+  const encoreFiles =
+    encore.files.length === 0
+      ? []
+      : [
+          ...encore.files,
+          emitEncorePackage(ir.package),
+          ...migrations.files.map((file) => ({
+            ...file,
+            path: file.path.replace(
+              `${MIGRATIONS_DIR}/`,
+              `.stackra/encore/${ir.member}/migrations/`,
+            ),
+          })),
+        ];
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
-  let files = [...result.files, ...encore.files, ...migrationFiles];
-  // A member with an `.int.test.ts` gets the integration-tier config beside the unit one (`stackra test --tier int`).
-  if (files.some((file) => file.path === ".stackra/vitest.config.ts") && hasIntTests(root))
+  let files = [...result.files, ...encoreFiles, ...migrationFiles];
+  // A member with an `.int.test.ts`, its own or gen's, gets the integration-tier config beside the unit one
+  // (`stackra test --tier int`), so the generated tenant-isolation test runs with no authored int test beside it.
+  if (
+    files.some((file) => file.path === ".stackra/vitest.config.ts") &&
+    hasIntTests(
+      root,
+      files.map((file) => file.path),
+    )
+  )
     files.push(emitIntTierConfig(ir.package));
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
@@ -352,16 +397,24 @@ export async function generate(
         ),
       );
   }
-  if (errors.length > 0) return { errors, files: [], changed: partial };
+  if (errors.length > 0) return { errors, warnings, files: [], changed: partial };
   result = { ...result, files };
+  // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
+  const reported = [...warnings, ...(options.pass === undefined ? checkSubscriptions(ir) : [])];
   return {
     errors: [],
     files: result.files,
+    ...(reported.length > 0 ? { warnings: reported } : {}),
     changed: [
       ...new Set([
         ...partial,
         ...write(root, result.files, check),
-        ...staleMigrations(root, result.files, check),
+        ...staleMigrations(
+          root,
+          result.files,
+          check,
+          ir.layout === "service" && options.pass === undefined,
+        ),
       ]),
     ],
   };

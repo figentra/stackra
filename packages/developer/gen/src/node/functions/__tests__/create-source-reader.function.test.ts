@@ -7,7 +7,8 @@
  *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class` (never for a `#stackra/clients/*`
  *          client, which is a class token before its file exists), each with a position and a fix; a
  *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
- *          (a trait's public id fields stay public ids, STA-1720; `[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
+ *          (a trait's public id fields stay public ids, STA-1720; its list, prefix-less id, Translated and enum fields keep
+ *          their types, STA-2215; `[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
  *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
  *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
  *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338); a
@@ -21,8 +22,8 @@
  *          `Config({ schema })` options class, reading `this.<field>` spreads, `Object.freeze` constants and `I18n` keys
  *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
  *          `kind_base_name_reserved`, `partner_mismatch` for a same-stem kind (a Resource), `secret_name_missing` and
- *          each file's exported class names (STA-1306), `port_key_mismatch` for a port whose `~key` brand is not `<member>.<Port>` (STA-1810). A `@Classify(Class)` facet carries its data class's constant
- *          effects as `options.dataClass` (STA-1251). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
+ *          each file's exported class names (STA-1306), the workflows a class body starts (`workflows`, ADR 0101), `port_key_mismatch` for a port whose `~key` brand is not `<member>.<Port>` (STA-1810). A `@Classify(Class)` facet carries its data class's constant
+ *          effects as `options.dataClass` (STA-1251), and an action's `dataClass` reads as its key (STA-2594). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
  *          reads with its options, import and props record, and a non-constant fill is `slot_options_not_constant`
  *          (ADR 0438). A `PickType` of, or a form extending, a `remoteShape` of `#stackra/clients/<service>` reads as a
  *          `remote` base; `Settings.pick` of `#stackra/settings` is a schema kind; a renamed enum case in a default is
@@ -345,6 +346,14 @@ const MODEL_STAND_IN: Readonly<Record<string, string>> = {
     "export declare function HasTypedId<const P extends string>(prefix: P): Trait<{ id: PublicId<P> }>;",
     'export declare const BelongsToTenant: Trait<{ tenantId: PublicId<"scp"> }>;',
     'export declare const BelongsToTenantOrPlatform: Trait<{ ownerId: PublicId<"scp"> | null }>;',
+    // Made-up traits of the kinds STA-2215 found read as json: a list, a prefix-less nullable id, Translated, an enum.
+    'export declare class Translated { private readonly "~translated": true; }',
+    "export declare const Labelled: Trait<{ labels: string[] }>;",
+    "export declare const Stamped: Trait<{ stampedBy: PublicId | null }>;",
+    "export declare const Titled: Trait<{ title: Translated }>;",
+    'export declare const Phase: { readonly Draft: "draft"; readonly Live: "live" };',
+    "export type Phase = (typeof Phase)[keyof typeof Phase];",
+    "export declare const Phased: Trait<{ phase: Phase }>;",
     "export declare const OptionalProps: unique symbol;",
     "// A symbol-keyed trait member: the checker names it `__@OptionalProps@<id>`, which must never become a field.",
     'export declare const Timestamps: Trait<{ createdAt: Date; updatedAt: Date; [OptionalProps]?: "createdAt" }>;',
@@ -361,6 +370,12 @@ const MODEL_STAND_IN: Readonly<Record<string, string>> = {
 /** Three models: a one-to-many with its inverse, a link, a getter and a relation with no decorator. */
 const MODEL_SOURCES: Readonly<Record<string, string>> = {
   ...MODEL_STAND_IN,
+  "src/node/models/gizmo.model.ts": [
+    'import { HasPublicId, Labelled, Model, Phased, Stamped, Titled } from "@stackra/model";',
+    "",
+    'export class Gizmo extends Model.with(HasPublicId("gzm"), Labelled, Stamped, Titled, Phased) {}',
+    "",
+  ].join("\n"),
   "src/node/models/order.model.ts": [
     'import { Collection, HasPublicId, Model, OneToMany, Timestamps } from "@stackra/model";',
     'import { OrderLine } from "#node/models/order-line.model";',
@@ -435,6 +450,22 @@ describe("createSourceReader on models", async () => {
     expect(typeOf("ownerId")).toMatchObject({
       nullable: true,
       type: { kind: "public_id", prefix: "scp" },
+    });
+  });
+
+  it("reads a trait's list, prefix-less id, Translated and enum fields by their types, never json (STA-2215)", () => {
+    const fields = shapes.find((shape) => shape.name === "Gizmo")?.fields ?? [];
+    const typeOf = (name: string) => fields.find((field) => field.name === name);
+    expect(typeOf("labels")?.type).toEqual({ kind: "array", element: { kind: "string" } });
+    expect(typeOf("stampedBy")).toMatchObject({
+      nullable: true,
+      type: { kind: "public_id", prefix: "" },
+    });
+    expect(typeOf("title")?.type).toEqual({ kind: "translated", form: "value" });
+    expect(typeOf("phase")?.type).toMatchObject({
+      kind: "enum",
+      name: "Phase",
+      values: ["draft", "live"],
     });
   });
 
@@ -530,6 +561,12 @@ const TOOL_SOURCES: Readonly<Record<string, string>> = {
     "  actors: [ActorKind.User],",
     "}) {",
     "  async handle(): Promise<void> {}",
+    "",
+    "  private start(runner: { run(...args: unknown[]): unknown }): void {",
+    "    runner.run(HandOverWorkflow, {});",
+    "    runner.run<Page<{ till: string }>>(CountTillWorkflow, {});",
+    "    runner.run(async () => {});",
+    "  }",
     "}",
     "",
   ].join("\n"),
@@ -542,6 +579,7 @@ describe("createSourceReader on tool reasons", async () => {
   const classes = reader.sources.flatMap((file) => reader.classes(file));
   host.close();
   const options = (name: string) => classes.find((declared) => declared.name === name)?.options;
+  const workflows = (name: string) => classes.find((declared) => declared.name === name)?.workflows;
 
   it("reads the `// reason:` line above `tool: false` as `toolReason`", () => {
     expect(options("OpenDrawerAction")).toMatchObject({
@@ -559,6 +597,72 @@ describe("createSourceReader on tool reasons", async () => {
 
   it("leaves `toolReason` out when no reason is written", () => {
     expect(options("CloseDrawerAction")?.["toolReason"]).toBeUndefined();
+  });
+
+  it("records the workflow classes a body passes first to `.run(`, typed or not, and nothing else (ADR 0101)", () => {
+    expect(workflows("HandOverAction")).toEqual(["HandOverWorkflow", "CountTillWorkflow"]);
+    expect(workflows("CloseDrawerAction")).toBeUndefined();
+  });
+});
+
+/** Queries that read above L1 and say why: on the permission, on the key, and not at all. */
+const RISK_SOURCES: Readonly<Record<string, string>> = {
+  "src/node/queries/load-secret.query.ts": [
+    'import { Query } from "@stackra/actions";',
+    'import { ActorKind } from "@stackra/contracts";',
+    "",
+    "export class LoadSecretQuery extends Query({",
+    '  key: "secret.load",',
+    "  // reason: returns the connection's credentials to the owning service",
+    "  permission: SecretPermissions.resolve,",
+    "  actors: [ActorKind.Service],",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/queries/get-export.query.ts": [
+    'import { Query } from "@stackra/actions";',
+    "",
+    "export class GetExportQuery extends Query({",
+    '  key: "export.get", // reason: hands out the tenant\'s whole evidence',
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/queries/list-exports.query.ts": [
+    'import { Query } from "@stackra/actions";',
+    "",
+    "export class ListExportsQuery extends Query({",
+    '  key: "export.list",',
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on query risk reasons", async () => {
+  const root = writeFixtureMember("risk-reasons", RISK_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+  const options = (name: string) => classes.find((declared) => declared.name === name)?.options;
+
+  it("reads the `// reason:` above `permission` as `riskReason`", () => {
+    expect(options("LoadSecretQuery")?.["riskReason"]).toBe(
+      "returns the connection's credentials to the owning service",
+    );
+  });
+
+  it("reads a trailing `// reason:` on `key` for a derived permission", () => {
+    expect(options("GetExportQuery")?.["riskReason"]).toBe("hands out the tenant's whole evidence");
+  });
+
+  it("leaves `riskReason` out when none is written", () => {
+    expect(options("ListExportsQuery")?.["riskReason"]).toBeUndefined();
   });
 });
 
@@ -1494,6 +1598,36 @@ const DATA_CLASS_SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  "node_modules/@stackra/contracts/package.json": JSON.stringify({
+    name: "@stackra/contracts",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/contracts/index.d.ts":
+    'export declare const DataClassification: { readonly Financial: "financial" };\n',
+  "src/node/actions/add-case-note.action.ts": [
+    'import { Action } from "@stackra/actions";',
+    'import { ClinicalNoteDataClass } from "#node/models/clinical-note.data-class";',
+    "",
+    "export class AddCaseNoteAction extends Action({",
+    '  key: "case_note.add",',
+    "  dataClass: ClinicalNoteDataClass,",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/actions/refund-payment.action.ts": [
+    'import { Action } from "@stackra/actions";',
+    'import { DataClassification } from "@stackra/contracts";',
+    "",
+    "export class RefundPaymentAction extends Action({",
+    '  key: "payment.refund",',
+    "  dataClass: DataClassification.Financial,",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
 };
 
 describe("createSourceReader on data classes", async () => {
@@ -1512,6 +1646,14 @@ describe("createSourceReader on data classes", async () => {
       $class: "ClinicalNoteDataClass",
       dataClass: { key: "clinical_note", ai: "never" },
     });
+  });
+
+  it("reads an action's `dataClass` as its key: a product class's, or a built-in code (STA-2594)", () => {
+    const [note, refund] = ["AddCaseNoteAction", "RefundPaymentAction"].map(
+      (name) => classes.find((declared) => declared.name === name)?.options["dataClass"],
+    );
+    expect(note).toBe("clinical_note");
+    expect(refund).toBe("financial");
   });
 });
 

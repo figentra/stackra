@@ -12,13 +12,14 @@
 import { ShopConfig } from "#config/shop.config";
 import { PaymentGateway } from "#contracts/ports/payment-gateway.port";
 import { ShopOptions } from "#core/schemas/shop-options.schema";
+import { HandlerScanService } from "#core/services/handler-scan.service";
 import { ShopService } from "#core/services/shop.service";
 import { CancelOrderAction } from "#node/actions/cancel-order.action";
 import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.listener";
 import { ShopModule as ImportedShopModule } from "#node/shop.module";
 import { ShopModule } from "#stackra/module";
-import { CorsConfig, CsrfConfig, CsrfGuard, OriginGuard } from "@stackra/app/server";
-import { Lifetime, named, type Wiring } from "@stackra/container";
+import { CorsConfig, CsrfConfig, CsrfGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
+import { DiscoveryService, Lifetime, named, type Wiring } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
 import { Database, DatabaseConfig } from "@stackra/database";
 import { DatabaseHealthIndicatorDriver } from "@stackra/database/node";
@@ -44,8 +45,9 @@ export const wiring = {
   modules: {
     shop: { exports: [ShopService], dependsOn: [], type: ImportedShopModule },
   },
-  platform: [Clock],
+  platform: [DiscoveryService, Clock],
   bindings: [
+    { module: "shop", kind: "service", provide: HandlerScanService, deps: [DiscoveryService] },
     { module: "shop", kind: "service", provide: ShopService, lifetime: Lifetime.Request, deps: [Clock, PaymentGateway, named(PaymentGateway, "fallback")] },
     { module: "shop", kind: "action", provide: CancelOrderAction, deps: [ShopService] },
     { module: "shop", kind: "listener", provide: ShipOnOrderPaidListener, deps: [] },
@@ -58,6 +60,7 @@ export const wiring = {
     { key: "shop", provide: ShopConfig, schema: ShopOptions, env: {"gateway":"STACKRA_SHOP_GATEWAY"} },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
+    { key: "app.http", provide: HttpConfig },
     { key: "database", provide: DatabaseConfig },
     { key: "queue", provide: QueueConfig },
   ],

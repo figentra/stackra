@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ColumnBuilder`, one column under construction: copyable, sortable, hidden, its enum labels.
+ * Purpose: `ColumnBuilder`, one column under construction: copyable, sortable, hidden, its enum labels and its look.
  * Boundary: a type only; chainable.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 1 and 2: a sortable key needs an index).
@@ -9,6 +9,7 @@ import type { I18nKey } from "@stackra/i18n";
 
 import type { Built } from "#core/types/built.type";
 import type { ColumnNode } from "#core/types/column-node.type";
+import type { TableColumnSpec } from "#core/types/table-column-spec.type";
 
 /** The chainable builder of one table column. */
 export interface ColumnBuilder extends Built<ColumnNode> {
@@ -23,4 +24,12 @@ export interface ColumnBuilder extends Built<ColumnNode> {
 
   /** Names the label key of each enum code (`.labels(I18n.orders.enums.order_status)`) where the derived key misses. */
   labels: (labels: Readonly<Record<string, I18nKey>>) => this;
+
+  /** Sets the column's look (`{ cell: "status", tones: { paid: "success" }, align: "end" }`); a later call merges. */
+  with: (
+    look: Omit<
+      TableColumnSpec,
+      "id" | "isHidden" | "isStickyHeader" | "hasColumnTools" | "isColumnResizable"
+    >,
+  ) => this;
 }

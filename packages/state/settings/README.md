@@ -30,7 +30,7 @@ Depends on `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@st
 | `.`           | `MemorySettingFloorSourceDriver`, `MemorySetting...`  | floors and revisions in memory                                   |
 | `.`           | `SettingsLockedError`, `SettingValueInvalidError`     | refusals                                                         |
 | `.`           | `SettingBelowFloorError`                              | refusals of the resolver                                         |
-| `.`           | `SettingFourEyesError`, `SettingRevisionClosedError`  | refusals of approval                                             |
+| `.`           | `SettingFourEyesError`, `SettingApproverRoleError`, `SettingRevisionClosedError` | refusals of approval |
 | `.`           | `PromotionBaseStaleError`                             | refusal of a promotion whose live base moved                     |
 | `.`           | `SettingsRules`, `SettingsOptions`, `SettingKey`, ... | types                                                            |
 | `./contracts` | `SettingValueStore`, `SettingLayer`, `SettingTarget`  | the store port and its types                                     |
@@ -137,7 +137,10 @@ await this.resolver.write(
 - A write no person makes (a seeder, a seed pack) names `settingSystemAuthor("seed")` (`sys_seed`) as its author.
 - Each write is a `SettingRevision`: applied now, `pending` when a key needs `approval` (a second person approves,
   `setting_four_eyes` refuses the author), or `scheduled` for a later `effectiveAt`; the app's scheduler calls
-  `applyDue()`.
+  `applyDue()`. A role-gated key, `approval: { by: SystemRole.Owner }`, records the role on the revision
+  (`approvalRole`) and waits for someone holding it: the calling action passes the approver's IAM roles to
+  `approve(id, approver, roles)`, a missing role or none passed is `setting_approver_role` (forbidden), and the
+  role holder may approve their own change. One change needs one approving role.
 
 ## Packs and promotion
 

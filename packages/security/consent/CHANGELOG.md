@@ -1,5 +1,498 @@
 # @stackra/consent
 
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/storage@0.28.0
+  - @stackra/ui@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/iam@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/storage@0.27.0
+  - @stackra/ui@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/i18n@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [9cee75d]
+- Updated dependencies [e5da198]
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/storage@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/iam@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/storage@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+  - @stackra/actions@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/storage@0.24.0
+  - @stackra/ui@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [6edeee4]
+- Updated dependencies [a42a80c]
+- Updated dependencies [dee48f0]
+  - @stackra/ui@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [786848c]
+  - @stackra/actions@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/storage@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/storage@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/iam@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/storage@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/storage@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/support@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/iam@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/storage@0.18.1
+  - @stackra/ui@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/i18n@0.18.1
+  - @stackra/support@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/iam@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/storage@0.18.0
+  - @stackra/ui@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/support@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/iam@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/storage@0.17.2
+  - @stackra/ui@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/iam@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/storage@0.17.1
+  - @stackra/ui@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/storage@0.17.0
+  - @stackra/ui@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/i18n@0.17.0
+  - @stackra/support@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/iam@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/storage@0.16.0
+  - @stackra/ui@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/iam@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/storage@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/iam@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/storage@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/storage@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/iam@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/storage@0.14.2
+  - @stackra/ui@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/storage@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/iam@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/storage@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/iam@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/storage@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/iam@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/storage@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/iam@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/storage@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/iam@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/storage@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/iam@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/storage@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/iam@0.10.0
+  - @stackra/support@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [681d01a]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/ui@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/storage@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/i18n@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/support@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

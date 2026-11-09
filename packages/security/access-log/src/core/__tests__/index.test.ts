@@ -7,7 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
-import type { Actor } from "@stackra/contracts";
+import type { Actor, PublicId } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import type { AccessLoggedOptions } from "#contracts/index";
@@ -45,7 +45,7 @@ describe("@stackra/access-log", () => {
   it("takes the template's call shapes", () => {
     expectTypeOf(accessLog.AccessLogged).parameter(0).toEqualTypeOf<AccessLoggedOptions>();
     expectTypeOf<accessLog.AccessLogService["record"]>().parameters.toEqualTypeOf<
-      [string, Actor, string, AccessLoggedOptions, readonly unknown[]]
+      [string, Actor, string, AccessLoggedOptions, readonly unknown[], (PublicId | undefined)?]
     >();
   });
 });

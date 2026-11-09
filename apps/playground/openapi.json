@@ -15,6 +15,7 @@
         "x-stackra-action": "identity.operator.bootstrap@1",
         "x-stackra-permission": "identity.operator.bootstrap",
         "x-stackra-risk": "L4",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden"],
         "requestBody": {
           "required": true,
@@ -51,6 +52,7 @@
         "x-stackra-action": "identity.account_deletion.cancel@1",
         "x-stackra-permission": "identity.account_deletion.cancel",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden"],
         "requestBody": {
           "required": true,
@@ -79,6 +81,44 @@
         }
       }
     },
+    "/public/passkeys/challenge": {
+      "post": {
+        "operationId": "identity_passkey_challenge",
+        "summary": "ChallengePasskeyAction",
+        "tags": ["identity"],
+        "x-stackra-action": "identity.passkey.challenge@1",
+        "x-stackra-permission": "identity.passkey.challenge",
+        "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "never",
+        "x-stackra-refusals": ["rate_limited"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "@stackra/identity#/schemas/identity.ChallengePasskeyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "@stackra/identity#/schemas/identity.ChallengePasskeyOutput"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Refusal"
+          }
+        }
+      }
+    },
     "/passkeys/{passkeyId}/confirm": {
       "put": {
         "operationId": "identity_passkey_confirm",
@@ -86,7 +126,8 @@
         "tags": ["identity"],
         "x-stackra-action": "identity.passkey.confirm@1",
         "x-stackra-permission": "identity.passkey.confirm",
-        "x-stackra-risk": "L2",
+        "x-stackra-risk": "L4",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["unauthenticated"],
         "parameters": [
           {
@@ -133,6 +174,7 @@
         "x-stackra-action": "identity.account_deletion.request@1",
         "x-stackra-permission": "identity.account_deletion.request",
         "x-stackra-risk": "L4",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden"],
         "requestBody": {
           "required": true,
@@ -169,6 +211,7 @@
         "x-stackra-action": "identity.session.end_all@1",
         "x-stackra-permission": "identity.session.end_all",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden", "unauthenticated"],
         "requestBody": {
           "required": true,
@@ -205,6 +248,7 @@
         "x-stackra-action": "identity.session.end@1",
         "x-stackra-permission": "identity.session.end",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["forbidden", "unauthenticated", "not_found"],
         "parameters": [
           {
@@ -251,6 +295,7 @@
         "x-stackra-action": "identity.session.end_user@1",
         "x-stackra-permission": "identity.session.end_user",
         "x-stackra-risk": "L3",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["not_found"],
         "requestBody": {
           "required": true,
@@ -287,6 +332,7 @@
         "x-stackra-action": "identity.passkey.register@1",
         "x-stackra-permission": "identity.passkey.register",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["unauthenticated"],
         "requestBody": {
           "required": true,
@@ -305,6 +351,44 @@
               "application/json": {
                 "schema": {
                   "$ref": "@stackra/identity#/schemas/identity.RegisterPasskeyOutput"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Refusal"
+          }
+        }
+      }
+    },
+    "/public/passkeys/verify": {
+      "post": {
+        "operationId": "identity_passkey_verify",
+        "summary": "VerifyPasskeyAction",
+        "tags": ["identity"],
+        "x-stackra-action": "identity.passkey.verify@1",
+        "x-stackra-permission": "identity.passkey.verify",
+        "x-stackra-risk": "L4",
+        "x-stackra-idempotency": "never",
+        "x-stackra-refusals": ["rate_limited"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "@stackra/identity#/schemas/identity.VerifyPasskeyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "@stackra/identity#/schemas/identity.VerifyPasskeyOutput"
                 }
               }
             }

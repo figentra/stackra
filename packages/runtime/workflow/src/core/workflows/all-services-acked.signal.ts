@@ -13,8 +13,8 @@ import { Field } from "@stackra/validation";
 import { z } from "zod";
 
 import { Signal } from "#core/bases/signal.base";
-import { KEPT_RECORDS_SCHEMA } from "#core/constants/kept-records-schema.constant";
-import type { KeptRecords } from "#core/types/kept-records.type";
+import { KEPT_RECORDS_SCHEMA } from "#contracts/constants/kept-records-schema.constant";
+import type { KeptRecords } from "#contracts/types/kept-records.type";
 
 /**
  * Every expected service acked.

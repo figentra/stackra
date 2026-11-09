@@ -5,7 +5,8 @@
  *          endpoint method, tool without an agent, job without the system actor, job and offline values, precondition
  *          classes, rate limit), records an offline cap and the `accepts` option and refuses malformed ones; a bare
  *          `extends Action` and a missing `handle` fail to compile; the tool default matches gen (a user action is a
- *          tool unless it says `tool: false`) and `effects` takes distinct `Effect` tags only.
+ *          tool unless it says `tool: false`) and `effects` takes distinct `Effect` tags only; `onBehalfOf` takes
+ *          `{ secondHop: boolean }` only.
  * Boundary: test only; the options are the template's create, expire and freeze actions.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 30); ADR
@@ -263,6 +264,17 @@ describe("Action", () => {
       { offline: { ...OFFLINE, cap: { count: 1, amountField: "", window: "24h" } } },
     ])
       expect(() => Action({ ...base, ...(options as object) })).toThrow();
+  });
+
+  it("records onBehalfOf's second hop, and refuses anything but { secondHop: boolean }", () => {
+    expect(kindOf(Action({ ...base, onBehalfOf: { secondHop: true } }))?.options).toMatchObject({
+      onBehalfOf: { secondHop: true },
+    });
+    expect(kindOf(Action(base))?.options["onBehalfOf"]).toBeUndefined();
+    for (const onBehalfOf of [true, null, {}, { secondHop: "yes" }, { secondHop: true, hops: 3 }])
+      expect(() => Action({ ...base, onBehalfOf } as unknown as ActionOptions)).toThrow(
+        /onBehalfOf/,
+      );
   });
 
   it("records approval as true or a declared stage with its defaults", () => {

@@ -3,12 +3,13 @@
  * Purpose: unit tests of `toolCommand`: its usage lists the task's options; in a member it runs gen first (not for
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
- *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`.
+ *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
+ *          the site and then fails on a broken link, naming the page (STA-2026).
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
  */
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -108,6 +109,27 @@ describe("toolCommand", () => {
   it("returns the tool's exit code", async () => {
     spawn.mockResolvedValue(7);
     expect(await toolCommand("lint", "Lint").run(context())).toBe(7);
+  });
+
+  it("builds a Fumadocs docs site for lint, then names each broken link", async () => {
+    mkdirSync(join(root, "src", "config"), { recursive: true });
+    writeFileSync(join(root, "src", "config", "docs.config.ts"), "");
+    mkdirSync(join(root, "node_modules", "@react-router", "dev"), { recursive: true });
+    const site = join(root, ".stackra", "site");
+    mkdirSync(join(site, "build", "client"), { recursive: true });
+    writeFileSync(join(site, "react-router.config.ts"), "");
+    writeFileSync(join(site, "build", "client", "index.html"), '<a href="/gone">Gone</a>');
+    const { io, output } = captureIo();
+    expect(await toolCommand("lint", "Lint").run({ ...context(), io })).toBe(1);
+    expect(gen).toHaveBeenCalled();
+    expect(spawn).toHaveBeenCalledTimes(1);
+    expect(spawn).toHaveBeenCalledWith(
+      { command: "react-router", args: ["build"], cwd: site },
+      expect.anything(),
+    );
+    expect(output()).toContain("/: /gone (no page or file)");
+    writeFileSync(join(site, "build", "client", "index.html"), '<a href="/">Home</a>');
+    expect(await toolCommand("lint", "Lint").run(context())).toBe(0);
   });
 
   it("fans out through turbo at the workspace root", async () => {

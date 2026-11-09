@@ -19,6 +19,9 @@ import type { MigrationFile } from "#node/types/migration-file.type";
 /** A step's timeout header: a `-- stackra:timeout=<interval>` line among the leading comment lines. */
 const TIMEOUT_HEADER = /^(?:--.*\n)*?-- stackra:timeout=(\w+)(?:\n|$)/;
 
+/** A whole comment line written for a linter: `-- squawk-ignore …` or `-- lint: …`. */
+const LINT_LINE = /^-- (?:squawk-ignore|lint:)[^\n]*\n/gm;
+
 /**
  * Lists the folder's migration files in sequence order.
  *
@@ -43,7 +46,9 @@ export function readMigrationFiles(directory: string): readonly MigrationFile[] 
         transactional: !sql.startsWith("-- stackra:transactional=false"),
         timeout: TIMEOUT_HEADER.exec(sql)?.[1],
         sql,
-        checksum: createHash("sha256").update(sql).digest("hex"),
+        // lint comments (a squawk ignore and its reason) never change what runs, so a frozen file keeps its checksum
+        checksum: createHash("sha256").update(sql.replaceAll(LINT_LINE, "")).digest("hex"),
+        legacyChecksum: createHash("sha256").update(sql).digest("hex"),
         inverse: existsSync(down) ? readFileSync(down, "utf8") : undefined,
       };
     })

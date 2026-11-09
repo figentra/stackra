@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `SERVER_CONTRIBUTIONS`, the extension-point contributions gen binds in a service's wiring when the service
  *          declares their package: the request guards of `@stackra/app/server` (`OriginGuard`, `CsrfGuard`, with the
- *          `app.cors` and `app.csrf` config rows), the six `HealthIndicator` drivers `/readyz` runs (database,
+ *          `app.cors`, `app.csrf` and `app.http` config rows), the six `HealthIndicator` drivers `/readyz` runs (database,
  *          cache, queue, realtime, filesystem, search, each with its package config row) and, with `@stackra/cache`,
  *          the query cache's `QueryCacheEvictorListener` from `@stackra/actions` (STA-1445).
  * Boundary: data only; each entry lists the package that must be declared, the class, its constructor tokens in
@@ -19,6 +19,7 @@ import type { ServerContribution } from "#core/types/server-contribution.type";
 const APP = "@stackra/app/server";
 const CORS: ClassRef = { name: "CorsConfig", from: APP };
 const CSRF: ClassRef = { name: "CsrfConfig", from: APP };
+const HTTP: ClassRef = { name: "HttpConfig", from: APP };
 
 /** A health driver of `pkg` over its port, configured by `<Config>` under `key`. */
 function health(
@@ -46,6 +47,8 @@ export const SERVER_CONTRIBUTIONS: readonly ServerContribution[] = Object.freeze
     configs: [
       { key: "app.cors", provide: CORS },
       { key: "app.csrf", provide: CSRF },
+      // The body cap of every generated adapter (`answerCall`), bound once with the first guard.
+      { key: "app.http", provide: HTTP },
     ],
   },
   {

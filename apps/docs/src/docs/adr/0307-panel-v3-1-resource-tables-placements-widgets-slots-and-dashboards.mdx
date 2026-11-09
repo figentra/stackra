@@ -211,9 +211,10 @@ drill checks, the slot and placement checks, the dashboard checks, and the setti
 
 ## Enforcement
 
-- planned — STA-340: the resource and widget gen checks listed in the Decision (`column_key_unknown`,
-  `sort_not_indexed`, `filter_not_indexed`, `list_query_shared`, `table_row_mismatch`, `action_permission_missing`,
-  `builder_impure`, `widget_display_type_mismatch`, `metric_path_not_metric`, `refresh_without_invalidation`,
+- automated — `stackra gen` (`check-table-indexes.function.ts` and `read-resource-trees.function.ts` in
+  `packages/developer/gen`): `sort_not_indexed`, `filter_not_indexed` and `builder_impure`.
+- planned — STA-340: the other resource and widget gen checks listed in the Decision (`column_key_unknown`,
+  `list_query_shared`, `table_row_mismatch`, `action_permission_missing`, `widget_display_type_mismatch`, `metric_path_not_metric`, `refresh_without_invalidation`,
   `slot_unknown`, `placement_duplicate`, `dashboard_block_not_widget`, `settings_too_deep`, `secret_in_settings`, and the
   rest of their families).
 - planned — STA-339: the slot table and the generated `#stackra/slots` module, and the layer-4 and layer-5 validation

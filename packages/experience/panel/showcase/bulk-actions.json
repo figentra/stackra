@@ -1,0 +1,21 @@
+{
+  "slug": "bulk-actions",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/panel",
+  "exportName": "BulkActions",
+  "parts": ["BulkActions"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 240
+    }
+  ],
+  "related": ["free/bulk-action-bar", "free/data-table"],
+  "tokens": ["color.accent", "color.surface"],
+  "keywords": ["bulk", "selection", "actions", "sdui", "toolbar", "kit"],
+  "status": "new"
+}

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `signedFields`: values join in the listed order with nothing between them, a missing or null
- *          value is empty, booleans are `true`/`false`, a `decimals` path is fixed to its places (numbers and numeric
+ * Purpose: unit tests of `signedFields`: values join in the listed order with nothing between them (or a separator),
+ *          a missing or null value is empty, booleans are `true`/`false`, a `decimals` path is fixed to its places (numbers and numeric
  *          text), and an object, an array or a non-numeric decimal answers `undefined`.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -16,6 +16,13 @@ describe(signedFields, () => {
     const payload = { obj: { id: 7, ok: true, gone: null, text: "a" } };
     expect(signedFields(payload, ["obj.text", "obj.missing", "obj.gone", "obj.id", "obj.ok"])).toBe(
       "a7true",
+    );
+  });
+
+  it("joins with a separator, a missing or null value empty between its neighbours", () => {
+    const payload = { obj: { id: 7, gone: null, text: "a" } };
+    expect(signedFields(payload, ["obj.text", "obj.missing", "obj.gone", "obj.id"], {}, ":")).toBe(
+      "a:::7",
     );
   });
 

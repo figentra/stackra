@@ -10,7 +10,7 @@ import type { CommandIo } from "@stackra/console";
 
 import type { TenantDirectory } from "#core/ports/tenant-directory.port";
 
-/** Lists tenants. */
+/** The `tenant:list` command: lists the tenants the directory holds. */
 export class TenantListCommand extends Command({
   name: "tenant:list",
   description: "List the tenants",

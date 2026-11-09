@@ -8,8 +8,12 @@
 
 /** Status to label. */
 export const CONSUMER_GATE_LABELS = {
+  /** Passed. */
   pass: "PASS",
+  /** Failed, excused by the allow-list. */
   allowed: "ALLOWED",
+  /** Failed. */
   fail: "FAIL",
+  /** Not run. */
   skipped: "SKIPPED",
 } as const;

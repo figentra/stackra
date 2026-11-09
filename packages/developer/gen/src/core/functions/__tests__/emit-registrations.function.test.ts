@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitRegistrations`: the generated entity and schemas files loaded first, then one call per
  *          platform registration with a row each, from the locked identities: the hosted packages' entity lists, the
- *          model partners of each `CrudService<M>` (and of an injected platform one, `RuleSetService`), event wire names, jobs for the queue and the scheduler,
+ *          model partners of each `CrudService<M>` (and of each one its packages' manifests list with its model), event wire names, jobs for the queue and the scheduler,
  *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry),
  *          entitlements with the calls they gate (STA-903) and searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
  *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
  *          to register; every Permission static (system and restricted included) and module role by its locked key,
- *          permissions first (STA-1702).
+ *          permissions first (STA-1702); each record policy with its model, own and hosted (STA-2045).
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 22); ADR 0097; ADR 0141; ADR 0308;
@@ -48,27 +48,38 @@ describe("emitRegistrations", () => {
     expect(billing).not.toContain("InvoiceFactory");
   });
 
-  it("registers the model partner of a platform CrudService a class injects", () => {
-    const rules: DeclaredClass = {
-      name: "DunningRulesService",
-      kind: "service",
-      module: "billing",
-      file: "src/modules/billing/services/dunning-rules.service.ts",
-      importPath: "#modules/billing/services/dunning-rules.service",
-      options: {},
-      deps: [{ class: { name: "RuleSetService", from: "@stackra/rules/node" } }],
-      facets: [],
-      methods: [],
-      refusals: [],
-      statics: {},
-      traits: [],
-    };
+  it("registers the model partner of each CrudService a package's manifest lists with its model", () => {
     const content =
-      registrationsOf({ ...BILLING_IR, classes: [...BILLING_IR.classes, rules] }) ?? "";
+      registrationsOf({
+        ...BILLING_IR,
+        dependencies: [
+          ...BILLING_IR.dependencies,
+          {
+            package: "@stackra/scope",
+            manifest: {
+              member: "scope",
+              package: "@stackra/scope",
+              version: "0.1.0",
+              services: [
+                {
+                  class: "ScopeNodeService",
+                  from: "@stackra/scope/node",
+                  partner: { name: "ScopeNode", from: "@stackra/scope/node" },
+                },
+                { class: "ScopeTreeReader", from: "@stackra/scope/node" },
+              ],
+            },
+          },
+        ],
+      }) ?? "";
     expect(content).toContain(
-      "registerModelPartners([\n  [InvoiceService, Invoice],\n  [RuleSetService, RuleSet],\n]);",
+      "registerModelPartners([\n  [InvoiceService, Invoice],\n  [ScopeNodeService, ScopeNode],\n]);",
     );
-    expect(content).toMatch(/import \{[^}]*RuleSet[^}]*\} from "@stackra\/rules\/node";/);
+    expect(content).toMatch(
+      /import \{[^}]*\bScopeNodeService\b[^}]*\} from "@stackra\/scope\/node";/,
+    );
+    expect(content).toMatch(/import \{[^}]*\bScopeNode\b[^}]*\} from "@stackra\/scope\/node";/);
+    expect(content).not.toContain("ScopeTreeReader");
   });
 
   it("registers event names, jobs and outbound webhooks by their locked identities", () => {
@@ -512,12 +523,12 @@ describe("emitRegistrations for a hosted package's permissions and roles (STA-17
 describe("emitRegistrations of actions and queries (STA-2025)", () => {
   /** A query anonymous callers may call, beside the commerce fixture's calls. */
   const health: DeclaredClass = {
-    name: "GetHealthQuery",
+    name: "CheckHealthQuery",
     kind: "query",
     module: "orders",
-    file: "src/modules/orders/queries/get-health.query.ts",
-    importPath: "#modules/orders/queries/get-health.query",
-    options: { key: "health.get", actors: ["anonymous", "user"] },
+    file: "src/modules/orders/queries/check-health.query.ts",
+    importPath: "#modules/orders/queries/check-health.query",
+    options: { key: "health.check", actors: ["anonymous", "user"] },
     deps: [],
     facets: [],
     methods: ["handle"],
@@ -532,23 +543,104 @@ describe("emitRegistrations of actions and queries (STA-2025)", () => {
     .split("\n")
     .filter((line) => line.startsWith("  { type: ") && line.includes(" risk: "));
 
-  it("registers every action and query with its locked key, permission, risk and input class", () => {
+  it("registers every action and query with its locked key, permission, risk and input and output classes", () => {
     expect(content).toMatch(/import \{[^}]*registerActions[^}]*\} from "@stackra\/actions";/);
     expect(content).toContain(
       '  { type: CancelOrderAction, key: "orders.order.cancel@1", permission: "orders.order.cancel", risk: "L2"',
     );
-    expect(content).toMatch(/\{ type: CancelOrderAction, [^}]*input: CancelOrderInput \}/);
+    expect(content).toMatch(
+      /\{ type: CancelOrderAction, [^}]*input: CancelOrderInput, output: CancelOrderOutput \}/,
+    );
     expect(content).toContain('{ type: ListOrdersQuery, key: "orders.order.list@1"');
     expect(rows).toHaveLength(manifest.actions?.length ?? -1);
   });
 
   it("registers an anonymous-callable query with its permission, and flags it in the manifest", () => {
-    expect(rows.find((line) => line.includes("type: GetHealthQuery"))).toBe(
-      '  { type: GetHealthQuery, key: "orders.health.get@1", permission: "orders.health.read", risk: "L0" },',
+    expect(rows.find((line) => line.includes("type: CheckHealthQuery"))).toBe(
+      '  { type: CheckHealthQuery, key: "orders.health.check@1", permission: "orders.health.read", risk: "L0" },',
     );
     const entries = manifest.actions ?? [];
     expect(
       entries.filter((entry) => entry["anonymous"] === true).map((entry) => entry.key),
-    ).toEqual(["orders.health.get@1"]);
+    ).toEqual(["orders.health.check@1"]);
+  });
+});
+
+describe("emitRegistrations of record policies (STA-2045)", () => {
+  /** The order policy, typed against the commerce fixture's model. */
+  const orderPolicy: DeclaredClass = {
+    name: "OrderPolicy",
+    kind: "policy",
+    module: "orders",
+    file: "src/modules/orders/access/order.policy.ts",
+    importPath: "#modules/orders/access/order.policy",
+    options: {},
+    partner: { name: "Order", from: "#modules/orders/models/order.model" },
+    deps: [],
+    facets: [],
+    methods: ["read", "cancel"],
+    refusals: [],
+    statics: {},
+    traits: [],
+  };
+  const ir: MemberIR = {
+    ...COMMERCE_IR,
+    classes: [...COMMERCE_IR.classes, orderPolicy],
+    dependencies: [
+      {
+        package: "@acme/loyalty-kit",
+        manifest: {
+          member: "loyalty_kit",
+          package: "@acme/loyalty-kit",
+          version: "0.1.0",
+          policies: [
+            {
+              class: "LoyaltyAccountPolicy",
+              model: "LoyaltyAccount",
+              module: "loyalty_kit",
+              file: "src/node/access/loyalty-account.policy.ts",
+              modelFile: "src/node/models/loyalty-account.model.ts",
+            },
+            // a policy whose model the package does not declare: no file to import it from
+            {
+              class: "ForeignPolicy",
+              model: "Foreign",
+              module: "loyalty_kit",
+              file: "src/node/access/foreign.policy.ts",
+            },
+          ],
+        },
+      },
+    ],
+  };
+  const manifest = buildManifest(ir).manifest;
+  const content = emitRegistrations(ir, manifest) ?? "";
+
+  it("records each policy with its model, own then hosted", () => {
+    expect(manifest["policies"]).toEqual([
+      expect.objectContaining({
+        class: "OrderPolicy",
+        model: "Order",
+        module: "orders",
+        file: "src/modules/orders/access/order.policy.ts",
+      }),
+      expect.objectContaining({ class: "LoyaltyAccountPolicy", from: "@acme/loyalty-kit" }),
+      expect.objectContaining({ class: "ForeignPolicy", from: "@acme/loyalty-kit" }),
+    ]);
+  });
+
+  it("registers each policy with the model it judges, a hosted one imported from its package", () => {
+    expect(content).toMatch(/import \{[^}]*registerPolicies[^}]*\} from "@stackra\/iam";/);
+    expect(content).toContain("  { model: Order, policy: OrderPolicy },");
+    expect(content).toContain("  { model: LoyaltyAccount, policy: LoyaltyAccountPolicy },");
+    expect(content).toMatch(
+      /import \{[^}]*LoyaltyAccountPolicy[^}]*\} from "@acme\/loyalty-kit\/node";/,
+    );
+    expect(content).not.toContain("ForeignPolicy");
+  });
+
+  it("records no policies section and registers none for a member without a policy", () => {
+    expect(buildManifest(COMMERCE_IR).manifest["policies"]).toBeUndefined();
+    expect(registrationsOf(COMMERCE_IR) ?? "").not.toContain("registerPolicies");
   });
 });

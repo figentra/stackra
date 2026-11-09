@@ -9,10 +9,19 @@ import type { ConsumerGateMode } from "#node/consumer-gate/types/consumer-gate-m
 
 /** The environment of one run; a value is `undefined` when it could not be read (a dry run installs nothing). */
 export type ConsumerGateEnvironment = {
+  /** The commit the core tree is at. */
   readonly coreCommit: string | undefined;
+
+  /** The commit the product is pinned to. */
   readonly productRef: string;
+
+  /** How core reached the product, `link` or `pack`. */
   readonly mode: ConsumerGateMode;
+
+  /** The Node.js version the gate ran on. */
   readonly node: string;
+
+  /** The pnpm version the scratch copy reported. */
   readonly pnpm: string | undefined;
 
   /** sha256 of the product's own committed lockfile, before the run drops it. */

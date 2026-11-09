@@ -17,9 +17,13 @@ export interface ColumnChange {
 
   /**
    * `SET NOT NULL`, a contract step: Postgres scans the table under an exclusive lock and fails on a null row, so the
-   * backfill (a queue job) ships in an earlier release. Its inverse drops NOT NULL.
+   * backfill (a queue job) ships in an earlier release. Its inverse drops NOT NULL. A new contract step passes
+   * `{ safe: true }`: ADR 0159's sequence, `ADD CONSTRAINT ck_<table>_<column>_not_null CHECK (column IS NOT NULL) NOT
+   * VALID` in the transactional step, then a later step that validates it (writes go on during the scan), sets NOT NULL
+   * (proven by the valid check, no second scan) and drops the check. The released contract steps keep the plain form,
+   * so their checksums stay the same.
    */
-  notNull: () => this;
+  notNull: (options?: { readonly safe?: boolean }) => this;
 
   /**
    * `ALTER COLUMN ... TYPE to USING ...`. `to` and `options.from` are SQL types the blueprint writes (`text`,

@@ -2,7 +2,7 @@
 
 <!--
 Stackra file contract:
-Purpose: the package's reader guide: signing, verification (Standard Webhooks, `hmac` recipes and the six regional
+Purpose: the package's reader guide: signing, verification (Standard Webhooks, `hmac` recipes and the regional
          gateway schemes), the inbound receiver, provider recipes and outbound delivery.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
@@ -22,12 +22,13 @@ on `@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contra
 
 | Symbol                                                             | Entry         | Use                                                                                            |
 | ------------------------------------------------------------------ | ------------- | ---------------------------------------------------------------------------------------------- |
-| `SignatureScheme`                                                  | `.`           | an Integration's `webhooks.scheme`: one of the eight codes under "Signature schemes"           |
+| `SignatureScheme`                                                  | `.`           | an Integration's `webhooks.scheme`: one of the nine codes under "Signature schemes"            |
 | `signWebhook`, `WebhookMessage`, `WebhookHeaders`                  | `.`           | the `webhook-id`, `webhook-timestamp` and `webhook-signature` headers of a message             |
 | `verifyWebhook`                                                    | `.`           | whether a received webhook is signed by one of the secrets, within five minutes                |
 | `verifyHmacWebhook`                                                | `.`           | the `hmac` scheme: checks a provider's data recipe (`WebhookSignature`)                        |
 | `verifyBodyToken`, `decryptAesGcmBody`, `verifyOrderedFieldHmac`   | `.`           | the `body_token`, `aes_gcm_body` and `ordered_field_hmac` schemes (`webhooks.recipe`)          |
 | `verifyKeyedFieldDigest`, `verifySharedHeader`, `verifyJwtHs256`   | `.`           | the `keyed_field_digest`, `shared_header` and `jwt_hs256` schemes (`webhooks.recipe`)          |
+| `verifyLabelledFieldHmac`                                          | `.`           | the `labelled_field_hmac` scheme (`webhooks.recipe`)                                           |
 | `CHATWOOT_WEBHOOK_SIGNATURE`                                       | `.`           | Chatwoot's recipe: `sha256=<hex>` of `<x-chatwoot-timestamp>.<body>`, five minutes (ADR 0448)  |
 | `registerWebhookEvents`, `WebhookEventRegistration`                | `.`           | gen's entry routes each `WebhookEvent<I>` class by its Integration and event type              |
 | `WebhookReceiver`, `InboundWebhook`                                | `.`           | verifies, routes and writes one inbound webhook to the outbox; the generated route calls it    |
@@ -78,8 +79,8 @@ CHATWOOT_WEBHOOK_SIGNATURE }`; the recipe is data, so Chatwoot has no verifier o
 
 ### Signature schemes
 
-`SignatureScheme` is exactly these eight codes. A provider whose signature is an HMAC over the raw body and headers is
-`hmac` data; the six regional gateway schemes (STA-1357) are not, so each has a code and a verifier, and reads its data
+`SignatureScheme` is exactly these nine codes. A provider whose signature is an HMAC over the raw body and headers is
+`hmac` data; the regional gateway schemes (STA-1357) are not, so each has a code and a verifier, and reads its data
 from the Integration's `webhooks.recipe` (`WebhookSchemeRecipe`, `@stackra/integrations`). Every comparison is constant
 time (`crypto.subtle.verify`, or `sameBytes`, which MACs both sides under a one-call random key).
 
@@ -90,14 +91,20 @@ time (`crypto.subtle.verify`, or `sameBytes`, which MACs both sides under a one-
 | `body_token`         | Moyasar               | a token at a body path (or header, query) equals the secret                         | `path`, `header` or `query`                  |
 | `aes_gcm_body`       | HyperPay              | the hex body decrypts AES-GCM under the hex key; the receiver parses the plaintext  | `ivHeader`, `tagHeader`                      |
 | `ordered_field_hmac` | Paymob                | a hex HMAC over ordered body field values joined with nothing                       | `fields`, `algorithm`, and a carrier         |
+| `labelled_field_hmac` | —                    | a hex HMAC over each label followed by its body field value; an amount at the currency's decimals | `labelledFields`, `algorithm`, `currencyDecimals`, a header or query |
 | `keyed_field_digest` | Fawry                 | a hex hash of ordered body field values followed by the secret                      | `fields`, `algorithm`, `decimals`, a carrier |
 | `shared_header`      | Tabby                 | a registered header equals the secret (weaker: the Connection re-reads the payment) | `header`                                     |
 | `jwt_hs256`          | Tamara                | a JWT signed HS256, `alg` must be `HS256`, `exp` and `nbf` hold                     | `query` and/or `header` (`Bearer`)           |
 
-The six regional schemes are built from each vendor's public documentation with fixture tests made in-test; they are
+The regional schemes are built from each vendor's public documentation with fixture tests made in-test; they are
 **certification pending** (owner decision D3) until checked against each gateway's sandbox. The vendor recipes (field
 lists, header names) are OS integrations data (ADR 0443 decision 7), never constants here. For those schemes the event
 id is the payload's `eventId` path and the event occurred when it was received.
+
+`keyed_field_digest` takes four more `recipe` fields, each defaulting to the form above: `secretAt` (`end`, or
+`start` for the secret before the values), `separator` (nothing, or the text between the values and the secret, such as
+`":"`), `algorithm` (also `SHA-1`) and `bodyFormat` (`json`, or `form` for an `application/x-www-form-urlencoded` body,
+its values percent-decoded and its paths plain keys). A missing value is empty.
 
 ## Outbound: `webhook: true` integration events
 

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `WebhookDeliveryService`, the module service over the delivery log: records one attempt.
  * Boundary: a `CrudService<WebhookDelivery>`. An attempt is written in a transaction of its own, so a failed attempt
- *           stays in the log when the delivery job's unit of work rolls back to be retried.
+ *           stays in the log when the delivery job's unit of work rolls back to be retried. That transaction carries the
+ *           caller's `app.tenant_id` (@stackra/database's `requiresNew`), so the row is the job's tenant's.
  * Runtime: node
  * Governing contract: ADR 0224 (decision 3); ADR 0105 as amended by ADR 0294.
  */

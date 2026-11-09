@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "feb0ece1db653a39",
+    "hash": "2e7ee3e2198b07ff",
     "propsFiles": ["ui/src/native/progress-button/progress-button.props.ts"]
   },
   "importLine": "import { ProgressButton } from \"@stackra/ui/native\";",
@@ -70,6 +70,13 @@
           "type": "\"sm\" | \"md\" | \"lg\""
         },
         {
+          "description": "True to stretch the button to the full width of its container.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
           "default": "default",
           "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
           "name": "shape",
@@ -83,13 +90,6 @@
           "required": false,
           "source": "stackra",
           "type": "ShortcutAction"
-        },
-        {
-          "description": "True to stretch the button to the full width of its container.",
-          "name": "isFullWidth",
-          "required": false,
-          "source": "stackra",
-          "type": "boolean"
         },
         {
           "description": "An element drawn before the label, on the inline-start side: an icon name or any icon element.",

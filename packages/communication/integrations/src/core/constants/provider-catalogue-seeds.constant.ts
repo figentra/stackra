@@ -3,7 +3,7 @@
  * Purpose: `PROVIDER_CATALOGUE_SEEDS`, the seed rows of the provider catalogue for the `us` and `eu` payment gateways:
  *          Stripe live (bring your own over OAuth, or managed as a Figentra Pay connected account), and the planned
  *          bring-your-own gateways (Square, Adyen and PayPal in `us`; Adyen and Mollie in `eu`).
- * Boundary: seed data the registry loads and an operator edits; a market pack's `payments.byo-providers` list cites
+ * Boundary: seed data the registry loads and an operator edits; a market pack's `payments.byo_providers` list cites
  *           these rows. A `planned` row is listed and never served: it turns `live` when its driver ships. Wallets and
  *           pay-later in these packs are the Stripe account's enabled payment methods, not rows of their own.
  * Runtime: isomorphic

@@ -191,8 +191,8 @@ membership tag; today every live person is a member.
 
 ## Access, redemption and the panel
 
-- **Access:** `LoyaltyAccountPermissions` declares `read` (L0), `enroll` (L1), `freeze` (L2), `redeem` (L1) and
-  `expire` (L2, system: only the platform holds it). The kit's keys name `account` and `points`, not the model, so every
+- **Access:** `LoyaltyAccountPermissions` declares `read` (L0), `enroll` (L2), `freeze` (L2), `redeem` (L3) and
+  `expire` (L3, system: only the platform holds it). The kit's keys name `account` and `points`, not the model, so every
   action and query names its permission. `LoyaltyAccountPolicy` refines `read`, `redeem` and `freeze` per record: a
   customer subject (`actor.onBehalfOf ?? actor`) reads and redeems only their own account, nobody redeems from a frozen
   one, and a deleted account is never frozen.

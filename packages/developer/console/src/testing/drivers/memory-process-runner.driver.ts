@@ -34,6 +34,7 @@ export class MemoryProcessRunnerDriver extends Driver(ProcessRunner) {
     return this;
   }
 
+  /** Records the call and answers with the scripted result, or exit 127 when none is scripted. */
   async run(
     command: string,
     args: readonly string[],

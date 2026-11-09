@@ -26,6 +26,7 @@ import { DotGrid } from "#native/dot-loader/dot-grid";
 import { useDotLoader } from "#native/hooks/use-dot-loader";
 import type { ProgressCircleProps } from "#native/progress-circle/progress-circle.props";
 
+/** The dot loader as a progress circle: a 3×3 cell filled to the value, or looping when there is none. */
 export function ProgressCircle({
   value,
   minValue = 0,

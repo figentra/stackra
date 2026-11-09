@@ -12,6 +12,7 @@
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 import { z } from "zod";
 
@@ -19,7 +20,11 @@ import { type CustomFieldValue, CustomFieldValue$ } from "#core/index";
 
 /** The values of one record. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class CustomFieldValueSet extends Model.with(HasPublicId("cfv"), Timestamps) {
+export class CustomFieldValueSet extends Model.with(
+  HasPublicId("cfv"),
+  BelongsToTenant,
+  Timestamps,
+) {
   /** The record's values, keyed by field key. */
   // reason: CustomFieldValue is a union this package ships as CustomFieldValue$
   @Field(z.record(z.string(), CustomFieldValue$))
@@ -44,5 +49,5 @@ export class CustomFieldValueSet extends Model.with(HasPublicId("cfv"), Timestam
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface CustomFieldValueSet {
   /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

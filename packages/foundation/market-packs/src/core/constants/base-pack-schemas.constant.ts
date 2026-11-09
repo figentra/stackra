@@ -37,6 +37,9 @@ const TEXTS = { type: "array", items: { type: "string", minLength: 1 } } as cons
 /** A lowercase code (`in_app`, `unifonic`). */
 const CODE = { type: "string", pattern: "^[a-z][a-z0-9_]*$" } as const;
 
+/** A payment provider code, as the connector packages name it (`stripe`, `stc-pay`, `network-international`). */
+const PROVIDER = { type: "string", pattern: "^[a-z][a-z0-9_-]*$" } as const;
+
 /** The base-pack section schemas this package ships. */
 export const BASE_PACK_SCHEMAS: readonly PackSchema[] = [
   {
@@ -68,6 +71,29 @@ export const BASE_PACK_SCHEMAS: readonly PackSchema[] = [
               {
                 type: "object",
                 properties: { provider: CODE, status: CODE },
+                required: ["provider"],
+                additionalProperties: false,
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    prefix: "payments.byo_providers",
+    owner: "os",
+    keys: [
+      {
+        key: "payments.byo_providers",
+        schema: {
+          type: "array",
+          items: {
+            anyOf: [
+              PROVIDER,
+              {
+                type: "object",
+                properties: { provider: PROVIDER, status: CODE },
                 required: ["provider"],
                 additionalProperties: false,
               },

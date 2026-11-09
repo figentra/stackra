@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
+ * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
  *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
@@ -12,62 +12,67 @@
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709) and
  *           `stackra db diff` compares models with the migrations (STA-1808); `db structure` and `db diff --write`
- *           are not built yet; infra is `stackra runway infra`, not a command here (ADR 0352).
+ *           are not built yet; infrastructure is figentra/infra's Pulumi stacks, never a command here or in Runway (ADR
+ *           0352 as amended 2026-11-07); `runway` itself runs @stackra/runway's commands
+ *           (ADR 0529 decision 4, STA-2214).
  * Runtime: node
- * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows).
+ * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows); ADR 0506;
+ *                     STA-1966.
  */
-import { AGENTS_CHECK_COMMAND } from "#node/constants/agents-check-command.constant";
-import { AGENTS_SYNC_COMMAND } from "#node/constants/agents-sync-command.constant";
-import { ANY_RATCHET_COMMAND } from "#node/any-ratchet/constants/any-ratchet-command.constant";
-import { APP_NATIVE_DEPS_COMMAND } from "#node/app-native-deps/constants/app-native-deps-command.constant";
-import { ARCHITECTURE_MAP_COMMAND } from "#node/architecture-map/constants/architecture-map-command.constant";
-import { AUDIT_VERIFY_COMMAND } from "#node/constants/audit-verify-command.constant";
-import { CATALOGUE_COMPLETENESS_COMMAND } from "#node/constants/catalogue-completeness-command.constant";
 import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
-import { CREATE_COMMAND } from "#node/constants/create-command.constant";
 import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
-import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
-import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
 import { DB_SEED_COMMAND } from "#node/constants/db-seed-command.constant";
-import { DOC_STANDARD_COMMAND } from "#node/constants/doc-standard-command.constant";
 import { GEN_COMMAND } from "#node/constants/gen-command.constant";
-import { LS_COMMAND } from "#node/constants/ls-command.constant";
 import { MCP_COMMAND } from "#node/constants/mcp-command.constant";
 import { MCP_EXEC_COMMAND } from "#node/constants/mcp-exec-command.constant";
-import { MCP_SYNC_COMMAND } from "#node/constants/mcp-sync-command.constant";
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
-import { OPS_BOOTSTRAP_OPERATOR_COMMAND } from "#node/constants/ops-bootstrap-operator-command.constant";
-import { PUBLISH_COMMAND } from "#node/constants/publish-command.constant";
-import { SEARCH_REINDEX_COMMAND } from "#node/constants/search-reindex-command.constant";
-import { SEARCH_STATUS_COMMAND } from "#node/constants/search-status-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
-import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
-import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
 import { TESTBED_COMMAND } from "#node/constants/testbed-command.constant";
 import { VALIDATE_COMMAND } from "#node/constants/validate-command.constant";
-import { CONSUMER_GATE_COMMAND } from "#node/consumer-gate/constants/consumer-gate-command.constant";
-import { CYCLES_COMMAND } from "#node/cycles/constants/cycles-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
-import { DOCTOR_COMMAND } from "#node/doctor/constants/doctor-command.constant";
-import { DUPLICATE_EXPORTS_COMMAND } from "#node/duplicate-exports/constants/duplicate-exports-command.constant";
-import { DUPLICATION_COMMAND } from "#node/duplication/constants/duplication-command.constant";
 import { EAS_PREFLIGHT_COMMAND } from "#node/eas-preflight/constants/eas-preflight-command.constant";
 import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
 import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
-import { MOBILE_ONBOARD_COMMAND } from "#node/product/constants/mobile-onboard-command.constant";
-import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
 import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
-import { addCommand } from "#node/functions/add-command.function";
+import { AddCommand } from "#node/commands/add.command";
+import { AgentsCheckCommand } from "#node/commands/agents-check.command";
+import { AgentsSyncCommand } from "#node/commands/agents-sync.command";
+import { AnyRatchetCommand } from "#node/commands/any-ratchet.command";
+import { RowSecurityDeclarationsCommand } from "#node/commands/row-security-declarations.command";
+import { AppNativeDepsCommand } from "#node/commands/app-native-deps.command";
+import { ArchitectureMapCommand } from "#node/commands/architecture-map.command";
+import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
+import { CatalogueCompletenessCommand } from "#node/commands/catalogue-completeness.command";
+import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
+import { CreateCommand } from "#node/commands/create.command";
+import { CyclesCommand } from "#node/commands/cycles.command";
+import { DbMigrateCommand } from "#node/commands/db-migrate.command";
+import { DbRollbackCommand } from "#node/commands/db-rollback.command";
+import { DocStandardCommand } from "#node/commands/doc-standard.command";
+import { DoctorCommand } from "#node/commands/doctor.command";
+import { DuplicateExportsCommand } from "#node/commands/duplicate-exports.command";
+import { DuplicationCommand } from "#node/commands/duplication.command";
+import { LsCommand } from "#node/commands/ls.command";
+import { McpSyncCommand } from "#node/commands/mcp-sync.command";
+import { MobileOnboardCommand } from "#node/commands/mobile-onboard.command";
+import { OpsBootstrapOperatorCommand } from "#node/commands/ops-bootstrap-operator.command";
+import { PromoteCommand } from "#node/commands/promote.command";
+import { PublishCommand } from "#node/commands/publish.command";
+import { RunwayCommand } from "#node/commands/runway.command";
+import { SearchReindexCommand } from "#node/commands/search-reindex.command";
+import { SearchStatusCommand } from "#node/commands/search-status.command";
+import { SettingsApplyCommand } from "#node/commands/settings-apply.command";
+import { SettingsDiffCommand } from "#node/commands/settings-diff.command";
+import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
+import { SmokeCommand } from "#node/commands/smoke.command";
+import { StructureCommand } from "#node/commands/structure.command";
 import { checkCommand } from "#node/functions/check-command.function";
-import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
 import { toolCommand } from "#node/functions/tool-command.function";
-import { SKILL_LICENCES_COMMAND } from "#node/skill-licences/constants/skill-licences-command.constant";
-import { STRUCTURE_COMMAND } from "#node/structure/constants/structure-command.constant";
-import type { CliCommand } from "#node/types/cli-command.type";
+import type { CliCommands } from "#node/types/cli-commands.type";
 
 /** The commands of `stackra`. */
-export const COMMANDS: readonly CliCommand[] = [
-  CREATE_COMMAND,
+export const COMMANDS: CliCommands = [
+  CreateCommand,
   NEW_COMMAND,
   GEN_COMMAND,
   CONSOLE_COMMAND,
@@ -96,41 +101,44 @@ export const COMMANDS: readonly CliCommand[] = [
       fix: true,
     },
   ),
-  DB_MIGRATE_COMMAND,
-  DB_ROLLBACK_COMMAND,
+  DbMigrateCommand,
+  DbRollbackCommand,
   DB_SEED_COMMAND,
   DB_DIFF_COMMAND,
   SEED_PACK_COMMAND,
-  SETTINGS_DIFF_COMMAND,
-  SETTINGS_APPLY_COMMAND,
-  SEARCH_REINDEX_COMMAND,
-  SEARCH_STATUS_COMMAND,
-  AUDIT_VERIFY_COMMAND,
+  SettingsDiffCommand,
+  SettingsApplyCommand,
+  SearchReindexCommand,
+  SearchStatusCommand,
+  AuditVerifyCommand,
   DEPLOY_COMMAND,
-  MOBILE_ONBOARD_COMMAND,
-  SMOKE_COMMAND,
+  PromoteCommand,
+  RunwayCommand,
+  MobileOnboardCommand,
+  SmokeCommand,
   PREVIEW_SERVE_COMMAND,
-  OPS_BOOTSTRAP_OPERATOR_COMMAND,
-  LS_COMMAND,
+  OpsBootstrapOperatorCommand,
+  LsCommand,
   TESTBED_COMMAND,
-  CONSUMER_GATE_COMMAND,
+  ConsumerGateCommand,
   MCP_COMMAND,
-  MCP_SYNC_COMMAND,
+  McpSyncCommand,
   MCP_EXEC_COMMAND,
-  AGENTS_SYNC_COMMAND,
-  AGENTS_CHECK_COMMAND,
-  addCommand(httpCatalogueClient),
-  PUBLISH_COMMAND,
-  DOCTOR_COMMAND,
+  AgentsSyncCommand,
+  AgentsCheckCommand,
+  AddCommand,
+  PublishCommand,
+  DoctorCommand,
   EAS_PREFLIGHT_COMMAND,
-  STRUCTURE_COMMAND,
-  ARCHITECTURE_MAP_COMMAND,
-  DOC_STANDARD_COMMAND,
-  CATALOGUE_COMPLETENESS_COMMAND,
-  CYCLES_COMMAND,
-  APP_NATIVE_DEPS_COMMAND,
-  DUPLICATE_EXPORTS_COMMAND,
-  ANY_RATCHET_COMMAND,
-  DUPLICATION_COMMAND,
-  SKILL_LICENCES_COMMAND,
+  StructureCommand,
+  ArchitectureMapCommand,
+  DocStandardCommand,
+  CatalogueCompletenessCommand,
+  CyclesCommand,
+  AppNativeDepsCommand,
+  DuplicateExportsCommand,
+  AnyRatchetCommand,
+  RowSecurityDeclarationsCommand,
+  DuplicationCommand,
+  SkillLicencesCommand,
 ];

@@ -46,7 +46,7 @@ import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration, Logger } from "@stackra/contracts";
-import type { Clock, Json, PublicId } from "@stackra/contracts";
+import type { Clock, Json, PublicId, RetryPolicy } from "@stackra/contracts";
 import { isRefusal, WorkflowTimedOutError } from "@stackra/errors";
 import { EventBus } from "@stackra/events";
 import type { Event } from "@stackra/events";
@@ -84,7 +84,9 @@ import type { DocumentView } from "#core/types/document-view.type";
 import type { RunChain } from "#core/types/run-chain.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
+import type { RunView } from "#core/types/run-view.type";
 import type { StepPlan } from "#core/types/step-plan.type";
+import type { StepRetryValues } from "#core/types/step-retry-values.type";
 import type { WorkflowError } from "#core/types/workflow-error.type";
 import type { WorkflowPlan } from "#core/types/workflow-plan.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
@@ -94,6 +96,7 @@ import type { WorkflowStepRecord } from "#core/types/workflow-step-record.type";
 type Attempt =
   | { readonly kind: "done"; readonly run: WorkflowRun }
   | { readonly kind: "parked" }
+  | { readonly kind: "retry"; readonly run: WorkflowRun }
   | { readonly kind: "failed"; readonly run: WorkflowRun; readonly error: unknown };
 
 /** How an advance ended: where the run stands, and, when it compensated or failed, the error a caller refuses with. */
@@ -199,6 +202,32 @@ function viewOf(run: WorkflowRun): object {
 const signalOf = (type: AnyClass, payload: object): object =>
   Object.freeze(Object.assign(Object.create(type.prototype as object) as object, payload));
 
+/** Whether `record` is a step parked until its next attempt: waiting, with the failure it keeps (STA-2613). */
+const parkedRetry = (record: WorkflowStepRecord | undefined): record is WorkflowStepRecord =>
+  record?.status === StepStatus.Waiting &&
+  record.error !== undefined &&
+  record.signal === undefined;
+
+/**
+ * `step`'s retry for this failure: the declared attempts, first wait and curve, each replaced by a valid `live` value
+ * (STA-2610). A live count that is not a whole number from 1 is ignored.
+ */
+function retryOf(
+  step: StepPlan,
+  live: StepRetryValues | undefined,
+): Pick<RetryPolicy, "attempts" | "backoff" | "base"> {
+  const attempts =
+    live?.attempts !== undefined && Number.isInteger(live.attempts) && live.attempts >= 1
+      ? live.attempts
+      : step.attempts;
+  const base = live?.base ?? step.base;
+  return {
+    attempts,
+    backoff: live?.backoff ?? step.backoff,
+    ...(base === undefined ? {} : { base }),
+  };
+}
+
 /**
  * Calls `method` of `instance` with `args`.
  *
@@ -280,6 +309,9 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   /** How deep an event chain of triggered runs may grow (config `workflow.maxChainDepth`). */
   private readonly maxChainDepth: number;
 
+  /** The longest backoff a retry waits out in process; a longer one parks the run (config `workflow.retryInlineMax`). */
+  private readonly retryInlineMax: number;
+
   /** Set by `connect`. */
   private resolver: Resolver | undefined;
 
@@ -301,6 +333,10 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         : Duration.toMilliseconds(duration(config.signalRetention));
     this.forEachLimit = config?.forEachLimit ?? WORKFLOW_DEFAULTS.forEachLimit;
     this.maxChainDepth = config?.maxChainDepth ?? WORKFLOW_DEFAULTS.maxChainDepth;
+    this.retryInlineMax =
+      config?.retryInlineMax === undefined
+        ? 0
+        : Duration.toMilliseconds(duration(config.retryInlineMax));
   }
 
   /** Builds workflows and reads the event and context ports from `resolver`; a later call replaces it. */
@@ -345,6 +381,25 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     return typeof (instance as { output?: unknown }).output === "function"
       ? invoke(instance, "output", [viewOf(outcome.run)])
       : undefined;
+  }
+
+  /**
+   * Run `id` as its caller may see it (STA-2613): the journalled run, for the caller's access checks, and its
+   * workflow's `output` over the results so far, as JSON; null when the workflow has none, it is not deployed here, or
+   * its output cannot be computed from the results yet. `undefined` when no run has the id.
+   */
+  async view(id: PublicId<"wfr">): Promise<RunView | undefined> {
+    const run = await this.journal.find(id);
+    if (run === undefined) return undefined;
+    const instance = this.targetOf(run)?.instance;
+    if (instance === undefined || typeof (instance as { output?: unknown }).output !== "function")
+      return { run, output: null };
+    try {
+      return { run, output: toJson(invoke(instance, "output", [viewOf(run)])) ?? null };
+    } catch {
+      // an output that reads a result the run has not reached yet
+      return { run, output: null };
+    }
   }
 
   /**
@@ -690,9 +745,17 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         );
         continue;
       }
+      // A parked retry (a waiting step that kept its failure) runs its next attempt once its time has come.
+      if (
+        parkedRetry(record) &&
+        record.wakeAt !== undefined &&
+        at.getTime() < record.wakeAt.getTime()
+      )
+        return { run, failed: false };
       const wait = this.waitOf(run, step, record, at);
       // oxlint-disable-next-line no-await-in-loop -- see above
       let attempt = await this.attempt(run, instance, step, record, at, wait);
+      if (attempt.kind === "retry") return { run: attempt.run, failed: false };
       if (attempt.kind === "parked" && wait !== undefined) {
         if (wait.wakeAt !== undefined && at.getTime() >= wait.wakeAt.getTime())
           return this.timeOut(run, instance, plan, step, record, at);
@@ -713,6 +776,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         // oxlint-disable-next-line no-await-in-loop -- see above
         attempt = await this.attempt(run, instance, step, recordOf(run, step.name), at, wait);
       }
+      if (attempt.kind === "retry") return { run: attempt.run, failed: false };
       if (attempt.kind === "failed")
         return this.fail(attempt.run, instance, plan, attempt.error, at);
       if (attempt.kind === "parked") return { run, failed: false };
@@ -828,11 +892,15 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           ...(progress === undefined ? {} : { progress }),
           startedAt: latest.record?.startedAt ?? at,
         };
-        const delay = backoffDelay({ ...JOB_BACKOFF, backoff: step.backoff }, attempt);
+        // Read per failure, so a changed setting applies to the next retry; a failed read keeps the declared values.
+        // oxlint-disable-next-line no-await-in-loop -- see above
+        const live = await step.live?.(instance as never).catch(() => undefined);
+        const { attempts, ...curve } = retryOf(step, live);
+        const delay = backoffDelay({ ...JOB_BACKOFF, ...curve }, attempt);
         const late =
           current.deadlineAt !== undefined &&
           this.clock.now().getTime() + delay >= current.deadlineAt.getTime();
-        if (!retryable(error) || attempt >= step.attempts || late)
+        if (!retryable(error) || attempt >= attempts || late)
           return {
             kind: "failed",
             run: withStep(current, {
@@ -842,11 +910,25 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
             }),
             error,
           };
+        // A retry parks like a timed wait (STA-2613): the run waits with the step's next attempt at `wakeAt`, the
+        // caller answers now with the output so far, and the worker's tick runs the attempt when it is due.
+        // shortcut: a step that waits for a signal still waits out its retry in process, since its `wakeAt` is the
+        // wait's timeout; park it too once the step record has a field of its own for the retry time.
+        if (delay > this.retryInlineMax && step.waitFor === undefined) {
+          // oxlint-disable-next-line no-await-in-loop -- the attempt count and its time survive a crash
+          const parked = await this.save({
+            ...withStep(current, {
+              ...failure,
+              status: StepStatus.Waiting,
+              wakeAt: new Date(this.clock.now().getTime() + delay),
+            }),
+            status: WorkflowRunStatus.Waiting,
+          });
+          return { kind: "retry", run: parked };
+        }
         // oxlint-disable-next-line no-await-in-loop -- the attempt count survives a crash
         run = await this.save(withStep(current, failure));
         latest.record = failure;
-        // shortcut: a retry waits in process, bounded by the run timeout; park it through the worker once a step's
-        // retries may outlive the calling action.
         // oxlint-disable-next-line no-await-in-loop -- see above
         await sleep(delay);
       } finally {

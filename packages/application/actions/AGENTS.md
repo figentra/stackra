@@ -133,7 +133,7 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 
 | Data         | Where                                   | Handling                                                                     |
 | ------------ | --------------------------------------- | ---------------------------------------------------------------------------- |
-| Call input   | `fingerprintOf`, the idempotency store  | Hashed (SHA-256) for the fingerprint; the output is stored for 24 hours.     |
+| Call input   | `fingerprintOf`, the idempotency store  | Hashed (SHA-256) for the fingerprint; the output is stored for 24 hours (or `idempotencyTtl`), never its `@ShownOnce` fields. |
 | Audit fields | `ctx.audit(...)`, the `AuditTrail` port | Whatever the handler adds; never add a classified field. Stored by the port. |
 | Client IP    | `ctx.client` (`CallClient`)             | Held for the call only; a handler that keeps it hashes or truncates it.      |
 | Query output | the `Cache` port (`cache.ttl`)          | Kept for the query's `ttl` under a key per caller unless `per` widens it.    |

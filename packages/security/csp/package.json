@@ -1,6 +1,6 @@
 {
   "name": "@stackra/csp",
-  "version": "0.8.0",
+  "version": "0.28.0",
   "private": false,
   "description": "Stackra Content Security Policy: the CspConfig configuration, the nonce-based baseline policy builder, per-request nonces, and the React NonceProvider, useNonce and Style",
   "keywords": [
@@ -99,6 +99,7 @@
     "@vitest/coverage-v8": "catalog:quality",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "parse5": "catalog:quality",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
     "tsdown": "catalog:build",

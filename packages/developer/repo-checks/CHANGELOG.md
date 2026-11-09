@@ -1,5 +1,206 @@
 # @stackra/repo-checks
 
+## 0.28.0
+
+No changes in this release.
+
+## 0.27.0
+
+No changes in this release.
+
+## 0.26.0
+
+### Patch Changes
+
+- e9d32d7: `checkJsonConfigs` lets a test fixture under `__tests__/fixtures/` stay `.json`: it is a provider's own wire format, a
+  recorded API answer the test parses exactly as the provider sends it. Product repos no longer fail `json-configs` on
+  their connector fixtures.
+- 15b5fd2: `checkouts.checkout_page.choose_method@1` is a reviewed anonymous surface: it binds the payer's method choice to an
+  unguessable session id with a per-session rate limit, answers only the bound provider session's widget, and returns
+  no data beyond that session.
+
+## 0.25.0
+
+### Patch Changes
+
+- e997ead: Tenant isolation tests must run on real Postgres. PGlite, the memory database driver and the test container's
+  superuser all skip row-level security, so a unit test that "tenant B cannot read tenant A" passes even when the
+  policies are wrong.
+  
+  - `stackra validate --repository` has a new check, `isolation-tier`: a test that imports `assertRowSecurity` or
+    `tenantIsolationOptions` from `@stackra/database/testing` or `@stackra/tenancy/testing` must be a `.int.test.ts`.
+  - The tenancy rule gains point 8: an isolation test runs in `test:int` on Postgres, as the service role that cannot
+    bypass row-level security, with each read inside `TenantIsolationService.withTenant`.
+  - The preset ships the `security-tenancy-isolation-test` skill again, rewritten with a working example.
+
+## 0.24.0
+
+No changes in this release.
+
+## 0.23.0
+
+### Patch Changes
+
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+
+## 0.22.0
+
+### Patch Changes
+
+- 157ddff: `checkouts.checkout_page.framers@1`, the edge's frame-ancestors callback for Figentra Pay's checkout (STA-2564), is a
+  reviewed anonymous surface: it answers only the checkout's configured public embed origins and fails closed.
+- 3a9a6be: `@stackra/integrations` is a peer of every library that uses its values (payments, webhooks, documents, notifications,
+  pricing, achievements, loyalty-kit), no longer a dependency. As a dependency, pnpm resolved a second copy in a product,
+  so a Connection's base and `makeConnection` came from different copies and every Stripe call failed with "StripeConnection
+  was not loaded by a ConnectionStore". `stackra validate` refuses the mistake (`hosted-peers`, `HOSTED_PEER_PACKAGES`).
+
+## 0.21.0
+
+No changes in this release.
+
+## 0.20.0
+
+No changes in this release.
+
+## 0.19.0
+
+### Patch Changes
+
+- b800ae4: An `@figentra-oss/*` member inside a product repository may carry its own open-source LICENSE instead of the root
+  licence, because the registry's `@figentra-oss` scope refuses the commercial licence.
+- 3aaf758: The neutral and stackra layouts allow a root `STATE.md` and `llms.txt`, which every repository now keeps (the repo's
+  current state and its agent index), so `stackra validate` stops reporting them.
+- 619099f: `checkYamlFlowMaps` reads every document of a multi-document YAML file, so a Maestro flow (its config, `---`, then
+  its commands) validates. A service's `assets/defaults/*.json` stays JSON: it is imported as a JSON module, which
+  takes no YAML and no comments.
+
+## 0.18.1
+
+No changes in this release.
+
+## 0.18.0
+
+No changes in this release.
+
+## 0.17.2
+
+No changes in this release.
+
+## 0.17.1
+
+No changes in this release.
+
+## 0.17.0
+
+### Patch Changes
+
+- a32f323: The layout check reads package.json `stackra.layout.banned`: a repository lists retired names, and any path carrying one
+  (in any case, outside `adr/` history) is a finding.
+
+## 0.16.0
+
+### Minor Changes
+
+- 585f9de: `stackra validate --repository` checks the repository layout (ADR 0526): the root holds only its Flow preset's
+  template entries, its member folders, `tools/` with a README and the extras package.json `stackra.layout.allow`
+  declares with a reason; never a root `src/` or a `scripts/` or `bin/` folder, and no path named `figentra-flow`.
+- 33c88a5: The structure phase refuses a public id prefix that models of two different apps or services share (ADR 0135).
+  Each finding names both models and their files and suggests a prefix no member uses. Members hosting the same
+  package model keep its prefix; a clash inside one member stays gen's `prefix_duplicate`.
+
+### Patch Changes
+
+- 31378e6: The layout check allows the agent surfaces `fflow sync` renders for every preset (`.mcp.yaml`,
+  `opencode.jsonc`, `.opencode/`) in the neutral template too, so a neutral repository and a Stackra
+  product on Flow 0.6.4 pass.
+
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+### Minor Changes
+
+- 46951df: The root runway carries the estate figentra/infra derives from (ADR 0524): `environments.<env>.region` (`me`, `eu` or
+  `ksa`), which `runway validate` and `stackra validate --repository` require on a product's staging and production;
+  `providers.aws.budgets.monthlyUsd` (default 300) beside the open thresholds; and `providers.cloudflare.records`, the
+  non-Worker DNS records (verification TXT, MX, CAA) under a declared zone, an MX with its priority and only A, AAAA and
+  CNAME proxied. `providers.aws.region` and `providers.aws.accounts` are deprecated: `runway validate` warns, and they go
+  in the next release. Runway exports `checkEnvironmentRegion`, `deprecatedFields` and `RegionKey`.
+
+## 0.10.0
+
+### Minor Changes
+
+- 242ebe4: `checkDestinations(root)` refuses a destination or target block no driver serves (owner decision O8):
+  destinations must be `encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`, and target blocks one of
+  those, `npm` or `electron-release` (the desktop feed origin builds read). `stackra validate` runs it on the
+  root runway. Core's dev environment drops its `compose`, `vite-dev`, `expo-dev` and `mint-dev` lines.
+- 0d65e3f: The `cloudflare-workers` provider now renders each Worker's wrangler config from `runway.yaml` before it deploys
+  (ADR 0519, STA-1989): the member's `wrangler.jsonc` stays the code facts, and the merged operational settings (the
+  base, the preset, `defaults`, the member and its `environments.<environment>` entry) are added in wrangler's keys.
+  `renderWranglerConfig` is exported from `@stackra/runway`, and a member may now set `environments`. `stackra
+  validate` refuses an operational key (`compatibility_date`, `workers_dev`, `observability`, `routes` and the rest) in
+  a new member's `wrangler.jsonc`; the four existing Workers are listed until they deploy through the provider.
+
+## 0.9.0
+
+### Minor Changes
+
+- ca1614e: `checkRequires(root, service)` reports each `valkey` entry of a service runway's `requires` that no environment's cache driver serves, at `requires.<name>`; `stackra validate` (`checkRunwayFiles`) now runs it for every service runway against the root (STA-2049).
+- cbbe4e3: Add the `docs` registry kind (STA-1920, ADR 0514 decision 10). `StackraKind.Docs` is a product's content-only docs
+  package, `@figentra/<product>-docs`: MDX pages and their Fumadocs `meta.json` in `content/`, plus assets, with no code.
+  `STACKRA_MANIFEST_SCHEMA` accepts `{ "kind": "docs" }` with nothing more. `pnpm validate` places a docs package at the
+  repository's `docs/`, asks for no tier, turbo.jsonc or tsconfig, requires `content/`, and treats it as UNLICENSED like
+  an app. `stackra add` never installs one: the docs hub depends on it.
+- 75e94ff: `stackra validate --repository` refuses a paid job (a macOS, Windows or larger runner, also through `strategy.matrix`; `eas build`; a device farm run) on a branch push, pull request or merge queue trigger, and, in a job with no `environment:`, a deploy credential in its env or a deploy variable or secret read in a step's env, `with:` or `run:` (rule `workflow-triggers`, `checkWorkflowTriggers`; STA-256, ADR 0166, 0167).
+
+### Patch Changes
+
+- 2aeaec8: `writeDevFacts(root, lane)` in `@stackra/runway/node` writes `.stackra/dev/ports.json`, the file `readDevFacts` reads: each member runway's dev url, port, host, https, TLS files and Electron dev ports with the lane offset applied. `stackra dev` calls it before the member tool starts (lane from `STACKRA_LANE`, default 0). The app runway's `environments.<env>.desktop.devtools` is now read, so it leaves `RUNWAY_UNREAD_FIELDS` and its "Not read yet" schema note.
+- 93bb1e7: `buildProduct` writes a product's `surfaces.ops.contributes` as a declarative `ops` bundle (the contributions file and its manifest, targeting `ops@1`), and `publishProduct` uploads it and writes its canary or release row like any surface. The root runway schema no longer marks `surfaces.ops.contributes` and its fields "Not read yet", and the list of runway fields not yet read drops them.
+- da0af20: The runway schema copy check now says to put the zod-derived text in the canonical `tools/schemas` file and copy it
+  to runway's `schema/`, instead of only `cp`, which overwrote a correct copy with a stale canonical file.
+
 ## 0.8.0
 
 ### Patch Changes

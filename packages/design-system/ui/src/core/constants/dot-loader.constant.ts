@@ -3,7 +3,7 @@
  * Purpose: the dot loader's timing and sizes, shared by the web and native Spinner, ProgressBar, ProgressCircle and
  *   RouteProgress (STA-2017, brand rules §41).
  * Boundary: data only; the step maths is `dotLoaderLit` and `dotLoaderFilled`.
- * Runtime: any
+ * Runtime: isomorphic
  * Governing contract: .agents/specs/sta-2017-dot-loader/spec.md
  */
 

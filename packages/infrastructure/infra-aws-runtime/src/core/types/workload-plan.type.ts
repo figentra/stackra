@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `WorkloadPlan`, one container workload of a runtime plan: its service name, image, port, health path,
- *          exposure, public env, secret names, the resources it uses, task size and count, and its tags.
+ *          arguments, exposure, public env, secret names, the resources it uses and the names it reads their variables
+ *          under, task size and count, and its tags.
  * Boundary: type only. Secret values never appear; only names.
  * Runtime: isomorphic
  * Governing contract: ADR 0493 (decisions 1 to 5).
@@ -21,6 +22,8 @@ export type WorkloadPlan = {
   readonly port: number;
   /** The health check path. */
   readonly health: string;
+  /** The container's arguments; empty runs the image's default command. */
+  readonly command: readonly string[];
   /** An ALB behind Cloudflare in front of it. */
   readonly public: boolean;
   /** Public environment values. */
@@ -29,6 +32,8 @@ export type WorkloadPlan = {
   readonly secrets: readonly string[];
   /** The resources it uses, by name. */
   readonly uses: readonly string[];
+  /** The name the image reads → a variable of a resource it uses (`ZITADEL_DATABASE_POSTGRES_DSN` → `MAIN_DB_URL`). */
+  readonly aliases: Readonly<Record<string, string>>;
   /** Fargate vCPU units (1024 is one vCPU). */
   readonly cpu: number;
   /** Task memory in MiB. */
