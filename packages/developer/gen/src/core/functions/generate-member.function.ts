@@ -37,7 +37,7 @@
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
  *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) or an adapter that reaches a workflow directly
  *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) on the full pass only. A warning
- *           (`severity: "warning"`, such as `action_without_workflow`) never blocks: the full pass returns it in
+ *           (`severity: "warning"`, such as `action_without_workflow`) or an info notice (`hatch_column_type`) never blocks: the full pass returns it in
  *           `warnings` beside the files (STA-340). An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
@@ -232,8 +232,9 @@ export function generateMember(
     for (const [index, error] of all.entries())
       if (STAGED_REFUSAL_CODES.has(error.code)) all[index] = { ...error, severity: "warning" };
   // A warning prints and never stops writing (STA-340); only the refusals below block.
-  const warnings = all.filter((error) => error.severity === "warning");
-  const refusals = all.filter((error) => error.severity !== "warning");
+  // An info notice (`severity: "info"`, `hatch_column_type`) travels with the warnings and never blocks either.
+  const warnings = all.filter((error) => error.severity !== undefined);
+  const refusals = all.filter((error) => error.severity === undefined);
   if (refusals.length > 0) return { files: [], errors: refusals, warnings, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];

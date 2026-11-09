@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `runGen(root, options, io)`, one gen run over one member as the CLI prints it: every refusal in gen's
- *          two-line form and each warning (`warning: `, never a failure), then the files written, or with `check` the files that are stale; `pass: "manifests"` runs
+ *          two-line form and each warning (`warning: `, never a failure) and each info notice (`info: `, not counted as a warning), then the files written, or with `check` the files that are stale; `pass: "manifests"` runs
  *          gen's manifest pass alone. It resolves true when the member is clean: no refusal, and with `check` nothing
  *          stale.
  * Boundary: gen writes only under the member root and, on a refusal, nothing but the client files and manifest it
@@ -53,7 +53,11 @@ export async function runGen(
     loader: loadWithVite,
   });
   for (const error of errors) io.err(`${where}/${formatGenError(error)}\n`);
-  for (const warning of warnings) io.err(`warning: ${where}/${formatGenError(warning)}\n`);
+  // An info notice prints as `info:` and is not counted among the warnings (`gen-command`).
+  for (const warning of warnings) {
+    const label = warning.severity === "info" ? "info" : "warning";
+    io.err(`${label}: ${where}/${formatGenError(warning)}\n`);
+  }
   if (errors.length > 0) {
     // A refused run may still have written its clients and manifest, which the next round resolves against.
     for (const path of changed) io.out(`wrote ${where}/${path}\n`);

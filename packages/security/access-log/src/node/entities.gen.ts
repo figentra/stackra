@@ -44,7 +44,7 @@ export const AuditLogEntrySchema = new EntitySchema<AuditLogEntry>({
     scopeId: { type: "string", nullable: true },
     originKind: { type: "string", nullable: true },
     originId: { type: "string", nullable: true },
-    outcome: { type: "json" },
+    outcome: { type: "string" },
     code: { type: "string", nullable: true },
     sequence: { type: "integer" },
     previousHash: { type: "string" },
