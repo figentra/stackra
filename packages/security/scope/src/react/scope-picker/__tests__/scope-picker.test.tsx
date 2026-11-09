@@ -14,7 +14,7 @@
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
 
@@ -125,9 +125,10 @@ describe("ScopePicker (web)", () => {
     const input = screen.getByRole("combobox", { name: /Scope/ });
     act(() => input.focus());
     fireEvent.change(input, { target: { value: "store 9" } });
-    const option = await screen.findByRole("option", { name: /Store 9/ });
+    // The picker lists every scope when it opens and searches after its debounce, so wait for the narrowed list.
+    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(1));
+    const option = screen.getByRole("option", { name: /Store 9/ });
     expect(option.textContent).toContain("Acme");
-    expect(screen.getAllByRole("option")).toHaveLength(1);
     act(() => option.click());
     expect(service.current()?.path).toBe("platform.acme.store_9");
   });
