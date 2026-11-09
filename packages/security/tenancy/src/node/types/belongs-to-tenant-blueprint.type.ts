@@ -20,13 +20,16 @@ declare module "@stackra/database" {
      * equality policy (the migration drops the table's old policy, after `schema.refuseNulls`). With `contract: true`
      * and `nullable: true`, the platform form's contract: the column stays nullable, and its policy shows a tenant its
      * rows and the platform's NULL rows, and lets it write only its own. With `contract: true` and `safeNotNull: true`,
-     * NOT NULL through a validated check, with no scan under an exclusive lock: every new contract step uses it.
+     * NOT NULL through a validated check, with no scan under an exclusive lock: every new contract step uses it. With
+     * `pivot: true`, an implicit many-to-many pivot's column: the bare form with a default read from `app.tenant_id`,
+     * because the ORM's pivot insert names only the two links.
      */
     belongsToTenant: (options?: {
       readonly nullable?: boolean;
       readonly expand?: boolean;
       readonly contract?: boolean;
       readonly safeNotNull?: boolean;
+      readonly pivot?: boolean;
     }) => ColumnGroup;
   }
 }
