@@ -52,8 +52,11 @@ export function runAsTenant<T>(tenantId: PublicId<"scp"> | undefined, work: () =
 function watchFlushes(): void {
   let events: Events | undefined;
   try {
-    // reason: a unit test's stand-in database may hand out an entity manager with no event manager
-    events = (Database.current().em() as { getEventManager?: () => Events }).getEventManager?.();
+    // reason: a unit test's stand-in database may hand out an entity manager with no event manager; the ORM's own
+    // subscriber type is wider than the two hooks `RunAsTenantSubscriber` declares, so it is read through `unknown`
+    events = (
+      Database.current().em() as unknown as { getEventManager?: () => Events }
+    ).getEventManager?.();
   } catch {
     // no database connected: there is no flush to check, runAsTenant only fills the trait
     return;
