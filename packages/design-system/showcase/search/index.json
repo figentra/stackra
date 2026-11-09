@@ -18050,8 +18050,8 @@
   },
   {
     "category": "blocks",
-    "description": "",
-    "headings": [],
+    "description": "A table of subjects by capability, each cell a yes, a no, coming or a short note.",
+    "headings": ["Basics"],
     "key": "free/capability-matrix",
     "keywords": [
       "capability",
@@ -18061,25 +18061,26 @@
       "carriers",
       "marketing",
       "landing",
-      "kit"
+      "kit",
+      "features"
     ],
     "lang": "en",
     "platforms": ["react"],
     "propNames": [],
     "tier": "free",
-    "title": "CapabilityMatrix"
+    "title": "Capability matrix"
   },
   {
     "category": "blocks",
-    "description": "",
-    "headings": [],
+    "description": "جدول يعرض الجهات مقابل القدرات، وكل خلية فيه نعم أو لا أو قريبًا أو ملاحظة قصيرة.",
+    "headings": ["الأساسيات"],
     "key": "free/capability-matrix",
-    "keywords": [],
+    "keywords": ["قدرات", "مصفوفة", "مقارنة", "جدول", "مزايا", "شركات الشحن", "صفحة هبوط"],
     "lang": "ar",
     "platforms": ["react"],
     "propNames": [],
     "tier": "free",
-    "title": "CapabilityMatrix"
+    "title": "مصفوفة القدرات"
   },
   {
     "category": "blocks",
@@ -18376,54 +18377,6 @@
   },
   {
     "category": "blocks",
-    "description": "",
-    "headings": [],
-    "key": "free/notification-inbox",
-    "keywords": ["notifications", "inbox", "bell", "unread", "in-app", "kit"],
-    "lang": "en",
-    "platforms": ["react", "native"],
-    "propNames": [],
-    "tier": "free",
-    "title": "NotificationInbox"
-  },
-  {
-    "category": "blocks",
-    "description": "",
-    "headings": [],
-    "key": "free/notification-inbox",
-    "keywords": [],
-    "lang": "ar",
-    "platforms": ["react", "native"],
-    "propNames": [],
-    "tier": "free",
-    "title": "NotificationInbox"
-  },
-  {
-    "category": "blocks",
-    "description": "",
-    "headings": [],
-    "key": "free/notification-preferences",
-    "keywords": ["notifications", "preferences", "settings", "email", "push", "subscribe", "kit"],
-    "lang": "en",
-    "platforms": ["react"],
-    "propNames": [],
-    "tier": "free",
-    "title": "NotificationPreferences"
-  },
-  {
-    "category": "blocks",
-    "description": "",
-    "headings": [],
-    "key": "free/notification-preferences",
-    "keywords": [],
-    "lang": "ar",
-    "platforms": ["react"],
-    "propNames": [],
-    "tier": "free",
-    "title": "NotificationPreferences"
-  },
-  {
-    "category": "blocks",
     "description": "The organisation's settings page: its profile, legal entities and domains.",
     "headings": ["Basics"],
     "key": "free/organization-page",
@@ -18586,30 +18539,6 @@
     "propNames": [],
     "tier": "free",
     "title": "بطاقات المنتجات"
-  },
-  {
-    "category": "blocks",
-    "description": "",
-    "headings": [],
-    "key": "free/push-primer",
-    "keywords": ["push", "notifications", "permission", "onboarding", "opt in", "kit"],
-    "lang": "en",
-    "platforms": ["native"],
-    "propNames": [],
-    "tier": "free",
-    "title": "PushPrimer"
-  },
-  {
-    "category": "blocks",
-    "description": "",
-    "headings": [],
-    "key": "free/push-primer",
-    "keywords": [],
-    "lang": "ar",
-    "platforms": ["native"],
-    "propNames": [],
-    "tier": "free",
-    "title": "PushPrimer"
   },
   {
     "category": "blocks",

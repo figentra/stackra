@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `assertRowSecurity`, the row-level-security audit of a migrated database. It walks every table of every
  *          non-system schema: a table without the owner column must be a listed platform table (`PLATFORM_TABLES` or
- *          the caller's `platform`, each with its reason), else it is returned as a warning naming its group
- *          (`unownedTableGroup`) until 0.20, and is a gap in strict mode (`strict`, `STACKRA_GEN_STRICT=1`). A table in
+ *          the caller's `platform`, each with its reason), else it is a gap naming its group (`unownedTableGroup`;
+ *          the tenancy contract step, ADR 0239). Only the audit's own tests pass `strict: false`, to read the groups
+ *          back as warnings. A table in
  *          `ISOLATION_SCOPE_TABLES` (group (b) by name) is audited by its own owner column, `isolation_scope_id`; a
  *          table whose `pol_<table>_scope_id` is exactly the `equals` or `equalsOrUnset` policy
  *          `Blueprint.rowLevelSecurity` writes on the setting (group (b) by shape, core payments' tables) by `scope_id`,
@@ -234,9 +235,9 @@ async function seedOwners(
  *
  * @param database - the connected database (`usePostgres().database`), migrated.
  * @param options - the column, setting, role, probe values and the caller's platform tables.
- * @returns the warnings, until 0.20 (each a gap when `options.strict` or `STACKRA_GEN_STRICT=1`): each unlisted
- *          table without the owner column, with its group.
- * @throws Error listing every gap: an unlisted table without the owner column in strict mode, a listed one with it, an
+ * @returns the warnings: none, unless `options.strict` is `false` (the audit's own tests), when each unlisted table
+ *          without the owner column is returned with its group instead of failing.
+ * @throws Error listing every gap: an unlisted table without the owner column, a listed one with it, an
  *         owned table without RLS, not forced, without its one permissive owner policy or with another policy that is
  *         permissive or misnamed, a table the probe could not seed, a role that bypasses RLS, a probe that saw or
  *         moved another owner's row, saw rows with the setting unset or did not see its own.
@@ -249,7 +250,7 @@ export async function assertRowSecurity(
   options: RowSecurityOptions,
 ): Promise<readonly string[]> {
   const { column, setting, role, probe } = options;
-  const strict = options.strict ?? process.env["STACKRA_GEN_STRICT"] === "1";
+  const strict = options.strict ?? true;
   const warnings: string[] = [];
   const [own, other] = probe;
   // The compiled migrations' `t.platformTable` and `t.reviewedPolicy` declarations, when the caller names them.
@@ -322,7 +323,6 @@ export async function assertRowSecurity(
         ? `; its pol_${audited.table}_scope_id is not exactly the generated equals or equalsOrUnset policy, so it is not group (b)`
         : "";
       if (reason === undefined)
-        // shortcut: warn-only for tables without tenant_id until 0.20, then error (push to `gaps` always).
         (strict ? gaps : warnings).push(
           `${name} has no ${audited.column} column and is not a platform table (${group}${scopeEquality}); give it ${audited.column} or list it in \`platform\` with its reason`,
         );
