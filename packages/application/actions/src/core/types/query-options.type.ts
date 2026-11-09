@@ -21,11 +21,15 @@ import type { EntitlementOption } from "#core/types/entitlement-option.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { QueryCache } from "#core/types/query-cache.type";
 import type { QueryReplica } from "#core/types/query-replica.type";
+import type { ActionPublic } from "#core/types/action-public.type";
 
 /** The options of a query. */
 export interface QueryOptions {
   /** `<model>.<name>` in snake_case (`order.list`, `points.stats_today`), written once. */
   readonly key: string;
+
+  /** Reachable with an API key (an `api_client` caller), with the scopes it must hold (ADR 0278); absent: never. */
+  readonly public?: ActionPublic;
 
   /** The actor kinds that may call it; any other is refused (`forbidden`). */
   readonly actors: readonly ActorKind[];

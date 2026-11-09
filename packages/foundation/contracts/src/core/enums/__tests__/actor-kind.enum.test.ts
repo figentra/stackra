@@ -17,6 +17,7 @@ describe("ActorKind", () => {
       "service",
       "agent",
       "external_agent",
+      "api_client",
       "job",
       "webhook",
       "system",
