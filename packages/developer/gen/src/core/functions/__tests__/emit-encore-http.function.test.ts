@@ -71,6 +71,20 @@ describe(emitEncoreHttp, () => {
     expect(bare).toContain("    const answered = await handle(request, container);");
   });
 
+  it("hands the key's credential to the call only for a member on @stackra/versioning", () => {
+    const versioned = emitEncoreHttp({
+      ...BILLING_IR,
+      packages: [...(BILLING_IR.packages ?? []), "@stackra/versioning"],
+    })?.content;
+    for (const line of [
+      'import type { CallAuthCredential } from "@stackra/app/server";',
+      "request: Request, credential?: CallAuthCredential) => Promise<unknown>;",
+      "      execute: (input, actor, guarded, credential) => call.execute(container, input, actor, guarded, credential),",
+    ])
+      expect(versioned).toContain(line);
+    expect(emitEncoreHttp(BILLING_IR)?.content).not.toContain("credential");
+  });
+
   it("writes none without @stackra/app or outside a service", () => {
     expect(emitEncoreHttp(COMMERCE_IR)).toBeUndefined();
     expect(emitEncoreHttp({ ...BILLING_IR, layout: "package" })).toBeUndefined();

@@ -22,6 +22,7 @@
  *                     are sent), STA-1477.
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
+import { declaresPackage } from "#core/functions/declares-package.function";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -35,12 +36,12 @@ import type { MemberIR } from "#core/types/member-ir.type";
  */
 export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
   if (ir.layout !== "service") return undefined;
-  const declares = (name: string): boolean =>
-    (ir.packages ?? []).includes(name) ||
-    ir.dependencies.some((dependency) => dependency.package === name);
+  const declares = (name: string): boolean => declaresPackage(ir, name);
   if (!declares("@stackra/app")) return undefined;
   // The 429 answer imports @stackra/errors, so it is written only for a service that declares it.
   const errors = declares("@stackra/errors");
+  // A member on @stackra/versioning also hands the verified key's credential to the call (its version pin, STA-2532).
+  const versioned = declares("@stackra/versioning");
   const header = generatedHeader({
     from: "the service layout and its @stackra/app dependency",
     purpose:
@@ -71,6 +72,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       '} from "@stackra/app/server";',
       'import type { AnyClass, Container } from "@stackra/container";',
       'import type { Actor } from "@stackra/contracts";',
+      ...(versioned ? ['import type { CallAuthCredential } from "@stackra/app/server";'] : []),
       ...(errors
         ? ['import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";']
         : []),
@@ -118,7 +120,9 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  action?: AnyClass;",
       "  input?: AnyClass;",
       "  raw?: boolean;",
-      "  execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;",
+      versioned
+        ? "  execute: (container: Container, input: unknown, actor: Actor, request: Request, credential?: CallAuthCredential) => Promise<unknown>;"
+        : "  execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;",
       "}",
       "",
       "/**",
@@ -147,7 +151,9 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
       "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",
-      "      execute: (input, actor, guarded) => call.execute(container, input, actor, guarded),",
+      versioned
+        ? "      execute: (input, actor, guarded, credential) => call.execute(container, input, actor, guarded, credential),"
+        : "      execute: (input, actor, guarded) => call.execute(container, input, actor, guarded),",
       "    }),",
       "  );",
       "  for (const [name, value] of response.headers)",

@@ -237,6 +237,25 @@ describe(emitEncoreApi, () => {
     );
   });
 
+  it("runs each call inside serveVersioned, with its output schema, only for a member on @stackra/versioning", () => {
+    const versioned = emitEncoreApi(
+      { ...ir, packages: [...(ir.packages ?? []), "@stackra/versioning"] },
+      manifest,
+    )?.content;
+    for (const line of [
+      'import { serveVersioned } from "@stackra/versioning";',
+      'import { CancelOrderOutput } from "#modules/orders/schemas/cancel-order-output.schema";',
+      "      execute: (container, input, actor, request, credential) =>",
+      "        serveVersioned(request, { container, actor, credential, subject: CancelOrderOutput }, () =>",
+      "          new ActionPipeline(container).execute(CancelOrderAction, input as never, {",
+      "            ...(credential === undefined ? {} : { credential }),",
+    ])
+      expect(versioned).toContain(line);
+    // a member without the package is unchanged
+    expect(emitEncoreApi(ir, manifest)?.content).not.toContain("serveVersioned");
+    expect(emitEncoreApi(ir, manifest)?.content).not.toContain("credential");
+  });
+
   it("writes none for a package, an app or a service with no endpoint", () => {
     expect(emitEncoreApi({ ...ir, layout: "package" }, manifest)).toBeUndefined();
     expect(emitEncoreApi({ ...ir, layout: "app" }, manifest)).toBeUndefined();

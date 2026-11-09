@@ -23,7 +23,8 @@
  *           pipeline; a path parameter is always an input field (`buildManifest` refuses one that is not,
  *           `endpoint_param_unbound`).
  * Runtime: isomorphic
- * Governing contract: ADR 0091 (decision 2) and 0124 (Encore is generated); ADR 0237 (STA-2577 note: every generated
+ * Governing contract: STA-2532 (a member on @stackra/versioning runs each call inside `serveVersioned`: the dated
+ *                     version, `downgrade` of the top-level output, `Stackra-Version`); ADR 0091 (decision 2) and 0124 (Encore is generated); ADR 0237 (STA-2577 note: every generated
  *                     adapter is raw, so the edge signature covers the body); ADR 0294 (decision 21: the derived
  *                     endpoint); ADR 0098 (the actor from the credential); ADR 0295 (decision 8: the adapters reach the
  *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063; STA-2577.
@@ -32,6 +33,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
+import { declaresPackage } from "#core/functions/declares-package.function";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -45,7 +47,31 @@ import type { MemberIR } from "#core/types/member-ir.type";
 type Entry = Readonly<Record<string, unknown>>;
 
 /** The local names this file always binds, which a member class never takes. */
-const RESERVED = ["ActionPipeline", "answerCall", "api", "app", "requestCallOptions"];
+const RESERVED = [
+  "ActionPipeline",
+  "answerCall",
+  "api",
+  "app",
+  "requestCallOptions",
+  "serveVersioned",
+];
+
+/**
+ * The `execute` of a versioned endpoint: the pipeline run inside `serveVersioned`, which picks the version, shapes the
+ * output through `subject` and names the version in the answer. The verified key's credential reaches the pipeline too.
+ */
+function versionedExecute(type: string, subject: string | undefined): string[] {
+  return [
+    "      execute: (container, input, actor, request, credential) =>",
+    `        serveVersioned(request, { container, actor, credential${subject === undefined ? "" : `, subject: ${subject}`} }, () =>`,
+    `          new ActionPipeline(container).execute(${type}, input as never, {`,
+    "            actor,",
+    "            ...(credential === undefined ? {} : { credential }),",
+    "            ...requestCallOptions(request),",
+    "          }),",
+    "        ),",
+  ];
+}
 
 /**
  * The Encore endpoints of a service, or undefined when it has no own action or query with an endpoint.
@@ -57,6 +83,8 @@ const RESERVED = ["ActionPipeline", "answerCall", "api", "app", "requestCallOpti
  */
 export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): GeneratedFile | undefined {
   if (ir.layout !== "service") return undefined;
+  // A member on @stackra/versioning answers every call in its dated version (STA-2532); any other is unchanged.
+  const versioned = declaresPackage(ir, "@stackra/versioning");
   const imports = new Map<string, Map<string, boolean>>();
   const local = new Map<string, string>();
   const taken = new Set(RESERVED);
@@ -120,6 +148,13 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       shape === undefined
         ? []
         : [`      input: ${ref({ name: shape.name, from: shape.importPath }, false)},`];
+    // The output schema class, whose registered dated changes shape the answer; a hosted entry's is not known here.
+    const outputShape =
+      !versioned || typeof entry["from"] === "string" ? undefined : shapeOfRef(ir, entry["output"]);
+    const subject =
+      outputShape === undefined
+        ? undefined
+        : ref({ name: outputShape.name, from: outputShape.importPath }, false);
     body.push(
       `/** ${method} ${path}: ${key} through the action pipeline. */`,
       `export const ${camelCase(key.replace("@", "_v"))} = api.raw(`,
@@ -130,8 +165,12 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       `      anonymous: ${entry["anonymous"] === true},`,
       `      action: ${type},`,
       ...input,
-      "      execute: (container, input, actor, request) =>",
-      `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request) }),`,
+      ...(versioned
+        ? versionedExecute(type, subject)
+        : [
+            "      execute: (container, input, actor, request) =>",
+            `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request) }),`,
+          ]),
       "    }),",
       ");",
       "",
@@ -174,6 +213,8 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
   }
   if (body.length === 0) return undefined;
 
+  if (body.some((line) => line.includes("serveVersioned(")))
+    use("@stackra/versioning", "serveVersioned", false);
   if (body.some((line) => line.includes("new ActionPipeline("))) {
     use("@stackra/actions", "ActionPipeline", false);
     use("@stackra/actions", "requestCallOptions", false);

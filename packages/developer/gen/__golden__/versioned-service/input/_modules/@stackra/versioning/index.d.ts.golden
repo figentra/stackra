@@ -1,0 +1,4 @@
+export declare abstract class VersioningConfig {}
+export declare function Change<S extends object>(options: { readonly from: string | number; readonly sunset: string }): abstract new () => object;
+export declare function registerChanges(rows: readonly (readonly [abstract new () => object, abstract new () => object])[]): void;
+export declare function serveVersioned(request: Request, call: object, run: () => Promise<unknown>): Promise<Response>;

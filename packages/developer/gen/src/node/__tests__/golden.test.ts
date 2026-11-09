@@ -89,6 +89,10 @@ const FIXTURES: readonly GoldenFixture[] = [
   // The pipeline's own ports are bound from what the service declares, not from a constructor (STA-2573): its
   // integration event reaches EventOutbox, its idempotent action IdempotencyStore.
   { name: "pipeline-ports", base: "service", members: ["services/shop"] },
+  // A member on `@stackra/versioning` answers each call in its dated version (STA-2532): the versioned adapter, the
+  // credential reaching the call, and the `registerChanges` row of the output schema's dated change. Every other
+  // fixture stays byte-identical.
+  { name: "versioned-service", base: "service", members: ["services/shop"] },
   // A package's own routes get the `Routes` ref table (`#stackra/routes`), keyed as its manifest records them.
   { name: "package-routes", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },

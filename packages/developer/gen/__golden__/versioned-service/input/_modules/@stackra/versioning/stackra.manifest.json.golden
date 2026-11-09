@@ -1,0 +1,19 @@
+{
+  "member": "versioning",
+  "package": "@stackra/versioning",
+  "version": "0.29.0",
+  "modules": [
+    {
+      "key": "versioning",
+      "exports": [],
+      "dependsOn": []
+    }
+  ],
+  "config": [
+    {
+      "key": "versioning",
+      "class": "VersioningConfig",
+      "from": "@stackra/versioning"
+    }
+  ]
+}

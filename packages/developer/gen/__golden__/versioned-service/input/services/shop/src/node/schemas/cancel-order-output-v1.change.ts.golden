@@ -1,0 +1,15 @@
+import { Change } from "@stackra/versioning";
+
+import type { CancelOrderOutput } from "#node/schemas/cancel-order-output.schema";
+
+/** Before 2027-03-01 a cancelled order answered no `cancelledAt`. */
+export class CancelOrderOutputV1Change extends Change<CancelOrderOutput>({
+  from: "2027-03-01",
+  sunset: "2028-03-01",
+}) {
+  status!: string;
+
+  down(view: CancelOrderOutput): CancelOrderOutputV1Change {
+    return Object.assign(new CancelOrderOutputV1Change(), { status: view.status });
+  }
+}

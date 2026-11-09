@@ -36,7 +36,8 @@
  *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
  *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) or an adapter that reaches a workflow directly
- *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) on the full pass only. A warning
+ *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) or, on `@stackra/versioning`, a dated change on the
+ *           items of a list in an output (`checkVersionedItems`, `versioned_items_not_applied`, STA-2532) on the full pass only. A warning
  *           (`severity: "warning"`, such as `action_without_workflow`) never blocks: the full pass returns it in
  *           `warnings` beside the files (STA-340). An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
@@ -64,6 +65,7 @@ import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
 import { checkShownOnce } from "#core/functions/check-shown-once.function";
+import { checkVersionedItems } from "#core/functions/check-versioned-items.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkActionFirst } from "#core/functions/check-action-first.function";
@@ -206,6 +208,7 @@ export function generateMember(
     ...checkApproval(ir),
     ...checkQueryCache(ir),
     ...checkShownOnce(ir),
+    ...checkVersionedItems(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
     // This run's recorded trees, so an unindexed path is refused in the run that adds it (ADR 0307 rule 2).
