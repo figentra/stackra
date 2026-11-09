@@ -58,6 +58,7 @@ import { checkConventions } from "#core/functions/check-conventions.function";
 import { checkEndpoints } from "#core/functions/check-endpoints.function";
 import { checkBlindIndexes } from "#core/functions/check-blind-indexes.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
+import { checkHatchColumns } from "#core/functions/check-hatch-columns.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
 import { checkApproval } from "#core/functions/check-approval.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
@@ -203,6 +204,7 @@ export function generateMember(
     ...checkEncryptedFields(ir),
     ...checkBlindIndexes(ir),
     ...checkModelScope(ir),
+    ...checkHatchColumns(ir),
     ...checkApproval(ir),
     ...checkQueryCache(ir),
     ...checkShownOnce(ir),

@@ -29,13 +29,20 @@ describe("readMigrationTables", () => {
     });
     const first = "src/modules/orders/database/migrations/0001-create-orders.migration.ts";
     expect(readMigrationTables(root, "service", "shop")).toEqual([
-      { file: first, module: "orders", table: "orders", ownerColumn: true },
-      { file: first, module: "orders", table: "order_notes", ownerColumn: false },
+      { file: first, module: "orders", table: "orders", ownerColumn: true, columns: [] },
+      {
+        file: first,
+        module: "orders",
+        table: "order_notes",
+        ownerColumn: false,
+        columns: [{ name: "body", method: "string" }],
+      },
       {
         file: "src/modules/orders/database/migrations/0002-own-notes.migration.ts",
         module: "orders",
         table: "order_notes",
         ownerColumn: true,
+        columns: [],
       },
     ]);
   });
@@ -74,8 +81,8 @@ describe("readMigrationTables", () => {
     });
     const file = "src/node/database/migrations/0002-contract-relay-tenancy.migration.ts";
     expect(readMigrationTables(root, "package", "relay")).toEqual([
-      { file, module: "relay", table: "messages", ownerColumn: true },
-      { file, module: "relay", table: "routes", ownerColumn: false },
+      { file, module: "relay", table: "messages", ownerColumn: true, columns: [] },
+      { file, module: "relay", table: "routes", ownerColumn: false, columns: [] },
     ]);
   });
 
@@ -90,7 +97,27 @@ describe("readMigrationTables", () => {
         module: "loyalty_kit",
         table: "loyalty_accounts",
         ownerColumn: false,
+        columns: [{ name: "tier", method: "string" }],
       },
+    ]);
+  });
+
+  it("reads each column a block adds with its Blueprint method, and nothing else", () => {
+    const root = writeFixtureMember("venues", {
+      "src/node/database/migrations/0001-create-closures.migration.ts": [
+        'schema.create("closures", (t: Blueprint) => {',
+        '  t.hasPublicId("clo");',
+        '  t.string("closed_on", 10).notNull().comment("The closed day.");',
+        '  t.jsonb("hours").nullable().comment("Opening hours");',
+        '  t.link("venue_id").notNull().comment("Its venue.");',
+        '  t.index(["venue_id"]);',
+        "});",
+      ].join("\n"),
+    });
+    expect(readMigrationTables(root, "package", "venues")[0]?.columns).toEqual([
+      { name: "closed_on", method: "string" },
+      { name: "hours", method: "jsonb" },
+      { name: "venue_id", method: "link" },
     ]);
   });
 });
