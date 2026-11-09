@@ -90,6 +90,15 @@ not know is never cached. A revoke takes effect at once when identity's `princip
 service (`evictPrincipal`); **the worst case is the cache window**, 30 seconds by default, when the event has not
 arrived. The listener that calls `evictPrincipal` is bound with the gateway path (B3).
 
+## Amendment, 2026-11-09: a tenant's deny rules bind an API key (STA-2646)
+
+An `api_client` call's grants are its key's scopes, so it skips the grant search of the decision point, but its
+tenant's deny rules still bind it: after the scopes pass, `PolicyDecisionPointService.denied` checks the deny rules of
+the key principal's own snapshot against the operation's permission and every scope the key had to cover, in `require`
+and against the record in `authorize`. A breakable deny counts too, since a key has no break-glass. A key whose
+principal has no published snapshot (version 0) is refused: fail closed. The access service publishes each API-key
+principal's snapshot (its tenant's deny rules, no grants); the gateway path (B3) goes live only once it does.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2,
