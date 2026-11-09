@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves the ChatSurface draws each turn by its role, gives answers their reasoning, sources and actions,
- *          offers starters only while empty, sends a starter's prompt, and passes the streaming state to the composer.
+ *          offers starters only while empty, sends a starter's prompt, passes the streaming state to the composer, draws
+ *          a turn's AI SDK parts in their place and answers a tool approval.
  * Boundary: unit tier, jsdom, the real @stackra/ui components, except ChatMessage, PromptInput, Reasoning and Sources,
  *           which are DOM stand-ins shaped by their feat/c6-gap-ui contracts until that branch lands in this one.
  * Runtime: node (vitest)
@@ -107,5 +108,54 @@ describe("ChatSurface", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Track my order/ }));
     expect(onSend).toHaveBeenCalledWith("Where is order 2048?");
+  });
+
+  it("draws a turn's parts in order and answers a tool approval", () => {
+    const onApprovalResponse = vi.fn();
+    render(
+      <ChatSurface
+        labels={LABELS}
+        onSend={() => {}}
+        onApprovalResponse={onApprovalResponse}
+        toolLabels={{ orders_order_cancel: "Cancel order" }}
+        messages={[
+          {
+            id: "1",
+            role: "assistant",
+            text: "Cancelling 2048.",
+            reasoning: [{ key: "ignored", label: "Ignored", content: "ignored" }],
+            parts: [
+              { type: "reasoning", text: "Found order 2048" },
+              { type: "text", text: "Cancelling 2048." },
+              {
+                type: "tool-orders_order_cancel",
+                toolCallId: "call-1",
+                state: "approval-requested",
+                input: { orderId: "2048" },
+                approval: { id: "appr-1" },
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("Steps")).toBeTruthy();
+    expect(screen.queryByText("Ignored")).toBeNull();
+    expect(screen.getByText("Cancelling 2048.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    expect(onApprovalResponse).toHaveBeenCalledWith("appr-1", true);
+  });
+
+  it("draws a text-only turn as before", () => {
+    render(
+      <ChatSurface
+        labels={LABELS}
+        onSend={() => {}}
+        messages={[{ id: "1", role: "assistant", text: "Hello there." }]}
+      />,
+    );
+    const [answer] = screen.getAllByRole("article", { name: "Assistant" });
+    expect(answer?.textContent).toContain("Hello there.");
+    expect(answer?.querySelector("details")).toBeNull();
   });
 });

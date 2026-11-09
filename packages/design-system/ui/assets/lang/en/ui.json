@@ -1253,6 +1253,14 @@
     "shortcut": "Shortcut {keys}",
     "you": "You",
     "disclaimer": "Tamo can be wrong. Check what it drafts.",
-    "close": "Close"
+    "close": "Close",
+    "approval_title": "Tamo wants to run this",
+    "approval_waiting": "Waiting for your approval.",
+    "approve": "Approve",
+    "deny": "Deny",
+    "approved": "Approved",
+    "denied": "Denied",
+    "expired": "Expired",
+    "risk": "Risk {level}"
   }
 }

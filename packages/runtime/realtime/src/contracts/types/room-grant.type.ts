@@ -4,7 +4,8 @@
  *          verified session, the document whose room it joins, and whether it may publish updates.
  * Boundary: a type only, in the leaf entry. Built by the server: the endpoint checked the document's view permission
  *           at its scope, the visibility rules and the live-collaboration entitlement, and sets `mayEdit` from the
- *           edit permission (ADR 0346 decision 3). The room lives in the session's tenant, never one a client names.
+ *           edit permission (ADR 0346 decision 3), and may hand the room `recheckEdit`, its own re-check of that
+ *           permission. The room lives in the session's tenant, never one a client names.
  * Runtime: isomorphic
  * Governing contract: ADR 0346 (decision 3); ADR 0225 (decision 1: IAM authorises each channel).
  */
@@ -20,4 +21,11 @@ export interface RoomGrant {
 
   /** Whether the caller holds the edit permission, so it may publish `update` messages. */
   readonly mayEdit: boolean;
+
+  /**
+   * Asks the edit right again before each `update` of the membership is relayed, so a right revoked mid-session drops
+   * the next edit; absent, `mayEdit` holds until the token's lifetime ends. A `false` answer or a failed check refuses
+   * that update and every later one.
+   */
+  readonly recheckEdit?: () => Promise<boolean>;
 }
