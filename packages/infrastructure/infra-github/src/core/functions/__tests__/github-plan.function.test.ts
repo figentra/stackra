@@ -100,6 +100,44 @@ describe("githubPlan", () => {
     });
   });
 
+  it("takes the repository metadata: description, topics and homepage", () => {
+    const plan = githubPlan(
+      root({
+        org: "acme",
+        repo: "acme-platform",
+        description: "Acme Platform: the services every Acme product runs on.",
+        topics: ["acme", "typescript", "multi-tenant"],
+        homepage: "https://docs.acme.example",
+      }),
+    );
+
+    expect(plan).toMatchObject({
+      description: "Acme Platform: the services every Acme product runs on.",
+      topics: ["acme", "typescript", "multi-tenant"],
+      homepage: "https://docs.acme.example",
+    });
+  });
+
+  it("leaves the metadata out of a plan whose runway states none", () => {
+    const plan = githubPlan(root({ org: "acme", repo: "acme-platform" }));
+
+    expect(plan).not.toHaveProperty("description");
+    expect(plan).not.toHaveProperty("topics");
+    expect(plan).not.toHaveProperty("homepage");
+  });
+
+  it("refuses an upper-case or repeated topic, more than 20 topics, and a relative homepage", () => {
+    for (const github of [
+      { topics: ["TypeScript"] },
+      { topics: ["acme", "acme"] },
+      { topics: Array.from({ length: 21 }, (_, i) => `t${i}`) },
+      { homepage: "docs.acme.example" },
+    ])
+      expect(() => githubPlan(root({ org: "acme", repo: "acme-platform", ...github }))).toThrow(
+        GithubInfraInvalidError,
+      );
+  });
+
   it("takes a stated visibility, literal values, tag-only refs and environment variables", () => {
     const plan = githubPlan(
       root({
