@@ -5,7 +5,9 @@
  *          the correlation `{ subject }`.
  * Boundary: a signal, held in the transaction of the ack that completed the set; the waiting step receives it as its
  *           third argument. `ServiceAckService.expect` returns `true` when there is nothing to wait for (no services),
- *           so the waiting step's `when` can skip it.
+ *           so the waiting step's `when` can skip it. It is held under the tenant the completing ack is delivered in,
+ *           and a run takes only signals of its own tenant: the waiting run must start in the tenant the acks are sent
+ *           in (a provisioning run in the tenant it provisions), never as a platform run.
  * Runtime: isomorphic
  * Governing contract: ADR 0210 (decision 6); ADR 0427 (decision 1); ADR 0152 (0294 note: held signals).
  */

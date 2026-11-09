@@ -165,4 +165,51 @@ describe("checkApproval", () => {
       "approval_condition_reads_unmarked",
     ]);
   });
+
+  it("keys a marked setting by its group, not its module", () => {
+    const pricing: ShapeIR = { ...SETTINGS, name: "PricingRulesSettings" };
+    const member = ir(
+      {},
+      [
+        klass("PricingRulesSettings", "settings", {
+          facets: [setting("maxPercent", { approval: true })],
+        }),
+      ],
+      [pricing],
+    );
+    const reading = (key: string): MemberIR => ({
+      ...member,
+      classes: [...member.classes, condition({ statics: { reads: `["${key}"]` } })],
+    });
+    expect(codes(reading("pricing_rules.maxPercent"))).toEqual([]);
+    expect(codes(reading("pricing_rules.label"))).toEqual(["approval_condition_reads_unmarked"]);
+  });
+
+  it("keys a marked setting by its group, not its module", () => {
+    const pricing: ShapeIR = { ...SETTINGS, name: "PricingRulesSettings" };
+    const member = ir(
+      {},
+      [
+        klass("PricingRulesSettings", "settings", {
+          facets: [setting("maxPercent", { approval: true })],
+        }),
+      ],
+      [pricing],
+    );
+    expect(
+      codes({
+        ...member,
+        classes: [
+          ...member.classes,
+          condition({ statics: { reads: '["pricing_rules.maxPercent"]' } }),
+        ],
+      }),
+    ).toEqual([]);
+    expect(
+      codes({
+        ...member,
+        classes: [...member.classes, condition({ statics: { reads: '["orders.maxPercent"]' } })],
+      }),
+    ).toEqual([]);
+  });
 });

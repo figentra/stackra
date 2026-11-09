@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { signal })`
  *          that connects what needs the booted container, in order: the record policies (`connectPolicies`, when the
- *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the bound
+ *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the extension
+ *          slots (`connectExtensions`, when the service declares an extension, so a slot builds each one), the bound
  *          `HoldRegistry` and `SequenceTimeZone` drivers (or none), the container itself as the reads' visibility
  *          resolver (`connectVisibilityFilter`, so reads AND the bound `VisibilityFilter`'s conditions, writes stamp
  *          the call's actor and the call's time zone is read; ADR 0333 decision 4, STA-2044),
@@ -15,7 +16,9 @@
  *          native-write watcher (`connectNativeWriteWatcher`, so a native `CrudService` write reaches the change log;
  *          STA-2047),
  *          `segments.connect(container)`, `AutomationService#connect` (so a published automation's principal is checked
- *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `EventBus#connect` and
+ *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `QueueWorkerService#connect` (so a
+ *          job a generated Encore subscription delivers, or `queue:work` reserves, runs through the pipeline, when the
+ *          service runs `@stackra/queue`; STA-2046), `EventBus#connect` and
  *          `InboxService#connect` (the
  *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
  *          `liveQueryRoutes` call per query with `cache.invalidateOn`, each route subscribed on the bus and sent through
@@ -25,7 +28,7 @@
  *          cross-app inbox (STA-1910). A signal already aborted when `boot` starts connects
  *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
- *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`); nothing to connect means no file. The connection
+ *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`, `@stackra/queue`); nothing to connect means no file. The connection
  *           strings are the runtime's (Encore's database, and `DATABASE_REPLICA_URLS` when the runtime provides
  *           one; runway does not set it for `readReplica` yet: Runway plan PR 10/11, STA-2001), never logged; `@stackra/app/server` calls `boot` once it hands the entry its container.
  * Runtime: isomorphic
@@ -130,11 +133,25 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   const outbox = uses("@stackra/outbox");
   const segments = uses("@stackra/segments");
   const workflow = uses("@stackra/workflow");
+  // The worker runs each delivered or reserved job through the container's pipeline (ADR 0148 decision 6, STA-2046).
+  const queue = uses("@stackra/queue");
   // The outbox depends on the bus, so a service with an outbox has one to connect.
   const events = outbox || uses("@stackra/events");
   // A record policy is built from the booted container when `ctx.authorize(record)` runs it (ADR 0132, STA-2045).
   const policies = ((built?.["policies"] ?? []) as readonly unknown[]).length > 0;
-  if (!database && !outbox && !segments && !workflow && !events && !policies) return undefined;
+  // A slot builds each registered extension from the booted container, so the slots need it connected (ADR 0305).
+  const extensions = ir.classes.some((declared) => declared.kind === "extension");
+  if (
+    !database &&
+    !outbox &&
+    !segments &&
+    !workflow &&
+    !queue &&
+    !events &&
+    !policies &&
+    !extensions
+  )
+    return undefined;
   // Live queries refresh their clients through realtime after each invalidating event commits (ADR 0315 decision 1).
   const live = events && uses("@stackra/realtime") ? liveQueryRows(built) : [];
 
@@ -143,6 +160,10 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   if (policies) {
     imports.push('import { connectPolicies } from "@stackra/iam";');
     steps.push("  connectPolicies(container);");
+  }
+  if (extensions) {
+    imports.push('import { connectExtensions } from "@stackra/actions";');
+    steps.push("  connectExtensions(container);");
   }
   if (database) {
     imports.push(
@@ -194,6 +215,10 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   if (workflow) {
     imports.push('import { AutomationService } from "@stackra/workflow/node";');
     steps.push("  container.get(AutomationService).connect(container);");
+  }
+  if (queue) {
+    imports.push('import { QueueWorkerService } from "@stackra/queue/node";');
+    steps.push("  container.get(QueueWorkerService).connect(container);");
   }
   if (events) {
     imports.push(

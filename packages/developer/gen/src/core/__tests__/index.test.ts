@@ -110,11 +110,15 @@ describe("@stackra/gen", () => {
       "rootModuleOf",
       "routeKey",
       "sequenceKey",
+      "settingTypeOf",
+      "settingsKeyOf",
+      "settingsOf",
       "surfacesOf",
       "systemGraph",
       "tableName",
       "toolHints",
       "toolName",
+      "unboundPorts",
       "webhookPath",
     ]);
   });

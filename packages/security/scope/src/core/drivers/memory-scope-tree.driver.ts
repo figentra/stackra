@@ -5,7 +5,9 @@
  *          holds the nodes it may see.
  * Boundary: holds a copy of the entries `seed` gave it (none before); what a caller may see is what it was given
  *           (the Postgres driver leaves that to row-level security). Ancestors come root first and descendants in path order, as the
- *           port states.
+ *           port states. Until it is seeded, `readFrom(load)` hands every read to the tree `load` resolves to: the scope
+ *           testing plugin points it at the Database's `ScopeNode` rows, so a memory-tier app sees the nodes
+ *           `ScopeNodeService` writes. A seed wins: a test that seeds (`fakeScopeTree`) reads its own list.
  * Runtime: isomorphic
  * Governing contract: ADR 0327 (decisions 1 and 3); ADR 0266 (memory drivers first); ADR 0294 (decision 16).
  */
@@ -32,6 +34,15 @@ export class MemoryScopeTreeDriver extends Driver(ScopeTree) {
   /** The entries, in path order. */
   private entries: readonly ScopeEntry[] = [];
 
+  /** Whether `seed` set the entries; a seeded tree never reads from a source. */
+  private seeded = false;
+
+  /** Resolves the tree reads go to while unseeded, once; undefined reads the entries. */
+  private load: (() => Promise<ScopeTree | undefined>) | undefined;
+
+  /** The source `load` resolved to, cached after the first read. */
+  private source: Promise<ScopeTree | undefined> | undefined;
+
   /**
    * Sets the nodes this tree holds, replacing any before.
    *
@@ -40,21 +51,42 @@ export class MemoryScopeTreeDriver extends Driver(ScopeTree) {
   seed(entries: readonly ScopeEntry[]): this {
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     this.entries = [...entries].sort(byPathOrder);
+    this.seeded = true;
+    return this;
+  }
+
+  /**
+   * Reads every node from the tree `load` resolves to, until the tree is seeded; an unresolved source (`undefined`)
+   * reads the entries.
+   *
+   * @returns this tree, to chain.
+   * @example
+   * tree.readFrom(async () => new PostgresScopeTreeDriver(nodes));
+   */
+  readFrom(load: () => Promise<ScopeTree | undefined>): this {
+    this.load = load;
+    this.source = undefined;
     return this;
   }
 
   /** The node with public id `id`, or `undefined` when none is visible. */
   async node(id: PublicId<"scp">): Promise<ScopeEntry | undefined> {
+    const source = await this.from();
+    if (source !== undefined) return source.node(id);
     return this.entries.find((entry) => entry.id === id);
   }
 
   /** The node at `path`, or `undefined` when none is visible. */
   async byPath(path: string): Promise<ScopeEntry | undefined> {
+    const source = await this.from();
+    if (source !== undefined) return source.byPath(path);
     return this.entries.find((entry) => entry.path === path);
   }
 
   /** The nodes above `scope`, root first; the node itself is not one of them. */
   async ancestors(scope: ScopeRef): Promise<readonly ScopeEntry[]> {
+    const source = await this.from();
+    if (source !== undefined) return source.ancestors(scope);
     return this.entries.filter(
       (entry) => entry.path !== scope.path && isWithinScope(scope.path, entry.path),
     );
@@ -62,8 +94,17 @@ export class MemoryScopeTreeDriver extends Driver(ScopeTree) {
 
   /** The nodes below `scope` at any depth, in path order; the node itself is not one of them. */
   async descendants(scope: ScopeRef): Promise<readonly ScopeEntry[]> {
+    const source = await this.from();
+    if (source !== undefined) return source.descendants(scope);
     return this.entries.filter(
       (entry) => entry.path !== scope.path && isWithinScope(entry.path, scope.path),
     );
+  }
+
+  /** The tree reads go to: the source while unseeded and one is set, else none. */
+  private async from(): Promise<ScopeTree | undefined> {
+    if (this.seeded || this.load === undefined) return undefined;
+    this.source ??= this.load();
+    return this.source;
   }
 }

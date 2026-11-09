@@ -134,6 +134,18 @@ function nest(path: string, value: unknown): Record<string, unknown> {
 }
 
 /**
+ * `em`, once it has written the unit of work's pending changes when a transaction is running, so a read sees a value set
+ * earlier in that transaction. MikroORM's auto flush misses a field set on a loaded row, through `update` (`assign`) or
+ * a plain setter. Outside a transaction nothing is written early. A module function, not a member, so a subclass may
+ * declare any member name.
+ */
+async function settled(em: EntityManager): Promise<EntityManager> {
+  // reason: a unit test may hand the service a partial entity manager with no `isInTransaction`; it runs outside one
+  if (typeof em.isInTransaction === "function" && em.isInTransaction()) await em.flush();
+  return em;
+}
+
+/**
  * The base of a module service over `M`.
  *
  * @example
@@ -154,7 +166,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>[]> {
     const [filter, rest] = await this.readOf(where, options);
-    return (await this.settled()).find(this.model(), filter, rest);
+    return (await settled(this.em())).find(this.model(), filter, rest);
   }
 
   /**
@@ -166,7 +178,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H> | null> {
     const [filter, rest] = await this.readOf(where, options);
-    const em = await this.settled();
+    const em = await settled(this.em());
     const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
     return em.findOne(this.model(), filter, cache === undefined ? rest : { cache });
   }
@@ -181,7 +193,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>> {
     const [filter, rest] = await this.readOf(where, options);
-    const em = await this.settled();
+    const em = await settled(this.em());
     const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
     return em.findOneOrFail(this.model(), filter, {
       ...rest,
@@ -193,7 +205,7 @@ export abstract class CrudService<M extends object> extends Service implements R
   /** Implements `Repository.count`, documented there; `DeletedReadOptions` count the rows a delete policy hides. */
   async count(where: Where<M> = {} as Where<M>, options?: DeletedReadOptions): Promise<number> {
     const [filter, rest] = await this.readOf<CountOptions<M>>(where, options);
-    const em = await this.settled();
+    const em = await settled(this.em());
     return rest === undefined
       ? em.count(this.model(), filter)
       : em.count(this.model(), filter, rest);
@@ -497,7 +509,9 @@ export abstract class CrudService<M extends object> extends Service implements R
       limit: perPage,
       offset: (page - 1) * perPage,
     });
-    const [items, total] = await (await this.settled()).findAndCount(this.model(), filter, rest);
+    const [items, total] = await (
+      await settled(this.em())
+    ).findAndCount(this.model(), filter, rest);
     return { items, total, page, perPage, pages: Math.ceil(total / perPage) };
   }
 
@@ -735,7 +749,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     input: TableQuery,
     options: TableOptions<M, H> = {},
   ): Promise<TablePage<Loaded<M, H>>> {
-    const em = await this.settled();
+    const em = await settled(this.em());
     const model = this.model();
     const orderBy = this.orderOf(input.sort);
     const filters = Object.entries(input.filter ?? {})
@@ -973,17 +987,6 @@ export abstract class CrudService<M extends object> extends Service implements R
     );
   }
 
-  /**
-   * The entity manager, once it has written the unit of work's pending changes when a transaction is running, so a read
-   * sees a value set earlier in that transaction. MikroORM's auto flush misses a field set on a loaded row, through
-   * `update` (`assign`) or a plain setter. Outside a transaction nothing is written early.
-   */
-  private async settled(): Promise<EntityManager> {
-    const em = this.em();
-    if (em.isInTransaction()) await em.flush();
-    return em;
-  }
-
   /** The filter and the ORM options of a read, with the delete filters a `DeletedReadOptions` turns off. */
   private async readOf<O extends { readonly filters?: unknown }>(
     where: Where<M>,
@@ -1022,7 +1025,7 @@ export abstract class CrudService<M extends object> extends Service implements R
     field: string,
     where: Where<M>,
   ): Promise<number> {
-    const em = await this.settled();
+    const em = await settled(this.em());
     const model = this.model();
     const column = `row.${quoteIdentifier(columnOf(em.getMetadata(model), field))}`;
     const row = (await em

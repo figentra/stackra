@@ -1,5 +1,42 @@
 # @stackra/scheduler
 
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [f0be8d8]
+- Updated dependencies [7a87018]
+- Updated dependencies [2b6f88c]
+  - @stackra/gen@0.28.0
+  - @stackra/actions@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/locking@0.28.0
+  - @stackra/testing@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [fb1ae38]
+  - @stackra/database@0.27.0
+  - @stackra/gen@0.27.0
+  - @stackra/locking@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/testing@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

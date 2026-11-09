@@ -1865,8 +1865,9 @@ const SETTINGS_SOURCES: Readonly<Record<string, string>> = {
   }),
   "node_modules/@stackra/settings/index.d.ts": [
     "export declare function Settings(options: { readonly scopes: readonly string[] }): abstract new () => object;",
-    "export type DecoratorFunction = (target: object, property: string) => void;",
-    "export declare function Setting(options?: { readonly [option: string]: unknown }): DecoratorFunction;",
+    // The real signature: `Setting` returns `FieldDecorator<unknown>`, not `DecoratorFunction`.
+    "export type FieldDecorator<T> = (target: object, property: string) => void;",
+    "export declare function Setting(options?: { readonly [option: string]: unknown }): FieldDecorator<unknown>;",
     "",
   ].join("\n"),
   "src/core/orders.settings.ts": [
@@ -1878,6 +1879,8 @@ const SETTINGS_SOURCES: Readonly<Record<string, string>> = {
     "  customersMayCancel = true;",
     "  @Int({ min: 1, max: 50 })",
     "  maxOpenOrders = 5;",
+    '  @Setting({ scopes: ["platform"], lockable: true, approval: true })',
+    "  refundCeilingMinor = 0;",
     "  cancellation!: CancellationSection;",
     "}",
     "",
@@ -1896,6 +1899,20 @@ const SETTINGS_SOURCES: Readonly<Record<string, string>> = {
     "  Settings.orders.customersMayCancel,",
     "  Settings.orders.windowDays,",
     "]) {}",
+    "",
+  ].join("\n"),
+  "src/core/shipping-rules.settings.ts": [
+    'import { Int } from "@stackra/validation";',
+    'import { Settings } from "@stackra/settings";',
+    'export class ShippingRulesSettings extends Settings({ scopes: ["platform"] }) {',
+    "  @Int({ min: 0 })",
+    "  flatRate = 3;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/shipping-form.schema.ts": [
+    'import { Settings } from "#stackra/settings";',
+    "export class ShippingForm extends Settings.pick([Settings.shipping_rules.flatRate]) {}",
     "",
   ].join("\n"),
   "src/core/schemas/bad-policy-form.schema.ts": [
@@ -1919,6 +1936,7 @@ describe("createSourceReader on Settings.pick over the member's own settings (st
     expect(settings?.fields.map((field) => field.name)).toEqual([
       "customersMayCancel",
       "maxOpenOrders",
+      "refundCeilingMinor",
       "cancellation",
     ]);
     expect(settings?.fields.find((field) => field.name === "cancellation")?.type).toEqual({
@@ -1935,6 +1953,17 @@ describe("createSourceReader on Settings.pick over the member's own settings (st
     );
   });
 
+  it("reads @Setting's field scopes, lock and approval, so gen enforces them (Setting returns FieldDecorator)", () => {
+    expect(classes.find((declared) => declared.name === "OrdersSettings")?.facets).toContainEqual(
+      expect.objectContaining({
+        name: "Setting",
+        target: "field",
+        member: "refundCeilingMinor",
+        options: { scopes: ["platform"], lockable: true, approval: true },
+      }),
+    );
+  });
+
   it("compiles a Settings.pick class over the picked keys, a section's key included", () => {
     const form = shapes.find((shape) => shape.name === "OrderPolicyForm");
     expect(form?.kind).toBe("schema");
@@ -1946,6 +1975,14 @@ describe("createSourceReader on Settings.pick over the member's own settings (st
       ["windowDays", "number", 14],
     ]);
     expect(form?.fields[1]?.rules).toEqual([{ name: "Int", options: { min: 0 } }]);
+  });
+
+  it("resolves a picked key by the group the class name derives, not the module key", () => {
+    const form = shapes.find((shape) => shape.name === "ShippingForm");
+    expect(form?.fields.map((field) => [field.name, field.default?.value])).toEqual([
+      ["flatRate", 3],
+    ]);
+    expect(reader.errors.map((error) => error.subject)).not.toContain("ShippingForm");
   });
 
   it("refuses a picked key no own settings class declares, and compiles no shape for it", () => {

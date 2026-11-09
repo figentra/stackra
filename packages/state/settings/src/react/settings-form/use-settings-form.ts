@@ -33,7 +33,10 @@ const defaultsOf = (page: SettingsPage): SettingsSnapshot => ({
 
 /** Typed text as a value of `field`: `null` for an empty nullable field, a number for a number key. */
 function parse(field: SettingKey, text: string): unknown {
-  if (field.type === SettingType.String) return text;
+  if (field.type === SettingType.String || field.type === SettingType.Choice) return text;
+  // A list is edited as comma-separated text (STA-2056).
+  if (field.type === SettingType.List)
+    return text.trim() === "" ? [] : text.split(",").map((item) => item.trim());
   const trimmed = text.trim();
   if (trimmed === "") return field.nullable === true ? null : undefined;
   return Number(trimmed);
@@ -112,9 +115,15 @@ export function useSettingsForm(page: SettingsPage): SettingsFormState {
         errorMessage: error === undefined ? undefined : t(error),
       },
       isBoolean: field.type === SettingType.Boolean,
-      isText: field.type === SettingType.String || field.type === SettingType.Connection,
+      isText:
+        field.type === SettingType.String ||
+        field.type === SettingType.Connection ||
+        field.type === SettingType.Choice ||
+        field.type === SettingType.List,
       checked: value === true,
-      text: drafts[field.name] ?? (value === null ? "" : String(value)),
+      text:
+        drafts[field.name] ??
+        (value === null ? "" : Array.isArray(value) ? value.join(", ") : String(value)),
     };
   });
   const announced = Object.values(errors).at(-1);

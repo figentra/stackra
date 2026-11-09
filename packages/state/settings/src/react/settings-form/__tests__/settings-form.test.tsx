@@ -47,6 +47,12 @@ settingKeys({
       scopes: [SettingScope.User],
       label: "messages::settings.digest_hour.label" as I18nKey,
     },
+    topics: {
+      type: SettingType.List,
+      default: [],
+      scopes: [SettingScope.User],
+      label: "messages::settings.topics.label" as I18nKey,
+    },
   },
 });
 const PAGE = settingsPage("messages", { scope: SettingScope.User });
@@ -99,6 +105,17 @@ describe("SettingsForm (web)", () => {
       { page: PAGE, scope: SettingScope.User, values: { digestHour: 8 } },
     ]);
     expect(screen.getByRole("status").textContent).toBe("");
+  });
+
+  it("edits a list key as comma-separated text", async () => {
+    const settings = fakeSettings();
+    await renderOver(settings);
+    const topics = screen.getByRole("textbox", { name: "messages::settings.topics.label" });
+    fireEvent.change(topics, { target: { value: "news, offers" } });
+    fireEvent.blur(topics);
+    expect(settings.writes).toEqual([
+      { page: PAGE, scope: SettingScope.User, values: { topics: ["news", "offers"] } },
+    ]);
   });
 
   it("is keyboard reachable and writes typed input on Enter", async () => {
