@@ -491,10 +491,11 @@ export class ActionPipeline {
     } catch (error) {
       if (taken.claim !== undefined && "held" in taken.claim) {
         const store = this.required(IdempotencyStore, "");
-        const { held, fingerprint, ttl } = taken.claim;
+        const { held, fingerprint, ttl, sent } = taken.claim;
         // a refusal that retrying cannot change is the call's answer; it is written after the rollback, which
         // took the claim row with it (a joined store). Anything else frees the key for a retry.
-        if (isRefusal(error) && !error.retryable)
+        // only a key the caller sent: an input-derived key would replay the refusal to every later identical call
+        if (sent && isRefusal(error) && !error.retryable)
           await store.completeRefused(held, fingerprint, storedRefusal(error), ttl);
         else await store.release(held);
       }
@@ -941,7 +942,13 @@ export class ActionPipeline {
     call: Call,
     input: unknown,
   ): Promise<
-    | { readonly held: string; readonly fingerprint: string; readonly ttl: Duration }
+    | {
+        readonly held: string;
+        readonly fingerprint: string;
+        readonly ttl: Duration;
+        /** Whether the key is the caller's own, not derived from the input. */
+        readonly sent: boolean;
+      }
     | { readonly replay: unknown }
     | undefined
   > {
@@ -956,11 +963,10 @@ export class ActionPipeline {
     const fingerprint = await fingerprintOf(descriptor.key, input);
     // why: a generated client mints a fresh key per call, not per intent, so for any caller but an API key a Derived
     // action keeps deduplicating by its input (a double click on Refund stays one refund); an API key sends its own
-    const key =
+    const derived =
       sent === undefined ||
-      (policy === Idempotency.Derived && call.request.origin?.kind !== CallOriginKind.ApiKey)
-        ? `derived:${fingerprint}`
-        : sent;
+      (policy === Idempotency.Derived && call.request.origin?.kind !== CallOriginKind.ApiKey);
+    const key = derived || sent === undefined ? `derived:${fingerprint}` : sent;
     call.state.idempotencyKey = key;
     const scoped = [descriptor.key, descriptor.scopeId ?? "-", descriptor.actor.id, key].join(":");
     const store = this.required(
@@ -977,7 +983,7 @@ export class ActionPipeline {
         ? own
         : IDEMPOTENCY_TTL;
     const earlier = await store.claim(scoped, fingerprint, ttl);
-    if (earlier === undefined) return { held: scoped, fingerprint, ttl };
+    if (earlier === undefined) return { held: scoped, fingerprint, ttl, sent: !derived };
     if (earlier.fingerprint !== fingerprint) throw IdempotencyKeyReusedError.create();
     if (!earlier.done) throw IdempotencyKeyInProgressError.create();
     if ("refusal" in earlier) throw refusalFromStored(earlier.refusal);

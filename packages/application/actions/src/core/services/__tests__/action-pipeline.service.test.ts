@@ -258,6 +258,23 @@ class FlakyAction extends Action({
   }
 }
 
+/** FlakyAction's behaviour on a Derived action, whose key a non-API-key caller never sends. */
+class DerivedFlakyAction extends Action({
+  key: "flaky.derived",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Derived,
+}) {
+  ran = 0;
+
+  mode: "ok" | "refuse" = "ok";
+
+  async handle(input: { quantity: number }): Promise<{ ran: number }> {
+    this.ran += 1;
+    if (this.mode === "refuse") throw OutOfStockError.create();
+    return { ran: this.ran + input.quantity };
+  }
+}
+
 class Shop {
   open = true;
 
@@ -875,6 +892,43 @@ describe(ActionPipeline, () => {
     expect((again as Refusal).toEnvelope()).toEqual((first as Refusal).toEnvelope());
     expect((again as Refusal).kind).toBe(ErrorKind.Conflict);
     expect(flaky.ran).toBe(1);
+  });
+
+  it("stores a refusal only under a key the caller sent; an input-derived key is released, so a later call runs", async () => {
+    const derived = new DerivedFlakyAction();
+    const { pipeline } = setup([[DerivedFlakyAction, derived]]);
+    // A console user's call: Derived, keyed by its input. Out of stock now, in stock later: the retry must run.
+    derived.mode = "refuse";
+    await expect(
+      pipeline.execute(
+        DerivedFlakyAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-click" },
+      ),
+    ).rejects.toBeInstanceOf(OutOfStockError);
+    derived.mode = "ok";
+    expect(
+      await pipeline.execute(
+        DerivedFlakyAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-click-2" },
+      ),
+    ).toEqual({ ran: 3 });
+    expect(derived.ran).toBe(2);
+    // An API key sends its own key: its refusal is the answer for that key.
+    const origin = { kind: CallOriginKind.ApiKey, id: "key_1" };
+    derived.mode = "refuse";
+    const call = () =>
+      pipeline.execute(
+        DerivedFlakyAction,
+        { quantity: 5 },
+        { actor: customer, idempotencyKey: "k-api", origin },
+      );
+    await expect(call()).rejects.toBeInstanceOf(OutOfStockError);
+    derived.mode = "ok";
+    const again = await call().catch((error: unknown) => error);
+    expect(isRefusal(again, OutOfStockError)).toBe(true);
+    expect(derived.ran).toBe(3);
   });
 
   it("releases the key of a retryable refusal or a plain error, so the retry runs handle again", async () => {
