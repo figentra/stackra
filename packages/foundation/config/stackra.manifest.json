@@ -52,6 +52,11 @@
             }
           ]
         }
+      },
+      "selectedBy": "config:config.signer.driver",
+      "config": {
+        "class": "SignerConfig",
+        "from": "@stackra/config"
       }
     },
     {
