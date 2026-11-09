@@ -2395,7 +2395,7 @@
       "required": ["kind"],
       "properties": {
         "kind": {
-          "enum": ["postgres", "queue", "topic", "cache", "bucket"]
+          "enum": ["postgres", "queue", "topic", "cache", "bucket", "gotenberg"]
         },
         "engine": {
           "enum": ["rds", "aurora"],

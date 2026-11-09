@@ -42,6 +42,7 @@ import { SURFACES_SCHEMA } from "#core/constants/surfaces-schema.constant";
 import { TARGETS_SCHEMA } from "#core/constants/targets-schema.constant";
 import { ZONE_SCHEMA } from "#core/constants/zone-schema.constant";
 import { WORKLOAD_SCHEMA } from "#core/constants/workload-schema.constant";
+import { ResourceKind } from "#core/enums/resource-kind.enum";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
 /** A runway environment name. */
@@ -205,6 +206,16 @@ export const ROOT_RUNWAY_SCHEMA = z
           path: ["providers", "cloudflare", "records", index, "name"],
           message: `${record.name} is under no zone in providers.cloudflare.zones`,
         });
+    // One PDF engine per runway: its consumers read it under DocumentsConfig's fixed names, which two would share.
+    const engines = Object.entries(root.resources ?? {}).filter(
+      ([, resource]) => resource.kind === ResourceKind.Gotenberg,
+    );
+    for (const [name] of engines.slice(1))
+      context.addIssue({
+        code: "custom",
+        path: ["resources", name, "kind"],
+        message: `A runway has one gotenberg resource; ${engines[0]?.[0]} is it`,
+      });
     // A workload may use only a declared resource (ADR 0493 decision 1); members are checked where the plan joins them.
     for (const [name, workload] of Object.entries(root.workloads ?? {}))
       for (const [index, used] of (workload.uses ?? []).entries())

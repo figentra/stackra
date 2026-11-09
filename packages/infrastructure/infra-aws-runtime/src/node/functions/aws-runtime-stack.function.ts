@@ -51,6 +51,9 @@ export function awsRuntimeStack(args: {
       securityGroupIds: network.securityGroupIds.map((id) => resolveRef(id)),
       ...(network.vpcId === undefined ? {} : { vpcId: resolveRef(network.vpcId) }),
     },
+    ...(network.registry === undefined
+      ? {}
+      : { workloads: { registry: resolveRef(network.registry) } }),
     tags: args.tags,
   });
 }

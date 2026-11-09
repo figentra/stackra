@@ -26,6 +26,8 @@ export type AwsRuntimeOptions = {
         readonly publicSubnetIds?: Input<Input<string>[]> | undefined;
         readonly certificateArn?: Input<string> | undefined;
         readonly logRetentionDays?: number | undefined;
+        /** The ECR pull-through registry host a `gotenberg` resource's image is pulled from. */
+        readonly registry?: Input<string> | undefined;
       }
     | undefined;
   /** Each database's admin password by plan key (`resources.main-db`), as a Pulumi secret; never logged. */
