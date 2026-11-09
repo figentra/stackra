@@ -657,6 +657,10 @@
         "outcome": {
           "description": "@Field(zod): described by its zod schema"
         },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0
+        },
         "callId": {
           "type": "string"
         },
@@ -696,6 +700,12 @@
         "fields": {
           "type": "object",
           "additionalProperties": {}
+        },
+        "idempotencyKey": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
         }
       }
     },

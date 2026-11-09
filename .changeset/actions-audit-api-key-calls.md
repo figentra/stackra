@@ -10,4 +10,4 @@ The audit step now records each call by an API key (a credential, an `api_client
 - `apiVersion`: from the new `CallOptions.apiVersion`, which the generated adapter sets;
 - `durationMs`.
 
-An entry never carries an input or output body, or an API key's secret.
+The `outbox` trail's `actions.audit_entry.recorded.v1` event carries all three as optional fields of version 1. An entry never carries an input or output body, or an API key's secret.

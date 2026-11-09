@@ -2,20 +2,21 @@
  * Stackra file contract:
  * Purpose: `AuditEntryRecorded`, the integration event the `outbox` AuditTrail driver writes for every audited action
  *          call: who called which action in which tenant and scope, its permission, risk and effect tags, the outcome
- *          with the refusal code, the request origin (storefront, console, API key, agent), and the fields the handler
- *          added. The audit service consumes it, chains it per
- *          tenant and stores it (ADR 0212).
+ *          with the refusal code, the request origin (storefront, console, API key, agent), the fields the handler
+ *          added, and the key the call ran under, its API version and its duration. The audit service consumes it,
+ *          chains it per tenant and stores it (ADR 0212).
  * Boundary: an integration event (`audit_entry.recorded`, version 1). The actor carries its full `onBehalfOf` chain
  *           (ADR 0098 decision 7) as public ids and kinds, never a credential. `fields` are what the handler passed to
  *           `ctx.audit`; a classified field never belongs there. It registers its schema when the module loads
  *           (STA-339 replaces the registration).
  * Runtime: isomorphic
  * Governing contract: ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decision 7); ADR 0141 (the envelope); ADR 0294
- *                     (decisions 5 and 16); ADR 0456 (decision 1: the request origin, optional fields of version 1).
+ *                     (decisions 5 and 16); ADR 0456 (decision 1: the request origin, optional fields of version 1); Pay AC-008
+ *                     (the key, version and duration, optional fields of version 1).
  */
 import type { Actor, Json } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
-import { Field, registerSchemas } from "@stackra/validation";
+import { Field, Int, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 /**
@@ -29,6 +30,10 @@ export class AuditEntryRecorded extends IntegrationEvent({ name: "audit_entry.re
   // reason: a two-value literal union kept as published, so `AuditEntry` consumers see the same type
   @Field(z.enum(["ok", "refused"]))
   outcome!: "ok" | "refused";
+
+  /** Milliseconds from the start of the call to its audit entry. */
+  @Int({ min: 0 })
+  durationMs?: number;
 
   /** The call's id. */
   callId!: string;
@@ -65,6 +70,12 @@ export class AuditEntryRecorded extends IntegrationEvent({ name: "audit_entry.re
 
   /** What the handler added with `ctx.audit`. */
   fields!: Record<string, Json>;
+
+  /** The `Idempotency-Key` the call ran under; absent when there was none. */
+  idempotencyKey?: string;
+
+  /** The dated API version the call was answered in; absent for an unversioned call. */
+  apiVersion?: string;
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).
@@ -88,6 +99,9 @@ registerSchemas([
         z.string(),
         z.custom<Json>(() => true),
       ),
+      idempotencyKey: z.string().optional(),
+      apiVersion: z.string().optional(),
+      durationMs: z.number().int().nonnegative().optional(),
     }),
   ],
 ]);
