@@ -10,7 +10,9 @@
  *          the other owners' runs are pushed. Dispatch is at least once with no duplicate: a tick that dies after its
  *          pushes and before its watermark moves is followed by one that pushes nothing again, also when the first
  *          jobs already finished (the fire records in `scheduler.fires` outlast them), and a push that fails rolls its
- *          fire back with it and keeps its key's watermark, so the next tick pushes it exactly once.
+ *          fire back with it and keeps its key's watermark, so the next tick pushes it exactly once. `fire`, the Encore
+ *          CronJob entry, pushes a cron's slot once per scope in its owner: a retry in the slot and a tick of it push
+ *          nothing again, the next slot pushes again.
  * Boundary: integration tier (`.int`): runs only where `TESTBED_POSTGRES_HOST` names a Postgres and is skipped elsewhere.
  *           One fresh database for the file (`ownerPostgres`); the superuser seeds and checks, everything under test
  *           runs as the service role (`asService`, `OwnerIsolation`). The jobs go to a memory queue whose push records
@@ -60,13 +62,17 @@ const TICK = new Date("2026-11-09T12:00:30.000Z");
 const DAY_2 = new Date("2026-11-10T12:00:30.000Z");
 const DAY_3 = new Date("2026-11-11T12:00:30.000Z");
 const DAY_4 = new Date("2026-11-12T12:00:30.000Z");
+const DAY_5 = new Date("2026-11-13T12:00:30.000Z");
 
 /** Twenty seconds after `at`: the next tick of the same minute. */
 const later = (at: Date): Date => new Date(at.getTime() + 20_000);
 
+/** A clock the test sets: 11:00 on the first day unless moved. */
 class FixedClock extends Clock {
+  at = new Date("2026-11-09T11:00:00.000Z");
+
   now(): Date {
-    return new Date("2026-11-09T11:00:00.000Z");
+    return new Date(this.at);
   }
 }
 
@@ -203,7 +209,7 @@ describe.skipIf(HOST === undefined)("scheduler row security and the tick on Post
       new SilentLogger(),
       containerOf(bound),
     );
-    return { scheduler, jobs };
+    return { scheduler, jobs, clock };
   };
 
   it("shows a session with no owner only the platform schedule, while the tick's claim reaches every owner's", async () => {
@@ -397,5 +403,45 @@ describe.skipIf(HOST === undefined)("scheduler row security and the tick on Post
     const again = await asService(postgres, undefined, () => scheduler.tick(later(DAY_4)));
     expect(again.pushed).toBe(2);
     expect(runsOf(jobs)).toEqual(EVERY_RUN);
+  });
+
+  it("fires a cron's slot once per scope when Encore retries it, the next slot again, and shares a slot with a tick", async () => {
+    const { scheduler, jobs, clock } = schedulerOf(
+      [[CallIsolation, isolation]],
+      [ACME_SCOPE, GLOBEX_SCOPE],
+    );
+    const recounts = () => jobs.pushed.filter((push) => push.job.key === "stock.stock.recount@1");
+    // Encore calls at 12:00:30 on day 5, then retries at 12:40: both in the daily cron's 12:00 slot
+    clock.at = DAY_5;
+    await expect(
+      asService(postgres, undefined, () => scheduler.fire("stock.stock.recount@1")),
+    ).resolves.toBe(2);
+    clock.at = new Date(DAY_5.getTime() + 40 * 60_000);
+    await expect(
+      asService(postgres, undefined, () => scheduler.fire("stock.stock.recount@1")),
+    ).resolves.toBe(0);
+    expect(
+      recounts()
+        .map((push) => [push.owner, push.job.scope?.id])
+        .sort(),
+    ).toEqual([
+      [ACME, ACME],
+      [GLOBEX, GLOBEX],
+    ]);
+    expect(await firesOn(DAY_5)).toEqual(
+      expect.arrayContaining([
+        [`stock.stock.recount@1:${ACME}`, ACME],
+        [`stock.stock.recount@1:${GLOBEX}`, GLOBEX],
+      ]),
+    );
+    // a tick of the same slot shares the fire key and time: the recount is not pushed again
+    await asService(postgres, undefined, () => scheduler.tick(later(DAY_5)));
+    expect(recounts()).toHaveLength(2);
+    // the next day's slot is a new fire
+    clock.at = new Date(DAY_5.getTime() + 86_400_000);
+    await expect(
+      asService(postgres, undefined, () => scheduler.fire("stock.stock.recount@1")),
+    ).resolves.toBe(2);
+    expect(recounts()).toHaveLength(4);
   });
 });

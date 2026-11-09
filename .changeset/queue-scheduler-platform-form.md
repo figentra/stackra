@@ -28,6 +28,9 @@ Dispatch is at least once with no duplicate: migration `scheduler.0003_create_fi
 form, keyed by fire key and fire time), and each run is pushed only when its fire record is new, in the push's own
 transaction, before the watermark moves. A tick that dies between the pushes and the advance pushes nothing again,
 even when the first jobs already finished; a key whose push failed keeps its watermark. A watermark never moves back.
+`fire(key)`, the Encore CronJob entry point, pushes the cron's current slot (its last due time at or before now, in
+UTC) and records it under the same fire key a tick uses, so an Encore retry in the slot, or a tick of it, pushes
+nothing again; a call with no due time in the last day pushes once, unrecorded.
 `ScheduleDriver` gains `recordFire(key, at)` and `forgetFires(key, through)`; its `remove` also deletes the
 schedule's fires.
 

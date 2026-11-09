@@ -6,7 +6,8 @@
  *          stored schedules run in their scope and time zone, never before they were made, are refused when invalid,
  *          skipped when their action is unknown, and deleted only from their scope; `run` ticks at once, logs a
  *          failed tick, and stops on abort; `fire` pushes one run of a cron action (per scope too) for its Encore
- *          CronJob, and `tick({ crons: false })` leaves the crons of actions to theirs. Across owners the lock covers
+ *          CronJob once per slot (a retry in the slot, or a tick of it, pushes nothing again), and `tick({ crons: false
+ *          })` leaves the crons of actions to theirs. Across owners the lock covers
  *          only the claim and the watermark advance: each owner's runs are pushed after it, in a `requiresNew`
  *          transaction in the owner's isolation (a schedule's claimed owner, a cron scope's own); an owned schedule with
  *          no isolation bound or one that does not load fails the tick after the other pushes.
@@ -411,6 +412,28 @@ describe("SchedulerService.fire and tick({ crons: false })", () => {
         ["scp_globex", { batchSize: 100 }],
       ]),
     );
+  });
+
+  it("pushes a cron's slot once when Encore retries it, and the next slot again", async () => {
+    const { jobs, scheduler, clock } = setup();
+    // 12:00:30, then a retry at 12:20: both in the hourly cron's 12:00 slot
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(1);
+    clock.at = at("12:20:00").getTime();
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(0);
+    clock.at = at("13:00:10").getTime();
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(1);
+    expect(await stored(jobs)).toHaveLength(2);
+  });
+
+  it("shares each slot with a tick: a fire and a tick of one slot push one run", async () => {
+    const { jobs, scheduler } = setup({}, [acme]);
+    await expect(scheduler.fire("orders.order.expire_unpaid@1")).resolves.toBe(1);
+    // the tick evaluates the same crons at 12:00: the purge is new, the per-scope expiry already fired
+    expect((await scheduler.tick(at("12:00:30"))).pushed).toBe(1);
+    expect((await stored(jobs)).map((job) => job.key).sort()).toEqual([
+      "access_log.entry.purge@1",
+      "orders.order.expire_unpaid@1",
+    ]);
   });
 
   it("refuses a key that is not a registered cron action", async () => {

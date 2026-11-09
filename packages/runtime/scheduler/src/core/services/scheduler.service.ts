@@ -56,6 +56,9 @@ import type { TickResult } from "#core/types/tick-result.type";
 /** One minute in milliseconds: the tick interval and the resolution of a cron. */
 const MINUTE = 60_000;
 
+/** How far back `fire` looks for its cron's current slot: one day, the longest catch-up window. */
+const SLOT_LOOKBACK = 24 * 60 * MINUTE;
+
 /** The platform-wide lock one runner holds for a tick. */
 const TICK_LOCK = "scheduler:tick";
 
@@ -122,8 +125,8 @@ const ownerActor = (ownerId: PublicId<"scp"> | undefined): Actor =>
 
 /**
  * The runs one tick or `fire` pushes for one owner: a claimed schedule's, or a cron's in one scope (none: platform).
- * A tick's push names its fire key and its watermark key, so each fire time is pushed once (`recordFire`) and the
- * watermark moves only once its runs are pushed; `fire` names neither.
+ * A tick's push, and a `fire` with a slot, names its fire key, so each fire time is pushed once (`recordFire`), and its
+ * watermark key, which a tick moves only once its runs are pushed.
  */
 type Push = (
   | { readonly claim: ScheduleClaim }
@@ -137,6 +140,10 @@ type Push = (
     readonly after: Date;
   };
 };
+
+/** The fire key of a cron's runs: its job key, with the scope's id for a per-scope cron. */
+const cronFireKey = (key: string, scope: ScopeRef | undefined): string =>
+  scope === undefined ? key : `${key}:${scope.id}`;
 
 /** What a tick decided under its lock: the pushes to make after it, and the keys it evaluated or skipped. */
 interface Plan {
@@ -239,9 +246,12 @@ export class SchedulerService extends Service {
   }
 
   /**
-   * Pushes one run of the cron action registered as `key` now: once, or once per scope `CronScopes` lists. The
-   * endpoint of that action's Encore CronJob calls it; Encore runs one invocation at a time, so it takes no lock and
-   * moves no watermark.
+   * Pushes one run of the cron action registered as `key` for its current slot: once, or once per scope `CronScopes`
+   * lists. The endpoint of that action's Encore CronJob calls it; Encore runs one invocation at a time, so it takes no
+   * lock and moves no watermark. The slot is the cron's last due time at or before now (UTC, as a tick reads an
+   * action's cron), and each run records its fire under the same fire key and time a tick would, so a retried
+   * invocation, or a tick of the same slot, pushes nothing again. A call with no due time in the last day (a manual
+   * run off the schedule) has no slot: it pushes once at now, unrecorded.
    *
    * @returns how many jobs were stored.
    * @throws TypeError when `key` is not a registered action with a `cron`.
@@ -257,8 +267,25 @@ export class SchedulerService extends Service {
       throw new TypeError(`${key} is not a registered job action with a cron`);
     const scopes: readonly (ScopeRef | undefined)[] =
       cron.perScope === true ? await this.cronScopes.list() : [undefined];
+    const now = this.clock.now();
+    const since = new Date(now.getTime() - SLOT_LOOKBACK);
+    const slot = cronRuns(parseCron(cron.schedule), "UTC", since, now).at(-1);
     const { pushed, failure } = await this.pushAll(
-      scopes.map((scope) => ({ type, fires: [this.clock.now()], input: cron.input ?? {}, scope })),
+      scopes.map((scope) => ({
+        type,
+        fires: [slot ?? now],
+        input: cron.input ?? {},
+        scope,
+        ...(slot === undefined
+          ? {}
+          : {
+              once: {
+                fireKey: cronFireKey(key, scope),
+                markKey: key,
+                after: since,
+              },
+            }),
+      })),
     );
     if (failure !== undefined) throw failure.error;
     return pushed;
@@ -360,7 +387,7 @@ export class SchedulerService extends Service {
           input: cron.input ?? {},
           scope,
           once: {
-            fireKey: scope === undefined ? key : `${key}:${scope.id}`,
+            fireKey: cronFireKey(key, scope),
             markKey: key,
             after: since,
           },
