@@ -10,7 +10,9 @@ import type { LocalizedText } from "@stackra/contracts";
 
 /** A link with its words. */
 export interface LandingLink {
+  /** The link's words. */
   readonly label: LocalizedText;
 
+  /** Where the link goes. */
   readonly href: string;
 }

@@ -1625,3 +1625,7 @@
   status: accepted
   owner: claude
   issue: STA-2563
+"0534":
+  slug: github-repository-metadata
+  status: reserved
+  issue: STA-2115

@@ -8,8 +8,9 @@
  *          of noncurrent versions from `shared.buckets`). Every resource is tagged with the environment, the member
  *          and the topology group that runs it. Then the runway's own `resources` (Postgres, and queues, topics, caches
  *          and buckets by name) and `workloads`, sized per environment from the catalogues, with the consumers each
- *          resource admits (a workload's `aliases` may name only a variable of a Postgres resource it uses); the
- *          monthly estimate is checked against the environment's cap (ADR 0493).
+ *          resource admits (a workload's `aliases` may name only a variable of a Postgres resource it uses) and, per
+ *          Postgres server, the approved extensions its member consumers name and those it preloads (ADR 0160 note of
+ *          2026-11-03); the monthly estimate is checked against the environment's cap (ADR 0493).
  * Boundary: pure; parsed runways in, plain data out. Reading the files is `readRuntimePlan`'s and declaring the
  *           resources `awsRuntime`'s (`./node`). `requires` matters here for `valkey` only: a member's queues and
  *           buckets are its own already, and a dedicated `postgres` server is the database stack's, not this one's.
@@ -34,6 +35,7 @@ import { DEFAULT_MONTHLY_LIMITS } from "#core/constants/default-monthly-limits.c
 import { HOURS_PER_MONTH } from "#core/constants/hours-per-month.constant";
 import { LOAD_BALANCER_MONTHLY_USD } from "#core/constants/load-balancer-monthly-usd.constant";
 import { POSTGRES_SIZES } from "#core/constants/postgres-sizes.constant";
+import { PRELOADED_EXTENSIONS } from "#core/constants/preloaded-extensions.constant";
 import { WORKLOAD_SIZES } from "#core/constants/workload-sizes.constant";
 import { cacheNodeType } from "#core/functions/cache-node-type.function";
 import { resourceName } from "#core/functions/resource-name.function";
@@ -62,6 +64,9 @@ const SERVICE_NAME_LIMIT = 32;
 
 /** The Postgres major a resource gets when it names none: production's major (ADR 0238, amendment of 2026-10-31). */
 const POSTGRES_VERSION = "18";
+
+/** How long a rollout waits for a workload's `migrate` task when the runway names no timeout. */
+const MIGRATE_TIMEOUT_MINUTES = 15;
 
 /** Days of automated backups, the point-in-time window of ADR 0186 decision 1. */
 const BACKUP_DAYS = 14;
@@ -226,6 +231,13 @@ export function runtimePlan(
     const size = sizeOf(resource.size);
     if (resource.kind === ResourceKind.Postgres) {
       const sized = POSTGRES_SIZES[size];
+      const consumers = consumersOf.get(name) ?? [];
+      // Workloads name no extensions; only member runways do.
+      const named = consumers.flatMap(
+        (consumer) => services[consumer]?.environments[environment]?.database?.extensions ?? [],
+      );
+      // oxlint-disable-next-line unicorn/no-array-sort -- a copy built here
+      const extensions = [...new Set(named)].sort();
       databases.push({
         key,
         resource: name,
@@ -237,7 +249,9 @@ export function runtimePlan(
         storageGb: sized.storageGb,
         backupDays: BACKUP_DAYS,
         // oxlint-disable-next-line unicorn/no-array-sort -- a copy built here
-        consumers: [...(consumersOf.get(name) ?? [])].sort(),
+        consumers: [...consumers].sort(),
+        extensions,
+        preloadLibraries: extensions.filter((extension) => PRELOADED_EXTENSIONS.has(extension)),
         tags,
       });
     } else if (resource.kind === ResourceKind.Cache)
@@ -289,9 +303,18 @@ export function runtimePlan(
       workload: name,
       name: resourceName([root.project, environment, name], SERVICE_NAME_LIMIT),
       image: workload.image,
-      port: workload.port,
-      health: workload.health,
+      ...(workload.port === undefined ? {} : { port: workload.port }),
+      ...(workload.health === undefined ? {} : { health: workload.health }),
+      healthCommand: workload.healthCommand ?? [],
       command: workload.command ?? [],
+      ...(workload.migrate === undefined
+        ? {}
+        : {
+            migrate: {
+              command: workload.migrate.command,
+              timeoutMinutes: workload.migrate.timeoutMinutes ?? MIGRATE_TIMEOUT_MINUTES,
+            },
+          }),
       public: workload.expose === "public",
       env: workload.env ?? {},
       secrets: workload.secrets ?? [],

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/app",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "private": false,
   "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, desktop) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
   "keywords": [
@@ -142,6 +142,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
     "@stackra/clients": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
@@ -155,7 +156,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@stackra/actions": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/iam": "workspace:*",
     "@stackra/scope": "workspace:*",

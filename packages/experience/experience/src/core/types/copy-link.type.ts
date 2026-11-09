@@ -9,7 +9,9 @@ import type { LocalizedText } from "@stackra/contracts";
 
 /** A copy button with its words. */
 export interface CopyLink {
+  /** The button's words. */
   readonly label: LocalizedText;
 
+  /** What the button copies, as given. */
   readonly value: string;
 }
