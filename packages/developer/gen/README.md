@@ -268,7 +268,11 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   `AgentRuntime`, the way an Integration gets `IntegrationRuntime`.
 - **Entitlements (STA-903, ADR 0215).** Each entitlement lands in `entitlements` with its derived key
   (`<module>.<snake name without Entitlement>`), kind, counted model, `where` filter and `gates`: a limit gates its
-  counted model's `create` actions, and an action or query naming it in an `entitlement` option is gated by it. The
+  counted model's `create` actions, a quota (`meter`, `per`) gates the actions whose `meter` names its meter, and an
+  action or query naming it in an `entitlement` option is gated by it (the action entry lists them in `entitlements`).
+  An entitlement or counted model a hosted package ships resolves through that package's manifest, and its merged
+  entry gates the host's calls too; a name that resolves to none is `entitlement_unknown` (an `entitlement` option) or
+  `entitlement_counts_unknown` (a limit's `counts`). The
   registrations file calls `registerEntitlements` with one row per entitlement, so `PlanSnapshotEntitlementSource`
   resolves every registered class. A class thunk option (`counts: () => Till`) is read as its class.
 
