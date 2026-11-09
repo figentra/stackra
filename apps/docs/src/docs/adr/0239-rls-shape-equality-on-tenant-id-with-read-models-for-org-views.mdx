@@ -249,7 +249,8 @@ today, so moving the read means a new service. TODO: move that read into an iden
   `ScopeNodeService` or `PostgresScopeTreeDriver`, and the `ScopeTree` port has exactly the readers listed above; no
   file in an `actions/`, `queries/` or `listeners/` folder names `ScopeTree`, except the bootstrap-operator exception.
 - `packages/data/database/src/testing/functions/assert-row-security.function.ts` and `unowned-table-group.function.ts`:
-  the three groups of item 7, warnings until 0.20 (`strict`, `STACKRA_GEN_STRICT=1`).
+  the three groups of item 7, each a gap since the contract step (2026-11-09; only the audit's own tests read them back
+  as warnings with `strict: false`), and gen's `model_tenancy_missing` an error for packages as for services.
 - `packages/data/database/src/testing/constants/platform-tables.constant.ts`: a `PLATFORM_TABLES` row with its reason
   for each platform-list table, and `Model.global` on the models of `workflow.service_ack_sets`,
   `rules.condition_fields` and `scope.scope_nodes`.
