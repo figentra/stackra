@@ -20,7 +20,7 @@ import { DatabaseConfigOptions } from "#core/schemas/database-config-options.sch
  * import { DatabaseConfig as BaseDatabaseConfig } from "@stackra/database";
  *
  * export class DatabaseConfig extends BaseDatabaseConfig {
- *   override health = { timeout: Duration.seconds(1), critical: true };
+ *   override health = { timeout: Duration.seconds(1), critical: true, rowSecurity: true };
  * }
  */
 export class DatabaseConfig extends Config({ schema: DatabaseConfigOptions }) {}

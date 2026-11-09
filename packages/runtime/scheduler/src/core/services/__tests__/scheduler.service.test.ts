@@ -6,16 +6,23 @@
  *          stored schedules run in their scope and time zone, never before they were made, are refused when invalid,
  *          skipped when their action is unknown, and deleted only from their scope; `run` ticks at once, logs a
  *          failed tick, and stops on abort; `fire` pushes one run of a cron action (per scope too) for its Encore
- *          CronJob, and `tick({ crons: false })` leaves the crons of actions to theirs.
+ *          CronJob once per slot (a retry in the slot, or a tick of it, pushes nothing again), and `tick({ crons: false
+ *          })` leaves the crons of actions to theirs. Across owners the lock covers
+ *          only the claim and the watermark advance: each owner's runs are pushed after it, in a `requiresNew`
+ *          transaction in the owner's isolation (a schedule's claimed owner, a cron scope's own); an owned schedule with
+ *          no isolation bound or one that does not load fails the tick after the other pushes.
  * Boundary: test only; the real queue service, `Locks` and memory drivers on a clock the test moves. The job registry
  *           is process-wide, so every tick here evaluates the crons registered at the top of this file.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0148 (decisions 4 and 5); ADR 0078 (decision 6); ADR 0103 (decision 4).
+ * Governing contract: ADR 0022; ADR 0148 (decisions 4 and 5); ADR 0078 (decision 6); ADR 0103 (decision 4); ADR
+ *                     0239 (2026-11-07 amendment, decision 5).
  */
 import { Action } from "@stackra/actions";
+import { CallIsolation } from "@stackra/actions/contracts";
 import { buildConfig } from "@stackra/config";
+import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind, Clock, Duration, Logger } from "@stackra/contracts";
-import type { ScopeRef } from "@stackra/contracts";
+import type { Actor, ScopeRef } from "@stackra/contracts";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { MemoryQueueDriver, QueueService, registerJobs } from "@stackra/queue";
 import type { QueuedJob } from "@stackra/queue/contracts";
@@ -28,6 +35,8 @@ import { MemoryCronScopesDriver } from "#core/drivers/memory-cron-scopes.driver"
 import { MemoryScheduleDriver } from "#core/drivers/memory-schedule.driver";
 import { InvalidCronError } from "#core/errors/invalid-cron.error";
 import { InvalidTimeZoneError } from "#core/errors/invalid-time-zone.error";
+import { ScheduleClaimNotLoadedError } from "#core/errors/schedule-claim-not-loaded.error";
+import { ScheduleRowIsolationMissingError } from "#core/errors/schedule-row-isolation-missing.error";
 import { registerScheduledJobs } from "#core/functions/register-scheduled-jobs.function";
 import { SchedulerService } from "#core/services/scheduler.service";
 import type { TickResult } from "#core/types/tick-result.type";
@@ -112,15 +121,46 @@ class RecordingLogger extends Logger {
   }
 }
 
+/** A container binding `bound`. */
+const containerOf = (bound: readonly (readonly [AnyClass, object])[]): Container => {
+  const map = new Map<unknown, object>(bound);
+  return {
+    has: (token: unknown) => map.has(token),
+    get: (token: unknown) => map.get(token),
+  } as unknown as Container;
+};
+
+/** An isolation that records each unit's actor and scope and runs it. */
+class RecordingIsolation {
+  readonly runs: [Actor, unknown][] = [];
+
+  run<T>(actor: Actor, scope: unknown, work: () => Promise<T>): Promise<T> {
+    this.runs.push([actor, scope]);
+    return work();
+  }
+}
+
+/** A memory driver whose claims of the schedules in `owners` name that owner, as the Postgres driver does. */
+function ownedDriver(owners: Readonly<Record<string, string>>): MemoryScheduleDriver {
+  const driver = new MemoryScheduleDriver();
+  const claim = driver.claim.bind(driver);
+  driver.claim = async () =>
+    (await claim()).map((one) =>
+      owners[one.id] === undefined ? one : { ...one, ownerId: owners[one.id] as never },
+    );
+  return driver;
+}
+
 /** A scheduler over memory drivers, with `values` as its configuration and `scopes` as the per-scope cron scopes. */
 function setup(
   values: { readonly misfire?: Misfire; readonly catchUpWindow?: Duration } = {},
   scopes: readonly ScopeRef[] = [],
+  bound: readonly (readonly [AnyClass, object])[] = [],
+  driver: MemoryScheduleDriver = new MemoryScheduleDriver(),
 ) {
   const clock = new MovableClock();
   const jobs = new MemoryQueueDriver();
   const locks = new Locks(new MemoryLockDriver(clock), clock);
-  const driver = new MemoryScheduleDriver();
   const cronScopes = new MemoryCronScopesDriver();
   cronScopes.scopes = scopes;
   const logger = new RecordingLogger();
@@ -132,6 +172,7 @@ function setup(
     clock,
     buildConfig(SchedulerConfig, { values }),
     logger,
+    containerOf(bound),
   );
   return { clock, jobs, locks, driver, logger, scheduler };
 }
@@ -141,7 +182,9 @@ async function stored(jobs: MemoryQueueDriver): Promise<readonly QueuedJob[]> {
   const found: QueuedJob[] = [];
   for (;;) {
     // oxlint-disable-next-line no-await-in-loop -- reserves one job after another until none is left
-    const job = await jobs.reserve(undefined, FAR);
+    const claim = await jobs.reserve(undefined, FAR);
+    // oxlint-disable-next-line no-await-in-loop -- see above
+    const job = claim === undefined ? undefined : await jobs.load(claim.id);
     if (job === undefined) return found;
     found.push(job);
   }
@@ -371,6 +414,28 @@ describe("SchedulerService.fire and tick({ crons: false })", () => {
     );
   });
 
+  it("pushes a cron's slot once when Encore retries it, and the next slot again", async () => {
+    const { jobs, scheduler, clock } = setup();
+    // 12:00:30, then a retry at 12:20: both in the hourly cron's 12:00 slot
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(1);
+    clock.at = at("12:20:00").getTime();
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(0);
+    clock.at = at("13:00:10").getTime();
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(1);
+    expect(await stored(jobs)).toHaveLength(2);
+  });
+
+  it("shares each slot with a tick: a fire and a tick of one slot push one run", async () => {
+    const { jobs, scheduler } = setup({}, [acme]);
+    await expect(scheduler.fire("orders.order.expire_unpaid@1")).resolves.toBe(1);
+    // the tick evaluates the same crons at 12:00: the purge is new, the per-scope expiry already fired
+    expect((await scheduler.tick(at("12:00:30"))).pushed).toBe(1);
+    expect((await stored(jobs)).map((job) => job.key).sort()).toEqual([
+      "access_log.entry.purge@1",
+      "orders.order.expire_unpaid@1",
+    ]);
+  });
+
   it("refuses a key that is not a registered cron action", async () => {
     const { scheduler } = setup();
     await expect(scheduler.fire("digests.digest.send@1")).rejects.toThrow(TypeError);
@@ -383,5 +448,119 @@ describe("SchedulerService.fire and tick({ crons: false })", () => {
     const result = await scheduler.tick(undefined, { crons: false });
     expect(result).toEqual({ ran: true, pushed: 0, skipped: [] });
     expect(await stored(jobs)).toEqual([]);
+  });
+});
+
+/** Stores a digest schedule `id` in `scope`, made at 11:00, that runs at noon UTC. */
+const scheduleIn = (driver: MemoryScheduleDriver, id: `sch_${string}`, scope: ScopeRef) =>
+  driver.add({
+    id,
+    scope,
+    key: "digests.digest.send@1",
+    cron: "0 12 * * *",
+    timeZone: "UTC",
+    input: { audience: id },
+    misfire: Misfire.CatchUp,
+    createdAt: at("11:00:00"),
+  });
+
+describe("SchedulerService across owners", () => {
+  it("claims under the lock, then pushes each owner's runs after it, each in its own transaction", async () => {
+    const isolation = new RecordingIsolation();
+    const driver = ownedDriver({ sch_acme: "scp_acme" });
+    const { scheduler, jobs, locks } = setup({}, [globex], [[CallIsolation, isolation]], driver);
+    await scheduleIn(driver, "sch_acme", acme);
+    const transaction = vi.spyOn(driver, "transaction");
+    const held: boolean[] = [];
+    const push = jobs.push.bind(jobs);
+    jobs.push = async (job) => {
+      // the lock covers only the claim and the watermark advance: a second runner could take it now
+      held.push(!(await locks.tryWith("scheduler:tick", Duration.minutes(1), async () => {})));
+      return push(job);
+    };
+    // the platform purge cron, the per-scope cron in globex, and acme's schedule: one transaction each
+    expect(await scheduler.tick(at("12:00:30"))).toMatchObject({ ran: true, pushed: 3 });
+    expect(held).toEqual([false, false, false]);
+    expect(transaction).toHaveBeenCalledTimes(3);
+    expect(isolation.runs).toEqual(
+      expect.arrayContaining([
+        [{ kind: ActorKind.System, id: "sys_scheduler" }, undefined],
+        [{ kind: ActorKind.System, id: "sys_scheduler", scopeId: "scp_globex" }, globex],
+        [{ kind: ActorKind.System, id: "sys_scheduler", scopeId: "scp_acme" }, undefined],
+      ]),
+    );
+    const digest = (await stored(jobs)).find((job) => job.key === "digests.digest.send@1");
+    expect(digest).toMatchObject({ scope: acme, input: { audience: "sch_acme" } });
+  });
+
+  it("refuses an owned schedule with no isolation bound after pushing the others, keeping its watermark", async () => {
+    const driver = ownedDriver({ sch_acme: "scp_acme" });
+    const { scheduler, jobs } = setup({}, [], [], driver);
+    await scheduleIn(driver, "sch_acme", acme);
+    await scheduleIn(driver, "sch_platform", { id: "scp_root", path: "platform" });
+    await expect(scheduler.tick(at("12:00:30"))).rejects.toBeInstanceOf(
+      ScheduleRowIsolationMissingError,
+    );
+    const keys = (await stored(jobs)).map((job) => job.input);
+    expect(keys).toEqual(expect.arrayContaining([{ audience: "sch_platform" }]));
+    expect(keys).not.toContainEqual({ audience: "sch_acme" });
+    const marks = await driver.watermarks();
+    expect(marks.has("sch_acme")).toBe(false);
+    expect(marks.get("sch_platform")).toEqual(at("12:00:30"));
+  });
+
+  it("pushes each fire exactly once when a tick dies after its pushes and before its watermark moves", async () => {
+    const driver = new MemoryScheduleDriver();
+    const { scheduler, jobs } = setup({}, [acme], [], driver);
+    await scheduleIn(driver, "sch_acme", acme);
+    const advance = vi.spyOn(driver, "advance").mockRejectedValueOnce(new Error("crash"));
+    await expect(scheduler.tick(at("12:00:30"))).rejects.toThrow("crash");
+    // the platform purge cron, the per-scope cron in acme, and acme's schedule were pushed; no watermark moved
+    expect((await driver.watermarks()).size).toBe(0);
+    expect(await scheduler.tick(at("12:00:50"))).toMatchObject({ ran: true, pushed: 0 });
+    expect(advance).toHaveBeenCalledTimes(2);
+    const keys = (await stored(jobs)).map((job) => job.key).sort();
+    expect(keys).toEqual([
+      "access_log.entry.purge@1",
+      "digests.digest.send@1",
+      "orders.order.expire_unpaid@1",
+    ]);
+  });
+
+  it("pushes a fire once even when its first job finished before the next tick", async () => {
+    const driver = new MemoryScheduleDriver();
+    const { scheduler, jobs } = setup({}, [], [], driver);
+    await scheduleIn(driver, "sch_acme", acme);
+    vi.spyOn(driver, "advance").mockRejectedValueOnce(new Error("crash"));
+    await expect(scheduler.tick(at("12:00:30"))).rejects.toThrow("crash");
+    // the worker ran and removed every job: nothing live holds a unique key any more
+    const first = await stored(jobs);
+    expect(first).toHaveLength(2);
+    for (const job of first) await jobs.remove(job.id);
+    expect(await scheduler.tick(at("12:00:50"))).toMatchObject({ pushed: 0 });
+    expect(await stored(jobs)).toEqual([]);
+  });
+
+  it("fails the tick on a claimed schedule that does not load in its owner", async () => {
+    const driver = new MemoryScheduleDriver();
+    const { scheduler } = setup({}, [], [[CallIsolation, new RecordingIsolation()]], driver);
+    await scheduleIn(driver, "sch_acme", acme);
+    driver.load = async () => undefined;
+    await expect(scheduler.tick(at("12:00:30"))).rejects.toBeInstanceOf(
+      ScheduleClaimNotLoadedError,
+    );
+  });
+
+  it("fires a per-scope cron in each scope's own isolation and transaction", async () => {
+    const isolation = new RecordingIsolation();
+    const driver = new MemoryScheduleDriver();
+    const transaction = vi.spyOn(driver, "transaction");
+    const { scheduler } = setup({}, [acme, globex], [[CallIsolation, isolation]], driver);
+    await expect(scheduler.fire("orders.order.expire_unpaid@1")).resolves.toBe(2);
+    expect(isolation.runs.map(([actor, scope]) => [actor.scopeId, scope])).toEqual([
+      ["scp_acme", acme],
+      ["scp_globex", globex],
+    ]);
+    expect(transaction).toHaveBeenCalledTimes(2);
   });
 });

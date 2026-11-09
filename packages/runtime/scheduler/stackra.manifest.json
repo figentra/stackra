@@ -28,6 +28,20 @@
       "category": "validation",
       "module": "scheduler",
       "class": "InvalidTimeZoneError"
+    },
+    {
+      "code": "schedule_claim_not_loaded",
+      "kind": "internal",
+      "category": "internal",
+      "module": "scheduler",
+      "class": "ScheduleClaimNotLoadedError"
+    },
+    {
+      "code": "schedule_row_isolation_missing",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "scheduler",
+      "class": "ScheduleRowIsolationMissingError"
     }
   ],
   "models": [],
@@ -131,6 +145,12 @@
           "class": {
             "name": "Logger",
             "from": "@stackra/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "Container",
+            "from": "@stackra/container"
           }
         }
       ]

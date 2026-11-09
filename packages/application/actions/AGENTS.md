@@ -73,6 +73,8 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - An action with no `rateLimit` takes from `RateLimitConfig.actionDefault` (per scope, and per client address when
   the call has a client); its own `rateLimit` replaces both. The store gets the address's SHA-256, never the address
   (`CallClient` reaches no port) (STA-1588).
+- A bound `RateLimitCapSource` (a scope's settings) only lowers a bucket: take the minimum of each number, never its
+  value alone. A failed caps read fails the call.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.

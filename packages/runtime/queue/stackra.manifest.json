@@ -16,6 +16,13 @@
   "permissions": [],
   "errors": [
     {
+      "code": "job_claim_not_loaded",
+      "kind": "internal",
+      "category": "internal",
+      "module": "queue",
+      "class": "JobClaimNotLoadedError"
+    },
+    {
       "code": "job_isolation_missing",
       "kind": "failed_precondition",
       "category": "precondition_failed",
@@ -28,6 +35,13 @@
       "category": "unavailable",
       "module": "queue",
       "class": "JobNotDueError"
+    },
+    {
+      "code": "job_row_isolation_missing",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "queue",
+      "class": "JobRowIsolationMissingError"
     },
     {
       "code": "job_timed_out",
