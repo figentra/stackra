@@ -79,6 +79,11 @@ The owner asked for a standard, kept as code, applied to every repository, with 
   environment reviewers by hand: an agent's write to an environment's protection rules is refused by the promote
   guard, and that is intended.
 
+- A product's release job opens its changesets version PR with the **figentra-release** App, never stackra-bot.
+  figentra-release has Contents and Pull requests write only, and its id and key live in their own sops sub-scope,
+  `ci/production/product-release`. Ciphertext grants are per sub-scope prefix, so a release job can read none of
+  stackra-bot's `ci/production/release` (owner, 2026-11-09; figentra/infra secret-callers).
+
 ## Enforcement
 
 - figentra/infra `estate/repos.test.mjs`: every row has a known type, its base topics, at most 12 lower-case topics,
