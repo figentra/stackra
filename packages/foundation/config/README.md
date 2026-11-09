@@ -20,6 +20,7 @@ with `@Secret("NAME")` and resolved blind.
 | `.`           | `ConfigInvalidError`                       | thrown at boot; names paths, variables and secrets, never values         |
 | `.`           | `BuildFacts`, `PublicPart`, `ConfigValues` | types                                                                    |
 | `./contracts` | `SecretStore`                              | the port secrets resolve through; the runtime binds its driver           |
+| `./contracts` | `KmsClient`                                | the AWS KMS client the `kms` signer calls; the host binds its driver     |
 | `./react`     | `useConfig`                                | `const site = useConfig(SiteConfig)` in a component                      |
 | `./testing`   | `.withConfig`, `.withSecrets`              | added to `createTestingModule(...)` when the entry loads                 |
 
@@ -80,6 +81,19 @@ after a rotation). No driver lists, logs or reports a value.
 | `AwsSecretsManagerSecretStoreDriver` | `./node` | `AwsSecretsManagerConfig`: region and secret ids; the runtime's AWS role signs the reads                                                                         |
 
 A JSON-object secret in AWS gives one secret per string member. `@aws-sdk/client-secrets-manager` is an optional peer.
+
+## Signer drivers
+
+A service that injects @stackra/contracts' `Signer` binds one of these drivers, configured by `SignerConfig` (key
+`config.signer`). They are the container's twins of the contracts classes `AwsKmsSignerDriver` and `MemorySignerDriver`,
+which they delegate to; code that builds a signer by hand keeps using those.
+
+- **`kms`, `KmsSignerDriver`:** signs inside AWS KMS with `kmsKeyId`, and names each signature `keyId` (or the KMS key
+  id). It takes a `KmsClient`: the `aws-sdk` driver in `./node` (`AwsSdkKmsClientDriver`) builds `new KMS({ region })`
+  of `@aws-sdk/client-kms`, an optional peer, on first use, with the runtime's role; a host may bind its own. An
+  empty `kmsKeyId` is refused at the first signature.
+- **`ephemeral`, `EphemeralSignerDriver`:** a key pair made in process on first use, for tests and local development.
+  It is lost on restart, so a signature that must outlive the process never comes from it.
 
 ## The environment
 

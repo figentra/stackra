@@ -1,0 +1,84 @@
+{
+  "generatedFrom": {
+    "hash": "2e57e9f0e1ce5e90",
+    "propsFiles": [
+      "ui/src/react/schematic/schematic-node.props.ts",
+      "ui/src/react/schematic/schematic.props.ts"
+    ]
+  },
+  "importLine": "import { Schematic } from \"@stackra/ui/react\";",
+  "key": "free/schematic",
+  "parts": [
+    {
+      "name": "Schematic",
+      "props": [
+        {
+          "description": "The machine's spoken name, which names the group.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The `SchematicNode`s, laid out by the caller through `className` (a grid or a flex row).",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The pipes, each from the bottom centre of one node to the top centre of another, listed in drawing order: a pipe\nleaving a node waits for the pipe that reaches it.",
+          "name": "links",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchematicLink[]"
+        },
+        {
+          "description": "Draws the pipes in on floor steps the first time the machine comes into view, at the `full` motion level. Defaults to true.",
+          "name": "drawOnView",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the machine, and lays out its nodes.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SchematicNode",
+      "props": []
+    },
+    {
+      "name": "Schematic.Node",
+      "props": [
+        {
+          "description": "The node's name in the machine's links; never shown and not a DOM id.",
+          "name": "id",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The part itself, such as a schematic `Frame`.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Styles the node, such as its grid placement.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

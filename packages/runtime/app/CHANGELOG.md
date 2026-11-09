@@ -1,5 +1,117 @@
 # @stackra/app
 
+## 0.32.0
+
+### Minor Changes
+
+- 33f61e5: Every app shows dates in the tenant's calendar with no wiring of its own: `Contexts`' `i18n` context reads the
+  tenant's `DisplaySettings.calendar` (`@stackra/settings`) through the container's `SettingsReader` and passes it to
+  `I18nProvider`, so `useDateTime` writes Hijri dates for a tenant on the Umm al-Qura calendar. Gregorian until the read
+  answers, and where no reader is bound.
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/navigation@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/csp@0.32.0
+  - @stackra/identity@0.32.0
+  - @stackra/settings@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [0f05f60]
+  - @stackra/actions@0.31.0
+  - @stackra/i18n@0.31.0
+  - @stackra/clients@0.31.0
+  - @stackra/identity@0.31.0
+  - @stackra/navigation@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+  - @stackra/csp@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 4ce80a2: An anonymous call acts in the tenant the edge Worker signed (`EdgeHeader.Scope`, ADR 0437): `EdgeHeaderGuard` records
+  the scope once the signature and the request id verify, and `serveGuardedCall` gives it to the anonymous actor as its
+  `scopeId`, its visitor id kept. A credential's tenant wins; a token or an API key whose tenant differs from the signed
+  one is refused with the generic 403; no signed scope means no tenant. A signed scope that is not an `scp_` public id
+  is refused (fail closed). `@stackra/contracts` adds `isPublicId(value, prefix)`, a type guard for a string in public id
+  form.
+- 04d04e4: API keys reach the action pipeline: `CallAuthenticator` verifies a bearer that is an API key with identity's
+  `ApiKeyVerifierService` and answers its principal as an `api_client` actor with the key's call options
+  (`KeyCallOptions`: credential, origin, sandbox for a test key); a forwarded user token beside a key is refused.
+  `serveGuardedCall` reads `Origin` for it and hands the options to `execute`, and gen's adapters pass them to
+  `ActionPipeline#execute`. Run `stackra gen` after upgrading.
+- 7d60f82: `EdgeHeaderGuard` is bound in every generated service and checks edge traffic only. A request that carries any edge
+  header must verify (fail closed); a request with none is not edge traffic and goes on to authentication or its
+  endpoint's own signature check, so service calls, cross-app deliveries and webhooks keep working. `publicPaths` is
+  removed from the guard. New `EdgeConfig` (`app.edge`) chooses the drivers: `keys` is `memory` or `env`, which reads the
+  `STACKRA_EDGE_SIGNING_KEYS` secret (newest first, comma-separated); `nonces` is `memory`, so a replay is refused per
+  instance until a shared nonce store ships.
+- 0765ecc: Runway publishes a pull request's preview (STA-1907, ADR 0289 decision 7).
+  
+  - `publishProduct({ environment: "preview", pullRequest: n })` uploads the console bundle and writes
+    `host:<product>-pr-<n>.figentra.cloud` and `release:<product>:console:pr-<n>`, both expiring after 7 days, with no canary; the
+    answer carries `host`. A host row another product holds is refused before any upload. `pullRequestPreviewHost(product, n)` and `PULL_REQUEST_PREVIEW_SETTINGS` are exported.
+  - `EdgeKvWriter.put(key, value, ttlSeconds?)` takes an optional expiry; `WranglerEdgeKvDriver` passes it as `--ttl`.
+  - `EdgeKvWriter.read(key)` answers the row or `null`; every driver implements it (wrangler's `kv key get --text`,
+    where the API's 404 is `null`).
+  - The product command takes `--pr <n>` (or `STACKRA_PULL_REQUEST`) with `--env preview` (digits only), and prints the host.
+- cd2496b: An anonymous caller keeps one visitor id across requests. `serveGuardedCall` resolves the visitor from a signed token
+  (the `stackra-visitor` header, else the httpOnly `stackra_visitor` cookie) through `VisitorIdentityService`, and an
+  answer to a new visitor, or one signed with the previous key, carries the token back. The token is an HMAC-SHA-256
+  over the `anon_` id with the `STACKRA_VISITOR_SIGNING_KEY` secret (`STACKRA_VISITOR_SIGNING_KEY_PREVIOUS` is accepted
+  for rotation). Until the secret is set, every anonymous call is a new visitor, as before. Gen's adapter fills the
+  new `visitor` seam.
+
+### Patch Changes
+
+- 0394e56: `serveGuardedCall` answers `idempotency_key_in_progress` with its 409 envelope and `Retry-After: 1`.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [38808c2]
+- Updated dependencies [336eacc]
+- Updated dependencies [751dd95]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [d5a7d0a]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/identity@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/clients@0.30.0
+  - @stackra/navigation@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/i18n@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/csp@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

@@ -1,5 +1,162 @@
 # @stackra/identity
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [2c6be3c]
+- Updated dependencies [54db249]
+  - @stackra/config@0.32.0
+  - @stackra/scope@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/market-packs@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/queue@0.32.0
+  - @stackra/scheduler@0.32.0
+  - @stackra/privacy@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/query@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/transport@0.32.0
+  - @stackra/storage@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/clients@0.31.0
+  - @stackra/outbox@0.31.0
+  - @stackra/queue@0.31.0
+  - @stackra/scheduler@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/privacy@0.31.0
+  - @stackra/scope@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/query@0.31.0
+  - @stackra/storage@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/market-packs@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/transport@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 336eacc: An API key has a mode, test or live, written into its text after the kind's prefix (`stackra_sk_test_…`).
+  `mintApiKey(kind, config, mode)` takes it (live by default), `parseApiKey` and `VerifiedApiKey` answer it, and a key
+  minted before modes reads as live. `ApiKeyRecord` gains `mode` and `versionPin`; the verifier refuses a key whose text
+  names another mode than its record. New `ApiKeyMode` enum in `./contracts`.
+- 751dd95: `ServiceApiKeyStoreDriver` (`./node`, driver `service`): the `ApiKeyStore` of a service that answers API-key calls. It
+  reads a key's record from the identity service by hash (`principals.api_key.verify@1`), caches a verified record for
+  the new `IdentityConfig.apiKeyCacheSeconds` (30 by default), never caches an unknown key, and forgets a principal's
+  records at once on `evictPrincipal` (a revoke). Worst case after a revoke whose event has not arrived: the cache window.
+- d5a7d0a: **Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+  action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
+  /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
+  `openapi.json` and the SDKs move to the prefixed paths.
+  
+  Gen also refuses, in its full pass (STA-340):
+  
+  - `endpoint_collision`: two calls on one method and path once parameter names are erased (`GET /app/orders/:orderId`
+    and `GET /app/orders/:id`). Until now `openapi.json` silently kept only one of them.
+  - `endpoint_versioned`: a `v<digits>` path segment (paths stay unversioned; API versions are dates).
+  - `endpoint_area_mismatch`: an `endpoint: { method, path }` override outside its area's prefix.
+  - `endpoint_method_mismatch`: a query not on `GET`, an action on `GET`, or a transition overridden away from `PUT`.
+  - `job_without_system_actor`: a `job` without the `system` or `job` actor.
+  - `cron_input_invalid`: a `job.cron.input` property the input schema does not have, a required one it omits, or a
+    value of another JSON type.
+  - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
+    catalogue.
+  
+  The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
+  verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
+  `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
+  `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
+  `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
+  media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+  
+  The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+  path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+  that already started with an area moving again is still refused with `identity_changed`.
+  
+  What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+  `openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+  pinned to an old path (none before launch) would need the prefixed one.
+
+### Patch Changes
+
+- 38808c2: A mode is never assumed: `parseApiKey` answers no mode for a key without a mode segment, and the verifier refuses a
+  key whose text or record has no mode, so live comes only from a key issued live.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [85cd1b5]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [a426842]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [98a8940]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [98a8940]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [265a3ee]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/actions@0.30.0
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/iam@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/outbox@0.30.0
+  - @stackra/queue@0.30.0
+  - @stackra/scheduler@0.30.0
+  - @stackra/privacy@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/clients@0.30.0
+  - @stackra/tenancy@0.30.0
+  - @stackra/scope@0.30.0
+  - @stackra/query@0.30.0
+  - @stackra/storage@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/market-packs@0.30.0
+  - @stackra/transport@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/support@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

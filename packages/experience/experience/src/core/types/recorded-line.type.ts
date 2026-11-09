@@ -11,6 +11,7 @@ import type { TerminalLineKind } from "#core/enums/terminal-line-kind.enum";
 
 /** A recorded terminal line. */
 export interface RecordedLine {
+  /** What the line is: a command, output, a prompt, the choice made or a done line. */
   readonly kind: TerminalLineKind;
 
   /** The text, without the prompt sign or mark the kind draws. */

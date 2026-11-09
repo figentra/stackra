@@ -1554,6 +1554,11 @@
         "description": "An event calendar in day, week, month and agenda views, with events placed by time and overlaps side by side.",
         "keywords": "scheduler, event calendar, agenda, bookings, appointments, week view"
       },
+      "scheduling_board": {
+        "title": "Scheduling board",
+        "description": "A resource schedule: rows of pitches, rooms and people, with bookings, holds and closures placed by time, dragged to move and checked for conflicts.",
+        "keywords": "scheduling board, resource schedule, bookings, holds, timeline, rota, drag and drop"
+      },
       "chart_export": {
         "title": "Chart export",
         "description": "Save any chart as a picture, a drawing or its numbers, or share it from a phone.",
@@ -1894,6 +1899,11 @@
         "description": "A chapter's large heading in the core tone, with a muted subtitle.",
         "keywords": "chapter, heading, title, subtitle, section title, landing"
       },
+      "capability_matrix": {
+        "title": "Capability matrix",
+        "description": "A table of subjects by capability, each cell a yes, a no, coming or a short note.",
+        "keywords": "capability, matrix, comparison, table, features, carriers, landing"
+      },
       "station": {
         "title": "Station",
         "description": "One station on the landing's pipe: a rail, a title and its line, and the window it shows.",
@@ -1948,6 +1958,46 @@
         "title": "Page dock",
         "description": "The landing's section dock: a sticky bar of section links with the page's status line.",
         "keywords": "dock, sections, scroll spy, status, navigation, landing"
+      },
+      "notification_inbox": {
+        "title": "Notification inbox",
+        "description": "The person's notifications behind a bell with the unread count, or listed in place, on the web and in the app.",
+        "keywords": "notifications, inbox, bell, unread, in-app, mobile"
+      },
+      "notification_preferences": {
+        "title": "Notification preferences",
+        "description": "Each kind of notification with a switch per channel; channels that must stay on show locked.",
+        "keywords": "notifications, preferences, settings, email, push, unsubscribe"
+      },
+      "push_primer": {
+        "title": "Push primer",
+        "description": "Explains what push notifications give before the system asks, as a sheet or inside onboarding.",
+        "keywords": "push, notifications, permission, onboarding, opt in, mobile"
+      },
+      "appearance_toggle": {
+        "title": "Appearance toggle",
+        "description": "Lets a person choose light, dark or the system's look, kept on their device.",
+        "keywords": "theme, dark mode, light mode, color scheme, appearance"
+      },
+      "brand_logo": {
+        "title": "Brand logo",
+        "description": "Draws the theme's logo, or yours, in the scheme on screen.",
+        "keywords": "logo, brand, wordmark, dark mode, theme"
+      },
+      "scope_picker": {
+        "title": "ScopePicker",
+        "description": "Switches the active scope: a branch, a store or any level of the scope tree.",
+        "keywords": "scope, branch, hierarchy, switcher, picker"
+      },
+      "entitlement_gate": {
+        "title": "EntitlementGate",
+        "description": "Shows part of the screen only while the customer's plan includes a feature.",
+        "keywords": "entitlement, plan, feature, upgrade, paywall"
+      },
+      "i18n_locale_switcher": {
+        "title": "LocaleSwitcher (i18n)",
+        "description": "The language field bound to the app's active locale, switching and remembering the choice.",
+        "keywords": "language, locale, switcher, translation, right-to-left"
       }
     }
   },
@@ -5299,6 +5349,26 @@
           "title": "Right to left"
         }
       },
+      "scheduling_board": {
+        "day": {
+          "title": "Academy day"
+        },
+        "week": {
+          "title": "Week"
+        },
+        "timeline": {
+          "title": "Timeline"
+        },
+        "rtl": {
+          "title": "Right to left, Hijri"
+        },
+        "read_only": {
+          "title": "Read-only"
+        },
+        "drag": {
+          "title": "Refused move"
+        }
+      },
       "chart_export": {
         "sales": {
           "title": "Monthly sales"
@@ -5753,6 +5823,11 @@
           "title": "Basics"
         }
       },
+      "capability_matrix": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
       "station": {
         "basics": {
           "title": "Basics"
@@ -5807,6 +5882,46 @@
         }
       },
       "page_dock": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "notification_inbox": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "notification_preferences": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "push_primer": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "appearance_toggle": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "brand_logo": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "scope_picker": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "entitlement_gate": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "i18n_locale_switcher": {
         "basics": {
           "title": "Basics"
         }
@@ -9083,6 +9198,23 @@
             "timeline_chart": "For tasks across weeks on one bar each."
           }
         },
+        "scheduling_board": {
+          "headline": "Every pitch, room and coach on one board.",
+          "intro": "Staff see what is booked on each resource across the day, hold a slot while a customer decides, drag a booking to another row or time, and see a clash before they drop it.",
+          "tags": "Day · Week · Timeline · Drag",
+          "what": "A resource schedule with one row per pitch, room or person, and the bookings, holds, closures and working time placed on it.",
+          "when": "For bookings across shared resources: courts, rooms, coaches, vehicles and delivery slots.",
+          "rtl": "Time runs from the right in Arabic, each row keeps its name at the start, and dates can be written in the Hijri calendar with the customer's digits.",
+          "when_not": "For one calendar of appointments without resource rows; use the scheduler.",
+          "do_1": "Pass the branch's time zone, not the viewer's.",
+          "do_2": "Return a promise from `onItemChange` and resolve it to `false` when the server refuses the move.",
+          "dont_1": "Do not refuse a drop in the screen; pass the conflicts on and let the server decide.",
+          "dont_2": "Do not use colour alone to tell a hold from a booking; say it in the title.",
+          "alternative": {
+            "scheduler": "For one calendar of events without resource rows.",
+            "timeline_chart": "For tasks across weeks on one bar each."
+          }
+        },
         "chart_export": {
           "headline": "Take the chart with you.",
           "intro": "People save the chart for a report or a message, as it looks on screen or as numbers for a spreadsheet.",
@@ -9705,6 +9837,15 @@
           "rtl": "The heading and subtitle follow the reading direction.",
           "when_not": "For a heading inside a card; use Heading."
         },
+        "capability_matrix": {
+          "headline": "Who does what, in one table.",
+          "intro": "Subjects down the side, capabilities across, and each cell a state with its word beside its icon, or a short note.",
+          "tags": "Landing kit · Table · Comparison",
+          "what": "The capability matrix block of the experience module.",
+          "when": "To compare what each carrier, plan or product supports on a landing page.",
+          "rtl": "Columns run from the right in Arabic, and on a narrow screen the table scrolls inside its own named region.",
+          "when_not": "For data people sort or filter; use DataTable."
+        },
         "station": {
           "headline": "One stop on the pipe.",
           "intro": "A ruled blueprint band with the pipe on its inline start and a junction at the title, the station's words, and its window, which a document gives as children.",
@@ -9803,6 +9944,70 @@
           "when": "For a long page of named sections, such as the landing's stations.",
           "rtl": "The links follow the reading order, so the dock mirrors in Arabic.",
           "when_not": "For the site's own navigation; use SiteHeader."
+        },
+        "notification_inbox": {
+          "headline": "Every update, one bell away.",
+          "intro": "Shows the person's notifications grouped by day, with unread marks, mark-all-read and dismiss; your app loads the inbox and keeps its read state.",
+          "tags": "Notifications kit · Inbox · In-app",
+          "what": "The notifications module's inbox, on the design system's notifications panel, on the web and on mobile.",
+          "when": "In the header of an app, or on a notifications screen or dashboard tile when shown in place.",
+          "rtl": "The panel mirrors in Arabic: the bell sits at the inline end and each notification keeps its own direction."
+        },
+        "notification_preferences": {
+          "headline": "Let people choose how they hear from you.",
+          "intro": "Lists each topic with a switch for every channel it can use, saves only what changed, and keeps locked channels, such as security mail, switched on.",
+          "tags": "Notifications kit · Preferences · Settings",
+          "what": "The notifications module's preferences editor, read and saved through its client port.",
+          "when": "In account settings, or in an organisation's settings for its defaults.",
+          "rtl": "Rows mirror in Arabic: the topic reads from the right and its switches line up at the inline end."
+        },
+        "push_primer": {
+          "headline": "Ask for push at the right moment.",
+          "intro": "Says what notifications will bring before the system prompt appears; one button asks, the other leaves it for later, and a retry never registers the device twice.",
+          "tags": "Notifications kit · Push · Onboarding",
+          "what": "The notifications module's push permission primer for the app, as a full sheet or an inline card.",
+          "when": "In onboarding, after a first order, or wherever push would help the person most.",
+          "rtl": "The card mirrors in Arabic, and its buttons keep their order from the inline start."
+        },
+        "appearance_toggle": {
+          "headline": "Light, dark or the system's look, one tap away.",
+          "intro": "Shows the colour schemes the app offers and keeps the one a person picks on their device; set to system, it follows the phone or computer.",
+          "tags": "Theming kit · Colour scheme · Dark mode",
+          "what": "The theming module's scheme picker over the device's chosen scheme: segments for a settings page, a switch for a compact header, or a menu behind a button for a site header.",
+          "when": "In a settings page, an account menu or a marketing site's header, wherever people expect to change the look.",
+          "rtl": "The segments and the menu follow the reading direction, so the first scheme sits on the right in Arabic and the arrow keys move with it."
+        },
+        "brand_logo": {
+          "headline": "Your logo, right in light and in dark.",
+          "intro": "Draws the logo the theme configures, or a logo per scheme you hand it, sized to a height and letterboxed so it never stretches; with no logo it shows your fallback.",
+          "tags": "Theming kit · Branding · Dark mode",
+          "what": "The theming module's logo, read from the theme's configuration and the scheme on screen.",
+          "when": "In an app bar, a sidebar header, a sign-in page or a branding preview.",
+          "rtl": "A logo is a picture, so it is never mirrored; only its place in the row follows the reading direction."
+        },
+        "scope_picker": {
+          "headline": "Work in one part of the organisation at a time.",
+          "intro": "A field over the scopes the signed-in person may enter, nested as a tree; with many of them it becomes a search. Choosing one makes it the active scope every request carries.",
+          "tags": "Scope kit · Scope tree · Field",
+          "what": "The scope module's switcher, a tree select or a search field over the active scope service.",
+          "when": "In the header or a filter bar, where people move between branches, stores or regions.",
+          "rtl": "The field and the tree mirror in Arabic, and each scope's name keeps its own direction."
+        },
+        "entitlement_gate": {
+          "headline": "Show it only when the plan includes it.",
+          "intro": "Wraps a feature and shows it while the customer's plan grants the entitlement, or an upgrade prompt when it does not; the server still checks every call.",
+          "tags": "Entitlements kit · Plans · Visibility",
+          "what": "The entitlements module's plan check for the screen, over the plan's entitlement source.",
+          "when": "Around a paid feature, a report or a panel that only some plans include.",
+          "rtl": "It draws nothing of its own, so what it shows mirrors in Arabic as it would anywhere."
+        },
+        "i18n_locale_switcher": {
+          "headline": "One language field, already wired.",
+          "intro": "Hands the house locale field the app's languages and the active one, then switches and remembers the choice through the app's own route or setter.",
+          "tags": "i18n kit · Languages · Field",
+          "what": "The i18n module's binding of the locale switcher to the active locale and the remembered choice.",
+          "when": "In the header, the account menu or a settings page, wherever people pick the app's language.",
+          "rtl": "Switching to Arabic turns the whole app right to left, and each language is named in itself."
         }
       }
     }

@@ -1,5 +1,72 @@
 # @stackra/infra-aws-runtime
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/infra-tools@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 670f75c: A workload can name `migrate: { command, timeoutMinutes? }`: a one-off task with the workload's image, env, secrets
+  and resources that runs once per new revision before the service rolls, and stops the apply when it fails or times
+  out (15 minutes by default). On AWS it is a second Fargate task definition run by a Pulumi dynamic resource through
+  `@aws-sdk/client-ecs`, which the stacks repository must list beside `@pulumi/aws`.
+
+### Patch Changes
+
+- Updated dependencies [5585893]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+  - @stackra/runway@0.31.0
+  - @stackra/infra-tools@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- a3a3190: A service runway's `environments.<env>.database.extensions` now takes only the Postgres extensions ADR 0160 approves:
+  vector, pg_trgm, ltree, citext, pgcrypto, postgis, pg_stat_statements and btree_gist. `@stackra/runway` exports them
+  as the `PostgresExtension` enum and the frozen `APPROVED_POSTGRES_EXTENSIONS` list, and the shipped
+  `schema/service.json` carries them as an `enum` on `extensions.items`. Any other name is refused with its path.
+  
+  The AWS runtime plan carries each Postgres server's extensions (`DatabasePlan.extensions`, the names its member
+  consumers list, once and sorted) and those it preloads (`preloadLibraries`). A server that preloads one gets its own
+  parameter group (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot.
+  
+  `@stackra/database`'s `Extension` adds `BtreeGist`, so a migration may run `schema.createExtension(Extension.BtreeGist)`.
+- f4df473: A worker workload needs no port: `port` and `health` are optional unless the workload is `public`, and an internal
+  worker may name `healthCommand`, which becomes its Fargate container's health check (no port mapping is declared).
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [0765ecc]
+- Updated dependencies [f4df473]
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/runway@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/infra-tools@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

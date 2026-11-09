@@ -45,7 +45,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                                                             | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`)                                                      |
 | `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                                                                  | the `encore-cloud`, `eas` and `mintlify` providers                                                                                                                     |
 | `./node`    | `runProgram`, `CommandRunner`                                                                                                                               | how a provider runs its CLI, with no shell                                                                                                                             |
-| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                                                                             |
+| `./node`    | `runMobileJob(request)`, `startWhiteLabelJob(request)` (the `white_label.build.requested.v1` starter), `whiteLabelVariantOf(event)`, `MobileJobRequest`, `MobileJobResult`                                                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                                                                             |
 | `./node`    | `onboardMobile(request)`, `MobileOnboardRequest`, `MobileOnboard`, `OnboardStep`, `easJsonOf`, `toolVersionOf`                                              | mobile onboarding (ADR 0482): ids, EAS, Apple, Google, Firebase, Sentry, signing, push, stores; see below                                                              |
 | `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…` drivers, and a `Memory…` driver of each (`MemoryVaultWriter…` only for `VaultWriter`) | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
 | `./node`    | `checkoutLine(request)`, `shellReleaseOf`, `LINE_CHECKOUT_SETTINGS`, `LineSource`, `LineCheckout`, `ShellManifest`                                          | the template line step: a line's highest release from the registry (or a local checkout) into a folder (ADR 0481)                                                      |
@@ -54,7 +54,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, …                                           | the store-screenshot capture job on a Mac CI runner                                                                                                                    |
 | `./node`    | `smokePreview(request)`, `PlaywrightSmokeDriver`, `MaestroSmokeDriver`, `ElectronSmokeDriver`, `SmokePreviewRequest`                                        | the smoke step after a preview deploy (STA-265); the `SmokeDriver` port and smoke types are `.`'s                                                                      |
 | `./node`    | `launchCheckJob(request)`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`, `LaunchCheckJob`, `LaunchCheckRequest`                                                | the mobile launch check: Maestro flows on a CI simulator or emulator (STA-265)                                                                                         |
-| `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
+| `./node`    | `publishProduct(request)`, `pullRequestPreviewHost(product, n)`, `PULL_REQUEST_PREVIEW_SETTINGS`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
 | `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …                                                  | the shell canary list and health-gated promotion of release and shell canaries                                                                                         |
 | `./node`    | `checkShellCompatibility(request)`, `checkOpsReview(review)`                                                                                                | the shell compatibility gate and the ops second-reviewer gate                                                                                                          |
 | `./node`    | `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`                                                                                             | the publish step's parts: rows from the root runway, built bundles, the R2 upload, the surfaces that bundle                                                            |
@@ -351,6 +351,24 @@ back alone. `checkShellCompatibility` is the gate the OS release runs first (app
 checkout it runs the `compatibility` build with the next shell's import map, then refuses a bundle whose target the
 edge will not serve or whose imports the next map does not resolve, listing every break at once. Every threshold,
 window, folder, command and header is in `EDGE_PUBLISH_SETTINGS`.
+
+### A pull request's preview
+
+`publishProduct` with `pullRequest: <n>` and `environment: "preview"` (the product command's `--env preview --pr <n>`,
+or `STACKRA_PULL_REQUEST`) publishes that pull request's preview instead (ADR 0289 decision 7 and its 2026-11-01 note,
+STA-1907). Only the console bundle is uploaded (its asset keys carry the commit, so pull requests never overwrite each
+other). It writes two rows, both with a 7-day expiry (`PULL_REQUEST_PREVIEW_SETTINGS.ttlSeconds`, wrangler's `--ttl`),
+so a preview nobody pushes to cleans itself up:
+
+| Row                                | Holds                                                                                              |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `host:<product>-pr-<n>.figentra.cloud` | an `EdgeHostRow` (product, surface `console`, region, status, realm, canonical) plus `pullRequest` |
+| `release:<product>:console:pr-<n>` | the console's `EdgeRelease`, written directly: a preview has no canary                             |
+
+The answer's `host` is `<product>-pr-<n>.figentra.cloud` (`pullRequestPreviewHost(product, n)`): the product is in the label because every product repository numbers its pull requests from 1, and the publish refuses a host row another product already holds (ADR 0289's 2026-11-09 note). No app-link file and no ops review run,
+and the shared `preview` environment's rows are untouched. The router Worker that serves the host (`/api/*` to the
+Encore Cloud preview, the console at `/`) is not built here; the asset-store objects are not expired (a bucket
+lifecycle rule is infrastructure's).
 
 Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the landing seed
 import, removing rows of hosts a runway no longer lists, the metrics query that fills a `CanarySample`, and the CI

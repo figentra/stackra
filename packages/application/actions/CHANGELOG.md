@@ -1,5 +1,95 @@
 # @stackra/actions
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/cache@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 298af71: `ctx.detach()` holds an action's isolation past its transaction, for a stream or a long agent loop. Each `detached.isolated(work)` step runs in a new `CallIsolation` transaction with the call's settled actor and scope, commits or rolls back alone, and holds no connection between steps. `RequestContext.detached()` answers inside `detached.run(...)`, so a service below the loop can open its own step. `fakeActionContext()` gains a `detach()` that runs each step as it is.
+- 6473cf1: A detached call (`ctx.detach()`) now works with the database. `detached.run` enters every wrapper registered in the new `DETACHED_RUNS` (`@stackra/actions/contracts`), and the database registers one when a driver connects: the loop's work runs on a fresh fork, outside the call's committed transaction (which MikroORM otherwise keeps in the context of a continuation started inside it), and `Database.detached()` answers the call's step, per database instance. Inside a detached call, every `CrudService` operation that runs outside a transaction runs as its own step: a short transaction with the call's isolation (`each`, `chunk` and `metrics` excepted). Outside a detached call nothing changes.
+
+### Patch Changes
+
+- @stackra/testing@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+  - @stackra/cache@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 6005425: An API-key caller (a call with a credential, an `api_client` actor or an `api_key` origin) must send an `Idempotency-Key` on every write, whatever the action declares; every other caller keeps the declared policy. The idempotency scope now includes the API key and the mode (test or live), so a principal's keys never share an answer. Existing records are keyed afresh once and expire within the retention.
+- 0394e56: The idempotency step tells a key still in flight (`idempotency_key_in_progress`, same input) from a reused one (`idempotency_key_reused`, other input), and a call refused for a reason no retry can change keeps its refusal under the key: a retry gets the same refusal and `handle` does not run again. A retryable refusal or a plain error still frees the key. `IdempotencyStore` gains `completeRefused(key, fingerprint, refusal, ttl)` and `IdempotencyRecord` a refusal form; the memory and Valkey drivers implement it. Breaking for a custom store: implement `completeRefused`.
+- 96b5241: **Route change for anonymous-only calls.** An action or query whose actors are exactly `[ActorKind.Anonymous]` (served
+  with `auth: false`) now defaults to the `public` API area, in gen and at runtime, so its route is `/public/...` and it
+  sits where no gate asks for a principal. A written `area` still wins, and a call with any other actor keeps the
+  service's area or `app`. Gen's identity lock accepts the move under the call's own area, as for STA-340. What a product
+  does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and `openapi.json`.
+- 17fafdd: A ninth actor kind, `ActorKind.ApiClient` (`api_client`): a tenant's server calling with an API key. An action or query
+  declares `public: true` or `public: { scopes, publishable }` to answer one; every other operation refuses it, and so
+  does a call without a key. `CallOptions.credential` carries the verified key (id, scopes, publishable, version pin) onto
+  the descriptor with `descriptor.public` (the required scopes and whether only exact keys count: L3 and above, approval
+  or step-up). iam's `AccessControl` checks an `api_client` call's scopes (`keyCovers`: exact keys, or selectors below
+  L3); a publishable key calls a public write only when it opts in.
+- 8c17109: The idempotency step reads its retention window from a bound `IdempotencyRetentionSource` (`@stackra/contracts`), so an
+  operator shortens it without a deploy. The answer only shortens the window: it never passes the 24 hours of ADR 0136,
+  an action's own shorter `idempotencyTtl` still wins, and a failed read fails the call. With no source bound the window
+  stays 24 hours.
+- 82dccb3: One shared owner-isolation helper. `@stackra/actions` now exports `inRowOwner(isolation, actorId, ownerId, id, work,
+  missing?)`, `boundIsolation(resolver)`, `ClaimNotLoadedError` (`claim_not_loaded`) and `RowIsolationMissingError`
+  (`row_isolation_missing`) from its `.` entry, so the tenancy families no longer each keep a copy. Every caller keeps
+  its own system actor id (`sys_outbox_relay`, `sys_queue_worker`, `sys_scheduler`, `sys_workflow_runner`,
+  `sys_privacy_holds`), the same refusals and the same rule: an owned row with no isolation bound is refused, never
+  skipped. Queue and scheduler keep their prefixed refusals and codes (`job_row_isolation_missing`,
+  `schedule_row_isolation_missing`, and their claim-not-loaded ones) and pass them to `inRowOwner`.
+  
+  `@stackra/outbox` still re-exports `boundIsolation`, `ClaimNotLoadedError` and `RowIsolationMissingError` from its `.`
+  entry for this release only; the re-exports go away in the next minor, so import them from `@stackra/actions`. The two
+  refusals now appear under `@stackra/actions` in the manifests, with the same codes. `@stackra/workflow` no longer
+  depends on `@stackra/outbox`; `@stackra/data-transfer` now depends on `@stackra/actions`.
+- ef49e63: The rate-limit step can read a scope's limits from settings, so an operator lowers them without a deploy. When a
+  `RateLimitCapSource` (new port in `@stackra/contracts`) is bound, each area bucket number and each default action
+  bucket is the lower of its own and the scope's cap; a cap never raises a limit, and a failed read fails the call.
+  `@stackra/settings` ships the driver, `SettingsRateLimitCapSourceDriver`, over the new `RateLimitSettings` group
+  (`rate_limit.<area>PerMinute`, `<area>Burst`, `actionPerScope`, `actionPerAddress`; `null` caps nothing). With no
+  source bound, nothing changes.
+
+### Patch Changes
+
+- 418e195: A `Derived` action keeps deduplicating by its input for every caller but an API key, even when a key is sent: a generated client mints a fresh key per call, so a double click stays one effect.
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/cache@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

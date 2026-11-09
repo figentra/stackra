@@ -28,6 +28,7 @@ import { decidePolicy } from "#core/functions/decide-policy.function";
 import { isAnonymousCall } from "#core/functions/is-anonymous-call.function";
 import { keyCovers } from "#core/functions/key-covers.function";
 import { policyRowOf } from "#core/functions/policy-row-of.function";
+import type { CheckOptions } from "#core/types/check-options.type";
 import type { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 
 /**
@@ -62,6 +63,9 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
   async require(call: CallDescriptor): Promise<void> {
     if (call.actor.kind === ActorKind.ApiClient) {
       if (!keyCovers(call)) throw ForbiddenError.create();
+      const scope = await this.scopeOf(call);
+      if (await this.keyDenied(call, scope === undefined ? {} : { scope }))
+        throw ForbiddenError.create();
       return;
     }
     if (call.permission === undefined) throw ForbiddenError.create();
@@ -94,11 +98,27 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
       row?.rules === undefined
         ? null
         : { rules: row.rules, facts: { record: record as RuleFacts[string] } };
-    // an API key's grants are its scopes (checked above) and its record policy (decided above); shortcut: deny rules are
-    // the decision point's, which a key call skips, so a tenant's deny rule does not bind a key yet (STA-2646 follow-up)
-    if (viaKey) return;
     const options = scope === undefined ? { record: facts } : { scope, record: facts };
+    // an API key's grants are its scopes (checked above); its tenant's deny rules still bind it, against the record
+    if (viaKey) {
+      if (await this.keyDenied(call, options)) throw ForbiddenError.create();
+      return;
+    }
     if (!(await this.pdp.check(call.actor, permission, options))) throw ForbiddenError.create();
+  }
+
+  /**
+   * Whether a deny rule refuses an `api_client` call: the operation's permission or any scope its key had to cover.
+   */
+  private async keyDenied(call: CallDescriptor, options: CheckOptions): Promise<boolean> {
+    const keys = new Set([
+      ...(call.permission === undefined ? [] : [call.permission]),
+      ...(call.public?.scopes ?? []),
+    ]);
+    for (const key of keys)
+      // oxlint-disable-next-line no-await-in-loop -- reason: the snapshot is read once per key; a call names one or two
+      if (await this.pdp.denied(call.actor, key, options)) return true;
+    return false;
   }
 
   /**

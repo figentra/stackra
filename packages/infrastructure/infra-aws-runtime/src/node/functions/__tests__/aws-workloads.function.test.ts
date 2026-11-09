@@ -5,17 +5,39 @@
  *          alias, and starts with its own arguments (none for an image's default); every workload is
  *          registered in the private namespace; a public workload gets an ALB admitting HTTPS from Cloudflare only,
  *          a TLS 1.3 listener on the given certificate, a target group checking its health path, and CPU autoscaling
- *          between its bounds; an internal one gets none of them; a public workload without a certificate is refused.
- * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`).
+ *          between its bounds; an internal one gets none of them; a worker with no port gets no port mapping and its
+ *          health command as the container's health check; a public workload without a certificate is refused; a
+ *          workload with `migrate` gets a migration task (the same image and secrets, its own arguments, no port) and
+ *          one migration run of that revision with its timeout, and a workload without one gets neither.
+ * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`); `dynamic.Resource` is
+ *           mocked so the migration run registers without closure serialisation.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 2 and 4, owner answers Q5 and Q6); spec sta-1640.
  */
 import * as pulumi from "@pulumi/pulumi";
 import { beforeAll, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import type { WorkloadPlan } from "#core/types/workload-plan.type";
 import { awsWorkloads } from "#node/functions/aws-workloads.function";
+
+// Vitest rewrites the provider's code, so Pulumi's closure serialisation of it never settles under the mocks; the
+// dynamic resource registers here without its serialised provider.
+vi.mock("@pulumi/pulumi", async (original) => {
+  const actual = await original<typeof pulumi>();
+  class Resource extends actual.CustomResource {
+    constructor(
+      _provider: unknown,
+      name: string,
+      props: pulumi.Inputs,
+      opts?: pulumi.CustomResourceOptions,
+    ) {
+      super("pulumi-nodejs:dynamic:Resource", name, props, opts);
+    }
+  }
+  return { ...actual, dynamic: { ...actual.dynamic, Resource } };
+});
 
 /** One resource the program registered. */
 type Registered = {
@@ -41,7 +63,11 @@ function workload(
     image: DIGEST,
     port: 8080,
     health: "/debug/healthz",
+    healthCommand: [],
     command: isPublic ? ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"] : [],
+    ...(isPublic
+      ? { migrate: { command: ["setup", "--masterkeyFromEnv"], timeoutMinutes: 20 } }
+      : {}),
     public: isPublic,
     env: { ZITADEL_EXTERNALSECURE: "true" },
     secrets: isPublic ? ["ZITADEL_MASTERKEY"] : [],
@@ -50,6 +76,27 @@ function workload(
     cpu: 1024,
     memoryMb: 2048,
     scale,
+    tags: { env: "production", service: name },
+  };
+}
+
+/** A queue worker named `name`: no port, checked by `healthCommand`. */
+function worker(name: string, healthCommand: readonly string[]): WorkloadPlan {
+  return {
+    key: `workloads.${name}`,
+    workload: name,
+    name: `academorix-production-${name}`,
+    image: DIGEST,
+    healthCommand,
+    command: [],
+    public: false,
+    env: {},
+    secrets: [],
+    uses: [],
+    aliases: {},
+    cpu: 512,
+    memoryMb: 1024,
+    scale: { min: 1, max: 1 },
     tags: { env: "production", service: name },
   };
 }
@@ -72,12 +119,15 @@ const PLAN: RuntimePlan = {
       storageGb: 100,
       backupDays: 14,
       consumers: ["zitadel"],
+      extensions: [],
+      preloadLibraries: [],
       tags: { env: "production", service: "main-db" },
     },
   ],
   workloads: [
     workload("zitadel", true, { min: 2, max: 4 }),
     workload("ocr", false, { min: 1, max: 1 }),
+    worker("sidekiq", ["pgrep", "-f", "sidekiq"]),
   ],
   cost: { items: [], monthlyUsd: 0 },
 };
@@ -184,6 +234,62 @@ describe("awsWorkloads", () => {
     const [container] = JSON.parse(String(task["containerDefinitions"])) as { command?: unknown }[];
 
     expect(container).not.toHaveProperty("command");
+  });
+
+  it("gives a worker with no port no port mapping and its health command as the container's check", () => {
+    const task = resource("TaskDefinition", "academorix-production-sidekiq").inputs;
+    const [container] = JSON.parse(String(task["containerDefinitions"])) as Record<
+      string,
+      unknown
+    >[];
+    const ocr = resource("TaskDefinition", "academorix-production-ocr").inputs;
+    const [served] = JSON.parse(String(ocr["containerDefinitions"])) as Record<string, unknown>[];
+
+    expect(container).not.toHaveProperty("portMappings");
+    expect(container?.["healthCheck"]).toMatchObject({
+      command: ["CMD", "pgrep", "-f", "sidekiq"],
+    });
+    expect(served).not.toHaveProperty("healthCheck");
+    expect(served?.["portMappings"]).toEqual([{ containerPort: 8080, protocol: "tcp" }]);
+    expect(all("TargetGroup").map((group) => group.name)).not.toContain(
+      "academorix-production-sidekiq",
+    );
+  });
+
+  it("runs a workload's migration as its own task, once per revision, before the service", () => {
+    const task = resource("TaskDefinition", "academorix-production-zitadel-migrate").inputs;
+    const [container] = JSON.parse(String(task["containerDefinitions"])) as {
+      name: string;
+      image: string;
+      command?: string[];
+      portMappings?: unknown;
+      secrets: { name: string }[];
+    }[];
+
+    expect(task).toMatchObject({ family: "academorix-production-zitadel-migrate", cpu: "1024" });
+    expect(container).toMatchObject({
+      name: "zitadel",
+      image: DIGEST,
+      command: ["setup", "--masterkeyFromEnv"],
+    });
+    expect(container).not.toHaveProperty("portMappings");
+    expect(container?.secrets.map((secret) => secret.name)).toEqual(
+      expect.arrayContaining(["ZITADEL_MASTERKEY", "ZITADEL_DATABASE_POSTGRES_DSN"]),
+    );
+    expect(resource("Resource", "academorix-production-zitadel-migrate").inputs).toMatchObject({
+      name: "academorix-production-zitadel",
+      taskDefinition: "arn:mock:academorix-production-zitadel-migrate",
+      container: "zitadel",
+      subnets: ["subnet-a"],
+      securityGroups: ["sg-workloads"],
+      timeoutMinutes: 20,
+    });
+  });
+
+  it("gives a workload without migrate no migration task and no run", () => {
+    expect(
+      registered.filter((entry) => entry.name === "academorix-production-ocr-migrate"),
+    ).toEqual([]);
   });
 
   // @covers sta-1640:FR-009

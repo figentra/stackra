@@ -1,5 +1,137 @@
 # @stackra/gen
 
+## 0.32.0
+
+### Patch Changes
+
+- 597e3e8: A generated docs site titles its home page (`index.mdx`, or a language's `index.<lang>.mdx`) by the page's own
+  words alone, not followed by the site name it already names ("Figentra Geo · Figentra Geo"). The build now also fails
+  when a prerendered title repeats a part.
+- @stackra/errors@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- 73ea174: A model whose last word is already plural keeps it in its derived table name and resource path. `OpeningHours` is now `opening_hours`, no longer `opening_hourses`. The same goes for `news`, `series`, `settings`, `analytics`, `species`, `preferences` and the rest of `INVARIANT_PLURALS`. Regular nouns that end in `s` (`address`, `class`, `bus`) still take `es`.
+- 137a7f9: Every automation run a trigger or a schedule starts is now checked against the new `AutomationQuota` port, which `AutomationService` injects, so a host that runs automations must select a driver. Over the quota, the run is skipped and `AutomationRunSkipped` (`quota_exceeded`) is recorded; that is not a failure. A quota that cannot be read starts nothing and records `quota_unavailable` (fail closed); `triggered` never throws for a quota. `AutomationService.triggered(block, startedBy)` takes an `AutomationStart`, kept on the skip. Gen's platform binding of `AutomationService` gains the port.
+  
+  Release order: this core release first; then Figentra Billing publishes its usage client package with the driver (`credits.quota.check@1` on `automation.runs`, called as the host member inside the automation's tenant); then os bumps and selects that driver in the same pull request. No host takes `UnlimitedAutomationQuotaDriver` as a stopgap: it is only for a host that sells no automation quota.
+- @stackra/money@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/support@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 96b5241: **Route change for anonymous-only calls.** An action or query whose actors are exactly `[ActorKind.Anonymous]` (served
+  with `auth: false`) now defaults to the `public` API area, in gen and at runtime, so its route is `/public/...` and it
+  sits where no gate asks for a principal. A written `area` still wins, and a call with any other actor keeps the
+  service's area or `app`. Gen's identity lock accepts the move under the call's own area, as for STA-340. What a product
+  does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and `openapi.json`.
+- 04d04e4: API keys reach the action pipeline: `CallAuthenticator` verifies a bearer that is an API key with identity's
+  `ApiKeyVerifierService` and answers its principal as an `api_client` actor with the key's call options
+  (`KeyCallOptions`: credential, origin, sandbox for a test key); a forwarded user token beside a key is refused.
+  `serveGuardedCall` reads `Origin` for it and hands the options to `execute`, and gen's adapters pass them to
+  `ActionPipeline#execute`. Run `stackra gen` after upgrading.
+- 0bf0a7f: Collaboration rooms are hosted with no hand wiring. A model declares `@Collaborative({ view, edit })`, and a service
+  that declares `@stackra/collaboration` serves `collaboration.room.token@1` (the checked one-time room token: the record
+  in the caller's tenant, its view permission, `LiveCollaborationEntitlement` for the scope, `mayEdit` from its edit
+  permission), `collaboration.room.publish@1` and `RoomController`, the room's event stream at `REALTIME_ROOM_PATH`,
+  through the package's new root `CollaborationModule`. `RoomMemberRole` (`collaboration.room_member`) grants the two L2 room
+  permissions. A client binds `RoomTokens` to `ClientRoomTokensDriver` over its
+  `DynamicClient`.
+  
+  `RoomGrant.recheckEdit` (realtime): the room asks the edit right again before relaying each `update`, so a permission
+  revoked mid-session drops the member's next edit; `RoomMember.publish` returns a promise for such an update.
+  
+  Gen: a package manifest lists its raw controllers in `services` with their `path`; a host binds a hosted package's
+  controllers, and its Encore `api.ts` serves a hosted package's actions, queries and controllers (the package needs an
+  authored root module); `endpoint_collision` also counts raw controllers (own and hosted, any method, a trailing `/*`
+  covering what is under it); the generated HTTP adapter streams answer bodies instead of buffering them.
+- 5b064da: A service's Encore app root is the member root: gen writes `encore.app` at `services/<name>/encore.app` (gitignored) and no longer writes `.stackra/encore/encore.app` or `.stackra/encore/package.json`, so Encore resolves the member's `node_modules` and, with the tsconfig `paths` block, its `#` imports. The generated services stay in `.stackra/encore/<svc>/`. `encore_app_stray` now refuses only an `encore.app` at the repository root. Breaking: `emitEncorePackage` is removed.
+- e1e1b5e: Gen refuses an Integration whose `webhooks` use a scheme other than Standard Webhooks (`hmac` or a regional gateway's)
+  and name neither `eventId` nor `signature.idHeader`, with `webhook_event_id_undeclared`. Such an Integration keyed every
+  inbound event by the id `""`, so the inbox kept only the first one. Name `eventId` (the payload `path` of the
+  provider's event id, or `parts` of paths and headers) or a signature `idHeader`, or use `SignatureScheme.StandardWebhooks`.
+- cd2496b: An anonymous caller keeps one visitor id across requests. `serveGuardedCall` resolves the visitor from a signed token
+  (the `stackra-visitor` header, else the httpOnly `stackra_visitor` cookie) through `VisitorIdentityService`, and an
+  answer to a new visitor, or one signed with the previous key, carries the token back. The token is an HMAC-SHA-256
+  over the `anon_` id with the `STACKRA_VISITOR_SIGNING_KEY` secret (`STACKRA_VISITOR_SIGNING_KEY_PREVIOUS` is accepted
+  for rotation). Until the secret is set, every anonymous call is a new visitor, as before. Gen's adapter fills the
+  new `visitor` seam.
+- d5a7d0a: **Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+  action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
+  /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
+  `openapi.json` and the SDKs move to the prefixed paths.
+  
+  Gen also refuses, in its full pass (STA-340):
+  
+  - `endpoint_collision`: two calls on one method and path once parameter names are erased (`GET /app/orders/:orderId`
+    and `GET /app/orders/:id`). Until now `openapi.json` silently kept only one of them.
+  - `endpoint_versioned`: a `v<digits>` path segment (paths stay unversioned; API versions are dates).
+  - `endpoint_area_mismatch`: an `endpoint: { method, path }` override outside its area's prefix.
+  - `endpoint_method_mismatch`: a query not on `GET`, an action on `GET`, or a transition overridden away from `PUT`.
+  - `job_without_system_actor`: a `job` without the `system` or `job` actor.
+  - `cron_input_invalid`: a `job.cron.input` property the input schema does not have, a required one it omits, or a
+    value of another JSON type.
+  - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
+    catalogue.
+  
+  The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
+  verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
+  `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
+  `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
+  `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
+  media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+  
+  The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+  path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+  that already started with an area moving again is still refused with `identity_changed`.
+  
+  What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+  `openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+  pinned to an old path (none before launch) would need the prefixed one.
+- 15dba8d: The tenancy contract step's two checks are now errors (ADR 0239):
+  
+  - `assertRowSecurity`: a table without the owner column that no platform list names is a gap, by default. It no longer
+    reads `STACKRA_GEN_STRICT`; only the audit's own tests pass `strict: false` to read such tables back as warnings with
+    their group. A service's generated isolation test therefore fails on one.
+  - gen's `model_tenancy_missing` (and `model_tenancy_migration_missing`) are errors for a package's models, as they
+    already were for a service running `@stackra/tenancy`.
+  
+  Before taking this version, a product must have zero such tables and models: list a table that holds no tenant data
+  with `t.platformTable(reason)` (or `t.reviewedPolicy(reason, policies)`), give a tenant table its owner column, and
+  mark each model `BelongsToTenant`, `BelongsToTenantOrPlatform` or `Model.global`. Core itself has none.
+
+### Patch Changes
+
+- 7d60f82: `EdgeHeaderGuard` is bound in every generated service and checks edge traffic only. A request that carries any edge
+  header must verify (fail closed); a request with none is not edge traffic and goes on to authentication or its
+  endpoint's own signature check, so service calls, cross-app deliveries and webhooks keep working. `publicPaths` is
+  removed from the guard. New `EdgeConfig` (`app.edge`) chooses the drivers: `keys` is `memory` or `env`, which reads the
+  `STACKRA_EDGE_SIGNING_KEYS` secret (newest first, comma-separated); `nonces` is `memory`, so a replay is refused per
+  instance until a shared nonce store ships.
+- 418e195: The generated Encore adapter passes the call headers to the action pipeline (`requestCallOptions(request)`): a client's `Idempotency-Key` and `Stackra-Consent` were dropped before.
+- e1e95d1: A service a member depends on (for its contract) ships its lang catalogues as that service's, so a namespace both share moves under the service's name (`I18n.payments.plans`) instead of refusing with `i18n_namespace_clash`; the member keeps the bare namespace.
+- dab9009: The gen golden fixtures commit the seed entry (`.stackra/entry/seed.ts`) that gen writes for the `service` fixture's shop
+  and the overlay fixtures built on it, since that shop has a seeder and a factory (STA-2061). Tests only; gen's output is
+  unchanged.
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/support@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

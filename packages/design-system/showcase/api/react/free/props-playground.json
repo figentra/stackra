@@ -1,0 +1,88 @@
+{
+  "generatedFrom": {
+    "hash": "4549849494584a61",
+    "propsFiles": ["ui/src/react/props-playground/props-playground.props.ts"]
+  },
+  "importLine": "import { PropsPlayground } from \"@stackra/ui/react\";",
+  "key": "free/props-playground",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with every value after each change.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(values: Readonly<Record<string, string | number | boolean>>) => void"
+        }
+      ],
+      "name": "PropsPlayground",
+      "props": [
+        {
+          "description": "The component's name, shown as the title and the group's spoken name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The props people can change, in order.",
+          "name": "controls",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly PlaygroundControl[]"
+        },
+        {
+          "description": "Draws the preview from the current values.",
+          "name": "render",
+          "required": true,
+          "source": "stackra",
+          "type": "(values: Readonly<Record<string, string | number | boolean>>) => ReactNode"
+        },
+        {
+          "description": "The values, for a controlled playground; pair it with `onChange`.",
+          "name": "values",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string | number | boolean>>"
+        },
+        {
+          "description": "The starting values of an uncontrolled playground, over each control's own default.",
+          "name": "defaultValues",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string | number | boolean>>"
+        },
+        {
+          "description": "Product themes to try live; the preview alone wears the one chosen.",
+          "name": "brands",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly { readonly id: string; readonly label: string; readonly theme: Theme; }[]"
+        },
+        {
+          "description": "Shows the left-to-right and right-to-left switch for the preview. Defaults to true.",
+          "name": "hasDirection",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The reset button's words. Defaults to \"Reset\".",
+          "name": "resetLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the playground.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -5,10 +5,12 @@
  *          base locale, else `null`), the logo and the mark as stored files with their variant URLs (the mark falls
  *          back to the logo), and each colour with its on-colour. A colour that fails its contrast rule
  *          (`brandColorRefusals`) counts as unset: the next layer out that holds a readable one wins, else `null`.
+ *          `bytes(image)` reads a resolved image's original from the disk, for a surface that embeds it (a PDF).
  * Boundary: reads through `SettingsReader#get`, which layers platform under tenant field by field and parses the group
  *           (formats only, never contrast, so one tenant's bad colour never breaks its reads); only when a resolved
  *           colour fails does it read the group's stored layers from the `SettingValueStore` to find the fallback. It
- *           asks the media `FileSystem` disk only whether a claimed file exists and for its public URL. It never writes
+ *           asks the media `FileSystem` disk whether a claimed file exists, for its public URL, and for its bytes; never
+ *           over HTTP (the egress rule). It never writes
  *           and holds no cache: every call reads the settings and checks the disk (README, known limits). An id whose
  *           file is gone (never claimed, deleted) reads as `null`.
  * Runtime: isomorphic
@@ -19,7 +21,7 @@ import { Service } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
 import type { FileSystem } from "@stackra/filesystem/contracts";
 import type { Locale } from "@stackra/i18n";
-import type { ImageVariant, ImageVariantOptions } from "@stackra/media";
+import type { ImageVariant, ImageVariantOptions, MediaType } from "@stackra/media";
 import { BucketVisibility } from "@stackra/media";
 import type { SettingsReader } from "@stackra/settings";
 import type { SettingTarget, SettingValue, SettingValueStore } from "@stackra/settings/contracts";
@@ -34,6 +36,11 @@ import { BRAND_ASSETS_BUCKET_KEY } from "#node/constants/brand-assets-bucket-key
 /** Where a claimed brand file lives: `<visibility>/<bucket key as folders>/`. */
 // shortcut: mirrors media's internal `filePathOf` layout; ask MediaLibrary once it can look a file up by id.
 const FOLDER = `${BucketVisibility.Public}/${BRAND_ASSETS_BUCKET_KEY.replaceAll(".", "/")}/`;
+
+/** Where the claimed file of upload `id` with `mediaType` lives on the disk. */
+function pathOf(id: string, mediaType: MediaType): string {
+  return `${FOLDER}${id}.${mediaType.slice(mediaType.indexOf("/") + 1)}`;
+}
 
 /** The settings group key gen derives from `BrandingSettings`. */
 const GROUP = "branding";
@@ -123,6 +130,19 @@ export class BrandReader extends Service {
   }
 
   /**
+   * The original bytes of `image` (PNG or JPEG, at most the bucket's 512 KiB), read from the disk, for a surface that
+   * embeds the image (a printed document); `null` when the file has gone since `profile` resolved it. The variants are
+   * resized on request from the URL and are not stored, so there is no variant to read.
+   *
+   * @example
+   * const bytes = brand.logo === null ? null : await this.brand.bytes(brand.logo);
+   */
+  async bytes(image: BrandImage): Promise<Uint8Array | null> {
+    const path = pathOf(image.id, image.mediaType);
+    return (await this.disk.exists(path)) ? this.disk.read(path) : null;
+  }
+
+  /**
    * The colour at `path` with its on-colour: `resolved` when it passes its rule, else the innermost stored layer's
    * value that does, else `null`.
    */
@@ -148,7 +168,7 @@ export class BrandReader extends Service {
   private async imageOf(id: string | null): Promise<BrandImage | null> {
     if (id === null) return null;
     for (const mediaType of BRAND_ASSET_TYPES) {
-      const path = `${FOLDER}${id}.${mediaType.slice(mediaType.indexOf("/") + 1)}`;
+      const path = pathOf(id, mediaType);
       if (!(await this.disk.exists(path))) continue;
       const url = this.disk.url(path);
       return {

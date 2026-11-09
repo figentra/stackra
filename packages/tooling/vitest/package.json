@@ -1,6 +1,6 @@
 {
   "name": "@stackra/vitest-config",
-  "version": "0.29.0",
+  "version": "0.32.0",
   "private": false,
   "description": "Shared vitest presets by member role: libraryPreset, servicePreset, appPreset, mobilePreset and toolingPreset, over the base, decorators and react presets and the coverage gate.",
   "keywords": [

@@ -98,6 +98,17 @@
       ],
       "outputs": [],
     },
+    // ADR 0022 (2026-11-09): a package's e2e tier. Never cached: it drives a real browser against a live page server.
+    // Defined only by members that have an `.e2e.page.tsx`; not part of `verify`.
+    "test:e2e": {
+      "description": "Run a member's `.e2e.test.ts` files in a real browser: `stackra test --tier e2e`. Defined only by members that have e2e tests. After gen and //#gen:workspace, as test.",
+      "dependsOn": ["^build", "gen", "//#gen:workspace"],
+      "cache": false,
+      // The testbed image's browsers (`PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`) and its virtual display: without
+      // them Playwright looks in the user's cache, where no browser is installed.
+      "passThroughEnv": ["PLAYWRIGHT_*", "DISPLAY", "CI"],
+      "outputs": [],
+    },
     // `stackra gen` once at the root (`gen:workspace`) over every member with a stackra.config.ts. One root task, not
     // one per member: its two passes resolve the services' clients against each other's manifests, which a per-member
     // graph cannot (a client cycle between services is allowed). It runs the built CLI, so it waits for @stackra/cli's
