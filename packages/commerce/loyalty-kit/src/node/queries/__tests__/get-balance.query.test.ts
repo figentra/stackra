@@ -71,7 +71,7 @@ describe("GetBalanceQuery", () => {
     expect(kindOf(GetBalanceQuery)?.options).toMatchObject({
       key: "points.balance",
       permission: LoyaltyAccountPermissions.read,
-      endpoint: { method: HttpMethod.Get, path: "/loyalty/accounts/:accountId/balance" },
+      endpoint: { method: HttpMethod.Get, path: "/app/loyalty/accounts/:accountId/balance" },
       intent: true,
       cache: {
         ttl: "1m",

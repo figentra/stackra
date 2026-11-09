@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ClientResultInput`, its shipped schema and the `CLIENT_RESULT_ACTION` contract: a result or
- *          a refusal parses, both or neither fails, and the action is `PUT /runs/:runId/client-result`.
+ *          a refusal parses, both or neither fails, and the action is `PUT /app/runs/:runId/client-result`.
  * Boundary: test only; validates through @stackra/validation.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0490 (decision 4); STA-1631.
@@ -44,7 +44,7 @@ describe("ClientResultInput", () => {
     expect(CLIENT_RESULT_ACTION).toEqual({
       key: "ai.run.client_result",
       method: "PUT",
-      path: "/runs/:runId/client-result",
+      path: "/app/runs/:runId/client-result",
     });
   });
 });

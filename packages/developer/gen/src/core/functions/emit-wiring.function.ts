@@ -60,7 +60,8 @@ import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { pipelinePorts } from "#core/functions/pipeline-ports.function";
 import { portKey } from "#core/functions/port-key.function";
 import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
-import { moduleDependsOn } from "#core/functions/module-depends-on.function";
+import { moduleEdges } from "#core/functions/module-edges.function";
+import { topological } from "#core/functions/topological.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { systemDriverDefaults } from "#core/functions/system-driver-defaults.function";
 import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
@@ -333,24 +334,6 @@ function dependencyConfigs(ir: MemberIR): Map<string, string> {
   return configs;
 }
 
-/** Sorts module keys so each comes after the modules it depends on; a cycle keeps source order. */
-function topological(
-  keys: readonly string[],
-  edges: ReadonlyMap<string, readonly string[]>,
-): string[] {
-  const out: string[] = [];
-  const state = new Map<string, "visiting" | "done">();
-  const visit = (key: string): void => {
-    if (state.has(key)) return;
-    state.set(key, "visiting");
-    for (const dependency of edges.get(key) ?? []) if (keys.includes(dependency)) visit(dependency);
-    state.set(key, "done");
-    out.push(key);
-  };
-  for (const key of keys) visit(key);
-  return out;
-}
-
 /**
  * The wiring file of `ir`.
  *
@@ -405,10 +388,7 @@ export function emitWiring(ir: MemberIR): string {
   });
 
   // Modules, own then each dependency's, in dependency order.
-  const edges = new Map<string, string[]>();
-  for (const key of ir.modules) {
-    edges.set(key, moduleDependsOn(ir, key));
-  }
+  const edges = moduleEdges(ir);
   const moduleLines: string[] = [];
   for (const key of topological(ir.modules, edges)) {
     const moduleClass = ir.classes.find(

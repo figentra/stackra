@@ -15,11 +15,11 @@
  *                     the job surface); ADR 0148 (queue and scheduler); data-layer gap cdc6; ADR 0462 (decision 1); ADR
  *                     0239 (2026-11-07 amendment, gap A).
  */
-import { Action } from "@stackra/actions";
+import { Action, boundIsolation } from "@stackra/actions";
 import type { ActionContext } from "@stackra/actions";
 import type { Container } from "@stackra/container";
 import { ActorKind, Duration } from "@stackra/contracts";
-import { boundIsolation, maintainChangeLog } from "@stackra/outbox";
+import { maintainChangeLog } from "@stackra/outbox";
 import type { OutboxConfig } from "@stackra/outbox";
 import type { ChangeFeed } from "@stackra/outbox/contracts";
 

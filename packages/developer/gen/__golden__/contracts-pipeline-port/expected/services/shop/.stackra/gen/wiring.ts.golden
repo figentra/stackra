@@ -15,6 +15,7 @@ import { ShopOptions } from "#core/schemas/shop-options.schema";
 import { HandlerScanService } from "#core/services/handler-scan.service";
 import { ShopService } from "#core/services/shop.service";
 import { CancelOrderAction } from "#node/actions/cancel-order.action";
+import { OrderFactory } from "#node/database/factories/order.factory";
 import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.listener";
 import { ShopModule as ImportedShopModule } from "#node/shop.module";
 import { ShopModule } from "#stackra/module";
@@ -89,5 +90,6 @@ export const wiring = {
   replaces: [
   ],
   partners: [
+    { class: OrderFactory, partner: "shop.order" },
   ],
 } satisfies Wiring;

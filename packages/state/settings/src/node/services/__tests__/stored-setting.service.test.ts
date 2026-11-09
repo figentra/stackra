@@ -3,7 +3,7 @@
  * Purpose: unit tests of `StoredSettingService`: the chain read is a parameterised raw `ltree` ancestor condition on
  *          the target's path or the session's `app.scope_path`, in path order, followed by the user's row; a store
  *          adds a row for a new holder, merges values and sets locks on an existing one, a drop removes paths and their
- *          locks, and both refuse a target with no holder.
+ *          locks, and both refuse a target with no holder; a user's row is looked up in the session's own owner.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0327 (decisions 3 and 9); ADR 0160.
@@ -37,6 +37,7 @@ function connect(nodes: StoredSetting[] = [], one: StoredSetting | null = null) 
     create: vi.fn((_model: unknown, data: object) => Object.assign(new StoredSetting(), data)),
     assign: vi.fn((row: object, data: object) => Object.assign(row, data)),
     flush: vi.fn(async () => undefined),
+    isInTransaction: vi.fn(() => false),
     transactional: vi.fn(async (work: (manager: unknown) => Promise<unknown>) => work(em)),
   };
   vi.spyOn(Database, "current").mockReturnValue({
@@ -66,7 +67,10 @@ describe(StoredSettingService, () => {
     expect(conditionOf(where ?? {})).toContain("scope_path @> ?::ltree");
     expect(conditionOf(where ?? {})).not.toContain("platform.acme");
     expect(options).toEqual({ orderBy: { scopePath: "asc" } });
-    expect(em.findOne.mock.calls[0]?.[1]).toEqual({ groupKey: "orders", userId: USER });
+    expect(em.findOne.mock.calls[0]?.[1]).toMatchObject({ groupKey: "orders", userId: USER });
+    expect(conditionOf(em.findOne.mock.calls[0]?.[1] ?? {})).toContain(
+      "tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')",
+    );
   });
 
   it("reads the session's scope when the target names no node", async () => {
@@ -97,9 +101,10 @@ describe(StoredSettingService, () => {
 
   it("merges values into an existing row and keeps or sets its locks", async () => {
     const existing = rowOf({ userId: USER, values: { a: 1, b: 2 }, locked: ["b"] });
-    connect([], existing);
+    const em = connect([], existing);
     const service = new StoredSettingService();
     await service.store("orders", { user: USER }, { a: 3 });
+    expect(conditionOf(em.findOne.mock.calls[0]?.[1] ?? {})).toContain("app.tenant_id");
     expect(existing).toMatchObject({ values: { a: 3, b: 2 }, locked: ["b"] });
     await service.store("orders", { user: USER }, { b: 4 }, []);
     expect(existing).toMatchObject({ values: { a: 3, b: 4 }, locked: [] });

@@ -12,16 +12,15 @@
  * Governing contract: ADR 0511 (decision 12, amendment of 2026-11-02); STA-1910 spec FR-014; ADR 0506; ADR 0239
  *                     (2026-11-07 amendment, gap A).
  */
+import { boundIsolation, ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import { Command, Option } from "@stackra/console";
 import type { CommandIo } from "@stackra/console";
 import type { Container } from "@stackra/container";
 import { Int, Str } from "@stackra/validation";
 
 import type { Delivery, DeliveryDriver, DeliveryState } from "#contracts/index";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 import { deliveryStateOf } from "#core/functions/delivery-state-of.function";
-import { boundIsolation } from "#core/functions/bound-isolation.function";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
 
 /** Lists the cross-app deliveries. */
 export class RelayDeliveriesCommand extends Command({
@@ -74,6 +73,7 @@ export class RelayDeliveriesCommand extends Command({
     for (const claim of claims) {
       const delivery = await inRowOwner(
         boundIsolation(this.container),
+        OUTBOX_ACTOR_ID,
         claim.ownerId,
         claim.id,
         () => this.driver.load(claim.id),

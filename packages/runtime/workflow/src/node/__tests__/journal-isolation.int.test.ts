@@ -18,12 +18,12 @@
  * Governing contract: ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0495; ADR 0102 (decision 1); ADR 0182
  *                     (integration tier); `.agents/rules/tenancy.md` (points 7 and 8).
  */
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { QueryContext, Resolver } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import type { AnyClass } from "@stackra/container";
 import { type Actor, ActorKind, Clock, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
-import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/outbox";
 import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
 
 import { Signal } from "#core/bases/signal.base";

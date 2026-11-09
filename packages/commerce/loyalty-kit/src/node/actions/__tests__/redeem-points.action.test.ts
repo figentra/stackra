@@ -30,7 +30,7 @@ describe("RedeemPointsAction", () => {
       actors: [ActorKind.User, ActorKind.Service],
       idempotency: Idempotency.Required,
       rateLimit: { perMinute: 30 },
-      endpoint: { method: HttpMethod.Post, path: "/loyalty/redemptions" },
+      endpoint: { method: HttpMethod.Post, path: "/app/loyalty/redemptions" },
       tool: true,
     });
   });

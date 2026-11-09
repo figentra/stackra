@@ -8,8 +8,9 @@
  *          where it lists the anonymous actor; a refusal of the call is its kind's status; the refusal bodies do not
  *          say which check failed. Through the adapter, a call forwards a user's token only as ADR 0209's amendment
  *          allows: a user's bearer on a first hop, a service's forwarded token only into an action that declares
- *          `onBehalfOf: { secondHop: true }`, never through a controller, and the holder is empty once the call
- *          returned or threw.
+ *          `onBehalfOf: { secondHop: true }`, never through a controller, never anything into an action that declares
+ *          `credentials: "ignore"` (which runs anonymous, its credential never verified), and the holder is empty once
+ *          the call returned or threw.
  * Boundary: test only; real Web Crypto signing with `signEdgeRequest` against real `Date.now()`; the forwarding cases
  *           stub the authenticator and `fetch` and use throwaway token strings.
  * Runtime: node (vitest)
@@ -88,6 +89,9 @@ function edgeGuard(): EdgeHeaderGuard {
 }
 
 /** A call under the real guard, with spies on the authenticator and the call. */
+/** A visitor's signed form, as `VisitorIdentityService` would issue it (the signature is a stand-in). */
+const SIGNED_VISITOR = ["v1", "anon_01j9z3k4m5n6p7q8r9s0t1v2a1", "sig"].join(".");
+
 function call(options: { anonymous?: boolean; maxBodyBytes?: number; throws?: Error } = {}) {
   const guard = edgeGuard();
   const authenticate = vi.fn(async () => ({ actor: USER }));
@@ -141,6 +145,52 @@ describe(serveGuardedCall, () => {
     });
     expect((await serve(request)).status).toBe(401);
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("runs an anonymous call as the visitor its token names, and carries a new visitor's token back", async () => {
+    const execute = vi.fn(async (_input: unknown, actor: Actor) => ({ actor: actor.id }));
+    const visitor = vi.fn(async () => ({
+      id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" as never,
+      issue: {
+        header: "stackra-visitor",
+        token: SIGNED_VISITOR,
+        cookie: `stackra_visitor=${SIGNED_VISITOR}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      },
+    }));
+    const response = await serveGuardedCall({
+      request: new Request("https://api.example.test/carts/crt_1"),
+      path: "/carts/:cartId",
+      maxBodyBytes: 1024,
+      anonymous: true,
+      guard: async () => undefined,
+      authenticate: async () => ({ actor: USER }),
+      visitor,
+      execute,
+    });
+    expect(await response.json()).toEqual({ actor: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" });
+    expect(response.headers.get("stackra-visitor")).toBe(SIGNED_VISITOR);
+    expect(response.headers.getSetCookie()).toEqual([
+      `stackra_visitor=${SIGNED_VISITOR}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+    ]);
+  });
+
+  it("never resolves a visitor for a signed-in call", async () => {
+    const visitor = vi.fn(async () => ({ id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" as never }));
+    const response = await serveGuardedCall({
+      request: new Request("https://api.example.test/carts/crt_1", {
+        headers: { authorization: "Bearer t" },
+      }),
+      path: "/carts/:cartId",
+      maxBodyBytes: 1024,
+      anonymous: true,
+      guard: async () => undefined,
+      authenticate: async () => ({ actor: USER }),
+      visitor,
+      execute: async (_input, actor) => ({ actor: actor.id }),
+    });
+    expect(await response.json()).toEqual({ actor: USER.id });
+    expect(visitor).not.toHaveBeenCalled();
+    expect(response.headers.get("stackra-visitor")).toBeNull();
   });
 
   it("answers 413 for an oversized body before any guard runs", async () => {
@@ -285,6 +335,15 @@ class IssueBalanceAction extends Action({
   async handle(): Promise<void> {}
 }
 
+/** A public page's action: its visitors may also be signed in elsewhere. */
+class SubscribeAction extends Action({
+  key: "newsletter.subscribe",
+  actors: [ActorKind.Anonymous],
+  credentials: "ignore",
+}) {
+  async handle(): Promise<void> {}
+}
+
 /** The generated clients' transport over a service's session, sending to Pay. */
 function payTransport(): HttpClientTransportDriver {
   const config = buildConfig(ClientsConfig, {
@@ -378,6 +437,36 @@ describe("serveGuardedCall forwarding a caller's token (ADR 0209)", () => {
     const second = await forwardingCall(serviceCall);
     expect((await second.answer).status).toBe(200);
     expect(second.sent[0]?.headers.has("Stackra-On-Behalf-Of")).toBe(false);
+  });
+
+  it('never verifies or holds the credential of an action that declares credentials: "ignore"', async () => {
+    const authenticate = vi.fn(async () => ({ actor: customer }));
+    const seen: [Actor, string | undefined][] = [];
+    const serve = (headers: Record<string, string>) =>
+      serveGuardedCall({
+        request: new Request("https://api.example.test/newsletters/subscribe", {
+          method: "POST",
+          headers,
+          body: "{}",
+        }),
+        path: "/newsletters/subscribe",
+        maxBodyBytes: 1024,
+        anonymous: true,
+        action: SubscribeAction,
+        guard: async () => {},
+        authenticate,
+        execute: async (_input, actor) => {
+          seen.push([actor, ON_BEHALF_OF_TOKEN.getStore()?.()]);
+          return { ok: true };
+        },
+      });
+    for (const headers of [userCall, serviceCall, { authorization: "Bearer expired" }, {}])
+      expect((await serve(headers)).status).toBe(200);
+    expect(authenticate).not.toHaveBeenCalled();
+    for (const [actor, token] of seen) {
+      expect(actor.kind).toBe(ActorKind.Anonymous);
+      expect(token).toBeUndefined();
+    }
   });
 
   it("empties the holder once the call returned, was refused or threw", async () => {

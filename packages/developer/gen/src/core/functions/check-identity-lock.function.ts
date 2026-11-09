@@ -8,7 +8,9 @@
  *           change without `@Renamed`. Rows lock actions, events (a version bump is accepted), refusals, models,
  *           integrations, sequences, rule outcome kinds, agents, pass kinds, entitlements (STA-903), an app's blocks
  *           and routes, permissions (a `@Renamed` may name the set prefix), roles, config keys, reports, own schema
- *           names and action endpoints (`@Renamed` may name the bare path) (STA-2057). Settings groups (STA-2056) are
+ *           names and action endpoints (`@Renamed` may name the bare path) (STA-2057); an endpoint that only gains its
+ *           own `/<area>` prefix, same method, is accepted once (STA-340), and any other route change still fails.
+ *           Settings groups (STA-2056) are
  *           locked after the rows: a group's key is derived from its class name, so a renamed class is a lost group and
  *           a gained one; a gained group pairs with a lost one only through its class's `@Renamed(<old key>)`, and a
  *           lost group beside an unpaired gained one fails on the gained class. A group also locks its key paths: a
@@ -20,7 +22,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 5, 20 and 22: the manifest lock and `@Renamed`); ADR 0305 (rule 5: the event version bump).
  */
-import type { StackraManifest } from "@stackra/contracts";
+import { ApiArea, Enum, type StackraManifest } from "@stackra/contracts";
 
 import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { isEventBump } from "#core/functions/is-event-bump.function";
@@ -40,8 +42,8 @@ interface Locked {
 interface LockRow {
   /** The own entries by subject. */
   readonly read: (manifest: StackraManifest) => Map<string, Locked>;
-  /** A change accepted with no `@Renamed` (the event version bump). */
-  readonly accepts?: (before: string, after: string) => boolean;
+  /** A change accepted with no `@Renamed` (the event version bump, an endpoint moved under its own area). */
+  readonly accepts?: (before: string, after: string, entry: Entry) => boolean;
   /** A `@Renamed` name accepted besides the locked identity in full or as written. */
   readonly sanctions?: (old: string, before: string) => boolean;
   /** The fix of a refusal, when the default one would mislead. */
@@ -156,6 +158,8 @@ const LOCKS: readonly LockRow[] = [
       },
       { section: "actions" },
     ),
+    // STA-340's one-time move: a route that only gains its own `/<area>` prefix, same method, keeps its identity.
+    accepts: movedUnderArea,
     // The bare path names the route.
     sanctions: (old, before) => before.endsWith(` ${old}`),
     fix: (before, cls) => {
@@ -164,6 +168,21 @@ const LOCKS: readonly LockRow[] = [
     },
   },
 ];
+
+/** The API areas a path can start with (ADR 0082). */
+const AREAS: ReadonlySet<string> = new Set(Enum.values(ApiArea));
+
+/**
+ * Whether an endpoint identity `before` became `after` only by gaining the entry's own `/<area>` prefix, with the same
+ * method (STA-340). A route that already started with an area, a move to another area and a method change are not.
+ */
+function movedUnderArea(before: string, after: string, entry: Entry): boolean {
+  const area = entry["area"];
+  const [method, path] = before.split(" ");
+  if (typeof area !== "string" || method === undefined || path === undefined) return false;
+  if (AREAS.has(path.split("/")[1] ?? "")) return false;
+  return after === `${method} /${area}${path}`;
+}
 
 /** The identity as its author wrote it: without the module prefix and the version suffix. */
 function written(identity: string, module: unknown): string {
@@ -220,7 +239,7 @@ export function checkIdentityLock(
       const before = locked.get(subject)?.identity;
       if (before === undefined || before === now.identity || judged.has(now.cls)) continue;
       changed.add(now.cls);
-      if (row.accepts?.(before, now.identity) === true) continue;
+      if (row.accepts?.(before, now.identity, now.entry) === true) continue;
       const old = renames.get(now.cls);
       if (
         old !== undefined &&

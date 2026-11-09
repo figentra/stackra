@@ -58,10 +58,11 @@
       "class": "EnrollMemberAction",
       "permission": "loyalty_kit.loyalty_account.enroll",
       "risk": "L1",
+      "area": "app",
       "actors": ["user", "agent", "service"],
       "endpoint": {
         "method": "PUT",
-        "path": "/loyalty/accounts/:accountId",
+        "path": "/app/loyalty/accounts/:accountId",
         "derived": false
       },
       "tool": {
@@ -86,6 +87,7 @@
       "class": "RedeemPointsAction",
       "permission": "loyalty_kit.loyalty_account.redeem",
       "risk": "L1",
+      "area": "app",
       "actors": ["user", "service"],
       "idempotency": "required",
       "rateLimit": {
@@ -105,7 +107,7 @@
       },
       "endpoint": {
         "method": "POST",
-        "path": "/loyalty/redemptions",
+        "path": "/app/loyalty/redemptions",
         "derived": false
       },
       "input": {
@@ -124,10 +126,11 @@
       "class": "ConfirmRedemptionAction",
       "permission": "loyalty_kit.loyalty_account.redeem",
       "risk": "L1",
+      "area": "app",
       "actors": ["user", "service"],
       "endpoint": {
         "method": "PUT",
-        "path": "/loyalty/redemptions/:reference/confirm",
+        "path": "/app/loyalty/redemptions/:reference/confirm",
         "derived": false
       },
       "signals": ["loyalty_kit.redemption_confirmed"],
@@ -146,10 +149,11 @@
       "permission": "loyalty_kit.loyalty_account.freeze",
       "policy": "LoyaltyAccountPolicy.freeze",
       "risk": "L2",
+      "area": "app",
       "actors": ["user", "agent"],
       "endpoint": {
         "method": "PUT",
-        "path": "/loyalty/accounts/:accountId/freeze",
+        "path": "/app/loyalty/accounts/:accountId/freeze",
         "derived": false
       },
       "tool": {
@@ -171,6 +175,7 @@
       "class": "ExpirePointsAction",
       "permission": "loyalty_kit.loyalty_account.expire",
       "risk": "L2",
+      "area": "app",
       "actors": ["system", "job"],
       "job": {
         "queue": "maintenance",
@@ -197,10 +202,11 @@
       "permission": "loyalty_kit.loyalty_account.read",
       "policy": "LoyaltyAccountPolicy.read",
       "risk": "L0",
+      "area": "app",
       "actors": ["user", "agent", "service"],
       "endpoint": {
         "method": "GET",
-        "path": "/loyalty/accounts/:accountId/balance",
+        "path": "/app/loyalty/accounts/:accountId/balance",
         "derived": false
       },
       "tool": "auto",
@@ -225,6 +231,7 @@
       "class": "PointsIssuedQuery",
       "permission": "loyalty_kit.loyalty_account.read",
       "risk": "L0",
+      "area": "app",
       "actors": ["user"],
       "endpoint": false,
       "tool": "auto",
@@ -248,9 +255,10 @@
       "permission": "loyalty_kit.loyalty_account.read",
       "policy": "LoyaltyAccountPolicy.read",
       "risk": "L0",
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/loyalty-accounts",
+        "path": "/app/loyalty-accounts",
         "derived": true
       },
       "tool": "auto",
@@ -277,9 +285,10 @@
       "permission": "loyalty_kit.loyalty_account.read",
       "policy": "LoyaltyAccountPolicy.read",
       "risk": "L0",
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/loyalty-accounts/:loyaltyAccountId",
+        "path": "/app/loyalty-accounts/:loyaltyAccountId",
         "derived": true
       },
       "tool": "auto",
@@ -569,7 +578,7 @@
         "key": "loyalty_kit.loyalty_overview",
         "class": "LoyaltyOverviewDocument",
         "kind": "dashboard",
-        "path": "/loyalty",
+        "path": "/app/loyalty",
         "area": "app",
         "blocks": ["loyalty_kit.points_balance"],
         "slots": ["loyalty_kit.loyalty_overview.header", "loyalty_kit.loyalty_overview.main"],

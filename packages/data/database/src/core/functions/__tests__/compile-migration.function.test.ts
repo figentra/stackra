@@ -373,7 +373,73 @@ describe(compileMigration, () => {
     ]);
   });
 
+  it("tells squawk that widening a varchar, or varchar to text, rewrites nothing, and flags every other type change", () => {
+    class WidenProductsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("products", (t: Blueprint) => {
+          t.change("sku").type("varchar(128)", { from: "varchar(64)" });
+          t.change("title").type("text", { from: "varchar(200)" });
+          t.change("code").type("varchar(16)", { from: "varchar(32)" });
+          t.change("stock").type("bigint", { from: "integer" });
+          t.change("note").type("text", { from: "varchar(200)", using: 'trim("note")' });
+        });
+      }
+    }
+    const [sql = []] = compileMigration(WidenProductsMigration, { schema: "catalogue" }).steps.map(
+      (step) => step.sql,
+    );
+    const ignored = (column: string): boolean =>
+      sql.some(
+        (statement) =>
+          statement.includes(`alter column "${column}" type`) &&
+          statement.includes("-- squawk-ignore changing-column-type\n"),
+      );
+    // The two widenings: the reason line, then the ignore, right above the statement.
+    expect(ignored("sku")).toBe(true);
+    expect(ignored("title")).toBe(true);
+    expect(sql.find((statement) => statement.includes(`"sku" type`))).toMatch(
+      /^-- lint: widening a varchar[^\n]*\n-- squawk-ignore changing-column-type\nalter table/,
+    );
+    // Narrowing, another type, and a custom conversion stay flagged.
+    expect(ignored("code")).toBe(false);
+    expect(ignored("stock")).toBe(false);
+    expect(ignored("note")).toBe(false);
+  });
+
+  it("gives an existing column a default read from a setting, which its inverse drops", () => {
+    class StampPivotMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("product_tags", (t: Blueprint) =>
+          t.change("tenant_id").defaultSetting("app.tenant_id"),
+        );
+      }
+    }
+    const table = '"catalogue"."product_tags"';
+    expect(compileMigration(StampPivotMigration, { schema: "catalogue" }).steps).toEqual([
+      {
+        sql: [
+          `alter table ${table} alter column "tenant_id" set default nullif(current_setting('app.tenant_id', true), '')`,
+        ],
+        transactional: true,
+        inverse: [`alter table ${table} alter column "tenant_id" drop default`],
+      },
+    ]);
+  });
+
   it.each([
+    [
+      "a setting default that is not a custom setting",
+      "table",
+      (t: Blueprint) => t.change("tenant_id").defaultSetting("tenant_id"),
+      /is not a custom setting/,
+    ],
+    [
+      "a second setting default of one column",
+      "table",
+      (t: Blueprint) =>
+        t.change("tenant_id").defaultSetting("app.tenant_id").defaultSetting("app.owner_id"),
+      /already changes its default/,
+    ],
     [
       "a change on a table being created",
       "create",

@@ -1,5 +1,37 @@
 # @stackra/webhooks
 
+## 0.29.0
+
+### Minor Changes
+
+- 1b88340: `webhooks.eventId` can name several parts, `{ parts: [{ path }, { header }] }`, joined with `:` into one inbox id, for a provider whose events carry no unique id of their own (an order id plus its state plus the delivery timestamp). The receiver refuses an event whose named part is missing with `WebhookEventIdMissingError` instead of keying it by an empty id, which would have deduplicated every such event as one; this applies to the single `{ path }` form too.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [4cc17e5]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+- Updated dependencies [1b88340]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/integrations@0.29.0
+  - @stackra/tenancy@0.29.0
+  - @stackra/queue@0.29.0
+  - @stackra/scheduler@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/money@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
 ## 0.28.0
 
 ### Patch Changes

@@ -30,7 +30,9 @@
  *          propagation: its `timeout` and its rollback hold, and it is not `requiresNew`), so a call commits once, when
  *          the isolation transaction ends. What waits for that commit runs after it: the idempotency `complete`, the
  *          offline cap record, the read-your-writes mark and `ctx.afterCommit` work. The audit's refusal entries and a
- *          query's analytics event are written outside it, and with none bound a call runs as before.
+ *          query's analytics event are written outside it, and with none bound a call runs as before. An action that
+ *          declares `credentials: "ignore"` runs a signed-in caller's call as a fresh anonymous actor, its request
+ *          stripped of what the credential gave, before the descriptor and context are built.
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -57,7 +59,8 @@
  *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
  *                     (an unbound approval step does not run); ADR 0406
  *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
- *                     STA-1588 (the default action buckets);
+ *                     STA-1588 (the default action buckets); ADR 0213 (decision 2: a scope's rate-limit caps, through
+ *                     `RateLimitCapSource`, are settings);
  *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
  *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
@@ -83,6 +86,7 @@ import {
   Logger,
   MeterKind,
   mintPublicId,
+  RateLimitCapSource,
   type TraceAttributes,
   Tracer,
 } from "@stackra/contracts";
@@ -98,6 +102,7 @@ import { duration, schemaOf, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
 import { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
+import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
@@ -216,7 +221,26 @@ interface Recorded {
   readonly reads?: "primary" | "replica";
   readonly analytics?: CallAnalytics;
   readonly queryBudget?: number;
+  readonly credentials?: "ignore";
 }
+
+/**
+ * What a `credentials: "ignore"` call keeps of its request: nothing that comes from the caller's credential (the actor,
+ * scope, assurance, device, approval or read-your-writes mark). An allowlist, so a field added later is dropped.
+ */
+const UNCREDENTIALED: readonly (keyof CallOptions)[] = [
+  "idempotencyKey",
+  "locale",
+  "timeZone",
+  "currency",
+  "market",
+  "callId",
+  "abortSignal",
+  "sandbox",
+  "client",
+  "expectedVersion",
+  "consentSnapshot",
+];
 
 /** What one call accumulates while it runs. */
 interface CallState {
@@ -385,13 +409,14 @@ export class ActionPipeline {
   }
 
   /** The call `type` makes under `request`: its options, identity, descriptor, state and context. */
-  private prepare(type: AnyClass<Action | Query>, request: CallOptions): Call {
+  private prepare(type: AnyClass<Action | Query>, given: CallOptions): Call {
     const record = kindOf(type);
     if (record?.kind !== "action" && record?.kind !== "query")
       throw new TypeError(
         `${type.name} is not an action or a query: extend Action({...}) or Query({...})`,
       );
     const options = record.options as unknown as Recorded;
+    const request = options.credentials === "ignore" ? this.uncredentialed(given) : given;
     const registration = ACTION_REGISTRY.get(type);
     const at = this.optional(Clock)?.now() ?? new Date();
     const { actor } = request;
@@ -719,6 +744,30 @@ export class ActionPipeline {
     }
   }
 
+  /**
+   * The request of a `credentials: "ignore"` call: a fresh anonymous actor and the `UNCREDENTIALED` fields, plus a
+   * storefront origin (the public surface itself, which an anonymous visitor's call carries too). An anonymous
+   * caller's request is kept as it is, so it runs exactly as without the option.
+   */
+  private uncredentialed(request: CallOptions): CallOptions {
+    if (request.actor.kind === ActorKind.Anonymous) return request;
+    // an approval's key (`approval:<id>`, set by `keyed`) is the signed-in caller's, so it goes with the approval
+    const fields = UNCREDENTIALED.filter(
+      (field) =>
+        request[field] !== undefined &&
+        (field !== "idempotencyKey" || request.approvalId === undefined),
+    );
+    const kept = Object.fromEntries(fields.map((field) => [field, request[field]])) as Omit<
+      CallOptions,
+      "actor"
+    >;
+    return {
+      ...kept,
+      ...(request.origin?.kind === CallOriginKind.Storefront ? { origin: request.origin } : {}),
+      actor: { kind: ActorKind.Anonymous, id: mintPublicId("anon") },
+    };
+  }
+
   /** The request with the key an approved call runs under: `approval:<id>`, whatever the caller sent (C1, S1). */
   private keyed(request: CallOptions): CallOptions {
     if (request.approvalId !== undefined)
@@ -886,7 +935,13 @@ export class ActionPipeline {
     if (sent === undefined && policy !== Idempotency.Derived) return undefined;
     const { descriptor } = call;
     const fingerprint = await fingerprintOf(descriptor.key, input);
-    const key = sent ?? `derived:${fingerprint}`;
+    // why: a generated client mints a fresh key per call, not per intent, so for any caller but an API key a Derived
+    // action keeps deduplicating by its input (a double click on Refund stays one refund); an API key sends its own
+    const key =
+      sent === undefined ||
+      (policy === Idempotency.Derived && call.request.origin?.kind !== CallOriginKind.ApiKey)
+        ? `derived:${fingerprint}`
+        : sent;
     call.state.idempotencyKey = key;
     const scoped = [descriptor.key, descriptor.scopeId ?? "-", descriptor.actor.id, key].join(":");
     const store = this.required(
@@ -916,7 +971,9 @@ export class ActionPipeline {
    * address. The area bucket is keyed by (app, scope) (ADR 0217 decision 2): the app is the origin's id
    * (storefront, API key, agent) or, without one, the actor. A refusal carries
    * the refusing bucket's numbers and, when an `EventOutbox` is bound, writes one `count` usage event on
-   * `RATE_LIMITED_METER` ("limits are metered").
+   * `RATE_LIMITED_METER` ("limits are metered"). When a `RateLimitCapSource` is bound, each bucket's numbers are the
+   * lower of its own and the scope's caps (the scope's settings), so an operator lowers a scope's limits without a
+   * deploy; a failed caps read fails the call, never lets it through unlimited.
    */
   private async limit(call: Call): Promise<void> {
     const { descriptor, options, at } = call;
@@ -932,14 +989,23 @@ export class ActionPipeline {
     const takes: [key: string, bucket: RateLimitBucket][] = [];
     const config = this.optional(RateLimitConfig);
     const area = config?.areas[descriptor.area];
-    const planned = await this.optional(RateLimitBudget)?.areaBucket(descriptor);
-    if (planned !== undefined) takes.push([areaKey, planned]);
-    else if (area !== undefined)
+    // shortcut: a cap only lowers a limit (min), so a scope that writes its own caps can only throttle itself; once the
+    // read-side level source (STA-2631) tells a platform cap from a scope's own, a platform cap may raise one.
+    const caps = await this.optional(RateLimitCapSource)?.caps(descriptor.area, descriptor.scope);
+    const planned =
+      (await this.optional(RateLimitBudget)?.areaBucket(descriptor)) ??
+      (area === undefined
+        ? undefined
+        : {
+            capacity: area.burst,
+            tokensPerSecond: area.requests / (Duration.toMilliseconds(area.per) / 1000),
+          });
+    if (planned !== undefined)
       takes.push([
         areaKey,
         {
-          capacity: area.burst,
-          tokensPerSecond: area.requests / (Duration.toMilliseconds(area.per) / 1000),
+          capacity: Math.min(planned.capacity, caps?.burst ?? Infinity),
+          tokensPerSecond: Math.min(planned.tokensPerSecond, (caps?.perMinute ?? Infinity) / 60),
         },
       ]);
     const own = options.rateLimit;
@@ -951,9 +1017,11 @@ export class ActionPipeline {
         { capacity: own.perMinute, tokensPerSecond: own.perMinute / 60 },
       ]);
     } else if (fallback !== undefined) {
+      const perScope = Math.min(fallback.perScope, caps?.actionPerScope ?? Infinity);
+      const perAddress = Math.min(fallback.perAddress, caps?.actionPerAddress ?? Infinity);
       takes.push([
         `action:${descriptor.key}:scope:${holder}`,
-        { capacity: fallback.perScope, tokensPerSecond: fallback.perScope / 60 },
+        { capacity: perScope, tokensPerSecond: perScope / 60 },
       ]);
       const address = call.request.client?.address;
       // The store sees a hash, never the address (CallClient goes to no port).
@@ -961,7 +1029,7 @@ export class ActionPipeline {
       if (address !== undefined)
         takes.push([
           `action:${descriptor.key}:address:${await fingerprintOf(address)}`,
-          { capacity: fallback.perAddress, tokensPerSecond: fallback.perAddress / 60 },
+          { capacity: perAddress, tokensPerSecond: perAddress / 60 },
         ]);
     }
     for (const [key, bucket] of takes) {

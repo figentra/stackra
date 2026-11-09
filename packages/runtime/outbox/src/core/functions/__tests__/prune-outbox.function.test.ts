@@ -10,13 +10,12 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { CallIsolation } from "@stackra/actions/contracts";
 import type { Actor } from "@stackra/contracts";
 
 import { MessageKind } from "#contracts/index";
 import type { InboxDriver, OutboxDriver } from "#contracts/index";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { RowIsolationMissingError } from "#core/errors/row-isolation-missing.error";
 import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 import { pruneOutbox } from "#core/functions/prune-outbox.function";
 

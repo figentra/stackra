@@ -25,6 +25,7 @@
  * Governing contract: ADR 0511 (decisions 12, 13 and 16, amendment of 2026-11-02); ADR 0078 (decision 4); ADR 0149
  *                     (one runner under a lock); ADR 0148 (backoff); ADR 0239 (2026-11-07 amendment, gaps A and C).
  */
+import { ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
@@ -42,10 +43,9 @@ import type {
   SubscriberSource,
 } from "#contracts/index";
 import { CROSS_APP_DEFAULTS } from "#core/constants/cross-app-defaults.constant";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
 import { pauseFor } from "#core/functions/pause-for.function";
 
 /** Whether an answered status is worth another attempt: a 4xx other than 408 and 429 is a permanent refusal. */
@@ -236,7 +236,7 @@ export class CrossAppRelayService extends Service {
   private inOwner<T>(claim: DeliveryClaim, work: () => Promise<T>): Promise<T> {
     const isolation =
       this.resolver?.has(CallIsolation) === true ? this.resolver.get(CallIsolation) : undefined;
-    return inRowOwner(isolation, claim.ownerId, claim.id, work);
+    return inRowOwner(isolation, OUTBOX_ACTOR_ID, claim.ownerId, claim.id, work);
   }
 
   /** The bound logger, when there is one. */

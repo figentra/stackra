@@ -282,6 +282,12 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   that is not `Idempotency.Never` returns a secret-named output field with neither `@ShownOnce` nor `@Hidden`.
   `registerActions` rows carry the output class, so the pipeline leaves `@ShownOnce` fields out of the idempotency
   store.
+- The endpoint checks (STA-340): `deriveEndpoint` prefixes every derived path with `/<area>` (`DEFAULT_AREA`, `app`,
+  when none is written; a service's own `defineService({ area })` first); `buildManifest` records `area` on every
+  action entry. `checkEndpoints` (core, full pass only) reads the built manifest: `endpoint_collision` over every
+  entry (hosted ones too, by route shape), and `endpoint_versioned`, `endpoint_area_mismatch`,
+  `endpoint_method_mismatch`, `job_without_system_actor` and `cron_input_invalid` over the own entries (the input JSON
+  Schema from `manifest.schemas`); `intent_phrases_missing` over the IR's `intent: true` classes and `ir.catalogues`.
 - The query cache (STA-1445): `checkQueryCache` (core, full pass only) is `site_cache_reads_caller`, over the
   reader's `DeclaredClass.callerReads` (a text scan of the class body for the `handle` context's caller fields) and
   the input shape's caller id fields. `registerCachedQueries` rows come from the manifest's query entries with

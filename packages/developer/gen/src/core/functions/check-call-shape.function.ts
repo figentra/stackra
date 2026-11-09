@@ -6,7 +6,8 @@
  *          (`action_cache`), an L3 or L4 action a user can call with no `stepUp` (`step_up_missing`) and a client
  *          write, an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`). The
  *          `stepUp: { exempt: "first-factor-enrolment" }` exemption counts as a `stepUp` only on an action listed in
- *          `FIRST_FACTOR_ENROLMENT_ACTIONS`; anywhere else it is `step_up_exemption_unlisted`.
+ *          `FIRST_FACTOR_ENROLMENT_ACTIONS`; anywhere else it is `step_up_exemption_unlisted`. `credentials: "ignore"`
+ *          is only for an action whose actors are exactly the anonymous one (`credentials_ignore_not_anonymous`).
  * Boundary: pure; reads the class's written options and the risk, endpoint and tool `buildManifest` resolved for it. An
  *           unknown permission (no risk) is `permission_unknown`'s, never `query_above_l1`. A job, event or workflow
  *           caller derives its own key, so an action with neither endpoint nor tool needs no declaration.
@@ -75,6 +76,15 @@ export function checkCallShape(
       "remove `cache`, or move the read into a query",
     );
   const actors = Array.isArray(options["actors"]) ? options["actors"].map(String) : [];
+  if (
+    options["credentials"] !== undefined &&
+    (options["credentials"] !== "ignore" || actors.length !== 1 || actors[0] !== "anonymous")
+  )
+    refuse(
+      "credentials_ignore_not_anonymous",
+      `${declared.name} declares \`credentials: "ignore"\`, which only an action whose actors are exactly [ActorKind.Anonymous] may take`,
+      "set `actors: [ActorKind.Anonymous]`, or remove `credentials` so a signed-in caller is refused",
+    );
   const stepUp = options["stepUp"];
   if (typeof stepUp === "object" && stepUp !== null) {
     const identity = `${declared.module}.${String(options["key"])}`;

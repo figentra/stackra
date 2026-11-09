@@ -4,7 +4,9 @@
  *          a connection's against that connection's secret field, with no fallback either way; a verified delivery is
  *          written to the outbox as its event class, keyed by the webhook id, with the connection in its metadata;
  *          Svix header names verify; an `hmac` Integration verifies by its recipe and keys the event by the payload's
- *          id; an `aes_gcm_body` Integration (a regional gateway scheme, STA-1357) is parsed from its plaintext and
+ *          id, or by several payload paths and headers joined, refusing the event when a named part is missing (two
+ *          events that differ only by state get different ids), or by its id header, refusing a delivery without it; an
+ *          `aes_gcm_body` Integration (a regional gateway scheme, STA-1357) is parsed from its plaintext and
  *          keyed by the payload's numeric id; a `keyed_field_digest` Integration whose recipe reads a form-encoded body
  *          routes, keys and creates its event from the percent-decoded form fields, and a form body that fails
  *          verification is refused; an unknown event type is dropped; an unknown Integration, a connection URL of a platform-only
@@ -29,6 +31,7 @@ import {
   Integration,
   IntegrationCategory,
   InvalidSignatureError,
+  WebhookEventIdMissingError,
 } from "@stackra/integrations";
 import type { ConnectionStore } from "@stackra/integrations";
 import { describe, expect, it } from "@stackra/testing";
@@ -107,6 +110,56 @@ class GatewayIntegration extends Integration({
   webhookSecret!: string;
 }
 
+/** A courier that numbers no event: the order, its state and the signed timestamp name one. */
+class CourierIntegration extends Integration({
+  provider: "courier",
+  category: IntegrationCategory.Shipping,
+  levels: [ConnectionLevel.Scope],
+  auth: { type: AuthType.None },
+  webhooks: {
+    scheme: SignatureScheme.Hmac,
+    secret: "{webhookSecret}",
+    eventType: { path: "event" },
+    eventId: { parts: [{ path: "order.id" }, { path: "state" }, { header: "courier-timestamp" }] },
+    signature: {
+      header: "courier-signature",
+      timestampHeader: "courier-timestamp",
+      algorithm: "SHA-256",
+      encoding: "hex",
+      payload: "{timestamp}.{body}",
+      tolerance: Duration.minutes(5),
+    },
+  },
+}) {
+  @Secret("COURIER_WEBHOOK_SECRET")
+  webhookSecret!: string;
+}
+
+/** A depot that numbers each delivery in a header and names nothing in its payload. */
+class DepotIntegration extends Integration({
+  provider: "depot",
+  category: IntegrationCategory.Shipping,
+  levels: [ConnectionLevel.Scope],
+  auth: { type: AuthType.None },
+  webhooks: {
+    scheme: SignatureScheme.Hmac,
+    secret: "{webhookSecret}",
+    eventType: { path: "event" },
+    signature: {
+      header: "depot-signature",
+      timestampHeader: "depot-timestamp",
+      idHeader: "depot-delivery-id",
+      algorithm: "SHA-256",
+      encoding: "hex",
+      payload: "{timestamp}.{body}",
+      tolerance: Duration.minutes(5),
+    },
+  },
+}) {
+  @Secret("DEPOT_WEBHOOK_SECRET")
+  webhookSecret!: string;
+}
+
 class SealedIntegration extends Integration({
   provider: "sealed",
   category: IntegrationCategory.Payments,
@@ -170,6 +223,18 @@ class PaymentSucceeded extends WebhookEvent<GatewayIntegration>({ type: "payment
   type!: string;
 }
 
+class CourierUpdated extends WebhookEvent<CourierIntegration>({ type: "order.updated" }) {
+  event!: string;
+
+  order!: { id: string };
+
+  state?: string;
+}
+
+class ParcelMoved extends WebhookEvent<DepotIntegration>({ type: "parcel.moved" }) {
+  event!: string;
+}
+
 class MailArrived extends WebhookEvent<InboxIntegration>({ type: "mail.arrived" }) {
   event!: { name: string };
 
@@ -186,6 +251,15 @@ registerSchemas([
   [PaymentSucceeded, z.object({ id: z.string(), type: z.string() })],
   [SealedPaid, z.object({ type: z.string(), payload: z.object({ id: z.number() }) })],
   [FormPaid, z.object({ ref: z.string(), kind: z.string(), note: z.string() })],
+  [ParcelMoved, z.object({ event: z.string() })],
+  [
+    CourierUpdated,
+    z.object({
+      event: z.string(),
+      order: z.object({ id: z.string() }),
+      state: z.string().optional(),
+    }),
+  ],
 ]);
 registerWebhookEvents([
   { event: MailArrived, integration: InboxIntegration, connection: InboxConnection },
@@ -193,6 +267,8 @@ registerWebhookEvents([
   { event: PaymentSucceeded, integration: GatewayIntegration },
   { event: SealedPaid, integration: SealedIntegration },
   { event: FormPaid, integration: FormIntegration },
+  { event: CourierUpdated, integration: CourierIntegration },
+  { event: ParcelMoved, integration: DepotIntegration },
 ]);
 
 /** Answers the platform's test secrets by name. */
@@ -201,7 +277,9 @@ class TestSecretStore extends SecretStore {
     return name === "INBOX_WEBHOOK_SECRET" ||
       name === "STATUS_WEBHOOK_SECRET" ||
       name === "GATEWAY_WEBHOOK_SECRET" ||
-      name === "FORM_WEBHOOK_SECRET"
+      name === "FORM_WEBHOOK_SECRET" ||
+      name === "COURIER_WEBHOOK_SECRET" ||
+      name === "DEPOT_WEBHOOK_SECRET"
       ? PLATFORM_SECRET
       : name === "SEALED_WEBHOOK_SECRET"
         ? SEALED_KEY
@@ -339,6 +417,93 @@ describe(WebhookReceiver, () => {
         body,
       }),
     ).rejects.toBeInstanceOf(InvalidSignatureError);
+  });
+
+  it("keys a courier event by its named parts, so two states of one order are two events", async () => {
+    const { receiver, outbox } = setup();
+    const t = String(SENT.getTime() / 1000);
+    const send = async (payload: object) => {
+      const body = JSON.stringify(payload);
+      const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(PLATFORM_SECRET),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+      );
+      const mac = new Uint8Array(
+        await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${t}.${body}`)),
+      );
+      return receiver.receive({
+        integration: CourierIntegration,
+        headers: { "courier-signature": toHex(mac), "courier-timestamp": t },
+        body,
+      });
+    };
+
+    await send({ event: "order.updated", order: { id: "ord_1" }, state: "picked_up" });
+    await send({ event: "order.updated", order: { id: "ord_1" }, state: "delivered" });
+
+    const ids = outbox.write.mock.calls.map(([written]) => written[0]?.meta.id);
+    expect(ids).toEqual([`ord_1:picked_up:${t}`, `ord_1:delivered:${t}`]);
+    await expect(send({ event: "order.updated", order: { id: "ord_1" } })).rejects.toBeInstanceOf(
+      WebhookEventIdMissingError,
+    );
+    expect(outbox.write).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuses an event whose one named id path is missing, never keying it by an empty id", async () => {
+    const { receiver, outbox } = setup();
+    const body = JSON.stringify({ type: "payment.succeeded" });
+    const t = String(SENT.getTime() / 1000);
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(PLATFORM_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const mac = new Uint8Array(
+      await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${t}.${body}`)),
+    );
+
+    await expect(
+      receiver.receive({
+        integration: GatewayIntegration,
+        headers: { "gateway-signature": `t=${t},v1=${toHex(mac)}` },
+        body,
+      }),
+    ).rejects.toBeInstanceOf(WebhookEventIdMissingError);
+    expect(outbox.write).not.toHaveBeenCalled();
+  });
+
+  it("keys a depot event by its id header and refuses a delivery without it", async () => {
+    const { receiver, outbox } = setup();
+    const t = String(SENT.getTime() / 1000);
+    const body = JSON.stringify({ event: "parcel.moved" });
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(PLATFORM_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const mac = new Uint8Array(
+      await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${t}.${body}`)),
+    );
+    const signed = { "depot-signature": toHex(mac), "depot-timestamp": t };
+
+    await receiver.receive({
+      integration: DepotIntegration,
+      headers: { ...signed, "depot-delivery-id": "dlv_1" },
+      body,
+    });
+
+    expect(outbox.write.mock.calls[0]?.[0][0]?.meta.id).toBe("dlv_1");
+    await expect(
+      receiver.receive({ integration: DepotIntegration, headers: signed, body }),
+    ).rejects.toBeInstanceOf(WebhookEventIdMissingError);
+    expect(outbox.write).toHaveBeenCalledTimes(1);
   });
 
   it("parses an aes_gcm_body delivery from its plaintext and keys it by the payload's numeric id", async () => {

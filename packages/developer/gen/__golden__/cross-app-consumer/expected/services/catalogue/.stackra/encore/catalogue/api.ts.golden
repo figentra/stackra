@@ -8,22 +8,22 @@
  */
 import { PublishCatalogueAction } from "#node/actions/publish-catalogue.action";
 import { PublishCatalogueInput } from "#node/schemas/publish-catalogue-input.schema";
-import { ActionPipeline } from "@stackra/actions";
+import { ActionPipeline, requestCallOptions } from "@stackra/actions";
 import { api } from "encore.dev/api";
 
 import { app } from "../../entry/server";
 import { answerCall } from "./http";
 
-/** POST /catalogues/publish: catalogue.catalogue.publish@1 through the action pipeline. */
+/** POST /app/catalogues/publish: catalogue.catalogue.publish@1 through the action pipeline. */
 export const catalogueCataloguePublishV1 = api.raw(
-  { method: "POST", path: "/catalogues/publish", expose: true, auth: false },
+  { method: "POST", path: "/app/catalogues/publish", expose: true, auth: false },
   (req, resp) =>
     answerCall(req, resp, {
-      path: "/catalogues/publish",
+      path: "/app/catalogues/publish",
       anonymous: false,
       action: PublishCatalogueAction,
       input: PublishCatalogueInput,
-      execute: (container, input, actor) =>
-        new ActionPipeline(container).execute(PublishCatalogueAction, input as never, { actor }),
+      execute: (container, input, actor, request) =>
+        new ActionPipeline(container).execute(PublishCatalogueAction, input as never, { actor, ...requestCallOptions(request) }),
     }),
 );

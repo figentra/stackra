@@ -7,6 +7,7 @@
  * Governing contract: ADR 0294 (decisions 6 and 19: a custom driver class is bound with `@Replaces(Port)`).
  */
 import type { AnyClass } from "#core/types/any-class.type";
+import type { Container } from "#core/services/container.service";
 import type { Token } from "#core/types/token.type";
 
 /** One class bound in place of a token. */
@@ -21,5 +22,5 @@ export interface WiringReplacement {
    * The constructor tokens of `override`, which gen reads from its constructor as for any driver (STA-2569). Absent
    * from an older wiring: the override's own binding row is used, else it is built with none.
    */
-  readonly deps?: readonly Token[];
+  readonly deps?: readonly (Token | typeof Container)[];
 }

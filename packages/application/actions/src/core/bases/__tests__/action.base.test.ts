@@ -6,7 +6,8 @@
  *          classes, rate limit), records an offline cap and the `accepts` option and refuses malformed ones; a bare
  *          `extends Action` and a missing `handle` fail to compile; the tool default matches gen (a user action is a
  *          tool unless it says `tool: false`) and `effects` takes distinct `Effect` tags only; `onBehalfOf` takes
- *          `{ secondHop: boolean }` only.
+ *          `{ secondHop: boolean }` only; `credentials: "ignore"` is recorded on an action whose actors are exactly
+ *          `[ActorKind.Anonymous]` and refused anywhere else.
  * Boundary: test only; the options are the template's create, expire and freeze actions.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 30); ADR
@@ -277,6 +278,24 @@ describe("Action", () => {
       );
   });
 
+  it('records credentials: "ignore" on an anonymous-only action, and refuses it anywhere else', () => {
+    const anonymous = { ...base, actors: [ActorKind.Anonymous] };
+    expect(kindOf(Action({ ...anonymous, credentials: "ignore" }))?.options).toMatchObject({
+      credentials: "ignore",
+    });
+    for (const actors of [
+      [ActorKind.User],
+      [ActorKind.Anonymous, ActorKind.User],
+      [ActorKind.Anonymous, ActorKind.Anonymous],
+    ])
+      expect(() => Action({ ...base, actors, credentials: "ignore" })).toThrow(
+        /needs actors: \[ActorKind\.Anonymous\] exactly/,
+      );
+    expect(() => Action({ ...anonymous, credentials: "keep" } as unknown as ActionOptions)).toThrow(
+      /credentials/,
+    );
+  });
+
   it("records approval as true or a declared stage with its defaults", () => {
     class AboveThresholdCondition extends ApprovalCondition {
       async needed(): Promise<boolean> {
@@ -325,5 +344,20 @@ describe("Action", () => {
       { permission, when: NotACondition },
     ])
       expect(() => Action({ ...base, approval: approval as never })).toThrow(/approval/);
+  });
+
+  it("types the `entitlement` option on the entitlement brand (STA-2059)", () => {
+    class ExportsEntitlement {
+      readonly "~kind" = "entitlement" as const;
+    }
+    expectTypeOf<{ entitlement: typeof ExportsEntitlement }>().toExtend<
+      Pick<ActionOptions, "entitlement">
+    >();
+    expectTypeOf<{ entitlement: (typeof ExportsEntitlement)[] }>().toExtend<
+      Pick<ActionOptions, "entitlement">
+    >();
+    expectTypeOf<{ entitlement: typeof Orders }>().not.toExtend<
+      Pick<ActionOptions, "entitlement">
+    >();
   });
 });
