@@ -1,0 +1,15 @@
+{
+  "band": {
+    "write": "Write",
+    "write_title": "Write the action once.",
+    "write_text": "One class declares the input, the output and who may run it.",
+    "expose": "Expose",
+    "expose_title": "Every surface follows.",
+    "expose_text": "The endpoint, the agent tool and the button come from the same declaration."
+  },
+  "plain": {
+    "label": "Changelog",
+    "title": "What changed",
+    "text": "A ruled band without its corner marks, for a quieter section."
+  }
+}

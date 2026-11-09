@@ -11,5 +11,7 @@
 /* The module UI kits' native blocks (ADR 0504) carry their own class names the same way. */
 @source "../../../packages/experience/navigation/src/native";
 @source "../../../packages/experience/panel/src/native";
+@source "../../../packages/communication/notifications/src/native";
+@source "../../../packages/state/theming/src/native";
 @source "../../../packages/security/identity/src/native";
 @source "../../../packages/security/tenancy/src/native";

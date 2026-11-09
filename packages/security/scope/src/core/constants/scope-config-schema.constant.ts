@@ -5,7 +5,8 @@
  *          through `ScopeConfig$.extend(...)` instead of recompiling.
  * Boundary: mirrors `ScopeOptions` field for field, with field rules only and every field defaulted, so `.parse({})`
  *           gives the defaults and gen's override schema can `.extend` it (no object-level refinement). A level key is
- *           snake_case and appears once; the root is one path label; an alias is a lang key. The defaults name no
+ *           snake_case and appears once; a level's `parents` name declared levels, and its own key only when it is
+ *           recursive; the root is one path label; an alias is a lang key. The defaults name no
  *           level another package contributes: tenancy adds its level as data (ADR 0323 d4, R-59). `zod` is imported
  *           here only because gen does not yet compile this package's schemas.
  * Runtime: isomorphic
@@ -23,11 +24,28 @@ const LANG_KEY = /^[a-z][a-z0-9-]*::[A-Za-z0-9_.-]+$/;
 /** The schema of `ScopeOptions`, with its defaults; extendable by a member's generated override schema. */
 export const ScopeConfig$ = z.object({
   levels: z
-    .array(z.object({ key: z.string().regex(LEVEL_KEY), recursive: z.boolean() }))
+    .array(
+      z.object({
+        key: z.string().regex(LEVEL_KEY),
+        recursive: z.boolean(),
+        parents: z.array(z.string().regex(LEVEL_KEY)).min(1).optional(),
+      }),
+    )
     .min(1)
     .refine(
       (levels) => new Set(levels.map((level) => level.key)).size === levels.length,
       "each level key once",
+    )
+    .refine(
+      (levels) =>
+        levels.every((level) =>
+          (level.parents ?? []).every(
+            (parent) =>
+              levels.some((declared) => declared.key === parent) &&
+              (parent !== level.key || level.recursive),
+          ),
+        ),
+      "each parent a declared level, and a level its own parent only when recursive",
     )
     .default(() => [
       { key: "platform", recursive: false },

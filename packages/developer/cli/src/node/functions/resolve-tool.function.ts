@@ -137,7 +137,15 @@ export function resolveTool(
               "gen wrote no .stackra/vitest.int.config.ts, so the member has no `.int.test.ts`",
             );
       }
-      if (layout !== "app") return refuse("e2e tests run in an app");
+      if (layout === "package") {
+        // Gen writes this config for a package that has a `<name>.e2e.page.tsx`; nobody authors one.
+        return existsSync(join(root, ".stackra", "playwright.e2e.config.ts"))
+          ? at("playwright", ["test", ...config("playwright.e2e.config.ts")])
+          : refuse(
+              "gen wrote no .stackra/playwright.e2e.config.ts: add a src/**/__tests__/<name>.e2e.page.tsx",
+            );
+      }
+      if (layout !== "app") return refuse("e2e tests run in an app or a package");
       if (native) return at("maestro", ["test", ".stackra/maestro"]);
       if (web || targets.includes("desktop")) {
         return at("playwright", ["test", ...config("playwright.config.ts")]);

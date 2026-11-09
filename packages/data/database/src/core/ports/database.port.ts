@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the `Database` port: the connected MikroORM database of a service. It hands out the entity manager of the
  *          running context, runs work in a transaction, runs work inside a scope (the application layer of
- *          row-level isolation), runs read-only work on a read replica, and closes.
+ *          row-level isolation), runs read-only work on a read replica, runs a detached call's work outside the call's
+ *          finished transaction while keeping its step (`Database.detached()`), and closes.
  * Boundary: the ORM itself is MikroORM, which only this package imports (ADR 0097). `Database.current()` is the
  *           connected driver for code that cannot inject it; everything else injects `Database`. A scope is a
  *           contracts `ScopeRef`, a node's id and `ltree` path; levels are deployment data, so none is named here.
@@ -14,6 +15,7 @@
  *                     ADR 0057 (decision 6: read replica); `.agents/rules/tenancy.md` (two layers).
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
+import type { DetachedStep } from "@stackra/actions/contracts";
 import { Port } from "@stackra/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 
@@ -40,6 +42,30 @@ export abstract class Database extends Port {
         "No database is connected: the app's boot (or usePostgres in a test) connects one first",
       );
     return database;
+  }
+
+  /**
+   * The step of the detached call (`ctx.detach()`) the caller runs inside, in the connected database: what `CrudService`
+   * opens around an operation that runs outside a transaction. `undefined` outside a detached run or with no database.
+   */
+  static detached(): DetachedStep | undefined {
+    const database = ACTIVE_DATABASE.current;
+    // reason: a unit test may connect a partial stand-in with only `em`; it runs outside every detached call
+    return typeof database?.detached === "function" ? database.detached() : undefined;
+  }
+
+  /** The step of the detached call the caller runs inside in this database (`runDetached`); else `undefined`. */
+  detached(): DetachedStep | undefined {
+    return undefined;
+  }
+
+  /**
+   * Runs `work` as part of the detached call whose step is `step`: `detached()` answers `step` inside it, and a driver
+   * that keeps a running transaction in its context starts `work` outside it, so a step opens a new transaction rather
+   * than join the call's committed one. This default runs `work` as it is.
+   */
+  runDetached<T>(_step: DetachedStep, work: () => Promise<T>): Promise<T> {
+    return work();
   }
 
   /** The entity manager of the running transaction or request, else a fresh fork for one call. */

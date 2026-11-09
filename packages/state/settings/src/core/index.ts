@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `.` entry of @stackra/settings (the `Settings` kind, `@Setting`, `AccountSettings`,
+ * Purpose: Stand-in barrel: the `.` entry of @stackra/settings (the `Settings` kind, `@Setting`, `AccountSettings`, `DisplaySettings`,
  *          `RateLimitSettings`, `IdempotencySettings`, `VersioningSettings` (with their source drivers), the scope, type and mode enums, the reader, the floor-aware resolver and the pack
  *          service, the memory drivers, the settings `Promotable` and rate-limit cap drivers, the pack schemas and YAML
  *          helpers, the refusals and the generated-key helpers) until `stackra gen` writes the entry barrels (STA-339).
@@ -12,6 +12,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { AccountSettings } from "#core/account.settings";
+export { DisplaySettings } from "#core/display.settings";
 export { Settings } from "#core/bases/settings.base";
 export { SETTINGS_CHANGE_SCHEMA as SettingsChange$ } from "#core/constants/settings-change-schema.constant";
 export { SETTINGS_PACK_SCHEMA as SettingsPack$ } from "#core/constants/settings-pack-schema.constant";

@@ -20,7 +20,9 @@
  *          (`analytics.tracked`, through the outbox when its consent grants `analytics`). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
  *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output). `handle` runs inside
  *          `QueryBudget` when one is bound (the call's statements counted against its `queryBudget`), and `ctx.memo`
- *          keeps one answer per key for the call. Order (ADR 0138 as amended by ADR 0495): the tenancy check and the
+ *          keeps one answer per key for the call. `ctx.detach()` holds the call's isolation past its transaction: each
+ *          `isolated` step of a stream or loop is a new `CallIsolation` transaction with the descriptor's actor and
+ *          scope. Order (ADR 0138 as amended by ADR 0495): the tenancy check and the
  *          live-configuration guard run first; then, when a `CallIsolation` is bound, everything after them (permission,
  *          approval, idempotency, rate limit, interceptors, the unit of work and `handle`) runs inside it, in one
  *          transaction whose scope and tenant settings are transaction-local and from the verified actor (an action
@@ -114,6 +116,7 @@ import { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
 import { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
+import { DETACHED_RUNS } from "#contracts/constants/detached-runs.constant";
 import { CallIsolation } from "#contracts/ports/call-isolation.port";
 import { ConsentCheck } from "#contracts/ports/consent-check.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
@@ -137,6 +140,7 @@ import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
 import type { ApprovalBinding } from "#contracts/types/approval-binding.type";
+import type { DetachedStep } from "#contracts/types/detached-step.type";
 import type { ApprovalDraft } from "#contracts/types/approval-draft.type";
 import type { ApprovalRequirement } from "#contracts/types/approval-requirement.type";
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
@@ -157,6 +161,7 @@ import { APPROVAL_PARK_FAILED } from "#core/constants/approval-park-failed.const
 import { ANALYTICS_CONSENT_CATEGORY } from "#core/constants/analytics-consent-category.constant";
 import { ANALYTICS_SKIPPED } from "#core/constants/analytics-skipped.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
+import { DETACHED_CALLS } from "#core/constants/detached-calls.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
 import { RATE_LIMITED_METER } from "#core/constants/rate-limited-meter.constant";
@@ -198,6 +203,7 @@ import type { ActionRegistration } from "#core/types/action-registration.type";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
 import type { CallInput } from "#core/types/call-input.type";
 import type { CallOptions } from "#core/types/call-options.type";
+import type { DetachedCall } from "#core/types/detached-call.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
 import type { OutputOf } from "#core/types/output-of.type";
 import type { PeriodInput } from "#core/types/period-input.type";
@@ -224,6 +230,7 @@ interface Recorded {
   readonly approval?: boolean | ActionApproval;
   readonly stepUp?: AssuranceLevel;
   readonly public?: ActionPublic;
+  readonly stream?: boolean;
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
@@ -472,6 +479,7 @@ export class ActionPipeline {
         ? {}
         : { credential: Object.freeze({ ...request.credential }) }),
       ...publicField(publicOf(options, registration?.permission, registration?.risk)),
+      ...(options.stream === true ? { stream: true as const } : {}),
     });
     const state: CallState = {
       idempotencyKey: undefined,
@@ -1570,6 +1578,7 @@ export class ActionPipeline {
     if (descriptor.kind === "query") return Object.freeze(query);
     const action: ActionContext = {
       ...query,
+      ...(request.attempt === undefined ? {} : { attempt: request.attempt }),
       ...(request.expectedVersion === undefined
         ? {}
         : { expectedVersion: request.expectedVersion }),
@@ -1602,8 +1611,46 @@ export class ActionPipeline {
           descriptor,
         ),
       publish: (event: Event) => this.published(descriptor, at, event),
+      detach: () => this.detachedOf(descriptor, action),
     };
     return Object.freeze(action);
+  }
+
+  /**
+   * The call's isolation held past its transaction (`ctx.detach()`): `run` stores a copy of the call's context, which
+   * `RequestContext.detached()` answers with this call, inside every wrapper of `DETACHED_RUNS` (the database leaves
+   * the call's finished transaction there and keeps the step for `CrudService`), and `isolated` opens a step through
+   * `CallIsolation` with the descriptor's actor and scope, as `isolated(call, ...)` does for the call itself, so its
+   * checks run again per step. A step opened outside `run` enters the wrappers first; inside `run` it does not, so a
+   * step inside a step joins it.
+   */
+  private detachedOf(descriptor: CallDescriptor, ctx: ActionContext): DetachedCall {
+    const storage = this.optional(ContextStorage);
+    // a copy, so the call's own context never reads as detached
+    const view: object = Object.freeze({ ...ctx });
+    const step: DetachedStep = <T>(work: () => Promise<T>): Promise<T> => {
+      const isolation = this.optional(CallIsolation);
+      return isolation === undefined
+        ? work()
+        : isolation.run(descriptor.actor, descriptor.scope, () => work(), { readOnly: false });
+    };
+    const within = <T>(work: () => Promise<T>): Promise<T> => {
+      // the first registered wrapper is the outermost
+      const next = [...DETACHED_RUNS].reduceRight<() => Promise<T>>(
+        (inner, wrapper) => () => wrapper(step, inner),
+        work,
+      );
+      return storage === undefined ? next() : storage.run(view, next);
+    };
+    const detached: DetachedCall = Object.freeze({
+      actor: descriptor.actor,
+      ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
+      run: within,
+      isolated: <T>(work: () => Promise<T>): Promise<T> =>
+        storage !== undefined && storage.current() === view ? step(work) : within(() => step(work)),
+    });
+    DETACHED_CALLS.set(view, detached);
+    return detached;
   }
 
   /**

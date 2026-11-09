@@ -201,6 +201,27 @@ describe("emitRegistrations", () => {
     expect(billing).not.toContain("registerReportSources");
   });
 
+  it("refuses to import `unknown`: a webhook event whose partner resolved to no class stops the run (SHIP, 0.29)", () => {
+    const unresolved: DeclaredClass = {
+      name: "QuiqupOrderUpdated",
+      kind: "webhook_event",
+      module: "orders",
+      file: "src/modules/orders/events/quiqup-order-updated.event.ts",
+      importPath: "#modules/orders/events/quiqup-order-updated.event",
+      options: { type: "order" },
+      partner: { name: "unknown", from: "@figentra/ship-connector-quiqup/node" },
+      deps: [],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    };
+    expect(() =>
+      registrationsOf({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, unresolved] }),
+    ).toThrow("gen would import `unknown` from @figentra/ship-connector-quiqup/node");
+  });
+
   it("writes no file for an app or a member with nothing to register", () => {
     expect(registrationsOf(WEB_APP_IR)).toBeUndefined();
     expect(registrationsOf({ ...COMMERCE_IR, classes: [], shapes: [], enums: [] })).toBeUndefined();

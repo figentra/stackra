@@ -22,9 +22,12 @@ export class StationBlock extends Block({
   /** The section id the dock links to (`expose`). */
   id!: string;
 
+  /** The station's title. */
   title!: LocalizedText;
 
+  /** The station's line under its title. */
   body!: LocalizedText;
 
+  /** The line the dock shows while this station is current. */
   status?: LocalizedText;
 }

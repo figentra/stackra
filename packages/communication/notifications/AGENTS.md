@@ -11,7 +11,7 @@ stackra-218 (STA-1376).
 
 Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `packages/communication/notifications`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`,
-`./react`, `./testing`.
+`./react`, `./native`, `./testing`.
 
 ## Where code goes
 
@@ -27,6 +27,9 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 | A type                      | `src/core/types/<name>.type.ts`                |
 | The configuration           | `src/config/notifications.config.ts`           |
 | Mail rendering and its hook | `src/react/mail/`                              |
+| A web kit block (ADR 0504)  | `src/react/<name>/<name>.tsx` + `.props.ts`    |
+| A native kit block          | `src/native/<name>/<name>.tsx` + `.props.ts`   |
+| A client port's memory twin | `src/testing/drivers/<name>.driver.ts`         |
 | The service-queueing driver | `src/node/drivers/<name>.driver.ts`            |
 | A test helper or double     | `src/testing/`                                 |
 | A test                      | `__tests__/<name>.<kind>.test.ts(x)` beside it |

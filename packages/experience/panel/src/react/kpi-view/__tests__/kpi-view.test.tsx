@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `KpiView`: money is formatted in its currency, the change chip is green when the value moves the
- *          better way (red when lower is better), the threshold tone colours the value, the target is shown, and a
- *          metric without a value shows a dash.
- * Boundary: unit tier, jsdom; the web kit is DOM stand-ins, translation returns the key with its values, numbers print as is.
+ *          better way (red when lower is better), the threshold tone colours the value, the target is shown, a metric
+ *          without a value shows a dash, a percent metric (0.67) reads "67%" with its change in points, and the note
+ *          line shows its count when the KPI has a note and a value for it, and never otherwise.
+ * Boundary: unit tier, jsdom; the web kit is DOM stand-ins, translation returns the key with its values, numbers print as
+ *           is unless given Intl options (then in en).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 15).
  */
@@ -25,10 +27,16 @@ const TestPermissions = {
 
 vi.mock("@stackra/i18n/react", () => ({
   useTranslation: () => ({
+    // `silentNote` stands in for a catalogue message that is empty for its count (`=0 {}`)
     t: (key: string, values?: Record<string, unknown>) =>
-      values === undefined ? key : `${key} ${JSON.stringify(values)}`,
+      key.endsWith(".silentNote")
+        ? ""
+        : values === undefined
+          ? key
+          : `${key} ${JSON.stringify(values)}`,
   }),
-  useNumber: () => (value: number) => String(value),
+  useNumber: () => (value: number, options?: Intl.NumberFormatOptions) =>
+    options === undefined ? String(value) : new Intl.NumberFormat("en", options).format(value),
   useMoney: () => (minor: number, currency: string) => `${currency} ${minor}`,
 }));
 
@@ -127,7 +135,9 @@ const TILE = widget(WidgetStub, {
 
 afterEach(cleanup);
 
+/** One KPI on the web, drawn from its metric and its note field. */
 describe("KpiView", () => {
+  /** A money metric shows in its currency, with a green relative change, its tone and target. */
   it("formats money, the change, the tone and the target", () => {
     const kpi = WidgetDisplay.kpi("revenue", { tones: [{ belowTarget: 1, tone: Tone.Warning }] });
     render(
@@ -142,6 +152,7 @@ describe("KpiView", () => {
     expect(screen.getByText(/panel::widgets.target/).textContent).toContain("USD 10000");
   });
 
+  /** The better direction flips the chip's colour, and a missing value is a dash. */
   it("colours a rise red when lower is better, and shows a dash without a value", () => {
     const kpi = WidgetDisplay.kpi("waitMinutes", { lowerIsBetter: true });
     render(
@@ -161,5 +172,62 @@ describe("KpiView", () => {
       />,
     );
     expect(screen.getByText("—")).toBeTruthy();
+  });
+
+  /** A rate of 0.67 reads 67%, its target too, and its trend moves in points, not as a ratio. */
+  it("formats a percent metric as a percent with a change in points", () => {
+    render(
+      <KpiView
+        widget={TILE}
+        kpi={WidgetDisplay.kpi("deliveredRate")}
+        metric={{ value: 0.67, previous: 0.6, target: 0.95, series: null, format: "percent" }}
+      />,
+    );
+    expect(screen.getByText("67%")).toBeTruthy();
+    const change = screen.getByText(/panel::widgets.change_points/);
+    expect(change.textContent).toContain('"change":"+7"');
+    expect(change.getAttribute("data-tone")).toBe("success");
+    expect(screen.queryByText(/panel::widgets.change /)).toBeNull();
+    expect(screen.getByText(/panel::widgets.target/).textContent).toContain("95%");
+  });
+
+  /** The note field's count reaches the note's derived key, under a value or under the dash. */
+  it("shows the note line with its count", () => {
+    const kpi = WidgetDisplay.kpi("spend", { note: "spendOtherCurrencies" });
+    const note = 'orders::widgets.order_kpis.spendOtherCurrencies {"count":2}';
+    render(
+      <KpiView
+        widget={TILE}
+        kpi={kpi}
+        metric={{ value: 5000, previous: null, target: null, series: null, currency: "USD" }}
+        note={2}
+      />,
+    );
+    expect(screen.getByText(note).getAttribute("data-tone")).toBe("muted");
+    cleanup();
+    render(
+      <KpiView
+        widget={TILE}
+        kpi={kpi}
+        metric={{ value: null, previous: null, target: null, series: null }}
+        note={2}
+      />,
+    );
+    expect(screen.getByText(note)).toBeTruthy();
+  });
+
+  /** No note path, an empty note field or an empty message draws no line. */
+  it("draws no note without a note path, a note value or a message", () => {
+    const metric = { value: 5000, previous: null, target: null, series: null, currency: "USD" };
+    render(<KpiView widget={TILE} kpi={WidgetDisplay.kpi("spend")} metric={metric} note={2} />);
+    expect(screen.queryByText(/spendOtherCurrencies/)).toBeNull();
+    cleanup();
+    const kpi = WidgetDisplay.kpi("spend", { note: "spendOtherCurrencies" });
+    render(<KpiView widget={TILE} kpi={kpi} metric={metric} note={null} />);
+    expect(screen.queryByText(/spendOtherCurrencies/)).toBeNull();
+    cleanup();
+    const silent = WidgetDisplay.kpi("spend", { note: "silentNote" });
+    render(<KpiView widget={TILE} kpi={silent} metric={metric} note={0} />);
+    expect(screen.queryByText(/silentNote/)).toBeNull();
   });
 });

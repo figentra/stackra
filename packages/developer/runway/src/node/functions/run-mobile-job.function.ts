@@ -85,9 +85,10 @@ function blockOf(block: Block, key: string): Block {
  *
  * @param request - the repository, app, template checkout (or the line source to check it out from), commit,
  *        environment, store accounts and variant.
- * @throws RunwayInvalidError when the app is not in the runway `mobile`, is not white-label for a variant, offers no
- *         mode a store account needs, lacks a store account for a platform it targets, has no EAS channel, or lists a
- *         capability the template line does not offer.
+ * @throws RunwayInvalidError when the app is not in the runway `mobile`, is not white-label for a variant, needs a
+ *         white-label entitlement the variant's scope does not hold, offers no mode a store account needs, lacks a
+ *         store account for a platform it targets, has no EAS channel, or lists a capability the template line does
+ *         not offer.
  * @throws RunwayUnresolvedError when a white-label build would publish under the platform's Apple account before the
  *         4.2.6 and 4.3 checks are recorded as passed, or a template file cannot be read.
  * @example
@@ -125,6 +126,13 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
     const modes = entry.whiteLabel?.modes ?? ["managed", "bring-your-own"];
     if (entry.whiteLabel === undefined) {
       issues.push({ path: `${at}.whiteLabel`, message: "The app has no white-label variants" });
+    }
+    const required = entry.whiteLabel?.entitlement;
+    if (required !== undefined && variant.entitlements?.includes(required) !== true) {
+      issues.push({
+        path: `${at}.whiteLabel.entitlement`,
+        message: `The scope does not hold ${required}`,
+      });
     }
     for (const account of stores) {
       const mode = account.owner === "scope" ? "bring-your-own" : "managed";

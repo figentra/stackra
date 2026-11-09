@@ -26,13 +26,13 @@ rules:
       # local secrets-decrypt action (ADR 0525, called by SHA from other repositories).
       - apply-observability.yml:106
       - ci.yml:76
-      - ci.yml:227
+      - ci.yml:231
       - deploy-docs.yml:55
       - deploy-registry.yml:65
       - deploy-static.yml:62
       - deploy-turbo-cache.yml:64
-      - release.yml:111
-      - release.yml:191
-      - runway-drift.yml:52
+      - release.yml:117
+      - release.yml:201
+      - runway-drift.yml:54
       - testbed-fallback.yml:52
-      - testbed-fallback.yml:58
+      - testbed-fallback.yml:60

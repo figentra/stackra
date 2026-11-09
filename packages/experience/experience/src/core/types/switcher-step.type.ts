@@ -11,13 +11,18 @@ import type { CodeSample } from "#core/types/code-sample.type";
 
 /** A step and its code. */
 export interface SwitcherStep {
+  /** The step's id, unique in its switcher. */
   readonly id: string;
 
+  /** The words on the step's tab. */
   readonly label: LocalizedText;
 
+  /** The step's title, above its code. */
   readonly title: LocalizedText;
 
+  /** The line under the title. */
   readonly body: LocalizedText;
 
+  /** The code the step shows. */
   readonly code: CodeSample;
 }

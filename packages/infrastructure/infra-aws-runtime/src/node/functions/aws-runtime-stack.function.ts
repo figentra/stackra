@@ -49,6 +49,7 @@ export function awsRuntimeStack(args: {
     network: {
       subnetIds: network.subnetIds.map((id) => resolveRef(id)),
       securityGroupIds: network.securityGroupIds.map((id) => resolveRef(id)),
+      ...(network.vpcId === undefined ? {} : { vpcId: resolveRef(network.vpcId) }),
     },
     tags: args.tags,
   });

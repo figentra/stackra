@@ -1,0 +1,17 @@
+{
+  "feature": {
+    "title": "Usage-based billing",
+    "description": "Meter any event and charge for it at the end of the cycle, prorated to the day.",
+    "start": "Start a trial",
+    "docs": "Read the docs",
+    "seats": "Seats used this cycle",
+    "seats_value": "{used} of {total} seats"
+  },
+  "brand": {
+    "pay": "Figentra Pay",
+    "pay_description": "Payments, payouts and wallets in one ledger.",
+    "commerce": "Figentra Commerce",
+    "commerce_description": "Catalogue, orders and fulfilment for every channel.",
+    "visit": "Visit {product}"
+  }
+}

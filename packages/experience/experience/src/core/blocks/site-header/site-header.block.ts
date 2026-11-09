@@ -20,11 +20,13 @@ export class SiteHeaderBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.siteHeader,
 }) {
+  /** The site's section links. */
   links!: LandingLink[];
 
   /** The links' nav name; give it when another nav (the page dock) is on the page. */
   navLabel?: LocalizedText;
 
+  /** The docs search link. */
   docsSearch!: LandingLink;
 
   /** Only once the AI gateway is live; until then the page leaves it out. */

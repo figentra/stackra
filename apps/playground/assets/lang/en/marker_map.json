@@ -1,0 +1,10 @@
+{
+  "label": "Active subscriptions by city",
+  "list_label": "Cities",
+  "selected": "Selected: {city}",
+  "riyadh": "Riyadh",
+  "jeddah": "Jeddah",
+  "dammam": "Dammam",
+  "madinah": "Madinah",
+  "abha": "Abha"
+}

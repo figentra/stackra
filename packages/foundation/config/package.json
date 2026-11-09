@@ -1,6 +1,6 @@
 {
   "name": "@stackra/config",
-  "version": "0.30.0",
+  "version": "0.32.0",
   "private": false,
   "description": "Stackra configuration: the Config({ schema, env }) kind base, @Secret field references resolved blind through the SecretStore port, config layering, public env hydration, the env value parsers, useConfig and the testing module's withConfig and withSecrets, and the AWS Secrets Manager SecretStore driver",
   "keywords": [
@@ -119,6 +119,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@aws-sdk/client-kms": "catalog:",
     "@aws-sdk/client-secrets-manager": "catalog:",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
@@ -137,10 +138,14 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@aws-sdk/client-kms": "catalog:",
     "@aws-sdk/client-secrets-manager": "catalog:",
     "react": "catalog:frontend"
   },
   "peerDependenciesMeta": {
+    "@aws-sdk/client-kms": {
+      "optional": true
+    },
     "@aws-sdk/client-secrets-manager": {
       "optional": true
     },

@@ -1,5 +1,44 @@
 # @stackra/runway
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [33f61e5]
+- Updated dependencies [9ddce28]
+  - @stackra/app@0.32.0
+  - @stackra/config@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 5585893: `providers.github` takes the repository metadata: `description` (one sentence, at most 350 characters), `topics`
+  (lower-case GitHub topics, each once, at most 20) and `homepage` (an absolute URL). `githubPlan` carries them and
+  `githubStack` sets them on the repository (`description`, `topics`, `homepageUrl`), so a `preview` of the github
+  stack shows a repository whose metadata drifted from its runway. `@stackra/runway`'s closed `providers.github`
+  schema takes the same three keys, so `parseRunway` accepts them.
+- ebfd942: `runMobileJob` reads mobile `whiteLabel.entitlement`: a scope-started white-label build is refused unless the
+  variant's new `entitlements` list holds it. The field leaves `RUNWAY_UNREAD_FIELDS` and its schema description no longer
+  says "Not read yet".
+- 670f75c: A workload can name `migrate: { command, timeoutMinutes? }`: a one-off task with the workload's image, env, secrets
+  and resources that runs once per new revision before the service rolls, and stops the apply when it fails or times
+  out (15 minutes by default). On AWS it is a second Fargate task definition run by a Pulumi dynamic resource through
+  `@aws-sdk/client-ecs`, which the stacks repository must list beside `@pulumi/aws`.
+
+### Patch Changes
+
+- @stackra/app@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

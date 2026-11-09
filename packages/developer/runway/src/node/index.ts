@@ -5,7 +5,7 @@
  *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
  *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316, `cloudflare-workers`, STA-1921) with the command runner they share (ADR 0352 decision 3),
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
- *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
+ *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439; `startWhiteLabelJob` for the OS event) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
  *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), the smoke step after a preview deploy (`smokePreview`, with the
  *          `PlaywrightSmokeDriver`, `MaestroSmokeDriver` and placeholder `ElectronSmokeDriver`) and the mobile launch
@@ -102,6 +102,8 @@ export { runProgram } from "#node/functions/run-program.function";
 export { runBrandStep } from "#node/functions/run-brand-step.function";
 export { runLaunchCheck } from "#node/functions/run-launch-check.function";
 export { runMobileJob } from "#node/functions/run-mobile-job.function";
+export { startWhiteLabelJob } from "#node/functions/start-white-label-job.function";
+export { whiteLabelVariantOf } from "#node/functions/white-label-variant-of.function";
 export { runScreenshotCapture } from "#node/functions/run-screenshot-capture.function";
 export { screenshotCaptureJob } from "#node/functions/screenshot-capture-job.function";
 export { shellReleaseOf } from "#node/functions/shell-release-of.function";
@@ -163,6 +165,8 @@ export type { MobileOnboard } from "#node/types/mobile-onboard.type";
 export type { MobileOnboardRequest } from "#node/types/mobile-onboard-request.type";
 export type { MobileStoreAccount } from "#node/types/mobile-store-account.type";
 export type { MobileVariant } from "#node/types/mobile-variant.type";
+export type { WhiteLabelBuildRequested } from "#node/types/white-label-build-requested.type";
+export type { WhiteLabelJobRequest } from "#node/types/white-label-job-request.type";
 export type { LaunchCheckJob } from "#node/types/launch-check-job.type";
 export type { LaunchCheckRequest } from "#node/types/launch-check-request.type";
 export type { SmokePreviewRequest } from "#node/types/smoke-preview-request.type";

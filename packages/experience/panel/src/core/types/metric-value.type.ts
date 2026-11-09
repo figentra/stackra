@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `MetricValue`, an aggregate over a period and the period before it, as `CrudService.metrics()` returns it:
- *          what `CountMetric.from` and `MoneyMetric.from` read.
+ *          what `CountMetric.from`, `MoneyMetric.from` and `PercentMetric.from` read.
  * Boundary: a type only, written structurally so this package does not depend on `@stackra/database`.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 16: the query computes current and previous values).

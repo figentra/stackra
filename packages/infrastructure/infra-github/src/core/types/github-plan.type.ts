@@ -20,6 +20,12 @@ export type GithubPlan = {
   readonly repo: string;
   /** Who can see it; `private` unless the runway says otherwise. */
   readonly visibility: GithubVisibility;
+  /** The one-sentence description GitHub shows; the metadata standard declares it for every repository. */
+  readonly description?: string;
+  /** The topics, in the order listed: the base set for the repository's type, then its domain topics. */
+  readonly topics?: readonly string[];
+  /** The homepage URL: the live docs site, else the live product site; absent when neither is live. */
+  readonly homepage?: string;
   /** Repository Actions variables: name → public value or `ref:<path>`. */
   readonly variables: Readonly<Record<string, string>>;
   /** The deployment environments, runway environments first in promotion order. */

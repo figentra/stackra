@@ -20,5 +20,6 @@ export interface Drawing {
   /** The base URL of the tone layers, `<src>.<tone>.svg`. */
   readonly src: string;
 
+  /** What the drawing shows; the drawing is decorative when absent. */
   readonly alt?: LocalizedText;
 }

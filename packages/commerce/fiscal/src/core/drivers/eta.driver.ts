@@ -59,6 +59,8 @@ const PARTY_TYPES: Readonly<Record<PartyKind, string>> = {
 /** The submission answer's parts the outcome reads. */
 const ANSWER = z
   .object({
+    // ETA's SDK names it `submissionUUID`; `submissionId` is kept for an answer in the older shape.
+    submissionUUID: z.string().nullish(),
     submissionId: z.string().nullish(),
     acceptedDocuments: z.array(z.object({ uuid: z.string(), internalId: z.string() })).nullish(),
     rejectedDocuments: z
@@ -244,7 +246,7 @@ export class EtaDriver extends Driver(FiscalDriver) {
     );
     return {
       status: FiscalRecordStatus.Rejected,
-      authorityReference: answer.submissionId ?? null,
+      authorityReference: answer.submissionUUID ?? answer.submissionId ?? null,
       message: rejected?.error?.message ?? `HTTP ${response.status}`,
       payload: null,
     };

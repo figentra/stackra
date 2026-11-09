@@ -14,7 +14,7 @@ permissions:
     effect: deny
 ---
 
-<!-- generated from .agents/agents/desktop-pwa-builder.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/desktop-pwa-builder.md by fflow sync — edit the source, not this file -->
 
 # desktop-pwa-builder
 

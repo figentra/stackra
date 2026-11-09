@@ -23,13 +23,16 @@ export class TerminalStageBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.terminalStage,
 }) {
+  /** The command the session runs, shown and copied. */
   command!: string;
 
   /** The recorded session; empty until the command ships. */
   lines!: RecordedLine[];
 
+  /** The terminal's spoken name. */
   label?: LocalizedText;
 
+  /** The dither band the terminal plays on. */
   art?: DitherBand;
 
   /** The monitor drawing (`/art/monitor`), shown once the session has played. */

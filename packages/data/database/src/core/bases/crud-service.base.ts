@@ -8,8 +8,11 @@
  * Boundary: a service (it extends container's `Service`, so its binding kind is `service`); its own constructor
  *           dependencies are the subclass's, and it calls `super()` with none. The model comes from the type argument,
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
- *           caller's transaction (an action's unit of work) and a query reads on a fork. A hand-written method of the
- *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
+ *           caller's transaction (an action's unit of work) and a query reads on a fork. Inside a detached call
+ *           (`ctx.detach()`, a stream or a long loop) an operation that runs outside a transaction runs as one step of
+ *           it (`step`, through `Database.detached()`): its own short transaction with the call's isolation; `each`,
+ *           `chunk` and `metrics` are not wrapped (the caller opens the step). A hand-written method of the same name
+ *           overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
  *           `countDistinct`, `table`, `metrics`, and `lock`, which also takes a row lock: exclusive or shared, waiting,
  *           `nowait` or `skipLocked`) ANDs in the bound
  *           `VisibilityFilter`'s conditions, on top of row-level security; writes (`increment` among them) and `purge`
@@ -161,26 +164,30 @@ async function settled(em: EntityManager): Promise<EntityManager> {
  */
 export abstract class CrudService<M extends object> extends Service implements Repository<M> {
   /** Implements `Repository.find`, documented there; `DeletedReadOptions` reach the rows a delete policy hides. */
-  async find<H extends string = never>(
+  find<H extends string = never>(
     where: Where<M>,
     options?: FindOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>[]> {
-    const [filter, rest] = await this.readOf(where, options);
-    return (await settled(this.em())).find(this.model(), filter, rest);
+    return this.step(async () => {
+      const [filter, rest] = await this.readOf(where, options);
+      return (await settled(this.em())).find(this.model(), filter, rest);
+    });
   }
 
   /**
    * Implements `Repository.findOne`, documented there; `DeletedReadOptions` reach the rows a delete policy hides. A
    * `Cached` model's read by `{ id }` alone, outside a transaction, is answered from the entity cache (`entityCacheOf`).
    */
-  async findOne<H extends string = never>(
+  findOne<H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H> | null> {
-    const [filter, rest] = await this.readOf(where, options);
-    const em = await settled(this.em());
-    const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
-    return em.findOne(this.model(), filter, cache === undefined ? rest : { cache });
+    return this.step(async () => {
+      const [filter, rest] = await this.readOf(where, options);
+      const em = await settled(this.em());
+      const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
+      return em.findOne(this.model(), filter, cache === undefined ? rest : { cache });
+    });
   }
 
   /**
@@ -188,37 +195,45 @@ export abstract class CrudService<M extends object> extends Service implements R
    *
    * @throws NotFoundError when no row matches, or none the caller may see.
    */
-  async findOneOrFail<H extends string = never>(
+  findOneOrFail<H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H> & DeletedReadOptions,
   ): Promise<Loaded<M, H>> {
-    const [filter, rest] = await this.readOf(where, options);
-    const em = await settled(this.em());
-    const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
-    return em.findOneOrFail(this.model(), filter, {
-      ...rest,
-      ...(cache === undefined ? {} : { cache }),
-      failHandler: () => NotFoundError.create(),
+    return this.step(async () => {
+      const [filter, rest] = await this.readOf(where, options);
+      const em = await settled(this.em());
+      const cache = rest === undefined ? entityCacheOf(em, this.model(), filter) : undefined;
+      return em.findOneOrFail(this.model(), filter, {
+        ...rest,
+        ...(cache === undefined ? {} : { cache }),
+        failHandler: () => NotFoundError.create(),
+      });
     });
   }
 
   /** Implements `Repository.count`, documented there; `DeletedReadOptions` count the rows a delete policy hides. */
-  async count(where: Where<M> = {} as Where<M>, options?: DeletedReadOptions): Promise<number> {
-    const [filter, rest] = await this.readOf<CountOptions<M>>(where, options);
-    const em = await settled(this.em());
-    return rest === undefined
-      ? em.count(this.model(), filter)
-      : em.count(this.model(), filter, rest);
+  count(where: Where<M> = {} as Where<M>, options?: DeletedReadOptions): Promise<number> {
+    return this.step(async () => {
+      const [filter, rest] = await this.readOf<CountOptions<M>>(where, options);
+      const em = await settled(this.em());
+      return rest === undefined
+        ? em.count(this.model(), filter)
+        : em.count(this.model(), filter, rest);
+    });
   }
 
   /** Implements `Repository.sum`, documented there. */
   sum(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
-    return this.aggregate((column) => `coalesce(sum(${column}), 0)`, field, where);
+    return this.step(() => {
+      return this.aggregate((column) => `coalesce(sum(${column}), 0)`, field, where);
+    });
   }
 
   /** Implements `Repository.countDistinct`, documented there. */
   countDistinct(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
-    return this.aggregate((column) => `count(distinct ${column})`, field, where);
+    return this.step(() => {
+      return this.aggregate((column) => `count(distinct ${column})`, field, where);
+    });
   }
 
   /**
@@ -237,30 +252,32 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /** Locks the matching row with the mode `options` picks; the overloads above document the contract. */
   lock(where: Where<M>, options: LockOptions = {}): Promise<M | null> {
-    const { shared = false, nowait = false, skipLocked = false } = options;
-    if (nowait && skipLocked)
-      throw new TypeError("a lock either fails at once (nowait) or skips held rows (skipLocked)");
-    const lockMode = skipLocked
-      ? shared
-        ? LockMode.PESSIMISTIC_PARTIAL_READ
-        : LockMode.PESSIMISTIC_PARTIAL_WRITE
-      : nowait
+    return this.step(() => {
+      const { shared = false, nowait = false, skipLocked = false } = options;
+      if (nowait && skipLocked)
+        throw new TypeError("a lock either fails at once (nowait) or skips held rows (skipLocked)");
+      const lockMode = skipLocked
         ? shared
-          ? LockMode.PESSIMISTIC_READ_OR_FAIL
-          : LockMode.PESSIMISTIC_WRITE_OR_FAIL
-        : shared
-          ? LockMode.PESSIMISTIC_READ
-          : LockMode.PESSIMISTIC_WRITE;
-    // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it. The flush
-    // first writes this unit's own pending changes, which the refresh would otherwise overwrite: locking a row twice
-    // in one transaction dropped an assigned, unflushed value (every document numbered 1).
-    return this.em()
-      .flush()
-      .then(() =>
-        skipLocked
-          ? (this.findOne(where, { lockMode, refresh: true }) as Promise<M | null>)
-          : (this.findOneOrFail(where, { lockMode, refresh: true }) as Promise<M>),
-      );
+          ? LockMode.PESSIMISTIC_PARTIAL_READ
+          : LockMode.PESSIMISTIC_PARTIAL_WRITE
+        : nowait
+          ? shared
+            ? LockMode.PESSIMISTIC_READ_OR_FAIL
+            : LockMode.PESSIMISTIC_WRITE_OR_FAIL
+          : shared
+            ? LockMode.PESSIMISTIC_READ
+            : LockMode.PESSIMISTIC_WRITE;
+      // `refresh` so a row the unit of work loaded before the wait is read again as the lock holder left it. The flush
+      // first writes this unit's own pending changes, which the refresh would otherwise overwrite: locking a row twice
+      // in one transaction dropped an assigned, unflushed value (every document numbered 1).
+      return this.em()
+        .flush()
+        .then(() =>
+          skipLocked
+            ? (this.findOne(where, { lockMode, refresh: true }) as Promise<M | null>)
+            : (this.findOneOrFail(where, { lockMode, refresh: true }) as Promise<M>),
+        );
+    });
   }
 
   /**
@@ -270,22 +287,24 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws AppendOnlyWriteError for an `AppendOnly` model.
    */
   increment(where: Where<M>, field: string, by = 1): Promise<number> {
-    if (!Number.isFinite(by)) throw new TypeError(`increment takes a finite step, got ${by}`);
-    this.refuseAppendOnly("increment");
-    const em = this.em();
-    const model = this.model();
-    const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
-    // raw-sql: `col = col + ?` is the one atomic form; read-modify-write loses concurrent steps. The step is a parameter.
-    return this.watched("updated", [field], filterOf(where), (filter) =>
-      em.nativeUpdate(
-        model,
-        filter as never,
-        {
-          ...stampFields(model, "update"),
-          ...nest(field, raw(`${column} + ?`, [by])),
-        } as never,
-      ),
-    );
+    return this.step(() => {
+      if (!Number.isFinite(by)) throw new TypeError(`increment takes a finite step, got ${by}`);
+      this.refuseAppendOnly("increment");
+      const em = this.em();
+      const model = this.model();
+      const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
+      // raw-sql: `col = col + ?` is the one atomic form; read-modify-write loses concurrent steps. The step is a parameter.
+      return this.watched("updated", [field], filterOf(where), (filter) =>
+        em.nativeUpdate(
+          model,
+          filter as never,
+          {
+            ...stampFields(model, "update"),
+            ...nest(field, raw(`${column} + ?`, [by])),
+          } as never,
+        ),
+      );
+    });
   }
 
   /**
@@ -304,11 +323,13 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws SystemFieldWriteError when `data` sets a system field other than the id.
    */
   insert(data: RequiredEntityData<M>, options: TransactionOptions = {}): Promise<M> {
-    this.refuseSystemFields("insert", data, CREATE_ALLOWED);
-    return this.writeNow(options, async (em) => {
-      const row = em.create(this.model(), data);
-      await em.flush();
-      return row;
+    return this.step(() => {
+      this.refuseSystemFields("insert", data, CREATE_ALLOWED);
+      return this.writeNow(options, async (em) => {
+        const row = em.create(this.model(), data);
+        await em.flush();
+        return row;
+      });
     });
   }
 
@@ -319,16 +340,18 @@ export abstract class CrudService<M extends object> extends Service implements R
    *
    * @throws SystemFieldWriteError when a row sets a system field other than the id.
    */
-  async insertMany(
+  insertMany(
     rows: readonly RequiredEntityData<M>[],
     options: TransactionOptions = {},
   ): Promise<M[]> {
-    for (const row of rows) this.refuseSystemFields("insertMany", row, CREATE_ALLOWED);
-    if (rows.length === 0) return [];
-    return this.writeNow(options, async (em) => {
-      const created = rows.map((data) => em.create(this.model(), data));
-      await em.flush();
-      return created;
+    return this.step(async () => {
+      for (const row of rows) this.refuseSystemFields("insertMany", row, CREATE_ALLOWED);
+      if (rows.length === 0) return [];
+      return this.writeNow(options, async (em) => {
+        const created = rows.map((data) => em.create(this.model(), data));
+        await em.flush();
+        return created;
+      });
     });
   }
 
@@ -343,50 +366,51 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws AppendOnlyWriteError for an `AppendOnly` model, whose rows are never changed.
    * @throws SystemFieldWriteError when a row sets a system field other than the id or a `by` field.
    */
-  async upsert(
-    rows: readonly RequiredEntityData<M>[],
-    options: UpsertOptions,
-  ): Promise<UpsertResult<M>> {
-    const { by } = options;
-    if (by.length === 0) throw new TypeError("upsert matches rows by at least one field");
-    this.refuseAppendOnly("upsert");
-    for (const row of rows) this.refuseSystemFields("upsert", row, [...CREATE_ALLOWED, ...by]);
-    const keys = rows.map((row, index) => {
-      const key = rowKey(row, by);
-      if (key === undefined)
-        throw new TypeError(`upsert row ${index} has no value for every field of ${by.join(", ")}`);
-      return key;
-    });
-    if (new Set(keys).size !== keys.length)
-      throw new TypeError(`upsert names one ${by.join(", ")} key twice`);
-    if (rows.length === 0) return { rows: [], created: 0, updated: 0 };
-    const model = this.model();
-    return this.writeNow(options, async (em) => {
-      const stored = new Map<string, M>();
-      for (let start = 0; start < rows.length; start += BULK_LIMITS.batch) {
-        const slice = rows.slice(start, start + BULK_LIMITS.batch);
-        const found = await em.find(
-          model,
-          {
-            $or: slice.map((row) =>
-              Object.fromEntries(
-                by.map((field) => [field, (row as Record<string, unknown>)[field]]),
-              ),
-            ),
-          } as never,
-          { filters: { deleted: false, archived: false } },
-        );
-        for (const row of found) stored.set(rowKey(row, by) ?? "", row as M);
-      }
-      let created = 0;
-      const written = rows.map((data, index) => {
-        const match = stored.get(keys[index] ?? "");
-        if (match !== undefined) return em.assign(match, data as never) as M;
-        created += 1;
-        return em.create(model, data);
+  upsert(rows: readonly RequiredEntityData<M>[], options: UpsertOptions): Promise<UpsertResult<M>> {
+    return this.step(async () => {
+      const { by } = options;
+      if (by.length === 0) throw new TypeError("upsert matches rows by at least one field");
+      this.refuseAppendOnly("upsert");
+      for (const row of rows) this.refuseSystemFields("upsert", row, [...CREATE_ALLOWED, ...by]);
+      const keys = rows.map((row, index) => {
+        const key = rowKey(row, by);
+        if (key === undefined)
+          throw new TypeError(
+            `upsert row ${index} has no value for every field of ${by.join(", ")}`,
+          );
+        return key;
       });
-      await em.flush();
-      return { rows: written, created, updated: rows.length - created };
+      if (new Set(keys).size !== keys.length)
+        throw new TypeError(`upsert names one ${by.join(", ")} key twice`);
+      if (rows.length === 0) return { rows: [], created: 0, updated: 0 };
+      const model = this.model();
+      return this.writeNow(options, async (em) => {
+        const stored = new Map<string, M>();
+        for (let start = 0; start < rows.length; start += BULK_LIMITS.batch) {
+          const slice = rows.slice(start, start + BULK_LIMITS.batch);
+          const found = await em.find(
+            model,
+            {
+              $or: slice.map((row) =>
+                Object.fromEntries(
+                  by.map((field) => [field, (row as Record<string, unknown>)[field]]),
+                ),
+              ),
+            } as never,
+            { filters: { deleted: false, archived: false } },
+          );
+          for (const row of found) stored.set(rowKey(row, by) ?? "", row as M);
+        }
+        let created = 0;
+        const written = rows.map((data, index) => {
+          const match = stored.get(keys[index] ?? "");
+          if (match !== undefined) return em.assign(match, data as never) as M;
+          created += 1;
+          return em.create(model, data);
+        });
+        await em.flush();
+        return { rows: written, created, updated: rows.length - created };
+      });
     });
   }
 
@@ -400,35 +424,39 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws AppendOnlyWriteError for an `AppendOnly` model.
    * @throws SystemFieldWriteError when `data` sets a system field.
    */
-  async updateWhere(where: Where<M>, data: EntityData<M>): Promise<number> {
-    this.refuseAppendOnly("updateWhere");
-    this.refuseSystemFields("updateWhere", data);
-    const fields = Object.keys(data);
-    if (fields.length === 0) return 0;
-    const model = this.model();
-    const sealed = new Set(encryptedFieldsOf(model));
-    if (fields.some((field) => sealed.has(field))) return this.updateEach(where, data);
-    const em = this.em();
-    const versioned = traitsOf(model).some((trait) => trait.name === "versioned");
-    const version = versioned
-      ? // raw-sql: `version = version + 1`, the optimistic lock's step, which a native statement must take itself
-        { version: raw(`${quoteIdentifier(columnOf(em.getMetadata(model), "version"))} + 1`) }
-      : {};
-    return this.watched("updated", fields, filterOf(where), (filter) =>
-      em.nativeUpdate(
-        model,
-        filter as never,
-        { ...data, ...stampFields(model, "update"), ...version } as never,
-      ),
-    );
+  updateWhere(where: Where<M>, data: EntityData<M>): Promise<number> {
+    return this.step(async () => {
+      this.refuseAppendOnly("updateWhere");
+      this.refuseSystemFields("updateWhere", data);
+      const fields = Object.keys(data);
+      if (fields.length === 0) return 0;
+      const model = this.model();
+      const sealed = new Set(encryptedFieldsOf(model));
+      if (fields.some((field) => sealed.has(field))) return this.updateEach(where, data);
+      const em = this.em();
+      const versioned = traitsOf(model).some((trait) => trait.name === "versioned");
+      const version = versioned
+        ? // raw-sql: `version = version + 1`, the optimistic lock's step, which a native statement must take itself
+          { version: raw(`${quoteIdentifier(columnOf(em.getMetadata(model), "version"))} + 1`) }
+        : {};
+      return this.watched("updated", fields, filterOf(where), (filter) =>
+        em.nativeUpdate(
+          model,
+          filter as never,
+          { ...data, ...stampFields(model, "update"), ...version } as never,
+        ),
+      );
+    });
   }
 
   /**
    * Implements `Repository.deleteWhere`, documented there: `delete` by its policy, under the bulk verbs' name. Async,
    * so `delete`'s synchronous append-only refusal arrives as a rejection like the other bulk verbs'.
    */
-  async deleteWhere(where: Where<M>): Promise<number> {
-    return this.delete(where);
+  deleteWhere(where: Where<M>): Promise<number> {
+    return this.step(async () => {
+      return this.delete(where);
+    });
   }
 
   /**
@@ -486,33 +514,35 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws TableFilterInvalidError when `page` is not a whole number from 1, `perPage` not one from 1 to 500, or the
    *         sort takes more than three keys.
    */
-  async page<H extends string = never>(
+  page<H extends string = never>(
     input: PageQuery,
     options: PageOptions<M, H> = {},
   ): Promise<OffsetPage<Loaded<M, H>>> {
-    const { page, perPage } = input;
-    if (!Number.isInteger(page) || page < 1)
-      throw TableFilterInvalidError.create({
-        key: "page",
-        reason: "a page is a whole number from 1",
+    return this.step(async () => {
+      const { page, perPage } = input;
+      if (!Number.isInteger(page) || page < 1)
+        throw TableFilterInvalidError.create({
+          key: "page",
+          reason: "a page is a whole number from 1",
+        });
+      if (!Number.isInteger(perPage) || perPage < 1 || perPage > BULK_LIMITS.maxPerPage)
+        throw TableFilterInvalidError.create({
+          key: "perPage",
+          reason: `a page holds 1 to ${BULK_LIMITS.maxPerPage} rows`,
+        });
+      const { where = {} as Where<M>, populate, ...hidden } = options;
+      const [filter, rest] = await this.readOf<FindOptions<M, H>>(where, {
+        ...hidden,
+        ...(populate === undefined ? {} : { populate }),
+        orderBy: this.orderOf(input.sort),
+        limit: perPage,
+        offset: (page - 1) * perPage,
       });
-    if (!Number.isInteger(perPage) || perPage < 1 || perPage > BULK_LIMITS.maxPerPage)
-      throw TableFilterInvalidError.create({
-        key: "perPage",
-        reason: `a page holds 1 to ${BULK_LIMITS.maxPerPage} rows`,
-      });
-    const { where = {} as Where<M>, populate, ...hidden } = options;
-    const [filter, rest] = await this.readOf<FindOptions<M, H>>(where, {
-      ...hidden,
-      ...(populate === undefined ? {} : { populate }),
-      orderBy: this.orderOf(input.sort),
-      limit: perPage,
-      offset: (page - 1) * perPage,
+      const [items, total] = await (
+        await settled(this.em())
+      ).findAndCount(this.model(), filter, rest);
+      return { items, total, page, perPage, pages: Math.ceil(total / perPage) };
     });
-    const [items, total] = await (
-      await settled(this.em())
-    ).findAndCount(this.model(), filter, rest);
-    return { items, total, page, perPage, pages: Math.ceil(total / perPage) };
   }
 
   /**
@@ -520,39 +550,41 @@ export abstract class CrudService<M extends object> extends Service implements R
    * (the registry logs each held one, and is told each row's registered subject links) and counts only those; with
    * none, one statement removes every match.
    */
-  async purge(where: Where<M>): Promise<number> {
-    const em = this.em();
-    const model = this.model();
-    const filter = filterOf(where);
-    // A purge reaches soft-deleted and archived rows too: it is how they finally go.
-    const filters = { deleted: false, archived: false };
-    if (HOLD_HOST.registry === undefined)
-      return this.watched(
-        "deleted",
-        [],
-        filter,
-        (narrowed) => em.nativeDelete(model, narrowed as never, { filters }),
+  purge(where: Where<M>): Promise<number> {
+    return this.step(async () => {
+      const em = this.em();
+      const model = this.model();
+      const filter = filterOf(where);
+      // A purge reaches soft-deleted and archived rows too: it is how they finally go.
+      const filters = { deleted: false, archived: false };
+      if (HOLD_HOST.registry === undefined)
+        return this.watched(
+          "deleted",
+          [],
+          filter,
+          (narrowed) => em.nativeDelete(model, narrowed as never, { filters }),
+          filters,
+        );
+      const [key = "id"] = em.getMetadata(model).primaryKeys;
+      const linkFields = HOLD_LINK_FIELDS.get(model) ?? [];
+      const rows = (await em.find(model, filter, {
+        fields: [key, ...linkFields] as never,
         filters,
+      })) as Record<string, unknown>[];
+      const ids = rows.map((row) => String(row[key]));
+      const free = await disposableIds(model, ids, Disposal.Purge, holdLinksOf(model, rows, key));
+      if (free.length === 0) return 0;
+      // Only the checked ids, so a row inserted after the read is never removed unchecked.
+      const removed = await em.nativeDelete(
+        model,
+        { $and: [filter, { [key]: { $in: free } }] } as never,
+        {
+          filters,
+        },
       );
-    const [key = "id"] = em.getMetadata(model).primaryKeys;
-    const linkFields = HOLD_LINK_FIELDS.get(model) ?? [];
-    const rows = (await em.find(model, filter, {
-      fields: [key, ...linkFields] as never,
-      filters,
-    })) as Record<string, unknown>[];
-    const ids = rows.map((row) => String(row[key]));
-    const free = await disposableIds(model, ids, Disposal.Purge, holdLinksOf(model, rows, key));
-    if (free.length === 0) return 0;
-    // Only the checked ids, so a row inserted after the read is never removed unchecked.
-    const removed = await em.nativeDelete(
-      model,
-      { $and: [filter, { [key]: { $in: free } }] } as never,
-      {
-        filters,
-      },
-    );
-    await this.report({ em, model, kind: "deleted", ids: free, fields: [] });
-    return removed;
+      await this.report({ em, model, kind: "deleted", ids: free, fields: [] });
+      return removed;
+    });
   }
 
   /**
@@ -563,20 +595,22 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws AppendOnlyWriteError for an `AppendOnly` model, whose rows go only by `purge` (retention, erasure).
    */
   delete(where: Where<M>): Promise<number> {
-    this.refuseAppendOnly("delete");
-    const model = this.model();
-    const policy = this.keptPolicy();
-    if (policy === undefined) return this.purge(where);
-    return this.watched("updated", [policy.field], filterOf(where), (filter) =>
-      this.em().nativeUpdate(
-        model,
-        filter as never,
-        {
-          ...stampFields(model, "update"),
-          [policy.field]: new Date(),
-        } as never,
-      ),
-    );
+    return this.step(() => {
+      this.refuseAppendOnly("delete");
+      const model = this.model();
+      const policy = this.keptPolicy();
+      if (policy === undefined) return this.purge(where);
+      return this.watched("updated", [policy.field], filterOf(where), (filter) =>
+        this.em().nativeUpdate(
+          model,
+          filter as never,
+          {
+            ...stampFields(model, "update"),
+            [policy.field]: new Date(),
+          } as never,
+        ),
+      );
+    });
   }
 
   /**
@@ -586,30 +620,34 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws AppendOnlyWriteError for an `AppendOnly` model.
    */
   restore(where: Where<M>): Promise<number> {
-    this.refuseAppendOnly("restore");
-    const model = this.model();
-    const policy = this.keptPolicy();
-    if (policy === undefined)
-      throw new TypeError(`${model.name} is hard-deleted: there is nothing to restore`);
-    const filters = { [policy.filter]: false };
-    return this.watched(
-      "updated",
-      [policy.field],
-      { $and: [filterOf(where), { [policy.field]: { $ne: null } }] },
-      (filter) =>
-        this.em().nativeUpdate(
-          model,
-          filter as never,
-          { ...stampFields(model, "update"), [policy.field]: null } as never,
-          { filters },
-        ),
-      filters,
-    );
+    return this.step(() => {
+      this.refuseAppendOnly("restore");
+      const model = this.model();
+      const policy = this.keptPolicy();
+      if (policy === undefined)
+        throw new TypeError(`${model.name} is hard-deleted: there is nothing to restore`);
+      const filters = { [policy.filter]: false };
+      return this.watched(
+        "updated",
+        [policy.field],
+        { $and: [filterOf(where), { [policy.field]: { $ne: null } }] },
+        (filter) =>
+          this.em().nativeUpdate(
+            model,
+            filter as never,
+            { ...stampFields(model, "update"), [policy.field]: null } as never,
+            { filters },
+          ),
+        filters,
+      );
+    });
   }
 
   /** Removes the rows matching `where` for good, soft-deleted or archived ones included; a legal hold still applies. */
   forceDelete(where: Where<M>): Promise<number> {
-    return this.purge(where);
+    return this.step(() => {
+      return this.purge(where);
+    });
   }
 
   /**
@@ -625,34 +663,36 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws AppendOnlyWriteError for an `AppendOnly` model, before anything is read.
    * @throws SystemFieldWriteError when `data` sets a system field (pass the version as `expectedVersion`).
    */
-  async update(where: Where<M>, data: EntityData<M>, options: UpdateOptions = {}): Promise<M> {
-    this.refuseAppendOnly("update");
-    this.refuseSystemFields("update", data);
-    if (options.requiresNew === true) {
-      const model = this.model();
-      const filter = await visibleFilter(model, where);
-      const settings = await readRowSecuritySettings(this.em());
-      return this.em().transactional(
-        async (em) => {
-          await replayRowSecuritySettings(settings, (sql, params) =>
-            (em as EntityManager).execute(sql, params),
-          );
-          const row = await em.findOneOrFail(model, filter, {
-            failHandler: () => NotFoundError.create(),
-          });
-          this.checkVersion(row, options.expectedVersion);
-          em.assign(row as M, data as never);
-          await em.flush();
-          return row as M;
-        },
-        { propagation: TransactionPropagation.REQUIRES_NEW },
-      );
-    }
-    const row = await this.findOneOrFail(where);
-    this.checkVersion(row, options.expectedVersion);
-    // reason: assign types its data as MikroORM's DTO union; EntityData<M> is what callers hold and assign takes
-    this.em().assign(row as M, data as never);
-    return row as M;
+  update(where: Where<M>, data: EntityData<M>, options: UpdateOptions = {}): Promise<M> {
+    return this.step(async () => {
+      this.refuseAppendOnly("update");
+      this.refuseSystemFields("update", data);
+      if (options.requiresNew === true) {
+        const model = this.model();
+        const filter = await visibleFilter(model, where);
+        const settings = await readRowSecuritySettings(this.em());
+        return this.em().transactional(
+          async (em) => {
+            await replayRowSecuritySettings(settings, (sql, params) =>
+              (em as EntityManager).execute(sql, params),
+            );
+            const row = await em.findOneOrFail(model, filter, {
+              failHandler: () => NotFoundError.create(),
+            });
+            this.checkVersion(row, options.expectedVersion);
+            em.assign(row as M, data as never);
+            await em.flush();
+            return row as M;
+          },
+          { propagation: TransactionPropagation.REQUIRES_NEW },
+        );
+      }
+      const row = await this.findOneOrFail(where);
+      this.checkVersion(row, options.expectedVersion);
+      // reason: assign types its data as MikroORM's DTO union; EntityData<M> is what callers hold and assign takes
+      this.em().assign(row as M, data as never);
+      return row as M;
+    });
   }
 
   /**
@@ -668,14 +708,16 @@ export abstract class CrudService<M extends object> extends Service implements R
    *         single-column `scopePath`.
    * @throws AppendOnlyWriteError for an `AppendOnly` model.
    */
-  async repath(from: string, to: string): Promise<number> {
-    if (!LTREE_PATH.test(from) || !LTREE_PATH.test(to))
-      throw new TypeError(`repath needs two ltree paths, got "${from}" and "${to}"`);
-    if (to.startsWith(`${from}.`))
-      throw new TypeError(`"${to}" lies below "${from}": a subtree cannot move under itself`);
-    if (from === to) return 0;
-    this.refuseAppendOnly("repath");
-    return this.rewritePrefix("scopePath", from, to);
+  repath(from: string, to: string): Promise<number> {
+    return this.step(async () => {
+      if (!LTREE_PATH.test(from) || !LTREE_PATH.test(to))
+        throw new TypeError(`repath needs two ltree paths, got "${from}" and "${to}"`);
+      if (to.startsWith(`${from}.`))
+        throw new TypeError(`"${to}" lies below "${from}": a subtree cannot move under itself`);
+      if (from === to) return 0;
+      this.refuseAppendOnly("repath");
+      return this.rewritePrefix("scopePath", from, to);
+    });
   }
 
   /**
@@ -683,9 +725,11 @@ export abstract class CrudService<M extends object> extends Service implements R
    *
    * @throws TypeError when the model has no `HasTree` trait.
    */
-  async children(id: string, options?: FindOptions<M> & DeletedReadOptions): Promise<M[]> {
-    this.treeColumn();
-    return this.find({ parentId: id } as unknown as Where<M>, options);
+  children(id: string, options?: FindOptions<M> & DeletedReadOptions): Promise<M[]> {
+    return this.step(async () => {
+      this.treeColumn();
+      return this.find({ parentId: id } as unknown as Where<M>, options);
+    });
   }
 
   /**
@@ -694,8 +738,10 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws NotFoundError when `id` is not a visible record.
    * @throws TypeError when the model has no `HasTree` trait.
    */
-  async ancestors(id: string): Promise<M[]> {
-    return this.subtreeRead(id, "@>");
+  ancestors(id: string): Promise<M[]> {
+    return this.step(async () => {
+      return this.subtreeRead(id, "@>");
+    });
   }
 
   /**
@@ -705,8 +751,10 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws NotFoundError when `id` is not a visible record.
    * @throws TypeError when the model has no `HasTree` trait.
    */
-  async descendants(id: string): Promise<M[]> {
-    return this.subtreeRead(id, "<@");
+  descendants(id: string): Promise<M[]> {
+    return this.step(async () => {
+      return this.subtreeRead(id, "<@");
+    });
   }
 
   /**
@@ -719,21 +767,25 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws TypeError when the model has no `HasTree` trait, or `parentId` is the record or lies below it.
    * @throws AppendOnlyWriteError for an `AppendOnly` model.
    */
-  async move(id: string, parentId: string | null): Promise<number> {
-    this.treeColumn();
-    this.refuseAppendOnly("move");
-    const from = await this.treePathOf(id);
-    const parent = parentId === null ? undefined : await this.treePathOf(parentId);
-    if (parent !== undefined && (parent === from || parent.startsWith(`${from}.`)))
-      throw new TypeError(`${parentId} lies at or below ${id}: a subtree cannot move under itself`);
-    const to = treePath(parent, id);
-    if (to === from) return 0;
-    const meta = this.em().getMetadata(this.model());
-    const [key = "id"] = meta.primaryKeys;
-    const idColumn = quoteIdentifier(columnOf(meta, key));
-    const parentColumn = quoteIdentifier(columnOf(meta, "parentId"));
-    return this.rewritePrefix("treePath", from, to, {
-      parentId: raw(`case when ${idColumn} = ? then ? else ${parentColumn} end`, [id, parentId]),
+  move(id: string, parentId: string | null): Promise<number> {
+    return this.step(async () => {
+      this.treeColumn();
+      this.refuseAppendOnly("move");
+      const from = await this.treePathOf(id);
+      const parent = parentId === null ? undefined : await this.treePathOf(parentId);
+      if (parent !== undefined && (parent === from || parent.startsWith(`${from}.`)))
+        throw new TypeError(
+          `${parentId} lies at or below ${id}: a subtree cannot move under itself`,
+        );
+      const to = treePath(parent, id);
+      if (to === from) return 0;
+      const meta = this.em().getMetadata(this.model());
+      const [key = "id"] = meta.primaryKeys;
+      const idColumn = quoteIdentifier(columnOf(meta, key));
+      const parentColumn = quoteIdentifier(columnOf(meta, "parentId"));
+      return this.rewritePrefix("treePath", from, to, {
+        parentId: raw(`case when ${idColumn} = ? then ? else ${parentColumn} end`, [id, parentId]),
+      });
     });
   }
 
@@ -745,38 +797,40 @@ export abstract class CrudService<M extends object> extends Service implements R
    * @throws TableFilterInvalidError for a filter value outside the `TableFilter` vocabulary, or more than three sort
    *         keys.
    */
-  async table<H extends string = never>(
+  table<H extends string = never>(
     input: TableQuery,
     options: TableOptions<M, H> = {},
   ): Promise<TablePage<Loaded<M, H>>> {
-    const em = await settled(this.em());
-    const model = this.model();
-    const orderBy = this.orderOf(input.sort);
-    const filters = Object.entries(input.filter ?? {})
-      .filter(([, value]) => value !== undefined)
-      .map(([path, value]) => nest(path, filterCondition(path, value, options.period)));
-    const visible = await visibleFilter(model, options.where ?? ({} as Where<M>));
-    const where = { $and: [visible, ...filters] } as Where<M>;
-    const cursor = await em.findByCursor(model, {
-      where,
-      orderBy,
-      first: input.limit,
-      ...(input.cursor === undefined ? {} : { after: input.cursor }),
-      ...(options.populate === undefined ? {} : { populate: options.populate }),
-      includeCount: false,
+    return this.step(async () => {
+      const em = await settled(this.em());
+      const model = this.model();
+      const orderBy = this.orderOf(input.sort);
+      const filters = Object.entries(input.filter ?? {})
+        .filter(([, value]) => value !== undefined)
+        .map(([path, value]) => nest(path, filterCondition(path, value, options.period)));
+      const visible = await visibleFilter(model, options.where ?? ({} as Where<M>));
+      const where = { $and: [visible, ...filters] } as Where<M>;
+      const cursor = await em.findByCursor(model, {
+        where,
+        orderBy,
+        first: input.limit,
+        ...(input.cursor === undefined ? {} : { after: input.cursor }),
+        ...(options.populate === undefined ? {} : { populate: options.populate }),
+        includeCount: false,
+      });
+      const next = cursor.hasNextPage ? cursor.endCursor : null;
+      // After the page, not beside it: both statements share the call's connection.
+      const count =
+        options.count === undefined
+          ? undefined
+          : await tableCount(em, model, where as FilterQuery<M>, options.count);
+      return {
+        items: [...cursor.items] as Loaded<M, H>[],
+        hasMore: cursor.hasNextPage,
+        ...(next === null ? {} : { nextCursor: next }),
+        ...(count === undefined ? {} : { count }),
+      };
     });
-    const next = cursor.hasNextPage ? cursor.endCursor : null;
-    // After the page, not beside it: both statements share the call's connection.
-    const count =
-      options.count === undefined
-        ? undefined
-        : await tableCount(em, model, where as FilterQuery<M>, options.count);
-    return {
-      items: [...cursor.items] as Loaded<M, H>[],
-      hasMore: cursor.hasNextPage,
-      ...(next === null ? {} : { nextCursor: next }),
-      ...(count === undefined ? {} : { count }),
-    };
   }
 
   /**
@@ -794,6 +848,20 @@ export abstract class CrudService<M extends object> extends Service implements R
   /** The entity manager of the running context; a raw query in a subclass method goes through it (ADR 0160). */
   protected em(): EntityManager {
     return Database.current().em();
+  }
+
+  /**
+   * Runs `work`, one operation, as one step of the detached call the caller runs inside (`ctx.detach()`): its own
+   * transaction with the call's isolation, when no transaction is running. Inside a transaction, or outside a
+   * detached call, it runs `work` as it is. A subclass method that reads or writes more than once wraps itself in it.
+   */
+  protected step<T>(work: () => Promise<T>): Promise<T> {
+    const detached = Database.detached();
+    if (detached === undefined) return work();
+    const em = this.em();
+    // reason: a unit test may hand the service a partial entity manager with no `isInTransaction`; it runs outside one
+    if (typeof em.isInTransaction === "function" && em.isInTransaction()) return work();
+    return detached(work);
   }
 
   /** The model this service is typed against. */
@@ -933,11 +1001,14 @@ export abstract class CrudService<M extends object> extends Service implements R
     const em = this.em();
     const model = this.model();
     const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
-    // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters
+    // raw-sql: the ltree prefix rewrite (`<@`, `subpath`, `nlevel`) has no typed form; both paths are parameters. The
+    // column is cast to ltree, so a `varchar` path column works as an `ltree` one does (the cast is a no-op there and
+    // keeps its index), and the new path is assigned back through the string I/O cast either way. The moved node's
+    // own row takes `to` itself: `subpath` refuses an offset equal to the path's length ("invalid positions").
     return this.watched(
       "updated",
       [field, ...Object.keys(extra)],
-      filterOf({ $raw: raw(`${column} <@ ?::ltree`, [from]) } as Where<M>),
+      filterOf({ $raw: raw(`${column}::ltree <@ ?::ltree`, [from]) } as Where<M>),
       (filter) =>
         em.nativeUpdate(
           model,
@@ -945,7 +1016,11 @@ export abstract class CrudService<M extends object> extends Service implements R
           {
             ...stampFields(model, "update"),
             ...extra,
-            [field]: raw(`?::ltree || subpath(${column}, nlevel(?::ltree))`, [to, from]),
+            [field]: raw(
+              `case when ${column}::ltree = ?::ltree then ?::ltree ` +
+                `else ?::ltree || subpath(${column}::ltree, nlevel(?::ltree)) end`,
+              [from, to, to, from],
+            ),
           } as never,
         ),
     );

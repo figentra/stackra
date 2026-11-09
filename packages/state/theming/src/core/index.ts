@@ -17,6 +17,7 @@ export { MemorySystemAccessibilityDriver } from "#core/drivers/memory-system-acc
 export { MemorySystemColorSchemeDriver } from "#core/drivers/memory-system-color-scheme.driver";
 export { ThemingOptions } from "#core/schemas/theming-options.schema";
 export { ColorSchemeService } from "#core/services/color-scheme.service";
+export type { BrandLogoSource } from "#core/types/brand-logo-source.type";
 export type { ColorSchemeState } from "#core/types/color-scheme-state.type";
 export type { SchemeColors } from "#core/types/scheme-colors.type";
 export type { Splash } from "#core/types/splash.type";

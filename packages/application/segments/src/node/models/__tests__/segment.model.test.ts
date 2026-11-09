@@ -20,6 +20,7 @@ describe("Segment", () => {
       "has_public_id",
       "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(Segment)[0]?.options).toEqual({ prefix: "seg" });
     expect(new Segment().id).toMatch(/^seg_[0-9a-z]{26}$/);

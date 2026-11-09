@@ -20,7 +20,9 @@ export class PageDockBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.pageDock,
 }) {
+  /** The dock's nav name. */
   label!: LocalizedText;
 
+  /** The sections the dock links, in page order. */
   items!: DockItem[];
 }

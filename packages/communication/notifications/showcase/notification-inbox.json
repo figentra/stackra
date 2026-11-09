@@ -1,0 +1,21 @@
+{
+  "slug": "notification-inbox",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react", "native"],
+  "packageName": "@stackra/notifications",
+  "exportName": "NotificationInbox",
+  "parts": ["NotificationInbox"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 480
+    }
+  ],
+  "related": ["free/notifications-panel", "free/badge", "free/popover"],
+  "tokens": ["color.surface", "color.danger"],
+  "keywords": ["notifications", "inbox", "bell", "unread", "in-app", "kit"],
+  "status": "new"
+}

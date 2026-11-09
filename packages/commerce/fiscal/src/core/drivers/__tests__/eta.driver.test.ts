@@ -136,6 +136,20 @@ describe("EtaDriver#seal", () => {
 describe("EtaDriver#submit", () => {
   const record = fiscalRecord({ payload: '{"internalID":"INV-0001"}' });
 
+  /** The outcome of a rejected submission whose answer also holds `fields`. */
+  const rejectedWith = (fields: object) =>
+    new EtaDriver(
+      new FiscalSignerFake(),
+      FiscalTransportFake.answering({
+        status: 202,
+        headers: {},
+        body: JSON.stringify({
+          ...fields,
+          rejectedDocuments: [{ internalId: "INV-0001", error: { message: "bad code" } }],
+        }),
+      }),
+    ).submit(record, context);
+
   it("wraps the document in a batch and reads an accepted UUID", async () => {
     const body = JSON.stringify({
       submissionId: "S1",
@@ -165,6 +179,14 @@ describe("EtaDriver#submit", () => {
       "bad code",
       "S1",
     ]);
+  });
+
+  it("takes the rejection reference from submissionUUID, as ETA's SDK names it, before submissionId", async () => {
+    expect((await rejectedWith({ submissionUUID: "SU1" })).authorityReference).toBe("SU1");
+    expect(
+      (await rejectedWith({ submissionUUID: "SU1", submissionId: "S1" })).authorityReference,
+    ).toBe("SU1");
+    expect((await rejectedWith({})).authorityReference).toBeNull();
   });
 });
 

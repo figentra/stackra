@@ -1,0 +1,13 @@
+{
+  "basics": {
+    "sizes": "Sizes",
+    "countries": "Beside a country's name",
+    "tags": "From a language tag",
+    "saudi_arabia": "Saudi Arabia",
+    "united_arab_emirates": "United Arab Emirates",
+    "egypt": "Egypt",
+    "united_kingdom": "United Kingdom",
+    "arabic_saudi_arabia": "Arabic (Saudi Arabia)",
+    "serbian_latin": "Serbian in Latin script: no region, so the code shows"
+  }
+}

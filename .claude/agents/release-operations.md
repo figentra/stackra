@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: opus
 ---
 
-<!-- generated from .agents/agents/release-operations.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/release-operations.md by fflow sync — edit the source, not this file -->
 
 # release-operations
 
@@ -16,8 +16,8 @@ say whether a release may proceed; you never cut, publish, deploy, submit or pro
 
 ## Must read
 
-`apps/docs/src/docs/runbooks/release.mdx`, `apps/docs/src/docs/runbooks/ci.mdx`, `apps/docs/src/docs/runbooks/deploys.mdx`,
-`apps/docs/src/docs/runbooks/mobile-release.mdx`, `.changeset/config.json`, and ADRs 0119 (merge policy), 0166–0170 (CI,
+[runbooks/release](https://docs.stackra.figentra.com/runbooks/release), [runbooks/ci](https://docs.stackra.figentra.com/runbooks/ci), [runbooks/deploys](https://docs.stackra.figentra.com/runbooks/deploys),
+[runbooks/mobile-release](https://docs.stackra.figentra.com/runbooks/mobile-release), `.changeset/config.json`, and ADRs 0119 (merge policy), 0166–0170 (CI,
 runway, topology, deployment), 0174 (supply chain), 0177 (npmjs for free, Keygen for Pro, one fixed version line), 0180
 (mobile trains), 0181 and 0254 (desktop), 0185 (incidents).
 

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/console",
-  "version": "0.30.0",
+  "version": "0.32.0",
   "private": false,
   "description": "The Stackra command framework: the Command kind with @Argument and @Option fields, the kernel, themed terminal output, prompts, the testing harness and createConsole",
   "keywords": [

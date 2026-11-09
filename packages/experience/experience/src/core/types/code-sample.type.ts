@@ -8,10 +8,12 @@
 
 /** A code sample. */
 export interface CodeSample {
+  /** The file name the frame shows (`checkout.action.ts`). */
   readonly filename: string;
 
   /** The highlighter's language (`ts`, `json`, `yaml`). */
   readonly language: string;
 
+  /** The code, shown as text. */
   readonly source: string;
 }
