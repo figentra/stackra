@@ -866,11 +866,13 @@ export function createSourceReader(
         ? undefined
         : (host.valueDeclaration(symbol) ?? host.declarations(symbol)[0]);
     if (symbol === undefined || declaration === undefined) return undefined;
-    // A package function that wraps its `createDecorator` (`Searchable(options): DecoratorFunction`) is a facet too.
+    // A package function that wraps its `createDecorator` is a facet too, typed `DecoratorFunction`
+    // (`Searchable(options)`) or `FieldDecorator<T>` (`Setting(options)`, whose scopes, lock and approval gen must read;
+    // the shape decorators typed the same way are filtered out above).
     const wrapped =
       host.kind(declaration) === "FunctionDeclaration" &&
       declaration.type !== undefined &&
-      /\bDecoratorFunction\b/.test(host.text(declaration.type)) &&
+      /\b(?:DecoratorFunction|FieldDecorator)\b/.test(host.text(declaration.type)) &&
       isStackra(host.fileName(declaration));
     if (host.kind(declaration) !== "VariableDeclaration" && !wrapped) return undefined;
     const made =
