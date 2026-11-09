@@ -62,9 +62,15 @@ export class AwsSdkKmsClientDriver extends Driver(KmsClient) {
 
   /** The SDK client, imported and built on first use. */
   private kms(): Promise<AwsKmsApi> {
-    this.client ??= import("@aws-sdk/client-kms").then(
-      ({ KMS }): AwsKmsApi => new KMS(this.region === "" ? {} : { region: this.region }),
-    );
+    this.client ??= import("@aws-sdk/client-kms").then(({ KMS }): AwsKmsApi => {
+      const kms = new KMS(this.region === "" ? {} : { region: this.region });
+      return {
+        sign: (input) => kms.sign(input),
+        getPublicKey: (input) => kms.getPublicKey(input),
+        decrypt: (input) => kms.decrypt(input),
+        generateDataKeyWithoutPlaintext: (input) => kms.generateDataKeyWithoutPlaintext(input),
+      };
+    });
     return this.client;
   }
 }

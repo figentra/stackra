@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0416.
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { SignerConfig } from "#config/signer.config";
 import { KmsClient } from "#contracts/ports/kms-client.port";
