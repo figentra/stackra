@@ -1,7 +1,23 @@
 ---
 title: "0314 — PostGIS is an approved extension: the geospatial field types, their macros and GiST indexes"
-description: "Accepted · 2026-10-24"
+description: "Accepted, amended 2026-11-07 (owners of the kit) · 2026-10-24"
 ---
+
+<Note>
+  Amended 2026-11-07 (STA-1432; the leader's call for the Figentra Geo split): decision 3 named "the
+  geography service's package" as the owner of the kit, and no such package exists (the places
+  service of Figentra Geo is a product service, not a framework package). The kit lives where its
+  layers already are: `GeoPoint`, `GeoPolygon` and `GeoLine` in `@stackra/contracts`; their schemas
+  `geoPoint()`, `geoPolygon()` and `geoLine()` in `@stackra/validation`; the column types
+  `GeoPointType`, `GeoPolygonType` and `GeoLineType` (written as EWKT, read through `ST_AsGeoJSON`)
+  in `@stackra/model`; `t.point()`, `t.polygon()` and `t.line()` with their GiST indexes, the
+  conditions `areaCovers`, `withinMetresOf` and `intersectsArea`, and the `HasLocation` trait in
+  `@stackra/database`. The macros are blueprint methods, not `Macro` classes, because an online
+  index needs to know whether the table is being created. A polygon is its outer ring with no holes
+  for now. The PGlite memory driver and `db diff` load PostGIS from `@electric-sql/pglite-postgis`
+  when a member installs it. The rest of decision 3 stands: no other package defines its own
+  geospatial type, macro or location trait.
+</Note>
 
 <Note>
   Amends [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2 (the

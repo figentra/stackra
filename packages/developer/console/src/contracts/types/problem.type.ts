@@ -9,7 +9,7 @@
 
 /** A failure, as the operator reads it. */
 export interface Problem {
-  /** What failed. */
+  /** The headline saying what failed. */
   readonly title: string;
 
   /** Why it failed. */

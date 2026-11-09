@@ -41,7 +41,9 @@
       "integer": "عدد صحيح",
       "number": "رقم",
       "string": "نص",
-      "connection": "اتصال"
+      "connection": "اتصال",
+      "choice": "اختيار",
+      "list": "قائمة"
     },
     "settings_mode": {
       "developer": "المطوِّر",

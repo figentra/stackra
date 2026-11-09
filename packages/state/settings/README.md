@@ -30,7 +30,7 @@ Depends on `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@st
 | `.`           | `MemorySettingFloorSourceDriver`, `MemorySetting...`  | floors and revisions in memory                                   |
 | `.`           | `SettingsLockedError`, `SettingValueInvalidError`     | refusals                                                         |
 | `.`           | `SettingBelowFloorError`                              | refusals of the resolver                                         |
-| `.`           | `SettingFourEyesError`, `SettingRevisionClosedError`  | refusals of approval                                             |
+| `.`           | `SettingFourEyesError`, `SettingApproverRoleError`, `SettingRevisionClosedError` | refusals of approval |
 | `.`           | `PromotionBaseStaleError`                             | refusal of a promotion whose live base moved                     |
 | `.`           | `SettingsRules`, `SettingsOptions`, `SettingKey`, ... | types                                                            |
 | `./contracts` | `SettingValueStore`, `SettingLayer`, `SettingTarget`  | the store port and its types                                     |
@@ -83,6 +83,9 @@ export class OrdersSettings extends Settings({
   the defaults, the bounds and the sections into the group's schema.
 - A credential is never a setting: `@Secret` cannot mark a settings class, gen refuses `secret_in_settings`, and a key
   that names a credential holds a connection's id (`SettingType.Connection`).
+- `SettingType` is `boolean`, `integer`, `number`, `string`, `choice`, `list` and `connection`. A `choice` takes one of
+  the key's `options`; a `list` is an array of strings, each in `options` when the key gives them. The forms edit a
+  `choice` as text and a `list` as comma-separated text until `@stackra/settings-ui` ships the controls.
 
 ## Reading
 
@@ -126,6 +129,10 @@ await this.resolver.write(
 );
 ```
 
+- A key's `scopes` (its class's, narrowed by `@Setting({ scopes })`) name the levels that may write it: the page's
+  level, or `user` for a user's own layer. Any other write is refused `setting_scope_refused` before anything is
+  written (`SettingScopeRefusedError`, one field error per path); break-glass does not lift it. `applyChange` (packs,
+  promotions) takes no page, so its caller checks the level.
 - Floors come from `SettingFloorSource`; the OS driver resolves the tenant's market pack and calls `settingFloorsOf`.
   A write that crosses a floor is refused `setting_below_floor`; a stored value or default that crosses a floor (a
   floor rose) reads as the floor, with `source: "floor"`, so the admin can tell the tenant.
@@ -137,7 +144,10 @@ await this.resolver.write(
 - A write no person makes (a seeder, a seed pack) names `settingSystemAuthor("seed")` (`sys_seed`) as its author.
 - Each write is a `SettingRevision`: applied now, `pending` when a key needs `approval` (a second person approves,
   `setting_four_eyes` refuses the author), or `scheduled` for a later `effectiveAt`; the app's scheduler calls
-  `applyDue()`.
+  `applyDue()`. A role-gated key, `approval: { by: SystemRole.Owner }`, records the role on the revision
+  (`approvalRole`) and waits for someone holding it: the calling action passes the approver's IAM roles to
+  `approve(id, approver, roles)`, a missing role or none passed is `setting_approver_role` (forbidden), and the
+  role holder may approve their own change. One change needs one approving role.
 
 ## Packs and promotion
 

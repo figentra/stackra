@@ -22,7 +22,17 @@ rules:
   self-repository:
     ignore:
       # Local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168, called by SHA from other repositories);
-      # the `$/…` form is not adopted until a run on GitHub has proven it for these three callers.
+      # the `$/…` form is not adopted until a run on GitHub has proven it for these callers. The same holds for the
+      # local secrets-decrypt action (ADR 0525, called by SHA from other repositories).
+      - apply-observability.yml:106
+      - ci.yml:76
+      - ci.yml:227
       - deploy-docs.yml:55
-      - deploy-static.yml:67
-      - release.yml:110
+      - deploy-registry.yml:65
+      - deploy-static.yml:62
+      - deploy-turbo-cache.yml:64
+      - release.yml:111
+      - release.yml:191
+      - runway-drift.yml:52
+      - testbed-fallback.yml:52
+      - testbed-fallback.yml:58

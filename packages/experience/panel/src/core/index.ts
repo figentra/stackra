@@ -4,7 +4,9 @@
  *          metric shapes and the time range input with their shipped schemas, the enums, the data constructors gen
  *          writes into `#stackra/resources`, `#stackra/panels` and `#stackra/slots`, the recorders gen runs, the saved
  *          views with their store port, layouts, key validator and grouping, the display-mode field filter, the line-editor and inert
- *          contribution rules, `registerResources` for the generic resource pages, `pageContextOf` (the AI page context a panel page publishes), and the public types) until `stackra gen` writes the entry barrels (STA-339).
+ *          contribution rules, `registerResources` for the generic resource pages, the SDUI spec types (`ActionButtonSpec`,
+ *          `EmptyStateSpec`, `RowActionsSpec`, `BulkActionsSpec`, `FormFieldSpec`, `FilterSpec`, `TableColumnSpec`) with their
+ *          `FieldControl` and `FilterKind` enums, `pageContextOf` (the AI page context a panel page publishes), and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
  *           (`CountMetric$`, `MoneyMetric$`, `SavedView$` with its `SavedViewSort$`, `SavedViewGroup$` and
  *           `SavedViewTotal$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
@@ -50,7 +52,9 @@ export { Count } from "#core/enums/count.enum";
 export { DisplayKind } from "#core/enums/display-kind.enum";
 export { DocumentLayout } from "#core/enums/document-layout.enum";
 export { ExportFormat } from "#core/enums/export-format.enum";
+export { FieldControl } from "#core/enums/field-control.enum";
 export { FilterComparison } from "#core/enums/filter-comparison.enum";
+export { FilterKind } from "#core/enums/filter-kind.enum";
 export { ImportMode } from "#core/enums/import-mode.enum";
 export { Place } from "#core/enums/place.enum";
 export { PlacementLayer } from "#core/enums/placement-layer.enum";
@@ -87,12 +91,15 @@ export { SavedViewTotal } from "#core/schemas/saved-view-total.schema";
 export { SavedView } from "#core/schemas/saved-view.schema";
 export { TimeRangeInput } from "#core/schemas/time-range-input.schema";
 export type { Actions } from "#core/types/actions.type";
+export type { ActionButtonSpec } from "#core/types/action-button-spec.type";
+export type { BulkActionsSpec } from "#core/types/bulk-actions-spec.type";
 export type { BindRef } from "#core/types/bind-ref.type";
 export type { PanelBlockNode } from "#core/types/panel-block-node.type";
 export type { Built } from "#core/types/built.type";
 export type { ColumnBuilder } from "#core/types/column-builder.type";
 export type { ColumnFactory } from "#core/types/column-factory.type";
 export type { ColumnNode } from "#core/types/column-node.type";
+export type { EmptyStateSpec } from "#core/types/empty-state-spec.type";
 export type { CreateInput } from "#core/types/create-input.type";
 export type { CustomWidgetProps } from "#core/types/custom-widget-props.type";
 export type { DisplayNode } from "#core/types/display-node.type";
@@ -111,6 +118,8 @@ export type { FieldNode } from "#core/types/field-node.type";
 export type { FilterBuilder } from "#core/types/filter-builder.type";
 export type { FilterFactory } from "#core/types/filter-factory.type";
 export type { FilterNode } from "#core/types/filter-node.type";
+export type { FilterSpec } from "#core/types/filter-spec.type";
+export type { FormFieldSpec } from "#core/types/form-field-spec.type";
 export type { FormNode } from "#core/types/form-node.type";
 export type { FormStepNode } from "#core/types/form-step-node.type";
 export type { Form } from "#core/types/form.type";
@@ -147,6 +156,8 @@ export type { Slot } from "#core/types/slot.type";
 export type { SortNode } from "#core/types/sort-node.type";
 export type { TableNode } from "#core/types/table-node.type";
 export type { Table } from "#core/types/table.type";
+export type { RowActionsSpec } from "#core/types/row-actions-spec.type";
+export type { TableColumnSpec } from "#core/types/table-column-spec.type";
 export type { ToneRule } from "#core/types/tone-rule.type";
 export type { ToneRules } from "#core/types/tone-rules.type";
 export type { ViewBuilder } from "#core/types/view-builder.type";

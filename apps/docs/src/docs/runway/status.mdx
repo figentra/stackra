@@ -1,0 +1,50 @@
+---
+title: "runway status"
+description: "What each GitHub environment of the repository runs now."
+---
+
+What each GitHub environment of the repository runs now.
+
+```bash
+stackra runway status [environment] [--json]
+```
+
+| Argument or option | Kind     | Meaning                                              |
+| ------------------ | -------- | ---------------------------------------------------- |
+| `environment`      | argument | One runway or GitHub environment; default every one. |
+
+## What it does
+
+Read-only `gh api` GETs of GitHub's deployment records, for the runway environments plus
+`providers.github.environments`. It changes nothing.
+
+## What it prints
+
+One row per environment: the commit, when it was deployed, and the latest state (`none` when nothing has deployed
+there). Each row is the `--json` data.
+
+## Exit codes
+
+| Code | Means                            |
+| ---- | -------------------------------- |
+| 0    | Printed.                         |
+| 1    | `gh` failed or is not signed in. |
+| 2    | Usage error.                     |
+
+## Where it runs
+
+With the person's own `gh` login, or a job's token.
+
+## Examples
+
+```bash
+stackra runway status
+stackra runway status production --json
+```
+
+## See also
+
+[0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step),
+[0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

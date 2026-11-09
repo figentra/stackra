@@ -20,7 +20,7 @@ import type { TenantProfileView } from "#contracts/types/tenant-profile-view.typ
  * await profile.update({ name: "Acme Academy" });
  */
 export abstract class TenantProfile extends Port {
-  /** The profile. */
+  /** Answers the active tenant's profile. */
   abstract get(): Promise<TenantProfileView>;
 
   /** Changes the given fields and answers the profile as it now is. */

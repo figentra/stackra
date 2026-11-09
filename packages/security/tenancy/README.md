@@ -89,7 +89,15 @@ with no actor runs as a platform call (`''`, no tenant row). A `job` or `system`
 tenant of that scope, which the platform wrote (a branch resolves to its parent tenant; ADR 0495, note of 2026-11-01), so
 a job pushed with `{ scope }` and no origin reads its tenant's rows; a scope the `ScopeTree` does not show is refused
 (`tenant_scope_unresolved`). Any other actor stays in its own tenant, and a scope of another tenant is refused
-(`tenant_scope_mismatch`); neither tenant is ever picked for it. Every `app.*` setting is `set_config(..., true)`, so it ends
+(`tenant_scope_mismatch`); neither tenant is ever picked for it. A user with a tenant is refused the same way in a
+scope above every tenant or one the tree does not show, such as its own id with the path `platform`, and so is an agent
+or a service with a tenant (its own, or else that of the user it acts for); a platform user, agent or service stays a
+platform call. An agent or a service with no tenant of its own runs in the tenant of the user it acts for:
+`withTenant` sets `app.tenant_id` to it. One whose own tenant differs from that user's is refused (ADR 0209,
+amendment of 2026-11-07, condition 3). These tenants are compared through the scope tree: a user whose token was
+issued for a branch claims that branch's tenant, so branch staff work directly and through a service or an agent of
+their tenant, and `withTenant` gets the tenant, never the branch id. A claimed scope the tree does not show, or one
+above every tenant, is refused (`tenant_scope_mismatch`), and a tree read that fails fails the call. Every `app.*` setting is `set_config(..., true)`, so it ends
 with the transaction; `pnpm validate` refuses a session-level one.
 
 `withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.scopeId`, or `''` for a
@@ -108,6 +116,26 @@ A table whose rows belong to a tenant or to the platform (an inbound message on 
 The policy is `tenant_id IS NOT DISTINCT FROM nullif(current_setting('app.tenant_id'), '')`: a platform call
 (`withTenant` with no tenant) reads and writes only the NULL rows, a tenant call only its own. The macro compiles it
 through @stackra/database's `equalsOrUnset` policy match (STA-1300).
+
+## An existing table: the expand form
+
+A table that already has rows and its own policy (the scope-path tables) becomes tenant-owned in two releases. The
+expand step, `t.belongsToTenant({ expand: true })` in `schema.table(...)`, adds a nullable, indexed `tenant_id` that
+every insert fills from `app.tenant_id` (a column default), and no policy: a second permissive policy would OR with the
+table's own and widen it. Older rows stay null until a backfill job sets them. The contract step then makes the column
+NOT NULL and the tenant equality the one permissive policy, any other policy restrictive (ADR 0347 decision 1):
+
+```typescript
+schema.refuseNulls("tenant_id", ["custom_fields"], "Backfill tenant_id in this environment first.");
+schema.table("custom_fields", (t: Blueprint) => {
+  t.dropRowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+  t.belongsToTenant({ contract: true }); // SET NOT NULL and pol_custom_fields_tenant_id
+  t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor", restrictive: true });
+});
+```
+
+`schema.refuseNulls` refuses the migration before any change while a row still has no tenant, naming each table's
+count, so an environment with expand-step rows runs the backfill first.
 
 ## Tenant tokens
 

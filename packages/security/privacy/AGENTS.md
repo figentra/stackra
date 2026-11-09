@@ -37,7 +37,9 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 - Every disposal asks `disposableIds` first; held rows are kept and counted, never touched.
 - Never shred while a held row carries a `shred` field.
 - Legal holds (`legal_holds`): a release keeps the row; never delete a hold or a refusal row. A hold is never an
-  agent tool, and every statement names the session's tenant partition as well as the policy enforcing it.
+  agent tool, and every statement names the call's own owner (`tenant_id`, NULL for the platform) as well as the
+  policy enforcing it. A system run (no tenant) claims live holds across tenants through `privacy.claim_live_holds`
+  and checks and logs each in its owner; a claimed hold that does not load, or a tenant's with no isolation, throws.
 - Never erase while a `shred` field is not subject-sealed (`unsealedShredFields`); the receipt would be false.
 - @stackra/model is imported from `node` only (its runtime is node); `core` and `contracts` stay off it.
 - A salt never leaves `SubjectKeyProviderDriver`: never log, export or put it in an event.
@@ -52,8 +54,11 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 - Business values (export window, folder) are `PrivacyConfig`, never constants.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 - No `tenant` identifiers (R-59); the running scope comes from row-level security.
-- `SubjectHolds` (`./contracts`, STA-1567) asks only whether a live hold names a subject's public id, in the session's
-  partition (`PostgresSubjectHoldsDriver`), never across tenants: the caller runs per scope, as the erasure does.
+- `SubjectHolds` (`./contracts`, STA-1567) asks only whether a live hold names a subject's public id, in the call's own
+  owner (`PostgresSubjectHoldsDriver`), never across tenants: the caller runs per scope, as the erasure does.
+- The privacy tables are in the platform form (`privacy.0003`): `tenant_id` from `app.tenant_id`, never written by
+  hand; no code reads or writes the old `-` partition. `scope_id` stays one release (nullable, filled on insert by
+  `privacy.fill_legacy_scope_id` for the previous release) until a contract migration drops it.
 
 - `test:int` (`vitest.int.config.ts`, which wraps `vitest.config.ts` in `intTier` from `@stackra/vitest-config/int`)
   runs the `.int.test.ts` files on a Testcontainers Postgres and needs Docker; `test` never runs them (STA-1570).

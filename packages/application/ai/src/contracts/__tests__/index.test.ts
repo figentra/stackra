@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry of @stackra/ai: the six runtime ports, the run
- *          enums, the client tool enums, the `PageReader` port and `PageReadRefusal` are exported, nothing else is as a value, and the exchanged records resolve.
+ *          enums, the client tool enums, the Tamo part enums, the `PageReader` port and `PageReadRefusal` are exported, nothing else is as a value, and the exchanged records resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); STA-781; ADR 0450; ADR 0490.
@@ -16,6 +16,9 @@ import type {
   ProductHint,
   RecordScope,
   RunRecord,
+  TamoDataPartType,
+  TamoPartData,
+  TamoPartKind,
   ToolCallRecord,
   ToolCallResult,
 } from "#contracts/index";
@@ -35,6 +38,9 @@ describe("@stackra/ai/contracts", () => {
       "RunStatus",
       "RunStore",
       "SurfaceKind",
+      "TamoChartKind",
+      "TamoMetricFormat",
+      "TamoPartKind",
       "ToolCallOutcome",
       "ToolDispatcher",
     ]);
@@ -43,6 +49,13 @@ describe("@stackra/ai/contracts", () => {
   it("types a client tool row as an L0 tool from the client", () => {
     expectTypeOf<ClientToolRow["from"]>().toEqualTypeOf<"client">();
     expectTypeOf<ClientToolRow["risk"]>().toEqualTypeOf<"L0">();
+  });
+
+  it("maps every Tamo part kind to its data and its data part type", () => {
+    expectTypeOf<keyof TamoPartData>().toEqualTypeOf<TamoPartKind>();
+    expectTypeOf<
+      Extract<TamoDataPartType, "data-tamo-widget_ref">
+    >().toEqualTypeOf<"data-tamo-widget_ref">();
   });
 
   it("resolves the exchanged records", () => {

@@ -3,7 +3,8 @@
  * Purpose: `RoomMember`, a joined connection as its owner drives it: its stamped identity, `publish` to relay a message
  *          to the room, and `leave`.
  * Boundary: a type only. `publish` throws the refusal of a message the room will not relay (`forbidden`,
- *           `room_limit_reached`); `leave` is idempotent.
+ *           `room_limit_reached`), or rejects with `forbidden` when a re-checked edit right is gone; `leave` is
+ *           idempotent.
  * Runtime: isomorphic
  * Governing contract: ADR 0346 (decisions 4 to 6).
  */
@@ -18,10 +19,12 @@ export interface RoomMember {
   /**
    * Relays `message` to the room's other members.
    *
+   * @returns `undefined` once relayed; a promise for an `update` whose grant re-checks the edit right
+   *          (`RoomGrant.recheckEdit`), which rejects with ForbiddenError when the right is gone.
    * @throws ForbiddenError for a viewer's `update`; RoomLimitReachedError over the size or rate cap (the member is
    *         dropped).
    */
-  publish: (message: RoomPublish) => void;
+  publish: (message: RoomPublish) => Promise<void> | undefined;
 
   /** Leaves the room. */
   leave: () => void;

@@ -7,7 +7,9 @@
  * Governing contract: ADR 0294 (decision 18).
  */
 import type { AnyClass } from "@stackra/container";
-import type { Backoff } from "@stackra/contracts";
+import type { Backoff, Duration } from "@stackra/contracts";
+
+import type { StepRetryValues } from "#core/types/step-retry-values.type";
 
 /** One step of a plan. */
 export interface StepPlan {
@@ -28,6 +30,12 @@ export interface StepPlan {
 
   /** The wait between two attempts. */
   readonly backoff: Backoff;
+
+  /** The first wait, when the step names one; the queue's `JOB_BACKOFF` base otherwise. */
+  readonly base?: Duration;
+
+  /** Reads the values that replace `attempts`, `base` and `backoff` each time the step fails (STA-2610). */
+  readonly live?: (workflow: never) => Promise<StepRetryValues | undefined>;
 
   /** The signal or event class it waits for. */
   readonly waitFor?: AnyClass;

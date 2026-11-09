@@ -3,21 +3,20 @@
  * Stackra file contract:
  * Purpose: run `gh` or `git` as `stackra-bot` — `pnpm bot:gh -- pr list`, `pnpm bot:git -- commit -m …`,
  *   `pnpm bot:git -- push origin HEAD`. Mints an installation token (bot-token.mjs) and passes it as GH_TOKEN.
- *   `pnpm bot:review -- pr comment <n> --body-file f` runs gh as the separate `stackra-reviewer` app (ADR 0230): the
- *   only identity whose `AI-REVIEW:` verdict pr-merge accepts. It may only read a PR and comment or review on it.
+ *   The `review` mode (the `stackra-reviewer` App, ADR 0230) is retired with that App (ADR 0523 decision 6).
  * git: author and committer are the bot; pushes go over https with `gh auth git-credential` as the only credential
  *   helper, and ssh remotes are rewritten to https for this one command. Everything is `-c`, so nothing is written
  *   to .git/config and the token never appears in argv. No hook runs (`core.hooksPath=/dev/null`): the CI gate runs
  *   the checks a hook would, and a hook is repository code that would see every /agents value.
  * Boundary: runs one `gh` or `git` child with the minted token in its environment; writes no git config and no file.
  * Runtime: node
- * Governing contract: ADR 0230 (reviewer identity separate from builder); ADR 0293 (agent permission tiers and
- *                     executor pushes).
+ * Governing contract: ADR 0230 (reviewer identity separate from builder, amended by ADR 0523 decision 6); ADR 0293
+ *                     (agent permission tiers and executor pushes).
  * Secrets: the token lives only in the child's environment; never printed.
  */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { ghIdempotent, mintToken, netFetch, spawnRetrying } from "./bot-token.mjs";
+import { ghIdempotent, mintToken, spawnRetrying } from "./bot-token.mjs";
 
 // Bot user id from `gh api /users/stackra-bot%5Bbot%5D` (not the app id).
 export const BOT_NAME = "stackra-bot[bot]";
@@ -82,25 +81,6 @@ export async function runAsBot(tool, args, token) {
     await write(process.stderr, `bot-gh: ${why}\n`);
   } else await write(process.stdout, r.stdout);
   return r.status ?? 1;
-}
-
-/**
- * Whether a `gh api` arg makes it write: gh api switches to POST when given fields or --input. pflag bundles short
- * flags (`-iX`, `-if`), so every single-dash arg is read letter by letter; a value that happens to hold X, f or F is
- * denied too.
- */
-const isWriteFlag = (a) =>
-  a.startsWith("--")
-    ? ["method", "field", "raw-field", "input"].includes(a.slice(2).split("=")[0])
-    : a.startsWith("-") && /[XfF]/.test(a.slice(1));
-
-/** gh subcommands the reviewer identity may run: read a PR, then comment or review. Never push, merge or edit. */
-export function reviewerAllows(args) {
-  const [group, verb] = args;
-  // A verdict is never edited or deleted (ADR 0230): post a new comment.
-  if (args.some((a) => /^--(edit|delete)-last(=|$)/.test(a))) return false;
-  if (group === "pr") return ["view", "diff", "checks", "comment", "review"].includes(verb);
-  return group === "api" && !args.some(isWriteFlag);
 }
 
 /**
@@ -250,15 +230,21 @@ function words(tool, args) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [tool, ...rest] = process.argv.slice(2);
   const args = rest[0] === "--" ? rest.slice(1) : rest;
-  if (tool !== "gh" && tool !== "git" && tool !== "review") {
-    process.stderr.write("usage: bot-gh.mjs gh|git|review [args...]\n");
+  if (tool === "review") {
+    process.stderr.write(
+      "bot-gh: the stackra-reviewer App is retired (ADR 0523 decision 6); post an advisory review with `pnpm bot:gh -- pr comment`\n",
+    );
+    process.exit(2);
+  }
+  if (tool !== "gh" && tool !== "git") {
+    process.stderr.write("usage: bot-gh.mjs gh|git [args...]\n");
     process.exit(2);
   }
   if (leaksToken(tool, args)) {
     process.stderr.write("bot-gh: `gh auth` and `git credential` would expose the bot token\n");
     process.exit(2);
   }
-  const unsafe = unsafeArgs(tool === "review" ? "gh" : tool, args);
+  const unsafe = unsafeArgs(tool, args);
   if (unsafe) {
     process.stderr.write(`bot-gh: ${unsafe}\n`);
     process.exit(2);
@@ -267,17 +253,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.stderr.write("bot-gh: agents merge only through `pnpm pr:merge <n>`\n");
     process.exit(2);
   }
-  if (tool === "review" && !reviewerAllows(args)) {
-    process.stderr.write(
-      "bot-gh: the reviewer identity only runs gh pr view|diff|checks|comment|review and GET api\n",
-    );
-    process.exit(2);
-  }
   try {
-    if (tool === "review")
-      process.exit(
-        await runAsBot("gh", args, await mintToken(process.env, netFetch, "STACKRA_REVIEWER")),
-      );
     process.exit(await runAsBot(tool, args, await mintToken()));
   } catch (error) {
     process.stderr.write(`bot-gh: ${error.message}\n`);

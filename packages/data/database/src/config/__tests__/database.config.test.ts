@@ -29,11 +29,13 @@ describe("DatabaseConfig", () => {
   });
 
   it("takes a runway values layer and refuses a timeout that is not a duration", () => {
-    const values = { health: { timeout: Duration.seconds(1), critical: false } };
+    const values = { health: { timeout: Duration.seconds(1), critical: false, rowSecurity: true } };
     expect(buildConfig(DatabaseConfig, { values }).health).toEqual(values.health);
     expect(() =>
       buildConfig(DatabaseConfig, {
-        values: { health: { timeout: "two seconds" as Duration, critical: true } },
+        values: {
+          health: { timeout: "two seconds" as Duration, critical: true, rowSecurity: false },
+        },
       }),
     ).toThrow(ConfigInvalidError);
   });

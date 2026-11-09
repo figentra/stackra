@@ -15,7 +15,7 @@ export interface PromptRequest {
   /** How it is asked. */
   readonly kind: PromptKind;
 
-  /** The question. */
+  /** The question the Operator reads. */
   readonly message: string;
 
   /** The answer used without asking when the run is not interactive, and preselected when it is. */

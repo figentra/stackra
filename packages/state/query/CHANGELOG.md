@@ -1,5 +1,505 @@
 # @stackra/query
 
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [1b727b9]
+- Updated dependencies [b26036e]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/settings@0.29.0
+  - @stackra/devices@0.29.0
+  - @stackra/storage@0.29.0
+  - @stackra/platform@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/realtime@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/devices@0.28.0
+  - @stackra/settings@0.28.0
+  - @stackra/storage@0.28.0
+  - @stackra/platform@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/validation@0.28.0
+  - @stackra/realtime@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/settings@0.27.0
+  - @stackra/devices@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/storage@0.27.0
+  - @stackra/platform@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/validation@0.27.0
+  - @stackra/realtime@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+  - @stackra/devices@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/settings@0.26.0
+  - @stackra/storage@0.26.0
+  - @stackra/platform@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+  - @stackra/realtime@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/settings@0.25.0
+  - @stackra/devices@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/storage@0.25.0
+  - @stackra/platform@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/validation@0.25.0
+  - @stackra/realtime@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+  - @stackra/actions@0.24.0
+  - @stackra/devices@0.24.0
+  - @stackra/settings@0.24.0
+  - @stackra/storage@0.24.0
+  - @stackra/platform@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/validation@0.24.0
+  - @stackra/realtime@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [a42a80c]
+- Updated dependencies [fb6e2b3]
+  - @stackra/actions@0.23.0
+  - @stackra/settings@0.23.0
+  - @stackra/devices@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/platform@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/validation@0.23.0
+  - @stackra/realtime@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [786848c]
+  - @stackra/actions@0.22.0
+  - @stackra/settings@0.22.0
+  - @stackra/devices@0.22.0
+  - @stackra/realtime@0.22.0
+  - @stackra/storage@0.22.0
+  - @stackra/platform@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/storage@0.21.0
+  - @stackra/platform@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/devices@0.21.0
+  - @stackra/realtime@0.21.0
+  - @stackra/settings@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/devices@0.20.0
+  - @stackra/settings@0.20.0
+  - @stackra/storage@0.20.0
+  - @stackra/platform@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/realtime@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [e0298ce]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/platform@0.19.0
+  - @stackra/devices@0.19.0
+  - @stackra/storage@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/realtime@0.19.0
+  - @stackra/settings@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/devices@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/storage@0.18.1
+  - @stackra/platform@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/realtime@0.18.1
+  - @stackra/settings@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/devices@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/storage@0.18.0
+  - @stackra/platform@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/realtime@0.18.0
+  - @stackra/settings@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/devices@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/storage@0.17.2
+  - @stackra/platform@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/realtime@0.17.2
+  - @stackra/settings@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/settings@0.17.1
+  - @stackra/devices@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/storage@0.17.1
+  - @stackra/platform@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/realtime@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/storage@0.17.0
+  - @stackra/platform@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/devices@0.17.0
+  - @stackra/realtime@0.17.0
+  - @stackra/settings@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [c6e4715]
+- Updated dependencies [5bf8ad3]
+  - @stackra/settings@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/storage@0.16.0
+  - @stackra/platform@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/devices@0.16.0
+  - @stackra/realtime@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/devices@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/storage@0.15.0
+  - @stackra/platform@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/realtime@0.15.0
+  - @stackra/settings@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [6406843]
+- Updated dependencies [cc150d2]
+  - @stackra/settings@0.14.4
+  - @stackra/devices@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/storage@0.14.4
+  - @stackra/platform@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/realtime@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/storage@0.14.3
+  - @stackra/platform@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/devices@0.14.3
+  - @stackra/realtime@0.14.3
+  - @stackra/settings@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/storage@0.14.2
+  - @stackra/platform@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/devices@0.14.2
+  - @stackra/realtime@0.14.2
+  - @stackra/settings@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/storage@0.14.1
+  - @stackra/platform@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/devices@0.14.1
+  - @stackra/realtime@0.14.1
+  - @stackra/settings@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/storage@0.14.0
+  - @stackra/platform@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/devices@0.14.0
+  - @stackra/realtime@0.14.0
+  - @stackra/settings@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/storage@0.13.0
+  - @stackra/platform@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/devices@0.13.0
+  - @stackra/realtime@0.13.0
+  - @stackra/settings@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/storage@0.12.0
+  - @stackra/platform@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/devices@0.12.0
+  - @stackra/realtime@0.12.0
+  - @stackra/settings@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/storage@0.11.1
+  - @stackra/platform@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/devices@0.11.1
+  - @stackra/realtime@0.11.1
+  - @stackra/settings@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/storage@0.11.0
+  - @stackra/platform@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/devices@0.11.0
+  - @stackra/realtime@0.11.0
+  - @stackra/settings@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/platform@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/devices@0.10.0
+  - @stackra/realtime@0.10.0
+  - @stackra/settings@0.10.0
+  - @stackra/storage@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/storage@0.9.0
+  - @stackra/platform@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/devices@0.9.0
+  - @stackra/realtime@0.9.0
+  - @stackra/settings@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

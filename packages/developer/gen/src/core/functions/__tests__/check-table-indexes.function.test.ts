@@ -2,9 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `checkTableIndexes`: a recorded resource table that sorts (a sortable column, the default sort,
  *          a tiebreak key) or filters on a path no index leads with is refused (`sort_not_indexed`,
- *          `filter_not_indexed`) with a fix; an `@Index` leading column, a `@Searchable` filter, the primary key, an own
- *          base model's index, a relation path and the trashed filter pass; no recorded tree means no refusal; and
- *          `generateMember` refuses on it in the full pass.
+ *          `filter_not_indexed`) with a fix; an `@Index` leading column (or the column after a leading scope column), a
+ *          `@Searchable` filter, the primary key, an own base model's index, a relation path and the trashed filter
+ *          pass; no recorded tree means no refusal; and
+ *          `generateMember` refuses on a tree read this run with no committed manifest, never on a tree only the
+ *          committed manifest holds (STA-2066).
  * Boundary: test only; pure IR in, refusals out.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rule 2); reporting gap 5.
@@ -48,7 +50,7 @@ function irOf(classes: readonly DeclaredClass[], shapes: readonly ShapeIR[] = []
   };
 }
 
-/** A committed manifest recording `table` for `key`. */
+/** A manifest recording `table` for `key`. */
 function recorded(key: string, table: unknown): StackraManifest {
   return { ui: { resources: { [key]: { options: {}, table } } } } as unknown as StackraManifest;
 }
@@ -70,10 +72,29 @@ const TABLE = {
   count: "estimated",
 };
 
-/** The `code subject` lines refused for `ir` and `previous`. */
-function refused(ir: MemberIR, previous?: StackraManifest): string[] {
-  return checkTableIndexes(ir, previous).map((error) => `${error.code} ${error.subject}`);
+/** The `code subject` lines refused for `ir` and `manifest`. */
+function refused(ir: MemberIR, manifest?: StackraManifest): string[] {
+  return checkTableIndexes(ir, manifest).map((error) => `${error.code} ${error.subject}`);
 }
+
+const LEDGER_RESOURCE_FILE = "src/modules/orders/resources/ledger/ledger.resource.ts";
+
+/** A resource class over the `Ledger` model, whose tree `readResourceTrees` reads from its file. */
+const LEDGER_RESOURCE: DeclaredClass = {
+  name: "LedgerResource",
+  kind: "resource",
+  module: "orders",
+  file: LEDGER_RESOURCE_FILE,
+  importPath: "#modules/orders/resources/ledger/ledger.resource",
+  options: {},
+  partner: { name: "Ledger", kind: "model", from: "#modules/orders/models/ledger.model" },
+  deps: [],
+  facets: [],
+  methods: ["table"],
+  refusals: [],
+  statics: {},
+  traits: [],
+};
 
 const CUSTOMER_SHAPE: ShapeIR = {
   ...(COMMERCE_IR.shapes[0] as ShapeIR),
@@ -123,20 +144,47 @@ describe(checkTableIndexes, () => {
     expect(refused(ir, recorded("orders.ledger", TABLE))).toEqual([]);
   });
 
+  it("counts the column after a leading scope column, and only after a scope column", () => {
+    const scoped = irOf(
+      [
+        model("Ledger", [
+          facet("Index", ["tenantId", "status"]),
+          facet("Index", ["scopeId", "total"]),
+          facet("Index", ["tenantId", "rank"]),
+          facet("Index", ["note", "placedAt"]),
+        ]),
+      ],
+      [CUSTOMER_SHAPE],
+    );
+    expect(refused(scoped, recorded("orders.ledger", TABLE))).toEqual([
+      "filter_not_indexed orders.ledger.table.filter.placedAt",
+    ]);
+  });
+
   it("checks nothing without a recorded tree", () => {
     const ir = irOf([model("Ledger", [])]);
     expect(refused(ir)).toEqual([]);
     expect(refused(ir, recorded("orders.other", TABLE))).toEqual([]);
   });
 
-  it("makes generateMember refuse in the full pass", () => {
-    const ir = irOf([model("Ledger", [])], [CUSTOMER_SHAPE]);
+  it("makes generateMember refuse a tree read this run, with no committed manifest", () => {
+    const ir: MemberIR = {
+      ...irOf([model("Ledger", []), LEDGER_RESOURCE], [CUSTOMER_SHAPE]),
+      resourceTrees: { [LEDGER_RESOURCE_FILE]: { options: {}, table: TABLE } },
+    };
+    const result = generateMember(ir);
+    expect(result.files).toEqual([]);
+    expect(result.errors.map((error) => error.code)).toContain("sort_not_indexed");
+  });
+
+  it("does not refuse a tree only the committed manifest holds", () => {
+    const ir = irOf([model("Ledger", []), LEDGER_RESOURCE], [CUSTOMER_SHAPE]);
     const { manifest } = generateMember(ir);
     const result = generateMember(ir, {
       ...manifest,
       ui: { resources: { "orders.ledger": { options: {}, table: TABLE } } },
     } as StackraManifest);
-    expect(result.files).toEqual([]);
-    expect(result.errors.map((error) => error.code)).toContain("sort_not_indexed");
+    expect(result.errors.map((error) => error.code)).not.toContain("sort_not_indexed");
+    expect(result.errors.map((error) => error.code)).not.toContain("filter_not_indexed");
   });
 });

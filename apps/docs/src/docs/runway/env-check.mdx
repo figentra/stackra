@@ -1,0 +1,49 @@
+---
+title: "runway env check"
+description: "Checks the repository's environment names against the sops scopes, and in CI their values."
+---
+
+Checks the repository's environment names against the sops scopes, and in CI their values.
+
+```bash
+stackra runway env check [--values --env <environment>]
+```
+
+| Argument or option | Kind   | Meaning                                                                                  |
+| ------------------ | ------ | ---------------------------------------------------------------------------------------- |
+| `--values`         | option | Also check the values (CI only), read from the job's environment after the decrypt step. |
+| `--env`            | option | With `--values`: the runway environment the job deploys.                                 |
+
+## What it does
+
+Without `--values`: the names-only check of the repository against the sops scopes, which needs no login. With
+`--values`: each name's value in the job's environment against its rule.
+
+## What it prints
+
+Each name, its scope, and pass or the broken rule; at most a SHA-256 prefix of a value, never the value.
+
+## Exit codes
+
+| Code | Means                                                      |
+| ---- | ---------------------------------------------------------- |
+| 0    | No errors; warnings pass.                                  |
+| 1    | At least one error, or `--values` outside a proved CI job. |
+
+## Where it runs
+
+The names check anywhere (the Quality Gate runs it on every pull request); the value check only in a deploy job.
+
+## Examples
+
+```bash
+stackra runway env check
+stackra runway env check --values --env staging
+```
+
+## See also
+
+[0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical),
+[0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (amendment of 2026-11-04) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

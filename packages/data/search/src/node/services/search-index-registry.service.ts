@@ -5,9 +5,11 @@
  *          and `begin`, `progress` and `finish` record a reindex job's run (and the index version it builds) so a stopped
  *          rebuild resumes from its cursor.
  * Boundary: a platform service over raw SQL on the running context's entity manager, one statement per method, every
- *           value bound and every result row read through zod. The table holds counts and states, never row data, and
- *           is read across scopes (no row-level security), so only platform code (the reindex job, `search:status`, an
- *           admin read) calls it. An index is keyed by model class name and scope (`-` for platform-wide).
+ *           value bound and every result row read through zod. The table holds counts and states, never row data. Its
+ *           rows are tenant-owned in the platform form: a reindex job records its call's tenant's rows (the platform's
+ *           outside a tenant), and `list` reads every tenant's through `search.index_statuses`, so only platform code
+ *           (`search:status`, an admin read) calls it. `invalidateChanged` changes only the rows the running call may
+ *           write. An index is keyed by owner, model class name and scope (`null` for platform-wide).
  * Runtime: node
  * Governing contract: ADR 0404 (decision 3: the reindex plan, run as a job); ADR 0221 (decision 7); ADR 0160 (raw SQL
  *                     is parameterised and typed with zod); ADR 0327 and ADR 0323 (a scope is a `ScopeRef`); stackra-303 (the version).
@@ -27,9 +29,13 @@ import { searchFacetHashOf } from "#node/functions/search-facet-hash-of.function
 /** The registry table, in the package's schema. */
 const TABLE = '"search"."indexes"';
 
-/** One row of `search.indexes`. */
+/** The running call's own rows: its tenant's, or the platform's outside a tenant, as the table's policy writes them. */
+const OWN = "tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')";
+
+/** One row of `search.indexes`, as `search.index_statuses` answers it. */
 const ROW = z.object({
   model: z.string(),
+  tenant_id: z.string().nullable(),
   scope_id: z.string().nullable(),
   scope_path: z.string().nullable(),
   state: z.enum(Enum.values(SearchIndexState) as [SearchIndexState, ...SearchIndexState[]]),
@@ -49,13 +55,14 @@ const MODELS = z.array(z.object({ model: z.string() }));
 /** Rows that carry a resume cursor and the documents indexed before it. */
 const CURSORS = z.array(z.object({ cursor: z.string().nullable(), doc_count: z.number().int() }));
 
-/** The key of a scope: its id, or `-` for platform-wide. */
-const scopeKeyOf = (scope: ScopeRef | undefined): string => scope?.id ?? "-";
+/** The key of a scope: its id, or `null` for platform-wide. */
+const scopeKeyOf = (scope: ScopeRef | undefined): string | null => scope?.id ?? null;
 
 /** The status of one row. */
 function statusOf(row: z.infer<typeof ROW>): SearchIndexStatus {
   return Object.freeze({
     model: row.model,
+    ...(row.tenant_id === null ? {} : { ownerId: row.tenant_id as PublicId<"scp"> }),
     ...(row.scope_id === null || row.scope_path === null
       ? {}
       : { scope: { id: row.scope_id as PublicId<"scp">, path: row.scope_path } }),
@@ -87,14 +94,14 @@ export class SearchIndexRegistry extends Service {
     this.database = database;
   }
 
-  /** Every index, by model then scope. */
+  /** Every tenant's indexes, by model, owner then scope, read through the audited system function. */
   async list(): Promise<readonly SearchIndexStatus[]> {
-    // raw-sql: the registry has no model; one parameterised select
+    // raw-sql: the registry has no model; the system function reads every tenant's states and counts
     const rows = await this.database
       .em()
       .execute(
-        "select model, scope_id, scope_path, state, facet_hash, doc_count, cursor, rebuilt_at, version " +
-          `from ${TABLE} order by model, scope_key`,
+        "select model, tenant_id, scope_id, scope_path, state, facet_hash, doc_count, cursor, rebuilt_at, version " +
+          'from "search"."index_statuses"()',
         [],
       );
     return ROWS.parse(rows).map(statusOf);
@@ -148,7 +155,7 @@ export class SearchIndexRegistry extends Service {
       .em()
       .execute(
         `insert into ${TABLE} as idx (model, scope_key, scope_id, scope_path, state, facet_hash, doc_count, version) ` +
-          "values (?, ?, ?, ?, 'rebuilding', ?, 0, ?) on conflict (model, scope_key) do update set " +
+          "values (?, ?, ?, ?, 'rebuilding', ?, 0, ?) on conflict (tenant_id, model, scope_key) do update set " +
           `cursor = case when ${same} then idx.cursor end, ` +
           `doc_count = case when ${same} then idx.doc_count else 0 end, ` +
           "state = 'rebuilding', facet_hash = excluded.facet_hash, version = excluded.version, " +
@@ -180,7 +187,7 @@ export class SearchIndexRegistry extends Service {
       .em()
       .execute(
         `update ${TABLE} set cursor = ?, doc_count = ?, updated_at = now() ` +
-          "where model = ? and scope_key = ?",
+          `where model = ? and scope_key is not distinct from ? and ${OWN}`,
         [cursor, docCount, model, scopeKeyOf(scope)],
       );
   }
@@ -192,7 +199,7 @@ export class SearchIndexRegistry extends Service {
       .em()
       .execute(
         `update ${TABLE} set state = 'valid', cursor = null, doc_count = ?, rebuilt_at = now(), ` +
-          "updated_at = now() where model = ? and scope_key = ?",
+          `updated_at = now() where model = ? and scope_key is not distinct from ? and ${OWN}`,
         [docCount, model, scopeKeyOf(scope)],
       );
   }

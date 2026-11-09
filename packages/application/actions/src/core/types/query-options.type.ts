@@ -16,6 +16,8 @@ import type { ActorKind, ApiArea } from "@stackra/contracts";
 
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
+import type { CallDataClass } from "#core/types/call-data-class.type";
+import type { EntitlementOption } from "#core/types/entitlement-option.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { QueryCache } from "#core/types/query-cache.type";
 import type { QueryReplica } from "#core/types/query-replica.type";
@@ -43,6 +45,12 @@ export interface QueryOptions {
   /** A `GET` route override, or `false` for no endpoint; derived from the key when absent. */
   readonly endpoint?: EndpointOptions | false;
 
+  /**
+   * The data class it handles (`DataClassification.Financial`, or a product's `DataClass` class); gen records its key,
+   * and the AI gateway keeps a run that calls it in region when the tenant's policy says so. None when absent.
+   */
+  readonly dataClass?: CallDataClass;
+
   /** Expose it as an MCP tool; on when absent. */
   readonly tool?: boolean;
 
@@ -68,6 +76,9 @@ export interface QueryOptions {
    * statement shape repeated past the configured limit (an N+1 loop) is reported either way.
    */
   readonly queryBudget?: number;
+
+  /** The plan entitlement or entitlements a call needs; gen lists the call in each one's `gates` (ADR 0215). */
+  readonly entitlement?: EntitlementOption;
 
   /**
    * The analytics event each call writes as `analytics.tracked.v1` when its consent grants `analytics`: `true` for

@@ -17,6 +17,8 @@ import {
   MemoryEdgeSigningKeysDriver,
 } from "@stackra/app/server";
 import { EdgeHeader } from "@stackra/app/contracts";
+import { buildConfig } from "@stackra/config";
+import { CspConfig } from "@stackra/csp";
 
 import { handleRequest } from "#src/http/handle-request";
 import type { EdgeDeps } from "#src/interfaces/edge-deps.interface";
@@ -63,7 +65,9 @@ async function jwt(claims: Record<string, unknown>, kid = "k1"): Promise<string>
 const claims = { iss: ISSUER, aud: AUDIENCE, sub: "u1", exp: SECONDS + 300 };
 
 /** Deps over a recording origin; `forwarded` holds what reached it. */
-function edge() {
+function edge(
+  framers: (path: string) => Promise<readonly string[] | undefined> = async () => undefined,
+) {
   const forwarded: Request[] = [];
   let id = 0;
   const deps: EdgeDeps = {
@@ -77,11 +81,24 @@ function edge() {
           scope: "scp_1",
         },
         "figentra.example": { product: "os", surface: "landing", realm: "public", scope: null },
+        "checkout.pay.example": {
+          product: "pay",
+          surface: "checkout",
+          realm: "public",
+          scope: null,
+        },
       },
       issuer: ISSUER,
       audience: AUDIENCE,
       keysSeconds: 3600,
       leewaySeconds: 60,
+      csp: {
+        "pay.checkout": buildConfig(CspConfig, {
+          values: { frameAncestors: { "/c/*": "request" } },
+        }),
+      },
+      baselineCsp: buildConfig(CspConfig),
+      frameAncestorsSeconds: 60,
     },
     secret: SECRET,
     keys: async (kid) => (kid === "k1" ? publicJwk : null),
@@ -91,6 +108,7 @@ function edge() {
     }) as unknown as typeof fetch,
     now: () => NOW,
     requestId: () => `req-${++id}`,
+    frameAncestors: { resolve: async (_host, _hostname, path) => framers(path) },
   };
   return { deps, forwarded };
 }
@@ -202,5 +220,68 @@ describe("handleRequest", () => {
     );
     expect(response.status).toBe(200);
     expect(forwarded).toHaveLength(1);
+  });
+
+  it("sends the baseline security headers and policy on a plain surface, and on its own 404", async () => {
+    const { deps } = edge(async () => ["https://shop.example"]);
+    for (const url of ["https://app.acme.example/c/x", "https://unknown.example/"]) {
+      const response = await handleRequest(new Request(url), deps);
+      expect(response.headers.get("x-frame-options")).toBe("DENY");
+      expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(response.headers.get("strict-transport-security")).toContain("max-age=");
+      expect(response.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    }
+  });
+
+  it("lets the resolved framers frame a request path, and nothing else", async () => {
+    const asked: string[] = [];
+    const { deps } = edge(async (path) => {
+      asked.push(path);
+      return ["https://shop.example"];
+    });
+    const framed = await handleRequest(
+      new Request("https://checkout.pay.example/c/cs_01?x=1"),
+      deps,
+    );
+    expect(framed.headers.get("content-security-policy")).toContain(
+      "frame-ancestors https://shop.example",
+    );
+    expect(framed.headers.has("x-frame-options")).toBe(false);
+    const other = await handleRequest(new Request("https://checkout.pay.example/account"), deps);
+    expect(other.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    expect(other.headers.get("x-frame-options")).toBe("DENY");
+    expect(asked).toEqual(["/c/cs_01"]);
+  });
+
+  it.each([
+    [
+      "throws",
+      async () => {
+        throw new Error("down");
+      },
+    ],
+    ["answers nothing", async () => undefined],
+    ["answers a wildcard", async () => ["*"]],
+    ["answers a non-origin", async () => ["https://shop.example/c"]],
+  ])("fails closed to 'none' when the resolver %s", async (_name, framers) => {
+    const { deps } = edge(framers);
+    const response = await handleRequest(new Request("https://checkout.pay.example/c/cs_01"), deps);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    expect(response.headers.get("x-frame-options")).toBe("DENY");
+  });
+
+  it("keeps the origin's own policy, which carries its nonce", async () => {
+    const { deps } = edge();
+    const fetcher = (async () =>
+      new Response("ok", {
+        headers: { "content-security-policy": "script-src 'nonce-abc'" },
+      })) as unknown as typeof fetch;
+    const response = await handleRequest(new Request("https://app.acme.example/"), {
+      ...deps,
+      fetcher,
+    });
+    expect(response.headers.get("content-security-policy")).toBe("script-src 'nonce-abc'");
+    expect(response.headers.get("x-frame-options")).toBe("DENY");
   });
 });

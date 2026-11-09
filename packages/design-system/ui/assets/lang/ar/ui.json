@@ -1253,7 +1253,15 @@
     "shortcut": "الاختصار {keys}",
     "you": "أنت",
     "disclaimer": "قد يخطئ تامو. راجع ما يقترحه.",
-    "close": "أغلق"
+    "close": "أغلق",
+    "approval_title": "يريد تامو تنفيذ هذا",
+    "approval_waiting": "بانتظار موافقتك.",
+    "approve": "وافق",
+    "deny": "ارفض",
+    "approved": "تمت الموافقة",
+    "denied": "تم الرفض",
+    "expired": "انتهت المهلة",
+    "risk": "مستوى الخطورة {level}"
   },
   "terminal_demo": {
     "label": "جرّبه",

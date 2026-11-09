@@ -169,4 +169,59 @@ describe("zoneEdge", () => {
     await settled(off);
     expect(off.rulesets).toEqual([]);
   });
+
+  it("adds SSL strict, TLS 1.3, DNSSEC and CAA for the baseline policy, with no bot protection on Free", async () => {
+    const edge = zoneEdge({
+      name: "figentra.com",
+      zoneId: "zone-1",
+      plan: "free",
+      edge: parseEdge(rootRunway()),
+      policy: "baseline",
+    });
+    await settled(edge);
+
+    const settings = inputsByName(declared, "cloudflare:index/zoneSetting:ZoneSetting");
+    expect(
+      Object.values(settings).map((setting) => [setting["settingId"], setting["value"]]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["ssl", "strict"],
+        ["tls_1_3", "on"],
+        ["automatic_https_rewrites", "on"],
+        ["always_use_https", "on"],
+      ]),
+    );
+    expect(settings["figentra.com-security-header"]).toBeDefined();
+    expect(inputsByName(declared, "cloudflare:index/zoneDnssec:ZoneDnssec")).toEqual({
+      "figentra.com-dnssec": { zoneId: "zone-1" },
+    });
+    expect(
+      Object.values(inputsByName(declared, "cloudflare:index/dnsRecord:DnsRecord")).map(
+        (record) => (record["data"] as { value: string }).value,
+      ),
+    ).toEqual(["digicert.com", "letsencrypt.org", "pki.goog", "ssl.com", "sectigo.com"]);
+    expect(edge.bots).toBeUndefined();
+  });
+
+  it("turns bot protection on for the strict policy on Pro and refuses it on Free", async () => {
+    const strict = zoneEdge({
+      name: "figentra.com",
+      zoneId: "zone-1",
+      plan: "pro",
+      edge: parseEdge(rootRunway()),
+      policy: "strict",
+    });
+    await settled(strict);
+    expect(strict.bots).toBeDefined();
+
+    expect(() =>
+      zoneEdge({
+        name: "figentra.com",
+        zoneId: "zone-1",
+        plan: "free",
+        edge: parseEdge(rootRunway()),
+        policy: "strict",
+      }),
+    ).toThrow(/Pro plan/);
+  });
 });

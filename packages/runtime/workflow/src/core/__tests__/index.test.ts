@@ -47,6 +47,7 @@ describe("@stackra/workflow", () => {
       "MemoryWorkflowJournalDriver",
       "NativeWorkflowRunnerDriver",
       "PublisherAccess",
+      "RunNotFoundError",
       "SeedResult",
       "ServiceAcked",
       "Signal",

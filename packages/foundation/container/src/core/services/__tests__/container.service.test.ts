@@ -289,6 +289,29 @@ describe("Container", () => {
       expect(memory).not.toHaveBeenCalled();
     });
 
+    it("builds a replacement with the constructor tokens its row lists", async () => {
+      class ConfiguredLedgerDriver extends Driver(Ledger) {
+        readonly config: PointsConfig;
+
+        constructor(config: PointsConfig) {
+          super();
+          this.config = config;
+        }
+
+        balance(): number {
+          return this.config.ledger.length;
+        }
+      }
+      const wiring = points({
+        replaces: [{ provide: Ledger, override: ConfiguredLedgerDriver, deps: [PointsConfig] }],
+      });
+      const container = await Container.create([wiring]);
+      const ledger = container.get(Ledger) as ConfiguredLedgerDriver;
+      expect(ledger).toBeInstanceOf(ConfiguredLedgerDriver);
+      expect(ledger.config).toBe(container.get(PointsConfig));
+      expect(container.get(PointsService).ledger).toBe(ledger);
+    });
+
     it("answers for the selected driver class with the port's instance", async () => {
       const container = await Container.create([points()]);
       expect(container.get(MemoryLedgerDriver)).toBe(container.get(Ledger));
@@ -437,6 +460,77 @@ describe("Container", () => {
       })();
       const frozen = await Container.create([points()], { overrides: new Map([[Clock, fixed]]) });
       expect(frozen.get(Clock).now()).toEqual(new Date(0));
+    });
+
+    it("injects the root container itself, at the root and inside a request scope", async () => {
+      class Reader extends Service {
+        readonly container: Container;
+
+        constructor(container: Container) {
+          super();
+          this.container = container;
+        }
+      }
+      class RequestReader extends Reader {}
+      class ReaderModule extends Module({ exports: [Reader] }) {}
+      const container = await Container.create([
+        {
+          member: "reader",
+          root: ReaderModule,
+          modules: { reader: { exports: [Reader], dependsOn: [] } },
+          bindings: [
+            {
+              module: "reader",
+              kind: "service",
+              provide: Reader,
+              lifetime: Lifetime.Singleton,
+              deps: [Container],
+            },
+            {
+              module: "reader",
+              kind: "service",
+              provide: RequestReader,
+              lifetime: Lifetime.Request,
+              deps: [Container],
+            },
+          ],
+        },
+      ]);
+      expect(container.get(Reader).container).toBe(container);
+      const request = container.forRequest();
+      expect(request.get(RequestReader).container).toBe(container);
+      expect(request.get(Reader).container).toBe(container);
+    });
+
+    it("boots a host whose exported singleton takes the container (resolved at boot)", async () => {
+      class Sink extends Service {
+        readonly container: Container;
+
+        constructor(container: Container) {
+          super();
+          this.container = container;
+        }
+      }
+      class SinkModule extends Module({ exports: [Sink] }) {}
+      const container = await Container.create([
+        {
+          member: "sink",
+          root: SinkModule,
+          modules: { sink: { exports: [Sink], dependsOn: [] } },
+          bindings: [
+            {
+              module: "sink",
+              kind: "service",
+              provide: Sink,
+              lifetime: Lifetime.Singleton,
+              deps: [Container],
+            },
+          ],
+        },
+      ]);
+      expect(container.get(Sink).container).toBe(container);
+      // An optional binding read through it at call time: unbound is `has` false, never a throw.
+      expect(container.get(Sink).container.has(Ledger)).toBe(false);
     });
 
     it("binds DiscoveryService once per container", async () => {

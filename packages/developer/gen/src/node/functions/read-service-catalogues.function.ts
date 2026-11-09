@@ -55,6 +55,7 @@ export function readServiceCatalogues(
     if (folder === undefined || catalogues === undefined) continue;
     found.push({
       package: service.manifest.package,
+      service: service.member,
       from: relative(root, join(folder, "assets", "lang"))
         .split(sep)
         .join("/"),

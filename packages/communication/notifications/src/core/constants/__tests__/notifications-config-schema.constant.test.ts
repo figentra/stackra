@@ -19,6 +19,7 @@ describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
       mandatoryCategories: [],
       unsubscribeUrl: "",
       unsubscribeKey: "",
+      webPushVapidSubject: "",
     });
   });
 
@@ -29,6 +30,7 @@ describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
       mandatoryCategories: [],
       unsubscribeUrl: "",
       unsubscribeKey: "",
+      webPushVapidSubject: "",
     });
   });
 
@@ -54,6 +56,17 @@ describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
     ).toBe("https://acme.example/unsubscribe");
     expect(
       NOTIFICATIONS_CONFIG_SCHEMA.safeParse({ unsubscribeUrl: "http://acme.example/u" }).success,
+    ).toBe(false);
+  });
+
+  it("takes a mailto or https VAPID contact and refuses plain http", () => {
+    for (const subject of ["mailto:ops@acme.example", "https://acme.example/push", ""])
+      expect(
+        NOTIFICATIONS_CONFIG_SCHEMA.parse({ webPushVapidSubject: subject }).webPushVapidSubject,
+      ).toBe(subject);
+    expect(
+      NOTIFICATIONS_CONFIG_SCHEMA.safeParse({ webPushVapidSubject: "http://acme.example/push" })
+        .success,
     ).toBe(false);
   });
 

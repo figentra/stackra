@@ -28,7 +28,7 @@ describe("FreezeAccountAction", () => {
       key: "account.freeze",
       permission: LoyaltyAccountPermissions.freeze,
       actors: [ActorKind.User, ActorKind.Agent],
-      endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId/freeze" },
+      endpoint: { method: HttpMethod.Put, path: "/app/loyalty/accounts/:accountId/freeze" },
       tool: true,
     });
   });

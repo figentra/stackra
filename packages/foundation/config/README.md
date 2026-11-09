@@ -69,12 +69,13 @@ throws. A schema with a secret never reaches a wire surface (gen's `secret_on_wi
 
 ## Secret store drivers
 
-Two `SecretStore` drivers read a deployment's secrets into memory at boot; the runtime awaits `load()` before it
-builds the configuration that reads them (and again after a rotation). Neither lists, logs or reports a value.
+A deployed runtime reads its secrets from the platform's own store (`envSecrets` in `@stackra/app`), where runway's
+sync writes them from `figentra/secrets` (ADR 0525). Beside it, the AWS Secrets Manager driver reads a deployment's
+secrets into memory at boot; the runtime awaits `load()` before it builds the configuration that reads them (and again
+after a rotation). No driver lists, logs or reports a value.
 
 | Driver                               | Entry    | Configuration                                                                                                                                                    |
 | ------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `InfisicalSecretStoreDriver`         | `.`      | `InfisicalConfig`: site, project, environment, folder; the machine identity is `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` from the platform's own store |
 | `MemorySecretStoreDriver`            | `.`      | none: `memory`, the secrets a test sets (STA-1308)                                                                                                               |
 | `AwsSecretsManagerSecretStoreDriver` | `./node` | `AwsSecretsManagerConfig`: region and secret ids; the runtime's AWS role signs the reads                                                                         |
 

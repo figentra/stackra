@@ -19,8 +19,9 @@
       // runway-cloudflare-workers workflow runs `pnpm exec wrangler` in the Worker member's folder, and the member
       // (workers/static) declares it; knip attributes workflow commands to the root. playwright and stackra: the
       // reusable runway-smoke workflow runs them in the product repository that calls it, where @stackra/cli and
-      // @stackra/runway's optional Playwright peer are installed (STA-265).
-      "ignoreBinaries": ["opencode", "infisical", "specify", "wrangler", "playwright", "stackra"],
+      // @stackra/runway's optional Playwright peer are installed (STA-265). sips: macOS's image tool, which
+      // tools/scripts/brand-pull.mjs runs on the owner's Mac.
+      "ignoreBinaries": ["opencode", "specify", "wrangler", "playwright", "stackra", "sips"],
     },
     "packages/tooling/*": {
       // Config packages export presets by subpath (package.json exports, which knip reads as entries); the only TS
@@ -40,8 +41,13 @@
       // module, entries, test setup) imports packages src/ never does, which the member declares for it
       // (generated_dependency_missing); knip reads it when gen has run. vitest.config.ts: the authored test config
       // that merges gen's (stackra-163); named so its @stackra/vitest-config import is always seen (stackra-247);
-      // knip's vitest plugin already finds vitest.int.config.ts, the int tier (STA-1570). plugin/: an Expo module package's config plugin
-      // (ADR 0478 decision 2), which app.plugin.js loads from dist/, so knip starts at its source index.
+      // knip's vitest plugin already finds vitest.int.config.ts, the int tier (STA-1570).
+      "entry": ["stackra.config.ts", "vitest.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+    },
+    // plugin/: an Expo module package's config plugin (ADR 0478 decision 2), which app.plugin.js loads from dist/, so
+    // knip starts at its source index. Only the native-* module packages have one.
+    "packages/experience/native-*": {
       "entry": [
         "stackra.config.ts",
         "vitest.config.ts",
@@ -50,6 +56,16 @@
         "plugin/src/index.ts",
       ],
       "project": ["src/**/*.{ts,tsx}", "plugin/**/*.ts"],
+    },
+    // runway: src/node/runway.ts is the source of the `runway` bin, which tsdown builds by name (STA-2100).
+    "packages/developer/runway": {
+      "entry": [
+        "stackra.config.ts",
+        "vitest.config.ts",
+        ".stackra/**/*.{ts,tsx}",
+        "src/node/runway.ts",
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
     },
     // A member listed by name replaces the packages/*/* entry for it, so it repeats entry and project.
     // console: src/node/stackra-console.ts is the source of the `stackra-console` bin, which tsdown builds by name
@@ -166,7 +182,7 @@
         "src/components/*/index.ts",
         ".stackra/**/*.{ts,tsx}",
       ],
-      "project": ["src/**/*.{ts,tsx,css}"],
+      "project": ["src/**/*.{ts,tsx}"],
     },
     "apps/mobile": {
       // The design-system review area is reached through `__DEV__ ? require(...)` in the tab navigator, which knip
@@ -223,8 +239,19 @@
       // Pages are MDX; gen reads stackra.config.ts and src/config/docs.config.ts; scripts/ holds the system-map writer.
       "entry": ["stackra.config.ts", "src/config/docs.config.ts", "scripts/**/*.ts"],
       "project": ["src/**/*.ts", "scripts/**/*.ts"],
-      // `stackra dev` and `stackra lint` run the member's own `mint` (cli resolve-tool), so no script names it.
-      "ignoreDependencies": ["mint"],
+      // The Fumadocs site gen writes into .stackra/site imports these, and `stackra build` runs react-router and
+      // wrangler from them (cli resolve-tool); no authored file names them (ADR 0514, STA-2026).
+      "ignoreDependencies": [
+        "fumadocs-core",
+        "fumadocs-mdx",
+        "fumadocs-ui",
+        "react-dom",
+        "react-router",
+        "@react-router/dev",
+        "@tailwindcss/vite",
+        "tailwindcss",
+        "wrangler",
+      ],
     },
   },
   // `mint`: Swift's Mint runner, a fallback in lefthook's generated hooks.
@@ -234,6 +261,8 @@
   "ignore": [
     "tools/scaffold/templates/**",
     "**/__tests__/fixtures/**",
+    // The consumer gate copies this module into a scaffolded member, whose imports map resolves `#modules/*`.
+    "tools/consumer-gate/scaffold-fixture/**",
     "**/dist/**",
     "packages/design-system/ui/src/**/*.returns.ts",
     // A build box's untracked leftover, not a file of this repository.

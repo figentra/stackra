@@ -1,6 +1,6 @@
 {
   "name": "@stackra/notifications",
-  "version": "0.8.0",
+  "version": "0.29.0",
   "private": false,
   "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the mail, SMS, WhatsApp, push, in-app and chat channel ports, connection transports that send through the provider chosen per tenant and Market over the host's vendor connectors (OS integrations), Web Push with dead-device revocation, the template cascade with content-free variants, quiet hours with mandatory categories, escalation, the .mail.tsx class-component bodies rendered with useMail, and the notifications Notifier driver (./node)",
   "keywords": [
@@ -127,7 +127,6 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/i18n": "workspace:*",
-    "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/support": "workspace:*",
@@ -135,6 +134,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/integrations": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -152,14 +152,12 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@stackra/integrations": "workspace:*",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend"
   },
   "peerDependenciesMeta": {
     "react": {
-      "optional": true
-    },
-    "react-dom": {
       "optional": true
     }
   },

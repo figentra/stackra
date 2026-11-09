@@ -13,14 +13,19 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import type { MessageKind } from "#contracts/enums/message-kind.enum";
 import { OutboxDriver } from "#contracts/ports/outbox-driver.port";
+import type { OutboxClaim } from "#contracts/types/outbox-claim.type";
 import type { OutboxMessage } from "#contracts/types/outbox-message.type";
 
 /** A driver that stores nothing. */
 class NullOutboxDriver extends Driver(OutboxDriver) {
   async write(): Promise<void> {}
 
-  async due(): Promise<readonly OutboxMessage[]> {
+  async claim(): Promise<readonly OutboxClaim[]> {
     return [];
+  }
+
+  async load(): Promise<OutboxMessage | undefined> {
+    return undefined;
   }
 
   async remove(): Promise<void> {}
@@ -29,8 +34,8 @@ class NullOutboxDriver extends Driver(OutboxDriver) {
 
   async deadLetter(): Promise<void> {}
 
-  async pruneDead(): Promise<number> {
-    return 0;
+  async claimDead(): Promise<readonly OutboxClaim[]> {
+    return [];
   }
 
   async holding(): Promise<readonly OutboxMessage[]> {
@@ -45,7 +50,8 @@ describe("OutboxDriver", () => {
     const driver: OutboxDriver = new NullOutboxDriver();
     expect(driver).toBeInstanceOf(OutboxDriver);
     expect(driver).toBeInstanceOf(Port);
-    await expect(driver.due(new Date(), 10)).resolves.toEqual([]);
+    await expect(driver.claim(new Date(), 10)).resolves.toEqual([]);
+    await expect(driver.load("evt_1" as PublicId<"evt">)).resolves.toBeUndefined();
   });
 
   it("is keyed outbox.OutboxDriver", () => {
@@ -58,5 +64,10 @@ describe("OutboxDriver", () => {
     expectTypeOf<OutboxMessage["scope"]>().toEqualTypeOf<ScopeRef | undefined>();
     expectTypeOf<OutboxMessage["availableAt"]>().toEqualTypeOf<Date>();
     expectTypeOf<OutboxMessage["deadAt"]>().toEqualTypeOf<Date | undefined>();
+  });
+
+  it("claims ids, owners and due times, never a payload", () => {
+    expectTypeOf<keyof OutboxClaim>().toEqualTypeOf<"id" | "ownerId" | "availableAt">();
+    expectTypeOf<OutboxClaim["ownerId"]>().toEqualTypeOf<PublicId<"scp"> | undefined>();
   });
 });

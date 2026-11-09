@@ -8,7 +8,7 @@
  *           `.parse({})` gives the full defaults, `.shape.s3.parse(undefined)` gives the nested default and a host's
  *           generated `FilesystemConfig$` extends it with `Base$.shape.<field>.unwrap().default(...)`. The defaults
  *           equal `FilesystemOptions`' initializers (tested). No credential is a field: the S3 driver reads the AWS
- *           credential chain (`AWS_ACCESS_KEY_ID`, an instance role), which runway syncs from Infisical,
+ *           credential chain (`AWS_ACCESS_KEY_ID`, an instance role), which runway syncs from SOPS,
  *           and the GCS driver reads Application Default Credentials (workload identity on GCP).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173 (no secret values in config).

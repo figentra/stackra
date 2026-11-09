@@ -22,6 +22,7 @@ export default {
   ...library({
     index: "src/core/index.ts",
     contracts: "src/contracts/index.ts",
+    native: "src/native/index.ts",
     react: "src/react/index.ts",
     server: "src/server/index.ts",
     testing: "src/testing/index.ts",

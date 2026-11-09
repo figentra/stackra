@@ -23,6 +23,7 @@ export const SHAPE_DECORATORS: readonly string[] = Object.freeze([
   "OneToOne",
   "Renamed",
   "Secret",
+  "ShownOnce",
   "Str",
   "Trim",
   "Visible",

@@ -3,12 +3,14 @@
  * Purpose: unit tests of `bundlePlugin`: the output folder `<outDir>/<surface>/<version>/` from the committed manifest;
  *          no manifest and a surface the member does not target fail with what to run; `bundle.manifest.json` carries
  *          the targets, the entry, the static modulepreload chain, the stylesheets and the import-map specifiers used,
+ *          the sha384 integrity of every emitted file,
  *          and `pro: "types-only"` under the flag; a copy of a shared package or any HeroUI Pro code is refused.
  * Boundary: test only; writes a throwaway member in the OS temp directory and calls the hooks directly with a fake
  *           output bundle whose chunks are typed against rolldown's `OutputChunk` and Vite's `ChunkMetadata`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0436; app-shells-edge-and-extension.md 15 (point 8), 16 (point 8).
  */
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -45,7 +47,7 @@ afterEach(() => {
 /** The output chunk fields the plugin reads, typed against rolldown and Vite so tsc catches a rename. */
 type Fixture = Pick<
   Rolldown.OutputChunk,
-  "type" | "name" | "fileName" | "isEntry" | "imports" | "dynamicImports" | "moduleIds"
+  "type" | "name" | "fileName" | "isEntry" | "imports" | "dynamicImports" | "moduleIds" | "code"
 > & { readonly viteMetadata?: Pick<ChunkMetadata, "importedCss"> };
 
 /** A fake output chunk. */
@@ -58,12 +60,16 @@ function chunk(fileName: string, extra: Partial<Fixture> = {}): Fixture {
     imports: [],
     dynamicImports: [],
     moduleIds: [],
+    code: `export default "${fileName}";`,
     ...extra,
   };
 }
 
 /** Runs the plugin's hooks over `chunks`; returns the config, the emitted files and the errors. */
-function run(chunks: Fixture[], options: { proTypesOnly?: boolean; surface?: string } = {}) {
+function run(
+  chunks: readonly (Fixture | Asset)[],
+  options: { proTypesOnly?: boolean; surface?: string } = {},
+) {
   const plugin = bundlePlugin({
     surface: options.surface ?? "console",
     importMap: IMPORT_MAP,
@@ -101,6 +107,13 @@ const ENTRY = chunk("console.a1.js", {
 const ORDERS = chunk("chunks/orders.b2.js", { imports: ["chunks/shared.e5.js"] });
 const SHARED = chunk("chunks/shared.e5.js");
 const REPORT = chunk("chunks/report.c3.js");
+/** An emitted asset: the type, the file name and the source the plugin hashes. */
+type Asset = Pick<Rolldown.OutputAsset, "type" | "fileName" | "source">;
+const CSS: Asset = { type: "asset", fileName: "assets/console.d4.css", source: "body{}" };
+
+/** The SRI value of `source`, as the browser computes it. */
+const sri = (source: string): string =>
+  `sha384-${createHash("sha384").update(source).digest("base64")}`;
 
 describe("bundlePlugin", () => {
   it("builds into the surface's version folder from the committed manifest", () => {
@@ -117,8 +130,8 @@ describe("bundlePlugin", () => {
     expect(() => run([ENTRY], { surface: "till" })).toThrow("targets no till shell");
   });
 
-  it("writes the bundle manifest with targets, modulepreload, css and shared imports", () => {
-    const { emitted, errors } = run([ENTRY, ORDERS, SHARED, REPORT]);
+  it("writes the bundle manifest with targets, modulepreload, css, shared imports and integrity", () => {
+    const { emitted, errors } = run([ENTRY, ORDERS, SHARED, REPORT, CSS]);
     expect(errors).toEqual([]);
     expect(emitted.map((file) => file.fileName)).toEqual(["bundle.manifest.json"]);
     expect(JSON.parse(emitted[0]?.source ?? "{}")).toEqual({
@@ -130,6 +143,13 @@ describe("bundlePlugin", () => {
       modulepreload: ["console.a1.js", "chunks/orders.b2.js", "chunks/shared.e5.js"],
       css: ["assets/console.d4.css"],
       imports: ["@stackra/ui", "react", "react/jsx-runtime"],
+      integrity: {
+        "assets/console.d4.css": sri("body{}"),
+        "chunks/orders.b2.js": sri('export default "chunks/orders.b2.js";'),
+        "chunks/report.c3.js": sri('export default "chunks/report.c3.js";'),
+        "chunks/shared.e5.js": sri('export default "chunks/shared.e5.js";'),
+        "console.a1.js": sri('export default "console.a1.js";'),
+      },
     });
   });
 

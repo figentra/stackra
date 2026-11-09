@@ -2,7 +2,7 @@
 /**
  * Stackra file contract:
  * Purpose: `node tools/scripts/spec-gate.mjs …`, kept for the plan-gate hook and setup-plan.sh: the spec gate is
- *   `figentra-flow gate`; this re-exports it and runs it when called directly.
+ *   `fflow gate`; this re-exports it and runs it when called directly.
  * Boundary: no logic of its own; Figentra Flow (@figentra-oss/flow) holds it and its tests.
  * Runtime: node
  * Governing contract: ADR 0503 (Figentra Flow runs the development workflow); STA-1729 (W2).

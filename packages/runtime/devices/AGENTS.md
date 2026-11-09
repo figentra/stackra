@@ -29,8 +29,10 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `.
 
 - Every HTTP call goes through `hubSender`: idempotency key, bearer token, retry, timeout, refusals. A new driver
   call reuses it.
-- No route or body names the device; the hub reads it from the credential (ADR 0235 decision 1). The one exception
-  is `POST /device-pairings`, which carries the install id because the device has no credential yet.
+- No route or body names the device; the hub reads it from the credential (ADR 0235 decision 1). The exception is
+  pairing, which carries the install id because the device has no credential yet.
+- Pairing: `begin` mints the pairing secret and sends it in the body; `check` polls a status that never carries a
+  credential, then picks the token up once with the secret in the body. No URL ever carries the secret or a token.
 - The registry and pairing ports live here, not in `@stackra/peripherals` (ADR 0361 decision 7, owner round 22). The
   registry never issues or revokes a credential: identity does; the devices service calls it.
 - A device's id is its install id (`StoredDeviceIdentityDriver`), minted once and registered at pairing, so it never
@@ -57,5 +59,6 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `.
 | ---------------- | ------------------- | -------------------------------------------------------------------- |
 | Device token     | request header only | Read from `DeviceCredential` per call; never logged here.            |
 | Pairing token    | `secrets` area      | Written by `HttpDevicePairingDriver` once paired; never returned.    |
+| Pairing secret   | `secrets` area      | Minted at `begin`, sent in bodies only, dropped after the pickup.    |
 | Pairing code     | the device's screen | Single use, short-lived; a refusal never says whether it exists.     |
 | Telemetry values | request body only   | Sent as given; never logged here. A refused response body is unread. |

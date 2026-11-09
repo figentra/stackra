@@ -42,6 +42,7 @@ describe("STACKRA_PLUGIN", () => {
       "no-literal-shadow",
       "no-literal-z-index",
       "no-parameter-decorator",
+      "no-raw-env",
       "no-raw-key-literal",
       "no-tenant-vocabulary",
       "one-declaration-per-file",

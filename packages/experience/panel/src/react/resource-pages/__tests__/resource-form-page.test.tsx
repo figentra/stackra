@@ -17,6 +17,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { vi } from "vitest";
 import { z } from "zod";
 
+import type { StandInProps as Props } from "#core/__tests__/stand-in-props.fixture";
 import { registerResources } from "#core/functions/register-resources.function";
 import { resource } from "#core/functions/resource.function";
 import { ResourceFormPage } from "#react/resource-pages/resource-form-page";
@@ -36,8 +37,6 @@ vi.mock("@stackra/i18n/react", () => ({ useTranslation: () => ({ t: (key: string
 
 vi.mock("@stackra/ui/react", async () => {
   const { createElement } = await import("react");
-  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
-  type Props = Record<string, any>;
   const field = (kind: string) => (props: Props) =>
     createElement("label", { "data-kind": kind }, `${kind}:${props.name}`);
   return {

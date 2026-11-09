@@ -18,6 +18,7 @@
 import { snakeCase } from "@stackra/support";
 
 import { i18nTree } from "#core/functions/i18n-tree.function";
+import { isBaseLocale } from "#core/functions/is-base-locale.function";
 import type { I18nNode } from "#core/types/i18n-node.type";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -84,7 +85,7 @@ export function checkI18n(ir: MemberIR): GenError[] {
   for (const [locale, shipped] of Object.entries(ir.catalogues ?? {}).sort(([left], [right]) =>
     left.localeCompare(right),
   )) {
-    if (locale.includes("-")) continue;
+    if (!isBaseLocale(locale)) continue;
     for (const enumeration of ir.enums) {
       const catalogue = shipped[enumeration.module];
       if (typeof catalogue !== "object" || catalogue === null) continue;

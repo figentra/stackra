@@ -15,10 +15,11 @@ import { MembershipEntered } from "#core/index";
 import { SegmentMembership } from "#node/models/segment-membership.model";
 
 describe("SegmentMembership", () => {
-  it("is a model with the sgm public id and the timestamps", () => {
+  it("is a model with the sgm public id, the tenant and the timestamps", () => {
     expect(new SegmentMembership()).toBeInstanceOf(Model);
     expect(traitsOf(SegmentMembership).map((trait) => trait.name)).toEqual([
       "has_public_id",
+      "belongs_to_tenant",
       "timestamps",
     ]);
     expect(traitsOf(SegmentMembership)[0]?.options).toEqual({ prefix: "sgm" });

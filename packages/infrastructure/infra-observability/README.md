@@ -121,10 +121,10 @@ into the stack config the deploy reads:
 | Output                                      | Read as                                                  |
 | ------------------------------------------- | -------------------------------------------------------- |
 | `otlp.endpoint`                             | `ref:otlp.endpoint` (root `providers.otlp.endpoint`)     |
-| `otlp.token` (secret)                       | the services' OTLP header, a runtime secret in Infisical |
+| `otlp.token` (secret)                       | the services' OTLP header, a runtime secret in sops      |
 | `betterstack.source`                        | `ref:betterstack.source`                                 |
 | `sentry.dsn.<member>`                       | `ref:sentry.dsn.<member>` (an app's `VITE_SENTRY_DSN`)   |
-| `heartbeats.<env>.<service>.<job>` (secret) | the URL the job beats, a runtime secret in Infisical     |
+| `heartbeats.<env>.<service>.<job>` (secret) | the URL the job beats, a runtime secret in sops          |
 | `slis`                                      | the indicators, for dashboards and the objectives later  |
 
 ## Indicators
@@ -148,7 +148,7 @@ compose.
 
 The owner sets each provider's token in the stack config of the private stacks repository: `sentry:token` (org and
 project write), `logtail:apiToken` and `better-uptime:apiToken` (Better Stack), and the AWS credentials of the core
-stack's account. Core's own stack reads its tokens from Infisical `ci-deploy` `prod` `/ci/observability` instead (ADR 0512) (see above). The
+stack's account. Core's own stack decrypts its tokens from the sops scope `ci/deploy/observability` instead (ADR 0525) (see above). The
 release job's `SENTRY_AUTH_TOKEN` uploads source maps and is a different token.
 
 ## Not here

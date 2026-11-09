@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/entitlements (the `Entitlement` kind, its ports, the plan driver
- *          of the pipeline's entitlement step and its limit reservation, the plan-sized rate-limit budget, the value-entitlement reader, the registration
+ *          of the pipeline's entitlement step, the service-backed `ServicePlanSnapshotsDriver` and its limit reservation, the plan-sized rate-limit budget, the value-entitlement reader, the registration
  *          gen calls, the by-class-or-key `isEntitled` check, the limit-grant helpers `isLimitGrant` and `limitOf`, `paidPlanDays`,
  *          `LimitReachedError`, the quota's `QuotaPeriod`, `quotaWindow` and `QuotaExceededError` (stackra-309), the plan-catalogue admin of ADR 0391, and an edition's bundled catalogue `bundleEditionCatalogue`, ADR 0335) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The registry stays internal; `isLimitGrant` and `limitOf` are public
@@ -21,6 +21,7 @@ export { MemorySeatLedgerDriver } from "#core/drivers/memory-seat-ledger.driver"
 export { PlanLimitReservationDriver } from "#core/drivers/plan-limit-reservation.driver";
 export { PlanEntitlementCheckDriver } from "#core/drivers/plan-entitlement-check.driver";
 export { PlanSnapshotEntitlementSourceDriver } from "#core/drivers/plan-snapshot-entitlement-source.driver";
+export { ServicePlanSnapshotsDriver } from "#core/drivers/service-plan-snapshots.driver";
 export { EntitlementKind } from "#core/enums/entitlement-kind.enum";
 export { QuotaPeriod } from "#core/enums/quota-period.enum";
 export { CatalogueChangeBackdatedError } from "#core/errors/catalogue-change-backdated.error";

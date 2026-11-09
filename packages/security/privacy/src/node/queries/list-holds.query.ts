@@ -18,8 +18,8 @@ import { ListHoldsOutput } from "#node/schemas/list-holds-output.schema";
 /** The holds table. */
 const HOLDS = '"privacy"."legal_holds"';
 
-/** The session's partition, as the table's policy reads it. */
-const PARTITION = "coalesce(nullif(current_setting('app.tenant_id', true), ''), '-')";
+/** The call's own rows: its tenant's, or the platform's outside a tenant, as the table's policy writes them. */
+const OWN = "tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')";
 
 /** A selected hold row. */
 type HoldRow = {
@@ -57,7 +57,7 @@ export class ListHoldsQuery extends Query({
 
   /** The matching holds, newest first. */
   async handle(input: ListHoldsInput): Promise<ListHoldsOutput> {
-    const conditions = [`scope_id = ${PARTITION}`];
+    const conditions = [OWN];
     const params: unknown[] = [];
     if (input.includeReleased !== true) conditions.push("released_at is null");
     if (input.recordId !== undefined) {

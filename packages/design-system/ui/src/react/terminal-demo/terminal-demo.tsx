@@ -1,23 +1,23 @@
 /**
  * Stackra file contract:
  * Purpose: the web `TerminalDemo`: a framed terminal that plays a recorded CLI session a whole line at a time, on the
- *          motion kit's 80 ms floor step ("nothing is typed on"), under a top bar with a mono label, the command and a
+ *          theme's `floor` motion step ("nothing is typed on"), under a top bar with a mono label, the command and a
  *          copy button; it ends on an optional result. It plays once it scrolls into view, at once, or never.
  * Boundary: a region named by `label`. The server and the edge render the last frame, so the whole session is in the
  *           HTML; a playing session hides the lines still to come (hidden from assistive tech too) without moving the
  *           layout. The log does not announce each line (`aria-live="off"`). Below the `full` motion level it never
  *           plays. Terminal text is code: left-to-right and never translated.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); motion principles (whole lines, 80 ms floor steps); WCAG 2.2 SC 2.2.2
+ * Governing contract: ADR 0302 (decision 3); motion principles (whole lines, the `floor` motion step); WCAG 2.2 SC 2.2.2
  *          and 2.3.3; STA-2041.
  */
 import { cn } from "@heroui/react";
-import { type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type ReactElement, useRef } from "react";
 
 import type { TerminalLine } from "#contracts/types/terminal-line.type";
 import { LONG_TAIL_KEYS } from "#core/constants/long-tail-keys.constant";
 import { CopyButton } from "#react/copy-button/copy-button";
-import { useMotion } from "#react/design-system-provider/use-motion";
+import { useFloorSteps } from "#react/hooks/use-floor-steps";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { TerminalDemoProps } from "#react/terminal-demo/terminal-demo.props";
 
@@ -41,52 +41,22 @@ export function TerminalDemo({
   lines,
   result,
   autoplay = "in-view",
-  stepMs = 80,
+  stepMs,
   isCopyable = true,
   copyLabel,
   className,
 }: TerminalDemoProps): ReactElement {
   const t = useUiText();
   const name = label ?? t(K.label);
-  const motion = useMotion();
-  const plays = autoplay !== "never" && motion === "full";
   const root = useRef<HTMLElement>(null);
-  // The last frame first, as the server and the edge draw it.
-  const [shown, setShown] = useState(lines.length);
-  const [isStarted, setIsStarted] = useState(autoplay === "always");
-
-  // Before paint, so a session about to play never flashes its last frame.
-  useLayoutEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- reason: the server draws the last frame; only the browser rewinds it to play
-    if (plays) setShown(0);
-  }, [plays]);
-
-  useEffect(() => {
-    const element = root.current;
-    if (!plays || isStarted || !element) return undefined;
-    if (typeof IntersectionObserver !== "function") {
-      // oxlint-disable-next-line react/set-state-in-effect -- reason: with no IntersectionObserver there is no view to wait for
-      setIsStarted(true);
-      return undefined;
-    }
-    const sight = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) setIsStarted(true);
-      },
-      { threshold: 0.4 },
-    );
-    sight.observe(element);
-    return () => sight.disconnect();
-  }, [plays, isStarted]);
-
-  useEffect(() => {
-    if (!plays || !isStarted || shown >= lines.length) return undefined;
-    const step = setTimeout(() => setShown((count) => count + 1), stepMs);
-    return () => clearTimeout(step);
-  }, [plays, isStarted, shown, lines.length, stepMs]);
-
-  // Below the full motion level, or never playing, everything shows, whatever the timer reached.
-  const visible = plays ? shown : lines.length;
+  // One whole line a step; below the full motion level, or never playing, every line shows.
+  const visible = useFloorSteps(root, {
+    total: lines.length,
+    isEnabled: autoplay !== "never",
+    startsAtOnce: autoplay === "always",
+    threshold: 0.4,
+    stepMs,
+  });
   const isDone = visible >= lines.length;
   const repeats = new Map<string, number>();
   return (
@@ -96,7 +66,7 @@ export function TerminalDemo({
       data-slot="terminal-demo"
       data-done={isDone ? "" : undefined}
       className={cn(
-        "overflow-hidden rounded-[calc(var(--radius-lg)+4px)] border border-border bg-surface-secondary",
+        "overflow-hidden rounded-[calc(var(--radius-lg)+var(--spacing))] border border-border bg-surface-secondary",
         className,
       )}
     >

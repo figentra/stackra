@@ -1,0 +1,21 @@
+{
+  "slug": "module-menu",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react", "native"],
+  "packageName": "@stackra/navigation",
+  "exportName": "ModuleMenu",
+  "parts": ["ModuleMenu"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 420
+    }
+  ],
+  "related": ["free/sidebar", "free/navigation-list", "free/tab-bar"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["menu", "navigation", "sidebar", "module", "modules", "kit"],
+  "status": "new"
+}

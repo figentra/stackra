@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ColumnChange`, the chain `t.change(column)` returns inside `schema.table(...)`: make an existing column
- *          nullable or NOT NULL, or change its type, as a frozen migration step with a derived inverse.
+ *          nullable or NOT NULL, change its type, or give it a default read from a custom setting, as a frozen migration step with a derived inverse.
  * Boundary: a type only; the migration compiler records the calls and writes `ALTER COLUMN` statements. Every value is
  *           a literal in the migration (the frozen snapshot rule): a type change states the type it had (`from`), so
  *           the inverse is derived without reading the database. Only on an existing table; a table being created
@@ -17,9 +17,13 @@ export interface ColumnChange {
 
   /**
    * `SET NOT NULL`, a contract step: Postgres scans the table under an exclusive lock and fails on a null row, so the
-   * backfill (a queue job) ships in an earlier release. Its inverse drops NOT NULL.
+   * backfill (a queue job) ships in an earlier release. Its inverse drops NOT NULL. A new contract step passes
+   * `{ safe: true }`: ADR 0159's sequence, `ADD CONSTRAINT ck_<table>_<column>_not_null CHECK (column IS NOT NULL) NOT
+   * VALID` in the transactional step, then a later step that validates it (writes go on during the scan), sets NOT NULL
+   * (proven by the valid check, no second scan) and drops the check. The released contract steps keep the plain form,
+   * so their checksums stay the same.
    */
-  notNull: () => this;
+  notNull: (options?: { readonly safe?: boolean }) => this;
 
   /**
    * `ALTER COLUMN ... TYPE to USING ...`. `to` and `options.from` are SQL types the blueprint writes (`text`,
@@ -29,4 +33,12 @@ export interface ColumnChange {
    * exclusive lock for the rewrite: on a large table, add a new column and backfill it instead.
    */
   type: (to: string, options: { readonly from: string; readonly using?: string }) => this;
+
+  /**
+   * `SET DEFAULT nullif(current_setting(setting, true), '')`, on a column that has no default: a row written without
+   * the column takes the transaction's setting, and NULL when it is unset or empty, so a NOT NULL column refuses the
+   * write. It fills a column the ORM never writes, such as an implicit many-to-many pivot's `tenant_id`. Its inverse
+   * drops the default.
+   */
+  defaultSetting: (setting: string) => this;
 }

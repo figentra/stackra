@@ -1,0 +1,21 @@
+{
+  "slug": "row-actions",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/panel",
+  "exportName": "RowActions",
+  "parts": ["RowActions"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 320
+    }
+  ],
+  "related": ["free/action-menu", "free/data-table", "free/icon-button"],
+  "tokens": ["color.surface", "color.danger"],
+  "keywords": ["row", "actions", "menu", "sdui", "overflow", "kit"],
+  "status": "new"
+}

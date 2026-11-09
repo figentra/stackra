@@ -266,6 +266,8 @@
   --ease-indicator: cubic-bezier(0.32, 0.72, 0, 1);
   --duration-blink: 1000ms;
   --ease-blink: steps(1);
+  --duration-floor: 80ms;
+  --ease-floor: steps(1);
   --duration-pulse: 1200ms;
   --ease-pulse: ease-in-out;
   --duration-emphasis: 600ms;
@@ -912,6 +914,14 @@
   --material-role-nav-bar-scrolled-depth: var(--material-glass-depth);
   --material-role-nav-bar-scrolled-elevation: var(--material-glass-elevation);
   --material-role-nav-bar-scrolled-label-fill: var(--material-glass-fill);
+  --blueprint-rule: var(--separator);
+  --blueprint-rule-width: 1px;
+  --blueprint-mark-size: 0px;
+  --blueprint-frame-radius: var(--radius-container);
+  --blueprint-pipe: var(--border);
+  --blueprint-pipe-width: 1px;
+  --blueprint-junction-size: 5px;
+  --blueprint-dock-height: 36px;
 }
 
 [data-family="front"] {
@@ -1059,6 +1069,14 @@
   --material-role-nav-bar-scrolled-depth: var(--material-glass-depth);
   --material-role-nav-bar-scrolled-elevation: var(--material-glass-elevation);
   --material-role-nav-bar-scrolled-label-fill: var(--material-glass-fill);
+  --blueprint-rule: color-mix(in oklab, var(--accent) 18%, transparent);
+  --blueprint-rule-width: 1px;
+  --blueprint-mark-size: 9px;
+  --blueprint-frame-radius: calc(var(--radius-lg) + 4px);
+  --blueprint-pipe: var(--accent);
+  --blueprint-pipe-width: 1.5px;
+  --blueprint-junction-size: 7px;
+  --blueprint-dock-height: 40px;
 }
 
 [data-family="studio"] {
@@ -1206,6 +1224,14 @@
   --material-role-nav-bar-scrolled-depth: var(--material-glass-depth);
   --material-role-nav-bar-scrolled-elevation: var(--material-glass-elevation);
   --material-role-nav-bar-scrolled-label-fill: var(--material-glass-fill);
+  --blueprint-rule: var(--separator);
+  --blueprint-rule-width: 1px;
+  --blueprint-mark-size: 0px;
+  --blueprint-frame-radius: var(--radius-container);
+  --blueprint-pipe: var(--border);
+  --blueprint-pipe-width: 1px;
+  --blueprint-junction-size: 5px;
+  --blueprint-dock-height: 36px;
 }
 
 .skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)::after,
@@ -1223,6 +1249,7 @@
     --duration-slow: 0ms;
     --duration-indicator: 0ms;
     --duration-blink: 0ms;
+    --duration-floor: 0ms;
     --duration-pulse: 0ms;
     --duration-emphasis: 0ms;
     --duration-hold: 0ms;
@@ -1265,6 +1292,7 @@ html[data-motion="none"] {
   --duration-slow: 0ms;
   --duration-indicator: 0ms;
   --duration-blink: 0ms;
+  --duration-floor: 0ms;
   --duration-pulse: 0ms;
   --duration-emphasis: 0ms;
   --duration-hold: 0ms;

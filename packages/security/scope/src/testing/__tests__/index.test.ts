@@ -11,6 +11,10 @@ import * as testing from "#testing/index";
 
 describe("@stackra/scope/testing", () => {
   it("exports exactly its helpers", () => {
-    expect(Object.keys(testing).sort()).toEqual(["fakeScopeTree", "scopeRefOf"]);
+    expect(Object.keys(testing).sort()).toEqual([
+      "SCOPE_TESTING_PLUGIN",
+      "fakeScopeTree",
+      "scopeRefOf",
+    ]);
   });
 });
