@@ -80,6 +80,9 @@ after a rotation). No driver lists, logs or reports a value.
 | `MemorySecretStoreDriver`            | `.`      | none: `memory`, the secrets a test sets (STA-1308)                                                                                                               |
 | `AwsSecretsManagerSecretStoreDriver` | `./node` | `AwsSecretsManagerConfig`: region and secret ids; the runtime's AWS role signs the reads                                                                         |
 
+`SecretsConfig.store` (key `config.secrets`) picks the driver: `memory` unless config says otherwise, so a member
+boots with no secrets config; a deployment that reads AWS sets `store: aws_secrets_manager` in its runway values.
+
 A JSON-object secret in AWS gives one secret per string member. `@aws-sdk/client-secrets-manager` is an optional peer.
 
 ## Signer drivers

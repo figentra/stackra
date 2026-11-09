@@ -80,6 +80,11 @@
             }
           ]
         }
+      },
+      "selectedBy": "config:config.secrets.store",
+      "config": {
+        "class": "SecretsConfig",
+        "from": "@stackra/config"
       }
     },
     {
@@ -113,6 +118,11 @@
     {
       "key": "config.aws_secrets_manager",
       "class": "AwsSecretsManagerConfig",
+      "from": "@stackra/config"
+    },
+    {
+      "key": "config.secrets",
+      "class": "SecretsConfig",
       "from": "@stackra/config"
     },
     {
