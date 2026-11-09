@@ -4,7 +4,7 @@
   "preset": {
     "name": "@stackra/flow-preset",
     "version": "0.32.0",
-    "digest": "sha256:9b199cc5d0f5294de7250ed7b41ca89155e7e2e15faf9255692eb5c280b54212"
+    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
   },
   "profile": "framework",
   "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
@@ -30,12 +30,12 @@
     ".agents/agents/dependency-steward.md": "sha256:82d9f9f29337f9cc1309aed2d5450b925567b9430c9c0c16b5592c524cf444af",
     ".agents/agents/design-brand-reviewer.md": "sha256:201eddbc1dfeb34ad707c9299d2c0b371eef31e80fb86a5d104c323beeebd80d",
     ".agents/agents/desktop-pwa-builder.md": "sha256:c6eb44f8c2ae92839ca4905d4af8d0f4f7230f0946bd03d5018ca53d7a4e27b1",
-    ".agents/agents/docs-adr-steward.md": "sha256:627c4b23de044e506dddfa608b671503fe49561d09c89e99a0a9c4caebc53ead",
+    ".agents/agents/docs-adr-steward.md": "sha256:b089da836dbe63a2817231b94c739f4d67f62f7b1f497136677921a48bb11dbc",
     ".agents/agents/docs-changesets-steward.md": "sha256:52f0996bbaf021c225b218e993a4575638eed9c7690dececf1c051a70727c8d8",
     ".agents/agents/frontend-builder.md": "sha256:e36a042cdbdcc2e986be8faa03fcce169c0d3d8697f66db326c853f8a51037d2",
     ".agents/agents/git-steward.md": "sha256:51a087c51efb38c8cee912fe223325c3681d8a549e0d2a0d149f2e118dbaac02",
     ".agents/agents/i18n-steward.md": "sha256:93451aa9260ede0cb90b5c7c4ff3cc5e42494d9892cb1fe131b25e8ffc0ca89e",
-    ".agents/agents/incident-commander.md": "sha256:ea9850d7fd8b945ccb7abb39fdb01073e1adbd949c47b3ea9a68ca1537f7e0cb",
+    ".agents/agents/incident-commander.md": "sha256:f046325f44e981fa5a7de987fe666d944b6cfcfad1ba74fce3a31f33c4fd23be",
     ".agents/agents/infra-engineer.md": "sha256:8fd3738b6c179d8440a77ac4d92e567a05f962e658e33228fb13ea998476d3d4",
     ".agents/agents/linear-steward.md": "sha256:e2ad75eed0793d717cef269044d62a2238b919756bfb44bc19713f0b39dae2e7",
     ".agents/agents/mobile-builder.md": "sha256:3674fd06db6f2d95f5727460fdfbdef2478d2468f391367c4365edba17c6dcc5",
