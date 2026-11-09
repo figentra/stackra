@@ -13,7 +13,8 @@
  *          then `registerRoles`; without
  *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
  *          STA-1702), each record policy with its model (`registerPolicies`; without it `ctx.authorize(record)` runs no
- *          policy, STA-2045), and every action and query with its locked key, permission, risk, effects and input class
+ *          policy, STA-2045), each extension on its point's slot with its order (`registerExtensions`; without it every
+ *          slot runs none), and every action and query with its locked key, permission, risk, effects and input class
  *          (`registerActions`; without it the pipeline checks no permission and validates no input, STA-2025).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
@@ -378,6 +379,23 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
         ? undefined
         : `{ type: ${type}, key: ${JSON.stringify(entry["key"])} }`;
     }),
+  );
+
+  // Each extension on the slot of the point its type argument names (`Extension<Point["slot"]>`), with its order, so the
+  // slot runs it (ADR 0305 rules 22 to 25; gen read the point and slot, which run time has lost).
+  // shortcut: a hosted package's extensions are not registered, since its manifest does not list them yet; upgrade when
+  // the manifest records each extension with its point, slot and file.
+  call(
+    "registerExtensions",
+    "@stackra/actions",
+    ir.classes
+      .filter((declared) => declared.kind === "extension")
+      .map((declared) => {
+        const partner = declared.partner;
+        if (partner === undefined || partner.slot === undefined) return undefined;
+        const order = declared.options["order"];
+        return `{ point: ${ref({ name: partner.name, from: partner.from })}, slot: ${JSON.stringify(partner.slot)}, extension: ${ref({ name: declared.name, from: declared.importPath })}${typeof order === "number" ? `, order: ${order}` : ""} }`;
+      }),
   );
 
   // Each record policy with the model it judges, own and hosted, so `ctx.authorize(record)` runs it (ADR 0132 as
