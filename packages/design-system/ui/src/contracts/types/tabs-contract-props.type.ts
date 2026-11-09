@@ -23,8 +23,12 @@ export interface TabsContractProps
   readonly label?: string | undefined;
   /** The axis the tabs run along. Defaults to `horizontal`; native has no vertical tabs and reads it as horizontal. */
   readonly orientation?: Orientation | undefined;
-  /** The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`. */
-  readonly variant?: Exclude<Variant, "tertiary"> | undefined;
+  /**
+   * The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one, and `steps` plain words
+   * joined by arrows with the selected step in the accent (a marketing switcher, such as Action → Endpoint → Client;
+   * native draws it as `secondary`). Defaults to `primary`.
+   */
+  readonly variant?: Exclude<Variant, "tertiary"> | "steps" | undefined;
   /** True to show every tab but refuse selecting any of them. */
   readonly isDisabled?: boolean | undefined;
   /**
