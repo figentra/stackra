@@ -25,6 +25,29 @@ function assertType(column: string, type: string): void {
     throw new TypeError(`${column}: "${type}" is not a column type a blueprint writes`);
 }
 
+/** The reason and the squawk ignore written above a type change Postgres makes without rewriting the table. */
+const WIDEN_SQUAWK_IGNORE =
+  "-- lint: widening a varchar, or varchar to text, changes only the catalog; Postgres does not rewrite the table.\n" +
+  "-- squawk-ignore changing-column-type\n";
+
+/** The length of a `varchar(n)` type, or undefined for any other type. */
+const varcharLength = (type: string): number | undefined => {
+  const match = /^varchar\((\d+)\)$/.exec(type);
+  return match?.[1] === undefined ? undefined : Number(match[1]);
+};
+
+/**
+ * Whether `from` to `to` only widens a varchar (`varchar(n)` to a longer `varchar(m)`) or turns it into `text`, with no
+ * custom conversion: Postgres changes the catalog and rewrites nothing. Every other change, narrowing included, stays
+ * flagged.
+ */
+function widens(from: string, to: string, using: string | undefined): boolean {
+  const before = varcharLength(from);
+  if (using !== undefined || before === undefined) return false;
+  const after = varcharLength(to);
+  return to === "text" || (after !== undefined && after > before);
+}
+
 /** One recorded column change. */
 export class ColumnChangeRecord implements ColumnChange {
   /** The column name. */
@@ -94,7 +117,7 @@ export class ColumnChangeRecord implements ColumnChange {
     if (this.conversion !== undefined) {
       const { to, from, using } = this.conversion;
       statements.push({
-        sql: `${alter} type ${to} using ${using ?? `${column}::${to}`}`,
+        sql: `${widens(from, to, using) ? WIDEN_SQUAWK_IGNORE : ""}${alter} type ${to} using ${using ?? `${column}::${to}`}`,
         inverse: [`${alter} type ${from} using ${column}::${from}`],
       });
     }
