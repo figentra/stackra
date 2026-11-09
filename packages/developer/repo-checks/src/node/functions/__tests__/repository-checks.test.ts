@@ -382,6 +382,10 @@ test("checkTestPlacement: test files must sit directly in __tests__/", () => {
     checkTestPlacement(["src/__tests__/x.int.test.ts", "src/__tests__/x.e2e.test.ts"]),
     [],
   );
+  assert.deepEqual(checkTestPlacement(["packages/a/b/src/__tests__/x.e2e.page.tsx"]), []);
+  assert.deepEqual(checkTestPlacement(["packages/a/b/src/x.e2e.page.tsx"]), [
+    "packages/a/b/src/x.e2e.page.tsx: an e2e page goes in a __tests__/ folder (ADR 0022)",
+  ]);
   assert.deepEqual(checkTestPlacement(["src/x/x.stories.tsx"]), [
     "src/x/x.stories.tsx: no Storybook; test the component in __tests__/",
   ]);

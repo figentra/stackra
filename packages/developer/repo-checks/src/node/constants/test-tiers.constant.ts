@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `TEST_TIERS`, the test tiers and the infix each one puts before `.ts`.
- * Boundary: data only; `testFileFor` reads it. `e2e` tests live in the app, not in a member.
+ * Boundary: data only; `testFileFor` reads it. `e2e` tests live in the app, or in a package beside an `.e2e.page.tsx`.
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0182 (decision 1).
  */

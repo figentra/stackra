@@ -86,6 +86,29 @@ describe("generate", () => {
     );
   });
 
+  it("writes the e2e app and Playwright config only for a package with an .e2e.page.tsx", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    await generate(root);
+    expect(existsSync(join(root, ".stackra/playwright.e2e.config.ts"))).toBe(false);
+    expect(existsSync(join(root, ".stackra/e2e"))).toBe(false);
+    const page = join(root, "src/node/__tests__/orders.e2e.page.tsx");
+    mkdirSync(dirname(page), { recursive: true });
+    writeFileSync(page, "export default () => null;\n");
+    const result = await generate(root);
+    expect(result.errors).toEqual([]);
+    expect(result.changed).toEqual(
+      expect.arrayContaining([
+        ".stackra/e2e/index.html",
+        ".stackra/e2e/main.tsx",
+        ".stackra/e2e/vite.config.ts",
+        ".stackra/playwright.e2e.config.ts",
+      ]),
+    );
+    expect(readFileSync(join(root, ".stackra/playwright.e2e.config.ts"), "utf8")).toContain(
+      "packageE2ePreset",
+    );
+  });
+
   it("refuses a changed identity without @Renamed", async () => {
     const root = writeFixtureMember("shop", SHOP_SOURCES);
     await generate(root);
