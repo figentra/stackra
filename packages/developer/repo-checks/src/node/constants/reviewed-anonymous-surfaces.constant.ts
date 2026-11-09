@@ -9,7 +9,8 @@
  * Runtime: node
  * Governing contract: ADR 0082 (public calls); ADR 0098 (the pipeline); STA-2025; reviewed 2026-11-04 (STA-2100);
  *                     Pay's checkout calls reviewed 2026-11-07 (STA-2515); the checkout's framers 2026-11-08 (STA-2564);
- *                     the checkout's method choice 2026-11-08.
+ *                     the checkout's method choice 2026-11-08; the checkout's details and terms submit 2026-11-09
+ *                     (figentra/pay#194).
  */
 
 /** Locked key to why an anonymous caller may make the call. */
@@ -23,6 +24,13 @@ export const REVIEWED_ANONYMOUS_SURFACES: Readonly<Record<string, string>> = Obj
   "checkouts.checkout_page.choose_method@1":
     "Binds the payer's method choice to an unguessable session id with a per-session rate limit; answers only the " +
     "bound provider session's widget; no data beyond that session.",
+  "checkouts.checkout_page.submit@1":
+    "Figentra Pay's hosted page sends the payer's details and terms acceptance (pay#194): anonymous only, and only " +
+    "with the session's HMAC client token (key id, tenant, region, purpose, expiry, the path's session), checked as " +
+    "load checks it, with the same refusal for any bad token or unknown session; runs in that tenant with row " +
+    "security; a per-session bucket (10 a minute) bounds it; binds the session once under a row lock, so a repeat " +
+    "records one acceptance and opens one provider session; the details go to payments in the call and are never " +
+    "stored, logged or put in an event; the acceptance's IP address and user agent come from the call, never input",
   "checkouts.checkout_page.framers@1":
     "returns only the checkout's configured public embed origins, no tenant or payer data, fails closed (empty list) " +
     "on any miss; the edge's frame-ancestors callback (STA-2564). Reviewed by the leader, 2026-11-08.",
