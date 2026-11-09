@@ -254,6 +254,7 @@ const UNCREDENTIALED: readonly (keyof CallOptions)[] = [
   "client",
   "expectedVersion",
   "consentSnapshot",
+  "apiVersion",
 ];
 
 /** What one call accumulates while it runs. */
@@ -1003,10 +1004,7 @@ export class ActionPipeline {
     const { descriptor } = call;
     // An API key's write needs its own key whatever the action declares (Pay FR-004, #850 G2); every other caller,
     // jobs and workflows included, keeps the declared policy
-    const keyCaller =
-      descriptor.credential !== undefined ||
-      descriptor.actor.kind === ActorKind.ApiClient ||
-      call.request.origin?.kind === CallOriginKind.ApiKey;
+    const keyCaller = this.isKeyCaller(call);
     if (sent === undefined && (policy === Idempotency.Required || keyCaller))
       throw IdempotencyKeyRequiredError.create();
     if (sent === undefined && policy !== Idempotency.Derived) return undefined;
@@ -1486,10 +1484,11 @@ export class ActionPipeline {
 
   /**
    * Runs `work` and writes the action's audit entry for what the unit of work did not: a refusal (its writes rolled
-   * back, so the entry is written after) and an idempotent replay (no unit of work ran). Queries are not audited.
+   * back, so the entry is written after) and an idempotent replay (no unit of work ran). A query is audited only for an
+   * API key caller (Pay AC-008), here, since it runs in no unit of work.
    */
   private async audited(call: Call, work: () => Promise<unknown>): Promise<unknown> {
-    if (call.kind === "query") return work();
+    if (call.kind === "query" && !this.isKeyCaller(call)) return work();
     const trail = this.optional(AuditTrail);
     try {
       const output = await work();
@@ -1501,15 +1500,32 @@ export class ActionPipeline {
     }
   }
 
-  /** The action's audit entry with `outcome`, and the fields the handler added so far. */
+  /**
+   * The call's audit entry with `outcome`: the fields the handler added so far, the key the call ran under, its API
+   * version and its duration. No input or output.
+   */
   private auditEntry(call: Call, outcome: "ok" | "refused", code?: string): AuditEntry {
+    const { idempotencyKey, apiVersion } = call.request;
+    const now = this.optional(Clock)?.now() ?? new Date();
     return {
       call: call.descriptor,
       at: call.at,
       outcome,
       ...(code === undefined ? {} : { code }),
       fields: Object.freeze({ ...call.state.audit }),
+      ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+      ...(apiVersion === undefined ? {} : { apiVersion }),
+      durationMs: Math.max(0, now.getTime() - call.at.getTime()),
     };
+  }
+
+  /** Whether an API key makes the call: a credential, an `api_client` actor or an `api_key` origin. */
+  private isKeyCaller(call: Call): boolean {
+    return (
+      call.descriptor.credential !== undefined ||
+      call.descriptor.actor.kind === ActorKind.ApiClient ||
+      call.request.origin?.kind === CallOriginKind.ApiKey
+    );
   }
 
   /** The context handed to preconditions, interceptors and `handle`. */

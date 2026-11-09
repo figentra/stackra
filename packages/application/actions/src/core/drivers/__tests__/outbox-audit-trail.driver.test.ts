@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `OutboxAuditTrailDriver`: it is the `AuditTrail` port; each entry is written to the
  *          `EventOutbox` as one `AuditEntryRecorded` with the call's identity, tags, actor, scope, request origin,
- *          outcome, code and fields, and metadata carrying a fresh `evt_` id, the call's time, tenant, actor and correlation.
+ *          outcome, code, fields, key, API version and duration, and metadata carrying a fresh `evt_` id, the call's time, tenant, actor and correlation.
  * Boundary: test only; a recording EventOutbox.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decisions 1, 2 and 4); ADR 0098 (decision 7); ADR 0456.
@@ -60,6 +60,9 @@ describe(OutboxAuditTrailDriver, () => {
       outcome: "refused",
       code: "forbidden",
       fields: { amount: 2500 },
+      idempotencyKey: "k-refund-1",
+      apiVersion: "2026-11-09",
+      durationMs: 42,
     });
     const [record] = outbox.written;
     expect(record?.event).toBeInstanceOf(AuditEntryRecorded);
@@ -78,6 +81,9 @@ describe(OutboxAuditTrailDriver, () => {
       outcome: "refused",
       code: "forbidden",
       fields: { amount: 2500 },
+      idempotencyKey: "k-refund-1",
+      apiVersion: "2026-11-09",
+      durationMs: 42,
     });
     expect(record?.meta).toMatchObject({
       occurredAt: at,

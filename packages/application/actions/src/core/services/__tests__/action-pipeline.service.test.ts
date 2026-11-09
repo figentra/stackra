@@ -1418,7 +1418,7 @@ describe(ActionPipeline, () => {
     });
   });
 
-  it("audits an action's outcome and fields, never a query", async () => {
+  it("audits an action's outcome and fields, never a user's query", async () => {
     const { pipeline, shop, trail } = setup();
     await pipeline.execute(
       CreateOrderAction,
