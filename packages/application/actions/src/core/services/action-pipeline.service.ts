@@ -138,6 +138,7 @@ import type { ApprovalRequirement } from "#contracts/types/approval-requirement.
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
 import type { CallConsent } from "#contracts/types/call-consent.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
+import type { CallPublic } from "#contracts/types/call-public.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { Action } from "#core/bases/action.base";
@@ -169,6 +170,7 @@ import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
+import { publicOf } from "#core/functions/public-of.function";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
 import { keptOutput } from "#core/functions/kept-output.function";
@@ -179,6 +181,7 @@ import { queryCacheKey } from "#core/functions/query-cache-key.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
 import { verifyApproval } from "#core/functions/verify-approval.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
+import type { ActionPublic } from "#core/types/action-public.type";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionApproval } from "#core/types/action-approval.type";
 import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
@@ -216,6 +219,7 @@ interface Recorded {
   readonly effects?: ActionEffects;
   readonly approval?: boolean | ActionApproval;
   readonly stepUp?: AssuranceLevel;
+  readonly public?: ActionPublic;
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
@@ -289,6 +293,28 @@ const IAM = "bind an AccessControl driver (@stackra/iam); calls fail closed with
 
 const APPROVALS =
   "declares approval: true, so bind an ApprovalGate driver (the OS tasks-approvals service); it fails closed without one";
+
+/** The descriptor's `public` field, when the operation is public. */
+function publicField(open: CallPublic | undefined): { readonly public?: CallPublic } {
+  return open === undefined ? {} : { public: open };
+}
+
+/**
+ * Whether an `api_client` call may reach this operation at all: it is `public`, the call carries a key, and a
+ * publishable key calls a write only when the operation opts in (a read admits one unless it opts out).
+ */
+function keyMayCall(
+  descriptor: CallDescriptor,
+  options: { readonly public?: ActionPublic },
+  kind: "action" | "query",
+): boolean {
+  const open = options.public;
+  const key = descriptor.credential;
+  if (open === undefined || key === undefined) return false;
+  if (!key.publishable) return true;
+  const allowed = open === true ? undefined : open.publishable;
+  return allowed ?? kind === "query";
+}
 
 /**
  * Runs actions and queries.
@@ -438,6 +464,10 @@ export class ActionPipeline {
       area: options.area,
       ...(request.sandbox === true ? { sandbox: true as const } : {}),
       ...(request.origin === undefined ? {} : { origin: Object.freeze({ ...request.origin }) }),
+      ...(request.credential === undefined
+        ? {}
+        : { credential: Object.freeze({ ...request.credential }) }),
+      ...publicField(publicOf(options, registration?.permission, registration?.risk)),
     });
     const state: CallState = {
       idempotencyKey: undefined,
@@ -785,7 +815,14 @@ export class ActionPipeline {
    */
   private async checked(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, options, kind, ctx } = call;
-    if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
+    // an API key's caller reaches a `public` operation only, with a key; its scopes are checked by AccessControl
+    const viaKey = descriptor.actor.kind === ActorKind.ApiClient;
+    if (
+      viaKey
+        ? !keyMayCall(descriptor, options, kind)
+        : !options.actors.includes(descriptor.actor.kind)
+    )
+      throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
     // step-up asks a user only: a service, job, system or agent call carries no assurance (ADR 0406 as amended)
     // `{ exempt: "first-factor-enrolment" }` is no level: that action enforces its own step-up (STA-340)

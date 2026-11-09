@@ -17,7 +17,9 @@ import type { AnyClass } from "@stackra/container";
 import type { Actor, ApiArea, PublicId, ScopeRef } from "@stackra/contracts";
 
 import type { Effect } from "#contracts/enums/effect.enum";
+import type { CallCredential } from "#contracts/types/call-credential.type";
 import type { CallOrigin } from "#contracts/types/call-origin.type";
+import type { CallPublic } from "#contracts/types/call-public.type";
 
 /** One call of an action or a query, as every pipeline port sees it. */
 export interface CallDescriptor {
@@ -69,4 +71,10 @@ export interface CallDescriptor {
 
   /** The surface the call arrived through (`CallOptions.origin`); absent for an internal call. */
   readonly origin?: CallOrigin;
+
+  /** The API key an `api_client` call came with (`CallOptions.credential`); absent for every other caller. */
+  readonly credential?: CallCredential;
+
+  /** What an API key must hold to call this operation; absent when the operation is not `public`. */
+  readonly public?: CallPublic;
 }

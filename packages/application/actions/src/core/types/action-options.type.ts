@@ -39,11 +39,15 @@ import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { JobOptions } from "#core/types/job-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
 import type { OnBehalfOfOptions } from "#core/types/on-behalf-of-options.type";
+import type { ActionPublic } from "#core/types/action-public.type";
 
 /** The options of an action. */
 export interface ActionOptions {
   /** `<model>.<verb>` in snake_case (`order.create`, `inbox_message.mark_read`), written once. */
   readonly key: string;
+
+  /** Reachable with an API key (an `api_client` caller), with the scopes it must hold (ADR 0278); absent: never. */
+  readonly public?: ActionPublic;
 
   /** The actor kinds that may call it; any other is refused (`forbidden`). */
   readonly actors: readonly ActorKind[];
