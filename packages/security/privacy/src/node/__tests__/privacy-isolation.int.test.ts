@@ -17,13 +17,13 @@
  * Governing contract: ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0134 (2026-10-24 amendment: holds); ADR 0212;
  *                     ADR 0495; ADR 0182 (integration tier); ADR 0022; `.agents/rules/tenancy.md` (points 7 and 8).
  */
+import { RowIsolationMissingError } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import type { AnyClass, Container } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { connectHoldRegistry, EntitySchema, maintainPartitions } from "@stackra/database";
 import { Disposal } from "@stackra/database/contracts";
 import { HasPublicId, Model, Partitioned } from "@stackra/model";
-import { RowIsolationMissingError } from "@stackra/outbox";
 import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
 
 import {

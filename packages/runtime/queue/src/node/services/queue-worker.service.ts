@@ -21,7 +21,7 @@
  *           set its tenant) and a job with none runs as a platform call.
  *           Jobs are tenant-owned (ADR 0239 amendment, gaps A and C): a reservation claims a job's id and owner across
  *           owners, and the job is loaded, settled (removed, retried, released or dead-lettered) in that owner's
- *           isolation (`inRowOwner`); the next link of its chain is queued in a transaction of its own (`requiresNew`,
+ *           isolation (`inJobOwner`); the next link of its chain is queued in a transaction of its own (`requiresNew`,
  *           with a `Database` bound) in that owner, so it takes the owner's tenant. A claimed job that does not load,
  *           or an owned one with no isolation bound, fails the reservation (`JobClaimNotLoadedError`,
  *           `JobRowIsolationMissingError`): it is never skipped, and runs again once its lease lapses. A job a broker
@@ -59,7 +59,7 @@ import { JobClaimNotLoadedError } from "#core/errors/job-claim-not-loaded.error"
 import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { inJobOwner } from "#core/functions/in-job-owner.function";
 import { readJob } from "#core/functions/read-job.function";
 import type { JobPlan } from "#core/types/job-plan.type";
 import type { JobRun } from "#core/types/job-run.type";
@@ -192,7 +192,7 @@ export class QueueWorkerService extends Service {
   private async next(queue: string | undefined, now: Date): Promise<JobRun | undefined> {
     const claim = await this.driver.reserve(queue, now);
     if (claim === undefined) return undefined;
-    const job = await inRowOwner(this.isolation(), claim.ownerId, claim.id, () =>
+    const job = await inJobOwner(this.isolation(), claim.ownerId, claim.id, () =>
       this.driver.load(claim.id),
     );
     if (job === undefined) throw JobClaimNotLoadedError.create({ id: claim.id });
@@ -298,7 +298,7 @@ export class QueueWorkerService extends Service {
   }
 
   /**
-   * Runs the row work of `job` in its owner: the claimed owner of a stored job (`inRowOwner`), or, for one a broker
+   * Runs the row work of `job` in its owner: the claimed owner of a stored job (`inJobOwner`), or, for one a broker
    * delivered (no claim), the tenant of its own scope through the bound isolation (none bound: as it is).
    */
   private inOwner<T>(
@@ -307,7 +307,7 @@ export class QueueWorkerService extends Service {
     work: () => Promise<T>,
   ): Promise<T> {
     const isolation = this.isolation();
-    if (claim !== undefined) return inRowOwner(isolation, claim.ownerId, claim.id, work);
+    if (claim !== undefined) return inJobOwner(isolation, claim.ownerId, claim.id, work);
     return isolation === undefined
       ? work()
       : isolation.run(WORKER_ACTOR, job.scope, () => work(), { readOnly: false });

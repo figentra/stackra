@@ -30,8 +30,8 @@
  *                     ADR 0305 (rules 28 and 30); ADR 0327 and ADR 0323 (`ScopeRef`); ADR 0239 (2026-11-07 amendment,
  *                     gaps A and C, decision 5); ADR 0495.
  */
+import { boundIsolation, inRowOwner } from "@stackra/actions";
 import type { Action, ActionOptions, CallInput } from "@stackra/actions";
-import { CallIsolation } from "@stackra/actions/contracts";
 import { kindOf, Service } from "@stackra/container";
 import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind, Duration } from "@stackra/contracts";
@@ -114,14 +114,6 @@ const SCHEDULER_ACTOR_ID = "sys_scheduler";
  */
 const schedulerActor = (scope: ScopeRef): Actor =>
   Object.freeze({ kind: ActorKind.System, id: SCHEDULER_ACTOR_ID, scopeId: scope.id });
-
-/** The actor a claimed schedule's runs are pushed as: the scheduler, in the schedule's owner when it has one. */
-const ownerActor = (ownerId: PublicId<"scp"> | undefined): Actor =>
-  Object.freeze({
-    kind: ActorKind.System,
-    id: SCHEDULER_ACTOR_ID,
-    ...(ownerId === undefined ? {} : { scopeId: ownerId }),
-  });
 
 /**
  * The runs one tick or `fire` pushes for one owner: a claimed schedule's, or a cron's in one scope (none: platform).
@@ -486,26 +478,23 @@ export class SchedulerService extends Service {
    * @throws ScheduleRowIsolationMissingError when a claimed schedule has an owner and no isolation is bound.
    */
   private inOwner<T>(push: Push, work: () => Promise<T>): Promise<T> {
-    const isolation = this.container.has(CallIsolation)
-      ? this.container.get(CallIsolation)
-      : undefined;
+    const isolation = boundIsolation(this.container);
     const unit = (): Promise<T> => {
-      if ("claim" in push) {
-        const { id, ownerId } = push.claim;
-        if (isolation !== undefined)
-          return isolation.run(ownerActor(ownerId), undefined, () => work(), { readOnly: false });
-        if (ownerId !== undefined)
-          return Promise.reject(ScheduleRowIsolationMissingError.create({ id }));
-        return work();
-      }
+      if ("claim" in push)
+        return inRowOwner(
+          isolation,
+          SCHEDULER_ACTOR_ID,
+          push.claim.ownerId,
+          push.claim.id,
+          work,
+          (details) => ScheduleRowIsolationMissingError.create(details),
+        );
       const { scope } = push;
+      // A platform cron runs as the platform, exactly as a claimed schedule with no owner does.
+      if (scope === undefined)
+        return inRowOwner(isolation, SCHEDULER_ACTOR_ID, undefined, "", work);
       if (isolation === undefined) return work();
-      return isolation.run(
-        scope === undefined ? ownerActor(undefined) : schedulerActor(scope),
-        scope,
-        () => work(),
-        { readOnly: false },
-      );
+      return isolation.run(schedulerActor(scope), scope, () => work(), { readOnly: false });
     };
     // A tenant insert from a no-tenant session: its own transaction, outside the lock's, never a tenant switch.
     return this.driver.transaction(unit);

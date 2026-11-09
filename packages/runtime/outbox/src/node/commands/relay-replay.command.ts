@@ -11,6 +11,7 @@
  * Governing contract: ADR 0511 (decisions 12 and 13, amendment of 2026-11-02); STA-1910 spec FR-014; ADR 0506; ADR
  *                     0239 (2026-11-07 amendment, gap A).
  */
+import { boundIsolation, ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import { Argument, Command, UsageError } from "@stackra/console";
 import type { CommandIo } from "@stackra/console";
 import type { Container } from "@stackra/container";
@@ -19,9 +20,7 @@ import { Str } from "@stackra/validation";
 
 import { DeliveryState } from "#contracts/index";
 import type { DeliveryDriver } from "#contracts/index";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { boundIsolation } from "#core/functions/bound-isolation.function";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 
 /** Replays a dead delivery. */
 export class RelayReplayCommand extends Command({
@@ -65,7 +64,7 @@ export class RelayReplayCommand extends Command({
     const [claim] = await this.driver.list({ id, state: DeliveryState.Dead, limit: 1 });
     if (claim === undefined) throw new UsageError(`${this.id} is not a dead delivery`);
     if (
-      !(await inRowOwner(boundIsolation(this.container), claim.ownerId, id, () =>
+      !(await inRowOwner(boundIsolation(this.container), OUTBOX_ACTOR_ID, claim.ownerId, id, () =>
         this.driver.replay(id, this.clock.now()),
       ))
     )

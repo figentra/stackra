@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `ClaimNotLoadedError`, the failure of a cross-tenant caller (the relay, the cross-app relay, the change
- *          feed's readers, the operator's commands) whose claimed row did not load in its claimed tenant's isolation:
- *          the row moved, or the isolation set another tenant than the claim named.
+ * Purpose: `ClaimNotLoadedError`, the failure of a cross-tenant caller (outbox's relays, change feed readers and
+ *          operator commands, the workflow engine, privacy's hold registry) whose claimed row did not load in its
+ *          claimed tenant's isolation: the row moved, or the isolation set another tenant than the claim named.
  * Boundary: raised, never swallowed: a claimed row is never skipped, since a skip would look like a delivery and move a
  *           cursor past a change no consumer saw (ADR 0239 amendment, gap A). Kind `Internal`, not retryable, code
  *           `claim_not_loaded`; the one detail is the claimed id or position, never a payload.

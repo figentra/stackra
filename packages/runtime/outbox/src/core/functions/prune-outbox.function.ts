@@ -15,11 +15,11 @@
  *                     kept no longer than needed); ADR 0462 (decision 1: jobs live in an add-on above iam); ADR 0239
  *                     (2026-11-07 amendment, gaps A and C).
  */
+import { ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { CallIsolation } from "@stackra/actions/contracts";
 
 import type { InboxDriver, OutboxDriver } from "#contracts/index";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 
 /** One day in milliseconds. */
 const DAY = 86_400_000;
@@ -50,7 +50,9 @@ export async function pruneOutbox(
     const claims = await outbox.claimDead(cutoff, BATCH);
     for (const claim of claims) {
       if (removed.has(claim.id)) throw ClaimNotLoadedError.create({ id: claim.id });
-      await inRowOwner(isolation, claim.ownerId, claim.id, () => outbox.remove(claim.id));
+      await inRowOwner(isolation, OUTBOX_ACTOR_ID, claim.ownerId, claim.id, () =>
+        outbox.remove(claim.id),
+      );
       removed.add(claim.id);
     }
     if (claims.length < BATCH) break;

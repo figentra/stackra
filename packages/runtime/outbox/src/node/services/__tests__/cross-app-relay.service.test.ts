@@ -15,6 +15,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0511 (decisions 12 and 13; AC-005, SC-005).
  */
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import type { AnyClass } from "@stackra/container";
@@ -35,8 +36,6 @@ import {
 } from "#core/__tests__/fixtures/relay-key.fixture";
 import type { RelayKeyPair } from "#core/__tests__/fixtures/relay-key.fixture";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { RowIsolationMissingError } from "#core/errors/row-isolation-missing.error";
 import { ConfigSubscriberSourceDriver } from "#core/drivers/config-subscriber-source.driver";
 import { ContractInboxVerifierDriver } from "#core/drivers/contract-inbox-verifier.driver";
 import { Ed25519EventSignerDriver } from "#core/drivers/ed25519-event-signer.driver";

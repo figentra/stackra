@@ -43,7 +43,7 @@
  *                     an ephemeral workflow); OS-232 (for-each and chain depth, both configured); ADR 0141
  *                     (correlation).
  */
-import { ActionPipeline } from "@stackra/actions";
+import { ActionPipeline, ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { ExtensionContext, Resolver } from "@stackra/actions";
 import { CallIsolation, ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
@@ -58,12 +58,12 @@ import { EventOutbox } from "@stackra/events/contracts";
 import type { EventMeta, RecordedEvent } from "@stackra/events/contracts";
 import type { Locks } from "@stackra/locking";
 import { JOB_BACKOFF } from "@stackra/queue";
-import { ClaimNotLoadedError } from "@stackra/outbox";
 import { duration } from "@stackra/validation";
 
 import type { WorkflowConfig } from "#config/workflow.config";
 import { BUILDING_BLOCKS } from "#core/constants/building-blocks.constant";
 import { DOCUMENT_WORKFLOW } from "#core/constants/document-workflow.constant";
+import { WORKFLOW_ACTOR_ID } from "#core/constants/workflow-actor-id.constant";
 import { WORKFLOW_DEFAULTS } from "#core/constants/workflow-defaults.constant";
 import { WORKFLOW_KEYS } from "#core/constants/workflow-keys.constant";
 import { StepStatus } from "#core/enums/step-status.enum";
@@ -74,7 +74,6 @@ import { WorkflowRunStarted } from "#core/events/workflow-run-started.event";
 import { checkAutomation } from "#core/functions/check-automation.function";
 import { correlationKey } from "#core/functions/correlation-key.function";
 import { documentPlan } from "#core/functions/document-plan.function";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
 import { lookupRef } from "#core/functions/lookup-ref.function";
 import { mintId } from "#core/functions/mint-id.function";
 import { planOf } from "#core/functions/plan-of.function";
@@ -614,7 +613,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       for (const [ownerId, ids] of owners)
         // oxlint-disable-next-line no-await-in-loop -- one owner's removal at a time
         await this.journal.transaction(undefined, () =>
-          inRowOwner(this.optional(CallIsolation), ownerId, ids[0] ?? "", () =>
+          inRowOwner(this.optional(CallIsolation), WORKFLOW_ACTOR_ID, ownerId, ids[0] ?? "", () =>
             this.journal.remove(ids),
           ),
         );
@@ -688,7 +687,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     let advanced = false;
     await this.locks.tryWith(lockKey(claim.id), WORKFLOW_DEFAULTS.lease, async () => {
       const run = await this.journal.transaction(undefined, () =>
-        inRowOwner(this.optional(CallIsolation), claim.ownerId, claim.id, () =>
+        inRowOwner(this.optional(CallIsolation), WORKFLOW_ACTOR_ID, claim.ownerId, claim.id, () =>
           this.journal.find(claim.id),
         ),
       );
@@ -1211,7 +1210,8 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   private isolated<T>(run: WorkflowRun, work: () => Promise<T>): Promise<T> {
     const isolation = this.optional(CallIsolation);
     // An owned run with no isolation would write as no tenant and miss its own rows: refused, never skipped.
-    if (isolation === undefined) return inRowOwner(undefined, run.ownerId, run.id, work);
+    if (isolation === undefined)
+      return inRowOwner(undefined, WORKFLOW_ACTOR_ID, run.ownerId, run.id, work);
     return isolation.run(run.origin.actor, run.origin.scope ?? run.scope, work, {
       readOnly: false,
     });
@@ -1256,7 +1256,9 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    */
   private async save(run: WorkflowRun): Promise<WorkflowRun> {
     await this.journal.transaction(run.scope, () =>
-      inRowOwner(this.optional(CallIsolation), run.ownerId, run.id, () => this.journal.save(run)),
+      inRowOwner(this.optional(CallIsolation), WORKFLOW_ACTOR_ID, run.ownerId, run.id, () =>
+        this.journal.save(run),
+      ),
     );
     return run;
   }

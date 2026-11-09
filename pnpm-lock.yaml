@@ -3146,6 +3146,9 @@ importers:
 
   packages/data/data-transfer:
     dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -8153,9 +8156,6 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
-      '@stackra/outbox':
-        specifier: workspace:*
-        version: link:../outbox
       '@stackra/queue':
         specifier: workspace:*
         version: link:../queue
