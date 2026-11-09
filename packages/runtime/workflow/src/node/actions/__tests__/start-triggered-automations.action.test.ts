@@ -15,10 +15,15 @@ import { vi } from "vitest";
 
 import { NativeWorkflowRunnerDriver } from "#core/index";
 import { StartTriggeredAutomationsAction } from "#node/actions/start-triggered-automations.action";
+import { StartTriggeredAutomationsInput } from "#node/schemas/start-triggered-automations-input.schema";
 import type { AutomationService } from "#node/services/automation.service";
 
-/** The occurrence every case starts. */
-const INPUT = { block: "orders.order_paid", eventId: "evt_1", occurrence: { orderId: "ord_1" } };
+/** The occurrence every case starts, as the validated input the pipeline hands `handle`. */
+const INPUT = Object.assign(new StartTriggeredAutomationsInput(), {
+  block: "orders.order_paid",
+  eventId: "evt_1",
+  occurrence: { orderId: "ord_1" },
+});
 
 /** An action over a recording `triggered` and a runner of the given class. */
 function actionWith(runner: object) {

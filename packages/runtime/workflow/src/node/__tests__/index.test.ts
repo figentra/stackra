@@ -14,6 +14,7 @@ describe("@stackra/workflow/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "Automation",
+      "AutomationPermissions",
       "AutomationService",
       "Checklist",
       "ChecklistProgress",

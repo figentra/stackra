@@ -11,6 +11,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (an entry exists once its folder has a file);
  *                     the STA-347 stand-in barrel decision.
  */
+export { AutomationPermissions } from "#node/access/automation.permissions";
 export { RunPermissions } from "#node/access/run.permissions";
 export { StartTriggeredAutomationsAction } from "#node/actions/start-triggered-automations.action";
 export { PostgresWorkflowJournalDriver } from "#node/drivers/postgres-workflow-journal.driver";
