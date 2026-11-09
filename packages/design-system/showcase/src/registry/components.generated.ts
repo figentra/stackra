@@ -221,6 +221,7 @@ import { FREE_SANKEY_CHART } from "#src/registry/components/free/sankey-chart";
 import { FREE_SAVE_BAR } from "#src/registry/components/free/save-bar";
 import { FREE_SCATTER_CHART } from "#src/registry/components/free/scatter-chart";
 import { FREE_SCHEDULER } from "#src/registry/components/free/scheduler";
+import { FREE_SCHEDULING_BOARD } from "#src/registry/components/free/scheduling-board";
 import { FREE_SCHEMATIC } from "#src/registry/components/free/schematic";
 import { FREE_SCREEN } from "#src/registry/components/free/screen";
 import { FREE_SCROLL_AREA } from "#src/registry/components/free/scroll-area";
@@ -414,6 +415,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_RANGE_CALENDAR,
   FREE_RECURRENCE_EDITOR,
   FREE_SCHEDULER,
+  FREE_SCHEDULING_BOARD,
   FREE_TIME_CLOCK,
   FREE_TIME_FIELD,
   FREE_TIME_PICKER,
