@@ -22,7 +22,11 @@ import type { ImageAsset } from "#core/types/image-asset.type";
 import type { ParsedDocumentTemplate } from "#core/types/parsed-document-template.type";
 import type { QrMatrix } from "#core/types/qr-matrix.type";
 import type { ResolvedBlock } from "#core/types/resolved-block.type";
+import type { ResolvedBrand } from "#core/types/resolved-brand.type";
 import type { ResolvedDocument } from "#core/types/resolved-document.type";
+
+/** A `#RRGGBB` colour, the one form an accent may take into the style sheet. */
+const HEX = /^#[0-9A-Fa-f]{6}$/u;
 
 /** The text of `localized` for `code`, or a refusal naming the template path. */
 function textFor(localized: Readonly<Record<string, string>>, code: string, path: string): string {
@@ -33,6 +37,23 @@ function textFor(localized: Readonly<Record<string, string>>, code: string, path
       problem: "no text for this locale",
     });
   return text;
+}
+
+/** The brand slot's values in `data`: a usable logo and accent, else `null` each, never a refusal. */
+function brandOf(template: ParsedDocumentTemplate, data: unknown): ResolvedBrand {
+  const logo = template.brand?.logo === undefined ? undefined : readPath(data, template.brand.logo);
+  const accent =
+    template.brand?.accent === undefined ? undefined : readPath(data, template.brand.accent);
+  const candidate = (logo ?? {}) as Partial<ImageAsset>;
+  const isImage =
+    (candidate.mediaType === "image/png" || candidate.mediaType === "image/jpeg") &&
+    candidate.bytes instanceof Uint8Array;
+  return {
+    logo: isImage
+      ? ({ mediaType: candidate.mediaType, bytes: candidate.bytes } as ImageAsset)
+      : null,
+    accent: typeof accent === "string" && HEX.test(accent) ? accent : null,
+  };
 }
 
 /** The image at `path`, checked: PNG or JPEG bytes. */
@@ -195,5 +216,5 @@ export function resolveDocument(
       }
     }
   });
-  return { template, blocks };
+  return { template, blocks, brand: brandOf(template, data) };
 }
