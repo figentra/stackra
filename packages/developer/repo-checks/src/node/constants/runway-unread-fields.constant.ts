@@ -59,7 +59,8 @@ export const RUNWAY_UNREAD_FIELDS: readonly RunwayUnreadField[] = [
     kind: "root",
     path: "providers.aws.ecr",
     reader: SELF_HOSTED,
-    access: /\baws\??\.ecr\b|\["ecr"\]/,
+    // not Pulumi's `aws.ecr` namespace: `aws.ecr.PullThroughCacheRule` names a resource class, never the runway field
+    access: /\baws\??\.ecr\b(?!\??\.[A-Z])|\["ecr"\]/,
   },
   { kind: "root", path: `${GROUP}.memory`, reader: SELF_HOSTED, access: /\bgroups?\??\.memory\b/ },
   {
