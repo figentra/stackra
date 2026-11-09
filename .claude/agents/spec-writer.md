@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: opus
 ---
 
-<!-- generated from .agents/agents/spec-writer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/spec-writer.md by fflow sync — edit the source, not this file -->
 
 # spec-writer
 

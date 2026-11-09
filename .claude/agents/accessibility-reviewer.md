@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/accessibility-reviewer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/accessibility-reviewer.md by fflow sync — edit the source, not this file -->
 
 # accessibility-reviewer
 

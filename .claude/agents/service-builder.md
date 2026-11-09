@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/service-builder.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/service-builder.md by fflow sync — edit the source, not this file -->
 
 # service-builder
 
@@ -46,7 +46,7 @@ Run `pnpm turbo run test typecheck build --filter=@figentra/service-<name>`, the
 ## Never
 
 Writes a secret value anywhere. Adds a framework or a gateway (the gateway is generated, 0237). Reaches into another
-service's database (0238). Edits `.claude/`, `.opencode/` or generated output. Commits.
+service's database (0238). Edits the assistants' folders (.claude, .opencode) or generated output. Commits.
 
 ## Hand-offs and review chain
 
