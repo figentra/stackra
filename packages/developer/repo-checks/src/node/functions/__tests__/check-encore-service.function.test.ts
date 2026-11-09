@@ -43,6 +43,14 @@ describe("checkEncoreService", () => {
   it("reads the default catalog, and checkMember leaves a service's encore.dev to it", () => {
     expect(catalogEncoreVersion("catalog:\n  encore.dev: 1.58.8\n")).toBe("1.58.8");
     expect(catalogEncoreVersion("catalogs:\n  x:\n    encore.dev: 1.0.0\n")).toBeUndefined();
+    // pnpm's other spelling of the default catalog, where fflow keeps its pin (INVOICING)
+    expect(catalogEncoreVersion("catalogs:\n  default:\n    encore.dev: 1.58.8\n")).toBe("1.58.8");
+    // the top-level form wins when a file has both
+    expect(
+      catalogEncoreVersion(
+        "catalog:\n  encore.dev: 1.58.8\ncatalogs:\n  default:\n    encore.dev: 1.0.0\n",
+      ),
+    ).toBe("1.58.8");
     const member = {
       dir: "services/x",
       pkg: { name: "@figentra/service-x", dependencies: { "encore.dev": "1.58.8" } },
