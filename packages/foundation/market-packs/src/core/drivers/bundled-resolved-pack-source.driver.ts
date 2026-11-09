@@ -23,6 +23,7 @@ import type { MarketPacksConfig } from "#config/market-packs.config";
 import { BUNDLED_PACK_HASHES } from "#core/constants/bundled-pack-hashes.constant";
 import { BUNDLED_PACK_LOADERS } from "#core/constants/bundled-pack-loaders.constant";
 import { MARKET_PACK_SCHEMA } from "#core/constants/market-pack-schema.constant";
+import { PackEnvironment } from "#core/enums/pack-environment.enum";
 import { PackRejection } from "#core/enums/pack-rejection.enum";
 import { PackStatus } from "#core/enums/pack-status.enum";
 import { BundledPackSourceRefusedError } from "#core/errors/bundled-pack-source-refused.error";
@@ -32,9 +33,6 @@ import { packLabel } from "#core/functions/pack-label.function";
 import { ResolvedPackSource } from "#core/ports/resolved-pack-source.port";
 import type { BundledPacks } from "#core/types/bundled-packs.type";
 import type { MarketPack } from "#core/types/market-pack.type";
-
-/** The deploy environment that needs signed packs. */
-const PRODUCTION = "production";
 
 /**
  * Serves the pinned, live packs this package bundles.
@@ -93,7 +91,7 @@ export class BundledResolvedPackSourceDriver extends Driver(ResolvedPackSource) 
   /** `bundled`, unless it would serve unsigned packs in production without the switch. */
   private static checked(bundled: BundledPacks): BundledPacks {
     const { environment, allowBundledInProduction } = bundled.config;
-    if (environment === PRODUCTION && !allowBundledInProduction)
+    if (environment === PackEnvironment.Production && !allowBundledInProduction)
       throw BundledPackSourceRefusedError.create({ environment });
     return bundled;
   }
@@ -129,7 +127,7 @@ export class BundledResolvedPackSourceDriver extends Driver(ResolvedPackSource) 
   /** The pinned, live packs, loaded on first use; in production the first use also warns that they are unsigned. */
   packs(): Promise<readonly MarketPack[]> {
     if (this.loading !== undefined) return this.loading;
-    if (this.bundled.config.environment === PRODUCTION)
+    if (this.bundled.config.environment === PackEnvironment.Production)
       this.logger?.warn("market_packs.bundled_source_in_production", {
         packHashes: this.bundled.config.packHashes.length,
       });

@@ -16,6 +16,7 @@ import type { DriverName } from "@stackra/container";
 import { registerSchemas, Schema } from "@stackra/validation";
 
 import { MARKET_PACKS_CONFIG_SCHEMA } from "#core/constants/market-packs-config-schema.constant";
+import { PackEnvironment } from "#core/enums/pack-environment.enum";
 import type { ResolvedPackSource } from "#core/ports/resolved-pack-source.port";
 
 /**
@@ -37,7 +38,7 @@ export class MarketPacksOptions extends Schema {
   trustedKeys: Record<string, string> = {};
 
   /** The running environment (`STACKRA_ENVIRONMENT`); the `bundled` source refuses `production` unless allowed. */
-  environment: "dev" | "preview" | "test" | "staging" | "production" = "dev";
+  environment: PackEnvironment = PackEnvironment.Dev;
 
   /** Lets the interim `bundled` source run in production (ADR 0386 amendment, 2026-11-09); off by default. */
   allowBundledInProduction = false;

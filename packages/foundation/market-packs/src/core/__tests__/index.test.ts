@@ -38,6 +38,7 @@ describe("@stackra/market-packs", () => {
       "MarketPacksConfig$",
       "MarketPacksOptions",
       "MemoryResolvedPackSourceDriver",
+      "PackEnvironment",
       "PackIssueCode",
       "PackNotFoundError",
       "PackRejectedError",

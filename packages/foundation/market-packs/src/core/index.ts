@@ -19,6 +19,7 @@ export { FilesystemPackStoreDriver } from "#core/drivers/filesystem-pack-store.d
 export { MemoryResolvedPackSourceDriver } from "#core/drivers/memory-resolved-pack-source.driver";
 export { StoreResolvedPackSourceDriver } from "#core/drivers/store-resolved-pack-source.driver";
 export { FloorBound } from "#core/enums/floor-bound.enum";
+export { PackEnvironment } from "#core/enums/pack-environment.enum";
 export { PackIssueCode } from "#core/enums/pack-issue-code.enum";
 export { PackRejection } from "#core/enums/pack-rejection.enum";
 export { PackStatus } from "#core/enums/pack-status.enum";

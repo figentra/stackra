@@ -11,9 +11,11 @@
  * Governing contract: ADR 0418; ADR 0370 (decision 2: trusted keys are deployment configuration); ADR 0294 (decision
  *                     26: a package ships its own `X$`).
  */
+import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
 import { RESOLVED_PACK_SOURCE_DRIVERS } from "#core/constants/resolved-pack-source-drivers.constant";
+import { PackEnvironment } from "#core/enums/pack-environment.enum";
 
 /** The shipped `MarketPacksConfig$`. */
 export const MARKET_PACKS_CONFIG_SCHEMA = z.object({
@@ -23,6 +25,6 @@ export const MARKET_PACKS_CONFIG_SCHEMA = z.object({
     .default([]),
   trustedKeys: z.record(z.string().min(1), z.string().min(1)).default({}),
   // the known environments (as @stackra/database's commandEnvironment): a typo fails config, never production
-  environment: z.enum(["dev", "preview", "test", "staging", "production"]).default("dev"),
+  environment: z.enum(Enum.values(PackEnvironment)).default(PackEnvironment.Dev),
   allowBundledInProduction: z.boolean().default(false),
 });
