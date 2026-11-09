@@ -118,10 +118,11 @@ export class KmsKeyProviderDriver extends Driver(KeyProvider) {
   /** Mints the tenant's key `k<version>` and stores it wrapped; a concurrent mint of the same version keeps the first. */
   private async mint(tenant: PublicId<"scp">, version: number): Promise<void> {
     const id = `k${version}`;
+    const keyId = this.kmsKeyId();
     let blob: Uint8Array | undefined;
     try {
       ({ CiphertextBlob: blob } = await this.kms.generateDataKeyWithoutPlaintext({
-        KeyId: this.kmsKeyId(),
+        KeyId: keyId,
         KeySpec: "AES_256",
         EncryptionContext: kmsKeyContext(tenant, id),
       }));
