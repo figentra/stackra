@@ -4,7 +4,8 @@
  *          (ADR 0493): a Postgres resource sized per environment and a public workload pinned by digest pass; a reserved
  *          kind (kafka), an engine on a non-Postgres kind, a workload without a reason or with a tagged image, an
  *          inverted scale, an empty command, an alias that is not SCREAMING_SNAKE, and a `uses` naming no resource are
- *          refused with their paths.
+ *          refused with their paths; an internal worker with no port or health path passes with its health command, and
+ *          a public workload without a port or health path, or a health path without a port, is refused.
  * Boundary: test only; plain objects through `parseRunway`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 1, 3 and 5); spec sta-1640.
@@ -123,6 +124,28 @@ describe("root runway resources and workloads", () => {
         root({ workloads: { zitadel: { ...zitadel, aliases: { dsn: "MAIN_DB_URL" } } } }),
       ).some((path) => path.startsWith("workloads.zitadel.aliases")),
     ).toBe(true);
+  });
+
+  it("takes an internal worker with no port, and refuses a public one or a health path without a port", () => {
+    const zitadel = (root({}) as { workloads: { zitadel: Record<string, unknown> } }).workloads
+      .zitadel;
+    const { port: _port, health: _health, expose: _expose, ...worker } = zitadel;
+    const healthCommand = ["pgrep", "-f", "sidekiq"];
+
+    const parsed = parseRunway(
+      "root",
+      root({ workloads: { zitadel: { ...worker, healthCommand } } }),
+    );
+    expect(parsed.workloads?.["zitadel"]).toMatchObject({ healthCommand });
+    expect(parsed.workloads?.["zitadel"]).not.toHaveProperty("port");
+
+    const refused = pathsOf(root({ workloads: { zitadel: { ...worker, expose: "public" } } }));
+    expect(refused).toEqual(
+      expect.arrayContaining(["workloads.zitadel.port", "workloads.zitadel.health"]),
+    );
+    expect(pathsOf(root({ workloads: { zitadel: { ...worker, health: "/healthz" } } }))).toContain(
+      "workloads.zitadel.health",
+    );
   });
 
   // @covers sta-1640:FR-003

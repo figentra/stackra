@@ -206,6 +206,16 @@
       "entry": "node"
     },
     {
+      "name": "encore:prepare",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "EncorePrepareCommand",
+      "file": "src/node/commands/encore-prepare.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "ls",
       "aliases": [],
       "hidden": false,
