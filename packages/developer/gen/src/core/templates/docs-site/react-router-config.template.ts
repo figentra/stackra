@@ -32,7 +32,7 @@ export default {
     // Every page renders its <title>; a page without one is the bare shell, so no route matched it.
     const titles = site.paths.map((path) => ({
       path,
-      title: /<title>([^<]*)<\/title>/.exec(readFileSync(join(client, path, "index.html"), "utf8"))?.[1],
+      title: /<title>([^<]*)<[/]title>/.exec(readFileSync(join(client, path, "index.html"), "utf8"))?.[1],
     }));
     const blank = titles.filter(({ title }) => title === undefined).map(({ path }) => path);
     if (blank.length > 0)
