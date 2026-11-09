@@ -1865,8 +1865,9 @@ const SETTINGS_SOURCES: Readonly<Record<string, string>> = {
   }),
   "node_modules/@stackra/settings/index.d.ts": [
     "export declare function Settings(options: { readonly scopes: readonly string[] }): abstract new () => object;",
-    "export type DecoratorFunction = (target: object, property: string) => void;",
-    "export declare function Setting(options?: { readonly [option: string]: unknown }): DecoratorFunction;",
+    // The real signature: `Setting` returns `FieldDecorator<unknown>`, not `DecoratorFunction`.
+    "export type FieldDecorator<T> = (target: object, property: string) => void;",
+    "export declare function Setting(options?: { readonly [option: string]: unknown }): FieldDecorator<unknown>;",
     "",
   ].join("\n"),
   "src/core/orders.settings.ts": [
@@ -1878,6 +1879,8 @@ const SETTINGS_SOURCES: Readonly<Record<string, string>> = {
     "  customersMayCancel = true;",
     "  @Int({ min: 1, max: 50 })",
     "  maxOpenOrders = 5;",
+    '  @Setting({ scopes: ["platform"], lockable: true, approval: true })',
+    "  refundCeilingMinor = 0;",
     "  cancellation!: CancellationSection;",
     "}",
     "",
@@ -1933,6 +1936,7 @@ describe("createSourceReader on Settings.pick over the member's own settings (st
     expect(settings?.fields.map((field) => field.name)).toEqual([
       "customersMayCancel",
       "maxOpenOrders",
+      "refundCeilingMinor",
       "cancellation",
     ]);
     expect(settings?.fields.find((field) => field.name === "cancellation")?.type).toEqual({
@@ -1945,6 +1949,17 @@ describe("createSourceReader on Settings.pick over the member's own settings (st
         name: "Setting",
         member: "customersMayCancel",
         options: { client: true },
+      }),
+    );
+  });
+
+  it("reads @Setting's field scopes, lock and approval, so gen enforces them (Setting returns FieldDecorator)", () => {
+    expect(classes.find((declared) => declared.name === "OrdersSettings")?.facets).toContainEqual(
+      expect.objectContaining({
+        name: "Setting",
+        target: "field",
+        member: "refundCeilingMinor",
+        options: { scopes: ["platform"], lockable: true, approval: true },
       }),
     );
   });
