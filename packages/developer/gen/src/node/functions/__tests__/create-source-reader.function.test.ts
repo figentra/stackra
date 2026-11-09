@@ -1039,6 +1039,18 @@ describe("createSourceReader on a webhook event typed by a hosted package's inte
     ).toMatchObject({ name: "OtoIntegration", from: "@figentra/ship-connector-oto/node" });
   });
 
+  it("reads each event as a webhook event", () => {
+    expect(
+      classes.map((candidate) => [candidate.name, candidate.kind, candidate.partner?.name]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["QuiqupOrderUpdated", "webhook_event", "QuiqupIntegration"],
+        ["BostaDeliveryUpdated", "webhook_event", "BostaIntegration"],
+        ["OtoShipmentUpdated", "webhook_event", "OtoIntegration"],
+      ]),
+    );
+  });
+
   it("refuses no partner it could name", () => {
     expect(reader.errors.map((error) => error.code)).not.toContain("partner_unresolved");
   });
