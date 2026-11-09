@@ -11,7 +11,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 import { z } from "zod";
@@ -24,6 +24,7 @@ export class CustomFieldValueSet extends Model.with(
   HasPublicId("cfv"),
   BelongsToTenant,
   Timestamps,
+  MovesWithScope,
 ) {
   /** The record's values, keyed by field key. */
   // reason: CustomFieldValue is a union this package ships as CustomFieldValue$
