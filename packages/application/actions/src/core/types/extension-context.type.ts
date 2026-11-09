@@ -2,8 +2,7 @@
  * Stackra file contract:
  * Purpose: `ExtensionContext`, what every call context shares and what an extension's `handle` receives last: the
  *          call's id and key, the caller, the tenant, the scope node, the request's locale, time zone, currency and
- *          market, the request origin (ADR 0456), the abort signal, a queued job's attempt and the frozen pipeline
- *          clock.
+ *          market, the request origin (ADR 0456), the abort signal and the frozen pipeline clock.
  * Boundary: a type only. `QueryContext` and `ActionContext` extend it, so an owner passes its own context to a slot;
  *           `RequestContext.current()` returns it inside any call. It carries no input and no record. The abort signal
  *           is `abortSignal`, because `signal(...)` is the workflow signal of an action. `scopeId` stays while
@@ -16,7 +15,6 @@
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 
 import type { CallOrigin } from "#contracts/types/call-origin.type";
-import type { CallAttempt } from "#core/types/call-attempt.type";
 
 /** The context of one action or query call, as far as an extension sees it. */
 export interface ExtensionContext {
@@ -52,9 +50,6 @@ export interface ExtensionContext {
 
   /** Aborted when the caller goes away or the call's deadline passes. */
   readonly abortSignal: AbortSignal;
-
-  /** Which attempt of a queued job the call is (`last`: no retry follows); absent for a direct call. */
-  readonly attempt?: CallAttempt;
 
   /** The pipeline clock: one instant for the whole call, read from the Clock port when the call started. */
   now: () => Date;
