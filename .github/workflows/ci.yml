@@ -29,6 +29,36 @@ permissions:
   contents: read
 
 jobs:
+  # ADR 0174: known vulnerabilities in the lockfile, as their own job. A finding fails this job and never skips the
+  # gate's code steps: as a gate step it failed first on a lockfile finding and skipped install, lint, typecheck,
+  # build and tests (2026-11-09).
+  dependency-scan:
+    name: Dependency scan (OSV-Scanner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # mise runs before checkout, as in the gate, so the repository's mise.toml is not loaded.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: aqua:google/osv-scanner@2.7.0
+          cache: false
+
+      - name: Put osv-scanner on PATH
+        run: dirname "$(mise exec aqua:google/osv-scanner@2.7.0 -- which osv-scanner)" >> "$GITHUB_PATH"
+
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Dependency scan (OSV-Scanner)
+        run: osv-scanner scan source --lockfile=pnpm-lock.yaml
+
   gate:
     name: Quality Gate
     runs-on: ubuntu-latest
@@ -63,10 +93,6 @@ jobs:
         run: |
           actionlint
           zizmor --config .github/zizmor.yml .github/workflows
-
-      # ADR 0174, STA-310: known vulnerabilities in the lockfile, before anything is installed.
-      - name: Dependency scan (OSV-Scanner)
-        run: osv-scanner scan source --lockfile=pnpm-lock.yaml
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525, P4): this job signs in to Google
