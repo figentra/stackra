@@ -1,5 +1,36 @@
 # @stackra/panel
 
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/access-log@0.28.0
+  - @stackra/clients@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/documents@0.28.0
+  - @stackra/entitlements@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/query@0.28.0
+  - @stackra/experience@0.28.0
+  - @stackra/navigation@0.28.0
+  - @stackra/pricing@0.28.0
+  - @stackra/data-transfer@0.28.0
+  - @stackra/money@0.28.0
+  - @stackra/filesystem@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/icons@0.28.0
+  - @stackra/ui@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
 ## 0.27.0
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @stackra/clients
 
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/query@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/transport@0.28.0
+  - @stackra/validation@0.28.0
+
 ## 0.27.0
 
 ### Patch Changes

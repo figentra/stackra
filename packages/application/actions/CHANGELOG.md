@@ -1,5 +1,24 @@
 # @stackra/actions
 
+## 0.28.0
+
+### Minor Changes
+
+- 2b6f88c: `UsageRecorded` carries optional `dimensions`, a small map the usage service may rate by (`{ market: "eg" }`): at most
+  8 snake_case keys with values of 1 to 64 characters, so a dimension never holds free text. A service that writes usage
+  itself (Notify per channel and market) sets them; existing producers are unchanged.
+
+### Patch Changes
+
+- @stackra/testing@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+  - @stackra/cache@0.28.0
+
 ## 0.27.0
 
 ### Patch Changes
