@@ -150,10 +150,6 @@ skills:
     source: "github:mattpocock/skills"
     licence: "MIT"
     machineOnly: true
-  - id: changesets
-    source: "github:oakoss (its agent skills)"
-    licence: "MIT"
-    machineOnly: true
   - id: frontend-design
     source: "github:anthropics/skills"
     licence: "Apache-2.0"

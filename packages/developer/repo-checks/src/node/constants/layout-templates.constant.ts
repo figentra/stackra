@@ -58,18 +58,22 @@ const NEUTRAL = [
  * Root entries per preset. A member folder (from `pnpm-workspace.yaml`), `tools/` with its README and the
  * entries a repository declares in its package.json `stackra.layout.allow` are added per repository.
  */
+/** The stackra template's root, named by the bundled preset and by its package (`@stackra/flow-preset`, T142). */
+const STACKRA = Object.freeze([
+  ...NEUTRAL,
+  ".easignore",
+  ".markdownlint.yaml",
+  ".testbed",
+  ".vscode",
+  "NOTICE",
+  "assets",
+  "brand.json",
+  "runway.yaml",
+  "stackra.lock.yaml",
+]);
+
 export const LAYOUT_TEMPLATES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   neutral: Object.freeze(NEUTRAL),
-  stackra: Object.freeze([
-    ...NEUTRAL,
-    ".easignore",
-    ".markdownlint.yaml",
-    ".testbed",
-    ".vscode",
-    "NOTICE",
-    "assets",
-    "brand.json",
-    "runway.yaml",
-    "stackra.lock.yaml",
-  ]),
+  stackra: STACKRA,
+  "@stackra/flow-preset": STACKRA,
 });
