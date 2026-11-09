@@ -16,7 +16,7 @@ export interface VerifiedApiKey {
   /** The kind its prefix names. */
   readonly kind: ApiKeyKind;
 
-  /** The mode its text names (`live` for a key minted before modes). */
+  /** The mode its text and its record both name. */
   readonly mode: ApiKeyMode;
 
   /** The stored record. */
