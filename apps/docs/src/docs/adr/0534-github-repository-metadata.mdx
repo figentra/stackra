@@ -72,9 +72,11 @@ The owner asked for a standard, kept as code, applied to every repository, with 
 - A repository's description and topics are reviewed like code; a drive-by edit on GitHub shows as drift.
 - The bot App (`stackra-bot`) holds Administration: write on the organization's repositories (owner, 2026-11-09), so the
   standard is applied by one plain `figentra bot gh repo edit` per repository until the github stack's first apply.
-- A visibility change is not metadata only: on GitHub Team a private repository has no environment required reviewers
-  (see [0522](/adr/0522-testbed-own-repo)). Before a public repository goes private, its environments' protection
-  rules are read and the owner is told what disappears.
+- A visibility change is not metadata only. Before a repository changes visibility, its environments' protection rules
+  are read back, and kept or restored the same day. The organization is on GitHub Enterprise, so a private repository
+  keeps environment required reviewers ([0522](/adr/0522-testbed-own-repo), amendment of 2026-11-09). The owner sets
+  environment reviewers by hand: an agent's write to an environment's protection rules is refused by the promote
+  guard, and that is intended.
 
 ## Enforcement
 
