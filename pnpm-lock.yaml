@@ -8271,6 +8271,9 @@ importers:
       '@stackra/rules':
         specifier: workspace:*
         version: link:../../application/rules
+      '@stackra/scheduler':
+        specifier: workspace:*
+        version: link:../scheduler
       '@stackra/tenancy':
         specifier: workspace:*
         version: link:../../security/tenancy
