@@ -32,13 +32,14 @@ import { CallIsolation, ContextStorage, WorkflowRunner } from "@stackra/actions/
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
 import { ActorKind, ApiArea } from "@stackra/contracts";
-import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
+import type { Actor, Clock, PublicId, ScopeRef } from "@stackra/contracts";
 import { ErrorKind, Refusal } from "@stackra/errors";
 import { DomainEvent, EventBus, IntegrationEvent } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
 import type { I18nKey } from "@stackra/i18n";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/outbox";
 import { FieldType, Operator } from "@stackra/rules/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -61,6 +62,7 @@ import { registerWorkflows } from "#core/functions/register-workflows.function";
 import type { Run } from "#core/types/run.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
+import type { SignalClaim } from "#core/types/signal-claim.type";
 import type { StepRetryValues } from "#core/types/step-retry-values.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
 
@@ -86,6 +88,17 @@ const ORIGIN: RunOrigin = {
   timeZone: "UTC",
   currency: "USD",
   market: "default",
+};
+
+/** A running run with no step reached, as a dead runner left it. */
+const STRANDED: WorkflowRun = {
+  id: `wfr_${"0".repeat(22)}wner`,
+  workflow: "OrderWorkflow",
+  status: WorkflowRunStatus.Running,
+  input: { sku: "sku_1", quantity: 1 },
+  origin: ORIGIN,
+  startedAt: NOON,
+  steps: [],
 };
 
 class CardDeclinedError extends Refusal({ kind: ErrorKind.FailedPrecondition }) {}
@@ -633,12 +646,116 @@ describe(NativeWorkflowRunnerDriver, () => {
 
     await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, { ...ORIGIN, scope: SCOPE });
 
-    expect(runs.length).toBeGreaterThan(0);
-    for (const [actor, scope, readOnly] of runs) {
-      expect(actor).toEqual(ORIGIN.actor);
+    // a step runs as the run's actor; a save as the workflow runner in the run's owner (none here: a platform run)
+    const steps = runs.filter(([actor]) => actor.id === ORIGIN.actor.id);
+    expect(steps.length).toBeGreaterThan(0);
+    for (const [, scope, readOnly] of steps) {
       expect(scope).toEqual(SCOPE);
       expect(readOnly).toBe(false);
     }
+    const saves = runs.filter(([actor]) => actor.id !== ORIGIN.actor.id);
+    expect(saves.length).toBeGreaterThan(0);
+    for (const [actor, scope] of saves) {
+      expect(actor).toEqual({ kind: ActorKind.System, id: "sys_workflow_runner" });
+      expect(scope).toBeUndefined();
+    }
+  });
+
+  it("owns a run by the session's tenant and saves it in that owner's isolation", async () => {
+    const owners: (string | undefined)[] = [];
+    class Recording extends Driver(CallIsolation) {
+      run<T>(actor: Actor, _scope: unknown, work: () => Promise<T>): Promise<T> {
+        if (actor.id === "sys_workflow_runner") owners.push(actor.scopeId);
+        return work();
+      }
+    }
+    class OwnedJournal extends MemoryWorkflowJournalDriver {
+      override currentOwner(): Promise<PublicId<"scp"> | undefined> {
+        return Promise.resolve("scp_acme" as PublicId<"scp">);
+      }
+    }
+    const { runner } = engineWith(
+      [
+        [OrderWorkflow, new OrderWorkflow()],
+        [CallIsolation, new Recording()],
+      ],
+      new OwnedJournal(),
+    );
+
+    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
+
+    expect((await runner.last(OrderWorkflow))?.ownerId).toBe("scp_acme");
+    expect(owners.length).toBeGreaterThan(0);
+    expect(new Set(owners)).toEqual(new Set(["scp_acme"]));
+  });
+
+  it("refuses to save or advance an owned run when no isolation is bound", async () => {
+    class OwnedJournal extends MemoryWorkflowJournalDriver {
+      override currentOwner(): Promise<PublicId<"scp"> | undefined> {
+        return Promise.resolve("scp_acme" as PublicId<"scp">);
+      }
+    }
+    const journal = new OwnedJournal();
+    const { runner } = engineWith([[OrderWorkflow, new OrderWorkflow()]], journal);
+
+    await expect(
+      runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN),
+    ).rejects.toBeInstanceOf(RowIsolationMissingError);
+    await journal.save({ ...STRANDED, ownerId: "scp_acme" as PublicId<"scp"> });
+    await expect(runner.tick(NOON)).rejects.toBeInstanceOf(RowIsolationMissingError);
+  });
+
+  it("fails the tick when a claimed run does not load, never skipping it", async () => {
+    class LosingJournal extends MemoryWorkflowJournalDriver {
+      override find(): Promise<WorkflowRun | undefined> {
+        return Promise.resolve(undefined);
+      }
+    }
+    const journal = new LosingJournal();
+    const { runner } = engineWith([[OrderWorkflow, new OrderWorkflow()]], journal);
+    await journal.save(STRANDED);
+
+    await expect(runner.tick(NOON)).rejects.toBeInstanceOf(ClaimNotLoadedError);
+  });
+
+  it("removes lapsed signals per owner, each in its owner's isolation, and fails on one claimed again", async () => {
+    const removals: [string | undefined, readonly string[]][] = [];
+    let owner: string | undefined;
+    class Recording extends Driver(CallIsolation) {
+      async run<T>(actor: Actor, _scope: unknown, work: () => Promise<T>): Promise<T> {
+        owner = actor.scopeId;
+        return work();
+      }
+    }
+    class OwnedSignals extends MemoryWorkflowJournalDriver {
+      override async expired(): Promise<readonly SignalClaim[]> {
+        return [
+          { id: "wfs_a1" as PublicId<"wfs">, ownerId: "scp_acme" as PublicId<"scp"> },
+          { id: "wfs_p1" as PublicId<"wfs"> },
+          { id: "wfs_a2" as PublicId<"wfs">, ownerId: "scp_acme" as PublicId<"scp"> },
+        ];
+      }
+
+      override async remove(ids: readonly PublicId<"wfs">[]): Promise<void> {
+        removals.push([owner, ids]);
+      }
+    }
+    const { runner } = engineWith([[CallIsolation, new Recording()]], new OwnedSignals());
+
+    await runner.tick(NOON);
+
+    expect(removals).toEqual([
+      ["scp_acme", ["wfs_a1", "wfs_a2"]],
+      [undefined, ["wfs_p1"]],
+    ]);
+    class Stuck extends OwnedSignals {
+      override async expired(): Promise<readonly SignalClaim[]> {
+        return Array.from({ length: 100 }, () => ({ id: "wfs_x" as PublicId<"wfs"> }));
+      }
+    }
+    await expect(
+      engineWith([[CallIsolation, new Recording()]], new Stuck()).runner.tick(NOON),
+    ).rejects.toBeInstanceOf(ClaimNotLoadedError);
   });
 
   it("refuses an integration event when no outbox is bound, failing the step", async () => {
