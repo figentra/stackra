@@ -4,7 +4,9 @@
  *          the same answer as AI SDK UI message chunks, and the reply once the run settles (stored, parked or failed).
  * Boundary: a type only. Read `textStream` or `uiStream` to the end, or await `reply`, so the run settles; all share
  *           one model call. `uiStream` holds what the reply holds: the tool outputs the model saw, never the
- *           instructions, and a parked call as a `tool-approval-request` chunk with the run's approval id.
+ *           instructions, and a parked call as a `tool-approval-request` chunk with the run's approval id. Both
+ *           streams are UNGUARDED: an output guardrail (redact or block) applies to `reply` only, after the deltas
+ *           were sent, so a host must never stream to a person for an agent that has one; serve the reply instead.
  * Runtime: isomorphic
  * Governing contract: ADR 0100 (decision 2: `stream`); STA-781; STA-2608.
  */
