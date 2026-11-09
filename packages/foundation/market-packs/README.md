@@ -113,7 +113,7 @@ before production.
 // a host's src/config/market-packs.config.ts
 export class MarketPacksConfig extends BaseMarketPacksConfig {
   override source = "bundled" as const;
-  override packHashes = [/* from BUNDLED_PACK_HASHES */];
+  override packHashes = [/* from BUNDLED_PACK_HASHES of the same @stackra/market-packs release */];
 }
 ```
 

@@ -22,6 +22,7 @@ export const MARKET_PACKS_CONFIG_SCHEMA = z.object({
     .array(z.string().regex(/^[0-9a-f]{64}$/, "Expected a 64-hex content hash"))
     .default([]),
   trustedKeys: z.record(z.string().min(1), z.string().min(1)).default({}),
-  environment: z.string().min(1).default("dev"),
+  // the known environments (as @stackra/database's commandEnvironment): a typo fails config, never production
+  environment: z.enum(["dev", "preview", "test", "staging", "production"]).default("dev"),
   allowBundledInProduction: z.boolean().default(false),
 });

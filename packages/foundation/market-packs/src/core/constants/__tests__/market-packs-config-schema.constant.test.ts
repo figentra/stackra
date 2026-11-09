@@ -29,4 +29,13 @@ describe("MARKET_PACKS_CONFIG_SCHEMA", () => {
       "a".repeat(64),
     ]);
   });
+
+  /** A misspelt production ("prod") must fail at boot, never run as not-production. */
+  it("refuses an unknown environment", () => {
+    expect(MARKET_PACKS_CONFIG_SCHEMA.parse({ environment: "production" }).environment).toBe(
+      "production",
+    );
+    for (const environment of ["prod", "Production", "prd", ""])
+      expect(() => MARKET_PACKS_CONFIG_SCHEMA.parse({ environment })).toThrow();
+  });
 });

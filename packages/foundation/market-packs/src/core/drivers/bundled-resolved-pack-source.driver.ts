@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `BundledResolvedPackSourceDriver`, the interim `ResolvedPackSource` (driver name `bundled`): the packs this
  *          package bundles in `assets/data/packs/`, but only those the deployment pins by content hash in
- *          `MarketPacksConfig.packHashes` and only when `live`, loaded once and served for the life of the process.
+ *          `MarketPacksConfig.packHashes` and only when `live`, loaded once (the pinned markets' files only, all on the
+ *          first `packs()`) and served for the life of the process.
  * Boundary: the pin replaces the signature until the platform release service signs packs (ADR 0386 as amended
  *           2026-11-09): a pinned hash is looked up in `BUNDLED_PACK_HASHES`, its market's file loaded lazily,
  *           re-hashed as shipped with `contentHash` (as `verifyPack` does), parsed with `MarketPack$` and checked

@@ -37,7 +37,7 @@ export class MarketPacksOptions extends Schema {
   trustedKeys: Record<string, string> = {};
 
   /** The running environment (`STACKRA_ENVIRONMENT`); the `bundled` source refuses `production` unless allowed. */
-  environment = "dev";
+  environment: "dev" | "preview" | "test" | "staging" | "production" = "dev";
 
   /** Lets the interim `bundled` source run in production (ADR 0386 amendment, 2026-11-09); off by default. */
   allowBundledInProduction = false;
