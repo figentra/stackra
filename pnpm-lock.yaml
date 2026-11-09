@@ -7602,6 +7602,9 @@ importers:
       '@stackra/navigation':
         specifier: workspace:*
         version: link:../../experience/navigation
+      '@stackra/settings':
+        specifier: workspace:*
+        version: link:../../state/settings
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
