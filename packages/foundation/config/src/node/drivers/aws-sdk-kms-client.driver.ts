@@ -64,11 +64,24 @@ export class AwsSdkKmsClientDriver extends Driver(KmsClient) {
   private kms(): Promise<AwsKmsApi> {
     this.client ??= import("@aws-sdk/client-kms").then(({ KMS }): AwsKmsApi => {
       const kms = new KMS(this.region === "" ? {} : { region: this.region });
+      // The SDK types an absent field as `T | undefined`; the port leaves it out.
       return {
-        sign: (input) => kms.sign(input),
-        getPublicKey: (input) => kms.getPublicKey(input),
-        decrypt: (input) => kms.decrypt(input),
-        generateDataKeyWithoutPlaintext: (input) => kms.generateDataKeyWithoutPlaintext(input),
+        sign: async (input) => {
+          const { Signature } = await kms.sign(input);
+          return Signature === undefined ? {} : { Signature };
+        },
+        getPublicKey: async (input) => {
+          const { PublicKey } = await kms.getPublicKey(input);
+          return PublicKey === undefined ? {} : { PublicKey };
+        },
+        decrypt: async (input) => {
+          const { Plaintext } = await kms.decrypt(input);
+          return Plaintext === undefined ? {} : { Plaintext };
+        },
+        generateDataKeyWithoutPlaintext: async (input) => {
+          const { CiphertextBlob } = await kms.generateDataKeyWithoutPlaintext(input);
+          return CiphertextBlob === undefined ? {} : { CiphertextBlob };
+        },
       };
     });
     return this.client;

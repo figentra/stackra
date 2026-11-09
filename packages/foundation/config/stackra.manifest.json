@@ -18,48 +18,6 @@
   "models": [],
   "drivers": [
     {
-      "port": "KmsClient",
-      "key": "config.KmsClient",
-      "candidates": ["aws_sdk"],
-      "classes": {
-        "aws_sdk": {
-          "class": "AwsSdkKmsClientDriver",
-          "from": "@stackra/config/node",
-          "deps": [
-            {
-              "class": {
-                "name": "SignerConfig",
-                "from": "@stackra/config"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "port": "SecretStore",
-      "key": "config.SecretStore",
-      "candidates": ["memory", "aws_secrets_manager"],
-      "classes": {
-        "memory": {
-          "class": "MemorySecretStoreDriver",
-          "from": "@stackra/config"
-        },
-        "aws_secrets_manager": {
-          "class": "AwsSecretsManagerSecretStoreDriver",
-          "from": "@stackra/config/node",
-          "deps": [
-            {
-              "class": {
-                "name": "AwsSecretsManagerConfig",
-                "from": "@stackra/config"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
       "port": "Signer",
       "key": "contracts.Signer",
       "candidates": ["ephemeral", "kms"],
@@ -90,6 +48,48 @@
               "class": {
                 "name": "KmsClient",
                 "from": "@stackra/config/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "SecretStore",
+      "key": "config.SecretStore",
+      "candidates": ["memory", "aws_secrets_manager"],
+      "classes": {
+        "memory": {
+          "class": "MemorySecretStoreDriver",
+          "from": "@stackra/config"
+        },
+        "aws_secrets_manager": {
+          "class": "AwsSecretsManagerSecretStoreDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "KmsClient",
+      "key": "config.KmsClient",
+      "candidates": ["aws_sdk"],
+      "classes": {
+        "aws_sdk": {
+          "class": "AwsSdkKmsClientDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
               }
             }
           ]
