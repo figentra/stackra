@@ -19,6 +19,7 @@
  * Governing contract: ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0495; ADR 0182 (integration tier); ADR 0022;
  *                     `.agents/rules/tenancy.md` (points 7 and 8).
  */
+import { inRowOwner, RowIsolationMissingError } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
 import { buildConfig } from "@stackra/config";
@@ -31,8 +32,7 @@ import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
 import { OutboxConfig } from "#config/outbox.config";
 import { EventPublisher } from "#contracts/index";
 import type { ChangeClaim, EventEnvelope } from "#contracts/index";
-import { RowIsolationMissingError } from "#core/errors/row-isolation-missing.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 import { loadChanges } from "#core/functions/load-changes.function";
 import { maintainChangeLog } from "#core/functions/maintain-change-log.function";
 import { pruneOutbox } from "#core/functions/prune-outbox.function";
@@ -279,11 +279,13 @@ describe.skipIf(HOST === undefined)("outbox row security on Postgres", () => {
       const driver = new PostgresDeliveryDriver(postgres.database);
       const failure = { code: "http_status", status: 503 };
       await asService(postgres, undefined, async () => {
-        await inRowOwner(isolation, ACME, "dlv_acme", () => driver.remove("dlv_acme"));
-        await inRowOwner(isolation, GLOBEX, "dlv_globex", () =>
+        await inRowOwner(isolation, OUTBOX_ACTOR_ID, ACME, "dlv_acme", () =>
+          driver.remove("dlv_acme"),
+        );
+        await inRowOwner(isolation, OUTBOX_ACTOR_ID, GLOBEX, "dlv_globex", () =>
           driver.retry("dlv_globex", new Date(), failure),
         );
-        await inRowOwner(isolation, undefined, "dlv_platform", () =>
+        await inRowOwner(isolation, OUTBOX_ACTOR_ID, undefined, "dlv_platform", () =>
           driver.deadLetter("dlv_platform", failure, new Date()),
         );
       });

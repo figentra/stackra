@@ -64,6 +64,9 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "docs", members: ["apps/handbook"] },
   { name: "consumer", members: ["services/catalogue", "services/channels"] },
   { name: "i18n-packages", members: ["packages/customers"] },
+  // A service sharing a module key (`plans`) with a service it depends on for a contract: the member keeps `plans`, the
+  // dependency's moves under its member key (`payments.plans`) instead of an i18n_namespace_clash.
+  { name: "i18n-consumed-service", members: ["services/billing"] },
   { name: "member-module-alias", members: ["services/payments"] },
   // The cross-app relay (STA-1910): a listener of a contract-only producer's event gets the inbox; a runway `events`
   // block makes the service a producer. The plain `consumer` and `service` fixtures stay byte-identical.
@@ -94,6 +97,8 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "refusal-encore-stray", base: "service", members: ["services/shop"] },
   { name: "refusal-encore-missing", base: "service", members: ["services/shop"] },
   { name: "refusal-identity-changed", base: "service", members: ["services/shop"] },
+  // A second action on the derived route's shape: `endpoint_collision` for both, nothing written (STA-340).
+  { name: "refusal-endpoint-collision", base: "service", members: ["services/shop"] },
   { name: "refusal-docs-misplaced", base: "docs", members: ["apps/handbook"] },
   { name: "refusal-docs-config", base: "docs", members: ["apps/handbook"] },
   // The producer is not generated, so it has no manifest: `client_service_unknown`, manifest still written.

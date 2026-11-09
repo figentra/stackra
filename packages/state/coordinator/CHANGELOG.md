@@ -1,5 +1,12 @@
 # @stackra/coordinator
 
+## 0.29.0
+
+### Patch Changes
+
+- @stackra/state@0.29.0
+  - @stackra/contracts@0.29.0
+
 ## 0.28.0
 
 ### Patch Changes

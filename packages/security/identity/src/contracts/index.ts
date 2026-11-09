@@ -15,6 +15,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { ApiKeyMode } from "#contracts/enums/api-key-mode.enum";
 export { AppApprovalPurpose } from "#contracts/enums/app-approval-purpose.enum";
 export { AppApprovalStatus } from "#contracts/enums/app-approval-status.enum";
 export { AppleSignInRefusal } from "#contracts/enums/apple-sign-in-refusal.enum";

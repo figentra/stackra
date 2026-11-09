@@ -5,7 +5,8 @@
  *          `OfflinePrecondition`, `Precondition`, `Query`, `RateLimitConfig`, `RateLimitConfig$`, `RequestContext`)
  *          and the registry row's runtime are exported with the offline additions (the device, cap, replica and review
  *          memory drivers, `ReplicaFeed` and two refusals; no header name), the query cache's `CacheScope`,
- *          `registerCachedQueries`, `QueryCacheEvictorListener` and `SHARED_CACHE_CONTEXT`, the `AnalyticsTracked` event (STA-1512), nothing else is, the ports are not,
+ *          `registerCachedQueries`, `QueryCacheEvictorListener` and `SHARED_CACHE_CONTEXT`, the `AnalyticsTracked` event (STA-1512), the
+ *          owner-row helpers (`inRowOwner`, `boundIsolation`, `ClaimNotLoadedError`, `RowIsolationMissingError`), nothing else is, the ports are not,
  *          and the template's types (`ActionContext`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`,
  *          `PreconditionContext`, `QueryContext`) and the offline option and replica types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -59,6 +60,7 @@ describe("@stackra/actions", () => {
       "ApprovalSettingsUnavailableError",
       "AuditEntryRecorded",
       "CacheScope",
+      "ClaimNotLoadedError",
       "ConflictResolution",
       "DeviceRevokedError",
       "DeviceSequenceOutOfOrderError",
@@ -91,14 +93,17 @@ describe("@stackra/actions", () => {
       "RateLimitConfig$",
       "ReplicaFeed",
       "RequestContext",
+      "RowIsolationMissingError",
       "SHARED_CACHE_CONTEXT",
       "StoresConfig",
       "StoresConfig$",
       "StoresOptions",
       "UsageRecorded",
       "approverRefusal",
+      "boundIsolation",
       "connectExtensions",
       "connectRecordPolicies",
+      "inRowOwner",
       "isRawBody",
       "limitedSettingsReader",
       "mergeApprovalRequirements",

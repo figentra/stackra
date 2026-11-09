@@ -3,7 +3,8 @@
  * Purpose: unit tests of `checkIdentityLock`: a changed identity fails with `identity_changed` and its fix, unless the
  *          class's `@Renamed` names the locked identity in full or as written; integrations, sequences, blocks and
  *          routes are locked too, and so are permissions (the set prefix renames), roles, reports, config keys, own
- *          schema names and endpoints (the bare path renames), each class judged once; an event version bump passes
+ *          schema names and endpoints (the bare path renames; a route that only gains its own area prefix passes once,
+ *          STA-340), each class judged once; an event version bump passes
  *          (STA-2057); a removed class, a package's merged entries and generated entries are not this check's concern.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -87,6 +88,13 @@ const model = (module: string): StackraManifest =>
     ...one("models", { key: `${module}.order`, class: "Order", module }),
     schemas: { [`${module}.Order`]: {} },
   }) as StackraManifest;
+
+/** The cancel action at `method path`, recorded under `area` when one is given. */
+const routed = (method: string, path: string, area?: string): StackraManifest =>
+  withAction("orders.order.cancel@1", {
+    endpoint: { method, path },
+    ...(area === undefined ? {} : { area }),
+  });
 
 describe("checkIdentityLock", () => {
   it("fails a changed identity with its fix", () => {
@@ -250,6 +258,30 @@ describe("checkIdentityLock", () => {
     expect(checkIdentityLock(before, both, new Map())).toHaveLength(1);
     // Gaining an endpoint is not a move.
     expect(checkIdentityLock(withAction("orders.order.cancel@1"), moved, new Map())).toEqual([]);
+  });
+
+  it("accepts an endpoint that only gains its own area prefix, once (STA-340)", () => {
+    const before = routed("PUT", "/orders/:orderId/cancel");
+    // Its own area: accepted with no @Renamed.
+    expect(
+      checkIdentityLock(before, routed("PUT", "/app/orders/:orderId/cancel", "app"), new Map()),
+    ).toEqual([]);
+    // Another area than the entry's own: refused.
+    expect(
+      checkIdentityLock(before, routed("PUT", "/admin/orders/:orderId/cancel", "app"), new Map()),
+    ).toHaveLength(1);
+    // A method change with the prefix: refused.
+    expect(
+      checkIdentityLock(before, routed("POST", "/app/orders/:orderId/cancel", "app"), new Map()),
+    ).toHaveLength(1);
+    // A route already under an area moving again: refused.
+    expect(
+      checkIdentityLock(
+        routed("PUT", "/app/orders/:orderId/cancel", "app"),
+        routed("PUT", "/admin/app/orders/:orderId/cancel", "admin"),
+        new Map(),
+      ),
+    ).toHaveLength(1);
   });
 
   it("judges a model whose key changed once, not again by its schema name", () => {

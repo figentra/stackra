@@ -13,7 +13,6 @@ skills:
   skills/backend-errors: MIT
   skills/backend-gen-and-encore-target: MIT
   skills/backend-module-and-root-module: MIT
-  skills/changesets: MIT
   skills/code-naming-and-casing: MIT
   skills/db-models-and-migrations: MIT
   skills/docs-adr: MIT

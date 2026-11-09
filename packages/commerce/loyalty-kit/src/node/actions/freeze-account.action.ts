@@ -27,7 +27,7 @@ export class FreezeAccountAction extends Action({
   permission: LoyaltyAccountPermissions.freeze,
   actors: [ActorKind.User, ActorKind.Agent],
   idempotency: Idempotency.Optional,
-  endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId/freeze" },
+  endpoint: { method: HttpMethod.Put, path: "/app/loyalty/accounts/:accountId/freeze" },
   tool: true,
 }) {
   /** Loads the account and flips the flag. */

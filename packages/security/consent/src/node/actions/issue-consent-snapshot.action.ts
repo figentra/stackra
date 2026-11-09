@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `IssueConsentSnapshotAction`, `consent.consent_snapshot.issue@1` on `POST /consent/snapshots`: the consent
+ * Purpose: `IssueConsentSnapshotAction`, `consent.consent_snapshot.issue@1` on `POST /public/consent/snapshots`: the consent
  *          endpoint (ADR 0472 decision 1), which signs a short-lived `ConsentSnapshot` of the client's stored decision
  *          and answers its token and expiry in the body.
  * Boundary: public area, open to anonymous visitors and signed-in users; not an MCP tool. It stores nothing and sets no
@@ -29,7 +29,7 @@ export class IssueConsentSnapshotAction extends Action({
   key: "consent_snapshot.issue",
   actors: [ActorKind.Anonymous, ActorKind.User],
   area: ApiArea.Public,
-  endpoint: { method: HttpMethod.Post, path: "/consent/snapshots" },
+  endpoint: { method: HttpMethod.Post, path: "/public/consent/snapshots" },
   idempotency: Idempotency.Optional,
   // reason: an agent acts under its principal's consent, never a visitor's browser decision
   tool: false,

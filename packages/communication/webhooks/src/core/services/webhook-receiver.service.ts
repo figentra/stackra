@@ -14,8 +14,8 @@
  *           the event occurred when it was received), or a regional gateway scheme with its data in `webhooks.recipe`
  *           (`authenticBody` picks the verifier; an `aes_gcm_body` request is parsed from its plaintext; the event id
  *           is the payload's `eventId` path and the event occurred when it was received). An `eventId` of several
- *           parts (payload paths and headers) is joined with `:`; a named part that is missing refuses the event
- *           before its class is built or anything is written. The verified body is parsed as JSON, or as an
+ *           parts (payload paths and headers) is joined with `:`; an event whose id header and id parts are missing
+ *           (or whose Integration names neither) is refused before its class is built or anything is written. The verified body is parsed as JSON, or as an
  *           `application/x-www-form-urlencoded` body when the recipe's `bodyFormat` is `form`.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 15, 16 and 20); ADR 0224 (decision 4, as amended); ADR 0078 (decision 4: inbox
@@ -134,7 +134,7 @@ export class WebhookReceiver extends Service {
       );
     } else {
       const idHeader = webhooks.signature?.idHeader;
-      const named = idHeader === undefined ? undefined : headers[idHeader];
+      const named = idHeader === undefined ? "" : (headers[idHeader] ?? "");
       // a gateway may number its events (Paymob's `obj.id`); one that numbers nothing names the parts of an id
       const parts =
         webhooks.eventId === undefined
@@ -147,10 +147,11 @@ export class WebhookReceiver extends Service {
           part.path === undefined ? headers[part.header ?? ""] : valueAt(payload, part.path);
         return typeof value === "string" || typeof value === "number" ? String(value) : "";
       });
-      // why: an empty id would dedupe every such event as one, so a named part that is missing refuses the event
-      if (named === undefined && values.some((value) => value === ""))
+      // why: an empty id would dedupe every such event as one, so an event without its id header or a named part
+      // of its id (or an Integration that names neither) is refused
+      if (named === "" && (values.length === 0 || values.some((value) => value === "")))
         throw WebhookEventIdMissingError.create();
-      id = named ?? values.join(":");
+      id = named === "" ? values.join(":") : named;
       occurredAt = now;
     }
     // reason: the event's generated schema checks the payload at runtime; `create` types its fields from the class

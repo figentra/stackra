@@ -89,6 +89,9 @@ function edgeGuard(): EdgeHeaderGuard {
 }
 
 /** A call under the real guard, with spies on the authenticator and the call. */
+/** A visitor's signed form, as `VisitorIdentityService` would issue it (the signature is a stand-in). */
+const SIGNED_VISITOR = ["v1", "anon_01j9z3k4m5n6p7q8r9s0t1v2a1", "sig"].join(".");
+
 function call(options: { anonymous?: boolean; maxBodyBytes?: number; throws?: Error } = {}) {
   const guard = edgeGuard();
   const authenticate = vi.fn(async () => ({ actor: USER }));
@@ -141,6 +144,52 @@ describe(serveGuardedCall, () => {
     });
     expect((await serve(request)).status).toBe(401);
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("runs an anonymous call as the visitor its token names, and carries a new visitor's token back", async () => {
+    const execute = vi.fn(async (_input: unknown, actor: Actor) => ({ actor: actor.id }));
+    const visitor = vi.fn(async () => ({
+      id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" as never,
+      issue: {
+        header: "stackra-visitor",
+        token: SIGNED_VISITOR,
+        cookie: `stackra_visitor=${SIGNED_VISITOR}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      },
+    }));
+    const response = await serveGuardedCall({
+      request: new Request("https://api.example.test/carts/crt_1"),
+      path: "/carts/:cartId",
+      maxBodyBytes: 1024,
+      anonymous: true,
+      guard: async () => undefined,
+      authenticate: async () => ({ actor: USER }),
+      visitor,
+      execute,
+    });
+    expect(await response.json()).toEqual({ actor: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" });
+    expect(response.headers.get("stackra-visitor")).toBe(SIGNED_VISITOR);
+    expect(response.headers.getSetCookie()).toEqual([
+      `stackra_visitor=${SIGNED_VISITOR}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+    ]);
+  });
+
+  it("never resolves a visitor for a signed-in call", async () => {
+    const visitor = vi.fn(async () => ({ id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" as never }));
+    const response = await serveGuardedCall({
+      request: new Request("https://api.example.test/carts/crt_1", {
+        headers: { authorization: "Bearer t" },
+      }),
+      path: "/carts/:cartId",
+      maxBodyBytes: 1024,
+      anonymous: true,
+      guard: async () => undefined,
+      authenticate: async () => ({ actor: USER }),
+      visitor,
+      execute: async (_input, actor) => ({ actor: actor.id }),
+    });
+    expect(await response.json()).toEqual({ actor: USER.id });
+    expect(visitor).not.toHaveBeenCalled();
+    expect(response.headers.get("stackra-visitor")).toBeNull();
   });
 
   it("answers 413 for an oversized body before any guard runs", async () => {

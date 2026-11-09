@@ -122,6 +122,28 @@ Wallet passes (`@stackra/integrations` pass logos) and SEO cards (`@stackra/seo`
 3. Who may edit: a tenant admin only? Default: a `branding.profile.update` permission at L2, granted to tenant admins.
 4. Logo cap 512 KiB? Default: yes, with variants generated at upload, so surfaces never ship the original.
 
+## Refinements and v1 limits
+
+- **(a) Live reads** (LEADER-approved 2026-11-09). v1 reads live through `SettingsReader`, with no cache and no
+  `branding.profile.changed.v1`. Both come later if a surface needs them. This narrows FR-004 for v1.
+- **(b) Editing rights** (LEADER-approved 2026-11-09). Editing is the settings package's derived permission for the
+  `branding` module, not a `branding.profile.update` of its own (this replaces decision 3). The derived key is
+  `branding.settings.update`, at L2 in the manifest format (with `branding.settings.read` at L0 and
+  `branding.settings.approve` at L2), and the generated settings page is gated by it. It must be granted to tenant
+  admins. This repository's gen does not emit settings permissions yet, so the package's manifest lists none today.
+- **(c) A failing colour is ignored at read.** The settings write path checks a value against its key's type only, so
+  a low-contrast colour can be stored. Until `@stackra/settings` checks a write against the group's registered schema
+  (queued with CORE-GAPS), `BrandReader` treats a colour that fails its rule as unset and falls back to the next layer
+  (platform, then plain), so a read never fails on contrast. `brandColorRefusals` and `BrandColorContrastError` are
+  ready for a save path.
+- **(d) Accent against white only** in v1. The check against the dark surface waits for a surface that draws the brand
+  on dark ground.
+- **(e) Image dimensions wait for media.** The logo's 200 px minimum width and the mark's square 512 × 512 minimum need
+  media to read image dimensions; v1 checks type, size and bytes only.
+- **(f) The reader probes for a stored image.** A setting holds the upload id only, so `BrandReader` finds the claimed
+  file by checking its path with each accepted extension (`.png`, then `.jpeg`). A shortcut until media looks a file
+  up by id.
+
 ## Risks
 
 - **The PDF engine fetches the network today.** `GotenbergPdfEngineDriver` sends the HTML with paper size and margins

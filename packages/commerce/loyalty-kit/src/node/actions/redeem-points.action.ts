@@ -31,7 +31,7 @@ export class RedeemPointsAction extends Action({
   idempotency: Idempotency.Required,
   stepUp: AssuranceLevel.Aal2,
   rateLimit: { perMinute: 30 },
-  endpoint: { method: HttpMethod.Post, path: "/loyalty/redemptions" },
+  endpoint: { method: HttpMethod.Post, path: "/app/loyalty/redemptions" },
 }) {
   /** Starts the redemption run and returns its output through the same pipeline. */
   async handle(input: RedeemPointsInput, ctx: ActionContext): Promise<RedeemPointsOutput> {

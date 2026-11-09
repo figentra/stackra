@@ -75,7 +75,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   outcome or delete recorded in the row's owner (`inRowOwner`, `loadChanges`). A claimed row that does not load, or an
   owned row with no `CallIsolation` bound, throws (`ClaimNotLoadedError`, `RowIsolationMissingError`): never skip
   one. A class built by injection reads the isolation optionally (`boundIsolation` of the injected `Container`), so an
-  app without tenancy still boots. Policies are not inherited by partitions: every partition `maintain` makes is
+  app without tenancy still boots. `inRowOwner` (as `OUTBOX_ACTOR_ID`), `boundIsolation` and both refusals are
+  @stackra/actions'; `.` re-exports the last three for one release only. Policies are not inherited by partitions: every partition `maintain` makes is
   secured by `outbox.secure_change_partition` at once. The system-access role never deletes.
 - A platform message or change (written with no tenant) is one no tenant's erasure can rewrite: a platform writer
   never puts personal data in one.

@@ -25,7 +25,8 @@
  *           a `@stackra/*` package (a schema file also zod) the member does not declare is refused (`client_dependency_missing`,
  *           `schema_dependency_missing`), and so is any other generated file (`generated_dependency_missing`, STA-1296), and so is a lang namespace clash
  *           or a key no merged catalogue ships (`i18n_namespace_clash`, `i18n_key_missing`, STA-1298), and so is a broken
- *           convention (`checkConventions`, STA-1306), a semantic `@Searchable` over an `ai: never` field
+ *           convention (`checkConventions`, STA-1306), a route or surface option that breaks the endpoint convention or
+ *           ADR 0305 rule 30 (`checkEndpoints`, STA-340), a semantic `@Searchable` over an `ai: never` field
  *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
  *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
@@ -54,6 +55,7 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkConventions } from "#core/functions/check-conventions.function";
+import { checkEndpoints } from "#core/functions/check-endpoints.function";
 import { checkBlindIndexes } from "#core/functions/check-blind-indexes.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
@@ -195,6 +197,7 @@ export function generateMember(
     ...clients.errors,
     ...checkI18n(ir),
     ...checkConventions(ir, manifest),
+    ...checkEndpoints(ir, manifest),
     ...checkSemanticSearch(ir),
     ...checkSearchableDrift(ir),
     ...checkEncryptedFields(ir),

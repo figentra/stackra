@@ -9,22 +9,22 @@
 import "./database";
 import { CancelOrderAction } from "#node/actions/cancel-order.action";
 import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";
-import { ActionPipeline } from "@stackra/actions";
+import { ActionPipeline, requestCallOptions } from "@stackra/actions";
 import { api } from "encore.dev/api";
 
 import { app } from "../../entry/server";
 import { answerCall } from "./http";
 
-/** PUT /orders/:orderId/cancel: shop.order.cancel@1 through the action pipeline. */
+/** PUT /app/orders/:orderId/cancel: shop.order.cancel@1 through the action pipeline. */
 export const shopOrderCancelV1 = api.raw(
-  { method: "PUT", path: "/orders/:orderId/cancel", expose: true, auth: false },
+  { method: "PUT", path: "/app/orders/:orderId/cancel", expose: true, auth: false },
   (req, resp) =>
     answerCall(req, resp, {
-      path: "/orders/:orderId/cancel",
+      path: "/app/orders/:orderId/cancel",
       anonymous: false,
       action: CancelOrderAction,
       input: CancelOrderInput,
-      execute: (container, input, actor) =>
-        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor }),
+      execute: (container, input, actor, request) =>
+        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request) }),
     }),
 );

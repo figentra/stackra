@@ -56,7 +56,7 @@ describe("consentSnapshotHeaders", () => {
     await expect(headers()).resolves.toEqual({ "Stackra-Consent": "tok_1" });
     expect(calls).toEqual([
       {
-        url: "https://api.example.com/consent/snapshots",
+        url: "https://api.example.com/public/consent/snapshots",
         body: JSON.stringify({ record: null, globalPrivacyControl: false, region: "FR" }),
       },
     ]);

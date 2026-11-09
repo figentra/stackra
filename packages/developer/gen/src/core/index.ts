@@ -38,6 +38,7 @@ export { buildManifest } from "#core/functions/build-manifest.function";
 export { checkActionFirst } from "#core/functions/check-action-first.function";
 export { unboundPorts } from "#core/functions/unbound-ports.function";
 export { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
+export { checkEndpoints } from "#core/functions/check-endpoints.function";
 export { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 export { checkModelScope } from "#core/functions/check-model-scope.function";
 export { checkApproval } from "#core/functions/check-approval.function";

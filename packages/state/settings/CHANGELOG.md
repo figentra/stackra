@@ -1,5 +1,28 @@
 # @stackra/settings
 
+## 0.29.0
+
+### Minor Changes
+
+- 1b727b9: Settings fields are never dropped: gen refuses a field no setting type holds with `settings_unsupported_type`, and writes an enum or driver name as a `choice` key and a string or enum array as a `list` key (`SettingType.Choice`, `SettingType.List`, `SettingKeyInput.options`, and `readonly string[]` as a `SettingValue`). Gen derives the group key from the class name as the runtime does (`AccountSettings` is `Settings.account`), refuses `settings_scope_widened`, `settings_too_deep`, `settings_group_key_empty` and `settings_group_conflict`, and records every group and key in a `settings` section of `stackra.manifest.json`; a group or key rename needs `@Renamed`. An enum setting field is now `choice` with its `options`, not `string`, and a group whose key is not its module's carries the group in its label key. Regenerate with `stackra gen`.
+
+### Patch Changes
+
+- b26036e: `SettingsResolver#write` and `SettingsReader#write` refuse a key whose `scopes` leave out the level written (the page's, or `user` for a user's own layer) with `setting_scope_refused` (`SettingScopeRefusedError`), before anything is written; break-glass does not lift it. The level comes from the page and the target alone, so no new binding is needed and reads are unchanged.
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/icons@0.29.0
+  - @stackra/ui@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/i18n@0.29.0
+  - @stackra/market-packs@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
 ## 0.28.0
 
 ### Patch Changes
