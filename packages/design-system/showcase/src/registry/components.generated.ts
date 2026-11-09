@@ -221,6 +221,7 @@ import { FREE_SANKEY_CHART } from "#src/registry/components/free/sankey-chart";
 import { FREE_SAVE_BAR } from "#src/registry/components/free/save-bar";
 import { FREE_SCATTER_CHART } from "#src/registry/components/free/scatter-chart";
 import { FREE_SCHEDULER } from "#src/registry/components/free/scheduler";
+import { FREE_SCHEDULING_BOARD } from "#src/registry/components/free/scheduling-board";
 import { FREE_SCHEMATIC } from "#src/registry/components/free/schematic";
 import { FREE_SCREEN } from "#src/registry/components/free/screen";
 import { FREE_SCROLL_AREA } from "#src/registry/components/free/scroll-area";
@@ -414,6 +415,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_RANGE_CALENDAR,
   FREE_RECURRENCE_EDITOR,
   FREE_SCHEDULER,
+  FREE_SCHEDULING_BOARD,
   FREE_TIME_CLOCK,
   FREE_TIME_FIELD,
   FREE_TIME_PICKER,
@@ -643,6 +645,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["action", "modal", "dialog", "input", "confirm", "panel", "kit"],
     status: "new",
   },
+  // KIT_APPEARANCE_TOGGLE: @stackra/theming, from its showcase/appearance-toggle.json
+  {
+    slug: "appearance-toggle",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/theming",
+    exportName: "AppearanceToggle",
+    parts: ["AppearanceToggle"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 200 }],
+    related: ["free/segmented-control", "free/switch", "free/dropdown"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["theme", "dark mode", "light mode", "color scheme", "appearance", "kit"],
+    status: "new",
+  },
   // KIT_ASK_AI: @stackra/experience, from its showcase/ask-ai.json
   {
     slug: "ask-ai",
@@ -673,6 +691,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/bento-card", "free/feature-section", "free/dither-art"],
     tokens: ["radius.lg", "color.surface", "color.border"],
     keywords: ["bento", "grid", "cards", "marketing", "landing", "kit"],
+    status: "new",
+  },
+  // KIT_BRAND_LOGO: @stackra/theming, from its showcase/brand-logo.json
+  {
+    slug: "brand-logo",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react", "native"],
+    packageName: "@stackra/theming",
+    exportName: "BrandLogo",
+    parts: ["BrandLogo"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 160 }],
+    related: ["free/thumbnail", "free/image"],
+    tokens: ["color.surface"],
+    keywords: ["logo", "brand", "wordmark", "dark mode", "theme", "kit"],
     status: "new",
   },
   // KIT_BULK_ACTIONS: @stackra/panel, from its showcase/bulk-actions.json

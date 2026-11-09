@@ -21,6 +21,9 @@ import { docs, source } from "../lib/source";
 import { mdxComponents } from "../mdx-components";
 import site from "../site.json";
 
+/** A home page's file: index.mdx at the root, or a language's index.<lang>.mdx. */
+const HOME_PAGE = /^index(\\.[A-Za-z-]+)?\\.mdx?$/;
+
 const trees = site.trees as Readonly<Record<string, typeof site.tree>>;
 
 export function loader({ params }: { readonly params: Readonly<Record<string, string | undefined>> }) {
@@ -35,9 +38,11 @@ function Content({ path }: { readonly path: string }) {
   if (page === undefined) throw new Response("Not found", { status: 404 });
   const { toc } = use(page.load());
   const Body = page.body;
+  // The home page (index.mdx, or index.<lang>.mdx) is titled by its own words alone: they already name the site.
+  const title = HOME_PAGE.test(path) ? page.title : page.title + " · " + site.name;
   return (
     <DocsPage toc={toc}>
-      <title>{page.title + " · " + site.name}</title>
+      <title>{title}</title>
       {page.description === undefined ? null : <meta name="description" content={page.description} />}
       <DocsTitle>{page.title}</DocsTitle>
       <DocsDescription>{page.description}</DocsDescription>

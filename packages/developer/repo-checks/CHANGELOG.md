@@ -1,5 +1,17 @@
 # @stackra/repo-checks
 
+## 0.31.0
+
+### Patch Changes
+
+- 2ba26cd: `checkouts.checkout_page.submit@1` is a reviewed anonymous surface. Figentra Pay's hosted page sends the payer's
+  details and terms acceptance with the session's HMAC client token, checked as `load` checks it. A per-session bucket
+  (10 a minute) bounds the calls, and a row lock binds the session once. The details reach payments in the call and are
+  never stored; the acceptance's IP address and user agent come from the call, never from input.
+- ebfd942: `runMobileJob` reads mobile `whiteLabel.entitlement`: a scope-started white-label build is refused unless the
+  variant's new `entitlements` list holds it. The field leaves `RUNWAY_UNREAD_FIELDS` and its schema description no longer
+  says "Not read yet".
+
 ## 0.30.0
 
 ### Minor Changes

@@ -1,5 +1,12 @@
 # @stackra/renderers
 
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/skills@0.31.0
+  - @stackra/contracts@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes
