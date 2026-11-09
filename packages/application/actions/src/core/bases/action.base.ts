@@ -10,7 +10,8 @@
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 2, 28 and 30); ADR 0098 (actions are the
  *                     unit); ADR 0136; ADR 0138 (as amended); ADR 0338 (decision 5: `offline.cap`); ADR 0337
  *                     (decisions 4 and 5: `accepts`); ADR 0360 (decision 4: the tool default); ADR 0099 (decision 2:
- *                     `effects`); STA-813 (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`).
+ *                     `effects`); STA-813 (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`);
+ *                     ADR 0098 (`credentials: "ignore"`, on an anonymous-only action only).
  */
 import { createKind } from "@stackra/container";
 import { ActorKind, AssuranceLevel, Duration, Enum, MeterKind } from "@stackra/contracts";
@@ -251,6 +252,18 @@ function read(options: ActionOptions) {
   )
     throw new TypeError(
       `Action({ onBehalfOf }) is { secondHop: true } or { secondHop: false } (${options.key}), got ${JSON.stringify(onBehalfOf)}`,
+    );
+  const { credentials } = options;
+  if (credentials !== undefined && credentials !== "ignore")
+    throw new RangeError(
+      `Action({ credentials }) is "ignore" (${options.key}), got ${JSON.stringify(credentials)}`,
+    );
+  if (
+    credentials === "ignore" &&
+    (options.actors.length !== 1 || options.actors[0] !== ActorKind.Anonymous)
+  )
+    throw new TypeError(
+      `Action({ credentials: "ignore" }) needs actors: [ActorKind.Anonymous] exactly (${options.key})`,
     );
   const { meter } = options;
   if (meter !== undefined) {

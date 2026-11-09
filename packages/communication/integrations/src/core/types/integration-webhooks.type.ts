@@ -14,6 +14,7 @@
  * Governing contract: ADR 0308 (rules 15 to 17); ADR 0224 (webhooks); STA-1357 (the regional gateways' schemes).
  */
 import type { WebhookSchemeRecipe } from "#core/types/webhook-scheme-recipe.type";
+import type { WebhookEventIdPart } from "#core/types/webhook-event-id-part.type";
 import type { WebhookSignature } from "#core/types/webhook-signature.type";
 
 /**
@@ -32,8 +33,12 @@ export interface IntegrationWebhooks {
   /** Where the provider's event type sits in the payload, as a dotted path (`type`, `event.name`). */
   readonly eventType: { readonly path: string };
 
-  /** Where the provider's event id sits in the payload, for a scheme with no id header (`id`). */
-  readonly eventId?: { readonly path: string };
+  /**
+   * The provider's event id, for a scheme with no id header: one payload path (`id`), or, for a provider that numbers
+   * nothing, the parts that together name one event (payload paths and headers, joined with `:`). A named part that is
+   * missing refuses the event (`webhook_event_id_missing`); it never falls back to an empty id.
+   */
+  readonly eventId?: { readonly path: string } | { readonly parts: readonly WebhookEventIdPart[] };
 
   /** The HMAC recipe of a scheme that reads it from data (`hmac`). */
   readonly signature?: WebhookSignature;

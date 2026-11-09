@@ -30,7 +30,9 @@
  *          propagation: its `timeout` and its rollback hold, and it is not `requiresNew`), so a call commits once, when
  *          the isolation transaction ends. What waits for that commit runs after it: the idempotency `complete`, the
  *          offline cap record, the read-your-writes mark and `ctx.afterCommit` work. The audit's refusal entries and a
- *          query's analytics event are written outside it, and with none bound a call runs as before.
+ *          query's analytics event are written outside it, and with none bound a call runs as before. An action that
+ *          declares `credentials: "ignore"` runs a signed-in caller's call as a fresh anonymous actor, its request
+ *          stripped of what the credential gave, before the descriptor and context are built.
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -100,6 +102,7 @@ import { duration, schemaOf, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
 import { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
+import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
@@ -218,7 +221,26 @@ interface Recorded {
   readonly reads?: "primary" | "replica";
   readonly analytics?: CallAnalytics;
   readonly queryBudget?: number;
+  readonly credentials?: "ignore";
 }
+
+/**
+ * What a `credentials: "ignore"` call keeps of its request: nothing that comes from the caller's credential (the actor,
+ * scope, assurance, device, approval or read-your-writes mark). An allowlist, so a field added later is dropped.
+ */
+const UNCREDENTIALED: readonly (keyof CallOptions)[] = [
+  "idempotencyKey",
+  "locale",
+  "timeZone",
+  "currency",
+  "market",
+  "callId",
+  "abortSignal",
+  "sandbox",
+  "client",
+  "expectedVersion",
+  "consentSnapshot",
+];
 
 /** What one call accumulates while it runs. */
 interface CallState {
@@ -387,13 +409,14 @@ export class ActionPipeline {
   }
 
   /** The call `type` makes under `request`: its options, identity, descriptor, state and context. */
-  private prepare(type: AnyClass<Action | Query>, request: CallOptions): Call {
+  private prepare(type: AnyClass<Action | Query>, given: CallOptions): Call {
     const record = kindOf(type);
     if (record?.kind !== "action" && record?.kind !== "query")
       throw new TypeError(
         `${type.name} is not an action or a query: extend Action({...}) or Query({...})`,
       );
     const options = record.options as unknown as Recorded;
+    const request = options.credentials === "ignore" ? this.uncredentialed(given) : given;
     const registration = ACTION_REGISTRY.get(type);
     const at = this.optional(Clock)?.now() ?? new Date();
     const { actor } = request;
@@ -719,6 +742,30 @@ export class ActionPipeline {
       });
       return error;
     }
+  }
+
+  /**
+   * The request of a `credentials: "ignore"` call: a fresh anonymous actor and the `UNCREDENTIALED` fields, plus a
+   * storefront origin (the public surface itself, which an anonymous visitor's call carries too). An anonymous
+   * caller's request is kept as it is, so it runs exactly as without the option.
+   */
+  private uncredentialed(request: CallOptions): CallOptions {
+    if (request.actor.kind === ActorKind.Anonymous) return request;
+    // an approval's key (`approval:<id>`, set by `keyed`) is the signed-in caller's, so it goes with the approval
+    const fields = UNCREDENTIALED.filter(
+      (field) =>
+        request[field] !== undefined &&
+        (field !== "idempotencyKey" || request.approvalId === undefined),
+    );
+    const kept = Object.fromEntries(fields.map((field) => [field, request[field]])) as Omit<
+      CallOptions,
+      "actor"
+    >;
+    return {
+      ...kept,
+      ...(request.origin?.kind === CallOriginKind.Storefront ? { origin: request.origin } : {}),
+      actor: { kind: ActorKind.Anonymous, id: mintPublicId("anon") },
+    };
   }
 
   /** The request with the key an approved call runs under: `approval:<id>`, whatever the caller sent (C1, S1). */
