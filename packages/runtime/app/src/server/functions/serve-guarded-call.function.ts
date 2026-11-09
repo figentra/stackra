@@ -3,7 +3,8 @@
  * Purpose: `serveGuardedCall`, the one path every generated HTTP adapter answers through, in a fixed order: read the
  *          body once under the cap (413 before any guard), run every request guard on a request carrying the exact
  *          bytes, authenticate (an `Authorization` header is verified and never downgraded to anonymous; none is the
- *          anonymous actor only where the call lists it, else 401), parse the input (JSON body, or the query string for
+ *          anonymous actor only where the call lists it, else 401; an action that declares `credentials: "ignore"` reads
+ *          no credential and runs anonymous), parse the input (JSON body, or the query string for
  *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
  *          kind's status with its envelope.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
@@ -16,6 +17,7 @@
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order and the
  *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
  */
+import { kindOf } from "@stackra/container";
 import { ActorKind, Enum, mintPublicId } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
 import { ErrorKind, isRefusal, RateLimitedError } from "@stackra/errors";
@@ -83,8 +85,11 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
 
   const authorization = guarded.headers.get("authorization");
   const onBehalfOf = guarded.headers.get("stackra-on-behalf-of");
+  // `credentials: "ignore"`: the credential is never verified or held, so no user token is forwarded either
+  const ignored =
+    options.action !== undefined && kindOf(options.action)?.options["credentials"] === "ignore";
   let actor: Actor;
-  if (authorization !== null || onBehalfOf !== null) {
+  if (!ignored && (authorization !== null || onBehalfOf !== null)) {
     try {
       actor = (
         await options.authenticate({

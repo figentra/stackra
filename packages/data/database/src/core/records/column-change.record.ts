@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `ColumnChangeRecord`, the runtime side of `ColumnChange`: records a nullability or type change of one
- *          existing column and compiles it to `ALTER COLUMN` statements, each with its inverse. `notNull({ safe: true })`
+ * Purpose: `ColumnChangeRecord`, the runtime side of `ColumnChange`: records a nullability, type or setting-default
+ *          change of one existing column and compiles it to `ALTER COLUMN` statements, each with its inverse. `notNull({ safe: true })`
  *          compiles to ADR 0159's sequence instead: a `NOT VALID` check in the transactional step, then a later step
  *          that validates it, sets NOT NULL (which Postgres proves from the check, without a scan) and drops it.
  * Boundary: internal. It checks each value as it comes (a known SQL type, no second change of the same kind); the
@@ -11,6 +11,7 @@
  */
 import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { sqlLiteral } from "#core/functions/sql-literal.function";
 import type { ColumnChange } from "#core/types/column-change.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
@@ -64,6 +65,9 @@ export class ColumnChangeRecord implements ColumnChange {
     | { readonly to: string; readonly from: string; readonly using: string | undefined }
     | undefined = undefined;
 
+  /** The custom setting the column's new default reads, when there is one. */
+  private setting: string | undefined = undefined;
+
   /**
    * @param name - the column name, snake_case.
    * @throws TypeError for a name that is not snake_case.
@@ -104,6 +108,20 @@ export class ColumnChangeRecord implements ColumnChange {
   }
 
   /**
+   * Records a default read from a custom setting, as `ColumnChange.defaultSetting` describes.
+   *
+   * @throws TypeError for a setting that is not `<prefix>.<name>`, or a second default of the column.
+   */
+  defaultSetting(setting: string): this {
+    if (this.setting !== undefined)
+      throw new TypeError(`${this.name} already changes its default in this blueprint`);
+    if (!/^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/.test(setting))
+      throw new TypeError(`"${setting}" is not a custom setting: <prefix>.<name>`);
+    this.setting = setting;
+    return this;
+  }
+
+  /**
    * The `ALTER COLUMN` statements, type first, each with its inverse; a safe NOT NULL adds its `NOT VALID` check here.
    *
    * @param table - the table name, without its schema, which names the check.
@@ -133,9 +151,15 @@ export class ColumnChangeRecord implements ColumnChange {
           ? { sql: `${alter} drop not null`, inverse: [`${alter} set not null`] }
           : { sql: `${alter} set not null`, inverse: [`${alter} drop not null`] },
       );
+    // No cast, unlike ColumnRecord's: the change does not know the column's type, and Postgres casts text on assignment.
+    if (this.setting !== undefined)
+      statements.push({
+        sql: `${alter} set default nullif(current_setting(${sqlLiteral(this.setting)}, true), '')`,
+        inverse: [`${alter} drop default`],
+      });
     if (statements.length === 0)
       throw new TypeError(
-        `t.change("${this.name}") changes nothing: call nullable(), notNull() or type()`,
+        `t.change("${this.name}") changes nothing: call nullable(), notNull(), type() or defaultSetting()`,
       );
     return statements;
   }

@@ -44,7 +44,8 @@ import type { WiringReplacement } from "#core/types/wiring-replacement.type";
 interface Recipe {
   readonly type: AnyClass;
   readonly lifetime: Lifetime;
-  readonly deps: readonly Token[];
+  /** The constructor's tokens; `Container` among them is the container itself (its constructor is private). */
+  readonly deps: readonly (Token | typeof Container)[];
   readonly create?: (container: Container) => object;
 }
 
@@ -61,7 +62,7 @@ interface MergedDriver {
   named: string | undefined;
   default: string | undefined;
   readonly candidates: Record<string, () => Promise<AnyClass<Port>>>;
-  readonly deps: Record<string, readonly Token[]>;
+  readonly deps: Record<string, readonly (Token | typeof Container)[]>;
 }
 
 /** One config class, merged across wirings. */
@@ -385,7 +386,7 @@ export class Container {
         recipe.create === undefined
           ? (Reflect.construct(
               recipe.type,
-              recipe.deps.map((dependency) => this.resolve(dependency)),
+              recipe.deps.map((dependency) => this.resolve(dependency as Token)),
             ) as object)
           : recipe.create(this);
       if (recipe.lifetime !== Lifetime.Transient) {
@@ -421,6 +422,16 @@ export class Container {
       if (!isNamed(port) && loaded.type === token) return { key: port, ...loaded };
     if (graph.bindings.has(token) || graph.exported.has(token))
       return { key: token, ...this.recipeFor(token) };
+    // The container itself, for a class that reads an optional binding at call time (`has` then `get`): the root, so
+    // a request scope's class gets the container its singletons live in.
+    if ((token as unknown) === Container)
+      return {
+        key: token,
+        type: Container as unknown as AnyClass,
+        lifetime: Lifetime.Singleton,
+        deps: [],
+        create: (container) => container,
+      };
     if (token === DiscoveryService)
       return {
         key: token,
@@ -440,7 +451,7 @@ export class Container {
   }
 
   /** The recipe of a class: its wiring row, else its `@Lifetime` and no dependencies. */
-  private recipeFor(type: AnyClass, deps?: readonly Token[]): Recipe {
+  private recipeFor(type: AnyClass, deps?: readonly (Token | typeof Container)[]): Recipe {
     const binding = this.graph.bindings.get(type);
     return {
       type,
