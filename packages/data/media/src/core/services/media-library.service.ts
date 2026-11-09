@@ -22,7 +22,7 @@ import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { Duration } from "@stackra/contracts";
 import { FileNotFoundError } from "@stackra/filesystem";
-import type { FileStat, FileSystem } from "@stackra/filesystem/contracts";
+import type { FileStat, FileSystem, WriteOptions } from "@stackra/filesystem/contracts";
 
 import type { MediaConfig } from "#config/media.config";
 import type { BucketBase } from "#core/bases/bucket-base.base";
@@ -186,16 +186,19 @@ export class MediaLibrary extends Service {
 
   /**
    * Stores `bytes` the server made (a rendered PDF, a generated image) as a new file of `bucket`, under the rules a claim
-   * applies: the bucket's media types, its size limit, and bytes that are the declared type.
+   * applies: the bucket's media types, its size limit, and bytes that are the declared type. With `retainUntil` the file
+   * is kept unchangeable until then (the disk's retention: Object Lock on `s3`).
    *
    * @throws UploadRejectedError when the bucket does not accept `mediaType`, the size is zero or above `maxBytes`, or
    *         the bytes are not that media type; nothing is written.
    * @throws TypeError when `bucket` does not extend `Bucket({...})`.
+   * @throws RetentionUnsupportedError when `retainUntil` is given and the disk cannot retain a file.
    */
   async store<B extends BucketBase>(
     bucket: BucketClass<B>,
     bytes: Uint8Array,
     mediaType: MediaType,
+    retention: Pick<WriteOptions, "retainUntil"> = {},
   ): Promise<MediaFile> {
     const options = bucketOptionsOf(bucket);
     const key = bucketKeyOf(bucket);
@@ -207,7 +210,10 @@ export class MediaLibrary extends Service {
       throw UploadRejectedError.create({ bucket: key, reason: "content" });
     const id = mintUploadId();
     const path = filePathOf(bucket, id, mediaType);
-    await this.disk.write(path, bytes, { contentType: mediaType });
+    await this.disk.write(path, bytes, {
+      contentType: mediaType,
+      ...(retention.retainUntil === undefined ? {} : { retainUntil: retention.retainUntil }),
+    });
     return { id, bucket: key, path, url: this.disk.url(path), mediaType, size: bytes.byteLength };
   }
 
