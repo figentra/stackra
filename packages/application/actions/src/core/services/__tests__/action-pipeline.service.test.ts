@@ -52,6 +52,7 @@ import {
   Clock,
   Duration,
   Enum,
+  IdempotencyRetentionSource,
   IdentityResolver,
   Logger,
   MeterKind,
@@ -849,6 +850,88 @@ describe(ActionPipeline, () => {
     expect(again).toEqual({ token: "token-2" });
     expect(action.picked).toBe(2);
     expect(claimed).toEqual([]);
+  });
+
+  describe("retention window (IdempotencyRetentionSource)", () => {
+    /** Records the ttl each claim passes. */
+    class Recording extends MemoryIdempotencyStoreDriver {
+      readonly ttls: unknown[] = [];
+
+      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
+        this.ttls.push(args[2]);
+        return super.claim(...args);
+      }
+    }
+
+    /** Answers a fixed window, or fails. */
+    class Retention extends Driver(IdempotencyRetentionSource) {
+      private readonly answer: Duration | Error;
+
+      constructor(answer: Duration | Error) {
+        super();
+        this.answer = answer;
+      }
+
+      async retention(): Promise<Duration> {
+        if (this.answer instanceof Error) throw this.answer;
+        return this.answer;
+      }
+    }
+
+    /** The ttl a keyed `CreateOrderAction` call claims with `source` bound (none when absent). */
+    async function claimedWith(source?: Retention): Promise<unknown[]> {
+      const store = new Recording(new FixedClock());
+      const { pipeline } = setup([
+        [IdempotencyStore, store],
+        ...(source === undefined ? [] : [[IdempotencyRetentionSource, source] as const]),
+      ]);
+      await pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k1" },
+      );
+      return store.ttls;
+    }
+
+    it("keeps a key 24 hours when no source is bound", async () => {
+      expect(await claimedWith()).toEqual([Duration.hours(24)]);
+    });
+
+    it("shortens the window to the bound source's answer", async () => {
+      expect(await claimedWith(new Retention(Duration.hours(2)))).toEqual([Duration.hours(2)]);
+    });
+
+    it("never lengthens the window past 24 hours", async () => {
+      expect(await claimedWith(new Retention(Duration.hours(48)))).toEqual([Duration.hours(24)]);
+    });
+
+    it("fails the call when the source cannot be read", async () => {
+      await expect(claimedWith(new Retention(new Error("down")))).rejects.toThrow("down");
+    });
+
+    it("lets an action's own shorter window win over the setting", async () => {
+      onTestFinished(() => {
+        ACTION_REGISTRY.delete(RegisterEndpointAction);
+      });
+      registerActions([
+        {
+          type: RegisterEndpointAction,
+          key: "webhooks.endpoint.register@1",
+          // oxlint-disable-next-line stackra/no-raw-key-literal -- reason: the test stands in for gen, which writes these registrations
+          permission: "webhooks.endpoint.register",
+          risk: "L2",
+          output: RegisterEndpointOutput,
+        },
+      ]);
+      const store = new Recording(new FixedClock());
+      const { pipeline } = setup([
+        [IdempotencyStore, store],
+        [IdempotencyRetentionSource, new Retention(Duration.hours(2))],
+        [RegisterEndpointAction, new RegisterEndpointAction()],
+      ]);
+      await pipeline.execute(RegisterEndpointAction, {}, { actor: customer, idempotencyKey: "k1" });
+      expect(store.ttls).toEqual([Duration.minutes(10)]);
+    });
   });
 
   it("never keeps a @ShownOnce output field: the replay omits it and says so", async () => {
