@@ -8,7 +8,8 @@
  *          (@stackra/database's `equalsOrUnset`, STA-1300; STA-1312). The expand form adds only a nullable column
  *          defaulting to `app.tenant_id` to an existing table, beside the policy it already has. The contract form sets
  *          the existing column NOT NULL and writes the equality policy; with `nullable` it is the platform form's contract
- *          (the column stays nullable, under the `platform` match); it is refused with `expand`.
+ *          (the column stays nullable, under the `platform` match); it is refused with `expand`. The pivot form adds a
+ *          default read from `app.tenant_id` to the bare form, and is refused with any other form.
  * Boundary: test only; pure compilation through @stackra/database, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0239; ADR 0159 as amended by ADR 0305; ADR 0231.
@@ -89,6 +90,42 @@ describe(BelongsToTenantMacro, () => {
     );
     expect(sql).not.toContain('"tenant_id" = nullif');
   });
+
+  it("writes the pivot form: the NOT NULL column with a default read from the call's tenant, and the policy", () => {
+    class TicketTagsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("ticket_tags", (t: Blueprint) => {
+          t.belongsToTenant({ pivot: true });
+        });
+      }
+    }
+    const sql = compileMigration(TicketTagsMigration, {
+      schema: "support",
+      macros: [BelongsToTenantMacro],
+    })
+      .steps.flatMap((step) => step.sql)
+      .join("\n");
+    expect(sql).toContain(
+      `"tenant_id" varchar(33) default nullif(current_setting('app.tenant_id', true), '')::varchar(33) not null`,
+    );
+    expect(sql).toContain('"pol_ticket_tags_tenant_id"');
+  });
+
+  it.each([{ nullable: true }, { expand: true }, { contract: true }])(
+    "refuses the pivot form with %o",
+    (other) => {
+      class BadPivotMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("ticket_tags", (t: Blueprint) => {
+            t.belongsToTenant({ pivot: true, ...other });
+          });
+        }
+      }
+      expect(() =>
+        compileMigration(BadPivotMigration, { schema: "support", macros: [BelongsToTenantMacro] }),
+      ).toThrow(/takes no nullable, expand or contract/);
+    },
+  );
 
   it("adds the nullable form to an existing table, whose rows become the platform's", () => {
     expect(compiled(false, undefined, true)).toContain('"pol_tickets_tenant_id"');
