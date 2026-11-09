@@ -20,6 +20,7 @@ describe("@stackra/infra-aws-runtime/node", () => {
       "awsRuntime",
       "awsRuntimeStack",
       "ensureDatabasePasswords",
+      "ensureGotenbergCredentials",
       "publishResourceSecrets",
       "readRuntimePlan",
     ]);

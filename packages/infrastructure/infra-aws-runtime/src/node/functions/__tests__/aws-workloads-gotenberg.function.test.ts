@@ -113,7 +113,11 @@ describe("awsWorkloads for a gotenberg engine", () => {
   });
 
   it("runs it on FARGATE_SPOT with the cluster's capacity providers", () => {
-    const service = resource("Service", "tamo-staging-pdf").inputs;
+    // the ECS service, not the service-discovery entry of the same name
+    const service = registered.find(
+      (entry) => entry.type === "aws:ecs/service:Service" && entry.name === "tamo-staging-pdf",
+    )?.inputs;
+    if (service === undefined) throw new Error("No ECS service tamo-staging-pdf was registered");
 
     expect(service["capacityProviderStrategies"]).toEqual([
       expect.objectContaining({ capacityProvider: "FARGATE_SPOT", weight: 1 }),
