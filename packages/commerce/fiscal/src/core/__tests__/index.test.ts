@@ -20,6 +20,7 @@ import { TurnoverCipherFake } from "#testing/turnover-cipher.fake";
 describe("@stackra/fiscal", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "CadesSignerDriver",
       "DeviceOnboardingDriver",
       "ETA_ONBOARDING_OPTIONS",
       "ETA_OPTIONS",

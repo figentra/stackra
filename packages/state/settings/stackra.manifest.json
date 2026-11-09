@@ -374,6 +374,15 @@
             }
           },
           {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
             "name": "createdAt",
             "optional": false,
             "nullable": false,
