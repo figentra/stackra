@@ -1253,6 +1253,14 @@
     "shortcut": "Sneltoets {keys}",
     "you": "Jij",
     "disclaimer": "Tamo kan zich vergissen. Controleer wat het voorstelt.",
-    "close": "Sluiten"
+    "close": "Sluiten",
+    "approval_title": "Tamo wil dit uitvoeren",
+    "approval_waiting": "Wacht op je goedkeuring.",
+    "approve": "Goedkeuren",
+    "deny": "Weigeren",
+    "approved": "Goedgekeurd",
+    "denied": "Geweigerd",
+    "expired": "Verlopen",
+    "risk": "Risico {level}"
   }
 }
