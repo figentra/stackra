@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `MarketPacksOptions`, the shape of the market-packs configuration: which `ResolvedPackSource` driver runs,
- *          the content hashes of the packs this deployment serves, and the trusted public keys.
+ *          the content hashes of the packs this deployment serves, the trusted public keys, the running environment
+ *          and the interim `bundled` source's production switch.
  * Boundary: a shape class, the `schema` of `MarketPacksConfig`; it registers this package's own schema
  *           (`MARKET_PACKS_CONFIG_SCHEMA`) for itself when the module loads, so `buildConfig(MarketPacksConfig)`
  *           validates with no generated file. Deploy-time values only: which packs a deployment trusts is decided at
@@ -34,6 +35,12 @@ export class MarketPacksOptions extends Schema {
 
   /** Key id to the base64 raw Ed25519 public key a pack signature is accepted from. */
   trustedKeys: Record<string, string> = {};
+
+  /** The running environment (`STACKRA_ENVIRONMENT`); the `bundled` source refuses `production` unless allowed. */
+  environment = "dev";
+
+  /** Lets the interim `bundled` source run in production (ADR 0386 amendment, 2026-11-09); off by default. */
+  allowBundledInProduction = false;
 }
 
 registerSchemas([[MarketPacksOptions, MARKET_PACKS_CONFIG_SCHEMA]]);

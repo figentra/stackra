@@ -17,6 +17,13 @@
   "permissions": [],
   "errors": [
     {
+      "code": "bundled_pack_source_refused",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "market_packs",
+      "class": "BundledPackSourceRefusedError"
+    },
+    {
       "code": "pack_not_found",
       "kind": "not_found",
       "category": "not_found",
@@ -41,29 +48,28 @@
   "models": [],
   "drivers": [
     {
-      "port": "PackStore",
-      "key": "market_packs.PackStore",
-      "candidates": ["filesystem"],
+      "port": "ResolvedPackSource",
+      "key": "market_packs.ResolvedPackSource",
+      "candidates": ["bundled", "memory", "store"],
       "classes": {
-        "filesystem": {
-          "class": "FilesystemPackStoreDriver",
+        "bundled": {
+          "class": "BundledResolvedPackSourceDriver",
           "from": "@stackra/market-packs",
           "deps": [
             {
               "class": {
-                "name": "FileSystem",
-                "from": "@stackra/filesystem/contracts"
+                "name": "MarketPacksConfig",
+                "from": "@stackra/market-packs"
+              }
+            },
+            {
+              "class": {
+                "name": "Logger",
+                "from": "@stackra/contracts"
               }
             }
           ]
-        }
-      }
-    },
-    {
-      "port": "ResolvedPackSource",
-      "key": "market_packs.ResolvedPackSource",
-      "candidates": ["memory", "store"],
-      "classes": {
+        },
         "memory": {
           "class": "MemoryResolvedPackSourceDriver",
           "from": "@stackra/market-packs"
@@ -92,6 +98,25 @@
         "class": "MarketPacksConfig",
         "from": "@stackra/market-packs"
       }
+    },
+    {
+      "port": "PackStore",
+      "key": "market_packs.PackStore",
+      "candidates": ["filesystem"],
+      "classes": {
+        "filesystem": {
+          "class": "FilesystemPackStoreDriver",
+          "from": "@stackra/market-packs",
+          "deps": [
+            {
+              "class": {
+                "name": "FileSystem",
+                "from": "@stackra/filesystem/contracts"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],
@@ -110,10 +135,19 @@
   ],
   "env": [
     {
+      "name": "STACKRA_ENVIRONMENT",
+      "kind": "config",
+      "type": "string",
+      "required": false,
+      "config": "market_packs",
+      "class": "MarketPacksConfig",
+      "field": "environment"
+    },
+    {
       "name": "STACKRA_MARKET_PACKS_SOURCE",
       "kind": "config",
       "type": "enum",
-      "values": ["memory", "store"],
+      "values": ["bundled", "memory", "store"],
       "required": false,
       "config": "market_packs",
       "class": "MarketPacksConfig",
@@ -144,7 +178,8 @@
         "key_unknown",
         "signature_invalid",
         "overlay_cycle",
-        "not_stored"
+        "not_stored",
+        "not_live"
       ]
     },
     "market_packs.PackStatus": {

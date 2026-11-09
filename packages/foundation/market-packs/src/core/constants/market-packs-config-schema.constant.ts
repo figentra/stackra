@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `MARKET_PACKS_CONFIG_SCHEMA`, the zod schema this package ships for `MarketPacksConfig` (exported as
  *          `MarketPacksConfig$`): the resolved-pack source driver, the content hashes of the packs the deployment
- *          serves and the public keys it accepts pack signatures from.
+ *          serves, the public keys it accepts pack signatures from, the running environment, and whether the interim
+ *          `bundled` source may run in production.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults; the defaults equal `MarketPacksOptions`' initializers (tested). Hashes are 64 lowercase hex;
  *           keys are public, never secret.
@@ -21,4 +22,6 @@ export const MARKET_PACKS_CONFIG_SCHEMA = z.object({
     .array(z.string().regex(/^[0-9a-f]{64}$/, "Expected a 64-hex content hash"))
     .default([]),
   trustedKeys: z.record(z.string().min(1), z.string().min(1)).default({}),
+  environment: z.string().min(1).default("dev"),
+  allowBundledInProduction: z.boolean().default(false),
 });

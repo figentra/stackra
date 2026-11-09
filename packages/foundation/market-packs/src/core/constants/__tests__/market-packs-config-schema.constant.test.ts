@@ -16,6 +16,8 @@ describe("MARKET_PACKS_CONFIG_SCHEMA", () => {
       source: "store",
       packHashes: [],
       trustedKeys: {},
+      environment: "dev",
+      allowBundledInProduction: false,
     });
   });
 
