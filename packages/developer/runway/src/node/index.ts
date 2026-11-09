@@ -53,6 +53,7 @@ export { MemoryVaultWriterDriver } from "#node/drivers/memory-vault-writer.drive
 export { EdgeKvConfig } from "#node/config/edge-kv.config";
 export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
+export { PULL_REQUEST_PREVIEW_SETTINGS } from "#node/constants/pull-request-preview-settings.constant";
 export { RUNWAY_COMMANDS } from "#node/constants/runway-commands.constant";
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
@@ -85,6 +86,7 @@ export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";
 export { promoteCanary } from "#node/functions/promote-canary.function";
 export { publishProduct } from "#node/functions/publish-product.function";
+export { pullRequestPreviewHost } from "#node/functions/pull-request-preview-host.function";
 export { publishShell } from "#node/functions/publish-shell.function";
 export { readBundles } from "#node/functions/read-bundles.function";
 export { launchCheckJob } from "#node/functions/launch-check-job.function";

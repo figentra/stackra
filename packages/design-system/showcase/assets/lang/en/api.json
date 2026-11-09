@@ -165,7 +165,8 @@
         "startContent": "A node at the logical start of the bar, before its main content.",
         "testID": "Used to locate this view in end-to-end tests.",
         "title": "The app's name or logo, drawn after `startContent`; a string is drawn as semibold text.",
-        "userMenu": "The user's menu, usually a `Menu` on an avatar; it is the last part of the bar."
+        "userMenu": "The user's menu, usually a `Menu` on an avatar; it is the last part of the bar.",
+        "variant": "`solid` (the default) is the console's bar. `transparent` is a marketing site's: sticky at the top, see-through\nwith no rule until the page scrolls, then on the nav-bar material over a hairline. Native draws `solid`."
       }
     },
     "app_shell": {
@@ -424,6 +425,20 @@
         "value": "What to encode: printable ASCII for `code128`; 12 or 13 digits for `ean13` (a 13th must be the check digit)."
       }
     },
+    "bento_card": {
+      "BentoCard": {
+        "actions": "Up to two pill links under the text; `primary` is filled, `ghost` (the default) is quiet.",
+        "art": "Dithered art behind the media.",
+        "brand": "A product's theme: the card draws in that brand's tokens, as on the \"Built on\" strip.",
+        "className": "Styles the card.",
+        "description": "One or two lines under the title.",
+        "headingLevel": "The heading's level in the page outline. Defaults to 3.",
+        "media": "The live widget at the bottom of the card.",
+        "mediaBleed": "How the media meets the card's edge: `bottom` (the default) runs it to the bottom edge, `full` to every edge.",
+        "span": "The columns the card spans in a two-column bento grid. Defaults to 1.",
+        "title": "The card's heading."
+      }
+    },
     "bidi": {
       "Bidi": {
         "children": "The text to isolate, or the block's content: a SKU, a phone number, an e-mail, a Latin name in Arabic text.",
@@ -431,6 +446,15 @@
         "id": "Used to reference react managed views from native code.",
         "isBlock": "True for a block that sets the direction of everything inside it (arrow keys and placement too); false (the\ndefault) for an inline run that only stops its own direction leaking into the sentence around it.",
         "testID": "Used to locate this view in end-to-end tests."
+      }
+    },
+    "blueprint_section": {
+      "BlueprintSection": {
+        "children": "The section's heading and drawing.",
+        "className": "Styles the section, such as its padding.",
+        "hasMarks": "Draws the `+` marks at the two top corners. Defaults to true.",
+        "id": "The section's element id, the target of a `SectionDock` link.",
+        "label": "The section's spoken name; given, the section is a named region landmark."
       }
     },
     "box_plot_chart": {
@@ -569,6 +593,47 @@
         "orientation": "`horizontal` (the default) or `vertical`.",
         "size": "The size every button takes.",
         "variant": "The variant every button takes. Defaults to `secondary`."
+      }
+    },
+    "button_link": {
+      "ButtonLink": {
+        "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
+        "aria-describedby": "Identifies the element (or elements) that describes the object.",
+        "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+        "aria-label": "Defines a string value that labels the current element.",
+        "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+        "autoFocus": "Whether the element should receive focus on render.",
+        "children": "The visible words, which are also the link's spoken name.",
+        "className": "Styles the link.",
+        "download": "Causes the browser to download the linked URL. A string may be provided to suggest a file name.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#download).",
+        "href": "Where the link goes; an internal one navigates through the nearest `RouterProvider`.",
+        "hrefLang": "Hints at the human language of the linked URL.\nSee[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#hreflang).",
+        "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "isDisabled": "Whether the link is disabled.",
+        "onBlur": "Handler that is called when the element loses focus.",
+        "onClick": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+        "onFocus": "Handler that is called when the element receives focus.",
+        "onFocusChange": "Handler that is called when the element's focus status changes.",
+        "onHoverChange": "Handler that is called when the hover state changes.",
+        "onHoverEnd": "Handler that is called when a hover interaction ends.",
+        "onHoverStart": "Handler that is called when a hover interaction starts.",
+        "onKeyDown": "Handler that is called when a key is pressed.",
+        "onKeyUp": "Handler that is called when a key is released.",
+        "onPress": "Handler that is called when the press is released over the target.",
+        "onPressChange": "Handler that is called when the press state changes.",
+        "onPressEnd": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+        "onPressStart": "Handler that is called when a press interaction starts.",
+        "onPressUp": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+        "ping": "A space-separated list of URLs to ping when the link is followed. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#ping).",
+        "referrerPolicy": "How much of the referrer to send when following the link. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#referrerpolicy).",
+        "rel": "The relationship between the linked resource and the current page. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel).",
+        "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nNote: You can check if `'href' in props` in order to tell whether to render an `<a>` element.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<a>` is expected, you cannot render a\n  `<button>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "routerOptions": "Options for the configured client side router.",
+        "shape": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
+        "size": "The height, padding and text size, as the Button's. Defaults to `md`.",
+        "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+        "target": "The target window for the link. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#target).",
+        "variant": "The emphasis and colour, as the Button's. Defaults to `primary`."
       }
     },
     "calendar": {
@@ -1954,6 +2019,22 @@
         "title": "The title that opens and closes the section; it names the button."
       }
     },
+    "dither_art": {
+      "DitherArt": {
+        "back": "The ground's colour, a theme token name. Defaults to `background`.",
+        "className": "Styles the wrapper; give it a size, since the art fills it.",
+        "core": "The engine glow's colour (the champagne core), a theme token name. Defaults to `core`.",
+        "front": "The steel dots' colour, a theme token name read as `--color-<name>`. Defaults to `accent`.",
+        "glyphs": "The characters `glyphs` draws from. Defaults to `{}[]()<>/=+*#;`.",
+        "mask": "A fade over the art: `radial` toward the edges, `bottom` or `top` toward that side. Defaults to `none`.",
+        "mode": "How a lit cell is drawn: `dots`, a square of its colour, or `glyphs`, a code character in the mono font at the cell\nsize. Defaults to `dots`.",
+        "pattern": "The brand pattern. Defaults to `strata`, the primary.",
+        "pixelSize": "One dither cell in CSS pixels: 2 to 8 for `dots`, 2 to 24 for `glyphs`. Defaults to 4.",
+        "poster": "The kit's poster image for this pattern, one for both schemes or one per scheme (`{ light, dark }`; dark first):\nwhat the edge render, a page without script and print show,\nunder the canvas until it draws.",
+        "speed": "How fast the art drifts on real time; 0 is still. Defaults to 1, and is 0 whenever motion is reduced.",
+        "sun": "Where the core glow (the sun) sits, as fractions of the art's width from the inline start and of its height, so in\nright-to-left it follows the mirrored layout. Defaults to the pattern's own."
+      }
+    },
     "donut_chart": {
       "DonutChart": {
         "centerLabel": "The word under the total in the hole, such as \"Visitors\"; no total is shown without it.",
@@ -2694,6 +2775,16 @@
         "title": "The section's title, required: it names the group of fields for assistive technology."
       }
     },
+    "frame": {
+      "Frame": {
+        "bleed": "Lets the frame run past its parent's edge, which clips it: `bottom`, `end` or both. Defaults to `none`.",
+        "children": "A screenshot or a live widget.",
+        "className": "Styles the frame.",
+        "tabs": "A pill switcher docked on the frame's bottom edge, such as a SegmentedControl of surfaces.",
+        "title": "The window's title, address or file name, shown in its title bar; only `window` and `schematic` draw it.",
+        "variant": "The chrome around the content: a `window` with a title bar, a `schematic` window (a striped title bar on the\nblueprint frame radius), a `phone`, or a `plain` border. Defaults to `window`."
+      }
+    },
     "fullscreen_bar": {
       "FullscreenBar": {
         "actions": "Controls drawn before the exit button, such as a lock or a help button.",
@@ -2891,6 +2982,15 @@
         "type": "The behavior of the button when used in an HTML form.",
         "value": "The value associated with the button's name when it's submitted with the form data.",
         "variant": "The emphasis and colour of the button. Defaults to `primary`."
+      }
+    },
+    "illustration": {
+      "Illustration": {
+        "alt": "The drawing's spoken description; without it the drawing is decoration, hidden from assistive tech.",
+        "className": "Styles the drawing, such as its width.",
+        "height": "The drawing's viewBox height, for its aspect ratio.",
+        "src": "The drawing's base URL, without the tone and extension, such as `art/engine` for `art/engine.ground.svg`.",
+        "width": "The drawing's viewBox width, for its aspect ratio and its smallest width."
       }
     },
     "image": {
@@ -4094,6 +4194,15 @@
         "variant": "The emphasis of every shown button. Defaults to `tertiary`."
       }
     },
+    "package_list": {
+      "PackageList": {
+        "className": "Styles the list.",
+        "hasFade": "Fades the last rows shown, to say the list goes on. Defaults to true.",
+        "items": "The packages: an npm name (never translated), a one-line description and an optional link.",
+        "label": "The list's spoken name, for example \"Stackra packages\".",
+        "maxVisible": "The rows shown; the rest are left out. Defaults to 5."
+      }
+    },
     "page_header": {
       "PageHeader": {
         "actions": "The page's actions in priority order: the first is primary, three at most show and the rest go in an ActionMenu.",
@@ -4577,6 +4686,20 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "props_playground": {
+      "PropsPlayground": {
+        "brands": "Product themes to try live; the preview alone wears the one chosen.",
+        "className": "Styles the playground.",
+        "controls": "The props people can change, in order.",
+        "defaultValues": "The starting values of an uncontrolled playground, over each control's own default.",
+        "hasDirection": "Shows the left-to-right and right-to-left switch for the preview. Defaults to true.",
+        "label": "The component's name, shown as the title and the group's spoken name.",
+        "onChange": "Called with every value after each change.",
+        "render": "Draws the preview from the current values.",
+        "resetLabel": "The reset button's words. Defaults to \"Reset\".",
+        "values": "The values, for a controlled playground; pair it with `onChange`."
+      }
+    },
     "pull_to_refresh": {
       "PullToRefresh": {
         "children": "The content that scrolls.",
@@ -4984,6 +5107,20 @@
         "view": "The view, for a controlled scheduler."
       }
     },
+    "schematic": {
+      "Schematic": {
+        "Node": {
+          "children": "The part itself, such as a schematic `Frame`.",
+          "className": "Styles the node, such as its grid placement.",
+          "id": "The node's name in the machine's links; never shown and not a DOM id."
+        },
+        "children": "The `SchematicNode`s, laid out by the caller through `className` (a grid or a flex row).",
+        "className": "Styles the machine, and lays out its nodes.",
+        "drawOnView": "Draws the pipes in on floor steps the first time the machine comes into view, at the `full` motion level. Defaults to true.",
+        "label": "The machine's spoken name, which names the group.",
+        "links": "The pipes, each from the bottom centre of one node to the top centre of another, listed in drawing order: a pipe\nleaving a node waits for the pipe that reaches it."
+      }
+    },
     "screen": {
       "Screen": {
         "children": "What the screen shows.",
@@ -5093,6 +5230,13 @@
         "testID": "Used to locate this view in end-to-end tests.",
         "title": "What the region is about, in a few words. Required: it is the heading a screen reader jumps to.",
         "variant": "The surface level of the card; `transparent` drops the background and shadow. Defaults to `default`."
+      }
+    },
+    "section_dock": {
+      "SectionDock": {
+        "className": "Styles the dock.",
+        "items": "The page's sections in reading order, each with the status line the dock shows while it is current.",
+        "label": "The navigation's spoken name, such as \"Sections\"."
       }
     },
     "segmented_control": {
@@ -6065,7 +6209,7 @@
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
         "testID": "Used to locate this view in end-to-end tests.",
-        "variant": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`."
+        "variant": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one, and `steps` plain words\njoined by arrows with the selected step in the accent (a marketing switcher, such as Action → Endpoint → Client;\nnative draws it as `secondary`). Defaults to `primary`."
       }
     },
     "switch": {
@@ -6209,7 +6353,7 @@
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
         "testID": "Used to locate this view in end-to-end tests.",
-        "variant": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`."
+        "variant": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one, and `steps` plain words\njoined by arrows with the selected step in the accent (a marketing switcher, such as Action → Endpoint → Client;\nnative draws it as `secondary`). Defaults to `primary`."
       }
     },
     "tag_group": {
@@ -6443,6 +6587,19 @@
         "onRetry": "Called with a failed task's id when its retry button is pressed; no retry button without it.",
         "placement": "`docked` (the default) pins it to the bottom end corner of the screen; `inline` leaves it in the flow.",
         "tasks": "The tasks, newest first. The tray draws nothing while this is empty."
+      }
+    },
+    "terminal_demo": {
+      "TerminalDemo": {
+        "autoplay": "When the session plays: once it scrolls into view (the default), at once, or `never` (the last frame only).",
+        "className": "Styles the window.",
+        "command": "The command in the top bar, which the copy button copies, such as `stackra create my-app`.",
+        "copyLabel": "The copy button's spoken name. Defaults to \"Copy command\".",
+        "isCopyable": "Shows the copy button. Defaults to true.",
+        "label": "The mono label in the top bar, and the region's spoken name. Defaults to \"Try it\".",
+        "lines": "The recorded session, played a whole line at a time.",
+        "result": "What the session ends on, such as a framed localhost preview; shown once every line is.",
+        "stepMs": "The time between lines in milliseconds, by default the theme's `floor` motion step."
       }
     },
     "text": {

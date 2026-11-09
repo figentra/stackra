@@ -28,13 +28,16 @@ import { FREE_BADGE } from "#src/registry/components/free/badge";
 import { FREE_BARCODE } from "#src/registry/components/free/barcode";
 import { FREE_BAR_CHART } from "#src/registry/components/free/bar-chart";
 import { FREE_BAR_LIST } from "#src/registry/components/free/bar-list";
+import { FREE_BENTO_CARD } from "#src/registry/components/free/bento-card";
 import { FREE_BIDI } from "#src/registry/components/free/bidi";
+import { FREE_BLUEPRINT_SECTION } from "#src/registry/components/free/blueprint-section";
 import { FREE_BOX_PLOT_CHART } from "#src/registry/components/free/box-plot-chart";
 import { FREE_BREADCRUMBS } from "#src/registry/components/free/breadcrumbs";
 import { FREE_BULK_ACTION_BAR } from "#src/registry/components/free/bulk-action-bar";
 import { FREE_BULLET_CHART } from "#src/registry/components/free/bullet-chart";
 import { FREE_BUTTON } from "#src/registry/components/free/button";
 import { FREE_BUTTON_GROUP } from "#src/registry/components/free/button-group";
+import { FREE_BUTTON_LINK } from "#src/registry/components/free/button-link";
 import { FREE_CALENDAR } from "#src/registry/components/free/calendar";
 import { FREE_CALENDAR_HEATMAP } from "#src/registry/components/free/calendar-heatmap";
 import { FREE_CANDLESTICK_CHART } from "#src/registry/components/free/candlestick-chart";
@@ -82,6 +85,7 @@ import { FREE_DATE_RANGE_PICKER } from "#src/registry/components/free/date-range
 import { FREE_DATE_TIME_PICKER } from "#src/registry/components/free/date-time-picker";
 import { FREE_DIFF_REVIEW } from "#src/registry/components/free/diff-review";
 import { FREE_DISCLOSURE } from "#src/registry/components/free/disclosure";
+import { FREE_DITHER_ART } from "#src/registry/components/free/dither-art";
 import { FREE_DONUT_CHART } from "#src/registry/components/free/donut-chart";
 import { FREE_DRAWER } from "#src/registry/components/free/drawer";
 import { FREE_DROPDOWN } from "#src/registry/components/free/dropdown";
@@ -106,6 +110,7 @@ import { FREE_FORM_ERROR_SUMMARY } from "#src/registry/components/free/form-erro
 import { FREE_FORM_FIELD } from "#src/registry/components/free/form-field";
 import { FREE_FORM_SECTION } from "#src/registry/components/free/form-section";
 import { FREE_FOUNDATIONS } from "#src/registry/components/free/foundations";
+import { FREE_FRAME } from "#src/registry/components/free/frame";
 import { FREE_FULLSCREEN_BAR } from "#src/registry/components/free/fullscreen-bar";
 import { FREE_FUNNEL_CHART } from "#src/registry/components/free/funnel-chart";
 import { FREE_GALLERY } from "#src/registry/components/free/gallery";
@@ -118,6 +123,7 @@ import { FREE_HOLO_CARD } from "#src/registry/components/free/holo-card";
 import { FREE_HOVER_CARD } from "#src/registry/components/free/hover-card";
 import { FREE_ICON } from "#src/registry/components/free/icon";
 import { FREE_ICON_BUTTON } from "#src/registry/components/free/icon-button";
+import { FREE_ILLUSTRATION } from "#src/registry/components/free/illustration";
 import { FREE_IMAGE } from "#src/registry/components/free/image";
 import { FREE_IMAGE_CROPPER } from "#src/registry/components/free/image-cropper";
 import { FREE_IMPORT_DIALOG } from "#src/registry/components/free/import-dialog";
@@ -169,6 +175,7 @@ import { FREE_NUMBER_VALUE } from "#src/registry/components/free/number-value";
 import { FREE_OTP_INPUT } from "#src/registry/components/free/otp-input";
 import { FREE_OVERFLOW_LIST } from "#src/registry/components/free/overflow-list";
 import { FREE_OVERFLOW_TOOLBAR } from "#src/registry/components/free/overflow-toolbar";
+import { FREE_PACKAGE_LIST } from "#src/registry/components/free/package-list";
 import { FREE_PAGE_HEADER } from "#src/registry/components/free/page-header";
 import { FREE_PAGE_INDICATOR } from "#src/registry/components/free/page-indicator";
 import { FREE_PAGE_SKELETON } from "#src/registry/components/free/page-skeleton";
@@ -188,6 +195,7 @@ import { FREE_PROGRESS_CIRCLE } from "#src/registry/components/free/progress-cir
 import { FREE_PROMPT_INPUT } from "#src/registry/components/free/prompt-input";
 import { FREE_PROMPT_SUGGESTIONS } from "#src/registry/components/free/prompt-suggestions";
 import { FREE_PROPERTY_LIST } from "#src/registry/components/free/property-list";
+import { FREE_PROPS_PLAYGROUND } from "#src/registry/components/free/props-playground";
 import { FREE_PULL_TO_REFRESH } from "#src/registry/components/free/pull-to-refresh";
 import { FREE_QR_CODE } from "#src/registry/components/free/qr-code";
 import { FREE_QUANTITY_STEPPER } from "#src/registry/components/free/quantity-stepper";
@@ -213,10 +221,12 @@ import { FREE_SANKEY_CHART } from "#src/registry/components/free/sankey-chart";
 import { FREE_SAVE_BAR } from "#src/registry/components/free/save-bar";
 import { FREE_SCATTER_CHART } from "#src/registry/components/free/scatter-chart";
 import { FREE_SCHEDULER } from "#src/registry/components/free/scheduler";
+import { FREE_SCHEMATIC } from "#src/registry/components/free/schematic";
 import { FREE_SCREEN } from "#src/registry/components/free/screen";
 import { FREE_SCROLL_AREA } from "#src/registry/components/free/scroll-area";
 import { FREE_SEARCH_FIELD } from "#src/registry/components/free/search-field";
 import { FREE_SECTION } from "#src/registry/components/free/section";
+import { FREE_SECTION_DOCK } from "#src/registry/components/free/section-dock";
 import { FREE_SEGMENTED_CONTROL } from "#src/registry/components/free/segmented-control";
 import { FREE_SELECT } from "#src/registry/components/free/select";
 import { FREE_SEPARATOR } from "#src/registry/components/free/separator";
@@ -264,6 +274,7 @@ import { FREE_TAMO_MARKER } from "#src/registry/components/free/tamo-marker";
 import { FREE_TAMO_MENU } from "#src/registry/components/free/tamo-menu";
 import { FREE_TAMO_STATUS_LINE } from "#src/registry/components/free/tamo-status-line";
 import { FREE_TASK_TRAY } from "#src/registry/components/free/task-tray";
+import { FREE_TERMINAL_DEMO } from "#src/registry/components/free/terminal-demo";
 import { FREE_TEXT_AREA } from "#src/registry/components/free/text-area";
 import { FREE_TEXT_AREA_FIELD } from "#src/registry/components/free/text-area-field";
 import { FREE_TEXT_FIELD } from "#src/registry/components/free/text-field";
@@ -306,11 +317,14 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_BIDI,
   FREE_CODE,
   FREE_COLLECTION_ENGINE,
+  FREE_DITHER_ART,
   FREE_FLAG,
   FREE_FOUNDATIONS,
   FREE_HEADING,
   FREE_ICON,
+  FREE_ILLUSTRATION,
   FREE_PRESS_FEEDBACK,
+  FREE_PROPS_PLAYGROUND,
   FREE_REVEAL,
   FREE_TEXT_REVEAL,
   FREE_TYPOGRAPHY,
@@ -479,6 +493,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_NUMBER_TICKER,
   FREE_NUMBER_VALUE,
   FREE_OVERFLOW_LIST,
+  FREE_PACKAGE_LIST,
   FREE_PERMISSIONS_MATRIX,
   FREE_PROPERTY_LIST,
   FREE_QR_CODE,
@@ -486,6 +501,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_STACKED_METER,
   FREE_SWIPEABLE_ROW,
   FREE_TABLE,
+  FREE_TERMINAL_DEMO,
   FREE_THUMBNAIL,
   FREE_TIMELINE,
   FREE_TREE_VIEW,
@@ -517,6 +533,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_TOAST,
   FREE_BACK_TO_TOP,
   FREE_BREADCRUMBS,
+  FREE_BUTTON_LINK,
   FREE_CURSOR_PAGINATION,
   FREE_LINK,
   FREE_LOCALE_SWITCHER,
@@ -558,15 +575,20 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_APP_HEADER,
   FREE_APP_SHELL,
   FREE_ASPECT_RATIO,
+  FREE_BENTO_CARD,
+  FREE_BLUEPRINT_SECTION,
   FREE_DASHBOARD_GRID,
   FREE_FOOTER,
+  FREE_FRAME,
   FREE_FULLSCREEN_BAR,
   FREE_KIOSK_SURFACE,
   FREE_LAYOUT,
   FREE_PAGE_HEADER,
+  FREE_SCHEMATIC,
   FREE_SCREEN,
   FREE_SCROLL_AREA,
   FREE_SECTION,
+  FREE_SECTION_DOCK,
   FREE_SEPARATOR,
   FREE_SINGLE_COLUMN_LAYOUT,
   FREE_SPLIT_VIEW,
@@ -621,6 +643,38 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["action", "modal", "dialog", "input", "confirm", "panel", "kit"],
     status: "new",
   },
+  // KIT_ASK_AI: @stackra/experience, from its showcase/ask-ai.json
+  {
+    slug: "ask-ai",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "AskAi",
+    parts: ["AskAi"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 200 }],
+    related: ["free/search-field", "free/link"],
+    tokens: ["color.field", "color.border", "radius.field"],
+    keywords: ["ask ai", "assistant", "docs", "search", "landing", "kit"],
+    status: "new",
+  },
+  // KIT_BENTO_GRID: @stackra/experience, from its showcase/bento-grid.json
+  {
+    slug: "bento-grid",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "BentoGrid",
+    parts: ["BentoGrid"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 420 }],
+    related: ["free/bento-card", "free/feature-section", "free/dither-art"],
+    tokens: ["radius.lg", "color.surface", "color.border"],
+    keywords: ["bento", "grid", "cards", "marketing", "landing", "kit"],
+    status: "new",
+  },
   // KIT_BULK_ACTIONS: @stackra/panel, from its showcase/bulk-actions.json
   {
     slug: "bulk-actions",
@@ -653,6 +707,31 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["permission", "access", "show or hide", "authorization", "visibility", "kit"],
     status: "new",
   },
+  // KIT_CAPABILITY_MATRIX: @stackra/experience, from its showcase/capability-matrix.json
+  {
+    slug: "capability-matrix",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "CapabilityMatrix",
+    parts: ["CapabilityMatrix"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/bento-grid", "free/product-cards"],
+    tokens: ["color.success", "color.accent", "color.muted", "color.border"],
+    keywords: [
+      "capability",
+      "matrix",
+      "table",
+      "comparison",
+      "carriers",
+      "marketing",
+      "landing",
+      "kit",
+    ],
+    status: "new",
+  },
   // KIT_CART: @stackra/payments, from its showcase/cart.json
   {
     slug: "cart",
@@ -669,6 +748,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["cart", "basket", "bag", "shopping", "order", "kit"],
     status: "new",
   },
+  // KIT_CHAPTER_TITLE: @stackra/experience, from its showcase/chapter-title.json
+  {
+    slug: "chapter-title",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "ChapterTitle",
+    parts: ["ChapterTitle"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 200 }],
+    related: ["free/heading", "free/statement", "free/blueprint-section"],
+    tokens: ["color.foreground", "color.muted"],
+    keywords: ["chapter", "title", "heading", "marketing", "landing", "kit"],
+    status: "new",
+  },
   // KIT_CHECKOUT: @stackra/payments, from its showcase/checkout.json
   {
     slug: "checkout",
@@ -683,6 +778,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/cart", "free/radio-group", "free/address-field"],
     tokens: ["color.surface", "color.field"],
     keywords: ["checkout", "payment", "shipping", "order", "purchase", "kit"],
+    status: "new",
+  },
+  // KIT_CTA_ROW: @stackra/experience, from its showcase/cta-row.json
+  {
+    slug: "cta-row",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "CtaRow",
+    parts: ["CtaRow"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 160 }],
+    related: ["free/button-link", "free/copy-button", "free/hero-machine"],
+    tokens: ["color.core", "color.surface", "color.border"],
+    keywords: ["call to action", "cta", "copy", "command", "marketing", "landing", "kit"],
     status: "new",
   },
   // KIT_CTA_SECTION: @stackra/experience, from its showcase/cta-section.json
@@ -715,6 +826,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/section", "free/icon", "free/cta-section"],
     tokens: ["color.accent-soft", "color.foreground"],
     keywords: ["features", "marketing", "landing", "section", "benefits", "kit"],
+    status: "new",
+  },
+  // KIT_HERO_MACHINE: @stackra/experience, from its showcase/hero-machine.json
+  {
+    slug: "hero-machine",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "HeroMachine",
+    parts: ["HeroMachine"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 640 }],
+    related: ["free/blueprint-section", "free/schematic", "free/cta-row"],
+    tokens: ["color.core", "color.accent", "color.background"],
+    keywords: ["hero", "landing", "blueprint", "schematic", "marketing", "headline", "kit"],
     status: "new",
   },
   // KIT_MEMBER_PICKER: @stackra/tenancy, from its showcase/member-picker.json
@@ -765,6 +892,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["menu", "navigation", "sidebar", "module", "modules", "kit"],
     status: "new",
   },
+  // KIT_MONO_DISPLAY: @stackra/experience, from its showcase/mono-display.json
+  {
+    slug: "mono-display",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "MonoDisplay",
+    parts: ["MonoDisplay"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 360 }],
+    related: ["free/dither-art", "free/heading", "free/footer"],
+    tokens: ["font.mono", "color.core", "color.background"],
+    keywords: ["wordmark", "display", "mono", "closing", "glyphs", "landing", "kit"],
+    status: "new",
+  },
   // KIT_ORGANIZATION_PAGE: @stackra/tenancy, from its showcase/organization-page.json
   {
     slug: "organization-page",
@@ -779,6 +922,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/page-header", "free/form-section", "free/property-list"],
     tokens: ["color.surface", "color.border"],
     keywords: ["organization", "tenant", "profile", "settings", "legal entity", "domain", "kit"],
+    status: "new",
+  },
+  // KIT_PAGE_DOCK: @stackra/experience, from its showcase/page-dock.json
+  {
+    slug: "page-dock",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "PageDock",
+    parts: ["PageDock"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 200 }],
+    related: ["free/section-dock", "free/station"],
+    tokens: ["color.accent", "color.muted"],
+    keywords: ["dock", "sections", "scroll spy", "status", "navigation", "landing", "kit"],
     status: "new",
   },
   // KIT_PASSWORD_POLICY_CHECKLIST: @stackra/identity, from its showcase/password-policy-checklist.json
@@ -827,6 +986,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/segmented-control", "free/card", "free/cart"],
     tokens: ["color.surface", "color.accent"],
     keywords: ["pricing", "plans", "subscription", "billing", "monthly", "yearly", "kit"],
+    status: "new",
+  },
+  // KIT_PRODUCT_CARDS: @stackra/experience, from its showcase/product-cards.json
+  {
+    slug: "product-cards",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "ProductCards",
+    parts: ["ProductCards"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 360 }],
+    related: ["free/bento-card", "free/marquee"],
+    tokens: ["radius.lg", "color.surface", "color.accent"],
+    keywords: ["products", "built on", "brands", "themes", "grid", "strip", "landing", "kit"],
     status: "new",
   },
   // KIT_RESOURCE_FORM_PAGE: @stackra/panel, from its showcase/resource-form-page.json
@@ -1005,6 +1180,86 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["sign up", "register", "create account", "onboarding", "kit"],
     status: "new",
   },
+  // KIT_SITE_FOOTER: @stackra/experience, from its showcase/site-footer.json
+  {
+    slug: "site-footer",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "SiteFooter",
+    parts: ["SiteFooter"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/footer", "free/link"],
+    tokens: ["color.border", "color.foreground"],
+    keywords: ["footer", "site", "links", "legal", "landing", "kit"],
+    status: "new",
+  },
+  // KIT_SITE_HEADER: @stackra/experience, from its showcase/site-header.json
+  {
+    slug: "site-header",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "SiteHeader",
+    parts: ["SiteHeader"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 160 }],
+    related: ["free/app-header", "free/link", "free/hero-machine"],
+    tokens: ["color.surface", "color.border"],
+    keywords: ["header", "navigation", "top bar", "marketing", "landing", "site", "kit"],
+    status: "new",
+  },
+  // KIT_STATEMENT: @stackra/experience, from its showcase/statement.json
+  {
+    slug: "statement",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "Statement",
+    parts: ["Statement"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 280 }],
+    related: ["free/heading", "free/chapter-title"],
+    tokens: ["color.accent", "color.foreground"],
+    keywords: ["statement", "paragraph", "facts", "marketing", "landing", "kit"],
+    status: "new",
+  },
+  // KIT_STATION: @stackra/experience, from its showcase/station.json
+  {
+    slug: "station",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "Station",
+    parts: ["Station"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 420 }],
+    related: ["free/blueprint-section", "free/frame", "free/chapter-title"],
+    tokens: ["color.accent", "color.background"],
+    keywords: ["station", "pipeline", "blueprint", "rail", "marketing", "landing", "kit"],
+    status: "new",
+  },
+  // KIT_STEP_SWITCHER: @stackra/experience, from its showcase/step-switcher.json
+  {
+    slug: "step-switcher",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "StepSwitcher",
+    parts: ["StepSwitcher"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 480 }],
+    related: ["free/tabs", "free/frame", "free/code-block"],
+    tokens: ["color.accent", "color.surface", "color.border"],
+    keywords: ["steps", "switcher", "tabs", "code", "marketing", "landing", "kit"],
+    status: "new",
+  },
   // KIT_STEP_UP_DIALOG: @stackra/identity, from its showcase/step-up-dialog.json
   {
     slug: "step-up-dialog",
@@ -1019,6 +1274,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/modal", "free/otp-input", "free/password-field"],
     tokens: ["color.surface", "color.accent"],
     keywords: ["step-up", "verify", "re-authenticate", "mfa", "assurance", "kit"],
+    status: "new",
+  },
+  // KIT_SURFACES: @stackra/experience, from its showcase/surfaces.json
+  {
+    slug: "surfaces",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "Surfaces",
+    parts: ["Surfaces"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 420 }],
+    related: ["free/frame", "free/button", "free/hero-machine"],
+    tokens: ["color.surface", "color.border", "color.accent"],
+    keywords: ["surfaces", "web", "desktop", "phone", "rtl", "frames", "landing", "kit"],
     status: "new",
   },
   // KIT_TENANT_MENU: @stackra/tenancy, from its showcase/tenant-menu.json
@@ -1051,6 +1322,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/entity-picker", "free/combo-box", "free/select"],
     tokens: ["color.field", "color.accent"],
     keywords: ["tenant", "organization", "workspace", "picker", "field", "kit"],
+    status: "new",
+  },
+  // KIT_TERMINAL_STAGE: @stackra/experience, from its showcase/terminal-stage.json
+  {
+    slug: "terminal-stage",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/experience",
+    exportName: "TerminalStage",
+    parts: ["TerminalStage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 480 }],
+    related: ["free/terminal-demo", "free/dither-art", "free/illustration"],
+    tokens: ["font.mono", "color.accent", "color.background"],
+    keywords: ["terminal", "cli", "demo", "try it", "recording", "landing", "kit"],
     status: "new",
   },
   FREE_AI_MARK,

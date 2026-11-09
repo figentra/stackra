@@ -14,7 +14,7 @@
       "minHeight": 280
     }
   ],
-  "related": ["free/text", "free/chapter-title"],
+  "related": ["free/heading", "free/chapter-title"],
   "tokens": ["color.accent", "color.foreground"],
   "keywords": ["statement", "paragraph", "facts", "marketing", "landing", "kit"],
   "status": "new"

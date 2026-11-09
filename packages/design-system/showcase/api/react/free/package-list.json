@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "3dd7d56543dd685e",
+    "propsFiles": ["ui/src/react/package-list/package-list.props.ts"]
+  },
+  "importLine": "import { PackageList } from \"@stackra/ui/react\";",
+  "key": "free/package-list",
+  "parts": [
+    {
+      "name": "PackageList",
+      "props": [
+        {
+          "description": "The packages: an npm name (never translated), a one-line description and an optional link.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly { readonly name: string; readonly description: string; readonly href?: string | undefined; }[]"
+        },
+        {
+          "description": "The rows shown; the rest are left out. Defaults to 5.",
+          "name": "maxVisible",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Fades the last rows shown, to say the list goes on. Defaults to true.",
+          "name": "hasFade",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The list's spoken name, for example \"Stackra packages\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the list.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

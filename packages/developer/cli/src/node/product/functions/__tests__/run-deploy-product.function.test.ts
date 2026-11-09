@@ -86,6 +86,14 @@ afterEach(() => {
 });
 
 describe("runDeployProduct", () => {
+  it.each(["0", "-3", "1.5", "1e3", "0x10", "07"])(
+    "refuses the pull request number %s",
+    async (pr) => {
+      await expect(run({ product: true, env: "preview", pr }).code).rejects.toThrow(CliUsageError);
+      expect(deployProduct).not.toHaveBeenCalled();
+    },
+  );
+
   it.each([undefined, "moon"])("refuses the environment %s", async (env) => {
     await expect(
       run({ product: true, ...(env === undefined ? {} : { env }) }).code,
