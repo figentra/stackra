@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `compileMigration`: the SQL and inverses of the template's migration shapes (create with
- *          trait, money, bigint, decimal, enum, link and foreign-key columns; the AppendOnly revoke; expand steps; online indexes; raw statements with `after`),
+ *          trait, money, bigint, decimal, enum, link and foreign-key columns; the AppendOnly revoke; expand steps; online indexes; an index's explicit name, and two indexes under one name refused; raw statements with `after`),
  *          macros installed by name, the generated equality, equals-or-unset, ancestor and inherited row-level-security policies, the
  *          scope-tree columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
@@ -149,6 +149,78 @@ describe(compileMigration, () => {
     expect(onScope).toHaveLength(1);
     expect(onScope[0]).toMatch(/^create unique index/);
     expect(sql.filter((text) => text.includes('"idx_locations_group_id"'))).toHaveLength(1);
+  });
+
+  it("gives a unique key on an existing table's indexed column its own name with named(...)", () => {
+    // The create migration's link column already holds idx_locations_scope_id, so the derived name would collide.
+    class AddScopeKeyMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("locations", (t: Blueprint) => {
+          t.unique(["scope_id"]).named("uq_locations_scope_id").concurrently();
+        });
+      }
+    }
+    expect(compileMigration(AddScopeKeyMigration, { schema: "entities" }).steps).toContainEqual({
+      sql: [
+        'create unique index concurrently "uq_locations_scope_id" on "entities"."locations" ("scope_id")',
+      ],
+      transactional: false,
+      inverse: ['drop index concurrently if exists "entities"."uq_locations_scope_id"'],
+    });
+  });
+
+  it("refuses two indexes of one blueprint under one name, and a name that is not a database name", () => {
+    class TwiceMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("vouchers", (t: Blueprint) => {
+          t.hasPublicId("vch");
+          t.string("code", 20).notNull().comment("The code.");
+          t.index(["code"]);
+          t.unique(["code"]);
+        });
+      }
+    }
+    expect(() => compileMigration(TwiceMigration, { schema: "billing" })).toThrow(
+      "idx_vouchers_code: two indexes of vouchers take this name",
+    );
+    class NamedMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("vouchers", (t: Blueprint) => {
+          t.hasPublicId("vch");
+          t.string("code", 20).notNull().comment("The code.");
+          t.index(["code"]);
+          t.unique(["code"]).named("uq_vouchers_code");
+        });
+      }
+    }
+    const sql = compileMigration(NamedMigration, { schema: "billing" }).steps.flatMap(
+      (step) => step.sql,
+    );
+    expect(sql).toContain('create index "idx_vouchers_code" on "billing"."vouchers" ("code")');
+    expect(sql).toContain(
+      'create unique index "uq_vouchers_code" on "billing"."vouchers" ("code")',
+    );
+    class TakenMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("vouchers", (t: Blueprint) => {
+          t.hasPublicId("vch");
+          t.string("code", 20).notNull().comment("The code.");
+          t.link("batch_id").notNull().comment("Its batch.");
+          t.unique(["code"]).named("idx_vouchers_batch_id");
+        });
+      }
+    }
+    expect(() => compileMigration(TakenMigration, { schema: "billing" })).toThrow("named(...)");
+    class BadNameMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("vouchers", (t: Blueprint) => {
+          t.unique(["code"]).named("Uq-Vouchers").concurrently();
+        });
+      }
+    }
+    expect(() => compileMigration(BadNameMigration, { schema: "billing" })).toThrow(
+      "is not a database name",
+    );
   });
 
   it("refuses a partitioning Postgres would refuse", () => {

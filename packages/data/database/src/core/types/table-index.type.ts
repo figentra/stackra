@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `TableIndex`, the chain `t.index(columns)` and `t.unique(columns)` return: online build, access method and
- *          partial predicate.
- * Boundary: a type only. The name is `idx_<table>_<columns>`; a unique rule is a unique index, never an `ADD UNIQUE`
- *           constraint. On a table this migration creates the index builds in the transaction; on an existing table
- *           `concurrently()` is required and the index compiles to its own non-transactional step.
+ *          partial predicate, and an explicit name.
+ * Boundary: a type only. The name is `idx_<table>_<columns>` unless `named(...)` gives one; a unique rule is a unique
+ *           index, never an `ADD UNIQUE` constraint. On a table this migration creates the index builds in the
+ *           transaction; on an existing table `concurrently()` is required and the index compiles to its own
+ *           non-transactional step.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3: concurrent index builds in their own step); ADR 0231 (`idx_`).
  */
@@ -20,4 +21,11 @@ export interface TableIndex {
 
   /** A partial index: only rows matching the SQL predicate (`deleted_at is null`). */
   where: (predicate: string) => this;
+
+  /**
+   * An explicit name in place of `idx_<table>_<columns>`, for an index whose derived name is taken: a unique key on a
+   * column an earlier migration already indexed (`t.belongsToTenant()`'s `idx_<table>_tenant_id`), or a second index
+   * over the same columns. A unique key takes `uq_<table>_<columns>` by convention.
+   */
+  named: (name: string) => this;
 }

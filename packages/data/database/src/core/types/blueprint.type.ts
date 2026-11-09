@@ -154,10 +154,15 @@ export interface Blueprint {
    */
   change: (column: string) => ColumnChange;
 
-  /** An index over `columns`, named `idx_<table>_<columns>`. */
+  /** An index over `columns`, named `idx_<table>_<columns>` unless `named(...)` gives it another name. */
   index: (columns: readonly string[]) => TableIndex;
 
-  /** A unique index over `columns`, named `idx_<table>_<columns>`. */
+  /**
+   * A unique index over `columns`, named `idx_<table>_<columns>` unless `named(...)` gives it another name. On a
+   * table this migration creates, a unique key on one indexed column (`t.belongsToTenant()` then
+   * `t.unique(["tenant_id"])`) replaces that column's own index. On an existing table, where the column's index already
+   * exists, the key takes its own name: `t.unique(["tenant_id"]).named("uq_<table>_tenant_id").concurrently()`.
+   */
   unique: (columns: readonly string[]) => TableIndex;
 
   /** A composite primary key, such as a pivot's pair. */

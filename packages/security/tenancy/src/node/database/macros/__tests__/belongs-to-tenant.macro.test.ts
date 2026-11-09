@@ -3,9 +3,10 @@
  * Purpose: unit tests of `BelongsToTenantMacro`: installed as `t.belongsToTenant`, the bare call writes a commented,
  *          NOT NULL `tenant_id varchar(33)` with its index and no foreign key, then ENABLE, FORCE and the equality
  *          policy `pol_<table>_tenant_id` on `app.tenant_id`; on an existing table the compiler refuses it (a backfill
- *          migration instead); a second policy on the same table is refused. The nullable form writes a nullable
- *          column under the `equalsOrUnset` match, so NULL rows are the platform call's, for reads and writes
- *          (@stackra/database's `equalsOrUnset`, STA-1300; STA-1312). The expand form adds only a nullable column
+ *          migration instead); a second policy on the same table is refused; a unique key on the tenant column replaces
+ *          its index, under the derived name or one `named(...)` gives, and two indexes under one name are refused.
+ *          The nullable form writes a nullable column under the `equalsOrUnset` match, so NULL rows are the platform
+ *          call's, for reads and writes (@stackra/database's `equalsOrUnset`, STA-1300; STA-1312). The expand form adds only a nullable column
  *          defaulting to `app.tenant_id` to an existing table, beside the policy it already has. The contract form sets
  *          the existing column NOT NULL and writes the equality policy; with `nullable` it is the platform form's contract
  *          (the column stays nullable, under the `platform` match); it is refused with `expand`. The pivot form adds a
@@ -78,6 +79,27 @@ describe(BelongsToTenantMacro, () => {
         t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
       }),
     ).toThrow(TypeError);
+  });
+
+  it("lets a unique key on the tenant column replace its index, under the derived name or its own", () => {
+    // One row per tenant: the unique index serves the column, so the plain one is not written under the same name.
+    const replaced = compiled(true, (t) => t.unique(["tenant_id"]));
+    expect(replaced).toContain(
+      'create unique index "idx_tickets_tenant_id" on "support"."tickets" ("tenant_id")',
+    );
+    expect(replaced).not.toContain('create index "idx_tickets_tenant_id"');
+    const named = compiled(true, (t) => t.unique(["tenant_id"]).named("uq_tickets_tenant_id"));
+    expect(named).toContain(
+      'create unique index "uq_tickets_tenant_id" on "support"."tickets" ("tenant_id")',
+    );
+    expect(named).not.toContain('"idx_tickets_tenant_id"');
+    // Two declared indexes under the macro's derived name are refused before Postgres would refuse the second.
+    expect(() =>
+      compiled(true, (t) => {
+        t.unique(["tenant_id"]);
+        t.index(["tenant_id"]);
+      }),
+    ).toThrow("idx_tickets_tenant_id: two indexes of tickets take this name");
   });
 
   it("writes the nullable form: a nullable column whose NULL rows only a platform call reaches", () => {

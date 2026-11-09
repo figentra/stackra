@@ -642,6 +642,7 @@ export class BlueprintRecord {
       throw new TypeError(
         `${this.table}: every column states notNull() or nullable() and has a comment(); not ${incomplete.map((column) => column.name).join(", ")}`,
       );
+    this.checkIndexNames();
     const compiled = this.creating
       ? this.compileCreate(schema, qualified)
       : this.compileAlter(schema, qualified);
@@ -825,6 +826,27 @@ export class BlueprintRecord {
    */
   private declaresIndexOn(column: string): boolean {
     return this.indexes.some((index) => index.columns.length === 1 && index.columns[0] === column);
+  }
+
+  /**
+   * Refuses two indexes of this blueprint under one name, which Postgres would refuse at the second `CREATE INDEX`: two
+   * declared over the same columns, or one whose `named(...)` takes another's name.
+   *
+   * @throws TypeError naming the index and `named(...)`.
+   */
+  private checkIndexNames(): void {
+    const plain = this.columns
+      .filter((column) => column.indexed && !this.declaresIndexOn(column.name))
+      .map((column) => new TableIndexRecord([column.name], false));
+    const names = new Set<string>();
+    for (const index of [...plain, ...this.indexes]) {
+      const name = index.name(this.table);
+      if (names.has(name))
+        throw new TypeError(
+          `${name}: two indexes of ${this.table} take this name; give one its own with named(...), uq_${this.table}_<columns> for a unique key`,
+        );
+      names.add(name);
+    }
   }
 
   /** `ALTER TABLE` steps on an existing table, and its indexes as online steps. */

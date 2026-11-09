@@ -31,6 +31,9 @@ export class TableIndexRecord implements TableIndex {
   /** The partial index predicate, when there is one. */
   predicate: string | undefined = undefined;
 
+  /** The name `named()` gave, when one was given. */
+  explicitName: string | undefined = undefined;
+
   /**
    * @param columns - the indexed columns, at least one.
    * @param unique - whether it is a unique index.
@@ -72,9 +75,20 @@ export class TableIndexRecord implements TableIndex {
     return this;
   }
 
-  /** The index name on `table`. */
+  /**
+   * Implements `TableIndex.named`, documented there.
+   *
+   * @throws TypeError for a name that is not snake_case or is longer than Postgres keeps.
+   */
+  named(name: string): this {
+    quoteIdentifier(name);
+    this.explicitName = name;
+    return this;
+  }
+
+  /** The index name on `table`: the explicit one, else `idx_<table>_<columns>`. */
   name(table: string): string {
-    return constraintName("idx", table, this.columns);
+    return this.explicitName ?? constraintName("idx", table, this.columns);
   }
 
   /** The `CREATE INDEX` statement on `qualified`, concurrent when `online`. */
