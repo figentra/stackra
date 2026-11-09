@@ -34,7 +34,7 @@
     // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)
     ".agents/reference/**",
     ".claude/skills/**",
-    // a copy of .agents/hooks written by agents-sync; the source is linted (rule-gap N-1)
+    // a copy of .agents/hooks linked by `fflow sync --direct`; the source is linted (rule-gap N-1)
     ".claude/hooks/**",
     // the guard bundle and its OpenCode plugin, rendered by `fflow sync`; .flow/lock.json pins their bytes
     ".agents/hooks/fflow-guard.mjs",

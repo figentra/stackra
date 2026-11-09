@@ -195,9 +195,6 @@ jobs:
       - name: Secrets scan
         run: pnpm secrets:scan
 
-      - name: Agent sync check
-        run: pnpm agents:check
-
   # STA-310: refuse a pull request that adds a dependency with a known high or critical advisory. The OSV step in the
   # gate scans the whole lockfile; this job reads only the pull request's dependency diff.
   # The two Uniwind Pro members, apart from the required gate, so a used-up licence quota never blocks a merge. It runs

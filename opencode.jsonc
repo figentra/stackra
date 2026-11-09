@@ -37,7 +37,6 @@
     { "action": "shell", "resource": "pnpm boundaries*", "effect": "allow" },
     { "action": "shell", "resource": "pnpm knip*", "effect": "allow" },
     { "action": "shell", "resource": "pnpm new *", "effect": "allow" },
-    { "action": "shell", "resource": "pnpm agents:check*", "effect": "allow" },
     { "action": "shell", "resource": "pnpm spec:gate*", "effect": "allow" },
     { "action": "shell", "resource": "pnpm spec:trace*", "effect": "allow" },
     { "action": "shell", "resource": "pnpm * exec *", "effect": "deny" },
