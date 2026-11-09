@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `checkModelScope`: in a service running @stackra/tenancy, a model with neither an owner
  *          trait nor `Model.global` is refused (`model_tenancy_missing`); an owned, a global and a model extending an
- *          owned own model pass; a service without tenancy is not checked; a package is, as warnings; an ADR-named
+ *          owned own model pass; a service without tenancy is not checked; a package is, as errors; an ADR-named
  *          table is skipped; an owned model whose migrated table never calls `t.belongsToTenant()` is flagged
  *          (`model_tenancy_migration_missing`).
  * Boundary: test only; runs on the commerce IR fixture.
@@ -78,10 +78,10 @@ describe("checkModelScope", () => {
     expect(checkModelScope({ ...withModel({}), layout: "app" })).toEqual([]);
   });
 
-  it("warns on a package's model that is neither, with or without tenancy (an error from 0.20)", () => {
-    const warned = checkModelScope({ ...COMMERCE_IR, layout: "package" });
-    expect(warned.map((error) => [error.code, error.subject, error.severity])).toEqual([
-      ["model_tenancy_missing", MODEL.name, "warning"],
+  it("refuses a package's model that is neither, with or without tenancy (the contract step)", () => {
+    const refused = checkModelScope({ ...COMMERCE_IR, layout: "package" });
+    expect(refused.map((error) => [error.code, error.subject, error.severity])).toEqual([
+      ["model_tenancy_missing", MODEL.name, undefined],
     ]);
     expect(checkModelScope({ ...withModel({ global: true }), layout: "package" })).toEqual([]);
   });
@@ -106,7 +106,7 @@ describe("checkModelScope", () => {
         layout: "package",
         migrationTables: [block("orders", false)],
       });
-      expect(inPackage.map((error) => error.severity)).toEqual(["warning"]);
+      expect(inPackage.map((error) => error.severity)).toEqual([undefined]);
     });
 
     it("passes when any migration of the table calls it, and judges no table without a migration", () => {
