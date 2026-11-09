@@ -1,0 +1,5 @@
+{
+  "name": "@golden/service-billing-encore",
+  "private": true,
+  "type": "module"
+}
