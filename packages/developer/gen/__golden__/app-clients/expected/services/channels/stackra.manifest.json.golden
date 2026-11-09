@@ -22,9 +22,10 @@
       "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/channelses/publish",
+        "path": "/app/channelses/publish",
         "derived": true
       },
       "tool": {

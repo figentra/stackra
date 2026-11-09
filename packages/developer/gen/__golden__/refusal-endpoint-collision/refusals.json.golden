@@ -1,6 +1,19 @@
 [
   {
     "member": "services/shop",
+    "code": "idempotency_missing",
+    "file": "src/node/actions/void-order.action.ts",
+    "subject": "VoidOrderAction",
+    "severity": "warning"
+  },
+  {
+    "member": "services/shop",
+    "code": "endpoint_param_unbound",
+    "file": "src/node/actions/void-order.action.ts",
+    "subject": "VoidOrderAction"
+  },
+  {
+    "member": "services/shop",
     "code": "endpoint_collision",
     "file": "src/node/actions/cancel-order.action.ts",
     "subject": "CancelOrderAction"

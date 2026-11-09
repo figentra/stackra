@@ -67,9 +67,10 @@
       "risk": "L3",
       "actors": ["user", "service"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/loyalty/redemptions/:reference/confirm",
+        "path": "/app/loyalty/redemptions/:reference/confirm",
         "derived": false
       },
       "toolOff": "a confirmation is the host's, after its own step succeeded, not an agent's",
@@ -90,6 +91,7 @@
       "risk": "L3",
       "actors": ["service"],
       "idempotency": "optional",
+      "area": "app",
       "input": {
         "$ref": "#/schemas/loyalty_kit.EarnVisitInput"
       },
@@ -107,9 +109,10 @@
       "risk": "L2",
       "actors": ["user", "agent", "service"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/loyalty/accounts/:accountId",
+        "path": "/app/loyalty/accounts/:accountId",
         "derived": false
       },
       "tool": {
@@ -139,6 +142,7 @@
       "permission": "loyalty_kit.loyalty_account.expire",
       "risk": "L3",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "5m",
@@ -168,9 +172,10 @@
       "risk": "L2",
       "actors": ["user", "agent"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/loyalty/accounts/:accountId/freeze",
+        "path": "/app/loyalty/accounts/:accountId/freeze",
         "derived": false
       },
       "tool": {
@@ -204,9 +209,10 @@
       "rateLimit": {
         "perMinute": 30
       },
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/loyalty/redemptions",
+        "path": "/app/loyalty/redemptions",
         "derived": false
       },
       "toolOff": "risk L3: not a tool unless the action says `tool: true` with a reason",
@@ -237,9 +243,10 @@
           "loyalty_kit.points.imported.v1"
         ]
       },
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/loyalty/accounts/:accountId/balance",
+        "path": "/app/loyalty/accounts/:accountId/balance",
         "derived": false
       },
       "tool": {
@@ -277,6 +284,7 @@
           "loyalty_kit.points.imported.v1"
         ]
       },
+      "area": "app",
       "endpoint": false,
       "tool": {
         "name": "loyalty_kit_points_stats_today",
@@ -304,9 +312,10 @@
       "permission": "loyalty_kit.loyalty_account.read",
       "risk": "L0",
       "actors": ["user", "agent", "service"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/loyalty-accounts/search",
+        "path": "/app/loyalty-accounts/search",
         "derived": true
       },
       "tool": {
