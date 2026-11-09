@@ -1,0 +1,7 @@
+import { I18n } from "#stackra/i18n";
+
+// billing's own `plans` keeps the bare namespace; Pay's `plans`, consumed through its contract, moves under `payments`.
+export const LABELS = {
+  billing: I18n.plans.title,
+  pay: I18n["payments.plans"].title,
+};

@@ -46,6 +46,35 @@ describe("readPackageCatalogues", () => {
     ]);
   });
 
+  it("reads a service dependency's lang as that service's, keyed by its member, so a shared namespace can move", () => {
+    const root = writeFixtureMember("billing", {
+      "node_modules/@acme/pay-payments/package.json": JSON.stringify({
+        name: "@acme/pay-payments",
+        stackra: { kind: "package", tier: "service", category: "service", runtimes: ["node"] },
+      }),
+      "node_modules/@acme/pay-payments/stackra.manifest.json": JSON.stringify({
+        member: "payments",
+      }),
+      "node_modules/@acme/pay-payments/assets/lang/en/plans.json": JSON.stringify({
+        title: "Pay plans",
+      }),
+      "node_modules/@acme/kit-lib/package.json": JSON.stringify({
+        name: "@acme/kit-lib",
+        stackra: { kind: "package", tier: "lib", category: "data", runtimes: ["node"] },
+      }),
+      "node_modules/@acme/kit-lib/stackra.manifest.json": JSON.stringify({ member: "kit_lib" }),
+      "node_modules/@acme/kit-lib/assets/lang/en/kit_lib.json": JSON.stringify({ title: "Kit" }),
+    });
+    expect(readPackageCatalogues(root, ["@acme/pay-payments", "@acme/kit-lib"])).toEqual([
+      {
+        package: "@acme/pay-payments",
+        service: "payments",
+        catalogues: { en: { plans: { title: "Pay plans" } } },
+      },
+      { package: "@acme/kit-lib", catalogues: { en: { kit_lib: { title: "Kit" } } } },
+    ]);
+  });
+
   it("finds a package hoisted above the member", () => {
     const root = writeFixtureMember("nested", {
       "node_modules/@stackra/rules/assets/lang/en/rules.json": JSON.stringify({ title: "Rules" }),

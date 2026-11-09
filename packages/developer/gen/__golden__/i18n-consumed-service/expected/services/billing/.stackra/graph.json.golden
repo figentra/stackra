@@ -1,0 +1,33 @@
+{
+  "member": "billing",
+  "package": "@golden/service-billing",
+  "layout": "service",
+  "modules": ["billing"],
+  "calls": [],
+  "eventsOut": [],
+  "eventsIn": [],
+  "tables": [],
+  "packages": [
+    "@golden/pay-payments",
+    "@stackra/actions",
+    "@stackra/app",
+    "@stackra/clients",
+    "@stackra/config",
+    "@stackra/container",
+    "@stackra/contracts",
+    "@stackra/errors",
+    "@stackra/events",
+    "@stackra/i18n",
+    "@stackra/locking",
+    "@stackra/money",
+    "@stackra/outbox",
+    "@stackra/queue",
+    "@stackra/scheduler",
+    "@stackra/settings",
+    "@stackra/testing",
+    "@stackra/tsdown-config",
+    "@stackra/validation",
+    "@stackra/vitest-config"
+  ],
+  "drivers": []
+}
