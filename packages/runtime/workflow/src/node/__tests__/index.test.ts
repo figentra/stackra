@@ -25,6 +25,8 @@ describe("@stackra/workflow/node", () => {
       "RunPermissions",
       "ServiceAckService",
       "ServiceAckSet",
+      "StartTriggeredAutomationsAction",
+      "StartTriggeredAutomationsInput",
       "WORKFLOW_ENTITIES",
       "WorkflowExplorer",
     ]);

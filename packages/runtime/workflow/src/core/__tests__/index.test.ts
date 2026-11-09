@@ -35,6 +35,7 @@ describe("@stackra/workflow", () => {
       "AutomationPrincipalMismatchError",
       "AutomationQuota",
       "AutomationQuotaAnswer",
+      "AutomationQuotaUnavailableError",
       "AutomationRunSkipped",
       "AutomationStart",
       "BlockKind",
