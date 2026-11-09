@@ -104,7 +104,7 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
         header,
         'import { registerBrokerTopics } from "@stackra/queue";',
         'import type { BrokerMessage } from "@stackra/queue/contracts";',
-        'import { Topic } from "encore.dev/pubsub";',
+        'import { Publisher, Topic } from "encore.dev/pubsub";',
         "",
         ...own.flatMap((wire) => [
           `/** The \`${wire}\` integration event. */`,
@@ -113,8 +113,12 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
           "});",
           "",
         ]),
+        // Encore refuses a bare topic handed around as a value ("invalid topic usage"); a publisher ref is how it may go.
         "registerBrokerTopics([",
-        ...own.map((wire) => `  { name: ${JSON.stringify(wire)}, topic: ${topicConst(wire)} },`),
+        ...own.map(
+          (wire) =>
+            `  { name: ${JSON.stringify(wire)}, topic: ${topicConst(wire)}.ref<Publisher<BrokerMessage>>() },`,
+        ),
         "]);",
         "",
       ].join("\n"),

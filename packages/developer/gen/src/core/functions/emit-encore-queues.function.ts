@@ -58,7 +58,7 @@ export function emitEncoreQueues(
       'import { registerBrokerTopics } from "@stackra/queue";',
       'import type { BrokerMessage, QueuedJob } from "@stackra/queue/contracts";',
       'import { QueueWorkerService } from "@stackra/queue/node";',
-      'import { Subscription, Topic } from "encore.dev/pubsub";',
+      'import { Publisher, Subscription, Topic } from "encore.dev/pubsub";',
       "",
       ENCORE_APP_IMPORT,
       "",
@@ -83,9 +83,11 @@ export function emitEncoreQueues(
         "});",
         "",
       ]),
+      // Encore refuses a bare topic handed around as a value ("invalid topic usage"); a publisher ref is how it may go.
       "registerBrokerTopics([",
       ...rows.map(
-        ({ queue, topic }) => `  { name: ${JSON.stringify(`queue.${queue}`)}, topic: ${topic} },`,
+        ({ queue, topic }) =>
+          `  { name: ${JSON.stringify(`queue.${queue}`)}, topic: ${topic}.ref<Publisher<BrokerMessage>>() },`,
       ),
       "]);",
       "",

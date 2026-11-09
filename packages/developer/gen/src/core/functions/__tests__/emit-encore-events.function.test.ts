@@ -100,11 +100,15 @@ describe("emitEncoreEvents", () => {
     expect(rest).toEqual([]);
     expect(file?.path).toBe(".stackra/encore/commerce/events.ts");
     const content = file?.content ?? "";
-    expect(content).toContain('import { Topic } from "encore.dev/pubsub";');
+    expect(content).toContain('import { Publisher, Topic } from "encore.dev/pubsub";');
     expect(content).toContain(
       'export const eventOrdersOrderPaidV1 = new Topic<BrokerMessage>("commerce-event-orders-order-paid-v1", {',
     );
-    expect(content).toContain('  { name: "orders.order.paid.v1", topic: eventOrdersOrderPaidV1 },');
+    // Encore's parser refuses a bare topic as a value ("invalid topic usage"): it goes as a publisher ref
+    expect(content).toContain(
+      '  { name: "orders.order.paid.v1", topic: eventOrdersOrderPaidV1.ref<Publisher<BrokerMessage>>() },',
+    );
+    expect(content).not.toMatch(/topic: \w+ \}/);
   });
 
   it("subscribes a relay service to every integration topic of the product", () => {
