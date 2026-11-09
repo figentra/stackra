@@ -106,6 +106,14 @@ token), and fails closed without one; a service, job, system or agent caller car
 `timeout: Duration.minutes(2)` hands it to `UnitOfWork.transaction(work, { timeout })`, so the database driver bounds
 each statement of that transaction by it instead of the configured session timeout.
 
+An action whose `actors` are exactly `[ActorKind.Anonymous]` refuses a signed-in caller (`ForbiddenError`), which a
+sign-up relies on. For a public page whose visitors may also be signed in elsewhere, the action declares
+`credentials: "ignore"`: the pipeline then runs a signed-in caller's call as a fresh anonymous actor and drops what the
+credential gave (scope, assurance, device, approval, read-your-writes mark, an origin other than the storefront), so
+the handler, `ctx`, the audit entry and the span see only the anonymous visitor. `serveGuardedCall` of `@stackra/app`
+never verifies or holds the credential of such a call, so no user token is forwarded. An unauthenticated call runs as
+before. `Action({...})` throws, and gen refuses `credentials_ignore_not_anonymous`, when the actors are anything else.
+
 The rate-limit step takes one token from the call's area bucket, keyed by (app, scope): `area:<area>:<app>[:<scope>]`,
 where the app is the origin's id (storefront, API key, agent) or, without one, the actor (ADR 0217 decision 2). It also
 takes one from the action's own `rateLimit`. When a `RateLimitBudget` is bound and answers a bucket for the call, that

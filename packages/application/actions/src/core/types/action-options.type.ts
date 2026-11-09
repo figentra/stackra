@@ -7,7 +7,8 @@
  *          approval gate (`approval`), the assurance level it needs (`stepUp`) and the statement timeout of its unit of
  *          work (`timeout`), and the analytics event each call writes (`analytics`), and the most statements a
  *          call may run (`queryBudget`), and whether a service calling it for a user may forward the user's token
- *          once more (`onBehalfOf`).
+ *          once more (`onBehalfOf`), and whether an anonymous-only action drops a signed-in caller's credentials
+ *          (`credentials`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
  *           static only when the class stem differs from the action's model (ADR 0305 rule 7).
@@ -150,4 +151,13 @@ export interface ActionOptions {
    * action calls. One hop when absent: those calls carry the service token only (ADR 0209, amendment of 2026-11-07).
    */
   readonly onBehalfOf?: OnBehalfOfOptions;
+
+  /**
+   * `"ignore"` runs every call as a fresh anonymous visitor, whatever credential it carried: for a public page whose
+   * visitors may also be signed in elsewhere. The bearer token, the session and the principal they resolve to never
+   * reach the call: its actor, context, audit entry and span are the anonymous ones, and no user token is held for
+   * forwarding. Only an action whose `actors` are exactly `[ActorKind.Anonymous]` may declare it. Absent, such an
+   * action refuses a signed-in caller (`ForbiddenError`), which a sign-up relies on.
+   */
+  readonly credentials?: "ignore";
 }
