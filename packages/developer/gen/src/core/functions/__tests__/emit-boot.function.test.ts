@@ -186,6 +186,20 @@ describe("emitBoot", () => {
     expect(emitBoot({ ...COMMERCE_IR, classes: [] })).toBeUndefined();
   });
 
+  it("connects the extension slots when the service declares an extension, and only then", () => {
+    const withExtension = {
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes,
+        { ...COMMERCE_IR.classes[0], name: "TierBonusExtension", kind: "extension" },
+      ],
+    } as typeof COMMERCE_IR;
+    const boot = emitBoot(withExtension) ?? "";
+    expect(boot).toContain('import { connectExtensions } from "@stackra/actions";');
+    expect(boot).toContain("  connectExtensions(container);");
+    expect(emitBoot(COMMERCE_IR) ?? "").not.toContain("connectExtensions");
+  });
+
   it("connects the record policies first when the manifest lists one, and only then (STA-2045)", () => {
     const manifest = {
       policies: [{ class: "OrderPolicy", model: "Order", module: "orders", file: "x.ts" }],

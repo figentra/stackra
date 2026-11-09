@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { signal })`
  *          that connects what needs the booted container, in order: the record policies (`connectPolicies`, when the
- *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the bound
+ *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the extension
+ *          slots (`connectExtensions`, when the service declares an extension, so a slot builds each one), the bound
  *          `HoldRegistry` and `SequenceTimeZone` drivers (or none), the container itself as the reads' visibility
  *          resolver (`connectVisibilityFilter`, so reads AND the bound `VisibilityFilter`'s conditions, writes stamp
  *          the call's actor and the call's time zone is read; ADR 0333 decision 4, STA-2044),
@@ -134,7 +135,10 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   const events = outbox || uses("@stackra/events");
   // A record policy is built from the booted container when `ctx.authorize(record)` runs it (ADR 0132, STA-2045).
   const policies = ((built?.["policies"] ?? []) as readonly unknown[]).length > 0;
-  if (!database && !outbox && !segments && !workflow && !events && !policies) return undefined;
+  // A slot builds each registered extension from the booted container, so the slots need it connected (ADR 0305).
+  const extensions = ir.classes.some((declared) => declared.kind === "extension");
+  if (!database && !outbox && !segments && !workflow && !events && !policies && !extensions)
+    return undefined;
   // Live queries refresh their clients through realtime after each invalidating event commits (ADR 0315 decision 1).
   const live = events && uses("@stackra/realtime") ? liveQueryRows(built) : [];
 
@@ -143,6 +147,10 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   if (policies) {
     imports.push('import { connectPolicies } from "@stackra/iam";');
     steps.push("  connectPolicies(container);");
+  }
+  if (extensions) {
+    imports.push('import { connectExtensions } from "@stackra/actions";');
+    steps.push("  connectExtensions(container);");
   }
   if (database) {
     imports.push(
