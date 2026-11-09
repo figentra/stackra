@@ -1,5 +1,15 @@
 # @stackra/vite-plugin
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [597e3e8]
+  - @stackra/gen@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/contracts@0.32.0
+
 ## 0.31.0
 
 ### Patch Changes

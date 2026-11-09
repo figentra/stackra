@@ -75,23 +75,19 @@ A label is 1 to 63 of `a-z`, `0-9` and `_`; the root's label is `ScopeConfig.roo
 
 `nodes.moveSubtree(scope, parent)` moves a node and everything below it under another parent (an organisation that changes
 hands, a tenant that leaves a reseller). It keeps every id and label, rewrites the path prefix of the node and its
-descendants in one statement, and records `ScopeMoved` (`scope.node.moved.v1`, through the outbox). Each service
-re-paths its own `scope_path` rows from its listener, in the same way:
+descendants in one statement, and records `ScopeMoved` (`scope.node.moved.v1`, through the outbox). Every service
+with this package runs `RepathOnScopeMovedListener` (`./node`), a queued listener that re-paths the `scope_path` rows
+of every model that opts in with the `MovesWithScope` trait (@stackra/model), the service's own and its packages'
+alike, in one transaction (`repathAllRecords` of @stackra/database). A model opts in on purpose:
 
 ```ts
-export class RepathDocumentsListener extends Listener({ queue: Queues.Default }) {
-  constructor(documents: DocumentService) {
-    super();
-    this.documents = documents;
-  }
-
-  async handle(event: ScopeMoved): Promise<void> {
-    await this.documents.repath(event.from, event.to); // @stackra/database CrudService.repath
-  }
+export class Document extends Model.with(HasPublicId("doc"), MovesWithScope) {
+  scopePath!: string; // t.scopePath() in its migration
 }
 ```
 
-Run the move, and each listener, in a scope that reaches both paths (a grant at a common ancestor). A move under the
+A `jsonb` scope or another special case keeps a listener of its own that calls `CrudService.repath`. Run the move in a
+scope that reaches both paths (a grant at a common ancestor); the listener runs in the move's scope. A move under the
 node itself is `scope_move_invalid`; a level the new parent does not take is `scope_level_invalid` (ADR 0411).
 
 ## Resolving a request

@@ -1,5 +1,19 @@
 # @stackra/actions
 
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/cache@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
 ## 0.31.0
 
 ### Minor Changes
