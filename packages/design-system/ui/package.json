@@ -145,7 +145,8 @@
     "test:coverage": "vitest run --coverage",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "clean": "rm -rf dist coverage .turbo"
+    "clean": "rm -rf dist coverage .turbo",
+    "test:e2e": "stackra test --tier e2e"
   },
   "dependencies": {
     "@stackra/config": "workspace:*",
@@ -165,6 +166,7 @@
     "@heroui/react": "catalog:frontend",
     "@internationalized/date": "catalog:frontend",
     "@internationalized/number": "catalog:mobile",
+    "@playwright/test": "catalog:e2e",
     "@shopify/react-native-skia": "catalog:mobile",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -209,6 +211,7 @@
     "typescript": "catalog:build",
     "uniwind": "catalog:mobile",
     "victory-native": "catalog:mobile",
+    "vite": "catalog:frontend",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
