@@ -1,5 +1,24 @@
 # @stackra/app
 
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [0f05f60]
+  - @stackra/actions@0.31.0
+  - @stackra/i18n@0.31.0
+  - @stackra/clients@0.31.0
+  - @stackra/identity@0.31.0
+  - @stackra/navigation@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+  - @stackra/csp@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes
