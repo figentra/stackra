@@ -385,6 +385,8 @@ export { DropZone } from "#react/drop-zone/drop-zone";
 export type { DropZoneProps } from "#react/drop-zone/drop-zone.props";
 export { AttachmentCard } from "#react/attachment-card/attachment-card";
 export type { AttachmentCardProps } from "#react/attachment-card/attachment-card.props";
+export { PdfPreview } from "#react/pdf-preview/pdf-preview";
+export type { PdfPreviewProps } from "#react/pdf-preview/pdf-preview.props";
 export { FileName } from "#react/file-name/file-name";
 export type { FileNameProps } from "#react/file-name/file-name.props";
 export { ShareButton } from "#react/share-button/share-button";

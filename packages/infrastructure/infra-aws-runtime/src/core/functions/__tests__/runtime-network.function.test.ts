@@ -71,4 +71,22 @@ describe("runtimeNetwork", () => {
       ]);
     }
   });
+
+  it("reads the ECR pull-through registry as a host or a ref, and refuses anything else", () => {
+    const base = { subnetIds: ["subnet-0a"], securityGroupIds: ["sg-01"] };
+
+    expect(
+      runtimeNetwork(
+        rootWith({ ...base, registry: "111122223333.dkr.ecr.me-central-1.amazonaws.com" }),
+        "staging",
+      ).registry,
+    ).toBe("111122223333.dkr.ecr.me-central-1.amazonaws.com");
+    expect(
+      runtimeNetwork(rootWith({ ...base, registry: "ref:ecr.staging.host" }), "staging").registry,
+    ).toBe("ref:ecr.staging.host");
+    expect(runtimeNetwork(rootWith(base), "staging")).not.toHaveProperty("registry");
+    expect(() => runtimeNetwork(rootWith({ ...base, registry: "docker.io" }), "staging")).toThrow(
+      RunwayInvalidError,
+    );
+  });
 });

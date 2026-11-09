@@ -865,6 +865,11 @@
     "failed": "Hochladen fehlgeschlagen",
     "retry": "{name} erneut versuchen"
   },
+  "pdf_preview": {
+    "title": "Vorschau von {name}",
+    "download": "{name} herunterladen",
+    "unavailable": "Wenn die Datei hier nicht angezeigt wird, laden Sie sie herunter."
+  },
   "share_button": {
     "share": "Teilen",
     "copied": "Link kopiert",

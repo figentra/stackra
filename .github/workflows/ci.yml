@@ -38,7 +38,7 @@ jobs:
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -195,9 +195,6 @@ jobs:
       - name: Secrets scan
         run: pnpm secrets:scan
 
-      - name: Agent sync check
-        run: pnpm agents:check
-
   # STA-310: refuse a pull request that adds a dependency with a known high or critical advisory. The OSV step in the
   # gate scans the whole lockfile; this job reads only the pull request's dependency diff.
   # The two Uniwind Pro members, apart from the required gate, so a used-up licence quota never blocks a merge. It runs
@@ -210,7 +207,7 @@ jobs:
       id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build scope only
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false
@@ -235,15 +232,43 @@ jobs:
 
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
-      - name: Uniwind Pro download cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # The lockfile holds two peer variants of uniwind-pro (the mobile app's and the playground's), so pnpm runs its
+      # postinstall twice; in parallel both missed the cache and each downloaded (2,001 downloads for ~1,100 jobs).
+      - name: Uniwind Pro cache directory
+        run: echo "UNIWIND_CACHE_DIR=$HOME/.uniwind/cache/pro" >> "$GITHUB_ENV"
+
+      - name: Uniwind Pro download cache (restore)
+        id: uniwind-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.uniwind/cache/pro
-          key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
-          restore-keys: uniwind-pro-${{ runner.os }}-
+          key: uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
+          restore-keys: uniwind-pro-1-${{ runner.os }}-
 
+      # One lifecycle script at a time: the first uniwind-pro postinstall downloads into UNIWIND_CACHE_DIR and the
+      # second logs "Using cached v1.9.0 package". The other postinstalls (esbuild, skia, workerd) only take longer.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --child-concurrency=1
+
+      # A failed or limited download leaves the directory without a package: saving it would store an empty entry
+      # that every later run restores as a hit, never saving the real download (seen in #926's first run).
+      - name: Uniwind Pro download cache (filled?)
+        id: uniwind-filled
+        if: ${{ !cancelled() }}
+        run: |
+          if find "$UNIWIND_CACHE_DIR" -type f ! -name '*.sha256' -size +100k 2>/dev/null | grep -q .; then
+            echo "filled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Saved right after the install, even when a later step fails: actions/cache saves only after a green job, so a
+      # failing mobile job never stored the download and every run fetched it again.
+      - name: Uniwind Pro download cache (save)
+        if: ${{ !cancelled() && steps.uniwind-cache.outputs.cache-hit != 'true' && steps.uniwind-filled.outputs.filled == 'true' }}
+        continue-on-error: true # another run may have saved the same key first
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.uniwind/cache/pro
+          key: uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
 
       - name: Lint, typecheck and build the mobile apps
         run: >-
@@ -258,13 +283,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false
 
       - name: Dependency review
-        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
 

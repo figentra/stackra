@@ -89,8 +89,10 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
   automation). This package names no billing service: the host selects its billing driver or
   `UnlimitedAutomationQuotaDriver` on purpose, never by default. `exceeded` skips with `AutomationRunSkipped`
   (`quota_exceeded`), never a failure or a pause. An unreadable quota (or a driver that throws) starts nothing and
-  skips with `quota_unavailable`. `triggered` never throws for a quota: a trigger listener runs once per delivery and
-  a throw there is only recorded, never redelivered. The driver calls the quota as the host member, in the
+  skips with `quota_unavailable`. `triggered` throws for an unreadable quota only when a retry follows
+  (`last: false`): with a `QueueService` bound the trigger listener pushes `StartTriggeredAutomationsAction`, a
+  retried job that passes `ctx.attempt.last`, so the last attempt records the skip; an in-process start is its own last
+  attempt (a listener's throw is only recorded, never redelivered). The driver calls the quota as the host member, in the
   automation's tenant, never as the automation's principal.
 - Checklist steps, lock flags and industry profiles are seed data; no step is coded here. A customization never hides
   or reorders a locked step (ADR 0424).

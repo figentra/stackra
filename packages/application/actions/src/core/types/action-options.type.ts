@@ -49,6 +49,13 @@ export interface ActionOptions {
   /** Reachable with an API key (an `api_client` caller), with the scopes it must hold (ADR 0278); absent: never. */
   readonly public?: ActionPublic;
 
+  /**
+   * `handle` answers a `ReadableStream` of JSON chunks, sent to one live caller as server-sent events; the call's
+   * transaction commits when `handle` returns it, so the stream's writes run in `ctx.detach()` steps. It takes no
+   * `job`, no `offline`, no `tool` and only `Idempotency.Never` (`stream_not_replayable`). Absent: `false`.
+   */
+  readonly stream?: boolean;
+
   /** The actor kinds that may call it; any other is refused (`forbidden`). */
   readonly actors: readonly ActorKind[];
 

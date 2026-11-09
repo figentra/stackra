@@ -15,4 +15,6 @@ export type RuntimeNetwork = {
   readonly securityGroupIds: readonly string[];
   /** The VPC id, or a `ref:<path>` value; workloads and databases need it, caches and queues do not. */
   readonly vpcId?: string;
+  /** The ECR pull-through registry host, or a `ref:<path>` value; a `gotenberg` resource's image is pulled from it. */
+  readonly registry?: string;
 };

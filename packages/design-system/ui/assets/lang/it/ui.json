@@ -865,6 +865,11 @@
     "failed": "Caricamento non riuscito",
     "retry": "Riprova {name}"
   },
+  "pdf_preview": {
+    "title": "Anteprima di {name}",
+    "download": "Scarica {name}",
+    "unavailable": "Se il file non viene mostrato qui, scaricalo."
+  },
   "share_button": {
     "share": "Condividi",
     "copied": "Link copiato",

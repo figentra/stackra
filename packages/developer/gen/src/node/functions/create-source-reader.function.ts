@@ -2599,7 +2599,7 @@ export function createSourceReader(
     const name = nameOf(node.name);
     const fix =
       "declare `async handle(input: XInput, ctx): Promise<XOutput>` with Schema classes from schemas/ " +
-      "(a replica query answers `Promise<ReplicaPage>`)";
+      "(a replica query answers `Promise<ReplicaPage>`, a `stream: true` action `Promise<ReadableStream<Chunk>>`)";
     const handle = (node.members ?? []).find(
       (member) => host.kind(member) === "MethodDeclaration" && nameOf(member.name) === "handle",
     );
@@ -2626,6 +2626,7 @@ export function createSourceReader(
     const returns = handle.type;
     let output: string | undefined;
     let replica = false;
+    let stream = false;
     if (
       returns === undefined ||
       host.kind(returns) !== "TypeReference" ||
@@ -2642,8 +2643,11 @@ export function createSourceReader(
       const inner = returns.typeArguments?.[0];
       if (inner !== undefined && host.kind(inner) !== "VoidKeyword") {
         replica = isReplicaPage(inner);
-        output = replica ? undefined : shapeClassAt(inner)?.name;
-        if (output === undefined && !replica)
+        // the platform's stream type: its chunks are a protocol, not a shape of this member
+        stream =
+          host.kind(inner) === "TypeReference" && nameOf(inner.typeName) === "ReadableStream";
+        output = replica || stream ? undefined : shapeClassAt(inner)?.name;
+        if (output === undefined && !replica && !stream)
           fail(
             inner,
             name,
@@ -2657,6 +2661,7 @@ export function createSourceReader(
       ...(input !== undefined ? { input: input.name } : {}),
       ...(output !== undefined ? { output } : {}),
       ...(replica ? { replica: true as const } : {}),
+      ...(stream ? { stream: true as const } : {}),
     };
   };
 

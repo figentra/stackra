@@ -17,6 +17,9 @@ import type { RuntimeNetwork } from "#core/types/runtime-network.type";
 /** An id or `ref:<path>`. */
 const ID = /^(ref:[A-Za-z0-9_.-]+|[a-z]+-[0-9a-f]+)$/;
 
+/** An ECR registry host, or a `ref:` the stack resolves. */
+const REGISTRY = /^(ref:[A-Za-z0-9_./-]+|[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com)$/;
+
 /**
  * The network of `environment`.
  *
@@ -50,6 +53,18 @@ export function runtimeNetwork(root: RootRunway, environment: RunwayEnvironment)
       path: `environments.${environment}.shared.network.vpcId`,
       message: "Name the VPC by its id (or a ref:<path> value) the subnets belong to",
     });
+  const registry = network["registry"];
+  if (registry !== undefined && !(typeof registry === "string" && REGISTRY.test(registry)))
+    issues.push({
+      path: `environments.${environment}.shared.network.registry`,
+      message:
+        "Name the ECR pull-through registry (<account>.dkr.ecr.<region>.amazonaws.com, or a ref:<path> value)",
+    });
   if (issues.length > 0) throw new RunwayInvalidError("root runway (AWS runtime)", issues);
-  return { subnetIds, securityGroupIds, ...(typeof vpcId === "string" ? { vpcId } : {}) };
+  return {
+    subnetIds,
+    securityGroupIds,
+    ...(typeof vpcId === "string" ? { vpcId } : {}),
+    ...(typeof registry === "string" ? { registry } : {}),
+  };
 }
