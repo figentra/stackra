@@ -63,9 +63,16 @@ jobs:
 
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
-      - name: Uniwind Pro download cache
+      # As ci.yml's mobile job: two peer variants run the postinstall, one at a time so the second reads the cache, and
+      # the cache is saved right after the install.
+      - name: Uniwind Pro cache directory
         if: inputs.preset == 'e2e'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        run: echo "UNIWIND_CACHE_DIR=$HOME/.uniwind/cache/pro" >> "$GITHUB_ENV"
+
+      - name: Uniwind Pro download cache (restore)
+        id: uniwind-cache
+        if: inputs.preset == 'e2e'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.uniwind/cache/pro
           key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
@@ -73,7 +80,15 @@ jobs:
 
       - name: Install dependencies
         if: inputs.preset == 'e2e'
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --child-concurrency=1
+
+      - name: Uniwind Pro download cache (save)
+        if: ${{ !cancelled() && inputs.preset == 'e2e' && steps.uniwind-cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true # nothing to save when the install failed before the download
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.uniwind/cache/pro
+          key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
 
       - name: Install dependencies (without the Uniwind Pro apps)
         if: inputs.preset != 'e2e'

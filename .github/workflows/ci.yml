@@ -235,15 +235,33 @@ jobs:
 
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
-      - name: Uniwind Pro download cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # The lockfile holds two peer variants of uniwind-pro (the mobile app's and the playground's), so pnpm runs its
+      # postinstall twice; in parallel both missed the cache and each downloaded (2,001 downloads for ~1,100 jobs).
+      - name: Uniwind Pro cache directory
+        run: echo "UNIWIND_CACHE_DIR=$HOME/.uniwind/cache/pro" >> "$GITHUB_ENV"
+
+      - name: Uniwind Pro download cache (restore)
+        id: uniwind-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.uniwind/cache/pro
           key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
           restore-keys: uniwind-pro-${{ runner.os }}-
 
+      # One lifecycle script at a time: the first uniwind-pro postinstall downloads into UNIWIND_CACHE_DIR and the
+      # second logs "Using cached v1.9.0 package". The other postinstalls (esbuild, skia, workerd) only take longer.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --child-concurrency=1
+
+      # Saved right after the install, even when a later step fails: actions/cache saves only after a green job, so a
+      # failing mobile job never stored the download and every run fetched it again.
+      - name: Uniwind Pro download cache (save)
+        if: ${{ !cancelled() && steps.uniwind-cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true # nothing to save when the install failed before the download
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.uniwind/cache/pro
+          key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
 
       - name: Lint, typecheck and build the mobile apps
         run: >-
