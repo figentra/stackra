@@ -45,6 +45,7 @@ const STAND_INS: Readonly<Record<string, string>> = {
     "export declare abstract class Event {}",
     "export declare abstract class DomainEvent extends Event {}",
     "export declare function IntegrationEvent(options: { readonly name: string; readonly [option: string]: unknown }): abstract new () => Event;",
+    "export declare function WebhookEvent<I = unknown>(options: { readonly type: string; readonly [option: string]: unknown }): abstract new () => Event;",
     "export declare abstract class Listener { abstract handle(event: never, ctx: unknown): Promise<void>; }",
     "",
   ].join("\n"),

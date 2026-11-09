@@ -16,6 +16,8 @@
     "**/encore.gen/**",
     // a package's committed entity list, written by `stackra gen` and checked byte-for-byte by `gen --check` (STA-1874)
     "packages/*/*/src/node/entities.gen.ts",
+    // the reviewer list `fflow sync` writes from .agents/agents (projection: true), byte-pinned by `fflow check`
+    ".agents/hooks/_reviewer-agents.mjs",
     "**/dist/**",
     // Expo: generated native projects and the CLI cache
     "**/ios/**",
@@ -34,7 +36,7 @@
     // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)
     ".agents/reference/**",
     ".claude/skills/**",
-    // a copy of .agents/hooks written by agents-sync; the source is linted (rule-gap N-1)
+    // a copy of .agents/hooks linked by `fflow sync`; the source is linted (rule-gap N-1)
     ".claude/hooks/**",
     // the guard bundle and its OpenCode plugin, rendered by `fflow sync`; .flow/lock.json pins their bytes
     ".agents/hooks/fflow-guard.mjs",

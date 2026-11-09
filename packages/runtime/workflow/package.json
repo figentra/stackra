@@ -118,6 +118,7 @@
     "@stackra/model": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/rules": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
     "@stackra/tenancy": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

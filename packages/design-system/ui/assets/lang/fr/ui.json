@@ -865,6 +865,11 @@
     "failed": "Échec de l'envoi",
     "retry": "Réessayer {name}"
   },
+  "pdf_preview": {
+    "title": "Aperçu de {name}",
+    "download": "Télécharger {name}",
+    "unavailable": "Si le fichier ne s’affiche pas ici, téléchargez-le."
+  },
   "share_button": {
     "share": "Partager",
     "copied": "Lien copié",

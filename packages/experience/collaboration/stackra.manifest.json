@@ -132,7 +132,7 @@
       "file": "src/node/models/comment-mention.model.ts",
       "table": "collaboration.comment_mentions",
       "publicId": "cmn",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "collaboration",
         "fields": [
@@ -236,7 +236,7 @@
       "file": "src/node/models/comment-revision.model.ts",
       "table": "collaboration.comment_revisions",
       "publicId": "cmr",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "collaboration",
         "fields": [
@@ -328,7 +328,7 @@
       "file": "src/node/models/comment-thread.model.ts",
       "table": "collaboration.comment_threads",
       "publicId": "cth",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "collaboration",
         "fields": [
@@ -454,7 +454,7 @@
       "file": "src/node/models/comment.model.ts",
       "table": "collaboration.comments",
       "publicId": "cmt",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "collaboration",
         "fields": [

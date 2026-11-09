@@ -102,7 +102,7 @@ jobs:
       # brings origin/main for the check below and every tag a build may read (the static site rebuilds each
       # `schemas@*` release from its tag).
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ inputs.sha || github.sha }}
           fetch-depth: 0

@@ -67,7 +67,7 @@ jobs:
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
@@ -105,7 +105,7 @@ jobs:
       # Only this stack's dedicated path, so no other /ci value enters the job.
       - name: Stack secrets (sops)
         if: env.ENABLED == 'true'
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/deploy/observability
 

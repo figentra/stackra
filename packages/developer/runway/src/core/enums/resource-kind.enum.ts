@@ -21,6 +21,8 @@ export const ResourceKind = Enum.of({
   Cache: "cache",
   /** An S3 bucket. */
   Bucket: "bucket",
+  /** The PDF engine `@stackra/documents` renders through: one internal Gotenberg per environment. */
+  Gotenberg: "gotenberg",
 });
 
 /** One of the codes above. */

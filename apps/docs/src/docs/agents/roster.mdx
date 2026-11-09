@@ -87,7 +87,7 @@ Every builder's change goes to `code-reviewer`, then the domain reviewer its cha
 
 ## Routing
 
-`.agents/routing.yaml` maps a task type to an executor, model and agent; `pnpm delegate` reads it. A route that sends an agent to OpenCode when the agent is not projected there fails `pnpm agents:check`.
+`.agents/routing.yaml` maps a task type to an executor, model and agent; `pnpm delegate` reads it. A route that sends an agent to OpenCode when the agent is not projected there fails `pnpm validate` (`stackra validate --repository`).
 
 | The work                                                            | Goes to                                                                                            |
 | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |

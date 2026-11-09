@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/releaser.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/releaser.md by fflow sync — edit the source, not this file -->
 
 # releaser
 

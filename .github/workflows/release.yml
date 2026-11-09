@@ -84,7 +84,7 @@ jobs:
       environment: ${{ steps.pick.outputs.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
@@ -114,7 +114,7 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
-    uses: ./.github/workflows/runway-npm.yml
+    uses: ./.github/workflows/runway-npm.yml # zizmor: ignore[self-repository]
     with:
       environment: ${{ needs.gate.outputs.environment }}
       # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
@@ -152,7 +152,7 @@ jobs:
       REGISTRY: https://npm.stackra.figentra.com/
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false # nothing is pushed
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
@@ -198,7 +198,7 @@ jobs:
       # so a caller without the turbo grant builds with the local cache instead of failing the release.
       - name: Turborepo remote cache (sops)
         continue-on-error: true
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build/turbo
 

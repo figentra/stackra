@@ -104,14 +104,14 @@ jobs:
       CAPTURES_DIR: ${{ inputs.captures-dir }}
     steps:
       - name: Checkout product
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: main
           persist-credentials: false
           submodules: false
 
       - name: Checkout store tooling (core)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: figentra/stackra
           ref: ${{ inputs.core-ref }}

@@ -865,6 +865,11 @@
     "failed": "Error al subir",
     "retry": "Reintentar {name}"
   },
+  "pdf_preview": {
+    "title": "Vista previa de {name}",
+    "download": "Descargar {name}",
+    "unavailable": "Si el archivo no se muestra aquí, descárgalo."
+  },
   "share_button": {
     "share": "Compartir",
     "copied": "Enlace copiado",

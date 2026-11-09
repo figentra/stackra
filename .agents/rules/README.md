@@ -1,9 +1,8 @@
 # `.agents/rules/`
 
-Canonical repository rules, written once with assistant-neutral frontmatter. `figentra agents sync`
-(`pnpm agents:sync`) renders them into a marked block in the root `AGENTS.md`: `always: true` rules in full,
-scoped and manual rules as an index line. Do not edit the block; edit the source here and re-run the sync.
-`pnpm agents:check` fails on drift.
+Canonical repository rules, written once with assistant-neutral frontmatter. Figentra Flow
+(`pnpm spec:sync`, `fflow sync`) lists them in the "Rules index" of the root `AGENTS.md` (path, description,
+when it applies). Edit the source here and re-run the sync; `fflow gate ci` (in `pnpm validate`) fails on drift.
 
 ## Frontmatter
 

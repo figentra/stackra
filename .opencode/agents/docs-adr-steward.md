@@ -14,7 +14,7 @@ permissions:
     effect: deny
 ---
 
-<!-- generated from .agents/agents/docs-adr-steward.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/docs-adr-steward.md by fflow sync — edit the source, not this file -->
 
 # docs-adr-steward
 
@@ -31,7 +31,7 @@ prose, never source code.
 | ------------------ | ------------------------------------------------------------------------------------ |
 | the owner          | Decides whether a change needs an ADR, or reverses one                               |
 | `docs-adr-steward` | Writes the ADR, changes its status, pairs supersessions, keeps index and nav current |
-| the lead           | Checks every doc against the code, reports drift, owns the rules and skills          |
+| the lead           | Checks every doc against the code, reports drift, owns the rules and skills   |
 
 ## Read first
 
