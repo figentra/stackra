@@ -93,9 +93,12 @@ import {
 } from "@stackra/contracts";
 import {
   ForbiddenError,
+  IdempotencyKeyInProgressError,
   IdempotencyKeyReusedError,
   isRefusal,
   RateLimitedError,
+  refusalFromStored,
+  storedRefusal,
 } from "@stackra/errors";
 import type { Event } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
@@ -139,6 +142,7 @@ import type { ApprovalRequirement } from "#contracts/types/approval-requirement.
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
 import type { CallConsent } from "#contracts/types/call-consent.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
+import type { CallPublic } from "#contracts/types/call-public.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { Action } from "#core/bases/action.base";
@@ -170,6 +174,7 @@ import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
+import { publicOf } from "#core/functions/public-of.function";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
 import { keptOutput } from "#core/functions/kept-output.function";
@@ -180,6 +185,7 @@ import { queryCacheKey } from "#core/functions/query-cache-key.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
 import { verifyApproval } from "#core/functions/verify-approval.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
+import type { ActionPublic } from "#core/types/action-public.type";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionApproval } from "#core/types/action-approval.type";
 import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
@@ -217,6 +223,7 @@ interface Recorded {
   readonly effects?: ActionEffects;
   readonly approval?: boolean | ActionApproval;
   readonly stepUp?: AssuranceLevel;
+  readonly public?: ActionPublic;
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
@@ -290,6 +297,28 @@ const IAM = "bind an AccessControl driver (@stackra/iam); calls fail closed with
 
 const APPROVALS =
   "declares approval: true, so bind an ApprovalGate driver (the OS tasks-approvals service); it fails closed without one";
+
+/** The descriptor's `public` field, when the operation is public. */
+function publicField(open: CallPublic | undefined): { readonly public?: CallPublic } {
+  return open === undefined ? {} : { public: open };
+}
+
+/**
+ * Whether an `api_client` call may reach this operation at all: it is `public`, the call carries a key, and a
+ * publishable key calls a write only when the operation opts in (a read admits one unless it opts out).
+ */
+function keyMayCall(
+  descriptor: CallDescriptor,
+  options: { readonly public?: ActionPublic },
+  kind: "action" | "query",
+): boolean {
+  const open = options.public;
+  const key = descriptor.credential;
+  if (open === undefined || key === undefined) return false;
+  if (!key.publishable) return true;
+  const allowed = open === true ? undefined : open.publishable;
+  return allowed ?? kind === "query";
+}
 
 /**
  * Runs actions and queries.
@@ -439,6 +468,10 @@ export class ActionPipeline {
       area: options.area,
       ...(request.sandbox === true ? { sandbox: true as const } : {}),
       ...(request.origin === undefined ? {} : { origin: Object.freeze({ ...request.origin }) }),
+      ...(request.credential === undefined
+        ? {}
+        : { credential: Object.freeze({ ...request.credential }) }),
+      ...publicField(publicOf(options, registration?.permission, registration?.risk)),
     });
     const state: CallState = {
       idempotencyKey: undefined,
@@ -487,8 +520,16 @@ export class ActionPipeline {
         return this.intercepted(call, input);
       });
     } catch (error) {
-      if (taken.claim !== undefined && "held" in taken.claim)
-        await this.required(IdempotencyStore, "").release(taken.claim.held);
+      if (taken.claim !== undefined && "held" in taken.claim) {
+        const store = this.required(IdempotencyStore, "");
+        const { held, fingerprint, ttl, sent } = taken.claim;
+        // a refusal that retrying cannot change is the call's answer; it is written after the rollback, which
+        // took the claim row with it (a joined store). Anything else frees the key for a retry.
+        // only a key the caller sent: an input-derived key would replay the refusal to every later identical call
+        if (sent && isRefusal(error) && !error.retryable)
+          await store.completeRefused(held, fingerprint, storedRefusal(error), ttl);
+        else await store.release(held);
+      }
       // a parked request is a write the refusal's rollback would undo, so it is written after the transaction ends
       const failure = call.state.parking === undefined ? error : await this.parked(call, error);
       // a refused call's usage event is a write its rollback would undo, so it waits for the transaction to end
@@ -786,7 +827,14 @@ export class ActionPipeline {
    */
   private async checked(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, options, kind, ctx } = call;
-    if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
+    // an API key's caller reaches a `public` operation only, with a key; its scopes are checked by AccessControl
+    const viaKey = descriptor.actor.kind === ActorKind.ApiClient;
+    if (
+      viaKey
+        ? !keyMayCall(descriptor, options, kind)
+        : !options.actors.includes(descriptor.actor.kind)
+    )
+      throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
     // step-up asks a user only: a service, job, system or agent call carries no assurance (ADR 0406 as amended)
     // `{ exempt: "first-factor-enrolment" }` is no level: that action enforces its own step-up (STA-340)
@@ -877,7 +925,12 @@ export class ActionPipeline {
       await settle();
       return output;
     } catch (error) {
-      if (isRefusal(error) && !isRefusal(error, IdempotencyKeyReusedError)) await settle();
+      if (
+        isRefusal(error) &&
+        !isRefusal(error, IdempotencyKeyReusedError) &&
+        !isRefusal(error, IdempotencyKeyInProgressError)
+      )
+        await settle();
       throw error;
     }
   }
@@ -926,25 +979,47 @@ export class ActionPipeline {
   private async claim(
     call: Call,
     input: unknown,
-  ): Promise<{ readonly held: string } | { readonly replay: unknown } | undefined> {
+  ): Promise<
+    | {
+        readonly held: string;
+        readonly fingerprint: string;
+        readonly ttl: Duration;
+        /** Whether the key is the caller's own, not derived from the input. */
+        readonly sent: boolean;
+      }
+    | { readonly replay: unknown }
+    | undefined
+  > {
     const policy = call.options.idempotency ?? Idempotency.Optional;
     // its output must never be kept (a credential): a sent key is ignored, so nothing is stored or replayed
     if (policy === Idempotency.Never) return undefined;
     const sent = call.request.idempotencyKey;
-    if (sent === undefined && policy === Idempotency.Required)
+    const { descriptor } = call;
+    // An API key's write needs its own key whatever the action declares (Pay FR-004, #850 G2); every other caller,
+    // jobs and workflows included, keeps the declared policy
+    const keyCaller =
+      descriptor.credential !== undefined ||
+      descriptor.actor.kind === ActorKind.ApiClient ||
+      call.request.origin?.kind === CallOriginKind.ApiKey;
+    if (sent === undefined && (policy === Idempotency.Required || keyCaller))
       throw IdempotencyKeyRequiredError.create();
     if (sent === undefined && policy !== Idempotency.Derived) return undefined;
-    const { descriptor } = call;
     const fingerprint = await fingerprintOf(descriptor.key, input);
     // why: a generated client mints a fresh key per call, not per intent, so for any caller but an API key a Derived
     // action keeps deduplicating by its input (a double click on Refund stays one refund); an API key sends its own
-    const key =
-      sent === undefined ||
-      (policy === Idempotency.Derived && call.request.origin?.kind !== CallOriginKind.ApiKey)
-        ? `derived:${fingerprint}`
-        : sent;
+    const derived = sent === undefined || (policy === Idempotency.Derived && !keyCaller);
+    const key = derived || sent === undefined ? `derived:${fingerprint}` : sent;
     call.state.idempotencyKey = key;
-    const scoped = [descriptor.key, descriptor.scopeId ?? "-", descriptor.actor.id, key].join(":");
+    // the API key and the mode belong to the scope, so a principal's test and live keys (or two of its keys) never
+    // share an answer
+    const scoped = [
+      descriptor.key,
+      descriptor.scopeId ?? "-",
+      descriptor.actor.id,
+      descriptor.credential?.id ?? call.request.origin?.id ?? "-",
+      descriptor.sandbox === true ? "test" : "live",
+      key,
+    ].join(":");
     const store = this.required(
       IdempotencyStore,
       `${descriptor.key} has an Idempotency-Key; bind a store (the memory driver ships with @stackra/actions)`,
@@ -967,9 +1042,10 @@ export class ActionPipeline {
         ? own
         : window;
     const earlier = await store.claim(scoped, fingerprint, ttl);
-    if (earlier === undefined) return { held: scoped };
-    if (!earlier.done || earlier.fingerprint !== fingerprint)
-      throw IdempotencyKeyReusedError.create();
+    if (earlier === undefined) return { held: scoped, fingerprint, ttl, sent: !derived };
+    if (earlier.fingerprint !== fingerprint) throw IdempotencyKeyReusedError.create();
+    if (!earlier.done) throw IdempotencyKeyInProgressError.create();
+    if ("refusal" in earlier) throw refusalFromStored(earlier.refusal);
     return { replay: earlier.output };
   }
 

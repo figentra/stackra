@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./react` entry of @stackra/ai, the AI module UI kit (`ChatSurface` with its Props and part renderers, and
+ * Purpose: Stand-in barrel: the `./react` entry of @stackra/ai, the AI module UI kit (`ChatSurface` with its Props, part renderers and default renderers, and
  *          ADR 0507's Tamo provider, slot hook, settings resolver and offline mock client) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing; the block depends on
  *           @stackra/ui, never the reverse, and never reaches ./node (ADR 0504).
@@ -10,6 +10,8 @@
 export { ChatSurface } from "#react/chat-surface/chat-surface";
 export type { ChatSurfaceProps } from "#react/chat-surface/chat-surface.props";
 export type { ChatPartRenderers } from "#react/chat-surface/chat-part-renderers.type";
+export type { ChatPartOptions } from "#react/chat-surface/chat-part-options.type";
+export { defaultChatPartRenderers } from "#react/chat-surface/default-chat-part-renderers.constant";
 export { TamoProvider } from "#react/tamo/tamo-provider";
 export type { TamoProviderProps } from "#react/tamo/tamo-provider.props";
 export { useTamoSlot } from "#react/tamo/use-tamo-slot";

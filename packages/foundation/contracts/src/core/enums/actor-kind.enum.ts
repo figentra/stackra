@@ -9,7 +9,7 @@
  */
 import { Enum } from "#core/bases/enum.base";
 
-/** The eight actor kinds of ADR 0098. Only a `User` actor has a realm. */
+/** The nine actor kinds of ADR 0098 (as amended 2026-11-09). Only a `User` actor has a realm. */
 export const ActorKind = Enum.of({
   /** A signed-in person. */
   User: "user",
@@ -19,6 +19,8 @@ export const ActorKind = Enum.of({
   Agent: "agent",
   /** An agent outside the platform, through MCP or A2A with a granted credential. */
   ExternalAgent: "external_agent",
+  /** A tenant's own server calling with an API key the tenant issued (ADR 0278); only a `public` operation answers it. */
+  ApiClient: "api_client",
   /** A queued or scheduled run of an action. */
   Job: "job",
   /** A verified inbound webhook. */

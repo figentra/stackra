@@ -11,6 +11,7 @@
 import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { Duration } from "@stackra/contracts";
+import type { StoredRefusal } from "@stackra/errors";
 
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";
@@ -62,6 +63,19 @@ export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     this.entries.set(key, {
       record: Object.freeze({ fingerprint: held.record.fingerprint, done: true, output }),
       expiresAt: held.expiresAt,
+    });
+  }
+
+  /** Stores the refusal that ended a call, whether or not its claim is still held. */
+  async completeRefused(
+    key: string,
+    fingerprint: string,
+    refusal: StoredRefusal,
+    ttl: Duration,
+  ): Promise<void> {
+    this.entries.set(key, {
+      record: Object.freeze({ fingerprint, done: true, refusal }),
+      expiresAt: this.clock.now().getTime() + Duration.toMilliseconds(ttl),
     });
   }
 

@@ -5250,6 +5250,9 @@ importers:
       '@stackra/support':
         specifier: workspace:*
         version: link:../../foundation/support
+      '@stackra/tokens':
+        specifier: workspace:*
+        version: link:../../design-system/tokens
       '@stackra/ui':
         specifier: workspace:*
         version: link:../../design-system/ui
