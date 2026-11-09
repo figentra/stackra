@@ -1,0 +1,15 @@
+{
+  "label": "Sections",
+  "plans": "Plans",
+  "plans_text": "Each plan holds its prices, one per currency and interval, in integer minor units.",
+  "plans_status": "plans: 3 plans, 6 prices",
+  "trials": "Trials",
+  "trials_text": "A trial starts the subscription without a charge and converts on its last day.",
+  "trials_status": "trials: 14 days, card on file",
+  "usage": "Usage",
+  "usage_text": "Metered usage is recorded as it happens and charged at the end of the period.",
+  "usage_status": "usage: 1 meter, billed monthly",
+  "dunning": "Dunning",
+  "dunning_text": "A failed payment is retried on a schedule before the subscription is paused.",
+  "dunning_status": "dunning: 3 retries over 7 days"
+}
