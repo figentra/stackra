@@ -1038,7 +1038,8 @@ export function buildManifest(ir: MemberIR): {
   // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686), and the
   // model a `CrudService<M>` is typed against (`partner`), so the host registers the pair (ADR 0305 rule 5). Its
   // extension points too: its services inject them, so a host binds them alongside (`LoyaltyKitExtensionPoint`).
-  // Its actions and queries too: they are its module's surface, which a host that imports the module binds.
+  // Its actions and queries too: they are its module's surface, which a host that imports the module binds. And its
+  // raw controllers with their `path`, which a host binds and serves as it serves its own.
   const services: Entry[] = published
     ? ir.classes
         .filter(
@@ -1046,12 +1047,14 @@ export function buildManifest(ir: MemberIR): {
             (candidate.kind === "service" ||
               candidate.kind === "extension_point" ||
               candidate.kind === "action" ||
-              candidate.kind === "query") &&
+              candidate.kind === "query" ||
+              (candidate.kind === "controller" && typeof candidate.options["path"] === "string")) &&
             candidate.abstract !== true,
         )
         .map((declared) => ({
           class: declared.name,
           from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
+          ...(declared.kind === "controller" ? { path: String(declared.options["path"]) } : {}),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
           ...(declared.partner === undefined
             ? {}

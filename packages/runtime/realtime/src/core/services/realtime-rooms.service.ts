@@ -14,7 +14,9 @@
  *           `room_limit_reached`. Payloads are relayed, never stored or read. The cross-instance member count is
  *           eventually consistent: each instance announces its count on a join and stamps it on every relayed frame, and
  *           a count not refreshed for two idle periods is dropped (its members were idle-closed or its instance died).
- *           A publish key works only for the member's own principal.
+ *           A publish key works only for the member's own principal. A grant with `recheckEdit` has the edit right asked
+ *           again before each `update` is relayed: a `false` answer (or a failed check) refuses that update and every
+ *           later one, so a right revoked mid-session drops the member's next edit (the member stays as a viewer).
  * Runtime: isomorphic
  * Governing contract: ADR 0346 (decisions 1 and 3 to 6); ADR 0225 (decision 1); ADR 0294 (decisions 16 and 17).
  */
@@ -72,7 +74,9 @@ interface Entry {
   readonly room: string;
   readonly key: string;
   readonly peer: RoomPeer;
-  readonly mayEdit: boolean;
+  /** Cleared for good once a re-check answers that the edit right is gone. */
+  mayEdit: boolean;
+  readonly recheckEdit: (() => Promise<boolean>) | undefined;
   windowStart: number;
   sent: number;
   idle: ReturnType<typeof setTimeout> | undefined;
@@ -174,6 +178,7 @@ export class RealtimeRooms extends Service {
       key,
       peer,
       mayEdit: grant.mayEdit,
+      recheckEdit: grant.recheckEdit,
       windowStart: Date.now(),
       sent: 0,
       idle: undefined,
@@ -227,6 +232,11 @@ export class RealtimeRooms extends Service {
       return false;
     }
     const joined = member;
+    const refuse = (error: unknown): void => {
+      if (isRefusal(error, ForbiddenError))
+        socket.send(JSON.stringify({ t: "refused", code: error.code }));
+      else if (!isRefusal(error, RoomLimitReachedError)) throw error;
+    };
     socket.addEventListener("message", (event) => {
       if (typeof event.data !== "string") return;
       let message: unknown;
@@ -237,11 +247,9 @@ export class RealtimeRooms extends Service {
       }
       if (!isPublish(message)) return;
       try {
-        joined.publish(message);
+        void joined.publish(message)?.catch(refuse);
       } catch (error) {
-        if (isRefusal(error, ForbiddenError))
-          socket.send(JSON.stringify({ t: "refused", code: error.code }));
-        else if (!isRefusal(error, RoomLimitReachedError)) throw error;
+        refuse(error);
       }
     });
     socket.addEventListener("close", () => joined.leave());
@@ -314,7 +322,8 @@ export class RealtimeRooms extends Service {
    *
    * @param principalId - the action's verified caller; it must be the member's principal.
    * @throws ForbiddenError when the member is here and belongs to another principal, or is a viewer sending an
-   *         update; RoomLimitReachedError over the size or rate cap (the member is dropped).
+   *         update (or its edit right failed the re-check); RoomLimitReachedError over the size or rate cap (the member
+   *         is dropped).
    */
   async publishFrom(key: string, principalId: string, message: RoomPublish): Promise<void> {
     const entry = this.keys.get(key);
@@ -323,7 +332,7 @@ export class RealtimeRooms extends Service {
       return;
     }
     if (entry.self.principalId !== principalId) throw ForbiddenError.create();
-    this.publish(entry.room, entry, message);
+    await this.publish(entry.room, entry, message);
   }
 
   /** Takes what another instance fanned out: a room frame for this instance's members, a member count, or a publish. */
@@ -331,12 +340,15 @@ export class RealtimeRooms extends Service {
     if (message.kind === "room-publish") {
       const entry = this.keys.get(message.key);
       if (entry === undefined || entry.self.principalId !== message.principalId) return;
-      try {
-        this.publish(entry.room, entry, message.message);
-      } catch (error) {
+      const refuse = (error: unknown): void => {
         if (isRefusal(error, ForbiddenError))
           entry.peer.deliver({ t: "refused", code: error.code });
         else if (!isRefusal(error, RoomLimitReachedError)) throw error;
+      };
+      try {
+        void this.publish(entry.room, entry, message.message)?.catch(refuse);
+      } catch (error) {
+        refuse(error);
       }
       return;
     }
@@ -364,8 +376,13 @@ export class RealtimeRooms extends Service {
     return total;
   }
 
-  /** Checks the caps and the grant, then relays `message` from `entry`. */
-  private publish(room: string, entry: Entry, message: RoomPublish): void {
+  /**
+   * Checks the caps and the grant, then relays `message` from `entry`.
+   *
+   * @returns `undefined` once relayed; a promise for an `update` whose grant re-checks the edit right, rejecting with
+   *          ForbiddenError when the right is gone.
+   */
+  private publish(room: string, entry: Entry, message: RoomPublish): Promise<void> | undefined {
     const { maxMessageBytes, maxMessagesPerSecond } = this.config.rooms;
     const size = new TextEncoder().encode(JSON.stringify(message.data ?? null)).length;
     const now = Date.now();
@@ -380,7 +397,22 @@ export class RealtimeRooms extends Service {
     }
     if (message.t === "update" && !entry.mayEdit) throw ForbiddenError.create();
     this.touch(entry);
-    this.relay(room, { t: message.t, from: entry.self, data: message.data }, entry);
+    const frame: RoomFrame = { t: message.t, from: entry.self, data: message.data };
+    if (message.t !== "update" || entry.recheckEdit === undefined) {
+      this.relay(room, frame, entry);
+      return undefined;
+    }
+    // Fails closed: a check that cannot answer refuses the update as a revoked right does.
+    return entry
+      .recheckEdit()
+      .catch(() => false)
+      .then((may) => {
+        if (!may) {
+          entry.mayEdit = false;
+          throw ForbiddenError.create();
+        }
+        if (this.keys.get(entry.key) === entry) this.relay(room, frame, entry);
+      });
   }
 
   /** Delivers `frame` here and hands it to the other instances. */

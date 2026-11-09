@@ -8,7 +8,8 @@ entitlement.
 **Tier:** `tier:lib` (`packages/experience/collaboration`). Entries `.`, `./contracts`, `./node`, `./react` and
 `./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
 `@stackra/errors`, `@stackra/entitlements`, `@stackra/realtime`, `@stackra/database`, `@stackra/model`,
-`@stackra/events`, `@stackra/actions`, `@stackra/transport` and zod. React and Yjs are optional peers for `./react`.
+`@stackra/events`, `@stackra/actions`, `@stackra/transport`, `@stackra/app` (the room controller),
+`@stackra/clients` (the client token driver) and zod. React and Yjs are optional peers for `./react`.
 
 ## What is here
 
@@ -28,6 +29,10 @@ entitlement.
 | `./node`      | `CommentThread`, `Comment`, `CommentRevision`, `CommentMention`, `CommentService`       | the tables (`collaboration.0002_create_comments`) and service  |
 | `./testing`   | `MemoryMentionDirectoryDriver`                                                          | a fixed set of known mention targets                           |
 | `./node`      | `RoomPublishAction`, `RoomPublishInput`, `RoomPermissions`                              | `collaboration.room.publish`: a stream member's messages       |
+| `./node`      | `Collaborative`, `CollaborativeOptions`                                                 | the model facet: a model's records have rooms                  |
+| `./node`      | `RoomTokenAction`, `RoomTokenInput`, `RoomTokenOutput`                                  | `collaboration.room.token`: the checked one-time room token    |
+| `./node`      | `RoomController`, `CollaborationModule`                                                 | the room stream at `REALTIME_ROOM_PATH`; the root module       |
+| `.`           | `ClientRoomTokensDriver`                                                                | `RoomTokens` over the app's `DynamicClient` (driver `client`)  |
 
 ## Comments
 
@@ -97,6 +102,62 @@ const other = new CollaborationSession(config, presence.peer("usr_…"), sync.pe
 presence.drop(); // the link goes down; presence.reconnect() brings it back
 ```
 
+## Hosting rooms
+
+A service hosts rooms by declaring `@stackra/collaboration` (with `@stackra/realtime`) and marking each model whose
+records are co-edited:
+
+```ts
+// src/modules/studio/models/template.model.ts
+@Collaborative({ view: TemplatePermissions.read, edit: TemplatePermissions.update })
+export class Template extends Model.with(HasPublicId("tpl"), BelongsToTenant) {}
+```
+
+Gen wires the rest from the package's root module (`CollaborationModule`), with no hand code in the service:
+
+- `collaboration.room.token@1` (`RoomTokenAction`, `POST /rooms/token`, users only, not a tool, permission
+  `collaboration.room.token`, L2). Its input is the document's public id; the prefix names the `@Collaborative` model.
+  It reads the record through its repository in the caller's tenant (row security and visibility: an unknown, another
+  tenant's or an invisible document is `not_found`), checks the model's `view` permission on it through `AccessControl`
+  as `ctx.authorize(record)` does (`forbidden`), requires `LiveCollaborationEntitlement` for the scope
+  (`entitlement_required`), sets `mayEdit` from the model's `edit` permission and answers the `RealtimeTarget` (the
+  `realtime.origin` config and a one-time token from `RealtimeRooms.issueToken`, bound to the document and the caller).
+- `collaboration.room.publish@1` (`POST /rooms/publish`), the stream member's send.
+- `RoomController` at `REALTIME_ROOM_PATH`: a GET is the room's server-sent-events stream (`RealtimeRooms.stream`).
+- Revocation: the grant carries `recheckEdit`, so the room asks the edit permission again before relaying each
+  `update`. Once it is refused (or the check fails) the member's update is answered `refused: forbidden` and the member
+  stays a viewer; viewing ends at the latest when the token's lifetime (`realtime.subscribeTokenTtl`) closes the link.
+
+A browser or native host binds `RoomTokens` to `ClientRoomTokensDriver` (driver `client`): it calls the two actions by
+key and route through the app's `DynamicClient`. When the hosting service is not behind the one API URL, set
+`clients.producers.collaboration` to its base URL.
+
+```mermaid
+sequenceDiagram
+  participant B as Browser (CollaborationSession)
+  participant T as collaboration.room.token
+  participant R as RealtimeRooms
+  participant P as Other members
+  B->>T: POST /rooms/token { document }
+  T->>T: load record (tenant, visibility), authorize view, entitlement, mayEdit from edit
+  T->>R: issueToken({ session, document, mayEdit, recheckEdit })
+  R-->>T: one-time token
+  T-->>B: { origin, token }
+  alt WebSocket opens
+    B->>R: WS REALTIME_ROOM_PATH?token (accept)
+  else socket blocked
+    B->>R: GET REALTIME_ROOM_PATH?token (RoomController, stream)
+  end
+  R-->>B: welcome { self, key }
+  B->>R: update (socket, or POST /rooms/publish with key)
+  R->>R: caps, mayEdit, recheckEdit()
+  R-->>P: update (here, and through the fanout)
+  Note over T,R: edit permission revoked
+  B->>R: next update
+  R->>R: recheckEdit() is false
+  R-->>B: refused: forbidden (member stays a viewer)
+```
+
 ## Network drivers
 
 - `RealtimePresenceChannelDriver` and `RealtimeSyncTransportDriver` (`.`) ride the document's `@stackra/realtime` room
@@ -118,5 +179,7 @@ presence.drop(); // the link goes down; presence.reconnect() brings it back
 
 - A stream member's publish that reaches another instance is fire-and-forget: a refusal arrives on the member's own
   stream as a `refused` frame, not as the action's answer.
-- Gen still routes only the WebSocket to `REALTIME_ROOM_PATH`; the raw endpoint must call `rooms.stream(request)` for a
-  plain GET before the fallback works end to end.
+- The generated Encore adapter cannot upgrade a socket: `RoomController` answers a WebSocket upgrade 426 and the link
+  falls back to the event stream with the same token. A runtime that upgrades sockets calls `RealtimeRooms.accept`.
+- The edit re-check reads the policy for every relayed update; the record is the one loaded at token time, so a policy
+  that reads the record's fields sees them as they were then.

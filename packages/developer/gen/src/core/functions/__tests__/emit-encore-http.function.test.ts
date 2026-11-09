@@ -48,7 +48,8 @@ describe(emitEncoreHttp, () => {
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
       "  action?: AnyClass;",
       "      action: call.action,",
-      "  resp.end(Buffer.from(await response.arrayBuffer()));",
+      "  if (response.body === null) resp.end();",
+      "  else Readable.fromWeb(response.body as never).pipe(resp);",
     ])
       expect(content).toContain(line);
   });

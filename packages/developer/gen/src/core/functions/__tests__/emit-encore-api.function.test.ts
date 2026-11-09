@@ -4,7 +4,8 @@
  *          action and query that has an endpoint, named by its camel-cased key and version, with the entry's method and
  *          path, typed by its input and output schemas, answered by the `answerCall` helper (`api.raw`, `auth: false` to Encore, the pipeline run with the
  *          verified actor); only an anonymous entry opens to a call with no credential; a controller is a raw `*`
- *          endpoint; an entry with no endpoint or a hosted entry gets no adapter; a package, an app and a service with no such entry get no file.
+ *          endpoint; an entry with no endpoint gets no adapter, nor a hosted entry unless the host imports its package's root
+ *          module, when its actions and controllers get the same adapters; a package, an app and a service with no such entry get no file.
  * Boundary: test only; runs on the commerce IR fixture and the manifest `buildManifest` derives from it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 21); ADR 0098; STA-2025; STA-2063 (FR-002 to
@@ -170,6 +171,38 @@ describe(emitEncoreApi, () => {
   it("writes no adapter for an entry without an endpoint or a hosted entry", () => {
     expect(content).not.toContain("CountOrdersQuery");
     expect(content).not.toContain("kitOrderCancelV1");
+  });
+
+  it("writes a hosted package's actions and controllers when the host imports its root module", () => {
+    const kit = {
+      member: "kit",
+      package: "@acme/kit",
+      modules: [{ key: "kit", class: "KitModule", file: "src/node/kit.module.ts", exports: [] }],
+      services: [
+        { class: "CancelOrderAction", from: "@acme/kit/node" },
+        { class: "RoomController", from: "@acme/kit/node", path: "/realtime/room" },
+      ],
+    } as unknown as StackraManifest;
+    const hosting: MemberIR = { ...ir, dependencies: [{ package: "@acme/kit", manifest: kit }] };
+    const text = emitEncoreApi(hosting, manifest)?.content ?? "";
+    for (const line of [
+      'import { CancelOrderAction as CancelOrderAction2, RoomController } from "@acme/kit/node";',
+      "export const kitOrderCancelV1 = api.raw(",
+      "        new ActionPipeline(container).execute(CancelOrderAction2, input as never, { actor }),",
+      "export const roomController = api.raw(",
+      '  { method: "*", path: "/realtime/room", expose: true, auth: false },',
+      "      execute: (container, _input, _actor, request) => container.get(RoomController).handle(request),",
+    ])
+      expect(text).toContain(line);
+    // A hosted input class is not known, so its query string is not coerced.
+    const hostedCancel = text.slice(text.indexOf("export const kitOrderCancelV1"));
+    expect(hostedCancel.slice(0, hostedCancel.indexOf(");"))).not.toContain("input: ");
+    const noRoot = { ...kit, modules: [{ key: "kit", class: "KitModule", exports: [] }] };
+    const unhosted: MemberIR = {
+      ...ir,
+      dependencies: [{ package: "@acme/kit", manifest: noRoot as unknown as StackraManifest }],
+    };
+    expect(emitEncoreApi(unhosted, manifest)?.content).not.toContain("roomController");
   });
 
   it("writes a raw controller as a wildcard-method endpoint through the same helper", () => {

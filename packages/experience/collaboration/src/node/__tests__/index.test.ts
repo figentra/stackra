@@ -14,15 +14,21 @@ describe("@stackra/collaboration/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "COLLABORATION_ENTITIES",
+      "CollaborationModule",
+      "Collaborative",
       "Comment",
       "CommentMention",
       "CommentRevision",
       "CommentService",
       "CommentThread",
       "PostgresSnapshotStoreDriver",
+      "RoomController",
       "RoomPermissions",
       "RoomPublishAction",
       "RoomPublishInput",
+      "RoomTokenAction",
+      "RoomTokenInput",
+      "RoomTokenOutput",
     ]);
   });
 });
