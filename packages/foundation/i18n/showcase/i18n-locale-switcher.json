@@ -1,0 +1,21 @@
+{
+  "slug": "i18n-locale-switcher",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/i18n",
+  "exportName": "LocaleSwitcher",
+  "parts": ["LocaleSwitcher"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 200
+    }
+  ],
+  "related": ["free/locale-switcher", "free/select"],
+  "tokens": ["color.field"],
+  "keywords": ["language", "locale", "switcher", "translation", "right-to-left", "kit"],
+  "status": "new"
+}

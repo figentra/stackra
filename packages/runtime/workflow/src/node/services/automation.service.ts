@@ -3,7 +3,8 @@
  * Purpose: `AutomationService`, the module service over `Automation`, the automation document kind: opens an automation
  *          in a scope, stores a checked document as its next draft revision, dry-runs a revision (which publishing
  *          requires), publishes a revision with the principal it runs as, reads a revision, lists the published
- *          automations a trigger starts (pausing each whose publisher lost access to a block it calls), pauses an
+ *          automations a trigger or a schedule starts (pausing each whose publisher lost access to a block it calls, and
+ *          leaving out, with `AutomationRunSkipped`, each its tenant's `AutomationQuota` refuses), pauses an
  *          automation for a host's reason (a failure threshold, a person), and seeds the default automations of a
  *          versioned workflow template pack into a scope.
  * Boundary: a `CrudService<Automation>` that injects `Repository<Revision>` (content's `HasRevisions` table), so every
@@ -31,15 +32,20 @@ import { CrudService, type Repository, UniqueViolation } from "@stackra/database
 import { NotFoundError } from "@stackra/errors";
 
 import { WORKFLOW_TEMPLATE_PACK_SCHEMA } from "#core/constants/workflow-template-pack-schema.constant";
+import { AutomationQuotaAnswer } from "#core/enums/automation-quota-answer.enum";
+import { AutomationStart } from "#core/enums/automation-start.enum";
 import { SeedResult } from "#core/enums/seed-result.enum";
 import { AutomationChangedError } from "#core/errors/automation-changed.error";
 import { AutomationExceedsPublisherError } from "#core/errors/automation-exceeds-publisher.error";
 import { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 import { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
 import { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
+import { AutomationQuotaUnavailableError } from "#core/errors/automation-quota-unavailable.error";
 import { AutomationPaused } from "#core/events/automation-paused.event";
+import { AutomationRunSkipped } from "#core/events/automation-run-skipped.event";
 import { checkAutomation } from "#core/functions/check-automation.function";
 import { dryRun } from "#core/functions/dry-run.function";
+import type { AutomationQuota } from "#core/ports/automation-quota.port";
 import type { PublisherAccess } from "#core/ports/publisher-access.port";
 import type { AutomationDocument } from "#core/types/automation-document.type";
 import type { DryRun } from "#core/types/dry-run.type";
@@ -79,17 +85,22 @@ export class AutomationService extends CrudService<Automation> {
   /** What each publisher may call. */
   private readonly access: PublisherAccess;
 
+  /** Whether a tenant may start one more run. */
+  private readonly quota: AutomationQuota;
+
   /** Where `ScopeOwnership` is looked up when an automation is released; set by `connect`. */
   private resolver: Resolver | undefined;
 
   /**
    * @param revisions - the revisions of every `HasRevisions` model, one row per revision.
    * @param access - which action blocks a publisher may call; @stackra/iam binds it.
+   * @param quota - whether a tenant may start one more run; the host selects its billing's driver or the unlimited one.
    */
-  constructor(revisions: Repository<Revision>, access: PublisherAccess) {
+  constructor(revisions: Repository<Revision>, access: PublisherAccess, quota: AutomationQuota) {
     super();
     this.revisions = revisions;
     this.access = access;
+    this.quota = quota;
   }
 
   /**
@@ -201,9 +212,22 @@ export class AutomationService extends CrudService<Automation> {
 
   /**
    * The published, running automations of the session's scopes that `block` (a trigger block key) starts. One whose
-   * publisher may no longer call a block of its document is paused instead (`AutomationPaused`) and left out.
+   * publisher may no longer call a block of its document is paused instead (`AutomationPaused`) and left out. Each
+   * left is checked against its tenant's `AutomationQuota`: one over the quota is left out and records
+   * `AutomationRunSkipped` (`quota_exceeded`); one whose quota cannot be read starts nothing and records
+   * `quota_unavailable` (fail closed). Neither throws, so the other automations of the occurrence still start.
+   *
+   * @param startedBy - what starts the runs, kept on a skip: a trigger event's delivery (the default) or a schedule's
+   *   tick.
+   * @param options - `last: false` when a retry follows (a queued start's attempt that is not its last): an unreadable
+   *   quota then throws instead of recording the skip, so the retry tries again. Default `last: true`.
+   * @throws AutomationQuotaUnavailableError for an event start whose quota cannot be read when `last` is false.
    */
-  async triggered(block: string): Promise<TriggeredAutomation[]> {
+  async triggered(
+    block: string,
+    startedBy: AutomationStart = AutomationStart.Event,
+    options: { readonly last?: boolean } = {},
+  ): Promise<TriggeredAutomation[]> {
     const automations = await this.find({
       trigger: block,
       publishedRevision: { $ne: null },
@@ -226,6 +250,8 @@ export class AutomationService extends CrudService<Automation> {
       const document = row.data["document"] as AutomationDocument;
       // oxlint-disable-next-line no-await-in-loop -- one access check per automation, in the delivery's transaction
       if (await this.pauseWithoutAccess(automation, document)) continue;
+      // oxlint-disable-next-line no-await-in-loop -- one quota check per automation, in the delivery's transaction
+      if (!(await this.withinQuota(automation, startedBy, options.last ?? true))) continue;
       started.push({ automationId: automation.id, document, principal: automation.principal });
     }
     return started;
@@ -435,5 +461,45 @@ export class AutomationService extends CrudService<Automation> {
       throw error;
     }
     return number;
+  }
+
+  /**
+   * Whether `automation`'s scope may start one more run. Otherwise it records `AutomationRunSkipped` and answers
+   * `false`: `quota_exceeded` over the quota, `quota_unavailable` when the quota cannot be read (an `unavailable`
+   * answer, an answer this version does not know, or a driver that throws), which fails closed. An unreadable quota
+   * throws only for an event start that a retry follows (`last` false, a queued start's earlier attempt), so the queue
+   * tries again; on the last attempt, and for an in-process start, the skip is what keeps the occurrence in the run
+   * history.
+   *
+   * @throws AutomationQuotaUnavailableError for an event start whose quota cannot be read when `last` is false.
+   */
+  private async withinQuota(
+    automation: Automation,
+    startedBy: AutomationStart,
+    last: boolean,
+  ): Promise<boolean> {
+    let answer: AutomationQuotaAnswer;
+    try {
+      answer = await this.quota.check(
+        { id: automation.scopeId, path: automation.scopePath },
+        automation.id,
+      );
+    } catch {
+      answer = AutomationQuotaAnswer.Unavailable;
+    }
+    if (answer === AutomationQuotaAnswer.Allow) return true;
+    const exceeded = answer === AutomationQuotaAnswer.Exceeded;
+    // a queued event start that a retry follows tries the quota again rather than skip the occurrence
+    if (!exceeded && !last && startedBy === AutomationStart.Event)
+      throw AutomationQuotaUnavailableError.create();
+    automation.record(
+      AutomationRunSkipped.create({
+        automationId: automation.id,
+        key: automation.key,
+        reason: exceeded ? "quota_exceeded" : "quota_unavailable",
+        startedBy,
+      }),
+    );
+    return false;
   }
 }

@@ -1,16 +1,16 @@
 ---
 description: Sync agent definitions (.agents/agents) to .claude/.opencode and report drift
-allowed-tools: Bash(pnpm agents:sync), Bash(pnpm agents:check)
+allowed-tools: Bash(pnpm spec:sync), Bash(pnpm exec fflow check)
 ---
 
 Sync the canonical agent definitions and verify there is no drift:
 
 ```bash
-pnpm agents:sync
-pnpm agents:check
+pnpm spec:sync
+pnpm exec fflow check
 ```
 
-`pnpm agents:sync` renders `.agents/agents/*.md` (plus tier→model from `.agents/models.yaml`) into the generated copies under `.claude/agents` and `.opencode/agents`. `pnpm agents:check` then verifies the generated copies match the sources.
+`pnpm spec:sync` (`fflow sync`) renders `.agents/agents/*.md` (plus tier→model from `.agents/models.yaml`) into the generated copies under `.claude/agents` and `.opencode/agents`. `fflow check` then verifies the generated copies match the sources.
 
 Report the result plainly:
 

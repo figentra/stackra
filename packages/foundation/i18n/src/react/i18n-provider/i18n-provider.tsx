@@ -5,7 +5,8 @@
  *          hooks read one locale on the server and in the browser or app.
  * Boundary: reads `I18nConfig` from the container of the nearest `ContainerProvider` (`useConfig`), never a static. The
  *           digits are the `numerals` prop (the customer's setting) where `scopeChoosesNumerals` allows, else the
- *           configured default; every formatter of the `./react` entry writes them. It
+ *           configured default; every formatter of the `./react` entry writes them. The calendar is the `calendar`
+ *           prop (the tenant's `DisplaySettings.calendar`), else Gregorian. It
  *           loads nothing: the catalogues arrive merged, and a locale switch is the `setLocale` prop's (absent on the
  *           web, where switching is a navigation). On native, a `region` replaces the locale's
  *           formats and adds the phone's region subtag and time zone.
@@ -16,6 +17,7 @@ import { useConfig } from "@stackra/config/react";
 import { type ReactNode, useMemo } from "react";
 
 import { I18nConfig } from "#config/i18n.config";
+import { CalendarSystem } from "#core/enums/calendar-system.enum";
 import { intlLocale } from "#core/functions/intl-locale.function";
 import { localeFormat } from "#core/functions/locale-format.function";
 import type { LocaleFormat } from "#core/types/locale-format.type";
@@ -46,6 +48,7 @@ export function I18nProvider({
   messages,
   setLocale,
   numerals: chosen,
+  calendar = CalendarSystem.Gregory,
   region,
   children,
 }: I18nProviderProps): ReactNode {
@@ -61,12 +64,13 @@ export function I18nProvider({
       locale,
       intlLocale: intlLocale(tag, numerals, format.hourCycle),
       numerals,
+      calendar,
       format,
       timeZone: region?.timeZone ?? null,
       messages,
       config,
       setLocale: setLocale ?? urlSelectsLocale,
     };
-  }, [locale, messages, config, numerals, setLocale, region]);
+  }, [locale, messages, config, numerals, calendar, setLocale, region]);
   return <I18nContext value={state}>{children}</I18nContext>;
 }

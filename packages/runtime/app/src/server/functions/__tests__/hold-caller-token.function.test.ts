@@ -5,7 +5,8 @@
  *          forwards the user's token only into an action that declares `onBehalfOf: { secondHop: true }`, and into any
  *          other action its outgoing calls carry the service token alone (one hop); an anonymous, agent or lone
  *          service call holds nothing; the holder is empty once the call ends and never reaches a concurrent call; the
- *          headers are read in any case, from a `Headers` or a record, and a repeated header holds nothing; and through
+ *          headers are read in any case, from a `Headers` or a record, and a repeated header holds nothing; a
+ *          `stream: true` action's call holds the token until its stream ends or its reader cancels it; and through
  *          the action pipeline no token reaches the call's context, its actor, its audit entry, a log line or the
  *          console.
  * Boundary: test only; the tokens are throwaway strings (nothing here verifies one: `CallAuthenticator` does, and its
@@ -15,7 +16,7 @@
  */
 import { inspect } from "node:util";
 
-import { Action, ActionPipeline, registerActions } from "@stackra/actions";
+import { Action, ActionPipeline, Idempotency, registerActions } from "@stackra/actions";
 import type { ActionContext, Resolver } from "@stackra/actions";
 import { AccessControl, AuditTrail } from "@stackra/actions/contracts";
 import type { AuditEntry } from "@stackra/actions/contracts";
@@ -60,6 +61,17 @@ class IssueBalanceAction extends Action({
   key: "balance.issue",
   actors: [ActorKind.Service],
   onBehalfOf: { secondHop: true },
+}) {
+  async handle(): Promise<void> {}
+}
+
+/** An action whose answer is a stream: its call ends when the stream does. */
+class SendMessageAction extends Action({
+  key: "message.send",
+  actors: [ActorKind.User],
+  stream: true,
+  tool: false,
+  idempotency: Idempotency.Never,
 }) {
   async handle(): Promise<void> {}
 }
@@ -207,6 +219,70 @@ describe(holdCallerToken, () => {
     // work the call left running reads nothing once it ended
     expect(reader?.()).toBeUndefined();
     expect(ON_BEHALF_OF_TOKEN.getStore()).toBeUndefined();
+  });
+
+  /** The loop writing a streamed answer forwards the token while the caller listens, and never after the end. */
+  it("holds a streamed call's token until its stream ends", async () => {
+    let reader: (() => string | undefined) | undefined;
+    let write: ((chunk: string) => void) | undefined;
+    let end: (() => void) | undefined;
+    const answer = await holdCallerToken(
+      { authorization: `Bearer ${USER_TOKEN}` },
+      user,
+      SendMessageAction,
+      async () => {
+        reader = ON_BEHALF_OF_TOKEN.getStore();
+        return new ReadableStream<string>({
+          start(controller) {
+            write = (chunk) => controller.enqueue(chunk);
+            end = () => controller.close();
+          },
+        });
+      },
+    );
+    expect(answer).toBeInstanceOf(ReadableStream);
+    const chunks = (answer as ReadableStream<string>).getReader();
+    write?.("a");
+    expect(await chunks.read()).toEqual({ done: false, value: "a" });
+    // handle has returned, and the stream is still open: the loop still forwards the token
+    expect(reader?.()).toBe(USER_TOKEN);
+    end?.();
+    expect((await chunks.read()).done).toBe(true);
+    expect(reader?.()).toBeUndefined();
+  });
+
+  /** A caller that goes away ends the call too. */
+  it("empties a streamed call's holder when its reader cancels", async () => {
+    let reader: (() => string | undefined) | undefined;
+    const cancelled = vi.fn();
+    const answer = await holdCallerToken(
+      { authorization: `Bearer ${USER_TOKEN}` },
+      user,
+      SendMessageAction,
+      async () => {
+        reader = ON_BEHALF_OF_TOKEN.getStore();
+        return new ReadableStream<string>({ cancel: cancelled });
+      },
+    );
+    expect(reader?.()).toBe(USER_TOKEN);
+    await (answer as ReadableStream<string>).cancel("gone");
+    expect(reader?.()).toBeUndefined();
+    expect(cancelled).toHaveBeenCalledWith("gone");
+  });
+
+  /** Only a `stream: true` action is held past `handle`: another action's stream output ends the call as usual. */
+  it("empties the holder at once when the action does not stream", async () => {
+    let reader: (() => string | undefined) | undefined;
+    await holdCallerToken(
+      { authorization: `Bearer ${USER_TOKEN}` },
+      user,
+      PostSettlementAction,
+      async () => {
+        reader = ON_BEHALF_OF_TOKEN.getStore();
+        return new ReadableStream<string>();
+      },
+    );
+    expect(reader?.()).toBeUndefined();
   });
 });
 

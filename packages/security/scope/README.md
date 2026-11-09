@@ -48,8 +48,9 @@ export class ScopeConfig extends BaseScopeConfig {
 
 The defaults are `platform` then `product`, rooted at `platform`. A node stores its level's key as text, so a level
 added here needs no code and no migration. A child takes its parent's level when that level is recursive, else the next
-one (`childLevelsOf`). Another package contributes its own level the same way, as data in the deployment's
-configuration. An alias is a lang key; a level without one reads `scope::levels.<key>` from `assets/lang/`.
+one (`childLevelsOf`). A level that sits under several levels names them in `parents` (a location under a tenant or a
+unit: `{ key: "location", recursive: false, parents: ["tenant", "unit"] }`); a level with no `parents` keeps the chain.
+Another package contributes its own level the same way, as data in the deployment's configuration. An alias is a lang key; a level without one reads `scope::levels.<key>` from `assets/lang/`.
 
 ## Nodes
 

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/navigation",
-  "version": "0.30.0",
+  "version": "0.32.0",
   "private": false,
   "description": "Stackra navigation: the Route, Layout and Menu kinds, typed route refs and contexts, chrome config, the React Router 7 and React Navigation adapters, the root error boundary, router-aware links, and the ModuleMenu kit block that draws every declared module menu (web Sidebar, native NavigationList)",
   "keywords": [

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `Widget<Q>` and `Widget.place`: the kind record in layer 1, the checked options (size,
  *          order, ranges, refresh at least 30 seconds), a placement shadow in layer 2 or the given layer that keeps the
- *          base's display, and the refusals of a placement that changes more than it may.
+ *          base's display, the refusals of a placement that changes more than it may, and a KPI's note path typed
+ *          against the query output.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rules 14 to 19); ADR 0306 (rules 6 to 8); ADR 0336 (decision 4).
@@ -35,6 +36,7 @@ interface Metric {
 interface KpisOutput {
   readonly revenue: Metric;
   readonly orders: Metric;
+  readonly otherCurrencies: number;
   readonly items: readonly { readonly variantId: string; readonly available: number }[];
 }
 
@@ -44,6 +46,7 @@ class KpisQuery {
     return {
       revenue: { value: 1, previous: 1, target: null },
       orders: { value: 1, previous: 1, target: null },
+      otherCurrencies: 0,
       items: [],
     };
   }
@@ -64,11 +67,16 @@ class KpisWidget extends Widget<KpisQuery>({
   refreshEvery: "60s",
 }) {
   display(d: Display<KpisOutput>) {
-    return d.kpiGroup([d.kpi("revenue").icon("banknote"), d.kpi("orders").lowerIsBetter()]);
+    return d.kpiGroup([
+      d.kpi("revenue").icon("banknote").note("otherCurrencies"),
+      d.kpi("orders").lowerIsBetter(),
+    ]);
   }
 }
 
+/** The widget kind: its checked options, its recorded display and its placements. */
 describe("Widget", () => {
+  /** A widget class records its options in layer 1. */
   it("records its checked options in the owner's layer", () => {
     const record = kindOf(KpisWidget);
     expect(record?.kind).toBe("widget");
@@ -76,6 +84,7 @@ describe("Widget", () => {
     expect(Object.create(KpisWidget.prototype as object)).toBeInstanceOf(WidgetBase);
   });
 
+  /** Each option is checked when the class is declared. */
   it("refuses a bad size, a fractional order, a range outside its ranges and a refresh under 30 seconds", () => {
     const widget = Widget as unknown as (options: object) => unknown;
     expect(() => widget({ size: "huge" })).toThrow(TypeError);
@@ -87,19 +96,21 @@ describe("Widget", () => {
     expect(() => widget({ slot: "dashboard.main" })).toThrow(TypeError);
   });
 
+  /** The display member's builder chain becomes the node gen writes, note included. */
   it("records the display the class builds", () => {
     expect(describeWidget(KpisWidget)).toMatchObject({
       layer: PlacementLayer.Owner,
       display: {
         kind: "kpi_group",
         kpis: [
-          { kind: "kpi", path: "revenue", icon: TestIcons.Banknote },
+          { kind: "kpi", path: "revenue", icon: TestIcons.Banknote, note: "otherCurrencies" },
           { kind: "kpi", path: "orders", lowerIsBetter: true },
         ],
       },
     });
   });
 
+  /** A placement moves a widget without touching its display. */
   it("places a widget it does not own in the host layer, keeping its display", () => {
     class Placed extends Widget.place(KpisWidget, {
       slot: MAIN,
@@ -118,6 +129,7 @@ describe("Widget", () => {
     expect(tree.display.kind).toBe("kpi_group");
   });
 
+  /** A placement may name the edition or the app layer, never the user's. */
   it("takes the edition layer 2b and the app layer for a placement", () => {
     class Edition extends Widget.place(KpisWidget, {
       slot: null,
@@ -129,11 +141,19 @@ describe("Widget", () => {
     );
   });
 
+  /** A placement only moves a widget; it never swaps its query. */
   it("refuses a placement of a class that is not a widget or one that changes the query", () => {
     expect(() => Widget.place(Changed as never, {})).toThrow(TypeError);
     expect(() => Widget.place(KpisWidget, { query: Changed } as never)).toThrow(/query/);
   });
 
+  /** A KPI's note reads only a number or string field of the output. */
+  it("types a KPI's note path against the query output", () => {
+    type NotePathOf = Parameters<ReturnType<Display<KpisOutput>["kpi"]>["note"]>[0];
+    expectTypeOf<NotePathOf>().toEqualTypeOf<"otherCurrencies">();
+  });
+
+  /** Params follow the query input, and the base needs its query type. */
   it("types params against the query input and requires the type argument", () => {
     expectTypeOf<Parameters<KpisWidget["display"]>[0]>().toEqualTypeOf<Display<KpisOutput>>();
     // @ts-expect-error -- a called form without its query fails with the hint

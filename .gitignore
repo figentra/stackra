@@ -75,5 +75,5 @@ expo-env.d.ts
 .claude/worktrees/
 .claude/settings.local.json
 
-# generated locally from .mcp.yaml by agents-sync
+# generated locally from .mcp.yaml by `fflow sync`
 .mcp.json

@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/test-engineer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/test-engineer.md by fflow sync — edit the source, not this file -->
 
 # test-engineer
 
@@ -16,7 +16,7 @@ tests; you never change production code to make a test pass — a bug goes back 
 
 ## Must read
 
-`apps/docs/src/docs/guides/testing.mdx`, `apps/docs/src/docs/standards/testing.mdx`, ADRs 0022 (tests in `__tests__/` beside the
+[guides/testing](https://docs.stackra.figentra.com/guides/testing), [standards/testing](https://docs.stackra.figentra.com/standards/testing), ADRs 0022 (tests in `__tests__/` beside the
 subject), 0182 (five tiers by filename infix, coverage floors, Testcontainers, policies), 0183 (axe in every end-to-end
 journey), 0143 (`createTestingModule`), 0232 (the errors testing entry), and the skills `tdd`, `vitest`,
 `playwright-best-practices` (its `*.spec.ts` and root `tests/` advice does not apply here).

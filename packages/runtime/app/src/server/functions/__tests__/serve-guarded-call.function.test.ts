@@ -13,7 +13,8 @@
  *          the call returned or threw. An API key's call options and the `Origin` header reach the call; a token's
  *          call gets none. An anonymous call acts in the tenant the edge signed (its visitor id kept), and in none
  *          without a signed one; a credential's tenant wins, and a token or API key for another tenant than the signed
- *          one is 403.
+ *          one is 403. A `stream: true` action answers its stream as server-sent events, holding the user's token
+ *          until the stream ends.
  * Boundary: test only; real Web Crypto signing with `signEdgeRequest` against real `Date.now()`; the forwarding cases
  *           stub the authenticator and `fetch` and use throwaway token strings.
  * Runtime: node (vitest)
@@ -21,7 +22,7 @@
  */
 import { createHash } from "node:crypto";
 
-import { Action } from "@stackra/actions";
+import { Action, Idempotency } from "@stackra/actions";
 import { CallOriginKind } from "@stackra/actions/contracts";
 import { ClientsConfig, HttpClientTransportDriver } from "@stackra/clients";
 import { buildConfig } from "@stackra/config";
@@ -522,6 +523,17 @@ class SubscribeAction extends Action({
   async handle(): Promise<void> {}
 }
 
+/** A chat turn: its answer streams to the one caller. */
+class SendMessageAction extends Action({
+  key: "message.send",
+  actors: [ActorKind.User],
+  stream: true,
+  tool: false,
+  idempotency: Idempotency.Never,
+}) {
+  async handle(): Promise<void> {}
+}
+
 /** The generated clients' transport over a service's session, sending to Pay. */
 function payTransport(): HttpClientTransportDriver {
   const config = buildConfig(ClientsConfig, {
@@ -645,6 +657,40 @@ describe("serveGuardedCall forwarding a caller's token (ADR 0209)", () => {
       expect(actor.kind).toBe(ActorKind.Anonymous);
       expect(token).toBeUndefined();
     }
+  });
+
+  it("answers a stream action as server-sent events, holding the token until the stream ends", async () => {
+    const authenticate = vi.fn(async () => ({ actor: customer }));
+    const held: (string | undefined)[] = [];
+    const response = await serveGuardedCall({
+      request: new Request("https://api.example.test/messages/send", {
+        method: "POST",
+        headers: userCall,
+        body: "{}",
+      }),
+      path: "/messages/send",
+      maxBodyBytes: 1024,
+      anonymous: false,
+      action: SendMessageAction,
+      guard: async () => {},
+      authenticate,
+      execute: async () => {
+        const token = ON_BEHALF_OF_TOKEN.getStore();
+        return new ReadableStream<unknown>({
+          pull(controller) {
+            // the loop behind the stream reads the token while the caller listens
+            held.push(token?.());
+            controller.enqueue({ type: "text-delta", id: "t1", delta: "Hi" });
+            controller.close();
+          },
+        });
+      },
+    });
+    expect(response.headers.get("content-type")).toBe("text/event-stream; charset=utf-8");
+    expect(await response.text()).toBe(
+      'data: {"type":"text-delta","id":"t1","delta":"Hi"}\n\ndata: [DONE]\n\n',
+    );
+    expect(held).toEqual([USER_TOKEN]);
   });
 
   it("empties the holder once the call returned, was refused or threw", async () => {

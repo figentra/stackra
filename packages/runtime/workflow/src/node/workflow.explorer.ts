@@ -15,7 +15,9 @@
  *           automation and the occurrence so a redelivery starts nothing twice, recorded as that automation's run, and
  *           placed in its event chain from the delivery's correlation (`NativeWorkflowRunnerDriver.chained`), so a
  *           chain past `workflow.maxChainDepth` or a loop back to an automation already in it starts nothing; one
- *           automation's failure does not stop the others. A coded step that waits for an event needs a trigger block
+ *           automation's failure does not stop the others (`startTriggered`). With a `QueueService` bound it pushes
+ *           `StartTriggeredAutomationsAction` instead, in the delivery's transaction and scope, so a start whose quota
+ *           cannot be read is retried by the queue and skipped only on its last attempt. A coded step that waits for an event needs a trigger block
  *           that correlates it, or boot fails. The runtime still runs `work` (the worker loop) per service.
  * Runtime: node
  * Governing contract: ADR 0144 (explorers) as amended by 0263; ADR 0294 (decision 6: the kind acts on what decorators
@@ -28,9 +30,10 @@ import type { WorkflowRunner } from "@stackra/actions/contracts";
 import { Explorer, kindOf } from "@stackra/container";
 import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
-import type { PublicId } from "@stackra/contracts";
+import type { Json, PublicId } from "@stackra/contracts";
 import { EventBus, Listener } from "@stackra/events";
 import type { Event, ListenerContext } from "@stackra/events";
+import { QueueService } from "@stackra/queue";
 
 import {
   AllServicesAcked,
@@ -38,10 +41,13 @@ import {
   buildingBlocks,
   NativeWorkflowRunnerDriver,
   ServiceAcked,
+  WorkflowJournal,
 } from "#core/index";
 import type { BuildingBlock, RunOrigin } from "#core/index";
 import { WORKFLOW_DEFAULTS } from "#core/constants/workflow-defaults.constant";
 import { planOf } from "#core/functions/plan-of.function";
+import { StartTriggeredAutomationsAction } from "#node/actions/start-triggered-automations.action";
+import { startTriggered } from "#node/functions/start-triggered.function";
 import { AutomationService } from "#node/services/automation.service";
 import { ServiceAckService } from "#node/services/service-ack.service";
 
@@ -70,14 +76,23 @@ function starterOf(runner: NativeWorkflowRunnerDriver, workflow: AnyClass, key: 
   })();
 }
 
+/** Where a trigger listener hands its occurrence to a queued, retried start, when the app binds a queue. */
+interface TriggerQueue {
+  readonly queue: QueueService;
+  readonly journal: WorkflowJournal;
+}
+
 /**
  * A subscription for trigger `block`: holds each occurrence for the runs that wait on it, when the block correlates,
- * and starts each published automation it triggers in the delivery's scope.
+ * and starts each published automation it triggers in the delivery's scope. With a queue bound it pushes
+ * `StartTriggeredAutomationsAction` in the delivery's transaction instead, in the delivery's scope, so a start whose
+ * quota cannot be read is retried rather than skipped at once.
  */
 function triggerOf(
   runner: NativeWorkflowRunnerDriver,
   block: BuildingBlock,
   automations: AutomationService | undefined,
+  queued: TriggerQueue | undefined,
 ): Listener {
   return new (class extends Listener {
     async handle(event: Event, ctx: ListenerContext): Promise<void> {
@@ -86,31 +101,29 @@ function triggerOf(
       if (block.correlate !== undefined)
         await runner.hold(block.type, event, block.correlate(event as never));
       if (automations === undefined) return;
-      const failures: unknown[] = [];
-      for (const automation of await automations.triggered(block.key))
-        try {
-          // oxlint-disable-next-line no-await-in-loop -- automations start one after another in the delivery
-          const chain = await runner.chained(ctx.correlationId, automation.automationId);
-          if (chain === undefined) continue;
-          // oxlint-disable-next-line no-await-in-loop -- see above
-          await runner.startDocument(
-            automation.document,
-            event,
-            Object.freeze({
-              ...originOf(ctx, automation.document.key),
-              actor: automation.principal,
-            }),
-            {
-              key: `${automation.automationId}:${ctx.eventId}`,
-              chain,
-              automation: automation.automationId,
-            },
-          );
-        } catch (error) {
-          failures.push(error);
-        }
-      if (failures.length > 0)
-        throw new AggregateError(failures, `${block.key}: ${failures.length} automation(s) failed`);
+      const correlation =
+        ctx.correlationId === undefined ? {} : { correlationId: ctx.correlationId };
+      if (queued !== undefined) {
+        const scope = await queued.journal.currentScope();
+        await queued.queue.push(
+          StartTriggeredAutomationsAction,
+          {
+            block: block.key,
+            eventId: ctx.eventId,
+            ...correlation,
+            // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose: the job's input is what the wire carries (Dates become strings)
+            occurrence: JSON.parse(JSON.stringify(event)) as Json,
+          },
+          { origin: SYSTEM_ACTOR, ...(scope === undefined ? {} : { scope }) },
+        );
+        return;
+      }
+      await startTriggered(
+        runner,
+        automations,
+        { block: block.key, eventId: ctx.eventId, ...correlation, input: event },
+        { last: true },
+      );
     }
   })();
 }
@@ -190,8 +203,12 @@ export class WorkflowExplorer extends Explorer {
     const automations = container.has(AutomationService)
       ? container.get(AutomationService)
       : undefined;
+    const queued =
+      container.has(QueueService) && container.has(WorkflowJournal)
+        ? { queue: container.get(QueueService), journal: container.get(WorkflowJournal) }
+        : undefined;
     for (const block of triggers)
-      bus.subscribe(block.type as AnyClass<Event>, triggerOf(runner, block, automations));
+      bus.subscribe(block.type as AnyClass<Event>, triggerOf(runner, block, automations, queued));
     if (container.has(ServiceAckService))
       bus.subscribe(ServiceAcked, ackOf(runner, container.get(ServiceAckService)));
   }

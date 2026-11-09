@@ -85,6 +85,15 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - Seeds never overwrite an automation whose latest revision is the tenant's.
 - An automation's grants never exceed its publisher's: `PublisherAccess` is asked at publish and before each trigger
   starts it; a lost block pauses it (ADR 0423). Never skip the check for a seed: its publisher is the seed principal.
+- Every run a trigger or a schedule starts is checked against `AutomationQuota` in `triggered` (the tenant, the
+  automation). This package names no billing service: the host selects its billing driver or
+  `UnlimitedAutomationQuotaDriver` on purpose, never by default. `exceeded` skips with `AutomationRunSkipped`
+  (`quota_exceeded`), never a failure or a pause. An unreadable quota (or a driver that throws) starts nothing and
+  skips with `quota_unavailable`. `triggered` throws for an unreadable quota only when a retry follows
+  (`last: false`): with a `QueueService` bound the trigger listener pushes `StartTriggeredAutomationsAction`, a
+  retried job that passes `ctx.attempt.last`, so the last attempt records the skip; an in-process start is its own last
+  attempt (a listener's throw is only recorded, never redelivered). The driver calls the quota as the host member, in the
+  automation's tenant, never as the automation's principal.
 - Checklist steps, lock flags and industry profiles are seed data; no step is coded here. A customization never hides
   or reorders a locked step (ADR 0424).
 - `ServiceAckSet` is platform data with no scope policy (a listed platform table); `expect` runs before the request leaves.

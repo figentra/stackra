@@ -7,7 +7,7 @@
  *          memory drivers, `ReplicaFeed` and two refusals; no header name), the query cache's `CacheScope`,
  *          `registerCachedQueries`, `QueryCacheEvictorListener` and `SHARED_CACHE_CONTEXT`, the `AnalyticsTracked` event (STA-1512), the
  *          owner-row helpers (`inRowOwner`, `boundIsolation`, `ClaimNotLoadedError`, `RowIsolationMissingError`), nothing else is, the ports are not,
- *          and the template's types (`ActionContext`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`,
+ *          and the template's types (`ActionContext` with its `DetachedCall`, `ExtensionClass`, `ExtensionContext`, `ExtensionTable`,
  *          `PreconditionContext`, `QueryContext`) and the offline option and replica types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -25,6 +25,7 @@ import type {
   AnySlot,
   CallInput,
   CallOptions,
+  DetachedCall,
   ExtensionClass,
   ExtensionContext,
   ExtensionTable,
@@ -125,6 +126,7 @@ describe("@stackra/actions", () => {
     expectTypeOf<QueryContext>().toMatchTypeOf<ExtensionContext>();
     expectTypeOf<ActionContext>().toMatchTypeOf<QueryContext>();
     expectTypeOf<ActionContext["idempotencyKey"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<ActionContext["detach"]>().returns.toEqualTypeOf<DetachedCall>();
     expectTypeOf<ExtensionTable[string]["kind"]>().toEqualTypeOf<"after" | "before">();
     // the called form returns the exported `ExtensionClass`, so a consumer's declaration emit can name it (STA-1220)
     expectTypeOf(actions.Extension<AnySlot>({ order: 1 })).toEqualTypeOf<ExtensionClass<AnySlot>>();

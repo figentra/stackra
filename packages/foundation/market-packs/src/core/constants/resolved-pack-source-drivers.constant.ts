@@ -9,5 +9,5 @@
  *                     ships with the production one).
  */
 
-/** The `ResolvedPackSource` drivers of this package, by name; `store` is the default. */
-export const RESOLVED_PACK_SOURCE_DRIVERS = ["store", "memory"] as const;
+/** The `ResolvedPackSource` drivers of this package, by name; `store` is the default, `bundled` the interim. */
+export const RESOLVED_PACK_SOURCE_DRIVERS = ["store", "memory", "bundled"] as const;

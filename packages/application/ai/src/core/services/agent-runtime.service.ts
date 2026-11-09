@@ -217,6 +217,47 @@ function parkedChunks(state: LoopState): TransformStream<UIMessageChunk, UIMessa
   });
 }
 
+/** The code a failed reply's error chunk names: a refusal's code, else `error`; never the error's text. */
+const codeOf = (error: unknown): string =>
+  typeof error === "object" &&
+  error !== null &&
+  typeof (error as { code?: unknown }).code === "string"
+    ? (error as { code: string }).code
+    : "error";
+
+/**
+ * The UI chunks of a streamed loop when a guardrail layer checks the answer: text and reasoning deltas are held, since
+ * the layers see only the settled text, and the reply's guarded text is sent as one text part once the run settles,
+ * before the `finish` chunk. Tool and approval chunks still pass at once. A blocked or failed reply is one `error`
+ * chunk naming its code.
+ */
+function guardedChunks(
+  textId: string,
+  reply: Promise<AgentReply>,
+): TransformStream<UIMessageChunk, UIMessageChunk> {
+  let finish: UIMessageChunk | undefined;
+  return new TransformStream<UIMessageChunk, UIMessageChunk>({
+    transform: (chunk, controller) => {
+      if (chunk.type.startsWith("text-") || chunk.type.startsWith("reasoning-")) return;
+      if (chunk.type === "finish") finish = chunk;
+      else controller.enqueue(chunk);
+    },
+    flush: async (controller) => {
+      try {
+        const { text } = await reply;
+        if (text !== "") {
+          controller.enqueue({ type: "text-start", id: textId });
+          controller.enqueue({ type: "text-delta", id: textId, delta: text });
+          controller.enqueue({ type: "text-end", id: textId });
+        }
+      } catch (error) {
+        controller.enqueue({ type: "error", errorText: codeOf(error) });
+      }
+      if (finish !== undefined) controller.enqueue(finish);
+    },
+  });
+}
+
 /**
  * Runs agents: prompts, streams and queued runs, with their tools, approvals and records.
  *
@@ -297,7 +338,8 @@ export class AgentRuntime extends Service {
 
   /**
    * Runs `text` for `agent`, streaming the model's text and its UI message chunks (message id: the run id); `reply`
-   * settles as `prompt` does.
+   * settles as `prompt` does. With a guardrail layer bound, `uiStream` holds the text until the layers passed it
+   * (`guarded`); `textStream` is never guarded.
    */
   async stream(agent: AgentDefinition, text: string, call: PromptCall): Promise<AgentStream> {
     const run = await this.begin(agent, text, call, RunStatus.Running);
@@ -326,13 +368,14 @@ export class AgentRuntime extends Service {
     })();
     // A host that serves only `uiStream` may never await `reply`: an abort or failure must not surface unhandled.
     reply.catch(() => undefined);
+    // a person never sees text an output guardrail would have redacted or blocked (STA-2608, G1b)
+    const guarded = this.discovery.getAll(GuardrailLayer).length > 0;
     const uiStream = createUIMessageStream({
       execute: ({ writer }) => {
-        writer.merge(
-          result
-            .toUIMessageStream({ generateMessageId: () => run.id })
-            .pipeThrough(parkedChunks(state)),
-        );
+        const live = result
+          .toUIMessageStream({ generateMessageId: () => run.id })
+          .pipeThrough(parkedChunks(state));
+        writer.merge(guarded ? live.pipeThrough(guardedChunks(`${run.id}-text`, reply)) : live);
       },
     });
     return {
@@ -340,6 +383,7 @@ export class AgentRuntime extends Service {
       conversationId: run.conversationId,
       textStream: result.textStream,
       uiStream,
+      guarded,
       reply,
     };
   }

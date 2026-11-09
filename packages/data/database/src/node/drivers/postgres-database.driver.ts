@@ -10,7 +10,9 @@
  *          store of `Cached` models.
  * Boundary: the only file that starts MikroORM. Gen writes every default and enum item into the entities, so default
  *           inference is off; the global entity manager is never used for work (each call gets the context's or a
- *           fork). `connect` makes it `Database.current()` until `close`. Reads stay on the primary
+ *           fork). `connect` makes it `Database.current()` until `close` and registers the detached-run wrapper; a detached
+ *           call's work runs on a fresh fork as the transaction context, outside the call's committed transaction, with
+ *           this instance's own step store (`runDetached`, `detached`). Reads stay on the primary
  *           unless `onReplica` asks (MikroORM's replica preference is off), because the scope settings live in the
  *           primary's transaction.
  * Runtime: node
@@ -19,14 +21,18 @@
  *                     data-layer gap mo6 (stackra-279: transaction options); gaps sc7 and sc8 (stackra-282: query
  *                     telemetry and the N+1 guard).
  */
+import { AsyncLocalStorage } from "node:async_hooks";
+
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/postgresql";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Driver } from "@stackra/container";
+import type { DetachedStep } from "@stackra/actions/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
+import { connectDetachedRuns } from "#core/functions/connect-detached-runs.function";
 import { deleteFilters } from "#core/functions/delete-filters.function";
 import { poolConfig } from "#core/functions/pool-config.function";
 import { readRowSecuritySettings } from "#core/functions/read-row-security-settings.function";
@@ -52,6 +58,9 @@ import type { TransactionOptions } from "#core/types/transaction-options.type";
 export class PostgresDatabaseDriver extends Driver(Database) {
   /** The MikroORM instance. */
   readonly orm: MikroORM;
+
+  /** The step of each detached call running in this database (`runDetached`). */
+  private readonly detachedSteps = new AsyncLocalStorage<DetachedStep>();
 
   /**
    * @param orm - a connected MikroORM instance; use `connect` instead.
@@ -93,7 +102,21 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     });
     const driver = new PostgresDatabaseDriver(orm);
     ACTIVE_DATABASE.current = driver;
+    connectDetachedRuns();
     return driver;
+  }
+
+  /** Implements `Database.detached`, documented there: this instance's own store, never another database's. */
+  override detached(): DetachedStep | undefined {
+    return this.detachedSteps.getStore();
+  }
+
+  /**
+   * Implements `Database.runDetached`, documented there: `work` runs on a fresh fork as the transaction context, so
+   * neither it nor a step it opens joins the call's committed transaction, which MikroORM keeps in the context.
+   */
+  override runDetached<T>(step: DetachedStep, work: () => Promise<T>): Promise<T> {
+    return this.detachedSteps.run(step, () => TransactionContext.create(this.orm.em.fork(), work));
   }
 
   /** Implements `Database.em`, documented there. */

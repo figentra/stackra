@@ -5,6 +5,7 @@
     "retry": "Réessayer",
     "range": "Période",
     "change": "{change} par rapport à la période précédente",
+    "change_points": "{change} pts par rapport à la période précédente",
     "target": "Objectif {target}",
     "not_rendered": "Cette vignette ne peut pas s’afficher ici."
   },
@@ -86,6 +87,16 @@
     "empty": "Aucun résultat.",
     "loading": "Recherche dans {source}",
     "failed": "Impossible de rechercher dans {source}."
+  },
+  "chat_form": {
+    "send": "Envoyer",
+    "sent": "Envoyé",
+    "loading": "Chargement du formulaire",
+    "unavailable": "Ce formulaire ne peut pas être affiché ici.",
+    "upload": "Choisir un fichier",
+    "uploading": "Envoi de {name}",
+    "upload_failed": "Impossible d’envoyer {name}.",
+    "no_upload": "Impossible d’ajouter des fichiers ici."
   },
   "checklist": {
     "title": "Bien démarrer",
@@ -191,6 +202,9 @@
       "create": "Créer",
       "update": "Mettre à jour l'existant",
       "upsert": "Créer ou mettre à jour"
+    },
+    "metric_format": {
+      "percent": "Pourcentage"
     },
     "place": {
       "band": "Bandeau de KPI",

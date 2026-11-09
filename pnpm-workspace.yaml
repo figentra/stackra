@@ -30,7 +30,7 @@ catalog:
   # Figentra Flow, the spec gates and the development workflow (ADR 0503), from the Figentra registry's open
   # @figentra-oss scope (.npmrc). It replaces tools/scripts' spec-gate, spec-trace, spec-parse, spec-linear and
   # speckit-sync, which remain as thin shims for the hooks, setup-plan.sh and the docs that name them.
-  "@figentra-oss/flow": 0.9.0
+  "@figentra-oss/flow": 0.10.0
   # YAML reader for repo-owned config (.agents/models.yaml, .mcp.yaml) read by tools/scripts.
   yaml: 2.9.1
   # HTTP client for tools/scripts' GitHub and Linear calls: an Agent with a 30 s connect timeout (STA-302).
@@ -55,6 +55,12 @@ catalog:
   "@aws-sdk/s3-request-presigner": 3.1149.0
   # The AWS Secrets Manager store of @stackra/config/node (BatchGetSecretValue). Apache-2.0; keep beside client-s3.
   "@aws-sdk/client-secrets-manager": 3.1149.0
+  # The KMS client of @stackra/config/node's `aws-sdk` KmsClient driver (KmsSignerDriver). Apache-2.0; keep beside
+  # client-s3 (owner approval 2026-11-09).
+  "@aws-sdk/client-kms": 3.1149.0
+  # A runway workload's one-off migration task in @stackra/infra-aws-runtime (ECS RunTask). Apache-2.0; keep beside
+  # client-s3.
+  "@aws-sdk/client-ecs": 3.1149.0
   # The GCS disk of @stackra/filesystem (GcsFileSystemDriver, ADR 0354): objects and V4 signed URLs. Apache-2.0.
   "@google-cloud/storage": 8.4.0
   # @stackra/model on the server only (ADR 0014, 0227): Collection, Ref, custom Types and the Money embeddable.
@@ -426,7 +432,10 @@ packageExtensions:
 # reviewed; a new one must be, too — install fails (ERR_PNPM_IGNORED_BUILDS) until it is.
 allowBuilds:
   esbuild: true
-  lefthook: true
+  # Off: its install script ran `lefthook install` in every worktree, rewriting the shared .git/hooks with that
+  # worktree's lefthook path. The root `prepare` installs the hooks instead, only from the main checkout, never when
+  # CI is set or in a tree without .git (the Testbed's copy).
+  lefthook: false
   sharp: true
   # Install-time telemetry pinger (pulled in by mint); never needed.
   "@scarf/scarf": false

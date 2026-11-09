@@ -4,7 +4,7 @@
  *          `ActionContext`, without running the pipeline: `authorize` allows, `afterCommit` work, `audit` fields and
  *          `publish`ed events are recorded, `period`, `startOfDay` and `now` work on a clock frozen at creation, and
  *          `consent()` reads as refused (`missing`) unless the test passes its own (see `grantedConsent`), and `memo`
- *          keeps one answer per key like the pipeline's.
+ *          keeps one answer per key like the pipeline's; `detach()` runs each step as it is, with no transaction.
  * Boundary: test only. `run`, `signal`, `dispatch` and `replica` reject with a message unless the test passes its own;
  *           a test that needs the real steps uses `run(...)` instead. Overrides replace members whole.
  * Runtime: node
@@ -61,6 +61,13 @@ export function fakeActionContext(overrides: Partial<ActionContext> = {}): FakeA
     publish: async (event: Event) => {
       published.push(event);
     },
+    detach: () =>
+      Object.freeze({
+        actor: base.actor,
+        ...(base.scope === undefined ? {} : { scope: base.scope }),
+        run: <T>(work: () => Promise<T>) => work(),
+        isolated: <T>(work: () => Promise<T>) => work(),
+      }),
     run: missing("run"),
     signal: missing("signal"),
     dispatch: missing("dispatch"),

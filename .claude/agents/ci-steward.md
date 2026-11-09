@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
 ---
 
-<!-- generated from .agents/agents/ci-steward.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/ci-steward.md by fflow sync — edit the source, not this file -->
 
 # ci-steward
 
@@ -16,7 +16,7 @@ red one.
 
 ## Must read
 
-`apps/docs/src/docs/runbooks/ci.mdx`, `.github/workflows/README.md`, `.agents/rules/linear.md`, the skill `test-infra`,
+[runbooks/ci](https://docs.stackra.figentra.com/runbooks/ci), `.github/workflows/README.md`, the `linear` rule, the skill `test-infra`,
 and ADRs 0119, 0166 and 0484.
 
 ## Steps
