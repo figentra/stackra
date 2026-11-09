@@ -19,6 +19,7 @@ describe("Award", () => {
       "has_public_id",
       "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(Award)[0]?.options).toEqual({ prefix: "awd" });
     expect(new Award().id).toMatch(/^awd_[0-9a-z]{26}$/);

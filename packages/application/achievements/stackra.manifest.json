@@ -94,7 +94,7 @@
       "file": "src/node/models/award-kind.model.ts",
       "table": "achievements.award_kinds",
       "publicId": "awk",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "achievements",
         "fields": [
@@ -237,7 +237,7 @@
       "file": "src/node/models/award-verification.model.ts",
       "table": "achievements.award_verifications",
       "publicId": "awv",
-      "traits": ["HasPublicId", "Timestamps"],
+      "traits": ["HasPublicId", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "achievements",
         "fields": [
@@ -320,7 +320,7 @@
       "file": "src/node/models/award.model.ts",
       "table": "achievements.awards",
       "publicId": "awd",
-      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps", "MovesWithScope"],
       "entity": {
         "module": "achievements",
         "fields": [

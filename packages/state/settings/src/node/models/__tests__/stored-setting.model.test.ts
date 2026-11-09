@@ -21,6 +21,7 @@ describe("StoredSetting", () => {
       "has_public_id",
       "belongs_to_tenant_or_platform",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(StoredSetting)[0]?.options).toEqual({ prefix: "sst" });
   });

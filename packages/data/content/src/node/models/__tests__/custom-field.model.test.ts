@@ -22,6 +22,7 @@ describe("CustomField", () => {
       "belongs_to_tenant",
       "timestamps",
       "translatable",
+      "moves_with_scope",
     ]);
     expect(traits[0]?.options).toEqual({ prefix: "cfd" });
     expect(traits[3]?.options).toEqual({ fields: ["label"] });

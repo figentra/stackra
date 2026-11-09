@@ -21,6 +21,7 @@ describe("SegmentMembership", () => {
       "has_public_id",
       "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(SegmentMembership)[0]?.options).toEqual({ prefix: "sgm" });
     expect(Index.on(SegmentMembership)).toEqual([]);
