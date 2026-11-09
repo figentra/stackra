@@ -19,6 +19,11 @@
  *          ... NOT VALID`, then a later step that validates it, sets NOT NULL without a scan and drops the check), so no
  *          exclusive lock is held while the table is scanned. The released contract steps keep the plain SET NOT NULL,
  *          whose checksum must not change; it carries a reviewed squawk ignore after `schema.refuseNulls`.
+ *          `t.belongsToTenant({ pivot: true })` is the form of a table the ORM writes without a model, an implicit
+ *          many-to-many pivot: the bare form plus a default read from `app.tenant_id`, because MikroORM's pivot insert
+ *          names only the two link columns. A pivot write in a tenant call stores that tenant; outside one the default
+ *          is NULL and the NOT NULL column refuses it. A pivot table created before this form takes the same default
+ *          through `t.change("tenant_id").defaultSetting("app.tenant_id")`.
  * Boundary: a `Macro` (ADR 0159 as amended by ADR 0305), installed by name as `t.belongsToTenant`. It states the
  *           column's nullability and comment itself, so the bare call compiles. Equality only, no tree logic (ADR
  *           0239): an organisation reads its children through read models. A blueprint takes one policy, so the table
@@ -55,9 +60,11 @@ export class BelongsToTenantMacro extends Macro {
    * @param t - the blueprint of the tenant-owned table being created.
    * @param options - `nullable: true` for a table whose NULL rows are the platform's (`BelongsToTenantOrPlatform`);
    *                  `expand: true` for the column alone on an existing table; `contract: true` for its contract step;
-   *                  `safeNotNull: true` with `contract` for NOT NULL through a validated check (new contract steps).
+   *                  `safeNotNull: true` with `contract` for NOT NULL through a validated check (new contract steps);
+   *                  `pivot: true` for an implicit many-to-many pivot, whose tenant the column default fills.
    * @returns the tenant column; none for the contract step, which changes the existing one.
-   * @throws TypeError for `contract` with `expand`, or `safeNotNull` without the non-nullable contract step.
+   * @throws TypeError for `contract` with `expand`, `safeNotNull` without the non-nullable contract step, or `pivot`
+   *         with `nullable`, `expand` or `contract`.
    */
   apply(
     t: Blueprint,
@@ -66,8 +73,16 @@ export class BelongsToTenantMacro extends Macro {
       readonly expand?: boolean;
       readonly contract?: boolean;
       readonly safeNotNull?: boolean;
+      readonly pivot?: boolean;
     } = {},
   ): ColumnGroup {
+    if (
+      options.pivot === true &&
+      (options.nullable === true || options.expand === true || options.contract === true)
+    )
+      throw new TypeError(
+        "t.belongsToTenant({ pivot: true }) creates a pivot's NOT NULL column: it takes no nullable, expand or contract",
+      );
     if (options.safeNotNull === true && (options.contract !== true || options.nullable === true))
       throw new TypeError(
         "t.belongsToTenant({ safeNotNull: true }) is the contract step's NOT NULL: pass contract: true, without nullable",
@@ -102,11 +117,18 @@ export class BelongsToTenantMacro extends Macro {
             .comment(
               "The owning tenant, or NULL for a platform row; set from the call's tenant, never from input.",
             )
-        : link
-            .notNull()
-            .comment(
-              "The owning tenant: the public id of its scope node; set from the call's tenant, never from input.",
-            );
+        : options.pivot === true
+          ? link
+              .notNull()
+              .defaultSetting(TENANT_ID_SETTING)
+              .comment(
+                "The owning tenant: the public id of its scope node; the default reads the call's tenant, as the ORM's pivot insert names only the links.",
+              )
+          : link
+              .notNull()
+              .comment(
+                "The owning tenant: the public id of its scope node; set from the call's tenant, never from input.",
+              );
     t.rowLevelSecurity("tenant_id", {
       setting: TENANT_ID_SETTING,
       match: options.nullable === true ? "equalsOrUnset" : "equals",
