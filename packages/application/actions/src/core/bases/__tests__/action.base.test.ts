@@ -289,7 +289,7 @@ describe("Action", () => {
       [ActorKind.Anonymous, ActorKind.Anonymous],
     ])
       expect(() => Action({ ...base, actors, credentials: "ignore" })).toThrow(
-        /credentials: "ignore"\) needs actors: \[ActorKind.Anonymous\]/,
+        /needs actors: \[ActorKind\.Anonymous\] exactly/,
       );
     expect(() => Action({ ...anonymous, credentials: "keep" } as unknown as ActionOptions)).toThrow(
       /credentials/,
