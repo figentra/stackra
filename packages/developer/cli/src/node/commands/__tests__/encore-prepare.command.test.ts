@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `EncorePrepareCommand`: in a service folder it pins `encore.dev` to the default catalog's
- *          version, writes tsconfig `baseUrl` and `paths` from `imports` (keeping the header comments), and a second
+ *          version, writes tsconfig `paths` from `imports` with no `baseUrl` (keeping the header comments), and a second
  *          run changes nothing.
  * Boundary: test only; writes a temporary workspace.
  * Runtime: node (vitest)
@@ -35,7 +35,8 @@ describe("EncorePrepareCommand", () => {
     );
     writeFileSync(
       join(service, "tsconfig.json"),
-      '// header\n{ "extends": "@stackra/typescript-config/node" }\n',
+      // an older prepare's baseUrl, which TypeScript 7 refuses: prepare removes it
+      '// header\n{ "extends": "@stackra/typescript-config/node", "compilerOptions": { "baseUrl": "." } }\n',
     );
 
     const first = await runCommandForTest([EncorePrepareCommand], ["encore:prepare", "--json"], {
@@ -51,10 +52,11 @@ describe("EncorePrepareCommand", () => {
     expect(JSON.parse(tsconfig.replace(/^\/\/.*\n/, ""))).toEqual({
       extends: "@stackra/typescript-config/node",
       compilerOptions: {
-        baseUrl: ".",
         paths: { "#src/*": ["./src/*", "./src/*.ts"], "#stackra/*": ["./.stackra/gen/*"] },
       },
     });
+    // laid out as the formatter leaves it: a short array on its line
+    expect(tsconfig).toContain('    "#src/*": ["./src/*", "./src/*.ts"],\n');
 
     const second = await runCommandForTest([EncorePrepareCommand], ["encore:prepare", "--json"], {
       cwd: service,

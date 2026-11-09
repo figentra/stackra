@@ -2,9 +2,11 @@
  * Stackra file contract:
  * Purpose: `prepareEncoreService(service, root)`, the fix-up for the two rules `stackra validate --repository` holds a
  *          service to for Encore to build its app at the member root: `dependencies.encore.dev` becomes the default
- *          catalog's literal version, and tsconfig.json gets `baseUrl` "." and `paths` equal to package.json `imports`.
- * Boundary: writes the service's package.json and tsconfig.json, and only when their content changes; a tsconfig's
- *           leading `//` comment lines are kept. Does not touch pnpm-lock.yaml: run `pnpm install` after a pin change.
+ *          catalog's literal version, and tsconfig.json gets `paths` equal to package.json `imports`, resolved from the
+ *          tsconfig's own folder (no `baseUrl`, which TypeScript 7 removed; an existing one is deleted).
+ * Boundary: writes the service's package.json and tsconfig.json, and only when their content changes, laid out as the
+ *           repository's formatter leaves them (`formatJson`); a tsconfig's leading `//` comment lines are kept. Does
+ *           not touch pnpm-lock.yaml: run `pnpm install` after a pin change.
  * Runtime: node
  * Governing contract: ADR 0091 (decision 2, amendment of 2026-11-09).
  */
@@ -12,6 +14,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { catalogEncoreVersion, pathsOfImports, readJsonc } from "@stackra/repo-checks/node";
+
+import { formatJson } from "#node/encore/functions/format-json.function";
 
 /**
  * Prepare one service for Encore.
@@ -44,7 +48,7 @@ export function prepareEncoreService(service: string, root: string): readonly st
     imports?: unknown;
   };
   pkg.dependencies = { ...pkg.dependencies, "encore.dev": version };
-  write("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
+  write("package.json", formatJson(pkg));
 
   const tsconfigFile = join(service, "tsconfig.json");
   const tsconfig = (existsSync(tsconfigFile) ? readJsonc(tsconfigFile) : {}) as {
@@ -57,11 +61,10 @@ export function prepareEncoreService(service: string, root: string): readonly st
         .map((line) => `${line}\n`)
         .join("")
     : "";
-  tsconfig.compilerOptions = {
-    ...tsconfig.compilerOptions,
-    baseUrl: ".",
-    paths: pathsOfImports(pkg.imports),
-  };
-  write("tsconfig.json", `${header}${JSON.stringify(tsconfig, null, 2)}\n`);
+  // TypeScript 7 refuses `baseUrl`; `paths` resolve from the tsconfig's folder without it.
+  const compilerOptions: Record<string, unknown> = { ...tsconfig.compilerOptions };
+  delete compilerOptions["baseUrl"];
+  tsconfig.compilerOptions = { ...compilerOptions, paths: pathsOfImports(pkg.imports) };
+  write("tsconfig.json", `${header}${formatJson(tsconfig)}`);
   return changed;
 }

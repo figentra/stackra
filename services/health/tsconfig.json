@@ -1,12 +1,11 @@
 // TypeScript project for this member: extends exactly one @stackra/typescript-config preset (pnpm validate checks the
-// preset). Its compilerOptions hold only baseUrl and paths, equal to package.json imports, because Encore ignores
+// preset). Its compilerOptions hold only paths, equal to package.json imports (no baseUrl: TypeScript 7 removed it), because Encore ignores
 // imports and reads paths only here (ADR 0091); `stackra encore:prepare` writes them. tsc reads tsconfig.json as JSONC,
 // so the name stays .json.
 // Owner: release-operations · Secrets: forbidden
 {
   "extends": "@stackra/typescript-config/node",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "#src/*": ["./src/*", "./src/*.ts", "./src/*.tsx", "./src/*/index.ts"],
       "#stackra/*": [
