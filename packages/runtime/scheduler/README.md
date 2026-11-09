@@ -75,7 +75,10 @@ one runs at both instants. No run from before the schedule was made is pushed.
 ## Ticks, misfires and one runner
 
 - `tick(at)` takes the lock `scheduler:tick` with `Locks.tryWith`: every instance ticks, one runs, the others get
-  `{ ran: false }`. With the Postgres drivers the pushes and the watermarks commit in the lock's transaction.
+  `{ ran: false }`. The lock covers only the claim of every owner's schedules and, taken again after the pushes,
+  the watermark advance; each owner's runs are pushed between them, in a transaction of their own in that owner's
+  isolation (schedules are tenant-owned, `scheduler.0002`). Each run is pushed once: its fire is recorded in
+  `scheduler.fires` in the push's transaction, so a tick that dies before its watermark moves pushes nothing again.
 - Each cron and schedule keeps a watermark (the last tick that evaluated it). A tick looks for runs after the
   watermark, never further back than `catchUpWindow` (one hour by default, one minute to one day). A cron new to the
   store looks back one minute.
@@ -89,7 +92,9 @@ one runs at both instants. No run from before the schedule was made is pushed.
 `encoreCronJobs()` lists the CronJobs gen emits for a SaaS service: one per registered action whose `job` option has
 a `cron` (its kebab id, its schedule, an endpoint that calls `SchedulerService.fire(key)`), and `scheduler-schedules`
 every minute, whose endpoint calls `tick(undefined, { crons: false })` for the stored per-scope schedules. Encore runs
-one invocation of a CronJob at a time, so `fire` takes no lock. On-prem, `run` stays the timer.
+one invocation of a CronJob at a time, so `fire` takes no lock. `fire` pushes the cron's current slot (its last due
+time at or before now, in UTC) once per scope: it records the fire as a tick would, so an Encore retry in the same
+slot, or a tick of that slot, pushes nothing again. On-prem, `run` stays the timer.
 
 ## Testing
 

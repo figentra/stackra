@@ -269,6 +269,22 @@
       "field": "gateway"
     }
   ],
+  "seeders": [
+    {
+      "key": "shop.demo",
+      "module": "shop",
+      "profile": "demo",
+      "class": "ShopDemoSeeder",
+      "file": "src/node/database/seeders/demo.seeder.ts"
+    }
+  ],
+  "factories": [
+    {
+      "class": "OrderFactory",
+      "file": "src/node/database/factories/order.factory.ts",
+      "model": "Order"
+    }
+  ],
   "schemas": {
     "shop.OrderStatus": {
       "type": "string",

@@ -19,8 +19,8 @@ import { ReleaseHoldOutput } from "#node/schemas/release-hold-output.schema";
 /** The holds table. */
 const HOLDS = '"privacy"."legal_holds"';
 
-/** The session's partition, as the table's policy reads it. */
-const PARTITION = "coalesce(nullif(current_setting('app.tenant_id', true), ''), '-')";
+/** The call's own rows: its tenant's, or the platform's outside a tenant, as the table's policy writes them. */
+const OWN = "tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')";
 
 /**
  * Releases a legal hold.
@@ -50,9 +50,9 @@ export class ReleaseHoldAction extends Action({
   /** Marks the live hold released. */
   async handle(input: ReleaseHoldInput, ctx: ActionContext): Promise<ReleaseHoldOutput> {
     const rows = (await this.database.em().execute(
-      // raw-sql: release keeps the row as evidence; only a live hold of the session's partition matches
+      // raw-sql: release keeps the row as evidence; only a live hold of the call's own owner matches
       `update ${HOLDS} set released_at = ?, released_by = ?, release_reason = ? ` +
-        `where id = ? and scope_id = ${PARTITION} and released_at is null returning id`,
+        `where id = ? and ${OWN} and released_at is null returning id`,
       [ctx.now(), ctx.actor.id, input.reason, input.holdId],
     )) as readonly unknown[];
     const released = rows.length > 0;

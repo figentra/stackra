@@ -21,7 +21,9 @@
  *          of `checkCallShape` (`query_above_l1`, `query_precondition`, `action_cache`, `step_up_missing`,
  *          `idempotency_missing`), `effect_unknown`,
  *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
- *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
+ *          `integration_role_unknown`, `egress_invalid`, `webhook_event_id_undeclared` (an Integration receiving
+ *          webhooks of a scheme other than Standard Webhooks that names neither `eventId` nor `signature.idHeader`,
+ *          so the inbox would dedupe its events as one), `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
  *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists
  *          each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as action
@@ -86,6 +88,7 @@ import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { envOf } from "#core/functions/env-of.function";
 import { eventName } from "#core/functions/event-name.function";
@@ -103,6 +106,7 @@ import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { resourcesOf } from "#core/functions/resources-of.function";
 import { moduleDependsOn } from "#core/functions/module-depends-on.function";
+import { seedersOf } from "#core/functions/seeders-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -757,6 +761,24 @@ export function buildManifest(ir: MemberIR): {
         `\`baseUrl\` ${JSON.stringify(baseUrl)} is not an https origin the managed client can call`,
         'write an https URL; a per-region host is a camelCase `{field}` of the credential set ("https://{region}.api.example.com"), or the whole URL is one `{field}` ("{baseUrl}")',
       );
+    // why: the inbox dedupes by event id; only Standard Webhooks carries one in a header, so another scheme that names
+    // neither `eventId` nor `signature.idHeader` keys every event "" and keeps one of them (`WebhookReceiver`).
+    const webhooks = declared.options["webhooks"] as
+      | { readonly scheme?: unknown; readonly eventId?: unknown; readonly signature?: unknown }
+      | undefined;
+    const idHeader = (webhooks?.signature as { readonly idHeader?: unknown } | undefined)?.idHeader;
+    if (
+      webhooks !== undefined &&
+      webhooks.scheme !== "standard_webhooks" &&
+      webhooks.eventId === undefined &&
+      (typeof idHeader !== "string" || idHeader === "")
+    )
+      fail(
+        declared,
+        "webhook_event_id_undeclared",
+        `${declared.name} receives \`${String(webhooks.scheme)}\` webhooks but names no event id, so the inbox would keep every event as one`,
+        "name `webhooks.eventId` (the payload `path` of the provider's event id, or `parts` of paths and headers) or a `webhooks.signature.idHeader`, or use `SignatureScheme.StandardWebhooks`",
+      );
     integrations.push({
       key,
       class: declared.name,
@@ -1116,6 +1138,20 @@ export function buildManifest(ir: MemberIR): {
     };
   });
 
+  // The seeders in module order and the factory pairs, which a host's seed entry imports from `./testing` (STA-2061).
+  const seeders: Entry[] = seedersOf(ir).map((row) => ({
+    key: row.key,
+    module: row.module,
+    profile: row.profile,
+    class: row.name,
+    file: row.file,
+  }));
+  const factories: Entry[] = factoryPairsOf(ir).map((factory) => ({
+    class: factory.name,
+    file: factory.file,
+    model: factory.partner.name,
+  }));
+
   // Replacements: `@Replaces(Base)` on a class of the member, so a host and a reviewer see what it swaps out.
   const replaces: Entry[] = [];
   for (const declared of ir.classes)
@@ -1421,6 +1457,8 @@ export function buildManifest(ir: MemberIR): {
     ...(env.length > 0 ? { env } : {}),
     ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
+    ...(seeders.length > 0 ? { seeders } : {}),
+    ...(factories.length > 0 ? { factories } : {}),
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),
     ...(surfaces.length > 0 ? { surfaces } : {}),

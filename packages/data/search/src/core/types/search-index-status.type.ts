@@ -3,12 +3,12 @@
  * Purpose: `SearchIndexStatus`, one row of the index registry as `search:status` and an admin read show it: the model,
  *          the scope, the state, the facet hash of the last rebuild, how many documents it holds, the resume cursor of a
  *          rebuild in progress, and when it was last fully rebuilt.
- * Boundary: a type only; `SearchIndexRegistry.list` builds it from `search.indexes`. The scope is absent for a
- *           platform-wide index.
+ * Boundary: a type only; `SearchIndexRegistry.list` builds it from `search.indexes`. The owner is absent for a
+ *           platform row and the scope for a platform-wide index.
  * Runtime: isomorphic
  * Governing contract: stackra-303 (version); ADR 0404 (decision 3); ADR 0221 (decision 7); ADR 0327 and ADR 0323 (a scope is a `ScopeRef`).
  */
-import type { ScopeRef } from "@stackra/contracts";
+import type { PublicId, ScopeRef } from "@stackra/contracts";
 
 import type { SearchIndexState } from "#core/enums/search-index-state.enum";
 
@@ -16,6 +16,9 @@ import type { SearchIndexState } from "#core/enums/search-index-state.enum";
 export interface SearchIndexStatus {
   /** The model's class name, as a row change names it. */
   readonly model: string;
+
+  /** The owning tenant's scope node id; absent for a platform row. */
+  readonly ownerId?: PublicId<"scp">;
 
   /** The scope the index serves; absent for a platform-wide one. */
   readonly scope?: ScopeRef;
