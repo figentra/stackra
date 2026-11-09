@@ -1,11 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `DatabasePlan`, one Postgres resource of a runtime plan: its identifier, engine and version, the size's
- *          instance class, Multi-AZ and storage, the backup days, the members and workloads that use it, and its tags.
+ *          instance class, Multi-AZ and storage, the backup days, the members and workloads that use it, the approved
+ *          extensions its member consumers name with those the server preloads, and its tags.
  * Boundary: type only.
  * Runtime: isomorphic
- * Governing contract: ADR 0493 (decisions 1 to 3), ADR 0238, ADR 0186 (point-in-time recovery).
+ * Governing contract: ADR 0493 (decisions 1 to 3), ADR 0238, ADR 0186 (point-in-time recovery), ADR 0160 (note of
+ *                     2026-11-03: extensions).
  */
+
+import type { PostgresExtension } from "@stackra/runway";
 
 /** One Postgres server. */
 export type DatabasePlan = {
@@ -29,6 +33,10 @@ export type DatabasePlan = {
   readonly backupDays: number;
   /** The members and workloads that use it, sorted; the security group admits only them. */
   readonly consumers: readonly string[];
+  /** The extensions its member consumers name in `environments.<env>.database.extensions`, deduplicated and sorted. */
+  readonly extensions: readonly PostgresExtension[];
+  /** Those of `extensions` that `shared_preload_libraries` must load (`PRELOADED_EXTENSIONS`). */
+  readonly preloadLibraries: readonly PostgresExtension[];
   /** `env` and `service` (the resource name). */
   readonly tags: Readonly<Record<string, string>>;
 };
