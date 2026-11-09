@@ -1,5 +1,57 @@
 # @stackra/workflow
 
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/rules@0.28.0
+  - @stackra/content@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/outbox@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/locking@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Minor Changes
+
+- 5119f3c: `workflow.run.get@1`: the person who started a run (or an agent acting for them) and the tenant's services read its
+  status, end time and its workflow's output so far, the pull path beside the run's events for a caller whose `ctx.run`
+  answered while the run parked. It is L1 (`workflow.run.get`), scoped to the caller's tenant, and answers
+  `run_not_found` for any run the caller may not see, so a run's existence never leaks. The engine gains `view(id)`.
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [8a70552]
+  - @stackra/database@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/rules@0.27.0
+  - @stackra/content@0.27.0
+  - @stackra/locking@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+
 ## 0.26.0
 
 ### Minor Changes

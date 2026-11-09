@@ -21,7 +21,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { SCOPE_RX, checkTarget, miseWhich, publish } from "../secrets-sops.mjs";
+import { SCOPE_RX, checkTarget, cliFailure, miseWhich, publish } from "../secrets-sops.mjs";
 import { main as put } from "../secrets-put.mjs";
 import {
   ed25519Pair,
@@ -189,6 +189,38 @@ test("publish: replace false refuses an existing name; a failed push is a fixed 
     {
       message: "push: git was refused (sign in, or this identity lacks the key)",
     },
+  );
+});
+
+test("cliFailure: names the cloud status and reasons, and repeats no other text", () => {
+  const v = canary();
+  const stderr = [
+    "Failed to get the data key required to decrypt the SOPS file.",
+    "Group 0: FAILED",
+    `  projects/p/locations/global/keyRings/r/cryptoKeys/k: FAILED ${v}`,
+    "    - | Error decrypting key: rpc error: code = PermissionDenied desc = Cloud KMS API requires billing",
+    '      reason: "BILLING_DISABLED"',
+    '      metadata: { "consumer": "projects/1" }',
+  ].join("\n");
+  const refused = cliFailure("decrypt", "sops", { status: 128, stderr, stdout: "" });
+  assert.equal(
+    refused.message,
+    "decrypt: sops was refused (sign in, or this identity lacks the key) [PermissionDenied, BILLING_DISABLED]",
+  );
+  assert.ok(!refused.message.includes(v), "no text beyond the status and reasons is repeated");
+  const quota = cliFailure("decrypt", "sops", {
+    status: 128,
+    stderr: 'code = PermissionDenied desc = x {"reason": "USER_PROJECT_DENIED"}',
+    stdout: "",
+  });
+  assert.match(quota.message, /\[PermissionDenied, USER_PROJECT_DENIED\]$/);
+  assert.equal(
+    cliFailure("decrypt", "sops", { status: 1, stderr: "denied", stdout: "" }).message,
+    "decrypt: sops was refused (sign in, or this identity lacks the key)",
+  );
+  assert.equal(
+    cliFailure("decrypt", "sops", { status: 2, stderr: "boom", stdout: "" }).message,
+    "decrypt: sops exited 2",
   );
 });
 

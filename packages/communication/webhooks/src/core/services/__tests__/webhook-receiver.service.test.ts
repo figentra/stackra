@@ -5,7 +5,9 @@
  *          written to the outbox as its event class, keyed by the webhook id, with the connection in its metadata;
  *          Svix header names verify; an `hmac` Integration verifies by its recipe and keys the event by the payload's
  *          id; an `aes_gcm_body` Integration (a regional gateway scheme, STA-1357) is parsed from its plaintext and
- *          keyed by the payload's numeric id; an unknown event type is dropped; an unknown Integration, a connection URL of a platform-only
+ *          keyed by the payload's numeric id; a `keyed_field_digest` Integration whose recipe reads a form-encoded body
+ *          routes, keys and creates its event from the percent-decoded form fields, and a form body that fails
+ *          verification is refused; an unknown event type is dropped; an unknown Integration, a connection URL of a platform-only
  *          Integration and a bad signature are refused before anything is written.
  * Boundary: test only; the connection store, the outbox and the clock are in-test fakes, the secret store a map of test
  *           values, and Web Crypto runs for real.
@@ -122,6 +124,37 @@ class SealedIntegration extends Integration({
   webhookSecret!: string;
 }
 
+/** A provider whose notifications are form-encoded: a SHA-256 digest of three fields and the secret, at `signature`. */
+class FormIntegration extends Integration({
+  provider: "form",
+  category: IntegrationCategory.Payments,
+  levels: [],
+  auth: { type: AuthType.None },
+  webhooks: {
+    scheme: SignatureScheme.KeyedFieldDigest,
+    secret: "{webhookSecret}",
+    eventType: { path: "kind" },
+    eventId: { path: "ref" },
+    recipe: {
+      path: "signature",
+      fields: ["ref", "kind", "note"],
+      algorithm: "SHA-256",
+      bodyFormat: "form",
+    },
+  },
+}) {
+  @Secret("FORM_WEBHOOK_SECRET")
+  webhookSecret!: string;
+}
+
+class FormPaid extends WebhookEvent<FormIntegration>({ type: "paid" }) {
+  ref!: string;
+
+  kind!: string;
+
+  note!: string;
+}
+
 /** The sealed gateway's hex AES-256 key (a test value). */
 const SEALED_KEY = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
@@ -152,12 +185,14 @@ registerSchemas([
   [StatusChanged, z.object({ event: z.object({ name: z.string() }) })],
   [PaymentSucceeded, z.object({ id: z.string(), type: z.string() })],
   [SealedPaid, z.object({ type: z.string(), payload: z.object({ id: z.number() }) })],
+  [FormPaid, z.object({ ref: z.string(), kind: z.string(), note: z.string() })],
 ]);
 registerWebhookEvents([
   { event: MailArrived, integration: InboxIntegration, connection: InboxConnection },
   { event: StatusChanged, integration: StatusIntegration },
   { event: PaymentSucceeded, integration: GatewayIntegration },
   { event: SealedPaid, integration: SealedIntegration },
+  { event: FormPaid, integration: FormIntegration },
 ]);
 
 /** Answers the platform's test secrets by name. */
@@ -165,7 +200,8 @@ class TestSecretStore extends SecretStore {
   get(name: string): string | undefined {
     return name === "INBOX_WEBHOOK_SECRET" ||
       name === "STATUS_WEBHOOK_SECRET" ||
-      name === "GATEWAY_WEBHOOK_SECRET"
+      name === "GATEWAY_WEBHOOK_SECRET" ||
+      name === "FORM_WEBHOOK_SECRET"
       ? PLATFORM_SECRET
       : name === "SEALED_WEBHOOK_SECRET"
         ? SEALED_KEY
@@ -204,6 +240,21 @@ async function delivery(name: string, secret: string, id = "msg_1") {
   const body = JSON.stringify({ event: { name }, mailId: "mail_1" });
   const headers = await signWebhook({ id, timestamp: SENT, body }, [secret]);
   return { headers: { ...headers }, body };
+}
+
+/** A form-encoded body of `fields`, percent-encoded, signed over their decoded values and `secret`. */
+async function formDelivery(fields: { ref: string; kind: string; note: string }, secret: string) {
+  const digest = new Uint8Array(
+    await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(`${fields.ref}${fields.kind}${fields.note}${secret}`),
+    ),
+  );
+  const signed = { ...fields, signature: toHex(digest) };
+  const body = Object.entries(signed)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join("&");
+  return { headers: {}, body };
 }
 
 describe(WebhookReceiver, () => {
@@ -326,6 +377,50 @@ describe(WebhookReceiver, () => {
         body: toHex(sealed.slice(1, -16)),
       }),
     ).rejects.toBeInstanceOf(InvalidSignatureError);
+  });
+
+  it("routes a verified form-encoded delivery by a form field and creates its event from the form fields", async () => {
+    const { receiver, outbox } = setup();
+    const event = await receiver.receive({
+      integration: FormIntegration,
+      ...(await formDelivery({ ref: "R1", kind: "paid", note: "ok" }, PLATFORM_SECRET)),
+    });
+    expect(event).toBeInstanceOf(FormPaid);
+    expect(event).toMatchObject({ ref: "R1", kind: "paid", note: "ok" });
+    expect(outbox.write).toHaveBeenCalledWith([{ event, meta: { id: "R1", occurredAt: SENT } }]);
+  });
+
+  it("percent-decodes a form-encoded value", async () => {
+    const { receiver } = setup();
+    const { headers, body } = await formDelivery(
+      { ref: "R2", kind: "paid", note: "paid in full & settled" },
+      PLATFORM_SECRET,
+    );
+    expect(body).toContain("note=paid%20in%20full%20%26%20settled");
+    const event = await receiver.receive({ integration: FormIntegration, headers, body });
+    expect(event).toMatchObject({ note: "paid in full & settled" });
+  });
+
+  it("refuses a form-encoded delivery that fails verification before parsing it", async () => {
+    const { receiver, outbox } = setup();
+    const { headers, body } = await formDelivery(
+      { ref: "R3", kind: "paid", note: "ok" },
+      PLATFORM_SECRET,
+    );
+    await expect(
+      receiver.receive({
+        integration: FormIntegration,
+        headers,
+        body: body.replace("note=ok", "note=changed"),
+      }),
+    ).rejects.toBeInstanceOf(InvalidSignatureError);
+    await expect(
+      receiver.receive({
+        integration: FormIntegration,
+        ...(await formDelivery({ ref: "R3", kind: "paid", note: "ok" }, CONNECTION_SECRET)),
+      }),
+    ).rejects.toBeInstanceOf(InvalidSignatureError);
+    expect(outbox.write).not.toHaveBeenCalled();
   });
 
   it("reads Svix header names and keys the event by the Svix id", async () => {

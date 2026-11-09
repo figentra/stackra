@@ -1,5 +1,31 @@
 # @stackra/gen
 
+## 0.28.0
+
+### Patch Changes
+
+- f0be8d8: A service that runs `@stackra/queue` now connects `QueueWorkerService` in its generated `boot`, so a job that a
+  generated Encore subscription delivers, or that `queue:work` reserves, runs through the pipeline instead of throwing
+  "QueueWorkerService is not connected" (STA-2046).
+- 7a87018: `stackra gen` refuses (`port_unbound`) a class whose constructor takes a port that no driver binds in the member, instead of letting every container-built test fail with `UnresolvedPortError`.
+- @stackra/money@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/support@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- fb1ae38: A service that declares a workflow gets the `WorkflowRunner` driver table in its wiring (`pipelinePorts`), as
+  STA-2573 did for the pipeline's other ports: the pipeline resolves the runner for `ctx.run` and `ctx.signal`, and no
+  constructor injects it, so it was left unbound ("WorkflowRunner is not bound"). The generated Vitest setup also imports
+  `@stackra/workflow/testing` for a member on `@stackra/workflow`, so a `useDrivers("memory")` test connects that runner.
+- @stackra/money@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/support@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes

@@ -2490,8 +2490,13 @@ export function createSourceReader(
         return refuse();
       return { class: refOf(port.typeName ?? port, portSymbol), named: nameOf(instance.literal) };
     }
-    if (classDeclarationOf(symbol) === undefined) return refuse();
-    return { class: refOf(type.typeName, symbol) };
+    const target = classDeclarationOf(symbol);
+    if (target === undefined) return refuse();
+    // A class that extends `Port` is a port: `port_unbound` reads the flag (it is never printed or recorded).
+    return {
+      class: refOf(type.typeName, symbol),
+      ...(kindInfo(target)?.kind === "port" ? { port: true as const } : {}),
+    };
   };
 
   // `ReplicaPage` (or `ReplicaPage<T>`) from a Stackra package: a replica query's answer (ADR 0338 decision 3).
