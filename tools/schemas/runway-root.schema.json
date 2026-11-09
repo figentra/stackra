@@ -2428,6 +2428,30 @@
           },
           "examples": [["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"]]
         },
+        "migrate": {
+          "type": "object",
+          "description": "A one-off task run with the same image, env, secrets and resources before each rollout; the rollout waits for it and stops when it fails.",
+          "additionalProperties": false,
+          "required": ["command"],
+          "properties": {
+            "command": {
+              "type": "array",
+              "description": "The migration task's arguments, replacing the image's default command.",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "examples": [["bundle", "exec", "rails", "db:chatwoot_prepare"]]
+            },
+            "timeoutMinutes": {
+              "type": "integer",
+              "description": "How long the rollout waits for the task; 15 when absent.",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        },
         "expose": {
           "enum": ["internal", "public"],
           "description": "public puts an ALB behind Cloudflare in front; internal is service discovery only."

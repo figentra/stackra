@@ -4,7 +4,8 @@
  *          (ADR 0493): a Postgres resource sized per environment and a public workload pinned by digest pass; a reserved
  *          kind (kafka), an engine on a non-Postgres kind, a workload without a reason or with a tagged image, an
  *          inverted scale, an empty command, an alias that is not SCREAMING_SNAKE, and a `uses` naming no resource are
- *          refused with their paths.
+ *          refused with their paths; a workload's `migrate` command passes, and an empty one or a timeout past an hour
+ *          is refused.
  * Boundary: test only; plain objects through `parseRunway`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 1, 3 and 5); spec sta-1640.
@@ -123,6 +124,26 @@ describe("root runway resources and workloads", () => {
         root({ workloads: { zitadel: { ...zitadel, aliases: { dsn: "MAIN_DB_URL" } } } }),
       ).some((path) => path.startsWith("workloads.zitadel.aliases")),
     ).toBe(true);
+  });
+
+  it("takes a migrate command run before each rollout, and refuses an empty one or a timeout past an hour", () => {
+    const zitadel = (root({}) as { workloads: { zitadel: Record<string, unknown> } }).workloads
+      .zitadel;
+    const migrate = { command: ["setup", "--masterkeyFromEnv"], timeoutMinutes: 20 };
+
+    const parsed = parseRunway("root", root({ workloads: { zitadel: { ...zitadel, migrate } } }));
+    expect(parsed.workloads?.["zitadel"]?.migrate).toEqual(migrate);
+
+    expect(
+      pathsOf(root({ workloads: { zitadel: { ...zitadel, migrate: { command: [] } } } })),
+    ).toContain("workloads.zitadel.migrate.command");
+    expect(
+      pathsOf(
+        root({
+          workloads: { zitadel: { ...zitadel, migrate: { ...migrate, timeoutMinutes: 90 } } },
+        }),
+      ),
+    ).toContain("workloads.zitadel.migrate.timeoutMinutes");
   });
 
   // @covers sta-1640:FR-003

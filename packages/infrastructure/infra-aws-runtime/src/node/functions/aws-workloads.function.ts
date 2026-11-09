@@ -5,6 +5,8 @@
  *          the task execution role (reads only the environment's own SSM parameters), and per workload a task
  *          definition (its arguments, and each `aliases` name reading its resource variable's parameter), a service
  *          registered in the namespace, and CPU target-tracking autoscaling when its maximum is above its minimum.
+ *          A workload with `migrate` also gets a migration task definition (the same container with the migration's
+ *          arguments and no port) that `WORKLOAD_MIGRATION_PROVIDER` runs once per revision; its service waits for it.
  *          A public workload also gets an ALB in the public subnets, HTTPS only, admitting Cloudflare's ranges alone,
  *          with a target group that checks the workload's health path.
  * Boundary: declares resources only, inside the Pulumi program that calls it; only the owner applies them. No secret
@@ -26,6 +28,7 @@ import { resourceVariables } from "#core/functions/resource-variables.function";
 import { workloadParameter } from "#core/functions/workload-parameter.function";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import { CLOUDFLARE_IPV4_RANGES } from "#node/constants/cloudflare-ipv4-ranges.constant";
+import { WORKLOAD_MIGRATION_PROVIDER } from "#node/constants/workload-migration-provider.constant";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
 
 /** The AWS-managed policy every task execution role carries (image pulls, log writes). */
@@ -36,6 +39,9 @@ const BALANCER_NAME_LIMIT = 32;
 
 /** The CPU a service scales out at, in percent. */
 const SCALE_AT_CPU = 60;
+
+/** Seconds between two looks at a running migration task. */
+const MIGRATE_POLL_SECONDS = 10;
 
 /** Days logs are kept when the options name none. */
 const LOG_DAYS = 30;
@@ -164,34 +170,68 @@ export function awsWorkloads(
           })),
       ),
     ];
-    const task = new aws.ecs.TaskDefinition(workload.name, {
-      family: workload.name,
+    // One container, run as the service with its port, or as the migration with its own arguments and none.
+    const containerOf = (command: readonly string[], streamPrefix: string, port?: number) => ({
+      name: workload.workload,
+      image: workload.image,
+      ...(command.length > 0 ? { command } : {}),
+      essential: true,
+      ...(port === undefined ? {} : { portMappings: [{ containerPort: port, protocol: "tcp" }] }),
+      environment: Object.entries(workload.env).map(([name, value]) => ({ name, value })),
+      secrets,
+      logConfiguration: {
+        logDriver: "awslogs",
+        options: {
+          "awslogs-group": logGroup.name,
+          "awslogs-region": region.name,
+          "awslogs-stream-prefix": streamPrefix,
+        },
+      },
+    });
+    const taskArgs = {
       networkMode: "awsvpc",
       requiresCompatibilities: ["FARGATE"],
       cpu: String(workload.cpu),
       memory: String(workload.memoryMb),
       executionRoleArn: executionRole.arn,
-      containerDefinitions: pulumi.jsonStringify([
-        {
-          name: workload.workload,
-          image: workload.image,
-          ...(workload.command.length > 0 ? { command: workload.command } : {}),
-          essential: true,
-          portMappings: [{ containerPort: workload.port, protocol: "tcp" }],
-          environment: Object.entries(workload.env).map(([name, value]) => ({ name, value })),
-          secrets,
-          logConfiguration: {
-            logDriver: "awslogs",
-            options: {
-              "awslogs-group": logGroup.name,
-              "awslogs-region": region.name,
-              "awslogs-stream-prefix": workload.workload,
-            },
-          },
-        },
-      ]),
       tags,
+    };
+    const task = new aws.ecs.TaskDefinition(workload.name, {
+      ...taskArgs,
+      family: workload.name,
+      containerDefinitions: pulumi.jsonStringify([
+        containerOf(workload.command, workload.workload, workload.port),
+      ]),
     });
+
+    // The migration runs once per revision, before the service rolls; a failed run stops the rollout.
+    let migration: pulumi.Resource | undefined;
+    if (workload.migrate !== undefined) {
+      const migrateName = `${workload.name}-migrate`;
+      const migrateTask = new aws.ecs.TaskDefinition(migrateName, {
+        ...taskArgs,
+        family: migrateName,
+        containerDefinitions: pulumi.jsonStringify([
+          containerOf(workload.migrate.command, `${workload.workload}-migrate`),
+        ]),
+      });
+      // dynamic.Resource is abstract, so the run gets an empty subclass of its own
+      migration = new (class WorkloadMigration extends pulumi.dynamic.Resource {})(
+        WORKLOAD_MIGRATION_PROVIDER,
+        migrateName,
+        {
+          name: workload.name,
+          region: region.name,
+          cluster: cluster.arn,
+          taskDefinition: migrateTask.arn,
+          container: workload.workload,
+          subnets: options.network.subnetIds,
+          securityGroups: [securityGroup],
+          timeoutMinutes: workload.migrate.timeoutMinutes,
+          pollSeconds: MIGRATE_POLL_SECONDS,
+        },
+      );
+    }
     const registry = new aws.servicediscovery.Service(workload.name, {
       name: workload.workload,
       namespaceId: namespace.id,
@@ -273,7 +313,12 @@ export function awsWorkloads(
         deploymentCircuitBreaker: { enable: true, rollback: true },
         tags,
       },
-      { dependsOn: listener === undefined ? [] : [listener] },
+      {
+        dependsOn: [
+          ...(listener === undefined ? [] : [listener]),
+          ...(migration === undefined ? [] : [migration]),
+        ],
+      },
     );
 
     if (workload.scale.max > workload.scale.min) {

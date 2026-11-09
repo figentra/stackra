@@ -85,6 +85,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@aws-sdk/client-ecs": "catalog:",
     "@pulumi/aws": "catalog:infra",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
