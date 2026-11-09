@@ -31,6 +31,8 @@ delivery, couriers, electronic shelf labels, scales and court systems, and Juris
 1. **Shelves.** `IntegrationCategory` gains `edi`, `fraud`, `food_delivery`, `courier`, `document_management`, `esl`,
    `scales` and `court`. A shelf is where the marketplace lists a provider; the providers on it are Connection classes
    in OS integrations. A court-system connector is a Connection on the `court` shelf, never a framework of its own.
+   Amended 2026-11-09 (STA-2607): `tax` joins the shelves for tax authorities (ZATCA, ETA), e-invoicing clearance and
+   reporting networks and tax engines, whose Connections Invoicing & Tax finds with `connectionsOf`.
 2. **Lookup by capability.** `connectionsOf(capability)` reads the connection registry gen fills and answers the
    classes whose Integration declares the connector kind, or sits on the shelf, keyed by provider code (a
    `ProviderDrivers` map). Two Integrations of one provider code are refused (0355 decision 1). `ConnectorGateway`
