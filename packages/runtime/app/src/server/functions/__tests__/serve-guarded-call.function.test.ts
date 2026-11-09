@@ -10,11 +10,13 @@
  *          allows: a user's bearer on a first hop, a service's forwarded token only into an action that declares
  *          `onBehalfOf: { secondHop: true }`, never through a controller, never anything into an action that declares
  *          `credentials: "ignore"` (which runs anonymous, its credential never verified), and the holder is empty once
- *          the call returned or threw.
+ *          the call returned or threw. An anonymous call acts in the tenant the edge signed (its visitor id kept), and
+ *          in none without a signed one; a token's tenant wins, and a token for another tenant than the signed one is
+ *          403.
  * Boundary: test only; real Web Crypto signing with `signEdgeRequest` against real `Date.now()`; the forwarding cases
  *           stub the authenticator and `fetch` and use throwaway token strings.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0237 (STA-2577 note); ADR 0437 (decision 4); ADR 0140.
+ * Governing contract: ADR 0022 (test placement); ADR 0237 (STA-2577 note); ADR 0437 (decisions 4 and 8); ADR 0140.
  */
 import { createHash } from "node:crypto";
 
@@ -42,6 +44,17 @@ import { EdgeHeaderGuard } from "#server/services/edge-header.guard";
 const SECRET = "edge-secret";
 const USER: Actor = { kind: ActorKind.Service, id: "svc_01H2J3K4L5M6N7P8Q9R0S1T2U3" as never };
 
+/** Two signed host scopes, one per tenant. */
+const SCOPE_A = "scp_01j9z3k4m5n6p7q8r9s0t1v2aa";
+const SCOPE_B = "scp_01j9z3k4m5n6p7q8r9s0t1v2bb";
+
+/** A signed-in member, given a tenant per test. */
+const MEMBER: Actor = {
+  kind: ActorKind.User,
+  id: "usr_01j9z3k4m5n6p7q8r9s0t1v2a1" as never,
+  realm: Realm.Customer,
+};
+
 class OrderLockedError extends Refusal({ kind: ErrorKind.Conflict }) {}
 
 let next = 0;
@@ -53,9 +66,10 @@ async function forwarded(
   signed: string,
   sent: string = signed,
   extra: Record<string, string> = {},
+  scope: string | null = null,
 ): Promise<Request> {
   const input = {
-    scope: null,
+    scope,
     product: "commerce",
     surface: "console",
     realm: "staff",
@@ -74,6 +88,7 @@ async function forwarded(
     [EdgeHeader.Signature]: await signEdgeRequest(input, SECRET),
     ...extra,
   });
+  if (scope !== null) headers.set(EdgeHeader.Scope, scope);
   return new Request(`https://api.example.test${path}`, {
     method,
     headers,
@@ -275,6 +290,102 @@ describe(serveGuardedCall, () => {
     const closed = call();
     expect((await closed.serve(await forwarded("GET", "/orders/ord_1", "", ""))).status).toBe(401);
     expect(closed.execute).not.toHaveBeenCalled();
+  });
+
+  it("runs an anonymous call in the tenant the edge signed, as the visitor its token names", async () => {
+    const execute = vi.fn(async (_input: unknown, _actor: Actor) => ({}));
+    const visitor = vi.fn(async () => ({ id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" as never }));
+    const guard = edgeGuard();
+    const response = await serveGuardedCall({
+      request: await forwarded("GET", "/orders/ord_1", "", "", {}, SCOPE_A),
+      path: "/orders/:orderId",
+      maxBodyBytes: 1024,
+      anonymous: true,
+      guard: (guarded) => guard.check(guarded),
+      authenticate: async () => ({ actor: USER }),
+      visitor,
+      execute,
+    });
+    expect(response.status).toBe(200);
+    expect(execute.mock.calls[0]?.[1]).toEqual({
+      kind: ActorKind.Anonymous,
+      id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1",
+      scopeId: SCOPE_A,
+    });
+  });
+
+  it("gives an anonymous call no tenant without a signed one", async () => {
+    const platform = call({ anonymous: true });
+    expect((await platform.serve(await forwarded("GET", "/orders/ord_1", "", ""))).status).toBe(
+      200,
+    );
+    expect(platform.execute.mock.calls[0]?.[1].scopeId).toBeUndefined();
+
+    const direct = call({ anonymous: true });
+    const unsigned = new Request("https://api.example.test/orders/ord_1");
+    expect((await direct.serve(unsigned)).status).toBe(200);
+    expect(direct.execute.mock.calls[0]?.[1].scopeId).toBeUndefined();
+  });
+
+  it("never takes a tenant a guard did not verify, even when the guard is skipped", async () => {
+    const execute = vi.fn(async (_input: unknown, actor: Actor) => ({ actor: actor.id }));
+    const spoofed = new Request("https://api.example.test/orders/ord_1", {
+      headers: { [EdgeHeader.Scope]: SCOPE_A },
+    });
+    const response = await serveGuardedCall({
+      request: spoofed,
+      path: "/orders/:orderId",
+      maxBodyBytes: 1024,
+      anonymous: true,
+      guard: async () => undefined,
+      authenticate: async () => ({ actor: USER }),
+      execute,
+    });
+    expect(response.status).toBe(200);
+    expect(execute.mock.calls[0]?.[1].scopeId).toBeUndefined();
+  });
+
+  it("runs a token in its own tenant when it matches the signed one, or has none", async () => {
+    const matching = call();
+    matching.authenticate.mockResolvedValue({ actor: { ...MEMBER, scopeId: SCOPE_A } });
+    const signed = await forwarded(
+      "GET",
+      "/orders/ord_1",
+      "",
+      "",
+      { authorization: "Bearer t" },
+      SCOPE_A,
+    );
+    expect((await matching.serve(signed)).status).toBe(200);
+    expect(matching.execute.mock.calls[0]?.[1]).toEqual({ ...MEMBER, scopeId: SCOPE_A });
+
+    // a platform token names no tenant, and the token wins: it stays a platform call
+    const platform = call();
+    const onScopedHost = await forwarded(
+      "GET",
+      "/orders/ord_1",
+      "",
+      "",
+      { authorization: "Bearer t" },
+      SCOPE_A,
+    );
+    expect((await platform.serve(onScopedHost)).status).toBe(200);
+    expect(platform.execute.mock.calls[0]?.[1]).toEqual(USER);
+  });
+
+  it("refuses a token for another tenant than the one the edge signed, with the generic 403", async () => {
+    const { serve, authenticate, execute } = call();
+    authenticate.mockResolvedValue({ actor: { ...MEMBER, scopeId: SCOPE_B } });
+    const response = await serve(
+      await forwarded("GET", "/orders/ord_1", "", "", { authorization: "Bearer t" }, SCOPE_A),
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      code: "request_refused",
+      category: "forbidden",
+      retryable: false,
+    });
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("answers a refusal of the call with its kind's status and envelope", async () => {

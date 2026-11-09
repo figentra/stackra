@@ -5,7 +5,8 @@
  *          edge traffic: authentication decides); it refuses any edge header without a signature (an identity header,
  *          or only a request id or timestamp), an unknown key, a tampered body or path, a timestamp outside the window
  *          either side (on a pinned clock, both edges accepted), a missing identity header, a replayed request id, and
- *          every signature when no key is active.
+ *          every signature when no key is active. It records a request's signed tenant only once the signature and
+ *          the request id verified: never for a platform host, a request with no edge header or a refused one.
  * Boundary: test only; real Web Crypto, the memory drivers, and requests built as the edge Worker forwards them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0437 (decisions 4 and 8; Enforcement); ADR 0457.
@@ -18,6 +19,7 @@ import { vi } from "vitest";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { signEdgeRequest } from "#core/functions/sign-edge-request.function";
+import { VERIFIED_EDGE_SCOPE } from "#server/constants/verified-edge-scope.constant";
 import { MemoryEdgeNonceStoreDriver } from "#server/drivers/memory-edge-nonce-store.driver";
 import { MemoryEdgeSigningKeysDriver } from "#server/drivers/memory-edge-signing-keys.driver";
 import { EdgeSignatureInvalidError } from "#server/errors/edge-signature-invalid.error";
@@ -172,5 +174,31 @@ describe("EdgeHeaderGuard", () => {
       });
       expect(await refuses(guard(), partial)).toBe(true);
     }
+  });
+
+  it("records the signed tenant of a verified request, for the call to act in", async () => {
+    const request = await forwarded({ scope: "scp_01j9z3k4m5n6p7q8r9s0t1v2a1" });
+    await guard().check(request);
+    expect(VERIFIED_EDGE_SCOPE.get(request)).toBe("scp_01j9z3k4m5n6p7q8r9s0t1v2a1");
+  });
+
+  it("records no tenant for a platform host or a request with no edge header", async () => {
+    const platform = await forwarded({ scope: null });
+    await guard().check(platform);
+    expect(VERIFIED_EDGE_SCOPE.has(platform)).toBe(false);
+    const plain = new Request("https://api.example.test/api/orders");
+    await guard().check(plain);
+    expect(VERIFIED_EDGE_SCOPE.has(plain)).toBe(false);
+  });
+
+  it("records no tenant for a request it refuses, a replay included", async () => {
+    const forged = await forwarded({ key: "retired" });
+    expect(await refuses(guard(), forged)).toBe(true);
+    expect(VERIFIED_EDGE_SCOPE.has(forged)).toBe(false);
+    const subject = guard();
+    await subject.check(await forwarded({ requestId: "req-twice" }));
+    const replayed = await forwarded({ requestId: "req-twice" });
+    expect(await refuses(subject, replayed)).toBe(true);
+    expect(VERIFIED_EDGE_SCOPE.has(replayed)).toBe(false);
   });
 });

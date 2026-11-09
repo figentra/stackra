@@ -12,18 +12,21 @@
  *           are refused per instance while the nonce store is the memory driver. The validity window is a getter a host
  *           overrides (ADR 0306). Rate limits, CSRF and the later checks of the order are other guards and the actions
  *           pipeline, not this one; a request with no edge header is authenticated there (ADR 0437 note of 2026-11-09).
+ *           A verified request's signed tenant is recorded in `VERIFIED_EDGE_SCOPE`, keyed by the request.
  * Runtime: node
  * Governing contract: ADR 0437 (decisions 4 and 8; Enforcement); ADR 0457 (RequestGuard); ADR 0306 (overrides).
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 
 import { Enum } from "@stackra/contracts";
+import type { PublicId } from "@stackra/contracts";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import type { EdgeNonceStore } from "#contracts/ports/edge-nonce-store.port";
 import type { EdgeSigningKeys } from "#contracts/ports/edge-signing-keys.port";
 import { signEdgeRequest } from "#core/functions/sign-edge-request.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
+import { VERIFIED_EDGE_SCOPE } from "#server/constants/verified-edge-scope.constant";
 import { EdgeSignatureInvalidError } from "#server/errors/edge-signature-invalid.error";
 
 /**
@@ -67,6 +70,7 @@ export class EdgeHeaderGuard extends RequestGuard {
    *
    * @throws EdgeSignatureInvalidError when a request carrying an edge header has no signature, or one that is wrong,
    *         stale or replayed.
+   * @remarks A verified request's signed tenant is recorded in `VERIFIED_EDGE_SCOPE` for `serveGuardedCall`.
    */
   async check(request: Request): Promise<void> {
     const url = new URL(request.url);
@@ -107,5 +111,7 @@ export class EdgeHeaderGuard extends RequestGuard {
     // twice the window: a timestamp may sit up to maxAge either side of now
     if (!(await this.nonces.claim(requestId, this.maxAge * 2)))
       throw EdgeSignatureInvalidError.create();
+    // only now is the tenant the Worker resolved from the host trusted (ADR 0437)
+    if (input.scope !== null) VERIFIED_EDGE_SCOPE.set(request, input.scope as PublicId);
   }
 }
