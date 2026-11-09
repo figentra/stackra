@@ -20,10 +20,13 @@ export class MonoDisplayBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.monoDisplay,
 }) {
+  /** The wordmark drawn in code glyphs, never translated. */
   title!: string;
 
+  /** The line under the wordmark. */
   tagline?: LocalizedText;
 
+  /** The art the wordmark stands on. */
   art?: MonoDisplayArt;
 
   /** The glyph field's poster, a root-relative URL; the `glyphs` art draws only with one. */

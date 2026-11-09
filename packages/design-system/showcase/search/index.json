@@ -18050,8 +18050,8 @@
   },
   {
     "category": "blocks",
-    "description": "",
-    "headings": [],
+    "description": "A table of subjects by capability, each cell a yes, a no, coming or a short note.",
+    "headings": ["Basics"],
     "key": "free/capability-matrix",
     "keywords": [
       "capability",
@@ -18061,25 +18061,26 @@
       "carriers",
       "marketing",
       "landing",
-      "kit"
+      "kit",
+      "features"
     ],
     "lang": "en",
     "platforms": ["react"],
     "propNames": [],
     "tier": "free",
-    "title": "CapabilityMatrix"
+    "title": "Capability matrix"
   },
   {
     "category": "blocks",
-    "description": "",
-    "headings": [],
+    "description": "جدول يعرض الجهات مقابل القدرات، وكل خلية فيه نعم أو لا أو قريبًا أو ملاحظة قصيرة.",
+    "headings": ["الأساسيات"],
     "key": "free/capability-matrix",
-    "keywords": [],
+    "keywords": ["قدرات", "مصفوفة", "مقارنة", "جدول", "مزايا", "شركات الشحن", "صفحة هبوط"],
     "lang": "ar",
     "platforms": ["react"],
     "propNames": [],
     "tier": "free",
-    "title": "CapabilityMatrix"
+    "title": "مصفوفة القدرات"
   },
   {
     "category": "blocks",
@@ -18376,6 +18377,63 @@
   },
   {
     "category": "blocks",
+    "description": "The person's notifications behind a bell with the unread count, or listed in place, on the web and in the app.",
+    "headings": ["Basics"],
+    "key": "free/notification-inbox",
+    "keywords": ["notifications", "inbox", "bell", "unread", "in-app", "kit", "mobile"],
+    "lang": "en",
+    "platforms": ["react", "native"],
+    "propNames": [],
+    "tier": "free",
+    "title": "Notification inbox"
+  },
+  {
+    "category": "blocks",
+    "description": "إشعارات الشخص خلف جرس يعرض عدد غير المقروء، أو معروضة في مكانها، على الويب وفي التطبيق.",
+    "headings": ["الأساسيات"],
+    "key": "free/notification-inbox",
+    "keywords": ["إشعارات", "صندوق الوارد", "جرس", "غير مقروء", "داخل التطبيق", "جوال"],
+    "lang": "ar",
+    "platforms": ["react", "native"],
+    "propNames": [],
+    "tier": "free",
+    "title": "صندوق الإشعارات"
+  },
+  {
+    "category": "blocks",
+    "description": "Each kind of notification with a switch per channel; channels that must stay on show locked.",
+    "headings": ["Basics"],
+    "key": "free/notification-preferences",
+    "keywords": [
+      "notifications",
+      "preferences",
+      "settings",
+      "email",
+      "push",
+      "subscribe",
+      "kit",
+      "unsubscribe"
+    ],
+    "lang": "en",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "Notification preferences"
+  },
+  {
+    "category": "blocks",
+    "description": "كل نوع من الإشعارات مع مفتاح لكل قناة؛ والقنوات التي يجب أن تبقى مفعّلة تظهر مقفلة.",
+    "headings": ["الأساسيات"],
+    "key": "free/notification-preferences",
+    "keywords": ["إشعارات", "تفضيلات", "إعدادات", "بريد إلكتروني", "إشعارات فورية", "إلغاء الاشتراك"],
+    "lang": "ar",
+    "platforms": ["react"],
+    "propNames": [],
+    "tier": "free",
+    "title": "تفضيلات الإشعارات"
+  },
+  {
+    "category": "blocks",
     "description": "The organisation's settings page: its profile, legal entities and domains.",
     "headings": ["Basics"],
     "key": "free/organization-page",
@@ -18538,6 +18596,30 @@
     "propNames": [],
     "tier": "free",
     "title": "بطاقات المنتجات"
+  },
+  {
+    "category": "blocks",
+    "description": "Explains what push notifications give before the system asks, as a sheet or inside onboarding.",
+    "headings": ["Basics"],
+    "key": "free/push-primer",
+    "keywords": ["push", "notifications", "permission", "onboarding", "opt in", "kit", "mobile"],
+    "lang": "en",
+    "platforms": ["native"],
+    "propNames": [],
+    "tier": "free",
+    "title": "Push primer"
+  },
+  {
+    "category": "blocks",
+    "description": "يشرح فائدة الإشعارات الفورية قبل أن يطلب النظام الإذن، كصفحة كاملة أو داخل خطوات البدء.",
+    "headings": ["الأساسيات"],
+    "key": "free/push-primer",
+    "keywords": ["إشعارات فورية", "إشعارات", "إذن", "بدء الاستخدام", "اشتراك", "جوال"],
+    "lang": "ar",
+    "platforms": ["native"],
+    "propNames": [],
+    "tier": "free",
+    "title": "تمهيد الإشعارات الفورية"
   },
   {
     "category": "blocks",
