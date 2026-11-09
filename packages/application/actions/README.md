@@ -262,6 +262,9 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
   allows it; in live it is refused `live_read_only`.
 - **Meters**: `meter: { name, kind, field? }` writes one `UsageRecorded` (`usage.recorded`) event through the
   `EventOutbox` in the action's unit of work, so a metered call never commits without its usage.
+- **Entitlements**: `entitlement: ExportsEntitlement` (or a list) on an `Action` or `Query` names the plan right a call
+  needs; gen lists the call in that entitlement's `gates` and `PlanEntitlementCheckDriver` checks it. A class that is
+  not an entitlement does not compile, and one that resolves to no entitlement fails gen (`entitlement_unknown`).
 - **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
   `OutboxListenerAuditTrailDriver` does the same for each listener delivery (`@stackra/events`' `ListenerAuditTrail`,
   key `listener:<Listener>`, the event's id as the call id, `ctx.audit` fields; STA-1715).
