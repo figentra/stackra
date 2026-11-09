@@ -11,7 +11,7 @@ redaction, the `LogReporter` port with its console driver, and two configuration
 
 | Symbol                                | Use                                                                                                          |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `LoggingConfig`, `LoggingConfig$`     | key `logger.logging`: `level`, `channels`, `sampleRate`, `redaction.extraFields`                             |
+| `LoggingConfig`, `LoggingConfig$`     | key `logger.logging`: `reporter` (`console` or `otlp`), `level`, `channels`, `sampleRate`, `redaction.extraFields` |
 | `TelemetryConfig`, `TelemetryConfig$` | key `logger.telemetry`: `errors`, `traces`, `replay`, `vitals`, `budgets`, `lighthouse`                      |
 | `LoggingOptions`, `TelemetryOptions`  | the shapes of the two configurations, for restating a field type in an override                              |
 | `ChannelLoggerDriver`                 | the driver of `Logger`: filters, samples, redacts, hands a `LogRecord` to the reporter                       |
@@ -78,7 +78,9 @@ Migrating: move a `logger.telemetry.dsn` value to the secret `SentryConfig.dsnSe
 
 ## OTLP
 
-`OtlpLogReporterDriver` (driver name `otlp`, the production default of ADR 0147) batches redacted records and POSTs
+`LoggingConfig.reporter` picks the `LogReporter` driver: `console` unless config says otherwise, so a member boots with
+no logging config; a deployment that ships to a collector sets `reporter: otlp` in its runway values.
+`OtlpLogReporterDriver` (driver name `otlp`, the production choice of ADR 0147) batches redacted records and POSTs
 them as OTLP/JSON to `<endpoint>/v1/logs`. `OtlpConfig` (key `logger.otlp`) sets the collector, the `service.name`, the
 batch size, the flush interval and the queue bound; the collector's headers are one secret in the OpenTelemetry form
 (`OTEL_EXPORTER_OTLP_HEADERS`, `k=v,k2=v2`). A failed send drops its batch and the oldest records go first past
