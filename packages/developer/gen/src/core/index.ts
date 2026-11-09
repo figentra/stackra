@@ -5,7 +5,7 @@
  *          webhook route, a service's HTTP adapter (`emitEncoreHttp`, STA-1385) and Encore database (`emitEncoreDatabase`, stackra-250), prefixes, an app's route tables and
  *          blocks (with `registerResources` and the resource label keys), the generated service clients, the setting keys
  *          (`#stackra/settings`, stackra-209), the class-component facade (`#stackra/ui`, STA-2069), the tool configs,
- *          the openapi projection, the docs-site target and its `DocsConfig` base, the public id prefix registry and
+ *          the openapi projection, the docs-site target, its `DocsConfig` base and the docs member's `navigationOfMeta`, the public id prefix registry and
  *          `stackra db diff`'s expected schema, comparison and type map (STA-1808), the IR types, the surface targets and the extension bundle's modulepreload list), until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: no file system and no TypeScript host here; those
@@ -20,7 +20,9 @@
  */
 export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
+export { DOCS_APP_SOURCE } from "#core/constants/docs-app-source.constant";
 export { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
+export { DOCS_MEMBER_SOURCE } from "#core/constants/docs-member-source.constant";
 export { DOCS_SITE_DIR } from "#core/constants/docs-site-dir.constant";
 export { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 export { GRAPH_NOTICE } from "#core/constants/graph-notice.constant";
@@ -57,6 +59,7 @@ export { clientToolsOf } from "#core/functions/client-tools-of.function";
 export { emitClientTools } from "#core/functions/emit-client-tools.function";
 export { emitClients } from "#core/functions/emit-clients.function";
 export { emitDocsSite } from "#core/functions/emit-docs-site.function";
+export { navigationOfMeta } from "#core/functions/navigation-of-meta.function";
 export { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 export { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 export { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
@@ -122,8 +125,10 @@ export type { Endpoint } from "#core/types/endpoint.type";
 export type { DocsGroup } from "#core/types/docs-group.type";
 export type { DocsLink } from "#core/types/docs-link.type";
 export type { DocsLocale } from "#core/types/docs-locale.type";
+export type { DocsMetaInput } from "#core/types/docs-meta-input.type";
 export type { DocsSiteInput } from "#core/types/docs-site-input.type";
 export type { DocsSite } from "#core/types/docs-site.type";
+export type { DocsSourcePaths } from "#core/types/docs-source-paths.type";
 export type { DocsTab } from "#core/types/docs-tab.type";
 export type { EntityIR } from "#core/types/entity-ir.type";
 export type { ExtensionBundleManifest } from "#core/types/extension-bundle-manifest.type";
