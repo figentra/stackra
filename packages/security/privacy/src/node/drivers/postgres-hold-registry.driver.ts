@@ -18,15 +18,13 @@
  *                     (2026-11-07 amendment, gaps A and C); ADR 0495 (decisions 1 and 2); ADR 0263 (ports and
  *                     drivers); data-layer gap gov20 (stackra-332).
  */
-import type { CallIsolation } from "@stackra/actions/contracts";
+import { boundIsolation, ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import { Driver } from "@stackra/container";
 import type { AnyClass, Container } from "@stackra/container";
-import { ActorKind } from "@stackra/contracts";
 import type { PublicId } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { HoldRegistry } from "@stackra/database/contracts";
 import type { Disposal, HoldLinks } from "@stackra/database/contracts";
-import { boundIsolation, ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/outbox";
 
 /** The holds table. */
 const HOLDS = '"privacy"."legal_holds"';
@@ -48,28 +46,8 @@ type HoldRow = { readonly id: string; readonly model: string; readonly record_id
 /** A live hold claimed across tenants: its id and owner. */
 type HoldClaim = { readonly id: string; readonly owner_id: PublicId<"scp"> | null };
 
-/**
- * Runs `work` in `ownerId` (the platform's when undefined) as the hold registry's system actor, for claimed hold `id`.
- *
- * @throws RowIsolationMissingError when the hold has an owner and no isolation is bound.
- */
-function inHoldOwner<T>(
-  isolation: CallIsolation | undefined,
-  ownerId: PublicId<"scp"> | undefined,
-  id: string,
-  work: () => Promise<T>,
-): Promise<T> {
-  if (isolation !== undefined) {
-    const actor = Object.freeze({
-      kind: ActorKind.System,
-      id: "sys_privacy_holds",
-      ...(ownerId === undefined ? {} : { scopeId: ownerId }),
-    });
-    return isolation.run(actor, undefined, () => work(), { readOnly: false });
-  }
-  if (ownerId !== undefined) return Promise.reject(RowIsolationMissingError.create({ id }));
-  return work();
-}
+/** The hold registry's system actor id: each owner's check runs as it, in that owner. */
+const HOLDS_ACTOR_ID = "sys_privacy_holds";
 
 /** `count` bound placeholders. */
 const placeholders = (count: number): string => Array.from({ length: count }, () => "?").join(", ");
@@ -125,8 +103,12 @@ export class PostgresHoldRegistryDriver extends Driver(HoldRegistry) {
     const isolation = boundIsolation(this.container);
     const held = new Set<string>();
     for (const [owner, claimed] of owners) {
-      const found = await inHoldOwner(isolation, owner ?? undefined, claimed[0] ?? "", () =>
-        this.heldHere(model, ids, targets, disposal, links, claimed),
+      const found = await inRowOwner(
+        isolation,
+        HOLDS_ACTOR_ID,
+        owner ?? undefined,
+        claimed[0] ?? "",
+        () => this.heldHere(model, ids, targets, disposal, links, claimed),
       );
       for (const id of found) held.add(id);
     }

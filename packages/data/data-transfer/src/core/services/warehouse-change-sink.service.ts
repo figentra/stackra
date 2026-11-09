@@ -17,10 +17,11 @@
  *                     and ADR 0221 (2026-10-28 amendment: the retained change feed with per-consumer cursors); ADR 0239
  *                     (2026-11-07 amendment, gap A).
  */
+import { boundIsolation } from "@stackra/actions";
 import { Service } from "@stackra/container";
 import type { Container } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
-import { boundIsolation, loadChanges } from "@stackra/outbox";
+import { loadChanges } from "@stackra/outbox";
 import type { ChangeFeed } from "@stackra/outbox/contracts";
 
 import type { WarehouseSink } from "#contracts/ports/warehouse-sink.port";

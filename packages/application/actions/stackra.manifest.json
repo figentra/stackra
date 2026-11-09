@@ -117,6 +117,13 @@
       "class": "ApprovalSettingsUnavailableError"
     },
     {
+      "code": "claim_not_loaded",
+      "kind": "internal",
+      "category": "internal",
+      "module": "actions",
+      "class": "ClaimNotLoadedError"
+    },
+    {
       "code": "device_revoked",
       "kind": "forbidden",
       "category": "forbidden",
@@ -157,6 +164,13 @@
       "category": "precondition_failed",
       "module": "actions",
       "class": "OfflineCapReachedError"
+    },
+    {
+      "code": "row_isolation_missing",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "actions",
+      "class": "RowIsolationMissingError"
     },
     {
       "code": "approver_refused",

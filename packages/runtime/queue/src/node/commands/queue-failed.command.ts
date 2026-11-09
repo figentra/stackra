@@ -3,7 +3,7 @@
  * Purpose: `QueueFailedCommand`, `queue:failed`: a table of the dead-lettered jobs, oldest first.
  * Boundary: read only. A platform operator's command over every tenant's jobs: `QueueDriver.claimDead` claims the dead
  *           letters' ids and owners through a system function, and each is loaded in its owner's isolation
- *           (`inRowOwner`, the bound `CallIsolation`, read optionally from the injected `Container`). A claimed job that
+ *           (`inJobOwner`, the bound `CallIsolation`, read optionally from the injected `Container`). A claimed job that
  *           does not load, or an owned one with no isolation bound, fails the command; none is skipped. `--queue`
  *           narrows it to one queue and `--limit` caps the rows (50 by default).
  * Runtime: node
@@ -18,7 +18,7 @@ import { Int, Str } from "@stackra/validation";
 import type { QueuedJob } from "#contracts/index";
 import type { QueueDriver } from "#contracts/ports/queue-driver.port";
 import { JobClaimNotLoadedError } from "#core/errors/job-claim-not-loaded.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { inJobOwner } from "#core/functions/in-job-owner.function";
 
 /** Lists the failed jobs. */
 export class QueueFailedCommand extends Command({
@@ -62,7 +62,7 @@ export class QueueFailedCommand extends Command({
       : undefined;
     const jobs: QueuedJob[] = [];
     for (const claim of claims) {
-      const job = await inRowOwner(isolation, claim.ownerId, claim.id, () =>
+      const job = await inJobOwner(isolation, claim.ownerId, claim.id, () =>
         this.driver.load(claim.id),
       );
       if (job === undefined) throw JobClaimNotLoadedError.create({ id: claim.id });

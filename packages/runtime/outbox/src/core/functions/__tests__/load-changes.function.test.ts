@@ -7,14 +7,13 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0239 (2026-11-07 amendment, gaps A and C).
  */
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { CallIsolation } from "@stackra/actions/contracts";
 import type { Actor } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { RowChangeKind } from "#contracts/index";
 import type { ChangeFeed, ChangeRecord } from "#contracts/index";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { RowIsolationMissingError } from "#core/errors/row-isolation-missing.error";
 import { loadChanges } from "#core/functions/load-changes.function";
 
 const NOON = new Date(Date.UTC(2026, 10, 8, 12));

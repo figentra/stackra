@@ -336,6 +336,48 @@ describe("IamAccessControlDriver", () => {
   });
 
   describe("authorize", () => {
+    it("finds the policy method by the permission static's name, and still by the key's verb for one release", async () => {
+      class CodPermissions extends Permissions {
+        static readonly confirmByCode = Permission.L2;
+
+        static readonly mark_paid = Permission.L2;
+      }
+      /** The static's camelCase name, and a snake-case method written to the old lookup. */
+      class CodPolicy extends Policy<Order> {
+        confirmByCode(): Decision {
+          return Decision.Deny;
+        }
+
+        mark_paid(): Decision {
+          return Decision.Deny;
+        }
+      }
+      registerPermissions([
+        {
+          type: CodPermissions,
+          keys: {
+            confirmByCode: "orders.order.confirm_by_code",
+            mark_paid: "orders.order.mark_paid",
+          },
+        },
+      ]);
+      registerPolicies([{ model: Order, policy: CodPolicy }]);
+      const { driver } = driverOver(
+        {
+          grants: [{ role: "all", scope: ROOT }],
+          roles: { all: ["orders.order.confirm_by_code", "orders.order.mark_paid"] },
+        },
+        new Map<AnyClass, object>([[CodPolicy, new CodPolicy()]]),
+      );
+      const order = new Order(customer.id);
+      await expect(
+        driver.authorize(callOf(customer, "orders.order.confirm_by_code"), order),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(
+        driver.authorize(callOf(customer, "orders.order.mark_paid"), order),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
     it("runs the policy method named after the verb", async () => {
       const { driver } = driverOver(BUYERS);
       const mine = new Order(customer.id);

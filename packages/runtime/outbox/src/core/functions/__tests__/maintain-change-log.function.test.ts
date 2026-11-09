@@ -8,6 +8,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 and ADR 0221 (2026-10-28 amendment); ADR 0239 (2026-11-07
  *                     amendment, gap A).
  */
+import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { CallIsolation } from "@stackra/actions/contracts";
 import { Duration } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
@@ -16,8 +17,6 @@ import { describe, expect, it } from "@stackra/testing";
 import { RowChangeKind } from "#contracts/index";
 import type { ChangeClaim, ChangeFeed } from "#contracts/index";
 import { MemoryChangeFeedDriver } from "#core/drivers/memory-change-feed.driver";
-import { ClaimNotLoadedError } from "#core/errors/claim-not-loaded.error";
-import { RowIsolationMissingError } from "#core/errors/row-isolation-missing.error";
 import { maintainChangeLog } from "#core/functions/maintain-change-log.function";
 
 const NOON = new Date(Date.UTC(2026, 10, 8, 12));

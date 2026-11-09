@@ -299,6 +299,20 @@ class CreateOrderAction extends Action({
   }
 }
 
+/** A Derived write with no rate limit, so a test can count its effects. */
+class IssueRefundAction extends Action({
+  key: "refund.issue",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Derived,
+}) {
+  issued = 0;
+
+  async handle(input: { paymentId: string }): Promise<{ count: number; paymentId: string }> {
+    this.issued += 1;
+    return { count: this.issued, paymentId: input.paymentId };
+  }
+}
+
 class SendMessageAction extends Action({
   key: "message.send",
   actors: [ActorKind.User],
@@ -895,6 +909,37 @@ describe(ActionPipeline, () => {
     await expect(
       pipeline.execute(SendMessageAction, { text: "again" }, { actor: customer }),
     ).rejects.toBeInstanceOf(RateLimitedError);
+  });
+
+  it("keeps a Derived action deduplicated by input when a client sends a fresh key per call, but not for an API key", async () => {
+    const refunds = new IssueRefundAction();
+    const { pipeline } = setup([[IssueRefundAction, refunds]]);
+    // A double click: the generated client mints a new Idempotency-Key for each call, with the same input.
+    const first = await pipeline.execute(
+      IssueRefundAction,
+      { paymentId: "pay_1" },
+      { actor: customer, idempotencyKey: "k-click-1" },
+    );
+    const second = await pipeline.execute(
+      IssueRefundAction,
+      { paymentId: "pay_1" },
+      { actor: customer, idempotencyKey: "k-click-2" },
+    );
+    expect(second).toEqual(first);
+    expect(refunds.issued).toBe(1);
+    // An API key sends its own keys: two keys are two intents.
+    const origin = { kind: CallOriginKind.ApiKey, id: "key_1" };
+    await pipeline.execute(
+      IssueRefundAction,
+      { paymentId: "pay_2" },
+      { actor: customer, idempotencyKey: "k-api-1", origin },
+    );
+    await pipeline.execute(
+      IssueRefundAction,
+      { paymentId: "pay_2" },
+      { actor: customer, idempotencyKey: "k-api-2", origin },
+    );
+    expect(refunds.issued).toBe(3);
   });
 
   it("refuses a keyed call that joined a running transaction when the store cannot join it", async () => {

@@ -170,12 +170,16 @@ two sides cannot drift.
 `EdgeHeaderGuard` is the first `RequestGuard` (order -100, ADR 0437 decision 8). It refuses with
 `EdgeSignatureInvalidError` (401) unless the signature matches one of the keys `EdgeSigningKeys` answers (newest
 first; two during a rotation, every key tried), the timestamp is within `maxAge` (60 seconds) of now either side, and
-`EdgeNonceStore.claim(requestId)` wins (a replay loses). The nonce is claimed only after the signature holds. An
-unsigned request passes only on one of `publicPaths` (none by default) and only with no identity header.
+`EdgeNonceStore.claim(requestId)` wins (a replay loses). The nonce is claimed only after the signature holds. Any
+edge header (an identity header, the signature, the request id or the timestamp) means the request must verify; a
+request with none is not edge traffic (a service call, a cross-app delivery, a webhook), so it goes on to
+authentication or its endpoint's own signature check. Gen binds the guard in every service.
 
-The key provider and the nonce store are ports, so which one answers is configuration: the `memory` drivers ship for
-tests and local runs; production binds a secret-store key driver and, with more than one API instance, a shared
-nonce store. `maxAge` and `publicPaths` are getters a host overrides in `src/overrides/app/` (ADR 0306).
+The key provider and the nonce store are ports chosen by `EdgeConfig` (`app.edge`): `keys` is `memory` (tests, local
+runs; empty, so every signed request is refused) or `env`, which reads the secret `STACKRA_EDGE_SIGNING_KEYS` (the
+edge Worker's signing keys, newest first, comma-separated). `nonces` is `memory` only for now, so a replay is refused
+per instance; a shared store over `Cache.add` follows before any edge goes live. `maxAge` is a getter a host
+overrides in `src/overrides/app/` (ADR 0306).
 
 ### Bearer tokens (JWKS)
 

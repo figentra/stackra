@@ -39,11 +39,11 @@
       "risk": "L2",
       "actors": ["anonymous"],
       "idempotency": "optional",
-      "area": "public",
+      "area": "app",
       "anonymous": true,
       "endpoint": {
         "method": "PUT",
-        "path": "/public/orders/:orderId/cancel",
+        "path": "/app/orders/:orderId/cancel",
         "derived": true
       },
       "input": {

@@ -31,7 +31,7 @@ import { QueueDriver } from "#contracts/index";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
 import { JobClaimNotLoadedError } from "#core/errors/job-claim-not-loaded.error";
 import { JobRowIsolationMissingError } from "#core/errors/job-row-isolation-missing.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { inJobOwner } from "#core/functions/in-job-owner.function";
 import { QueueService } from "#core/services/queue.service";
 import type { JobFairnessOptions } from "#core/types/job-fairness-options.type";
 import {
@@ -375,7 +375,7 @@ describe.skipIf(HOST === undefined)("queue row security on Postgres", () => {
     await seed("job_unique_globex", GLOBEX, "unique", { uniqueKey: "u:1" });
     const redrive = () =>
       asService(postgres, undefined, () =>
-        inRowOwner(isolation, ACME, "job_unique_acme", () =>
+        inJobOwner(isolation, ACME, "job_unique_acme", () =>
           driver.redrive("job_unique_acme", new Date()),
         ),
       );

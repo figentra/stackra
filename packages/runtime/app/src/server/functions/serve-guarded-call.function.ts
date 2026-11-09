@@ -4,7 +4,8 @@
  *          body once under the cap (413 before any guard), run every request guard on a request carrying the exact
  *          bytes, authenticate (an `Authorization` header is verified and never downgraded to anonymous; none is the
  *          anonymous actor only where the call lists it, else 401; an action that declares `credentials: "ignore"` reads
- *          no credential and runs anonymous), parse the input (JSON body, or the query string for
+ *          no credential and runs anonymous; an anonymous actor is the visitor its signed token names, and an answer to
+ *          a new or re-signed visitor carries the token back in a header and an httpOnly cookie), parse the input (JSON body, or the query string for
  *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
  *          kind's status with its envelope.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
@@ -27,6 +28,7 @@ import { holdCallerToken } from "#server/functions/hold-caller-token.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
 import { readCappedBody } from "#server/functions/read-capped-body.function";
 import type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
+import type { VisitorIdentity } from "#server/types/visitor-identity.type";
 
 /** Methods whose input is the body; every other method's input is the query string. */
 const BODY_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH"]);
@@ -49,6 +51,16 @@ function invalidBody(): Response {
     { code: "invalid_body", category: "validation", retryable: false },
     { status: 400 },
   );
+}
+
+/** `response` carrying `visitor`'s token back, when it has one to carry. */
+function carry(response: Response, visitor: VisitorIdentity | undefined): Response {
+  if (visitor?.issue === undefined) return response;
+  // A raw controller's answer may have immutable headers: copy it once.
+  const answer = new Response(response.body, response);
+  answer.headers.set(visitor.issue.header, visitor.issue.token);
+  answer.headers.append("set-cookie", visitor.issue.cookie);
+  return answer;
 }
 
 /**
@@ -89,6 +101,7 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   const ignored =
     options.action !== undefined && kindOf(options.action)?.options["credentials"] === "ignore";
   let actor: Actor;
+  let visitor: VisitorIdentity | undefined;
   if (!ignored && (authorization !== null || onBehalfOf !== null)) {
     try {
       actor = (
@@ -102,7 +115,9 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
       throw error;
     }
   } else if (options.anonymous) {
-    actor = { kind: ActorKind.Anonymous, id: mintPublicId("anon") };
+    // One visitor across requests, so a record keyed to it (a guest cart) stays its own (STA-2025, 2026-11-09).
+    visitor = await options.visitor?.(guarded);
+    actor = { kind: ActorKind.Anonymous, id: visitor?.id ?? mintPublicId("anon") };
   } else {
     return refused(401);
   }
@@ -116,10 +131,10 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
         try {
           const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
           if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
-            return invalidBody();
+            return carry(invalidBody(), visitor);
           fields = parsed as Record<string, unknown>;
         } catch {
-          return invalidBody();
+          return carry(invalidBody(), visitor);
         }
       }
     } else {
@@ -141,9 +156,10 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
     );
   } catch (error) {
     if (!isRefusal(error) || isRefusal(error, RateLimitedError)) throw error;
-    return Response.json(error.toEnvelope(), {
-      status: Enum.meta(ErrorKind, error.kind).httpStatus,
-    });
+    return carry(
+      Response.json(error.toEnvelope(), { status: Enum.meta(ErrorKind, error.kind).httpStatus }),
+      visitor,
+    );
   }
-  return output instanceof Response ? output : Response.json(output ?? null);
+  return carry(output instanceof Response ? output : Response.json(output ?? null), visitor);
 }

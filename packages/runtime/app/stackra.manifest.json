@@ -63,6 +63,34 @@
   "models": [],
   "drivers": [
     {
+      "port": "EdgeSigningKeys",
+      "key": "app.EdgeSigningKeys",
+      "candidates": ["env", "memory"],
+      "classes": {
+        "env": {
+          "class": "EnvEdgeSigningKeysDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "EdgeConfig",
+                "from": "@stackra/app/server"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemoryEdgeSigningKeysDriver",
+          "from": "@stackra/app/server"
+        }
+      },
+      "selectedBy": "config:app.edge.keys",
+      "config": {
+        "class": "EdgeConfig",
+        "from": "@stackra/app/server"
+      }
+    },
+    {
       "port": "EdgeNonceStore",
       "key": "app.EdgeNonceStore",
       "candidates": ["memory"],
@@ -71,17 +99,11 @@
           "class": "MemoryEdgeNonceStoreDriver",
           "from": "@stackra/app/server"
         }
-      }
-    },
-    {
-      "port": "EdgeSigningKeys",
-      "key": "app.EdgeSigningKeys",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryEdgeSigningKeysDriver",
-          "from": "@stackra/app/server"
-        }
+      },
+      "selectedBy": "config:app.edge.nonces",
+      "config": {
+        "class": "EdgeConfig",
+        "from": "@stackra/app/server"
       }
     },
     {
@@ -157,8 +179,18 @@
       "from": "@stackra/app/server"
     },
     {
+      "key": "app.edge",
+      "class": "EdgeConfig",
+      "from": "@stackra/app/server"
+    },
+    {
       "key": "app.http",
       "class": "HttpConfig",
+      "from": "@stackra/app/server"
+    },
+    {
+      "key": "app.visitor",
+      "class": "VisitorConfig",
       "from": "@stackra/app/server"
     }
   ],
@@ -189,6 +221,33 @@
       "config": "app.cors",
       "class": "CorsConfig",
       "field": "allowedOrigins"
+    },
+    {
+      "name": "STACKRA_EDGE_SIGNING_KEYS",
+      "kind": "secret",
+      "type": "string",
+      "required": false,
+      "config": "app.edge",
+      "class": "EdgeConfig",
+      "field": "signingKeys"
+    },
+    {
+      "name": "STACKRA_VISITOR_SIGNING_KEY",
+      "kind": "secret",
+      "type": "string",
+      "required": false,
+      "config": "app.visitor",
+      "class": "VisitorConfig",
+      "field": "signingKey"
+    },
+    {
+      "name": "STACKRA_VISITOR_SIGNING_KEY_PREVIOUS",
+      "kind": "secret",
+      "type": "string",
+      "required": false,
+      "config": "app.visitor",
+      "class": "VisitorConfig",
+      "field": "previousSigningKey"
     }
   ],
   "services": [
@@ -267,6 +326,18 @@
     {
       "class": "VerifiedToken",
       "from": "@stackra/app/server"
+    },
+    {
+      "class": "VisitorIdentityService",
+      "from": "@stackra/app/server",
+      "deps": [
+        {
+          "class": {
+            "name": "VisitorConfig",
+            "from": "@stackra/app/server"
+          }
+        }
+      ]
     }
   ],
   "schemas": {
