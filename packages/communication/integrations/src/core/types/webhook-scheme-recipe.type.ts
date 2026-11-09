@@ -51,8 +51,9 @@ export interface WebhookSchemeRecipe {
   readonly separator?: string;
 
   /**
-   * How a `keyed_field_digest` reads its body: `json` (the default), or `form`, an `application/x-www-form-urlencoded`
-   * body whose percent-decoded values its paths name as plain keys.
+   * How the body is read: `json` (the default), or `form`, an `application/x-www-form-urlencoded` body whose
+   * percent-decoded values its paths name as plain keys. A `keyed_field_digest` reads its signed fields this way, and
+   * the receiver parses the verified body this way for routing, the event id and the event.
    */
   readonly bodyFormat?: "json" | "form";
 

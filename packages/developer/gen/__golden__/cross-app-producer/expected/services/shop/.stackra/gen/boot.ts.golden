@@ -10,6 +10,7 @@ import { AppendOnlySubscriber, connectHoldRegistry, connectNativeWriteWatcher, c
 import { CrossAppRelayService, InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";
 import { EventBus } from "@stackra/events";
 import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";
+import { QueueWorkerService } from "@stackra/queue/node";
 import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";
 
 /** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */
@@ -36,6 +37,7 @@ export async function boot(
     subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), container.get(OutboxWriterService)],
   });
   connectNativeWriteWatcher(container.get(OutboxWriterService));
+  container.get(QueueWorkerService).connect(container);
   const bus = container.get(EventBus);
   bus.connect(container);
   const inbox = container.get(InboxService);

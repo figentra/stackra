@@ -9,7 +9,8 @@
  *            default);
  *          - `DeviceSequenceStore` for an `offline` action, and `OfflineCapStore` when it has a `cap`;
  *          - `ReviewItemSink` for an action that `accepts` offline documents;
- *          - `StepUpCheck` for an action that declares `stepUp`.
+ *          - `StepUpCheck` for an action that declares `stepUp`;
+ *          - `WorkflowRunner` when the service declares a workflow (`ctx.run` and `ctx.signal` start and wake it).
  * Boundary: pure; reads the IR only. A service only, like `replicaReadsPorts`: a package's own wiring is registered by
  *           its tests. A port no declared package ships a table for stays unbound, and the pipeline names the package
  *           to install. Before STA-2573 these ports were bound only where a constructor injected them, so a service
@@ -69,5 +70,8 @@ export function pipelinePorts(ir: MemberIR): TokenRef[] {
     ...(capped ? [actionsPort("OfflineCapStore")] : []),
     ...(some("accepts") ? [actionsPort("ReviewItemSink")] : []),
     ...(some("stepUp") ? [actionsPort("StepUpCheck")] : []),
+    ...(ir.classes.some((declared) => declared.kind === "workflow")
+      ? [actionsPort("WorkflowRunner")]
+      : []),
   ];
 }

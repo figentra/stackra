@@ -47,8 +47,12 @@
  *          rules, the config that declares it; a host adds its packages' rows), STA-2104.
  *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
  *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
+ *          It lists each own settings class in `settings` (`settingsOf`: group key, class, module,
+ *          file and keys with path, type, options and earlier paths) with `settings_unsupported_type`,
+ *          `settings_too_deep`, `settings_scope_widened`, `settings_group_key_empty` and `settings_group_conflict`
+ *          (ADR 0496, STA-2056).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
- *           (settings, migrations, infra, ...) are written by those targets when they land.
+ *           (migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
  *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
@@ -101,6 +105,7 @@ import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
+import { settingsOf } from "#core/functions/settings-of.function";
 import { slotOf } from "#core/functions/slot-of.function";
 import { surfacesOf } from "#core/functions/surfaces-of.function";
 import { tableName } from "#core/functions/table-name.function";
@@ -1304,6 +1309,9 @@ export function buildManifest(ir: MemberIR): {
             ]),
           ),
         };
+  // The settings groups with their keys, and their refusals (ADR 0496, STA-2056); none for a member with no class.
+  const settings = settingsOf(ir);
+  errors.push(...settings.errors);
 
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
@@ -1332,6 +1340,7 @@ export function buildManifest(ir: MemberIR): {
     ...(policies.length > 0 ? { policies } : {}),
     ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
     ...(relay !== undefined ? { relay } : {}),
+    ...(settings.entries.length > 0 ? { settings: [...settings.entries] } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

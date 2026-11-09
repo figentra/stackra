@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `pipelinePorts`: a service with an integration event (own or hosted) or a metered action
  *          reaches `EventOutbox`; an action that is not `Idempotency.Never` reaches `IdempotencyStore`; `offline`,
- *          `offline.cap`, `accepts` and `stepUp` reach their stores; a package reaches none.
+ *          `offline.cap`, `accepts` and `stepUp` reach their stores; a declared workflow reaches `WorkflowRunner`; a
+ *          package reaches none.
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0263; STA-2573.
@@ -78,6 +79,20 @@ describe("pipelinePorts", () => {
     expect(names(withActions({ idempotency: "never", offline: {} }))).toEqual([
       "DeviceSequenceStore",
     ]);
+  });
+
+  it("reaches the workflow runner for a declared workflow", () => {
+    const ir = withActions({ idempotency: "never" });
+    const action = ir.classes.find((declared) => declared.kind === "action");
+    if (action === undefined) throw new Error("the fixture declares an action");
+    const workflow: DeclaredClass = {
+      ...action,
+      name: "RestockWorkflow",
+      kind: "workflow",
+      options: {},
+    };
+    expect(names(ir)).toEqual([]);
+    expect(names({ ...ir, classes: [...ir.classes, workflow] })).toEqual(["WorkflowRunner"]);
   });
 
   it("reaches nothing in a package", () => {

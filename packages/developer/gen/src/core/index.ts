@@ -36,6 +36,7 @@ export { diffSchemas } from "#core/functions/diff-schemas.function";
 export { blockKey } from "#core/functions/block-key.function";
 export { buildManifest } from "#core/functions/build-manifest.function";
 export { checkActionFirst } from "#core/functions/check-action-first.function";
+export { unboundPorts } from "#core/functions/unbound-ports.function";
 export { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 export { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 export { checkModelScope } from "#core/functions/check-model-scope.function";
@@ -75,6 +76,9 @@ export { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.functio
 export { emitSchemas } from "#core/functions/emit-schemas.function";
 export { emitSdks } from "#core/functions/emit-sdks.function";
 export { emitSettings } from "#core/functions/emit-settings.function";
+export { settingsKeyOf } from "#core/functions/settings-key-of.function";
+export { settingsOf } from "#core/functions/settings-of.function";
+export { settingTypeOf } from "#core/functions/setting-type-of.function";
 export { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 export { emitUiFacade } from "#core/functions/emit-ui-facade.function";
 export { emitWebhooks } from "#core/functions/emit-webhooks.function";

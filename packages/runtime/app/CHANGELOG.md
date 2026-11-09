@@ -1,5 +1,35 @@
 # @stackra/app
 
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/clients@0.28.0
+  - @stackra/identity@0.28.0
+  - @stackra/navigation@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/validation@0.28.0
+  - @stackra/csp@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/identity@0.27.0
+  - @stackra/clients@0.27.0
+  - @stackra/navigation@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/i18n@0.27.0
+  - @stackra/validation@0.27.0
+  - @stackra/csp@0.27.0
+
 ## 0.26.0
 
 ### Patch Changes
