@@ -1,5 +1,712 @@
 # @stackra/database
 
+## 0.29.0
+
+### Minor Changes
+
+- 11a19a7: An implicit many-to-many pivot of tenant-owned models now stores the call's tenant. MikroORM's pivot insert names only
+  the two link columns, so `t.belongsToTenant({ pivot: true })` gives a new pivot's `tenant_id` a default read from
+  `app.tenant_id`, and `t.change(column).defaultSetting(setting)` gives an existing pivot the same default. Outside a
+  tenant call the default is NULL, so the NOT NULL column refuses the row instead of storing it without a tenant.
+
+### Patch Changes
+
+- 09b2c41: `CrudService` no longer declares a private `settled` member (0.26.0), which broke any subclass with a member of that name (TS2415 and a runtime override). The read flush is a module function now.
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/cache@0.29.0
+  - @stackra/testing@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/testing@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+  - @stackra/cache@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- 4a4d817: A `CrudService` read treats an entity manager without `isInTransaction` (a unit test's partial one) as outside a transaction, instead of throwing.
+- @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/testing@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+  - @stackra/cache@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- 93e358e: Inside a transaction, `CrudService` read verbs flush the unit of work first, so a read sees a field set earlier in the same transaction through `update` or a plain set on a loaded row (MikroORM's auto flush misses both).
+- a9f21b6: A platform-form table that declares `t.systemAccess` update columns now lets the system-access role through its
+  restrictive `pol_<table>_<column>_write_update`. Before this, a claim function run with no tenant (a relay, queue,
+  scheduler or workflow lease) reached only the platform's NULL rows and silently skipped every tenant row, because a
+  restrictive policy binds every role. The policy compiles as `(<own rows>) or current_user = 'stackra_system_access'`;
+  the role's column grants still keep it to the lease columns, and `_write_delete` is unchanged (the role has no
+  DELETE). `assertRowSecurity` accepts that suffix only on a table with `pol_<table>_system_access_update`, requires it
+  there, and otherwise holds `_write_update` to exactly what `_write_delete` tests. Declare the platform form and
+  `t.systemAccess` in the same blueprint.
+- Updated dependencies [9cee75d]
+  - @stackra/actions@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/console@0.26.0
+  - @stackra/testing@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+  - @stackra/cache@0.26.0
+
+## 0.25.0
+
+### Minor Changes
+
+- 8f8ddcf: System workers and pre-tenant routes can now find tenant rows before they know the tenant, through one narrow,
+  audited way in (ADR 0239 amendment, gap A).
+  
+  A migration gives a tenant table `t.systemAccess({ select, update, reason })`. This lets the new
+  `stackra_system_access` role read the `select` columns and write the `update` columns, and nothing else. The role
+  cannot log in, does not bypass row-level security, and no one is a member of it, so no session can become it. The
+  package then writes its lookup or claim with `schema.systemFunction({ name, args, returns, sql, reason })`. The
+  function runs as that role with a fixed search path, returns only the columns it declares (ids and the tenant id),
+  and only the service may call it. The worker then loads each row in that row's tenant.
+  
+  `assertRowSecurity`, and so every service's generated isolation test, refuses anything looser: a policy for anyone
+  but the role, a member of the role, a role that bypasses row-level security, a grant beyond the declared columns, or
+  a function that is not `SECURITY DEFINER`, does not pin its search path, or that anyone may call.
+  `stackra row-security-declarations` lists both declarations with their reasons for review.
+  
+  Deployment: the database user that runs migrations needs `CREATEROLE` the first time a migration uses either
+  declaration. A managed Postgres master user (RDS) has it; RUNWAY's deploy role must have it too.
+
+### Patch Changes
+
+- 1d7bbc1: The contract migrations (database 0007, achievements 0004, rules 0005, segments 0003, content 0006, collaboration
+  0004, workflow 0011 and webhooks 0003) now carry a reviewed squawk ignore, with its reason, above each `SET NOT NULL`
+  that the migration's pre-flight checked, so a product that hosts them lints clean. The runner hashes a migration
+  without its lint lines, so no checksum changes, and nothing runs differently.
+  
+  New contract steps can set NOT NULL without scanning the table under an exclusive lock:
+  `t.belongsToTenant({ contract: true, safeNotNull: true })`, or `t.change(column).notNull({ safe: true })`, adds a
+  `NOT VALID` check, then validates it, sets NOT NULL and drops the check in a later step. The released migrations keep
+  their form.
+- dc9da69: A blueprint that declares an index on a link column alone (`t.unique(["scope_id"])` beside `t.scopeId()`) no longer also
+  writes the column's own plain index. Both took the name `idx_<table>_<column>`, so the migration failed with "relation
+  already exists"; the declared index serves the column.
+- 3942ab1: Webhook endpoints and their delivery log now belong to a tenant (ADR 0239 amendment, group (c)).
+  
+  Migration `webhooks.0003` gives `webhook_endpoints` and `webhook_deliveries` a `tenant_id` column. It is required,
+  filled from the running tenant call by default, and indexed. Each table gets one row-level-security policy: a call sees
+  and writes only its own tenant's rows. Before, neither table had a policy; the endpoint service filtered by scope.
+  
+  Existing rows get their tenant in the same migration. An endpoint registered at a top-level tenant node takes that
+  node, and each delivery takes its endpoint's tenant. If any row is left without a tenant (an endpoint at the root, at a
+  product, or below a tenant), the migration refuses before changing anything and names each table's count. Delete or
+  re-register those endpoints, then migrate again.
+  
+  `WebhookEndpoint` and `WebhookDelivery` carry `BelongsToTenant`. Every read and write of these tables must now run in a
+  tenant call; the pipeline, the delivery job and the inbox already do. The package ships an int test tier (`test:int`).
+  
+  `CrudService` writes that use `requiresNew` (`insert`, `insertMany`, `upsert`, `update`) now carry the caller's scope
+  and tenant into their own transaction, as `Database.transaction` with `requiresNew` already did. Before, such a write
+  ran on a new connection with no tenant, so row security refused it on a tenant-owned table.
+- @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/testing@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/validation@0.25.0
+  - @stackra/cache@0.25.0
+
+## 0.24.0
+
+### Minor Changes
+
+- 2df7162: The row-security audit learns the group (c) decisions (ADR 0239 amendment).
+  
+  `assertRowSecurity` now accepts a table that keeps its tenant in `scope_id`, when its one permissive policy is exactly
+  the `equals` or `equalsOrUnset` policy `t.rowLevelSecurity` writes on the tenant setting. It then checks that table
+  like any owned one, with the two-tenant probe on `scope_id`. A looser policy, such as one that adds `or true`, or a
+  second permissive policy, is still refused. Core payments' three tables pass this way, with no migration.
+  
+  Migrations gain two declarations, each with a required one-line reason:
+  
+  - `t.platformTable(reason)`: no row of this table can ever belong to a tenant. Compiling refuses it on a table that
+    also writes a scope id, an isolation scope id, a column filled from a setting, or a policy. The audit refuses it once
+    the table holds the tenant column, a scope id or an isolation scope id.
+  - `t.reviewedPolicy(reason, policies)`: the table's policies have a reviewed shape the audit cannot derive. The audit
+    still requires row-level security enabled and forced, and every named policy present. Only the tenant-policy checks
+    and the probe are left out.
+  
+  The compiled migration carries each declaration as a comment line. Gen's generated isolation test now passes its
+  migrations folder to the audit (`migrationsDirectory`), which reads them.
+  
+  `PLATFORM_TABLES` gains the platform-list tables: `outbox.inbox`, `outbox.change_cursors`, `queue.job_batches`,
+  `scheduler.watermarks`, `workflow.service_ack_sets`, `rules.condition_fields`, `database.seed_records` and
+  `scope.scope_nodes`, each with its reason.
+  
+  New command `stackra row-security-declarations` lists every declaration with its reason. It and
+  `stackra validate --repository` fail on a declaration that is not in the reviewed list
+  `tools/scripts/row-security-declarations.yaml` with that reason.
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+  - @stackra/actions@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/console@0.24.0
+  - @stackra/testing@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+  - @stackra/cache@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The contract step of the sequence and projection tables. Migration `database.0007_contract_isolation_scope` makes
+  `isolation_scope_id` NOT NULL on `sequence_counters`, `sequence_blocks`, `sequence_voids` and `projection_rows`, makes
+  `pol_<table>_isolation_scope_id` (equality with `app.tenant_id`) each table's one permissive policy, and keeps the scope
+  path only as a restrictive policy. `scope_id` stays the caller's sub-scope. The migration first counts the rows with no
+  `isolation_scope_id` and refuses before changing anything if there are any, naming each table's count: an environment
+  with such rows from the expand step runs the backfill (RUNWAY 4c) first. After this step a sequence or projection is
+  written only inside a tenant call.
+  
+  New migration API for a contract step: `schema.refuseNulls(column, tables, remedy)` (the pre-flight),
+  `t.dropRowLevelSecurity(column, options)` (drops a policy an earlier migration created, by the name it was created
+  under), `restrictive: true` on `t.rowLevelSecurity` (an `AS RESTRICTIVE` policy that does not narrow a session with the
+  setting unset), and a policy on a column an earlier migration wrote. `assertRowSecurity` audits these four tables by
+  `isolation_scope_id` (group (b), by name), with every check and probe of a tenant table.
+  
+  The platform form of a nullable id column is the `platform` match of `t.rowLevelSecurity`. A tenant reads its own rows
+  and the NULL rows and writes only its own. A session without a tenant reads and writes only the NULL rows. It comes
+  with the restrictive `pol_<table>_<column>_write_update` and `_write_delete`. `exemptNull` lets a column's NULL rows
+  through a restrictive path narrowing when their path is at or above a granted path. `schema.refuseNulls(..., { where })`
+  counts only the rows that also meet `where`. `assertRowSecurity` accepts and requires the two write policies on a
+  platform-form table, does not count its NULL rows against a probe, and checks that a tenant can neither take over nor
+  delete a platform row. It no longer stages a table in the expand step as a warning: every package table now has its
+  contract step, so such a table takes the hard checks.
+- a2c8821: A seeder that injects its repositories or services now runs wherever seeders run. A seeder is not a binding, so the
+  container could not build one with its dependencies: `.seed()` and `stackra db seed` built it with no arguments and its
+  first repository call failed. `seederOf(container, type, deps)` (`@stackra/database/node`) builds a bound seeder from the
+  container, else the class with its constructor tokens resolved in the container. Gen lists those tokens in the seed
+  entry (`SeederEntry.deps`) and registers them in the test setup (`registerSeederDeps`, `@stackra/database/testing`).
+
+### Patch Changes
+
+- 82238da: Under the memory (PGlite) driver, `Database.transaction(work, { requiresNew: true })` inside a running transaction runs
+  as a savepoint instead of waiting forever for a second connection PGlite does not have. It commits with the caller
+  under PGlite, and a failure inside it rolls back only the savepoint; its timeouts still apply. The independent commit
+  is proven only in `.int` tests on Postgres. The Postgres driver's real `REQUIRES_NEW` is unchanged.
+- 6edeee4: Peers no longer fork a product's install. pnpm gives a package one variant per set of resolved peers, so an optional
+  peer one member installs and another does not split every dependent in two: a product with connectors (react-dom for
+  their tests) and a pglite service resolved two copies of @stackra/integrations, whose classes then failed each other's
+  checks. `@stackra/database`'s test-only packages (PGlite and its extensions, Faker, Testcontainers) are no longer peers:
+  its testing entry loads them from the member running the tests, as their devDependencies. `react-dom` is a required peer
+  of `@stackra/ui`, `@stackra/app` and `@stackra/notifications`. `stackra validate` refuses a test-only package as a
+  library's peer and an optional `react-dom` (`forking-peers`).
+- Updated dependencies [a42a80c]
+  - @stackra/actions@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/testing@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+  - @stackra/cache@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- b394912: `CrudService.lock` flushes the unit of work before its refreshing read. Locking one row twice in a transaction used to
+  drop a value assigned (and not yet flushed) since the first lock, so every invoicing document was numbered 1. An added
+  column whose default is a setting (`defaultSetting`) now carries `-- squawk-ignore adding-field-with-default` and its
+  reason in the compiled SQL (`current_setting()` is STABLE, so there is no table rewrite), which clears every host's squawk
+  on `database.0006_add_isolation_scope`. Lint comment lines are left out of a migration file's checksum, so adding
+  one keeps a frozen file valid; a row recorded under the old whole-file checksum (a file that already had a lint line) is
+  still accepted.
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/testing@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+  - @stackra/cache@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- a785356: The geospatial field kit on PostGIS (ADR 0314, STA-1432):
+  
+  - `@stackra/contracts`: the `GeoPolygon` and `GeoLine` types beside `GeoPoint`.
+  - `@stackra/validation`: the `geoPoint()`, `geoPolygon()` and `geoLine()` schemas.
+  - `@stackra/model`: the `GeoPointType`, `GeoPolygonType` and `GeoLineType` column types (EWKT in, `ST_AsGeoJSON` out).
+  - `@stackra/database`: `t.point()`, `t.polygon()` and `t.line()` with default GiST indexes, the `areaCovers`,
+    `withinMetresOf` and `intersectsArea` conditions, the `HasLocation` trait, and PostGIS in the PGlite memory driver
+    and `db diff` when a member installs `@electric-sql/pglite-postgis`.
+  - `@stackra/gen`: the `geo` kind, mapped to `geography(<shape>,4326)` columns, entity column types and the schemas.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/console@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/cache@0.21.0
+  - @stackra/testing@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- 80d121b: `usePostgres()` uses the integration-tier image as it is when Docker already has it under its tag (built before, or
+  preloaded), and otherwise builds it with the process's `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` passed as build
+  arguments, so its `apt-get` reaches the mirrors on a machine whose only way out is a proxy (a testbed job, STA-2572).
+- 19a9222: A `requiresNew` transaction now runs in the caller's scope and tenant. It opens on another connection, which had none
+  of the caller's transaction-local `app.*` settings, so under forced row-level security its insert was refused or its
+  `tenant_id` default wrote NULL. `runTransaction` now reads those settings from the running transaction before it opens
+  the new one and sets them first inside it, as `onReplica` already did for a replica (both share one helper now). This
+  also fixes `CrudService` `insert` and `update` with `requiresNew` and the webhook delivery attempts written that way
+  under row-level security. With no transaction running, nothing changes (STA-2565).
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/cache@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- b59aa22: The `postgres` cache driver's tables now ship as a migration: `database.0005_create_cache_tables` makes
+  `cache.entries` and `cache.set_members` (unlogged, "C"-collated keys, sweep indexes) with `if not exists`, so it adopts
+  tables a service made earlier from `postgresCacheTables("cache")` and keeps their rows. They are platform tables, with
+  no `tenant_id` and no row-level security: each key already carries its `CacheNamespace` prefix and the driver runs
+  outside the caller's transaction. The driver never creates a table; a missing one rejects the call.
+- 12f25aa: Migration `database.0006_add_isolation_scope` adds `isolation_scope_id` to `sequence_counters`, `sequence_blocks`,
+  `sequence_voids` and `projection_rows`: a nullable, indexed public-id column that every insert fills from
+  `app.tenant_id` (`defaultSetting`), and no policy change. `scope_id` stays the key it was, since a sequence or a
+  projection row may sit at a node below the isolation's. This is the expand step; a backfill and the contract step
+  (NOT NULL, equality with the setting as the one permissive policy) follow (tenancy audit 2026-11-07, gap D).
+- e5f5432: An `equals` or `equalsOrUnset` row-level-security policy on a `uuid` column now decodes a public-id setting
+  (`scp_…`, as `withTenant` writes it) to the UUID it encodes, so a tenant table compiled with `publicIds: "uuid"` no
+  longer raises on every query; a raw UUID setting is still cast as it is, and text columns are unchanged.
+- 40fda23: `Database.withScope` puts the enclosing scope settings back when it runs inside a running transaction. A released
+  savepoint keeps a `set_config(…, true)` until the outer transaction ends, so a nested call used to leave
+  `app.scope_id`, `app.scope_path` and `app.scope_paths` on the inner scope for the rest of the caller's transaction. The
+  nested call's writes are flushed before the settings go back, so they still land in its own scope.
+- dd9427a: `assertRowSecurity` now audits every table, not only those holding the owner column: a table without it fails unless
+  `PLATFORM_TABLES` (the migration ledger, the action store, cache and lock tables) or the new `platform` option names it
+  with a reason. An owned table must have exactly one permissive policy, `pol_<table>_<column>`, the `FOR ALL` owner
+  equality, and only restrictive policies named after their column beside it (ADR 0347 decision 5). The probe seeds a
+  row of each owner itself, so the cross-owner read always runs, and also checks that an unset setting sees no row and
+  the owner sees its own. gen's generated tenant-isolation test passes the service's `Model.global` tables and
+  `MODEL_SCOPE_EXEMPTIONS` as `platform`. A table under a scope-path policy with no `tenant_id` now fails the audit.
+- 4a23af8: `assertRowSecurity` now treats a table in the expand step of the scope-path migration as a warning until 0.20, not a failure. That is a table with a nullable owner column, no `pol_<table>_<column>` policy yet, and its permissive `scope_path` policy still in place. The warning reads "(a) ancestor scope_path table in the expand step, awaiting backfill and the contract step". It is a failure under `strict: true` or `STACKRA_GEN_STRICT=1`. A NOT NULL owner column, or a table without that `scope_path` policy, still gets every hard check.
+- fc845f4: `assertRowSecurity` stages its every-table check like gen's tenancy checks. Until 0.20, an unlisted table without the owner column is a warning, not a failure. `assertRowSecurity` now returns these warnings. Each one names the table's group, read from the catalogue:
+  
+  - an ancestor `scope_path` table awaiting the contract step;
+  - a `scope_id` table whose policy reads the owner setting;
+  - a system table with no row-level security, awaiting its ADR decision;
+  - otherwise, unclassified.
+  
+  With `strict: true` or `STACKRA_GEN_STRICT=1`, these tables fail the audit as they will from 0.20. Every other finding still fails at once: the policy shape of an owned table, the probe's checks, a listed table that holds the column, and a listing with no reason.
+  
+  gen's tenant-isolation test now prints each warning and passes when the audit returns only warnings.
+- d2b3d22: A column can default to a transaction setting: `.defaultSetting("app.x")` writes
+  `default nullif(current_setting('app.x', true), '')`, so a writer that names no value stores the call's setting and
+  rows that predate the column stay null (refused on a `uuid` column for now). `t.belongsToTenant({ expand: true })` uses
+  it for the expand step of an existing table: a nullable, indexed `tenant_id` filled from `app.tenant_id`, and no
+  policy, so the table keeps the one it has until the contract step makes the tenant equality its one permissive policy
+  (ADR 0347 decision 1; tenancy audit 2026-11-07, gap D).
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/cache@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/testing@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/actions@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/console@0.18.1
+  - @stackra/testing@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/cache@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/actions@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/console@0.18.0
+  - @stackra/testing@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/cache@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/actions@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/console@0.17.2
+  - @stackra/testing@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/cache@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/actions@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/console@0.17.1
+  - @stackra/testing@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/cache@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/console@0.17.0
+  - @stackra/testing@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/cache@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/console@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/cache@0.16.0
+  - @stackra/testing@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/actions@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/testing@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/cache@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/actions@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/testing@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/cache@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/console@0.14.3
+  - @stackra/testing@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/cache@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/console@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/cache@0.14.2
+  - @stackra/testing@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/testing@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/cache@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/testing@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/cache@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/testing@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/cache@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/testing@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/cache@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/console@0.11.1
+  - @stackra/testing@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/cache@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/testing@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/cache@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- aea9b1d: `registerEntities` keeps one schema per schema-qualified table. A service that hosts a package's models (gen's
+  `#stackra/entities/hosted/…`) and also loads that package's own entity list (`registerEntities(TENANCY_ENTITIES)` in
+  its `node` entry) registered the table twice, and MikroORM refused to start ("Duplicate table names are not allowed").
+  Every test of pay's two services failed on `tenancy.approval_bindings`, and a server would not boot (STA-2116).
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/cache@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/testing@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [be4a198]
+- Updated dependencies [9bb5d55]
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [f9c825d]
+  - @stackra/console@0.9.0
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/cache@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/testing@0.9.0
+
 ## 0.8.0
 
 ### Minor Changes

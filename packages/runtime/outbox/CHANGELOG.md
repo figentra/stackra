@@ -1,5 +1,621 @@
 # @stackra/outbox
 
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/queue@0.29.0
+  - @stackra/versioning@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/locking@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/locking@0.28.0
+  - @stackra/versioning@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Minor Changes
+
+- 8a70552: The outbox tables are tenant-owned in the platform form (migration `outbox.0006_contract_outbox_tenancy`):
+  `messages`, `deliveries`, `changes` (every partition, the default included), `replica_changes`,
+  `device_sequences` and `offline_cap_uses` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a
+  NULL row is the platform's), forced row-level security and the platform policies. Cross-owner readers claim through
+  system functions that return ids, owners and order or lease columns only, and load or change each row in its owner.
+  
+  Upgrade: drain the relay before you migrate. The migration backfills a row at a tenant node (`nlevel(scope_path) =
+  3`) from its scope and keeps a row with no scope, at the root or at a product node, as a platform row. It refuses,
+  changing nothing, while a message, delivery, change, replica change or device sequence sits below a tenant node,
+  naming each count and the remedy: deliver or dead-letter pending messages and deliveries and delete those dead
+  letters; let every change consumer pass such changes and delete them (or wait for retention); delete such replica
+  changes (their devices fill again); settle and delete such device sequences. Existing `offline_cap_uses` rows have no
+  scope and become platform rows.
+  
+  Platform messages and changes (written with no tenant) carry no personal data: no tenant's erasure can rewrite them.
+  
+  Breaking port changes, for a custom driver:
+  
+  - `OutboxDriver`: `due` is `claim` (returns `OutboxClaim`: id, `ownerId`, due time) plus `load(id)`; `pruneDead` is
+    `claimDead`, each claim then deleted with `remove` in its owner.
+  - `ChangeFeed`: `read` is `claim` (returns `ChangeClaim`: position, `ownerId`) plus `load(positions)`; `maintain` no
+    longer deletes the default partition's expired rows: `expired` claims them and `remove` deletes them per owner
+    (`maintainChangeLog` does both).
+  - `DeliveryDriver`: `lease` and `list` return `DeliveryClaim` (id, `ownerId`, subscriber, state), `list` also takes
+    an `id`, and `load(id)` returns the delivery.
+  
+  New in `@stackra/outbox`: `loadChanges`, `maintainChangeLog`, `boundIsolation`, `ClaimNotLoadedError` (a claimed row
+  that does not load in its owner) and `RowIsolationMissingError` (an owned row with no `CallIsolation` bound). Both
+  fail the work: a claimed row is never skipped. `pruneOutbox` takes the isolation as its last argument.
+  
+  `@stackra/data-maintenance`: `PruneOutboxAction` and `MaintainChangeLogAction` inject the `Container` and read the
+  `CallIsolation` from it optionally. `@stackra/data-transfer`: `WarehouseChangeSink` takes the `Container` as its fourth
+  argument and loads each owner's changes in its owner. An app without tenancy still boots; its platform rows run as
+  before.
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+  - @stackra/database@0.27.0
+  - @stackra/locking@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/versioning@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/locking@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/versioning@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/console@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/locking@0.25.0
+  - @stackra/queue@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/versioning@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/queue@0.24.0
+  - @stackra/locking@0.24.0
+  - @stackra/versioning@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/console@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+  - @stackra/database@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/locking@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/versioning@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/locking@0.22.0
+  - @stackra/queue@0.22.0
+  - @stackra/versioning@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/versioning@0.21.0
+  - @stackra/console@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/locking@0.21.0
+  - @stackra/queue@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/queue@0.20.0
+  - @stackra/locking@0.20.0
+  - @stackra/versioning@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/queue@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/versioning@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/locking@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/actions@0.18.1
+  - @stackra/versioning@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/console@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/locking@0.18.1
+  - @stackra/queue@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/actions@0.18.0
+  - @stackra/versioning@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/console@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/locking@0.18.0
+  - @stackra/queue@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/actions@0.17.2
+  - @stackra/versioning@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/console@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/locking@0.17.2
+  - @stackra/queue@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/actions@0.17.1
+  - @stackra/versioning@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/console@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/locking@0.17.1
+  - @stackra/queue@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/versioning@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/console@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/locking@0.17.0
+  - @stackra/queue@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/versioning@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/console@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/locking@0.16.0
+  - @stackra/queue@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Minor Changes
+
+- 0b0cf51: Cross-app event relay (STA-1910, ADR 0511 decisions 11 to 19). After the outbox relay publishes an event in its own
+  app, a bound `CrossAppFanOut` writes one `outbox.deliveries` row (migration `outbox.0005_create_deliveries`) per
+  subscriber in another app whose events include each published version; `CrossAppRelayService` sends them under its own
+  lock, leased and sent outside it, as Ed25519-signed `POST /events/inbox` requests (Standard Webhooks headers, `v1a,<key id>,<signature>`), fair per
+  subscriber, with the outbox's backoff and dead letters. On the consumer, `RelayInboxService` verifies the signature
+  with `ContractInboxVerifierDriver` before parsing, sets `producer` from the verified sender and hands the envelope to
+  `InboxService`, answering 204, 401, 403 (an event the verified producer does not publish) or 422. New ports `DeliveryDriver`, `SubscriberSource`, `EventSigner` and
+  `InboxVerifier` with memory, Postgres, config, Ed25519 and contract drivers, and the operator commands
+  `outbox:relay-deliveries` and `outbox:relay-replay`. A service with no relay configuration behaves as before.
+
+### Patch Changes
+
+- @stackra/actions@0.15.0
+  - @stackra/versioning@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/locking@0.15.0
+  - @stackra/queue@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/actions@0.14.4
+  - @stackra/versioning@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/locking@0.14.4
+  - @stackra/queue@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/versioning@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/locking@0.14.3
+  - @stackra/queue@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/versioning@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/locking@0.14.2
+  - @stackra/queue@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/versioning@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/locking@0.14.1
+  - @stackra/queue@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/versioning@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/locking@0.14.0
+  - @stackra/queue@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/versioning@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/locking@0.13.0
+  - @stackra/queue@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/versioning@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/locking@0.12.0
+  - @stackra/queue@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/versioning@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/locking@0.11.1
+  - @stackra/queue@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/versioning@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/locking@0.11.0
+  - @stackra/queue@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/locking@0.10.0
+  - @stackra/queue@0.10.0
+  - @stackra/versioning@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [b174a17]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/model@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/database@0.9.0
+  - @stackra/queue@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/versioning@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/errors@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/locking@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

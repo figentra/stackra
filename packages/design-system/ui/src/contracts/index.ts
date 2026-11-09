@@ -10,6 +10,7 @@ export { AccordionVariant } from "#contracts/enums/accordion-variant.enum";
 export { AiMarkKind } from "#contracts/enums/ai-mark-kind.enum";
 export { TamoActionKind } from "#contracts/enums/tamo-action-kind.enum";
 export { TamoStatus } from "#contracts/enums/tamo-status.enum";
+export { ApprovalCardStatus } from "#contracts/enums/approval-card-status.enum";
 export { AriaSortDirection } from "#contracts/enums/aria-sort-direction.enum";
 export { AvatarShape } from "#contracts/enums/avatar-shape.enum";
 export { AvatarVariant } from "#contracts/enums/avatar-variant.enum";
@@ -631,6 +632,8 @@ export type { CodeContractProps } from "#contracts/types/code-contract-props.typ
 export type { ShortcutCheatSheetContractProps } from "#contracts/types/shortcut-cheat-sheet-contract-props.type";
 export type { ShortcutContractProps } from "#contracts/types/shortcut-contract-props.type";
 export type { ShortcutSettingsPanelContractProps } from "#contracts/types/shortcut-settings-panel-contract-props.type";
+export type { ApprovalCardContractProps } from "#contracts/types/approval-card-contract-props.type";
+export type { ApprovalCardField } from "#contracts/types/approval-card-field.type";
 export type { TamoActionItem } from "#contracts/types/tamo-action-item.type";
 export type { TamoAskBoxContractProps } from "#contracts/types/tamo-ask-box-contract-props.type";
 export type { TamoButtonContractProps } from "#contracts/types/tamo-button-contract-props.type";

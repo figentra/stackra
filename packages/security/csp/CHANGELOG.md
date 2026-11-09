@@ -1,5 +1,246 @@
 # @stackra/csp
 
+## 0.29.0
+
+### Patch Changes
+
+- @stackra/config@0.29.0
+  - @stackra/validation@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/config@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/config@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/config@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/config@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/config@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/config@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Minor Changes
+
+- 2dd98e6: `sanitizeHtml(html, policy?)` makes rich-text HTML safe to render, with no DOM and no new dependency. It rebuilds the
+  output from parsed parts against an allowlist (`RICH_TEXT_HTML_POLICY`: the editor's paragraphs, headings, lists,
+  quotes, code, marks and links). Scripts, styles and their content, event handlers, `style`, comments and unknown tags
+  are dropped, and a link keeps its `href` only for http(s), mailto, relative or fragment URLs once entities and control
+  characters are taken out. `HtmlPolicy` narrows it.
+  
+  A floor holds under any `HtmlPolicy`: event handlers, `style`, `srcdoc`, `formaction` and the like are never kept,
+  script-capable elements always go with their content, and `base`, `meta`, `link`, `embed` and form controls always go.
+- 1d5d185: `CspConfig.thirdPartyScripts` is the per-surface third-party script allowlist: each exact https origin with the
+  consent category that gates it. A `necessary` script (a payment SDK) always loads; any other (an ad pixel under
+  `marketing`) is added to `script-src` only when `CspAdditions.consent` grants its category, so without consent only
+  `necessary` scripts load and an unlisted script never does. Wildcards, paths and http are refused at boot.
+
+### Patch Changes
+
+- @stackra/config@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- e871d59: `frameAncestorsEntry(config, path)` is exported: the `frameAncestors` entry that governs a path (an exact key, else the
+  longest `/*` prefix). A runtime uses it to ask its resolver only on a `"request"` path, as the edge Worker does.
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+  - @stackra/validation@0.21.0
+  - @stackra/config@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+  - @stackra/validation@0.20.0
+  - @stackra/config@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 581af77: `CspConfig.frameAncestors` lets a path be framed: an exact path or a `/*` prefix maps to `self` and https origins, or
+  to `"request"` for framers the runtime resolves per request and passes as `CspAdditions.frameAncestors` with
+  `CspAdditions.path`. Every framer must be exactly one origin; a wildcard is refused in configuration and in a
+  resolver's output alike. Every other path keeps `frame-ancestors 'none'` and `X-Frame-Options: DENY`;
+  `securityHeaders` now takes the same additions and drops `X-Frame-Options` only where a framer is allowed.
+
+### Patch Changes
+
+- 3a894fa: While `reportOnly` is on, `securityHeaders` keeps `X-Frame-Options: DENY` on every path, framed ones included:
+  browsers never enforce `frame-ancestors` from a report-only header, so dropping it left a framed path open to every
+  site during a rollout. `frameAncestorOrigin` is now exported, so a host can refuse a stored framer (a merchant's embed
+  origin) at write time with the same rule the header uses.
+- Updated dependencies [cb26737]
+  - @stackra/config@0.19.0
+  - @stackra/validation@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/config@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/config@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/config@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/config@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/config@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/config@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/config@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/config@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/config@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/config@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/config@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/config@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/config@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/config@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/config@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/validation@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+  - @stackra/validation@0.9.0
+  - @stackra/config@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

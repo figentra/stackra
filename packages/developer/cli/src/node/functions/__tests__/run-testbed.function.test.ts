@@ -6,7 +6,8 @@
  *          public IP with the allowlist swap only under `--ssh-direct`; and across regions: the next region when the
  *          first is full, a group raised where there is room, no call outside the enabled list, each box's own region
  *          in its calls, `run --json` (one stdout line, the reserved exit codes), `status` and `status --json`, and
- *          `scale` and `unlock` in the right region.
+ *          `scale` and `unlock` in the right region; without the Session Manager plugin, `run` exits 75 at once and
+ *          `status` says why, and `--ssh-direct` never asks for the plugin.
  * Boundary: test only; nothing starts a process or reaches the network, the claim folder is a throwaway directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0484.
@@ -17,6 +18,7 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { TESTBED_PROBE_TIMEOUT_MS } from "#node/constants/testbed-probe-timeout-ms.constant";
 import { captureIo } from "#node/functions/capture-io.function";
 import { runTestbed } from "#node/functions/run-testbed.function";
 import type { TestbedDeps } from "#node/types/testbed-deps.type";
@@ -48,7 +50,10 @@ type Fake = {
 /** The region an aws call names. */
 const regionOf = (args: readonly string[]): string => String(args[args.indexOf("--region") + 1]);
 
-/** `agent` answers the remote command of one ssh call; `jobRun` answers the streamed `job run`, in order. */
+/**
+ * `agent` answers the remote command of one ssh call; `jobRun` answers the streamed `job run` and each reattach to it,
+ * in order; `interrupt` fires the SIGINT handler during the first `job run`.
+ */
 function fake(options: {
   /** The describe-instances rows: one answer for every region, or one per region (`undefined` fails the call). */
   readonly boxes: string | Readonly<Record<string, string | undefined>>;
@@ -59,11 +64,17 @@ function fake(options: {
   readonly group?: string | Readonly<Record<string, string>>;
   /** The clock; each call advances it by this many milliseconds. */
   readonly tick?: number;
+  readonly interrupt?: boolean;
+  /** Why the Session Manager plugin cannot be found; `undefined` when it can. */
+  readonly noPlugin?: string;
+  /** The stderr of an ssh call that fails. */
+  readonly sshError?: string;
 }): Fake {
   const calls: string[] = [];
   const streams: string[] = [];
   const jobRun = [...(options.jobRun ?? [0])];
   let clock = 1_000_000;
+  let onInterrupt: (() => void) | undefined;
   const deps: TestbedDeps = {
     exec: async (command, args) => {
       calls.push(`${command} ${args.join(" ")}`);
@@ -86,13 +97,15 @@ function fake(options: {
         const box = String(args.at(-2)).split("@")[1] ?? "";
         const remote = String(args.at(-1));
         const answer = options.agent?.(box, remote) ?? defaultAgent(remote);
-        return { ...answer, stderr: "" };
+        return { ...answer, stderr: answer.code === 0 ? "" : (options.sshError ?? "") };
       }
       return { code: 0, stdout: "", stderr: "" };
     },
     stream: async (command, args) => {
       streams.push(`${command} ${args.join(" ")}`);
-      if (command === "ssh" && String(args.at(-1)).includes("job run")) return jobRun.shift() ?? 0;
+      const remote = String(args.at(-1));
+      if (command === "ssh" && remote.includes("job run") && options.interrupt) onInterrupt?.();
+      if (command === "ssh" && remote.includes("/tmp/testbed-")) return jobRun.shift() ?? 0;
       return 0;
     },
     sleep: async () => undefined,
@@ -104,6 +117,16 @@ function fake(options: {
     isAlive: () => true,
     publicIp: async () => options.ip,
     claimRoot,
+    onInterrupt: (handler) => {
+      onInterrupt = handler;
+      return () => {
+        onInterrupt = undefined;
+      };
+    },
+    ssmPlugin: async () => {
+      calls.push("ssm-plugin");
+      return options.noPlugin;
+    },
   };
   return { deps, calls, streams };
 }
@@ -125,6 +148,7 @@ const request = (overrides: Partial<TestbedRequest>): TestbedRequest => ({
   ref: undefined,
   noWait: false,
   onDemand: false,
+  postgres: false,
   json: false,
   settings: { profile: "p", region: "r", regions: ["r"], key: "/k", user: "ubuntu" },
   ...overrides,
@@ -156,6 +180,28 @@ describe("runTestbed run", () => {
     expect(streams[0]).toContain("--exclude node_modules");
     expect(streams[1]).toContain("testbed-agent job run");
     expect(streams[1]).toContain(" light 'me work' 'app' -- 'pnpm lint'");
+  });
+
+  it("gives every health and slot probe a deadline, so one hung box never stalls a waiting run", async () => {
+    const { deps } = fake({ boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]) });
+    const seen: [command: string, timeoutMs: number | undefined][] = [];
+    const traced: TestbedDeps = {
+      ...deps,
+      exec: async (command, args, options) => {
+        if (command === "ssh") seen.push([String(args.at(-1)), options?.timeoutMs]);
+        return deps.exec(command, args, options);
+      },
+    };
+    expect(await runTestbed(request({}), traced, captureIo().io)).toBe(0);
+    const probes = seen.filter(([command]) => /testbed-agent (health|slot)/.test(command));
+    expect(probes.length).toBeGreaterThan(0);
+    expect(probes.every(([, timeoutMs]) => timeoutMs === TESTBED_PROBE_TIMEOUT_MS)).toBe(true);
+  });
+
+  it("asks the box for a Postgres beside the job with --postgres", async () => {
+    const { deps, streams } = fake({ boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]) });
+    expect(await runTestbed(request({ postgres: true }), deps, captureIo().io)).toBe(0);
+    expect(streams[1]).toContain(" light 'me work' 'app' --postgres -- 'pnpm lint'");
   });
 
   it("runs a light command in the heavy (on-demand) slot with --on-demand", async () => {
@@ -193,6 +239,29 @@ describe("runTestbed run", () => {
     expect(streams.join("\n")).not.toContain("ProxyCommand");
   });
 
+  it("exits 75 at once, saying why, when the Session Manager plugin cannot be found", async () => {
+    const { deps, calls, streams } = fake({
+      boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]),
+      noPlugin: "no plugin here",
+    });
+    const { io, output } = captureIo();
+    expect(await runTestbed(request({}), deps, io)).toBe(75);
+    expect(output()).toContain("no plugin here");
+    expect(calls.filter((call) => call.startsWith("ssh ") || call.startsWith("aws "))).toEqual([]);
+    expect(streams).toEqual([]);
+  });
+
+  it("asks for the Session Manager plugin once per run, and never under --ssh-direct", async () => {
+    const box = instances(["i-1", "light", "2026-10-30T00:00:00Z"]);
+    const ssm = fake({ boxes: box });
+    expect(await runTestbed(request({}), ssm.deps, captureIo().io)).toBe(0);
+    expect(ssm.calls.filter((call) => call === "ssm-plugin")).toHaveLength(1);
+    const direct = fake({ boxes: box, noPlugin: "no plugin here", ip: "198.51.100.9" });
+    const settings = { ...request({}).settings, sshDirect: true };
+    expect(await runTestbed(request({ settings }), direct.deps, captureIo().io)).toBe(0);
+    expect(direct.calls).not.toContain("ssm-plugin");
+  });
+
   it("picks another box when the first answers 75", async () => {
     const { deps, streams } = fake({
       boxes: instances(
@@ -208,14 +277,48 @@ describe("runTestbed run", () => {
     expect(runs[1]).toContain("ubuntu@i-2");
   });
 
-  it("retries a light job once after the connection drops, and a heavy job never", async () => {
+  it("runs the job detached and follows its log, so a dropped connection cannot kill it", async () => {
+    const { deps, streams } = fake({ boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]) });
+    expect(await runTestbed(request({}), deps, captureIo().io)).toBe(0);
+    expect(streams[1]).toContain("setsid nohup sh -c");
+    expect(streams[1]).toMatch(/f=\/tmp\/testbed-j\w+; /);
+    expect(streams[1]).toContain('tail -n +1 -f --pid="$p" "$f.log"');
+    expect(streams[1]).toContain('rc=$(cat "$f.rc")');
+  });
+
+  it("reattaches to the same box after a dropped connection and exits with the job's code", async () => {
+    const { deps, streams } = fake({
+      boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]),
+      jobRun: [255, 7],
+    });
+    const { io, output } = captureIo();
+    expect(await runTestbed(request({}), deps, io)).toBe(7);
+    expect(streams).toHaveLength(3);
+    expect(streams[2]).toContain("ubuntu@i-1");
+    expect(streams[2]).toContain("tail -n 50 -f");
+    expect(streams[2]).not.toContain("job run");
+    expect(output()).toContain("the job keeps running there, reattaching");
+  });
+
+  it("stops the job on the box on Ctrl-C and exits 130", async () => {
+    const { deps, calls } = fake({
+      boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]),
+      jobRun: [255],
+      interrupt: true,
+    });
+    expect(await runTestbed(request({}), deps, captureIo().io)).toBe(130);
+    expect(calls.some((call) => call.includes("testbed-agent job stop light"))).toBe(true);
+  });
+
+  it("retries a light job once after the box is lost, and a heavy job never", async () => {
     const boxes = instances(
       ["i-1", "heavy", "2026-10-30T00:00:00Z"],
       ["i-2", "heavy", "2026-10-30T01:00:00Z"],
     );
-    const light = fake({ boxes, jobRun: [255, 0] });
+    // The first attempt and its three reattaches all fail with 255: the box is gone.
+    const light = fake({ boxes, jobRun: [255, 255, 255, 255, 0] });
     expect(await runTestbed(request({}), light.deps, captureIo().io)).toBe(0);
-    const heavy = fake({ boxes, jobRun: [255, 0] });
+    const heavy = fake({ boxes, jobRun: [255, 255, 255, 255, 0] });
     expect(
       await runTestbed(
         request({ args: ["w", "/tmp/app", "pnpm build"] }),
@@ -223,6 +326,15 @@ describe("runTestbed run", () => {
         captureIo().io,
       ),
     ).toBe(255);
+  });
+
+  it("exits 75 at once, with AWS's reason, when no enabled region answers (a bad AWS profile)", async () => {
+    const { deps, calls, streams } = fake({ boxes: { a: undefined, b: undefined } });
+    const { io, output } = captureIo();
+    expect(await runTestbed(request({ settings: over("a", "b") }), deps, io)).toBe(75);
+    expect(output()).toContain("no enabled region answers (unreachable); check the AWS profile p");
+    expect(calls.some((call) => call.includes("set-desired-capacity"))).toBe(false);
+    expect(streams).toEqual([]);
   });
 
   it("exits 75 with --no-wait when no box is healthy", async () => {
@@ -521,6 +633,25 @@ describe("runTestbed status", () => {
     expect(text).toContain("a: heavy 1/1 free (+0 startable), light 0/1 free (+1 startable)");
     expect(text).toContain("box 1 i-h heavy (a): status of i-h");
     expect(text).toContain("b: unreachable");
+  });
+
+  it("says why a box did not answer, and that the Session Manager plugin is missing", async () => {
+    const { deps } = fake({
+      boxes: { a: instances(heavyBox) },
+      agent: () => ({ code: 255, stdout: "" }),
+      group: "1\t1\t0\n",
+      noPlugin: "no plugin here",
+      sshError:
+        "aws: [ERROR]: SessionManagerPlugin is not found.\nConnection closed by UNKNOWN port 65535\n",
+    });
+    const { io, out, err } = splitIo();
+    expect(
+      await runTestbed(request({ verb: "status", args: [], settings: over("a") }), deps, io),
+    ).toBe(0);
+    expect(err.join("")).toContain("no plugin here");
+    expect(out.join("")).toContain(
+      "box 1 i-h heavy (a): unreachable (Connection closed by UNKNOWN port 65535)",
+    );
   });
 });
 

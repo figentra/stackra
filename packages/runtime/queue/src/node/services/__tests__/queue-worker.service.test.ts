@@ -8,12 +8,14 @@
  *          key is dead-lettered; a scoped job runs through the bound `CallIsolation` with its scope as the call's (`ctx.scope`) and is dead-lettered at once, its hook not run, when none is bound (`job_isolation_missing`);
  *          `work` loops until aborted; a throttled job waits for its next token without counting the attempt (and fails
  *          its attempt when no `RateLimitStore` is bound); a chain runs its links in order; a batch counts done and
- *          failed jobs.
+ *          failed jobs. Across owners: a claimed job loads, settles and queues its next link in its owner (the link in a
+ *          `requiresNew` transaction), an owned job with no isolation bound or a claim that does not load fails the
+ *          drain and never runs, and a delivered job's row work runs in its own scope's isolation.
  * Boundary: test only; the memory driver, a fixed clock and a map resolver with an allowing `AccessControl`. Fake timers
  *           only in the timeout test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decisions 1 and 3); ADR 0305 (rules 28 and 30); ADR 0136
- *                     (decision 3); ADR 0327 (decision 6).
+ *                     (decision 3); ADR 0327 (decision 6); ADR 0239 (2026-11-07 amendment, gaps A and C).
  */
 import {
   Action,
@@ -34,10 +36,15 @@ import { ErrorKind, isRefusal, Refusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { Database } from "@stackra/database";
+
 import { JobStatus } from "#contracts/index";
+import type { QueuedJob } from "#contracts/index";
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
+import { JobClaimNotLoadedError } from "#core/errors/job-claim-not-loaded.error";
 import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.error";
+import { JobRowIsolationMissingError } from "#core/errors/job-row-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
 import { QueueService } from "#core/services/queue.service";
@@ -172,10 +179,43 @@ function resolverOf(entries: readonly (readonly [AnyClass, object])[]): Resolver
   };
 }
 
-/** A connected worker over a memory driver, with the actions above bound. */
-function setup(extra: readonly (readonly [AnyClass, object])[] = []) {
-  const clock = new FixedClock();
+/** The job `driver` reserves of `queue` at `now`, loaded as its claim names it. */
+async function reserved(
+  driver: MemoryQueueDriver,
+  queue: string | undefined,
+  now: Date,
+): Promise<QueuedJob | undefined> {
+  const claim = await driver.reserve(queue, now);
+  return claim === undefined ? undefined : driver.load(claim.id);
+}
+
+/** An isolation that records each unit's actor and scope and runs it. */
+class RecordingIsolation extends Driver(CallIsolation) {
+  readonly runs: [Actor, unknown][] = [];
+
+  run<T>(actor: Actor, scope: unknown, work: () => Promise<T>): Promise<T> {
+    this.runs.push([actor, scope]);
+    return work();
+  }
+}
+
+/** A memory driver whose every reservation claims owner `owner`, as the Postgres driver does for a tenant's job. */
+function ownedDriver(owner: string): MemoryQueueDriver {
   const driver = new MemoryQueueDriver();
+  const reserve = driver.reserve.bind(driver);
+  driver.reserve = async (queue, now) => {
+    const claim = await reserve(queue, now);
+    return claim === undefined ? undefined : { ...claim, ownerId: owner as never };
+  };
+  return driver;
+}
+
+/** A connected worker over a memory driver, with the actions above bound. */
+function setup(
+  extra: readonly (readonly [AnyClass, object])[] = [],
+  driver: MemoryQueueDriver = new MemoryQueueDriver(),
+) {
+  const clock = new FixedClock();
   const queue = new QueueService(driver, clock);
   const worker = new QueueWorkerService(driver, clock);
   const deliver = new DeliverMessageAction();
@@ -211,6 +251,23 @@ describe(QueueWorkerService, () => {
     });
     expect(deliver.contexts[0]?.idempotencyKey).toBeUndefined();
     expect(await worker.drain()).toEqual([]);
+  });
+
+  it("runs a job queued by an agent with no tenant of its own in the tenant of the human it acts for", async () => {
+    const { queue, worker, deliver } = setup();
+    const agent: Actor = {
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { ...user, scopeId: "org_1" },
+    };
+    const id = await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { origin: agent });
+    await worker.drain();
+    expect(deliver.contexts[0]?.actor).toEqual({
+      kind: ActorKind.System,
+      id,
+      scopeId: "org_1",
+      onBehalfOf: agent,
+    });
   });
 
   it("retries after the backoff, then dead-letters after the last attempt and calls onDeadLetter once", async () => {
@@ -265,9 +322,13 @@ describe(QueueWorkerService, () => {
     );
     await worker.drain();
     const expected = { kind: ActorKind.System, id, scopeId: "org_1", onBehalfOf: caller };
-    // the first run is the pipeline's own isolation of the attempt, the second the worker's of the hook
+    const row = { kind: ActorKind.System, id: "sys_queue_worker" };
+    // the load, the pipeline's own isolation of the attempt, the dead letter in the job's owner (memory keeps none:
+    // the platform's), then the worker's isolation of the hook
     expect(runs).toEqual([
+      [row, undefined, false],
       [expected, scope, false],
+      [row, undefined, false],
       [expected, scope, false],
     ]);
     expect(deliver.failed).toEqual([{ messageId: "msg_1" }]);
@@ -358,9 +419,10 @@ describe(QueueWorkerService, () => {
     expect(run?.outcome).toBe(JobOutcome.Done);
     expect(deliver.contexts[0]?.scope).toEqual(scope);
     // no tenant is written here: the isolation driver derives it from the scope (`@stackra/tenancy`)
-    expect(runs[0]?.[0]).toMatchObject({ kind: ActorKind.System });
-    expect(runs[0]?.[0]?.scopeId).toBeUndefined();
-    expect(runs[0]?.[1]).toEqual(scope);
+    const attempt = runs.find(([actor]) => actor.id !== "sys_queue_worker");
+    expect(attempt?.[0]).toMatchObject({ kind: ActorKind.System });
+    expect(attempt?.[0]?.scopeId).toBeUndefined();
+    expect(attempt?.[1]).toEqual(scope);
   });
 
   it("dead-letters a scoped job at once when no CallIsolation is bound, instead of running it with no tenant", async () => {
@@ -397,7 +459,7 @@ describe(QueueWorkerService, () => {
   it("processes a job the caller reserved", async () => {
     const { driver, queue, worker } = setup();
     await queue.push(DeliverMessageAction, { messageId: "msg_1" });
-    const job = await driver.reserve("delivery", NOON);
+    const job = await reserved(driver, "delivery", NOON);
     if (job === undefined) throw new Error("not reserved");
     await expect(worker.process(job)).resolves.toMatchObject({ outcome: JobOutcome.Done });
   });
@@ -405,7 +467,7 @@ describe(QueueWorkerService, () => {
   it("hands a delivered job to the driver's claim before it runs", async () => {
     const { driver, queue, worker } = setup();
     await queue.push(DeliverMessageAction, { messageId: "msg_1" });
-    const job = await driver.reserve("delivery", NOON);
+    const job = await reserved(driver, "delivery", NOON);
     if (job === undefined) throw new Error("not reserved");
     const claim = vi.spyOn(driver, "claim");
     await expect(worker.process(job)).resolves.toMatchObject({ outcome: JobOutcome.Done });
@@ -439,7 +501,7 @@ describe(QueueWorkerService, () => {
     expect(second?.outcome).toBe(JobOutcome.Throttled);
     const retryAt = second?.retryAt ?? NOON;
     expect(retryAt.getTime()).toBeGreaterThan(NOON.getTime());
-    expect(await driver.reserve("payments", retryAt)).toMatchObject({ attempts: 1 });
+    expect(await reserved(driver, "payments", retryAt)).toMatchObject({ attempts: 1 });
   });
 
   it("fails a throttled attempt when no RateLimitStore is bound", async () => {
@@ -472,5 +534,72 @@ describe(QueueWorkerService, () => {
     ]);
     await worker.drain();
     expect(await queue.progress(id)).toEqual({ id, total: 2, done: 1, failed: 1 });
+  });
+
+  it("loads, settles and chains an owned job in its owner, the next link in a transaction of its own", async () => {
+    const isolation = new RecordingIsolation();
+    const transactions: unknown[] = [];
+    const database = {
+      transaction: (work: () => Promise<unknown>, options: unknown) => {
+        transactions.push(options);
+        return work();
+      },
+    };
+    const { queue, worker } = setup(
+      [
+        [CallIsolation, isolation],
+        [Database, database],
+      ],
+      ownedDriver("scp_acme"),
+    );
+    await queue.chain([
+      { type: DeliverMessageAction, input: { messageId: "msg_1" } },
+      { type: DeliverMessageAction, input: { messageId: "msg_2" } },
+    ]);
+    const runs = await worker.drain("delivery");
+    expect(runs.map((run) => run.outcome)).toEqual([JobOutcome.Done, JobOutcome.Done]);
+    const owned = { kind: ActorKind.System, id: "sys_queue_worker", scopeId: "scp_acme" };
+    // per job: the load, the attempt (the pipeline's), the removal; the first also pushes its next link
+    expect(isolation.runs.filter(([actor]) => actor.id === "sys_queue_worker")).toEqual([
+      [owned, undefined],
+      [owned, undefined],
+      [owned, undefined],
+      [owned, undefined],
+      [owned, undefined],
+    ]);
+    expect(transactions).toEqual([{ requiresNew: true }]);
+  });
+
+  it("refuses an owned job when no CallIsolation is bound, and never runs or skips it", async () => {
+    const { queue, worker, deliver, driver } = setup([], ownedDriver("scp_acme"));
+    const id = await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    await expect(worker.drain()).rejects.toBeInstanceOf(JobRowIsolationMissingError);
+    expect(deliver.contexts).toEqual([]);
+    expect(await driver.load(id ?? "job_x")).toMatchObject({ status: JobStatus.Running });
+  });
+
+  it("fails a reserved job that does not load in its owner", async () => {
+    const { queue, worker, driver, deliver } = setup([[CallIsolation, new RecordingIsolation()]]);
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    driver.load = async () => undefined;
+    await expect(worker.drain()).rejects.toBeInstanceOf(JobClaimNotLoadedError);
+    expect(deliver.contexts).toEqual([]);
+  });
+
+  it("keeps a delivered job's row work in its own scope's isolation", async () => {
+    const isolation = new RecordingIsolation();
+    const { driver, queue, worker, deliver } = setup([[CallIsolation, isolation]]);
+    deliver.outcome = "gone";
+    const scope = { id: "scp_1", path: "platform.acme" } as const;
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { origin: caller, scope });
+    const job = await reserved(driver, "delivery", NOON);
+    if (job === undefined) throw new Error("not reserved");
+    await expect(worker.process(job)).resolves.toMatchObject({
+      outcome: JobOutcome.DeadLettered,
+    });
+    expect(isolation.runs).toContainEqual([
+      { kind: ActorKind.System, id: "sys_queue_worker" },
+      scope,
+    ]);
   });
 });

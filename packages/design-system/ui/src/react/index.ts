@@ -702,6 +702,8 @@ export { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 export type { ShortcutHintProps } from "#react/shortcut-hint/shortcut-hint.props";
 export { ShortcutSettingsPanel } from "#react/shortcut-settings-panel/shortcut-settings-panel";
 export type { ShortcutSettingsPanelProps } from "#react/shortcut-settings-panel/shortcut-settings-panel.props";
+export { ApprovalCard } from "#react/approval-card/approval-card";
+export type { ApprovalCardProps } from "#react/approval-card/approval-card.props";
 export { TamoAskBox } from "#react/tamo-ask-box/tamo-ask-box";
 export type { TamoAskBoxProps } from "#react/tamo-ask-box/tamo-ask-box.props";
 export { TamoButton } from "#react/tamo-button/tamo-button";
@@ -752,3 +754,16 @@ export { Illustration } from "#react/illustration/illustration";
 export type { IllustrationProps } from "#react/illustration/illustration.props";
 export { useFloorSteps } from "#react/hooks/use-floor-steps";
 export type { FloorStepsOptions } from "#react/hooks/floor-steps-options.type";
+
+// UI build list wave 2: fields, a flag and a marker map (STA-1981).
+export { Autocomplete } from "#react/autocomplete/autocomplete";
+export type { AutocompleteProps } from "#react/autocomplete/autocomplete.props";
+export { ColorField } from "#react/color-field/color-field";
+export type { ColorFieldProps } from "#react/color-field/color-field.props";
+export { ColorSwatch } from "#react/color-swatch/color-swatch";
+export type { ColorSwatchProps } from "#react/color-swatch/color-swatch.props";
+export { Flag } from "#react/flag/flag";
+export type { FlagProps } from "#react/flag/flag.props";
+export { MarkerMap } from "#react/marker-map/marker-map";
+export type { MarkerMapProps } from "#react/marker-map/marker-map.props";
+export type { MapMarker } from "#react/marker-map/map-marker.type";

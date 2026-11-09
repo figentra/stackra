@@ -7,7 +7,7 @@
     "x-stackra-member": "shop"
   },
   "paths": {
-    "/orders/{orderId}/cancel": {
+    "/app/orders/{orderId}/cancel": {
       "put": {
         "operationId": "shop_order_cancel",
         "summary": "CancelOrderAction",
@@ -15,6 +15,7 @@
         "x-stackra-action": "shop.order.cancel@1",
         "x-stackra-permission": "shop.order.cancel",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "x-stackra-refusals": ["order_not_cancellable"],
         "parameters": [
           {

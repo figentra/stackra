@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `ChatSurfaceProps`, what a host hands the ChatSurface block: the conversation, the starters, the handlers
- *          and every word.
+ * Purpose: `ChatSurfaceProps`, what a host hands the ChatSurface block: the conversation (plain turns or AI SDK UI
+ *          message parts), the starters, the part renderers, the handlers and every word.
  * Boundary: an interface in its own file beside the component (ADR 0305). Turns come from the agent runtime's
  *           ConversationStore (this package's core); starters and copy are the module's or tenant's data. The step and
  *           source shapes are @stackra/ui's own (`ReasoningStep`, `SourceItem`), so a turn passes straight through.
@@ -9,6 +9,9 @@
  * Governing contract: ADR 0504 (module UI kits); ADR 0305 (`<name>.props.ts`).
  */
 import type { PromptSuggestion, ReasoningStep, SourceItem } from "@stackra/ui/contracts";
+import type { UIDataTypes, UIMessagePart, UITools } from "ai";
+
+import type { ChatPartRenderers } from "#react/chat-surface/chat-part-renderers.type";
 
 /** One turn of the conversation. */
 interface ChatTurn {
@@ -19,6 +22,11 @@ interface ChatTurn {
   readonly reasoning?: readonly ReasoningStep[] | undefined;
   /** The pages the answer cites, listed under it. */
   readonly sources?: readonly SourceItem[] | undefined;
+  /**
+   * The AI SDK UI message parts of the turn. Given, they are its content, drawn in order, and `reasoning` and `sources`
+   * are ignored; `text` still feeds the copy action.
+   */
+  readonly parts?: readonly UIMessagePart<UIDataTypes, UITools>[] | undefined;
 }
 
 /**
@@ -40,6 +48,12 @@ export interface ChatSurfaceProps {
   readonly suggestions?: readonly PromptSuggestion[] | undefined;
   /** Asks again for an assistant turn. */
   readonly onRetry?: ((turnId: string) => void) | undefined;
+  /** How each Tamo data part (`data-tamo-<kind>`) is drawn; a kind left out draws nothing. */
+  readonly renderers?: ChatPartRenderers | undefined;
+  /** Called with a tool call's approval id and whether the person approved it. */
+  readonly onApprovalResponse?: ((approvalId: string, approved: boolean) => void) | undefined;
+  /** Each tool name to the label its approval card shows; a tool left out shows its name. */
+  readonly toolLabels?: Readonly<Record<string, string>> | undefined;
   /** The words; each left out falls back to @stackra/ui's catalogue. */
   readonly labels: {
     /** The conversation log's accessible name. */

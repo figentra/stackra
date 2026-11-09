@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `MediaLibrary`, the platform service of server-side media: issues signed uploads into a bucket
- *          (`createUpload`), claims a finished upload for a bucket (`claim`), and links a private file
- *          (`temporaryUrl`).
- * Boundary: the bytes never pass through it (ADR 0222 decision 2): the client puts them to `uploads/<id>` on the
+ *          (`createUpload`), claims a finished upload for a bucket (`claim`), stores bytes the server made
+ *          (`store`), and links a private file (`temporaryUrl`).
+ * Boundary: a client's bytes never pass through it (ADR 0222 decision 2); only `store` takes bytes, the server's own,
+ *           under the same bucket rules a claim applies. The client puts its bytes to `uploads/<id>` on the
  *           `FileSystem` disk through a signed URL (`FileSystem.signUpload`), and the token itself carries only the id.
  *           What the server must remember about the upload (the bucket key and the expiry) it writes itself beside it,
  *           as `uploads/<id>.json`, so every disk works, an Encore bucket included, which signs no metadata (ADR 0465;
@@ -31,6 +32,7 @@ import { UploadExpiredError } from "#core/errors/upload-expired.error";
 import { UploadIncompleteError } from "#core/errors/upload-incomplete.error";
 import { UploadRejectedError } from "#core/errors/upload-rejected.error";
 import { bucketKeyOf } from "#core/functions/bucket-key-of.function";
+import { contentMatches } from "#core/functions/content-matches.function";
 import { bucketOptionsOf } from "#core/functions/bucket-options-of.function";
 import { filePathOf } from "#core/functions/file-path-of.function";
 import { mintUploadId } from "#core/functions/mint-upload-id.function";
@@ -41,6 +43,9 @@ import { Upload } from "#core/values/upload.value";
 
 /** Where uploads wait for their claim. */
 const UPLOADS = "uploads/";
+
+/** How many leading bytes the content check reads: enough for every signature, an `ftyp` box's brands included. */
+const HEAD = 64;
 
 /** What the server remembers about one upload, written beside it as `uploads/<id>.json`. */
 type UploadRecord = { readonly bucket: string; readonly expires: string };
@@ -128,7 +133,8 @@ export class MediaLibrary extends Service {
    * @throws UploadIncompleteError when nothing waits under the token (never uploaded, already claimed, or not a token).
    * @throws UploadBucketMismatchError when the token was signed for another bucket.
    * @throws UploadExpiredError when the token's lifetime has passed.
-   * @throws UploadRejectedError when the stored file's media type or size breaks the bucket's rules.
+   * @throws UploadRejectedError when the stored file's media type or size breaks the bucket's rules, or its bytes are
+   *         not that media type.
    */
   async claim<B extends BucketBase>(upload: Upload<B>, bucket: BucketClass<B>): Promise<MediaFile> {
     const options = bucketOptionsOf(bucket);
@@ -158,6 +164,13 @@ export class MediaLibrary extends Service {
         reason: mediaType === undefined ? "media_type" : "size",
       });
     }
+    // shortcut: reads the whole staged file (bounded by maxBytes, checked above) for its head; read a range once
+    // FileSystem has one
+    if (!contentMatches((await this.disk.read(staged)).subarray(0, HEAD), mediaType)) {
+      await this.disk.delete(staged);
+      await this.disk.delete(recordPath);
+      throw UploadRejectedError.create({ bucket: key, reason: "content" });
+    }
     const path = filePathOf(bucket, upload.id, mediaType);
     await this.disk.move(staged, path);
     await this.disk.delete(recordPath);
@@ -169,6 +182,33 @@ export class MediaLibrary extends Service {
       mediaType,
       size: object.size,
     };
+  }
+
+  /**
+   * Stores `bytes` the server made (a rendered PDF, a generated image) as a new file of `bucket`, under the rules a claim
+   * applies: the bucket's media types, its size limit, and bytes that are the declared type.
+   *
+   * @throws UploadRejectedError when the bucket does not accept `mediaType`, the size is zero or above `maxBytes`, or
+   *         the bytes are not that media type; nothing is written.
+   * @throws TypeError when `bucket` does not extend `Bucket({...})`.
+   */
+  async store<B extends BucketBase>(
+    bucket: BucketClass<B>,
+    bytes: Uint8Array,
+    mediaType: MediaType,
+  ): Promise<MediaFile> {
+    const options = bucketOptionsOf(bucket);
+    const key = bucketKeyOf(bucket);
+    if (!options.accept.includes(mediaType))
+      throw UploadRejectedError.create({ bucket: key, reason: "media_type" });
+    if (bytes.byteLength < 1 || bytes.byteLength > options.maxBytes)
+      throw UploadRejectedError.create({ bucket: key, reason: "size" });
+    if (!contentMatches(bytes.subarray(0, HEAD), mediaType))
+      throw UploadRejectedError.create({ bucket: key, reason: "content" });
+    const id = mintUploadId();
+    const path = filePathOf(bucket, id, mediaType);
+    await this.disk.write(path, bytes, { contentType: mediaType });
+    return { id, bucket: key, path, url: this.disk.url(path), mediaType, size: bytes.byteLength };
   }
 
   /** A URL that reads `file` until `expiresIn` has passed; the way to show a file of a private bucket. */

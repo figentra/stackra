@@ -60,8 +60,14 @@ generated-key helpers, the native form and the fake (ADR 0307 rules 22 to 24, AD
   locks, floors, entitlements and `fake.writes`. A test of a refusal goes through `write`.
 - `Promotable` is homed here (package-needs conflict note, ADR 0359 d6); a kind's driver validates its snapshot.
 - A store driver names each layer's holder (`SettingLayer.holder`) and implements `remove`.
-- Raw SQL lives only in `StoredSettingService` methods, parameterised with `sql`, with a `// raw-sql:` comment (ADR
-  0160). The scope path comes from the target or the session, never from request input.
+- Raw SQL lives only in the `StoredSettingService` and `StoredSettingRevisionService` methods, parameterised with
+  `sql`, with a `// raw-sql:` comment (ADR 0160). The scope path comes from the target or the session, never from
+  request input.
+- Both tables are in the platform form (`settings.0004`): `tenant_id` from `app.tenant_id`, never written by hand. A
+  user's row is per owner (`(tenant_id, group_key, user_id)`), so its lookups name the session's own owner. Due
+  revisions across tenants are claimed through `settings.claim_due_revisions`, then applied in each owner.
+- The `settings:diff`/`settings:apply` runner (`openSettingsSession`) sets `app.tenant_id` by the tenant-level rule:
+  the node's own id at `nlevel` 3, none above it; a deeper node is refused until the runner can read the scope tree.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

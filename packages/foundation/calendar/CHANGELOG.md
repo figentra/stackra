@@ -1,5 +1,277 @@
 # @stackra/calendar
 
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [b4b6422]
+  - @stackra/container@0.29.0
+  - @stackra/market-packs@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/market-packs@0.28.0
+  - @stackra/support@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/market-packs@0.27.0
+  - @stackra/support@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/market-packs@0.26.0
+  - @stackra/support@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/market-packs@0.25.0
+  - @stackra/support@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/market-packs@0.24.0
+  - @stackra/support@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/support@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/market-packs@0.22.0
+  - @stackra/support@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/market-packs@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+  - @stackra/container@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/market-packs@0.19.0
+  - @stackra/support@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/market-packs@0.18.1
+  - @stackra/support@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/market-packs@0.18.0
+  - @stackra/support@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/market-packs@0.17.2
+  - @stackra/support@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- Updated dependencies [0b917cf]
+  - @stackra/market-packs@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/support@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/market-packs@0.17.0
+  - @stackra/support@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- @stackra/market-packs@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/market-packs@0.15.0
+  - @stackra/support@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/market-packs@0.14.4
+  - @stackra/support@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/market-packs@0.14.3
+  - @stackra/support@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/market-packs@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/market-packs@0.14.1
+  - @stackra/support@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/market-packs@0.14.0
+  - @stackra/support@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/market-packs@0.13.0
+  - @stackra/support@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/market-packs@0.12.0
+  - @stackra/support@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/market-packs@0.11.1
+  - @stackra/support@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/market-packs@0.11.0
+  - @stackra/support@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/market-packs@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/support@0.10.0
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/market-packs@0.9.0
+  - @stackra/support@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

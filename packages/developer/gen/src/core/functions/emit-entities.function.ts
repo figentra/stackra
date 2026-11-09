@@ -30,6 +30,13 @@ import type { MemberIR } from "#core/types/member-ir.type";
 import type { RelationIR } from "#core/types/relation-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 
+/** The `@stackra/model` column type of each geospatial shape (ADR 0314). */
+const GEO_TYPES = {
+  point: "GeoPointType",
+  polygon: "GeoPolygonType",
+  line: "GeoLineType",
+} as const;
+
 /** The ORM type of a scalar field. */
 function ormType(field: FieldIR): string {
   switch (field.type.kind) {
@@ -61,11 +68,12 @@ function ormType(field: FieldIR): string {
  *
  * @param ir - the member read by discovery.
  * @param module - the module key whose models the file holds.
+ * @param hosted - the models are a hosted package's, whose published types carry no `"~defaults"` marker.
  * @returns the file content, or undefined when the module declares no model.
  * @example
  * emitEntities(ir, "scope"); // "...export const ScopeNodeSchema = new EntitySchema<ScopeNode>({..."
  */
-export function emitEntities(ir: MemberIR, module: string): string | undefined {
+export function emitEntities(ir: MemberIR, module: string, hosted = false): string | undefined {
   const models = ir.shapes.filter((shape) => shape.kind === "model" && shape.module === module);
   const additions = ir.shapes.filter(
     (shape) => shape.kind === "model_addition" && shape.module === module,
@@ -117,10 +125,11 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
           candidate.target.name === owner.name,
       )?.name;
 
-  // Only a service's `T` carries the marker: its schemas file (in the typecheck program) adds it; a package's
-  // committed entity list is checked on `src` alone, where the model class has no such key (TS2353).
+  // Only a service's own `T` carries the marker: its schemas file (in the typecheck program) adds it; a package's
+  // committed entity list is checked on `src` alone, and a hosted package's class comes from its published types,
+  // where the model class has no such key (TS2353).
   const marked = (shape: ShapeIR): boolean =>
-    ir.layout !== "package" && shape.fields.some((field) => field.default !== undefined);
+    !hosted && ir.layout !== "package" && shape.fields.some((field) => field.default !== undefined);
   let money = false;
   /** The column properties of `fields`, given the model's `traits`. */
   const fieldProperties = (fields: readonly FieldIR[], traits: ReadonlySet<string>): string[] => {
@@ -135,14 +144,18 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
         continue;
       }
       if (field.type.kind === "translated") use("@stackra/model", "TranslatedType");
+      const geoType = field.type.kind === "geo" ? GEO_TYPES[field.type.shape] : undefined;
+      if (geoType !== undefined) use("@stackra/model", geoType);
       const parts =
         field.type.kind === "enum"
           ? ["enum: true", `items: ${JSON.stringify(field.type.values)}`]
           : field.type.kind === "translated"
             ? ["type: TranslatedType"]
-            : [
-                `type: ${JSON.stringify(field.name === "version" && traits.has("Versioned") ? "integer" : ormType(field))}`,
-              ];
+            : geoType !== undefined
+              ? [`type: ${geoType}`]
+              : [
+                  `type: ${JSON.stringify(field.name === "version" && traits.has("Versioned") ? "integer" : ormType(field))}`,
+                ];
       if (field.name === "id" && traits.has("HasPublicId")) parts.push("primary: true");
       if (field.name === "updatedAt" && traits.has("Timestamps"))
         parts.push("onUpdate: () => new Date()");

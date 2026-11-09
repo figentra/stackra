@@ -59,6 +59,12 @@ export class NotificationsOptions extends Schema {
    * runway sets it.
    */
   unsubscribeUrl = "";
+
+  /**
+   * The VAPID contact (RFC 8292 `sub`) a push service may reach about this sender: a `mailto:` or `https://` URL, set
+   * per environment in the member runway's config. Not a secret. Empty until runway sets it.
+   */
+  webPushVapidSubject = "";
 }
 
 registerSchemas([[NotificationsOptions, NOTIFICATIONS_CONFIG_SCHEMA]]);

@@ -2,9 +2,10 @@
  * Stackra file contract:
  * Purpose: `MemoryWorkflowJournalDriver`, the `WorkflowJournal` of a test or a single process: runs and held signals in
  *          process memory, each stored as a copy, listed in the order the Postgres journal lists them.
- * Boundary: no transaction (`transaction` runs the work as it is) and no scope session (`currentScope` is
- *           `undefined`), so a write whose caller rolls back stays; the Postgres driver is the transactional one. A run
- *           and a signal keep the scope they are given, and `take` matches it.
+ * Boundary: no transaction (`transaction` runs the work as it is) and no scope or tenant session (`currentScope` and
+ *           `currentOwner` are `undefined`), so a write whose caller rolls back stays; the Postgres driver is the
+ *           transactional one. A run and a signal keep the scope they are given, and `take` matches it. Nothing is
+ *           hidden by owner: a run's claim carries the `ownerId` it was saved with, and a signal's carries none.
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decision 1); ADR 0142 (drivers behind ports); ADR 0266 (memory first).
  */
@@ -15,6 +16,8 @@ import { StepStatus } from "#core/enums/step-status.enum";
 import { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
 import { WorkflowJournal } from "#core/ports/workflow-journal.port";
 import type { HeldSignal } from "#core/types/held-signal.type";
+import type { RunClaim } from "#core/types/run-claim.type";
+import type { SignalClaim } from "#core/types/signal-claim.type";
 import type { WorkflowRun } from "#core/types/workflow-run.type";
 
 /** Whether two scopes are the same node, or both absent. */
@@ -42,6 +45,11 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
 
   /** See `WorkflowJournal.currentScope`: memory has no session. */
   currentScope(): Promise<ScopeRef | undefined> {
+    return Promise.resolve(undefined);
+  }
+
+  /** See `WorkflowJournal.currentOwner`: memory has no session. */
+  currentOwner(): Promise<PublicId<"scp"> | undefined> {
     return Promise.resolve(undefined);
   }
 
@@ -116,9 +124,9 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
   }
 
   /** See `WorkflowJournal.due`: the runs to advance now, oldest first. */
-  due(now: Date, limit: number): Promise<readonly PublicId<"wfr">[]> {
+  due(now: Date, limit: number): Promise<readonly RunClaim[]> {
     const at = now.getTime();
-    const ids = [...this.runs.values()]
+    const claims = [...this.runs.values()]
       .filter((run) => {
         if (run.status === WorkflowRunStatus.Running) return true;
         if (run.status === WorkflowRunStatus.Compensating) return true;
@@ -138,13 +146,27 @@ export class MemoryWorkflowJournalDriver extends Driver(WorkflowJournal) {
       })
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((left, right) => left.startedAt.getTime() - right.startedAt.getTime())
-      .map((run) => run.id);
-    return Promise.resolve(ids.slice(0, limit));
+      .map((run): RunClaim => ({
+        id: run.id,
+        ...(run.ownerId === undefined ? {} : { ownerId: run.ownerId }),
+        startedAt: run.startedAt,
+      }));
+    return Promise.resolve(claims.slice(0, limit));
   }
 
-  /** See `WorkflowJournal.expire`: drops the held signals that lapsed. */
-  expire(now: Date): Promise<void> {
-    this.signals = this.signals.filter((held) => held.expiresAt.getTime() > now.getTime());
+  /** See `WorkflowJournal.expired`: the held signals that lapsed, oldest lapse first. */
+  expired(now: Date, limit: number): Promise<readonly SignalClaim[]> {
+    const lapsed = this.signals
+      .filter((held) => held.expiresAt.getTime() <= now.getTime())
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      .sort((left, right) => left.expiresAt.getTime() - right.expiresAt.getTime())
+      .slice(0, limit);
+    return Promise.resolve(lapsed.map((held) => ({ id: held.id })));
+  }
+
+  /** See `WorkflowJournal.remove`: drops the held signals `ids`. */
+  remove(ids: readonly PublicId<"wfs">[]): Promise<void> {
+    this.signals = this.signals.filter((held) => !ids.includes(held.id));
     return Promise.resolve();
   }
 }

@@ -37,6 +37,6 @@ export type MobileJobRequest = {
   /** The product packages to build in, by name, at the version each is published at: they join the template's
    *  dependencies and its product module imports each one's `./native` entry (MOBILE_DEV_SETTINGS). */
   readonly packages?: Readonly<Record<string, string>>;
-  /** The command runner; `runCommand` when absent. */
+  /** The command runner; `runProgram` when absent. */
   readonly run?: CommandRunner;
 };

@@ -67,6 +67,7 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
     return this;
   }
 
+  /** Answers a page of the members, filtered by kind and by `search` within the role. */
   list(input: Parameters<TenantMembers["list"]>[0]): ReturnType<TenantMembers["list"]> {
     this.calls.push("list");
     const rows = this.members.filter(
@@ -77,6 +78,7 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
     return Promise.resolve(pageOf(rows, input.cursor, input.limit));
   }
 
+  /** Adds a pending invitation that expires in seven days; refuses a role the kind may not hold. */
   invite(input: Parameters<TenantMembers["invite"]>[0]): ReturnType<TenantMembers["invite"]> {
     this.calls.push("invite");
     try {
@@ -99,6 +101,7 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
     return Promise.resolve({ invitationId: invitation.id });
   }
 
+  /** Answers a page of the sent invitations, newest first. */
   invitations(
     input: Parameters<TenantMembers["invitations"]>[0],
   ): ReturnType<TenantMembers["invitations"]> {
@@ -107,6 +110,7 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
     return Promise.resolve({ ...page, hasMore: page.nextCursor !== null });
   }
 
+  /** Marks a pending invitation revoked; any other is left as it is. */
   revokeInvitation(invitationId: PublicId<"inv">): Promise<void> {
     this.calls.push("revokeInvitation");
     this.sent = this.sent.map((sent) =>
@@ -115,6 +119,7 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
     return Promise.resolve();
   }
 
+  /** Changes a member's role; refuses demoting the last owner or a role the kind may not hold. */
   // A refusal thrown inside the executor rejects the promise, as a real client call does.
   changeRole(input: Parameters<TenantMembers["changeRole"]>[0]): Promise<void> {
     return new Promise((resolve) => {
@@ -131,6 +136,7 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
     });
   }
 
+  /** Removes a member; refuses removing the last owner. */
   remove(membershipId: PublicId<"mbr">): Promise<void> {
     return new Promise((resolve) => {
       this.calls.push("remove");

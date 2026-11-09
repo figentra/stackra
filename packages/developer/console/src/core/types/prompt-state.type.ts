@@ -10,7 +10,7 @@ import type { PromptRequest } from "#contracts/types/prompt-request.type";
 
 /** A prompt in progress. */
 export interface PromptState {
-  /** The question. */
+  /** The question being asked. */
   readonly request: PromptRequest;
 
   /** The typed text (text, password, search filter). */

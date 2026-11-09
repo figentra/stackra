@@ -1253,7 +1253,15 @@
     "shortcut": "Atajo {keys}",
     "you": "Tú",
     "disclaimer": "Tamo puede equivocarse. Revisa lo que propone.",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "approval_title": "Tamo quiere ejecutar esto",
+    "approval_waiting": "Esperando tu aprobación.",
+    "approve": "Aprobar",
+    "deny": "Rechazar",
+    "approved": "Aprobado",
+    "denied": "Rechazado",
+    "expired": "Caducado",
+    "risk": "Riesgo {level}"
   },
   "terminal_demo": {
     "label": "Pruébalo",

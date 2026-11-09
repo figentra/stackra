@@ -2,12 +2,12 @@
 
 Invocable skills, one folder per skill with a `SKILL.md` (Agent Skills format: `name` and `description` frontmatter,
 then the instructions). `pnpm agents:sync` symlinks each folder into `.claude/skills/`; OpenCode reads this folder
-directly. The Figentra Flow skills (`flow-*`) are here too, but rendered by `pnpm spec:sync` (`figentra-flow sync`) and
+directly. The Figentra Flow skills (`flow-*`) are here too, but rendered by `pnpm spec:sync` (`fflow sync`) and
 recorded in `.flow/lock.json`: never edit them in place; override in `.flow/overrides/` (ADR 0510).
 
 | Family                 | Skills                                                                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Monorepo and release   | `pnpm`, `turborepo`, `changesets`, `vitest`, `tdd`, `test-infra`                                                                        |
+| Monorepo and release   | `pnpm`, `turborepo`, `vitest`, `tdd`, `test-infra`                                                                          |
 | Web UI                 | `heroui-react`, `frontend-design`, `accessibility`, `playwright-best-practices`                                             |
 | Mobile                 | `heroui-native`, `react-native-best-practices`, `expo-*` (animation, data-fetching, design-system, dev-client, upgrade), `eas-*` (app-stores, update, workflows) |
 | Services and vendors   | `resend` (behind the mail driver), `stripe-best-practices` (billing work only)                                              |

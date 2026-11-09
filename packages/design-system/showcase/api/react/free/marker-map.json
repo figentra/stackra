@@ -1,0 +1,68 @@
+{
+  "generatedFrom": {
+    "hash": "db942248ddf12b9c",
+    "propsFiles": ["ui/src/react/marker-map/marker-map.props.ts"]
+  },
+  "importLine": "import { MarkerMap } from \"@stackra/ui/react\";",
+  "key": "free/marker-map",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a pin's id when it is chosen on the map or in the list.",
+          "name": "onSelect",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "MarkerMap",
+      "props": [
+        {
+          "description": "The pins to draw, in the order the list shows them.",
+          "name": "markers",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MapMarker[]"
+        },
+        {
+          "description": "The selected pin, for a controlled map; pair it with `onSelect`. Null for none.",
+          "name": "selectedId",
+          "required": false,
+          "source": "stackra",
+          "type": "string | null"
+        },
+        {
+          "description": "The map's accessible name, for example \"Today's job sites\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "label",
+          "description": "The title and spoken name of the list of pins beside the map, for example \"Sites\". Defaults to `label`.",
+          "name": "listLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The map's height in pixels. Defaults to 360.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

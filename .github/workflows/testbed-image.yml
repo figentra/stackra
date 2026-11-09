@@ -46,6 +46,8 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm
 
       # The job image with three browsers and the core store do not fit the runner's free disk otherwise.
@@ -72,8 +74,9 @@ jobs:
           if grep -n '@@' "$RUNNER_TEMP/validate.sh"; then echo "::error::an unfilled placeholder"; exit 1; fi
           bash "$RUNNER_TEMP/validate.sh"
 
-      # WarmStore and its offline check (03-agent.yml), from a shell with no environment: the build instance has no
-      # licence token, so a fetch that ran an install script would fail here as it did there.
+      # WarmStore, Clean and the offline check (03-agent.yml), from a shell with no environment: the build instance has
+      # no licence token, so a fetch that ran an install script would fail here as it did there, and Clean empties every
+      # home cache, so the offline check reads only the store and the metadata cache on /data.
       - name: Warm store with no environment
         working-directory: ${{ github.workspace }}
         run: |
@@ -82,7 +85,29 @@ jobs:
           cp pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs .npmrc "$warm/"
           tools="$(dirname "$(mise which pnpm)"):$(dirname "$(mise which node)"):/usr/bin:/bin"
           cd "$warm"
-          env -i PATH="$tools" HOME="$RUNNER_TEMP/home" pnpm fetch --ignore-scripts --store-dir "$RUNNER_TEMP/store"
-          rm -rf node_modules
-          env -i PATH="$tools" HOME="$RUNNER_TEMP/home" \
+          env -i PATH="$tools" HOME="$RUNNER_TEMP/home" PNPM_CONFIG_CACHE_DIR="$RUNNER_TEMP/cache" \
+            pnpm fetch --ignore-scripts --store-dir "$RUNNER_TEMP/store"
+          rm -rf node_modules "${RUNNER_TEMP:?}/home"
+          mkdir -p "$RUNNER_TEMP/home"
+          env -i PATH="$tools" HOME="$RUNNER_TEMP/home" PNPM_CONFIG_CACHE_DIR="$RUNNER_TEMP/cache" \
             pnpm fetch --offline --ignore-scripts --store-dir "$RUNNER_TEMP/store" >/dev/null
+
+      # A job's install as the box agent runs it: in the job image, with the warm store and the metadata cache beside
+      # it. Offline here, so a package the store lacks fails the check; scripts are skipped (no licence token). The
+      # read-only attempt only reports: it shows whether pnpm can serve an install from a read-only store mount.
+      - name: Job install from the warm store
+        working-directory: ${{ github.workspace }}
+        run: |
+          install() {
+            docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e CI=true -e PNPM_CONFIG_CACHE_DIR=/pnpm-cache \
+              -e PNPM_CONFIG_VERIFY_STORE_INTEGRITY=true \
+              -v "$PWD:/work" -v "$RUNNER_TEMP/store:/pnpm-store$1" -v "$RUNNER_TEMP/cache:/pnpm-cache" \
+              stackra-testbed-job:current sh -euc 'cd /work
+                # A writable shared store is safe only while pnpm checks every file against the lockfile hashes.
+                [ "$(pnpm config get verify-store-integrity)" = true ]
+                rm -rf node_modules && pnpm install --offline --frozen-lockfile --ignore-scripts \
+                  --store-dir /pnpm-store --package-import-method clone-or-copy'
+          }
+          if install :ro; then echo "::notice title=Store::a read-only store serves an install"
+          else echo "::notice title=Store::a read-only store cannot serve an install; jobs mount it writable"; fi
+          install ""

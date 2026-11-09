@@ -5,9 +5,11 @@
  * Boundary: data only. The routes follow the endpoint convention of the HTTP rule: the action `device.report` is
  *           `POST /devices/report`, the query `device_command.list` is `GET /device-commands` and the action
  *           `device_command.acknowledge` (input has `deviceCommandId`) is
- *           `PUT /device-commands/:deviceCommandId/acknowledge`; pairing is `POST /device-pairings` and
- *           `GET /device-pairings/:pairingId`. No route names a device: the hub reads it from the credential, except
- *           the pairing request, which carries the install id because the device has no credential yet.
+ *           `PUT /device-commands/:deviceCommandId/acknowledge`; pairing is `POST /device-pairings`,
+ *           `GET /device-pairings/:pairingId` (state only) and `POST /device-pairings/:pairingId/pickup` (the one-time
+ *           credential pickup). No route names a device: the hub reads it from the credential, except the pairing
+ *           calls, which carry the install id because the device has no credential yet. No route carries a secret: the
+ *           pairing secret travels in the body.
  * Runtime: isomorphic
  * Governing contract: ADR 0235 (decision 2); ADR 0217 as amended (endpoint convention); ADR 0294 (decision 21).
  */
@@ -26,8 +28,10 @@ export const DEVICE_HUB_PATHS = Object.freeze({
   /** `PUT`: ends one command; the id is URI-encoded. */
   acknowledge: (commandId: string): string =>
     `/device-commands/${encodeURIComponent(commandId)}/acknowledge`,
-  /** `POST`: opens a pairing for the calling install (`{ deviceId }`), answering its code. */
+  /** `POST`: opens a pairing for the calling install (`{ deviceId, secret }`), answering its code. */
   pairings: "/device-pairings",
-  /** `GET`: one pairing's state, with the token once paired; the id is URI-encoded. */
+  /** `GET`: one pairing's state, never a credential; the id is URI-encoded. */
   pairing: (pairingId: string): string => `/device-pairings/${encodeURIComponent(pairingId)}`,
+  /** `POST`: the one-time credential pickup of a paired pairing (`{ secret }`); the id is URI-encoded. */
+  pickup: (pairingId: string): string => `/device-pairings/${encodeURIComponent(pairingId)}/pickup`,
 });

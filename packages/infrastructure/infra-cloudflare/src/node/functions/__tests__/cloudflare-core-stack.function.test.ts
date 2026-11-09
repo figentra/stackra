@@ -206,7 +206,7 @@ describe("cloudflareCoreStack", () => {
     const foreign = parseCloudflareStack({
       edgeWorker: {
         script: "figentra-edge",
-        routes: { "acme.example": ["*/*"] },
+        routes: { "acme.example": ["*.acme.example/*"] },
         origins: { eu: { hostname: "api.acme.example", lock: "mtls" } },
         signingKeys: ["k1"],
       },

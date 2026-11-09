@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `GithubStack`, what `githubStack` gives the generated Pulumi program to export: the repository's full name
- *          and the CI secret names jobs read from Infisical.
+ *          and the CI secret names jobs decrypt from sops.
  * Boundary: type only. Names and ids, never a secret value.
  * Runtime: node
  * Governing contract: ADR 0171 (decision 3: the generated program), ADR 0173 (decision 6: names in git).
@@ -12,6 +12,6 @@ import type * as pulumi from "@pulumi/pulumi";
 export type GithubStack = {
   /** `<org>/<repo>`, once GitHub reports it. */
   readonly repository: pulumi.Output<string>;
-  /** The CI secret names the deploy jobs fetch from Infisical `/ci`; GitHub stores none of them. */
+  /** The CI secret names the deploy jobs decrypt from sops; GitHub stores none of them. */
   readonly ciSecrets: readonly string[];
 };

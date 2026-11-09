@@ -97,6 +97,11 @@ export type PackageManifest = {
   /** Compatible ranges a consumer provides. */
   readonly peerDependencies?: Readonly<Record<string, string>> | undefined;
 
+  /** Per peer, whether a consumer may leave it out. */
+  readonly peerDependenciesMeta?:
+    | Readonly<Record<string, { readonly optional?: boolean | undefined }>>
+    | undefined;
+
   /** Dependencies an install may skip. */
   readonly optionalDependencies?: Readonly<Record<string, string>> | undefined;
 };

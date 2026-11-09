@@ -5,8 +5,10 @@
  *          by `Database.withScope`, the ones row-level security reads).
  * Boundary: internal to `./node`; the Postgres driver runs it on the running context's entity manager and the flush
  *           writer on the entity manager whose transaction is committing, so the rows commit with the change or not at
- *           all. A write outside any scope stores no scope. Nothing but the JSON array is bound, so no value reaches the
- *           statement text.
+ *           all. A write outside any scope stores no scope. `tenant_id` is never named: its default takes the
+ *           transaction's `app.tenant_id`, so a row is the call's tenant's and never one from input; a write with no
+ *           tenant is a platform row, which no tenant's erasure can rewrite, so it must carry no personal data. Nothing
+ *           but the JSON array is bound, so no value reaches the statement text.
  * Runtime: node
  * Governing contract: ADR 0078 (decision 4); ADR 0160 (raw SQL is parameterised); ADR 0327 (decisions 3 and 9: the
  *                     scope settings).

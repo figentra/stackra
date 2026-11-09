@@ -4,7 +4,8 @@
  *          `io.inherit`, otherwise with its output piped into `io`. Every `node_modules/.bin` from the tool's directory
  *          up goes first on `PATH`, so the member's own pinned tools win.
  * Boundary: never uses a shell, so no argument is parsed as shell syntax; never reads or prints a secret. A tool that
- *           cannot start resolves 127 with the reason written to `io.err`.
+ *           cannot start resolves 127 with the reason written to `io.err`. One still running past `run.timeoutMs` gets
+ *           SIGTERM (SIGKILL 5 s later) and resolves 124, the `timeout` convention.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 5); POSIX exit status 127 for a command that cannot run.
  */
@@ -43,17 +44,30 @@ export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
     child.stdout?.setEncoding("utf8").on("data", io.out);
     child.stderr?.setEncoding("utf8").on("data", io.err);
     let settled = false;
+    let timedOut = false;
+    // A testbed probe that never answers (a box still booting keeps an SSH session open) must not stall its caller.
+    const deadline =
+      run.timeoutMs === undefined
+        ? undefined
+        : setTimeout(() => {
+            timedOut = true;
+            io.err(`stackra: ${run.command} gave no answer in ${run.timeoutMs} ms\n`);
+            child.kill("SIGTERM");
+            setTimeout(() => child.kill("SIGKILL"), 5000).unref();
+          }, run.timeoutMs);
     // A spawn failure (no such program) emits `error` and then `close`; the first settle wins.
     child.on("error", (error) => {
       if (settled) return;
       settled = true;
+      clearTimeout(deadline);
       io.err(`stackra: cannot start ${run.command}: ${error.message}\n`);
       resolve(127);
     });
     child.on("close", (code) => {
       if (settled) return;
       settled = true;
-      resolve(code ?? 1);
+      clearTimeout(deadline);
+      resolve(timedOut ? 124 : (code ?? 1));
     });
   });
 }

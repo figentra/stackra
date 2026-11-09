@@ -21,7 +21,7 @@
  * Runtime: node
  * Governing contract: ADR 0480; ADR 0257 (nobody reads a value).
  * Secrets: ASC_API_*, GOOGLE_PLAY_SERVICE_ACCOUNT_JSON and the secrets store.yaml names come from the environment
- *   (Infisical over OIDC in CI) and leave only inside a request. Output is step names, resource ids and counts.
+ *   (the secrets-decrypt action in CI) and leave only inside a request. Output is step names, resource ids and counts.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";

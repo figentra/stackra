@@ -1754,6 +1754,71 @@
         "description": "The members settings page: roles, removals, invitations.",
         "keywords": "members, team, invite, invitation, role, settings"
       },
+      "module_menu": {
+        "title": "Module menu",
+        "description": "Every module's declared navigation menu, as the sidebar on the web and a list in the app.",
+        "keywords": "menu, navigation, sidebar, modules, places, nav"
+      },
+      "resource_list_page": {
+        "title": "Resource list page",
+        "description": "Any resource's records as a searchable, sortable list with paging, row actions and pull to refresh.",
+        "keywords": "resource, list, table, records, crud, admin, panel"
+      },
+      "resource_view_page": {
+        "title": "Resource view page",
+        "description": "One record of any resource: its fields, its sections and its actions.",
+        "keywords": "resource, record, detail, view, crud, admin, panel"
+      },
+      "resource_form_page": {
+        "title": "Resource form page",
+        "description": "The Create and Edit form of any resource, drawn from its action's input.",
+        "keywords": "resource, form, create, edit, crud, admin, panel"
+      },
+      "action_input_modal": {
+        "title": "Action input modal",
+        "description": "The form an action opens when it needs more than the record it runs on.",
+        "keywords": "action, modal, dialog, input, confirm, panel"
+      },
+      "action_button": {
+        "title": "Action button",
+        "description": "A button that runs a server action, drawn from its spec.",
+        "keywords": "action, button, run, confirm, shortcut, server-driven"
+      },
+      "row_actions": {
+        "title": "Row actions",
+        "description": "A row's actions in one menu, grouped and with hover buttons.",
+        "keywords": "row, actions, menu, overflow, table, server-driven"
+      },
+      "bulk_actions": {
+        "title": "Bulk actions",
+        "description": "The bar of actions over a selection of records.",
+        "keywords": "bulk, selection, actions, toolbar, export, server-driven"
+      },
+      "autocomplete": {
+        "title": "Autocomplete",
+        "description": "A select whose list opens with a search box that narrows it.",
+        "keywords": "autocomplete, select, search, filter, picker"
+      },
+      "color_field": {
+        "title": "Colour field",
+        "description": "A field that takes a colour as a typed hex code, with a swatch of it.",
+        "keywords": "colour, color, hex, field, input"
+      },
+      "color_swatch": {
+        "title": "Colour swatch",
+        "description": "A small preview of one colour, named for screen readers.",
+        "keywords": "colour, color, swatch, preview, chip"
+      },
+      "flag": {
+        "title": "Flag",
+        "description": "A country's flag, from its ISO code.",
+        "keywords": "flag, country, region, locale, emoji"
+      },
+      "marker_map": {
+        "title": "Marker map",
+        "description": "Places pinned on a map, with their list beside it.",
+        "keywords": "map, marker, pin, location, places"
+      },
       "dither_art": {
         "title": "Dither art",
         "description": "A brand pattern drawn as steel dots on the ground, with a champagne core where the engine is.",
@@ -5517,6 +5582,71 @@
         }
       },
       "members_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "module_menu": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_list_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_view_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_form_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "action_input_modal": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "action_button": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "row_actions": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "bulk_actions": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "autocomplete": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "color_field": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "color_swatch": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "flag": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "marker_map": {
         "basics": {
           "title": "Basics"
         }
@@ -9335,6 +9465,110 @@
           "what": "The tenancy module's members settings page, over the TenantMembers client port.",
           "when": "Under the settings of an organisation's admin area, for whoever manages access.",
           "rtl": "The tables mirror in Arabic; names keep their own direction and email addresses stay left to right."
+        },
+        "module_menu": {
+          "headline": "Each module brings its own places.",
+          "intro": "Modules declare their navigation menus once; the module menu lists them all, in order, with the current place marked on the web and entries behind a switched-off flag left out.",
+          "tags": "Navigation kit · Declared menus · Sidebar",
+          "what": "The navigation module's menu of every installed module: the sidebar on the web, a list of places in the app.",
+          "when": "As the console's side navigation, or in the app's More screen or drawer; pass items for a menu of your own.",
+          "rtl": "The sidebar sits on the start edge and mirrors in Arabic; each place keeps its own text direction."
+        },
+        "resource_list_page": {
+          "headline": "Every resource gets its list.",
+          "intro": "Reads a resource's list query and draws its records with search, filters, sort, cursor paging, the views as tabs, row and bulk actions and pull to refresh; every button runs through the action runner.",
+          "tags": "Panel kit · Resources · Lists",
+          "what": "The panel's generic List page on mobile, with the same props as the web page.",
+          "when": "For a back-office screen that lists one resource's records on a phone.",
+          "rtl": "The page mirrors in Arabic; the columns, the menus and the paging follow the reading direction."
+        },
+        "resource_view_page": {
+          "headline": "One record, laid out.",
+          "intro": "Reads a record with its resource's get query and shows its entries and sections, money in its currency and codes by their labels, with the edit, delete and placed actions in the header.",
+          "tags": "Panel kit · Resources · Records",
+          "what": "The panel's generic View page on mobile, with the same props as the web page.",
+          "when": "When a person opens one record from a list on a phone.",
+          "rtl": "Labels and values swap sides in Arabic; numbers and codes keep their own direction."
+        },
+        "resource_form_page": {
+          "headline": "Forms from the action itself.",
+          "intro": "Builds the Create or Edit form from the action's input: each field drawn by its type, checked by the same schema the server uses, saved through the action runner, and the server's errors shown on their fields.",
+          "tags": "Panel kit · Resources · Forms",
+          "what": "The panel's generic Create and Edit page on mobile, with the same props as the web page.",
+          "when": "When a person adds or changes a record on a phone.",
+          "rtl": "Fields and their labels mirror in Arabic; typed values keep their own direction."
+        },
+        "action_input_modal": {
+          "headline": "Ask only what the action needs.",
+          "intro": "Opens a form with the action's own input fields, the record filled in, and runs it once per chosen record; a refused record stays in the form with its errors.",
+          "tags": "Panel kit · Actions · Dialogs",
+          "what": "The panel's action form on mobile: the dialog itself is the confirmation.",
+          "when": "For a row, bulk or header action whose input has fields besides the record id.",
+          "rtl": "The dialog mirrors in Arabic, its buttons in reading order."
+        },
+        "action_button": {
+          "headline": "One button for one action, as the server describes it.",
+          "intro": "Runs an action through the panel's action runner with its declared or its own confirmation, or follows a link; it hides without its permission and while its record predicate is false.",
+          "tags": "Panel kit · Actions · Server-driven",
+          "what": "The panel's action button: the icons, variant, size, shortcut, disabled reason and tone of an action spec on the design system's Button.",
+          "when": "In a page header, an empty state or a card, wherever one action of a resource is offered as a button.",
+          "rtl": "Icons sit on the inline start and end sides, so they swap in Arabic; the label keeps its own direction."
+        },
+        "row_actions": {
+          "headline": "Every action of a row, one press away.",
+          "intro": "Lists a record's actions in a menu, in the sections the spec names, and can show the actions that have an icon as buttons while the row is hovered or focused.",
+          "tags": "Panel kit · Actions · Tables",
+          "what": "The panel's row menu over a row's action specs, each with its icon, description, shortcut, tone and disabled reason.",
+          "when": "At the end of a table row, a list item or a card that offers several actions on one record.",
+          "rtl": "The menu opens from the inline end and the hover buttons sit before the trigger in reading order, so both mirror in Arabic."
+        },
+        "bulk_actions": {
+          "headline": "Act on many records at once.",
+          "intro": "Shows how many records are selected and the actions that apply to all of them, run once per record or once over the whole selection, with the export when asked for.",
+          "tags": "Panel kit · Actions · Selection",
+          "what": "The panel's bulk bar over a selection's action specs, on the design system's BulkActionBar.",
+          "when": "Above a table or a list whose rows can be selected, while at least one is selected.",
+          "rtl": "The count, the actions and the clear button follow the reading order, so they run right to left in Arabic."
+        },
+        "autocomplete": {
+          "headline": "A long list, found in a few letters.",
+          "intro": "The field stays a tidy select until it opens; then a search box narrows the choices as people type.",
+          "tags": "Search · Keyboard · Clear",
+          "what": "A single-choice select with a search box in its list.",
+          "when": "Use it when the list is long enough to search but the choice should still read as a select; for typing straight into the field, use the combo box.",
+          "rtl": "The label, the value and the clear button flow from the start; the search box follows the reading direction."
+        },
+        "color_field": {
+          "headline": "A colour, typed the way designers say it.",
+          "intro": "Type or paste a hex code; the swatch beside it shows what you will save, and the arrow keys nudge it.",
+          "tags": "Hex · Swatch · Form field",
+          "what": "A text field for one colour.",
+          "when": "Use it when people know the exact colour; when they need to look for one, use the colour picker.",
+          "rtl": "The hex code stays left to right; the swatch sits at the start of the field."
+        },
+        "color_swatch": {
+          "headline": "One colour, at a glance.",
+          "intro": "A round or square chip of a colour, on a checkered ground so transparency shows, with a name people can hear.",
+          "tags": "Sizes · Shapes · Accessible name",
+          "what": "A preview of one colour.",
+          "when": "Use it beside a colour value, in a legend or in a list of themes.",
+          "rtl": "A swatch has no direction; it sits where the layout puts it."
+        },
+        "flag": {
+          "headline": "Where in the world, in one glyph.",
+          "intro": "Give a country code or a language tag with a region, and the flag shows beside a name, a phone number or a price.",
+          "tags": "ISO 3166 · Sizes · Decorative or named",
+          "what": "A country's flag drawn as its emoji.",
+          "when": "Use it next to a country or a region's language; give it a label when it stands alone.",
+          "rtl": "A flag is never mirrored."
+        },
+        "marker_map": {
+          "headline": "Every place, on the map and in the list.",
+          "intro": "Pins sit where the places are and grow with their count; choosing one on the map or in the list selects it in both.",
+          "tags": "Pins · List · Keyboard",
+          "what": "A map of pins with a selectable list of them.",
+          "when": "Use it to show where things are, such as job sites, stores or visits, and to pick one.",
+          "rtl": "The map is never mirrored; the list panel moves to the left."
         },
         "dither_art": {
           "headline": "Quiet art that still moves.",

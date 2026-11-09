@@ -9,7 +9,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0098; the PUT-133 answer.
  */
 import { kindOf } from "@stackra/container";
-import { ActorKind, HttpMethod } from "@stackra/contracts";
+import { ActorKind } from "@stackra/contracts";
 import { fakeSettings } from "@stackra/settings/testing";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -26,13 +26,14 @@ import { EarnVisitOutput } from "#node/schemas/earn-visit-output.schema";
 import type { AccountService } from "#node/services/account.service";
 
 describe("EarnVisitAction", () => {
-  it("is the points.earn_visit action of staff and services", () => {
-    expect(kindOf(EarnVisitAction)?.options).toMatchObject({
+  it("is the points.earn_visit action of services only, with no endpoint (STA-340)", () => {
+    const options = kindOf(EarnVisitAction)?.options;
+    expect(options).toMatchObject({
       key: "points.earn_visit",
       permission: LoyaltyAccountPermissions.stamp,
-      actors: [ActorKind.User, ActorKind.Service],
-      endpoint: { method: HttpMethod.Post, path: "/loyalty/visits" },
+      actors: [ActorKind.Service],
     });
+    expect(options?.endpoint).toBeUndefined();
   });
 
   it("stamps with the setting and answers the card", async () => {

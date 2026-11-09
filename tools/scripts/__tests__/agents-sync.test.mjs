@@ -288,52 +288,46 @@ test("OpenCode gets no skills copy, and a leftover one is pruned", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Rules block (AGENTS.md)
+// Rules (validated; the AGENTS.md block is retired)
 // ---------------------------------------------------------------------------
 
 const RULE = (fm, body) =>
   `---\ntitle: ${fm.title}\ndescription: ${fm.title} rule\n${fm.extra ?? ""}---\n\n# ${fm.title}\n\n${body}\n`;
 
-test("rules reach OpenCode as a marked AGENTS.md block; hand-written text is kept", () => {
+test("a leftover rules block is removed from AGENTS.md; the text around it is kept", () => {
   withFixture({ "reviewer.md": READ_ONLY }, (root) => {
     mkdirSync(join(root, ".agents/rules"));
     writeFileSync(
       join(root, ".agents/rules/secrets.md"),
       RULE({ title: "Secrets", extra: "always: true\n" }, "## Never\n\nNo values."),
     );
+    const block =
+      "<!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->" +
+      "\n\n## Repository rules\n\nNo values.\n\n<!-- END generated from .agents/rules -->";
     writeFileSync(
-      join(root, ".agents/rules/versions.md"),
-      RULE({ title: "Versions", extra: 'applies_to: ["**/package.json"]\n' }, "Catalogs only."),
+      join(root, "AGENTS.md"),
+      `# AGENTS.md\n\nHand-written intro.\n\n${block}\n\nMore hand-written text.\n`,
     );
-    writeFileSync(join(root, "AGENTS.md"), "# AGENTS.md\n\nHand-written intro.\n");
+    assert.match(run(root, "--check").out, /AGENTS\.md: retired generated rules block present/);
     assert.equal(run(root).code, 0);
-    const text = read(root, "AGENTS.md");
-    assert.match(text, /^# AGENTS\.md\n\nHand-written intro\.\n/);
-    assert.match(text, /<!-- BEGIN generated from \.agents\/rules/);
-    assert.match(
-      text,
-      /### Secrets\n[\s\S]*#### Never\n\nNo values\./,
-      "always-on rule in full, headings demoted",
-    );
-    assert.match(
-      text,
-      /- \*\*Versions\*\* — `\*\*\/package\.json`: read `\.agents\/rules\/versions\.md`/,
-    );
-    assert.doesNotMatch(text, /Catalogs only\./, "file-scoped rule is indexed, not inlined");
-    assert.equal(run(root, "--check").code, 0, "idempotent");
-
-    writeFileSync(join(root, "AGENTS.md"), `${text}\nMore hand-written text.\n`);
-    assert.equal(run(root, "--check").code, 0, "text outside the markers is not drift");
-    writeFileSync(
-      join(root, ".agents/rules/secrets.md"),
-      RULE({ title: "Secrets", extra: "always: true\n" }, "Changed."),
-    );
-    assert.match(run(root, "--check").out, /AGENTS\.md: generated rules block stale/);
-    assert.equal(run(root).code, 0);
-    assert.match(
+    assert.equal(
       read(root, "AGENTS.md"),
-      /Changed\.[\s\S]*END generated[\s\S]*More hand-written text\./,
+      "# AGENTS.md\n\nHand-written intro.\n\nMore hand-written text.\n",
     );
+    assert.equal(run(root, "--check").code, 0, "idempotent: nothing is added back");
+  });
+});
+
+test("a rule with malformed frontmatter still fails the run", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    mkdirSync(join(root, ".agents/rules"));
+    writeFileSync(
+      join(root, ".agents/rules/broken.md"),
+      "---\ntitle: Broken\n---\n\nNo description.\n",
+    );
+    const r = run(root);
+    assert.equal(r.code, 2);
+    assert.match(r.out, /invalid neutral frontmatter in \.agents\/rules\/broken\.md/);
   });
 });
 
@@ -689,63 +683,6 @@ for (const [what, source, message] of INVALID) {
     });
   });
 }
-
-// ---------------------------------------------------------------------------
-// Constitution projection
-// ---------------------------------------------------------------------------
-
-test("the constitution is generated from the docs laws and drift is detected", () => {
-  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
-    mkdirSync(join(root, "apps/docs/src/docs/constitution"), { recursive: true });
-    writeFileSync(
-      join(root, "apps/docs/src/docs/constitution/secrets.mdx"),
-      '---\ntitle: "Secrets"\ndescription: "d"\n---\n\n<Note>\nNever print values.\n</Note>\n\n## Rule\n\nText.\n',
-    );
-    assert.equal(run(root).code, 0);
-    const out = read(root, ".flow/constitution.md");
-    assert.match(out, /^# Stackra Constitution/);
-    assert.match(out, /## Secrets\n\n<Note>|## Secrets\n\nNever print values\./);
-    assert.doesNotMatch(out, /<Note>/);
-    assert.match(out, /### Rule/);
-    assert.equal(run(root, "--check").code, 0);
-    writeFileSync(join(root, ".flow/constitution.md"), "hand edited\n");
-    const drift = run(root, "--check");
-    assert.equal(drift.code, 1);
-    assert.match(drift.out, /constitution\.md: stale/);
-  });
-});
-
-test("oxfmt-wrapped multi-line <Step> and <Note> blocks keep titles and render as prose, not code", () => {
-  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
-    mkdirSync(join(root, "apps/docs/src/docs/constitution"), { recursive: true });
-    writeFileSync(
-      join(root, "apps/docs/src/docs/constitution/index.mdx"),
-      [
-        '---\ntitle: "Constitution"\ndescription: "d"\n---\n',
-        "<Steps>",
-        '  <Step title="Laws">Short and normative.</Step>',
-        '  <Step title="ADRs">',
-        "    Record one decision each. Where an ADR and a law disagree, the law",
-        "    wins.",
-        "  </Step>",
-        "</Steps>\n",
-        "<Note>",
-        "  A wrapped note that must",
-        "  not become a code block.",
-        "</Note>\n",
-      ].join("\n"),
-    );
-    assert.equal(run(root).code, 0);
-    const out = read(root, ".flow/constitution.md");
-    assert.match(out, /^- \*\*Laws\*\*: Short and normative\.$/m);
-    assert.match(
-      out,
-      /^- \*\*ADRs\*\*: Record one decision each\. Where an ADR and a law disagree, the law wins\.$/m,
-    );
-    assert.match(out, /^A wrapped note that must\nnot become a code block\.$/m);
-    assert.doesNotMatch(out, /<\/?(Steps?|Note)\b|^ {4}/m);
-  });
-});
 
 // ---------------------------------------------------------------------------
 // MCP

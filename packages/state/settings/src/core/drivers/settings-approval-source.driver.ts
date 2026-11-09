@@ -48,7 +48,7 @@ export class SettingsApprovalSourceDriver extends Driver(ApprovalSettingsSource)
     for (const keys of SETTING_KEY_REGISTRY.values())
       for (const setting of keys)
         if (setting.path === key) {
-          if (setting.approval !== true)
+          if (setting.approval === undefined || setting.approval === false)
             throw new RangeError(
               `The setting ${key} is not marked approval, so an approval condition may not read it`,
             );

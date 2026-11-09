@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `fakeIntegrationApi`: a route answers with its path parameters and the request, a later route
- *          for the same call wins, an answer that throws rejects the call, and a call no route answers is refused by
- *          name.
+ * Purpose: unit tests of `fakeIntegrationApi`: a route answers with its path parameters and the request, a raw body
+ *          reaches the route as its text with its media type, a later route for the same call wins, an answer that
+ *          throws rejects the call, and a call no route answers is refused by name.
  * Boundary: test only; no request leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3).
  */
+import { HttpMethod } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import {
@@ -50,6 +51,18 @@ describe("fakeIntegrationApi", () => {
     });
   });
 
+  it("hands a raw body to the route as its text, with its media type", async () => {
+    const api = fakeIntegrationApi(ResendIntegration, (fake) =>
+      fake.post("/soap").returns((_params, request) => ({
+        body: request.body,
+        type: request.headers["content-type"],
+      })),
+    );
+    await expect(
+      api.post("/soap", undefined, { body: { content: "<a/>", contentType: "text/xml" } }),
+    ).resolves.toEqual({ body: "<a/>", type: "text/xml" });
+  });
+
   it("lets a later route win and an answer reject", async () => {
     const api = fakeIntegrationApi(ResendIntegration, (fake) =>
       fake
@@ -61,6 +74,29 @@ describe("fakeIntegrationApi", () => {
         }),
     );
     await expect(api.get("/domains")).rejects.toBeInstanceOf(ProviderUnavailableError);
+  });
+
+  it("answers send with a route's status, or a 200 of its answer as text", async () => {
+    const api = fakeIntegrationApi(ResendIntegration, (fake) =>
+      fake
+        .post("/invoices")
+        .returns((_, request) => ({ status: 409, body: String(request.body) }))
+        .get("/status")
+        .returns(() => ({ ok: true })),
+    );
+
+    await expect(
+      api.send({
+        method: HttpMethod.Post,
+        path: "/invoices",
+        body: { content: "<a/>", contentType: "text/xml" },
+      }),
+    ).resolves.toEqual({ status: 409, headers: {}, body: "<a/>" });
+    await expect(api.send({ method: HttpMethod.Get, path: "/status" })).resolves.toEqual({
+      status: 200,
+      headers: {},
+      body: '{"ok":true}',
+    });
   });
 
   it("refuses a call no route answers", async () => {

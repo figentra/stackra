@@ -4,7 +4,8 @@
  *          `.withExtensions([...])` to the builder, connects the extension slots to each compiled app (with that
  *          module's inline extensions only) and gives `run(...)` a pipeline over the app whose audit trail records each
  *          call's entry for `RunResult.audit` (forwarding to the app's own trail); it offers the "memory"
- *          `AccessControl` (`MemoryAccessControlDriver`) a test picks with `.useDrivers("memory")`.
+ *          `AccessControl` (`MemoryAccessControlDriver`) and "memory" `StepUpCheck` (`MemoryStepUpCheckDriver`, STA-340) a
+ *          test picks with `.useDrivers("memory")`.
  * Boundary: registers itself when this module loads; `./testing` is loaded only by vitest (gen's vitest config loads
  *           it for every member that depends on @stackra/actions). Imports `.`, `./contracts` and `@stackra/container/testing` only (ADR
  *           0269 decision 3).
@@ -14,11 +15,12 @@
 import { registerTestingPlugin } from "@stackra/container/testing";
 import type { TestingApp, TestingModuleBuilder, TestingPlugin } from "@stackra/container/testing";
 
-import { AccessControl, AuditTrail } from "#contracts/index";
+import { AccessControl, AuditTrail, StepUpCheck } from "#contracts/index";
 import { ActionPipeline, connectExtensions } from "#core/index";
 import type { InlineExtension, Resolver } from "#core/index";
 import { CURRENT_PIPELINE } from "#testing/constants/current-pipeline.constant";
 import { MemoryAccessControlDriver } from "#testing/drivers/memory-access-control.driver";
+import { MemoryStepUpCheckDriver } from "#testing/drivers/memory-step-up-check.driver";
 import { RecordingAuditTrailDriver } from "#testing/drivers/recording-audit-trail.driver";
 
 declare module "@stackra/container/testing" {
@@ -42,6 +44,11 @@ export const ACTIONS_TESTING_PLUGIN: TestingPlugin = {
       port: AccessControl,
       key: "actions.AccessControl",
       candidates: { memory: () => Promise.resolve(MemoryAccessControlDriver) },
+    },
+    {
+      port: StepUpCheck,
+      key: "actions.StepUpCheck",
+      candidates: { memory: () => Promise.resolve(MemoryStepUpCheckDriver) },
     },
   ],
   builder: {

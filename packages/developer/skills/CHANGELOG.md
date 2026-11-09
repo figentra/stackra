@@ -1,5 +1,193 @@
 # @stackra/skills
 
+## 0.29.0
+
+### Patch Changes
+
+- @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/contracts@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/contracts@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/contracts@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/contracts@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/contracts@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/contracts@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/contracts@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/contracts@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/contracts@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/contracts@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/contracts@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/contracts@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/contracts@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/contracts@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/contracts@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/contracts@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/contracts@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/contracts@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/contracts@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/contracts@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/contracts@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+
+## 0.9.0
+
+### Minor Changes
+
+- cbbe4e3: Add the `docs` registry kind (STA-1920, ADR 0514 decision 10). `StackraKind.Docs` is a product's content-only docs
+  package, `@figentra/<product>-docs`: MDX pages and their Fumadocs `meta.json` in `content/`, plus assets, with no code.
+  `STACKRA_MANIFEST_SCHEMA` accepts `{ "kind": "docs" }` with nothing more. `pnpm validate` places a docs package at the
+  repository's `docs/`, asks for no tier, turbo.jsonc or tsconfig, requires `content/`, and treats it as UNLICENSED like
+  an app. `stackra add` never installs one: the docs hub depends on it.
+
+### Patch Changes
+
+- Updated dependencies [2e43c48]
+  - @stackra/contracts@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

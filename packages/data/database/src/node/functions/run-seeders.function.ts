@@ -16,9 +16,9 @@ import { createHash } from "node:crypto";
 
 import type { Container } from "@stackra/container";
 
-import type { Seeder } from "#core/bases/seeder.base";
 import { Database } from "#core/ports/database.port";
 import type { SeedLedger } from "#node/types/seed-ledger.type";
+import { seederOf } from "#node/functions/seeder-of.function";
 import type { SeederEntry } from "#node/types/seeder-entry.type";
 
 /** Each profile and the folders it runs, first to last (ADR 0190). */
@@ -67,9 +67,7 @@ export async function runSeeders(options: {
       skipped.push(entry.key);
       continue;
     }
-    const seeder = options.container.has(entry.type)
-      ? options.container.get(entry.type)
-      : (Reflect.construct(entry.type, []) as Seeder);
+    const seeder = seederOf(options.container, entry.type, entry.deps);
     try {
       await Database.current().transaction(async () => {
         await seeder.run();

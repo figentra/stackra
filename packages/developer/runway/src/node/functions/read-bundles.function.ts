@@ -3,11 +3,13 @@
  * Purpose: `readBundles(repository, surfaces)`, the built extension bundle of each named surface in a product
  *          checkout: the one `<bundleDir>/<surface>/<version>/` folder and its parsed manifest, whose version must
  *          match the folder.
- * Boundary: reads files only. A surface with no bundle folder, more than one version folder, or a missing or invalid
- *           manifest is an issue; every issue is reported at once.
+ * Boundary: reads files only. A surface with no bundle folder, more than one version folder, a missing or invalid
+ *           manifest, or a file missing or changed since the build recorded its `integrity` is an issue; every issue is
+ *           reported at once.
  * Runtime: node
  * Governing contract: ADR 0436 (decision 4); app-shells 4.2.
  */
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -16,6 +18,10 @@ import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { BUNDLE_MANIFEST_SCHEMA } from "#node/constants/bundle-manifest-schema.constant";
 import { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
 import type { EdgeBundle } from "#node/types/edge-bundle.type";
+
+/** The SRI value of `bytes`, as the bundle build and the browser compute it. */
+const integrityOf = (bytes: Uint8Array): string =>
+  `sha384-${createHash("sha384").update(bytes).digest("base64")}`;
 
 /**
  * The bundles of `surfaces`, in the order given.
@@ -68,6 +74,17 @@ export function readBundles(repository: string, surfaces: readonly string[]): Ed
       });
       continue;
     }
+    // A file that no longer matches the integrity the build recorded is never published: the browser would refuse it.
+    const tampered = Object.entries(parsed.data.integrity ?? {}).filter(([file, expected]) => {
+      const path = join(folder, file);
+      return !existsSync(path) || integrityOf(readFileSync(path)) !== expected;
+    });
+    for (const [file] of tampered)
+      issues.push({
+        path: `${bundleDir}/${surface}/${versions[0] as string}/${file}`,
+        message: "Missing, or changed since the build recorded its integrity: rebuild the bundle",
+      });
+    if (tampered.length > 0) continue;
     bundles.push({ surface, folder, manifest: parsed.data });
   }
   if (issues.length > 0) throw new RunwayInvalidError("bundles", issues);

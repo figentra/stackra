@@ -1,11 +1,10 @@
 # Stackra file contract:
-# Purpose: deploy workers/static (the `stackra-static` Cloudflare Worker, static.stackra.figentra.com) through Runway's
-#          `cloudflare-workers` provider, runway-cloudflare-workers.yml (ADR 0284, ADR 0289 decision 1). Runs on main
-#          and on schema release tags only, never on a pull request; by hand (or `pnpm runway promote <sha>`) it
-#          redeploys a given commit of main, recording `message` with the deployment (the rollback record).
-# Secrets: CLOUDFLARE_API_TOKEN comes from Infisical /ci (env prod) through GitHub OIDC inside the provider. No
-#          repository secret holds it (ADR 0173, ADR 0019 D2). Without INFISICAL_CI_IDENTITY_ID the provider builds,
-#          tests, prints a notice and deploys nothing, so main stays green.
+# Purpose: deploy workers/static (the `stackra-static` Cloudflare Worker, static.stackra.figentra.com), the `static`
+#          member of runway.yaml, through Runway's `cloudflare-workers` provider (runway-cloudflare-workers.yml, ADR 0352
+#          decision 1, ADR 0284). Runs on main and on schema release tags only, never on a pull request; by hand (or
+#          `pnpm runway promote <sha>`) it redeploys a given commit of main. The deployment message is the commit.
+# Secrets: CLOUDFLARE_API_TOKEN comes from the sops scope ci/deploy, decrypted by the provider job as itself (ADR 0525).
+#          No repository secret holds it (ADR 0019 D2).
 # Owner: release-operations
 
 name: Deploy static
@@ -27,10 +26,6 @@ on:
         description: A commit of main to deploy (promote or roll back); empty deploys the branch head
         type: string
         default: ""
-      message:
-        description: The deployment message Cloudflare records (`pnpm runway promote` sends `rollback to <sha>`)
-        type: string
-        default: ""
 
 # One deploy at a time, in order: a newer run waits instead of cancelling one that is mid-upload.
 concurrency:
@@ -43,7 +38,7 @@ permissions: {}
 jobs:
   # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
   # main and schemas@* tags only) holds no secret and grants nothing; the deploy job keeps the `static` environment,
-  # whose name the Infisical identity trusts (STA-1968).
+  # whose name figentra/infra's secret callers grant (STA-1968, ADR 0525).
   approve:
     name: Owner approval (production)
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/schemas@')
@@ -66,16 +61,12 @@ jobs:
       id-token: write
     uses: ./.github/workflows/runway-cloudflare-workers.yml
     with:
-      member: workers/static
+      member: static
       package: "@figentra/worker-static"
       # The `static` environment (owner: restrict it to main and schemas@* tags, STA-605) puts its name into the OIDC
-      # subject, so the Infisical identity can trust this job and nothing else.
+      # subject, so figentra/infra can grant this job its scopes and nothing else.
       environment: static
       sha: ${{ inputs.sha }}
-      message: ${{ inputs.message }}
       # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the two members that pull them
       # in are not installed; neither is deployed here.
       install-args: --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
-      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-      infisical-project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
-      smoke-url: https://static.stackra.figentra.com/schemas/index.json

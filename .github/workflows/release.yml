@@ -22,8 +22,9 @@
 # Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
-#          decision A1), passed to the provider until the owner has stored them in Infisical `/ci/release`; then the
-#          `secrets:` block goes and the provider reads them over OIDC (STA-1747). Publishing uses GitHub OIDC exchanged at the registry; no token.
+#          decision A1), passed to the provider until the provider decrypts them from the sops scope
+#          ci/production/release (ADR 0525); then the `secrets:` block goes (STA-1747). Publishing uses GitHub OIDC
+#          exchanged at the registry; no token.
 name: Release
 
 on:
@@ -54,9 +55,15 @@ on:
         type: string
         default: 0.1.0
 
-# One release run per ref at a time: a second run starting before this one finishes
-# would version the same changesets twice.
-concurrency: release-${{ github.ref }}
+# One release run per ref and kind at a time: a second run starting before this one finishes
+# would version the same changesets twice. The version PR's squash merge publishes, and only its
+# own run can (the gate below), so it gets its own group: GitHub keeps one pending run per group,
+# and a later push to main cancelled a publish run that was pending in the shared group (0.27.0).
+# A publish run versions nothing, so it never races a `pr` run. workflow_dispatch has no
+# head_commit and stays in `pr`.
+concurrency:
+  group: "release-${{ github.ref }}-${{ startsWith(github.event.head_commit.message, 'chore(release): version packages') && 'publish' || 'pr' }}"
+  cancel-in-progress: false
 
 # ADR 0019 D2: nothing by default; the job grants what the provider's jobs ask for.
 permissions: {}
@@ -153,6 +160,8 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm
 
       # Inputs arrive through the environment and are checked before use (zizmor template-injection).
@@ -185,18 +194,13 @@ jobs:
         run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525). The cache only speeds the build,
+      # so a caller without the turbo grant builds with the local cache instead of failing the release.
+      - name: Turborepo remote cache (sops)
+        continue-on-error: true
+        uses: ./.github/actions/secrets-decrypt
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       - name: Build
         env:

@@ -1,0 +1,8 @@
+import { Seeder } from "@stackra/database";
+import { OrderFactory } from "#node/database/factories/order.factory";
+
+export class ShopDemoSeeder extends Seeder {
+  async run(): Promise<void> {
+    await OrderFactory.new().create();
+  }
+}

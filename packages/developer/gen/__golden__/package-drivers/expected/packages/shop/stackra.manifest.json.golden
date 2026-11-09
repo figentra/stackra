@@ -38,9 +38,11 @@
       "permission": "shop.order.cancel",
       "risk": "L2",
       "actors": ["user"],
+      "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/orders/:orderId/cancel",
+        "path": "/app/orders/:orderId/cancel",
         "derived": true
       },
       "tool": {
@@ -147,6 +149,18 @@
       "from": "@golden/shop"
     }
   ],
+  "env": [
+    {
+      "name": "STACKRA_SHOP_GATEWAY",
+      "kind": "config",
+      "type": "enum",
+      "values": ["manual", "stripe"],
+      "required": false,
+      "config": "shop",
+      "class": "ShopConfig",
+      "field": "gateway"
+    }
+  ],
   "services": [
     {
       "class": "ShopService",
@@ -170,6 +184,18 @@
             "from": "@golden/shop/contracts"
           },
           "named": "fallback"
+        }
+      ]
+    },
+    {
+      "class": "CancelOrderAction",
+      "from": "@golden/shop/node",
+      "deps": [
+        {
+          "class": {
+            "name": "ShopService",
+            "from": "@golden/shop"
+          }
         }
       ]
     }

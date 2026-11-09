@@ -3,7 +3,7 @@
  * Purpose: unit tests of `compareManifests`: additions pass; removals, a moved endpoint, a narrowed input (a newly
  *          required field, a removed enum code, a tighter bound, a dropped null), a widened output (a removed or
  *          newly optional field, a new enum code, a new null) and an event change dropped before its sunset are
- *          breaks.
+ *          breaks; an event version bump is no removal (STA-2057).
  * Boundary: test only; `today` is fixed.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 22); ADR 0158; ADR 0131.
@@ -142,5 +142,25 @@ describe("compareManifests", () => {
     const after = manifest(IN, OUT, { events: [{ ...event, changes: [] }] });
     expect(compareManifests(before, after, "2026-10-24")).toHaveLength(1);
     expect(compareManifests(before, after, "2027-02-01")).toEqual([]);
+  });
+
+  it("reads a version bump as no removal and still applies the change sunset", () => {
+    const event = { module: "orders", class: "OrderPaid", kind: "integration" };
+    const before = manifest(IN, OUT, {
+      events: [
+        { ...event, name: "orders.order.paid.v1", changes: [{ from: 1, sunset: "2027-01-01" }] },
+      ],
+    });
+    const bumped = manifest(IN, OUT, {
+      events: [
+        { ...event, name: "orders.order.paid.v2", changes: [{ from: 1, sunset: "2027-01-01" }] },
+      ],
+    });
+    const dropped = manifest(IN, OUT, { events: [{ ...event, name: "orders.order.paid.v2" }] });
+    expect(compareManifests(before, bumped, "2026-10-24")).toEqual([]);
+    expect(compareManifests(before, dropped, "2026-10-24")).toHaveLength(1);
+    expect(compareManifests(bumped, before, "2026-10-24")).toEqual([
+      { section: "events", identity: "orders.order.paid.v2", message: "removed" },
+    ]);
   });
 });

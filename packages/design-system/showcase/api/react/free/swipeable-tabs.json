@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "aa170d0bdffd16b7",
+    "hash": "da0781c4b1d5ce57",
     "propsFiles": ["ui/src/react/swipeable-tabs/swipeable-tabs.props.ts"]
   },
   "importLine": "import { SwipeableTabs } from \"@stackra/ui/react\";",
@@ -9,18 +9,18 @@
     {
       "events": [
         {
-          "description": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
-          "name": "onClose",
-          "required": false,
-          "source": "stackra",
-          "type": "(id: string) => void"
-        },
-        {
           "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
           "name": "onSelectionChange",
           "required": false,
           "source": "stackra",
           "type": "(keys: readonly string[]) => void"
+        },
+        {
+          "description": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
+          "name": "onClose",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
         }
       ],
       "name": "SwipeableTabs",
@@ -62,18 +62,18 @@
           "type": "boolean"
         },
         {
-          "description": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
-          "name": "overflow",
-          "required": false,
-          "source": "stackra",
-          "type": "\"menu\" | \"scroll\""
-        },
-        {
           "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
           "name": "loadingLabel",
           "required": false,
           "source": "stackra",
           "type": "string"
+        },
+        {
+          "description": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
+          "name": "overflow",
+          "required": false,
+          "source": "stackra",
+          "type": "\"menu\" | \"scroll\""
         },
         {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",

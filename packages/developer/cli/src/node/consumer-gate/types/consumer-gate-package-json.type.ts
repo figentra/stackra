@@ -8,6 +8,9 @@
 
 /** The fields read. */
 export type ConsumerGatePackageJson = {
+  /** The package name. */
   readonly name?: string;
+
+  /** The package scripts, by name. */
   readonly scripts?: Record<string, string>;
 };

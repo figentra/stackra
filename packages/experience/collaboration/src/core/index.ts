@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/collaboration (the configuration with its shipped schema, the
- *          entitlement this package contributes, `CollaborationSession` and `SnapshotService`) until `stackra gen`
+ *          entitlement this package contributes, `CollaborationSession` and `SnapshotService`, the realtime drivers and
+ *          the client `RoomTokens` driver) until `stackra gen`
  *          writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The ports and their types are the `./contracts` entry's; the
  *           memory drivers are the `./testing` entry's; the Yjs binding is the `./react` entry's (one symbol, one
@@ -13,6 +14,7 @@
 export { CollaborationConfig } from "#config/collaboration.config";
 export { LiveCollaborationEntitlement } from "#core/access/live-collaboration.entitlement";
 export { COLLABORATION_CONFIG_SCHEMA as CollaborationConfig$ } from "#core/constants/collaboration-config-schema.constant";
+export { ClientRoomTokensDriver } from "#core/drivers/client-room-tokens.driver";
 export { RealtimePresenceChannelDriver } from "#core/drivers/realtime-presence-channel.driver";
 export { CommentTombstonedError } from "#core/errors/comment-tombstoned.error";
 export { CommentVisibilityNotAllowedError } from "#core/errors/comment-visibility-not-allowed.error";

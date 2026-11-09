@@ -1,6 +1,6 @@
 {
   "name": "@stackra/app",
-  "version": "0.8.0",
+  "version": "0.29.0",
   "private": false,
   "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, desktop) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
   "keywords": [
@@ -136,11 +136,13 @@
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/clients": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
@@ -153,6 +155,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/iam": "workspace:*",
+    "@stackra/scope": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -192,9 +199,6 @@
       "optional": true
     },
     "react": {
-      "optional": true
-    },
-    "react-dom": {
       "optional": true
     },
     "react-native": {
