@@ -1,5 +1,15 @@
 # @stackra/tokens
 
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [b4b6422]
+  - @stackra/container@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+
 ## 0.28.0
 
 ### Patch Changes

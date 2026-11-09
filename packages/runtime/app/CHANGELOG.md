@@ -1,5 +1,26 @@
 # @stackra/app
 
+## 0.29.0
+
+### Minor Changes
+
+- 3361957: An action whose actors are exactly `[ActorKind.Anonymous]` may declare `credentials: "ignore"`, for a public page whose visitors may also be signed in elsewhere. The pipeline then runs a signed-in caller's call as a fresh anonymous actor and drops what the credential gave, and `serveGuardedCall` never verifies or holds that credential, so no user token is forwarded. Without the option such an action still refuses a signed-in caller. `Action({...})` throws, and gen refuses `credentials_ignore_not_anonymous`, when the actors are anything else. Limit: a host's optional `BearerTokenGuard` runs before the adapter, so it can still refuse an expired or invalid token on such an action; a host that serves these actions should let them pass that guard.
+
+### Patch Changes
+
+- Updated dependencies [b4b6422]
+- Updated dependencies [0e8f570]
+  - @stackra/container@0.29.0
+  - @stackra/clients@0.29.0
+  - @stackra/identity@0.29.0
+  - @stackra/navigation@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/i18n@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/csp@0.29.0
+  - @stackra/contracts@0.29.0
+
 ## 0.28.0
 
 ### Patch Changes

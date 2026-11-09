@@ -1,5 +1,32 @@
 # @stackra/integrations
 
+## 0.29.0
+
+### Minor Changes
+
+- 4cc17e5: `IntegrationCategory.Tax` (`tax`): the marketplace shelf for tax authorities, e-invoicing clearance and reporting
+  networks and tax engines, so Invoicing & Tax finds a fiscal unit's Connection with `connectionsOf` (ADR 0447 as
+  amended, STA-2607).
+- 1b88340: `webhooks.eventId` can name several parts, `{ parts: [{ path }, { header }] }`, joined with `:` into one inbox id, for a provider whose events carry no unique id of their own (an order id plus its state plus the delivery timestamp). The receiver refuses an event whose named part is missing with `WebhookEventIdMissingError` instead of keying it by an empty id, which would have deduplicated every such event as one; this applies to the single `{ path }` form too.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [0e8f570]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/clients@0.29.0
+  - @stackra/money@0.29.0
+  - @stackra/data-transfer@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/market-packs@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
 ## 0.28.0
 
 ### Patch Changes
