@@ -7,7 +7,7 @@ recorded in `.flow/lock.json`: never edit them in place; override in `.flow/over
 
 | Family                 | Skills                                                                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Monorepo and release   | `pnpm`, `turborepo`, `changesets`, `vitest`, `tdd`, `test-infra`                                                                        |
+| Monorepo and release   | `pnpm`, `turborepo`, `vitest`, `tdd`, `test-infra`                                                                          |
 | Web UI                 | `heroui-react`, `frontend-design`, `accessibility`, `playwright-best-practices`                                             |
 | Mobile                 | `heroui-native`, `react-native-best-practices`, `expo-*` (animation, data-fetching, design-system, dev-client, upgrade), `eas-*` (app-stores, update, workflows) |
 | Services and vendors   | `resend` (behind the mail driver), `stripe-best-practices` (billing work only)                                              |
