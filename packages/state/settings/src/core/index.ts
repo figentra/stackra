@@ -32,6 +32,7 @@ export { SettingApproverRoleError } from "#core/errors/setting-approver-role.err
 export { SettingBelowFloorError } from "#core/errors/setting-below-floor.error";
 export { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
 export { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
+export { SettingScopeRefusedError } from "#core/errors/setting-scope-refused.error";
 export { SettingValueInvalidError } from "#core/errors/setting-value-invalid.error";
 export { SettingsLockedError } from "#core/errors/settings-locked.error";
 export { diffSettingsPacks } from "#core/functions/diff-settings-packs.function";

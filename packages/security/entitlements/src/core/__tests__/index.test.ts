@@ -46,6 +46,7 @@ describe("@stackra/entitlements", () => {
       "SeatLimitReachedError",
       "SeatMeterService",
       "SecondApproverRequiredError",
+      "ServicePlanSnapshotsDriver",
       "bundleEditionCatalogue",
       "entitlementKey",
       "isEntitled",

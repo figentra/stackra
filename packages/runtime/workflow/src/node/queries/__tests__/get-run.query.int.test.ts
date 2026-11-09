@@ -4,8 +4,10 @@
  *          starter in A and by a service in A, and is `run_not_found` for tenant B (its people and its services) and for
  *          another person in A, with the run's scope read back from the journal's own columns.
  * Boundary: int tier; the Postgres journal over every workflow migration, the native engine with memory locks and a
- *           fixed clock. The runs table holds no tenant policy (its rows are read across scopes by the worker), so the
- *           query's scope check is the isolation this test proves.
+ *           fixed clock, as the container's superuser, which row security never restricts: the query's own scope and
+ *           starter check is what this test proves. The runs table's tenant policy (migration 0012) hides another
+ *           tenant's run as well, with the same `run_not_found`, proven as a NOBYPASSRLS role by
+ *           `journal-isolation.int.test.ts`.
  * Runtime: node
  * Governing contract: ADR 0101; ADR 0102 (decision 1); ADR 0208; STA-2613.
  */
@@ -38,6 +40,7 @@ import { AddServiceAckKeptMigration } from "#node/database/migrations/0008-add-s
 import { RenameChecklistProgressMigration } from "#node/database/migrations/0009-rename-checklist-progress.migration";
 import { AddWorkflowTenancyMigration } from "#node/database/migrations/0010-add-workflow-tenancy.migration";
 import { ContractWorkflowTenancyMigration } from "#node/database/migrations/0011-contract-workflow-tenancy.migration";
+import { ContractJournalTenancyMigration } from "#node/database/migrations/0012-contract-journal-tenancy.migration";
 import { PostgresWorkflowJournalDriver } from "#node/drivers/postgres-workflow-journal.driver";
 import { GetRunQuery } from "#node/queries/get-run.query";
 
@@ -55,6 +58,7 @@ const postgres = usePostgres({
     RenameChecklistProgressMigration,
     AddWorkflowTenancyMigration,
     ContractWorkflowTenancyMigration,
+    ContractJournalTenancyMigration,
   ].map((migration, index) =>
     compileMigration(migration, {
       schema: "workflow",

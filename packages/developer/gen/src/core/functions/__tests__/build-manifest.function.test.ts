@@ -26,6 +26,7 @@ import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { buildManifest } from "#core/functions/build-manifest.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+import type { TypeDesc } from "#core/types/type-desc.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
@@ -1360,6 +1361,49 @@ describe("buildManifest's entitlement gates (STA-2059)", () => {
     expect(built.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
       "entitlement_unknown @acme/kit",
     ]);
+  });
+});
+
+/** The commerce member plus one settings class whose `mode` field is of `type`. */
+const withMode = (type: TypeDesc): MemberIR => ({
+  ...COMMERCE_IR,
+  shapes: [
+    ...COMMERCE_IR.shapes,
+    {
+      name: "OrdersSettings",
+      kind: "settings",
+      module: "orders",
+      file: "src/modules/orders/orders.settings.ts",
+      importPath: "#modules/orders/orders.settings",
+      fields: [{ name: "mode", optional: false, nullable: false, type, rules: [] }],
+      relations: [],
+    },
+  ],
+});
+
+describe("buildManifest's settings section (STA-2056)", () => {
+  it("writes one entry per own settings class", () => {
+    const { manifest, errors } = buildManifest(withMode({ kind: "boolean" }));
+    expect(errors).toEqual([]);
+    expect(manifest["settings"]).toEqual([
+      {
+        key: "orders",
+        class: "OrdersSettings",
+        module: "orders",
+        file: "src/modules/orders/orders.settings.ts",
+        keys: [{ path: "mode", type: "boolean" }],
+      },
+    ]);
+  });
+
+  it("joins the settings refusals", () => {
+    expect(buildManifest(withMode({ kind: "json" })).errors.map((error) => error.code)).toEqual([
+      "settings_unsupported_type",
+    ]);
+  });
+
+  it("writes no section for a member with no settings class", () => {
+    expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("settings");
   });
 });
 

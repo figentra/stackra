@@ -58,6 +58,13 @@
       "class": "SettingRevisionClosedError"
     },
     {
+      "code": "setting_scope_refused",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "settings",
+      "class": "SettingScopeRefusedError"
+    },
+    {
       "code": "setting_value_invalid",
       "kind": "validation",
       "category": "validation",

@@ -47,6 +47,7 @@ describe("@stackra/settings", () => {
       "SettingFourEyesError",
       "SettingRevisionClosedError",
       "SettingScope",
+      "SettingScopeRefusedError",
       "SettingType",
       "SettingValueInvalidError",
       "Settings",

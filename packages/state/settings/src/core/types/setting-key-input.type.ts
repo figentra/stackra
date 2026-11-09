@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `SettingKeyInput`, the metadata gen writes for one setting key in a member's `#stackra/settings`: its type,
- *          default, levels, label and help keys, bounds, nullability, lock, approval, client, live and essential flags,
+ *          default, levels, label and help keys, bounds, options, nullability, lock, approval, client, live and essential flags,
  *          the market-pack key that floors it, the entitlements that unlock it or its values, its section and its
  *          earlier names.
  * Boundary: a type only, extending `SettingOptions` (lock, approval, client, live, essential, floor, entitlements);
@@ -40,6 +40,9 @@ export interface SettingKeyInput extends Omit<SettingOptions, "scopes"> {
 
   /** The largest number allowed. */
   readonly max?: number;
+
+  /** The texts a `choice` takes, or each item of a `list` takes; a list without options takes any text. */
+  readonly options?: readonly string[];
 
   /** Whether `null` is a value. */
   readonly nullable?: boolean;

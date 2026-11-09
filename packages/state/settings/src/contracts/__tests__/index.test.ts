@@ -35,7 +35,9 @@ describe("@stackra/settings/contracts", () => {
   });
 
   it("resolves its public types", () => {
-    expectTypeOf<SettingValue>().toEqualTypeOf<boolean | number | string | null>();
+    expectTypeOf<SettingValue>().toEqualTypeOf<
+      boolean | number | string | readonly string[] | null
+    >();
     expectTypeOf<SettingLayer["locked"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<SettingLayer["holder"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<SettingTarget["scope"]>().toEqualTypeOf<ScopeRef | undefined>();
