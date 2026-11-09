@@ -1,0 +1,21 @@
+{
+  "slug": "brand-logo",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react", "native"],
+  "packageName": "@stackra/theming",
+  "exportName": "BrandLogo",
+  "parts": ["BrandLogo"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 160
+    }
+  ],
+  "related": ["free/thumbnail", "free/image"],
+  "tokens": ["color.surface"],
+  "keywords": ["logo", "brand", "wordmark", "dark mode", "theme", "kit"],
+  "status": "new"
+}

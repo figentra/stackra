@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `readMigrationTables`, every `schema.create`/`schema.table` block of a member's own migrations, with its
- *          table, its module, its file and whether it calls `t.belongsToTenant(...)` (either form: the bare call or
- *          `{ nullable: true }`, BelongsToTenantOrPlatform's), so `checkModelScope` can refuse an owned model whose
+ *          table, its module, its file and whether it gives the table its owner policy: `t.belongsToTenant(...)` (either
+ *          form: the bare call or `{ nullable: true }`, BelongsToTenantOrPlatform's), or `t.rowLevelSecurity("tenant_id",
+ *          …)`, which the macro compiles to and a package that cannot depend on @stackra/tenancy writes itself (outbox,
+ *          queue, scheduler, settings at their contract step). So `checkModelScope` can refuse an owned model whose
  *          table never gets the owner column and policy.
  * Boundary: a text scan over `migrationFilesOf`, in apply order. A block runs from its `schema.create`/`schema.table`
  *           to the next one in its file; migrations are frozen literals (ADR 0159), so the call is read as written. A
@@ -19,6 +21,9 @@ import type { MemberIR } from "#core/types/member-ir.type";
 import { migrationFilesOf } from "#node/functions/migration-files-of.function";
 
 /** A table a migration creates or alters: `schema.create("products"`, `schema.table('products'`. */
+/** A block's owner policy: the tenancy macro, or the `tenant_id` policy it compiles to, written directly. */
+const OWNER_POLICY = /\.belongsToTenant\(|\.rowLevelSecurity\(\s*["']tenant_id["']/;
+
 const TABLE = /\bschema\.(?:create|table)\(\s*["'`]([A-Za-z_][\w]*)["'`]/g;
 
 /** A raw table rename as a `schema.sql` statement: `schema.sql('alter table "ai"."steps" rename to "run_steps"'`. */
@@ -50,9 +55,7 @@ export function readMigrationTables(
         at: match.index ?? 0,
         table: match[1] ?? "",
         ownerColumn: (): boolean =>
-          text
-            .slice(match.index ?? 0, tables[index + 1]?.index ?? text.length)
-            .includes(".belongsToTenant("),
+          OWNER_POLICY.test(text.slice(match.index ?? 0, tables[index + 1]?.index ?? text.length)),
       })),
       ...[...text.matchAll(RENAME)].map((match) => ({
         at: match.index ?? 0,

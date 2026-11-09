@@ -40,8 +40,6 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
   if (!declares("@stackra/app")) return undefined;
   // The 429 answer imports @stackra/errors, so it is written only for a service that declares it.
   const errors = declares("@stackra/errors");
-  // A member on @stackra/versioning also hands the verified key's credential to the call (its version pin, STA-2532).
-  const versioned = declares("@stackra/versioning");
   const header = generatedHeader({
     from: "the service layout and its @stackra/app dependency",
     purpose:
@@ -66,13 +64,13 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  CorsConfig,",
       "  corsHeaders,",
       "  HttpConfig,",
+      "  type KeyCallOptions,",
       "  serveGuardedCall,",
       "  VisitorConfig,",
       "  VisitorIdentityService,",
       '} from "@stackra/app/server";',
       'import type { AnyClass, Container } from "@stackra/container";',
       'import type { Actor } from "@stackra/contracts";',
-      ...(versioned ? ['import type { CallAuthCredential } from "@stackra/app/server";'] : []),
       ...(errors
         ? ['import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";']
         : []),
@@ -120,9 +118,13 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  action?: AnyClass;",
       "  input?: AnyClass;",
       "  raw?: boolean;",
-      versioned
-        ? "  execute: (container: Container, input: unknown, actor: Actor, request: Request, credential?: CallAuthCredential) => Promise<unknown>;"
-        : "  execute: (container: Container, input: unknown, actor: Actor, request: Request) => Promise<unknown>;",
+      "  execute: (",
+      "    container: Container,",
+      "    input: unknown,",
+      "    actor: Actor,",
+      "    request: Request,",
+      "    call: KeyCallOptions | undefined,",
+      "  ) => Promise<unknown>;",
       "}",
       "",
       "/**",
@@ -151,9 +153,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
       "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",
-      versioned
-        ? "      execute: (input, actor, guarded, credential) => call.execute(container, input, actor, guarded, credential),"
-        : "      execute: (input, actor, guarded) => call.execute(container, input, actor, guarded),",
+      "      execute: (input, actor, guarded, options) => call.execute(container, input, actor, guarded, options),",
       "    }),",
       "  );",
       "  for (const [name, value] of response.headers)",

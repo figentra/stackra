@@ -12,9 +12,9 @@
 import type { AnyClass } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
 
-import type { CallAuthCredential } from "#server/types/call-auth-credential.type";
 import type { CallAuthData } from "#server/types/call-auth-data.type";
 import type { CallCredentials } from "#server/types/call-credentials.type";
+import type { KeyCallOptions } from "#server/types/key-call-options.type";
 import type { VisitorIdentity } from "#server/types/visitor-identity.type";
 
 /** The inputs of one guarded call. */
@@ -49,7 +49,7 @@ export interface GuardedCallOptions {
   /** Verifies the credential headers (`CallAuthenticator#authenticate`); throws a refusal when they are bad. */
   readonly authenticate: (
     credentials: CallCredentials,
-  ) => Promise<Pick<CallAuthData, "actor" | "credential">>;
+  ) => Promise<Pick<CallAuthData, "actor" | "call">>;
   /**
    * Who an anonymous call's visitor is (`VisitorIdentityService#resolve`): the id its signed token names, or a new
    * visitor. Absent, every anonymous call is a new visitor.
@@ -57,13 +57,13 @@ export interface GuardedCallOptions {
   readonly visitor?: (request: Request) => Promise<VisitorIdentity>;
 
   /**
-   * Runs the call with its parsed input (`{}` when raw), the verified actor and, for an API-key call, the verified
-   * key's credential; a raw call gets the guarded request.
+   * Runs the call with its parsed input (`{}` when raw), the verified actor and, for an API key, its call options; a
+   * raw call gets the guarded request.
    */
   readonly execute: (
     input: unknown,
     actor: Actor,
     request: Request,
-    credential?: CallAuthCredential,
+    call: KeyCallOptions | undefined,
   ) => Promise<unknown>;
 }

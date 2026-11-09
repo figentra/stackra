@@ -5,7 +5,8 @@
  *          controller (any method, its `path`, a trailing `/*` as Encore's `/*rest`), each `expose: true` and
  *          `auth: false` to Encore, each calling `answerCall` of `./http`. That helper reads the body once under the
  *          cap, runs the request guards over its exact bytes, authenticates, then runs the call as `new
- *          ActionPipeline(container).execute(<class>, input, { actor, ...requestCallOptions(request) })` (an action or query) or `container.get(<class>)
+ *          ActionPipeline(container).execute(<class>, input, { actor, ...requestCallOptions(request), ...call })` (an
+ *          action or query; `call` is an API key's credential, origin and sandbox) or `container.get(<class>)
  *          .handle(request)` (a controller). The endpoint is named by the camel-cased key and its version (`shop.order
  *          .cancel@1` is `shopOrderCancelV1`), a controller by its class name. A hosted package's actions, queries and
  *          controllers get the same adapters, imported from the entry its manifest's `services` names, when the host
@@ -58,16 +59,17 @@ const RESERVED = [
 
 /**
  * The `execute` of a versioned endpoint: the pipeline run inside `serveVersioned`, which picks the version, shapes the
- * output through `subject` and names the version in the answer. The verified key's credential reaches the pipeline too.
+ * output through `subject` and names the version in the answer. The key's pin is read from `call?.credential`, the
+ * `KeyCallOptions` the guarded call passes; the pipeline gets the same `call` as in an unversioned adapter.
  */
 function versionedExecute(type: string, subject: string | undefined): string[] {
   return [
-    "      execute: (container, input, actor, request, credential) =>",
-    `        serveVersioned(request, { container, actor, credential${subject === undefined ? "" : `, subject: ${subject}`} }, () =>`,
+    "      execute: (container, input, actor, request, call) =>",
+    `        serveVersioned(request, { container, actor, credential: call?.credential${subject === undefined ? "" : `, subject: ${subject}`} }, () =>`,
     `          new ActionPipeline(container).execute(${type}, input as never, {`,
     "            actor,",
-    "            ...(credential === undefined ? {} : { credential }),",
     "            ...requestCallOptions(request),",
+    "            ...call,",
     "          }),",
     "        ),",
   ];
@@ -168,8 +170,8 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       ...(versioned
         ? versionedExecute(type, subject)
         : [
-            "      execute: (container, input, actor, request) =>",
-            `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request) }),`,
+            "      execute: (container, input, actor, request, call) =>",
+            `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request), ...call }),`,
           ]),
       "    }),",
       ");",

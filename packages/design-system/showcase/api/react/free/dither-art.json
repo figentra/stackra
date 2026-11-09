@@ -1,0 +1,107 @@
+{
+  "generatedFrom": {
+    "hash": "6a3a09ed7673e6ae",
+    "propsFiles": ["ui/src/react/dither-art/dither-art.props.ts"]
+  },
+  "importLine": "import { DitherArt } from \"@stackra/ui/react\";",
+  "key": "free/dither-art",
+  "parts": [
+    {
+      "name": "DitherArt",
+      "props": [
+        {
+          "default": "strata",
+          "description": "The brand pattern. Defaults to `strata`, the primary.",
+          "name": "pattern",
+          "required": false,
+          "source": "stackra",
+          "type": "\"core\" | \"grid\" | \"strata\" | \"lanes\" | \"waves\" | \"field\""
+        },
+        {
+          "default": "accent",
+          "description": "The steel dots' colour, a theme token name read as `--color-<name>`. Defaults to `accent`.",
+          "name": "front",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "background",
+          "description": "The ground's colour, a theme token name. Defaults to `background`.",
+          "name": "back",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "core",
+          "description": "The engine glow's colour (the champagne core), a theme token name. Defaults to `core`.",
+          "name": "core",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "One dither cell in CSS pixels: 2 to 8 for `dots`, 2 to 24 for `glyphs`. Defaults to 4.",
+          "name": "pixelSize",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "dots",
+          "description": "How a lit cell is drawn: `dots`, a square of its colour, or `glyphs`, a code character in the mono font at the cell\nsize. Defaults to `dots`.",
+          "name": "mode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"dots\" | \"glyphs\""
+        },
+        {
+          "default": "{}[]()<>/=+*#;",
+          "description": "The characters `glyphs` draws from. Defaults to `{}[]()<>/=+*#;`.",
+          "name": "glyphs",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Where the core glow (the sun) sits, as fractions of the art's width from the inline start and of its height, so in\nright-to-left it follows the mirrored layout. Defaults to the pattern's own.",
+          "name": "sun",
+          "required": false,
+          "source": "stackra",
+          "type": "DitherSun"
+        },
+        {
+          "description": "How fast the art drifts on real time; 0 is still. Defaults to 1, and is 0 whenever motion is reduced.",
+          "name": "speed",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The kit's poster image for this pattern, one for both schemes or one per scheme (`{ light, dark }`; dark first):\nwhat the edge render, a page without script and print show,\nunder the canvas until it draws.",
+          "name": "poster",
+          "required": true,
+          "source": "stackra",
+          "type": "string | { readonly light: string; readonly dark: string; }"
+        },
+        {
+          "default": "none",
+          "description": "A fade over the art: `radial` toward the edges, `bottom` or `top` toward that side. Defaults to `none`.",
+          "name": "mask",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"none\" | \"radial\""
+        },
+        {
+          "description": "Styles the wrapper; give it a size, since the art fills it.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

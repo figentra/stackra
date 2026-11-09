@@ -30,7 +30,7 @@
  *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
  *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
- *           `model_tenancy_missing`, stackra-258; a package's warns until 0.20) or a site-cached query that reads its caller
+ *           `model_tenancy_missing`, stackra-258, packages too) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path

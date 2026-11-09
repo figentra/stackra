@@ -3,7 +3,8 @@
  * Purpose: unit and type tests of `parseRunway` against the canonical runway v3 schemas: the template's root, app and
  *          service runway shapes pass, typed per kind, with nothing added; a member runway refuses the root keys
  *          (`member`, `deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`) at the top and in an
- *          environment; a dedicated resource needs a non-empty reason; the engines are ADR 0296's four; a grouped
+ *          environment; a dedicated resource needs a non-empty reason; the engines are ADR 0296's four; a database
+ *          extension is one ADR 0160 approves; a grouped
  *          topology needs groups and lists a member once; the root's environments, `secrets` and `destinations` are
  *          closed, as are the known targets, the edge, release, observability and GitHub blocks (STA-1975, STA-1976),
  *          while the other provider blocks, other targets and the member size blocks stay open; the config layer selects
@@ -14,7 +15,8 @@
  * Boundary: test only; the fixtures mirror the template's `runway.yaml` files, trimmed.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0296 (decisions 1, 2
- *                     and 5, its 2026-10-24 note, and enforcement); ADR 0227; ADR 0294 (decision 4, store drivers).
+ *                     and 5, its 2026-10-24 note, and enforcement); ADR 0227; ADR 0294 (decision 4, store drivers);
+ *                     ADR 0160 (decision 2 and its notes).
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -164,6 +166,14 @@ function parseVars(vars: Record<string, unknown>): unknown {
   return parseRunway("app", { version: 3, environments: { dev: { vars } } });
 }
 
+/** Parses a service runway whose dev database names `extensions`. */
+function withExtensions(extensions: string[]) {
+  return parseRunway("service", {
+    version: 3,
+    environments: { dev: { database: { extensions } } },
+  });
+}
+
 describe("parseRunway", () => {
   it("parses the template's service runway, typed ServiceRunway", () => {
     const commerce = parseRunway("service", COMMERCE, "services/commerce/runway.yaml");
@@ -293,7 +303,7 @@ describe("parseRunway", () => {
     ).toEqual(["targets.mintlify.adminKey"]);
   });
 
-  it("closes the edge, release, observability and GitHub blocks, refusing a misspelt key", () => {
+  it("closes the edge, release, observability and GitHub blocks (repository metadata included), refusing a misspelt key", () => {
     const sections = {
       edge: {
         proxy: "all",
@@ -318,6 +328,9 @@ describe("parseRunway", () => {
         github: {
           org: "acme",
           repo: "platform",
+          description: "Acme Platform: the services every Acme product runs on.",
+          topics: ["acme", "typescript"],
+          homepage: "https://docs.acme.example",
           environments: { production: { reviewers: ["acme/owners"] } },
         },
       },
@@ -336,6 +349,23 @@ describe("parseRunway", () => {
         }),
       ).sort(),
     ).toEqual(["edge.tls", "observability", "providers.github", "release.gate"]);
+  });
+
+  it("refuses an upper-case or repeated GitHub topic, more than 20 topics, and a relative homepage", () => {
+    for (const metadata of [
+      { topics: ["TypeScript"] },
+      { topics: ["acme", "acme"] },
+      { topics: Array.from({ length: 21 }, (_, i) => `t${i}`) },
+      { homepage: "docs.acme.example" },
+    ])
+      expect(
+        issuePaths(() =>
+          parseRunway("root", {
+            ...ROOT,
+            providers: { github: { org: "acme", repo: "platform", ...metadata } },
+          }),
+        ).some((path) => path.startsWith("providers.github")),
+      ).toBe(true);
   });
 
   it("refuses root keys in a member runway", () => {
@@ -394,6 +424,19 @@ describe("parseRunway", () => {
         environments: {},
       }),
     ).toThrow(/ADR 0296 allows: postgres, valkey, s3, sns-sqs/);
+  });
+
+  it("allows the approved database extensions and refuses another, naming them", () => {
+    expect(
+      withExtensions(["btree_gist", "pg_stat_statements", "postgis"]).environments.dev?.database
+        ?.extensions,
+    ).toEqual(["btree_gist", "pg_stat_statements", "postgis"]);
+    expect(issuePaths(() => withExtensions(["ltree", "pg_cron"]))).toEqual([
+      "environments.dev.database.extensions.1",
+    ]);
+    expect(() => withExtensions(["timescaledb"])).toThrow(
+      /approved extension \(ADR 0160\): vector, pg_trgm, ltree, citext, pgcrypto, postgis, pg_stat_statements, btree_gist/,
+    );
   });
 
   it("needs groups in a grouped topology and lists a member once", () => {

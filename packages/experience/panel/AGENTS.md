@@ -44,7 +44,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
   `@stackra/navigation/react`); panel depends on navigation, never the reverse. `./react` re-exports `useBreadcrumbs`
   only because the template imports it from here.
 - The records, the widget and resource registries, `PANEL_KEYS`, `widgetsFor`, `widgetInput`, `widgetTitle`, `toneOf`,
-  `changeOf`, `valueAt`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey`,
+  `changeOf`, `pointChangeOf`, `valueAt`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey`,
   `actionFormKeys`, `fieldsForInput`, `enumLabelKeys`, `listCellCurrency`, `actionLabelKey`, `minorUnitScale` and `inputKind` are internal: `react` and `native` import them by path, and no barrel exports them.
 - `pageContextOf(listState, record, selection)` is the panel's AI page context (ADR 0490 decision 5): pure, structural
   (`PanelPageContext`), ids and filter keys only. Panel imports no `@stackra/ai`; the SDK reads its result.
@@ -83,6 +83,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
   bulk selection; the modal is its confirmation (`{ confirmed: true }`).
 - Resource labels are derived by `resourceLabel` (`<module>::resources.<model>.<part>.<path>`); never add a label
   option. Logic a native page needs too (list input, places, id key, input kind) goes in a pure `core` function.
+- A KPI's words are derived by `widgetTitle`: its label from its path, its note line from its note path
+  (`<module>::widgets.<widget>.<path>`, given `{count}` or `{value}`); never add a text option. A percent metric is
+  known by its `format: "percent"` mark on the wire, never by a flag on the node.
 - `SearchPalette` reads only generated search queries (`<model>.search`) through `useQuery`, one hook per source
   (`SearchPaletteGroup`); it never binds a key itself (the app's `Shortcut` opens it) and never imports
   `@stackra/search` (`SearchPaletteHit` mirrors `SearchQueryHit`).

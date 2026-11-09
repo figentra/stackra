@@ -16,6 +16,7 @@ export { LengthUnit } from "#core/enums/length-unit.enum";
 export { Locale } from "#core/enums/locale.enum";
 export { LocaleUrlStrategy } from "#core/enums/locale-url-strategy.enum";
 export { NativeSwitcher } from "#core/enums/native-switcher.enum";
+export { CalendarSystem } from "#core/enums/calendar-system.enum";
 export { NumberingSystem } from "#core/enums/numbering-system.enum";
 export { countryName } from "#core/functions/country-name.function";
 export { formatAddress } from "#core/functions/format-address.function";

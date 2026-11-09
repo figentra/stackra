@@ -141,8 +141,8 @@ describe(emitEncoreApi, () => {
         "      anonymous: false,",
         "      action: CancelOrderAction,",
         "      input: CancelOrderInput,",
-        "      execute: (container, input, actor, request) =>",
-        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request) }),",
+        "      execute: (container, input, actor, request, call) =>",
+        "        new ActionPipeline(container).execute(CancelOrderAction, input as never, { actor, ...requestCallOptions(request), ...call }),",
         "    }),",
         ");",
       ].join("\n"),
@@ -155,7 +155,7 @@ describe(emitEncoreApi, () => {
     expect(content).toContain("export const ordersOrderListV1 = api.raw(");
     expect(content).toContain(`  { method: "GET", path: "${path}", expose: true, auth: false },`);
     expect(content).toContain(
-      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor, ...requestCallOptions(request) }),",
+      "        new ActionPipeline(container).execute(ListOrdersQuery, input as never, { actor, ...requestCallOptions(request), ...call }),",
     );
   });
 
@@ -188,7 +188,7 @@ describe(emitEncoreApi, () => {
     for (const line of [
       'import { CancelOrderAction as CancelOrderAction2, RoomController } from "@acme/kit/node";',
       "export const kitOrderCancelV1 = api.raw(",
-      "        new ActionPipeline(container).execute(CancelOrderAction2, input as never, { actor, ...requestCallOptions(request) }),",
+      "        new ActionPipeline(container).execute(CancelOrderAction2, input as never, { actor, ...requestCallOptions(request), ...call }),",
       "export const roomController = api.raw(",
       '  { method: "*", path: "/realtime/room", expose: true, auth: false },',
       "      execute: (container, _input, _actor, request) => container.get(RoomController).handle(request),",
@@ -245,15 +245,16 @@ describe(emitEncoreApi, () => {
     for (const line of [
       'import { serveVersioned } from "@stackra/versioning";',
       'import { CancelOrderOutput } from "#modules/orders/schemas/cancel-order-output.schema";',
-      "      execute: (container, input, actor, request, credential) =>",
-      "        serveVersioned(request, { container, actor, credential, subject: CancelOrderOutput }, () =>",
+      "      execute: (container, input, actor, request, call) =>",
+      "        serveVersioned(request, { container, actor, credential: call?.credential, subject: CancelOrderOutput }, () =>",
       "          new ActionPipeline(container).execute(CancelOrderAction, input as never, {",
-      "            ...(credential === undefined ? {} : { credential }),",
+      "            ...requestCallOptions(request),",
+      "            ...call,",
     ])
       expect(versioned).toContain(line);
     // a member without the package is unchanged
     expect(emitEncoreApi(ir, manifest)?.content).not.toContain("serveVersioned");
-    expect(emitEncoreApi(ir, manifest)?.content).not.toContain("credential");
+    expect(emitEncoreApi(ir, manifest)?.content).not.toContain("call?.credential");
   });
 
   it("writes none for a package, an app or a service with no endpoint", () => {

@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: `AwsSecretsManagerSecretStoreDriver` is its only value.
+ * Purpose: the consumer contract of the `./node` entry: `AwsSdkKmsClientDriver` and
+ *          `AwsSecretsManagerSecretStoreDriver` are its only values.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias, with the AWS SDK mocked.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -17,6 +18,9 @@ vi.mock("@aws-sdk/client-secrets-manager", () => ({
 
 describe("@stackra/config/node", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(node).sort()).toEqual(["AwsSecretsManagerSecretStoreDriver"]);
+    expect(Object.keys(node).toSorted()).toEqual([
+      "AwsSdkKmsClientDriver",
+      "AwsSecretsManagerSecretStoreDriver",
+    ]);
   });
 });

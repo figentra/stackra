@@ -53,7 +53,7 @@ function refused(error: unknown): Response {
  * @param run - runs the call on the latest shape and returns its output (or a `Response`).
  * @throws RateLimitedError or a non-refusal error `run` threw, for the adapter's answer.
  * @example
- * return serveVersioned(request, { container, actor, credential, subject: OrderView }, () =>
+ * return serveVersioned(request, { container, actor, credential: key?.credential, subject: OrderView }, () =>
  *   new ActionPipeline(container).execute(GetOrderQuery, input, { actor }),
  * );
  */
@@ -90,6 +90,7 @@ export async function serveVersioned(
 
   let response: Response;
   try {
+    // next: pass the resolved version as CallOptions.apiVersion
     const output = await run();
     if (output instanceof Response) response = new Response(output.body, output);
     else {
