@@ -1,0 +1,21 @@
+{
+  "slug": "step-switcher",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "StepSwitcher",
+  "parts": ["StepSwitcher"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 480
+    }
+  ],
+  "related": ["free/tabs", "free/frame", "free/code-block"],
+  "tokens": ["color.accent", "color.surface", "color.border"],
+  "keywords": ["steps", "switcher", "tabs", "code", "marketing", "landing", "kit"],
+  "status": "new"
+}

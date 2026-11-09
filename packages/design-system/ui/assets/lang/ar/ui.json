@@ -1262,5 +1262,19 @@
     "denied": "تم الرفض",
     "expired": "انتهت المهلة",
     "risk": "مستوى الخطورة {level}"
+  },
+  "terminal_demo": {
+    "label": "جرّبه",
+    "copy": "نسخ الأمر"
+  },
+  "props_playground": {
+    "controls": "الخصائص",
+    "preview": "المعاينة",
+    "theme": "السمة",
+    "theme_default": "الافتراضية",
+    "direction": "الاتجاه",
+    "ltr": "من اليسار إلى اليمين",
+    "rtl": "من اليمين إلى اليسار",
+    "reset": "إعادة الضبط"
   }
 }
