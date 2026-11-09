@@ -8,7 +8,7 @@
  */
 import { PublishCatalogueAction } from "#node/actions/publish-catalogue.action";
 import { PublishCatalogueInput } from "#node/schemas/publish-catalogue-input.schema";
-import { ActionPipeline } from "@stackra/actions";
+import { ActionPipeline, requestCallOptions } from "@stackra/actions";
 import { api } from "encore.dev/api";
 
 import { app } from "../../entry/server";
@@ -23,7 +23,7 @@ export const catalogueCataloguePublishV1 = api.raw(
       anonymous: false,
       action: PublishCatalogueAction,
       input: PublishCatalogueInput,
-      execute: (container, input, actor) =>
-        new ActionPipeline(container).execute(PublishCatalogueAction, input as never, { actor }),
+      execute: (container, input, actor, request) =>
+        new ActionPipeline(container).execute(PublishCatalogueAction, input as never, { actor, ...requestCallOptions(request) }),
     }),
 );

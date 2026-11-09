@@ -8,7 +8,7 @@
  */
 import { PublishChannelsAction } from "#node/actions/publish-channels.action";
 import { PublishChannelsInput } from "#node/schemas/publish-channels-input.schema";
-import { ActionPipeline } from "@stackra/actions";
+import { ActionPipeline, requestCallOptions } from "@stackra/actions";
 import { api } from "encore.dev/api";
 
 import { app } from "../../entry/server";
@@ -23,7 +23,7 @@ export const channelsChannelsPublishV1 = api.raw(
       anonymous: false,
       action: PublishChannelsAction,
       input: PublishChannelsInput,
-      execute: (container, input, actor) =>
-        new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor }),
+      execute: (container, input, actor, request) =>
+        new ActionPipeline(container).execute(PublishChannelsAction, input as never, { actor, ...requestCallOptions(request) }),
     }),
 );
