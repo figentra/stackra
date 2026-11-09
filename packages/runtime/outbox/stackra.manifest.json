@@ -16,20 +16,6 @@
   "permissions": [],
   "errors": [
     {
-      "code": "claim_not_loaded",
-      "kind": "internal",
-      "category": "internal",
-      "module": "outbox",
-      "class": "ClaimNotLoadedError"
-    },
-    {
-      "code": "row_isolation_missing",
-      "kind": "failed_precondition",
-      "category": "precondition_failed",
-      "module": "outbox",
-      "class": "RowIsolationMissingError"
-    },
-    {
       "code": "unknown_event",
       "kind": "internal",
       "category": "internal",

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `inRowOwner`: with an isolation bound the work runs through it as the worker's system actor
+ * Purpose: unit tests of `inJobOwner`: with an isolation bound the work runs through it as the worker's system actor
  *          in the job's owner (or as the platform for a job with none), never read-only and with no scope; with none
  *          bound a platform job runs as it is and an owned job is refused (`JobRowIsolationMissingError`) before any
  *          work.
@@ -14,9 +14,9 @@ import type { Actor } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { JobRowIsolationMissingError } from "#core/errors/job-row-isolation-missing.error";
-import { inRowOwner } from "#core/functions/in-row-owner.function";
+import { inJobOwner } from "#core/functions/in-job-owner.function";
 
-describe("inRowOwner", () => {
+describe("inJobOwner", () => {
   it("runs the work through the isolation as the worker's system actor in the job's owner", async () => {
     const runs: unknown[][] = [];
     const isolation = {
@@ -25,8 +25,8 @@ describe("inRowOwner", () => {
         return work();
       },
     } as unknown as CallIsolation;
-    await expect(inRowOwner(isolation, "scp_acme", "job_A", async () => 1)).resolves.toBe(1);
-    await expect(inRowOwner(isolation, undefined, "job_B", async () => 2)).resolves.toBe(2);
+    await expect(inJobOwner(isolation, "scp_acme", "job_A", async () => 1)).resolves.toBe(1);
+    await expect(inJobOwner(isolation, undefined, "job_B", async () => 2)).resolves.toBe(2);
     expect(runs).toEqual([
       [
         { kind: ActorKind.System, id: "sys_queue_worker", scopeId: "scp_acme" },
@@ -38,9 +38,9 @@ describe("inRowOwner", () => {
   });
 
   it("runs a platform job as it is with no isolation, and refuses an owned one before any work", async () => {
-    await expect(inRowOwner(undefined, undefined, "job_A", async () => 3)).resolves.toBe(3);
+    await expect(inJobOwner(undefined, undefined, "job_A", async () => 3)).resolves.toBe(3);
     let ran = false;
-    const refused = inRowOwner(undefined, "scp_acme", "job_B", async () => {
+    const refused = inJobOwner(undefined, "scp_acme", "job_B", async () => {
       ran = true;
     });
     await expect(refused).rejects.toBeInstanceOf(JobRowIsolationMissingError);

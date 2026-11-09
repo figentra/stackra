@@ -116,7 +116,6 @@
     "@stackra/iam": "workspace:*",
     "@stackra/locking": "workspace:*",
     "@stackra/model": "workspace:*",
-    "@stackra/outbox": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/rules": "workspace:*",
     "@stackra/tenancy": "workspace:*",

@@ -4,7 +4,7 @@
  *          `CallIsolation` is bound: nothing could set that tenant, so the row would load as nothing and be skipped.
  * Boundary: raised before any tenant row is read or changed; a platform row (no tenant) needs no isolation. Kind
  *           `FailedPrecondition`, not retryable, code `row_isolation_missing`; the one detail is the claimed id or
- *           position.
+ *           position. `inRowOwner` raises it by default; queue and scheduler pass their own prefixed refusal.
  * Runtime: isomorphic
  * Governing contract: ADR 0495 (decision 2: every background unit runs in `CallIsolation`); ADR 0239 (2026-11-07
  *                     amendment, gap A); ADR 0140 (envelope and kinds); ADR 0328.

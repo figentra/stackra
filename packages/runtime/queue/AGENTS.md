@@ -60,7 +60,7 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
 - `queue.jobs` is tenant-owned in the platform form (`queue.0003`, ADR 0239 amendment). Cross-owner reads go only
   through its system functions (`reserve_job`, `claim_dead_jobs`, `unique_key_holders`), which return ids and owners;
   everything else runs in the caller's isolation. The worker and the operator commands load and settle a claimed job
-  in its owner (`inRowOwner`), and a claim that does not load, or an owned one with no `CallIsolation`, throws; never
+  in its owner (`inJobOwner`, `inRowOwner` of @stackra/actions with this package's refusal), and a claim that does not load, or an owned one with no `CallIsolation`, throws; never
   skip one. Never write `tenant_id`: its default takes the call's tenant. `queue.job_batches` stays a platform table.
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`.
 - No `@Job` or `@Queue`: job, queue and cron are typed sub-options of `Action({...})` (R-13).

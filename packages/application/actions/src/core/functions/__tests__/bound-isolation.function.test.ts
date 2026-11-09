@@ -5,11 +5,11 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0495.
  */
-import type { Resolver } from "@stackra/actions";
-import { CallIsolation } from "@stackra/actions/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { CallIsolation } from "#contracts/ports/call-isolation.port";
 import { boundIsolation } from "#core/functions/bound-isolation.function";
+import type { Resolver } from "#core/types/resolver.type";
 
 describe("boundIsolation", () => {
   it("answers the bound isolation, or undefined when none is bound", () => {
