@@ -263,6 +263,19 @@ describe("awsBaseline", () => {
     });
   });
 
+  it("gives the account's owner ECR's pull-through cache for Docker Hub", async () => {
+    const engine = await mockPulumi(STACK);
+    const foundation = awsBaseline(STAGING);
+
+    expect(
+      (await engine.find("PullThroughCacheRule", "acme-staging-docker-hub-cache")).inputs,
+    ).toMatchObject({
+      ecrRepositoryPrefix: "docker-hub",
+      upstreamRegistryUrl: "registry-1.docker.io",
+    });
+    expect(foundation.dockerHubCacheSecretArn).not.toBeNull();
+  });
+
   it("leaves account-wide resources to the account's owner and selects the database by tag", async () => {
     const engine = await mockPulumi(STACK);
     const foundation = awsBaseline({
@@ -277,7 +290,12 @@ describe("awsBaseline", () => {
     const types = resources.map((resource) => resource.type.split(":").at(-1));
     expect(types).not.toContain("OpenIdConnectProvider");
     expect(types).not.toContain("Budget");
-    expect([foundation.encoreRoleArn, foundation.budgetTopicArn]).toEqual([null, null]);
+    expect(types).not.toContain("PullThroughCacheRule");
+    expect([
+      foundation.encoreRoleArn,
+      foundation.budgetTopicArn,
+      foundation.dockerHubCacheSecretArn,
+    ]).toEqual([null, null, null]);
     const role = await engine.find("Role", "acme-production-infra");
     expect(statementsOf(role, "assumeRolePolicy")[0]?.["Principal"]).toEqual({
       Federated: "arn:aws:iam::222222222222:oidc-provider/token.actions.githubusercontent.com",
