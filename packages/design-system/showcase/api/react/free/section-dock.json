@@ -1,0 +1,37 @@
+{
+  "generatedFrom": {
+    "hash": "2820e65e76b4b6cc",
+    "propsFiles": ["ui/src/react/section-dock/section-dock.props.ts"]
+  },
+  "importLine": "import { SectionDock } from \"@stackra/ui/react\";",
+  "key": "free/section-dock",
+  "parts": [
+    {
+      "name": "SectionDock",
+      "props": [
+        {
+          "description": "The navigation's spoken name, such as \"Sections\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The page's sections in reading order, each with the status line the dock shows while it is current.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SectionDockItem[]"
+        },
+        {
+          "description": "Styles the dock.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

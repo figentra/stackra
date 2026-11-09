@@ -193,6 +193,7 @@ export class EtaDriver extends Driver(FiscalDriver) {
       format: SignatureFormat.Cades,
       payload: canonical,
       digest: hash,
+      signedAt: context.now,
     });
     return {
       payload: JSON.stringify({
