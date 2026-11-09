@@ -85,6 +85,7 @@ import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { envOf } from "#core/functions/env-of.function";
 import { eventName } from "#core/functions/event-name.function";
@@ -102,6 +103,7 @@ import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { resourcesOf } from "#core/functions/resources-of.function";
 import { moduleDependsOn } from "#core/functions/module-depends-on.function";
+import { seedersOf } from "#core/functions/seeders-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -185,6 +187,37 @@ export function buildManifest(ir: MemberIR): {
     errors.push({ code, file: owner.file, line: 0, column: 0, subject: owner.name, message, fix });
   };
   const byName = new Map(ir.classes.map((declared) => [declared.name, declared]));
+  // A class named in an option resolves to this member's own declaration, else to the entry a hosted dependency's
+  // manifest lists for it, matched by class name and by the specifier the class is imported from (STA-2059).
+  const hostedKey = (section: "entitlements" | "models", value: ClassValue): string | undefined => {
+    for (const { package: name, manifest } of ir.dependencies) {
+      if (manifest["kind"] === "app") continue;
+      for (const item of (manifest[section] ?? []) as unknown as readonly Entry[])
+        if (
+          item["class"] === value.$class &&
+          [name, item["from"]].some(
+            (origin) =>
+              typeof origin === "string" &&
+              (value.from === origin || value.from.startsWith(`${origin}/`)),
+          )
+        )
+          return String(item["key"]);
+    }
+    return undefined;
+  };
+  // Only a class imported from this member (`#…` or a relative path) is its own; a package specifier is hosted.
+  const ownOf = (value: ClassValue) =>
+    value.from.startsWith("#") || value.from.startsWith(".") ? byName.get(value.$class) : undefined;
+  const entitlementOf = (value: ClassValue): string | undefined => {
+    const own = ownOf(value);
+    return own?.kind === "entitlement"
+      ? entitlementKey(own.module, own.name)
+      : hostedKey("entitlements", value);
+  };
+  const modelOf = (value: ClassValue): string | undefined => {
+    const own = ownOf(value);
+    return own?.kind === "model" ? modelKey(own.module, own.name) : hostedKey("models", value);
+  };
   const shapeNamed = (name: string | undefined): ShapeIR | undefined =>
     name === undefined ? undefined : ir.shapes.find((shape) => shape.name === name);
   const ref = (name: string | undefined): Entry | undefined => {
@@ -496,6 +529,26 @@ export function buildManifest(ir: MemberIR): {
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
+    // The meter it feeds and the entitlements it names, so a quota or an entitlement gates it (STA-2059).
+    const meter = declared.options["meter"];
+    if (typeof meter === "object" && meter !== null && "name" in meter)
+      entry["meter"] = String(meter.name);
+    const named = declared.options["entitlement"];
+    const entitlementKeys = new Set<string>();
+    for (const item of Array.isArray(named) ? named : [named]) {
+      if (item === undefined) continue;
+      const resolved = isClassValue(item) ? entitlementOf(item) : undefined;
+      if (resolved === undefined)
+        fail(
+          declared,
+          "entitlement_unknown",
+          `\`entitlement\` names ${isClassValue(item) ? item.$class : "a value"}, which is no entitlement of this member or of a hosted package`,
+          "import an `Entitlement` class this member declares or a hosted package ships",
+        );
+      else entitlementKeys.add(resolved);
+    }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here; toSorted is ES2023 and the base lib is ES2022
+    if (entitlementKeys.size > 0) entry["entitlements"] = [...entitlementKeys].sort();
     // An anonymous caller may call it, past the permission and record-policy steps only (STA-2025): listed, so review sees it.
     if (actors?.includes("anonymous") === true) entry["anonymous"] = true;
     // OS ADR 0039 d2: only an entry marked public forms the published REST and MCP API and its SDKs.
@@ -828,29 +881,23 @@ export function buildManifest(ir: MemberIR): {
       file: declared.file,
       kind: jsonOf(declared.options["kind"]),
     };
-    const gates = new Set<string>();
     const counted = declared.options["counts"];
     if (isClassValue(counted)) {
-      const model = byName.get(counted.$class);
-      const module = model?.kind === "model" ? model.module : undefined;
-      entry["counts"] = module === undefined ? counted.$class : modelKey(module, counted.$class);
-      const create = `${module}.${snakeCase(counted.$class)}.create@`;
-      if (module !== undefined)
-        for (const action of actions)
-          if (action["kind"] === "action" && String(action["key"]).startsWith(create))
-            gates.add(String(action["key"]));
+      const model = modelOf(counted);
+      if (model === undefined)
+        fail(
+          declared,
+          "entitlement_counts_unknown",
+          `\`counts\` names ${counted.$class}, which is no model of this member or of a hosted package`,
+          "count a model this member declares or a hosted package ships",
+        );
+      entry["counts"] = model ?? counted.$class;
     }
     if (declared.options["where"] !== undefined) entry["where"] = jsonOf(declared.options["where"]);
-    for (const call of ir.classes) {
-      if (call.kind !== "action" && call.kind !== "query") continue;
-      const named = call.options["entitlement"];
-      const list = Array.isArray(named) ? named : [named];
-      if (!list.some((item) => isClassValue(item) && item.$class === declared.name)) continue;
-      const gate = actions.find((action) => action["class"] === call.name)?.["key"];
-      if (typeof gate === "string") gates.add(gate);
-    }
-    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-    entry["gates"] = [...gates].sort();
+    if (typeof declared.options["meter"] === "string") entry["meter"] = declared.options["meter"];
+    if (declared.options["per"] !== undefined) entry["per"] = jsonOf(declared.options["per"]);
+    // The gates are computed once the hosted sections merge in, over every entitlement and every action.
+    entry["gates"] = [];
     entitlements.push(entry);
   }
 
@@ -1061,6 +1108,20 @@ export function buildManifest(ir: MemberIR): {
     };
   });
 
+  // The seeders in module order and the factory pairs, which a host's seed entry imports from `./testing` (STA-2061).
+  const seeders: Entry[] = seedersOf(ir).map((row) => ({
+    key: row.key,
+    module: row.module,
+    profile: row.profile,
+    class: row.name,
+    file: row.file,
+  }));
+  const factories: Entry[] = factoryPairsOf(ir).map((factory) => ({
+    class: factory.name,
+    file: factory.file,
+    model: factory.partner.name,
+  }));
+
   // Replacements: `@Replaces(Base)` on a class of the member, so a host and a reviewer see what it swaps out.
   const replaces: Entry[] = [];
   for (const declared of ir.classes)
@@ -1166,6 +1227,43 @@ export function buildManifest(ir: MemberIR): {
         }
     }
 
+  // Gates (STA-2059): over the member's and its hosted packages' entries, an entitlement gates the calls that name
+  // it, a quota the actions feeding its meter, and a limit its counted model's create actions. A merged entry keeps
+  // the gates its own package computed.
+  for (const entitlement of sections.entitlements) {
+    const gates = new Set(((entitlement["gates"] ?? []) as readonly Json[]).map(String));
+    const create =
+      typeof entitlement["counts"] === "string" ? `${entitlement["counts"]}.create@` : "";
+    for (const call of sections.actions) {
+      const key = String(call["key"]);
+      const names = (call["entitlements"] ?? []) as readonly Json[];
+      if (
+        names.includes(entitlement["key"] ?? null) ||
+        (typeof entitlement["meter"] === "string" && call["meter"] === entitlement["meter"]) ||
+        (create !== "" && call["kind"] === "action" && key.startsWith(create))
+      )
+        gates.add(key);
+    }
+    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here; toSorted is ES2023 and the base lib is ES2022
+    entitlement["gates"] = [...gates].sort();
+  }
+  // A hosted action may name an entitlement of a package the host does not depend on directly: refused, since no
+  // entry would gate it and the call would run ungated (STA-2059 EC-02).
+  if (ir.layout !== "package") {
+    const known = new Set(sections.entitlements.map((entitlement) => entitlement["key"]));
+    for (const call of sections.actions)
+      for (const name of (call["entitlements"] ?? []) as readonly Json[])
+        if (!known.has(name))
+          errors.push({
+            code: "entitlement_unknown",
+            file: "package.json",
+            line: 0,
+            column: 0,
+            subject: String(call["from"] ?? call["key"]),
+            message: `\`${String(call["key"])}\` names the entitlement \`${String(name)}\`, which no member or hosted package of this member declares`,
+            fix: "add the package that declares the entitlement to this member's dependencies",
+          });
+  }
   // A contracts-only dependency adds just its contracts events, from its `./contracts` entry (STA-2567).
   if (ir.layout !== "package")
     for (const dependency of ir.contractsDependencies ?? [])
@@ -1329,6 +1427,8 @@ export function buildManifest(ir: MemberIR): {
     ...(env.length > 0 ? { env } : {}),
     ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
+    ...(seeders.length > 0 ? { seeders } : {}),
+    ...(factories.length > 0 ? { factories } : {}),
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),
     ...(surfaces.length > 0 ? { surfaces } : {}),

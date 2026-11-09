@@ -16,15 +16,25 @@ import { MemoryFileSystemDriver } from "@stackra/filesystem";
 import { FileSystem } from "@stackra/filesystem/contracts";
 
 import { filePathOf } from "#core/functions/file-path-of.function";
-import { MediaLibrary } from "#core/index";
-import type { Bucket, BucketClass, MediaType } from "#core/index";
+import { type Bucket, type BucketClass, MediaLibrary, MediaType } from "#core/index";
 import { ForeignBucket } from "#testing/models/foreign.bucket";
 import type { FakeUpload } from "#testing/types/fake-upload.type";
+
+/** The shortest real head of each media type, so a claim's content check accepts the fake. */
+const HEADS: Readonly<Record<MediaType, readonly number[]>> = {
+  [MediaType.Jpeg]: [0xff, 0xd8, 0xff, 0xe0],
+  [MediaType.Png]: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  [MediaType.Webp]: [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50],
+  [MediaType.Avif]: [0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66, 0, 0, 0, 0],
+  [MediaType.Gif]: [0x47, 0x49, 0x46, 0x38, 0x39, 0x61],
+  [MediaType.Pdf]: [0x25, 0x50, 0x44, 0x46, 0x2d],
+  [MediaType.Mp4]: [0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 0, 0],
+};
 
 /**
  * A finished upload into `bucket`.
  *
- * @param options - the file's media type, and its bytes (one byte by default).
+ * @param options - the file's media type, and its bytes (by default the shortest real head of that type).
  * @throws TypeError when the app's `FileSystem` is not the memory disk, or the memory disk refuses the bytes.
  * @throws UploadRejectedError when the bucket does not take the media type or the size.
  * @example
@@ -43,7 +53,7 @@ export async function fakeUpload<B extends Bucket = Bucket>(
       'fakeUpload needs the memory file system disk: compile the testing module with useDrivers("memory")',
     );
   const type: BucketClass = bucket ?? ForeignBucket;
-  const bytes = options.bytes ?? new Uint8Array([0]);
+  const bytes = options.bytes ?? new Uint8Array(HEADS[options.mediaType]);
   const pending = await app
     .get(MediaLibrary)
     .createUpload(type, { mediaType: options.mediaType, size: bytes.byteLength });

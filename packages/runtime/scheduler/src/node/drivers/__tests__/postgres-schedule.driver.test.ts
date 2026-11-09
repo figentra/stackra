@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresScheduleDriver`: each method's statement binds every value (one placeholder per
- *          parameter, no value in the text), reads its rows through zod into the port's shapes, deletes a schedule
- *          only with its scope and with its watermark, and advances every key in one upsert (none for no key).
+ *          parameter, no value in the text), reads its rows through zod into the port's shapes, claims every owner's
+ *          schedules through `scheduler.claim_schedules` (no input or scope), loads one by id, deletes a schedule only
+ *          with its scope and with its watermark, and advances every key in one upsert (none for no key).
  * Boundary: test only; a recording entity manager stands in for the database. A Postgres integration test runs with
  *           the testing workflow.
  * Runtime: node (vitest)
@@ -91,6 +92,7 @@ describe(PostgresScheduleDriver, () => {
     const [statement] = gone.statements;
     expect(statement?.sql).toContain("where id = ? and scope_id = ?");
     expect(statement?.sql).toContain('delete from "scheduler"."watermarks"');
+    expect(statement?.sql).toContain('delete from "scheduler"."fires"');
     expect(statement?.params).toEqual(["sch_1", "scp_acme"]);
     expectBound(gone.statements);
     const kept = databaseWith([]);
@@ -99,7 +101,7 @@ describe(PostgresScheduleDriver, () => {
     );
   });
 
-  it("reads schedules through zod, of one scope or of all", async () => {
+  it("reads the schedules of one scope through zod, and loads one by id", async () => {
     const { database, statements } = databaseWith([
       {
         id: "sch_1",
@@ -115,16 +117,94 @@ describe(PostgresScheduleDriver, () => {
     ]);
     const driver = new PostgresScheduleDriver(database);
     await expect(driver.schedules(acme)).resolves.toEqual([schedule]);
-    await driver.schedules();
+    await expect(driver.load("sch_1")).resolves.toEqual(schedule);
     expect(statements[0]?.sql).toContain("where scope_id = ? order by id");
     expect(statements[0]?.params).toEqual(["scp_acme"]);
-    expect(statements[1]?.sql).not.toContain("where");
+    expect(statements[1]?.sql).toContain("where id = ?");
+    expect(statements[1]?.params).toEqual(["sch_1"]);
+    expectBound(statements);
+    const gone = databaseWith([]);
+    await expect(new PostgresScheduleDriver(gone.database).load("sch_1")).resolves.toBeUndefined();
+  });
+
+  it("claims every owner's schedules through the system function, with no input or scope", async () => {
+    const { database, statements } = databaseWith([
+      {
+        id: "sch_1",
+        tenant_id: "scp_acme",
+        job_key: "digests.digest.send@1",
+        cron: "0 8 * * mon",
+        time_zone: "Asia/Dubai",
+        misfire: "once",
+        created_at: NOON.toISOString(),
+      },
+      {
+        id: "sch_2",
+        tenant_id: null,
+        job_key: "digests.digest.send@1",
+        cron: "0 8 * * mon",
+        time_zone: "UTC",
+        misfire: "skip",
+        created_at: NOON.toISOString(),
+      },
+    ]);
+    const claims = await new PostgresScheduleDriver(database).claim();
+    expect(claims).toEqual([
+      {
+        id: "sch_1",
+        ownerId: "scp_acme",
+        key: "digests.digest.send@1",
+        cron: "0 8 * * mon",
+        timeZone: "Asia/Dubai",
+        misfire: Misfire.Once,
+        createdAt: NOON,
+      },
+      expect.not.objectContaining({ ownerId: expect.anything() }),
+    ]);
+    expect(statements[0]?.sql).toBe(
+      "select id, tenant_id, job_key, cron, time_zone, misfire, created_at from scheduler.claim_schedules()",
+    );
     expectBound(statements);
   });
 
   it("refuses a row that is not a schedule", async () => {
     const { database } = databaseWith([{ id: "job_1" }]);
-    await expect(new PostgresScheduleDriver(database).schedules()).rejects.toThrow();
+    await expect(new PostgresScheduleDriver(database).schedules(acme)).rejects.toThrow();
+  });
+
+  it("records a fire once by its key and time, and forgets a key's fires through an instant", async () => {
+    const first = databaseWith([{ id: "sch_1" }]);
+    await expect(
+      new PostgresScheduleDriver(first.database).recordFire("sch_1", NOON),
+    ).resolves.toBe(true);
+    expect(first.statements[0]?.sql).toContain(
+      'insert into "scheduler"."fires" (fire_key, fire_at)',
+    );
+    expect(first.statements[0]?.sql).toContain("on conflict (fire_key, fire_at) do nothing");
+    expect(first.statements[0]?.params).toEqual(["sch_1", NOON]);
+    expectBound(first.statements);
+    const again = databaseWith([]);
+    await expect(
+      new PostgresScheduleDriver(again.database).recordFire("sch_1", NOON),
+    ).resolves.toBe(false);
+    const forget = databaseWith([]);
+    await new PostgresScheduleDriver(forget.database).forgetFires("sch_1", NOON);
+    expect(forget.statements[0]?.sql).toBe(
+      'delete from "scheduler"."fires" where fire_key = ? and fire_at <= ?',
+    );
+    expect(forget.statements[0]?.params).toEqual(["sch_1", NOON]);
+  });
+
+  it("runs work in a transaction of its own", async () => {
+    const options: unknown[] = [];
+    const database = {
+      transaction: (work: () => Promise<unknown>, given: unknown) => {
+        options.push(given);
+        return work();
+      },
+    } as unknown as Database;
+    await expect(new PostgresScheduleDriver(database).transaction(async () => 7)).resolves.toBe(7);
+    expect(options).toEqual([{ requiresNew: true }]);
   });
 
   it("reads every watermark by key", async () => {
@@ -142,6 +222,7 @@ describe(PostgresScheduleDriver, () => {
     await driver.advance([], NOON);
     expect(statements).toHaveLength(1);
     expect(statements[0]?.sql).toContain("on conflict (schedule_key) do update");
+    expect(statements[0]?.sql).toContain("greatest(watermarks.ticked_at, excluded.ticked_at)");
     expect(statements[0]?.params).toEqual([NOON, '["access_log.entry.purge@1","sch_1"]']);
     expectBound(statements);
   });

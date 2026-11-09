@@ -13,6 +13,7 @@ import type { CallDescriptor } from "@stackra/actions/contracts";
 import { type Actor, ActorKind, ApiArea, Clock, Realm, type ScopeRef } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import type { QueuedJob } from "#contracts/index";
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
 import { QueueJobDispatcherDriver } from "#core/drivers/queue-job-dispatcher.driver";
 import { QueueService } from "#core/services/queue.service";
@@ -51,6 +52,12 @@ const call: CallDescriptor = {
   area: ApiArea.App,
 };
 
+/** The job `driver` reserves of the delivery queue at noon, loaded as its claim names it. */
+async function reserved(driver: MemoryQueueDriver): Promise<QueuedJob | undefined> {
+  const claim = await driver.reserve("delivery", NOON);
+  return claim === undefined ? undefined : driver.load(claim.id);
+}
+
 describe(QueueJobDispatcherDriver, () => {
   it("is the JobDispatcher behind ctx.dispatch", () => {
     const driver = new MemoryQueueDriver();
@@ -63,7 +70,7 @@ describe(QueueJobDispatcherDriver, () => {
     const driver = new MemoryQueueDriver();
     const dispatcher = new QueueJobDispatcherDriver(new QueueService(driver, new FixedClock()));
     await dispatcher.dispatch(DeliverMessageAction, { messageId: "msg_1" }, call);
-    expect(await driver.reserve("delivery", NOON)).toMatchObject({
+    expect(await reserved(driver)).toMatchObject({
       key: "message.deliver",
       input: { messageId: "msg_1" },
       origin: caller,
@@ -71,7 +78,7 @@ describe(QueueJobDispatcherDriver, () => {
       runAt: NOON,
     });
     await dispatcher.dispatch(DeliverMessageAction, { messageId: "msg_2" }, call);
-    expect(await driver.reserve("delivery", NOON)).not.toHaveProperty("scope");
+    expect(await reserved(driver)).not.toHaveProperty("scope");
   });
 
   it("queues the job in the call's scope, so the worker opens that scope session", async () => {
@@ -79,6 +86,6 @@ describe(QueueJobDispatcherDriver, () => {
     const dispatcher = new QueueJobDispatcherDriver(new QueueService(driver, new FixedClock()));
     const scope: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
     await dispatcher.dispatch(DeliverMessageAction, { messageId: "msg_1" }, { ...call, scope });
-    expect((await driver.reserve("delivery", NOON))?.scope).toEqual(scope);
+    expect((await reserved(driver))?.scope).toEqual(scope);
   });
 });

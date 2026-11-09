@@ -13,11 +13,14 @@
  *           its `webhooks.signature` (then the event id is the recipe's id header or the payload's `eventId` path, and
  *           the event occurred when it was received), or a regional gateway scheme with its data in `webhooks.recipe`
  *           (`authenticBody` picks the verifier; an `aes_gcm_body` request is parsed from its plaintext; the event id
- *           is the payload's `eventId` path and the event occurred when it was received). The verified body is parsed
- *           as JSON, or as an `application/x-www-form-urlencoded` body when the recipe's `bodyFormat` is `form`.
+ *           is the payload's `eventId` path and the event occurred when it was received). An `eventId` of several
+ *           parts (payload paths and headers) is joined with `:`; a named part that is missing refuses the event
+ *           before its class is built or anything is written. The verified body is parsed as JSON, or as an
+ *           `application/x-www-form-urlencoded` body when the recipe's `bodyFormat` is `form`.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 15, 16 and 20); ADR 0224 (decision 4, as amended); ADR 0078 (decision 4: inbox
- *                     dedup); ADR 0173 (secrets read blind); STA-1357 (the regional gateway schemes).
+ *                     dedup); ADR 0173 (secrets read blind); STA-1357 (the regional gateway schemes); STA-2647 (a
+ *                     composite event id).
  */
 import { Secret } from "@stackra/config";
 import type { SecretStore } from "@stackra/config/contracts";
@@ -29,6 +32,7 @@ import type { EventOutbox } from "@stackra/events/contracts";
 import {
   InvalidSignatureError,
   resolvePlaceholders,
+  WebhookEventIdMissingError,
   type ConnectionStore,
 } from "@stackra/integrations";
 
@@ -85,6 +89,7 @@ export class WebhookReceiver extends Service {
    *
    * @returns the event written, or `undefined` when no class handles the payload's type.
    * @throws InvalidSignatureError when the signature, the id or the timestamp does not verify.
+   * @throws WebhookEventIdMissingError when a part of the event id the Integration names is missing.
    * @throws NotFoundError when the URL names a connection that does not exist, or the Integration has none.
    * @throws TypeError when the Integration has no registered webhook event or its secret placeholder has no value.
    */
@@ -120,8 +125,6 @@ export class WebhookReceiver extends Service {
     const type = valueAt(payload, webhooks.eventType.path);
     const eventClass = typeof type === "string" ? route.types.get(type) : undefined;
     if (eventClass === undefined) return undefined;
-    // reason: the event's generated schema checks the payload at runtime; `create` types its fields from the class
-    const event = (eventClass as unknown as { create: (values: unknown) => Event }).create(payload);
     let id: string;
     let occurredAt: Date;
     if (webhooks.scheme === SignatureScheme.StandardWebhooks) {
@@ -132,12 +135,26 @@ export class WebhookReceiver extends Service {
     } else {
       const idHeader = webhooks.signature?.idHeader;
       const named = idHeader === undefined ? undefined : headers[idHeader];
-      const found =
-        webhooks.eventId === undefined ? undefined : valueAt(payload, webhooks.eventId.path);
-      // a gateway may number its events (Paymob's `obj.id`)
-      id = named ?? (typeof found === "string" || typeof found === "number" ? String(found) : "");
+      // a gateway may number its events (Paymob's `obj.id`); one that numbers nothing names the parts of an id
+      const parts =
+        webhooks.eventId === undefined
+          ? []
+          : "path" in webhooks.eventId
+            ? [{ path: webhooks.eventId.path }]
+            : webhooks.eventId.parts;
+      const values = parts.map((part) => {
+        const value =
+          part.path === undefined ? headers[part.header ?? ""] : valueAt(payload, part.path);
+        return typeof value === "string" || typeof value === "number" ? String(value) : "";
+      });
+      // why: an empty id would dedupe every such event as one, so a named part that is missing refuses the event
+      if (named === undefined && values.some((value) => value === ""))
+        throw WebhookEventIdMissingError.create();
+      id = named ?? values.join(":");
       occurredAt = now;
     }
+    // reason: the event's generated schema checks the payload at runtime; `create` types its fields from the class
+    const event = (eventClass as unknown as { create: (values: unknown) => Event }).create(payload);
     await this.outbox.write([
       {
         event,

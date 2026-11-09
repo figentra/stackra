@@ -6,20 +6,34 @@
  *          window, pushes one job per run through `QueueService` and moves each watermark to the tick. `run` ticks once
  *          a minute until its signal aborts; `schedule` and `unschedule` keep the per-scope schedules.
  * Boundary: a platform service over `QueueService`, `Locks`, the `ScheduleDriver` and `CronScopes` ports, the `Clock`,
- *           `SchedulerConfig` and the `Logger`. It only dispatches: the work is the job action's, run by the queue
- *           worker (ADR 0078 decision 6). One runner per tick: every instance ticks, `Locks.tryWith` lets one through,
- *           and the watermarks make a second tick of the same minute push nothing. With the Postgres drivers the
- *           pushes and the watermarks commit in the lock's transaction, so a tick that dies pushes nothing. In SaaS
+ *           `SchedulerConfig`, the `Logger` and the `Container` (the bound `CallIsolation`, read optionally at run
+ *           time). It only dispatches: the work is the job action's, run by the queue worker (ADR 0078
+ *           decision 6). One runner per tick: every instance ticks, `Locks.tryWith` lets one through, and the
+ *           watermarks make a second tick of the same minute push nothing. Schedules and jobs are tenant-owned (ADR
+ *           0239 amendment, gaps A and C, decision 5): the lock covers only the claim of every owner's schedules (ids,
+ *           owners and what decides their runs), and, taken again after the pushes, the watermark advance. Between
+ *           them each schedule's due runs, and each scope's runs of a per-scope cron, are pushed in a transaction of
+ *           their own (`ScheduleDriver.transaction`, `requiresNew` on Postgres) in their owner's isolation (a schedule's claimed owner, a
+ *           cron scope's tenant as the isolation resolves it, the platform for a platform cron), since `CallIsolation`
+ *           refuses a tenant switch inside one transaction. Dispatch is at least once with no duplicate: each fire
+ *           time is recorded (`ScheduleDriver.recordFire`, keyed by schedule or cron and scope, and fire time) in the
+ *           push's own transaction and pushed only when the record is new, and the watermark moves after the push, so
+ *           a tick that dies between them pushes again and the record drops the copy, even when the first job has
+ *           finished. A claimed schedule that does not load, or an owned one with no isolation bound, fails the tick
+ *           (`ScheduleClaimNotLoadedError`, `ScheduleRowIsolationMissingError`) after every other owner's runs are
+ *           pushed, its watermark kept: none is skipped silently. In SaaS
  *           each cron of an action has its own Encore CronJob (`encoreCronJobs`) whose endpoint calls `fire`, and a
  *           minute CronJob ticks the stored schedules only (`{ crons: false }`); on-prem `run` is the timer (ADR 0148
  *           decision 4).
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0078 (decision 6, as amended); ADR 0103 (decision 4);
- *                     ADR 0305 (rules 28 and 30); ADR 0327 and ADR 0323 (`ScopeRef`).
+ *                     ADR 0305 (rules 28 and 30); ADR 0327 and ADR 0323 (`ScopeRef`); ADR 0239 (2026-11-07 amendment,
+ *                     gaps A and C, decision 5); ADR 0495.
  */
 import type { Action, ActionOptions, CallInput } from "@stackra/actions";
+import { CallIsolation } from "@stackra/actions/contracts";
 import { kindOf, Service } from "@stackra/container";
-import type { AnyClass } from "@stackra/container";
+import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind, Duration } from "@stackra/contracts";
 import type { Actor, Clock, Logger, PublicId, ScopeRef } from "@stackra/contracts";
 import type { Locks } from "@stackra/locking";
@@ -27,9 +41,11 @@ import type { QueueService } from "@stackra/queue";
 
 import type { SchedulerConfig } from "#config/scheduler.config";
 import { Misfire } from "#contracts/index";
-import type { CronScopes, Schedule, ScheduleDriver } from "#contracts/index";
+import type { CronScopes, Schedule, ScheduleClaim, ScheduleDriver } from "#contracts/index";
 import { SCHEDULED_JOBS } from "#core/constants/scheduled-jobs.constant";
 import { InvalidTimeZoneError } from "#core/errors/invalid-time-zone.error";
+import { ScheduleClaimNotLoadedError } from "#core/errors/schedule-claim-not-loaded.error";
+import { ScheduleRowIsolationMissingError } from "#core/errors/schedule-row-isolation-missing.error";
 import { cronRuns } from "#core/functions/cron-runs.function";
 import { mintScheduleId } from "#core/functions/mint-schedule-id.function";
 import { parseCron } from "#core/functions/parse-cron.function";
@@ -39,6 +55,9 @@ import type { TickResult } from "#core/types/tick-result.type";
 
 /** One minute in milliseconds: the tick interval and the resolution of a cron. */
 const MINUTE = 60_000;
+
+/** How far back `fire` looks for its cron's current slot: one day, the longest catch-up window. */
+const SLOT_LOOKBACK = 24 * 60 * MINUTE;
 
 /** The platform-wide lock one runner holds for a tick. */
 const TICK_LOCK = "scheduler:tick";
@@ -96,6 +115,50 @@ const SCHEDULER_ACTOR_ID = "sys_scheduler";
 const schedulerActor = (scope: ScopeRef): Actor =>
   Object.freeze({ kind: ActorKind.System, id: SCHEDULER_ACTOR_ID, scopeId: scope.id });
 
+/** The actor a claimed schedule's runs are pushed as: the scheduler, in the schedule's owner when it has one. */
+const ownerActor = (ownerId: PublicId<"scp"> | undefined): Actor =>
+  Object.freeze({
+    kind: ActorKind.System,
+    id: SCHEDULER_ACTOR_ID,
+    ...(ownerId === undefined ? {} : { scopeId: ownerId }),
+  });
+
+/**
+ * The runs one tick or `fire` pushes for one owner: a claimed schedule's, or a cron's in one scope (none: platform).
+ * A tick's push, and a `fire` with a slot, names its fire key, so each fire time is pushed once (`recordFire`), and its
+ * watermark key, which a tick moves only once its runs are pushed.
+ */
+type Push = (
+  | { readonly claim: ScheduleClaim }
+  | { readonly input: object; readonly scope: ScopeRef | undefined }
+) & {
+  readonly type: AnyClass<Action>;
+  readonly fires: readonly Date[];
+  readonly once?: {
+    readonly fireKey: string;
+    readonly markKey: string;
+    readonly after: Date;
+  };
+};
+
+/** The fire key of a cron's runs: its job key, with the scope's id for a per-scope cron. */
+const cronFireKey = (key: string, scope: ScopeRef | undefined): string =>
+  scope === undefined ? key : `${key}:${scope.id}`;
+
+/** What a tick decided under its lock: the pushes to make after it, and the keys it evaluated or skipped. */
+interface Plan {
+  readonly pushes: readonly Push[];
+  readonly evaluated: readonly string[];
+  readonly skipped: readonly PublicId<"sch">[];
+}
+
+/** What a run of pushes did: how many jobs it stored, the watermark keys whose push failed, the first failure. */
+interface Pushed {
+  readonly pushed: number;
+  readonly failed: ReadonlySet<string>;
+  readonly failure: { readonly error: unknown } | undefined;
+}
+
 /**
  * Dispatches crons and per-scope schedules.
  *
@@ -125,6 +188,9 @@ export class SchedulerService extends Service {
   /** Where `run` reports a failed tick. */
   private readonly logger: Logger;
 
+  /** The container the bound `CallIsolation`, if any, is read from at run time. */
+  private readonly container: Container;
+
   /**
    * @param queue - pushes each run.
    * @param locks - one runner per tick.
@@ -133,6 +199,7 @@ export class SchedulerService extends Service {
    * @param clock - the time source of ticks and schedules.
    * @param config - the catch-up window and default policy.
    * @param logger - reports a failed tick.
+   * @param container - the container whose `CallIsolation` each owner's pushes run in, when one is bound.
    */
   constructor(
     queue: QueueService,
@@ -142,6 +209,7 @@ export class SchedulerService extends Service {
     clock: Clock,
     config: SchedulerConfig,
     logger: Logger,
+    container: Container,
   ) {
     super();
     this.queue = queue;
@@ -151,6 +219,7 @@ export class SchedulerService extends Service {
     this.clock = clock;
     this.config = config;
     this.logger = logger;
+    this.container = container;
   }
 
   /**
@@ -158,19 +227,31 @@ export class SchedulerService extends Service {
    * with `{ crons: false }` only the stored schedules' runs.
    *
    * @returns what the tick did; `ran` is `false` when another runner held it.
+   * @throws ScheduleClaimNotLoadedError or ScheduleRowIsolationMissingError for a claimed schedule that cannot load in
+   *         its owner, once every other push was made.
    */
   async tick(at: Date = this.clock.now(), options: TickOptions = {}): Promise<TickResult> {
-    let result: TickResult = { ran: false, pushed: 0, skipped: [] };
+    let plan = undefined as Plan | undefined;
     await this.locks.tryWith(TICK_LOCK, TICK_LEASE, async () => {
-      result = await this.dispatch(at, options.crons ?? true);
+      plan = await this.plan(at, options.crons ?? true);
     });
-    return result;
+    if (plan === undefined) return { ran: false, pushed: 0, skipped: [] };
+    const { pushed, failed, failure } = await this.pushAll(plan.pushes);
+    // Pushed first, then the watermarks (at least once): a tick that dies before this line pushes again next time,
+    // and each fire's record drops the copy. A key whose push failed keeps its watermark, so its runs come again.
+    const advanced = plan.evaluated.filter((key) => !failed.has(key));
+    await this.locks.with(TICK_LOCK, TICK_LEASE, () => this.driver.advance(advanced, at));
+    if (failure !== undefined) throw failure.error;
+    return { ran: true, pushed, skipped: plan.skipped };
   }
 
   /**
-   * Pushes one run of the cron action registered as `key` now: once, or once per scope `CronScopes` lists. The
-   * endpoint of that action's Encore CronJob calls it; Encore runs one invocation at a time, so it takes no lock and
-   * moves no watermark.
+   * Pushes one run of the cron action registered as `key` for its current slot: once, or once per scope `CronScopes`
+   * lists. The endpoint of that action's Encore CronJob calls it; Encore runs one invocation at a time, so it takes no
+   * lock and moves no watermark. The slot is the cron's last due time at or before now (UTC, as a tick reads an
+   * action's cron), and each run records its fire under the same fire key and time a tick would, so a retried
+   * invocation, or a tick of the same slot, pushes nothing again. A call with no due time in the last day (a manual
+   * run off the schedule) has no slot: it pushes once at now, unrecorded.
    *
    * @returns how many jobs were stored.
    * @throws TypeError when `key` is not a registered action with a `cron`.
@@ -186,7 +267,28 @@ export class SchedulerService extends Service {
       throw new TypeError(`${key} is not a registered job action with a cron`);
     const scopes: readonly (ScopeRef | undefined)[] =
       cron.perScope === true ? await this.cronScopes.list() : [undefined];
-    return this.push(type, cron.input ?? {}, scopes, 1);
+    const now = this.clock.now();
+    const since = new Date(now.getTime() - SLOT_LOOKBACK);
+    const slot = cronRuns(parseCron(cron.schedule), "UTC", since, now).at(-1);
+    const { pushed, failure } = await this.pushAll(
+      scopes.map((scope) => ({
+        type,
+        fires: [slot ?? now],
+        input: cron.input ?? {},
+        scope,
+        ...(slot === undefined
+          ? {}
+          : {
+              once: {
+                fireKey: cronFireKey(key, scope),
+                markKey: key,
+                after: since,
+              },
+            }),
+      })),
+    );
+    if (failure !== undefined) throw failure.error;
+    return pushed;
   }
 
   /** Ticks at the start of every minute until `signal` aborts; a failed tick is logged and the next one runs. */
@@ -248,8 +350,8 @@ export class SchedulerService extends Service {
     return this.driver.schedules(scope);
   }
 
-  /** One tick under the lock. */
-  private async dispatch(now: Date, crons: boolean): Promise<TickResult> {
+  /** One tick under the lock: claims every owner's schedules and works out the due runs; pushes nothing. */
+  private async plan(now: Date, crons: boolean): Promise<Plan> {
     const at = now.getTime();
     const floor = at - Duration.toMilliseconds(this.config.catchUpWindow);
     const marks = await this.driver.watermarks();
@@ -258,16 +360,17 @@ export class SchedulerService extends Service {
       new Date(Math.max(marks.get(key)?.getTime() ?? fallback, floor));
     const evaluated: string[] = [];
     const skipped: PublicId<"sch">[] = [];
+    const pushes: Push[] = [];
     let scopes: readonly ScopeRef[] | undefined;
-    let pushed = 0;
     for (const [type, key] of crons ? SCHEDULED_JOBS.keys : []) {
       const options = kindOf(type)?.options as unknown as Pick<ActionOptions, "job"> | undefined;
       const cron = options?.job?.cron;
       if (cron === undefined) continue;
       evaluated.push(key);
       // A cron new to the store looks back one minute, so its first tick pushes only the current minute's run.
+      const since = after(key, at - MINUTE);
       const runs = due(
-        cronRuns(parseCron(cron.schedule), "UTC", after(key, at - MINUTE), now),
+        cronRuns(parseCron(cron.schedule), "UTC", since, now),
         this.config.misfire,
         at,
       );
@@ -277,30 +380,42 @@ export class SchedulerService extends Service {
       // oxlint-disable-next-line no-await-in-loop -- listed once per tick, on the first per-scope cron that is due
       if (perScope) scopes ??= await this.cronScopes.list();
       const targets = perScope ? (scopes ?? []) : [undefined];
-      // oxlint-disable-next-line no-await-in-loop -- pushes join the tick's transaction one at a time
-      pushed += await this.push(type, cron.input ?? {}, targets, runs.length);
+      for (const scope of targets)
+        pushes.push({
+          type,
+          fires: runs,
+          input: cron.input ?? {},
+          scope,
+          once: {
+            fireKey: cronFireKey(key, scope),
+            markKey: key,
+            after: since,
+          },
+        });
     }
-    for (const schedule of await this.driver.schedules()) {
-      const type = SCHEDULED_JOBS.byKey.get(schedule.key);
-      const runs =
-        type === undefined
-          ? undefined
-          : this.runsOf(schedule, after(schedule.id, schedule.createdAt.getTime()), now);
+    for (const claim of await this.driver.claim()) {
+      const type = SCHEDULED_JOBS.byKey.get(claim.key);
+      const since = after(claim.id, claim.createdAt.getTime());
+      const runs = type === undefined ? undefined : this.runsOf(claim, since, now);
       if (type === undefined || runs === undefined) {
-        skipped.push(schedule.id);
+        skipped.push(claim.id);
         continue;
       }
-      evaluated.push(schedule.id);
-      const count = due(runs, schedule.misfire, at).length;
-      // oxlint-disable-next-line no-await-in-loop -- pushes join the tick's transaction one at a time
-      pushed += await this.push(type, schedule.input, [schedule.scope], count);
+      evaluated.push(claim.id);
+      const fires = due(runs, claim.misfire, at);
+      if (fires.length > 0)
+        pushes.push({
+          type,
+          fires,
+          claim,
+          once: { fireKey: claim.id, markKey: claim.id, after: since },
+        });
     }
-    await this.driver.advance(evaluated, now);
-    return { ran: true, pushed, skipped };
+    return { pushes, evaluated, skipped };
   }
 
-  /** The runs of a stored schedule in `(after, now]`, or `undefined` when its cron or time zone is refused. */
-  private runsOf(schedule: Schedule, after: Date, now: Date): readonly Date[] | undefined {
+  /** The runs of a claimed schedule in `(after, now]`, or `undefined` when its cron or time zone is refused. */
+  private runsOf(schedule: ScheduleClaim, after: Date, now: Date): readonly Date[] | undefined {
     try {
       return cronRuns(parseCron(schedule.cron), schedule.timeZone, after, now);
     } catch {
@@ -308,24 +423,91 @@ export class SchedulerService extends Service {
     }
   }
 
-  /** Pushes `runs` jobs of `type` into each of `scopes` (`undefined` for the platform); how many were stored. */
-  private async push(
-    type: AnyClass<Action>,
-    input: object,
-    scopes: readonly (ScopeRef | undefined)[],
-    runs: number,
-  ): Promise<number> {
+  /** Makes every push, each in its owner, one after another; a push that fails does not stop the others. */
+  private async pushAll(pushes: readonly Push[]): Promise<Pushed> {
     let pushed = 0;
-    for (let run = 0; run < runs; run += 1)
-      for (const scope of scopes) {
-        // oxlint-disable-next-line no-await-in-loop -- pushes join the tick's transaction one at a time
-        const id = await this.queue.push(
-          type,
-          input as never,
-          scope === undefined ? {} : { scope, origin: schedulerActor(scope) },
-        );
-        if (id !== undefined) pushed += 1;
+    let failure: { readonly error: unknown } | undefined;
+    const failed = new Set<string>();
+    for (const push of pushes)
+      try {
+        // oxlint-disable-next-line no-await-in-loop -- one owner's transaction at a time
+        pushed += await this.inOwner(push, () => this.pushRuns(push));
+      } catch (error) {
+        failure ??= { error };
+        if (push.once !== undefined) failed.add(push.once.markKey);
       }
+    return { pushed, failed, failure };
+  }
+
+  /**
+   * Pushes the runs of `push` in the running isolation: a claimed schedule's, loaded first, or a cron's.
+   *
+   * @throws ScheduleClaimNotLoadedError when the claimed schedule does not load.
+   */
+  private async pushRuns(push: Push): Promise<number> {
+    const { input, scope }: { readonly input: object; readonly scope: ScopeRef | undefined } =
+      "claim" in push ? await this.loaded(push.claim) : push;
+    const { once } = push;
+    // Fires at or before the window's start are never evaluated again, so their records can go.
+    if (once !== undefined) await this.driver.forgetFires(once.fireKey, once.after);
+    let pushed = 0;
+    for (const at of push.fires) {
+      // A fire already recorded was pushed by a tick that died before its watermark moved: the copy is dropped. The
+      // record commits with the push, in the owner's one transaction.
+      // oxlint-disable-next-line no-await-in-loop -- one fire after another in the owner's transaction
+      if (once !== undefined && !(await this.driver.recordFire(once.fireKey, at))) continue;
+      // oxlint-disable-next-line no-await-in-loop -- pushes join the owner's transaction one at a time
+      const id = await this.queue.push(
+        push.type,
+        input as never,
+        scope === undefined ? {} : { scope, origin: schedulerActor(scope) },
+      );
+      if (id !== undefined) pushed += 1;
+    }
     return pushed;
+  }
+
+  /**
+   * The claimed schedule, as the running isolation loads it.
+   *
+   * @throws ScheduleClaimNotLoadedError when it does not load.
+   */
+  private async loaded(claim: ScheduleClaim): Promise<Schedule> {
+    const schedule = await this.driver.load(claim.id);
+    if (schedule === undefined) throw ScheduleClaimNotLoadedError.create({ id: claim.id });
+    return schedule;
+  }
+
+  /**
+   * Runs `work` for `push` in a transaction of its own (`ScheduleDriver.transaction`) in its owner's
+   * isolation: a claimed schedule's owner, or the tenant the isolation resolves for a cron's scope (the platform for
+   * none). With no isolation bound a platform schedule or a cron runs as it is.
+   *
+   * @throws ScheduleRowIsolationMissingError when a claimed schedule has an owner and no isolation is bound.
+   */
+  private inOwner<T>(push: Push, work: () => Promise<T>): Promise<T> {
+    const isolation = this.container.has(CallIsolation)
+      ? this.container.get(CallIsolation)
+      : undefined;
+    const unit = (): Promise<T> => {
+      if ("claim" in push) {
+        const { id, ownerId } = push.claim;
+        if (isolation !== undefined)
+          return isolation.run(ownerActor(ownerId), undefined, () => work(), { readOnly: false });
+        if (ownerId !== undefined)
+          return Promise.reject(ScheduleRowIsolationMissingError.create({ id }));
+        return work();
+      }
+      const { scope } = push;
+      if (isolation === undefined) return work();
+      return isolation.run(
+        scope === undefined ? ownerActor(undefined) : schedulerActor(scope),
+        scope,
+        () => work(),
+        { readOnly: false },
+      );
+    };
+    // A tenant insert from a no-tenant session: its own transaction, outside the lock's, never a tenant switch.
+    return this.driver.transaction(unit);
   }
 }

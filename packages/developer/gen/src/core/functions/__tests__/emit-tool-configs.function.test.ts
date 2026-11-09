@@ -201,6 +201,16 @@ describe("emitToolConfigs", () => {
     expect(bare[1]?.content).not.toContain("@stackra/tenancy/testing");
   });
 
+  it("loads the scope testing entry only for a member on @stackra/scope", () => {
+    const on = emitToolConfigs(
+      { ...COMMERCE_IR, packages: ["@stackra/container", "@stackra/scope"] },
+      { entries: [], registrations: false },
+    );
+    expect(on[1]?.content).toContain('import "@stackra/scope/testing";');
+    const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
+    expect(bare[1]?.content).not.toContain("@stackra/scope/testing");
+  });
+
   it("loads the actions testing entry only for a member on @stackra/actions", () => {
     const on = emitToolConfigs(
       { ...COMMERCE_IR, packages: ["@stackra/container", "@stackra/actions"] },

@@ -5,6 +5,9 @@
  *          driver (`postgres`, `memory`, `broker`). `claim` takes a job a broker delivered instead of one `reserve` found.
  *          A reservation is fair: the highest priority first, then the scope with the fewest running jobs, then the
  *          oldest `runAt`, and never past a job's `scopeConcurrency`. Batches keep their progress in the store.
+ *          Jobs are tenant-owned (ADR 0239 amendment, gaps A and C): `reserve` and `claimDead` claim across owners and
+ *          hand back ids and owners only; every other job method runs in the caller's isolation, so a job is loaded,
+ *          changed or deleted only in its owner's (a platform job in the platform's).
  * Boundary: an abstract class that is its own token, keyed `queue.QueueDriver`. A driver stores and reserves; it never
  *           runs a job, computes a backoff or reads a clock: the worker passes `now` and the retry time, so every
  *           driver behaves the same to a caller. A reservation that lapses (a worker that died) makes the job due again
@@ -17,6 +20,7 @@ import { Port } from "@stackra/contracts";
 import type { PublicId } from "@stackra/contracts";
 
 import type { JobBatch } from "#contracts/types/job-batch.type";
+import type { JobClaim } from "#contracts/types/job-claim.type";
 import type { JobError } from "#contracts/types/job-error.type";
 import type { QueuedJob } from "#contracts/types/queued-job.type";
 
@@ -49,9 +53,13 @@ export abstract class QueueDriver extends Port {
    * running one whose reservation lapsed. Among them the highest `priority` wins, then the job whose scope (on its
    * queue) has the fewest jobs running, then the oldest `runAt`; a job whose scope already runs `scopeConcurrency`
    * jobs on its queue is skipped. It is marked running with one more attempt and held until `now` plus its `lease`; no
-   * other `reserve` returns it meanwhile. `undefined` when none is due.
+   * other `reserve` returns it meanwhile. It is claimed across owners: the answer is its id and owner, which the worker
+   * loads (`load`) in that owner. `undefined` when none is due.
    */
-  abstract reserve(queue: string | undefined, now: Date): Promise<QueuedJob | undefined>;
+  abstract reserve(queue: string | undefined, now: Date): Promise<JobClaim | undefined>;
+
+  /** Job `id` as the caller's isolation reads it; `undefined` when it is gone or another owner's. */
+  abstract load(id: PublicId<"job">): Promise<QueuedJob | undefined>;
 
   /** Makes job `id` wait again until `runAt`, keeping `error` as its last failure. */
   abstract retry(id: PublicId<"job">, runAt: Date, error: JobError): Promise<void>;
@@ -65,12 +73,25 @@ export abstract class QueueDriver extends Port {
   /** Deletes job `id`: it finished, or failed for good without a dead letter. */
   abstract remove(id: PublicId<"job">): Promise<void>;
 
-  /** Up to `limit` dead-lettered jobs of `queue` (of every queue when `undefined`), in the order they were queued. */
+  /**
+   * Up to `limit` dead-lettered jobs of `queue` (of every queue when `undefined`) the caller's isolation reads, in the
+   * order they were queued.
+   */
   abstract deadLetters(queue: string | undefined, limit: number): Promise<readonly QueuedJob[]>;
 
   /**
-   * Makes dead job `id` wait again from `now` with its attempts reset; `false` when it is not dead, or a waiting or
-   * running job holds its `uniqueKey`.
+   * Claims up to `limit` dead-lettered jobs of every owner, of `options.queue` (every queue when absent) or job
+   * `options.id` alone, in the order they were queued: ids and owners only, each then loaded or redriven in its owner.
+   */
+  abstract claimDead(options: {
+    readonly queue?: string;
+    readonly id?: PublicId<"job">;
+    readonly limit: number;
+  }): Promise<readonly JobClaim[]>;
+
+  /**
+   * Makes dead job `id` wait again from `now` with its attempts reset; `false` when it is not dead (or not the caller's
+   * to change), or a waiting or running job of any owner holds its `uniqueKey`.
    */
   abstract redrive(id: PublicId<"job">, now: Date): Promise<boolean>;
 

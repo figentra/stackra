@@ -8,6 +8,7 @@
  */
 import type { Lifetime } from "#core/decorators/lifetime.decorator";
 import type { AnyClass } from "#core/types/any-class.type";
+import type { Container } from "#core/services/container.service";
 import type { Token } from "#core/types/token.type";
 
 /** One class the container builds. */
@@ -25,5 +26,5 @@ export interface WiringBinding {
   readonly lifetime?: Lifetime;
 
   /** The tokens of the constructor parameters, in order. */
-  readonly deps?: readonly Token[];
+  readonly deps?: readonly (Token | typeof Container)[];
 }

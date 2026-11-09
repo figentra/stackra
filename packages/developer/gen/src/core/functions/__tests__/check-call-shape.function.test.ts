@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `checkCallShape`: each of `query_above_l1`, `query_precondition`, `action_cache`,
- *          `step_up_missing` and `idempotency_missing` refuses its fixture beside a conforming one that passes, an
+ *          `step_up_missing`, `idempotency_missing` and `credentials_ignore_not_anonymous` refuses its fixture beside a
+ *          conforming one that passes, an
  *          unknown query risk, a service-only L3 action, an action with neither endpoint nor tool and a written
  *          `Idempotency.Optional` pass, every refusal carries a fix, and `buildManifest` reports the codes.
  * Boundary: test only; runs on the commerce IR fixture.
@@ -37,6 +38,10 @@ const codes = (
   routed = true,
   tool = true,
 ): string[] => checkCallShape(declared, { risk, routed, tool }).map((error) => error.code);
+
+/** The action with `actors` and `credentials` written. */
+const ignoring = (actors: readonly string[], credentials: unknown = "ignore"): DeclaredClass =>
+  withOptions(ACTION, { ...ACTION.options, actors, credentials, idempotency: "optional" });
 
 describe("checkCallShape", () => {
   it("refuses a query above L1, and passes L0, L1 and an unknown permission", () => {
@@ -84,6 +89,15 @@ describe("checkCallShape", () => {
       "action_cache",
     ]);
     expect(codes(withOptions(QUERY, { ...QUERY.options, cache }), "L0")).toEqual([]);
+  });
+
+  it('allows credentials: "ignore" only on an action whose actors are exactly anonymous', () => {
+    expect(codes(ignoring(["anonymous"]), "L1")).toEqual([]);
+    for (const actors of [["user"], ["anonymous", "user"], []])
+      expect(codes(ignoring(actors), "L1")).toEqual(["credentials_ignore_not_anonymous"]);
+    expect(codes(ignoring(["anonymous"], "keep"), "L1")).toEqual([
+      "credentials_ignore_not_anonymous",
+    ]);
   });
 
   it("allows the first-factor enrolment exemption only on a listed action", () => {

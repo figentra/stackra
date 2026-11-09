@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ColumnChange`, the chain `t.change(column)` returns inside `schema.table(...)`: make an existing column
- *          nullable or NOT NULL, or change its type, as a frozen migration step with a derived inverse.
+ *          nullable or NOT NULL, change its type, or give it a default read from a custom setting, as a frozen migration step with a derived inverse.
  * Boundary: a type only; the migration compiler records the calls and writes `ALTER COLUMN` statements. Every value is
  *           a literal in the migration (the frozen snapshot rule): a type change states the type it had (`from`), so
  *           the inverse is derived without reading the database. Only on an existing table; a table being created
@@ -33,4 +33,12 @@ export interface ColumnChange {
    * exclusive lock for the rewrite: on a large table, add a new column and backfill it instead.
    */
   type: (to: string, options: { readonly from: string; readonly using?: string }) => this;
+
+  /**
+   * `SET DEFAULT nullif(current_setting(setting, true), '')`, on a column that has no default: a row written without
+   * the column takes the transaction's setting, and NULL when it is unset or empty, so a NOT NULL column refuses the
+   * write. It fills a column the ORM never writes, such as an implicit many-to-many pivot's `tenant_id`. Its inverse
+   * drops the default.
+   */
+  defaultSetting: (setting: string) => this;
 }

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `ColumnChangeRecord`, the runtime side of `ColumnChange`: records a nullability or type change of one
- *          existing column and compiles it to `ALTER COLUMN` statements, each with its inverse. `notNull({ safe: true })`
+ * Purpose: `ColumnChangeRecord`, the runtime side of `ColumnChange`: records a nullability, type or setting-default
+ *          change of one existing column and compiles it to `ALTER COLUMN` statements, each with its inverse. `notNull({ safe: true })`
  *          compiles to ADR 0159's sequence instead: a `NOT VALID` check in the transactional step, then a later step
  *          that validates it, sets NOT NULL (which Postgres proves from the check, without a scan) and drops it.
  * Boundary: internal. It checks each value as it comes (a known SQL type, no second change of the same kind); the
@@ -11,6 +11,7 @@
  */
 import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { sqlLiteral } from "#core/functions/sql-literal.function";
 import type { ColumnChange } from "#core/types/column-change.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
@@ -23,6 +24,29 @@ const SQL_TYPE =
 function assertType(column: string, type: string): void {
   if (!SQL_TYPE.test(type))
     throw new TypeError(`${column}: "${type}" is not a column type a blueprint writes`);
+}
+
+/** The reason and the squawk ignore written above a type change Postgres makes without rewriting the table. */
+const WIDEN_SQUAWK_IGNORE =
+  "-- lint: widening a varchar, or varchar to text, changes only the catalog; Postgres does not rewrite the table.\n" +
+  "-- squawk-ignore changing-column-type\n";
+
+/** The length of a `varchar(n)` type, or undefined for any other type. */
+const varcharLength = (type: string): number | undefined => {
+  const match = /^varchar\((\d+)\)$/.exec(type);
+  return match?.[1] === undefined ? undefined : Number(match[1]);
+};
+
+/**
+ * Whether `from` to `to` only widens a varchar (`varchar(n)` to a longer `varchar(m)`) or turns it into `text`, with no
+ * custom conversion: Postgres changes the catalog and rewrites nothing. Every other change, narrowing included, stays
+ * flagged.
+ */
+function widens(from: string, to: string, using: string | undefined): boolean {
+  const before = varcharLength(from);
+  if (using !== undefined || before === undefined) return false;
+  const after = varcharLength(to);
+  return to === "text" || (after !== undefined && after > before);
 }
 
 /** One recorded column change. */
@@ -40,6 +64,9 @@ export class ColumnChangeRecord implements ColumnChange {
   private conversion:
     | { readonly to: string; readonly from: string; readonly using: string | undefined }
     | undefined = undefined;
+
+  /** The custom setting the column's new default reads, when there is one. */
+  private setting: string | undefined = undefined;
 
   /**
    * @param name - the column name, snake_case.
@@ -81,6 +108,20 @@ export class ColumnChangeRecord implements ColumnChange {
   }
 
   /**
+   * Records a default read from a custom setting, as `ColumnChange.defaultSetting` describes.
+   *
+   * @throws TypeError for a setting that is not `<prefix>.<name>`, or a second default of the column.
+   */
+  defaultSetting(setting: string): this {
+    if (this.setting !== undefined)
+      throw new TypeError(`${this.name} already changes its default in this blueprint`);
+    if (!/^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/.test(setting))
+      throw new TypeError(`"${setting}" is not a custom setting: <prefix>.<name>`);
+    this.setting = setting;
+    return this;
+  }
+
+  /**
    * The `ALTER COLUMN` statements, type first, each with its inverse; a safe NOT NULL adds its `NOT VALID` check here.
    *
    * @param table - the table name, without its schema, which names the check.
@@ -94,7 +135,7 @@ export class ColumnChangeRecord implements ColumnChange {
     if (this.conversion !== undefined) {
       const { to, from, using } = this.conversion;
       statements.push({
-        sql: `${alter} type ${to} using ${using ?? `${column}::${to}`}`,
+        sql: `${widens(from, to, using) ? WIDEN_SQUAWK_IGNORE : ""}${alter} type ${to} using ${using ?? `${column}::${to}`}`,
         inverse: [`${alter} type ${from} using ${column}::${from}`],
       });
     }
@@ -110,9 +151,15 @@ export class ColumnChangeRecord implements ColumnChange {
           ? { sql: `${alter} drop not null`, inverse: [`${alter} set not null`] }
           : { sql: `${alter} set not null`, inverse: [`${alter} drop not null`] },
       );
+    // No cast, unlike ColumnRecord's: the change does not know the column's type, and Postgres casts text on assignment.
+    if (this.setting !== undefined)
+      statements.push({
+        sql: `${alter} set default nullif(current_setting(${sqlLiteral(this.setting)}, true), '')`,
+        inverse: [`${alter} drop default`],
+      });
     if (statements.length === 0)
       throw new TypeError(
-        `t.change("${this.name}") changes nothing: call nullable(), notNull() or type()`,
+        `t.change("${this.name}") changes nothing: call nullable(), notNull(), type() or defaultSetting()`,
       );
     return statements;
   }
