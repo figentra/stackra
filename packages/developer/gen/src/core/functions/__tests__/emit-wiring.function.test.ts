@@ -245,6 +245,23 @@ describe("emitWiring", () => {
     expect(content).toMatch(/import \{[^}]*LoyaltyService[^}]*\} from "@acme\/loyalty-kit";/);
   });
 
+  it("binds what the generated boot resolves for a declared package, which nothing injects (STA-2664 (n))", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const names = ["OutboxWriterService", "OutboxRelayService", "InboxService"];
+    const outbox = {
+      ...kit,
+      package: "@stackra/outbox",
+      services: names.map((name) => ({ class: name, from: "@stackra/outbox/node", deps: [] })),
+    };
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@stackra/outbox"],
+      dependencies: [{ package: "@stackra/outbox", manifest: outbox }],
+    });
+    for (const name of names)
+      expect(content).toMatch(new RegExp(`kind: "service", provide: ${name}, deps: \\[\\] \\},`));
+  });
+
   it("binds a package's extension point that its service injects, from the package's manifest", () => {
     const point = {
       name: "LoyaltyKitExtensionPoint",

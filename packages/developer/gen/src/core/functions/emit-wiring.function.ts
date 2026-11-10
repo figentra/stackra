@@ -45,6 +45,7 @@
 import { snakeCase } from "@stackra/support";
 
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
+import { BOOT_SERVICES } from "#core/constants/boot-services.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { CONTAINER_BUILT } from "#core/constants/container-built.constant";
@@ -693,6 +694,11 @@ export function emitWiring(ir: MemberIR): string {
     for (const dep of replicaReadsPorts(ir)) used.push({ module: ir.member, dep });
     // The ports the pipeline itself requires for what the service declares, injected or not (STA-2573).
     for (const dep of pipelinePorts(ir)) used.push({ module: ir.member, dep });
+    // What the generated boot resolves for a declared package; nothing injects it, so without these rows boot stops
+    // at "Nothing binds OutboxWriterService" (STA-2664 (n)).
+    for (const { packages, services } of BOOT_SERVICES)
+      if (packages.some(declares))
+        for (const service of services) used.push({ module: ir.member, dep: { class: service } });
   }
   // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
   const systemDefaults = new Map<string, string>();
