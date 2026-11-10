@@ -759,9 +759,6 @@ importers:
       '@stackra/commitlint-config':
         specifier: workspace:*
         version: link:packages/tooling/commitlint
-      '@stackra/flow-preset':
-        specifier: workspace:*
-        version: link:packages/developer/flow-preset
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4

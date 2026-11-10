@@ -20,7 +20,7 @@ const K = BENTO_CARD_KEYS.bento_card.feature;
 /** The kit's strata poster, one per scheme. */
 const POSTER = { light: "/posters/strata-light.png", dark: "/posters/strata-dark.png" } as const;
 
-/** BentoCard: Feature. */
+/** The BentoCard demo: Feature. */
 export default function Feature() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

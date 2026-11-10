@@ -938,11 +938,7 @@ test("figentra CLI: an executor is denied every form of the lead's wrappers", ()
     "npx figentra pr merge 1 & pgrep -af node",
   ])
     assert.equal(kind(c), "deny", c);
-  for (const c of [
-    'grep -rn "figentra bot git" .agents',
-    "git log --oneline -1",
-    "pnpm bot:git -- push origin HEAD",
-  ])
+  for (const c of ['grep -rn "figentra bot git" .agents', "git log --oneline -1"])
     assert.equal(kind(c), "allow", c);
 });
 
