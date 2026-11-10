@@ -25,7 +25,7 @@ const CITIES = [
   { id: "abha", latitude: 18.2164, longitude: 42.5053, count: 5, name: K.abha },
 ] as const;
 
-/** MarkerMap: basics. */
+/** The MarkerMap demo: basics. */
 export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   const [selectedId, setSelectedId] = useState<string>("riyadh");
