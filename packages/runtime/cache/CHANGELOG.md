@@ -1,5 +1,19 @@
 # @stackra/cache
 
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/storage@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

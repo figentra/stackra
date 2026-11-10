@@ -1,5 +1,36 @@
 # @stackra/ai
 
+## 0.33.0
+
+### Minor Changes
+
+- df6f577: The ChatSurface draws a `data-tamo-artifact` part by default: an `AttachmentCard` of the file Tamo made (its name with the kind as extension, and its size). Opening or downloading it calls the host's new `onOpenArtifact` or `onDownloadArtifact` with the artifact's id and version; the part never carries a link. `TamoArtifactPart` gains an optional `bytes`, and its `kind` is the file extension.
+- 54aa1e7: `AgentRuntime.stream`'s `uiStream` is safe to send to a person: with a guardrail layer bound (`AgentStream.guarded`), it holds the text and reasoning deltas and sends the reply's guarded text once the run settles, before `finish`; tool and approval chunks still stream at once, and a blocked answer is one `error` chunk naming `guardrail_blocked`. `textStream` stays unguarded.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/actions@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/search@0.33.0
+  - @stackra/outbox@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

@@ -1,5 +1,29 @@
 # @stackra/flow-preset
 
+## 0.33.0
+
+### Minor Changes
+
+- 7d0e16f: The package catches up with Flow's bundled stackra preset, so a repository can switch to it (T142). That brings in:
+  
+  - the agents' docs links and rule names;
+  - the guard's executor rules;
+  - the settings and OpenCode surfaces;
+  - the opt-in lefthook;
+  - every edit made to Flow's copy since the package was cut.
+  
+  Core's own changes stay. It requires Flow 0.11.0 or later (`requires.flow` and the peer), since it relies on 0.11's
+  opt-in surfaces, projection and fencing.
+
+### Patch Changes
+
+- 3d7b572: The `docs-adr-steward` and `incident-commander` agents name the docs member as `<docs>/…`, so a repository's
+  `stackra validate` keeps passing once its docs move from `apps/docs` to the root `docs/` (ADR 0514).
+- 9cb51b7: The service-builder agent names the assistants' folders without a path, so a product without `.opencode/` (OpenCode
+  is opt-in from Flow 0.9.3) passes validate.
+- 7f7c00a: The guard's refusals for generated agent files, the reviewer list, `.mcp.json` and the rules block now say to run
+  `fflow sync`, which projects `.agents/` now that core's `agents:sync` script has retired.
+
 ## 0.32.0
 
 No changes in this release.

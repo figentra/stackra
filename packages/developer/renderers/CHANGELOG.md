@@ -1,5 +1,14 @@
 # @stackra/renderers
 
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/skills@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

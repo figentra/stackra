@@ -1,5 +1,39 @@
 # @stackra/scheduler
 
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [6186329]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [3c47a3a]
+- Updated dependencies [2e3e323]
+- Updated dependencies [93d63bb]
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4bf092e]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/gen@0.33.0
+  - @stackra/queue@0.33.0
+  - @stackra/testing@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/locking@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes
