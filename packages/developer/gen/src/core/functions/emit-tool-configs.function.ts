@@ -41,6 +41,15 @@ import type { MemberIR } from "#core/types/member-ir.type";
 const inline = (items: readonly string[]): string =>
   `[${items.map((item) => JSON.stringify(item)).join(", ")}]`;
 
+/** The service preset's `include` (`@stackra/typescript-config/service`), from `.stackra/`. */
+const SERVICE_TYPECHECK_INCLUDE = [
+  "../src",
+  "../stackra.config.ts",
+  "../.stackra/gen",
+  "../.stackra/entry",
+  "../.stackra/*.config.ts",
+];
+
 /**
  * The tool configs of `ir`.
  *
@@ -278,13 +287,14 @@ export function emitToolConfigs(
 
   // A service's tsconfig carries `paths` for Encore; tsc would apply them to every package the service compiles, so its
   // typecheck reads the same tsconfig with none, and each package's `#` imports resolve through its own package.json.
-  // No preset sets `include`, and tsc's default is relative to the config it is given, so this one names the member's
-  // files as the member's own tsconfig does by default.
+  // The service preset's `include` names its files from `${configDir}`, which is this config's folder here, so this one
+  // names the same files from the member root. A wildcard would not do: tsc's `**` skips dot folders, and losing
+  // `.stackra/gen` drops the entity augmentations gen writes there.
   const typecheckTsconfig = [
     "{",
     `  "$comment": ${JSON.stringify(`${GENERATED_NOTICE}; from the member's tsconfig. Purpose: the typecheck program of a service: its tsconfig without the paths that exist for Encore.`)},`,
     `  "extends": "../tsconfig.json",`,
-    `  "include": ${inline(["../**/*"])},`,
+    `  "include": ${inline(SERVICE_TYPECHECK_INCLUDE)},`,
     `  "compilerOptions": {`,
     `    "paths": {}`,
     `  }`,

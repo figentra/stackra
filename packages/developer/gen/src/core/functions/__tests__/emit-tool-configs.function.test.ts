@@ -78,7 +78,14 @@ describe("emitToolConfigs", () => {
     >;
     expect(typecheck).toMatchObject({
       extends: "../tsconfig.json",
-      include: ["../**/*"],
+      // The preset's files from `.stackra/`, never a wildcard: tsc's `**` skips `.stackra/gen`.
+      include: [
+        "../src",
+        "../stackra.config.ts",
+        "../.stackra/gen",
+        "../.stackra/entry",
+        "../.stackra/*.config.ts",
+      ],
       compilerOptions: { paths: {} },
     });
     const pkg = emitToolConfigs(LOYALTY_KIT_IR, { entries: [], registrations: false });
