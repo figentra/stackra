@@ -91,6 +91,7 @@ export { eventName } from "#core/functions/event-name.function";
 export { expectedSchema } from "#core/functions/expected-schema.function";
 export { folderKey } from "#core/functions/folder-key.function";
 export { formatGenError } from "#core/functions/format-gen-error.function";
+export { formatJson } from "#core/functions/format-json.function";
 export { formatSchemaDifference } from "#core/functions/format-schema-difference.function";
 export { generateMember } from "#core/functions/generate-member.function";
 export { memberGraphOf } from "#core/functions/member-graph-of.function";

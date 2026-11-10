@@ -95,6 +95,7 @@ describe("@stackra/gen", () => {
       "expectedSchema",
       "folderKey",
       "formatGenError",
+      "formatJson",
       "formatSchemaDifference",
       "generateMember",
       "integrationKey",
