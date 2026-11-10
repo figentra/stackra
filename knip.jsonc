@@ -252,7 +252,10 @@
       // which reads the App Tracking Transparency answer; the app carries no ATT plugin since it never prompts (STA-1587).
       // expo-status-bar: the app no longer imports it, but the mobile scaffold template does through the same
       // `catalog:mobile` entry, and knip ignores the templates; this keeps that entry named by a member.
+      // @stackra/vitest-config: referenced only by the vitest config, which knip doesn't load because the gate doesn't
+      // install this workspace (Uniwind Pro limit); the ignore comes out when the gate installs it again.
       "ignoreDependencies": [
+        "@stackra/vitest-config",
         "expo-status-bar",
         "expo-updates",
         "@babel/plugin-transform-flow-strip-types",
@@ -270,6 +273,9 @@
     // cannot load there (knip exits 2 on a config it cannot load): those plugins are off, and its unit tests, their
     // setup files and its e2e specs are entries instead. jsdom: the vitest config's test environment, named by a string
     // in that config only. @testing-library/dom: the peer @testing-library/react requires installed; never imported.
+    // @stackra/vitest-config, @tailwindcss/vite, @vitejs/plugin-react, vite: referenced only by the vite, vitest and
+    // playwright configs, which knip doesn't load because the gate doesn't install this workspace (Uniwind Pro limit);
+    // these ignores come out when the gate installs it again.
     "apps/playground": {
       "entry": [
         "src/main.{ts,tsx}",
@@ -283,7 +289,15 @@
       "vite": false,
       "vitest": false,
       "playwright": false,
-      "ignoreDependencies": ["@stackra/app", "jsdom", "@testing-library/dom"],
+      "ignoreDependencies": [
+        "@stackra/app",
+        "jsdom",
+        "@testing-library/dom",
+        "@stackra/vitest-config",
+        "@tailwindcss/vite",
+        "@vitejs/plugin-react",
+        "vite",
+      ],
     },
     "workers/*": {
       "project": ["src/**/*.ts"],
