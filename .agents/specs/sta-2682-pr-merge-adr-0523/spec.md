@@ -55,8 +55,8 @@ gate", honouring a HOLD label) and decision 6 (the stackra-reviewer App is retir
 
 - **AC-001**: WHEN the PR is closed, merged or a draft THE script SHALL refuse.
 - **AC-002**: WHEN the newest Quality Gate run on the head is missing or not `success` THE script SHALL refuse.
-- **AC-003**: WHEN the base has no merge queue and `mergeStateStatus` is not CLEAN, HAS_HOOKS or UNSTABLE THE script
-  SHALL refuse, naming the state and its fix.
+- **AC-003**: WHEN the base has no merge queue and the merge state is not mergeable THE script SHALL refuse:
+  `mergeStateStatus` must be CLEAN, HAS_HOOKS or UNSTABLE, and the refusal names the state and its fix.
 - **AC-004**: WHEN the PR carries a `hold` label in any case THE script SHALL refuse.
 - **AC-005**: THE script SHALL NOT read or require an AI-REVIEW verdict, and SHALL never pass `--admin`.
 - **AC-006**: WHEN a PR is labelled `design` or `risk:R3` THE script SHALL refuse without the owner's approval on the
