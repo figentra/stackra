@@ -278,6 +278,50 @@ jobs:
           key: uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
           restore-keys: uniwind-pro-1-${{ runner.os }}-
 
+      # On a cache miss, the verified tarball comes from figentra/ci-cache's private `uniwind-pro-<version>` release
+      # instead of the CDN, so a miss spends no download either (a used-up quota failed every miss). This repository is
+      # public, so the build lives in that private repository only, read through a stackra-bot token scoped to it with
+      # contents:read. The seeded file is checked against the sha256 Uniwind publishes before the install sees it, and
+      # dropped when it differs (the postinstall checks it again). With no token (a fork), no release or a mismatch, the
+      # postinstall downloads as before. Nothing here prints the token: gh reads it from the environment.
+      - name: Uniwind Pro cache token (GitHub App)
+        id: ci-cache-token
+        if: ${{ steps.uniwind-cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          owner: figentra
+          repositories: ci-cache
+          permission-contents: read
+
+      - name: Uniwind Pro cache from figentra/ci-cache
+        if: ${{ steps.uniwind-cache.outputs.cache-hit != 'true' && steps.ci-cache-token.outputs.token != '' }}
+        continue-on-error: true # a seed that cannot finish leaves the download to the postinstall, never a red job
+        env:
+          GH_TOKEN: ${{ steps.ci-cache-token.outputs.token }}
+        run: |
+          version=$(awk '/^  uniwind-pro@[0-9]/ { sub(/^  uniwind-pro@/, ""); sub(/:$/, ""); print; exit }' \
+            pnpm-lock.yaml)
+          dir="$UNIWIND_CACHE_DIR/$version"
+          if [ -z "$version" ] || [ -f "$dir/uniwind-pro-$version.tgz" ]; then exit 0; fi
+          mkdir -p "$dir"
+          if ! gh release download "uniwind-pro-$version" --repo figentra/ci-cache \
+            --pattern "uniwind-pro-$version.tgz*" --dir "$dir"; then
+            echo "::notice title=Uniwind Pro::no uniwind-pro-$version release in figentra/ci-cache; downloading"
+            exit 0
+          fi
+          published="https://cdn.uniwind.dev/uniwind-pro/checksums/$version"
+          expected=$(curl -fsS --max-time 10 "$published" | awk '{ print tolower($1); exit }' || true)
+          actual=$(sha256sum "$dir/uniwind-pro-$version.tgz" 2>/dev/null | awk '{ print $1 }' || true)
+          if [ -n "$expected" ] && [ "$expected" = "$actual" ]; then
+            echo "Uniwind Pro $version seeded from figentra/ci-cache (sha256 $actual, as Uniwind publishes)"
+          else
+            rm -rf "$dir"
+            echo "::warning title=Uniwind Pro::seeded $version does not match the published sha256; dropped, downloading"
+          fi
+
       # One lifecycle script at a time: the first uniwind-pro postinstall downloads into UNIWIND_CACHE_DIR and the
       # second logs "Using cached v1.9.0 package". The other postinstalls (esbuild, skia, workerd) only take longer.
       - name: Install dependencies
