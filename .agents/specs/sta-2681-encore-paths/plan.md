@@ -76,7 +76,8 @@ packages/developer/gen/src/core/constants/typecheck-tsconfig.constant.ts
 packages/developer/gen/src/core/functions/emit-tool-configs.function.ts
 packages/developer/gen/src/core/index.ts
 packages/developer/gen/__golden__/*/expected/services/*/.stackra/tsconfig.typecheck.json.golden (14)
-services/example/tsconfig.json, services/health/tsconfig.json
+services/example/tsconfig.json
+services/health/tsconfig.json
 apps/docs/src/docs/adr/0091-generated-encore-app-in-stackra-folder.mdx
 .changeset/encore-paths-one-target.md
 ```
