@@ -1,5 +1,48 @@
 # @stackra/identity
 
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [7c34d68]
+- Updated dependencies [26a2d54]
+- Updated dependencies [7c34d68]
+- Updated dependencies [7c34d68]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/actions@0.33.0
+  - @stackra/scope@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/queue@0.33.0
+  - @stackra/market-packs@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/clients@0.33.0
+  - @stackra/outbox@0.33.0
+  - @stackra/scheduler@0.33.0
+  - @stackra/privacy@0.33.0
+  - @stackra/query@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/storage@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/transport@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

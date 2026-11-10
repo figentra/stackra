@@ -1,5 +1,19 @@
 # @stackra/state-machine
 
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

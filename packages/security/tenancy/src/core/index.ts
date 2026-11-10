@@ -11,10 +11,13 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0327 (decisions 7 and 8); the STA-347 stand-in barrel decision.
  */
+export { TenantKeysConfig } from "#config/tenant-keys.config";
+export { TENANT_KEYS_CONFIG_SCHEMA as TenantKeysConfig$ } from "#core/constants/tenant-keys-config-schema.constant";
 export { TENANT_SCOPE_ALIAS } from "#core/constants/tenant-scope-alias.constant";
 export { TENANT_SCOPE_LEVEL } from "#core/constants/tenant-scope-level.constant";
 export { MemorySandboxTenantsDriver } from "#core/drivers/memory-sandbox-tenants.driver";
 export { MemoryTenantBillingContactsDriver } from "#core/drivers/memory-tenant-billing-contacts.driver";
+export { MemoryTenantDataKeyStoreDriver } from "#core/drivers/memory-tenant-data-key-store.driver";
 export { MemoryTenantDirectoryDriver } from "#core/drivers/memory-tenant-directory.driver";
 export { MemoryTenantPlacementDriver } from "#core/drivers/memory-tenant-placement.driver";
 export { MemoryTenantSharesDriver } from "#core/drivers/memory-tenant-shares.driver";
@@ -39,6 +42,7 @@ export { TenantScopeMismatchError } from "#core/errors/tenant-scope-mismatch.err
 export { TenantScopeUnresolvedError } from "#core/errors/tenant-scope-unresolved.error";
 export { TenantSwitchRefusedError } from "#core/errors/tenant-switch-refused.error";
 export { TransferRefusedError } from "#core/errors/transfer-refused.error";
+export { TenantDataKeyMinted } from "#core/events/tenant-data-key-minted.event";
 export { isTenantId } from "#core/functions/is-tenant-id.function";
 export { revocationPlan } from "#core/functions/revocation-plan.function";
 export { tenantOf } from "#core/functions/tenant-of.function";
@@ -49,6 +53,7 @@ export { TenantPlacement } from "#core/ports/tenant-placement.port";
 export { TenantShares } from "#core/ports/tenant-shares.port";
 export { TenantTokens } from "#core/ports/tenant-tokens.port";
 export { TransferCheck } from "#core/ports/transfer-check.port";
+export { TenantKeysOptions } from "#core/schemas/tenant-keys-options.schema";
 export { SandboxTenantService } from "#core/services/sandbox-tenant.service";
 export { TenantShareService } from "#core/services/tenant-share.service";
 export { TenantSwitcher } from "#core/services/tenant-switcher.service";

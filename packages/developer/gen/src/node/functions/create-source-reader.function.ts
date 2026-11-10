@@ -2298,11 +2298,14 @@ export function createSourceReader(
         const propertyName = host.symbolName(property);
         const declaration = host.declarations(property)[0];
         // An `[OptionalProps]` the member writes beside its model wins: a generated one would redeclare it (TS2717).
+        // Gen's own entities file is under `src/` too; its augmentation is the last run's output, not the member's, so
+        // counting it would drop the keys on every other run (STA-2688).
         if (
           propertyName.startsWith("__@OptionalProps@") &&
-          host
-            .declarations(property)
-            .some((written) => rel(host.fileName(written)).startsWith("src/"))
+          host.declarations(property).some((written) => {
+            const file = rel(host.fileName(written));
+            return file.startsWith("src/") && file !== PACKAGE_ENTITIES_FILE;
+          })
         )
           authoredOptional = true;
         if (

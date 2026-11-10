@@ -1,5 +1,27 @@
 # @stackra/ui
 
+## 0.33.0
+
+### Minor Changes
+
+- 22493bf: `PdfPreview` (`@stackra/ui/react`) shows a PDF in the browser's own viewer: a sandboxed frame that sends no referrer, with a download button as the fallback where the browser shows no PDF in a page (many mobile WebViews). No PDF library is added. A cross-origin link (the signed object-storage URL it is meant for) may run the viewer's scripts in its own origin; a same-origin link gets no scripts, so the frame can never lift its sandbox.
+
+### Patch Changes
+
+- 41a5ff0: `Alert` gets the first package e2e proof: a page and a Playwright spec that check, in a real browser, that each tone announces itself, that there are no console errors, and that the `ar` project lays the document out right to left. Adds the `test:e2e` script.
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/i18n@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/icons@0.33.0
+  - @stackra/tokens@0.33.0
+  - @stackra/shortcuts@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

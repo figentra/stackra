@@ -8,7 +8,14 @@
  * Runtime: node
  */
 import { ApprovalBinding } from "#node/models/approval-binding.model";
-import { EntitySchema, registerEntities } from "@stackra/database";
+import { TenantDataKey } from "#node/models/tenant-data-key.model";
+import { EntitySchema, type OptionalProps, registerEntities } from "@stackra/database";
+
+declare module "#node/models/tenant-data-key.model" {
+  interface TenantDataKey {
+    [OptionalProps]?: "id" | "tenantId";
+  }
+}
 
 /** `tenancy.approval_binding` (src/node/models/approval-binding.model.ts). */
 export const ApprovalBindingSchema = new EntitySchema<ApprovalBinding>({
@@ -35,7 +42,21 @@ export const ApprovalBindingSchema = new EntitySchema<ApprovalBinding>({
   },
 });
 
+/** `tenancy.tenant_data_key` (src/node/models/tenant-data-key.model.ts). */
+export const TenantDataKeySchema = new EntitySchema<TenantDataKey>({
+  class: TenantDataKey,
+  schema: "tenancy",
+  tableName: "tenant_data_keys",
+  properties: {
+    version: { type: "integer" },
+    keyId: { type: "string" },
+    wrapped: { type: "string" },
+    id: { type: "string", primary: true },
+    tenantId: { type: "string" },
+  },
+});
+
 /** Every entity of module `tenancy`. */
-export const TENANCY_ENTITIES: readonly EntitySchema[] = [ApprovalBindingSchema];
+export const TENANCY_ENTITIES: readonly EntitySchema[] = [ApprovalBindingSchema, TenantDataKeySchema];
 
 registerEntities(TENANCY_ENTITIES);

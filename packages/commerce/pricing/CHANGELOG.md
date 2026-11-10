@@ -1,5 +1,20 @@
 # @stackra/pricing
 
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/contracts@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/integrations@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

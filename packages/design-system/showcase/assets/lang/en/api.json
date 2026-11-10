@@ -4335,6 +4335,14 @@
         "variant": "The look of the field. Defaults to `primary`."
       }
     },
+    "pdf_preview": {
+      "PdfPreview": {
+        "className": "Styles the root.",
+        "name": "The file name, shown as given; it names the frame and the download button.",
+        "onDownload": "Called by the download button, the fallback where the browser shows no PDF; left out, there is none.",
+        "src": "The PDF's link: a short-lived signed URL minted for this open, on another origin than the page (object storage).\nA same-origin link is shown with scripts off, so the frame can never lift its own sandbox."
+      }
+    },
     "period_picker": {
       "PeriodPicker": {
         "className": "Styles the root.",

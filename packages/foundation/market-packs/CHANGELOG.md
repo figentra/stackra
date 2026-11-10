@@ -1,5 +1,45 @@
 # @stackra/market-packs
 
+## 0.33.0
+
+### Minor Changes
+
+- 26a2d54: An interim `bundled` `ResolvedPackSource` (ADR 0386, amended 2026-11-09). It serves only the packs this package
+  bundles whose content hash the host pins in `packHashes`, and only `live` ones: an unpinned file is never read, and a
+  pin with no bundled pack, a changed file or a pinned draft is refused (`not_stored`, `hash_mismatch`, `not_live`). It
+  loads each pinned market lazily. In production it refuses at construction (`BundledPackSourceRefusedError`) unless the
+  host sets `allowBundledInProduction`, and warns once when that is set. `BUNDLED_PACK_HASHES` lists the live bundled
+  packs for a host to copy its pins from. `MarketPacksOptions` gains `environment` (`STACKRA_ENVIRONMENT`) and
+  `allowBundledInProduction`, and `PackRejection` gains `not_live`.
+
+### Patch Changes
+
+- 7c34d68: The bundled `ae` pack (0.2.0, still `draft`) authors the UAE's `fiscal.invoice` mandate from 2027-01-01, the first
+  mandatory group's date: the `peppol` driver with PINT AE's specification identifier `urn:peppol:pint:billing-1@ae-1`
+  and business process `urn:peppol:bis:billing`, the `Asia/Dubai` time zone, no separate reporting window (the document
+  is sent through the accredited service provider when it is issued) and a five-year retention. Each business brings its
+  own ASP, so `accessPointUrl` is the unit's option, never the pack's. It is served only once its reviewers sign it off
+  and it turns `live`.
+- 7c34d68: The bundled `eg` pack (0.2.0, still `draft`) authors ETA's `fiscal.invoice` mandate from 2020-11-15: the `eta` driver
+  with the production System API's submission and document details paths, `documentTypeVersion` 1.0, amounts in EGP, the
+  UNCL 5305 categories mapped to T1 subtypes (S → V009, Z → V001, E → V003, O → V004), a same-day (24-hour) submission
+  window and a five-year retention. The issuer's `activityCode` is the unit's own option, never the pack's. It is served
+  only once its reviewers sign it off and it turns `live`.
+- 7c34d68: The bundled `sa` pack (0.2.0, still `draft`) authors ZATCA's `fiscal.invoice` mandate from 2023-01-01: the `zatca`
+  driver with Fatoora's production gateway paths, a 24-hour reporting window for simplified invoices and a six-year
+  retention. It is served only once its reviewers sign it off and it turns `live`.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/assets@0.33.0
+  - @stackra/filesystem@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

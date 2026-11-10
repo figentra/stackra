@@ -1,5 +1,41 @@
 # @stackra/workflow
 
+## 0.33.0
+
+### Minor Changes
+
+- 44ca288: With a `QueueService` bound, a trigger occurrence starts its automations through the new queued job `StartTriggeredAutomationsAction` (`workflow.automation.start_triggered@1`), pushed in the delivery's transaction and scope. An automation quota that cannot be read now throws a retryable `AutomationQuotaUnavailableError` on an attempt a retry follows, and only the job's last attempt records `AutomationRunSkipped` (`quota_unavailable`), so a short quota outage no longer skips the occurrence. `AutomationService.triggered(block, startedBy, { last })` takes the attempt; without a queue, starts run in process as before.
+
+### Patch Changes
+
+- 628b60d: The scope-pathed models of these packages opt into `MovesWithScope`, so their rows follow a moved scope subtree (`scope.node.moved.v1`) in every service that hosts them: award kinds, awards and their verifications, rule sets, segments and their memberships, webhook endpoints and deliveries, custom fields, their value sets and content revisions, comment threads, comments, their revisions and mentions, automations, checklists and their progress, and stored settings and their revisions. The audit log (append-only, its history kept) and the scope tree itself (moved by `moveSubtree`) stay out.
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/rules@0.33.0
+  - @stackra/content@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/queue@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/scheduler@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/locking@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes
