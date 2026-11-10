@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `devSecretEnv`: a member's run gets the workspace file's values for its own declared secret
- *          names only, nothing without the file or the manifest, and a malformed file fails naming the file only.
+ *          names and its runway's dev names only, nothing without the file or a name, and a malformed file fails
+ *          naming the file only.
  * Boundary: test only; a temporary workspace.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0525 (amendment of 2026-11-10); STA-2679.
@@ -59,6 +60,20 @@ describe("devSecretEnv", () => {
       SESSION_SECRET: "s",
       DATABASE_URL: "postgres://localhost/orders",
     });
+  });
+
+  it("also gives the names its runway lists under environments.dev.secrets", () => {
+    writeFileSync(
+      join(member, "runway.yaml"),
+      "environments:\n  dev:\n    secrets: [PAY_DATA_KEY]\n",
+    );
+    writeFileSync(
+      join(root, ".stackra", "dev-secrets.json"),
+      JSON.stringify({ SESSION_SECRET: "s", PAY_DATA_KEY: "p", OTHER: "o" }),
+    );
+    expect(devSecretEnv(member)).toEqual({ SESSION_SECRET: "s", PAY_DATA_KEY: "p" });
+    rmSync(join(member, "stackra.manifest.json"));
+    expect(devSecretEnv(member)).toEqual({ PAY_DATA_KEY: "p" });
   });
 
   it("adds nothing without the file or without the manifest", () => {

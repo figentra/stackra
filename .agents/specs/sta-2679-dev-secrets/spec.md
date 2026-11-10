@@ -72,6 +72,9 @@ packages' included), so a dev value only has to reach the member's own process.
 - **AC-005**: WHEN `stackra dev` starts a member's tool THE run SHALL add the file's values for the member's own
   declared secret names to the tool's environment, and nothing when the file is absent.
 - **AC-006**: THE testbed upload SHALL exclude `.stackra/dev-secrets.json`.
+- **AC-007**: WHEN a member's runway lists names under `environments.dev.secrets` THE command SHALL treat each as a
+  required dev secret, optional in the configuration or not (a connection-shaped one still needs a value set by hand),
+  and the dev run SHALL inject them for that member (PAY, pay#227: its keys are optional because production reads KMS).
 
 ## Status history
 

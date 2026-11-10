@@ -83,6 +83,7 @@ packages/developer/cli/src/node/
   dev-secrets/functions/read-dev-secrets.function.ts
   dev-secrets/functions/declared-dev-secrets.function.ts
   dev-secrets/functions/dev-secret-env.function.ts
+  dev-secrets/functions/runway-dev-secret-names.function.ts
   dev-secrets/functions/__tests__/*.test.ts
   commands/dev-secrets-init.command.ts
   constants/commands.constant.ts
