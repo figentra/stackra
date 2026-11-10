@@ -33,3 +33,74 @@ by that fixed asset name. The repository-checks test accepts an eval dataset and
 | Deploy modes (ADR 0076)               | N/A    | none                             |
 | Licence tier (ADR 0077)               | PASS   | free, MIT                        |
 | Docs and ADRs                         | N/A    | the entry carries its own reason |
+
+## Deploy modes
+
+| Mode       | Behaviour                                  |
+| ---------- | ------------------------------------------ |
+| SaaS       | unchanged: a repository check, not runtime |
+| On-prem    | unchanged: a repository check, not runtime |
+| Air-gapped | unchanged: a repository check, not runtime |
+
+## Correctness properties
+
+- **P-001**: `checkJsonConfigs` returns no finding for `assets/ai/**/<stem>.eval.json` — Validates: AC-001
+- **P-002**: `checkJsonConfigs` still flags another JSON under `assets/ai/` — Validates: AC-002
+
+## Architecture overview
+
+`checkJsonConfigs` asks every `*.json` not on `MUST_STAY_JSON` to become `.jsonc`. One more entry joins the list; the
+check itself is unchanged.
+
+## Components and responsibilities
+
+- `MUST_STAY_JSON`: the JSON files whose reader takes no JSONC, each with its reason.
+
+## Files and folders
+
+```text
+packages/developer/repo-checks/
+  src/node/constants/must-stay-json.constant.ts
+  src/node/functions/__tests__/repository-checks.test.ts
+.changeset/repo-checks-eval-json.md
+```
+
+## Data models and migrations
+
+none
+
+## Contracts
+
+none changed: the check accepts one more fixed name.
+
+## Error handling
+
+none changed: any other `*.json` still gets the same finding.
+
+## Security and tenancy
+
+none
+
+## Testing strategy
+
+- AC-001, AC-002: the `checkJsonConfigs` case in `repository-checks.test.ts` (one accepted path, one flagged).
+
+## Rollout
+
+A patch changeset for `@stackra/repo-checks`; Figentra OS's validate passes on its eval datasets after the release.
+
+## Delegation and risk plan
+
+Claude only; one wave; route `spec-task`. R0.
+
+## ADRs
+
+none
+
+## Docs
+
+none
+
+## Complexity tracking
+
+none
