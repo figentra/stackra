@@ -1,0 +1,46 @@
+---
+title: "API reference"
+description: "What is generated, and from where: the OpenAPI document of every service is the projection of its committed manifest; nobody writes a reference page by hand."
+icon: "book-open-text"
+---
+
+{/* Stackra file contract: Purpose: the reader's page on the API reference: where it comes from (the committed manifest and openapi.json of each service, the contract packages), what the reference shows, and where it is served. Boundary: an explanation; the reference pages themselves are generated per site. Runtime: docs. Governing contract: ADR 0511; ADR 0514 (decision 5); ADR 0294; STA-2676. */}
+
+Stackra's API reference is never written by hand. Each service's `stackra gen` writes two committed files at the
+member root: `stackra.manifest.json`, every identity with its version, and `openapi.json`, the manifest's projection
+to HTTP, one operation per action and query. A docs site lists the services whose reference it carries, and gen
+renders one page per operation from those files.
+
+## Where the document comes from
+
+- **The manifest** is derived from the member's classes and locked by `stackra gen --check`; a renamed key is a
+  reviewed change, so an operation never moves by accident ([The programming model](/programming-model)).
+- **`openapi.json`** is `openApiOf(manifest)`: the public and app areas of every action and query, their method and
+  path, the input and output schemas compiled from the member's `Schema` classes, and the refusals they declare.
+- **The `x-stackra-*` extensions** carry what HTTP alone does not say: the permission a call needs, its risk level,
+  its API area and whether it is idempotent. The reference shows them as badges on the operation.
+
+Across repositories, a product's services publish their types and their `openapi.json` in contract packages,
+`@figentra/<service>-contract` ([ADR 0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events)); the hub
+at docs.figentra.com builds each product's reference from the released contract packages, so the reference matches
+the released code ([ADR 0514](/adr/0514-self-hosted-docs-replace-mintlify) decision 5).
+
+## Calling conventions
+
+Every operation follows the laws of [HTTP and events](/constitution/http-and-events): one endpoint per operation,
+authentication by default, the method by idempotency, cursor lists, prefixed ids, the `Idempotency-Key` header on a
+guarded write and versioned events. A refusal comes back as a stable code the client's generated refusal ref decodes,
+never as free text ([Clients and MCP tools](/clients-and-tools)).
+
+## What this site carries today
+
+Stackra core is a framework, not a service, so this site has no operation pages of its own; what it documents is
+every `@stackra` package, its purpose and entries, on [Packages](/customers/packages). A product's reference is on
+its product's docs. A service appears in a site's reference once its manifest is committed and its key is added to
+the site's `apiReference` list; the page tree, the search index and `llms.txt` follow.
+
+## Read next
+
+- [Actions](/actions): what one operation is.
+- [Contracts](/build/contracts): the types-only `./contracts` entry every package publishes.
+- [Install](/customers/install): the registry the packages come from.
