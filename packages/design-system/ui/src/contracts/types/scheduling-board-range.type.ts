@@ -10,7 +10,7 @@ import type { SchedulingBoardConflict } from "#contracts/types/scheduling-board-
 
 /** A selected range. */
 export interface SchedulingBoardRange {
-  /** The row. */
+  /** The row it is on. */
   readonly resourceId: string;
   /** Its start, on a slot boundary. */
   readonly start: Date;
