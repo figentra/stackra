@@ -10,7 +10,7 @@ import type { SchedulingBoardConflict } from "#contracts/types/scheduling-board-
 
 /** An item moved or resized. */
 export interface SchedulingBoardChange {
-  /** The item. */
+  /** The id of the item moved. */
   readonly itemId: string;
   /** `move` or `resize`. */
   readonly change: "move" | "resize";

@@ -8,7 +8,7 @@
  */
 import type { CalendarDate } from "@internationalized/date";
 
-/** One column. */
+/** One column of the board. */
 export interface SchedulingColumn {
   /** When it starts. */
   readonly start: Date;
