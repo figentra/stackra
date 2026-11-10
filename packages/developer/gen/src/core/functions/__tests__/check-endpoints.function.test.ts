@@ -171,6 +171,25 @@ describe("checkEndpoints: routes", () => {
     expect(check([defaulted])).toEqual([["endpoint_area_mismatch", defaulted.class]]);
   });
 
+  it("accepts a public call under /.well-known/, and only a public one", () => {
+    const frameAncestors = entry("frame-ancestors.get", "query", {
+      area: "public",
+      endpoint: route("GET", "/.well-known/stackra/frame-ancestors", false),
+    });
+    expect(check([frameAncestors])).toEqual([]);
+    expect(check([{ ...frameAncestors, area: "app" }])).toEqual([
+      ["endpoint_area_mismatch", frameAncestors.class],
+    ]);
+    expect(
+      check([
+        {
+          ...frameAncestors,
+          endpoint: route("POST", "/.well-known/stackra/frame-ancestors", false),
+        },
+      ]),
+    ).toEqual([["endpoint_method_mismatch", frameAncestors.class]]);
+  });
+
   // @covers sta-340:FR-006
   it("refuses a method that contradicts the kind or the transition", () => {
     const query = entry("order.search", "query", {
