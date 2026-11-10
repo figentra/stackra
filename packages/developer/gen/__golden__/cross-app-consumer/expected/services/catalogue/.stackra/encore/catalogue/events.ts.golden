@@ -6,8 +6,9 @@
  * Runtime: node
  */
 import { registerBrokerTopics } from "@stackra/queue";
-import type { BrokerMessage } from "@stackra/queue/contracts";
-import { Topic } from "encore.dev/pubsub";
+import { Publisher, Topic } from "encore.dev/pubsub";
+
+import type { BrokerMessage } from "./broker-message";
 
 /** The `catalogue.item.published.v1` integration event. */
 export const eventCatalogueItemPublishedV1 = new Topic<BrokerMessage>("catalogue-event-catalogue-item-published-v1", {
@@ -15,5 +16,5 @@ export const eventCatalogueItemPublishedV1 = new Topic<BrokerMessage>("catalogue
 });
 
 registerBrokerTopics([
-  { name: "catalogue.item.published.v1", topic: eventCatalogueItemPublishedV1 },
+  { name: "catalogue.item.published.v1", topic: eventCatalogueItemPublishedV1.ref<Publisher<BrokerMessage>>() },
 ]);

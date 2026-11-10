@@ -26,6 +26,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase, kebabCase } from "@stackra/support";
 
+import { BROKER_MESSAGE_IMPORT } from "#core/constants/broker-message-import.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
@@ -62,9 +63,9 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
     ...encoreDatabaseImport(ir),
     'import type { EventEnvelope } from "@stackra/outbox/contracts";',
     'import { InboxService } from "@stackra/outbox/node";',
-    'import type { BrokerMessage } from "@stackra/queue/contracts";',
     'import { Subscription } from "encore.dev/pubsub";',
     "",
+    BROKER_MESSAGE_IMPORT,
     ENCORE_APP_IMPORT,
     ...imports,
     "",
@@ -103,8 +104,9 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
       content: [
         header,
         'import { registerBrokerTopics } from "@stackra/queue";',
-        'import type { BrokerMessage } from "@stackra/queue/contracts";',
-        'import { Topic } from "encore.dev/pubsub";',
+        'import { Publisher, Topic } from "encore.dev/pubsub";',
+        "",
+        BROKER_MESSAGE_IMPORT,
         "",
         ...own.flatMap((wire) => [
           `/** The \`${wire}\` integration event. */`,
@@ -113,8 +115,12 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
           "});",
           "",
         ]),
+        // Encore refuses a bare topic handed around as a value ("invalid topic usage"); a publisher ref is how it may go.
         "registerBrokerTopics([",
-        ...own.map((wire) => `  { name: ${JSON.stringify(wire)}, topic: ${topicConst(wire)} },`),
+        ...own.map(
+          (wire) =>
+            `  { name: ${JSON.stringify(wire)}, topic: ${topicConst(wire)}.ref<Publisher<BrokerMessage>>() },`,
+        ),
         "]);",
         "",
       ].join("\n"),

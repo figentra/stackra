@@ -11,9 +11,9 @@
 import "./database";
 import type { EventEnvelope } from "@stackra/outbox/contracts";
 import { InboxService } from "@stackra/outbox/node";
-import type { BrokerMessage } from "@stackra/queue/contracts";
 import { Subscription } from "encore.dev/pubsub";
 
+import type { BrokerMessage } from "./broker-message";
 import { app } from "../../entry/server";
 import { eventShopOrderPaidV1 } from "./events";
 
