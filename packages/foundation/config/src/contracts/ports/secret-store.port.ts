@@ -13,6 +13,9 @@ import { Port } from "@stackra/contracts";
 
 /** Resolves a secret by its name, blind: the caller holds the value, never a list of them. */
 export abstract class SecretStore extends Port {
+  /** Type-only port key, so `DriverName<SecretStore>` narrows to this port's drivers. */
+  declare readonly "~key": "config.SecretStore";
+
   /**
    * The value of the secret `name` (SCREAMING_SNAKE, such as `RESEND_API_KEY`).
    * @returns undefined when the store has no such secret.

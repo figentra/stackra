@@ -644,10 +644,13 @@ export function emitWiring(ir: MemberIR): string {
   // Bindings gen adds: one per per-model token, the inbound webhook route, and each platform service it knows where
   // it is injected. A worklist, so `journalOf(M)` brings `Locks` with it.
   const used: { readonly module: string; readonly dep: TokenRef }[] = [];
+  // A seeder is no binding (the setup registers its tokens for `.seed()`), but what it injects must be bound: a minimal
+  // seeder's `SettingsPackService` is wired by nothing else (os#256).
   for (const declared of ir.classes)
     if (
       (BINDING_KINDS.includes(declared.kind) && !contributed(ir, declared)) ||
-      declared.kind === "driver"
+      declared.kind === "driver" ||
+      declared.kind === "seeder"
     )
       for (const dep of depsOf(declared)) used.push({ module: declared.module, dep });
   used.push(...hostedTokens);

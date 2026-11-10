@@ -30,3 +30,34 @@ planned — the break-glass grant is logged by the audit service (ADR 0134); the
 ## Supersedes and sources
 
 Supersedes: none. Sources: owner answers SC12, SC13 (`stackra-decisions-2026-10-19.md` L553, 2026-10-20); DA5 (L533).
+
+## Amendment 2026-11-09: the per-tenant key provider a container can bind (STA-2561)
+
+Decision 2 had two drivers that a container cannot bind: `AwsKmsKeyProviderDriver` is built per tenant with that
+tenant's wrapped keys, and `MemoryKeyProviderDriver` takes its keys as constructor data. A service that injects
+`KeyProvider` (os audit, privacy's salted subject cipher) therefore had none (`port_unbound`). This amendment adds one
+driver that serves every tenant.
+
+1. **Where the wrapped keys live.** A `TenantDataKeyStore` port (@stackra/tenancy) keeps each tenant's wrapped data
+   keys, oldest first: `list(tenantId)` and `add(tenantId, key)`, append-only. Its Postgres driver is the tenant-owned
+   table `tenancy.data_keys` (tenant, key id, KMS ciphertext, created at; row-level security on `tenant_id`, `UPDATE`
+   revoked). A key's plaintext is never stored, logged or returned by the store.
+2. **The call's tenant, never input.** The `kms` driver of `KeyProvider` (@stackra/tenancy) reads the running call's
+   tenant (`withTenant`), lists that tenant's wrapped keys and unwraps each through KMS with the tenant and key id in
+   the encryption context, so KMS refuses a key of another tenant. One instance serves every tenant; unwrapped keys
+   are cached per tenant for a bounded time (a setting) and in a bounded number of tenants, never logged. A call with
+   no tenant (a platform call) is refused: platform data has no tenant data key.
+3. **Minting and rotation.** A tenant's first key is minted on its first seal: KMS `GenerateDataKeyWithoutPlaintext`
+   under the environment's KMS key and the tenant's encryption context, stored wrapped. Key ids are `k1`, `k2`, … per
+   tenant (unique per tenant, so two concurrent first seals keep one key). A rotation mints the next id;
+   `current()` answers the newest, and `byId(id)` still opens every older key, because data names its key id. Old
+   keys are never retired while the tenant exists. Deleting the tenant deletes its rows, which destroys its keys
+   (decision 2's crypto-shred).
+4. **Two drivers.** `kms` over the bound `KmsClient` (@stackra/config, the SDK an optional peer loaded on first use),
+   and `memory`, which keeps each tenant's random keys in process, for dev and tests. `MemoryKeyProviderDriver` and
+   `AwsKmsKeyProviderDriver` (contracts) stay as the single-tenant building blocks the `kms` driver delegates to.
+5. **Region.** AWS KMS keys are regional and each hosting region (ADR 0186: GCC and EU) deploys with its own KMS key
+   in that region. An EU tenant's data keys are therefore wrapped and unwrapped only by the EU deployment's KMS key in
+   an EU AWS region, and stored in the EU database beside the tenant's rows; they never leave the jurisdiction. This
+   is separate from the operational secrets in `figentra/secrets` (ADR 0525), whose Google Cloud key ring sits at
+   `global`.
