@@ -236,8 +236,13 @@
         "src/components/ui/display-settings.tsx",
         "src/screens/design-system-screen.tsx",
         ".stackra/**/*.{ts,tsx}",
+        // Its tests, named here since the vitest plugin is off (below).
+        "src/**/__tests__/*.test.{ts,tsx}",
       ],
       "project": ["src/**/*.{ts,tsx,css}"],
+      // The Quality Gate never installs this app (its own Mobile job does), so its vitest.config.ts cannot load there
+      // (knip exits 2 on a config it cannot load); its tests are entries above instead.
+      "vitest": false,
       // app.json turns OTA updates off until the app has an EAS project id; knip's expo plugin assumes them.
       // @babel/plugin-transform-flow-strip-types: babel.config.js resolves it through babel-preset-expo on purpose, so
       // the override runs the preset's own copy (Babel 7) and the app declares none.
@@ -261,15 +266,24 @@
     // @stackra/app: imported only by gen's `.stackra/entry/<runtime>.ts` (generated_dependency_missing without it).
     // shortcut: CI's knip runs without gen, so the .stackra entry is absent; drop this block once knip runs after gen
     // (the same shortcut as the packages blocks above).
+    // The Quality Gate never installs this app, so its vite, vitest and playwright configs
+    // cannot load there (knip exits 2 on a config it cannot load): those plugins are off, and its unit tests, their
+    // setup files and its e2e specs are entries instead. jsdom: the vitest config's test environment, named by a string
+    // in that config only. @testing-library/dom: the peer @testing-library/react requires installed; never imported.
     "apps/playground": {
       "entry": [
         "src/main.{ts,tsx}",
         "src/*.module.ts",
         "src/components/*/index.ts",
         ".stackra/**/*.{ts,tsx}",
+        "src/**/__tests__/*.{ts,tsx}",
+        "e2e/**/*.ts",
       ],
       "project": ["src/**/*.{ts,tsx,css}"],
-      "ignoreDependencies": ["@stackra/app"],
+      "vite": false,
+      "vitest": false,
+      "playwright": false,
+      "ignoreDependencies": ["@stackra/app", "jsdom", "@testing-library/dom"],
     },
     "workers/*": {
       "project": ["src/**/*.ts"],
