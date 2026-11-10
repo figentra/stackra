@@ -24,6 +24,7 @@ import { join } from "node:path";
 import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
+import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
 import { readMember } from "#node/functions/read-member.function";
@@ -127,6 +128,9 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
           watcher.close();
         }
       }
+      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679).
+      if (task === "dev")
+        return runProcess({ ...tool, env: { ...tool.env, ...devSecretEnv(cwd) } }, io);
       return runProcess(tool, io);
     },
   };
