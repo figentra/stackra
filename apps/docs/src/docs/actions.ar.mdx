@@ -1,0 +1,73 @@
+---
+title: "الإجراءات"
+description: "المفتاح، ومخطط المُدخل والمُخرج، والصلاحية المشتقّة من المفتاح، وعدم التكرار، وترتيب خط الأنابيب الثابت."
+icon: "zap"
+---
+
+{/* Stackra file contract: Purpose: the Arabic twin of /actions, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page. Runtime: docs. Governing contract: ADR 0098; ADR 0294; ADR 0472; STA-2676. */}
+
+الإجراء هو وحدة العمل في ستاكرا ([القرار 0098](/adr/0098-actions-are-the-unit)): كتابةٌ واحدة، لها مفتاح، والفاعلون
+الذين يجوز لهم استدعاؤها، ومخططا المُدخل والمُخرج، ومعالِج. والاستعلام توأمها للقراءة فقط. وكل استدعاء، من شاشة أو
+خدمة أخرى أو مهمة أو أداة ذكاء اصطناعي، يمرّ في خط الأنابيب نفسه بالترتيب نفسه.
+
+## الإعلان عن إجراء
+
+```ts services/orders/src/modules/orders/actions/create-order.action.ts
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
+import { ActorKind } from "@stackra/contracts";
+
+export class CreateOrderAction extends Action({
+  key: "order.create",
+  actors: [ActorKind.User, ActorKind.Agent],
+  preconditions: [AcceptingOrdersPrecondition],
+  idempotency: Idempotency.Required,
+  rateLimit: { perMinute: 20 },
+  tool: true,
+}) {
+  async handle(input: CreateOrderInput, ctx: ActionContext): Promise<CreateOrderOutput> {
+    return ctx.run(CreateOrderWorkflow, input);
+  }
+}
+```
+
+يُكتب المفتاح مرة واحدة. ومنه يشتقّ `stackra gen` الوحدة والمفتاح المقفل (`orders.order.create@1`) والصلاحية
+والمسار، ويسجّلها بـ`registerActions`. والمُدخل والمُخرج صنفا `Schema` في `schemas/`، يترجمهما gen إلى zod، فيتحقق
+خط الأنابيب من المُدخل قبل أن يراه المعالِج، ويُنمِّط العملاء الاستدعاء. والاستعلام مثله بـ`Query({ … })`: لا يأخذ
+شروطًا مسبقة ولا عدم تكرار ولا خيار مهمة أو عمل دون اتصال، و`tool` فيه مفعّل افتراضيًا.
+
+## خط الأنابيب
+
+يشغّل `ActionPipeline.execute` الخطوات بهذا الترتيب لا غير: الإيجار، ثم داخل معاملة الاستدعاء: الصلاحية (نوع
+الفاعل، ثم `AccessControl`)، والشروط المسبقة، والاستحقاق، والراية، والتحقق من المُدخل، والاعتماد وعدم التكرار، وحدّ
+المعدّل، والمعترِضات، وذاكرة الاستعلام، ثم `handle` في وحدة عمله مع حدث استخدامه وقيد تدقيقه، ثم أعمال
+`afterCommit`. ويُدقَّق الرفض بعد التراجع. وتُتخطّى خطوةٌ لم يربط أحدٌ منفذها، إلا الصلاحية، فهي تفشل مغلقةً.
+
+## عدم التكرار
+
+الكتابة التي يحرسها `Idempotency.Required` تُعاد لا تُكرَّر: يرسل المستدعي ترويسة `Idempotency-Key` (إحدى
+`CALL_HEADERS` التي ترفعها نقطة النهاية المولَّدة،
+[القرار 0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls))،
+ويخزّن خط الأنابيب الإجابة المكتملة تحتها، ويتلقّى استدعاءٌ ثانٍ بالمفتاح نفسه الإجابة المخزّنة. و`Idempotency.Never`
+يُخرج الإجراء من ذلك. وطابور العمل دون اتصال في العميل يسكّ المفتاح حين يصفّ الاستدعاء، فتكون الإعادة بعد عودة
+الاتصال آمنة أيضًا ([العملاء وأدوات MCP](/clients-and-tools)).
+
+## نقطة النهاية
+
+يصبح كل إجراء واستعلام عمليةَ HTTP واحدة، طريقتُها تتبع عدم تكرارها ومسارُها يتبع مفتاحها
+([HTTP والأحداث](/constitution/http-and-events)). وتُكتب العملية في `openapi.json` العضو مع امتدادات `x-stackra-*`
+(الصلاحية والخطورة والمنطقة وعدم التكرار) التي يعرضها [مرجع الواجهة البرمجية](/api) شاراتٍ. ولا يكتب أحدٌ مسارًا
+بيده.
+
+## الأدوات
+
+الإجراء الذي يستطيع المستخدم تنفيذه هو أداة MCP أيضًا، ما لم يقل `tool: false` مع سطر `// reason:` يقرأه gen
+([القرار 0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)، البند 4). تعمل
+الأداة بصلاحيات مستدعيها نفسه عبر خط الأنابيب نفسه؛ و`effects: [Effect.Financial]` يَسِم ما تمسّه، والإجراء الذي
+يعلن `approval: true` ينتظر معتمِده المسمّى قبل أن يلتزم ([الاعتمادات](/build/approvals)).
+
+## اقرأ بعد ذلك
+
+- `@stackra/actions`: ملف README الحزمة يسمّي كل مدخل ومنفذ (الشروط المسبقة، والمعترِضات، ونقاط الامتداد، ودِلاء
+  حدّ المعدّل، وخيارات العمل دون اتصال).
+- [نموذج البرمجة](/programming-model): كيف يلتئم المفتاح والمجلد والبيان الملتزَم به.
+- [العملاء وأدوات MCP](/clients-and-tools): استدعاء الإجراء من مكوّن أو خدمة أو مساعد.

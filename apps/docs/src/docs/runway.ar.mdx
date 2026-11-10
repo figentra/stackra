@@ -1,0 +1,62 @@
+---
+title: "Runway"
+description: "runway.yaml في ملفين، والوجهات لكل بيئة، والمعاينات، وبوابة الاعتماد قبل الإنتاج، وخطوة العلامة."
+icon: "plane-takeoff"
+---
+
+{/* Stackra file contract: Purpose: the Arabic twin of /runway, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page. Runtime: docs. Governing contract: ADR 0296; ADR 0352; ADR 0441; ADR 0468; STA-2676. */}
+
+Runway هو أداة النشر الوحيدة
+([القرار 0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)):
+يقرأ أين تعمل الأشياء من `runway.yaml`، ويبني بـgen، ويخطّط ويطبّق بـPulumi حيث تلزم بنية تحتية، ويشحن عبر
+الموفّرين. ولا يُكتب منفذ أو أصل أو عنوان تغذية في أي مكان آخر.
+
+## ملفان
+
+يقول **runway الجذري** **أين** تعمل الأشياء: الموفّرون والحسابات، ووجهات كل بيئة، والمجمّعات التي يتشاركها كثير من
+الأعضاء (خادم Postgres واحد لكل بيئة، والذاكرة المؤقتة، والطوابير)، والنطاقات، والحافة، وسياسة الإصدار، و**طوبولوجيا**
+كل بيئة: أتعمل الخدمات عمليةً واحدة، أم في مجموعات مسمّاة، أم كلٌّ على حدة. ويقول **runway العضو** **ما** يحتاجه
+العضو الواحد: منفذ التطوير، والمحرّكات التي `requires`، وأسماء الأسرار، والصحة، والمتغيرات والأحجام لكل بيئة. ولا
+يقول العضو أين يعمل أبدًا؛ ولا يسمّي الجذر حقائق عضو
+([القرار 0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)).
+
+```yaml services/orders/runway.yaml
+$schema: "@stackra/runway/schema/service.json"
+version: 3
+requires: [postgres]
+environments:
+  dev:
+    port: 4010
+```
+
+يتحقق `stackra validate` من الاثنين بمخططيهما، ويرفض بيئةً مجمَّعة تترك عضو خدمة بلا موضع، ومتطلَّب `valkey` لا تخدمه
+ذاكرة أي بيئة، وعضوين على منفذ تطوير واحد.
+
+## البيئات والوجهات
+
+أربعة أسماء للبيئات في كل أداة: `dev` تعمل محليًا (`stackra dev`)؛ و`preview` بيئة لكل طلب دمج ببيانات اصطناعية
+ومدة صلاحية؛ و`staging` و`production` هما المُدارتان. وتسمّي كل بيئة وجهاتها بحسب النوع (`services` و`web`
+و`mobile` و`docs`)، ولكل نوع موفّر: Encore Cloud للخدمات، وCloudflare Workers للويب والتوثيق، وEAS للهواتف.
+
+## النشر والمعاينات وبوابة الاعتماد
+
+تُنشر dev وstaging عند الدمج في main بلا اعتماد؛ ويحصل طلب الدمج على معاينته، مقيَّدةً بنقطة نهاية الصحة؛ ولا
+يُنشر الإنتاج إلا عبر `runway promote <sha>`، خلف اعتماد بيئة GitHub الواحد، اعتماد المالك
+([القرار 0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)). وبعد الترقية
+يقرأ Runway نقطة نهاية الصحة للـsha المنشور، ويشغّل حزمة دخان Playwright، ويراقب الأخطاء مدةً قبل أن يُحتسب الإصدار؛
+والتراجع داخل تلك المدة أمر واحد. والأوامر موثّقة صفحةً لكلٍّ: [plan](/runway/plan) و[deploy](/runway/deploy)
+و[promote](/runway/promote) و[rollback](/runway/rollback) و[status](/runway/status) و[drift](/runway/drift) وسواها.
+
+## الأسطح وتطبيقات الهاتف وخطوة العلامة
+
+يسمّي المنتج ما يشحنه إلى هياكل أو إس (`surfaces.console` و`surfaces.landing` …: خط الهيكل، والحزم التي يحمّلها
+الهيكل، والمضيفون) وتطبيقات هاتفه (خط القالب، والأصول، وحسابات المتاجر، ومشروع EAS). ويحلّ Runway كل خط هيكل إلى
+أعلى إصدار له على السجل ([القرار 0481](/adr/0481-template-lines-release-as-registry-packages-and-runway-checks-them-out))،
+ويبني حزم المنتج، وينشرها مع صفوف المضيفين إلى الحافة. وتشغّل **خطوة العلامة** `@stackra/brand-kit` لكل سطح
+وتطبيق من العلامة التي يثبّتها المنتج، فتتولّد الأيقونات وشاشات البدء وCSS السِّمة ولا تُلتزَم أبدًا.
+
+## اقرأ بعد ذلك
+
+- `@stackra/runway`: ملف README الحزمة، بكل قارئ وموفّر.
+- [دليل تشغيل Runway](/runbooks/runway) و[النشر](/runbooks/deploys): تشغيله.
+- [الأسرار](/constitution/secrets): الأسماء في runway، والقيم في المخزن، لا في ملف أبدًا.

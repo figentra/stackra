@@ -1,0 +1,73 @@
+---
+title: "نظام التصميم"
+description: "الرموز، وسِمة لكل منتج، والمكوّنات بحسب العائلة، والاتجاه من اليمين إلى اليسار والأرقام، وأين تقف صفحات المكوّنات وملعب التجربة."
+icon: "palette"
+---
+
+{/* Stackra file contract: Purpose: the Arabic twin of /design-system, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page; no measurement is typed. Runtime: docs. Governing contract: ADR 0302; ADR 0303; ADR 0403; ADR 0521; STA-2676. */}
+
+نظام تصميم ستاكرا حزمتان وقاعدة واحدة: `@stackra/tokens` يحمل السِّمات، و`@stackra/ui` يحمل المكوّنات، وكل مكوّن
+يوجد مرةً عقدًا ومرتين تنفيذًا، على HeroUI v3 للويب وعلى HeroUI Native مع Uniwind للهواتف
+([القرار 0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)).
+
+## الرموز والسِّمات
+
+السِّمة كائن واحد مُنمَّط: أدوار ألوان HeroUI للوضعين الفاتح والداكن (بـoklch، ومنها يُشتقّ sRGB الست عشري)، ولوحة
+العلامة، وخمس مجموعات خطوط، وسلّم الطباعة، والمسافات، والانحناءات، والظلال، والحركة. يتحقق منها `defineTheme`،
+ويحوّلها `renderWebCss` و`renderNativeCss` إلى خصائص CSS المخصّصة التي يقرأها HeroUI على كل بيئة تشغيل. وسِمة
+`stackra` هي الافتراضية؛ ويأتي كل منتج بعلامته سِمةً خاصة به، ملفَّ `stackra.theme-diff/2` فوق الأساس لا يسمّي إلا
+ما يختلف.
+
+```css
+/* الويب: Tailwind v4 + HeroUI v3، بعد HeroUI */
+@import "tailwindcss";
+@import "@heroui/styles";
+@import "@stackra/tokens/fonts/fonts.css";
+@import "@stackra/tokens/themes/stackra/web.css";
+```
+
+يبدّل ملف الويب الوضعين على طريقة HeroUI (`:root` للفاتح و`.dark` للداكن)، ويعيد تنسيق طباعة HeroUI بسلّم السِّمة،
+مع توائم `:lang(ar)` من الرموز العربية. ومجموعات الخطوط هي `sans` و`mono` و`arabic`، ومعها `display`
+و`displayArabic` للعناوين؛ وتترك سِمة stackra مجموعتي العرض، فعناوينها Geist وIBM Plex Sans Arabic.
+
+## المكوّنات
+
+يتشارك `@stackra/ui/react` و`@stackra/ui/native` المجلد `src/contracts`: الخصائص نفسها والكلمات نفسها. تحمل
+الحزمة الموفّرين، والطباعة، والأزرار والروابط، والأسطح والبطاقات، والحالة والتغذية الراجعة، وكل حقل من حقول النموذج
+مع محرّك النماذج القائم على المخطط (`@stackra/ui/form`)، والطبقات العلوية، وأوليات البيانات، وهيكل التطبيق؛ وينمو
+الكتالوج مكوّنًا مكوّنًا ([القرار 0303](/adr/0303-stackra-ui-component-catalogue-decisions)). لفّ التطبيق مرة
+واحدة:
+
+```tsx
+import { DesignSystemProvider } from "@stackra/ui/react";
+
+<DesignSystemProvider defaultColorScheme="system" defaultLocale="en">
+  <App />
+</DesignSystemProvider>;
+```
+
+يملك الموفّر وضع الألوان واللغة والاتجاه (`directionOf` اللغة ما لم يُقَل غير ذلك)، ويضع `lang` و`dir` على
+المستند، ويلفّ الشجرة بموفّر React Aria فتتبع مفاتيح الأسهم اتجاه المستند.
+
+## الكلمات، والاتجاه من اليمين إلى اليسار، والأرقام
+
+كل كلمة يقولها مكوّن افتراضيًا مفتاحٌ في `assets/lang/<locale>/ui.json`، يُشحن بسبع لغات، لا ثابتًا إنجليزيًا في
+الكود أبدًا؛ ويتحقق `pnpm validate` من كل لغة بمفاتيح الإنجليزية وعناصرها النائبة في ICU
+([القرار 0403](/adr/0403-seven-languages-locales-formats-analysers-catalogues-and-a-completeness-gate)). ويستعمل
+التخطيط الخصائص المنطقية، فتنعكس العربية من دون ورقة أنماط ثانية؛ وتبقى المعرّفات والكود والأوامر من اليسار إلى
+اليمين داخل النص العربي. والقواعد التي تتبعها الصفحة في [التدويل والاتجاه](/standards/i18n-rtl) و[الواجهة
+وإمكانية الوصول](/standards/ui-and-accessibility).
+
+## صفحات المكوّنات وملعب التجربة
+
+هذا الموقع هو الموطن الوحيد لتوثيق نظام التصميم ([القرار 0521](/adr/0521-design-system-docs-on-fumadocs-ai-first)):
+صفحة لكل مكوّن في الكتالوج، مولَّدة من سجلّه ومن JSON عرضه بمعاينات حية وجدول خصائص وملاحظات إمكانية وصول، خلف
+مبدّل سِمات واحد. وتخصّ اختبارات التباين والمصفوفة لسِمات العلامات اختباراتِ `@stackra/ui` نفسها، ويتقاعد ملعب
+التجربة حين يجد كل مسار من مساراته موطنًا جديدًا. والصفحات المولَّدة والمبدّل قادمة؛ وحتى تصل، ملفات README الحزم
+والعقود هي المرجع.
+
+## اقرأ بعد ذلك
+
+- `@stackra/tokens` و`@stackra/ui`: ملفا README الحزمتين، ومنهما «أحضِر سِمتك».
+- [وثائق التجربة](/experience): كتل الهبوط المبنيّة على `@stackra/ui`.
+- [العلامة](/brand): ملفات علامة ستاكرا التي يحملها هذا الموقع.
