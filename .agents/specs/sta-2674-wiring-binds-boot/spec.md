@@ -50,8 +50,8 @@ binds a package's service only when a class injects it, and nothing injects thes
 
 - **AC-001**: WHEN a service declares a package whose services the generated boot resolves THE generated wiring SHALL
   bind each of those services, with its dependencies from the package's manifest.
-- **AC-002**: THE generated wiring of every golden service SHALL bind each service its generated boot resolves from
-  `BOOT_SERVICES`.
+- **AC-002**: WHEN binding a boot service needs a package the service does not declare THE generator SHALL refuse it
+  (`generated_dependency_missing`), never write a wiring that boot cannot resolve.
 
 ## Status history
 

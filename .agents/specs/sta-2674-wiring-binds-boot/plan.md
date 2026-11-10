@@ -8,7 +8,7 @@
 
 A constant, `BOOT_SERVICES`, lists the services the generated boot resolves for each declared package. In a
 service's wiring, each one of a declared package joins the `used` worklist, which binds it with its dependencies from
-the package's manifest. A test checks every golden `boot.ts` against its `wiring.ts`.
+the package's manifest. The golden trees of the fixtures that carry the outbox manifest show the new rows.
 
 ## Technical Context
 
@@ -47,8 +47,8 @@ the package's manifest. A test checks every golden `boot.ts` against its `wiring
 
 - **P-001**: a service declaring `@stackra/outbox` has wiring rows for `OutboxWriterService`, `OutboxRelayService`,
   `InboxService` and `EventBus` — Validates: AC-001
-- **P-002**: for every golden service, each `BOOT_SERVICES` class its `boot.ts` resolves has a `provide:` row in its
-  `wiring.ts` — Validates: AC-002
+- **P-002**: the cross-app-consumer golden binds `InboxService` once its catalogue declares `@stackra/database` —
+  Validates: AC-002
 
 ## Architecture overview
 
@@ -67,7 +67,7 @@ packages/developer/gen/
   src/core/constants/boot-services.constant.ts
   src/core/functions/emit-wiring.function.ts
   src/core/functions/__tests__/emit-wiring.function.test.ts
-  src/node/__tests__/boot-wiring.test.ts
+  __golden__/cross-app-consumer/input/services/catalogue/package.json.golden
   __golden__/*/expected/services/*/.stackra/gen/wiring.ts.golden
 .changeset/gen-wiring-binds-boot.md
 ```
@@ -92,7 +92,7 @@ none
 ## Testing strategy
 
 - AC-001: the wiring emitter test with a service declaring the outbox.
-- AC-002: `boot-wiring.test.ts` over every golden service; the golden files.
+- AC-002: the cross-app-producer and cross-app-consumer golden trees (the fixtures that carry the outbox manifest).
 
 ## Rollout
 
