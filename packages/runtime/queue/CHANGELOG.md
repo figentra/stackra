@@ -1,5 +1,31 @@
 # @stackra/queue
 
+## 0.33.0
+
+### Minor Changes
+
+- ad4e5bf: A queued job's call knows which attempt it is: `ctx.attempt` (`{ number, last }`, the new `CallAttempt` type) on every call context, set by the queue worker through `CallOptions.attempt` and absent for a direct call. `last` is true when no retry follows, so a job that may give up (a quota it cannot read) can act on its last attempt instead of throwing again.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/testing@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

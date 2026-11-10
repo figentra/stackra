@@ -1,5 +1,39 @@
 # @stackra/repo-checks
 
+## 0.33.0
+
+### Patch Changes
+
+- 6186329: A service's tsconfig no longer needs `baseUrl` for Encore. TypeScript 7 removed `baseUrl` (TS5102), so the rule from 0.30.0 broke typecheck in a TS 7 repository (INVOICING).
+  
+  - **The service check:** it now requires only `compilerOptions.paths` equal to package.json `imports`, which resolve from the tsconfig's folder. It refuses a `baseUrl`.
+  - **`stackra encore:prepare`:**
+    - it removes an existing `baseUrl`;
+    - it writes package.json and tsconfig.json with gen's `formatJson`, now exported from `@stackra/gen`, in the repository formatter's layout, so the format check passes after it.
+  
+  Bump step: run `stackra encore:prepare` in each service, or delete `"baseUrl": "."` from its tsconfig.
+  
+  `stackra encore:prepare` also keeps a tsconfig's file contract written inside the braces (NOTIFY's services). Before, it kept only the `//` lines above the object, so the contract was dropped and the format check failed. `encore.dev` stays the literal catalog version (ADR 0091 rule 3): Encore rewrites `catalog:` to `^<version>`, which breaks the frozen install.
+- 6186329: The `encore.dev` version a service pins can live in the root package.json as `stackra.encore`, so a repository whose
+  services pin the literal keeps no unused catalog entry for it. `encoreReferenceVersion` (exported from
+  `@stackra/repo-checks/node`) reads `stackra.encore` first and falls back to the default catalog's `encore.dev`; the
+  service check and `stackra encore:prepare` use it. A repository that keeps the version in its catalog needs no change.
+- 41a5ff0: The test-placement check refuses an `.e2e.page.tsx` (a package's end-to-end page) outside a `__tests__/` folder, and accepts one directly in it.
+- 0a57fb3: The JSON config check now accepts a docs member's `docs/content/**/meta.json`, which Fumadocs reads by that fixed name, and gen's shipped JSON Schemas in `packages/developer/gen/schema/`.
+- 93d63bb: `stackra validate --repository` no longer asks a prompt's evaluation dataset to become `.jsonc`. `@stackra/ai` binds a
+  code prompt's evaluations by the fixed asset name `<module>::ai/<stem>.eval.json`, so `assets/ai/**/<stem>.eval.json`
+  joins `MUST_STAY_JSON`; any other JSON under `assets/ai/` is still flagged.
+- 7d0e16f: The layout rule reads the `@stackra/flow-preset` preset as the stackra template, so a repository that names the package
+  (T142) keeps its root entries. The format rule keeps the preset package's `surfaces/opencode.jsonc` and
+  `surfaces/settings.json`, which Flow reads by exact name.
+- 6186329: `stackra validate --repository` reads a preset folder in flow.config.json (`"preset": "./…"`) by the `preset.id` its
+  `preset.yml` declares, so a repository that names its preset by folder gets that template's layout check. A folder
+  whose id is no template, or that has no `preset.yml`, is still refused as having no template.
+- 52d2593: `REVIEWED_ANONYMOUS_SURFACES` records Figentra Notify's marketing opt-out link (`preferences.opt_out.apply@1`) as
+  reviewed: a signed single-use token is its only input and credential, it only records an opt-out in the token's tenant,
+  and 30 calls a minute bound it.
+- 89253a8: The runway unread-fields check no longer takes Pulumi's `aws.ecr` namespace (`new aws.ecr.PullThroughCacheRule(...)` in infra-aws's Docker Hub cache) for a read of the runway field `providers.aws.ecr`, which nothing reads yet. It made main's `validate --repository` fail twice.
+
 ## 0.32.0
 
 ### Patch Changes
