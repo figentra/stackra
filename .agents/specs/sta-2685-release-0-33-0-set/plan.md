@@ -61,8 +61,18 @@ drivers (ADR 0007, which #1013 made enforced on main) and the regenerated manife
 ## Files and folders
 
 ```text
-.agents/specs/sta-2685-release-0-33-0-set/{spec,plan,tasks}.md
+.agents/specs/sta-2685-release-0-33-0-set/spec.md
+.agents/specs/sta-2685-release-0-33-0-set/plan.md
+.agents/specs/sta-2685-release-0-33-0-set/tasks.md
+.agents/specs/sta-2682-pr-merge-adr-0523/spec.md
+packages/security/tenancy/src/core/drivers/memory-tenant-data-key-store.driver.ts
+packages/security/tenancy/src/node/drivers/postgres-tenant-data-key-store.driver.ts
+packages/security/tenancy/src/node/entities.gen.ts
+packages/security/tenancy/stackra.manifest.json
+packages/application/actions/stackra.manifest.json
 ```
+
+The nine pull requests' own files are listed per pull request in tasks.md (T001 to T009).
 
 ## Data models and migrations
 
