@@ -60,8 +60,8 @@ amendment, rule 4 ("paths equal to package.json imports"):
   for each package.json `imports` key, that entry's first target only.
 - **AC-002**: WHEN gen runs for a service THE output SHALL include `.stackra/tsconfig.typecheck.json`, which extends
   the member's tsconfig and sets no `paths`.
-- **AC-003**: WHEN `stackra typecheck` runs in a service whose `.stackra/tsconfig.typecheck.json` exists THE tool run
-  SHALL be `tsc --noEmit -p .stackra/tsconfig.typecheck.json`, so each package's `#` imports resolve through its own
+- **AC-003**: WHEN a service's typecheck runs with gen's typecheck config present THE run SHALL use that config:
+  `tsc --noEmit -p .stackra/tsconfig.typecheck.json`, so each package's `#` imports resolve through its own
   package.json.
 - **AC-004**: THE committed services SHALL carry the one-target `paths`.
 
