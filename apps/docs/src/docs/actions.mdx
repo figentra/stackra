@@ -1,0 +1,75 @@
+---
+title: "Actions"
+description: "The key, the input and output schemas, the permission derived from the key, idempotency and the pipeline's fixed order."
+icon: "zap"
+---
+
+{/* Stackra file contract: Purpose: the reader's page on actions and queries: declaring one, what gen derives, the fixed pipeline, idempotency, the generated endpoint. Boundary: an introduction that cites @stackra/actions' README and the ADRs; the package is the source. Runtime: docs. Governing contract: ADR 0098; ADR 0294; ADR 0472; STA-2676. */}
+
+An action is the unit of work in Stackra ([ADR 0098](/adr/0098-actions-are-the-unit)): one write, with a key, the
+actors who may call it, its input and output schemas and a handler. A query is its read-only twin. Every call, from a
+screen, another service, a job or an AI tool, goes through the same pipeline in the same order.
+
+## Declaring one
+
+```ts services/orders/src/modules/orders/actions/create-order.action.ts
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
+import { ActorKind } from "@stackra/contracts";
+
+export class CreateOrderAction extends Action({
+  key: "order.create",
+  actors: [ActorKind.User, ActorKind.Agent],
+  preconditions: [AcceptingOrdersPrecondition],
+  idempotency: Idempotency.Required,
+  rateLimit: { perMinute: 20 },
+  tool: true,
+}) {
+  async handle(input: CreateOrderInput, ctx: ActionContext): Promise<CreateOrderOutput> {
+    return ctx.run(CreateOrderWorkflow, input);
+  }
+}
+```
+
+The key is written once. From it `stackra gen` derives the module, the locked key (`orders.order.create@1`), the
+permission and the route, and registers them with `registerActions`. The input and output are `Schema` classes in
+`schemas/`, compiled to zod by gen, so the pipeline validates the input before the handler sees it and the clients
+type the call. A query is the same with `Query({ … })`: it takes no preconditions, idempotency, job or offline option,
+and `tool` is on by default.
+
+## The pipeline
+
+`ActionPipeline.execute` runs the steps in this order and no other: tenancy, then, inside the call's transaction,
+permission (the actor kind, then `AccessControl`), preconditions, entitlement, flag, input validation, approval and
+idempotency, rate limit, interceptors, the query cache, then `handle` in its unit of work with its usage event and
+audit entry, then the `afterCommit` work. A refusal is audited after the rollback. A step whose port nobody binds is
+skipped, except permission, which fails closed.
+
+## Idempotency
+
+A write that `Idempotency.Required` guards is replayed, not repeated: the caller sends an `Idempotency-Key` header
+(one of the `CALL_HEADERS` the generated endpoint lifts, [ADR 0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls)),
+the pipeline stores the completed answer under it, and a second call with the same key gets the stored answer.
+`Idempotency.Never` opts an action out. The offline queue of a client mints the key when it queues the call, so a
+replay after reconnecting is safe too ([Clients and MCP tools](/clients-and-tools)).
+
+## The endpoint
+
+Every action and query becomes one HTTP operation whose method follows its idempotency and whose path follows its key
+([HTTP and events](/constitution/http-and-events)). The operation is written into the member's `openapi.json`, with
+the `x-stackra-*` extensions (permission, risk, area, idempotency) that the [API reference](/api) shows as badges.
+Nobody writes a route by hand.
+
+## Tools
+
+An action a user can perform is also an MCP tool, unless it says `tool: false` with a `// reason:` line gen reads
+([ADR 0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 4). The
+tool runs under the caller's own permissions, through the same pipeline; `effects: [Effect.Financial]` tags what it
+touches, and an action that declares `approval: true` waits for its named approver before it commits
+([Approvals](/build/approvals)).
+
+## Read next
+
+- `@stackra/actions`: the package README names every entry and port (preconditions, interceptors, extension points,
+  the rate-limit buckets, the offline options).
+- [The programming model](/programming-model): how the key, the folder and the committed manifest fit together.
+- [Clients and MCP tools](/clients-and-tools): calling an action from a component, a service or an assistant.

@@ -1,0 +1,83 @@
+---
+title: "The programming model"
+description: "Kinds, the folder of its kind, what stackra gen derives, and the manifest and OpenAPI document as committed facts."
+icon: "shapes"
+---
+
+{/* Stackra file contract: Purpose: the reader's first page on the programming model (v3.1): kinds, group folders, identities gen derives, the committed manifest. Boundary: an overview that links to the standards pages and the ADRs; the rules themselves live there. Runtime: docs. Governing contract: ADR 0294; ADR 0295; ADR 0305; STA-2676 (SITE lane, docs step). */}
+
+A Stackra member, a package or a service, is written as classes of a few **kinds**. Each kind has a base to extend,
+a file suffix and a home folder, and `stackra gen` reads the class, derives every identity from it and locks what it
+derived in a committed file. You write the key once; the module, the permission, the route and the schema follow.
+
+## Kinds
+
+| Kind             | You write                                                         | Suffix                       | Home folder         |
+| ---------------- | ----------------------------------------------------------------- | ---------------------------- | ------------------- |
+| Action           | `class CreateOrderAction extends Action({ key, actors, … })`      | `.action.ts`                 | `actions/`          |
+| Query            | `class ListOrdersQuery extends Query({ key, actors, … })`         | `.query.ts`                  | `queries/`          |
+| Model            | `class Order extends Model.with(…)`                               | `.model.ts`                  | `models/`           |
+| Event            | an integration event, versioned by name                           | `.event.ts`                  | `events/`           |
+| Schema           | `class CreateOrderInput extends Schema`                           | `.schema.ts`                 | `schemas/`          |
+| Driver           | `class HttpClientTransportDriver extends Driver(ClientTransport)` | `.driver.ts`                 | `drivers/`          |
+| Route, Page      | an app's screen, `Page.of(X)`                                     | `.route.tsx`, `.page.tsx`    | `routes/`, `pages/` |
+| Block            | an experience block, `Block({ category, icon })`                  | `.block.ts`                  | `blocks/`           |
+| Module, Settings | the one root module and its settings group                        | `.module.ts`, `.settings.ts` | the module root     |
+
+A module is `src/modules/<key>/` in a service and `src/node/` in a package; a group folder appears with its first
+file, and a file exports exactly one declaration, named after its file. The full table of groups and suffixes, with
+the ADR each row comes from, is [Repository structure](/standards/structure), generated from the validator's own
+rules so the two never drift.
+
+## What gen derives
+
+`stackra gen` reads the member through the TypeScript compiler API and, from each class's `extends` clause and its
+options, derives:
+
+- **the key**, locked with its version (`orders.order.create@1`);
+- **the permission**, from the key, so renaming a key is a reviewed manifest change;
+- **the route**: method and path of the generated endpoint, and the OpenAPI operation that documents it;
+- **the schemas**: every `Schema` class compiled to zod, for the pipeline's input validation and the clients;
+- **the wiring**: the container bindings, the member module and the entries, so no file imports another by path.
+
+What gen writes lives under the member's `.stackra/`, which is never committed and never edited. What gen locks lives
+in two committed files at the member root: `stackra.manifest.json`, every identity with its version, and
+`openapi.json`, the manifest's projection to the HTTP surface. A change that would alter a locked identity fails
+`stackra gen --check` unless the class or field carries `@Renamed(old)`, which keeps the old name answering.
+
+```sh
+stackra gen            # write .stackra/ and the two committed files
+stackra gen --check    # fail when a committed file no longer matches the declarations
+```
+
+## Why committed facts
+
+The manifest is the contract between members: a consuming app or service is described by the producer's committed
+manifest, never by its `.d.ts`, and gen writes one typed client per consumed service from it
+([Clients and MCP tools](/clients-and-tools)). The OpenAPI document is what the [API reference](/api) is built from.
+Both are reviewed in the pull request that changes them, so an identity never moves by accident.
+
+## Read next
+
+<CardGroup cols={2}>
+  <Card title="Actions" icon="zap" href="/actions">
+    The key, the schemas, the derived permission, idempotency and the pipeline's fixed order.
+  </Card>
+  <Card title="Repository structure" icon="sitemap" href="/standards/structure">
+    Every category, group folder and suffix, from the validator's rules.
+  </Card>
+  <Card
+    title="ADR 0294"
+    icon="landmark"
+    href="/adr/0294-programming-model-v3-grammar-folders-identities-and-naming"
+  >
+    The grammar, folders, identities and naming of programming model v3.
+  </Card>
+  <Card
+    title="ADR 0305"
+    icon="landmark"
+    href="/adr/0305-programming-model-v3-1-names-partners-files-and-class-components"
+  >
+    v3.1: names, partners, one declaration per file, class components.
+  </Card>
+</CardGroup>

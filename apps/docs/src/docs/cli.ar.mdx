@@ -1,0 +1,56 @@
+---
+title: "سطر الأوامر"
+description: "stackra new وgen وdev وvalidate وverify وmcp وسواها؛ ما يعمل أين، وصناديق Testbed خلف الأوامر الثقيلة."
+icon: "terminal"
+---
+
+{/* Stackra file contract: Purpose: the Arabic twin of /cli, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page. Runtime: docs. Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0484; STA-2676. */}
+
+`stackra` ملفٌ تنفيذي واحد ([القرار 0083](/adr/0083-npm-scopes-and-cli-names)). يشغّل gen، ويشغّل أدوات كل عضو على
+الإعدادات التي يكتبها gen، ويسرد ما يقفله بيان ملتزَم به، ويوصِل MCP المطوّر المحلي. وفي جذر مساحة العمل تتوزّع
+أوامر المهام عبر Turborepo؛ وفي العضو تعمل على ذلك العضو.
+
+## كل يوم
+
+| الأمر                                | ما يفعله                                                                                 |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `stackra new <kind> <name>`          | حزمة `package` (مع `--category`) أو خدمة `service` (مع `--area`) أو `seed-pack` بالقواعد |
+| `stackra gen [--check]`              | يشتقّ ويكتب `.stackra/`؛ و`--check` يفشل حين لا يطابق بيان ملتزَم به الإعلانات           |
+| `stackra dev`                        | gen ثم التشغيل: Vite للويب، وExpo للهواتف، وWrangler للـWorkers، وEncore للخدمات         |
+| `stackra dev --surface <s> --os <c>` | سطح منتج في هيكل أو إس الحقيقي، مع إعادة تحميل فورية                                     |
+| `stackra build`                      | gen ثم البناء: tsdown وVite و`expo export` وتشغيل Wrangler تجريبي                        |
+| `stackra typecheck`، `test`، `lint`  | gen ثم `tsc --noEmit`، وvitest (أو Playwright وMaestro بحسب الطبقة)، و`oxlint .`         |
+| `stackra validate`                   | مراحل الإعداد والبنية والتوثيق والكتالوج والمواصفة من بوابة الجودة                       |
+| `stackra verify`                     | البوابة كاملةً، بالاختبارات                                                              |
+| `stackra ls [section]`               | الهويات التي يقفلها بيان ملتزَم به: الإجراءات والأحداث والصلاحيات…                       |
+
+يسمّي الرفض رمزه وموضعه والإصلاح؛ ولا يُكتب شيء حين يرفض gen. و`stackra validate` هو ما يشغّله التكامل المستمر على
+كل طلب دمج؛ و`verify` هو ما يعمل على الصندوق قبل أن يُحتسب الدمج.
+
+## المنتجات
+
+يبني `stackra build --product` كل حزمة سطح وتطبيق هاتف في runway الجذري، وينشرها
+`stackra deploy --product --env <e>` إلى الحافة والمتاجر؛ ويشحن `stackra promote --to production` ما تعمل به
+staging خلف اعتماد المالك؛ ويشغّل `stackra smoke --env <e>` اختبارات Playwright على كل سطح ويب بعد نشر معاينة ويمنع
+الترقية حين يحمرّ. ويأخذ `stackra mobile onboard` تطبيق المنتج من لا شيء إلى الجاهزية للمتجر خطوةً خطوة.
+
+## الوكلاء
+
+يقدّم `stackra mcp` خادم MCP المطوّر المحلي عبر stdio، فيقرأ المساعد داخل المستودع البيانات ويشغّل `new` و`gen`
+و`validate` و`verify` عبر بوابات سطر الأوامر نفسها؛ ويصيّر `stackra mcp sync` الملف `.mcp.json` من `.mcp.yaml`،
+ويبدأ `stackra mcp exec --` خادمًا بأسراره من دون أن يقرأها أحد
+([القرار 0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)). ويثبّت `stackra add` مهارةً أو
+وكيلًا أو إضافةً من السجل؛ ويفشل `stackra agents check` حين ينحرف `.mcp.json`.
+
+## أين تعمل الأشياء
+
+لا شيء ثقيل يعمل على محطة العمل. يزامن `stackra testbed run "<session> <what>" <dir> "<cmd>"` نسخةً إلى صندوق مشترك
+ويشغّل الأمر هناك تحت قفل؛ وتدير `status` و`unlock` و`ssh` و`sync` و`scale` الصناديق
+([القرار 0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical)). والتكامل المستمر هو البوابة: تعمل فحوص طلب
+الدمج هناك، والخطوة المتخطّاة تُحتسب حمراء.
+
+## اقرأ بعد ذلك
+
+- `@stackra/cli`: ملف README الحزمة، وجدول الأوامر الكامل، و`consumer-gate`.
+- [التطوير](/development): من نسخة نظيفة إلى `pnpm verify` أخضر.
+- [تعريف الاكتمال](/guides/definition-of-done): كل سطر مربوط بالفحص الذي يفرضه.
