@@ -293,6 +293,52 @@ describe("emitWiring", () => {
       expect(content).toMatch(new RegExp(`kind: "service", provide: ${name}, deps: \\[\\] \\},`));
   });
 
+  it("binds FieldCipher over a declared KeyProvider for a service with encrypted fields (STA-2664 (l))", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const tenancy = {
+      ...kit,
+      package: "@stackra/tenancy",
+      member: "tenancy",
+      drivers: [
+        {
+          port: "KeyProvider",
+          key: "contracts.KeyProvider",
+          candidates: ["ephemeral"],
+          classes: {
+            ephemeral: { class: "EphemeralKeyProviderDriver", from: "@stackra/tenancy/node" },
+          },
+        },
+      ],
+    } as unknown as typeof kit;
+    const encrypted = (trait: boolean) =>
+      emitWiring({
+        ...COMMERCE_IR,
+        packages: [...(COMMERCE_IR.packages ?? []), "@stackra/tenancy"],
+        classes: COMMERCE_IR.classes.map((declared) =>
+          trait && declared.name === "Order"
+            ? {
+                ...declared,
+                traits: [...declared.traits, { name: "HasEncryptedFields", args: [] }],
+              }
+            : declared,
+        ),
+        dependencies: [{ package: "@stackra/tenancy", manifest: tenancy }],
+      });
+    const content = encrypted(true);
+    expect(content).toContain('key: "contracts.FieldCipher",');
+    expect(content).toContain(
+      '"aes_gcm": () => import("@stackra/contracts").then((m) => m.AesGcmFieldCipherDriver),',
+    );
+    expect(content).toMatch(/deps: \{ "aes_gcm": \[\w*KeyProvider\] \},/);
+    expect(content).toContain('key: "contracts.KeyProvider",');
+    expect(content).toContain(
+      '"ephemeral": () => import("@stackra/tenancy/node").then((m) => m.EphemeralKeyProviderDriver),',
+    );
+    // A service without encrypted fields binds neither.
+    expect(encrypted(false)).not.toContain("contracts.FieldCipher");
+    expect(encrypted(false)).not.toContain("contracts.KeyProvider");
+  });
+
   it("binds a package's extension point that its service injects, from the package's manifest", () => {
     const point = {
       name: "LoyaltyKitExtensionPoint",
