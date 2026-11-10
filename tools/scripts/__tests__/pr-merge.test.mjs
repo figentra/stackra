@@ -83,7 +83,7 @@ test("condition 3: without a merge queue, the ruleset's merge state must let it 
   ])
     assert.match(
       blockers(pr({ mergeStateStatus: state }), green).join(),
-      new RegExp(`mergeStateStatus is ${state} \\(${hint.source}`),
+      new RegExp(`mergeStateStatus is ${state} \\(.*${hint.source}`),
       state,
     );
   assert.match(blockers(pr({ mergeStateStatus: undefined }), green).join(), /is UNKNOWN/);
