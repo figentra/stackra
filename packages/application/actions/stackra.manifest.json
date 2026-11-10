@@ -424,6 +424,17 @@
       }
     },
     {
+      "port": "JobDispatcher",
+      "key": "actions.JobDispatcher",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryJobDispatcherDriver",
+          "from": "@stackra/actions/testing"
+        }
+      }
+    },
+    {
       "port": "StepUpCheck",
       "key": "actions.StepUpCheck",
       "candidates": ["memory"],

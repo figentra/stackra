@@ -190,6 +190,11 @@
           ]
         }
       },
+      "selectedBy": "config:config.signer.driver",
+      "config": {
+        "class": "SignerConfig",
+        "from": "@stackra/config"
+      },
       "from": "@stackra/config"
     },
     {
@@ -213,6 +218,11 @@
             }
           ]
         }
+      },
+      "selectedBy": "config:config.secrets.store",
+      "config": {
+        "class": "SecretsConfig",
+        "from": "@stackra/config"
       },
       "from": "@stackra/config"
     },

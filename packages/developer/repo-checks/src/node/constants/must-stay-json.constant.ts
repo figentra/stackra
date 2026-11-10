@@ -47,6 +47,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     'a service\'s shipped defaults are imported as JSON modules (`with { type: "json" }`), which take no YAML and no comments',
   ],
   [
+    /(^|\/)assets\/ai\/.+\.eval\.json$/,
+    "a code prompt's evaluation dataset: @stackra/ai binds it by the fixed asset name <module>::ai/<stem>.eval.json",
+  ],
+  [
     /(^|\/)expo-module\.config\.json$/,
     "Expo autolinking reads this fixed name as strict JSON (ADR 0478)",
   ],

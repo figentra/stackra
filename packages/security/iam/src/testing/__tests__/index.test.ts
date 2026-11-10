@@ -12,6 +12,6 @@ import * as testing from "#testing/index";
 
 describe("@stackra/iam/testing", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(testing).sort()).toEqual(["IAM_TESTING_PLUGIN", "actors"]);
+    expect(Object.keys(testing).sort()).toEqual(["IAM_TESTING_PLUGIN", "TEST_SCOPE_ID", "actors"]);
   });
 });
