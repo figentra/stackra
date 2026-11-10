@@ -18,7 +18,7 @@ import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 describe("emitEncoreQueues", () => {
   it("emits a topic and a subscription per queue, registered for the broker publisher", () => {
     const file = emitEncoreQueues(BILLING_IR, buildManifest(BILLING_IR).manifest);
-    expect(file?.path).toBe(".stackra/encore/billing/queues.ts");
+    expect(file?.path).toBe("stackra-encore/billing/queues.ts");
     const content = file?.content ?? "";
     expect(content).toContain(
       'import { Publisher, Subscription, Topic } from "encore.dev/pubsub";',

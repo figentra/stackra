@@ -47,7 +47,7 @@ describe("emitEncoreBrokerMessage", () => {
 
   it("writes broker-message.ts beside the generated files that import it", () => {
     const file = emitEncoreBrokerMessage(BILLING_IR, files);
-    expect(file?.path).toBe(".stackra/encore/billing/broker-message.ts");
+    expect(file?.path).toBe("stackra-encore/billing/broker-message.ts");
     expect(file?.content).toContain("export interface BrokerMessage {");
   });
 

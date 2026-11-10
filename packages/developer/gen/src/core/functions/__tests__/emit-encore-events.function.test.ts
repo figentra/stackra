@@ -22,7 +22,7 @@ import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture"
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 /** A relay or consumer file climbs to the services folder; a variable keeps the import-shaped strings out of the ADR 0233 import check. */
-const UP = "../../../../";
+const UP = "../../../";
 
 /** The relay listener of the webhooks service. */
 const RELAY: DeclaredClass = {
@@ -98,7 +98,7 @@ describe("emitEncoreEvents", () => {
   it("emits one topic per integration event, registered under its wire name", () => {
     const [file, ...rest] = emitEncoreEvents(COMMERCE_IR, buildManifest(COMMERCE_IR).manifest);
     expect(rest).toEqual([]);
-    expect(file?.path).toBe(".stackra/encore/commerce/events.ts");
+    expect(file?.path).toBe("stackra-encore/commerce/events.ts");
     const content = file?.content ?? "";
     expect(content).toContain('import { Publisher, Topic } from "encore.dev/pubsub";');
     expect(content).toContain(
@@ -116,10 +116,10 @@ describe("emitEncoreEvents", () => {
 
   it("subscribes a relay service to every integration topic of the product", () => {
     const files = emitEncoreEvents(WEBHOOKS_IR, buildManifest(WEBHOOKS_IR).manifest);
-    expect(files.map((file) => file.path)).toEqual([".stackra/encore/webhooks/relay.ts"]);
+    expect(files.map((file) => file.path)).toEqual(["stackra-encore/webhooks/relay.ts"]);
     const content = files[0]?.content ?? "";
     expect(content).toContain(
-      `import { eventOrdersOrderPaidV1 } from "${UP}commerce/.stackra/encore/commerce/events";`,
+      `import { eventOrdersOrderPaidV1 } from "${UP}commerce/stackra-encore/commerce/events";`,
     );
     expect(content).toMatch(
       /import \{ event\w+ \} from "\.\.\/\.\.\/\.\.\/\.\.\/billing\/\.stackra\/encore\/billing\/events";/,
@@ -138,18 +138,18 @@ describe("emitEncoreEvents", () => {
     const ir: MemberIR = { ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, RELAY] };
     const files = emitEncoreEvents(ir, buildManifest(ir).manifest);
     expect(files.map((file) => file.path)).toEqual([
-      ".stackra/encore/commerce/events.ts",
-      ".stackra/encore/commerce/relay.ts",
+      "stackra-encore/commerce/events.ts",
+      "stackra-encore/commerce/relay.ts",
     ]);
     expect(files[1]?.content).toContain('import { eventOrdersOrderPaidV1 } from "./events";');
   });
 
   it("subscribes a typed consumer to each consumed event on the producer's topic, once", () => {
     const files = emitEncoreEvents(SHIPPING_IR, buildManifest(SHIPPING_IR).manifest);
-    expect(files.map((file) => file.path)).toEqual([".stackra/encore/shipping/subscriptions.ts"]);
+    expect(files.map((file) => file.path)).toEqual(["stackra-encore/shipping/subscriptions.ts"]);
     const content = files[0]?.content ?? "";
     expect(content).toContain(
-      `import { eventOrdersOrderPaidV1 } from "${UP}commerce-svc/.stackra/encore/commerce/events";`,
+      `import { eventOrdersOrderPaidV1 } from "${UP}commerce-svc/stackra-encore/commerce/events";`,
     );
     expect(content).toContain(
       'export const eventOrdersOrderPaidV1Subscription = new Subscription(eventOrdersOrderPaidV1, "shipping-orders-order-paid-v1", {',
@@ -175,8 +175,8 @@ describe("emitEncoreEvents", () => {
     };
     const files = emitEncoreEvents(ir, buildManifest(ir).manifest);
     expect(files.map((file) => file.path)).toEqual([
-      ".stackra/encore/commerce/events.ts",
-      ".stackra/encore/commerce/subscriptions.ts",
+      "stackra-encore/commerce/events.ts",
+      "stackra-encore/commerce/subscriptions.ts",
     ]);
     const content = files[1]?.content ?? "";
     expect(content).toContain('import { eventOrdersOrderPaidV1 } from "./events";');
@@ -188,13 +188,13 @@ describe("emitEncoreEvents", () => {
     const relayed: MemberIR = { ...ir, classes: [...ir.classes, RELAY] };
     expect(
       emitEncoreEvents(relayed, buildManifest(relayed).manifest).map((file) => file.path),
-    ).toEqual([".stackra/encore/commerce/events.ts", ".stackra/encore/commerce/relay.ts"]);
+    ).toEqual(["stackra-encore/commerce/events.ts", "stackra-encore/commerce/relay.ts"]);
   });
 
   it("leaves a consumed event to the relay when the service relays", () => {
     const ir: MemberIR = { ...WEBHOOKS_IR, classes: [RELAY, TYPED], services: COMMERCE_SERVICE };
     const files = emitEncoreEvents(ir, buildManifest(ir).manifest);
-    expect(files.map((file) => file.path)).toEqual([".stackra/encore/webhooks/relay.ts"]);
+    expect(files.map((file) => file.path)).toEqual(["stackra-encore/webhooks/relay.ts"]);
   });
 
   it("emits no sibling-path topic import for a service read from a contract package (STA-1820)", () => {

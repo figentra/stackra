@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `emitEncoreHttp`: a service that declares @stackra/app gets `.stackra/encore/<member>/http.ts`,
+ * Purpose: unit tests of `emitEncoreHttp`: a service that declares @stackra/app gets `stackra-encore/<member>/http.ts`,
  *          whose `answerHttp` runs through `app.handlers.run`, answers `OPTIONS` with 204 and `corsHeaders` over the
  *          bound `CorsConfig`, and adds those headers to every other answer (`Vary` appended) with `apiCacheControl`'s
  *          `private, no-store` (ADR 0325 rule 22); a service that declares @stackra/errors answers a `RateLimitedError`
@@ -17,13 +17,13 @@ import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
-/** The entry import of a generated .stackra/encore/<service>/ file; a constant so validate does not read it as this test's own import. */
-const GENERATED_ENTRY = "../../entry/server";
+/** The entry import of a generated stackra-encore/<service>/ file; a constant so validate does not read it as this test's own import. */
+const GENERATED_ENTRY = "../../.stackra/entry/server";
 
 describe(emitEncoreHttp, () => {
   it("writes the CORS adapter of a service that runs @stackra/app", () => {
     const file = emitEncoreHttp(BILLING_IR);
-    expect(file?.path).toBe(".stackra/encore/billing/http.ts");
+    expect(file?.path).toBe("stackra-encore/billing/http.ts");
     const content = file?.content ?? "";
     for (const line of [
       "  corsHeaders,",

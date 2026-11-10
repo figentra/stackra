@@ -57,7 +57,7 @@ const BEARER = /^bearer +(\S+)$/i;
  * Authenticates inbound calls.
  *
  * @example
- * // the generated .stackra/encore/<member>/auth.ts
+ * // the generated stackra-encore/<member>/auth.ts
  * authHandler<AuthParams, CallAuthData>((params) =>
  *   app.handlers.run((container) => new CallAuthenticator(container).authenticate(params)),
  * );

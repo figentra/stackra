@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreBrokerMessage`, a service's `.stackra/encore/<member>/broker-message.ts`: the `BrokerMessage`
+ * Purpose: `emitEncoreBrokerMessage`, a service's `stackra-encore/<member>/broker-message.ts`: the `BrokerMessage`
  *          its generated topics and subscriptions carry, declared beside them so Encore's parser resolves it. Encore
  *          cannot follow a package's dist into the hashed `.d.mts` chunk that declares `@stackra/queue`'s type.
  * Boundary: pure; written only when another generated file of the service imports it (`BROKER_MESSAGE_IMPORT`). The
@@ -9,6 +9,7 @@
  * Governing contract: ADR 0091 and 0124 (the generated Encore app); ADR 0148 (decision 3: Encore Pub/Sub).
  */
 import { BROKER_MESSAGE_IMPORT } from "#core/constants/broker-message-import.constant";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -19,14 +20,14 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * @param ir - the member read by discovery.
  * @param files - the member's generated files so far.
  * @example
- * emitEncoreBrokerMessage(ir, files)?.path; // ".stackra/encore/billing/broker-message.ts"
+ * emitEncoreBrokerMessage(ir, files)?.path; // "stackra-encore/billing/broker-message.ts"
  */
 export function emitEncoreBrokerMessage(
   ir: MemberIR,
   files: readonly GeneratedFile[],
 ): GeneratedFile | undefined {
   if (ir.layout !== "service") return undefined;
-  const folder = `.stackra/encore/${ir.member}/`;
+  const folder = `${encoreServiceFolder(ir.member)}/`;
   if (
     !files.some(
       (file) => file.path.startsWith(folder) && file.content.includes(BROKER_MESSAGE_IMPORT),

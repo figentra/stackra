@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreCronJobs`, a service's Encore CronJobs (`.stackra/encore/<member>/cron.ts`): the rows
+ * Purpose: `emitEncoreCronJobs`, a service's Encore CronJobs (`stackra-encore/<member>/cron.ts`): the rows
  *          `encoreCronJobs()` of @stackra/scheduler gives at run time, written statically as Encore requires: one
  *          CronJob per action whose `job` has a `cron` (its own schedule, its endpoint calling `SchedulerService.fire`
  *          with the locked key) and one every minute that ticks the stored per-scope schedules
@@ -20,6 +20,7 @@ import { camelCase } from "@stackra/support";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -43,7 +44,7 @@ function cronActions(manifest: StackraManifest): { key: string; schedule: string
  * The CronJobs file of a service, or undefined when it schedules nothing.
  *
  * @example
- * emitEncoreCronJobs(ir, manifest)?.path; // ".stackra/encore/billing/cron.ts"
+ * emitEncoreCronJobs(ir, manifest)?.path; // "stackra-encore/billing/cron.ts"
  */
 export function emitEncoreCronJobs(
   ir: MemberIR,
@@ -97,7 +98,7 @@ export function emitEncoreCronJobs(
     runtime: "node",
   });
   return {
-    path: `.stackra/encore/${ir.member}/cron.ts`,
+    path: `${encoreServiceFolder(ir.member)}/cron.ts`,
     content: [
       header,
       ...encoreDatabaseImport(ir),

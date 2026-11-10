@@ -30,7 +30,7 @@ const KINDS: readonly {
     note: "the entity list",
   },
   { match: /^\.stackra\/gen\//, label: () => ".stackra/gen/", note: "" },
-  { match: /^\.stackra\/encore\//, label: () => ".stackra/encore/", note: "the Encore app" },
+  { match: /^stackra-encore\//, label: () => "stackra-encore/", note: "the Encore services" },
   { match: /^\.stackra\/entry\//, label: (path) => path, note: "an entry" },
   { match: /^\.stackra\//, label: () => ".stackra/ (tool configs)", note: "configs, tests, graph" },
   // Tool configs gen writes at the member root (vitest.config.ts, tsdown.config.ts, tsconfig.build.json).

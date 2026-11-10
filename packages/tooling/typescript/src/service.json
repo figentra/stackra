@@ -3,8 +3,8 @@
 //          decorators and React Email templates (`*.mail.tsx`, through library's JSX). The decorators preset plus
 //          the member files gen reads and writes: stackra.config.ts, `.stackra/gen` (imported as `#stackra/*`),
 //          the runtime entry in `.stackra/entry` and the tool configs gen writes into `.stackra/` (ADR 0295).
-//          Hand-written Encore never appears; gen emits it into `.stackra/encore` with its own tsconfig, which
-//          extends `encore`, so that folder stays out of this program (ADR 0091, 0124). A service publishes no `.d.ts`
+//          Hand-written Encore never appears; gen emits it into `stackra-encore/`, which `include` leaves out, so
+//          that folder stays out of this program (ADR 0091, 0124). A service publishes no `.d.ts`
 //          (its contract package holds the manifest), so declarations are off: gen's entity schemas infer a type
 //          naming @mikro-orm/core's `EntityCtor`, which no service depends on, and a declaration check fails with
 //          TS2883 (STA-1880).

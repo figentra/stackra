@@ -83,18 +83,18 @@ beforeEach(async () => {
   sha = (await git("rev-parse", "HEAD")).trim();
   // What gen and the build leave behind, gitignored.
   for (const name of ["billing", "usage"]) {
-    write(`services/${name}/.stackra/encore/encore.app`, APP);
+    write(`services/${name}/encore.app`, APP);
     write(`services/${name}/.stackra/gen/wiring.ts`, "export type Wiring = {};\n");
     write(
-      `services/${name}/.stackra/encore/${name}/api.ts`,
+      `services/${name}/stackra-encore/${name}/api.ts`,
       'import { plan } from "#modules/plans/plan.service";\nexport const api = plan;\n',
     );
-    write(`services/${name}/.stackra/encore/${name}/events.ts`, "export const topic = 1;\n");
+    write(`services/${name}/stackra-encore/${name}/events.ts`, "export const topic = 1;\n");
   }
   // The relay imports its producer's topic across members, by a relative path that must survive.
   write(
-    "services/usage/.stackra/encore/usage/relay.ts",
-    `import { topic } from "${up(4)}billing/.stackra/encore/billing/events";\nexport const relay = topic;\n`,
+    "services/usage/stackra-encore/usage/relay.ts",
+    `import { topic } from "${up(3)}billing/stackra-encore/billing/events";\nexport const relay = topic;\n`,
   );
   write("packages/core/money/dist/index.js", "export {};\n");
   write("services/usage/node_modules/x/index.js", "skip\n");
@@ -116,9 +116,9 @@ describe("encoreDeployTree", () => {
     expect(files).toEqual(
       expect.arrayContaining([
         "encore.app",
-        "services/billing/.stackra/encore/billing/api.ts",
-        "services/usage/.stackra/encore/usage/relay.ts",
-        "services/billing/.stackra/encore/billing/events.ts",
+        "services/billing/stackra-encore/billing/api.ts",
+        "services/usage/stackra-encore/usage/relay.ts",
+        "services/billing/stackra-encore/billing/events.ts",
         "packages/core/money/dist/index.js",
       ]),
     );
@@ -133,11 +133,11 @@ describe("encoreDeployTree", () => {
     expect(await show("services/billing/src/modules/plans/plan.service.ts")).toContain(
       `import { Plan } from "./plan.model";\nimport type { Wiring } from "${up(3)}.stackra/gen/wiring";`,
     );
-    expect(await show("services/usage/.stackra/encore/usage/api.ts")).toContain(
-      `from "${up(3)}src/modules/plans/plan.service"`,
+    expect(await show("services/usage/stackra-encore/usage/api.ts")).toContain(
+      `from "${up(2)}src/modules/plans/plan.service"`,
     );
-    expect(await show("services/usage/.stackra/encore/usage/relay.ts")).toContain(
-      `from "${up(4)}billing/.stackra/encore/billing/events"`,
+    expect(await show("services/usage/stackra-encore/usage/relay.ts")).toContain(
+      `from "${up(3)}billing/stackra-encore/billing/events"`,
     );
 
     await tree?.dispose();
@@ -147,14 +147,14 @@ describe("encoreDeployTree", () => {
 
   /** Without a generated app the caller pushes the source commit itself. */
   it("builds nothing when no service has a generated app", async () => {
-    rmSync(join(repository, "services/billing/.stackra"), { recursive: true });
-    rmSync(join(repository, "services/usage/.stackra"), { recursive: true });
+    rmSync(join(repository, "services/billing/encore.app"));
+    rmSync(join(repository, "services/usage/encore.app"));
     expect(await encoreDeployTree({ repository, sha, run: runProgram })).toBeUndefined();
   });
 
   /** Members of one product must name one Encore app. */
   it("refuses members whose generated apps name different Encore app ids", async () => {
-    write("services/usage/.stackra/encore/encore.app", '{ "id": "acme-other" }\n');
+    write("services/usage/encore.app", '{ "id": "acme-other" }\n');
     await expect(encoreDeployTree({ repository, sha, run: runProgram })).rejects.toThrow(
       RunwayInvalidError,
     );
@@ -163,7 +163,7 @@ describe("encoreDeployTree", () => {
   /** An alias that resolves nowhere would fail Encore's build later; it fails here, and the checkout is removed. */
   it("refuses an alias no imports entry resolves, and removes the checkout", async () => {
     write(
-      "services/billing/.stackra/encore/billing/api.ts",
+      "services/billing/stackra-encore/billing/api.ts",
       'import { missing } from "#modules/nowhere/missing";\nexport const api = missing;\n',
     );
     await expect(encoreDeployTree({ repository, sha, run: runProgram })).rejects.toThrow(

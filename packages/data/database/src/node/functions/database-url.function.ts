@@ -21,7 +21,7 @@ export function databaseUrl(): string {
   const url = DATABASE_URL_HOST.url;
   if (url === undefined)
     throw new Error(
-      "no database url was provided: the generated .stackra/encore/<member>/database.ts calls provideDatabaseUrl, " +
+      "no database url was provided: the generated stackra-encore/<member>/database.ts calls provideDatabaseUrl, " +
         'and every generated Encore file must import "./database" before the server app (STA-1652)',
     );
   return url;
