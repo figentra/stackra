@@ -66,6 +66,8 @@ describe("IdentityConfig", () => {
     const config = buildConfig(IdentityConfig);
     expect(Object.isFrozen(config)).toBe(true);
     expect({ ...config }).toEqual({
+      sessionStore: "memory",
+      approvalChallenges: "memory",
       flow: { web: "bff", pwa: "bff", desktop: "pkce", ios: "pkce", android: "pkce" },
       issuer: "",
       clientId: "",
@@ -111,6 +113,29 @@ describe("IdentityConfig", () => {
       appApprovalAssurance: "aal2",
       accountDeletionGraceDays: 30,
     });
+  });
+
+  it("picks the SessionStore driver: memory by default, a named driver by config, nothing else", () => {
+    expect(buildConfig(IdentityConfig).sessionStore).toBe("memory");
+    expect(buildConfig(IdentityConfig, { values: { sessionStore: "pkce" } }).sessionStore).toBe(
+      "pkce",
+    );
+    expect(() =>
+      buildConfig(IdentityConfig, {
+        values: { sessionStore: "cookie" } as unknown as Partial<ConfigValues<IdentityConfig>>,
+      }),
+    ).toThrow(ConfigInvalidError);
+  });
+
+  it("picks the AppApprovalChallenges driver: memory by default, a product's by config", () => {
+    expect(buildConfig(IdentityConfig).approvalChallenges).toBe("memory");
+    expect(
+      buildConfig(IdentityConfig, {
+        values: { approvalChallenges: "records" } as unknown as Partial<
+          ConfigValues<IdentityConfig>
+        >,
+      }).approvalChallenges,
+    ).toBe("records");
   });
 
   it("types its fields on the class", () => {

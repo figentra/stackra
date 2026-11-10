@@ -26,6 +26,9 @@ import type { StoredRecord } from "#contracts/types/stored-record.type";
  * await storage.flush();
  */
 export abstract class Storage extends Port {
+  /** Type-only port key, so `DriverName<Storage>` narrows to this port's drivers. */
+  declare readonly "~key": "storage.Storage";
+
   /** Per-install preferences and persisted client state; kept across sessions. */
   abstract readonly prefs: StorageAreaHandle;
 

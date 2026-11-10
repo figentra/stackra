@@ -30,6 +30,9 @@ import type { TransactionOptions } from "#core/types/transaction-options.type";
  * await database.withScope(scope, () => orders.cancel(order, reason));
  */
 export abstract class Database extends Port {
+  /** Type-only port key, so `DriverName<Database>` narrows to this port's drivers. */
+  declare readonly "~key": "database.Database";
+
   /**
    * The connected database.
    *
