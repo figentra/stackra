@@ -8,7 +8,9 @@
  *           is a note, not a key. On a clash the first owner keeps the namespace (the member, then package.json
  *           order); `checkI18n` refuses the clash, so a clashing tree is never written. A consumed service's namespace
  *           that one of the member's own modules also has is no clash: it moves under the service's client name
- *           (`geography.rates`, `clientNamespace`), and the member's own keeps its name.
+ *           (`geography.rates`, `clientNamespace`), and the member's own keeps its name. A consumed service's namespace
+ *           that its own contract package (`<service package>-contract`, declared) already ships is taken once, from
+ *           the contract: the two are one catalogue, not a clash.
  * Runtime: isomorphic
  * Governing contract: ADR 0268 (R15: typed keys); ADR 0231 (`<module>::<path>` lookups); STA-1293; STA-1298.
  */
@@ -68,6 +70,10 @@ export function i18nTree(ir: MemberIR): {
     const base = baseOf(catalogues);
     for (const [shippedAs, catalogue] of Object.entries(catalogues[base] ?? {})) {
       const namespace = clientNamespace(own, service, shippedAs);
+      // A consumed service's own copy of a namespace its contract package already ships is that namespace, once:
+      // the declared contract (`<service package>-contract`) keeps it, and no clash is recorded (PAY on 0.32).
+      const holder = namespaces.get(namespace)?.package;
+      if (service !== undefined && owner !== undefined && holder === `${owner}-contract`) continue;
       owners.set(namespace, [...(owners.get(namespace) ?? []), owner ?? ir.package]);
       if (namespaces.has(namespace)) continue;
       const node =

@@ -18,6 +18,7 @@ export { denyPermission } from "#testing/functions/deny-permission.function";
 export { expectScopeCacheSafe } from "#testing/functions/expect-scope-cache-safe.function";
 export { MemoryAccessControlDriver } from "#testing/drivers/memory-access-control.driver";
 export { MemoryStepUpCheckDriver } from "#testing/drivers/memory-step-up-check.driver";
+export { MemoryJobDispatcherDriver } from "#testing/drivers/memory-job-dispatcher.driver";
 export { MemoryActorStatusCheckDriver } from "#testing/drivers/memory-actor-status-check.driver";
 export { MemoryApprovalBindingStoreDriver } from "#testing/drivers/memory-approval-binding-store.driver";
 export { MemoryApprovalGateDriver } from "#testing/drivers/memory-approval-gate.driver";
