@@ -12,7 +12,7 @@ import type { SchedulingDayStatus } from "#contracts/enums/scheduling-day-status
 
 /** One day's standing. */
 export interface SchedulingBoardDayMark {
-  /** The day. */
+  /** The day it marks. */
   readonly date: CalendarDate;
   /** How it stands; a rest day or holiday is shaded. */
   readonly status: SchedulingDayStatus;
