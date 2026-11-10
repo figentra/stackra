@@ -22,7 +22,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { DOCS_CONFIG_FILE, DOCS_SITE_DIR } from "@stackra/gen";
+import { DOCS_CONFIG_FILE, DOCS_SITE_DIR, TYPECHECK_TSCONFIG } from "@stackra/gen";
 import { parse } from "yaml";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -120,6 +120,10 @@ export function resolveTool(
       return at("oxlint", ["."]);
     }
     case "typecheck": {
+      // A service's paths exist for Encore; tsc would apply them to every package it compiles, so gen's config drops
+      // them and each package's `#` imports resolve through its own package.json (STA-2681).
+      if (layout === "service" && existsSync(join(root, TYPECHECK_TSCONFIG)))
+        return at("tsc", ["--noEmit", "-p", TYPECHECK_TSCONFIG]);
       return at("tsc", ["--noEmit"]);
     }
     case "test": {
