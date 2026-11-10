@@ -55,6 +55,7 @@ import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hasEncryptedFields } from "#core/functions/has-encrypted-fields.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
@@ -101,6 +102,17 @@ function depsOf(declared: DeclaredClass): readonly TokenRef[] {
 
 /** The cross-app inbox service a consumer's inbox route takes (ADR 0511 decision 18, STA-1910). */
 const RELAY_INBOX: ClassRef = { name: "RelayInboxService", from: "@stackra/outbox/node" };
+
+/**
+ * The field cipher a service with encrypted fields seals with: the port, its one implementation (a plain subclass in
+ * contracts, which sits below the container, so no manifest lists it as a driver) and the key provider it seals under.
+ */
+const FIELD_CIPHER: ClassRef = { name: "FieldCipher", from: "@stackra/contracts" };
+const AES_GCM_FIELD_CIPHER: ClassRef = {
+  name: "AesGcmFieldCipherDriver",
+  from: "@stackra/contracts",
+};
+const KEY_PROVIDER: ClassRef = { name: "KeyProvider", from: "@stackra/contracts" };
 
 /** The producer services that fan events out to other apps and deliver them (ADR 0511 decision 12, STA-1910). */
 const CROSS_APP_PRODUCER: readonly ClassRef[] = [
@@ -566,6 +578,19 @@ export function emitWiring(ir: MemberIR): string {
     entry.own.push(name);
     ports.set(key, entry);
   }
+  // A service with encrypted fields: its boot builds the EncryptedFieldsSubscriber from FieldCipher, whose one
+  // implementation gen names here, over the KeyProvider the worklist below links (STA-2664 (l)).
+  const encrypted = ir.layout === "service" && hasEncryptedFields(ir);
+  const cipherKey = portKey("contracts", FIELD_CIPHER.name);
+  if (encrypted && !ports.has(cipherKey))
+    ports.set(cipherKey, {
+      port: FIELD_CIPHER,
+      key: cipherKey,
+      candidates: [
+        { name: "aes_gcm", type: AES_GCM_FIELD_CIPHER, deps: [{ class: KEY_PROVIDER }] },
+      ],
+      own: [],
+    });
   const selectors = new Map<string, { selectedBy?: string; named?: string }>();
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
     const schema = declared.options["schema"];
@@ -699,6 +724,8 @@ export function emitWiring(ir: MemberIR): string {
     for (const { packages, services } of BOOT_SERVICES)
       if (packages.some(declares))
         for (const service of services) used.push({ module: ir.member, dep: { class: service } });
+    // The cipher's key provider, which nothing injects either: its table comes from a declared package (tenancy's).
+    if (encrypted) used.push({ module: ir.member, dep: { class: KEY_PROVIDER } });
   }
   // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
   const systemDefaults = new Map<string, string>();

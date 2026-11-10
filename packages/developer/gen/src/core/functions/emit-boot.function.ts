@@ -43,6 +43,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hasEncryptedFields } from "#core/functions/has-encrypted-fields.function";
 import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
 import { traitSubscribers } from "#core/functions/trait-subscribers.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
@@ -119,15 +120,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     ir.dependencies.some((dependency) => dependency.package === name);
   const database = usesDatabase(ir);
   // A model with `HasEncryptedFields` (own or a declared package's) is sealed by the subscriber, never written in clear.
-  const encrypted =
-    ir.classes.some(
-      (declared) =>
-        declared.kind === "model" &&
-        declared.traits.some((trait) => trait.name === "HasEncryptedFields"),
-    ) ||
-    ir.dependencies.some(({ manifest }) =>
-      (manifest.models ?? []).some((model) => model.traits.includes("HasEncryptedFields")),
-    );
+  const encrypted = hasEncryptedFields(ir);
   // Trait subscribers (`TreeSubscriber`, ...) run before the encrypted fields are sealed.
   const traits = traitSubscribers(ir);
   const outbox = uses("@stackra/outbox");
