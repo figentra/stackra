@@ -17,6 +17,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase, kebabCase } from "@stackra/support";
 
+import { BROKER_MESSAGE_IMPORT } from "#core/constants/broker-message-import.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -56,10 +57,11 @@ export function emitEncoreQueues(
       header,
       ...encoreDatabaseImport(ir),
       'import { registerBrokerTopics } from "@stackra/queue";',
-      'import type { BrokerMessage, QueuedJob } from "@stackra/queue/contracts";',
+      'import type { QueuedJob } from "@stackra/queue/contracts";',
       'import { QueueWorkerService } from "@stackra/queue/node";',
-      'import { Subscription, Topic } from "encore.dev/pubsub";',
+      'import { Publisher, Subscription, Topic } from "encore.dev/pubsub";',
       "",
+      BROKER_MESSAGE_IMPORT,
       ENCORE_APP_IMPORT,
       "",
       "/** The queued job a message carries, with its run time read back into a date. */",
@@ -83,9 +85,11 @@ export function emitEncoreQueues(
         "});",
         "",
       ]),
+      // Encore refuses a bare topic handed around as a value ("invalid topic usage"); a publisher ref is how it may go.
       "registerBrokerTopics([",
       ...rows.map(
-        ({ queue, topic }) => `  { name: ${JSON.stringify(`queue.${queue}`)}, topic: ${topic} },`,
+        ({ queue, topic }) =>
+          `  { name: ${JSON.stringify(`queue.${queue}`)}, topic: ${topic}.ref<Publisher<BrokerMessage>>() },`,
       ),
       "]);",
       "",

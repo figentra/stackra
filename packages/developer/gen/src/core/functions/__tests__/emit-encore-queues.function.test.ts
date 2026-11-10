@@ -20,7 +20,9 @@ describe("emitEncoreQueues", () => {
     const file = emitEncoreQueues(BILLING_IR, buildManifest(BILLING_IR).manifest);
     expect(file?.path).toBe(".stackra/encore/billing/queues.ts");
     const content = file?.content ?? "";
-    expect(content).toContain('import { Subscription, Topic } from "encore.dev/pubsub";');
+    expect(content).toContain(
+      'import { Publisher, Subscription, Topic } from "encore.dev/pubsub";',
+    );
     expect(content).toContain(
       'export const queueDefault = new Topic<BrokerMessage>("billing-queue-default", {',
     );
@@ -30,7 +32,14 @@ describe("emitEncoreQueues", () => {
     expect(content).toContain(
       "      await container.get(QueueWorkerService).process(jobOf(message));",
     );
-    expect(content).toContain('  { name: "queue.default", topic: queueDefault },');
+    // Encore's parser refuses a bare topic as a value ("invalid topic usage"): it goes as a publisher ref
+    expect(content).toContain(
+      '  { name: "queue.default", topic: queueDefault.ref<Publisher<BrokerMessage>>() },',
+    );
+    expect(content).not.toMatch(/topic: \w+ \}/);
+    // Encore cannot resolve a type through a package's dist: the topic's message type is the local declaration
+    expect(content).toContain('import type { BrokerMessage } from "./broker-message";');
+    expect(content).toContain('import type { QueuedJob } from "@stackra/queue/contracts";');
   });
 
   it("writes nothing for a package, an app or a service without jobs", () => {
