@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: `prepareEncoreService(service, root)`, the fix-up for the two rules `stackra validate --repository` holds a
  *          service to for Encore to build its app at the member root: `dependencies.encore.dev` becomes the reference
- *          literal version (`encoreReferenceVersion`), and tsconfig.json gets `paths` equal to package.json `imports`, resolved from the
- *          tsconfig's own folder (no `baseUrl`, which TypeScript 7 removed; an existing one is deleted).
+ *          literal version (`encoreReferenceVersion`), and tsconfig.json gets `paths` with each package.json `imports`
+ *          key and its first target (`pathsOfImports`: Encore reads no further), resolved from the tsconfig's own
+ *          folder (no `baseUrl`, which TypeScript 7 removed; an existing one is deleted).
  * Boundary: writes the service's package.json and tsconfig.json, and only when their content changes, laid out as the
  *           repository's formatter leaves them (gen's `formatJson`); a tsconfig's header comments are kept, the
  *           `//` lines above its object and those that open it (a file contract inside the braces). Does not touch pnpm-lock.yaml: run `pnpm install` after a pin change.
  * Runtime: node
- * Governing contract: ADR 0091 (decision 2, amendment of 2026-11-09).
+ * Governing contract: ADR 0091 (decision 2, amendment of 2026-11-09, rule 4 as corrected 2026-11-10).
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
