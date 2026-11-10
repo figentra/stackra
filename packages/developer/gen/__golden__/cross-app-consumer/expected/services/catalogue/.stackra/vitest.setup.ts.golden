@@ -5,6 +5,7 @@
  * Boundary: loaded by Vitest before every test file; a server never loads it.
  * Runtime: node
  */
+import "@stackra/database/testing";
 import "@stackra/clients/testing";
 import "@stackra/actions/testing";
 import "#stackra/registrations";

@@ -6,6 +6,7 @@
  *           the anonymous actor, only where the call lists it, are decided in answerCall, never here.
  * Runtime: node
  */
+import "./database";
 import { PublishCatalogueAction } from "#node/actions/publish-catalogue.action";
 import { PublishCatalogueInput } from "#node/schemas/publish-catalogue-input.schema";
 import { ActionPipeline, requestCallOptions } from "@stackra/actions";
