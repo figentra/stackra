@@ -1,6 +1,6 @@
 ---
 title: "0441 — Product repository layout: the assets tree, root runway surfaces and the brand kit in CI"
-description: "Proposed · 2026-10-26"
+description: "Proposed · 2026-10-26 · amended 2026-11-10 (apps→templates, owner 2026-11-10)"
 ---
 
 <Note>
@@ -13,6 +13,21 @@ description: "Proposed · 2026-10-26"
   [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells),
   [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) and
   [0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge).
+</Note>
+
+<Note>
+  Amended 2026-11-10 (apps→templates, owner decision of 2026-11-10; the Linear key follows). Decision 2 stands for
+  product repositories. In the Figentra OS repository the shell lines
+  ([0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells) decision 5: `os/console@3`,
+  `os/landing@1`, `os/mobile@3`, and the docs line) are the templates Runway builds every product's surfaces and
+  mobile apps from, so they live under `templates/<surface>` (`templates/console`, `templates/landing`,
+  `templates/mobile`, `templates/docs`), not under `apps/`. The shell ids stay `os/<surface>@<major>`. Each line is
+  versioned and cut like a package: a release per line, stable and production-deployable before any product builds
+  on it. The OS's own surfaces are built from those lines through the root runway exactly as a product's are
+  (`surfaces.console.shell: os/console@3`), never served from the template folder. Order of the change: this
+  amendment; core's layout check and Runway's line resolution read `templates/<surface>` (0.33.2); the move in
+  `figentra/os` as one pull request (workspace globs, turbo, Flow config, docs, e2e) after its 0.33.1 bump; then one
+  CI deploy job per line to the staging hosts.
 </Note>
 
 ## Context
