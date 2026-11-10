@@ -6,9 +6,12 @@
  * Runtime: node
  */
 import type { Container } from "@stackra/container";
+import { AppendOnlySubscriber, connectHoldRegistry, connectNativeWriteWatcher, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";
 import { EventBus } from "@stackra/events";
+import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";
 import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";
 import { QueueWorkerService } from "@stackra/queue/node";
+import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";
 
 /** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */
 export async function boot(
@@ -16,6 +19,24 @@ export async function boot(
   options: { readonly signal: AbortSignal; readonly url?: string; readonly relay?: boolean },
 ): Promise<void> {
   if (options.signal.aborted) return;
+  connectHoldRegistry(container.has(HoldRegistry) ? container.get(HoldRegistry) : undefined);
+  connectSequenceTimeZone(
+    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,
+  );
+  connectVisibilityFilter(container);
+  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;
+  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");
+  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.
+  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");
+  await PostgresDatabaseDriver.connect({
+    // The seed entry passes the direct url (STA-1709); a server reads the one Encore provided (STA-1652).
+    url: options.url ?? databaseUrl(),
+    replicas,
+    ...(config === undefined ? {} : { timeouts: config.timeouts }),
+    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },
+    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), container.get(OutboxWriterService)],
+  });
+  connectNativeWriteWatcher(container.get(OutboxWriterService));
   container.get(QueueWorkerService).connect(container);
   const bus = container.get(EventBus);
   bus.connect(container);
