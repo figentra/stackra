@@ -26,7 +26,7 @@ const PACKAGES = [
   { name: "@stackra/ui", description: K.ui },
 ] as const;
 
-/** PackageList: packages. */
+/** The PackageList demo: packages. */
 export default function Packages() {
   const t = useCatalogueText(MESSAGES.en);
   return (
