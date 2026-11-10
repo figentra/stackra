@@ -446,6 +446,17 @@ const MODEL_SOURCES: Readonly<Record<string, string>> = {
     'export class Customer extends Model.with(HasPublicId("cus")) {}',
     "",
   ].join("\n"),
+  // Gen's own last output: its augmentation is not the member's, so `Customer` keeps its keys (STA-2688).
+  "src/node/entities.gen.ts": [
+    'import type { OptionalProps } from "@stackra/model";',
+    "",
+    'declare module "./models/customer.model" {',
+    "  interface Customer {",
+    '    [OptionalProps]?: "id";',
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
   "src/node/models/receipt.model.ts": [
     'import { HasPublicId, Model, OptionalProps, Timestamps } from "@stackra/model";',
     "",
@@ -502,6 +513,10 @@ describe("createSourceReader on models", async () => {
 
   it("leaves the keys out when the model writes its own [OptionalProps], which a generated one would redeclare (STA-1750)", () => {
     expect(entity("Receipt")?.optional).toEqual([]);
+  });
+
+  it("keeps the keys when the [OptionalProps] is gen's own, in the entities file it wrote last run (STA-2688)", () => {
+    expect(entity("Customer")?.optional).toEqual(["id"]);
   });
 
   it("reads a one-to-many with its inverse and options", () => {
