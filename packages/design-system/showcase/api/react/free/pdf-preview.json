@@ -1,0 +1,46 @@
+{
+  "generatedFrom": {
+    "hash": "77bb2cb72e70fb3b",
+    "propsFiles": ["ui/src/react/pdf-preview/pdf-preview.props.ts"]
+  },
+  "importLine": "import { PdfPreview } from \"@stackra/ui/react\";",
+  "key": "free/pdf-preview",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called by the download button, the fallback where the browser shows no PDF; left out, there is none.",
+          "name": "onDownload",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "PdfPreview",
+      "props": [
+        {
+          "description": "The PDF's link: a short-lived signed URL minted for this open, on another origin than the page (object storage).\nA same-origin link is shown with scripts off, so the frame can never lift its own sandbox.",
+          "name": "src",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The file name, shown as given; it names the frame and the download button.",
+          "name": "name",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}
