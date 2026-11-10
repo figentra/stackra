@@ -1,0 +1,74 @@
+---
+title: "The design system"
+description: "Tokens, a theme per product, components by family, right-to-left and numerals, and where the component pages and the playground stand."
+icon: "palette"
+---
+
+{/* Stackra file contract: Purpose: the reader's page on the Stackra Design System: @stackra/tokens (themes, CSS), @stackra/ui (one contract, two implementations), RTL and locales, and the docs' generated component pages. Boundary: an introduction that cites the package READMEs and the ADRs; measurements are never typed here. Runtime: docs. Governing contract: ADR 0302; ADR 0303; ADR 0403; ADR 0521; STA-2676. */}
+
+The Stackra Design System is two packages and one rule: `@stackra/tokens` holds the themes, `@stackra/ui` holds the
+components, and every component exists once as a contract and twice as an implementation, on HeroUI v3 for the web
+and on HeroUI Native with Uniwind for phones ([ADR 0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)).
+
+## Tokens and themes
+
+A theme is one typed object: the HeroUI colour roles for light and dark (oklch, with the sRGB hex derived from it), a
+brand palette, five font stacks, a type scale, spacing, radii, shadows and motion. `defineTheme` checks it, and
+`renderWebCss` and `renderNativeCss` turn it into the CSS custom properties HeroUI reads on each runtime. The
+`stackra` theme is the default; a product brings its brand as a theme of its own, a `stackra.theme-diff/2` file over
+the base that names only what differs.
+
+```css
+/* Web: Tailwind v4 + HeroUI v3, after HeroUI */
+@import "tailwindcss";
+@import "@heroui/styles";
+@import "@stackra/tokens/fonts/fonts.css";
+@import "@stackra/tokens/themes/stackra/web.css";
+```
+
+The web file switches modes the HeroUI way (`:root` light, `.dark` dark) and restyles HeroUI's typography in the
+theme's type scale, with `:lang(ar)` twins from the Arabic tokens. The font stacks are `sans`, `mono` and `arabic`,
+plus `display` and `displayArabic` for headings; the stackra theme leaves the display stacks out, so its headings are
+Geist and IBM Plex Sans Arabic.
+
+## Components
+
+`@stackra/ui/react` and `@stackra/ui/native` share `src/contracts`: the same props, the same words. The package holds
+the providers, the typography, buttons and links, surfaces and cards, status and feedback, every field of a form
+with the schema-driven form engine (`@stackra/ui/form`), overlays, data primitives and the app shell; the catalogue
+grows one component at a time ([ADR 0303](/adr/0303-stackra-ui-component-catalogue-decisions)). Wrap an app once:
+
+```tsx
+import { DesignSystemProvider } from "@stackra/ui/react";
+
+<DesignSystemProvider defaultColorScheme="system" defaultLocale="en">
+  <App />
+</DesignSystemProvider>;
+```
+
+The provider owns the colour scheme, the locale and the direction (`directionOf` the locale unless told otherwise),
+puts `lang` and `dir` on the document, and wraps the tree in React Aria's provider so arrow keys follow the
+document's direction.
+
+## Words, right to left and numerals
+
+Every word a component says by default is a key in `assets/lang/<locale>/ui.json`, shipped in seven languages, never
+an English constant in the code; `pnpm validate` checks every locale for English's keys and ICU placeholders
+([ADR 0403](/adr/0403-seven-languages-locales-formats-analysers-catalogues-and-a-completeness-gate)). Layout uses
+logical properties, so Arabic mirrors without a second stylesheet; identifiers, code and commands stay left to right
+inside Arabic text. The rules a page follows are on [i18n and RTL](/standards/i18n-rtl) and
+[UI and accessibility](/standards/ui-and-accessibility).
+
+## Component pages and the playground
+
+This site is the one home of the design-system docs ([ADR 0521](/adr/0521-design-system-docs-on-fumadocs-ai-first)):
+one page per catalogued component, generated from its record and its showcase JSON with live previews, a props table
+and accessibility notes, behind one theme switcher. The contrast and matrix tests of the brand themes belong to
+`@stackra/ui`'s own tests, and the playground retires once every one of its routes has a new home. The generated
+pages and the switcher are coming; until they land, the package READMEs and the contracts are the reference.
+
+## Read next
+
+- `@stackra/tokens` and `@stackra/ui`: the package READMEs, including "bring your own theme".
+- [Experience documents](/experience): the landing blocks built on `@stackra/ui`.
+- [Brand](/brand): the Stackra brand files this site carries.
