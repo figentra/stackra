@@ -245,6 +245,37 @@ describe("emitWiring", () => {
     expect(content).toMatch(/import \{[^}]*LoyaltyService[^}]*\} from "@acme\/loyalty-kit";/);
   });
 
+  it("binds a package service only a seeder injects, so .seed() can build the seeder (os#256)", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
+      classes: [
+        ...COMMERCE_IR.classes,
+        {
+          name: "OrdersMinimalSeeder",
+          kind: "seeder",
+          module: "orders",
+          file: "src/modules/orders/database/seeders/orders-minimal.seeder.ts",
+          importPath: "#modules/orders/database/seeders/orders-minimal.seeder",
+          options: {},
+          deps: [{ class: { name: "LoyaltyService", from: "@acme/loyalty-kit" } }],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+      dependencies: [{ package: "@acme/loyalty-kit", manifest: kit }],
+    });
+    expect(content).toMatch(
+      /\{ module: "orders", kind: "service", provide: LoyaltyService, deps: \[LoyaltyLedger\] \},/,
+    );
+    // the seeder itself stays out of the bindings: the test setup registers its tokens
+    expect(content).not.toMatch(/provide: OrdersMinimalSeeder/);
+  });
+
   it("binds a package's extension point that its service injects, from the package's manifest", () => {
     const point = {
       name: "LoyaltyKitExtensionPoint",
