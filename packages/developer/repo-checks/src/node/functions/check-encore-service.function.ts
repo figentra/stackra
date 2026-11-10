@@ -43,7 +43,7 @@ export function checkEncoreService(member: {
   const pin = pkg.dependencies?.["encore.dev"];
   if (pin !== undefined && pin !== catalogEncore)
     out.push(
-      `dependencies.encore.dev = "${pin}" must be the literal ${catalogEncore ?? "<default catalog encore.dev>"}: Encore rewrites any other spec, catalog: included (ADR 0091); ${FIX}`,
+      `dependencies.encore.dev = "${pin}" must be the literal ${catalogEncore ?? "<root package.json stackra.encore>"}: Encore rewrites any other spec, catalog: included (ADR 0091); ${FIX}`,
     );
   if (pkg.imports === undefined) return out;
   const compiler = tsconfig?.compilerOptions;

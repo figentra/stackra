@@ -217,8 +217,13 @@ jobs:
       - name: Check boundaries
         run: pnpm boundaries
 
+      # knip loads every member's vitest.config.ts, which imports gen's .stackra/vitest.config and the built
+      # @stackra/vitest-config; the steps above gen and build only what the change affects, so this runs both for all.
       - name: Check unused code
-        run: pnpm knip
+        run: |
+          pnpm exec turbo run build --filter=@stackra/vitest-config --output-logs=errors-only
+          pnpm exec turbo run gen --filter='!@figentra/mobile' --filter='!@figentra/playground' --output-logs=errors-only
+          pnpm knip
 
       - name: Secrets scan
         run: pnpm secrets:scan

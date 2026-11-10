@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `prepareEncoreService(service, root)`, the fix-up for the two rules `stackra validate --repository` holds a
- *          service to for Encore to build its app at the member root: `dependencies.encore.dev` becomes the default
- *          catalog's literal version, and tsconfig.json gets `paths` equal to package.json `imports`, resolved from the
+ *          service to for Encore to build its app at the member root: `dependencies.encore.dev` becomes the reference
+ *          literal version (`encoreReferenceVersion`), and tsconfig.json gets `paths` equal to package.json `imports`, resolved from the
  *          tsconfig's own folder (no `baseUrl`, which TypeScript 7 removed; an existing one is deleted).
  * Boundary: writes the service's package.json and tsconfig.json, and only when their content changes, laid out as the
  *           repository's formatter leaves them (gen's `formatJson`); a tsconfig's header comments are kept, the
@@ -14,24 +14,25 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { formatJson } from "@stackra/gen";
-import { catalogEncoreVersion, pathsOfImports, readJsonc } from "@stackra/repo-checks/node";
+import { encoreReferenceVersion, pathsOfImports, readJsonc } from "@stackra/repo-checks/node";
 
 /**
  * Prepare one service for Encore.
  *
  * @param service - the service member directory.
- * @param root - the workspace root, which holds `pnpm-workspace.yaml`.
- * @throws Error when the default catalog has no `encore.dev` or the service has no package.json.
+ * @param root - the workspace root, whose package.json (`stackra.encore`) or `pnpm-workspace.yaml` names the version.
+ * @throws Error when neither names an `encore.dev` version, or the service has no package.json.
  * @example
  * prepareEncoreService("/repo/services/orders", "/repo"); // ["package.json", "tsconfig.json"]
  */
 export function prepareEncoreService(service: string, root: string): readonly string[] {
-  const workspace = join(root, "pnpm-workspace.yaml");
-  const version = catalogEncoreVersion(
-    existsSync(workspace) ? readFileSync(workspace, "utf8") : undefined,
-  );
+  const maybe = (name: string): string | undefined =>
+    existsSync(join(root, name)) ? readFileSync(join(root, name), "utf8") : undefined;
+  const version = encoreReferenceVersion(maybe("package.json"), maybe("pnpm-workspace.yaml"));
   if (version === undefined)
-    throw new Error("pnpm-workspace.yaml's default catalog has no encore.dev");
+    throw new Error(
+      "no encore.dev reference version: set the root package.json stackra.encore (or the default catalog's encore.dev)",
+    );
   const packageFile = join(service, "package.json");
   if (!existsSync(packageFile)) throw new Error(`${packageFile} not found: run this in a service`);
   const changed: string[] = [];

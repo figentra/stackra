@@ -83,6 +83,7 @@
   },
   "packageManager": "pnpm@12.16.1",
   "stackra": {
+    "encore": "1.58.8",
     "layout": {
       "allow": {
         ".gitmodules": "the private .notes submodule",

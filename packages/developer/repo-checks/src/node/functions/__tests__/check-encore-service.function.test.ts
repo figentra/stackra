@@ -12,6 +12,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { catalogEncoreVersion } from "#node/functions/catalog-encore-version.function";
 import { checkEncoreService } from "#node/functions/check-encore-service.function";
 import { checkMember } from "#node/functions/check-member.function";
+import { encoreReferenceVersion } from "#node/functions/encore-reference-version.function";
 import { pathsOfImports } from "#node/functions/paths-of-imports.function";
 
 const imports = { "#src/*": ["./src/*", "./src/*.ts"], "#stackra/*": "./.stackra/gen/*" };
@@ -42,6 +43,13 @@ describe("checkEncoreService", () => {
     expect(checkEncoreService({ pkg, tsconfig: based, catalogEncore: "1.58.8" })).toEqual([
       expect.stringContaining("compilerOptions.baseUrl must go"),
     ]);
+  });
+
+  it("reads the reference version from the root package.json first, then the default catalog", () => {
+    const catalog = "catalog:\n  encore.dev: 1.0.0\n";
+    expect(encoreReferenceVersion('{ "stackra": { "encore": "1.58.8" } }', catalog)).toBe("1.58.8");
+    expect(encoreReferenceVersion('{ "name": "x" }', catalog)).toBe("1.0.0");
+    expect(encoreReferenceVersion(undefined, undefined)).toBeUndefined();
   });
 
   it("reads the default catalog, and checkMember leaves a service's encore.dev to it", () => {

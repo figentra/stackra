@@ -107,6 +107,42 @@
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": ["@stackra/database"],
     },
+    // @electric-sql/pglite-postgis: read-migrated-schema and the memory driver load it with `loadPeer("…")`, a string
+    // knip does not trace (PostGIS for a member with geography columns, ADR 0314).
+    "packages/data/database": {
+      "entry": [
+        "stackra.config.ts",
+        "vitest.config.ts",
+        ".stackra/**/*.{ts,tsx}",
+        "src/**/__tests__/*.e2e.page.tsx",
+        "src/**/__tests__/*.e2e.test.ts",
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@electric-sql/pglite-postgis"],
+    },
+    // The preset ships data only (agents, rules, skills), no source. @figentra-oss/flow: the dev dependency installs
+    // its own peer (Flow) in the workspace, so the preset resolves where Flow reads it; nothing imports it.
+    "packages/developer/flow-preset": {
+      "entry": [],
+      "project": [],
+      "ignoreDependencies": ["@figentra-oss/flow"],
+    },
+    // The docs app scaffold template (`stackra new app:docs`), a knip workspace only so its `mint: catalog:docs` counts
+    // as the docs catalog's reference; it is never installed, so its own dependencies read as unused. A Fumadocs
+    // template replaces it (STA-2664); then the `mint` entry and this block go.
+    "tools/scaffold/templates/apps/docs": {
+      "entry": [],
+      "project": [],
+      "ignoreDependencies": [
+        "@stackra/cli",
+        "@stackra/contracts",
+        "@stackra/gen",
+        "@stackra/typescript-config",
+        "@types/node",
+        "mint",
+        "oxfmt",
+      ],
+    },
     // Packages only gen's .stackra output imports (registrations: outbox, queue, scheduler; wiring: actions, content,
     // database), declared for it (generated_dependency_missing).
     // shortcut: gen writes no .stackra for these members while shim_authored refuses them; drop these blocks once
@@ -286,6 +322,11 @@
   // entry barrels import; the two names are one schema by design.
   "ignoreIssues": {
     "**/.stackra/**": ["unlisted", "duplicates"],
+    // The Quality Gate never installs the two Uniwind Pro apps (their own Mobile job does), so their configs cannot
+    // load there and every dependency, binary and test reads as unused. They stay workspaces, so the catalog
+    // entries only they name still count as used.
+    "apps/mobile/**": ["files", "dependencies", "binaries"],
+    "apps/playground/**": ["files", "dependencies", "binaries"],
     // A package's committed entity list is gen output in src/ (STA-1874): only <KEY>_ENTITIES is re-exported, so its
     // per-model `*Schema` exports read as unused, as they did under .stackra/.
     "packages/*/*/src/node/entities.gen.ts": ["exports"],
