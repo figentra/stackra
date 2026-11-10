@@ -1,0 +1,65 @@
+---
+title: "Runway"
+description: "runway.yaml in two files, destinations per environment, previews, the approval gate before production, and the brand step."
+icon: "plane-takeoff"
+---
+
+{/* Stackra file contract: Purpose: the reader's page on Runway: the root and member runway files, environments and destinations, previews, the production approval, surfaces and the brand step; it links the command pages for the rest. Boundary: an introduction that cites @stackra/runway's README and ADRs 0296, 0352, 0468. Runtime: docs. Governing contract: ADR 0296; ADR 0352; ADR 0441; ADR 0468; STA-2676. */}
+
+Runway is the one deployment tool ([ADR 0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)):
+it reads where things run from `runway.yaml`, builds with gen, plans and applies with Pulumi where infrastructure is
+needed, and ships through providers. No port, origin or feed URL is typed anywhere else.
+
+## Two files
+
+The **root runway** says **where** things run: providers and accounts, the destinations of each environment, the
+pools many members share (one Postgres server per environment, the cache, the queues), domains, the edge, the release
+policy, and each environment's **topology**: whether services run as one process, in named groups or one each. The
+**member runway** says **what** one member needs: its dev port, the engines it `requires`, secret names, health,
+vars and sizes per environment. A member never says where it runs; the root never names a member's facts
+([ADR 0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)).
+
+```yaml services/orders/runway.yaml
+$schema: "@stackra/runway/schema/service.json"
+version: 3
+requires: [postgres]
+environments:
+  dev:
+    port: 4010
+```
+
+`stackra validate` checks both against their schemas and refuses a grouped environment that leaves a service member
+unplaced, a `valkey` requirement no environment's cache serves, and two members on one dev port.
+
+## Environments and destinations
+
+Four environment names, in every tool: `dev` runs locally (`stackra dev`); `preview` is one environment per pull
+request with synthetic data and a TTL; `staging` and `production` are the managed ones. Each names its destinations
+by kind (`services`, `web`, `mobile`, `docs`), and each kind has a provider: Encore Cloud for services, Cloudflare
+Workers for the web and the docs, EAS for mobile.
+
+## Deploys, previews and the approval gate
+
+Dev and staging deploy on a merge to main with no approval; a pull request gets its preview, gated on the health
+endpoint; production deploys only through `runway promote <sha>`, behind the GitHub environment's one approval, the
+owner's ([ADR 0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)). After a
+promotion, Runway reads the health endpoint for the deployed sha, runs the Playwright smoke suite and watches errors
+for a window before the release counts; a rollback inside that window is one command. The commands are documented one
+page each: [plan](/runway/plan), [deploy](/runway/deploy), [promote](/runway/promote), [rollback](/runway/rollback),
+[status](/runway/status), [drift](/runway/drift) and the rest.
+
+## Surfaces, mobile apps and the brand step
+
+A product names what it ships into the OS shells (`surfaces.console`, `surfaces.landing`, …: the shell line, the
+packages the shell loads, the hosts) and its mobile apps (the template line, assets, store accounts, EAS project).
+Runway resolves each shell line to its highest release on the registry
+([ADR 0481](/adr/0481-template-lines-release-as-registry-packages-and-runway-checks-them-out)), builds the
+product's bundles, and publishes them with the host rows to the edge. The **brand step** runs `@stackra/brand-kit`
+per surface and app from the brand the product pins, so icons, splash screens and theme CSS are generated, never
+committed.
+
+## Read next
+
+- `@stackra/runway`: the package README, with every reader and provider.
+- [Runway runbook](/runbooks/runway) and [Deploys](/runbooks/deploys): operating it.
+- [Secrets](/constitution/secrets): names in the runway, values in the store, never in a file.
