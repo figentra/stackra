@@ -37,11 +37,9 @@ catalog:
   undici: 8.12.2
   # Runtime schemas: @stackra/validation, config and money, and the X$ schemas gen emits (ADR 0095).
   zod: 4.6.7
-  # The Encore runtime a service's generated Encore files import, at the Encore CLI version the products pin; gen
-  # refuses a service that does not declare it (STA-2194).
-  # A service pins this same version as a literal (Encore rewrites catalog: specs); bump both together:
-  # `stackra encore:prepare` in each service, and `stackra validate --repository` refuses a mismatch (ADR 0091).
-  encore.dev: 1.58.8
+  # encore.dev is not in a catalog: a service pins it as a literal (Encore rewrites catalog: specs), at the reference
+  # version in the root package.json `stackra.encore`; bump that, then `stackra encore:prepare` in each service, and
+  # `stackra validate --repository` refuses a mismatch (ADR 0091).
   # Apple Wallet pass signing in @stackra/integrations (stackra-41): PKCS#7 detached signatures over the pass manifest.
   # pkijs 3.x and its asn1js 3.x peer; BSD-3-Clause. Bump the pair together.
   asn1js: 3.1.0

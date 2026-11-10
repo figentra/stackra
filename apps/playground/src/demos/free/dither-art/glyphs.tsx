@@ -20,7 +20,7 @@ const K = DITHER_ART_KEYS.dither_art.glyphs;
 /** The kit's strata poster, one per scheme. */
 const POSTER = { light: "/posters/strata-light.png", dark: "/posters/strata-dark.png" } as const;
 
-/** DitherArt: Glyphs. */
+/** The DitherArt demo: Glyphs. */
 export default function Glyphs() {
   const t = useCatalogueText(MESSAGES.en);
   return (
