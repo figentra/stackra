@@ -49,8 +49,9 @@ container), so no manifest lists it as a driver and no wiring binds it.
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN a service has a model with `HasEncryptedFields` (its own or a declared package's) THE generated
-  wiring SHALL bind `FieldCipher` (`contracts.FieldCipher`) to `AesGcmFieldCipherDriver` over `KeyProvider`.
+- **AC-001**: WHEN a service has an encrypted model THE generated wiring SHALL bind `FieldCipher`
+  (`contracts.FieldCipher`) to `AesGcmFieldCipherDriver` over `KeyProvider`; the model is its own or a declared
+  package's, with `HasEncryptedFields`.
 - **AC-002**: WHEN such a service declares the package of a `KeyProvider` driver table THE generated wiring SHALL list
   that table, so `KeyProvider` resolves.
 - **AC-003**: THE boot and the wiring SHALL read "has encrypted fields" from one helper.
