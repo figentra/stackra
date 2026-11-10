@@ -32,7 +32,8 @@ committed docs were stale.
 
 - **Apps touched**: none
 - **Services touched**: none
-- **Packages touched**: packages/design-system/showcase (generated API docs and the Arabic catalogue)
+- **Packages touched**: packages/design-system/showcase (generated API docs and the Arabic catalogue);
+  apps/mobile (one generated demo source file, `read-only.code.ts`, stale against its `.tsx`)
 - **Public contract change**: none; the showcase documents PdfPreview, which already ships
 - **Cross-service events**: none
 - **Tenancy and data**: none
@@ -51,6 +52,7 @@ committed docs were stale.
 
 - **AC-001**: THE showcase's committed API docs SHALL equal what gen writes for PdfPreview on main.
 - **AC-002**: THE Arabic API catalogue SHALL hold every PdfPreview key the English one does.
+- **AC-003**: WHEN `turbo run gen:workspace gen --force` runs over main after a build THE tracked files SHALL not change.
 
 ## Status history
 

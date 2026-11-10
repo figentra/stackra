@@ -62,6 +62,7 @@ packages/design-system/showcase/api/index.json
 packages/design-system/showcase/api/react/free/pdf-preview.json
 packages/design-system/showcase/assets/lang/en/api.json
 packages/design-system/showcase/assets/lang/ar/api.json
+apps/mobile/src/demos/free/scheduling-board/read-only.code.ts
 ```
 
 ## Data models and migrations
