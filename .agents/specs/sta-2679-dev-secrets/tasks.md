@@ -1,0 +1,9 @@
+# Tasks: `stackra dev secrets init` writes generated dev values and `stackra dev` injects them
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-2679
+
+- [x] T001 the row classification and the merge plan, with tests, in `packages/developer/cli/src/node/dev-secrets/functions/classify-dev-secrets.function.ts`, `packages/developer/cli/src/node/dev-secrets/functions/plan-dev-secrets.function.ts` — covers: AC-001, AC-002, AC-003, AC-004, P-001, P-002, P-003 — route: spec-task
+- [x] T002 the file and manifest readers and the member env, with a test, in `packages/developer/cli/src/node/dev-secrets/functions/read-dev-secrets.function.ts`, `packages/developer/cli/src/node/dev-secrets/functions/declared-dev-secrets.function.ts`, `packages/developer/cli/src/node/dev-secrets/functions/dev-secret-env.function.ts` — covers: AC-005, P-004 — route: spec-task — deps: T001
+- [x] T003 the command and its registration, with a test, in `packages/developer/cli/src/node/commands/dev-secrets-init.command.ts`, `packages/developer/cli/src/node/constants/commands.constant.ts` — covers: AC-001, AC-003, AC-004, P-005 — route: spec-task — deps: T002
+- [x] T004 the dev run's environment and the testbed exclude in `packages/developer/cli/src/node/functions/tool-command.function.ts`, `packages/developer/cli/src/node/constants/testbed-rsync-excludes.constant.ts`, `packages/infrastructure/infra-testbed/src/core/constants/testbed-defaults.constant.ts` — covers: AC-005, AC-006 — route: spec-task — deps: T002
+- [x] T005 the ADR 0525 amendment and the changeset in `apps/docs/src/docs/adr/0525-secrets-sops-and-cloud-kms-replace-infisical.mdx`, `apps/docs/src/docs/adr/index.mdx`, `.changeset/cli-dev-secrets.md` — covers: AC-001 — route: spec-task — deps: T003

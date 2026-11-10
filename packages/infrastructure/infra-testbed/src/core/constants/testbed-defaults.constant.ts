@@ -65,6 +65,8 @@ export const TESTBED_DEFAULTS = {
     ".claude/worktrees",
     ".env*",
     "*.secrets.local.cue",
+    // `stackra dev secrets init`'s generated dev values stay on the workstation (STA-2679).
+    ".stackra/dev-secrets.json",
     ".mcp.json",
     ".turbo",
     "dist",
