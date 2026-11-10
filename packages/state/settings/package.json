@@ -36,6 +36,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
@@ -124,6 +128,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
@@ -139,7 +144,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@stackra/config": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",

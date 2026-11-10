@@ -40,6 +40,12 @@ describe("DatabaseConfig", () => {
     ).toThrow(ConfigInvalidError);
   });
 
+  it("picks the Database driver: postgres by default, memory by config, nothing else", () => {
+    expect(buildConfig(DatabaseConfig).driver).toBe("postgres");
+    expect(buildConfig(DatabaseConfig, { values: { driver: "memory" } }).driver).toBe("memory");
+    expect(DATABASE_CONFIG_SCHEMA.safeParse({ driver: "mysql" }).success).toBe(false);
+  });
+
   it("takes the deployment's region key and refuses one that is not a runway key (stackra-310)", () => {
     expect(buildConfig(DatabaseConfig).region).toBe("");
     expect(buildConfig(DatabaseConfig, { values: { region: "me" } }).region).toBe("me");

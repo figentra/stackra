@@ -248,6 +248,11 @@
           "class": "MemoryDatabaseDriver",
           "from": "@stackra/database/testing"
         }
+      },
+      "selectedBy": "config:database.driver",
+      "config": {
+        "class": "DatabaseConfig",
+        "from": "@stackra/database"
       }
     },
     {

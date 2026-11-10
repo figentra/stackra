@@ -671,6 +671,11 @@
             }
           ]
         }
+      },
+      "selectedBy": "config:identity.sessionStore",
+      "config": {
+        "class": "IdentityConfig",
+        "from": "@stackra/identity"
       }
     },
     {
@@ -740,6 +745,11 @@
           "class": "MemoryAppApprovalChallengesDriver",
           "from": "@stackra/identity"
         }
+      },
+      "selectedBy": "config:identity.approvalChallenges",
+      "config": {
+        "class": "IdentityConfig",
+        "from": "@stackra/identity"
       }
     },
     {

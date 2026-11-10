@@ -21,6 +21,9 @@ import type { AppApprovalChallenge } from "#contracts/types/app-approval-challen
  * const waiting = await challenges.pending(user.id, clock.now());
  */
 export abstract class AppApprovalChallenges extends Port {
+  /** Type-only port key, so `DriverName<AppApprovalChallenges>` narrows to this port's drivers. */
+  declare readonly "~key": "identity.AppApprovalChallenges";
+
   /** Writes `challenge`, replacing the one with its id. */
   abstract put(challenge: AppApprovalChallenge): Promise<void>;
 

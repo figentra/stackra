@@ -431,6 +431,11 @@
           "class": "RegisteredFloorGuardDriver",
           "from": "@stackra/settings/node"
         }
+      },
+      "selectedBy": "config:settings.floors",
+      "config": {
+        "class": "SettingsConfig",
+        "from": "@stackra/settings"
       }
     },
     {
@@ -488,6 +493,11 @@
             }
           ]
         }
+      },
+      "selectedBy": "config:settings.store",
+      "config": {
+        "class": "SettingsConfig",
+        "from": "@stackra/settings"
       }
     },
     {
@@ -593,6 +603,13 @@
   "passes": [],
   "entitlements": [],
   "roles": [],
+  "config": [
+    {
+      "key": "settings",
+      "class": "SettingsConfig",
+      "from": "@stackra/settings"
+    }
+  ],
   "services": [
     {
       "class": "SettingsPackService",

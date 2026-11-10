@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `IdentityOptions`, the shape of `IdentityConfig`: how each target signs in, the public client a device uses,
+ * Purpose: `IdentityOptions`, the shape of `IdentityConfig`: which `SessionStore` and `AppApprovalChallenges` drivers
+ *          run, how each target signs in, the public client a device uses,
  *          what it asks the provider for, where the BFF is mounted and the CSRF header its calls carry, the device redirect path, the route after sign-out,
  *          the idle rule and when the session is read again; the external identity providers and the pack key that
  *          lists a market's, the assurance each method reaches and how long a step-up lasts, the staff PIN rules, the
@@ -15,9 +16,15 @@
  * Governing contract: ADR 0206 (decision 8); ADR 0241 (decisions 2 and 4); ADR 0277; ADR 0173 (secrets are names);
  *                     ADR 0294 (decisions 19 and 26).
  */
+import "#core/types/app-approval-challenges-driver-names.type";
+import "#core/types/session-store-driver-names.type";
+
+import type { DriverName } from "@stackra/container";
 import { AssuranceLevel, Target, type Url } from "@stackra/contracts";
 import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
+import type { AppApprovalChallenges } from "#contracts/ports/app-approval-challenges.port";
+import type { SessionStore } from "#contracts/ports/session-store.port";
 import { IDENTITY_CONFIG_SCHEMA } from "#core/constants/identity-config-schema.constant";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { AuthFlow } from "#core/enums/auth-flow.enum";
@@ -175,6 +182,18 @@ export class IdentityOptions extends Schema {
     max: 1440,
   })
   appApprovalWindowMinutes = 15;
+
+  /**
+   * Which `SessionStore` driver runs: `memory` (the default), `bff` or `pkce`. A service's own: an app takes its flow's
+   * driver (`bff`, `pkce`) through gen, ahead of this selector.
+   */
+  sessionStore: DriverName<SessionStore> = "memory";
+
+  /**
+   * Which `AppApprovalChallenges` driver keeps the approval challenges: `memory` (the default, the only driver here).
+   * A product registers its own (a records driver) and selects it here in production.
+   */
+  approvalChallenges: DriverName<AppApprovalChallenges> = "memory";
 
   /** The flow per target code; gen's wiring picks the `SessionStore` driver of a target from it. */
   flow: Record<string, AuthFlow> = {

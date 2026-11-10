@@ -34,6 +34,11 @@
           "class": "NativeStorageDriver",
           "from": "@stackra/storage/native"
         }
+      },
+      "selectedBy": "config:storage.driver",
+      "config": {
+        "class": "StorageConfig",
+        "from": "@stackra/storage"
       }
     },
     {
@@ -87,6 +92,13 @@
   "passes": [],
   "entitlements": [],
   "roles": [],
+  "config": [
+    {
+      "key": "storage",
+      "class": "StorageConfig",
+      "from": "@stackra/storage"
+    }
+  ],
   "schemas": {
     "storage.OfflineStore": {
       "type": "string",
