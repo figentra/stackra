@@ -121,8 +121,8 @@ log, output or error carries a value.
 
 ## Rollout
 
-A patch changeset for `@stackra/cli`, in 0.33.1. The OS lane (os-7c) proves that `encore run` passes its
-environment to the app process.
+A patch changeset for `@stackra/cli`, in 0.33.1. The OS lane (os-7c) proved on 2026-11-10 that `encore run` passes
+its environment to the app process.
 
 ## Delegation and risk plan
 
