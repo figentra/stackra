@@ -4,7 +4,7 @@
   "preset": {
     "name": "./packages/developer/flow-preset/preset",
     "version": "0.11.0",
-    "digest": "sha256:9b199cc5d0f5294de7250ed7b41ca89155e7e2e15faf9255692eb5c280b54212"
+    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
   },
   "profile": "framework",
   "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
@@ -30,12 +30,12 @@
     ".agents/agents/dependency-steward.md": "sha256:20d9dccccb42968c9eabc8433c92099638481c42ac46ff1f075cdb56b27d1a8e",
     ".agents/agents/design-brand-reviewer.md": "sha256:86625493b44681a553cc361dd00877de8fed8734e4a826fd13cd1c1acb262b4c",
     ".agents/agents/desktop-pwa-builder.md": "sha256:1d9e594f443aaa06e2edb38548f383db61c9cc11b744cc52073979459a26fd7b",
-    ".agents/agents/docs-adr-steward.md": "sha256:1dd1f902eff73135fa08f23adeabd73a94d84db27e94fc3536fc7f7495fe93d1",
+    ".agents/agents/docs-adr-steward.md": "sha256:0d1897a81337ff6dea0043127cdb549aec9505ecd1156c2792da5b63f7fc5d54",
     ".agents/agents/docs-changesets-steward.md": "sha256:0523a40cff4536b7d3e7282c1bdb05bfa2bbaabdd0db14364582e8830eefef6f",
     ".agents/agents/frontend-builder.md": "sha256:111a3ed1c12d562cfa80434e3d5d8702b750498ae7b8194271b14e93a371739d",
     ".agents/agents/git-steward.md": "sha256:7094e94cbcb13e905b733d386a1f325aae4361a77f3e17f4cee43c18dfa91922",
     ".agents/agents/i18n-steward.md": "sha256:ac6b905825dc861368d9421d7bfa7eb8879773f74d7a2acd019d6058ae9c091d",
-    ".agents/agents/incident-commander.md": "sha256:b00f628305998d0c14bcfa3badde93296edb116c59e770f0a63b8681ba003159",
+    ".agents/agents/incident-commander.md": "sha256:3915f3a46bcad41d847c9fa413e27fba31d802f20466a148eface345834080db",
     ".agents/agents/infra-engineer.md": "sha256:feb98edb605d93383bd288ea2c59a07bcd8ac07ea3c1423f7c2fec8345528e2c",
     ".agents/agents/linear-steward.md": "sha256:c31f581b9d937f8c3febc47855deaaeb7c88c7ac4c9a2b59fdee02b7e714a9f2",
     ".agents/agents/mobile-builder.md": "sha256:a620a2241d1fa51369fa680160e7b62ed8d382008ff6634a0d4da1fc941eed9a",
