@@ -6,3 +6,6 @@
 2d5a8881da2e3cd5b99b05ca40efd53302b6dae8:packages/foundation/errors/src/core/functions/__tests__/sentry-envelope.function.test.ts:stripe-access-token:93
 2d5a8881da2e3cd5b99b05ca40efd53302b6dae8:packages/foundation/errors/src/core/functions/__tests__/sentry-envelope.function.test.ts:jwt:87
 09823c1475f0cd3803dc44267500f65039118dc4:packages/communication/webhooks/src/core/services/__tests__/webhook-receiver.service.test.ts:generic-api-key:125
+# - resolve-page-context.function.test.ts (owner-approved 2026-11-10, STA-2665): the id of a record the caller cannot
+#   read, then named SECRET; renamed FORBIDDEN on 2026-11-10, so only this historical commit matches
+ccc0b0ffbca45746fcf6826086e3285dac0ca0e8:packages/application/ai/src/core/functions/__tests__/resolve-page-context.function.test.ts:generic-api-key:19

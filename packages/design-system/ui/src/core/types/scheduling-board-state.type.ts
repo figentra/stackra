@@ -30,7 +30,7 @@ export interface SchedulingBoardState {
   readonly date: CalendarDate;
   /** Moves a view's span back or forward. */
   readonly move: (direction: -1 | 1) => void;
-  /** Shows today. */
+  /** Moves the view to show today. */
   readonly goToday: () => void;
   /** The heading: the day, or the first and last day shown. */
   readonly heading: string;
