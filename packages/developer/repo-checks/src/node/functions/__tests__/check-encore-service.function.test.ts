@@ -17,7 +17,6 @@ import { pathsOfImports } from "#node/functions/paths-of-imports.function";
 const imports = { "#src/*": ["./src/*", "./src/*.ts"], "#stackra/*": "./.stackra/gen/*" };
 const tsconfig = {
   compilerOptions: {
-    baseUrl: ".",
     paths: { "#stackra/*": ["./.stackra/gen/*"], "#src/*": ["./src/*", "./src/*.ts"] },
   },
 };
@@ -36,8 +35,13 @@ describe("checkEncoreService", () => {
     );
     expect(checkEncoreService({ pkg, tsconfig, catalogEncore: "1.59.0" })).toHaveLength(1);
     expect(checkEncoreService({ pkg, catalogEncore: "1.58.8" })).toHaveLength(1);
-    const stale = { compilerOptions: { baseUrl: ".", paths: {} } };
+    const stale = { compilerOptions: { paths: {} } };
     expect(checkEncoreService({ pkg, tsconfig: stale, catalogEncore: "1.58.8" })).toHaveLength(1);
+    // TypeScript 7 refuses baseUrl (TS5102), so it is refused here, the paths still being right
+    const based = { compilerOptions: { ...tsconfig.compilerOptions, baseUrl: "." } };
+    expect(checkEncoreService({ pkg, tsconfig: based, catalogEncore: "1.58.8" })).toEqual([
+      expect.stringContaining("compilerOptions.baseUrl must go"),
+    ]);
   });
 
   it("reads the default catalog, and checkMember leaves a service's encore.dev to it", () => {
