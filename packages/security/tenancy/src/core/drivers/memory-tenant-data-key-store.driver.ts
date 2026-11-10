@@ -22,12 +22,12 @@ export class MemoryTenantDataKeyStoreDriver extends Driver(TenantDataKeyStore) {
   /** Each tenant's keys, oldest first. */
   private readonly keys = new Map<string, WrappedDataKey[]>();
 
-  /** See `TenantDataKeyStore.list`. */
+  /** Lists the tenant's wrapped data keys, oldest first (`TenantDataKeyStore.list`). */
   async list(tenantId: PublicId<"scp">): Promise<readonly WrappedDataKey[]> {
     return [...(this.keys.get(tenantId) ?? [])];
   }
 
-  /** See `TenantDataKeyStore.add`. */
+  /** Adds a wrapped data key for the tenant, false when its id is already held (`TenantDataKeyStore.add`). */
   async add(tenantId: PublicId<"scp">, key: WrappedDataKey): Promise<boolean> {
     const held = this.keys.get(tenantId) ?? [];
     if (held.some((one) => one.id === key.id)) return false;

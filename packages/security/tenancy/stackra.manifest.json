@@ -363,7 +363,7 @@
           }
         ],
         "relations": [],
-        "optional": ["id", "tenantId"],
+        "optional": [],
         "computed": []
       }
     }

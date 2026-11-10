@@ -61,7 +61,9 @@ dry-run; their own specs, plans, changesets and tests come in unchanged.
 ## Acceptance criteria
 
 - **AC-001**: THE branch SHALL contain each of the nine pull requests' heads, merged in the order above with
-  `chore: merge <branch>` commits, and nothing else but this spec folder.
+  `chore: merge <branch>` commits; beyond them only this spec folder and the fixes the set's combined gate needs
+  (named in the pull request body): STA-2682's AC-003 on one line, the TSDoc purpose sentences ADR 0007 asks of
+  #1019's two data-key store drivers, and the manifests gen writes for the merged set.
 - **AC-002**: WHEN the branch's gate runs THE Quality Gate SHALL be green on its head before it is marked ready.
 - **AC-003**: THE pull request body SHALL list the nine pull requests with their heads and their Testbed dry-run
   results, and the combined dry-run's.

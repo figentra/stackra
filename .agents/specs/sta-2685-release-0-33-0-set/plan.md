@@ -50,7 +50,8 @@ push, open one pull request. The owner merges it; the leader closes the nine as 
 
 ## Architecture overview
 
-Merge commits only; no change is authored here except this spec folder.
+Merge commits, plus the fixes the combined gate needs: one spec line, four TSDoc purpose sentences in #1019's
+drivers (ADR 0007, which #1013 made enforced on main) and the regenerated manifests of the merged set.
 
 ## Components and responsibilities
 

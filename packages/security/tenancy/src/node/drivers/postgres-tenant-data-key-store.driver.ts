@@ -32,7 +32,7 @@ export class PostgresTenantDataKeyStoreDriver extends Driver(TenantDataKeyStore)
   }
 
   /**
-   * See `TenantDataKeyStore.list`.
+   * Lists the tenant's wrapped data keys, oldest first (`TenantDataKeyStore.list`).
    * @throws RangeError when `tenantId` is not the running call's tenant.
    */
   list(tenantId: PublicId<"scp">): Promise<readonly WrappedDataKey[]> {
@@ -41,7 +41,7 @@ export class PostgresTenantDataKeyStoreDriver extends Driver(TenantDataKeyStore)
   }
 
   /**
-   * See `TenantDataKeyStore.add`.
+   * Adds a wrapped data key for the tenant, false when its id is already held (`TenantDataKeyStore.add`).
    * @throws RangeError when `tenantId` is not the running call's tenant.
    */
   add(tenantId: PublicId<"scp">, key: WrappedDataKey): Promise<boolean> {

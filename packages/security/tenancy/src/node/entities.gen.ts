@@ -9,13 +9,7 @@
  */
 import { ApprovalBinding } from "#node/models/approval-binding.model";
 import { TenantDataKey } from "#node/models/tenant-data-key.model";
-import { EntitySchema, type OptionalProps, registerEntities } from "@stackra/database";
-
-declare module "#node/models/tenant-data-key.model" {
-  interface TenantDataKey {
-    [OptionalProps]?: "id" | "tenantId";
-  }
-}
+import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `tenancy.approval_binding` (src/node/models/approval-binding.model.ts). */
 export const ApprovalBindingSchema = new EntitySchema<ApprovalBinding>({
