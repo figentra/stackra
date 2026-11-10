@@ -3,7 +3,8 @@
  * Stackra file contract:
  * Purpose: run `gh` or `git` as `stackra-bot` — `pnpm bot:gh -- pr list`, `pnpm bot:git -- commit -m …`,
  *   `pnpm bot:git -- push origin HEAD`. Mints an installation token (bot-token.mjs) and passes it as GH_TOKEN.
- *   The `review` mode (the `stackra-reviewer` App, ADR 0230) is retired with that App (ADR 0523 decision 6).
+ *   The `review` mode (the `stackra-reviewer` App, ADR 0230) is retired with that App (ADR 0523 decision 6); the
+ *   gate and the ruleset are the merge condition since ADR 0523, and an AI review is advisory.
  * git: author and committer are the bot; pushes go over https with `gh auth git-credential` as the only credential
  *   helper, and ssh remotes are rewritten to https for this one command. Everything is `-c`, so nothing is written
  *   to .git/config and the token never appears in argv. No hook runs (`core.hooksPath=/dev/null`): the CI gate runs
@@ -232,7 +233,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = rest[0] === "--" ? rest.slice(1) : rest;
   if (tool === "review") {
     process.stderr.write(
-      "bot-gh: the stackra-reviewer App is retired (ADR 0523 decision 6); post an advisory review with `pnpm bot:gh -- pr comment`\n",
+      "bot-gh: the stackra-reviewer App is retired (ADR 0523 decision 6), and the gate and the ruleset are the merge condition since ADR 0523; post an advisory review with `pnpm bot:gh -- pr comment`\n",
     );
     process.exit(2);
   }
