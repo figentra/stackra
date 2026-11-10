@@ -16,7 +16,6 @@
  * Governing contract: ADR 0206 (decision 8); ADR 0241 (decisions 2 and 4); ADR 0277; ADR 0173 (secrets are names);
  *                     ADR 0294 (decisions 19 and 26).
  */
-import "#core/types/app-approval-challenges-driver-names.type";
 import "#core/types/session-store-driver-names.type";
 
 import type { DriverName } from "@stackra/container";
@@ -191,7 +190,9 @@ export class IdentityOptions extends Schema {
 
   /**
    * Which `AppApprovalChallenges` driver keeps the approval challenges: `memory` (the default, the only driver here).
-   * A product registers its own (a records driver) and selects it here in production.
+   * A product registers its own (a records driver) and selects it here in production. The port has no key and this
+   * package declares no `DriverRegistry` entry for it: a product's generated wiring declares the names it has, and a
+   * second, narrower declaration here would clash with it (TS2717).
    */
   approvalChallenges: DriverName<AppApprovalChallenges> = "memory";
 
