@@ -19,22 +19,22 @@ import type { TamoWidgetRefPart } from "#contracts/types/tamo-widget-ref-part.ty
 
 /** The data of each Tamo part kind; its keys are exactly `TamoPartKind`. */
 export interface TamoPartData {
-  /** A table. */
+  /** A table the renderer draws. */
   readonly table: TamoTablePart;
 
-  /** A chart. */
+  /** A chart the renderer draws. */
   readonly chart: TamoChartPart;
 
-  /** Key figures. */
+  /** Key figures to show. */
   readonly kpi: TamoKpiPart;
 
   /** A prefilled action form. */
   readonly form: TamoFormPart;
 
-  /** A question. */
+  /** A question for the user. */
   readonly question: TamoQuestionPart;
 
-  /** A report. */
+  /** A report the renderer draws. */
   readonly report: TamoReportPart;
 
   /** A saved artifact. */
@@ -43,7 +43,7 @@ export interface TamoPartData {
   /** A placed widget. */
   readonly widget_ref: TamoWidgetRefPart;
 
-  /** Follow-up suggestions. */
+  /** Follow-up suggestions to offer. */
   readonly suggestions: TamoSuggestionsPart;
 
   /** An answer to a question. */
