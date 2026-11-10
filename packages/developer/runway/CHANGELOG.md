@@ -1,5 +1,39 @@
 # @stackra/runway
 
+## 0.33.0
+
+### Minor Changes
+
+- 0f7448f: A root runway can declare one `gotenberg` resource, the PDF engine `@stackra/documents` renders through. Runway runs it
+  as an internal Fargate workload:
+  
+  - the Chromium image pinned by digest and pulled through the ECR pull-through registry named in
+    `shared.network.registry`;
+  - basic auth on, no URL fetching;
+  - its own 443-only egress group;
+  - FARGATE_SPOT outside production.
+  
+  `ensureGotenbergCredentials` writes the password once and hands every consumer `DOCUMENTS_GOTENBERG_URL` and
+  `DOCUMENTS_GOTENBERG_AUTHORIZATION`.
+- c7144a0: The white-label job starter (ADR 0439 decision 8, STA-2074). `startWhiteLabelJob(request)` turns the OS event
+  `white_label.build.requested.v1` into the mobile job's variant and runs `runMobileJob` for the event's app.
+  `whiteLabelVariantOf(event)` carries the scope, the entitlement keys and the identity parts the scope sets; a null,
+  empty or blank part is dropped, so the runway entry's stays. An event with no scope or app is refused before the job
+  runs. `WhiteLabelBuildRequested` and `WhiteLabelJobRequest` are exported.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/app@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

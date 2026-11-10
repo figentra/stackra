@@ -1,5 +1,71 @@
 # @stackra/cli
 
+## 0.33.0
+
+### Minor Changes
+
+- 41a5ff0: `stackra test --tier e2e` runs in a package too: it uses the `.stackra/playwright.e2e.config.ts` gen writes for a package that has a `.e2e.page.tsx`, and refuses with a hint when there is none. A service or a worker still refuses.
+
+### Patch Changes
+
+- 0ed69c1: The duplicate-export check now exempts five names that two packages each declare for a different concept: `FooterLink`, `RawBody`, `Surface`, `SurfaceKind` and `settingsKeyOf`. Each entry gives its reason. `validate` on main no longer reports them.
+- 89253a8: `stackra duplicate-exports` allows five names that today's kit blocks share with older exports, each with its reason:
+  
+  - `CalendarSystem`: ui derives its picker list from i18n's enum.
+  - `LocaleSwitcher` and `LocaleSwitcherProps`: ui's drawn switcher, and i18n's headless kit block that binds it.
+  - `PushPermission` and `PushRegistration`: notifications' registration port and its answer, and platform's push address and permission hook.
+  
+  Main's `validate --repository` reported them.
+- 6186329: A service's tsconfig no longer needs `baseUrl` for Encore. TypeScript 7 removed `baseUrl` (TS5102), so the rule from 0.30.0 broke typecheck in a TS 7 repository (INVOICING).
+  
+  - **The service check:** it now requires only `compilerOptions.paths` equal to package.json `imports`, which resolve from the tsconfig's folder. It refuses a `baseUrl`.
+  - **`stackra encore:prepare`:**
+    - it removes an existing `baseUrl`;
+    - it writes package.json and tsconfig.json with gen's `formatJson`, now exported from `@stackra/gen`, in the repository formatter's layout, so the format check passes after it.
+  
+  Bump step: run `stackra encore:prepare` in each service, or delete `"baseUrl": "."` from its tsconfig.
+  
+  `stackra encore:prepare` also keeps a tsconfig's file contract written inside the braces (NOTIFY's services). Before, it kept only the `//` lines above the object, so the contract was dropped and the format check failed. `encore.dev` stays the literal catalog version (ADR 0091 rule 3): Encore rewrites `catalog:` to `^<version>`, which breaks the frozen install.
+- 6186329: The `encore.dev` version a service pins can live in the root package.json as `stackra.encore`, so a repository whose
+  services pin the literal keeps no unused catalog entry for it. `encoreReferenceVersion` (exported from
+  `@stackra/repo-checks/node`) reads `stackra.encore` first and falls back to the default catalog's `encore.dev`; the
+  service check and `stackra encore:prepare` use it. A repository that keeps the version in its catalog needs no change.
+- 03da426: `runAsTenant` (`@stackra/tenancy/testing`) now sets `app.tenant_id` transaction-locally in every transaction that starts inside it on a connected database (a factory's flush, a `database.transaction`), so a test's setup rows pass the tenant policy under a role without `BYPASSRLS`, instead of being refused by row-level security. It still opens no transaction itself, sets no scope setting and proves nothing about isolation (`asTenant` does). The session-setting check allows this one testing path.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [6186329]
+- Updated dependencies [6186329]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [3c47a3a]
+- Updated dependencies [2e3e323]
+- Updated dependencies [93d63bb]
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4bf092e]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [93d63bb]
+- Updated dependencies [7d0e16f]
+- Updated dependencies [6186329]
+- Updated dependencies [52d2593]
+- Updated dependencies [0f7448f]
+- Updated dependencies [89253a8]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/repo-checks@0.33.0
+  - @stackra/gen@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/mcp@0.33.0
+  - @stackra/skills@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

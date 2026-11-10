@@ -1,5 +1,41 @@
 # @stackra/infra-aws-runtime
 
+## 0.33.0
+
+### Minor Changes
+
+- 0f7448f: A root runway can declare one `gotenberg` resource, the PDF engine `@stackra/documents` renders through. Runway runs it
+  as an internal Fargate workload:
+  
+  - the Chromium image pinned by digest and pulled through the ECR pull-through registry named in
+    `shared.network.registry`;
+  - basic auth on, no URL fetching;
+  - its own 443-only egress group;
+  - FARGATE_SPOT outside production.
+  
+  `ensureGotenbergCredentials` writes the password once and hands every consumer `DOCUMENTS_GOTENBERG_URL` and
+  `DOCUMENTS_GOTENBERG_AUTHORIZATION`.
+
+### Patch Changes
+
+- b33fb9d: A public workload's load balancer keeps a quiet connection for 180 s instead of the ALB default of 60, so an AI answer
+  streamed as server-sent events (60 to 120 s, a ping every 15 s) is not cut mid-stream.
+- 5ca7ec9: The runtime stack reads the VPC from the root runway's `environments.<env>.shared.network.vpcId` (an id or a
+  `ref:<path>`, resolved from the stack config) and passes it to `awsRuntime`. Before, `awsRuntimeStack` passed no VPC,
+  so every plan with a workload or a database failed with "Name the VPC (network.vpcId)". `runtimeNetwork` reports a
+  `vpcId` that is not one id or `ref:`.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0f7448f]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/infra-tools@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes
