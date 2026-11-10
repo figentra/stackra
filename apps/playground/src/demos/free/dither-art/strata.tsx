@@ -19,7 +19,7 @@ const K = DITHER_ART_KEYS.dither_art.strata;
 /** The kit's strata poster, one per scheme. */
 const POSTER = { light: "/posters/strata-light.png", dark: "/posters/strata-dark.png" } as const;
 
-/** DitherArt: Strata. */
+/** The DitherArt demo: Strata. */
 export default function Strata() {
   const t = useCatalogueText(MESSAGES.en);
   return (
