@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `provideDatabaseUrl`, which the runtime calls with the connection string of the service's own database
- *          before anything connects: the generated `.stackra/encore/<member>/database.ts` passes its Encore
+ *          before anything connects: the generated `stackra-encore/<member>/database.ts` passes its Encore
  *          `connectionString`, so `#stackra/boot` connects without importing the Encore program (STA-1652).
  * Boundary: replaces the previous value; never logs it.
  * Runtime: node

@@ -28,6 +28,12 @@ description: "Accepted, amended by 0158, 0268, 0294, 0295 and its own amendment 
   `.stackra/encore/`.
 </Note>
 
+<Note>
+  Amended 2026-11-10 (below): the generated services move out of the dot folder to
+  `stackra-encore/<svc>/` at the member root, since Encore skips dot folders when it discovers
+  services. The runtime entry and gen output stay in `.stackra/`.
+</Note>
+
 ## Context
 
 [0040](/adr/0040-ddd-feature-modules-in-services) put Encore primitives at each service's root, and
@@ -124,6 +130,27 @@ aliases. This amendment covers single-service apps only.
 
 Upstream: the Encore issue on `imports` and `paths` resolution is being filed separately (link to
 follow).
+
+## Amendment 2026-11-10: the generated services sit outside the dot folder
+
+Encore skips dot directories when it discovers services, so the services in `.stackra/encore/<svc>/`
+were never found: `encore build docker` of Pay produced an app with only the api-gateway (RUNWAY's
+spike, pay#217). Run 7 of that spike copied only the service folder to a plain folder: Encore
+discovered and parsed the service, and followed its imports into `.stackra/entry` and
+`.stackra/gen` without error. Dot folders are skipped only in discovery, not when resolving imports.
+
+1. **Gen writes a service's Encore files into `stackra-encore/<svc>/` at the member root**, beside
+   `encore.app`, replacing amendment 2026-11-09's rule 2. `@stackra/gen` names the folder
+   (`ENCORE_SERVICES_DIR`). It is generated output: gitignored (`**/stackra-encore/*`, gen's golden
+   trees excepted), owned by gen, and nobody writes a file there by hand. The member's TypeScript
+   program does not include it.
+2. **The runtime entry and gen output stay in `.stackra/`.** A generated Encore file imports the
+   server app from `../../.stackra/entry/server`, and a sibling service's topics from
+   `../../../<folder>/stackra-encore/<svc>/events`.
+3. **`stackra dev` runs `encore run` in the member root**, and refuses a service whose
+   `stackra-encore/` gen has not written. Runway's Encore Cloud deploy tree carries each member's
+   `stackra-encore/` with its `.stackra/` and rewrites the `#` imports in both.
+4. A consumer repository adds `stackra-encore/` to its `.gitignore`.
 
 ## Supersedes and sources
 

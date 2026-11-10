@@ -25,6 +25,7 @@ export { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 export { DOCS_MEMBER_SOURCE } from "#core/constants/docs-member-source.constant";
 export { DOCS_SITE_DIR } from "#core/constants/docs-site-dir.constant";
 export { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
+export { ENCORE_SERVICES_DIR } from "#core/constants/encore-services-dir.constant";
 export { GRAPH_NOTICE } from "#core/constants/graph-notice.constant";
 export { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 export { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";

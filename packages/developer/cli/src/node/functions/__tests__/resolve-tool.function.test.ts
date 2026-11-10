@@ -155,13 +155,13 @@ describe("resolveTool", () => {
     ]);
   });
 
-  it("runs a service's generated Encore app, and refuses before gen wrote it", () => {
-    expect(() => resolveTool("dev", member("service"), {})).toThrow(/\.stackra\/encore/);
-    mkdirSync(join(root, ".stackra", "encore"), { recursive: true });
+  it("runs a service's generated Encore app in the member root, and refuses before gen wrote it", () => {
+    expect(() => resolveTool("dev", member("service"), {})).toThrow(/stackra-encore/);
+    mkdirSync(join(root, "stackra-encore"), { recursive: true });
     expect(resolveTool("dev", member("service"), {})).toEqual({
       command: "encore",
       args: ["run"],
-      cwd: join(root, ".stackra", "encore"),
+      cwd: root,
     });
   });
 

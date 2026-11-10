@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreQueues`, a service's broker-delivered queues (`.stackra/encore/<member>/queues.ts`): one Encore
+ * Purpose: `emitEncoreQueues`, a service's broker-delivered queues (`stackra-encore/<member>/queues.ts`): one Encore
  *          Pub/Sub `Topic` per queue its job actions name, registered with `registerBrokerTopics` as `queue.<name>`
  *          so a broker-delivered queue driver publishes each job to it, and one `Subscription` per topic that runs each
  *          delivered job through `QueueWorkerService.process` in the server app.
@@ -20,6 +20,7 @@ import { camelCase, kebabCase } from "@stackra/support";
 import { BROKER_MESSAGE_IMPORT } from "#core/constants/broker-message-import.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { jobQueues } from "#core/functions/job-queues.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -29,7 +30,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * The broker queue file of a service, or undefined when it has no job action.
  *
  * @example
- * emitEncoreQueues(ir, manifest)?.path; // ".stackra/encore/billing/queues.ts"
+ * emitEncoreQueues(ir, manifest)?.path; // "stackra-encore/billing/queues.ts"
  */
 export function emitEncoreQueues(
   ir: MemberIR,
@@ -52,7 +53,7 @@ export function emitEncoreQueues(
     runtime: "node",
   });
   return {
-    path: `.stackra/encore/${ir.member}/queues.ts`,
+    path: `${encoreServiceFolder(ir.member)}/queues.ts`,
     content: [
       header,
       ...encoreDatabaseImport(ir),

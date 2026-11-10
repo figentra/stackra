@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreDatabase`, a service's Encore database declaration (`.stackra/encore/<member>/database.ts`):
+ * Purpose: `emitEncoreDatabase`, a service's Encore database declaration (`stackra-encore/<member>/database.ts`):
  *          one `SQLDatabase` named after the member (snake case), whose migrations are `./migrations` beside it, the
  *          compiled `.stackra/migrations` files gen copies there (Encore takes only a local relative path), so Encore
  *          provisions the service's own logical database and applies its migrations. It hands its `connectionString` to `provideDatabaseUrl`, which
@@ -14,6 +14,7 @@
  */
 import { snakeCase } from "@stackra/support";
 
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -23,7 +24,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * The Encore database file of a service, or undefined when it has no database.
  *
  * @example
- * emitEncoreDatabase(commerceIr)?.path; // ".stackra/encore/commerce/database.ts"
+ * emitEncoreDatabase(commerceIr)?.path; // "stackra-encore/commerce/database.ts"
  */
 export function emitEncoreDatabase(ir: MemberIR): GeneratedFile | undefined {
   if (!usesDatabase(ir)) return undefined;
@@ -36,7 +37,7 @@ export function emitEncoreDatabase(ir: MemberIR): GeneratedFile | undefined {
     runtime: "node",
   });
   return {
-    path: `.stackra/encore/${ir.member}/database.ts`,
+    path: `${encoreServiceFolder(ir.member)}/database.ts`,
     content: [
       header,
       'import { provideDatabaseUrl } from "@stackra/database/node";',
