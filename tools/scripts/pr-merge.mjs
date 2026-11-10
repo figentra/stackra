@@ -9,7 +9,8 @@
  *   1. the PR is open and not a draft;
  *   2. the newest "Quality Gate" check run on the head SHA concluded `success`;
  *   3. the ruleset lets it merge: the base has a merge queue (the queue applies the ruleset), or `mergeStateStatus`
- *      is CLEAN, HAS_HOOKS or UNSTABLE (only a non-required check is not green; the gate is condition 2);
+ *      is CLEAN, HAS_HOOKS or UNSTABLE (only a non-required check is not green; the gate is condition 2, so a red
+ *      non-required check is reported, not blocking);
  *   4. the PR carries no `hold` label (any case).
  *   A PR labelled `design` or `risk:R3` also needs an owner APPROVED review on the head SHA, or `owner-approved` put
  *   there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is the owner
@@ -203,6 +204,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       );
       process.exit(1);
     }
+    // The gate is condition 2; a red non-required check is reported, not blocking.
+    if (pr.mergeStateStatus === "UNSTABLE")
+      process.stdout.write(
+        `pr-merge: a non-required check on ${pr.headRefOid} is not green (mergeStateStatus UNSTABLE); reported, not blocking\n`,
+      );
     if (repository.mergeQueue && !enqueueReady(botNetwork)) {
       throw new Error(
         `${pr.baseRefName} has a merge queue, but enqueueing needs CONNECT_TIMEOUT_MS >= 30000 and ` +
