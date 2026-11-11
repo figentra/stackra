@@ -304,7 +304,9 @@
     },
     "services/*": {
       // gen finds the root module by name (ADR 0294 R12); a v2 service still names it in `stackra.module`.
-      "entry": ["src/*.module.ts", ".stackra/**/*.{ts,tsx}"],
+      // stackra-encore/: the Encore services gen writes outside .stackra (ADR 0091, amendment of 2026-11-10), the
+      // service's only encore.dev imports.
+      "entry": ["src/*.module.ts", ".stackra/**/*.{ts,tsx}", "stackra-encore/**/*.ts"],
       "project": ["src/**/*.ts"],
     },
     "apps/docs": {

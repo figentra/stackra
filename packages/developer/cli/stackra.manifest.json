@@ -166,6 +166,16 @@
       "entry": "node"
     },
     {
+      "name": "dev:secrets:init",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DevSecretsInitCommand",
+      "file": "src/node/commands/dev-secrets-init.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "doc-standard",
       "aliases": [],
       "hidden": false,

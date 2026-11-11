@@ -54,7 +54,8 @@ const up = (levels: number) => "../".repeat(levels);
 
 beforeEach(async () => {
   repository = mkdtempSync(join(tmpdir(), "stackra-encore-tree-"));
-  write(".gitignore", ".stackra/\ndist/\nnode_modules/\n");
+  // As the repository's: gen's Encore app file and services sit outside .stackra (ADR 0091, 2026-11-10).
+  write(".gitignore", ".stackra/\ndist/\nnode_modules/\nservices/*/encore.app\nstackra-encore/\n");
   for (const name of ["billing", "usage"]) {
     write(`services/${name}/package.json`, member(name));
     write(`services/${name}/src/modules/plans/plan.model.ts`, "export class Plan {}\n");

@@ -90,7 +90,9 @@ describe("DevSecretsInitCommand", () => {
     const first = file()["SESSION_SECRET"];
     const again = await runCommandForTest([DevSecretsInitCommand], ["dev:secrets:init"]);
     expect(again.exitCode).toBe(2);
-    expect(again.stderr).toContain("--rotate regenerates them");
+    // The error box wraps the message at its width, so each fragment is one that fits on a line.
+    expect(again.stderr).toContain("already holds every generated name");
+    expect(again.stderr).toContain("regenerates them");
     const rotated = await runCommandForTest(
       [DevSecretsInitCommand],
       ["dev:secrets:init", "--rotate"],

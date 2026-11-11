@@ -28,6 +28,7 @@ describe("DatabaseConfigOptions", () => {
   it("has the schema's defaults as its initializers", () => {
     expect({ ...new DatabaseConfigOptions() }).toEqual(DATABASE_CONFIG_SCHEMA.parse({}));
     expect(DATABASE_CONFIG_SCHEMA.parse({})).toEqual({
+      driver: "postgres",
       health: { timeout: "PT2S", critical: true, rowSecurity: false },
       timeouts: { statement: "PT30S", lock: "PT10S", idleInTransaction: "PT1M" },
       pool: { max: 10, min: 0, idleTimeout: "PT10S" },

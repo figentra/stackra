@@ -64,7 +64,23 @@ Merge commits plus conflict resolutions; nothing else is authored here.
 .agents/specs/sta-2690-release-0-33-1-boot/plan.md
 .agents/specs/sta-2690-release-0-33-1-boot/tasks.md
 packages/developer/gen/src/core/functions/__tests__/emit-wiring.function.test.ts
+packages/tooling/typescript/src/base.json
+.changeset/typescript-config-stackra-encore-exclude.md
+knip.jsonc
+packages/developer/cli/stackra.manifest.json
+packages/data/database/src/core/schemas/__tests__/database-config-options.schema.test.ts
+packages/developer/cli/src/node/commands/__tests__/dev-secrets-init.command.test.ts
+packages/developer/gen/src/core/functions/__tests__/emit-encore-events.function.test.ts
+packages/developer/gen/src/core/functions/__tests__/generate-member.function.test.ts
+packages/developer/runway/src/node/functions/__tests__/encore-deploy-tree.function.test.ts
+packages/developer/gen/__golden__/consumer/expected/services/catalogue/stackra-encore/catalogue/
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/
 ```
+
+The integration fixes (T003) are where two of the nine meet, or where a pull request's own check was never run
+(CI runs no tests): the base preset excludes `stackra-encore/` (#1015's folder, read by a `node`-preset service's
+default include), knip reads it as a service entry, the cli manifest gains #1024's command row, and four tests and
+two goldens follow what the merged generator writes.
 
 The nine pull requests' own files are listed per pull request in tasks.md.
 

@@ -122,7 +122,7 @@ describe("emitEncoreEvents", () => {
       `import { eventOrdersOrderPaidV1 } from "${UP}commerce/stackra-encore/commerce/events";`,
     );
     expect(content).toMatch(
-      /import \{ event\w+ \} from "\.\.\/\.\.\/\.\.\/\.\.\/billing\/\.stackra\/encore\/billing\/events";/,
+      /import \{ event\w+ \} from "\.\.\/\.\.\/\.\.\/billing\/stackra-encore\/billing\/events";/,
     );
     expect(content).not.toContain("copy-cat");
     expect(content).toContain(
