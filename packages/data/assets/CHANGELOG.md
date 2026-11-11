@@ -1,5 +1,15 @@
 # @stackra/assets
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/filesystem@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes

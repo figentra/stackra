@@ -1,5 +1,17 @@
 # @stackra/native-share
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/filesystem@0.33.1
+  - @stackra/media@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes

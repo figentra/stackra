@@ -1,5 +1,23 @@
 # @stackra/query
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/contracts@0.33.1
+  - @stackra/settings@0.33.1
+  - @stackra/storage@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/platform@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/devices@0.33.1
+  - @stackra/realtime@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes

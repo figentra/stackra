@@ -1,5 +1,63 @@
 # @stackra/gen
 
+## 0.33.1
+
+### Patch Changes
+
+- d60f9d5: A service's Encore app resolves its `#` imports, and its typecheck no longer resolves a compiled workspace package's
+  `#` imports into the service. Encore honours only the first `./` target of a tsconfig `paths` key, so
+  `stackra encore:prepare` writes, and `stackra validate --repository` expects, each package.json `imports` key with its
+  first target only (`pathsOfImports`). And because tsc applies `paths` to every package a service compiles, gen writes
+  the service's `.stackra/tsconfig.typecheck.json` (its tsconfig without `paths`), and `stackra typecheck` runs on it in a
+  service. After upgrading, run `stackra encore:prepare` in each service and regenerate (ADR 0091, rule 4 as corrected
+  2026-11-10).
+- e885a38: An app's generated `#stackra/i18n` catalogue loaders load in the browser again. gen wrote each loader with
+  `{ with: { type: "json" } }`, and Vite serves the JSON as a JavaScript module, so the browser refused every catalogue
+  ("Expected a JSON module script"). An app's loaders now import the JSON plainly and let its bundler (Vite, Metro) load
+  it; services, packages and Workers keep the attribute, which Node and esbuild need. Regenerate (`stackra gen`).
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- e885a38: A service's Encore app applies its migrations. Encore's runner runs every migration file in one transaction, so the
+  online index builds of `@stackra/database` migration 0006 (`create index concurrently`, which every service declares)
+  failed with SQLSTATE 25001 and no service started under `encore run`. The copy gen writes to the Encore service's
+  `migrations/` folder now builds each online step in its plain form; `.stackra/migrations`, which `stackra db migrate`
+  applies in production, keeps the online form (ADR 0159, amendment of 2026-11-10). Regenerate (`stackra gen`).
+- e885a38: A service's generated Encore topic files pass Encore's parser. Regenerate (`stackra gen`) to pick it up.
+  
+  - `events.ts` and `queues.ts` registered each Pub/Sub topic with `registerBrokerTopics` by passing the topic itself,
+    which Encore refuses ("invalid topic usage"). Each topic is now registered as a publisher ref,
+    `topic.ref<Publisher<BrokerMessage>>()`, the form Encore allows.
+  - The topics and subscriptions named `BrokerMessage` from `@stackra/queue/contracts`, which Encore cannot resolve
+    through the package's dist. gen now writes `.stackra/encore/<member>/broker-message.ts` with the same shape, and the
+    generated files import it from there.
+  
+  Topic names, subscriptions, message bodies and the broker's behaviour are unchanged.
+- e885a38: A service with encrypted fields (a `HasEncryptedFields` model, its own or a declared package's) boots. Its generated
+  boot seals them with `FieldCipher`, but the cipher's one implementation, `AesGcmFieldCipherDriver` in
+  `@stackra/contracts`, is a plain class no manifest lists as a driver, so nothing bound it ("No driver is bound to
+  FieldCipher"). The generated wiring now binds `FieldCipher` to it over `KeyProvider`, and links the `KeyProvider`
+  drivers of a declared package (`@stackra/tenancy`: `ephemeral` by default, `kms` in production). Regenerate
+  (`stackra gen`); a service with encrypted fields declares `@stackra/tenancy`.
+- e885a38: A service's generated wiring binds the services its generated boot resolves. For a service that declares
+  `@stackra/outbox`, boot gets `OutboxWriterService`, `OutboxRelayService`, `InboxService` and `EventBus` from the
+  container (and `SegmentService`, `AutomationService` or `QueueWorkerService` for segments, workflow or queue), but
+  nothing injected them, so the wiring had no row and boot stopped at "Nothing binds OutboxWriterService". Each is now
+  bound with its dependencies from its package's manifest. Regenerate (`stackra gen`).
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/support@0.33.1
+
 ## 0.33.0
 
 ### Minor Changes

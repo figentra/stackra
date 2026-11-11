@@ -1,5 +1,36 @@
 # @stackra/identity
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: A service no longer refuses to boot with "its drivers are X, Y, and no config field selects one" for six ports: each now has a config field that picks its driver, with a default. `DatabaseConfig.driver` selects `Database` (`postgres`; `memory` stays the testing driver a test picks with `useDrivers`). The new `SettingsConfig` (key `settings`) holds `store` for `SettingValueStore` and `floors` for `SettingFloorSource`, both `memory`. The new `StorageConfig` (key `storage`) holds `driver` for `Storage` (`memory`; an app still gets `web` or `native` from gen's per-runtime defaults, which come first). `IdentityConfig` gains `sessionStore` for `SessionStore` and `approvalChallenges` for `AppApprovalChallenges`, both `memory`. The ports `Database`, `Storage` and `AppApprovalChallenges` declare their keys, so `DriverName<…>` narrows to their drivers. Production sets `settings.store`, `settings.floors`, `storage.driver` and `identity.approval_challenges` in config to choose its own drivers.
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/storage@0.33.1
+  - @stackra/scheduler@0.33.1
+  - @stackra/outbox@0.33.1
+  - @stackra/queue@0.33.1
+  - @stackra/iam@0.33.1
+  - @stackra/privacy@0.33.1
+  - @stackra/scope@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/clients@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/market-packs@0.33.1
+  - @stackra/transport@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/query@0.33.1
+  - @stackra/support@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes
