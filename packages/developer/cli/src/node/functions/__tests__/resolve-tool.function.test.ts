@@ -55,6 +55,16 @@ describe("resolveTool", () => {
     }
   });
 
+  it("type-checks a service on gen's tsconfig without paths once gen wrote it", () => {
+    generated("tsconfig.typecheck.json");
+    expect(resolveTool("typecheck", member("service"), {})).toEqual({
+      command: "tsc",
+      args: ["--noEmit", "-p", ".stackra/tsconfig.typecheck.json"],
+      cwd: root,
+    });
+    expect(resolveTool("typecheck", member("package"), {}).args).toEqual(["--noEmit"]);
+  });
+
   it("passes the generated config when gen wrote one, and none otherwise", () => {
     expect(resolveTool("test", member("package"), {}).args).toEqual(["run"]);
     generated("vitest.config.ts");

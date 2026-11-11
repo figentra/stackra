@@ -113,7 +113,7 @@ providers.encore.app>, "lang": "typescript" }`, at `services/<name>/encore.app`.
    pin differs from the catalog's. A catalog bump of `encore.dev` is a bump of every service's
    literal in the same change (`stackra encore:prepare`); no Renovate configuration exists in the
    repository, so nothing automates it yet.
-4. **The service's tsconfig carries `paths` equal to its package.json `imports`, and no
+4. **The service's tsconfig carries `paths` mirroring its package.json `imports`, and no
    `baseUrl`.** Encore's parser ignores package.json `imports`, and reads `compilerOptions.paths`
    only when written directly in the app root's own tsconfig.json, not through `extends` and not
    with `${configDir}`. Each key and its target array equal the `imports` entry (a string target
@@ -121,7 +121,12 @@ providers.encore.app>, "lang": "typescript" }`, at `services/<name>/encore.app`.
    extends its one `@stackra/typescript-config` preset. `stackra validate --repository` refuses a
    service whose `paths` differ from its `imports`, or that sets `baseUrl`: TypeScript 7 removed
    `baseUrl` (TS5102). Corrected 2026-11-09: the first version of this rule required `baseUrl`
-   ".", which TypeScript 7 refuses (INVOICING).
+   ".", which TypeScript 7 refuses (INVOICING). Corrected 2026-11-10 (STA-2681): each key carries
+   its `imports` entry's first target only, because Encore honours only a key's first `./` target
+   (the OS lane's identity app); tsc still probes extensions and `index` files through it. And
+   since tsc applies `paths` to every package a service compiles (notify#71), a service's
+   typecheck reads gen's `.stackra/tsconfig.typecheck.json`, its tsconfig without `paths`, so each
+   package's `#` imports resolve through its own `imports`.
 5. **`stackra encore:prepare`** rewrites a service's tsconfig `paths` from its `imports` and pins
    `encore.dev` to the catalog version.
 6. **The Encore Cloud Root Directory is the member folder**, `services/<name>`.

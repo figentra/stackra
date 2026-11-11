@@ -33,6 +33,7 @@ export { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 export { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 export { SCOPE_OWNER_TRAITS } from "#core/constants/scope-owner-traits.constant";
 export { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
+export { TYPECHECK_TSCONFIG } from "#core/constants/typecheck-tsconfig.constant";
 export { actionKey } from "#core/functions/action-key.function";
 export { additionsOf } from "#core/functions/additions-of.function";
 export { diffSchemas } from "#core/functions/diff-schemas.function";

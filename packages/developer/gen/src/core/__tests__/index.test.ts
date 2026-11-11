@@ -42,6 +42,7 @@ describe("@stackra/gen", () => {
       "MIGRATIONS_DIR",
       "PUBLIC_ID_PREFIXES",
       "SCOPE_OWNER_TRAITS",
+      "TYPECHECK_TSCONFIG",
       "actionKey",
       "additionsOf",
       "blockKey",

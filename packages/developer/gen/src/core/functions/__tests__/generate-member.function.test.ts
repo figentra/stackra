@@ -83,6 +83,7 @@ describe("generateMember", () => {
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      ".stackra/tsconfig.typecheck.json",
       "vitest.config.ts",
       ".stackra/graph.json",
     ]);
@@ -122,6 +123,7 @@ describe("generateMember", () => {
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      ".stackra/tsconfig.typecheck.json",
       "vitest.config.ts",
       ".stackra/graph.json",
     ]);
