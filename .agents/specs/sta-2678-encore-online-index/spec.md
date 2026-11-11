@@ -49,9 +49,7 @@ query, so Postgres runs them in an implicit transaction and the build fails (SQL
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN gen copies a non-transactional step into the Encore service's `migrations/` folder THE copy SHALL
-  write each concurrent statement (`create [unique] index`, `drop index`, `reindex`, `refresh materialized view`) in
-  its plain form, which runs inside Encore's transaction.
+- **AC-001**: WHEN gen copies a non-transactional step into the Encore service's `migrations/` folder THE copy SHALL write each concurrent statement (`create [unique] index`, `drop index`, `reindex`, `refresh materialized view`) in its plain form, which runs inside Encore's transaction.
 - **AC-002**: THE transactional steps' Encore copies and every file in `.stackra/migrations` SHALL stay byte-identical
   to the compiled output, so `stackra db migrate` keeps the online form.
 - **AC-003**: THE ADR 0159 amendment SHALL state which path each environment uses: dev and staging apply Encore's

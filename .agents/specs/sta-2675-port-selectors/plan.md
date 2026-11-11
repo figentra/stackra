@@ -73,6 +73,10 @@ packages/data/storage/src/{config,core/schemas,core/constants,core/types,contrac
 packages/security/identity/src/{core/schemas,core/constants,core/types,contracts/ports}/…
 packages/*/*/stackra.manifest.json (the four, regenerated)
 .changeset/port-selectors.md
+packages/data/database/src/core/schemas/database-config-options.schema.ts
+packages/state/settings/src/config/settings.config.ts
+packages/data/storage/src/config/storage.config.ts
+packages/security/identity/src/core/schemas/identity-options.schema.ts
 ```
 
 ## Data models and migrations
