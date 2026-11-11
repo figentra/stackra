@@ -5,8 +5,8 @@
  *          bundle-mode Vite config), write the `DevSurface` descriptor beside that config, then start Vite, or with
  *          `--os` the local shell's own Vite, which serves the product packages from source, and wait for them.
  * Boundary: the CLI parses, plans and starts processes; the import map, hot reload and API proxy are the bundle-mode
- *           Vite config's work (gen and `@stackra/vite-plugin`, stackra-04). A gen refusal or a missing surface config
- *           stops before any process starts and exits 1.
+ *           Vite config's work (gen and `@stackra/vite-plugin`, stackra-04). A gen refusal is reported and dev goes on
+ *           (`runDevGen`); another gen failure or a missing surface config stops before any process starts and exits 1.
  * Runtime: node
  * Governing contract: ADR 0436 (decision 6); app-shells section 15 point 2; ADR 0295 (decision 5: tools read the
  *                     configs gen writes).
@@ -17,6 +17,7 @@ import { join } from "node:path";
 import { DEV_SURFACE_FILES } from "#node/dev-surface/constants/dev-surface-files.constant";
 import { planDevSurface } from "#node/dev-surface/functions/plan-dev-surface.function";
 import { readSurface } from "#node/dev-surface/functions/read-surface.function";
+import { runDevGen } from "#node/dev-surface/functions/run-dev-gen.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { runProcess } from "#node/functions/run-process.function";
 import type { CliContext } from "#node/types/cli-context.type";
@@ -45,7 +46,7 @@ export async function runDevSurface(
   surface = text(context.values, "surface") ?? "",
   gen = true,
 ): Promise<number> {
-  const { cwd, io, values, cli } = context;
+  const { cwd, io, values } = context;
   if (!SURFACE_KEY.test(surface)) throw new CliUsageError(`bad surface key: ${surface}`);
   if (values["target"] !== undefined) {
     throw new CliUsageError("--target picks an app's target; --surface runs a product surface");
@@ -59,7 +60,7 @@ export async function runDevSurface(
     api: text(values, "api"),
   });
 
-  if (gen && (await cli(["gen"], io)) !== 0) return 1;
+  if (gen && !(await runDevGen(context))) return 1;
   // A local shell serves the packages itself; only a published shell needs gen's bundle-mode Vite config.
   if (!descriptor.shell.local && !existsSync(join(cwd, DEV_SURFACE_FILES.viteConfig(surface)))) {
     io.err(

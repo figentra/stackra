@@ -27,11 +27,12 @@ import { DiscoveryService, Lifetime, named, type Wiring } from "@stackra/contain
 import { Clock } from "@stackra/contracts";
 import { Database, DatabaseConfig } from "@stackra/database";
 import { DatabaseHealthIndicatorDriver } from "@stackra/database/node";
+import { EventBus } from "@stackra/events";
 import { Locks } from "@stackra/locking";
 import { LockDriver } from "@stackra/locking/contracts";
 import { EventsRelayConfig as BaseEventsRelayConfig } from "@stackra/outbox";
-import { DeliveryDriver, EventSigner, SubscriberSource } from "@stackra/outbox/contracts";
-import { CrossAppFanOut, CrossAppRelayService } from "@stackra/outbox/node";
+import { DeliveryDriver, EventSigner, InboxDriver, SubscriberSource } from "@stackra/outbox/contracts";
+import { CrossAppFanOut, CrossAppRelayService, InboxService } from "@stackra/outbox/node";
 import { QueueConfig, QueueHealthIndicatorDriver } from "@stackra/queue";
 import { QueueDriver } from "@stackra/queue/contracts";
 
@@ -67,6 +68,7 @@ export const wiring = {
     { module: "shop", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },
     { module: "shop", kind: "service", provide: CrossAppFanOut, deps: [SubscriberSource, DeliveryDriver] },
     { module: "shop", kind: "service", provide: CrossAppRelayService, deps: [DeliveryDriver, SubscriberSource, EventSigner, Locks, Clock] },
+    { module: "shop", kind: "service", provide: InboxService, deps: [InboxDriver, EventBus, Database, Clock] },
     { module: "shop", kind: "service", provide: Locks, deps: [LockDriver, Clock] },
   ],
   config: [
@@ -114,6 +116,15 @@ export const wiring = {
         "ed25519": () => import("@stackra/outbox").then((m) => m.Ed25519EventSignerDriver),
       },
       deps: { "ed25519": [SecretStore, BaseEventsRelayConfig] },
+    },
+    {
+      port: InboxDriver,
+      key: "outbox.InboxDriver",
+      candidates: {
+        "memory": () => import("@stackra/outbox").then((m) => m.MemoryInboxDriver),
+        "postgres": () => import("@stackra/outbox/node").then((m) => m.PostgresInboxDriver),
+      },
+      deps: { "postgres": [Database] },
     },
   ],
   replaces: [

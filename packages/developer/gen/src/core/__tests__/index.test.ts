@@ -34,6 +34,7 @@ describe("@stackra/gen", () => {
       "DOCS_SITE_DIR",
       "DocsConfig",
       "EFFECT_TAGS",
+      "ENCORE_SERVICES_DIR",
       "GENERATED_NOTICE",
       "GRAPH_NOTICE",
       "INTEGRATION_ROLES",

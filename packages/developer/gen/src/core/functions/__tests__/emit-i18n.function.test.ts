@@ -73,6 +73,12 @@ describe("emitI18n", () => {
     );
   });
 
+  it("writes an app's loaders without the json attribute, which its bundler's module would fail", () => {
+    const app = emitI18n({ ...COMMERCE_IR, layout: "app", catalogues: CATALOGUES })?.content ?? "";
+    expect(app).toContain('"ar": () => import("../../assets/lang/ar/carts.json"),');
+    expect(app).not.toContain('type: "json"');
+  });
+
   it("loads a consumed service's namespace from its folder, relative to the member (STA-1363)", () => {
     const merged =
       emitI18n({

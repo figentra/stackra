@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { readRunway } from "@stackra/runway/node";
 
 import { runDevMobile } from "#node/dev-mobile/functions/run-dev-mobile.function";
+import { runDevGen } from "#node/dev-surface/functions/run-dev-gen.function";
 import { runDevSurface } from "#node/dev-surface/functions/run-dev-surface.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import type { CliContext } from "#node/types/cli-context.type";
@@ -26,7 +27,7 @@ import type { CliContext } from "#node/types/cli-context.type";
  * await runDevProduct({ ...context, values: { product: true, os: "../os", device: "A44ABE24-…" } });
  */
 export async function runDevProduct(context: CliContext): Promise<number> {
-  const { cwd, io, cli, values } = context;
+  const { cwd, io, values } = context;
   if (typeof values["os"] !== "string")
     throw new CliUsageError("--product runs the local shells and template: pass --os <checkout>");
   const root = readRunway(join(cwd, "runway.yaml"), "root");
@@ -37,7 +38,8 @@ export async function runDevProduct(context: CliContext): Promise<number> {
   io.out(
     `product ${root.product?.key ?? root.project}: ${[...surfaces, ...apps.map((app) => `mobile.${app}`)].join(", ")}\n`,
   );
-  if ((await cli(["gen"], io)) !== 0) return 1;
+  // One member's refusal does not stop the product; runDevGen names it and any other gen failure stops here.
+  if (!(await runDevGen(context))) return 1;
   // shortcut: the runs share the terminal and stop together on Ctrl-C (one process group).
   const codes = await Promise.all([
     ...surfaces.map((surface) => runDevSurface(context, surface, false)),

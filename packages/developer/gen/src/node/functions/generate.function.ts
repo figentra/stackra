@@ -55,6 +55,8 @@ import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
+import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -314,7 +316,8 @@ export async function generate(
       ]
     : migrations.files;
   // Encore reads migrations only from a local folder, so a
-  // service's compiled files are copied under its Encore service too.
+  // service's compiled files are copied under its Encore service too. Encore runs each file in one transaction, so
+  // an online step's copy builds in its plain form (ADR 0159, amendment of 2026-11-10).
   const encoreFiles =
     encore.files.length === 0
       ? []
@@ -324,8 +327,9 @@ export async function generate(
             ...file,
             path: file.path.replace(
               `${MIGRATIONS_DIR}/`,
-              `.stackra/encore/${ir.member}/migrations/`,
+              `${encoreServiceFolder(ir.member)}/migrations/`,
             ),
+            content: encoreMigrationSql(file.content),
           })),
         ];
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];

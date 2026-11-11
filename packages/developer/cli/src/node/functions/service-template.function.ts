@@ -125,7 +125,7 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       clean: "rm -rf dist coverage .turbo .stackra",
     },
     // Gen refuses an undeclared generated dependency: the server entry (`.stackra/entry/server.ts`) imports
-    // `@stackra/app` and the Encore app (`.stackra/encore/<member>/http.ts`) imports `@stackra/container`.
+    // `@stackra/app` and the Encore app (`stackra-encore/<member>/http.ts`) imports `@stackra/container`.
     dependencies: {
       "@stackra/app": stackraVersion,
       "@stackra/container": stackraVersion,

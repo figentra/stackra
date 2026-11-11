@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `DATABASE_CONFIG_SCHEMA`, the zod schema this package ships for `DatabaseConfig` (exported as
- *          `DatabaseConfig$`): the `health` field that tunes `DatabaseHealthIndicatorDriver` for `/readyz`, and the
+ *          `DatabaseConfig$`): the `driver` that selects the `Database` driver, the `health` field that tunes
+ *          `DatabaseHealthIndicatorDriver` for `/readyz`, and the
  *          `timeouts` every runtime session starts with, the `pool` of one instance (ADR 0473), the
  *          `readYourWrites` window a replica query stays on the primary after its caller's write (STA-1504), and the
  *          `region` key of the deployment the database serves (stackra-310), and the `queries` guard: the slow-statement
@@ -18,7 +19,7 @@ import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
 import { CANONICAL_DURATION_SCHEMA } from "#core/constants/canonical-duration-schema.constant";
-
+import { DATABASE_DRIVERS } from "#core/constants/database-drivers.constant";
 import { DATABASE_POOL_SCHEMA } from "#core/constants/database-pool-schema.constant";
 import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
 import { QUERY_GUARD_SCHEMA } from "#core/constants/query-guard-schema.constant";
@@ -26,6 +27,7 @@ import { SESSION_TIMEOUTS_SCHEMA } from "#core/constants/session-timeouts-schema
 
 /** The shipped `DatabaseConfig$`. */
 export const DATABASE_CONFIG_SCHEMA = z.object({
+  driver: z.enum(DATABASE_DRIVERS).default("postgres"),
   health: HEALTH_CHECK_SCHEMA,
   timeouts: SESSION_TIMEOUTS_SCHEMA,
   pool: DATABASE_POOL_SCHEMA,

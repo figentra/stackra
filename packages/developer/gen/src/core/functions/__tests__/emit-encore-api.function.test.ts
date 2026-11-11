@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `emitEncoreApi`: a service gets `.stackra/encore/<member>/api.ts` with one `api()` per own
+ * Purpose: unit tests of `emitEncoreApi`: a service gets `stackra-encore/<member>/api.ts` with one `api()` per own
  *          action and query that has an endpoint, named by its camel-cased key and version, with the entry's method and
  *          path, typed by its input and output schemas, answered by the `answerCall` helper (`api.raw`, `auth: false` to Encore, the pipeline run with the
  *          verified actor); only an anonymous entry opens to a call with no credential; a controller is a raw `*`
@@ -21,8 +21,8 @@ import type { MemberIR } from "#core/types/member-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
-/** The entry import of a generated .stackra/encore/<service>/ file; a constant so validate does not read it as this test's own import. */
-const GENERATED_ENTRY = "../../entry/server";
+/** The entry import of a generated stackra-encore/<service>/ file; a constant so validate does not read it as this test's own import. */
+const GENERATED_ENTRY = "../../.stackra/entry/server";
 
 /** A query of the commerce module, without input or output. */
 function query(name: string, stem: string, options: Record<string, unknown>): DeclaredClass {
@@ -114,7 +114,7 @@ describe(emitEncoreApi, () => {
   ): { method: string; path: string } => entry?.["endpoint"] as { method: string; path: string };
 
   it("writes the endpoints file of a service, importing the pipeline, Encore, the helper and the server app", () => {
-    expect(emitEncoreApi(ir, manifest)?.path).toBe(".stackra/encore/commerce/api.ts");
+    expect(emitEncoreApi(ir, manifest)?.path).toBe("stackra-encore/commerce/api.ts");
     for (const line of [
       'import { ActionPipeline, requestCallOptions } from "@stackra/actions";',
       'import { api } from "encore.dev/api";',

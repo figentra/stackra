@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreHttp`, a service's HTTP adapter (`.stackra/encore/<member>/http.ts`): `answerHttp(request,
+ * Purpose: `emitEncoreHttp`, a service's HTTP adapter (`stackra-encore/<member>/http.ts`): `answerHttp(request,
  *          handle)`, which every generated raw endpoint answers through, and `answerCall(req, resp, call)`, the bridge
  *          of every action, query and controller endpoint: Node's request becomes a Fetch `Request` with a streamed
  *          body, `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
@@ -23,6 +23,7 @@
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -31,7 +32,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * The HTTP adapter of a service, or undefined when it does not run `@stackra/app`.
  *
  * @example
- * emitEncoreHttp(ir)?.path; // ".stackra/encore/billing/http.ts"
+ * emitEncoreHttp(ir)?.path; // "stackra-encore/billing/http.ts"
  */
 export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
   if (ir.layout !== "service") return undefined;
@@ -52,7 +53,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
     runtime: "node",
   });
   return {
-    path: `.stackra/encore/${ir.member}/http.ts`,
+    path: `${encoreServiceFolder(ir.member)}/http.ts`,
     content: [
       header,
       ...encoreDatabaseImport(ir),

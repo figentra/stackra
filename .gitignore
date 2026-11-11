@@ -27,6 +27,10 @@ services/*/vitest.config.ts
 apps/*/app.config.ts
 # The Encore app file gen writes at a service's root, so the member is the Encore app root (ADR 0091, amendment of 2026-11-09).
 services/*/encore.app
+# The Encore services gen writes beside it, outside .stackra since Encore skips dot folders (ADR 0091, amendment of
+# 2026-11-10). Gen's golden trees commit them as *.golden files.
+**/stackra-encore/*
+!packages/developer/gen/__golden__/**/stackra-encore/*
 # A docs app's generated Mintlify root, in any member (ADR 0002, 2026-10-27 amendment).
 **/.stackra/site/
 

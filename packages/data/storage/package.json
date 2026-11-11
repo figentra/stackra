@@ -39,6 +39,10 @@
       "./src/browser/*.ts",
       "./src/browser/*/index.ts"
     ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
@@ -129,9 +133,11 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
-    "@stackra/validation": "workspace:*"
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
@@ -151,8 +157,7 @@
     "react-native-mmkv": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
-    "vitest": "catalog:quality",
-    "zod": "catalog:"
+    "vitest": "catalog:quality"
   },
   "peerDependencies": {
     "electron": "catalog:desktop",

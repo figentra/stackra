@@ -17,7 +17,7 @@ import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 describe("emitEncoreDatabase", () => {
   it("declares the service's database over the compiled migrations", () => {
     const file = emitEncoreDatabase(COMMERCE_IR);
-    expect(file?.path).toBe(".stackra/encore/commerce/database.ts");
+    expect(file?.path).toBe("stackra-encore/commerce/database.ts");
     expect(file?.content).toContain('import { SQLDatabase } from "encore.dev/storage/sqldb";');
     expect(file?.content).toContain(
       [

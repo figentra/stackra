@@ -83,6 +83,7 @@ import { emitClientTools } from "#core/functions/emit-client-tools.function";
 import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
+import { emitEncoreBrokerMessage } from "#core/functions/emit-encore-broker-message.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreInbox } from "#core/functions/emit-encore-inbox.function";
@@ -315,6 +316,9 @@ export function generateMember(
   ])
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
+  // The BrokerMessage those topic files import, declared beside them: Encore cannot resolve it through a package's dist.
+  const brokerMessage = emitEncoreBrokerMessage(ir, files);
+  if (brokerMessage !== undefined) files.push(brokerMessage);
   files.push(
     ...clients.files,
     ...emitRoutes(ir),
