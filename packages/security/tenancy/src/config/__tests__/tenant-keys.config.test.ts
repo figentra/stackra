@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `TenantKeysConfig` and its shipped `TenantKeysConfig$`: the key, the defaults a boot with no
  *          configuration takes (`ephemeral` and `memory`, no KMS key, a five-minute cache of 1000 tenants) equal to the
- *          schema's, a production layer (`kms`, `postgres`, the region's KMS key), and the refusal of a driver name no
- *          driver has.
+ *          schema's, a production layer (`kms`, `postgres`, the region's KMS key), the refusal of a store name no
+ *          driver has, and a `KeyProvider` driver a product ships (any non-empty name, STA-2693).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0188 (2026-11-09 amendment); ADR 0294 (decisions 19 and 20).
@@ -28,7 +28,7 @@ describe("TenantKeysConfig", () => {
     });
   });
 
-  it("takes a region's production layer and refuses a driver no driver is named", () => {
+  it("takes a region's production layer and refuses a store no driver is named", () => {
     const config = buildConfig(TenantKeysConfig, {
       values: {
         driver: "kms",
@@ -38,7 +38,15 @@ describe("TenantKeysConfig", () => {
       },
     });
     expect(config).toMatchObject({ driver: "kms", store: "postgres", region: "eu-central-1" });
-    expect(() => buildConfig(TenantKeysConfig, { values: { driver: "vault" } as never })).toThrow(
+    expect(() => buildConfig(TenantKeysConfig, { values: { store: "vault" } as never })).toThrow(
+      ConfigInvalidError,
+    );
+  });
+
+  it("takes a KeyProvider driver a product ships, and refuses an empty name (STA-2693)", () => {
+    const config = buildConfig(TenantKeysConfig, { values: { driver: "audit" } as never });
+    expect(config).toMatchObject({ driver: "audit" });
+    expect(() => buildConfig(TenantKeysConfig, { values: { driver: "" } as never })).toThrow(
       ConfigInvalidError,
     );
   });
