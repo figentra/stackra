@@ -6,7 +6,6 @@
  *           cron option writes them.
  * Runtime: node
  */
-import "./database";
 import { SchedulerService } from "@stackra/scheduler";
 import { api } from "encore.dev/api";
 import { CronJob } from "encore.dev/cron";

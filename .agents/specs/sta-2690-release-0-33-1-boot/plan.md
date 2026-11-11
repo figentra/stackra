@@ -74,7 +74,9 @@ packages/developer/gen/src/core/functions/__tests__/emit-encore-events.function.
 packages/developer/gen/src/core/functions/__tests__/generate-member.function.test.ts
 packages/developer/runway/src/node/functions/__tests__/encore-deploy-tree.function.test.ts
 packages/developer/gen/__golden__/consumer/expected/services/catalogue/stackra-encore/catalogue/
-packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/stackra-encore/catalogue/
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/.stackra/gen/encore-sqldb.d.ts.golden
+packages/developer/cli/src/node/dev-secrets/types/plan-dev-secrets-input.type.ts
 ```
 
 The integration fixes (T003) are where two of the nine meet, or where a pull request's own check was never run

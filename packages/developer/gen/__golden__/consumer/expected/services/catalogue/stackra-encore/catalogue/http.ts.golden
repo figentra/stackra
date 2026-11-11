@@ -6,7 +6,6 @@
  *           `CorsConfig` (`app.cors`) and `apiCacheControl`, never from this file.
  * Runtime: node
  */
-import "./database";
 import { Readable } from "node:stream";
 import type { IncomingMessage, ServerResponse } from "node:http";
 

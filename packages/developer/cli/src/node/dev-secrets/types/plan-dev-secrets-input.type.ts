@@ -12,10 +12,10 @@ export type PlanDevSecretsInput = {
   readonly generate: readonly string[];
 
   /** The file's current values, or undefined when there is no file. */
-  readonly existing?: Readonly<Record<string, string>>;
+  readonly existing?: Readonly<Record<string, string>> | undefined;
 
-  /** Another repository's file, whose matching names are copied. */
-  readonly from?: Readonly<Record<string, string>>;
+  /** Another repository's file, whose matching names are copied, or undefined without `--from`. */
+  readonly from?: Readonly<Record<string, string>> | undefined;
 
   /** Regenerate every generated name. */
   readonly rotate?: boolean;
