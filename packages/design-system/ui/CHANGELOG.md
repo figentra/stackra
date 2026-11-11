@@ -1,5 +1,19 @@
 # @stackra/ui
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/shortcuts@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/icons@0.33.1
+  - @stackra/tokens@0.33.1
+
 ## 0.33.0
 
 ### Minor Changes

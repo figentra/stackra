@@ -1,5 +1,14 @@
 # @stackra/tokens
 
+## 0.33.1
+
+### Patch Changes
+
+- @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/validation@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes

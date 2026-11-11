@@ -1,5 +1,34 @@
 # @stackra/tenancy
 
+## 0.33.1
+
+### Patch Changes
+
+- bf2c6ea: A product can ship its own `KeyProvider` driver. `@stackra/tenancy` declared a closed `DriverRegistry` entry for the
+  port (`"ephemeral" | "kms"`), so a member's generated wiring that also names a product's driver failed with TS2717,
+  and the shipped `TenantKeysConfig$` refused the name at config parse.
+  
+  - The `KeyProvider` port has no `~key` brand, and tenancy declares no registry entry for it: the member's generated
+    wiring declares the names it has, as for identity's `AppApprovalChallenges`.
+  - `TenantKeysConfig$.driver` takes any non-empty driver name (default `ephemeral`); the container refuses a name no
+    driver has when it resolves the port.
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/scheduler@0.33.1
+  - @stackra/scope@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+
 ## 0.33.0
 
 ### Minor Changes
