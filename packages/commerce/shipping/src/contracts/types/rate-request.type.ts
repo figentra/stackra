@@ -9,6 +9,7 @@
  */
 import type { Money } from "@stackra/money";
 
+import type { Incoterm } from "#contracts/enums/incoterm.enum";
 import type { Parcel } from "#contracts/types/parcel.type";
 import type { ShippingAddress } from "#contracts/types/shipping-address.type";
 
@@ -36,4 +37,10 @@ export interface RateRequest {
 
   /** Only these service codes, when the caller already knows which it offers. */
   readonly services?: readonly string[];
+
+  /**
+   * Who pays a cross-border shipment's duties, when the caller chose; absent, the carrier's default (DAP). A connector
+   * that cannot honour DDP to the destination refuses with `ddp_unsupported` and never quotes DAP instead.
+   */
+  readonly incoterm?: Incoterm;
 }
