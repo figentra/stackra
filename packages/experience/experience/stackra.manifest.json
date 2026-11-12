@@ -76,6 +76,10 @@
       "type": "string",
       "enum": ["yes", "no", "coming"]
     },
+    "experience.LeadFieldType": {
+      "type": "string",
+      "enum": ["text", "email", "phone", "textarea"]
+    },
     "experience.MonoDisplayArt": {
       "type": "string",
       "enum": ["floors", "glyphs", "none"]

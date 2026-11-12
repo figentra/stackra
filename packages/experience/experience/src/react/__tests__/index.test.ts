@@ -29,6 +29,7 @@ describe("@stackra/experience/react", () => {
       "DocumentRenderer",
       "FeatureSection",
       "HeroMachine",
+      "LeadForm",
       "MonoDisplay",
       "PageDock",
       "ProductCards",
