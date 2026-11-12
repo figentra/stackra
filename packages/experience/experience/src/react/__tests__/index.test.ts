@@ -40,6 +40,7 @@ describe("@stackra/experience/react", () => {
       "StepSwitcher",
       "Surfaces",
       "TerminalStage",
+      "TimelineHero",
     ]);
   });
 

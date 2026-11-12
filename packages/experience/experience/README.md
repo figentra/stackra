@@ -199,6 +199,7 @@ A field's nested shape is a plain type in `src/core/types/` (`Drawing`, `DitherB
 | `SiteFooterBlock`    | `SiteFooter`          | the link columns, the legal line and a locale slot on `Footer`                                |
 | `PageDockBlock`      | `PageDock`            | the sticky `SectionDock`: a link per station and the current one's status line               |
 | `CapabilityMatrixBlock` | `CapabilityMatrix` | subjects by capability as a captioned table with row and column headers; each state (`CapabilityState`: yes, no, coming) is an icon with its word, a cell may be a note, and the table scrolls in a focusable region |
+| `TimelineHeroBlock` | `TimelineHero` | the `h1`, lede and primary action beside a window titled by the route's reference: origin to destination over an ordered list of timed events (`TimelineEvent`: time, status, actor), the last marked current |
 
 The drawings are `{ src, width, height, alt? }`: the root-relative base URL of the four tone layers `Illustration`
 stacks in the theme's roles (`/art/engine`), never fetched, decorative without `alt` and never mirrored. A dither
