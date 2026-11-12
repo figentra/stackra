@@ -125,6 +125,9 @@ jobs:
       dry-run: ${{ inputs.dry_run == true }}
       # The one place the registry is set: runway.yaml `providers.npm.registry` (ADR 0453).
       registry: https://npm.stackra.figentra.com/
+      # @stackra/* is one fixed changesets group: one `v<version>` tag and release per publish, not one per package
+      # (129 tags a release, 3,629 by 0.32; owner, 2026-11-09, STA-2662). The old per-package tags stay.
+      tag-mode: release
     secrets:
       app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
       app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
