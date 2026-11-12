@@ -256,7 +256,7 @@ jobs:
 
   # Runs only after a publish: the SBOM of what was installed, signed keylessly with this job's OIDC identity, kept as
   # an artifact and attached, with the tarballs' SHA-256 sums, to every release the publish created. No App token and
-  # no npm access here (the tarballs are public reads).
+  # no npm access here: public tarballs are public reads, and an internal scope's are listed without a checksum.
   sbom:
     name: SBOM
     runs-on: ubuntu-latest
@@ -323,14 +323,22 @@ jobs:
           set -euo pipefail
           mkdir tarballs
           jq -r '.[] | [.name, .version] | @tsv' published-packages.json | while IFS=$'\t' read -r name version; do
-            dist="$(curl -fsS "${REGISTRY}${name/\//%2f}/${version}" | jq -c '.dist')"
+            # An internal scope (`@figentra/*`) is read only with a licence token, and this job holds none: it gets no
+            # public checksum. Any other answer than 200 still fails (testbed 0.2.0, run 42640569244: 401).
+            code="$(curl -sS -o meta.json -w '%{http_code}' "${REGISTRY}${name/\//%2f}/${version}")"
+            if [ "$code" = 401 ] || [ "$code" = 403 ]; then
+              echo "::notice title=Checksums::${name}@${version} is not a public read (an internal scope); no checksum for it"
+              continue
+            fi
+            [ "$code" = 200 ] || { echo "::error title=Checksums::${name}@${version}: the registry answered ${code}"; exit 1; }
+            dist="$(jq -c '.dist' meta.json)"
             file="${name#@}"
             file="tarballs/${file//\//-}-${version}.tgz"
             curl -fsS -o "$file" "$(jq -r '.tarball' <<< "$dist")"
             [ "sha512-$(openssl dgst -sha512 -binary "$file" | base64 -w0)" = "$(jq -r '.integrity' <<< "$dist")" ] || {
               echo "::error title=Integrity::${name}@${version} differs from the registry's integrity"; exit 1; }
           done
-          (cd tarballs && sha256sum -- *.tgz) > sha256sums.txt
+          (cd tarballs && shopt -s nullglob && files=(*.tgz) && { [ ${#files[@]} -eq 0 ] || sha256sum -- "${files[@]}"; }) > sha256sums.txt
           cat sha256sums.txt
 
       # changesets names each release after its tag, `<name>@<version>`.
