@@ -52,10 +52,13 @@ tools, which change only the viewer's screen, come from its own declarations the
 ## Erasure
 
 `ConversationStore.forget(principalId)` erases a principal's conversations and their messages (both drivers), for a
-subject's erasure (ADR 0189 decision 2). It runs under the caller's scope, so row-level security limits it to what the
-caller sees; a message a legal hold covers stays (`purge` skips it), and so does its conversation. This package cannot
-import @stackra/privacy (privacy depends on it through workflow and rules), so the `SubjectErased` listener that calls
-it lives in privacy.
+subject's erasure (ADR 0189 decision 2). The Postgres store removes each erased conversation's runs with their steps,
+tool calls and approvals first, in the same unit of work: a run references its conversation with no cascade (ai.0001),
+so a conversation with a run could not be deleted on its own. `RunStore.forget(principalId)` erases the runs that acted
+for the principal elsewhere: as the actor, or the person in `onBehalfOf` up to two delegations deep. Both run under the
+caller's scope, so row-level security limits them to what the caller sees; a row a legal hold covers stays (`purge`
+skips it), and so does what it references. This package cannot import @stackra/privacy (privacy depends on it through
+workflow and rules), so the host's erasure listener calls both (Tamo's on `erasure.requested`).
 
 ## Retrieval for Facts
 
