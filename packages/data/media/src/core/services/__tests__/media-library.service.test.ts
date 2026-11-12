@@ -317,6 +317,32 @@ describe("MediaLibrary.claim", () => {
       `${file.url}?expires=2026-10-24T09%3A05%3A00.000Z`,
     );
   });
+
+  it("links a stored path of a bucket without its MediaFile, and refuses another bucket's", async () => {
+    const { media } = setup();
+    const file = await media.store(
+      InvoicesBucket,
+      new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]),
+      MediaType.Pdf,
+    );
+    // an archive that kept only the path signs the same URL temporaryUrl would
+    expect(await media.temporaryUrlOf(InvoicesBucket, file.path, Duration.minutes(5))).toBe(
+      await media.temporaryUrl(file, Duration.minutes(5)),
+    );
+    expect(() => media.temporaryUrlOf(ProductImagesBucket, file.path, Duration.minutes(5))).toThrow(
+      TypeError,
+    );
+    expect(() =>
+      media.temporaryUrlOf(
+        InvoicesBucket,
+        "private/invoices/../payroll/x.pdf",
+        Duration.minutes(5),
+      ),
+    ).toThrow(TypeError);
+    expect(() =>
+      media.temporaryUrlOf(InvoicesBucket, "private/invoices/", Duration.minutes(5)),
+    ).toThrow(TypeError);
+  });
 });
 
 describe("MediaLibrary.store", () => {
