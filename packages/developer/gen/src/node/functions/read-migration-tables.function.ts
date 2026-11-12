@@ -26,6 +26,14 @@ const OWNER_POLICY = /\.belongsToTenant\(|\.rowLevelSecurity\(\s*["']tenant_id["
 
 const TABLE = /\bschema\.(?:create|table)\(\s*["'`]([A-Za-z_][\w]*)["'`]/g;
 
+/** A column a block adds through a Blueprint column method, with the method: `t.jsonb("closed_on")`. */
+const COLUMN =
+  /\.(string|integer|bigint|decimal|boolean|timestamp|uuid|jsonb|tsvector|point|polygon|line|enum|link)\(\s*["'`]([a-z_][a-z0-9_]*)["'`]/g;
+
+/** The columns `block` adds, each with the Blueprint method that adds it. */
+const columnsOf = (block: string): { name: string; method: string }[] =>
+  [...block.matchAll(COLUMN)].map((match) => ({ name: match[2] ?? "", method: match[1] ?? "" }));
+
 /** A raw table rename as a `schema.sql` statement: `schema.sql('alter table "ai"."steps" rename to "run_steps"'`. */
 const RENAME =
   /\bschema\.sql\(\s*["'`]alter table\s+(?:"?\w+"?\.)?"?(\w+)"?\s+rename to\s+"?(\w+)"?/gi;
@@ -38,14 +46,20 @@ const RENAME =
  * @param member - the member key, a package migration's module.
  * @example
  * readMigrationTables("packages/application/ai", "package", "ai")[0];
- * // { file: "src/node/database/migrations/0001-create-ai-tables.migration.ts", module: "ai", table: "conversations", ownerColumn: true }
+ * // { file: "src/node/database/migrations/0001-create-ai-tables.migration.ts", module: "ai", table: "conversations", ownerColumn: true, columns: […] }
  */
 export function readMigrationTables(
   root: string,
   layout: MemberIR["layout"],
   member: string,
 ): NonNullable<MemberIR["migrationTables"]> {
-  const found: { file: string; module: string; table: string; ownerColumn: boolean }[] = [];
+  const found: {
+    file: string;
+    module: string;
+    table: string;
+    ownerColumn: boolean;
+    columns: { name: string; method: string }[];
+  }[] = [];
   for (const { module, path } of migrationFilesOf(root, layout, member)) {
     const text = readFileSync(path, "utf8");
     const file = relative(root, path);
@@ -56,6 +70,7 @@ export function readMigrationTables(
         table: match[1] ?? "",
         ownerColumn: (): boolean =>
           OWNER_POLICY.test(text.slice(match.index ?? 0, tables[index + 1]?.index ?? text.length)),
+        columns: columnsOf(text.slice(match.index ?? 0, tables[index + 1]?.index ?? text.length)),
       })),
       ...[...text.matchAll(RENAME)].map((match) => ({
         at: match.index ?? 0,
@@ -64,12 +79,19 @@ export function readMigrationTables(
           found.some(
             (block) => block.module === module && block.table === match[1] && block.ownerColumn,
           ),
+        columns: [],
       })),
     ]
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort((left, right) => left.at - right.at);
     for (const event of events)
-      found.push({ file, module, table: event.table, ownerColumn: event.ownerColumn() });
+      found.push({
+        file,
+        module,
+        table: event.table,
+        ownerColumn: event.ownerColumn(),
+        columns: event.columns,
+      });
   }
   return found;
 }

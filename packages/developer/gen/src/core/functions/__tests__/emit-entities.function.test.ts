@@ -5,7 +5,8 @@
  *          and constant defaults, integer columns, embedded money), its relations (a one-to-many `mappedBy` its
  *          inverse, a many-to-one `ref` `inversedBy` the other side, a link to another module's model by key), its
  *          getters as not persisted, the module's entity list and its `registerEntities` call; nothing for a module
- *          without a model; a translated field typed with `TranslatedType` (STA-1218).
+ *          without a model; a translated field typed with `TranslatedType` (STA-1218); a `@Field(zod)` hatch field typed
+ *          from its migration column (`t.enum` is `string`, `t.integer` `integer`, ...), `json` when no column is found.
  * Boundary: test only; runs on the billing IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0097 (decisions 3 and 5.4); ADR 0294 (decisions 20 and 28);
@@ -24,6 +25,15 @@ const geo = (name: string, shape: "point" | "polygon" | "line", nullable: boolea
   optional: false,
   nullable,
   type: { kind: "geo" as const, shape },
+  rules: [],
+});
+
+/** A `@Field(zod)` hatch field named `name`. */
+const hatchField = (name: string) => ({
+  name,
+  optional: false,
+  nullable: false,
+  type: { kind: "hatch" as const, source: "z.enum" },
   rules: [],
 });
 
@@ -154,5 +164,50 @@ describe("emitEntities", () => {
     expect(content).toContain("    location: { type: GeoPointType },");
     expect(content).toContain("    area: { type: GeoPolygonType, nullable: true },");
     expect(content).toContain("    route: { type: GeoLineType, nullable: true },");
+  });
+
+  it("types a @Field(zod) hatch field from its migration column, and json when none is found", () => {
+    const columns = [
+      { name: "outcome", method: "enum" },
+      { name: "closed_on", method: "string" },
+      { name: "attempts", method: "integer" },
+      { name: "is_open", method: "boolean" },
+      { name: "seen_at", method: "timestamp" },
+      { name: "extra", method: "jsonb" },
+    ];
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      shapes: [
+        {
+          name: "Entry",
+          kind: "model",
+          module: "billing",
+          file: "src/modules/billing/models/entry.model.ts",
+          importPath: "#modules/billing/models/entry.model",
+          fields: ["outcome", "closedOn", "attempts", "isOpen", "seenAt", "extra", "loose"].map(
+            hatchField,
+          ),
+          relations: [],
+        },
+      ],
+      classes: [],
+      migrationTables: [
+        {
+          file: "src/modules/billing/database/migrations/0001-create-entries.migration.ts",
+          module: "billing",
+          table: "entries",
+          ownerColumn: false,
+          columns,
+        },
+      ],
+    };
+    const content = emitEntities(ir, "billing") ?? "";
+    expect(content).toContain('    outcome: { type: "string" },');
+    expect(content).toContain('    closedOn: { type: "string" },');
+    expect(content).toContain('    attempts: { type: "integer" },');
+    expect(content).toContain('    isOpen: { type: "boolean" },');
+    expect(content).toContain('    seenAt: { type: "datetime" },');
+    expect(content).toContain('    extra: { type: "json" },');
+    expect(content).toContain('    loose: { type: "json" },');
   });
 });

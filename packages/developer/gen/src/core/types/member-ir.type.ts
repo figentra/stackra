@@ -252,6 +252,12 @@ export interface MemberIR {
     readonly module: string;
     readonly table: string;
     readonly ownerColumn: boolean;
+    /**
+     * The columns the block adds through a Blueprint column method, each with that method (`jsonb`, `string`), so
+     * `checkHatchColumns` can refuse a `@Field(zod)` model field whose column is not `jsonb`. Absent in an IR read
+     * before the column scan.
+     */
+    readonly columns?: readonly { readonly name: string; readonly method: string }[];
   }[];
 
   /**
