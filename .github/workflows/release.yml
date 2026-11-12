@@ -15,8 +15,12 @@
 #          commit, no tag, no version PR, nothing pushed. The normal `release` job does not run on that dispatch.
 #          The prerelease job still waits on `release`, because the publisher row names that environment; it moves to an
 #          unprotected environment once the registry has a row for it (ADR 0468, plan).
+#          A third path, workflow_dispatch with `deprecate` on main (ADR 0522 decision 3): the `deprecate` job marks
+#          every published version of the one `deprecate_package` deprecated with `deprecate_message`, through the same
+#          registry exchange, in `release` (the owner approves it). Versions stay immutable and installable; nothing
+#          else runs on that dispatch.
 # Boundary: the registry URL is set only in this file (the release job's `registry`, the root runway's
-#           `providers.npm.registry`, and the prerelease job's REGISTRY); no member's publishConfig names one. Never
+#           `providers.npm.registry`, and the prerelease and deprecate jobs' REGISTRY); no member's publishConfig names one. Never
 #           npmjs, never Keygen (ADR 0453).
 # Runtime: GitHub Actions
 # Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
@@ -54,6 +58,18 @@ on:
         description: "Prerelease: the release the prerelease leads to (one fixed version, ADR 0177 PK5)"
         type: string
         default: 0.1.0
+      deprecate:
+        description: "Deprecate every published version of `deprecate_package` (nothing is published)"
+        type: boolean
+        default: false
+      deprecate_package:
+        description: "Deprecate: the one @stackra/* package"
+        type: string
+        default: ""
+      deprecate_message:
+        description: "Deprecate: the message npm shows on install"
+        type: string
+        default: ""
 
 # One release run per ref and kind at a time: a second run starting before this one finishes
 # would version the same changesets twice. The version PR's squash merge publishes, and only its
@@ -75,7 +91,7 @@ jobs:
   # ever wrong, a publish from `release-pr` fails at the registry, whose publisher row names `release` (fail closed).
   gate:
     name: Release gate
-    if: ${{ !inputs.prerelease }}
+    if: ${{ !inputs.prerelease && !inputs.deprecate }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -108,8 +124,8 @@ jobs:
   release:
     name: Release
     needs: gate
-    # A prerelease dispatch runs the job below instead; a push has no inputs, so this is true for every push.
-    if: ${{ !inputs.prerelease }}
+    # A prerelease or deprecate dispatch runs a job below instead; a push has no inputs, so this is true for every push.
+    if: ${{ !inputs.prerelease && !inputs.deprecate }}
     permissions:
       contents: write
       pull-requests: write
@@ -138,7 +154,7 @@ jobs:
   # registry has a publisher row for an unprotected `prerelease` environment (workers/registry migration, plan).
   prerelease:
     name: Prerelease
-    if: ${{ inputs.prerelease && github.ref == 'refs/heads/main' }}
+    if: ${{ inputs.prerelease && !inputs.deprecate && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: release
@@ -262,3 +278,47 @@ jobs:
             unset NODE_AUTH_TOKEN
             echo "::notice title=Published::${name}@${VERSION} (${DIST_TAG})"
           done < <(pnpm -r ls --depth -1 --json | jq -r '.[] | [.name, .path] | @tsv')
+
+  # ADR 0522 decision 3: a package that moved is deprecated, never deleted (versions are immutable, ADR 0453 decision 7).
+  # The registry takes a deprecation as a PUT without an attachment from a publish token for that one name, which only
+  # this file, on main, in `release` can get (the publisher row), so the owner's approval of `release` is the gate.
+  deprecate:
+    name: Deprecate
+    if: ${{ inputs.deprecate && !inputs.prerelease && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      id-token: write # the registry's OIDC exchange
+    env:
+      PACKAGE: ${{ inputs.deprecate_package }}
+      MESSAGE: ${{ inputs.deprecate_message }}
+      REGISTRY: https://npm.stackra.figentra.com/
+    steps:
+      # Inputs arrive through the environment and are checked before use (zizmor template-injection).
+      - name: Inputs
+        run: |
+          [[ "$PACKAGE" =~ ^@stackra/[a-z0-9][a-z0-9-]*$ ]] || {
+            echo "::error title=deprecate_package::$PACKAGE is not an @stackra/* package name"; exit 1; }
+          [ -n "$MESSAGE" ] && [ "${#MESSAGE}" -le 200 ] || {
+            echo "::error title=deprecate_message::give a message of at most 200 characters"; exit 1; }
+
+      - name: Deprecate every published version
+        run: |
+          set -euo pipefail
+          curl() { command curl --connect-timeout 20 --max-time 90 --retry 4 --retry-delay 5 "$@"; }
+          host="${REGISTRY#https://}"
+          encoded="${PACKAGE/\//%2f}"
+          curl -fsS -o /dev/null "${REGISTRY}${encoded}" || {
+            echo "::error title=deprecate_package::${PACKAGE} is not on the registry"; exit 1; }
+          id_token="$(curl -fsS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:${host%/}" | jq -r '.value')"
+          echo "::add-mask::${id_token}"
+          NODE_AUTH_TOKEN="$(curl -fsS -X POST -H "Authorization: Bearer ${id_token}" \
+            "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${encoded}" | jq -r '.token')"
+          echo "::add-mask::${NODE_AUTH_TOKEN}"
+          export NODE_AUTH_TOKEN
+          # shellcheck disable=SC2016 # the literal ${NODE_AUTH_TOKEN} is the point
+          printf '//%s:_authToken=${NODE_AUTH_TOKEN}\n' "$host" >> ~/.npmrc
+          npm deprecate "${PACKAGE}@*" "$MESSAGE" --registry "$REGISTRY"
+          echo "::notice title=Deprecated::${PACKAGE}: ${MESSAGE}"
