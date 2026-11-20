@@ -1,123 +1,142 @@
 ---
-title: "0535 — Design system tiers: every component is free or pro, decided by one rule and kept in the registry"
-description: "Proposed · 2026-11-20"
+title: "0535 — Design system tiers: free components in @stackra/ui, pro components in @stackra/ui-pro"
+description: "Proposed · 2026-11-20 · STA-2697"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0535 (Proposed 2026-11-20), the free and pro tier of every `@stackra/ui` component: the criteria, where pro lives, and the classification of all 383 components. Boundary: decision text and the attached table only; code and registry edits follow the lead's ruling. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0023, 0075, 0077, 0302, 0303, 0461, 0469. */}
+{/* Stackra file contract. Purpose: ADR 0535 (Proposed 2026-11-20, STA-2697), the free and pro tier of every design-system component: the criteria, where pro lives (`@stackra/ui-pro`, private registry only), and the classification of all 383 components. Boundary: decision text and the attached table only; code and registry edits follow acceptance. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0023, 0075, 0077, 0302, 0303, 0310, 0453, 0461, 0469. */}
 
 <Note>
-  Proposed for the lead's ruling (design system 1.0 lane, P-STA-124). Nothing relies on it until it
-  is Accepted. Three rulings are open and are listed under Consequences. The ADR number is the next
-  free one on this branch and is not yet reserved on main with `pnpm adr:reserve`.
+  Proposed on the lead's final rulings of 2026-11-20 (design system 1.0 lane, STA-2697, project
+  Stackra Design System 1.0). It stays Proposed until it lands on main. The number 0535 is the next
+  free one on the lane's branch; it is reserved on main with `pnpm adr:reserve` in a normal pull
+  request, never by a direct push.
 </Note>
 
 ## Context
 
-The registry of `@stackra/ui` declares tier `free` for all 360 entries, and `ui-pro` is empty: there is no pro
-component, in code or in the registry. The inventory of 2026-11-20 counts 383 distinct components (501 with
-compound parts) in 16 packages: 327 in `@stackra/ui` and 56 kit components in the domain packages. 70 link to a
-free HeroUI component, and the rest are ours.
+The registry of `@stackra/ui` declares tier `free` for all 360 entries, and there is no pro component, in code
+or in the registry. The inventory of 2026-11-20 counts 383 distinct components (501 with compound parts) in 16
+packages: 327 in `@stackra/ui` and 56 kit components in the domain packages. 70 link to a free HeroUI component,
+and the rest are ours.
 
-Three accepted decisions bound the answer:
+Four accepted decisions bound the answer:
 
 - [0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only) removed HeroUI Pro
-  from Stackra. `@stackra/ui-pro` and `@stackra-pro/ui` are withdrawn, and a component that only HeroUI Pro offered
-  is built clean-room on free HeroUI, React Aria and permissive libraries.
+  from Stackra and withdrew the `@stackra/ui-pro` and `@stackra-pro/ui` wrappers of HeroUI Pro. The folder
+  `packages/design-system/ui-pro` no longer exists in this repository. A component that only HeroUI Pro offered is
+  built clean-room on free HeroUI, React Aria and permissive libraries.
 - [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
-  decision 1: nothing moves out of a free package, and `@stackra-pro/*` holds new code only. Every `@stackra/ui`
-  component is already published under MIT, and Academorix imports them.
-- [0077](/adr/0077-open-core-free-and-pro-lists) decision 4 (a free package never imports a Pro package and works
-  fully without one) is the rule any pro tier must keep.
+  decision 1: nothing moves out of a free package. Every `@stackra/ui` component is published today under MIT, and
+  Academorix imports them.
+- [0077](/adr/0077-open-core-free-and-pro-lists) decision 4: a free package never imports a Pro package and works
+  fully without one.
+- [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  decision 10: the Stackra registry serves a package under a read rule, and a per-name `internal` or licensed row
+  can cover one package.
 
-The owner decided on 2026-11-20 that Stackra builds its own pro components on HeroUI community, and the lead's
-order asks for a free and pro split by criteria: free is HeroUI pass-through and basic primitives, pro is our
-composites (advanced data display, charts, date ranges, blocks, AI, editors).
+The owner decided on 2026-11-20 that Stackra builds its own pro components on HeroUI community. The lead's final
+rulings of the same day: the pro tier is a separate package, the 38 domain-kit components are pro, and the
+starter charts are free.
 
 ## Decision
 
-1. **Every component has one tier, `free` or `pro`.** The tier is a required field of the registry entry
-   (`ComponentTier` in `packages/design-system/showcase`) and of the component's row in the package manifest. A new
-   component is registered with its tier in the same change. Hooks and providers take the tier of their component.
-2. **Free criteria.** A component is `free` when any one of these holds:
+1. **Every component has one tier, `free` or `pro`, and the tier follows the package.** A free component lives in
+   `@stackra/ui` (MIT, public registry). A pro component lives in `@stackra/ui-pro` at
+   `packages/design-system/ui-pro`, and nowhere else. **Pro code never ships in `@stackra/ui`.** The registry
+   entry of the showcase gets its `tier` derived from the package that holds the component, not typed by hand;
+   `ComponentTier` stays the enum. Hooks and providers take the tier of their component.
+2. **No new scope.** The pro package is `@stackra/ui-pro`, not `@stackra-pro/ui`: this restores the folder and the
+   name that 0469 withdrew, now for Stackra's own clean-room components only, with no HeroUI Pro in it.
+3. **Private registry only.** `@stackra/ui-pro` publishes to the Stackra registry
+   (`https://npm.stackra.figentra.com/`) and never to npmjs. The registry serves it under a licensed read rule as
+   a per-name row (0453 decision 10), so a customer without a grant cannot install it. It carries its own
+   `LICENSE` and a `"license"` field that names it.
+4. **Free criteria.** A component is `free` when any one of these holds:
    - **F1**: it is a thin wrapper over, or a re-export of, a free HeroUI or HeroUI Native component (70 today).
      HeroUI pass-through is free even when the topic sounds advanced: `date-range-picker` and `range-calendar` are
      free for that reason.
-   - **F2**: it is a basic primitive: one purpose, no domain logic, no heavy third-party dependency, and an app
-     needs it to be a complete app (foundations, fields, selection, feedback, navigation and overlay basics, layout
-     primitives, `ai-mark`). It includes the starter charts (`chart`, its legend, tooltip and crosshair, and line,
-     bar, area, pie, donut and sparkline), so a free app can draw a dashboard.
-   - **F4**: it is a domain kit component that lives in a domain package (`@stackra/identity`, `tenancy`, `iam`,
-     `panel`, `payments`, `notifications` and the others). It follows its package, which is free runtime code
-     under 0461 decision 1.
-3. **Pro criteria.** A component that is none of F1, F2 or F4 is `pro`, in one of these classes:
+   - **F2**: it is a generic primitive: one purpose, no product logic, no heavy third-party dependency, and an
+     app needs it to be a complete app (foundations, fields, selection, feedback, navigation and overlay basics,
+     layout primitives, `ai-mark`). It includes the starter charts: `bar-chart`, `line-chart`, `area-chart` and
+     `pie-chart`, with the chart building blocks they stand on (`chart`, `chart-legend`, `chart-tooltip` and
+     `chart-crosshair`), so a free app can draw a dashboard.
+5. **Pro criteria.** A component that is neither F1 nor F2 is `pro`, composed and product-grade, in one of these
+   classes:
    - **P1** advanced data display (grids, tables with state, filters, import and export, matrices, timelines);
-   - **P2** the chart set beyond the starter charts;
+   - **P2** every chart beyond the starter charts, including `donut-chart` and `sparkline`;
    - **P3** date and time composites (scheduling, recurrence, periods, wheels);
    - **P4** marketing and composition blocks of `@stackra/experience`;
    - **P5** AI surfaces (chat, prompt, drafting, conversation);
    - **P6** editors and builders (rich text, rules, cropping, mentions);
    - **P7** showpiece and heavy interaction composites (morphing, holo and flip cards, command palette, transfer
-     list, cascader, floating panels, dashboard grid).
-4. **The classification is the attached table.** It lists all 383 components with package, platforms, tier and
-   the rule that decided it: 249 free and 134 pro. A change to a row needs this ADR amended, or a later ADR.
-5. **Where pro lives (recommended; the lead rules).** For 1.0 the tier is metadata. All 383 components stay in
-   `@stackra/ui` and the domain packages, under MIT. The tier shows in the showcase (badge and filter), in each
-   API page and in the manifest, and it decides how a new component is documented and where a future split
-   would cut. No `@stackra/ui-pro` exists: that name is withdrawn by 0469, and a pro package is `@stackra-pro/*`
-   by the scope rule. A physical split, if the owner sells the pro tier, is a new ADR that amends 0461 decision 1
-   and picks `@stackra-pro/ui` in `figentra/stackra-pro`, served by the Stackra registry.
-6. **A free component never imports a pro component.** A free app works fully without the pro tier, as 0077
-   decision 4 requires. The check is a boundary rule between the two tiers inside `@stackra/ui`.
-7. **No HeroUI Pro in any tier**, and no pro component derives from HeroUI Pro source
+     list, cascader, floating panels, dashboard grid);
+   - **P8** the 38 domain-kit components of the domain packages (identity, tenancy, iam, panel, payments,
+     notifications, settings, ai and the others): composed product patterns over the free runtimes.
+6. **The classification is the attached table.** It lists all 383 components with where each lives today, its
+   platforms, its tier and the rule that decided it: 209 free and 174 pro (118 now in `@stackra/ui`, 56 now in
+   domain packages). A change to a row needs this ADR amended, or a later ADR.
+7. **A free package never imports `@stackra/ui-pro`.** `@stackra/ui` and every domain package work fully without
+   it (0077 decision 4). A pro kit component is a view over the hooks and contracts that its free domain package
+   keeps; the domain package imports nothing from `@stackra/ui-pro`. The check is a boundary rule in
+   `packages/tooling/oxlint/src/boundaries.jsonc`.
+8. **No HeroUI Pro in either tier**, and no pro component derives from HeroUI Pro source
    ([0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only) decision 2).
+9. **Amendments on acceptance.** This ADR amends 0461 decision 1 (the 118 and 56 components above leave the free
+   packages) and 0469 decision 1 for the folder and name `@stackra/ui-pro`, which now holds Stackra's own
+   components only. 0469's ban on HeroUI Pro stands.
 
 ## Consequences
 
-- Every registry entry gets a tier and the 28 API docs, 3 code-only components and 12 unlisted exports in the gap
-  list are registered with one (step 2 of the lane).
-- Under decision 5 the label alone sells nothing. What the pro tier buys (support, entitlement, early access, a
-  licence) is a commercial decision this ADR does not make.
-- Academorix switches its imports to the published packages with no visual change, because no component moves.
-- **Open ruling 1, the home.** Decision 5 (tier as a field, one MIT package) or a physical split now to
-  `@stackra-pro/ui`. The split breaks 0461 decision 1, forces a deprecation path for 0.33.x imports and needs
-  the private `stackra-pro` repository, which this lane does not touch.
-- **Open ruling 2, domain kits.** The 38 domain kit components are free by F4 because 0461 makes runtime code
-  free. The lead's wording lists blocks as pro. This table makes only the 17 `@stackra/experience` blocks and
-  `chat-surface` pro.
-- **Open ruling 3, starter charts.** Ten chart components are free so a free app can draw a dashboard. If
-  charts are wholly pro, those ten move to P2.
-- A component that needs a different tier is a one-row change plus a changelog line, and a free to pro move is
-  a breaking change after publication.
+- **A breaking move, carried by the 1.0 major.** The 174 pro components leave `@stackra/ui` and the domain
+  packages. A consumer imports them from `@stackra/ui-pro` and needs a registry grant. The 1.0 release ships a
+  migration note with the old and new import for every moved component. Academorix switches its imports to the
+  published packages with no visual change, and adds the pro package.
+- Every registry entry gets its tier from its package. The 28 API docs, 3 code-only components and 12 unlisted
+  exports of the gap list are registered in the right package (step 2 of the lane).
+- Domain packages keep their runtime, hooks and contracts, and lose their components. A route page in a free
+  package that needs a pro component takes it by prop or slot, never by import.
+- **Open point, source visibility.** The lead's ruling keeps the pro source in this repository, whose licence is
+  MIT, while 0077 decision 3 puts pro source in a private repository. The folder carries its own commercial
+  `LICENSE` and the published `dist` is minified without source maps, as 0316 decision 2 describes. The owner
+  confirms this, or the source moves to `figentra/stackra-pro`.
+- **Open point, `@stackra/` under a licensed rule.** The registry rule of 0453 decision 10 is per scope today;
+  a per-name licensed row inside `@stackra` is new work for the registry session.
+- The label buys what the commercial ADR says it buys; this ADR makes no pricing claim.
+- A free to pro move after publication is a breaking change, so a tier change is a one-row edit here plus a
+  major or a changelog line.
 
 ## Enforcement
 
-planned — the `ComponentTier` enum and the `tier` field already exist in
-`packages/design-system/showcase/src/schemas/component-entry.schema.ts`; the work is a check that every
-`@stackra/ui` export has an entry with a tier equal to this table, and an oxlint boundary rule that a free
-component imports no pro component (decision 6). `HERO_LINK` and `PRO_DEPENDENCIES` already refuse HeroUI Pro.
+planned — a check that every `@stackra/ui` and `@stackra/ui-pro` export has a registry entry whose tier equals
+the package and the table; the boundary rule of decision 7; the registry read rule of decision 3. Already in
+force: `HERO_LINK` in `packages/design-system/showcase/src/schemas/component-entry.schema.ts` and
+`PRO_DEPENDENCIES` in `@stackra/repo-checks` refuse HeroUI Pro.
 
 ## Supersedes and sources
 
-Supersedes: none. Amends nothing while decision 5 stands; the physical split would amend
+Supersedes: none. Amends on acceptance:
 [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
-decision 1. Related: [0023](/adr/0023-stackra-is-a-framework),
+decision 1 and
+[0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only) decision 1 (the name).
+Related: [0023](/adr/0023-stackra-is-a-framework),
 [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services),
 [0077](/adr/0077-open-core-free-and-pro-lists),
 [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground),
 [0303](/adr/0303-stackra-ui-component-catalogue-decisions),
-[0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only). Sources: the inventory
-of 2026-11-20 (383 components) and the lead's order of 2026-11-20 (project P-STA-124).
+[0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers). Sources: the inventory of 2026-11-20 (383
+components) and the lead's rulings of 2026-11-20 (STA-2697).
 
 ## Attached table: the 383 components
 
-Rules: **F1** HeroUI pass-through, **F2** basic primitive, **F4** domain kit follows its package, **P1** advanced
-data display, **P2** charts beyond the starter set, **P3** date and time composites, **P4** experience blocks,
-**P5** AI surfaces, **P6** editors and builders, **P7** showpiece composites. Totals: 249 free (F1 70, F2 141,
-F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
+Rules: **F1** HeroUI pass-through, **F2** generic primitive, **P1** advanced data display, **P2** charts beyond
+the starter charts, **P3** date and time composites, **P4** experience blocks, **P5** AI surfaces, **P6** editors
+and builders, **P7** showpiece composites, **P8** domain-kit components. Totals: 209 free (F1 70, F2 139) and 174
+pro (P1 26, P2 30, P3 7, P4 18, P5 23, P6 6, P7 26, P8 38). "Today in" is the package that holds the component
+now; every pro row moves to `@stackra/ui-pro`.
 
 ### Foundations (16: 16 free, 0 pro)
 
-| Component          | Package       | Platforms | Tier | Rule |
+| Component          | Today in      | Platforms | Tier | Rule |
 | ------------------ | ------------- | --------- | ---- | ---- |
 | `bidi`             | `@stackra/ui` | both      | free | F2   |
 | `code`             | `@stackra/ui` | both      | free | F2   |
@@ -138,7 +157,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 
 ### Actions (16: 13 free, 3 pro)
 
-| Component                | Package       | Platforms | Tier | Rule |
+| Component                | Today in      | Platforms | Tier | Rule |
 | ------------------------ | ------------- | --------- | ---- | ---- |
 | `button`                 | `@stackra/ui` | both      | free | F1   |
 | `button-group`           | `@stackra/ui` | both      | free | F1   |
@@ -159,7 +178,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 
 ### Inputs and forms (42: 36 free, 6 pro)
 
-| Component                 | Package       | Platforms | Tier | Rule |
+| Component                 | Today in      | Platforms | Tier | Rule |
 | ------------------------- | ------------- | --------- | ---- | ---- |
 | `address-field`           | `@stackra/ui` | both      | pro  | P6   |
 | `angle-slider`            | `@stackra/ui` | both      | free | F2   |
@@ -206,7 +225,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 
 ### Selection (22: 17 free, 5 pro)
 
-| Component               | Package       | Platforms | Tier | Rule |
+| Component               | Today in      | Platforms | Tier | Rule |
 | ----------------------- | ------------- | --------- | ---- | ---- |
 | `autocomplete`          | `@stackra/ui` | web       | free | F1   |
 | `cascader`              | `@stackra/ui` | both      | pro  | P7   |
@@ -233,7 +252,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 
 ### Date and time (17: 10 free, 7 pro)
 
-| Component           | Package       | Platforms | Tier | Rule |
+| Component           | Today in      | Platforms | Tier | Rule |
 | ------------------- | ------------- | --------- | ---- | ---- |
 | `calendar`          | `@stackra/ui` | both      | free | F1   |
 | `countdown`         | `@stackra/ui` | both      | free | F2   |
@@ -253,9 +272,9 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 | `wheel-picker`      | `@stackra/ui` | both      | pro  | P3   |
 | `year-picker`       | `@stackra/ui` | both      | free | F2   |
 
-### Charts (38: 10 free, 28 pro)
+### Charts (38: 8 free, 30 pro)
 
-| Component           | Package       | Platforms | Tier | Rule |
+| Component           | Today in      | Platforms | Tier | Rule |
 | ------------------- | ------------- | --------- | ---- | ---- |
 | `area-chart`        | `@stackra/ui` | both      | free | F2   |
 | `bar-chart`         | `@stackra/ui` | both      | free | F2   |
@@ -272,7 +291,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 | `chord-diagram`     | `@stackra/ui` | both      | pro  | P2   |
 | `choropleth-map`    | `@stackra/ui` | both      | pro  | P2   |
 | `composed-chart`    | `@stackra/ui` | both      | pro  | P2   |
-| `donut-chart`       | `@stackra/ui` | both      | free | F2   |
+| `donut-chart`       | `@stackra/ui` | both      | pro  | P2   |
 | `funnel-chart`      | `@stackra/ui` | both      | pro  | P2   |
 | `gauge-chart`       | `@stackra/ui` | both      | pro  | P2   |
 | `heatmap-chart`     | `@stackra/ui` | both      | pro  | P2   |
@@ -286,7 +305,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 | `range-bar-chart`   | `@stackra/ui` | both      | pro  | P2   |
 | `sankey-chart`      | `@stackra/ui` | both      | pro  | P2   |
 | `scatter-chart`     | `@stackra/ui` | both      | pro  | P2   |
-| `sparkline`         | `@stackra/ui` | both      | free | F2   |
+| `sparkline`         | `@stackra/ui` | both      | pro  | P2   |
 | `sunburst-chart`    | `@stackra/ui` | both      | pro  | P2   |
 | `timeline-chart`    | `@stackra/ui` | both      | pro  | P2   |
 | `tracker-strip`     | `@stackra/ui` | both      | pro  | P2   |
@@ -298,7 +317,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 
 ### Data display (59: 30 free, 29 pro)
 
-| Component            | Package       | Platforms | Tier | Rule |
+| Component            | Today in      | Platforms | Tier | Rule |
 | -------------------- | ------------- | --------- | ---- | ---- |
 | `accordion`          | `@stackra/ui` | both      | free | F1   |
 | `account-connection` | `@stackra/ui` | both      | pro  | P1   |
@@ -362,7 +381,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 
 ### Feedback and status (28: 25 free, 3 pro)
 
-| Component             | Package       | Platforms | Tier | Rule |
+| Component             | Today in      | Platforms | Tier | Rule |
 | --------------------- | ------------- | --------- | ---- | ---- |
 | `alert`               | `@stackra/ui` | both      | free | F1   |
 | `dot-loader`          | `@stackra/ui` | both      | free | F2   |
@@ -395,7 +414,7 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 
 ### Navigation (21: 20 free, 1 pro)
 
-| Component           | Package       | Platforms | Tier | Rule |
+| Component           | Today in      | Platforms | Tier | Rule |
 | ------------------- | ------------- | --------- | ---- | ---- |
 | `back-to-top`       | `@stackra/ui` | both      | free | F2   |
 | `breadcrumbs`       | `@stackra/ui` | both      | free | F1   |
@@ -419,9 +438,9 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 | `toc-rail`          | `@stackra/ui` | both      | free | F2   |
 | `view-stack`        | `@stackra/ui` | both      | free | F2   |
 
-### Overlays (20: 15 free, 5 pro)
+### Overlays (20: 14 free, 6 pro)
 
-| Component              | Package               | Platforms | Tier | Rule |
+| Component              | Today in              | Platforms | Tier | Rule |
 | ---------------------- | --------------------- | --------- | ---- | ---- |
 | `action-menu`          | `@stackra/ui`         | both      | free | F2   |
 | `alert-dialog`         | `@stackra/ui`         | both      | free | F1   |
@@ -439,14 +458,14 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 | `modal`                | `@stackra/ui`         | both      | free | F1   |
 | `popconfirm`           | `@stackra/ui`         | both      | free | F2   |
 | `popover`              | `@stackra/ui`         | both      | free | F1   |
-| `route-overlay`        | `@stackra/navigation` | web       | free | F4   |
+| `route-overlay`        | `@stackra/navigation` | web       | pro  | P8   |
 | `sheet`                | `@stackra/ui`         | both      | free | F1   |
 | `shortcut-cheat-sheet` | `@stackra/ui`         | web       | pro  | P7   |
 | `tooltip`              | `@stackra/ui`         | both      | free | F1   |
 
 ### Layout (23: 17 free, 6 pro)
 
-| Component              | Package       | Platforms | Tier | Rule |
+| Component              | Today in      | Platforms | Tier | Rule |
 | ---------------------- | ------------- | --------- | ---- | ---- |
 | `app-header`           | `@stackra/ui` | both      | free | F2   |
 | `app-shell`            | `@stackra/ui` | both      | free | F2   |
@@ -472,73 +491,73 @@ F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
 | `surface`              | `@stackra/ui` | both      | free | F1   |
 | `two-column-layout`    | `@stackra/ui` | both      | free | F2   |
 
-### Blocks (54: 37 free, 17 pro)
+### Blocks (54: 0 free, 54 pro)
 
-| Component                   | Package                  | Platforms | Tier | Rule |
+| Component                   | Today in                 | Platforms | Tier | Rule |
 | --------------------------- | ------------------------ | --------- | ---- | ---- |
-| `account-menu`              | `@stackra/identity`      | web       | free | F4   |
-| `action-button`             | `@stackra/panel`         | web       | free | F4   |
-| `action-input-modal`        | `@stackra/panel`         | native    | free | F4   |
-| `appearance-toggle`         | `@stackra/theming`       | web       | free | F4   |
+| `account-menu`              | `@stackra/identity`      | web       | pro  | P8   |
+| `action-button`             | `@stackra/panel`         | web       | pro  | P8   |
+| `action-input-modal`        | `@stackra/panel`         | native    | pro  | P8   |
+| `appearance-toggle`         | `@stackra/theming`       | web       | pro  | P8   |
 | `ask-ai`                    | `@stackra/experience`    | web       | pro  | P4   |
 | `bento-grid`                | `@stackra/experience`    | web       | pro  | P4   |
-| `brand-logo`                | `@stackra/theming`       | both      | free | F4   |
-| `bulk-actions`              | `@stackra/panel`         | web       | free | F4   |
-| `can`                       | `@stackra/iam`           | web       | free | F4   |
+| `brand-logo`                | `@stackra/theming`       | both      | pro  | P8   |
+| `bulk-actions`              | `@stackra/panel`         | web       | pro  | P8   |
+| `can`                       | `@stackra/iam`           | web       | pro  | P8   |
 | `capability-matrix`         | `@stackra/experience`    | web       | pro  | P4   |
-| `cart`                      | `@stackra/payments`      | web       | free | F4   |
+| `cart`                      | `@stackra/payments`      | web       | pro  | P8   |
 | `chapter-title`             | `@stackra/experience`    | web       | pro  | P4   |
-| `checkout`                  | `@stackra/payments`      | web       | free | F4   |
+| `checkout`                  | `@stackra/payments`      | web       | pro  | P8   |
 | `cta-row`                   | `@stackra/experience`    | web       | pro  | P4   |
 | `cta-section`               | `@stackra/experience`    | web       | pro  | P4   |
-| `entitlement-gate`          | `@stackra/entitlements`  | web       | free | F4   |
+| `entitlement-gate`          | `@stackra/entitlements`  | web       | pro  | P8   |
 | `feature-section`           | `@stackra/experience`    | web       | pro  | P4   |
 | `hero-machine`              | `@stackra/experience`    | web       | pro  | P4   |
-| `i18n-locale-switcher`      | `@stackra/i18n`          | web       | free | F4   |
-| `member-picker`             | `@stackra/tenancy`       | web       | free | F4   |
-| `members-page`              | `@stackra/tenancy`       | web       | free | F4   |
-| `module-menu`               | `@stackra/navigation`    | both      | free | F4   |
+| `i18n-locale-switcher`      | `@stackra/i18n`          | web       | pro  | P8   |
+| `member-picker`             | `@stackra/tenancy`       | web       | pro  | P8   |
+| `members-page`              | `@stackra/tenancy`       | web       | pro  | P8   |
+| `module-menu`               | `@stackra/navigation`    | both      | pro  | P8   |
 | `mono-display`              | `@stackra/experience`    | web       | pro  | P4   |
-| `notification-inbox`        | `@stackra/notifications` | both      | free | F4   |
-| `notification-preferences`  | `@stackra/notifications` | web       | free | F4   |
-| `organization-page`         | `@stackra/tenancy`       | web       | free | F4   |
+| `notification-inbox`        | `@stackra/notifications` | both      | pro  | P8   |
+| `notification-preferences`  | `@stackra/notifications` | web       | pro  | P8   |
+| `organization-page`         | `@stackra/tenancy`       | web       | pro  | P8   |
 | `page-dock`                 | `@stackra/experience`    | web       | pro  | P4   |
-| `password-policy-checklist` | `@stackra/identity`      | web       | free | F4   |
-| `password-reset`            | `@stackra/identity`      | web       | free | F4   |
-| `pricing-table`             | `@stackra/pricing`       | web       | free | F4   |
+| `password-policy-checklist` | `@stackra/identity`      | web       | pro  | P8   |
+| `password-reset`            | `@stackra/identity`      | web       | pro  | P8   |
+| `pricing-table`             | `@stackra/pricing`       | web       | pro  | P8   |
 | `product-cards`             | `@stackra/experience`    | web       | pro  | P4   |
-| `push-primer`               | `@stackra/notifications` | native    | free | F4   |
-| `resource-form-page`        | `@stackra/panel`         | native    | free | F4   |
-| `resource-list-page`        | `@stackra/panel`         | native    | free | F4   |
-| `resource-view-page`        | `@stackra/panel`         | native    | free | F4   |
-| `role-picker`               | `@stackra/iam`           | web       | free | F4   |
-| `roles-page`                | `@stackra/iam`           | web       | free | F4   |
-| `row-actions`               | `@stackra/panel`         | web       | free | F4   |
-| `scope-picker`              | `@stackra/scope`         | web       | free | F4   |
-| `security-page`             | `@stackra/identity`      | web       | free | F4   |
-| `session-gate`              | `@stackra/identity`      | web       | free | F4   |
-| `settings-form`             | `@stackra/settings`      | web       | free | F4   |
-| `sign-in`                   | `@stackra/identity`      | both      | free | F4   |
-| `sign-up`                   | `@stackra/identity`      | web       | free | F4   |
+| `push-primer`               | `@stackra/notifications` | native    | pro  | P8   |
+| `resource-form-page`        | `@stackra/panel`         | native    | pro  | P8   |
+| `resource-list-page`        | `@stackra/panel`         | native    | pro  | P8   |
+| `resource-view-page`        | `@stackra/panel`         | native    | pro  | P8   |
+| `role-picker`               | `@stackra/iam`           | web       | pro  | P8   |
+| `roles-page`                | `@stackra/iam`           | web       | pro  | P8   |
+| `row-actions`               | `@stackra/panel`         | web       | pro  | P8   |
+| `scope-picker`              | `@stackra/scope`         | web       | pro  | P8   |
+| `security-page`             | `@stackra/identity`      | web       | pro  | P8   |
+| `session-gate`              | `@stackra/identity`      | web       | pro  | P8   |
+| `settings-form`             | `@stackra/settings`      | web       | pro  | P8   |
+| `sign-in`                   | `@stackra/identity`      | both      | pro  | P8   |
+| `sign-up`                   | `@stackra/identity`      | web       | pro  | P8   |
 | `site-footer`               | `@stackra/experience`    | web       | pro  | P4   |
 | `site-header`               | `@stackra/experience`    | web       | pro  | P4   |
 | `statement`                 | `@stackra/experience`    | web       | pro  | P4   |
 | `station`                   | `@stackra/experience`    | web       | pro  | P4   |
 | `step-switcher`             | `@stackra/experience`    | web       | pro  | P4   |
-| `step-up-dialog`            | `@stackra/identity`      | web       | free | F4   |
-| `surfaces`                  | `@stackra/experience`    | web       | free | F4   |
-| `tenant-menu`               | `@stackra/tenancy`       | both      | free | F4   |
-| `tenant-picker`             | `@stackra/tenancy`       | web       | free | F4   |
+| `step-up-dialog`            | `@stackra/identity`      | web       | pro  | P8   |
+| `surfaces`                  | `@stackra/experience`    | web       | pro  | P4   |
+| `tenant-menu`               | `@stackra/tenancy`       | both      | pro  | P8   |
+| `tenant-picker`             | `@stackra/tenancy`       | web       | pro  | P8   |
 | `terminal-stage`            | `@stackra/experience`    | web       | pro  | P4   |
 
 ### Ai (27: 3 free, 24 pro)
 
-| Component               | Package       | Platforms | Tier | Rule |
+| Component               | Today in      | Platforms | Tier | Rule |
 | ----------------------- | ------------- | --------- | ---- | ---- |
 | `ai-mark`               | `@stackra/ui` | both      | free | F2   |
 | `approval-card`         | `@stackra/ui` | web       | pro  | P5   |
 | `chat-message`          | `@stackra/ui` | both      | pro  | P5   |
-| `chat-surface`          | `@stackra/ai` | web       | pro  | P5   |
+| `chat-surface`          | `@stackra/ai` | web       | pro  | P8   |
 | `conversation-list`     | `@stackra/ui` | both      | pro  | P5   |
 | `message-actions`       | `@stackra/ui` | both      | pro  | P5   |
 | `message-scroller`      | `@stackra/ui` | both      | pro  | P5   |
