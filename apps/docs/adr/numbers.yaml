@@ -1630,3 +1630,7 @@
   status: accepted
   owner: claude
   issue: STA-2115
+"0535":
+  slug: design-system-tier-split-free-and-pro-components
+  status: proposed
+  owner: claude

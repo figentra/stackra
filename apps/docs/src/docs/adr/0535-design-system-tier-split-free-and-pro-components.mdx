@@ -1,0 +1,564 @@
+---
+title: "0535 — Design system tiers: every component is free or pro, decided by one rule and kept in the registry"
+description: "Proposed · 2026-11-20"
+---
+
+{/* Stackra file contract. Purpose: ADR 0535 (Proposed 2026-11-20), the free and pro tier of every `@stackra/ui` component: the criteria, where pro lives, and the classification of all 383 components. Boundary: decision text and the attached table only; code and registry edits follow the lead's ruling. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0023, 0075, 0077, 0302, 0303, 0461, 0469. */}
+
+<Note>
+  Proposed for the lead's ruling (design system 1.0 lane, P-STA-124). Nothing relies on it until it
+  is Accepted. Three rulings are open and are listed under Consequences. The ADR number is the next
+  free one on this branch and is not yet reserved on main with `pnpm adr:reserve`.
+</Note>
+
+## Context
+
+The registry of `@stackra/ui` declares tier `free` for all 360 entries, and `ui-pro` is empty: there is no pro
+component, in code or in the registry. The inventory of 2026-11-20 counts 383 distinct components (501 with
+compound parts) in 16 packages: 327 in `@stackra/ui` and 56 kit components in the domain packages. 70 link to a
+free HeroUI component, and the rest are ours.
+
+Three accepted decisions bound the answer:
+
+- [0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only) removed HeroUI Pro
+  from Stackra. `@stackra/ui-pro` and `@stackra-pro/ui` are withdrawn, and a component that only HeroUI Pro offered
+  is built clean-room on free HeroUI, React Aria and permissive libraries.
+- [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
+  decision 1: nothing moves out of a free package, and `@stackra-pro/*` holds new code only. Every `@stackra/ui`
+  component is already published under MIT, and Academorix imports them.
+- [0077](/adr/0077-open-core-free-and-pro-lists) decision 4 (a free package never imports a Pro package and works
+  fully without one) is the rule any pro tier must keep.
+
+The owner decided on 2026-11-20 that Stackra builds its own pro components on HeroUI community, and the lead's
+order asks for a free and pro split by criteria: free is HeroUI pass-through and basic primitives, pro is our
+composites (advanced data display, charts, date ranges, blocks, AI, editors).
+
+## Decision
+
+1. **Every component has one tier, `free` or `pro`.** The tier is a required field of the registry entry
+   (`ComponentTier` in `packages/design-system/showcase`) and of the component's row in the package manifest. A new
+   component is registered with its tier in the same change. Hooks and providers take the tier of their component.
+2. **Free criteria.** A component is `free` when any one of these holds:
+   - **F1**: it is a thin wrapper over, or a re-export of, a free HeroUI or HeroUI Native component (70 today).
+     HeroUI pass-through is free even when the topic sounds advanced: `date-range-picker` and `range-calendar` are
+     free for that reason.
+   - **F2**: it is a basic primitive: one purpose, no domain logic, no heavy third-party dependency, and an app
+     needs it to be a complete app (foundations, fields, selection, feedback, navigation and overlay basics, layout
+     primitives, `ai-mark`). It includes the starter charts (`chart`, its legend, tooltip and crosshair, and line,
+     bar, area, pie, donut and sparkline), so a free app can draw a dashboard.
+   - **F4**: it is a domain kit component that lives in a domain package (`@stackra/identity`, `tenancy`, `iam`,
+     `panel`, `payments`, `notifications` and the others). It follows its package, which is free runtime code
+     under 0461 decision 1.
+3. **Pro criteria.** A component that is none of F1, F2 or F4 is `pro`, in one of these classes:
+   - **P1** advanced data display (grids, tables with state, filters, import and export, matrices, timelines);
+   - **P2** the chart set beyond the starter charts;
+   - **P3** date and time composites (scheduling, recurrence, periods, wheels);
+   - **P4** marketing and composition blocks of `@stackra/experience`;
+   - **P5** AI surfaces (chat, prompt, drafting, conversation);
+   - **P6** editors and builders (rich text, rules, cropping, mentions);
+   - **P7** showpiece and heavy interaction composites (morphing, holo and flip cards, command palette, transfer
+     list, cascader, floating panels, dashboard grid).
+4. **The classification is the attached table.** It lists all 383 components with package, platforms, tier and
+   the rule that decided it: 249 free and 134 pro. A change to a row needs this ADR amended, or a later ADR.
+5. **Where pro lives (recommended; the lead rules).** For 1.0 the tier is metadata. All 383 components stay in
+   `@stackra/ui` and the domain packages, under MIT. The tier shows in the showcase (badge and filter), in each
+   API page and in the manifest, and it decides how a new component is documented and where a future split
+   would cut. No `@stackra/ui-pro` exists: that name is withdrawn by 0469, and a pro package is `@stackra-pro/*`
+   by the scope rule. A physical split, if the owner sells the pro tier, is a new ADR that amends 0461 decision 1
+   and picks `@stackra-pro/ui` in `figentra/stackra-pro`, served by the Stackra registry.
+6. **A free component never imports a pro component.** A free app works fully without the pro tier, as 0077
+   decision 4 requires. The check is a boundary rule between the two tiers inside `@stackra/ui`.
+7. **No HeroUI Pro in any tier**, and no pro component derives from HeroUI Pro source
+   ([0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only) decision 2).
+
+## Consequences
+
+- Every registry entry gets a tier and the 28 API docs, 3 code-only components and 12 unlisted exports in the gap
+  list are registered with one (step 2 of the lane).
+- Under decision 5 the label alone sells nothing. What the pro tier buys (support, entitlement, early access, a
+  licence) is a commercial decision this ADR does not make.
+- Academorix switches its imports to the published packages with no visual change, because no component moves.
+- **Open ruling 1, the home.** Decision 5 (tier as a field, one MIT package) or a physical split now to
+  `@stackra-pro/ui`. The split breaks 0461 decision 1, forces a deprecation path for 0.33.x imports and needs
+  the private `stackra-pro` repository, which this lane does not touch.
+- **Open ruling 2, domain kits.** The 38 domain kit components are free by F4 because 0461 makes runtime code
+  free. The lead's wording lists blocks as pro. This table makes only the 17 `@stackra/experience` blocks and
+  `chat-surface` pro.
+- **Open ruling 3, starter charts.** Ten chart components are free so a free app can draw a dashboard. If
+  charts are wholly pro, those ten move to P2.
+- A component that needs a different tier is a one-row change plus a changelog line, and a free to pro move is
+  a breaking change after publication.
+
+## Enforcement
+
+planned — the `ComponentTier` enum and the `tier` field already exist in
+`packages/design-system/showcase/src/schemas/component-entry.schema.ts`; the work is a check that every
+`@stackra/ui` export has an entry with a tier equal to this table, and an oxlint boundary rule that a free
+component imports no pro component (decision 6). `HERO_LINK` and `PRO_DEPENDENCIES` already refuse HeroUI Pro.
+
+## Supersedes and sources
+
+Supersedes: none. Amends nothing while decision 5 stands; the physical split would amend
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
+decision 1. Related: [0023](/adr/0023-stackra-is-a-framework),
+[0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services),
+[0077](/adr/0077-open-core-free-and-pro-lists),
+[0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground),
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions),
+[0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only). Sources: the inventory
+of 2026-11-20 (383 components) and the lead's order of 2026-11-20 (project P-STA-124).
+
+## Attached table: the 383 components
+
+Rules: **F1** HeroUI pass-through, **F2** basic primitive, **F4** domain kit follows its package, **P1** advanced
+data display, **P2** charts beyond the starter set, **P3** date and time composites, **P4** experience blocks,
+**P5** AI surfaces, **P6** editors and builders, **P7** showpiece composites. Totals: 249 free (F1 70, F2 141,
+F4 38) and 134 pro (P1 26, P2 28, P3 7, P4 17, P5 24, P6 6, P7 26).
+
+### Foundations (16: 16 free, 0 pro)
+
+| Component          | Package       | Platforms | Tier | Rule |
+| ------------------ | ------------- | --------- | ---- | ---- |
+| `bidi`             | `@stackra/ui` | both      | free | F2   |
+| `code`             | `@stackra/ui` | both      | free | F2   |
+| `dither-art`       | `@stackra/ui` | web       | free | F2   |
+| `flag`             | `@stackra/ui` | web       | free | F2   |
+| `glass`            | `@stackra/ui` | native    | free | F2   |
+| `heading`          | `@stackra/ui` | both      | free | F2   |
+| `icon`             | `@stackra/ui` | both      | free | F2   |
+| `illustration`     | `@stackra/ui` | web       | free | F2   |
+| `press-feedback`   | `@stackra/ui` | both      | free | F2   |
+| `props-playground` | `@stackra/ui` | web       | free | F2   |
+| `reveal`           | `@stackra/ui` | native    | free | F2   |
+| `slot-icon`        | `@stackra/ui` | both      | free | F2   |
+| `text-reveal`      | `@stackra/ui` | both      | free | F2   |
+| `theme-bars`       | `@stackra/ui` | native    | free | F2   |
+| `typography`       | `@stackra/ui` | both      | free | F1   |
+| `visually-hidden`  | `@stackra/ui` | both      | free | F2   |
+
+### Actions (16: 13 free, 3 pro)
+
+| Component                | Package       | Platforms | Tier | Rule |
+| ------------------------ | ------------- | --------- | ---- | ---- |
+| `button`                 | `@stackra/ui` | both      | free | F1   |
+| `button-group`           | `@stackra/ui` | both      | free | F1   |
+| `close-button`           | `@stackra/ui` | both      | free | F1   |
+| `copy-button`            | `@stackra/ui` | both      | free | F2   |
+| `fab`                    | `@stackra/ui` | both      | free | F2   |
+| `icon-button`            | `@stackra/ui` | both      | free | F2   |
+| `keyboard-shortcuts`     | `@stackra/ui` | web       | free | F1   |
+| `morph-button`           | `@stackra/ui` | both      | pro  | P7   |
+| `overflow-toolbar`       | `@stackra/ui` | both      | free | F1   |
+| `progress-button`        | `@stackra/ui` | both      | pro  | P7   |
+| `reaction-button`        | `@stackra/ui` | both      | free | F2   |
+| `share-button`           | `@stackra/ui` | both      | free | F2   |
+| `slide-to-confirm`       | `@stackra/ui` | both      | pro  | P7   |
+| `social-sign-in-buttons` | `@stackra/ui` | both      | free | F2   |
+| `split-button`           | `@stackra/ui` | both      | free | F1   |
+| `toggle-button-group`    | `@stackra/ui` | native    | free | F2   |
+
+### Inputs and forms (42: 36 free, 6 pro)
+
+| Component                 | Package       | Platforms | Tier | Rule |
+| ------------------------- | ------------- | --------- | ---- | ---- |
+| `address-field`           | `@stackra/ui` | both      | pro  | P6   |
+| `angle-slider`            | `@stackra/ui` | both      | free | F2   |
+| `checkbox-field`          | `@stackra/ui` | web       | free | F2   |
+| `color-field`             | `@stackra/ui` | web       | free | F1   |
+| `color-picker`            | `@stackra/ui` | both      | free | F1   |
+| `description`             | `@stackra/ui` | both      | free | F2   |
+| `drop-zone`               | `@stackra/ui` | both      | free | F2   |
+| `field`                   | `@stackra/ui` | both      | free | F2   |
+| `field-error`             | `@stackra/ui` | both      | free | F2   |
+| `file-trigger`            | `@stackra/ui` | both      | free | F2   |
+| `form`                    | `@stackra/ui` | both      | free | F1   |
+| `form-error-summary`      | `@stackra/ui` | both      | free | F2   |
+| `form-field`              | `@stackra/ui` | both      | free | F2   |
+| `form-section`            | `@stackra/ui` | both      | free | F2   |
+| `image-cropper`           | `@stackra/ui` | both      | pro  | P6   |
+| `inline-edit`             | `@stackra/ui` | both      | free | F2   |
+| `input-group`             | `@stackra/ui` | both      | free | F1   |
+| `label`                   | `@stackra/ui` | both      | free | F2   |
+| `masked-field`            | `@stackra/ui` | both      | free | F2   |
+| `mention-input`           | `@stackra/ui` | both      | pro  | P6   |
+| `mode-switch`             | `@stackra/ui` | both      | free | F2   |
+| `money-field`             | `@stackra/ui` | both      | free | F1   |
+| `number-field`            | `@stackra/ui` | both      | free | F1   |
+| `number-pad`              | `@stackra/ui` | both      | free | F2   |
+| `otp-input`               | `@stackra/ui` | both      | free | F1   |
+| `password-field`          | `@stackra/ui` | both      | free | F1   |
+| `phone-field`             | `@stackra/ui` | both      | free | F2   |
+| `quantity-stepper`        | `@stackra/ui` | both      | free | F2   |
+| `range-slider`            | `@stackra/ui` | both      | free | F1   |
+| `rating`                  | `@stackra/ui` | both      | free | F2   |
+| `rich-text-editor`        | `@stackra/ui` | both      | pro  | P6   |
+| `rule-builder`            | `@stackra/ui` | both      | pro  | P6   |
+| `search-field`            | `@stackra/ui` | both      | free | F1   |
+| `setting-row`             | `@stackra/ui` | both      | free | F2   |
+| `settings-cell`           | `@stackra/ui` | both      | free | F2   |
+| `shortcut-settings-panel` | `@stackra/ui` | web       | pro  | P6   |
+| `slider`                  | `@stackra/ui` | both      | free | F1   |
+| `tag-input`               | `@stackra/ui` | both      | free | F2   |
+| `text-area`               | `@stackra/ui` | both      | free | F1   |
+| `text-area-field`         | `@stackra/ui` | web       | free | F2   |
+| `text-field`              | `@stackra/ui` | both      | free | F1   |
+| `turnstile`               | `@stackra/ui` | web       | free | F2   |
+
+### Selection (22: 17 free, 5 pro)
+
+| Component               | Package       | Platforms | Tier | Rule |
+| ----------------------- | ------------- | --------- | ---- | ---- |
+| `autocomplete`          | `@stackra/ui` | web       | free | F1   |
+| `cascader`              | `@stackra/ui` | both      | pro  | P7   |
+| `checkbox`              | `@stackra/ui` | both      | free | F1   |
+| `checkbox-button-group` | `@stackra/ui` | both      | free | F2   |
+| `checkbox-group`        | `@stackra/ui` | both      | free | F1   |
+| `combo-box`             | `@stackra/ui` | both      | free | F1   |
+| `country-select`        | `@stackra/ui` | both      | free | F2   |
+| `emoji-picker`          | `@stackra/ui` | both      | pro  | P7   |
+| `entity-picker`         | `@stackra/ui` | both      | pro  | P7   |
+| `inline-select`         | `@stackra/ui` | both      | free | F2   |
+| `listbox`               | `@stackra/ui` | both      | free | F1   |
+| `multi-select`          | `@stackra/ui` | both      | free | F1   |
+| `native-select`         | `@stackra/ui` | both      | free | F2   |
+| `radio-button-group`    | `@stackra/ui` | both      | free | F2   |
+| `radio-group`           | `@stackra/ui` | both      | free | F1   |
+| `segmented-control`     | `@stackra/ui` | both      | free | F2   |
+| `select`                | `@stackra/ui` | both      | free | F1   |
+| `switch`                | `@stackra/ui` | both      | free | F1   |
+| `tag-group`             | `@stackra/ui` | both      | free | F1   |
+| `toggle-button`         | `@stackra/ui` | both      | free | F1   |
+| `transfer-list`         | `@stackra/ui` | both      | pro  | P7   |
+| `tree-select`           | `@stackra/ui` | both      | pro  | P7   |
+
+### Date and time (17: 10 free, 7 pro)
+
+| Component           | Package       | Platforms | Tier | Rule |
+| ------------------- | ------------- | --------- | ---- | ---- |
+| `calendar`          | `@stackra/ui` | both      | free | F1   |
+| `countdown`         | `@stackra/ui` | both      | free | F2   |
+| `date-field`        | `@stackra/ui` | both      | free | F1   |
+| `date-label`        | `@stackra/ui` | both      | free | F2   |
+| `date-picker`       | `@stackra/ui` | both      | free | F1   |
+| `date-range-picker` | `@stackra/ui` | both      | free | F1   |
+| `date-time-picker`  | `@stackra/ui` | both      | pro  | P3   |
+| `period-picker`     | `@stackra/ui` | both      | pro  | P3   |
+| `range-calendar`    | `@stackra/ui` | both      | free | F1   |
+| `recurrence-editor` | `@stackra/ui` | both      | pro  | P3   |
+| `scheduler`         | `@stackra/ui` | both      | pro  | P3   |
+| `scheduling-board`  | `@stackra/ui` | both      | pro  | P3   |
+| `time-clock`        | `@stackra/ui` | both      | pro  | P3   |
+| `time-field`        | `@stackra/ui` | both      | free | F1   |
+| `time-picker`       | `@stackra/ui` | both      | free | F2   |
+| `wheel-picker`      | `@stackra/ui` | both      | pro  | P3   |
+| `year-picker`       | `@stackra/ui` | both      | free | F2   |
+
+### Charts (38: 10 free, 28 pro)
+
+| Component           | Package       | Platforms | Tier | Rule |
+| ------------------- | ------------- | --------- | ---- | ---- |
+| `area-chart`        | `@stackra/ui` | both      | free | F2   |
+| `bar-chart`         | `@stackra/ui` | both      | free | F2   |
+| `bar-list`          | `@stackra/ui` | both      | pro  | P2   |
+| `box-plot-chart`    | `@stackra/ui` | both      | pro  | P2   |
+| `bullet-chart`      | `@stackra/ui` | both      | pro  | P2   |
+| `calendar-heatmap`  | `@stackra/ui` | both      | pro  | P2   |
+| `candlestick-chart` | `@stackra/ui` | both      | pro  | P2   |
+| `chart`             | `@stackra/ui` | both      | free | F2   |
+| `chart-crosshair`   | `@stackra/ui` | native    | free | F2   |
+| `chart-export`      | `@stackra/ui` | both      | pro  | P2   |
+| `chart-legend`      | `@stackra/ui` | both      | free | F2   |
+| `chart-tooltip`     | `@stackra/ui` | web       | free | F2   |
+| `chord-diagram`     | `@stackra/ui` | both      | pro  | P2   |
+| `choropleth-map`    | `@stackra/ui` | both      | pro  | P2   |
+| `composed-chart`    | `@stackra/ui` | both      | pro  | P2   |
+| `donut-chart`       | `@stackra/ui` | both      | free | F2   |
+| `funnel-chart`      | `@stackra/ui` | both      | pro  | P2   |
+| `gauge-chart`       | `@stackra/ui` | both      | pro  | P2   |
+| `heatmap-chart`     | `@stackra/ui` | both      | pro  | P2   |
+| `histogram-chart`   | `@stackra/ui` | both      | pro  | P2   |
+| `line-chart`        | `@stackra/ui` | both      | free | F2   |
+| `network-graph`     | `@stackra/ui` | both      | pro  | P2   |
+| `pie-chart`         | `@stackra/ui` | both      | free | F2   |
+| `polar-chart`       | `@stackra/ui` | both      | pro  | P2   |
+| `radar-chart`       | `@stackra/ui` | both      | pro  | P2   |
+| `radial-bar-chart`  | `@stackra/ui` | both      | pro  | P2   |
+| `range-bar-chart`   | `@stackra/ui` | both      | pro  | P2   |
+| `sankey-chart`      | `@stackra/ui` | both      | pro  | P2   |
+| `scatter-chart`     | `@stackra/ui` | both      | pro  | P2   |
+| `sparkline`         | `@stackra/ui` | both      | free | F2   |
+| `sunburst-chart`    | `@stackra/ui` | both      | pro  | P2   |
+| `timeline-chart`    | `@stackra/ui` | both      | pro  | P2   |
+| `tracker-strip`     | `@stackra/ui` | both      | pro  | P2   |
+| `tree-diagram`      | `@stackra/ui` | both      | pro  | P2   |
+| `treemap-chart`     | `@stackra/ui` | both      | pro  | P2   |
+| `waffle-chart`      | `@stackra/ui` | both      | pro  | P2   |
+| `waterfall-chart`   | `@stackra/ui` | both      | pro  | P2   |
+| `word-cloud`        | `@stackra/ui` | both      | pro  | P2   |
+
+### Data display (59: 30 free, 29 pro)
+
+| Component            | Package       | Platforms | Tier | Rule |
+| -------------------- | ------------- | --------- | ---- | ---- |
+| `accordion`          | `@stackra/ui` | both      | free | F1   |
+| `account-connection` | `@stackra/ui` | both      | pro  | P1   |
+| `attachment-card`    | `@stackra/ui` | both      | pro  | P1   |
+| `avatar`             | `@stackra/ui` | both      | free | F1   |
+| `avatar-group`       | `@stackra/ui` | both      | free | F1   |
+| `badge`              | `@stackra/ui` | both      | free | F1   |
+| `barcode`            | `@stackra/ui` | both      | free | F2   |
+| `bulk-action-bar`    | `@stackra/ui` | both      | pro  | P1   |
+| `card`               | `@stackra/ui` | both      | free | F1   |
+| `carousel`           | `@stackra/ui` | both      | free | F2   |
+| `chip`               | `@stackra/ui` | both      | free | F1   |
+| `code-block`         | `@stackra/ui` | both      | free | F2   |
+| `color-swatch`       | `@stackra/ui` | web       | free | F1   |
+| `column-chooser`     | `@stackra/ui` | both      | pro  | P1   |
+| `comment-thread`     | `@stackra/ui` | both      | pro  | P1   |
+| `data-grid`          | `@stackra/ui` | both      | pro  | P1   |
+| `data-table`         | `@stackra/ui` | both      | pro  | P1   |
+| `data-view`          | `@stackra/ui` | both      | pro  | P1   |
+| `diff-review`        | `@stackra/ui` | both      | pro  | P1   |
+| `disclosure`         | `@stackra/ui` | both      | free | F1   |
+| `export-dialog`      | `@stackra/ui` | both      | pro  | P1   |
+| `file-name`          | `@stackra/ui` | web       | free | F2   |
+| `filter-bar`         | `@stackra/ui` | both      | pro  | P1   |
+| `filter-panel`       | `@stackra/ui` | both      | pro  | P1   |
+| `flip-card`          | `@stackra/ui` | both      | pro  | P7   |
+| `gallery`            | `@stackra/ui` | both      | pro  | P1   |
+| `highlight`          | `@stackra/ui` | both      | free | F2   |
+| `holo-card`          | `@stackra/ui` | both      | pro  | P7   |
+| `image`              | `@stackra/ui` | both      | free | F2   |
+| `import-dialog`      | `@stackra/ui` | both      | pro  | P1   |
+| `import-flow`        | `@stackra/ui` | both      | pro  | P1   |
+| `item-card`          | `@stackra/ui` | both      | free | F2   |
+| `kpi`                | `@stackra/ui` | both      | free | F2   |
+| `kpi-group`          | `@stackra/ui` | both      | pro  | P1   |
+| `list`               | `@stackra/ui` | both      | free | F1   |
+| `marker-map`         | `@stackra/ui` | web       | pro  | P1   |
+| `marquee`            | `@stackra/ui` | both      | free | F2   |
+| `media-player`       | `@stackra/ui` | both      | pro  | P1   |
+| `number-ticker`      | `@stackra/ui` | both      | free | F2   |
+| `number-value`       | `@stackra/ui` | both      | free | F2   |
+| `overflow-list`      | `@stackra/ui` | both      | free | F2   |
+| `package-list`       | `@stackra/ui` | web       | pro  | P1   |
+| `pdf-preview`        | `@stackra/ui` | web       | pro  | P1   |
+| `permissions-matrix` | `@stackra/ui` | both      | pro  | P1   |
+| `property-list`      | `@stackra/ui` | both      | free | F2   |
+| `qr-code`            | `@stackra/ui` | both      | free | F2   |
+| `saved-views`        | `@stackra/ui` | both      | pro  | P1   |
+| `shortcut-hint`      | `@stackra/ui` | web       | free | F2   |
+| `sortable-list`      | `@stackra/ui` | both      | pro  | P1   |
+| `stacked-meter`      | `@stackra/ui` | both      | free | F2   |
+| `stat`               | `@stackra/ui` | both      | free | F2   |
+| `swipeable-row`      | `@stackra/ui` | native    | free | F2   |
+| `table`              | `@stackra/ui` | both      | free | F1   |
+| `terminal-demo`      | `@stackra/ui` | web       | pro  | P7   |
+| `thumbnail`          | `@stackra/ui` | both      | free | F2   |
+| `timeline`           | `@stackra/ui` | both      | pro  | P1   |
+| `tree-view`          | `@stackra/ui` | both      | pro  | P1   |
+| `truncate`           | `@stackra/ui` | both      | free | F2   |
+| `widget-frame`       | `@stackra/ui` | both      | pro  | P1   |
+
+### Feedback and status (28: 25 free, 3 pro)
+
+| Component             | Package       | Platforms | Tier | Rule |
+| --------------------- | ------------- | --------- | ---- | ---- |
+| `alert`               | `@stackra/ui` | both      | free | F1   |
+| `dot-loader`          | `@stackra/ui` | both      | free | F2   |
+| `empty-state`         | `@stackra/ui` | both      | free | F2   |
+| `environment-banner`  | `@stackra/ui` | both      | free | F2   |
+| `error-page`          | `@stackra/ui` | both      | free | F2   |
+| `error-state`         | `@stackra/ui` | both      | free | F2   |
+| `feedback-icon`       | `@stackra/ui` | both      | free | F2   |
+| `inline-loading`      | `@stackra/ui` | both      | free | F2   |
+| `loading-overlay`     | `@stackra/ui` | both      | free | F2   |
+| `meter`               | `@stackra/ui` | both      | free | F1   |
+| `notifications-panel` | `@stackra/ui` | both      | pro  | P7   |
+| `page-skeleton`       | `@stackra/ui` | both      | free | F2   |
+| `progress-bar`        | `@stackra/ui` | both      | free | F1   |
+| `progress-circle`     | `@stackra/ui` | both      | free | F1   |
+| `pull-to-refresh`     | `@stackra/ui` | native    | free | F2   |
+| `result`              | `@stackra/ui` | both      | free | F2   |
+| `route-progress`      | `@stackra/ui` | both      | free | F2   |
+| `save-bar`            | `@stackra/ui` | both      | free | F2   |
+| `setup-guide`         | `@stackra/ui` | both      | pro  | P7   |
+| `skeleton`            | `@stackra/ui` | both      | free | F1   |
+| `skeleton-group`      | `@stackra/ui` | both      | free | F2   |
+| `spinner`             | `@stackra/ui` | both      | free | F1   |
+| `state-layout`        | `@stackra/ui` | both      | free | F2   |
+| `status-badge`        | `@stackra/ui` | both      | free | F2   |
+| `status-indicator`    | `@stackra/ui` | both      | free | F2   |
+| `system-banner`       | `@stackra/ui` | both      | free | F1   |
+| `task-tray`           | `@stackra/ui` | both      | pro  | P7   |
+| `toast`               | `@stackra/ui` | both      | free | F1   |
+
+### Navigation (21: 20 free, 1 pro)
+
+| Component           | Package       | Platforms | Tier | Rule |
+| ------------------- | ------------- | --------- | ---- | ---- |
+| `back-to-top`       | `@stackra/ui` | both      | free | F2   |
+| `breadcrumbs`       | `@stackra/ui` | both      | free | F1   |
+| `button-link`       | `@stackra/ui` | web       | free | F2   |
+| `cursor-pagination` | `@stackra/ui` | both      | free | F2   |
+| `link`              | `@stackra/ui` | both      | free | F1   |
+| `locale-switcher`   | `@stackra/ui` | both      | free | F2   |
+| `menubar`           | `@stackra/ui` | web       | free | F2   |
+| `morph-tabs`        | `@stackra/ui` | both      | pro  | P7   |
+| `navigation-header` | `@stackra/ui` | both      | free | F2   |
+| `navigation-list`   | `@stackra/ui` | both      | free | F2   |
+| `navigation-menu`   | `@stackra/ui` | web       | free | F2   |
+| `page-indicator`    | `@stackra/ui` | both      | free | F2   |
+| `pagination`        | `@stackra/ui` | both      | free | F1   |
+| `side-panel`        | `@stackra/ui` | web       | free | F2   |
+| `sidebar`           | `@stackra/ui` | both      | free | F2   |
+| `stepper`           | `@stackra/ui` | both      | free | F2   |
+| `swipeable-tabs`    | `@stackra/ui` | both      | free | F2   |
+| `tab-bar`           | `@stackra/ui` | both      | free | F2   |
+| `tabs`              | `@stackra/ui` | both      | free | F1   |
+| `toc-rail`          | `@stackra/ui` | both      | free | F2   |
+| `view-stack`        | `@stackra/ui` | both      | free | F2   |
+
+### Overlays (20: 15 free, 5 pro)
+
+| Component              | Package               | Platforms | Tier | Rule |
+| ---------------------- | --------------------- | --------- | ---- | ---- |
+| `action-menu`          | `@stackra/ui`         | both      | free | F2   |
+| `alert-dialog`         | `@stackra/ui`         | both      | free | F1   |
+| `coach-mark`           | `@stackra/ui`         | both      | pro  | P7   |
+| `command-palette`      | `@stackra/ui`         | both      | pro  | P7   |
+| `context-menu`         | `@stackra/ui`         | both      | free | F2   |
+| `contextual-help`      | `@stackra/ui`         | both      | free | F1   |
+| `drawer`               | `@stackra/ui`         | both      | free | F1   |
+| `dropdown`             | `@stackra/ui`         | web       | free | F2   |
+| `floating-panel`       | `@stackra/ui`         | web       | pro  | P7   |
+| `hover-card`           | `@stackra/ui`         | both      | free | F2   |
+| `leave-confirmation`   | `@stackra/ui`         | both      | free | F2   |
+| `lightbox`             | `@stackra/ui`         | both      | pro  | P7   |
+| `menu`                 | `@stackra/ui`         | both      | free | F1   |
+| `modal`                | `@stackra/ui`         | both      | free | F1   |
+| `popconfirm`           | `@stackra/ui`         | both      | free | F2   |
+| `popover`              | `@stackra/ui`         | both      | free | F1   |
+| `route-overlay`        | `@stackra/navigation` | web       | free | F4   |
+| `sheet`                | `@stackra/ui`         | both      | free | F1   |
+| `shortcut-cheat-sheet` | `@stackra/ui`         | web       | pro  | P7   |
+| `tooltip`              | `@stackra/ui`         | both      | free | F1   |
+
+### Layout (23: 17 free, 6 pro)
+
+| Component              | Package       | Platforms | Tier | Rule |
+| ---------------------- | ------------- | --------- | ---- | ---- |
+| `app-header`           | `@stackra/ui` | both      | free | F2   |
+| `app-shell`            | `@stackra/ui` | both      | free | F2   |
+| `aspect-ratio`         | `@stackra/ui` | both      | free | F2   |
+| `bento-card`           | `@stackra/ui` | web       | pro  | P7   |
+| `blueprint-section`    | `@stackra/ui` | web       | pro  | P7   |
+| `dashboard-grid`       | `@stackra/ui` | both      | pro  | P7   |
+| `footer`               | `@stackra/ui` | web       | free | F2   |
+| `frame`                | `@stackra/ui` | web       | free | F2   |
+| `fullscreen-bar`       | `@stackra/ui` | both      | free | F2   |
+| `kiosk-surface`        | `@stackra/ui` | both      | pro  | P7   |
+| `layout`               | `@stackra/ui` | both      | free | F2   |
+| `page-actions`         | `@stackra/ui` | both      | free | F2   |
+| `page-header`          | `@stackra/ui` | both      | free | F2   |
+| `schematic`            | `@stackra/ui` | web       | pro  | P7   |
+| `screen`               | `@stackra/ui` | both      | free | F2   |
+| `scroll-area`          | `@stackra/ui` | both      | free | F1   |
+| `section`              | `@stackra/ui` | both      | free | F2   |
+| `section-dock`         | `@stackra/ui` | web       | pro  | P7   |
+| `separator`            | `@stackra/ui` | both      | free | F1   |
+| `single-column-layout` | `@stackra/ui` | both      | free | F2   |
+| `split-view`           | `@stackra/ui` | both      | free | F2   |
+| `surface`              | `@stackra/ui` | both      | free | F1   |
+| `two-column-layout`    | `@stackra/ui` | both      | free | F2   |
+
+### Blocks (54: 37 free, 17 pro)
+
+| Component                   | Package                  | Platforms | Tier | Rule |
+| --------------------------- | ------------------------ | --------- | ---- | ---- |
+| `account-menu`              | `@stackra/identity`      | web       | free | F4   |
+| `action-button`             | `@stackra/panel`         | web       | free | F4   |
+| `action-input-modal`        | `@stackra/panel`         | native    | free | F4   |
+| `appearance-toggle`         | `@stackra/theming`       | web       | free | F4   |
+| `ask-ai`                    | `@stackra/experience`    | web       | pro  | P4   |
+| `bento-grid`                | `@stackra/experience`    | web       | pro  | P4   |
+| `brand-logo`                | `@stackra/theming`       | both      | free | F4   |
+| `bulk-actions`              | `@stackra/panel`         | web       | free | F4   |
+| `can`                       | `@stackra/iam`           | web       | free | F4   |
+| `capability-matrix`         | `@stackra/experience`    | web       | pro  | P4   |
+| `cart`                      | `@stackra/payments`      | web       | free | F4   |
+| `chapter-title`             | `@stackra/experience`    | web       | pro  | P4   |
+| `checkout`                  | `@stackra/payments`      | web       | free | F4   |
+| `cta-row`                   | `@stackra/experience`    | web       | pro  | P4   |
+| `cta-section`               | `@stackra/experience`    | web       | pro  | P4   |
+| `entitlement-gate`          | `@stackra/entitlements`  | web       | free | F4   |
+| `feature-section`           | `@stackra/experience`    | web       | pro  | P4   |
+| `hero-machine`              | `@stackra/experience`    | web       | pro  | P4   |
+| `i18n-locale-switcher`      | `@stackra/i18n`          | web       | free | F4   |
+| `member-picker`             | `@stackra/tenancy`       | web       | free | F4   |
+| `members-page`              | `@stackra/tenancy`       | web       | free | F4   |
+| `module-menu`               | `@stackra/navigation`    | both      | free | F4   |
+| `mono-display`              | `@stackra/experience`    | web       | pro  | P4   |
+| `notification-inbox`        | `@stackra/notifications` | both      | free | F4   |
+| `notification-preferences`  | `@stackra/notifications` | web       | free | F4   |
+| `organization-page`         | `@stackra/tenancy`       | web       | free | F4   |
+| `page-dock`                 | `@stackra/experience`    | web       | pro  | P4   |
+| `password-policy-checklist` | `@stackra/identity`      | web       | free | F4   |
+| `password-reset`            | `@stackra/identity`      | web       | free | F4   |
+| `pricing-table`             | `@stackra/pricing`       | web       | free | F4   |
+| `product-cards`             | `@stackra/experience`    | web       | pro  | P4   |
+| `push-primer`               | `@stackra/notifications` | native    | free | F4   |
+| `resource-form-page`        | `@stackra/panel`         | native    | free | F4   |
+| `resource-list-page`        | `@stackra/panel`         | native    | free | F4   |
+| `resource-view-page`        | `@stackra/panel`         | native    | free | F4   |
+| `role-picker`               | `@stackra/iam`           | web       | free | F4   |
+| `roles-page`                | `@stackra/iam`           | web       | free | F4   |
+| `row-actions`               | `@stackra/panel`         | web       | free | F4   |
+| `scope-picker`              | `@stackra/scope`         | web       | free | F4   |
+| `security-page`             | `@stackra/identity`      | web       | free | F4   |
+| `session-gate`              | `@stackra/identity`      | web       | free | F4   |
+| `settings-form`             | `@stackra/settings`      | web       | free | F4   |
+| `sign-in`                   | `@stackra/identity`      | both      | free | F4   |
+| `sign-up`                   | `@stackra/identity`      | web       | free | F4   |
+| `site-footer`               | `@stackra/experience`    | web       | pro  | P4   |
+| `site-header`               | `@stackra/experience`    | web       | pro  | P4   |
+| `statement`                 | `@stackra/experience`    | web       | pro  | P4   |
+| `station`                   | `@stackra/experience`    | web       | pro  | P4   |
+| `step-switcher`             | `@stackra/experience`    | web       | pro  | P4   |
+| `step-up-dialog`            | `@stackra/identity`      | web       | free | F4   |
+| `surfaces`                  | `@stackra/experience`    | web       | free | F4   |
+| `tenant-menu`               | `@stackra/tenancy`       | both      | free | F4   |
+| `tenant-picker`             | `@stackra/tenancy`       | web       | free | F4   |
+| `terminal-stage`            | `@stackra/experience`    | web       | pro  | P4   |
+
+### Ai (27: 3 free, 24 pro)
+
+| Component               | Package       | Platforms | Tier | Rule |
+| ----------------------- | ------------- | --------- | ---- | ---- |
+| `ai-mark`               | `@stackra/ui` | both      | free | F2   |
+| `approval-card`         | `@stackra/ui` | web       | pro  | P5   |
+| `chat-message`          | `@stackra/ui` | both      | pro  | P5   |
+| `chat-surface`          | `@stackra/ai` | web       | pro  | P5   |
+| `conversation-list`     | `@stackra/ui` | both      | pro  | P5   |
+| `message-actions`       | `@stackra/ui` | both      | pro  | P5   |
+| `message-scroller`      | `@stackra/ui` | both      | pro  | P5   |
+| `model-picker`          | `@stackra/ui` | both      | pro  | P5   |
+| `prompt-input`          | `@stackra/ui` | both      | pro  | P5   |
+| `prompt-suggestions`    | `@stackra/ui` | both      | pro  | P5   |
+| `questionnaire-card`    | `@stackra/ui` | both      | pro  | P5   |
+| `reasoning`             | `@stackra/ui` | both      | pro  | P5   |
+| `shimmer`               | `@stackra/ui` | both      | free | F2   |
+| `sources`               | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-ask-box`          | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-button`           | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-collection-tools` | `@stackra/ui` | web       | pro  | P5   |
+| `tamo-draft-review`     | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-field-assist`     | `@stackra/ui` | native    | pro  | P5   |
+| `tamo-ghost-text`       | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-launcher`         | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-mark`             | `@stackra/ui` | both      | free | F2   |
+| `tamo-marker`           | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-menu`             | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-panel`            | `@stackra/ui` | both      | pro  | P5   |
+| `tamo-status-line`      | `@stackra/ui` | both      | pro  | P5   |
+| `voice-input`           | `@stackra/ui` | both      | pro  | P5   |
