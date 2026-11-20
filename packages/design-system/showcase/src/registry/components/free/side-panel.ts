@@ -12,7 +12,7 @@ export const FREE_SIDE_PANEL: ComponentEntry = {
   slug: "side-panel",
   tier: "free",
   category: "navigation",
-  platforms: ["react"],
+  platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "SidePanel",
   parts: [

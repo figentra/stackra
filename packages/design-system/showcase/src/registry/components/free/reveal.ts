@@ -12,7 +12,7 @@ export const FREE_REVEAL: ComponentEntry = {
   slug: "reveal",
   tier: "free",
   category: "foundations",
-  platforms: ["native"],
+  platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "Reveal",
   parts: ["Reveal"],
