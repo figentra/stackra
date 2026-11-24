@@ -1,0 +1,402 @@
+/**
+ * Stackra file contract:
+ * Purpose: run the publish plan and the publish script that `runway-npm.yml` writes (its "Registry" step) against a
+ *          fixture workspace, so a release publishes dependencies first and a run that stops half way, or ends early,
+ *          is loud and leaves a set that installs. 0.33.1 published 99 of 119 packages in path order and left 22 of them
+ *          pinning a version of an unpublished package (@stackra/consent -> @stackra/iam).
+ * Boundary: the two scripts are cut out of the workflow text and run as written; `curl` is a stand-in registry and
+ *           `pnpm publish` records what it was asked to publish. Every other `pnpm` command is the real one.
+ * Runtime: node, bash, jq, pnpm
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0453 decision 7 (versions are immutable); ADR 0468.
+ */
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { execFileSync, spawnSync } from "node:child_process";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+
+const WORKFLOW = readFileSync(".github/workflows/runway-npm.yml", "utf8");
+const REGISTRY = "https://registry.test/";
+
+/** The body of the heredoc `cat > "$RUNNER_TEMP/<file>" <<'<tag>'`, without the workflow's indentation. */
+function heredoc(file, tag) {
+  const start = WORKFLOW.indexOf(`cat > "$RUNNER_TEMP/${file}" <<'${tag}'\n`);
+  assert.notEqual(start, -1, `runway-npm.yml no longer writes ${file}`);
+  const lines = WORKFLOW.slice(WORKFLOW.indexOf("\n", start) + 1).split("\n");
+  const body = lines.slice(
+    0,
+    lines.findIndex((line) => line.trim() === tag),
+  );
+  const indent = /^ */.exec(body[0])[0].length;
+  return `${body.map((line) => line.slice(indent)).join("\n")}\n`;
+}
+
+const PLAN_SCRIPT = heredoc("registry-plan.mjs", "MJS");
+const PUBLISH_SCRIPT = heredoc("registry-publish.sh", "SH");
+
+/** The directories of the real `node` and `pnpm`, which a shim directory must not hide from the scripts. */
+function realToolDirs() {
+  let pnpm;
+  try {
+    pnpm = execFileSync("mise", ["which", "pnpm"], { encoding: "utf8" }).trim();
+  } catch {
+    pnpm = execFileSync("which", ["pnpm"], { encoding: "utf8" }).trim();
+  }
+  return [dirname(process.execPath), dirname(pnpm)];
+}
+
+const CURL_SHIM = `#!/usr/bin/env bash
+# The registry's answers: the ID token, the token exchange, and "is name@version there" by a file per version.
+url="\${!#}"
+case "$url" in
+  "\${ACTIONS_ID_TOKEN_REQUEST_URL%%\\?*}"*) echo '{"value":"id-token"}' ;;
+  *oidc/token/exchange*) echo '{"token":"publish-token"}' ;;
+  *) key="\${url#"$REGISTRY"}"; key="\${key//\\//@}"
+     [ -e "$STATE/registry/$key" ] ;;
+esac
+`;
+
+const PNPM_SHIM = `#!/usr/bin/env bash
+# \`pnpm publish\` records itself and puts the version on the stand-in registry; everything else is the real pnpm.
+if [ "$1" = publish ]; then
+  cat > /dev/null # a greedy reader on stdin, as the loop's input would suffer from
+  name="$(node -p "require('./package.json').name")"
+  version="$(node -p "require('./package.json').version")"
+  [ "$NODE_AUTH_TOKEN" = publish-token ] || { echo "no publish token for $name" >&2; exit 3; }
+  echo "$name" >> "$STATE/published.log"
+  failures="$STATE/fail/\${name//\\//_}"
+  if [ -e "$failures" ] && [ "$(cat "$failures")" -gt 0 ]; then
+    echo $(( $(cat "$failures") - 1 )) > "$failures"
+    [ -e "$failures.registers" ] && touch "$STATE/registry/\${name/\\//%2f}@$version"
+    exit 1
+  fi
+  [ -e "$STATE/hide/\${name//\\//_}" ] || touch "$STATE/registry/\${name/\\//%2f}@$version"
+  exit 0
+fi
+exec "$REAL_PNPM" "$@"
+`;
+
+/**
+ * A workspace of packages, `{ name, deps, private }`, with the two scripts and the shims, ready to run.
+ *
+ * @example
+ * const run = fixture([{ name: "a", deps: ["b"] }, { name: "b" }]);
+ */
+function fixture(packages) {
+  const root = mkdtempSync(join(tmpdir(), "registry-publish-"));
+  const state = join(root, "state");
+  const bin = join(root, "bin");
+  for (const dir of [state, bin, join(state, "registry"), join(state, "fail"), join(state, "hide")])
+    mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(root, "package.json"),
+    JSON.stringify({ name: "fixture-root", private: true }),
+  );
+  writeFileSync(join(root, "pnpm-workspace.yaml"), 'packages:\n  - "pkgs/*"\n');
+  for (const { name, deps = [], isPrivate = false } of packages) {
+    mkdirSync(join(root, "pkgs", name), { recursive: true });
+    writeFileSync(
+      join(root, "pkgs", name, "package.json"),
+      JSON.stringify({
+        name: `@t/${name}`,
+        version: "1.0.0",
+        ...(isPrivate ? { private: true } : {}),
+        dependencies: Object.fromEntries(deps.map((dep) => [`@t/${dep}`, "workspace:*"])),
+      }),
+    );
+  }
+  for (const [file, text] of [
+    ["curl", CURL_SHIM],
+    ["pnpm", PNPM_SHIM],
+  ]) {
+    writeFileSync(join(bin, file), text);
+    chmodSync(join(bin, file), 0o755);
+  }
+  writeFileSync(join(root, "registry-plan.mjs"), PLAN_SCRIPT);
+  writeFileSync(join(root, "registry-publish.sh"), PUBLISH_SCRIPT);
+  const git = (...args) => execFileSync("git", args, { cwd: root, stdio: "ignore" });
+  git("init", "-q");
+  git(
+    "-c",
+    "user.name=t",
+    "-c",
+    "user.email=t@t",
+    "commit",
+    "-q",
+    "--allow-empty",
+    "-m",
+    "fixture",
+  );
+  const [nodeDir, pnpmDir] = realToolDirs();
+  const env = {
+    ...process.env,
+    PATH: [bin, nodeDir, pnpmDir, process.env.PATH].join(":"),
+    REAL_PNPM: join(pnpmDir, "pnpm"),
+    REGISTRY,
+    STATE: state,
+    RUNNER_TEMP: root,
+    CHANGESETS_OUTPUT: join(root, "changesets-output.ndjson"),
+    ACTIONS_ID_TOKEN_REQUEST_TOKEN: "request-token",
+    ACTIONS_ID_TOKEN_REQUEST_URL: "https://actions.test/token?api=1",
+    PUBLISH_RETRY_DELAY: "0",
+    GIT_AUTHOR_NAME: "t",
+    GIT_AUTHOR_EMAIL: "t@t",
+    GIT_COMMITTER_NAME: "t",
+    GIT_COMMITTER_EMAIL: "t@t",
+  };
+  return {
+    root,
+    /** Mark a package so its next `count` publishes fail, optionally after reaching the registry. */
+    failPublish(name, count, { registers = false } = {}) {
+      writeFileSync(join(state, "fail", `@t_${name}`), String(count));
+      if (registers) writeFileSync(join(state, "fail", `@t_${name}.registers`), "");
+    },
+    /** Mark a package so its publish succeeds but the registry never shows it. */
+    hide(name) {
+      writeFileSync(join(state, "hide", `@t_${name}`), "");
+    },
+    /** Put a version on the stand-in registry before the run. */
+    preload(name) {
+      writeFileSync(join(state, "registry", `@t%2f${name}@1.0.0`), "");
+    },
+    run() {
+      const result = spawnSync("bash", [join(root, "registry-publish.sh")], {
+        cwd: root,
+        env,
+        encoding: "utf8",
+      });
+      const log = join(state, "published.log");
+      return {
+        ...result,
+        output: `${result.stdout}${result.stderr}`,
+        published: existsSync(log) ? readFileSync(log, "utf8").trim().split("\n") : [],
+        tags: execFileSync("git", ["tag", "-l"], { cwd: root, encoding: "utf8" })
+          .trim()
+          .split("\n")
+          .filter(Boolean),
+        events: existsSync(env.CHANGESETS_OUTPUT)
+          ? readFileSync(env.CHANGESETS_OUTPUT, "utf8").trim().split("\n").filter(Boolean)
+          : [],
+      };
+    },
+    dispose() {
+      rmSync(root, { recursive: true, force: true });
+    },
+  };
+}
+
+/** Path order, which a package-by-package loop over `pnpm -r ls` follows: a before b before c. */
+const CHAIN = [
+  { name: "a", deps: ["b"] },
+  { name: "b", deps: ["c"] },
+  { name: "c" },
+  { name: "z" },
+];
+
+/** Run the plan script on manifest lines and return its exit status, output and the plan it wrote. */
+function plan(rows) {
+  const dir = mkdtempSync(join(tmpdir(), "registry-plan-"));
+  try {
+    writeFileSync(join(dir, "plan.mjs"), PLAN_SCRIPT);
+    const out = join(dir, "plan.tsv");
+    const result = spawnSync("node", [join(dir, "plan.mjs"), "--plan", out], {
+      input: rows
+        .map((row) => JSON.stringify({ version: "1.0.0", dir: "/x", deps: [], ...row }))
+        .join("\n"),
+      encoding: "utf8",
+    });
+    return {
+      status: result.status,
+      stdout: result.stdout,
+      text: existsSync(out) ? readFileSync(out, "utf8") : null,
+    };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test("the plan keeps public packages in the order it is given and drops private ones", () => {
+  const result = plan([{ name: "c" }, { name: "p", private: true }, { name: "b", deps: ["c"] }]);
+  assert.equal(result.status, 0);
+  assert.deepEqual(
+    result.text
+      .trim()
+      .split("\n")
+      .map((line) => line.split("\t")[0]),
+    ["c", "b"],
+  );
+});
+
+test("the plan refuses a package that comes before its dependency", () => {
+  const result = plan([{ name: "b", deps: ["c"] }, { name: "c" }]);
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /::error title=Publish plan::b comes before its dependency c/);
+  assert.equal(result.text, null);
+});
+
+test("the plan refuses a public package that depends on a private one", () => {
+  const result = plan([
+    { name: "p", private: true },
+    { name: "a", deps: ["p"] },
+  ]);
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stdout,
+    /a depends on the private workspace package p, which is never published/,
+  );
+});
+
+test("the manifest mode lists dependencies, optional and peer ones once each", () => {
+  const dir = mkdtempSync(join(tmpdir(), "registry-manifest-"));
+  try {
+    writeFileSync(join(dir, "plan.mjs"), PLAN_SCRIPT);
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({
+        name: "m",
+        version: "2.0.0",
+        dependencies: { x: "1" },
+        optionalDependencies: { y: "1" },
+        peerDependencies: { x: "1", z: "1" },
+        devDependencies: { dev: "1" },
+      }),
+    );
+    const manifest = JSON.parse(
+      execFileSync("node", ["plan.mjs", "--manifest"], { cwd: dir, encoding: "utf8" }),
+    );
+    assert.deepEqual(manifest.deps.sort(), ["x", "y", "z"]);
+    assert.equal(manifest.private, false);
+    assert.equal(manifest.version, "2.0.0");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a release publishes every package dependencies first, tags each and verifies the registry", () => {
+  const run = fixture(CHAIN);
+  try {
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.ok(result.published.indexOf("@t/c") < result.published.indexOf("@t/b"));
+    assert.ok(result.published.indexOf("@t/b") < result.published.indexOf("@t/a"));
+    assert.equal(result.published.length, 4);
+    assert.deepEqual(result.tags.sort(), ["@t/a@1.0.0", "@t/b@1.0.0", "@t/c@1.0.0", "@t/z@1.0.0"]);
+    assert.equal(result.events.length, 4);
+    assert.match(
+      result.output,
+      /All 4 packages are on the registry \(4 published, 0 already there\)/,
+    );
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a version already on the registry is skipped, never republished, and not tagged again", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.preload("c");
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.ok(!result.published.includes("@t/c"));
+    assert.match(result.output, /skip @t\/c@1\.0\.0: already on the registry/);
+    assert.match(result.output, /\(3 published, 1 already there\)/);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a transient publish failure is retried and the run succeeds", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.failPublish("b", 2);
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.equal(result.published.filter((name) => name === "@t/b").length, 3);
+    assert.match(result.output, /retry @t\/b@1\.0\.0: attempt 3/);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a publish that reached the registry and then failed is not published twice", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.failPublish("b", 1, { registers: true });
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.equal(result.published.filter((name) => name === "@t/b").length, 1);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a package that keeps failing stops the run with a published set no package of which pins an unpublished one", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.failPublish("b", 99);
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Publish stopped::@t\/b@1\.0\.0 failed after 3 attempts/,
+    );
+    const onRegistry = new Set(result.published.filter((name) => name !== "@t/b"));
+    // c came first and is there; a, which pins b, was never attempted.
+    assert.ok(onRegistry.has("@t/c"));
+    assert.ok(!result.published.includes("@t/a"));
+    for (const { name: member, deps = [] } of CHAIN.filter(({ name }) =>
+      onRegistry.has(`@t/${name}`),
+    ))
+      for (const dep of deps)
+        assert.ok(onRegistry.has(`@t/${dep}`), `${member} is published but ${dep} is not`);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a loop that ends with a version missing from the registry fails the run", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.hide("z");
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Publish incomplete::@t\/z@1\.0\.0 is not on the registry/,
+    );
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a public package on a private one stops the run before anything is published", () => {
+  const run = fixture([
+    { name: "a", deps: ["p"] },
+    { name: "p", isPrivate: true },
+  ]);
+  try {
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(result.output, /@t\/a depends on the private workspace package @t\/p/);
+    assert.deepEqual(result.published, []);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("the dry run checks the same plan before it packs", () => {
+  const dryRun = WORKFLOW.slice(WORKFLOW.indexOf("- name: Publish dry run"));
+  assert.ok(
+    dryRun.indexOf("registry-plan.mjs") !== -1 &&
+      dryRun.indexOf("registry-plan.mjs") < dryRun.indexOf("publish --dry-run"),
+  );
+});
