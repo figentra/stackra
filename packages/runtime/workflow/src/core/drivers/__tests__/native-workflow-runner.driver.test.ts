@@ -379,6 +379,21 @@ describe(NativeWorkflowRunnerDriver, () => {
     expect((await runner.view(rejected?.id as never))?.output).toBeNull();
   });
 
+  it("views a run with a null output when its workflow has none or is not deployed here, and nothing for an unknown id", async () => {
+    const { runner, journal } = engineWith([[SkippingWorkflow, new SkippingWorkflow()]]);
+    await runner.start(SkippingWorkflow, { gift: false }, ORIGIN);
+    const run = await runner.last(SkippingWorkflow);
+    if (run === undefined) throw new Error("the run was recorded");
+    // The workflow declares no `output`.
+    expect(await runner.view(run.id)).toEqual({ run, output: null });
+
+    // Another engine over the same journal has not deployed the workflow, so it cannot compute one.
+    const { runner: elsewhere } = engineWith([], journal);
+    expect(await elsewhere.view(run.id)).toEqual({ run, output: null });
+
+    expect(await runner.view(`wfr_${"0".repeat(22)}none`)).toBeUndefined();
+  });
+
   it("undoes the completed steps last first when a step is refused, and rejects with the refusal", async () => {
     const order = new OrderWorkflow();
     order.failures.push(CardDeclinedError.create());
