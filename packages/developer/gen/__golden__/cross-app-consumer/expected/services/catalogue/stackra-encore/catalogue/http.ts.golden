@@ -20,6 +20,7 @@ import {
   serveGuardedCall,
   VisitorConfig,
   VisitorIdentityService,
+  webBodyOf,
 } from "@stackra/app/server";
 import type { AnyClass, Container } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
@@ -85,7 +86,7 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
   const request = new Request(new URL(req.url ?? "/", "http://encore"), {
     method,
     headers,
-    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),
+    ...(method === "GET" || method === "HEAD" ? {} : { body: webBodyOf(req), duplex: "half" }),
   } as RequestInit);
   const response = await answerHttp(request, (incoming, container) =>
     serveGuardedCall({

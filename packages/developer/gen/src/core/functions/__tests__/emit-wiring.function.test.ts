@@ -61,6 +61,14 @@ const billingClass = (name: string, kind: string, extra: object = {}) => ({
   ...extra,
 });
 
+/** Whether a driver table, or one of its candidate lines, imports from a testing entry. */
+const isTesting = (block: string): boolean =>
+  /import\("(?:[^"]*\/testing|#testing\/[^"]*)"\)/.test(block);
+
+/** Whether a driver table lists a stand-in: a testing-entry driver or a `memory` one. */
+const hasStandIn = (block: string): boolean =>
+  isTesting(block) || /\n        "memory": \(\) => import/.test(block);
+
 describe("emitWiring", () => {
   const wiring = emitWiring(COMMERCE_IR);
 
@@ -1002,6 +1010,7 @@ describe("emitWiring", () => {
       '    { module: "billing", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },',
       '    { module: "billing", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },',
       '    { module: "billing", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },',
+      '    { module: "billing", kind: "service", provide: VisitorIdentityService, deps: [VisitorConfig] },',
       '    { module: "billing", kind: "service", provide: DatabaseHealthIndicatorDriver, deps: [Database, DatabaseConfig] },',
       '    { module: "billing", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },',
       '    { module: "billing", kind: "service", provide: SearchHealthIndicatorDriver, deps: [SearchDriver, SearchConfig] },',
@@ -1009,6 +1018,8 @@ describe("emitWiring", () => {
       '    { key: "app.cors", provide: CorsConfig },',
       '    { key: "app.csrf", provide: CsrfConfig },',
       '    { key: "app.http", provide: HttpConfig },',
+      // every generated adapter resolves an anonymous caller's visitor with it, public endpoint or not
+      '    { key: "app.visitor", provide: VisitorConfig },',
       '    { key: "database", provide: DatabaseConfig },',
       '    { key: "queue", provide: QueueConfig },',
     ])
@@ -1022,6 +1033,110 @@ describe("emitWiring", () => {
     expect(billing).not.toContain("CacheHealthIndicatorDriver");
     expect(billing).not.toContain("RealtimeHealthIndicatorDriver");
     expect(billing).not.toContain("FilesystemHealthIndicatorDriver");
+  });
+
+  it("binds the ports every call needs, and takes the one driver that is not a testing stand-in (STA-2573)", () => {
+    const actions: MemberIR["dependencies"][number] = {
+      package: "@stackra/actions",
+      manifest: {
+        member: "actions",
+        package: "@stackra/actions",
+        version: "0.33.0",
+        drivers: [
+          {
+            port: "AccessControl",
+            key: "actions.AccessControl",
+            candidates: ["memory"],
+            classes: {
+              memory: { class: "MemoryAccessControlDriver", from: "@stackra/actions/testing" },
+            },
+          },
+          {
+            port: "ContextStorage",
+            key: "actions.ContextStorage",
+            candidates: ["async"],
+            classes: {
+              async: { class: "AsyncContextStorageDriver", from: "@stackra/actions/node" },
+            },
+          },
+          {
+            port: "IdempotencyStore",
+            key: "actions.IdempotencyStore",
+            candidates: ["memory", "valkey", "postgres"],
+            classes: {
+              memory: { class: "MemoryIdempotencyStoreDriver", from: "@stackra/actions" },
+              valkey: { class: "ValkeyIdempotencyStoreDriver", from: "@stackra/actions/node" },
+              postgres: { class: "PostgresIdempotencyStoreDriver", from: "@stackra/database/node" },
+            },
+          },
+        ],
+      },
+    };
+    const iam: MemberIR["dependencies"][number] = {
+      package: "@stackra/iam",
+      manifest: {
+        member: "iam",
+        package: "@stackra/iam",
+        version: "0.33.0",
+        drivers: [
+          {
+            port: "AccessControl",
+            key: "actions.AccessControl",
+            candidates: ["iam"],
+            classes: {
+              iam: {
+                class: "IamAccessControlDriver",
+                from: "@stackra/iam",
+                deps: [{ class: { name: "ScopeTree", from: "@stackra/scope/contracts" } }],
+              },
+            },
+          },
+        ],
+      },
+    };
+    const scope: MemberIR["dependencies"][number] = {
+      package: "@stackra/scope",
+      manifest: {
+        member: "scope",
+        package: "@stackra/scope",
+        version: "0.33.0",
+        drivers: [
+          {
+            port: "ScopeTree",
+            key: "scope.ScopeTree",
+            candidates: ["memory", "postgres"],
+            classes: {
+              memory: { class: "MemoryScopeTreeDriver", from: "@stackra/scope" },
+              postgres: { class: "PostgresScopeTreeDriver", from: "@stackra/scope/node" },
+            },
+          },
+        ],
+      },
+    };
+    const content = emitWiring({
+      ...BILLING_IR,
+      dependencies: [...BILLING_IR.dependencies, actions, iam, scope],
+    });
+    // AccessControl is injected by nothing, yet bound: the permission step of every call needs it.
+    expect(content).toContain('      key: "actions.AccessControl",');
+    expect(content).toContain(
+      '        "iam": () => import("@stackra/iam").then((m) => m.IamAccessControlDriver),',
+    );
+    expect(content).toContain(
+      '        "memory": () => import("@stackra/actions/testing").then((m) => m.MemoryAccessControlDriver),',
+    );
+    // two candidates, one of them the testing stand-in, nothing selecting: the real one is the default
+    expect(content).toMatch(
+      /key: "actions\.AccessControl",\n      default: "iam",\n      candidates: \{/,
+    );
+    // a memory driver is a stand-in too: the one persistent driver beside it is the default
+    expect(content).toMatch(
+      /key: "scope\.ScopeTree",\n      default: "postgres",\n      candidates: \{/,
+    );
+    // a lone candidate needs no default, and two real candidates are not guessed between
+    expect(content).toContain('      key: "actions.ContextStorage",');
+    expect(content).not.toMatch(/key: "actions\.ContextStorage",\n      default:/);
+    expect(content).not.toMatch(/key: "actions\.IdempotencyStore",\n      default:/);
   });
 
   it("binds the query cache evictor in a service that declares @stackra/cache (STA-1445)", () => {
@@ -1143,8 +1258,21 @@ describe("emitWiring's defaults for a package's own tests", () => {
     expect(ledger).toContain('default: "memory",');
   });
 
-  it("gives a service's wiring no default", () => {
-    expect(emitWiring({ ...ir, layout: "service" })).not.toContain("default:");
+  it("gives a service's wiring a default only to the one driver that is not a testing stand-in", () => {
+    // A package's own tests take its memory or testing driver by default; a service takes none of that. The one default a
+    // service's port gets is a port nothing selects whose candidates are one real driver and stand-ins (the testing
+    // entry's, or a `memory` driver), where it names the real driver (STA-2573).
+    const wiring = emitWiring({ ...ir, layout: "service" });
+    const tables = wiring.split("\n    {\n      port: ").slice(1);
+    for (const block of tables) {
+      const defaulted = /\n      default: "([^"]+)",/.exec(block)?.[1];
+      if (defaulted === undefined) continue;
+      expect(hasStandIn(block), block.slice(0, 60)).toBe(true);
+      // and the default is a candidate that is not the stand-in
+      const line =
+        block.split("\n").find((entry) => entry.trimStart().startsWith(`"${defaulted}":`)) ?? "";
+      expect(hasStandIn(line) || defaulted === "memory", line).toBe(false);
+    }
   });
 
   it("defaults to the one driver marked testDefault when no memory or testing driver decides", () => {

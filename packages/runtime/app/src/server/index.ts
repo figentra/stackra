@@ -36,6 +36,7 @@ export { apiCacheControl } from "#server/functions/api-cache-control.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
 export { serveGuardedCall } from "#server/functions/serve-guarded-call.function";
+export { webBodyOf } from "#server/functions/web-body-of.function";
 export { BearerTokenGuard } from "#server/services/bearer-token.guard";
 export { CallAuthenticator } from "#server/services/call-authenticator.service";
 export { CsrfGuard } from "#server/services/csrf.guard";

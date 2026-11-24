@@ -49,6 +49,7 @@ describe("@stackra/app/server", () => {
       "corsHeaders",
       "createApp",
       "serveGuardedCall",
+      "webBodyOf",
     ]);
   });
 

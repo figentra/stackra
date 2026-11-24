@@ -3,7 +3,8 @@
  * Purpose: `SERVER_CONTRIBUTIONS`, the extension-point contributions gen binds in a service's wiring when the service
  *          declares their package: the request guards of `@stackra/app/server` (`EdgeHeaderGuard` over the
  *          `EdgeSigningKeys` and `EdgeNonceStore` ports with the `app.edge` config row, `OriginGuard`, `CsrfGuard`, with
- *          the `app.cors`, `app.csrf` and `app.http` config rows), the six `HealthIndicator` drivers `/readyz` runs (database,
+ *          the `app.cors`, `app.csrf` and `app.http` config rows), the visitor identity of an anonymous call
+ *          (`VisitorIdentityService` over the `app.visitor` config row, which every generated adapter reads), the six `HealthIndicator` drivers `/readyz` runs (database,
  *          cache, queue, realtime, filesystem, search, each with its package config row) and, with `@stackra/cache`,
  *          the query cache's `QueryCacheEvictorListener` from `@stackra/actions` (STA-1445).
  * Boundary: data only; each entry lists the package that must be declared, the class, its constructor tokens in
@@ -21,6 +22,7 @@ const APP = "@stackra/app/server";
 const CORS: ClassRef = { name: "CorsConfig", from: APP };
 const CSRF: ClassRef = { name: "CsrfConfig", from: APP };
 const HTTP: ClassRef = { name: "HttpConfig", from: APP };
+const VISITOR: ClassRef = { name: "VisitorConfig", from: APP };
 const EDGE: ClassRef = { name: "EdgeConfig", from: APP };
 const APP_CONTRACTS = "@stackra/app/contracts";
 
@@ -52,6 +54,15 @@ export const SERVER_CONTRIBUTIONS: readonly ServerContribution[] = Object.freeze
     ],
     // The ports' drivers come from @stackra/app's manifest, chosen by `app.edge` (`keys`, `nonces`).
     configs: [{ key: "app.edge", provide: EDGE }],
+  },
+  {
+    package: "@stackra/app",
+    // Every generated adapter resolves an anonymous caller's visitor through it, so a service that declares the app package
+    // needs its config row whether or not an endpoint is public: without it each such call is a 500 ("Nothing binds
+    // VisitorConfig").
+    provide: { name: "VisitorIdentityService", from: APP },
+    deps: [VISITOR],
+    configs: [{ key: "app.visitor", provide: VISITOR }],
   },
   {
     package: "@stackra/app",
