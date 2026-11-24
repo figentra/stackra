@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: start the app under test as a child process on a free port, wait until it answers, and stop it again.
- * Boundary: one child process in the given directory with a minimal environment (PATH, NODE_ENV, PORT and the task's
- *   settings); nothing else of the caller's environment reaches the generated code. It never leaves the child running:
- *   `stop` ends it, and a failed start ends it before the error is thrown.
+ * Boundary: one child process, in its own process group, in the given directory with a minimal environment (PATH,
+ *   NODE_ENV, PORT and the task's settings); nothing else of the caller's environment reaches the generated code. It
+ *   never leaves the app running: `stop` signals the whole group, so a start command that is a wrapper (`npm run
+ *   start`, a shell script) takes its server grandchild down with it, and a failed start stops it before the error is
+ *   thrown.
  * Runtime: node
  * Governing contract: STA-2709 (the owner's method rules).
  * Input: the app directory, the start command as an array, and the task's environment settings.
@@ -35,6 +37,8 @@ export async function startApp({ directory, command, env = {} }) {
     cwd: directory,
     env: { PATH: process.env.PATH, NODE_ENV: "test", ...env, PORT: String(port) },
     stdio: ["ignore", "pipe", "pipe"],
+    // Its own process group, so `stop` can end the app's children too.
+    detached: true,
   });
   let written = "";
   const keep = (chunk) => {
@@ -50,11 +54,18 @@ export async function startApp({ directory, command, env = {} }) {
     });
   });
 
+  // The whole group, also after the child itself has exited: a wrapper may leave its server running.
+  const signalGroup = (signal) => {
+    try {
+      process.kill(-child.pid, signal);
+    } catch {
+      // the group is already gone
+    }
+  };
   const stop = async () => {
-    if (exited) return;
-    child.kill("SIGTERM");
+    signalGroup("SIGTERM");
     await Promise.race([exit, sleep(3000)]);
-    if (!exited) child.kill("SIGKILL");
+    signalGroup("SIGKILL");
     await exit;
   };
 
