@@ -15,6 +15,7 @@ import { checkGenStrictEnv } from "#node/functions/check-gen-strict-env.function
 import { checkGitignore } from "#node/functions/check-gitignore.function";
 import { checkJsonConfigs } from "#node/functions/check-json-configs.function";
 import { checkToolPins } from "#node/functions/check-tool-pins.function";
+import { checkVitestPair } from "#node/functions/check-vitest-pair.function";
 import { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
 import { constitutionFindings } from "#node/functions/constitution-findings.function";
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
@@ -70,6 +71,7 @@ export function configFindings(context: RepoContext): RawFinding[] {
       "tool-pins",
       checkToolPins(readIf(join(root, "mise.toml")), readIf(join(root, "pnpm-workspace.yaml"))),
     ),
+    ...of("vitest-pair", checkVitestPair(readIf(join(root, "pnpm-workspace.yaml")))),
     ...of("gen-strict-env", checkGenStrictEnv(readIf(join(root, "turbo.jsonc")))),
   ];
 }
