@@ -72,7 +72,13 @@ try {
   const [program, ...args] = framework.create;
   const created = spawnSync(program, [...args, workdir], {
     cwd: baselineDirectory,
-    env: { PATH: process.env.PATH },
+    env: {
+      PATH: process.env.PATH,
+      // A cache folder redirected away from the home directory stays redirected for the create step.
+      ...(process.env.XDG_CACHE_HOME === undefined
+        ? {}
+        : { XDG_CACHE_HOME: process.env.XDG_CACHE_HOME }),
+    },
     encoding: "utf8",
     timeout: CREATE_TIMEOUT_MS,
   });

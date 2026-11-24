@@ -4,8 +4,8 @@
  * Purpose: create the NestJS baseline's starting app in a directory: the official starter from `nest new` at a pinned
  *   CLI version, with its hello-world controller replaced by the starting app of benchmarks/tasks/starting-app.md.
  * Boundary: the first call builds the starter once inside a one-off node container (the container is removed when it
- *   ends, runs at the lowest priority with 2 CPUs, and reaches the npm registry) into a cache folder under the home
- *   directory; every call then copies the cache into the target. Nothing is built twice. The build is refused when the
+ *   ends, runs at the lowest priority with 2 CPUs, and reaches the npm registry) into a cache folder under
+ *   `$XDG_CACHE_HOME`, else under `~/.cache`; every call then copies the cache into the target. Nothing is built twice. The build is refused when the
  *   resolved @nestjs/core is not the version in framework.json.
  * Runtime: node, with docker for the first call
  * Governing contract: benchmarks/tasks/starting-app.md; STA-2709 rule "fair baselines: each framework's own
@@ -31,7 +31,8 @@ import { fileURLToPath } from "node:url";
 const CLI_VERSION = "12.0.15";
 const here = dirname(fileURLToPath(import.meta.url));
 const { version } = JSON.parse(readFileSync(join(here, "framework.json"), "utf8"));
-const cache = join(homedir(), ".cache", "stk-bench", `nestjs-${version}`);
+const cacheHome = process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache");
+const cache = join(cacheHome, "stk-bench", `nestjs-${version}`);
 const HELLO_WORLD = [
   "src/app.controller.ts",
   "src/app.controller.spec.ts",
