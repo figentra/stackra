@@ -11,7 +11,8 @@
  *   mine | open [--label l]          list my open issues | the team's started issues (or open issues with a label)
  *   digest                           ≤8 lines: In Progress plus `owner`-labelled issues (the SessionStart hook)
  *   check-pr                         CI: exit 1 unless PR_BRANCH is Linear-named (figentra/ or delegate/sta-n-…) and
- *                                    the title or branch carries an STA key (PR_LABELS may hold chore-lane)
+ *                                    the title or branch carries an STA key, or is a lane branch (stackra/l<n>/<slug>)
+ *                                    and the title carries one (PR_LABELS may hold chore-lane)
  * Boundary: talks to Linear's GraphQL API through bot-token.mjs' network layer; writes no repo file.
  * Runtime: node
  * Governing contract: ADR 0065 (Linear gate checked offline); ADR 0121 (SDLC tooling roles and Linear).
@@ -35,6 +36,8 @@ export const TEAM = "STA";
 const API = "https://api.linear.app/graphql";
 export const KEY_RE = /\bSTA-(\d+)\b/i;
 export const BRANCH_RE = /^(?:figentra|delegate)\/sta-\d+-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** A lane branch, `stackra/l<n>/<slug>`: the agent lanes name their branches by lane and topic, not by issue. */
+export const LANE_BRANCH_RE = /^stackra\/l\d+\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const TOKEN_URL = "https://api.linear.app/oauth/token";
 export const SCOPE = "read,write,issues:create,comments:create,app:assignable,app:mentionable";
@@ -150,12 +153,20 @@ export function prCarriesKey({ title = "", branch = "", labels = [] }) {
   if (labels.includes("chore-lane")) return { ok: true, why: "labelled chore-lane" };
   if (/^(renovate|changeset-release)\//.test(branch))
     return { ok: true, why: `bot branch ${branch}` };
+  // A lane branch is not Linear-named, so the PR title has to carry the key: the branch cannot.
+  if (LANE_BRANCH_RE.test(branch))
+    return KEY_RE.test(title)
+      ? { ok: true, why: `lane branch ${branch}, the title carries an STA key` }
+      : {
+          ok: false,
+          why: `lane branch "${branch}" needs an STA-n key in the PR title (add one, or label the PR chore-lane)`,
+        };
   // ADR 0065 decision 5: a Linear-named branch, `figentra/sta-<n>-<slug>` (Linear's gitBranchName) or
   // `delegate/sta-<n>-…` (pnpm delegate).
   if (!BRANCH_RE.test(branch))
     return {
       ok: false,
-      why: `branch "${branch}" is not figentra/sta-<n>-<slug> or delegate/sta-<n>-<slug> (use Linear's branch name, or label the PR chore-lane)`,
+      why: `branch "${branch}" is not figentra/sta-<n>-<slug>, delegate/sta-<n>-<slug> or stackra/l<n>/<slug> (use Linear's branch name, or label the PR chore-lane)`,
     };
   if (KEY_RE.test(title) || KEY_RE.test(branch)) return { ok: true, why: "carries an STA key" };
   return {
