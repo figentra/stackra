@@ -11,6 +11,9 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); STA-1921; STA-606.
  */
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { deploy } from "@stackra/runway";
 import type { DeployLock, RootRunway } from "@stackra/runway";
@@ -149,6 +152,8 @@ describe("runRunwayDeploy", () => {
       "cloudflare-workers",
     ]);
     expect(output()).toBe(`production/web ${SHA.slice(0, 12)} up (static=v1)\n`);
+    // The real lock is the host's, in the temp folder, shared with `stackra promote`.
+    expect(fileDeployLock).toHaveBeenCalledWith(join(tmpdir(), "stackra-runway-locks"));
   });
 
   it("wires no encore-cloud provider when runway names no Encore app", async () => {
