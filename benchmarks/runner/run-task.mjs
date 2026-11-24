@@ -29,6 +29,9 @@ import { runAcceptance } from "./run-acceptance.mjs";
 import { startApp } from "./start-app.mjs";
 import { validateRecord } from "./validate-record.mjs";
 
+const BUILD_TIMEOUT_MS = 300_000;
+const CREATE_TIMEOUT_MS = 900_000;
+
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const { values } = parseArgs({
@@ -71,6 +74,7 @@ try {
     cwd: baselineDirectory,
     env: { PATH: process.env.PATH },
     encoding: "utf8",
+    timeout: CREATE_TIMEOUT_MS,
   });
   if (created.status !== 0)
     throw new Error(`baseline create failed: ${created.stderr || created.stdout}`);
@@ -79,11 +83,32 @@ try {
   const measured = fakeAgent({ baselineDirectory, task: values.task, workdir });
   const wallTimeMs = Math.round(performance.now() - agentStart);
 
-  app = await startApp({ directory: workdir, command: framework.start, env: settings.env });
-  const acceptance = await runAcceptance({
-    directory: join(taskDirectory, "acceptance"),
-    baseUrl: app.baseUrl,
-  });
+  let acceptance;
+  const built =
+    framework.build === undefined
+      ? { status: 0 }
+      : spawnSync(framework.build[0], framework.build.slice(1), {
+          cwd: workdir,
+          env: { PATH: process.env.PATH, NODE_ENV: "test" },
+          encoding: "utf8",
+          timeout: BUILD_TIMEOUT_MS,
+        });
+  if (built.status === 0) {
+    app = await startApp({ directory: workdir, command: framework.start, env: settings.env });
+    acceptance = await runAcceptance({
+      directory: join(taskDirectory, "acceptance"),
+      baseUrl: app.baseUrl,
+    });
+  } else {
+    const output = `${built.stdout ?? ""}${built.stderr ?? ""}`.trim().slice(-300);
+    acceptance = {
+      passed: 0,
+      failed: 0,
+      total: 0,
+      ok: false,
+      firstError: `build failed: ${output}`,
+    };
+  }
   const { firstError, ...counts } = acceptance;
 
   const record = {
