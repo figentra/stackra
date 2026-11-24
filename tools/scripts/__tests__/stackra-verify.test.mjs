@@ -16,6 +16,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createConnection, createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -91,6 +92,23 @@ import {
   withMainScripts,
   GATE_FILTERS,
   GATE_STEPS,
+  KINDS,
+  TOOLS,
+  VERIFY_PREPARE,
+  downloadVerified,
+  errorKey,
+  historyRefs,
+  kindFiles,
+  kindMounts,
+  osvDbPath,
+  osvDbProblem,
+  outputText,
+  prFacts,
+  runKinds,
+  toolFile,
+  toolInstallScript,
+  toolShaSetting,
+  toolsFingerprint,
   MOBILE_STEPS,
   gatePrepare,
   gateScript,
@@ -119,6 +137,8 @@ const S = {
   appId: APP_ID,
   installationId: "77",
   keyFile: "/home/svc/stackra-verify.pem",
+  // Stand-in checksums, made at run time (the real ones are owner settings, never in the repository).
+  toolSha256: Object.fromEntries(TOOLS.map((t, i) => [t.name, String(i).repeat(64)])),
 };
 const ENV = "/runs/x/container.env";
 const TAR = "/runs/x/src.tar";
@@ -339,11 +359,23 @@ test("install: no PR lifecycle script or pnpmfile; only main's allowed builds ru
   assert.deepEqual(allowedBuilds(yaml), ["esbuild", "sharp", "workerd", "@scope/pkg"]);
 });
 
-test("verify: the tested tree is unpacked again over /work and committed to a fresh repository before pnpm verify", () => {
+test("verify: the tested tree is unpacked again over /work and committed (the gate: as a merge onto main) before the kind's script", () => {
   const check = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR });
   assert.match(
     check.at(-1),
-    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; pnpm verify$/,
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; rm -rf \.git; git init -q; git fetch -q --no-tags \/in\/history\.bundle .*; git update-ref HEAD "\$commit"; git reset -q; bash \/in\/gate\.sh$/,
+  );
+  const mobile = verifyArgs(S, {
+    name: "v",
+    image: "run",
+    envFile: ENV,
+    tarPath: TAR,
+    command: "bash /in/mobile.sh",
+    prepare: VERIFY_PREPARE,
+  });
+  assert.match(
+    mobile.at(-1),
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; bash \/in\/mobile\.sh$/,
   );
 });
 
@@ -577,7 +609,7 @@ test("output: scrubbed, inert Markdown (no fence breakout, no @mention), capped;
   assert.equal(body.conclusion, "failure");
   assert.equal(body.head_sha, SHA);
   assert.equal(body.external_id, `base:${BASE}`);
-  assert.match(body.output.title, /^pnpm verify failed in 1m 1s$/);
+  assert.match(body.output.title, /^Quality Gate failed in 1m 1s$/);
   assert.equal(body.output.text.match(/```/g).length, 2);
   assert.equal(JSON.stringify(body).includes("STACKRA_VERIFY"), false);
 });
@@ -634,6 +666,9 @@ function fakeDeps({
   conflict = false,
   stop = null,
   leaks = [],
+  storeError = null,
+  facts = undefined,
+  builds = ["esbuild"],
 }) {
   const calls = { kill: [], cleanUp: [], docker: [], runs: [] };
   let stopping = false;
@@ -642,12 +677,17 @@ function fakeDeps({
     envFile: ENV,
     installEnvFile: "/runs/x/install.env",
     now: () => Date.now(),
-    builds: () => ["esbuild"],
+    builds: () => builds,
     archive: () => {
       if (conflict) throw Object.assign(new Error("conflict"), { conflict: true });
       return TAR;
     },
-    storeImage: () => "stackra-verify-store:abc",
+    storeImage: () => {
+      if (storeError) throw storeError;
+      return "stackra-verify-store:abc";
+    },
+    facts,
+    verifyMounts: () => [["/runs/x/gate.sh", "/in/gate.sh"]],
     network: ({ network }) => {
       calls.network = network;
       return { network, proxy: "proxy:3128" };
@@ -962,7 +1002,21 @@ test("ledgerEntry and formatDuration: the result, the posted flag and the link",
   });
   assert.equal(json.posted, false);
   assert.equal(json.pr, 7);
-  assert.match(md, /\| failure, not posted \| 1m 1s \|/);
+  assert.match(md, /\| stackra\/verify: failure, not posted \| 1m 1s \|/);
+  assert.equal(json.check, "stackra/verify");
+  assert.equal(json.command, "bash /in/gate.sh");
+  const mobile = ledgerEntry({
+    kind: "mobile",
+    repo: "figentra/stackra",
+    sha: SHA,
+    conclusion: "success",
+    durationMs: 1,
+    box: "b",
+    at: "t",
+    posted: true,
+  });
+  assert.equal(mobile.json.check, "stackra/verify-mobile");
+  assert.match(mobile.md, /\| stackra\/verify-mobile: success \|/);
 });
 
 test("licensed builds: main's versions from the lockfile; the install copies the prebuilt output, never runs it", () => {
@@ -2059,4 +2113,360 @@ test("stepSections: each step's lines and result, for display; an unfinished ste
     { id: "typecheck", result: "FAIL", lines: ["error TS1", "== result: lint pass"] },
     { id: "build", result: "unfinished", lines: ["killed"] },
   ]);
+});
+
+// ---- the gate's wiring: tools, OSV database, kinds, mounts, output ----------------------------------------------
+
+test("tools: main's mise.toml pins (squawk as ci.yml), shellcheck for actionlint; each download needs its sha256 setting", () => {
+  const mise = readFileSync(new URL("../../../mise.toml", import.meta.url), "utf8");
+  const pin = (key) => new RegExp(`^"?${key}"? = "([^"]+)"`, "m").exec(mise)?.[1];
+  const version = Object.fromEntries(TOOLS.map((t) => [t.name, t.version]));
+  assert.equal(version.actionlint, pin("aqua:rhysd/actionlint"));
+  assert.equal(version.zizmor, pin("aqua:zizmorcore/zizmor"));
+  assert.equal(version["osv-scanner"], pin("aqua:google/osv-scanner"));
+  assert.equal(version.gitleaks, pin("gitleaks"));
+  assert.equal(version.shfmt, pin("shfmt"));
+  assert.match(
+    readFileSync(CI_YML, "utf8"),
+    new RegExp(`squawk@${version.squawk.replaceAll(".", "\\.")} `),
+  );
+  assert.equal(version.shellcheck, "0.11.0");
+  for (const tool of TOOLS) {
+    assert.match(
+      tool.url,
+      new RegExp(
+        `^https://github\\.com/.*/releases/download/v?${tool.version.replaceAll(".", "\\.")}/`,
+      ),
+    );
+    assert.match(tool.url, /linux|x86_64-unknown-linux/);
+  }
+  assert.equal(toolShaSetting({ name: "osv-scanner" }), "STACKRA_VERIFY_SHA256_OSV_SCANNER");
+  const sha = "f".repeat(64);
+  const fromEnv = settings({ STACKRA_VERIFY_SHA256_SQUAWK: ` ${sha.toUpperCase()} ` });
+  assert.equal(fromEnv.toolSha256.squawk, sha);
+  assert.equal(fromEnv.toolSha256.actionlint, null);
+  assert.match(
+    hostProblems({ ...S, toolSha256: { ...S.toolSha256, zizmor: null } }, 0o400).join(),
+    /STACKRA_VERIFY_SHA256_ZIZMOR must be the sha256/,
+  );
+  assert.match(
+    hostProblems({ ...S, toolSha256: { ...S.toolSha256, gitleaks: "abc" } }, 0o400).join(),
+    /STACKRA_VERIFY_SHA256_GITLEAKS/,
+  );
+});
+
+test("store image: the tools come from the checked downloads through a bind mount, are on PATH, and change the tag", () => {
+  const dockerfile = storeDockerfile({ baseImage: PINNED, pnpmVersion: "12.16.1" });
+  assert.match(
+    dockerfile,
+    /^RUN --mount=type=bind,source=tools,target=\/tools sh \/tools\/install\.sh$/m,
+  );
+  assert.match(dockerfile, /^ENV PATH=\/opt\/stackra-verify\/bin:\$PATH$/m);
+  assert.match(dockerfile, /bash --version/);
+  assert.doesNotMatch(dockerfile, /curl|wget|ADD /);
+  const script = toolInstallScript();
+  assert.match(
+    script,
+    /tar -xf \/tools\/shellcheck-0\.11\.0\.tar\.xz -C \/tmp\/stackra-tools shellcheck-v0\.11\.0\/shellcheck/,
+  );
+  assert.match(
+    script,
+    /install -m 0755 \/tools\/squawk-2\.71\.0 \/opt\/stackra-verify\/bin\/squawk/,
+  );
+  for (const tool of TOOLS) assert.ok(script.includes(tool.check), tool.name);
+  assert.equal(toolFile(TOOLS[0]), "actionlint-1.7.12.tar.gz");
+  const lock = Buffer.from("lock");
+  assert.notEqual(
+    storeTag(lock, PINNED, toolsFingerprint(S)),
+    storeTag(
+      lock,
+      PINNED,
+      toolsFingerprint({ ...S, toolSha256: { ...S.toolSha256, squawk: "e".repeat(64) } }),
+    ),
+  );
+});
+
+test("downloadVerified: a download whose sha256 differs from its setting leaves no file; a match is kept", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-download-"));
+  const bytes = Buffer.from("a pinned release asset");
+  const sha = createHash("sha256").update(bytes).digest("hex");
+  const fetcher = async () => new Response(bytes);
+  const dest = join(dir, "tool");
+  assert.equal(await downloadVerified("https://example.test/t", sha, dest, fetcher), sha);
+  assert.deepEqual(readFileSync(dest), bytes);
+  const bad = join(dir, "bad");
+  await assert.rejects(
+    downloadVerified("https://example.test/t", "0".repeat(64), bad, fetcher),
+    /sha256 is/,
+  );
+  assert.equal(spawnSync("test", ["-e", bad]).status, 1);
+  assert.equal(spawnSync("test", ["-e", `${bad}.part`]).status, 1);
+  await assert.rejects(
+    downloadVerified(
+      "https://example.test/t",
+      sha,
+      join(dir, "x"),
+      async () => new Response("", { status: 404 }),
+    ),
+    /HTTP 404/,
+  );
+});
+
+test("OSV database: missing, future-dated or older than the maximum is refused (an error, never a green scan)", () => {
+  const H = 3_600_000;
+  assert.match(osvDbProblem(null, NOW, 24 * H), /missing/);
+  assert.match(osvDbProblem(NOW + 60_000, NOW, 24 * H), /future/);
+  assert.match(osvDbProblem(NOW - 25 * H, NOW, 24 * H), /25 h old \(at most 24 h\)/);
+  assert.equal(osvDbProblem(NOW - 23 * H, NOW, 24 * H), null);
+  assert.equal(
+    osvDbPath("/work/stackra/verify/osv"),
+    "/work/stackra/verify/osv/osv-scalibr/npm/all.zip",
+  );
+  assert.equal(settings({}).osvMaxAgeMs, 24 * H);
+  assert.equal(settings({ STACKRA_VERIFY_HOME: "/h" }).osvDir, "/h/osv");
+  assert.match(hostProblems({ ...S, osvMaxAgeMs: Number.NaN }, 0o400).join(), /OSV_MAX_AGE_H/);
+});
+
+test("kinds: the gate mounts its script, licence check, PR facts, history and OSV database read-only, and nothing else", () => {
+  const mounts = kindMounts("gate", { runDir: "/runs/x", osvDir: "/osv-db" });
+  assert.deepEqual(mounts, [
+    ["/runs/x/gate.sh", "/in/gate.sh"],
+    ["/runs/x/licence-check.mjs", "/in/licence-check.mjs"],
+    ["/runs/x/facts.json", "/in/facts.json"],
+    ["/runs/x/history.bundle", "/in/history.bundle"],
+    ["/osv-db", "/osv"],
+  ]);
+  assert.deepEqual(kindMounts("mobile", { runDir: "/runs/x" }), [
+    ["/runs/x/mobile.sh", "/in/mobile.sh"],
+  ]);
+  assert.throws(() => kindMounts("nope", { runDir: "/r" }), /not a verify kind/);
+  const argv = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR, mounts });
+  const volumes = argv.filter((_, i) => argv[i - 1] === "--volume");
+  assert.equal(volumes.length, 6);
+  for (const v of volumes) assert.match(v, /:ro$/, v);
+  assert.equal(argv[argv.indexOf("--network") + 1], "none");
+  assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs"]);
+  assert.equal(kindFiles("gate")["gate.sh"], gateScript());
+  assert.deepEqual(Object.keys(kindFiles("mobile")), ["mobile.sh"]);
+});
+
+test("runJob gate: installs without the Uniwind Pro members and never lays in a licensed build; runs the gate script", async () => {
+  const { deps, calls } = fakeDeps({ builds: ["esbuild", "uniwind-pro"], facts: async () => true });
+  const r = await runJob({ ...JOB, kind: "gate" }, deps);
+  assert.equal(r.conclusion, "success");
+  const install = calls.runs[0].at(-1);
+  assert.match(
+    install,
+    /--filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild esbuild$/,
+  );
+  assert.doesNotMatch(install, /uniwind-pro|prebuilt/);
+  assert.match(calls.runs[1].at(-1), /; bash \/in\/gate\.sh$/);
+  assert.ok(calls.runs[1].includes("/runs/x/gate.sh:/in/gate.sh:ro"));
+});
+
+test("runJob mobile: the full install with the licensed build; a licence failure fails verify-mobile only, as a result", async () => {
+  const { deps, calls } = fakeDeps({ builds: ["esbuild", "uniwind-pro"] });
+  const r = await runJob({ ...JOB, kind: "mobile" }, deps);
+  assert.equal(r.conclusion, "success");
+  assert.doesNotMatch(calls.runs[0].at(-1), /--filter=/);
+  assert.match(
+    calls.runs[0].at(-1),
+    /pnpm rebuild esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
+  );
+  assert.match(calls.runs[1].at(-1), /commit -qm tested --no-verify; bash \/in\/mobile\.sh$/);
+  const licence = Object.assign(new Error("could not build the licensed image"), { licence: true });
+  const failed = await runJob({ ...JOB, kind: "mobile" }, fakeDeps({ storeError: licence }).deps);
+  assert.equal(failed.post, true);
+  assert.equal(failed.conclusion, "failure");
+  assert.equal(failed.phase, "licence");
+  // an unmarked store error stays an infrastructure error (retried), as before
+  const infra = await runJob(JOB, fakeDeps({ storeError: new Error("docker is down") }).deps);
+  assert.deepEqual([infra.post, infra.error], [false, "docker is down"]);
+});
+
+test("runJob gate: a PR head that moved before the facts were read posts nothing", async () => {
+  const { deps, calls } = fakeDeps({ facts: async () => false });
+  assert.deepEqual(await runJob(JOB, deps), { post: false, moved: true });
+  assert.equal(calls.runs.length, 0);
+});
+
+test("verify-mobile: a mobile failure leaves stackra/verify green; both carry the same head SHA and external_id scheme", async () => {
+  const outcomes = { gate: "success", mobile: "failure" };
+  const posted = [];
+  const results = await runKinds(JOB, Object.keys(KINDS), async (job) => {
+    if (job.kind === "mobile") throw new Error("Uniwind Pro licence quota used up");
+    const body = checkRunBody({
+      kind: job.kind,
+      sha: job.sha,
+      base: job.base,
+      conclusion: outcomes[job.kind],
+      durationMs: 1,
+      box: "b",
+      log: "",
+      startedAt: "t0",
+      completedAt: "t1",
+    });
+    posted.push(body);
+    return body;
+  });
+  assert.equal(results.gate.conclusion, "success");
+  assert.equal(results.gate.name, "stackra/verify");
+  assert.match(results.mobile.error, /quota/);
+  assert.deepEqual(
+    posted.map((b) => b.name),
+    ["stackra/verify"],
+  );
+  // a failed mobile run, posted, is its own check run beside a green gate
+  const gate = checkRunBody({
+    kind: "gate",
+    sha: SHA,
+    base: BASE,
+    conclusion: "success",
+    durationMs: 1,
+    box: "b",
+    log: "",
+    startedAt: "t0",
+    completedAt: "t1",
+  });
+  const mobile = checkRunBody({
+    kind: "mobile",
+    sha: SHA,
+    base: BASE,
+    conclusion: "failure",
+    phase: "licence",
+    reason: "quota",
+    durationMs: 1,
+    box: "b",
+    log: "",
+    startedAt: "t0",
+    completedAt: "t1",
+  });
+  assert.equal(mobile.name, "stackra/verify-mobile");
+  assert.equal(mobile.head_sha, gate.head_sha);
+  assert.equal(mobile.external_id, gate.external_id);
+  assert.equal(gate.external_id, `base:${BASE}`);
+  assert.match(mobile.output.title, /^the licensed build is unavailable \(quota\)/);
+  // each check has its own error record and its own needs-run answer
+  assert.equal(errorKey({ ...JOB, kind: "gate" }), `figentra/stackra@${SHA}`);
+  assert.equal(errorKey({ ...JOB, kind: "mobile" }), `figentra/stackra@${SHA}#mobile`);
+  const mobileRun = {
+    name: "stackra/verify-mobile",
+    head_sha: SHA,
+    status: "completed",
+    conclusion: "success",
+    app: { id: Number(APP_ID) },
+    external_id: `base:${BASE}`,
+  };
+  assert.equal(
+    needsRun({ checkRuns: [mobileRun], sha: SHA, appId: APP_ID, base: BASE }, NOW),
+    true,
+  );
+  assert.equal(
+    needsRun(
+      {
+        checkRuns: [mobileRun],
+        sha: SHA,
+        appId: APP_ID,
+        base: BASE,
+        name: "stackra/verify-mobile",
+      },
+      NOW,
+    ),
+    false,
+  );
+});
+
+test("check run text: a table of steps, each failing step's own output, then the log tail, inside the limit", () => {
+  const log = [
+    "install output",
+    "== step: lint",
+    "fine",
+    "== result: lint pass",
+    "== step: typecheck",
+    "src/a.ts(1,1): error TS2322",
+    "== result: typecheck FAIL",
+    "== step: test",
+    "x".repeat(200_000),
+    "== result: test FAIL",
+    "== failed: typecheck test",
+  ].join("\n");
+  const text = outputText(log);
+  assert.ok(text.length <= OUTPUT_TEXT_MAX, String(text.length));
+  assert.match(
+    text,
+    /\| lint \| pass \|\n\| typecheck \| \*\*FAIL\*\* \|\n\| test \| \*\*FAIL\*\* \|/,
+  );
+  assert.match(text, /### typecheck \(FAIL\)\n\n```text\nsrc\/a\.ts\(1,1\): error TS2322\n```/);
+  assert.match(text, /### test \(FAIL\)/);
+  assert.equal(text.match(/```/g).length % 2, 0);
+  const body = checkRunBody({
+    sha: SHA,
+    base: BASE,
+    conclusion: "failure",
+    phase: "verify",
+    durationMs: 1,
+    box: "b",
+    log,
+    startedAt: "t0",
+    completedAt: "t1",
+  });
+  assert.match(body.output.summary, /Failed steps \(from the log\): typecheck, test/);
+  assert.equal(body.output.title, "Quality Gate failed in 0s");
+});
+
+test("PR facts and history: from GitHub's pull request, never the tree; main is a push with one ref", () => {
+  const pull = {
+    title: "feat: x (STA-1)",
+    head: { ref: "figentra/sta-1-x", sha: SHA },
+    labels: [{ name: "risk:R3" }],
+    draft: false,
+  };
+  assert.deepEqual(prFacts(JOB, pull), {
+    event: "pull_request",
+    title: "feat: x (STA-1)",
+    branch: "figentra/sta-1-x",
+    labels: ["risk:R3"],
+    draft: false,
+    base: BASE,
+    head: SHA,
+  });
+  assert.equal(prFacts({ ...JOB, pr: undefined }, null).event, "push");
+  assert.deepEqual(historyRefs(JOB), [
+    ["refs/stackra/base", BASE],
+    ["refs/stackra/head", SHA],
+  ]);
+  assert.deepEqual(historyRefs({ ...JOB, sha: BASE }), [["refs/stackra/base", BASE]]);
+});
+
+test("cpus: a positive number goes to --cpus; a cpuset such as 0-7 is refused there and goes to --cpuset-cpus", () => {
+  assert.deepEqual(hostProblems({ ...S, cpus: "8" }, 0o400), []);
+  assert.deepEqual(hostProblems({ ...S, cpus: "1.5" }, 0o400), []);
+  for (const bad of ["0-7", "0", "-1", "8 cpus", "", "0,1"])
+    assert.match(
+      hostProblems({ ...S, cpus: bad }, 0o400).join(),
+      /STACKRA_VERIFY_CPUS is ".*": it must be a positive number.*STACKRA_VERIFY_CPUSET/,
+      bad,
+    );
+  for (const ok of ["0-7", "0,2-4", "3"])
+    assert.deepEqual(hostProblems({ ...S, cpuset: ok }, 0o400), [], ok);
+  for (const bad of ["0-", "a-b", "0;7", "0-7,", " 0-7"])
+    assert.match(
+      hostProblems({ ...S, cpuset: bad }, 0o400).join(),
+      /STACKRA_VERIFY_CPUSET is/,
+      bad,
+    );
+  const set = settings({ STACKRA_VERIFY_CPUS: "8", STACKRA_VERIFY_CPUSET: "0-7" });
+  assert.deepEqual([set.cpus, set.cpuset], ["8", "0-7"]);
+  const argv = installArgs(
+    { ...S, cpuset: "0-7" },
+    { name: "i", image: "s", tarPath: TAR, envFile: ENV, network: "n" },
+  );
+  assert.equal(argv[argv.indexOf("--cpus") + 1], "8");
+  assert.equal(argv[argv.indexOf("--cpuset-cpus") + 1], "0-7");
+  assert.equal(
+    installArgs(S, { name: "i", image: "s", tarPath: TAR, envFile: ENV, network: "n" }).includes(
+      "--cpuset-cpus",
+    ),
+    false,
+  );
 });
