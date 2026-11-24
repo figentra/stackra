@@ -293,9 +293,27 @@ jobs:
           host="${REGISTRY#https://}"
           # changesets/action v2 reads the published tags from the NDJSON file it names in CHANGESETS_OUTPUT, not from
           # stdout: an absent file left 0.2.0 (run 41166821024) without tags or GitHub releases. Created empty first.
-          : > "${CHANGESETS_OUTPUT:-/dev/null}"
-          # A dry run rehearses every check up to the first write: nothing is published, tagged or announced.
+          # A dry run rehearses every check up to the first write: nothing is published, tagged or announced. The flag is
+          # exactly `true` or `false`: any other spelling (`1`, `TRUE`) would read as "not a dry run" and publish.
           dry_run="${DRY_RUN:-false}"
+          case "$dry_run" in
+            true | false) ;;
+            *)
+              echo "::error title=Publish::DRY_RUN must be true or false (got '${DRY_RUN}')"
+              exit 1
+              ;;
+          esac
+          # A real run names the file its tags go to before anything is published: with none, the first package would
+          # go out and the run then fail on its tag.
+          if [ "$dry_run" = true ]; then
+            : > "${CHANGESETS_OUTPUT:-/dev/null}"
+          else
+            if [ -z "${CHANGESETS_OUTPUT:-}" ]; then
+              echo "::error title=Publish::CHANGESETS_OUTPUT is not set: a real run needs the file the release tags are written to"
+              exit 1
+            fi
+            : > "$CHANGESETS_OUTPUT"
+          fi
           plan="$RUNNER_TEMP/registry-plan.tsv"
           pnpm -r --workspace-concurrency=1 --reporter=silent exec node "$RUNNER_TEMP/registry-plan.mjs" --manifest |
             node "$RUNNER_TEMP/registry-plan.mjs" --plan "$plan"

@@ -334,14 +334,16 @@ function fixture(packages) {
         integrity ?? integrityOf(join(dir, tarball)),
       );
     },
-    /** Run the script; `extraEnv` adds to its environment and `input` is its standard input. */
+    /** Run the script; `extraEnv` adds to its environment (a value of undefined removes the variable) and `input` is its standard input. */
     run({
       extraEnv = {},
       input = "standard input that no child of the script may swallow\n",
     } = {}) {
       const result = spawnSync("bash", [join(root, "registry-publish.sh")], {
         cwd: root,
-        env: { ...env, ...extraEnv },
+        env: Object.fromEntries(
+          Object.entries({ ...env, ...extraEnv }).filter(([, value]) => value !== undefined),
+        ),
         encoding: "utf8",
         input,
       });
@@ -1027,6 +1029,41 @@ test("a pnpm ls that prints nothing stops the run instead of skipping the count 
       result.output,
       /::error title=Publish plan::the plan has 4 packages and the workspace has 0 public ones/,
     );
+    assert.deepEqual(result.published, []);
+  });
+});
+
+test("DRY_RUN must be exactly true or false: any other spelling stops the run before anything is published", () => {
+  for (const spelling of ["1", "TRUE", "True", "yes", "0", " true"])
+    withFixture(CHAIN, (run) => {
+      const result = run.run({ extraEnv: { DRY_RUN: spelling } });
+      assert.equal(result.status, 1, spelling);
+      assert.match(result.output, /::error title=Publish::DRY_RUN must be true or false/, spelling);
+      assert.deepEqual(result.published, [], spelling);
+      assert.deepEqual(result.tags, [], spelling);
+    });
+  // `false`, and no DRY_RUN at all, are a real run.
+  for (const value of ["false", undefined])
+    withFixture(CHAIN, (run) => {
+      const result = run.run({ extraEnv: { DRY_RUN: value } });
+      assert.equal(result.status, 0, result.output);
+      assert.equal(result.published.length, 4);
+    });
+});
+
+test("a real run without CHANGESETS_OUTPUT stops before the first publish; a dry run does not need it", () => {
+  for (const missing of [undefined, ""])
+    withFixture(CHAIN, (run) => {
+      const result = run.run({ extraEnv: { CHANGESETS_OUTPUT: missing } });
+      assert.equal(result.status, 1, `${missing}`);
+      assert.match(result.output, /::error title=Publish::CHANGESETS_OUTPUT is not set/);
+      assert.deepEqual(result.published, [], "a package was published before the stop");
+      assert.deepEqual(result.tarballs, []);
+      assert.deepEqual(result.tags, []);
+    });
+  withFixture(CHAIN, (run) => {
+    const result = run.run({ extraEnv: { DRY_RUN: "true", CHANGESETS_OUTPUT: undefined } });
+    assert.equal(result.status, 0, result.output);
     assert.deepEqual(result.published, []);
   });
 });
