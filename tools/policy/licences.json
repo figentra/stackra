@@ -1,5 +1,5 @@
 {
-  "$comment": "Approved: Idris (CTO) ruling 2026-11-24. The licence policy stackra/verify's licence-policy step enforces over every package the Quality Gate installs (`pnpm licenses list --json --offline --recursive`, STA-2761). `allow` holds SPDX ids; an expression passes when every AND part and at least one OR part is allowed. `deny` holds case-insensitive regular expressions over one SPDX id (GPL, LGPL, AGPL, SSPL, BUSL, Elastic, CC NC/ND, Unknown): a denied id never counts as allowed, even when listed in `allow`, so it passes only as an OR alternative beside an allowed licence or through an exception. Each exception has exactly `name`, `licence` (the exact string pnpm lists), `reason`, `scope` (dev-only, runtime, tool or mobile) and, when the ruling pins one, `versions`; it fails again when the name, the licence string or a pinned version changes, and a malformed exception is itself a violation. Scopes are checked over the workspace's manifests: a dev-only package is never in a publishable member's dependencies, optionalDependencies or non-optional peerDependencies; a mobile package is a dependency of apps/mobile and apps/playground only. buffers@0.1.1 (Unknown, via @contentauth/c2pa-node > unzipper@0.10.14 > binary) has no exception: neither its published tarball nor its registry metadata states a licence, and its upstream repository is gone, so the ruling denies it. Read by tools/scripts/stackra-verify.mjs; the verify service takes main's copy of this file (VERIFY_OVERLAY).",
+  "$comment": "Approved: Idris (CTO) ruling 2026-11-24. The licence policy stackra/verify's licence-policy step enforces over every package the Quality Gate installs (`pnpm licenses list --json --offline --recursive`, STA-2761). `allow` holds SPDX ids; an expression passes when every AND part and at least one OR part is allowed. `deny` holds case-insensitive regular expressions over one SPDX id (GPL, LGPL, AGPL, SSPL, BUSL, Elastic, CC NC/ND, Unknown): a denied id never counts as allowed, even when listed in `allow`, so it passes only as an OR alternative beside an allowed licence or through an exception. Each exception has exactly `name`, `licence` (the exact string pnpm lists), `reason`, `scope` (dev-only, runtime, tool or mobile) and, when the ruling pins one, `versions`; it fails again when the name, the licence string or a pinned version changes, and a malformed exception is itself a violation. Scopes are checked over each member's package.json and over pnpm-lock.yaml's installed closures: a dev-only or tool package is never in a publishable member's production closure (dependencies, optionalDependencies and non-optional peers, transitively, never devDependencies), and a mobile package is in no closure, devDependencies included, but those of apps/mobile and apps/playground. buffers@0.1.1 (Unknown, via @contentauth/c2pa-node > unzipper@0.10.14 > binary) has no exception: neither its published tarball nor its registry metadata states a licence, and its upstream repository is gone, so the ruling denies it. Read by tools/scripts/stackra-verify.mjs; the verify service takes main's copy of this file (VERIFY_OVERLAY).",
   "status": "approved",
   "allow": [
     "MIT",
@@ -44,14 +44,14 @@
     {
       "name": "@sentry/cli",
       "licence": "FSL-1.1-MIT",
-      "reason": "FSL-1.1-MIT: a CLI used in dev and CI only; FSL limits competing products, not our use; becomes MIT after two years",
-      "scope": "tool"
+      "reason": "FSL-1.1-MIT, shipped at runtime: @stackra/vite-plugin → @sentry/vite-plugin@5.4.1 → @sentry/bundler-plugins@10.76.2 → @sentry/cli@2.58.6; FSL limits competing products, not our use; becomes MIT after two years",
+      "scope": "runtime"
     },
     {
       "name": "@sentry/cli-linux-x64",
       "licence": "FSL-1.1-MIT",
-      "reason": "FSL-1.1-MIT: a CLI used in dev and CI only; FSL limits competing products, not our use; becomes MIT after two years",
-      "scope": "tool"
+      "reason": "FSL-1.1-MIT, shipped at runtime: @stackra/vite-plugin → @sentry/vite-plugin@5.4.1 → @sentry/bundler-plugins@10.76.2 → @sentry/cli@2.58.6 → @sentry/cli-linux-x64@2.58.6 (its Linux binary); FSL limits competing products, not our use; becomes MIT after two years",
+      "scope": "runtime"
     },
     {
       "name": "@zowe/secrets-for-zowe-sdk",

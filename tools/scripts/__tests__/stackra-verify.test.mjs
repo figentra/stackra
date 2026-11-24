@@ -2433,13 +2433,16 @@ test("licence policy: tools/policy/licences.json is the CTO's approved ruling, e
     assert.ok(["dev-only", "runtime", "tool", "mobile"].includes(e.scope), e.name);
     assert.ok(e.reason.length > 10, e.name);
   }
+  // the Sentry CLI ships with @stackra/vite-plugin (a publishable package): runtime, its path in the reason
+  for (const e of policy.exceptions.filter((x) => x.name.startsWith("@sentry/")))
+    assert.match(e.reason, /@stackra\/vite-plugin → @sentry\/vite-plugin@5\.4\.1 → /, e.name);
   assert.deepEqual(
     policy.exceptions.map((e) => [e.name, e.licence, e.scope, e.versions ?? null]),
     [
       ["@electric-sql/pglite-postgis", "Apache-2.0 AND GPL-2.0-or-later", "dev-only", null],
       ["@img/sharp-libvips-linux-x64", "LGPL-3.0-or-later", "runtime", null],
-      ["@sentry/cli", "FSL-1.1-MIT", "tool", null],
-      ["@sentry/cli-linux-x64", "FSL-1.1-MIT", "tool", null],
+      ["@sentry/cli", "FSL-1.1-MIT", "runtime", null],
+      ["@sentry/cli-linux-x64", "FSL-1.1-MIT", "runtime", null],
       ["@zowe/secrets-for-zowe-sdk", "EPL-2.0", "runtime", null],
       ["chainsaw", "MIT/X11", "runtime", ["0.1.0"]],
       ["uniwind-pro", "UNLICENSED", "mobile", null],
