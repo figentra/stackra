@@ -201,6 +201,18 @@ describe("checkConventions", () => {
     ).toEqual([]);
   });
 
+  it("keeps a root module that states an empty imports list, which is what `stackra new service` writes", () => {
+    expect(
+      refused(
+        withClasses(
+          declared("DemoModule", "module", "demo", "src/demo.module.ts", {
+            options: { imports: [] },
+          }),
+        ),
+      ),
+    ).toEqual([]);
+  });
+
   it("refuses an injected sibling service its module does not export, and a module cycle", () => {
     const invoices = declared(
       "InvoiceService",

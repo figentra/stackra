@@ -50,11 +50,20 @@ describe("serviceTemplate", () => {
       "CHANGELOG.md",
     ]);
     expect(content(false, "src/demo.module.ts")).toContain(
-      "export class DemoModule extends Module({}) {}",
+      "export class DemoModule extends Module({ imports: [] }) {}",
     );
     const test = content(false, "src/__tests__/demo.module.test.ts");
     expect(test).toContain('from "@stackra/container/testing"');
     expect(test).toContain("await createTestingModule(DemoModule).compile()");
+  });
+
+  it("writes a root module that states something, because gen refuses one that states nothing (empty_module)", () => {
+    for (const data of [false, true]) {
+      const module = content(data, "src/demo.module.ts");
+      // `Module({})` is what gen's `empty_module` refuses: a fresh service then failed its own `stackra gen`.
+      expect(module).not.toMatch(/Module\(\{\s*\}\)/);
+      expect(module).toMatch(/extends Module\(\{ imports: \[\] \}\)/);
+    }
   });
 
   it("writes no tool config and no test:int without --data", () => {

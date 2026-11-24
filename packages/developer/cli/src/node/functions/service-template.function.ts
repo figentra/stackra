@@ -30,21 +30,25 @@ function aliasOf(folder: string): readonly string[] {
   return [`./${folder}/*`, `./${folder}/*.ts`, `./${folder}/*.tsx`, `./${folder}/*/index.ts`];
 }
 
-/** The root module, `src/<name>.module.ts`: states nothing yet, so gen derives the wiring. */
+/**
+ * The root module, `src/<name>.module.ts`. It states its (empty) `imports` list: gen refuses a module that states
+ * nothing (`empty_module`, "the module is its folder"), and the root module has to exist (`package.json` `stackra.module`
+ * points at it), so the list is what it states until a feature module joins it.
+ */
 function rootModule({ name, pascal, packageName }: TemplateOptions): string {
   return [
     "/**",
     " * Stackra file contract:",
     ` * Purpose: the root module of ${packageName}. Gen finds it by name, writes the runtime entry that boots it`,
     " *          (`.stackra/entry/server.ts`) and the wiring of the feature modules under `src/modules/`.",
-    " * Boundary: states nothing gen can derive; no providers, no handlers.",
+    " * Boundary: declares the root module class and its feature-module list; no providers, no handlers.",
     " * Runtime: node",
     " * Governing contract: ADR 0294 (rule R12, decision 16); ADR 0295 (decision 7); ADR 0305 (rule 15).",
     " */",
     'import { Module } from "@stackra/container";',
     "",
-    `/** The root module of the ${name} service. */`,
-    `export class ${pascal}Module extends Module({}) {}`,
+    `/** The root module of the ${name} service. Its \`imports\` list holds the feature modules the service hosts. */`,
+    `export class ${pascal}Module extends Module({ imports: [] }) {}`,
     "",
   ].join("\n");
 }
