@@ -84,7 +84,14 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import * as botNetwork from "./bot-token.mjs";
-import { gh, isVerifyOverlay, VERIFY_APP, VERIFY_CHECK, VERIFY_MOBILE_CHECK } from "./pr-merge.mjs";
+import {
+  gh,
+  isVerifyOverlay,
+  VERIFY_APP,
+  VERIFY_CHECK,
+  VERIFY_MOBILE_CHECK,
+  CODEQL_CHECK,
+} from "./pr-merge.mjs";
 
 export const DEFAULT_REPO = "figentra/stackra";
 export const INSTALL_COMMAND =
@@ -616,7 +623,17 @@ export const KINDS = Object.freeze({
     install: "full",
     describe: "ci.yml's mobile job: lint, typecheck and build of the two Uniwind Pro members",
   },
+  codeql: {
+    check: CODEQL_CHECK,
+    label: "CodeQL",
+    script: "codeql.sh",
+    install: null,
+    describe:
+      "CodeQL from the pinned bundle, each language's code-scanning suite, offline; fails on an error-level or high-severity result",
+  },
 });
+/** The kinds every head gets; CodeQL runs nightly on main and on demand (codeqlJobs). */
+export const PER_HEAD_KINDS = ["gate", "mobile"];
 /** The command the verify container runs for a kind: its generated script, mounted read-only. */
 export const kindCommand = (kind) => `bash ${IN_DIR}/${KINDS[kind].script}`;
 export const VERIFY_COMMAND = kindCommand("gate");
@@ -625,7 +642,7 @@ export const VERIFY_COMMAND = kindCommand("gate");
  * The read-only inputs a kind's verify container gets besides the archive: the gate its script, the licence check,
  * the PR facts, the history bundle and the offline OSV database; mobile its script. Each `[host path, container path]`.
  */
-export function kindMounts(kind, { runDir, osvDir }) {
+export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
   const file = (name) => [join(runDir, name), `${IN_DIR}/${name}`];
   if (kind === "gate")
     return [
@@ -636,14 +653,21 @@ export function kindMounts(kind, { runDir, osvDir }) {
       [osvDir, OSV_MOUNT],
     ];
   if (kind === "mobile") return [file("mobile.sh")];
+  if (kind === "codeql")
+    return [file("codeql.sh"), file("codeql-results.cjs"), [codeqlDir, "/codeql"]];
   throw new Error(`not a verify kind: ${kind}`);
 }
 
 /** The files a kind's run writes for its mounts (the facts and the bundle come from GitHub and the mirror). */
-export function kindFiles(kind) {
+export function kindFiles(kind, languages = CODEQL_DEFAULT_LANGUAGES) {
   if (kind === "gate")
     return { "gate.sh": gateScript(), "licence-check.mjs": licenceCheckSource() };
   if (kind === "mobile") return { "mobile.sh": mobileScript() };
+  if (kind === "codeql")
+    return {
+      "codeql.sh": codeqlScript(languages),
+      "codeql-results.cjs": `${codeqlResults.toString()}\nprocess.exit(codeqlResults(process.argv.slice(2)));\n`,
+    };
   throw new Error(`not a verify kind: ${kind}`);
 }
 
@@ -804,6 +828,105 @@ export function osvDbProblem(mtimeMs, now, maxAgeMs) {
   return null;
 }
 
+// ---- CodeQL: stackra/codeql, never required -----------------------------------------------------------------
+
+/** The languages CodeQL analyses and each one's code-scanning suite (what GitHub's default setup runs). */
+export const CODEQL_SUITES = Object.freeze({
+  "javascript-typescript": "codeql/javascript-queries:codeql-suites/javascript-code-scanning.qls",
+  actions: "codeql/actions-queries:codeql-suites/actions-code-scanning.qls",
+});
+export const CODEQL_DEFAULT_LANGUAGES = ["javascript-typescript", "actions"];
+/** A PR with one of these labels gets a stackra/codeql run on its head: on demand, or a strict (risk:R3) change. */
+export const CODEQL_LABELS = ["codeql", "risk:R3"];
+
+/**
+ * The CodeQL steps: per language, a database from the tested tree and its code-scanning suite (the bundle carries the
+ * query packs, so nothing is downloaded), then the results step. Databases live in /tmp, outside the source root.
+ */
+export function codeqlScript(languages = CODEQL_DEFAULT_LANGUAGES) {
+  const steps = languages.map((language) => {
+    if (!CODEQL_SUITES[language]) throw new Error(`not a CodeQL language: ${language}`);
+    return {
+      id: `codeql-${language}`,
+      run: [
+        `/codeql/codeql database create /tmp/stackra-codeql/db-${language} --language=${language} --source-root=/work --threads=0 --overwrite`,
+        `/codeql/codeql database analyze /tmp/stackra-codeql/db-${language} ${CODEQL_SUITES[language]} --format=sarif-latest --output=/tmp/stackra-codeql/${language}.sarif --threads=0`,
+      ].join("\n"),
+    };
+  });
+  steps.push({
+    id: "codeql-results",
+    run: 'node "$GATE_IN/codeql-results.cjs" /tmp/stackra-codeql/*.sarif',
+  });
+  return stepScript(steps, { facts: false }).replace(
+    "cd /work || exit 1",
+    "cd /work || exit 1\nmkdir -p /tmp/stackra-codeql",
+  );
+}
+
+/**
+ * Prints every result of the SARIF files (level, rule, place, first line of the message) and returns the exit code:
+ * 1 when any result is error-level or its rule's security-severity is 7.0 or more (GitHub's high and critical), or a
+ * file is unreadable; else 0. Self-contained: the results step runs this function's own source.
+ */
+export function codeqlResults(
+  files,
+  read = (path) => require("node:fs").readFileSync(path, "utf8"),
+) {
+  let total = 0;
+  let failing = 0;
+  if (!files.length) {
+    console.log("no SARIF file: the analysis did not run");
+    return 1;
+  }
+  for (const file of files) {
+    let sarif;
+    try {
+      sarif = JSON.parse(read(file));
+    } catch (error) {
+      console.log(`${file}: ${error.message}`);
+      return 1;
+    }
+    for (const run of sarif.runs ?? []) {
+      const rules = new Map((run.tool?.driver?.rules ?? []).map((rule) => [rule.id, rule]));
+      for (const result of run.results ?? []) {
+        const rule = rules.get(result.ruleId);
+        const level = result.level ?? rule?.defaultConfiguration?.level ?? "warning";
+        const severity = Number(rule?.properties?.["security-severity"] ?? 0);
+        const fails = level === "error" || severity >= 7;
+        total++;
+        if (fails) failing++;
+        const place = result.locations?.[0]?.physicalLocation;
+        console.log(
+          `${fails ? "FAIL" : "note"} ${level}${severity ? ` (security-severity ${severity})` : ""} ${result.ruleId} ` +
+            `${place?.artifactLocation?.uri ?? "?"}:${place?.region?.startLine ?? 0} ${String(
+              result.message?.text ?? "",
+            )
+              .split("\n")[0]
+              .slice(0, 200)}`,
+        );
+      }
+    }
+  }
+  console.log(`${total} results, ${failing} at error level or high severity`);
+  return failing ? 1 : 0;
+}
+
+/**
+ * The CodeQL jobs of one pass: every open PR labelled CODEQL_LABELS (on demand), and main's head once per UTC day
+ * from `hourUtc` (`nightly` names the day, so a posted run marks it done).
+ */
+export function codeqlJobs(jobs, { now, hourUtc, lastNightly }) {
+  const out = jobs
+    .filter((j) => j.pr && (j.labels ?? []).some((l) => CODEQL_LABELS.includes(l)))
+    .map((j) => ({ ...j, kind: "codeql" }));
+  const day = new Date(now).toISOString().slice(0, 10);
+  const main = jobs.find((j) => !j.pr && !j.queue);
+  if (main && lastNightly !== day && new Date(now).getUTCHours() >= hourUtc)
+    out.push({ ...main, kind: "codeql", nightly: day });
+  return out;
+}
+
 /** The uid:gid PR code runs as inside every container (the base image's unprivileged user), never root. */
 export const CONTAINER_USER = "1000:1000";
 /**
@@ -918,6 +1041,10 @@ export function settings(env = process.env) {
     osvDir:
       env.STACKRA_VERIFY_OSV_DIR || join(env.STACKRA_VERIFY_HOME ?? "/work/stackra/verify", "osv"),
     osvMaxAgeMs: Number(env.STACKRA_VERIFY_OSV_MAX_AGE_H ?? 24) * 3_600_000,
+    codeqlBundleUrl: env.STACKRA_VERIFY_CODEQL_BUNDLE_URL || null,
+    codeqlBundleSha256: env.STACKRA_VERIFY_CODEQL_BUNDLE_SHA256?.trim().toLowerCase() || null,
+    codeqlLanguages: list(env.STACKRA_VERIFY_CODEQL_LANGUAGES, CODEQL_DEFAULT_LANGUAGES),
+    codeqlHourUtc: Number(env.STACKRA_VERIFY_CODEQL_HOUR_UTC ?? 2),
     registries: (env.STACKRA_VERIFY_REGISTRIES?.split(",").filter(Boolean) ?? REGISTRY_HOSTS).map(
       (h) => h.trim(),
     ),
@@ -962,6 +1089,21 @@ export function hostProblems(s, keyMode, licenceMode = 0o400) {
     problems.push(
       `STACKRA_VERIFY_CPUSET is "${s.cpuset}": it must be a CPU list such as 0-7 or 0,2-4 (docker --cpuset-cpus)`,
     );
+  if (Boolean(s.codeqlBundleUrl) !== Boolean(s.codeqlBundleSha256))
+    problems.push(
+      "STACKRA_VERIFY_CODEQL_BUNDLE_URL and STACKRA_VERIFY_CODEQL_BUNDLE_SHA256 are set together (or neither: no CodeQL)",
+    );
+  else if (s.codeqlBundleUrl) {
+    if (!/^https:\/\/\S+$/.test(s.codeqlBundleUrl))
+      problems.push("STACKRA_VERIFY_CODEQL_BUNDLE_URL must be an https URL");
+    if (!SHA256.test(s.codeqlBundleSha256))
+      problems.push("STACKRA_VERIFY_CODEQL_BUNDLE_SHA256 must be 64 hex characters");
+    for (const language of s.codeqlLanguages ?? [])
+      if (!CODEQL_SUITES[language])
+        problems.push(`STACKRA_VERIFY_CODEQL_LANGUAGES: not a CodeQL language here: ${language}`);
+    if (!Number.isInteger(s.codeqlHourUtc) || s.codeqlHourUtc < 0 || s.codeqlHourUtc > 23)
+      problems.push("STACKRA_VERIFY_CODEQL_HOUR_UTC must be a whole hour, 0 to 23");
+  }
   for (const [name, value] of [
     ["STACKRA_VERIFY_OSV_MAX_AGE_H", s.osvMaxAgeMs],
     ["STACKRA_VERIFY_PIDS", s.pids],
@@ -1700,7 +1842,9 @@ export function checkRunBody({
       title: `${verdict} in ${formatDuration(durationMs)}`,
       summary: [
         `- Checks: ${describe}; every step runs, and the verdict is the container's exit code`,
-        `- Install: \`${INSTALL_COMMAND}\`${KINDS[kind].install === "gate" ? ` without ${GATE_FILTERS.map((f) => f.slice(1)).join(" and ")}` : ""} (registries only), then \`${kindCommand(kind)}\` (no network)`,
+        KINDS[kind].install
+          ? `- Install: \`${INSTALL_COMMAND}\`${KINDS[kind].install === "gate" ? ` without ${GATE_FILTERS.map((f) => f.slice(1)).join(" and ")}` : ""} (registries only), then \`${kindCommand(kind)}\` (no network)`
+          : `- Run: \`${kindCommand(kind)}\` on the tested tree (no install, no network)`,
         `- Box: ${box}; throwaway containers`,
         `- Head: \`${sha}\`, merged onto main \`${base ?? "-"}\` with main's verify definition (scripts, configs, policies)`,
         ...(failed.length ? [`- Failed steps (from the log): ${failed.join(", ")}`] : []),
@@ -1818,56 +1962,63 @@ export async function runJob(job, deps) {
       });
     }
     const envFile = deps.envFile;
-    // The gate installs without the Uniwind Pro members and never lays in a licensed build; mobile installs all.
+    // The gate installs without the Uniwind Pro members and never lays in a licensed build; mobile installs all;
+    // CodeQL installs nothing and reads the tree only.
     const gate = KINDS[kind].install === "gate";
-    const builds = deps.builds();
+    let image = store;
+    if (KINDS[kind].install) {
+      const builds = deps.builds();
 
-    const net = deps.network({ id, image: store, proxyName, network });
-    const leaks = deps.egressLeaks(store, net);
-    if (leaks === null || leaks.length) {
-      // Unsafe host: no PR code runs, and the service stops before anything else does.
-      deps.stop();
-      return {
-        post: false,
-        error:
-          leaks === null
-            ? "the egress probe did not run"
-            : `the install network reaches ${leaks.join(" ")}`,
-        unsafe: true,
-      };
+      const net = deps.network({ id, image: store, proxyName, network });
+      const leaks = deps.egressLeaks(store, net);
+      if (leaks === null || leaks.length) {
+        // Unsafe host: no PR code runs, and the service stops before anything else does.
+        deps.stop();
+        return {
+          post: false,
+          error:
+            leaks === null
+              ? "the egress probe did not run"
+              : `the install network reaches ${leaks.join(" ")}`,
+          unsafe: true,
+        };
+      }
+
+      const installTimedOut = await limited(
+        installArgs(s, {
+          name: install,
+          image: store,
+          tarPath,
+          envFile: deps.installEnvFile,
+          network: net.network,
+          builds: gate ? builds.filter((b) => !LICENSED_BUILDS.includes(b)) : builds,
+          licensed: gate ? [] : LICENSED_BUILDS,
+          filters: gate ? GATE_FILTERS : [],
+        }),
+        install,
+      );
+      if (deps.stopping() && !installTimedOut) return { post: false, stopped: true };
+      if (installTimedOut)
+        return settle(job, deps, { conclusion: "failure", phase: "install", reason: "time limit" });
+      const installExit = deps.exitCodeOf(install);
+      if (installExit === null)
+        return { post: false, error: "the install container did not start" };
+      // The licensed image is built for exactly the versions this tree locks, so a missing build is the service's
+      // fault: an error (retried), never the PR's pass, fail or neutral.
+      if (installExit === NEEDS_STORE_REBUILD_EXIT)
+        return { post: false, error: "a licensed build is missing from the run image" };
+      if (installExit !== 0) return settle(job, deps, { conclusion: "failure", phase: "install" });
+
+      const commit = deps.docker(["commit", install, runImage]);
+      if (commit.code !== 0)
+        return { post: false, error: "could not commit the install container" };
+      image = runImage;
     }
-
-    const installTimedOut = await limited(
-      installArgs(s, {
-        name: install,
-        image: store,
-        tarPath,
-        envFile: deps.installEnvFile,
-        network: net.network,
-        builds: gate ? builds.filter((b) => !LICENSED_BUILDS.includes(b)) : builds,
-        licensed: gate ? [] : LICENSED_BUILDS,
-        filters: gate ? GATE_FILTERS : [],
-      }),
-      install,
-    );
-    if (deps.stopping() && !installTimedOut) return { post: false, stopped: true };
-    if (installTimedOut)
-      return settle(job, deps, { conclusion: "failure", phase: "install", reason: "time limit" });
-    const installExit = deps.exitCodeOf(install);
-    if (installExit === null) return { post: false, error: "the install container did not start" };
-    // The licensed image is built for exactly the versions this tree locks, so a missing build is the service's
-    // fault: an error (retried), never the PR's pass, fail or neutral.
-    if (installExit === NEEDS_STORE_REBUILD_EXIT)
-      return { post: false, error: "a licensed build is missing from the run image" };
-    if (installExit !== 0) return settle(job, deps, { conclusion: "failure", phase: "install" });
-
-    const commit = deps.docker(["commit", install, runImage]);
-    if (commit.code !== 0) return { post: false, error: "could not commit the install container" };
 
     const verifyTimedOut = await limited(
       verifyArgs(s, {
         name: check,
-        image: runImage,
+        image,
         envFile,
         tarPath,
         mounts: deps.verifyMounts?.() ?? [],
@@ -2456,6 +2607,34 @@ async function ensureOsvDb(s) {
 }
 
 /**
+ * The CodeQL bundle, unpacked once per sha256 under `<home>/codeql/<sha256>/codeql` (0755, read-only in the CodeQL
+ * container): downloaded from STACKRA_VERIFY_CODEQL_BUNDLE_URL and checked against its sha256 setting first.
+ */
+async function ensureCodeql(s) {
+  const root = join(s.home, "codeql");
+  mkdirSync(root, { recursive: true, mode: 0o755 });
+  chmodSync(root, 0o755);
+  const dir = join(root, s.codeqlBundleSha256);
+  if (existsSync(join(dir, "codeql", "codeql"))) return join(dir, "codeql");
+  const archive = join(root, `${s.codeqlBundleSha256}.tar.gz`);
+  await downloadVerified(s.codeqlBundleUrl, s.codeqlBundleSha256, archive);
+  const unpacking = `${dir}.part`;
+  rmSync(unpacking, { recursive: true, force: true });
+  mkdirSync(unpacking, { mode: 0o755 });
+  try {
+    sh("tar", ["-xzf", archive, "-C", unpacking], { timeout: 30 * 60_000 });
+    sh("chmod", ["-R", "a+rX,go-w", unpacking]);
+    renameSync(unpacking, dir);
+  } finally {
+    rmSync(archive, { force: true });
+    rmSync(unpacking, { recursive: true, force: true });
+  }
+  if (!existsSync(join(dir, "codeql", "codeql")))
+    throw new Error("the CodeQL bundle has no codeql/codeql");
+  return join(dir, "codeql");
+}
+
+/**
  * The licensed image for a tested tree: the store image plus a build of each licensed package at the version the
  * tree locks (publisher code from the registry, checked against the lockfile integrity, never PR code). Built once per
  * version set and recorded like the store image. Without licensed builds in the tree it is the store image itself.
@@ -2603,7 +2782,7 @@ export async function verify(s, job) {
     mode: 0o644,
   });
   writeFileSync(join(s.home, "docker.env"), dockerEnvFile(s), { mode: 0o644 });
-  for (const [file, text] of Object.entries(kindFiles(kind)))
+  for (const [file, text] of Object.entries(kindFiles(kind, s.codeqlLanguages)))
     writeFileSync(join(runDir, file), text, { mode: 0o644 });
   const state = readState(s);
 
@@ -2651,6 +2830,7 @@ export async function verify(s, job) {
     storeImage: async () => {
       if (kind === "gate") await ensureOsvDb(s);
       const store = await ensureStore(s, deps.mirror, job.base, runDir, state);
+      if (kind === "codeql") deps.codeqlDir = await ensureCodeql(s);
       if (kind !== "mobile") return store;
       try {
         const lockText = git(deps.mirror, ["show", `${deps.tree}:pnpm-lock.yaml`]);
@@ -2676,7 +2856,7 @@ export async function verify(s, job) {
             return true;
           }
         : undefined,
-    verifyMounts: () => kindMounts(kind, { runDir, osvDir: s.osvDir }),
+    verifyMounts: () => kindMounts(kind, { runDir, osvDir: s.osvDir, codeqlDir: deps.codeqlDir }),
     docker: (args) => docker(s, args),
     runContainer: (args) =>
       new Promise((resolve) => {
@@ -2898,7 +3078,13 @@ export function jobsFrom({ repo, pulls, main, queue = [] }) {
   const prs = pulls
     .filter((p) => !p.draft && p.head?.repo?.full_name === repo && sha(p.head?.sha))
     .toSorted((a, b) => a.number - b.number)
-    .map((p) => ({ repo, sha: p.head.sha, pr: String(p.number), base: main }));
+    .map((p) => ({
+      repo,
+      sha: p.head.sha,
+      pr: String(p.number),
+      base: main,
+      labels: (p.labels ?? []).map((l) => l.name),
+    }));
   return [
     ...prs,
     ...queue.filter((q) => sha(q.sha)),
@@ -2938,13 +3124,46 @@ function pruneLogs(s) {
   }
 }
 
+/**
+ * stackra/codeql for the PRs that ask for it and, once a day, main. The nightly is marked done when its run is posted,
+ * or when main's head already has one; an error leaves it for the retry.
+ */
+async function codeqlPass(s, jobs) {
+  let failed = 0;
+  const due = codeqlJobs(jobs, {
+    now: Date.now(),
+    hourUtc: s.codeqlHourUtc,
+    lastNightly: readState(s).codeqlNightly,
+  });
+  for (const job of due) {
+    if (isStopping()) break;
+    try {
+      const needed = await wanted(s, job);
+      const entry = needed ? await verify(s, job) : null;
+      const errors = readState(s).errors[errorKey(job)];
+      if (job.nightly && (entry || (!needed && !(errors?.count > 0)))) {
+        const state = readState(s);
+        state.codeqlNightly = job.nightly;
+        writeState(s, state);
+      }
+      if (entry)
+        process.stdout.write(`${entry.check} ${entry.conclusion} ${job.repo}@${job.sha}\n`);
+    } catch (error) {
+      failed++;
+      process.stderr.write(`stackra-verify: ${job.repo}@${job.sha} codeql: ${error.message}\n`);
+    }
+  }
+  return failed;
+}
+
 async function once(s, repo) {
   pruneLogs(s);
   let failed = 0;
-  for (const job of await heads(s, repo)) {
+  const jobs = await heads(s, repo);
+  for (const job of jobs) {
     if (isStopping()) break;
     // stackra/verify first, then stackra/verify-mobile: separate runs, separate check runs, separate errors.
-    const results = await runKinds(job, Object.keys(KINDS), async (kindJob) => {
+    const results = await runKinds(job, PER_HEAD_KINDS, async (kindJob) => {
       if (isStopping() || !(await wanted(s, kindJob))) return null;
       const entry = await verify(s, kindJob);
       if (entry)
@@ -2959,6 +3178,7 @@ async function once(s, repo) {
         process.stderr.write(`stackra-verify: ${repo}@${job.sha} ${kind}: ${result.error}\n`);
       }
   }
+  if (s.codeqlBundleUrl) failed += await codeqlPass(s, jobs);
   return failed;
 }
 
@@ -3019,7 +3239,7 @@ async function runLocked(options, s) {
   try {
     if (options.verb === "run") {
       const job = { repo: options.repo, sha: options.sha, pr: options.pr };
-      const results = await runKinds(job, Object.keys(KINDS), (kindJob) => verify(s, kindJob));
+      const results = await runKinds(job, PER_HEAD_KINDS, (kindJob) => verify(s, kindJob));
       for (const [kind, entry] of Object.entries(results))
         process.stdout.write(
           `${KINDS[kind].check} ${entry?.error ? `error: ${entry.error}` : entry ? entry.conclusion : "not recorded"} ${options.repo}@${options.sha}\n`,

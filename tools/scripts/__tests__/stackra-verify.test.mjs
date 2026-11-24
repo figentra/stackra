@@ -93,6 +93,11 @@ import {
   FORBIDDEN_DEFAULTS,
   GATE_FILTERS,
   GATE_STEPS,
+  CODEQL_LABELS,
+  PER_HEAD_KINDS,
+  codeqlJobs,
+  codeqlResults,
+  codeqlScript,
   KINDS,
   TOOLS,
   VERIFY_PREPARE,
@@ -2296,7 +2301,7 @@ test("runJob gate: a PR head that moved before the facts were read posts nothing
 test("verify-mobile: a mobile failure leaves stackra/verify green; both carry the same head SHA and external_id scheme", async () => {
   const outcomes = { gate: "success", mobile: "failure" };
   const posted = [];
-  const results = await runKinds(JOB, Object.keys(KINDS), async (job) => {
+  const results = await runKinds(JOB, PER_HEAD_KINDS, async (job) => {
     if (job.kind === "mobile") throw new Error("Uniwind Pro licence quota used up");
     const body = checkRunBody({
       kind: job.kind,
@@ -2538,4 +2543,213 @@ test("preflight: deny by default under each protected root; allowlisted entries 
   // the settings take a list, trailing slashes trimmed
   assert.deepEqual(settings({ STACKRA_VERIFY_ALLOW_PATHS: "/a/, /b" }).allowPaths, ["/a", "/b"]);
   assert.equal(FORBIDDEN_DEFAULTS.includes("/work/academorix"), false);
+});
+
+// ---- stackra/codeql -------------------------------------------------------------------------------------------------
+
+test("codeql: each language's database and code-scanning suite from the pinned bundle, offline, then the results", () => {
+  assert.deepEqual(PER_HEAD_KINDS, ["gate", "mobile"]);
+  assert.equal(KINDS.codeql.check, "stackra/codeql");
+  const script = codeqlScript();
+  assert.match(
+    script,
+    /\/codeql\/codeql database create \/tmp\/stackra-codeql\/db-javascript-typescript --language=javascript-typescript --source-root=\/work/,
+  );
+  assert.match(
+    script,
+    /database analyze \/tmp\/stackra-codeql\/db-javascript-typescript codeql\/javascript-queries:codeql-suites\/javascript-code-scanning\.qls --format=sarif-latest/,
+  );
+  assert.match(
+    script,
+    /database analyze \/tmp\/stackra-codeql\/db-actions codeql\/actions-queries:codeql-suites\/actions-code-scanning\.qls/,
+  );
+  assert.match(script, /run_step codeql-results "" step_codeql_results/);
+  assert.throws(() => codeqlScript(["cobol"]), /not a CodeQL language/);
+  assert.deepEqual(kindMounts("codeql", { runDir: "/r", codeqlDir: "/h/codeql/abc/codeql" }), [
+    ["/r/codeql.sh", "/in/codeql.sh"],
+    ["/r/codeql-results.cjs", "/in/codeql-results.cjs"],
+    ["/h/codeql/abc/codeql", "/codeql"],
+  ]);
+});
+
+/** A SARIF document with these results and rules. */
+const sarifOf = (results, rules = []) =>
+  JSON.stringify({ runs: [{ tool: { driver: { rules } }, results }] });
+const quiet = () => {};
+
+test("codeql results: an error-level or high-severity result fails; notes and warnings are listed; no SARIF never passes", () => {
+  const place = {
+    locations: [
+      { physicalLocation: { artifactLocation: { uri: "a.ts" }, region: { startLine: 3 } } },
+    ],
+  };
+  const run = (text) => {
+    const log = console.log;
+    console.log = quiet;
+    try {
+      return codeqlResults(["x.sarif"], () => text);
+    } finally {
+      console.log = log;
+    }
+  };
+  assert.equal(
+    run(sarifOf([{ ruleId: "js/x", level: "note", message: { text: "n" }, ...place }])),
+    0,
+  );
+  assert.equal(
+    run(sarifOf([{ ruleId: "js/x", level: "error", message: { text: "e" }, ...place }])),
+    1,
+  );
+  assert.equal(
+    run(
+      sarifOf(
+        [{ ruleId: "js/sqli", message: { text: "w" }, ...place }],
+        [
+          {
+            id: "js/sqli",
+            properties: { "security-severity": "8.8" },
+            defaultConfiguration: { level: "warning" },
+          },
+        ],
+      ),
+    ),
+    1,
+  );
+  assert.equal(
+    run(
+      sarifOf(
+        [{ ruleId: "js/low", message: { text: "w" } }],
+        [{ id: "js/low", properties: { "security-severity": "4.0" } }],
+      ),
+    ),
+    0,
+  );
+  assert.equal(run("not json"), 1);
+  const log = console.log;
+  console.log = quiet;
+  try {
+    assert.equal(codeqlResults([]), 1);
+  } finally {
+    console.log = log;
+  }
+  // the file the results step runs is this function's own source
+  const dir = mkdtempSync(join(tmpdir(), "stackra-codeql-"));
+  writeFileSync(join(dir, "codeql-results.cjs"), kindFiles("codeql")["codeql-results.cjs"]);
+  writeFileSync(
+    join(dir, "a.sarif"),
+    sarifOf([{ ruleId: "js/x", level: "error", message: { text: "bad" }, ...place }]),
+  );
+  const r = spawnSync(process.execPath, [join(dir, "codeql-results.cjs"), join(dir, "a.sarif")], {
+    encoding: "utf8",
+  });
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /^FAIL error js\/x a\.ts:3 bad$/m);
+});
+
+test("codeql jobs: PRs labelled codeql or risk:R3 on demand, and main once a day from the set hour", () => {
+  const jobs = [
+    { repo: "figentra/stackra", sha: SHA, pr: "1", base: BASE, labels: ["codeql"] },
+    { repo: "figentra/stackra", sha: SHA, pr: "2", base: BASE, labels: ["risk:R3"] },
+    { repo: "figentra/stackra", sha: SHA, pr: "3", base: BASE, labels: ["design"] },
+    { repo: "figentra/stackra", sha: "c".repeat(40), base: BASE, queue: true },
+    { repo: "figentra/stackra", sha: BASE, base: BASE },
+  ];
+  assert.deepEqual(CODEQL_LABELS, ["codeql", "risk:R3"]);
+  const jobsAt = (iso, lastNightly) =>
+    codeqlJobs(jobs, { now: Date.parse(iso), hourUtc: 2, lastNightly });
+  assert.deepEqual(
+    jobsAt("2026-11-24T01:00:00Z").map((j) => j.pr ?? j.nightly),
+    ["1", "2"],
+  );
+  const night = jobsAt("2026-11-24T02:30:00Z");
+  assert.deepEqual(
+    night.map((j) => j.pr ?? j.nightly),
+    ["1", "2", "2026-11-24"],
+  );
+  assert.ok(night.every((j) => j.kind === "codeql"));
+  assert.equal(night.at(-1).sha, BASE);
+  assert.deepEqual(
+    jobsAt("2026-11-24T23:00:00Z", "2026-11-24").map((j) => j.pr ?? j.nightly),
+    ["1", "2"],
+  );
+  assert.equal(jobsAt("2026-11-25T03:00:00Z", "2026-11-24").at(-1).nightly, "2026-11-25");
+  // jobsFrom carries the labels the on-demand rule reads
+  const fromPulls = jobsFrom({
+    repo: "figentra/stackra",
+    pulls: [
+      {
+        number: 7,
+        draft: false,
+        labels: [{ name: "codeql" }],
+        head: { sha: SHA, repo: { full_name: "figentra/stackra" } },
+      },
+    ],
+    main: BASE,
+  });
+  assert.deepEqual(fromPulls[0].labels, ["codeql"]);
+});
+
+test("codeql settings: URL and sha256 together (https, 64 hex), known languages, a whole hour; unset means no CodeQL", () => {
+  const sha = "d".repeat(64);
+  assert.deepEqual(hostProblems(S, 0o400), []);
+  assert.equal(settings({}).codeqlBundleUrl, null);
+  const on = {
+    ...S,
+    codeqlBundleUrl: "https://example.test/codeql-bundle-linux64.tar.gz",
+    codeqlBundleSha256: sha,
+  };
+  assert.deepEqual(hostProblems(on, 0o400), []);
+  assert.match(hostProblems({ ...on, codeqlBundleSha256: null }, 0o400).join(), /set together/);
+  assert.match(hostProblems({ ...on, codeqlBundleUrl: "http://x/y" }, 0o400).join(), /https URL/);
+  assert.match(hostProblems({ ...on, codeqlBundleSha256: "abc" }, 0o400).join(), /64 hex/);
+  assert.match(
+    hostProblems({ ...on, codeqlLanguages: ["cobol"] }, 0o400).join(),
+    /not a CodeQL language here: cobol/,
+  );
+  assert.match(hostProblems({ ...on, codeqlHourUtc: 24 }, 0o400).join(), /0 to 23/);
+  const fromEnv = settings({
+    STACKRA_VERIFY_CODEQL_BUNDLE_URL: on.codeqlBundleUrl,
+    STACKRA_VERIFY_CODEQL_BUNDLE_SHA256: sha.toUpperCase(),
+    STACKRA_VERIFY_CODEQL_LANGUAGES: "javascript-typescript",
+    STACKRA_VERIFY_CODEQL_HOUR_UTC: "3",
+  });
+  assert.deepEqual(
+    [fromEnv.codeqlBundleSha256, fromEnv.codeqlLanguages, fromEnv.codeqlHourUtc],
+    [sha, ["javascript-typescript"], 3],
+  );
+});
+
+test("runJob codeql: no install and no network; one container from the store image with the bundle read-only", async () => {
+  const { deps, calls } = fakeDeps({});
+  deps.verifyMounts = () =>
+    kindMounts("codeql", { runDir: "/runs/x", codeqlDir: "/h/codeql/s/codeql" });
+  const r = await runJob({ ...JOB, kind: "codeql" }, deps);
+  assert.equal(r.conclusion, "success");
+  assert.equal(calls.runs.length, 1);
+  assert.equal(calls.network, undefined);
+  const argv = calls.runs[0];
+  assert.equal(argv[argv.indexOf("--network") + 1], "none");
+  assert.ok(argv.includes("stackra-verify-store:abc"));
+  assert.ok(argv.includes("/h/codeql/s/codeql:/codeql:ro"));
+  assert.match(argv.at(-1), /commit -qm tested --no-verify; bash \/in\/codeql\.sh$/);
+  const failed = await runJob(
+    { ...JOB, kind: "codeql" },
+    fakeDeps({ exits: { install: 0, verify: 1 } }).deps,
+  );
+  assert.equal(failed.conclusion, "failure");
+  const body = checkRunBody({
+    kind: "codeql",
+    sha: SHA,
+    base: BASE,
+    conclusion: "failure",
+    phase: "verify",
+    durationMs: 1,
+    box: "b",
+    log: "",
+    startedAt: "t0",
+    completedAt: "t1",
+  });
+  assert.equal(body.name, "stackra/codeql");
+  assert.equal(body.external_id, `base:${BASE}`);
+  assert.equal(body.output.title, "CodeQL failed in 0s");
 });
