@@ -17,13 +17,16 @@ import {
   enqueueReady,
   gh,
   graphql,
+  definitionFieldsChanged,
   isVerifyDefinition,
+  isVerifyOverlay,
   scriptsChanged,
   OWNER,
   ownerLabelled,
   parseArgs,
   VERIFY_APP,
   VERIFY_CHECK,
+  verifyFacts,
   verifyRun,
 } from "../pr-merge.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
@@ -380,4 +383,103 @@ test("condition 6: a PR that changes what pnpm verify checks needs risk:R3", () 
     }).join(),
     /needs an owner approval/,
   );
+});
+
+test("condition 6: a PR that adds only a patch and a workspace entry needs risk:R3 (it changes what verify runs)", () => {
+  for (const path of [
+    "patches/vitest@5.0.5.patch",
+    "pnpm-workspace.yaml",
+    "pnpm-lock.yaml",
+    "packages/a/tsconfig.json",
+    "packages/a/tsconfig.build.json",
+    "packages/a/vite.config.ts",
+    "packages/a/vitest.setup.ts",
+    "packages/developer/cli/src/x.ts",
+    ".pnpmfile.cjs",
+    ".gitattributes",
+  ])
+    assert.equal(isVerifyDefinition(path), true, path);
+  assert.equal(isVerifyOverlay("pnpm-workspace.yaml"), false);
+  assert.equal(isVerifyOverlay(".pnpmfile.cjs"), true);
+  const changes = ["patches/vitest@5.0.5.patch", "pnpm-workspace.yaml"];
+  assert.match(
+    blockers(pr(), green, { app: APP, verifyRuns: verified, definitionChanges: changes }).join(),
+    /label it risk:R3/,
+  );
+});
+
+test("condition 6: package.json definition fields — scripts, pnpm, overrides, resolutions, packageManager; reads fail closed", () => {
+  const base = '{"name":"a","version":"1","scripts":{"test":"vitest run"}}';
+  assert.equal(
+    definitionFieldsChanged(base, '{"name":"a","version":"2","scripts":{"test":"vitest run"}}'),
+    false,
+  );
+  for (const head of [
+    '{"name":"a","scripts":{"test":"true"}}',
+    '{"name":"a","scripts":{"test":"vitest run"},"pnpm":{"patchedDependencies":{"vitest":"p"}}}',
+    '{"name":"a","scripts":{"test":"vitest run"},"overrides":{"vitest":"npm:noop"}}',
+    '{"name":"a","scripts":{"test":"vitest run"},"packageManager":"pnpm@1.0.0"}',
+  ])
+    assert.equal(definitionFieldsChanged(base, head), true, head);
+  assert.equal(definitionFieldsChanged(base, null, "modified"), true);
+  // a read failure counts as a change even when the copy that was read has no definition field
+  assert.equal(definitionFieldsChanged('{"name":"a"}', null, "modified"), true);
+  assert.equal(definitionFieldsChanged(null, '{"name":"a"}', "modified"), true);
+  assert.equal(definitionFieldsChanged(null, null, "modified"), true);
+  assert.equal(definitionFieldsChanged(null, base, "modified"), true);
+  assert.equal(definitionFieldsChanged(null, '{"name":"new"}', "added"), false);
+  assert.equal(definitionFieldsChanged(null, '{"name":"new","scripts":{"x":"y"}}', "added"), true);
+  assert.equal(definitionFieldsChanged(base, null, "removed"), true);
+  assert.equal(definitionFieldsChanged('{"name":"gone"}', null, "removed"), false);
+});
+
+test("condition 5: a success against an older main refuses until the re-verify", () => {
+  const MAIN = "e".repeat(40);
+  const ok = { ...appRun("success"), external_id: `base:${MAIN}` };
+  assert.deepEqual(blockers(pr(), green, { app: APP, verifyRuns: [ok], mainSha: MAIN }), []);
+  const old = { ...appRun("success"), external_id: `base:${"d".repeat(40)}` };
+  assert.match(
+    blockers(pr(), green, { app: APP, verifyRuns: [old], mainSha: MAIN }).join(),
+    /main is now e{40}: wait for the re-verify/,
+  );
+});
+
+test("verifyFacts: the main block reads the head's verify runs, current main and every changed definition file", () => {
+  const HEAD = SHA;
+  const MAIN = "e".repeat(40);
+  const calls = [];
+  const api = (path) => {
+    calls.push(path);
+    if (path.startsWith("repos/figentra/stackra/commits/" + HEAD + "/check-runs"))
+      return { check_runs: [appRun("success")] };
+    if (path === "repos/figentra/stackra/pulls/7")
+      return { base: { sha: "b".repeat(40), ref: "main" }, changed_files: 5 };
+    if (path === "repos/figentra/stackra/commits/main") return { sha: MAIN };
+    throw new Error(`unexpected ${path}`);
+  };
+  const list = (path) => {
+    calls.push(path);
+    return [
+      { filename: "src/a.ts", status: "modified" },
+      { filename: "packages/a/package.json", status: "modified" },
+      { filename: "packages/b/package.json", status: "modified" },
+      { filename: "turbo.jsonc", status: "modified" },
+    ];
+  };
+  const raw = (path, ref) =>
+    path === "packages/a/package.json"
+      ? ref === HEAD
+        ? '{"scripts":{"test":"true"}}'
+        : '{"scripts":{"test":"vitest run"}}'
+      : '{"version":"' + ref.slice(0, 1) + '"}';
+  const facts = verifyFacts({ repo: "figentra/stackra", n: "7", headSha: HEAD, api, list, raw });
+  assert.equal(facts.verifyRuns.length, 1);
+  assert.equal(facts.mainSha, MAIN);
+  assert.deepEqual(facts.definitionChanges, [
+    "1 unlisted files",
+    "packages/a/package.json",
+    "turbo.jsonc",
+  ]);
+  assert.ok(calls.includes("repos/figentra/stackra/pulls/7/files?per_page=100"));
+  assert.match(calls[0], /check-runs\?check_name=stackra%2Fverify&filter=all/);
 });

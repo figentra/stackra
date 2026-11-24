@@ -17,7 +17,7 @@
  *      on that exact SHA in a throwaway container on our machines (`stackra-verify.mjs`, STA-2761; replaces the
  *      merge-now rule STA-2083). A commit status, or a check run any other App posts (stackra-bot included, which
  *      every agent can act as), never counts.
- *   6. a PR that changes what `pnpm verify` checks (`VERIFY_DEFINITION`, or the `scripts` of a package.json) is
+ *   6. a PR that changes what `pnpm verify` checks (`isVerifyDefinition`, or a package.json definition field) is
  *      labelled `risk:R3`, so it needs the owner's approval below: the verify service runs main's definition.
  *   A PR labelled `design` or `risk:R3` also needs an owner APPROVED review on the head SHA, or `owner-approved` put
  *   there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is the owner
@@ -72,28 +72,81 @@ export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
 }
 
 /**
- * The files that define what `pnpm verify` checks (STA-2761): scripts and task pipelines, test, lint and knip
- * configs, the config presets, the repository scripts and the registry config. The verify service always runs main's
- * copy of them against a PR's source, so a PR that changes them is not verified by its own change: it needs the
- * owner's review (`risk:R3`, condition 6). `package.json` counts only when its `scripts` change (`scriptsChanged`).
+ * The files that define what `pnpm verify` checks and that the verify service always takes from main (STA-2761):
+ * scripts pipelines, test, lint, format and knip configs, the config presets, the repository scripts and hooks, the
+ * registry config and the git attribute and ignore files. A PR's copy of them never runs.
  */
-export const VERIFY_DEFINITION =
-  /(?:^|\/)(?:turbo\.jsonc?|knip\.jsonc?|\.oxlintrc\.jsonc?|oxlint\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s|\.npmrc|lefthook\.ya?ml)$|^(?:packages\/tooling|tools\/scripts)\//;
+export const VERIFY_OVERLAY =
+  /(?:^|\/)(?:turbo\.jsonc?|knip\.jsonc?|\.oxlintrc\.jsonc?|\.oxfmtrc\.jsonc?|oxlint\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?)$|^(?:packages\/tooling|tools\/scripts|\.agents\/hooks|\.opencode\/plugins)\//;
 
-export const isVerifyDefinition = (path) => VERIFY_DEFINITION.test(path);
+/**
+ * Files a PR legitimately changes that still change what `pnpm verify` checks: the workspace (catalogs, overrides,
+ * allowed builds), the TypeScript projects and the CLI the repository checks run. The service runs the PR's copy, so
+ * a change to them needs the owner's review (condition 6), like a change to VERIFY_OVERLAY.
+ */
+export const VERIFY_SENSITIVE =
+  /(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vite\.config\.[cm]?[jt]s|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^(?:packages\/developer\/cli|patches)\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
 
-/** A package.json text's `scripts`, as a comparable string (a missing file has none; an unparsable one is marked). */
-const scriptsOf = (text) => {
+export const isVerifyOverlay = (path) => VERIFY_OVERLAY.test(path);
+export const isVerifyDefinition = (path) =>
+  VERIFY_OVERLAY.test(path) || VERIFY_SENSITIVE.test(path);
+
+/** The package.json fields that change what runs or resolves in a verify: commands, pnpm settings, overrides. */
+export const DEFINITION_FIELDS = ["scripts", "pnpm", "overrides", "resolutions", "packageManager"];
+
+/** A package.json text's definition fields as one comparable string (a missing file has none). */
+const definitionOf = (text) => {
   try {
-    return JSON.stringify(JSON.parse(text ?? "{}").scripts ?? {});
+    const json = JSON.parse(text ?? "{}");
+    return JSON.stringify(DEFINITION_FIELDS.map((field) => json[field] ?? null));
   } catch {
     return "unparsable";
   }
 };
 
-/** Whether two package.json texts differ in `scripts`. */
-export function scriptsChanged(baseText, headText) {
-  return scriptsOf(baseText) !== scriptsOf(headText);
+/**
+ * Whether a package.json changed a definition field between base and head. `status` is GitHub's file status: an
+ * added file has no base copy and a removed one no head copy; any other missing copy is a read failure, and a read
+ * failure counts as a change (fails closed).
+ */
+export function definitionFieldsChanged(baseText, headText, status = "modified") {
+  const baseMissing = baseText === null || baseText === undefined;
+  const headMissing = headText === null || headText === undefined;
+  if ((baseMissing && status !== "added") || (headMissing && status !== "removed")) return true;
+  return (
+    definitionOf(baseMissing ? null : baseText) !== definitionOf(headMissing ? null : headText)
+  );
+}
+
+/** Kept for callers of the first version: only `scripts`, through definitionFieldsChanged. */
+export const scriptsChanged = (baseText, headText) => definitionFieldsChanged(baseText, headText);
+
+/**
+ * What conditions 5 and 6 need, read through `api(path)` (parsed JSON, throws on an API error), `list(path)` (every
+ * page of a list) and `raw(path, ref)`
+ * (file text or null): the head's stackra/verify runs, main's current head, and the changed paths that define what
+ * pnpm verify checks. GitHub lists at most 3000 files; a longer PR counts as a change.
+ */
+export function verifyFacts({ repo, n, headSha, api, list: listAll = api, raw }) {
+  const verifyRuns = api(
+    `repos/${repo}/commits/${headSha}/check-runs?check_name=${encodeURIComponent(VERIFY_CHECK)}&filter=all&per_page=100`,
+  ).check_runs;
+  const pull = api(`repos/${repo}/pulls/${n}`);
+  const mainSha = api(`repos/${repo}/commits/${pull.base.ref}`).sha;
+  const files = listAll(`repos/${repo}/pulls/${n}/files?per_page=100`);
+  const definitionChanges = [];
+  if (pull.changed_files > files.length)
+    definitionChanges.push(`${pull.changed_files - files.length} unlisted files`);
+  for (const file of files)
+    for (const path of [file.filename, file.previous_filename].filter(Boolean)) {
+      if (isVerifyDefinition(path)) definitionChanges.push(path);
+      else if (
+        /(?:^|\/)package\.json$/.test(path) &&
+        definitionFieldsChanged(raw(path, pull.base.sha), raw(path, headSha), file.status)
+      )
+        definitionChanges.push(path);
+    }
+  return { verifyRuns, mainSha, definitionChanges: [...new Set(definitionChanges)] };
 }
 
 /** The merge states in which the ruleset lets a PR without a merge queue merge. */
@@ -153,6 +206,7 @@ export function blockers(
     verifyRuns = [],
     app = VERIFY_APP,
     definitionChanges = [],
+    mainSha,
   } = {},
 ) {
   const reasons = [];
@@ -179,6 +233,10 @@ export function blockers(
   else if (verify.conclusion !== "success")
     reasons.push(
       `${VERIFY_CHECK} on ${sha} is ${verify.conclusion}${verify.html_url ? ` (${verify.html_url})` : ""}`,
+    );
+  else if (mainSha && verify.external_id !== `base:${mainSha}`)
+    reasons.push(
+      `${VERIFY_CHECK} on ${sha} was run against ${verify.external_id ?? "an unknown base"}, and main is now ${mainSha}: wait for the re-verify`,
     );
 
   const labelNames = new Set(pr.labels.map((l) => l.name));
@@ -293,47 +351,38 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       gated && labels.has(OWNER_LABEL)
         ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
         : [];
-    // Condition 5: every stackra/verify check run of the head SHA, from any App; verifyRun keeps the verify App's.
-    const verifyRuns = JSON.parse(
-      gh(
-        [
-          "api",
-          `repos/${repo}/commits/${pr.headRefOid}/check-runs?check_name=${encodeURIComponent(VERIFY_CHECK)}&filter=all&per_page=100`,
-        ],
-        token,
-        true,
-      ),
-    ).check_runs;
-    // Condition 6: the changed files, and for a package.json whether its scripts changed between base and head.
-    const files = list(`repos/${repo}/pulls/${n}/files?per_page=100`, token);
-    const base = JSON.parse(gh(["api", `repos/${repo}/pulls/${n}`], token, true)).base.sha;
-    const raw = (path, ref) => {
-      const r = spawnSync(
-        "gh",
-        [
-          "api",
-          "-H",
-          "Accept: application/vnd.github.raw",
-          `repos/${repo}/contents/${encodeURI(path)}?ref=${ref}`,
-        ],
-        { encoding: "utf8", env: { ...process.env, GH_TOKEN: token }, maxBuffer: 16 * 1024 * 1024 },
-      );
-      return r.status === 0 ? r.stdout : null;
-    };
-    const definitionChanges = files
-      .flatMap((f) => [f.filename, f.previous_filename].filter(Boolean))
-      .filter(
-        (path) =>
-          isVerifyDefinition(path) ||
-          (/(?:^|\/)package\.json$/.test(path) &&
-            scriptsChanged(raw(path, base), raw(path, pr.headRefOid))),
-      );
+    // Conditions 5 and 6: read through verifyFacts, so the wiring is tested with fakes.
+    const { verifyRuns, mainSha, definitionChanges } = verifyFacts({
+      repo,
+      n,
+      headSha: pr.headRefOid,
+      api: (path) => JSON.parse(gh(["api", path], token, true)),
+      list: (path) => list(path, token),
+      raw: (path, ref) => {
+        const r = spawnSync(
+          "gh",
+          [
+            "api",
+            "-H",
+            "Accept: application/vnd.github.raw",
+            `repos/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${ref}`,
+          ],
+          {
+            encoding: "utf8",
+            env: { ...process.env, GH_TOKEN: token },
+            maxBuffer: 16 * 1024 * 1024,
+          },
+        );
+        return r.status === 0 ? r.stdout : null;
+      },
+    });
     const reasons = blockers(pr, runs, {
       queue: Boolean(repository.mergeQueue),
       reviews,
       events,
       verifyRuns,
       definitionChanges,
+      mainSha,
     });
     if (reasons.length) {
       process.stderr.write(

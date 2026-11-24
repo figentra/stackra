@@ -29,7 +29,7 @@
  *   - The result is the verify container's exit code, read with `docker inspect`; output is display only, scrubbed
  *     and size-capped. A container that never started is an `error`, never a pass.
  *   - The PR never defines its own verify: the tested tree is the PR head merged onto main's head (`git merge-tree`;
- *     a conflict is a failure), with main's verify definition laid over it (`isVerifyDefinition` paths and every
+ *     a conflict is a failure), with main's verify definition laid over it (`isVerifyOverlay` paths and every
  *     package.json `scripts`, wherever main has the file). pr-merge.mjs asks the owner's review for a PR that changes
  *     that definition (condition 6). The mirror is the daemon's own, read with replace objects off.
  *   - Nothing crosses sudo or docker as an argument value: PATH and DOCKER_HOST come from an env file the verify user
@@ -38,13 +38,21 @@
  *   - The SHA is bound once: the head resolved for the job is the SHA archived and the SHA the check run names; if a
  *     PR's head moved meanwhile, nothing is posted and the PR is verified again at its new head.
  *   - One service per box: the process re-executes itself under `flock -n` on STACKRA_VERIFY_HOME/lock.
+ * Threat model, stated plainly: the service proves that a PR's code passes main's checks on our machines, cannot
+ *   forge or replay a result, cannot reach the key, the host's services or instance credentials, and cannot poison
+ *   another run. It cannot prove that a PR's own code is honest: code that runs during install or test can always
+ *   make its own run pass (an emptied test does that too). That is what review, the risk:R3 label on a change to
+ *   the verify definition, and the owner's approval are for. Residual risk: a verify-user escape from a container
+ *   could alter the kept base or store image layers on disk without changing their ids.
+ *   Start it directly (`node tools/scripts/stackra-verify.mjs daemon …` from systemd), never through secrets-exec:
+ *   it needs no stackra-bot secret, only its own key file.
  * Runtime: node on Linux with flock, sudo, git, and docker for the verify user.
  * Governing contract: ADR 0119 (merge policy); ADR 0523 (decision 3); STA-2761.
  * Secrets: the App key is read from STACKRA_VERIFY_KEY_FILE (owner-placed, mode 0400) only to mint a token, which
  *   stays in the gh child's environment. No secret is passed to sudo, docker or a container.
  * Exit: 0 every head recorded, 1 a head could not be recorded or the host is not set up, 2 usage, 75 lock held.
  */
-import { spawn, spawnSync } from "node:child_process";
+import { spawn as spawnChild, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   appendFileSync,
@@ -62,11 +70,47 @@ import { hostname } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as botNetwork from "./bot-token.mjs";
-import { gh, isVerifyDefinition, VERIFY_APP, VERIFY_CHECK } from "./pr-merge.mjs";
+import { gh, isVerifyOverlay, VERIFY_APP, VERIFY_CHECK } from "./pr-merge.mjs";
 
 export const DEFAULT_REPO = "figentra/stackra";
-export const INSTALL_COMMAND = "pnpm install --frozen-lockfile --store-dir /store";
+export const INSTALL_COMMAND =
+  "pnpm install --frozen-lockfile --store-dir /store --ignore-scripts --ignore-pnpmfile";
+
+/**
+ * The dependencies main allows to build (`allowBuilds: { name: true }` or `onlyBuiltDependencies: [name]` in main's
+ * pnpm-workspace.yaml): the only build scripts the install runs, through `pnpm rebuild`. Names are checked against
+ * the npm name grammar, so nothing else reaches the shell.
+ */
+export function allowedBuilds(workspaceYaml) {
+  const names = [];
+  let section = null;
+  for (const line of workspaceYaml.split("\n")) {
+    if (/^\S/.test(line))
+      section = /^(allowBuilds|onlyBuiltDependencies):\s*$/.exec(line)?.[1] ?? null;
+    else if (section === "allowBuilds") {
+      const m = /^\s+["']?([@\w./-]+)["']?:\s*true\s*(?:#.*)?$/.exec(line);
+      if (m) names.push(m[1]);
+    } else if (section === "onlyBuiltDependencies") {
+      const m = /^\s+-\s+["']?([@\w./-]+)["']?\s*(?:#.*)?$/.exec(line);
+      if (m) names.push(m[1]);
+    }
+  }
+  return [...new Set(names)].filter((n) => /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/.test(n));
+}
+
+/** The install: no lifecycle script and no pnpmfile from the PR; then only main's allowed builds. */
+export const installCommand = (builds) =>
+  builds.length ? `${INSTALL_COMMAND} && pnpm rebuild ${builds.join(" ")}` : INSTALL_COMMAND;
 export const VERIFY_COMMAND = "pnpm verify";
+/** The uid:gid PR code runs as inside every container (the base image's unprivileged user), never root. */
+export const CONTAINER_USER = "1000:1000";
+/**
+ * Before verify: the tested tree is unpacked again over /work (undoing whatever the install phase wrote to tracked
+ * files), and committed to a fresh git repository so `git ls-files` sees the tree as a local checkout would.
+ */
+export const VERIFY_PREPARE =
+  "set -e; tar -xf /in/src.tar -C /work; cd /work; rm -rf .git; git init -q; git add -A; " +
+  "git -c user.name=stackra-verify -c user.email=verify@stackra.invalid -c commit.gpgsign=false commit -qm tested --no-verify";
 /** An infrastructure error (fetch, Docker, disk) is retried after this long … */
 export const ERROR_RETRY_MS = 30 * 60 * 1000;
 /** … and after this many on one SHA the service posts `neutral` (could not run), which never merges. */
@@ -127,6 +171,10 @@ export function settings(env = process.env) {
     appId: env.STACKRA_VERIFY_APP_ID || null,
     installationId: env.STACKRA_VERIFY_INSTALLATION_ID || null,
     keyFile: env.STACKRA_VERIFY_KEY_FILE || null,
+    dockerRoot: env.STACKRA_VERIFY_DOCKER_ROOT || null,
+    registries: (env.STACKRA_VERIFY_REGISTRIES?.split(",").filter(Boolean) ?? REGISTRY_HOSTS).map(
+      (h) => h.trim(),
+    ),
   };
 }
 
@@ -147,8 +195,8 @@ export function hostProblems(s, keyMode) {
       "STACKRA_VERIFY_APP_ID, STACKRA_VERIFY_INSTALLATION_ID and STACKRA_VERIFY_KEY_FILE are required",
     );
   else if (keyMode === null) problems.push("the App key file is not readable");
-  else if ((keyMode & 0o077) !== 0)
-    problems.push("the App key file must be readable by its owner only (0400)");
+  else if (keyMode !== 0o400)
+    problems.push("the App key file must be mode 0400 (readable by its owner only)");
   if (VERIFY_APP.id && s.appId && String(VERIFY_APP.id) !== String(s.appId))
     problems.push(
       `STACKRA_VERIFY_APP_ID differs from VERIFY_APP.id (${VERIFY_APP.id}) in pr-merge.mjs`,
@@ -203,10 +251,12 @@ export const containerLimits = (s, envFile) => [
   "ALL",
   "--security-opt",
   "no-new-privileges",
+  "--user",
+  CONTAINER_USER,
   "--tmpfs",
-  "/tmp:rw,nosuid,nodev,size=4g",
+  "/tmp:rw,nosuid,nodev,size=4g,mode=1777",
   "--tmpfs",
-  "/home/run:rw,nosuid,nodev,size=1g",
+  "/home/run:rw,nosuid,nodev,size=1g,uid=1000,gid=1000,mode=0700",
   "--env-file",
   envFile,
 ];
@@ -215,20 +265,74 @@ export const containerLimits = (s, envFile) => [
  * The install container: the archived SHA (read-only) unpacked into /work, then `pnpm install` against the warm
  * store in the image. It has network for the registries and nothing secret.
  */
-export const installArgs = (s, { name, image, tarPath, envFile }) => [
+export const installArgs = (s, { name, image, tarPath, envFile, network, builds = [] }) => [
   "run",
   "--name",
   name,
   "--network",
-  "bridge",
+  network,
   ...containerLimits(s, envFile),
   "--volume",
   `${tarPath}:/in/src.tar:ro`,
   image,
   "sh",
   "-c",
-  `set -e; mkdir -p /work; tar -xf /in/src.tar -C /work; cd /work; ${INSTALL_COMMAND}`,
+  `set -e; tar -xf /in/src.tar -C /work; cd /work; ${installCommand(builds)}`,
 ];
+
+/** The hosts the install's proxy lets through, on port 443 only: the package registries. */
+export const REGISTRY_HOSTS = ["registry.npmjs.org", "npm.stackra.figentra.com"];
+export const PROXY_PORT = 3128;
+
+/**
+ * The allowlisting proxy: the install container sits on an `--internal` network whose only way out is this proxy,
+ * which answers CONNECT to an allowed host on 443 and refuses everything else (403), including any address literal.
+ */
+export function proxyScript(allow, port = PROXY_PORT) {
+  return [
+    'const http = require("node:http"); const net = require("node:net");',
+    `const allow = new Set(${JSON.stringify(allow.map((h) => h.toLowerCase()))});`,
+    "const server = http.createServer((req, res) => { res.writeHead(403); res.end(); });",
+    'server.on("connect", (req, socket) => {',
+    '  const [host, port] = String(req.url).split(":");',
+    '  if (!allow.has(String(host).toLowerCase()) || port !== "443" || net.isIP(host)) {',
+    '    socket.end("HTTP/1.1 403 Forbidden\\r\\n\\r\\n"); return; }',
+    "  const up = net.connect(443, host, () => {",
+    '    socket.write("HTTP/1.1 200 Connection Established\\r\\n\\r\\n"); up.pipe(socket); socket.pipe(up); });',
+    '  up.on("error", () => socket.end("HTTP/1.1 502 Bad Gateway\\r\\n\\r\\n"));',
+    '  socket.on("error", () => up.destroy());',
+    "});",
+    `server.listen(${port}, "0.0.0.0");`,
+  ].join("\n");
+}
+
+/** The proxy container: on the default bridge (the only one with egress), joined to the run's internal network. */
+export const proxyArgs = (s, { name, image, envFile, allow }) => [
+  "run",
+  "--detach",
+  "--name",
+  name,
+  "--network",
+  "bridge",
+  ...containerLimits(s, envFile),
+  image,
+  "node",
+  "-e",
+  proxyScript(allow),
+];
+
+/** The install container's proxy settings, for its env file (pnpm and node read both spellings). */
+export const proxyEnv = (url) =>
+  [
+    `HTTPS_PROXY=${url}`,
+    `https_proxy=${url}`,
+    `HTTP_PROXY=${url}`,
+    `http_proxy=${url}`,
+    `npm_config_https_proxy=${url}`,
+    `npm_config_proxy=${url}`,
+    "NO_PROXY=",
+    "",
+  ].join("\n");
 
 /** Ports probed on every host address: ssh, web, Encore, Postgres, Redis, the Docker API, dev servers. */
 export const PROBE_PORTS = [22, 80, 443, 2375, 2376, 3000, 4000, 5432, 6379, 8080, 9400];
@@ -242,6 +346,9 @@ export function probeTargets(hostAddresses = []) {
     "169.254.169.254:80",
     "169.254.169.254:443",
     "169.254.170.2:80",
+    "172.17.0.1:5432",
+    "172.17.0.1:2375",
+    "172.17.0.1:80",
     "[fd00:ec2::254]:80",
     ...PROBE_PORTS.map((port) => `10.0.2.2:${port}`),
   ];
@@ -255,10 +362,18 @@ export function probeTargets(hostAddresses = []) {
  * The probe: node in the store image tries a TCP connection to each target for 2 s and exits 9 when any connects
  * (it prints which), 0 when none does. Any other exit is an error, never a pass.
  */
-export function probeScript(targets) {
+export function probeScript(targets, proxy = null) {
   return [
     'const net = require("node:net");',
     `const targets = ${JSON.stringify(targets)};`,
+    `const proxy = ${JSON.stringify(proxy)};`,
+    "const viaProxy = (t) => new Promise((done) => {",
+    "  if (!proxy) return done(null);",
+    '  const [h, p] = proxy.split(":"); const s = net.connect({ host: h, port: Number(p), timeout: 3000 });',
+    '  let buf = ""; s.on("connect", () => s.write("CONNECT " + t + " HTTP/1.1\\r\\nHost: " + t + "\\r\\n\\r\\n"));',
+    '  s.on("data", (d) => { buf += d; if (buf.includes("\\r\\n")) { s.destroy(); done(/^HTTP\\/1\\.[01] 200/.test(buf) ? "proxy->" + t : null); } });',
+    '  s.on("timeout", () => { s.destroy(); done(null); }); s.on("error", () => done(null)); s.on("end", () => done(null));',
+    "});",
     "const tryOne = (t) => new Promise((done) => {",
     '  const i = t.lastIndexOf(":"); const host = t.slice(0, i).replace(/^\\[|\\]$/g, ""); const port = Number(t.slice(i + 1));',
     "  const s = net.connect({ host, port, timeout: 2000 });",
@@ -266,44 +381,46 @@ export function probeScript(targets) {
     '  s.on("timeout", () => { s.destroy(); done(null); });',
     '  s.on("error", () => done(null));',
     "});",
-    'Promise.all(targets.map(tryOne)).then((r) => { const open = r.filter(Boolean); if (open.length) { console.log("reachable: " + open.join(" ")); process.exit(9); } process.exit(0); });',
+    'Promise.all([...targets.map(tryOne), ...targets.map(viaProxy)]).then((r) => { const open = r.filter(Boolean); if (open.length) { console.log("reachable: " + open.join(" ")); process.exit(9); } process.exit(0); });',
   ].join("\n");
 }
 
 /** The probe container: the install's network and limits, nothing mounted, removed when it ends. */
-export const probeArgs = (s, { name, image, envFile, targets }) => [
+export const probeArgs = (s, { name, image, envFile, targets, network, proxy = null }) => [
   "run",
   "--rm",
   "--name",
   name,
   "--network",
-  "bridge",
+  network,
   ...containerLimits(s, envFile),
   image,
   "node",
   "-e",
-  probeScript(targets),
+  probeScript(targets, proxy),
 ];
 
-/** The verify container: the committed install, no network, the same limits. */
-export const verifyArgs = (s, { name, image, envFile }) => [
+/** The verify container: the committed install, the tree unpacked again (read-only archive), no network. */
+export const verifyArgs = (s, { name, image, envFile, tarPath }) => [
   "run",
   "--name",
   name,
   "--network",
   "none",
   ...containerLimits(s, envFile),
+  "--volume",
+  `${tarPath}:/in/src.tar:ro`,
   "--workdir",
   "/work",
   image,
   "sh",
   "-c",
-  VERIFY_COMMAND,
+  `${VERIFY_PREPARE}; ${VERIFY_COMMAND}`,
 ];
 
 /** The warm store image's tag, from the lockfile it was fetched for. */
-export const storeTag = (lockfile) =>
-  `stackra-verify-store:${createHash("sha256").update(lockfile).digest("hex").slice(0, 16)}`;
+export const storeTag = (lockfile, baseImage = "") =>
+  `stackra-verify-store:${createHash("sha256").update(baseImage).update("\0").update(lockfile).digest("hex").slice(0, 16)}`;
 
 /** The warm store: main's lockfile fetched into /store on top of the pinned base, built by the daemon only. */
 export function storeDockerfile({ baseImage, pnpmVersion }) {
@@ -311,11 +428,13 @@ export function storeDockerfile({ baseImage, pnpmVersion }) {
   if (!/^\d+\.\d+\.\d+$/.test(pnpmVersion)) throw new Error(`not a pnpm version: ${pnpmVersion}`);
   return [
     `FROM ${baseImage}`,
-    "ENV CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0",
-    `RUN corepack enable && corepack prepare pnpm@${pnpmVersion} --activate`,
+    "ENV CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0 COREPACK_HOME=/opt/corepack",
+    `RUN corepack enable && corepack prepare pnpm@${pnpmVersion} --activate && chmod -R a+rX /opt/corepack`,
+    "RUN git --version && tar --version",
     "WORKDIR /seed",
     "COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./",
     "RUN pnpm fetch --store-dir /store && rm -rf /seed",
+    `RUN mkdir -p /work && chown -R ${CONTAINER_USER} /store /work`,
     "",
   ].join("\n");
 }
@@ -339,32 +458,60 @@ export function withMainScripts(headText, mainText) {
 /** The paths of `tree` (ls-tree lines) that take main's copy: verify-definition files, and package.json scripts. */
 export function overlayPlan(mergedPaths, mainEntries) {
   const main = new Map(mainEntries.map((e) => [e.path, e]));
-  const whole = [...main.values()].filter((e) => isVerifyDefinition(e.path));
+  const whole = [...main.values()].filter((e) => isVerifyOverlay(e.path));
   const scripts = mergedPaths.filter(
-    (p) => /(?:^|\/)package\.json$/.test(p) && main.has(p) && !isVerifyDefinition(p),
+    (p) => /(?:^|\/)package\.json$/.test(p) && main.has(p) && !isVerifyOverlay(p),
   );
   return { whole, scripts };
 }
+
+/** The container's own exit code from `docker inspect --format '{{.State.StartedAt}} {{.State.ExitCode}}'`; null when it never started. */
+export function exitFromInspect(code, stdout) {
+  if (code !== 0) return null;
+  const [startedAt, exit] = String(stdout).trim().split(" ");
+  if (!startedAt || startedAt.startsWith("0001-") || !/^-?\d+$/.test(exit ?? "")) return null;
+  return Number(exit);
+}
+
+/** Every docker command of the clean-up after a run, in order (`allIds`: every image id there is). */
+export function cleanupPlan({ names, images, leftover, allIds, keep }) {
+  const plan = [["rm", "-f", "-v", ...names]];
+  if (images.length) plan.push(["rmi", "-f", ...images]);
+  if (leftover.length) plan.push(["rm", "-f", "-v", ...leftover]);
+  plan.push(["volume", "prune", "-af"], ["network", "prune", "-f"]);
+  const remove = imagesToRemove(allIds, keep);
+  if (remove.length) plan.push(["rmi", "-f", ...remove]);
+  plan.push(["builder", "prune", "-af"]);
+  return plan;
+}
+
+/** How old a store image may get before it is rebuilt from scratch on the current base. */
+export const STORE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Whether the recorded store image may be used: same id as recorded, and young enough. Anything else rebuilds. */
+export const storeReusable = ({ recordedId, currentId, builtAt }, now = Date.now()) =>
+  Boolean(recordedId) && currentId === recordedId && now - (builtAt ?? 0) < STORE_MAX_AGE_MS;
 
 /** Every image id to remove after a run: all of them but the pinned base and the current store. */
 export const imagesToRemove = (ids, keep) => [...new Set(ids)].filter((id) => !keep.includes(id));
 
 /** The verify App's completed `stackra/verify` run for `sha`, or undefined (our own App only, by id). */
-export const recordedRun = (checkRuns, sha, appId) =>
+export const recordedRun = (checkRuns, sha, appId, base) =>
   checkRuns.find(
     (r) =>
       r.name === VERIFY_CHECK &&
       r.head_sha === sha &&
       String(r.app?.id) === String(appId) &&
-      r.status === "completed",
+      r.status === "completed" &&
+      (!base || r.external_id === `base:${base}`),
   );
 
 /**
- * Whether a head needs a verify. A completed run from this App stands until the head moves. Otherwise the local error
- * record decides: no error yet, or the last one older than ERROR_RETRY_MS while fewer than MAX_ERROR_ATTEMPTS.
+ * Whether a head needs a verify. A completed run from this App against the current main (`base`) stands until the
+ * head or main moves; pr-merge refuses a run against an older main. Otherwise the local error record decides: no
+ * error yet, or the last one older than ERROR_RETRY_MS while fewer than MAX_ERROR_ATTEMPTS.
  */
-export function needsRun({ checkRuns, sha, appId, errors = { count: 0 } }, now = Date.now()) {
-  if (recordedRun(checkRuns, sha, appId)) return false;
+export function needsRun({ checkRuns, sha, appId, base, errors = { count: 0 } }, now = Date.now()) {
+  if (recordedRun(checkRuns, sha, appId, base)) return false;
   if (errors.count === 0) return true;
   return errors.count < MAX_ERROR_ATTEMPTS && now - errors.at > ERROR_RETRY_MS;
 }
@@ -513,15 +660,22 @@ export async function runJob(job, deps) {
   const install = `sv-${id}-install`;
   const check = `sv-${id}-verify`;
   const runImage = `stackra-verify-run:${id}`;
-  const names = [install, check];
+  const proxyName = `sv-${id}-proxy`;
+  const network = `sv-net-${id}`;
+  const names = [install, check, proxyName];
   const s = deps.settings;
-  /** Runs a container under the time limit; `timedOut` says the limit killed it (every process in it goes). */
+  // One time limit for the whole run, shared by every phase.
+  const deadline = deps.now() + deps.timeoutMs;
+  /** Runs a container under what is left of the time limit; `timedOut` says the limit killed it. */
   const limited = async (args, name) => {
     let timedOut = false;
-    const cancel = deps.setTimer(() => {
-      timedOut = true;
-      deps.kill(name);
-    }, deps.timeoutMs);
+    const cancel = deps.setTimer(
+      () => {
+        timedOut = true;
+        deps.kill(name);
+      },
+      Math.max(0, deadline - deps.now()),
+    );
     await deps.runContainer(args, name);
     cancel();
     return timedOut;
@@ -542,13 +696,21 @@ export async function runJob(job, deps) {
     const store = deps.storeImage(job);
     const envFile = deps.envFile;
 
-    const leaks = deps.egressLeaks(store);
+    const net = deps.network({ id, image: store, proxyName, network });
+    const leaks = deps.egressLeaks(store, net);
     if (leaks === null) return { post: false, error: "the egress probe did not run", unsafe: true };
     if (leaks.length)
       return { post: false, error: `the install network reaches ${leaks.join(" ")}`, unsafe: true };
 
     const installTimedOut = await limited(
-      installArgs(s, { name: install, image: store, tarPath, envFile }),
+      installArgs(s, {
+        name: install,
+        image: store,
+        tarPath,
+        envFile: deps.installEnvFile,
+        network: net.network,
+        builds: deps.builds(),
+      }),
       install,
     );
     if (deps.stopping() && !installTimedOut) return { post: false, stopped: true };
@@ -562,7 +724,7 @@ export async function runJob(job, deps) {
     if (commit.code !== 0) return { post: false, error: "could not commit the install container" };
 
     const verifyTimedOut = await limited(
-      verifyArgs(s, { name: check, image: runImage, envFile }),
+      verifyArgs(s, { name: check, image: runImage, envFile, tarPath }),
       check,
     );
     if (deps.stopping() && !verifyTimedOut) return { post: false, stopped: true };
@@ -577,7 +739,7 @@ export async function runJob(job, deps) {
   } catch (error) {
     return { post: false, error: error.message };
   } finally {
-    deps.cleanUp(names, [runImage]);
+    deps.cleanUp(names, [runImage], [network]);
   }
 }
 
@@ -604,47 +766,88 @@ export const FORBIDDEN_DEFAULTS = [
  * The host checks that need the machine: the verify user can read none of the forbidden paths, its user slice has
  * cgroup caps (CPU, memory, tasks), and its Docker is rootless. Each problem is a reason not to start.
  */
-function preflight(s) {
+/**
+ * The host checks that need the machine, through `io` so a test can stand in: `exists(path)`, `canRead(path)` (as the
+ * verify user), `cgroup(file)` (the verify user's slice, null when missing) and `dockerInfo()` ({ code, stdout }).
+ * The verify user can read none of the forbidden paths, its slice has CPU, memory and task caps, and its Docker is
+ * rootless. Each problem is a reason not to start.
+ */
+export function preflightProblems(s, io, extraForbidden = []) {
   const problems = [];
-  const forbidden = [
-    s.keyFile,
-    s.home,
-    process.env.HOME,
-    ...(process.env.STACKRA_VERIFY_FORBIDDEN?.split(",") ?? FORBIDDEN_DEFAULTS),
-  ].filter(Boolean);
-  for (const path of forbidden) {
-    if (!existsSync(path)) continue;
-    // STACKRA_VERIFY_HOME is 0711: the verify user may pass through it to a run's archive, never list or read it.
-    const r = spawnSync(
-      "sudo",
-      ["-n", "-u", s.runAs, "--", "test", "-r", path],
-      spawnOptions({ timeout: 30_000 }),
-    );
-    if (r.status === 0) problems.push(`the verify user ${s.runAs} can read ${path}`);
-  }
-  const uid = spawnSync("id", ["-u", s.runAs], spawnOptions({ timeout: 30_000 })).stdout?.trim();
+  const forbidden = [s.keyFile, s.home, ...FORBIDDEN_DEFAULTS, ...extraForbidden].filter(Boolean);
+  for (const path of forbidden)
+    if (io.exists(path) && io.canRead(path))
+      problems.push(`the verify user ${s.runAs} can read ${path}`);
   for (const file of ["memory.max", "pids.max", "cpu.max"]) {
-    let value;
-    try {
-      value = readFileSync(`/sys/fs/cgroup/user.slice/user-${uid}.slice/${file}`, "utf8").trim();
-    } catch {
-      value = "missing";
-    }
-    if (value === "missing" || value.startsWith("max"))
+    const value = io.cgroup(file);
+    if (value === null || value.startsWith("max"))
       problems.push(
-        `user-${uid}.slice has no ${file} cap (a drop-in on user@${uid}.service sets it)`,
+        `the verify user's slice has no ${file} cap (a drop-in on its user@.service sets it)`,
       );
   }
-  const info = docker(s, ["info", "--format", "{{json .SecurityOptions}}"], { timeout: 60_000 });
-  if (info.code !== 0)
-    problems.push(`the verify user's Docker does not answer: ${info.stderr.trim()}`);
+  const info = io.dockerInfo();
+  if (info.code !== 0) problems.push("the verify user's Docker does not answer");
   else if (!info.stdout.includes("rootless"))
     problems.push("the verify user's Docker is not rootless");
   return problems;
 }
 
+function preflight(s) {
+  const uid = spawnSync("id", ["-u", s.runAs], spawnOptions({ timeout: 30_000 })).stdout?.trim();
+  return preflightProblems(
+    s,
+    {
+      exists: existsSync,
+      // STACKRA_VERIFY_HOME is 0711: the verify user may pass through it to a run's archive, never list or read it.
+      canRead: (path) =>
+        spawnSync(
+          "sudo",
+          ["-n", "-u", s.runAs, "--", "test", "-r", path],
+          spawnOptions({ timeout: 30_000 }),
+        ).status === 0,
+      cgroup: (file) => {
+        try {
+          return readFileSync(`/sys/fs/cgroup/user.slice/user-${uid}.slice/${file}`, "utf8").trim();
+        } catch {
+          return null;
+        }
+      },
+      dockerInfo: () =>
+        docker(s, ["info", "--format", "{{json .SecurityOptions}}"], { timeout: 60_000 }),
+    },
+    [process.env.HOME, ...(process.env.STACKRA_VERIFY_FORBIDDEN?.split(",").filter(Boolean) ?? [])],
+  );
+}
+
 let stopping = false;
 let activeKill = null;
+
+/** A run log is capped: past LOG_MAX_BYTES nothing more is written, except the last LOG_TAIL_BYTES when it closes. */
+export const LOG_MAX_BYTES = 20 * 1024 * 1024;
+export const LOG_TAIL_BYTES = 256 * 1024;
+
+/** A capped writer: `write(chunk)` appends while under the cap and keeps a tail after it; `close()` writes the tail. */
+export function cappedLog(append, max = LOG_MAX_BYTES, tailBytes = LOG_TAIL_BYTES) {
+  let written = 0;
+  let tail = Buffer.alloc(0);
+  let capped = false;
+  return {
+    write(chunk) {
+      const data = Buffer.from(chunk);
+      if (!capped && written + data.length <= max) {
+        append(data);
+        written += data.length;
+        return;
+      }
+      capped = true;
+      tail = Buffer.concat([tail, data]).subarray(-tailBytes);
+    },
+    close() {
+      if (capped)
+        append(Buffer.concat([Buffer.from("\n[log capped; its last part follows]\n"), tail]));
+    },
+  };
+}
 
 /** The first stop signal kills the running container; the run then records nothing and cleans up. */
 function onStop() {
@@ -801,11 +1004,26 @@ const readState = (s) => {
     return { errors: {}, stores: {} };
   }
 };
-const writeState = (s, state) => writeFileSync(statePath(s), JSON.stringify(state, null, 2));
+const writeState = (s, state) =>
+  writeFileSync(statePath(s), JSON.stringify(state, null, 2), { mode: 0o600 });
 
 function freeBytes(dir) {
   const stat = statfsSync(dir);
   return stat.bavail * stat.bsize;
+}
+
+/**
+ * `git archive` honours the archived tree's `.gitattributes`: a PR's `export-ignore` would drop main's overlaid
+ * configs or its own tests from the tested tree, and `export-subst` would rewrite files. The mirror's own
+ * `info/attributes`, which wins over the tree's, turns both off for every path.
+ */
+export function neutraliseAttributes(mirror) {
+  const gitDir =
+    existsSync(join(mirror, "HEAD")) && !existsSync(join(mirror, ".git"))
+      ? mirror
+      : join(mirror, ".git");
+  mkdirSync(join(gitDir, "info"), { recursive: true });
+  writeFileSync(join(gitDir, "info", "attributes"), "* -export-ignore -export-subst\n");
 }
 
 /** The daemon's mirror of `repo`, fetched; the tested tree built and archived; `job.base` set to main's head. */
@@ -823,6 +1041,7 @@ function archiveJob(s, job, runDir) {
   try {
     const tree = buildTree(mirror, job.base, job.sha, join(runDir, "index"));
     const tarPath = join(runDir, "src.tar");
+    neutraliseAttributes(mirror);
     git(mirror, ["archive", "--format=tar", "-o", tarPath, tree]);
     chmodSync(tarPath, 0o644);
     return { tarPath, mirror };
@@ -844,37 +1063,35 @@ function ensureStore(s, mirror, base, runDir, state) {
   for (const file of ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"])
     writeFileSync(join(ctx, file), git(mirror, ["show", `${base}:${file}`]), { mode: 0o644 });
   const lockfile = readFileSync(join(ctx, "pnpm-lock.yaml"));
-  const tag = storeTag(lockfile);
+  const tag = storeTag(lockfile, s.baseImage);
   const recorded = state.stores[tag];
   const current = docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim();
-  if (recorded && current === recorded) return tag;
+  if (storeReusable({ recordedId: recorded?.id, currentId: current, builtAt: recorded?.builtAt }))
+    return tag;
   const dockerfile = storeDockerfile({
     baseImage: s.baseImage,
     pnpmVersion: pnpmVersionOf(readFileSync(join(ctx, "package.json"), "utf8")),
   });
   writeFileSync(join(ctx, "Dockerfile"), dockerfile, { mode: 0o644 });
-  const build = docker(s, ["build", "--quiet", "--pull=false", "--tag", tag, ctx], {
+  const build = docker(s, ["build", "--quiet", "--pull=false", "--no-cache", "--tag", tag, ctx], {
     timeout: 60 * 60 * 1000,
   });
   if (build.code !== 0) throw new Error(`could not build the store image: ${build.stderr.trim()}`);
   state.stores = {
-    [tag]: docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim(),
+    [tag]: {
+      id: docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim(),
+      builtAt: Date.now(),
+    },
   };
   return tag;
 }
 
 /** Everything a run left in the verify user's Docker goes: containers, run images, volumes, networks, other images. */
 function cleanDocker(s, names, images, keepIds) {
-  docker(s, ["rm", "-f", "-v", ...names]);
-  if (images.length) docker(s, ["rmi", "-f", ...images]);
   const leftover = docker(s, ["ps", "-aq"]).stdout.split("\n").filter(Boolean);
-  if (leftover.length) docker(s, ["rm", "-f", "-v", ...leftover]);
-  docker(s, ["volume", "prune", "-af"]);
-  docker(s, ["network", "prune", "-f"]);
-  const ids = docker(s, ["image", "ls", "-aq", "--no-trunc"]).stdout.split("\n").filter(Boolean);
-  const remove = imagesToRemove(ids, keepIds);
-  if (remove.length) docker(s, ["rmi", "-f", ...remove]);
-  docker(s, ["builder", "prune", "-af"]);
+  const allIds = docker(s, ["image", "ls", "-aq", "--no-trunc"]).stdout.split("\n").filter(Boolean);
+  for (const args of cleanupPlan({ names, images, leftover, allIds, keep: keepIds }))
+    docker(s, args);
 }
 
 async function headOf(s, job) {
@@ -891,6 +1108,7 @@ export async function verify(s, job) {
   for (const dir of ["logs", "ledger", "runs", "mirror"])
     mkdirSync(join(s.home, dir), { recursive: true });
   chmodSync(join(s.home, "logs"), 0o700);
+  chmodSync(join(s.home, "mirror"), 0o700);
   chmodSync(join(s.home, "ledger"), 0o700);
   const logPath = join(s.home, "logs", `${name}-${started}.log`);
   writeFileSync(logPath, "", { mode: 0o600 });
@@ -899,37 +1117,57 @@ export async function verify(s, job) {
   chmodSync(join(s.home, "runs"), 0o711);
   const envFile = join(runDir, "container.env");
   writeFileSync(envFile, CONTAINER_ENV, { mode: 0o644 });
+  const installEnvFile = join(runDir, "install.env");
+  writeFileSync(installEnvFile, CONTAINER_ENV + proxyEnv(`http://proxy:${PROXY_PORT}`), {
+    mode: 0o644,
+  });
   writeFileSync(join(s.home, "docker.env"), dockerEnvFile(s), { mode: 0o644 });
   const state = readState(s);
-  let keepIds = [];
 
   const deps = {
     settings: s,
     envFile,
+    installEnvFile,
+    now: Date.now,
     archive: () => {
-      if (freeBytes(s.home) < s.minFreeBytes) throw new Error("not enough free disk for a run");
+      for (const dir of [s.home, s.dockerRoot].filter(Boolean))
+        if (freeBytes(dir) < s.minFreeBytes)
+          throw new Error(`not enough free disk in ${dir} for a run`);
       const { tarPath, mirror } = archiveJob(s, job, runDir);
       deps.mirror = mirror;
+      deps.buildList = allowedBuilds(git(mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
       return tarPath;
     },
-    storeImage: () => {
-      const tag = ensureStore(s, deps.mirror, job.base, runDir, state);
-      keepIds = [
-        ...Object.values(state.stores),
-        docker(s, ["image", "inspect", "--format", "{{.Id}}", s.baseImage]).stdout.trim(),
-      ].filter(Boolean);
-      return tag;
+    builds: () => deps.buildList ?? [],
+    network: ({ image, proxyName, network }) => {
+      const steps = [
+        ["network", "create", "--internal", network],
+        proxyArgs(s, { name: proxyName, image, envFile, allow: s.registries }),
+        ["network", "connect", "--alias", "proxy", network, proxyName],
+      ];
+      for (const args of steps) {
+        const r = docker(s, args, { timeout: 120_000 });
+        if (r.code !== 0)
+          throw new Error(`could not set up the install network: ${scrub(r.stderr).slice(0, 200)}`);
+      }
+      return { network, proxy: `proxy:${PROXY_PORT}` };
     },
+    storeImage: () => ensureStore(s, deps.mirror, job.base, runDir, state),
     docker: (args) => docker(s, args),
     runContainer: (args) =>
       new Promise((resolve) => {
         const [bin, ...argv] = dockerAs(s, args);
-        const child = spawn(bin, argv, { stdio: ["ignore", "pipe", "pipe"] });
-        child.stdout.on("data", (chunk) => appendFileSync(logPath, chunk));
-        child.stderr.on("data", (chunk) => appendFileSync(logPath, chunk));
+        const child = spawnChild(bin, argv, { stdio: ["ignore", "pipe", "pipe"] });
+        const log = cappedLog((data) => appendFileSync(logPath, data));
+        child.stdout.on("data", (chunk) => log.write(chunk));
+        child.stderr.on("data", (chunk) => log.write(chunk));
         const nameIndex = args.indexOf("--name") + 1;
         activeKill = () => docker(s, ["kill", args[nameIndex]]);
+        // Backstop: if `docker kill` at the time limit did not end the client, end it here.
+        const backstop = setTimeout(() => child.kill("SIGKILL"), s.timeoutMs + 5 * 60_000);
         child.on("close", (code) => {
+          clearTimeout(backstop);
+          log.close();
           activeKill = null;
           resolve({ code });
         });
@@ -945,12 +1183,10 @@ export async function verify(s, job) {
         "{{.State.StartedAt}} {{.State.ExitCode}}",
         container,
       ]);
-      if (r.code !== 0) return null;
-      const [startedAtIso, code] = r.stdout.trim().split(" ");
-      return startedAtIso.startsWith("0001-") ? null : Number(code);
+      return exitFromInspect(r.code, r.stdout);
     },
     kill: (container) => docker(s, ["kill", container]),
-    egressLeaks: (image) => {
+    egressLeaks: (image, net) => {
       const hostAddresses = spawnSync("hostname", ["-I"], spawnOptions({ timeout: 10_000 }))
         .stdout?.trim()
         .split(/\s+/)
@@ -961,6 +1197,8 @@ export async function verify(s, job) {
           name: `sv-probe-${Date.now().toString(36)}`,
           image,
           envFile,
+          network: net.network,
+          proxy: net.proxy,
           targets: probeTargets(hostAddresses),
         }),
         { timeout: 5 * 60_000 },
@@ -969,7 +1207,18 @@ export async function verify(s, job) {
       if (r.code === 9) return (r.stdout.match(/^reachable: (.*)$/m)?.[1] ?? "unknown").split(" ");
       return null;
     },
-    cleanUp: (names, images) => cleanDocker(s, names, images, keepIds),
+    // The keep list comes from the daemon's own state at clean-up time, so a run that failed early (a merge conflict,
+    // a fetch error) never removes the base or the store image.
+    cleanUp: (names, images) =>
+      cleanDocker(
+        s,
+        names,
+        images,
+        [
+          ...Object.values(state.stores).map((entry) => entry?.id ?? entry),
+          docker(s, ["image", "inspect", "--format", "{{.Id}}", s.baseImage]).stdout.trim(),
+        ].filter(Boolean),
+      ),
     headOf: () => headOf(s, job),
     readLog: () => readFileSync(logPath, "utf8"),
     stopping: isStopping,
@@ -1009,7 +1258,7 @@ export async function verify(s, job) {
     writeState(s, state);
     if (state.errors[key].count < MAX_ERROR_ATTEMPTS) return null;
     conclusion = "neutral";
-    reason = result.error;
+    reason = scrub(result.error ?? "unknown").slice(0, 120);
   } else {
     state.errors = Object.fromEntries(Object.entries(state.errors).filter(([k]) => k !== key));
     writeState(s, state);
@@ -1031,18 +1280,7 @@ export async function verify(s, job) {
   let link;
   let posted = true;
   try {
-    const created = await retry(async () =>
-      JSON.parse(
-        gh(
-          ["api", "--method", "POST", `repos/${job.repo}/check-runs`, "--input", "-"],
-          await appToken(s),
-          false,
-          {
-            input: JSON.stringify(body),
-          },
-        ),
-      ),
-    );
+    const created = await retry(async () => postCheckRun(job.repo, body, await appToken(s)));
     link = created.html_url;
   } catch (error) {
     posted = false;
@@ -1069,6 +1307,27 @@ export async function verify(s, job) {
   return json;
 }
 
+/**
+ * Creates the check run: `gh api --method POST repos/<repo>/check-runs --input -` with the body on stdin, as the
+ * verify App. `run` is the spawn (a test passes a fake). Throws with GitHub's answer when it is refused.
+ */
+export function postCheckRun(repo, body, token, run = spawnSync) {
+  const r = run("gh", ["api", "--method", "POST", `repos/${repo}/check-runs`, "--input", "-"], {
+    input: JSON.stringify(body),
+    encoding: "utf8",
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      GH_TOKEN: token,
+      GH_PROMPT_DISABLED: "1",
+    },
+    timeout: 60_000,
+  });
+  if (r.error) throw new Error(`gh api check-runs: ${r.error.message}`);
+  if (r.status !== 0) throw new Error(`gh api check-runs: ${(r.stderr || r.stdout || "").trim()}`);
+  return JSON.parse(r.stdout);
+}
+
 /** Open non-draft PRs whose head branch lives in this repository (never a fork's), then main's head. */
 async function heads(s, repo) {
   const token = await appToken(s);
@@ -1079,12 +1338,32 @@ async function heads(s, repo) {
       true,
     ),
   ).flat();
-  const prs = pulls
-    .filter((p) => !p.draft && p.head?.repo?.full_name === repo)
-    .toSorted((a, b) => a.number - b.number)
-    .map((p) => ({ repo, sha: p.head.sha, pr: String(p.number) }));
   const main = JSON.parse(gh(["api", `repos/${repo}/commits/main`], token, true)).sha;
-  return [...prs.map((job) => ({ ...job, base: main })), { repo, sha: main, base: main }];
+  // A merge queue's group commits (gh-readonly-queue/main/…) need the check too, or the queue stalls.
+  const queue = JSON.parse(
+    gh(["api", `repos/${repo}/git/matching-refs/heads/gh-readonly-queue/`], token, true),
+  ).map((ref) => ({ repo, sha: ref.object?.sha, base: main }));
+  return jobsFrom({ repo, pulls, main, queue });
+}
+
+/** A full 40-hex commit id. */
+const isSha = (value) => typeof value === "string" && /^[0-9a-f]{40}$/.test(value);
+
+/**
+ * The jobs of one pass: open, non-draft PRs whose head lives in this repository (never a fork's), oldest first; merge
+ * queue commits; then main. Every SHA must be 40 hex characters, or the head is skipped.
+ */
+export function jobsFrom({ repo, pulls, main, queue = [] }) {
+  const sha = isSha;
+  const prs = pulls
+    .filter((p) => !p.draft && p.head?.repo?.full_name === repo && sha(p.head?.sha))
+    .toSorted((a, b) => a.number - b.number)
+    .map((p) => ({ repo, sha: p.head.sha, pr: String(p.number), base: main }));
+  return [
+    ...prs,
+    ...queue.filter((q) => sha(q.sha)),
+    ...(sha(main) ? [{ repo, sha: main, base: main }] : []),
+  ];
 }
 
 async function wanted(s, job) {
@@ -1100,7 +1379,7 @@ async function wanted(s, job) {
     ),
   ).check_runs;
   const errors = readState(s).errors[`${job.repo}@${job.sha}`];
-  return needsRun({ checkRuns: runs, sha: job.sha, appId: s.appId, errors });
+  return needsRun({ checkRuns: runs, sha: job.sha, appId: s.appId, base: job.base, errors });
 }
 
 function pruneLogs(s) {
@@ -1143,7 +1422,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const s = settings();
   let keyMode;
   try {
-    keyMode = s.keyFile ? statSync(s.keyFile).mode & 0o777 : null;
+    const key = s.keyFile ? statSync(s.keyFile) : null;
+    // A key file someone else owns could be swapped under the service: it counts as unreadable.
+    keyMode = key && key.uid === process.getuid() ? key.mode & 0o777 : null;
   } catch {
     keyMode = null;
   }
@@ -1163,7 +1444,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (process.env.STACKRA_VERIFY_LOCKED !== "1") {
     // One service per box: hold an flock for the whole life of the real process, released by the kernel on exit.
     mkdirSync(s.home, { recursive: true, mode: 0o711 });
-    const r = spawnSync(
+    // The parent forwards stop signals to the locked child and waits for it, so the child's clean-up finishes.
+    const child = spawnChild(
       "flock",
       [
         "-n",
@@ -1175,10 +1457,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       ],
       { stdio: "inherit", env: { ...process.env, STACKRA_VERIFY_LOCKED: "1" } },
     );
-    if (r.status === LOCK_HELD_EXIT)
-      process.stderr.write("stackra-verify: another verify service holds the lock\n");
-    process.exit(r.status ?? 1);
+    for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
+    child.on("close", (code) => {
+      if (code === LOCK_HELD_EXIT)
+        process.stderr.write("stackra-verify: another verify service holds the lock\n");
+      process.exit(code ?? 1);
+    });
+  } else {
+    await runLocked(options, s);
   }
+}
+
+async function runLocked(options, s) {
   process.on("SIGINT", onStop);
   process.on("SIGTERM", onStop);
   try {
