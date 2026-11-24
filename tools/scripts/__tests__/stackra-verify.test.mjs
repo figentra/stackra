@@ -10,6 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  childEnv,
   commentBody,
   COMMAND,
   DEFAULT_REPO,
@@ -21,6 +22,7 @@ import {
   redact,
   STALE_PENDING_MS,
   statusDescription,
+  verifiable,
 } from "../stackra-verify.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
@@ -202,4 +204,36 @@ test("ledgerEntry: the JSON line and the markdown row carry SHA, command, result
     }).md,
     /\| main \|.*\| - \| - \|$/,
   );
+});
+
+test("verifiable: drafts and fork PRs are never run; this repository's own branches are", () => {
+  assert.equal(verifiable({ isDraft: false, isCrossRepository: false }), true);
+  assert.equal(verifiable({ isDraft: true, isCrossRepository: false }), false);
+  assert.equal(verifiable({ isDraft: false, isCrossRepository: true }), false);
+  assert.equal(verifiable({ isDraft: false }), false);
+});
+
+test("childEnv: the bot identity and every secret-named variable stay out of the verify", () => {
+  const env = childEnv({
+    PATH: "/usr/bin",
+    HOME: "/home/x",
+    PNPM_HOME: "/p",
+    STACKRA_BOT_APP_ID: "1",
+    STACKRA_BOT_PRIVATE_KEY: "k",
+    GH_TOKEN: "t",
+    GITHUB_TOKEN: "t",
+    SOPS_AGE_KEY_FILE: "/k",
+    AWS_SECRET_ACCESS_KEY: "s",
+    TURBO_TOKEN: "t",
+    CLOUDFLARE_API_TOKEN: "t",
+    DB_PASSWORD: "p",
+  });
+  assert.deepEqual(Object.keys(env).sort(), [
+    "CI",
+    "FORCE_COLOR",
+    "HOME",
+    "PATH",
+    "PNPM_HOME",
+    "TURBO_TELEMETRY_DISABLED",
+  ]);
 });

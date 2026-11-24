@@ -19,8 +19,10 @@
  *   mirror/<repo>, worktrees/, logs/, ledger/.
  * Runtime: node (Linux for taskset; elsewhere it runs without the core pin).
  * Governing contract: ADR 0119 (merge policy); ADR 0523 (decision 3); STA-2761.
- * Secrets: the bot token is minted in-process (bot-token.mjs) and stays in the gh child's environment; logs are
- *   scrubbed of token shapes before they leave the box.
+ * Secrets: the bot token is minted in-process (bot-token.mjs) and stays in the gh child's environment; the verify
+ *   itself gets an environment with every secret name removed (`childEnv`), and fork PRs are never run
+ *   (`verifiable`). Logs are scrubbed of token shapes before they leave the box. Run the verify under its own Unix
+ *   user where the box allows it: a same-user process can read the daemon's environment from /proc.
  * Exit: 0 every verify recorded (pass or fail), 1 a verify could not be recorded, 2 usage.
  */
 import { spawn, spawnSync } from "node:child_process";
@@ -85,6 +87,24 @@ export function needsRun(statuses, now = Date.now()) {
 }
 
 /** Terminal colour and cursor codes (ESC [ … letter), built from the ESC code point so the source holds no control character. */
+/**
+ * Which open PRs the service runs: not drafts, and never a fork's. A fork's code is anyone's code; on the box it
+ * would run as the service's user, next to the bot identity. A fork PR is verified only after a maintainer pushes
+ * its commits to a branch here.
+ */
+export const verifiable = (pr) => !pr.isDraft && pr.isCrossRepository === false;
+
+/** Names that never reach the verify's environment: the bot identity and anything that names a secret. */
+const SECRET_NAME =
+  /^(STACKRA_BOT_|GH_|GITHUB_TOKEN$|SOPS_|AGE_|AWS_|NPM_TOKEN$|NODE_AUTH_TOKEN$)|(TOKEN|SECRET|PASSWORD|PRIVATE_KEY|API_KEY)/i;
+
+/** The verify's environment: this process's, minus every secret name, plus the CI flags. */
+export function childEnv(env = process.env) {
+  const out = {};
+  for (const [name, value] of Object.entries(env)) if (!SECRET_NAME.test(name)) out[name] = value;
+  return { ...out, CI: "1", TURBO_TELEMETRY_DISABLED: "1", FORCE_COLOR: "0" };
+}
+
 const ANSI = new RegExp(`${String.fromCodePoint(27)}\\[[0-9;?]*[A-Za-z]`, "g");
 /** Token shapes never leave the box, whatever a tool printed. */
 export const redact = (text) =>
@@ -233,12 +253,24 @@ function runCommand(cwd, logPath) {
     const out = createWriteStream(logPath);
     const child = spawn(cmd, args, {
       cwd,
-      env: { ...process.env, CI: "1", TURBO_TELEMETRY_DISABLED: "1", FORCE_COLOR: "0" },
+      env: childEnv(),
       stdio: ["ignore", "pipe", "pipe"],
+      // Its own process group, so the timeout stops turbo, vitest and every grandchild, not only `nice`.
+      detached: true,
     });
     child.stdout.pipe(out, { end: false });
     child.stderr.pipe(out, { end: false });
-    const timer = setTimeout(() => child.kill("SIGTERM"), RUN_TIMEOUT_MS);
+    const stopGroup = (signal) => {
+      try {
+        process.kill(-child.pid, signal);
+      } catch {
+        // ESRCH: the group has already exited.
+      }
+    };
+    const timer = setTimeout(() => {
+      stopGroup("SIGTERM");
+      setTimeout(() => stopGroup("SIGKILL"), 30_000).unref();
+    }, RUN_TIMEOUT_MS);
     child.on("close", (code, signal) => {
       clearTimeout(timer);
       out.end(() => resolve({ code, signal }));
@@ -364,13 +396,13 @@ async function pendingHeads(repo) {
         "--limit",
         "200",
         "--json",
-        "number,headRefOid,isDraft",
+        "number,headRefOid,isDraft,isCrossRepository",
       ],
       token,
       true,
     ),
   )
-    .filter((p) => !p.isDraft)
+    .filter(verifiable)
     .toSorted((a, b) => a.number - b.number)
     .map((p) => ({ sha: p.headRefOid, pr: String(p.number) }));
   const main = JSON.parse(gh(["api", `repos/${repo}/commits/main`], token, true)).sha;
