@@ -2,13 +2,13 @@
   "name": "@figentra/service-example",
   "version": "0.0.1",
   "private": true,
-  "description": "Example service.",
+  "description": "The reference example service: one tenant-owned resource (notes) through the actions pipeline.",
   "keywords": [
     "example",
-    "module",
+    "notes",
+    "reference",
     "stackra",
-    "starter",
-    "template"
+    "tenancy"
   ],
   "homepage": "https://github.com/figentra/stackra/tree/main/services/example#readme",
   "bugs": {
@@ -29,6 +29,25 @@
       "./src/*.tsx",
       "./src/*/index.ts"
     ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
+    ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
+      "./src/contracts/*/index.ts"
+    ],
+    "#modules/*": [
+      "./src/modules/*",
+      "./src/modules/*.ts",
+      "./src/modules/*.tsx",
+      "./src/modules/*/index.ts"
+    ],
+    "#assets/*": "./assets/*",
     "#stackra/*": [
       "./.stackra/gen/*",
       "./.stackra/gen/*.ts",
@@ -36,30 +55,58 @@
       "./.stackra/gen/*/index.ts"
     ]
   },
+  "exports": {
+    "./assets/*": "./assets/*"
+  },
   "scripts": {
-    "dev": "node --watch src/main.ts",
-    "start": "node src/main.ts",
-    "build": "tsdown",
-    "gen": "stackra gen",
-    "typecheck": "tsc --noEmit",
-    "lint": "oxlint .",
+    "dev": "stackra dev",
+    "build": "stackra build",
+    "typecheck": "stackra typecheck",
+    "lint": "stackra lint",
+    "test": "stackra test",
+    "test:int": "stackra test --tier int",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "clean": "rm -rf dist .turbo"
+    "clean": "rm -rf dist coverage .turbo .stackra"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/app": "workspace:*",
+    "@stackra/console": "workspace:*",
     "@stackra/container": "workspace:*",
-    "encore.dev": "1.58.8"
+    "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/entitlements": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
+    "@stackra/model": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
+    "@stackra/scope": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "encore.dev": "1.58.8",
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "@electric-sql/pglite-pgvector": "catalog:",
+    "@faker-js/faker": "catalog:",
+    "@mikro-orm/pglite": "catalog:",
     "@stackra/cli": "workspace:*",
+    "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@testcontainers/postgresql": "catalog:",
     "@types/node": "catalog:",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "testcontainers": "catalog:",
     "tsdown": "catalog:build",
-    "typescript": "catalog:build"
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
   },
   "engines": {
     "node": ">=24.0.0"
@@ -70,7 +117,6 @@
     "runtimes": [
       "node"
     ],
-    "summary": "Read or copy it as the reference layout of a Stackra service (an entry plus the root module named in stackra.module); it holds no business logic.",
-    "module": "./src/example.module.ts"
+    "summary": "The reference example service: a tenant-owned notes resource (create, get, list, update, delete) through the actions pipeline with permissions, row-level tenant isolation, validation and events; read it for the shape of a complete service."
   }
 }
