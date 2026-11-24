@@ -4,18 +4,21 @@
  *          resources, pages and widgets declared by modules).
  * Boundary: layout only; the pages come from the route folders.
  * Runtime: browser
- * Governing contract: ADR 0294 (decision 14); ADR 0165 (web client stack).
+ * Governing contract: ADR 0294 (decision 14); ADR 0165 (web client stack); ADR 0305 (rules 10 to 13).
  */
 import { Button } from "@heroui/react";
 import { Outlet } from "react-router";
 
-/** Props of {@link PanelShell}. */
-export interface PanelShellProps {
-  /** The panel's name, shown in the header. */
-  title: string;
-}
+import type { PanelShellProps } from "#src/components/panel-shell/panel-shell.props";
 
-// shortcut: built on @heroui/react directly until @stackra/ui and @stackra/panel exist; swap the imports then.
+/** The shell's words, in one place until @stackra/i18n serves them. */
+const STRINGS = {
+  account: "Account",
+  resources: "Resources",
+};
+
+// shortcut: built on @heroui/react directly; @stackra/ui and @stackra/panel exist now, and a product moves onto them
+// with its first resource.
 /** Layout route of the panel: header and navigation around the current page. */
 export function PanelShell({ title }: PanelShellProps) {
   return (
@@ -26,11 +29,11 @@ export function PanelShell({ title }: PanelShellProps) {
           <h1 className="text-xl font-semibold">{title}</h1>
         </div>
         <Button size="sm" variant="ghost">
-          Account
+          {STRINGS.account}
         </Button>
       </header>
       <div className="grid grid-cols-[14rem_1fr]">
-        <nav aria-label="Resources" className="border-e border-border p-4" />
+        <nav aria-label={STRINGS.resources} className="border-e border-border p-4" />
         <main className="p-4">
           <Outlet />
         </main>

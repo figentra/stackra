@@ -16,9 +16,11 @@
   never decorators. The panel renderer draws them; a hand-written route page is the escape hatch, not the default.
 - UI comes from HeroUI v3 (`@stackra/ui` once it exists); styles are Tailwind v4 utilities. No other component
   library, no Storybook.
-- A component is a folder `x/{x.tsx, index.ts, __tests__/x.test.tsx}`; `XProps` is exported from `x.tsx`.
+- A component is a folder `x/{x.tsx, x.props.ts, index.ts, __tests__/x.test.tsx}`; `XProps` is declared in `x.props.ts`,
+  one declaration per file (ADR 0305 rules 10 to 13).
 - Talk to services only through the generated API client, never by importing `services/`.
-- Versions only via `catalog:<name>` or `workspace:*`. `tsconfig.json` only extends `@stackra/typescript-config/vite`.
+- Versions only via `catalog:<name>` or `workspace:*`. `tsconfig.json` only extends `@stackra/typescript-config/app` (the vite preset with decorators, which
+  the workspace packages this app imports need).
 - Tasks: `dev`, `build`, `preview`, `typecheck`, `test`, `lint`, `format`, `format:check`, `clean`.
 - Done = `pnpm verify` green. Secrets: none in this app; anything shipped to the browser is public.
 

@@ -36,5 +36,5 @@ src/
 ```
 
 A route is a folder `routes/<name>/` with `<name>.route.ts` (or `<name>.layout.ts`) and its page `<name>.tsx`; until
-gen builds the route tree, `main.tsx` lists the routes. A component is a folder `x/{x.tsx, index.ts,
-__tests__/x.test.tsx}` exporting `XProps`. Run from the root with `pnpm --filter @figentra/{{NAME}} dev`.
+gen builds the route tree, `main.tsx` lists the routes. A component is a folder `x/{x.tsx, x.props.ts, index.ts,
+__tests__/x.test.tsx}` whose `XProps` is declared in `x.props.ts`. Run from the root with `pnpm --filter @figentra/{{NAME}} dev`.

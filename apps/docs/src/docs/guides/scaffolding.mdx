@@ -7,10 +7,13 @@ icon: "blocks"
 Never copy an existing member to start a new one. `stackra new` (`pnpm new` is its alias) picks the right directory, package scope, tier tag and script set, copies the target repo's `LICENSE` (packages and tooling only) and formats the result. Members come out in the programming model v3 shape: `stackra.config.ts`, one root module and no authored `main.ts` or entry barrel ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12, [ADR 0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)). The kinds are decided in [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates).
 
 ```bash
-stackra new <kind> <name> --description "<one sentence>" [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]
+stackra new <kind> <name> --description "<one sentence>" [--summary "<when an agent reaches for it>"] [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]
 ```
 
-Run it with `--dry-run` first to see what it would write. Then run `pnpm install` and `pnpm verify`.
+Run it with `--dry-run` first to see what it would write. Then run `pnpm install`. A new member can change the docs
+architecture map (a new app did): run `stackra architecture-map` and commit the two files it writes,
+`apps/docs/scripts/architecture-map/architecture-map.yaml` and `apps/docs/src/assets/architecture-map.html`, or
+`stackra validate --repository` reports the map as out of date. Then run `pnpm verify`.
 
 A service is one command with a three-command first run, and no hand edit between them:
 
@@ -44,6 +47,7 @@ cd services/demo && stackra gen && stackra test
 | `--data`                 | `package`: the module's `src/node/database/{migrations,factories,seeders}/`, for a package that owns models. `service`: the example module, the database test peers and `test:int`.                                                                                                                                                                       |
 | `--repo <path>`          | Scaffold into another folder or monorepo (for example the private figentra-os), for every kind. A service written into a folder with no `pnpm-workspace.yaml` also gets a minimal workspace root: the catalogs it names (`stackra` pinned to the CLI's version) and an `.npmrc` naming the Stackra registry, no token. An existing root is never touched. |
 | `--description`          | Required for every kind: one sentence, which becomes the `package.json` description and opens the README and AGENTS. There is no placeholder, so generated output holds no TODO.                                                                                                                                                                          |
+| `--summary`              | One sentence for agents on when to reach for the member, which becomes `package.json` `stackra.summary` (ADR 0453 decision 11); not the description. Required for `tooling` and the app kinds; a `package` or `service` takes it when given.                                                                                                              |
 | `--title`, `--port`      | Fill the tokens; the port defaults to the next free one in the kind's range.                                                                                                                                                                                                                                                                              |
 | `--dry-run`              | Print the file list, write nothing.                                                                                                                                                                                                                                                                                                                       |
 

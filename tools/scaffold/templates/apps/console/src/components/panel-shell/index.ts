@@ -5,4 +5,5 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { PanelShell, type PanelShellProps } from "./panel-shell";
+export { PanelShell } from "./panel-shell";
+export { type PanelShellProps } from "./panel-shell.props";

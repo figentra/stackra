@@ -6,12 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decisions 14 and 16, rule R7).
  */
+import { Route } from "@stackra/navigation";
 
 /** The panel's landing page, at `/`. */
-// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
-// `export class HomeRoute extends Route({ path: "/" }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static field
-export class HomeRoute {
-  /** The URL path of the route. */
-  static readonly path = "/";
-}
+export class HomeRoute extends Route({ path: "/" }) {}

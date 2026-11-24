@@ -336,6 +336,40 @@ test("apps come out in the v3 shape: config, root module, route folders, config 
   );
 });
 
+/**
+ * A new console app is a member gen and lint accept (ADR 0294 R3, ADR 0305 rules 10 to 13): its module and route extend
+ * their kind bases, the shell's props sit in their own file, it depends on the packages those bases come from, it takes
+ * the preset those packages typecheck under, and its test config has the complete file contract. Each of these failed
+ * once: a fresh app made `stackra gen` refuse the whole workspace and failed its own lint.
+ */
+test("app:console renders a member gen and lint accept: kind bases, props in their own file, the app preset", () => {
+  const web = render("app:console", "admin").dest;
+  assert.match(
+    readText(web, "src/admin.module.ts"),
+    /^export class AdminModule extends Module\(\{ imports: \[\] \}\) \{\}$/m,
+  );
+  assert.match(
+    readText(web, "src/routes/home/home.route.ts"),
+    /^export class HomeRoute extends Route\(\{ path: "\/" \}\) \{\}$/m,
+  );
+  const deps = json(web, "package.json").dependencies;
+  assert.equal(deps?.["@stackra/container"], "workspace:*");
+  assert.equal(deps?.["@stackra/navigation"], "workspace:*");
+  assert.match(readText(web, "tsconfig.json"), /"extends": "@stackra\/typescript-config\/app"/);
+  // One declaration per file: the component file declares no type, the props file declares the one.
+  assert.doesNotMatch(
+    readText(web, "src/components/panel-shell/panel-shell.tsx"),
+    /export (interface|type) /,
+  );
+  assert.match(
+    readText(web, "src/components/panel-shell/panel-shell.props.ts"),
+    /export interface PanelShellProps/,
+  );
+  for (const file of ["vitest.config.ts", "src/components/panel-shell/panel-shell.props.ts"])
+    for (const field of ["Purpose:", "Boundary:", "Runtime:", "Governing contract:"])
+      assert.ok(readText(web, file).includes(field), `${file} lacks ${field}`);
+});
+
 test("parseEntries", () => {
   assert.deepEqual(parseEntries("none"), []);
   assert.deepEqual(parseEntries(""), []);

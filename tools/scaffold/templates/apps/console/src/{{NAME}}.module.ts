@@ -6,12 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (rule R12, decisions 14 and 16); ADR 0295 (decisions 7 and 10).
  */
+import { Module } from "@stackra/container";
 
 /** The root module of the {{NAME}} app; package modules it uses join `imports`. */
-// shortcut: a plain class until @stackra/container ships the Module kind base (STA-76); then
-// `export class {{PASCAL}}Module extends Module({ imports: [] }) {}`.
-// oxlint-disable-next-line typescript/no-extraneous-class -- the Module kind base replaces the static field
-export class {{PASCAL}}Module {
-  /** Modules this app imports; empty in a new app. */
-  static readonly imports: readonly unknown[] = [];
-}
+export class {{PASCAL}}Module extends Module({ imports: [] }) {}
