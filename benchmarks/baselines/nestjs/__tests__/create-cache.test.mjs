@@ -63,3 +63,39 @@ test("create.mjs reads its template cache from XDG_CACHE_HOME and never starts d
     rmSync(sandbox, { recursive: true, force: true });
   }
 });
+
+test("create.mjs asks npm to resolve every dependency as of the date framework.json names", () => {
+  const { resolveBefore } = JSON.parse(readFileSync(join(baseline, "framework.json"), "utf8"));
+  assert.match(
+    String(resolveBefore),
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/,
+    "framework.json names the date",
+  );
+  const sandbox = mkdtempSync(join(tmpdir(), "stk-create-before-"));
+  try {
+    // No cache, so the first-call path runs; a `docker` that records its arguments and fails stands in for it.
+    const bin = join(sandbox, "bin");
+    mkdirSync(bin);
+    const recorded = join(sandbox, "docker-args");
+    writeFileSync(join(bin, "docker"), `#!/bin/sh\nprintf '%s\\n' "$@" > "${recorded}"\nexit 1\n`, {
+      mode: 0o755,
+    });
+    const ran = spawnSync(process.execPath, [join(baseline, "create.mjs"), join(sandbox, "app")], {
+      env: {
+        PATH: `${bin}:${process.env.PATH}`,
+        HOME: join(sandbox, "home"),
+        XDG_CACHE_HOME: join(sandbox, "xdg"),
+      },
+      encoding: "utf8",
+    });
+    assert.notEqual(ran.status, 0, "the stand-in docker failed, so the build fails");
+    const args = readFileSync(recorded, "utf8").split("\n");
+    const at = args.indexOf(`npm_config_before=${resolveBefore}`);
+    assert.ok(
+      at > 0 && args[at - 1] === "-e",
+      "the container gets npm_config_before as an environment variable",
+    );
+  } finally {
+    rmSync(sandbox, { recursive: true, force: true });
+  }
+});

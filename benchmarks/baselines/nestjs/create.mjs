@@ -5,8 +5,10 @@
  *   CLI version, with its hello-world controller replaced by the starting app of benchmarks/tasks/starting-app.md.
  * Boundary: the first call builds the starter once inside a one-off node container (the container is removed when it
  *   ends, runs at the lowest priority with 2 CPUs, and reaches the npm registry) into a cache folder under
- *   `$XDG_CACHE_HOME`, else under `~/.cache`; every call then copies the cache into the target. Nothing is built twice. The build is refused when the
- *   resolved @nestjs/core is not the version in framework.json.
+ *   `$XDG_CACHE_HOME`, else under `~/.cache`; every call then copies the cache into the target. Nothing is built
+ *   twice. npm resolves the CLI and every dependency of the starter as of `resolveBefore` in framework.json
+ *   (`npm_config_before`), so the same tree comes back whatever npm has published since. The build is refused when
+ *   the resolved @nestjs/core is not the version in framework.json.
  * Runtime: node, with docker for the first call
  * Governing contract: benchmarks/tasks/starting-app.md; STA-2709 rule "fair baselines: each framework's own
  *   idiomatic starter, set up by its own docs".
@@ -30,7 +32,7 @@ import { fileURLToPath } from "node:url";
 
 const CLI_VERSION = "12.0.15";
 const here = dirname(fileURLToPath(import.meta.url));
-const { version } = JSON.parse(readFileSync(join(here, "framework.json"), "utf8"));
+const { version, resolveBefore } = JSON.parse(readFileSync(join(here, "framework.json"), "utf8"));
 const cacheHome = process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache");
 const cache = join(cacheHome, "stk-bench", `nestjs-${version}`);
 const HELLO_WORLD = [
@@ -46,6 +48,7 @@ function fail(message) {
 }
 
 function buildTemplate() {
+  if (typeof resolveBefore !== "string") fail("framework.json names no resolveBefore date");
   mkdirSync(dirname(cache), { recursive: true });
   const scratch = mkdtempSync(`${cache}.tmp-`);
   const ran = spawnSync(
@@ -62,6 +65,9 @@ function buildTemplate() {
       `${process.getuid()}:${process.getgid()}`,
       "-e",
       "HOME=/tmp",
+      // npm resolves the CLI and the starter's whole tree as of this date, so the baseline is reproducible.
+      "-e",
+      `npm_config_before=${resolveBefore}`,
       "-v",
       `${scratch}:/work`,
       "-w",
