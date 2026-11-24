@@ -147,8 +147,12 @@ if (args[0] === "publish") {
   const failures = path.join(state, "fail", plain);
   if (fs.existsSync(failures) && Number(fs.readFileSync(failures, "utf8")) > 0) {
     fs.writeFileSync(failures, String(Number(fs.readFileSync(failures, "utf8")) - 1));
-    if (fs.existsSync(failures + ".registers"))
-      fs.writeFileSync(held, fs.readFileSync(failures + ".registers", "utf8") === "wrong" ? "sha512-OTHER" : integrityOf(tarball));
+    if (fs.existsSync(failures + ".registers")) {
+      const content = fs.readFileSync(failures + ".registers", "utf8") === "wrong" ? "sha512-OTHER" : integrityOf(tarball);
+      const lag = path.join(state, "lag", plain);
+      if (fs.existsSync(lag)) fs.writeFileSync(path.join(state, "lagging", key), fs.readFileSync(lag, "utf8") + " " + content);
+      else fs.writeFileSync(held, content);
+    }
     process.exit(1);
   }
   if (fs.existsSync(path.join(state, "lag", plain)))
@@ -186,7 +190,7 @@ const linesOf = (file) =>
 const plainName = (name) => `@t_${name}`;
 
 /**
- * A workspace of packages, `{ name, deps, devDeps, isPrivate, prepack }`, with the two scripts and the shims, ready to run.
+ * A workspace of packages, `{ name, deps, devDeps, isPrivate, prepack, main }`, with the two scripts and the shims, ready to run.
  *
  * @example
  * const run = fixture([{ name: "a", deps: ["b"] }, { name: "b" }]);
@@ -203,7 +207,7 @@ function fixture(packages) {
     JSON.stringify({ name: "fixture-root", private: true }),
   );
   writeFileSync(join(root, "pnpm-workspace.yaml"), 'packages:\n  - "pkgs/*"\n');
-  for (const { name, deps = [], devDeps = [], isPrivate = false, prepack } of packages) {
+  for (const { name, deps = [], devDeps = [], isPrivate = false, prepack, main } of packages) {
     mkdirSync(join(root, "pkgs", name), { recursive: true });
     writeFileSync(
       join(root, "pkgs", name, "package.json"),
@@ -212,6 +216,7 @@ function fixture(packages) {
         version: "1.0.0",
         ...(isPrivate ? { private: true } : {}),
         ...(prepack === undefined ? {} : { scripts: { prepack } }),
+        ...(main === undefined ? {} : { main }),
         dependencies: Object.fromEntries(deps.map((dep) => [`@t/${dep}`, "workspace:*"])),
         devDependencies: Object.fromEntries(devDeps.map((dep) => [`@t/${dep}`, "workspace:*"])),
       }),
@@ -697,6 +702,37 @@ test("a version the registry shows a moment late does not fail the run; one stil
   });
 });
 
+test("a failed publish that reached the registry, shown a moment late, is found by asking again and not published twice", () => {
+  withFixture(CHAIN, (run) => {
+    run.failPublish("b", 1, { registers: true });
+    run.lag("b", 2);
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.equal(result.published.filter((name) => name === "@t/b").length, 1);
+    assert.ok(result.tags.includes("@t/b@1.0.0"));
+  });
+});
+
+test("a package whose main points at a file the tarball lacks stops the run in the pre-flight, with nothing published", () => {
+  withFixture(
+    [
+      { name: "a", deps: ["c"] },
+      { name: "c", main: "./dist/index.mjs" },
+    ],
+    (run) => {
+      const result = run.run();
+      assert.equal(result.status, 1);
+      assert.match(result.output, /@t\/c@1\.0\.0: the tarball lacks dist\/index\.mjs/);
+      assert.match(
+        result.output,
+        /::error title=Preflight failed::cannot pack: @t\/c@1\.0\.0\. Nothing was published/,
+      );
+      assert.deepEqual(result.published, []);
+      assert.deepEqual(result.events, []);
+    },
+  );
+});
+
 test("a plan with no public package stops the run", () => {
   withFixture([{ name: "p", isPrivate: true }], (run) => {
     const result = run.run();
@@ -798,7 +834,10 @@ function makeTarball(manifest, files = ["LICENSE"]) {
   const dir = mkdtempSync(join(tmpdir(), "registry-tarball-"));
   mkdirSync(join(dir, "package"));
   writeFileSync(join(dir, "package", "package.json"), JSON.stringify(manifest));
-  for (const file of files) writeFileSync(join(dir, "package", file), "x\n");
+  for (const file of files) {
+    mkdirSync(dirname(join(dir, "package", file)), { recursive: true });
+    writeFileSync(join(dir, "package", file), "x\n");
+  }
   execFileSync("tar", ["-czf", join(dir, "t.tgz"), "-C", dir, "package"]);
   return { dir, file: join(dir, "t.tgz") };
 }
@@ -841,6 +880,55 @@ test("verify refuses a wrong name or version, a leftover protocol and a missing 
   const missing = verify(good, []);
   assert.equal(missing.status, 1);
   assert.match(missing.stdout, /no LICENSE file/);
+});
+
+test("verify refuses a tarball that lacks a file package.json points at: main, types, bin and every exports leaf", () => {
+  const manifest = {
+    name: "@t/a",
+    version: "1.0.0",
+    main: "./dist/index.mjs",
+    types: "./dist/index.d.mts",
+    bin: { tool: "./dist/tool.mjs" },
+    exports: {
+      ".": { types: "./dist/index.d.mts", default: "./dist/index.mjs" },
+      "./node": { default: "./dist/node.mjs" },
+    },
+  };
+  const everything = [
+    "LICENSE",
+    "dist/index.mjs",
+    "dist/index.d.mts",
+    "dist/tool.mjs",
+    "dist/node.mjs",
+  ];
+  assert.equal(verify(manifest, everything).status, 0);
+  // Nothing but package.json and LICENSE: what a pack of a package whose build was skipped looks like.
+  const bare = verify(manifest, ["LICENSE"]);
+  assert.equal(bare.status, 1);
+  assert.match(
+    bare.stdout,
+    /the tarball lacks dist\/index\.mjs, dist\/index\.d\.mts, dist\/tool\.mjs, dist\/node\.mjs/,
+  );
+  // Only a `bin` target missing.
+  const noBin = verify(
+    manifest,
+    everything.filter((file) => file !== "dist/tool.mjs"),
+  );
+  assert.equal(noBin.status, 1);
+  assert.match(noBin.stdout, /the tarball lacks dist\/tool\.mjs/);
+  // A string `bin`, wildcard export patterns and a blocked (null) condition are not entry points to find.
+  assert.equal(
+    verify(
+      {
+        name: "@t/a",
+        version: "1.0.0",
+        bin: "./cli.mjs",
+        exports: { "./*": "./dist/*.mjs", "./x": null },
+      },
+      ["LICENSE", "cli.mjs"],
+    ).status,
+    0,
+  );
 });
 
 test("the script keeps no descriptor open and counts lines without wc", () => {

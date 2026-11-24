@@ -234,7 +234,8 @@ jobs:
             console.log(`Publish plan: ${plan.length} packages, dependencies first`);
           } else if (mode === "--verify" && out && expectedName && expectedVersion) {
             // The packed tarball is what is published: the name and version it says, no protocol left for the
-            // registry to choke on (pnpm rewrites `workspace:` and `catalog:` when it packs), and a LICENSE file.
+            // registry to choke on (pnpm rewrites `workspace:` and `catalog:` when it packs), a LICENSE file and every entry
+            // point it names.
             const tar = (...args) => execFileSync("tar", args, { encoding: "utf8", maxBuffer: 1 << 28 });
             const manifest = JSON.parse(tar("-xzOf", out, "package/package.json"));
             const problems = [];
@@ -243,8 +244,30 @@ jobs:
             for (const field of ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"])
               for (const [dep, range] of Object.entries(manifest[field] ?? {}))
                 if (/^(workspace|catalog|link|file):/.test(range)) problems.push(`${field}.${dep} is still ${range}`);
-            if (!tar("-tzf", out).split("\n").some((file) => /^package\/LICEN[CS]E(\.(md|txt))?$/i.test(file)))
+            const files = new Set(tar("-tzf", out).split("\n").filter(Boolean));
+            if (![...files].some((file) => /^package\/LICEN[CS]E(\.(md|txt))?$/i.test(file)))
               problems.push("no LICENSE file");
+            // `pnpm pack` succeeds when dist/ is missing (a skipped or cached-out build, a wrong `files` list), so every
+            // file package.json points at (main, module, types, typings, each `bin` and `exports` leaf; wildcard
+            // patterns skipped) must be in the tarball, or the version would be published unusable.
+            const leaves = (value) =>
+              typeof value === "string"
+                ? [value]
+                : value !== null && typeof value === "object"
+                  ? Object.values(value).flatMap(leaves)
+                  : [];
+            const entries = [
+              manifest.main,
+              manifest.module,
+              manifest.types,
+              manifest.typings,
+              ...leaves(manifest.bin),
+              ...leaves(manifest.exports),
+            ]
+              .filter((entry) => typeof entry === "string" && !entry.includes("*"))
+              .map((entry) => `package/${entry.replace(/^\.\//, "")}`);
+            const absent = [...new Set(entries)].filter((entry) => !files.has(entry));
+            if (absent.length > 0) problems.push(`the tarball lacks ${absent.map((entry) => entry.replace(/^package\//, "")).join(", ")}`);
             if (problems.length > 0) fail(`${expectedName}@${expectedVersion}: ${problems.join("; ")}`);
             // The sha512 integrity of the tarball, as the registry's `dist.integrity` writes it.
             console.log(`sha512-${createHash("sha512").update(readFileSync(out)).digest("base64")}`);
@@ -427,9 +450,10 @@ jobs:
             esac
             attempt=1
             until publish_one "$name" "$tarball"; do
-              # A publish that reached the registry and failed on the way back is there now: never published twice, and only
-              # accepted if what is there is what was packed.
-              state="$(registry_state "$name" "$version" "$integrity")"
+              # A publish that reached the registry and failed on the way back is there now (the store may show it a
+              # moment late, so an absent answer is asked again): never published twice, and only accepted if what is
+              # there is what was packed.
+              state="$(settled_state "$name" "$version" "$integrity")"
               case "$state" in
                 present) break ;;
                 absent) ;;
