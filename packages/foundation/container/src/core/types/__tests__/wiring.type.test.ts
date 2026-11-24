@@ -3,7 +3,8 @@
  * Purpose: type tests of `Wiring` and its parts: a wiring of the shape the template's committed loyalty-kit and web
  *          samples carry satisfies it (named deps, lazy driver candidates, config overrides, string roots and the
  *          sections other packages own), while a string token, a lifetime outside the three and a binding without its
- *          class are refused; the container boots it.
+ *          class are refused; the container boots it; the container itself, whose constructor is private, is accepted in
+ *          the platform set a service that injects it lists, and a string is not.
  * Boundary: test only; the classes are test-local stand-ins for the template's.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0263 (decision 11).
@@ -59,6 +60,15 @@ class LedgerReconcilerService extends Service {}
 class LoyaltyKitModule extends Module({ exports: [LoyaltyService, LedgerReconcilerService] }) {}
 
 class DemoSeeder {}
+
+/** A service that injects the container itself, as a health check that runs the request pipeline does. */
+class ContainerReaderService extends Service {
+  constructor(readonly container: Container) {
+    super();
+  }
+}
+
+class ContainerReaderModule extends Module({ exports: [ContainerReaderService] }) {}
 
 const wiring = {
   member: "loyalty_kit",
@@ -120,6 +130,28 @@ describe("Wiring", () => {
     expect(container.get(LoyaltyService)).toBeInstanceOf(LoyaltyService);
     expect(container.get(LoyaltyKitConfig)).toBeInstanceOf(HostLoyaltyKitConfig);
     expect(container.get(LoyaltyMembers)).toBeInstanceOf(HostLoyaltyMembersDriver);
+  });
+
+  it("accepts the container in the platform set, and the container injects itself", async () => {
+    const reader = {
+      member: "container_reader",
+      package: "@acme/container-reader",
+      root: ContainerReaderModule,
+      modules: { container_reader: { exports: [ContainerReaderService], dependsOn: [] } },
+      platform: [Container],
+      bindings: [
+        { module: "container_reader", kind: "service", provide: ContainerReaderService, deps: [Container] },
+      ],
+    } satisfies Wiring;
+    const container = await Container.create([reader]);
+    expect(container.get(ContainerReaderService).container).toBe(container);
+  });
+
+  it("keeps the platform set to classes: a string is refused", () => {
+    const platform: Wiring["platform"] = [Clock];
+    // @ts-expect-error -- a string is never a token
+    const refused: Wiring["platform"] = ["Clock"];
+    expect([platform, refused]).toHaveLength(2);
   });
 
   it("accepts an app wiring whose root is a module key", () => {
