@@ -12,5 +12,5 @@ the tests only call it over HTTP, one acceptance set fits every framework.
   - `PATCH /tasks/:id` changes the fields sent and returns `200` with the task, or `404`.
 - Storage is in memory; a restart empties it. The server listens on the port in the `PORT` environment variable.
 
-How a test run works: the runner starts the app, exports its address as `BASE_URL`, and runs
+How a test run works: the runner starts a fresh app (no tasks in it) for every run, exports its address as `BASE_URL`, and runs
 `node --test` on the task's `acceptance/` folder. The result is the pass and fail counts of that run.
