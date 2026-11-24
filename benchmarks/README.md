@@ -2,7 +2,10 @@
 
 The AI-era benchmark harness: how well an AI agent builds the same five tasks on Stackra and on other frameworks.
 Like `tools/`, it is not a workspace member: no `package.json`, no tier, never published. Plain Node 24 `.mjs`, no
-dependencies.
+dependencies. `pnpm lint:root` lints it (the baselines' starting apps and scripted solutions are the apps under test, left
+out in `.oxlintrc.jsonc`). Its few `stackra(no-raw-env)` warnings stand: the runner reads `process.env` only to hand `PATH`
+(and a redirected `XDG_CACHE_HOME`) to the processes it starts, and a harness with no dependency has no `Config` class to read
+them through.
 
 | Path                     | Holds                                                                                          |
 | ------------------------ | ---------------------------------------------------------------------------------------------- |
