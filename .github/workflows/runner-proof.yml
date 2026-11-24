@@ -1,0 +1,26 @@
+# Stackra file contract:
+# Purpose: proves that figentra's self-hosted runner on box 2 takes jobs while GitHub billing is locked (the billing
+#          note in STA-2784). It runs only on a push to its own branch, `ci/runner-proof`, and prints the runner's
+#          name, the date and `node -v`; nothing else.
+# Boundary: no checkout, no secrets, no token permissions; never runs on main, on a pull request or for a fork.
+# Owner: release-operations
+# Governing contract: ADR 0019 (supply chain); the CTO's self-hosted runner ruling of 2026-11-25.
+name: Runner proof
+
+on:
+  push:
+    branches: [ci/runner-proof]
+
+permissions: {}
+
+jobs:
+  proof:
+    name: Runner proof (box 2)
+    runs-on: [self-hosted, figentra]
+    timeout-minutes: 5
+    steps:
+      - name: Print the runner, the date and node
+        run: |
+          echo "runner: ${RUNNER_NAME}"
+          date -u +%FT%TZ
+          node -v
