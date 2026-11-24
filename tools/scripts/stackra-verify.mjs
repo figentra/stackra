@@ -80,6 +80,12 @@
  *   images are for this box only: never pushed to or published in any registry (licence: our own use).
  *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
+ *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
+ *   recorded in #1043 before the ruleset swap.
+ *   stackra/verify-mobile runs the licence policy over the full install (the mobile-scoped exceptions and every licence
+ *   only the mobile apps pull in). A red licence step on stackra/verify-mobile is a lane finding with an STA issue,
+ *   never ignored. verify-mobile becomes required after 7 consecutive days with no infrastructure-caused red, by the
+ *   CTO's decision on that date.
  * Runtime: node on Linux with flock, sudo, git, and docker for the verify user.
  * Governing contract: ADR 0119 (merge policy); ADR 0523 (decision 3); STA-2761.
  * Secrets: the App key is read from STACKRA_VERIFY_KEY_FILE (owner-placed, mode 0400) only to mint a token, which
@@ -226,6 +232,24 @@ export const SQUAWK_FLAGS =
   "    --exclude=prefer-bigint-over-int \\\n    --exclude=require-lock-timeout --exclude=require-statement-timeout";
 
 /**
+ * The licence-policy step's commands over an install (review of #1043, MEDIUM A, LOW 5, LOW C; CTO ruling of round 4): main's
+ * policy (/in/licences.json, the CTO's ruling of 2026-11-24) over every package that install laid down, offline; the
+ * workspace's members and closures from pnpm-lock.yaml and from pnpm's own view of the installed tree, which must
+ * agree. `install` is `gate` (the Quality Gate's install without the mobile members, GATE_FILTERS, which must not hold
+ * a mobile-scoped package at all) or `mobile` (stackra/verify-mobile's full install, where the mobile-scoped
+ * exceptions and every licence only the mobile apps pull in are checked).
+ */
+export function licenceRun(install) {
+  if (install !== "gate" && install !== "mobile") throw new Error(`not an install: ${install}`);
+  const filters = install === "gate" ? ` ${EXCLUDE}` : "";
+  return [
+    `pnpm licenses list --json --offline --recursive${filters} > "\${TMPDIR:-/tmp}/stackra-licences.json"`,
+    'pnpm list --recursive --json --depth Infinity --offline > "${TMPDIR:-/tmp}/stackra-pnpm-list.json"',
+    `node "$GATE_IN/licence-check.mjs" "$GATE_IN/licences.json" "\${TMPDIR:-/tmp}/stackra-licences.json" . "\${TMPDIR:-/tmp}/stackra-pnpm-list.json" ${install}`,
+  ].join("\n");
+}
+
+/**
  * The Quality Gate as `stackra/verify` runs it: ci.yml's `dependency-scan` job and its `gate` job, step by step, in
  * order, with the same commands, filters and conditions; then the licence policy and the tests (STA-2761's verify
  * ran them; ci.yml leaves tests to the box). Each step names the ci.yml job and step it mirrors (`job`, `ci`, the
@@ -276,20 +300,9 @@ export const GATE_STEPS = Object.freeze([
       'NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"',
     ].join("\n"),
   },
-  {
-    // Not in ci.yml, so its place is free: right after the install's commit checks and before any PR code runs (lint,
-    // build and validate run the PR's code and could rewrite the lockfile or node_modules). Main's licence policy
-    // (/in/licences.json, the CTO's ruling of 2026-11-24) over every package the install laid down, offline; the
-    // workspace's members and closures from pnpm-lock.yaml and from pnpm's own view of the installed tree, which must
-    // agree (review of #1043, MEDIUM A, LOW 5 and LOW C).
-    id: "licence-policy",
-    run: [
-      // The licences of what the gate installed: without the mobile members, as the install (GATE_FILTERS).
-      `pnpm licenses list --json --offline --recursive ${EXCLUDE} > "\${TMPDIR:-/tmp}/stackra-licences.json"`,
-      'pnpm list --recursive --json --depth Infinity --offline > "${TMPDIR:-/tmp}/stackra-pnpm-list.json"',
-      'node "$GATE_IN/licence-check.mjs" "$GATE_IN/licences.json" "${TMPDIR:-/tmp}/stackra-licences.json" . "${TMPDIR:-/tmp}/stackra-pnpm-list.json"',
-    ].join("\n"),
-  },
+  // Not in ci.yml, so its place is free: right after the install's commit checks and before any PR code runs (lint,
+  // build and validate run the PR's code and could rewrite the lockfile or node_modules).
+  { id: "licence-policy", run: licenceRun("gate") },
   { id: "format-check", job: "gate", ci: "Format check", line: 130, run: "pnpm format:check" },
   {
     id: "lint",
@@ -406,6 +419,8 @@ export const GATE_STEPS = Object.freeze([
  * the licensed builds the daemon made). Never required; its result never touches `stackra/verify`.
  */
 export const MOBILE_STEPS = Object.freeze([
+  // The mobile install's licences, before the mobile apps' code runs; a red here is a lane finding (runbook).
+  { id: "licence-policy", run: licenceRun("mobile") },
   {
     id: "mobile-apps",
     job: "mobile",
@@ -1419,8 +1434,8 @@ export function installedMobile(entries, policy, mobileMembers, pnpm = null) {
 }
 
 /**
- * The licence check the gate runs, right after the install and before any PR code
- * (`node licence-check.mjs <policy> <listing> <workspace root> <pnpm list>`): this file's spdxAllowed,
+ * The licence check the gate and stackra/verify-mobile run, right after the install and before any PR code
+ * (`node licence-check.mjs <policy> <listing> <workspace root> <pnpm list> gate|mobile`, licenceStep): this file's spdxAllowed,
  * licenceViolations, workspaceManifest, readMembers, workspaceMembers, memberSetProblems, exceptionScopeViolations,
  * lockfileGraph, lockfileFindings, pnpmFindings, closureViolations, lockfileScopeViolations and installedMobile, with
  * MOBILE_MEMBERS. The policy is main's (`/in/licences.json`). The members are pnpm-lock.yaml's importers, which must
@@ -1452,13 +1467,13 @@ export const licenceCheckSource = () =>
     "    return { unreadable: `${path}: ${error.message}` };",
     "  }",
     "};",
-    "const [policyPath, listingPath, root, pnpmListPath] = process.argv.slice(2);",
+    "const [policyPath, listingPath, root, pnpmListPath, install] = process.argv.slice(2);",
     "const policy = read(policyPath);",
     "const listing = read(listingPath);",
     "const pnpmList = pnpmListPath ? read(pnpmListPath) : null;",
     "const problems = [policy, listing, pnpmList ?? {}].filter((x) => x.unreadable).map((x) => x.unreadable);",
-    "if (!root || !pnpmListPath)",
-    '  problems.push("usage: licence-check <policy> <listing> <workspace root> <pnpm list --json>");',
+    'if (!root || !pnpmListPath || !["gate", "mobile"].includes(install))',
+    '  problems.push("usage: licence-check <policy> <listing> <workspace root> <pnpm list --json> gate|mobile");',
     "let members = [];",
     "if (!problems.length) {",
     "  problems.push(...licenceViolations(listing, policy));",
@@ -1472,7 +1487,9 @@ export const licenceCheckSource = () =>
     "    const reader = lockfileFindings(graph, members, policy, MOBILE_MEMBERS);",
     "    const pnpm = pnpmFindings(pnpmList, realpathSync(root), members, policy, MOBILE_MEMBERS, graph.optionalPeers);",
     "    problems.push(...closureViolations(reader, pnpm, MOBILE_MEMBERS));",
-    "    problems.push(...installedMobile(readdirSync(`${root}/node_modules/.pnpm`), policy, MOBILE_MEMBERS, pnpm));",
+    "    // The gate's install leaves the mobile members out, so it must not hold a mobile-scoped package at all.",
+    '    if (install === "gate")',
+    "      problems.push(...installedMobile(readdirSync(`${root}/node_modules/.pnpm`), policy, MOBILE_MEMBERS, pnpm));",
     "  } catch (error) {",
     "    problems.push(error.message);",
     "  }",
@@ -1530,7 +1547,8 @@ export const KINDS = Object.freeze({
     label: "Mobile apps (Uniwind Pro)",
     script: "mobile.sh",
     install: "full",
-    describe: "ci.yml's mobile job: lint, typecheck and build of the two Uniwind Pro members",
+    describe:
+      "the licence policy over the full install, then ci.yml's mobile job: lint, typecheck and build of the two Uniwind Pro members",
   },
   codeql: {
     check: CODEQL_CHECK,
@@ -1562,7 +1580,8 @@ export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
       file("history.bundle"),
       [osvDir, OSV_MOUNT],
     ];
-  if (kind === "mobile") return [file("mobile.sh")];
+  if (kind === "mobile")
+    return [file("mobile.sh"), file("licence-check.mjs"), file("licences.json")];
   if (kind === "codeql")
     return [file("codeql.sh"), file("codeql-results.cjs"), [codeqlDir, "/codeql"]];
   throw new Error(`not a verify kind: ${kind}`);
@@ -1572,7 +1591,8 @@ export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
 export function kindFiles(kind, languages = CODEQL_DEFAULT_LANGUAGES) {
   if (kind === "gate")
     return { "gate.sh": gateScript(), "licence-check.mjs": licenceCheckSource() };
-  if (kind === "mobile") return { "mobile.sh": mobileScript() };
+  if (kind === "mobile")
+    return { "mobile.sh": mobileScript(), "licence-check.mjs": licenceCheckSource() };
   if (kind === "codeql")
     return {
       "codeql.sh": codeqlScript(languages),
@@ -3940,7 +3960,7 @@ export async function verify(s, job) {
       );
       const drift = definitionDrift(own, onMain.status === 0 ? onMain.stdout.trim() : null);
       if (drift) throw Object.assign(new Error(drift), { drift: true });
-      if (kind === "gate")
+      if (kind === "gate" || kind === "mobile")
         writeFileSync(
           join(runDir, "licences.json"),
           git(mirror, ["show", `${job.base}:tools/policy/licences.json`]),

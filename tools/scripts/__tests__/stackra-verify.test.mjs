@@ -2033,7 +2033,7 @@ const STEP_CASES = {
     calls: [
       `pnpm licenses list --json --offline --recursive ${X}`,
       "pnpm list --recursive --json --depth Infinity --offline",
-      "licence-check <tmp>/in/licences.json <tmp>/stackra-licences.json . <tmp>/stackra-pnpm-list.json",
+      "licence-check <tmp>/in/licences.json <tmp>/stackra-licences.json . <tmp>/stackra-pnpm-list.json gate",
     ],
     fail: "licence-check *",
   },
@@ -2208,21 +2208,43 @@ test("gate script: a hostile PR title or branch is data, never shell", needsBash
   assert.equal(run.calls("linear-key-check")[0].env.PR_TITLE, title);
 });
 
-test("mobile script: ci.yml's mobile job step, with no PR facts needed", needsBash, () => {
-  const fixture = gateFixture();
-  rmSync(join(fixture.input, "facts.json"));
-  const run = runGate(fixture, "__never__", mobileScript);
-  assert.equal(run.status, 0, run.stdout);
-  assert.deepEqual(
-    run.calls("mobile-apps").map((c) => c.call),
-    [
-      "pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground --continue=dependencies-successful",
-    ],
-  );
-  const failed = runGate(fixture, "pnpm exec turbo run lint *", mobileScript);
-  assert.equal(failed.status, 1);
-  assert.equal(failed.sections["mobile-apps"].result, "FAIL");
-});
+test(
+  "mobile script: the licence step over the mobile install, then ci.yml's mobile job step, with no PR facts needed",
+  needsBash,
+  () => {
+    const fixture = gateFixture();
+    rmSync(join(fixture.input, "facts.json"));
+    const run = runGate(fixture, "__never__", mobileScript);
+    assert.equal(run.status, 0, run.stdout);
+    assert.deepEqual(
+      MOBILE_STEPS.map((s) => s.id),
+      ["licence-policy", "mobile-apps"],
+    );
+    // the full install, unfiltered: the mobile-only packages and the mobile-scoped exceptions are checked here
+    assert.deepEqual(
+      run.calls("licence-policy").map((c) => c.call.replaceAll(fixture.dir, "<tmp>")),
+      [
+        "pnpm licenses list --json --offline --recursive",
+        "pnpm list --recursive --json --depth Infinity --offline",
+        "licence-check <tmp>/in/licences.json <tmp>/stackra-licences.json . <tmp>/stackra-pnpm-list.json mobile",
+      ],
+    );
+    const red = runGate(fixture, "licence-check *", mobileScript);
+    assert.equal(red.status, 1);
+    assert.equal(red.sections["licence-policy"].result, "FAIL");
+    // the mobile apps' step still runs and reports
+    assert.equal(red.sections["mobile-apps"].result, "pass");
+    assert.deepEqual(
+      run.calls("mobile-apps").map((c) => c.call),
+      [
+        "pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground --continue=dependencies-successful",
+      ],
+    );
+    const failed = runGate(fixture, "pnpm exec turbo run lint *", mobileScript);
+    assert.equal(failed.status, 1);
+    assert.equal(failed.sections["mobile-apps"].result, "FAIL");
+  },
+);
 
 /** git in `cwd` with a fixed identity; asserts success and returns trimmed stdout. */
 function gitIn(cwd, ...args) {
@@ -3366,7 +3388,7 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
     { name: "@figentra/mobile", path: `${ws}/apps/mobile`, private: true },
     { name: "@t/database", path: `${ws}/packages/data/database`, private: false, ...database },
   ];
-  const run = (extra = {}, { root = ws, list = pnpmList() } = {}) => {
+  const run = (extra = {}, { root = ws, list = pnpmList(), install = "gate" } = {}) => {
     writeFileSync(
       join(dir, "listing.json"),
       JSON.stringify({
@@ -3377,9 +3399,11 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
     );
     writeFileSync(join(dir, "pnpm-list.json"), JSON.stringify(list));
     const args = [check, join(dir, "policy.json"), join(dir, "listing.json")];
-    return spawnSync(process.execPath, root ? [...args, root, join(dir, "pnpm-list.json")] : args, {
-      encoding: "utf8",
-    });
+    return spawnSync(
+      process.execPath,
+      root ? [...args, root, join(dir, "pnpm-list.json"), install] : args,
+      { encoding: "utf8" },
+    );
   };
   const ok = run();
   assert.equal(ok.status, 0, ok.stdout + ok.stderr);
@@ -3471,11 +3495,37 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
   assert.match(noWorkspace.stdout, /ENOENT/);
   const missing = spawnSync(
     process.execPath,
-    [check, join(dir, "none.json"), join(dir, "listing.json"), ws, join(dir, "pnpm-list.json")],
+    [
+      check,
+      join(dir, "none.json"),
+      join(dir, "listing.json"),
+      ws,
+      join(dir, "pnpm-list.json"),
+      "gate",
+    ],
     { encoding: "utf8" },
   );
   assert.equal(missing.status, 1);
   assert.match(missing.stdout, /none\.json/);
+  assert.match(run({}, { install: "full" }).stdout, /usage: licence-check .* gate\|mobile/);
+  // stackra/verify-mobile (CTO ruling, round 4): the full install lists what only the mobile apps pull in. Its
+  // mobile-scoped exceptions pass there, and a mobile-only package under an unlisted licence fails verify-mobile
+  // while the gate, whose filtered listing never sees it, stays green.
+  const mobileInstall = {
+    UNLICENSED: [{ name: "uniwind-pro", versions: ["1.9.0"], license: "UNLICENSED" }],
+    "EPL-2.0": [{ name: "@zowe/secrets-for-zowe-sdk", versions: ["8.29.4"], license: "EPL-2.0" }],
+  };
+  mkdirSync(join(ws, "node_modules/.pnpm/uniwind-pro@1.9.0_abc"));
+  const mobileOk = run(mobileInstall, { install: "mobile" });
+  assert.equal(mobileOk.status, 0, mobileOk.stdout);
+  const mobileOnly = {
+    WTFPL: [{ name: "mobile-only-lib", versions: ["2.0.0"], license: "WTFPL" }],
+  };
+  const mobileRed = run({ ...mobileInstall, ...mobileOnly }, { install: "mobile" });
+  assert.equal(mobileRed.status, 1);
+  assert.match(mobileRed.stdout, /mobile-only-lib@2\.0\.0: WTFPL/);
+  rmSync(join(ws, "node_modules/.pnpm/uniwind-pro@1.9.0_abc"), { recursive: true });
+  assert.equal(run({}, { install: "gate" }).status, 0);
   rmSync(ws, { recursive: true, force: true });
   rmSync(dir, { recursive: true, force: true });
 });
@@ -3624,6 +3674,8 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
   ]);
   assert.deepEqual(kindMounts("mobile", { runDir: "/runs/x" }), [
     ["/runs/x/mobile.sh", "/in/mobile.sh"],
+    ["/runs/x/licence-check.mjs", "/in/licence-check.mjs"],
+    ["/runs/x/licences.json", "/in/licences.json"],
   ]);
   assert.throws(() => kindMounts("nope", { runDir: "/r" }), /not a verify kind/);
   const argv = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR, mounts });
@@ -3633,7 +3685,8 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
   assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs"]);
   assert.equal(kindFiles("gate")["gate.sh"], gateScript());
-  assert.deepEqual(Object.keys(kindFiles("mobile")), ["mobile.sh"]);
+  assert.deepEqual(Object.keys(kindFiles("mobile")), ["mobile.sh", "licence-check.mjs"]);
+  assert.equal(kindFiles("mobile")["licence-check.mjs"], licenceCheckSource());
 });
 
 test("runJob gate: installs without the Uniwind Pro members and never lays in a licensed build; runs the gate script", async () => {
