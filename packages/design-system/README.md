@@ -1,4 +1,4 @@
-<!-- Purpose: the index of the design-system category (tokens, ui) and the rules its packages follow. Boundary: category index only; each package documents itself. Runtime: docs. Governing contract: ADR 0302, ADR 0461 (decision 3). -->
+<!-- Purpose: the index of the design-system category (tokens, ui, branding, icons, showcase) and the rules its packages follow. Boundary: category index only; each package documents itself. Runtime: docs. Governing contract: ADR 0302, ADR 0461 (decision 3). -->
 
 # `packages/design-system/`
 
@@ -12,10 +12,12 @@ shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. Stackra ships
 components only
 ([ADR 0469](../../apps/docs/src/docs/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only.mdx)).
 [`branding`](branding) (`@stackra/branding`): a tenant's brand profile read at run time (settings, a brand-images
-bucket and `BrandReader`).
+bucket and `BrandReader`). [`icons`](icons) (`@stackra/icons`): the `IconName` contract and the per-platform icon
+registries. [`showcase`](showcase) (`@stackra/showcase`): the one component registry the showcases read, with its
+catalogues, generated API docs and search index.
 
-**Planned here:** icons. A product brings its own brand as a theme for `@stackra/tokens`; Stackra's own logos and brand
-assets live in the docs app (`apps/docs/src/assets/brand/`).
+A product brings its own brand as a theme for `@stackra/tokens`; Stackra's own logos and brand assets live in the docs
+app (`apps/docs/src/assets/brand/`).
 
 ## Rules
 
