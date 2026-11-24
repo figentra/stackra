@@ -116,6 +116,16 @@ describe(OtlpMetricsDriver, () => {
     );
   });
 
+  it("keeps one series per attribute set, whatever order the attributes are given in", async () => {
+    const meter = driver();
+    meter.counter("orders.created", 1, { scopeId: "s1", channel: "web" });
+    meter.counter("orders.created", 2, { channel: "web", scopeId: "s1" });
+    meter.counter("orders.created", 4, { scopeId: "s1", channel: "app" });
+    await meter.flush();
+    const [sum] = metrics(fetch, 0);
+    expect(sum?.sum?.dataPoints.map((point) => point.asDouble)).toEqual([3, 4]);
+  });
+
   it("keeps values cumulative across exports, and exports on its interval", async () => {
     const meter = driver({ metricIntervalMs: 1000, flushIntervalMs: 100 });
     meter.counter("jobs.run", 2);

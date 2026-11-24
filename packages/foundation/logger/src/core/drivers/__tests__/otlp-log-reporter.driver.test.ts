@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `OtlpLogReporterDriver`: it is the `LogReporter` port; a full batch is POSTed at once to
  *          `<endpoint>/v1/logs` with the headers from the secret; a partial batch waits for the interval; `flush` sends
- *          the rest; no endpoint sends nothing; the queue drops its oldest records past `maxQueue`; a failing collector
- *          never reaches the caller.
+ *          the rest, and so does shutdown; no endpoint sends nothing; the queue drops its oldest records past `maxQueue`,
+ *          and `dropped` counts them and the batches a collector refuses; a failing collector never reaches the caller.
  * Boundary: test only; `fetch` is stubbed and timers are faked, so nothing leaves the process. The header value is
  *           made up.
  * Runtime: node (vitest)
@@ -106,6 +106,28 @@ describe(OtlpLogReporterDriver, () => {
     for (const n of [1, 2, 3]) driver.report(record(n));
     await driver.flush();
     expect(sentEvents(fetch)).toEqual([["orders.e2", "orders.e3"]]);
+  });
+
+  it("counts the records it drops: the overflow, and a batch the collector refuses", async () => {
+    const driver = reporter({ endpoint: "https://otlp.example.test", maxQueue: 2, batchSize: 5 });
+    expect(driver.dropped).toBe(0);
+    for (const n of [1, 2, 3]) driver.report(record(n));
+    expect(driver.dropped).toBe(1);
+    await driver.flush();
+    expect(driver.dropped).toBe(1);
+    fetch.mockResolvedValue(new Response(null, { status: 503 }));
+    driver.report(record(4));
+    driver.report(record(5));
+    await driver.flush();
+    expect(driver.dropped).toBe(3);
+  });
+
+  it("sends what is queued when the application shuts down", async () => {
+    const driver = reporter({ endpoint: "https://otlp.example.test", batchSize: 10 });
+    driver.report(record(1));
+    expect(fetch).not.toHaveBeenCalled();
+    await driver.onApplicationShutdown();
+    expect(sentEvents(fetch)).toEqual([["orders.e1"]]);
   });
 
   it("never fails its caller when the collector fails", async () => {
