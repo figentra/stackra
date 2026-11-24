@@ -9,6 +9,7 @@ pre-commit:
         - "*.{css,scss,less,html,graphql,vue}"
       exclude:
         - ".agents/hooks/fflow-guard.mjs"
+        - ".opencode/plugins/fflow-guard.mjs"
       run: |
         sh -c 'command -v mise >/dev/null 2>&1 || { echo "oxfmt skipped: mise not installed; CI checks"; exit 0; };
         exec mise exec npm:oxfmt -- oxfmt --check --no-error-on-unmatched-pattern "$@"' -- {staged_files}
