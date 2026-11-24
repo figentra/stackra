@@ -5008,9 +5008,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: catalog:frontend
         version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
-      vite-plugin-pwa:
-        specifier: catalog:frontend
-        version: 2.0.0(supports-color@10.2.2)(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(workbox-build@7.4.1(supports-color@10.2.2))(workbox-window@7.4.1)
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*
@@ -5045,6 +5042,9 @@ importers:
       vite:
         specifier: catalog:frontend
         version: 8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
+      vite-plugin-pwa:
+        specifier: catalog:frontend
+        version: 2.0.0(supports-color@10.2.2)(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(workbox-build@7.4.1(supports-color@10.2.2))(workbox-window@7.4.1)
       vitest:
         specifier: catalog:quality
         version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))

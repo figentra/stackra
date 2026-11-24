@@ -17,8 +17,9 @@ and turns a member's `stackra.config.ts` plus the options gen writes into one Vi
 **Tier:** `tier:lib` (`packages/developer/vite-plugin`). One entry, `.`, which runs in Node inside a Vite build.
 Depends on `@stackra/gen` (the class-component pass), `@stackra/runway` (the dev server type), `@stackra/i18n` (the
 locales of the pages), `@stackra/contracts`, and the framework plugins it wires: `@vitejs/plugin-react`,
-`@tailwindcss/vite`, `@react-router/dev`, `@cloudflare/vite-plugin`, `vite-plugin-pwa` and `@sentry/vite-plugin`.
-`vite` is a peer.
+`@tailwindcss/vite`, `@react-router/dev`, `@cloudflare/vite-plugin` and `@sentry/vite-plugin`. `vite` is a peer, and so is
+`vite-plugin-pwa`, optional: only a member that builds the PWA target adds it (`pnpm add -D vite-plugin-pwa`), so every
+other member installs none of its workbox tree. Without it the PWA target stops with one error that says so.
 
 ## What is here
 
