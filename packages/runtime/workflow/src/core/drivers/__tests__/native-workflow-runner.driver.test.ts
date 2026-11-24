@@ -925,6 +925,41 @@ describe(NativeWorkflowRunnerDriver, () => {
     expect(order.calls).toEqual(["create", "authorize:1:null"]);
   });
 
+  it("times out a run whose deadline passed while a retry was parked, and undoes the completed steps", async () => {
+    const order = new OrderWorkflow();
+    order.failures.push(new TypeError("gateway timeout"));
+    const { runner } = engineWith([[OrderWorkflow, order]]);
+    // The workflow's own limit is two minutes; its failing step parks a retry.
+    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
+    expect((await runner.last(OrderWorkflow))?.status).toBe(WorkflowRunStatus.Waiting);
+    order.calls.length = 0;
+
+    expect(await runner.tick(plus(3))).toBe(1);
+
+    const run = await runner.last(OrderWorkflow);
+    expect(run?.status).toBe(WorkflowRunStatus.Compensated);
+    expect(run?.error?.code).toBe("workflow_timed_out");
+    expect(run?.steps.at(-1)).toMatchObject({ name: "authorize", status: StepStatus.TimedOut });
+    // The parked retry never ran again, and the completed steps were undone last first.
+    expect(order.calls).toEqual(["undoCreate:ord_1", "undoReserve"]);
+  });
+
+  it("finishes the undo of a run that was compensating when its runner died", async () => {
+    const order = new OrderWorkflow();
+    order.failures.push(new TypeError("gateway timeout"));
+    const { runner, journal } = engineWith([[OrderWorkflow, order]]);
+    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
+    const parked = await runner.last(OrderWorkflow);
+    if (parked === undefined) throw new Error("the run was recorded");
+    await journal.save({ ...parked, status: WorkflowRunStatus.Compensating });
+    order.calls.length = 0;
+
+    expect(await runner.tick(plus(1))).toBe(1);
+
+    expect((await runner.find(parked.id))?.status).toBe(WorkflowRunStatus.Compensated);
+    expect(order.calls).toEqual(["undoCreate:ord_1", "undoReserve"]);
+  });
+
   it("refuses a signal class that is not a signal, and a run before connect", async () => {
     const { runner } = engineWith([]);
     class NotASignal {}
