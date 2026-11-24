@@ -866,6 +866,30 @@ export function parseArgs(argv) {
   return out;
 }
 
+/**
+ * The directories whose every entry the verify user must not read or list (deny by default): box 1's work root and
+ * the Stackra root that holds the lanes' worktrees. Each must itself be traverse-only for the verify user (o=x).
+ */
+export const PROTECTED_ROOTS = ["/work", "/work/stackra"];
+/**
+ * The entries of a protected root the verify user may reach: the daemon's home (0711 at start; the run archives are
+ * mounted from it), the code clone the unit runs from, and the verify user's own work and Docker data-root.
+ */
+export const ALLOW_PATHS = [
+  "/work/stackra/verify",
+  "/work/stackra/service",
+  "/work/stackra/verify-work",
+  "/work/stackra/verify-docker",
+];
+/** A comma-separated path setting, or `fallback` when unset. */
+const list = (value, fallback) =>
+  value === undefined
+    ? [...fallback]
+    : value
+        .split(",")
+        .map((p) => p.trim().replace(/(?<=.)\/+$/, ""))
+        .filter(Boolean);
+
 /** The host settings, from the environment the service was started with. None of them is a secret. */
 export function settings(env = process.env) {
   return {
@@ -886,6 +910,8 @@ export function settings(env = process.env) {
     dockerRoot: env.STACKRA_VERIFY_DOCKER_ROOT || null,
     licenceFile: env.STACKRA_VERIFY_LICENCE_FILE || null,
     cpuset: env.STACKRA_VERIFY_CPUSET || null,
+    protectedRoots: list(env.STACKRA_VERIFY_PROTECTED_ROOTS, PROTECTED_ROOTS),
+    allowPaths: list(env.STACKRA_VERIFY_ALLOW_PATHS, ALLOW_PATHS),
     toolSha256: Object.fromEntries(
       TOOLS.map((tool) => [tool.name, env[toolShaSetting(tool)]?.trim().toLowerCase() || null]),
     ),
@@ -1879,7 +1905,6 @@ async function settle(job, deps, result) {
 export const FORBIDDEN_DEFAULTS = [
   "/var/run/docker.sock",
   "/run/docker.sock",
-  "/work/academorix",
   "/home/build/.claude",
   "/home/build/.config/sops",
   "/home/build/.ssh",
@@ -1914,22 +1939,54 @@ export function subuidOverlap(text, user) {
 
 /**
  * The host checks that need the machine, through `io` so a test can stand in: `exists(path)`, `canRead(path)` (as the
- * verify user), `cgroup(file)` (the verify user's slice, null when missing) and `dockerInfo()` ({ code, stdout }).
- * The verify user can read none of the forbidden paths, its slice has CPU, memory and task caps, and its Docker is
- * rootless. Each problem is a reason not to start.
+ * verify user: read a file, list a directory), `canTraverse(path)` (as the verify user), `list(dir)` (as this
+ * process; null when it cannot), `cgroup(file)` (the verify user's slice, null when missing) and `dockerInfo()`
+ * ({ code, stdout }). The verify user can read none of the forbidden paths; under each protected root (deny by
+ * default) it can read no entry but the allowed ones, and the root itself is traverse-only; its slice has CPU,
+ * memory and task caps, and its Docker is rootless. A path that is named but missing, or a root this process cannot
+ * list, is a problem too: what cannot be checked never passes. Each problem is a reason not to start.
  */
 export function preflightProblems(s, io, extraForbidden = []) {
   const problems = [];
-  const forbidden = [
-    s.keyFile,
-    s.licenceFile,
-    s.home,
-    ...FORBIDDEN_DEFAULTS,
-    ...extraForbidden,
-  ].filter(Boolean);
-  for (const path of forbidden)
+  // Named by the settings or the operator: each must exist, or its check would pass without proving anything.
+  const named = [s.keyFile, s.licenceFile, s.home, ...extraForbidden].filter(Boolean);
+  for (const path of named)
+    if (!io.exists(path))
+      problems.push(`${path} is named as unreadable but does not exist, so nothing proves it`);
+    else if (io.canRead(path)) problems.push(`the verify user ${s.runAs} can read ${path}`);
+  // Generic defaults (sockets, the build user's secrets) that a host may not have.
+  for (const path of FORBIDDEN_DEFAULTS)
     if (io.exists(path) && io.canRead(path))
       problems.push(`the verify user ${s.runAs} can read ${path}`);
+  const roots = s.protectedRoots ?? PROTECTED_ROOTS;
+  const allowed = new Set(s.allowPaths ?? ALLOW_PATHS);
+  for (const root of roots) {
+    if (!io.exists(root)) {
+      problems.push(`the protected root ${root} does not exist, so nothing proves it`);
+      continue;
+    }
+    if (io.canRead(root))
+      problems.push(`the verify user ${s.runAs} can list ${root}: make it traverse-only (o=x)`);
+    if (io.canTraverse && !io.canTraverse(root))
+      problems.push(
+        `the verify user ${s.runAs} cannot traverse ${root}, which its run inputs sit under`,
+      );
+    const entries = io.list?.(root) ?? null;
+    if (entries === null) {
+      problems.push(
+        `this service cannot list ${root}, so its entries cannot be shown unreadable (give the service user read on it, e.g. an ACL)`,
+      );
+      continue;
+    }
+    for (const entry of entries) {
+      const path = root === "/" ? `/${entry}` : `${root}/${entry}`;
+      if (roots.includes(path) || allowed.has(path)) continue;
+      if (io.canRead(path))
+        problems.push(
+          `the verify user ${s.runAs} can read ${path} (deny by default: not on STACKRA_VERIFY_ALLOW_PATHS)`,
+        );
+    }
+  }
   for (const file of ["memory.max", "pids.max", "cpu.max"]) {
     const value = io.cgroup(file);
     if (value === null || value.startsWith("max"))
@@ -1967,6 +2024,19 @@ function preflight(s) {
           ["-n", "-u", s.runAs, "--", "test", "-r", path],
           spawnOptions({ timeout: 30_000 }),
         ).status === 0,
+      canTraverse: (path) =>
+        spawnSync(
+          "sudo",
+          ["-n", "-u", s.runAs, "--", "test", "-x", path],
+          spawnOptions({ timeout: 30_000 }),
+        ).status === 0,
+      list: (dir) => {
+        try {
+          return readdirSync(dir);
+        } catch {
+          return null;
+        }
+      },
       cgroup: (file) => {
         try {
           return readFileSync(`/sys/fs/cgroup/user.slice/user-${uid}.slice/${file}`, "utf8").trim();
