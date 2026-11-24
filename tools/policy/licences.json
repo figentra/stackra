@@ -1,6 +1,6 @@
 {
-  "$comment": "PROPOSAL for Idris (CTO), not yet a ruling. The licence allowlist stackra/verify's licence-policy step enforces over every package the Quality Gate installs (`pnpm licenses list --json --offline --recursive`, STA-2761). `allow` holds SPDX ids; an expression passes when every AND part and at least one OR part is allowed. Measured on main 79f0ba8e (box 1, full install, 2026-11-24): MIT 1423, Apache-2.0 154, ISC 116, BSD-3-Clause 33, BSD-2-Clause 17, BlueOak-1.0.0 15, MPL-2.0 8, Unlicense 4, CC0-1.0 3, MIT-0 2, 0BSD 2, Python-2.0 1, CC-BY-4.0 1, CC-BY-3.0 1, Zlib (inside an AND) 1. Beyond the five permissive core licences, each extra id and each exception below needs the CTO's yes. An exception holds for one package under the exact licence string it names; a change of licence fails the step again. Read by tools/scripts/stackra-verify.mjs; the verify service takes main's copy of this file (VERIFY_OVERLAY).",
-  "status": "proposal",
+  "$comment": "Approved: Idris (CTO) ruling 2026-11-24. The licence policy stackra/verify's licence-policy step enforces over every package the Quality Gate installs (`pnpm licenses list --json --offline --recursive`, STA-2761). `allow` holds SPDX ids; an expression passes when every AND part and at least one OR part is allowed. `deny` holds case-insensitive regular expressions over one SPDX id (GPL, LGPL, AGPL, SSPL, BUSL, Elastic, CC NC/ND, Unknown): a denied id never counts as allowed, even when listed in `allow`, so it passes only as an OR alternative beside an allowed licence or through an exception. Each exception has exactly `name`, `licence` (the exact string pnpm lists), `reason`, `scope` (dev-only, runtime, tool or mobile) and, when the ruling pins one, `versions`; it fails again when the name, the licence string or a pinned version changes, and a malformed exception is itself a violation. Scopes are checked over the workspace's manifests: a dev-only package is never in a publishable member's dependencies, optionalDependencies or non-optional peerDependencies; a mobile package is a dependency of apps/mobile and apps/playground only. buffers@0.1.1 (Unknown, via @contentauth/c2pa-node > unzipper@0.10.14 > binary) has no exception: neither its published tarball nor its registry metadata states a licence, and its upstream repository is gone, so the ruling denies it. Read by tools/scripts/stackra-verify.mjs; the verify service takes main's copy of this file (VERIFY_OVERLAY).",
+  "status": "approved",
   "allow": [
     "MIT",
     "Apache-2.0",
@@ -18,46 +18,59 @@
     "CC-BY-3.0",
     "CC-BY-4.0"
   ],
+  "deny": [
+    "^GPL",
+    "^LGPL",
+    "^AGPL",
+    "^SSPL",
+    "^BUSL",
+    "^Elastic",
+    "^CC-.*-(NC|ND)(-|$)",
+    "^(Unknown|UNKNOWN|UNLICENSED|SEE LICENSE IN .*)$"
+  ],
   "exceptions": [
     {
       "name": "@electric-sql/pglite-postgis",
       "licence": "Apache-2.0 AND GPL-2.0-or-later",
-      "reason": "PROPOSAL: PostGIS for PGlite carries GPL-2.0-or-later beside Apache-2.0; the CTO decides whether it may stay and where"
+      "reason": "GPL, used only in tests as an optional test peer; never distributed (ADR 0314)",
+      "scope": "dev-only"
     },
     {
       "name": "@img/sharp-libvips-linux-x64",
       "licence": "LGPL-3.0-or-later",
-      "reason": "PROPOSAL: libvips, the native library sharp loads; LGPL-3.0-or-later"
+      "reason": "LGPL native library, loaded dynamically, unmodified; libvips' notice goes in third-party notices",
+      "scope": "runtime"
     },
     {
       "name": "@sentry/cli",
       "licence": "FSL-1.1-MIT",
-      "reason": "PROPOSAL: Sentry's CLI under the Functional Source Licence (FSL-1.1-MIT, MIT after two years)"
+      "reason": "FSL-1.1-MIT: a CLI used in dev and CI only; FSL limits competing products, not our use; becomes MIT after two years",
+      "scope": "tool"
     },
     {
       "name": "@sentry/cli-linux-x64",
       "licence": "FSL-1.1-MIT",
-      "reason": "PROPOSAL: the Linux binary of @sentry/cli, as above"
+      "reason": "FSL-1.1-MIT: a CLI used in dev and CI only; FSL limits competing products, not our use; becomes MIT after two years",
+      "scope": "tool"
     },
     {
       "name": "@zowe/secrets-for-zowe-sdk",
       "licence": "EPL-2.0",
-      "reason": "PROPOSAL: a transitive dependency under EPL-2.0 (weak copyleft)"
-    },
-    {
-      "name": "buffers",
-      "licence": "Unknown",
-      "reason": "PROPOSAL: buffers@0.1.1 has no licence pnpm can read (listed as Unknown); a transitive dependency"
+      "reason": "EPL-2.0, transitive via @figentra/mobile and @figentra/playground > uniwind-pro@1.9.0 > @zowe/secrets-for-zowe-sdk@8.29.4, unmodified",
+      "scope": "runtime"
     },
     {
       "name": "chainsaw",
       "licence": "MIT/X11",
-      "reason": "PROPOSAL: chainsaw@0.1.0 names its licence with the non-SPDX string MIT/X11"
+      "reason": "MIT/X11 is MIT; this exact version and string",
+      "scope": "runtime",
+      "versions": ["0.1.0"]
     },
     {
       "name": "uniwind-pro",
       "licence": "UNLICENSED",
-      "reason": "PROPOSAL: the commercial Uniwind Pro build we hold a licence for (ADR 0310); only the two mobile members use it"
+      "reason": "our commercial licence (ADR 0310); checked under stackra/verify-mobile",
+      "scope": "mobile"
     }
   ]
 }
