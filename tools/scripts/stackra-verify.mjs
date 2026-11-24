@@ -77,6 +77,8 @@
  *   token as a BuildKit secret (piped on stdin, never a file, ENV, ARG or layer), scans the image history and every
  *   layer for the token and refuses the image if it is there, and PR installs only copy the built output. The store
  *   image is for this box only: it is never pushed to or published in any registry (licence: our own use).
+ *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
+ *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  * Runtime: node on Linux with flock, sudo, git, and docker for the verify user.
  * Governing contract: ADR 0119 (merge policy); ADR 0523 (decision 3); STA-2761.
  * Secrets: the App key is read from STACKRA_VERIFY_KEY_FILE (owner-placed, mode 0400) only to mint a token, which

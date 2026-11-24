@@ -25,7 +25,7 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
 - **Merge checks on the box (STA-2761, 2026-11-24).** The required `stackra/verify` check run, posted by the
   stackra-verify GitHub App (id 5907714) from box 1, carries main's whole Quality Gate: ci.yml's `dependency-scan`
   and `gate` jobs step by step (offline: OSV against a daemon-refreshed database, zizmor `--offline`), the licence
-  allowlist `tools/policy/licences.json` (a proposal for the CTO) and the tests (`tools/scripts/stackra-verify.mjs`).
+  policy `tools/policy/licences.json` (the CTO's ruling of 2026-11-24) and the tests (`tools/scripts/stackra-verify.mjs`).
   Two checks from the same App are never required: `stackra/verify-mobile` (ci.yml's `mobile` job) and
   `stackra/codeql`. Reduced from per PR: SAST (CodeQL) now runs nightly on main and on demand (a PR labelled
   `codeql` or `risk:R3`); GitHub's Dependency Review (a PR's added dependencies against GitHub's advisory database)
