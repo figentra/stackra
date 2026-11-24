@@ -28,6 +28,13 @@ beforeEach(async () => {
   declared = await mockPulumi();
 });
 
+/** The names of the status page entries the program declared, sorted. */
+const entryNames = (): string[] =>
+  declared
+    .filter((resource) => resource.type.endsWith("StatusPageResource"))
+    .map((resource) => resource.name)
+    .sort();
+
 const PLAN: ObservabilityPlan = {
   project: "acme-platform",
   environments: ["production"],
@@ -142,5 +149,83 @@ describe("observabilityStack", () => {
     const { statusPage } = stack.outputs;
     if (!statusPage) throw new Error("the status page was not exported");
     expect(await valueOf(statusPage.id)).toBe("status-acme-platform-id");
+  });
+
+  describe("with heartbeats and probes in two environments", () => {
+    const PAGE = {
+      subdomain: "acme-status",
+      companyName: "Acme",
+      companyUrl: "https://acme.example",
+      timezone: "Asia/Riyadh",
+      customDomain: null,
+      published: false,
+    };
+    const BEAT = {
+      service: "commerce",
+      kind: HeartbeatKind.Relay,
+      name: "outbox",
+      periodSeconds: 60,
+      graceSeconds: 12,
+    };
+    const PROBE = {
+      url: "https://npm.acme.example/-/ping",
+      checkFrequencySeconds: 60,
+      expectedStatusCodes: null,
+    };
+    const BOTH: ObservabilityPlan = {
+      ...PLAN,
+      environments: ["production", "staging"],
+      heartbeats: [
+        { ...BEAT, environment: "production" },
+        { ...BEAT, environment: "staging" },
+      ],
+      uptime: [
+        { ...PROBE, environment: "production", name: "registry" },
+        { ...PROBE, environment: "staging", name: "registry-staging" },
+      ],
+    };
+
+    it("shows only the environments the page names: another environment's heartbeats and probes stay off it", async () => {
+      const stack = observabilityStack({
+        ...BOTH,
+        statusPage: { ...PAGE, environments: ["production"] },
+      });
+      await settled(stack);
+      expect(entryNames()).toEqual([
+        "status-production.commerce.outbox",
+        "status-production.uptime.registry",
+      ]);
+    });
+
+    it("gives each environment's section its own heartbeats and probes", async () => {
+      const stack = observabilityStack({
+        ...BOTH,
+        statusPage: { ...PAGE, environments: ["production", "staging"] },
+      });
+      await settled(stack);
+      const sections = declared
+        .filter((resource) => resource.type.endsWith("StatusPageSection"))
+        .map((resource) => resource.inputs);
+      expect(sections).toEqual([
+        expect.objectContaining({ name: "production", position: 0 }),
+        expect.objectContaining({ name: "staging", position: 1 }),
+      ]);
+      expect(entryNames()).toEqual([
+        "status-production.commerce.outbox",
+        "status-production.uptime.registry",
+        "status-staging.commerce.outbox",
+        "status-staging.uptime.registry-staging",
+      ]);
+    });
+
+    it("lists no probe when the plan has no uptime monitors", async () => {
+      const stack = observabilityStack({
+        ...BOTH,
+        uptime: [],
+        statusPage: { ...PAGE, environments: ["production"] },
+      });
+      await settled(stack);
+      expect(entryNames()).toEqual(["status-production.commerce.outbox"]);
+    });
   });
 });
