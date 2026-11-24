@@ -73,10 +73,11 @@
  *       listable by the service) and STACKRA_VERIFY_ALLOW_PATHS (default /work/stackra/verify, /work/stackra/service,
  *       /work/stackra/verify-work, /work/stackra/verify-docker): deny by default, every other entry of a protected
  *       root the verify user can read or list stops the service, and so does a protected path that does not exist.
- *   Licensed builds (uniwind-pro): the daemon builds them into the store image from main's versions, with the licence
+ *   Licensed builds (uniwind-pro): the daemon builds them into a separate licensed image on top of the store image,
+ *   for stackra/verify-mobile only (the gate's store image never holds one), from main's versions, with the licence
  *   token as a BuildKit secret (piped on stdin, never a file, ENV, ARG or layer), scans the image history and every
- *   layer for the token and refuses the image if it is there, and PR installs only copy the built output. The store
- *   image is for this box only: it is never pushed to or published in any registry (licence: our own use).
+ *   layer for the token and refuses the image if it is there, and PR installs only copy the built output. Both
+ *   images are for this box only: never pushed to or published in any registry (licence: our own use).
  *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  * Runtime: node on Linux with flock, sudo, git, and docker for the verify user.
@@ -1788,6 +1789,22 @@ export function untilLine(stream, prefix, timeoutMs) {
   });
 }
 
+/**
+ * untilLine over a child's stdout, and a rejection when the child itself fails (`error`: it could not be started or
+ * signalled), so a missing sudo or docker is a failed run, never an unhandled event that ends the service.
+ */
+export function childLine(child, prefix, timeoutMs) {
+  let onError;
+  const failed = new Promise((_, reject) => {
+    onError = (error) =>
+      reject(new Error(`the follower failed: ${error.message}`, { cause: error }));
+    child.once("error", onError);
+  });
+  return Promise.race([untilLine(child.stdout, prefix, timeoutMs), failed]).finally(() =>
+    child.off("error", onError),
+  );
+}
+
 /** The proxy container: on the default bridge (the only one with egress), joined to the run's internal network. */
 export const proxyArgs = (s, { name, image, envFile, allow }) => [
   "run",
@@ -3445,7 +3462,7 @@ export async function verify(s, job) {
       const [bin, ...argv] = dockerAs(s, ["logs", "--follow", proxyName]);
       const logs = spawnChild(bin, argv, { stdio: ["ignore", "pipe", "ignore"] });
       try {
-        await untilLine(logs.stdout, PROXY_READY, PROXY_START_MS);
+        await childLine(logs, PROXY_READY, PROXY_START_MS);
       } catch (error) {
         throw new Error(`the install proxy did not start: ${error.message}`, { cause: error });
       } finally {

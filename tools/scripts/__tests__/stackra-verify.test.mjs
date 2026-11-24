@@ -126,6 +126,7 @@ import {
   licenceCheckSource,
   licenceViolations,
   untilLine,
+  childLine,
   PROXY_READY,
   exceptionScopeViolations,
   lockfileGraph,
@@ -476,6 +477,18 @@ test("untilLine: the first matching line, even split across chunks; rejects on e
   ended.end("crashed: EADDRINUSE\n");
   await assert.rejects(never, /ended before printing "stackra-proxy listening on"/);
   await assert.rejects(untilLine(new PassThrough(), PROXY_READY, 1), /within 1 ms/);
+});
+
+test("childLine: a follower that cannot start rejects with its error, never an unhandled event; a line resolves", async () => {
+  const missing = spawn(join(tmpdir(), "stackra-no-such-binary"), [], {
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  await assert.rejects(childLine(missing, PROXY_READY, 60_000), /the follower failed: .*ENOENT/);
+  assert.equal(missing.listenerCount("error"), 0);
+  const ok = spawn(process.execPath, ["-e", `console.log(${JSON.stringify(PROXY_READY)} + 3128)`], {
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  assert.equal(await childLine(ok, PROXY_READY, 60_000), "stackra-proxy listening on 3128");
 });
 
 test("egress probe: metadata, docker0, the host-loopback gateway and every host address on the service ports", () => {
