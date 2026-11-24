@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0184 (decisions 1 to 6); ADR 0296 (enforcement).
  */
-import type { RunwayIssue } from "@stackra/runway";
+import type { RootRunway, RunwayIssue } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
 
 import { appRunway, rootRunway, TEMPLATE_ROOT } from "#core/__tests__/fixtures/runways.fixture";
@@ -307,6 +307,34 @@ describe("observabilityPlan", () => {
       "heartbeats.3.name",
       "root.providers.sentry.org",
     ]);
+  });
+
+  it("refuses a misspelt or out-of-range observability key by its path, and still reports the other failures", () => {
+    // `parseRunway` already refuses such a section, so the root is built the way a caller that skips the parser would:
+    // a valid root with the section swapped in. The plan checks its own section, so it must refuse this one too.
+    const root = {
+      ...rootRunway({ providers: { betterstack: {}, sentry: { org: "acme" } } }),
+      observability: { logs: { hotDays: 0 }, retentionDays: 5 },
+    } as unknown as RootRunway;
+    const issues = issuesOf(() =>
+      observabilityPlan(root, {
+        apps: {},
+        services: ["commerce"],
+        heartbeats: [
+          { service: "commerce", kind: HeartbeatKind.Cron, name: "Nightly", periodSeconds: 60 },
+        ],
+      }),
+    );
+    // The bad section falls back to the defaults, so the heartbeat below it is still checked.
+    expect(issues.map((issue) => issue.path).sort()).toEqual([
+      "heartbeats.0.name",
+      "root.observability",
+      "root.observability.logs.hotDays",
+    ]);
+    expect(issues.every((issue) => issue.message.length > 0)).toBe(true);
+    expect(issues.find((issue) => issue.path === "root.observability")?.message).toContain(
+      "retentionDays",
+    );
   });
 });
 
