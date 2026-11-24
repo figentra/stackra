@@ -33,7 +33,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Run `pnpm -r publish --dry-run` (no version PR, no publish) in the release-pr environment (no approval)"
+        description: "Rehearse the publish: plan, pack and check every package, compare with the registry (no version PR, no publish, no write) in the release-pr environment (no approval)"
         type: boolean
         default: false
       prerelease:
