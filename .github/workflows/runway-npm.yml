@@ -182,9 +182,10 @@ jobs:
           # public package that depends on a private one (it would never be published) and an order that puts a
           # package before its dependency.
           cat > "$RUNNER_TEMP/registry-plan.mjs" <<'MJS'
+          import { execFileSync } from "node:child_process";
           import { readFileSync, writeFileSync } from "node:fs";
 
-          const [mode, out] = process.argv.slice(2);
+          const [mode, out, expectedName, expectedVersion] = process.argv.slice(2);
           const fail = (message) => {
             console.log(`::error title=Publish plan::${message}`);
             process.exit(1);
@@ -230,8 +231,22 @@ jobs:
             const plan = rows.filter((row) => !row.private);
             writeFileSync(out, plan.map((row) => `${row.name}\t${row.version}\t${row.dir}\n`).join(""));
             console.log(`Publish plan: ${plan.length} packages, dependencies first`);
+          } else if (mode === "--verify" && out && expectedName && expectedVersion) {
+            // The packed tarball is what would be published: the name and version it says, no protocol left for the
+            // registry to choke on (pnpm rewrites `workspace:` and `catalog:` when it packs), and a LICENSE file.
+            const tar = (...args) => execFileSync("tar", args, { encoding: "utf8", maxBuffer: 1 << 28 });
+            const manifest = JSON.parse(tar("-xzOf", out, "package/package.json"));
+            const problems = [];
+            if (manifest.name !== expectedName) problems.push(`package.json names ${manifest.name}`);
+            if (manifest.version !== expectedVersion) problems.push(`package.json says ${manifest.version}`);
+            for (const field of ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"])
+              for (const [dep, range] of Object.entries(manifest[field] ?? {}))
+                if (/^(workspace|catalog|link|file):/.test(range)) problems.push(`${field}.${dep} is still ${range}`);
+            if (!tar("-tzf", out).split("\n").some((file) => /^package\/LICEN[CS]E(\.(md|txt))?$/i.test(file)))
+              problems.push("no LICENSE file");
+            if (problems.length > 0) fail(`${expectedName}@${expectedVersion}: ${problems.join("; ")}`);
           } else {
-            fail("usage: registry-plan.mjs --manifest | --plan <file>");
+            fail("usage: registry-plan.mjs --manifest | --plan <file> | --verify <tarball> <name> <version>");
           }
           MJS
           # The one script `changeset publish` is replaced by, so each package gets its own short-lived token.
@@ -265,15 +280,65 @@ jobs:
           }
 
           total="$(wc -l < "$plan")"
-          published=0
-          skipped=0
+          published_file="$RUNNER_TEMP/registry-published.txt"
+          skipped_file="$RUNNER_TEMP/registry-skipped.txt"
+          : > "$published_file"
+          : > "$skipped_file"
+
+          # What this run published, what was already there and what is still missing, for the log of a run that stops.
+          report() {
+            local all="$RUNNER_TEMP/registry-all.txt" settled="$RUNNER_TEMP/registry-settled.txt"
+            awk -F'\t' '{ print $1 "@" $2 }' "$plan" > "$all"
+            cat "$skipped_file" "$published_file" > "$settled"
+            echo "Published in this run ($(wc -l < "$published_file")):"
+            sed 's/^/  /' "$published_file"
+            echo "Already on the registry ($(wc -l < "$skipped_file"))"
+            echo "Not published ($(grep -cvxFf "$settled" "$all" || true)):"
+            { grep -vxFf "$settled" "$all" || true; } | sed 's/^/  /'
+          }
+
+          # One git-tag event per version: the action pushes the tag and creates the GitHub release from it. A tag left by an
+          # earlier run that published nothing is kept (run 40896627689); a new one is annotated, so it carries its tagger and
+          # date (changesets/action has set the git user).
+          tag_release() {
+            git rev-parse -q --verify "refs/tags/${1}@${2}" > /dev/null || git tag -a "${1}@${2}" -m "${1}@${2}"
+            jq -nc --arg tag "${1}@${2}" --arg name "$1" '{type: "git-tag", tag: $tag, packageName: $name}' >> "$CHANGESETS_OUTPUT"
+            echo "New tag: ${1}@${2}"
+          }
+
+          # Pre-flight: before the first publish, every package that is not on the registry yet is packed (the beforePacking
+          # hook runs) and its tarball checked. One that cannot be packed stops the run with nothing published.
+          packs="$RUNNER_TEMP/registry-packs"
+          rm -rf "$packs"
+          mkdir -p "$packs"
+          unpackable=""
+          index=0
+          exec 3< "$plan"
+          while IFS=$'\t' read -r -u 3 name version dir; do
+            if on_registry "$name" "$version"; then continue; fi
+            index=$((index + 1))
+            mkdir -p "$packs/$index"
+            if ! { (cd "$dir" && pnpm pack --pack-destination "$packs/$index" < /dev/null > /dev/null) \
+              && node "$RUNNER_TEMP/registry-plan.mjs" --verify "$packs/$index"/*.tgz "$name" "$version"; }; then
+              unpackable="${unpackable} ${name}@${version}"
+            fi
+          done
+          exec 3<&-
+          if [ -n "$unpackable" ]; then
+            echo "::error title=Preflight failed::cannot pack:${unpackable}. Nothing was published."
+            exit 1
+          fi
+          echo "Preflight: ${index} packages packed and checked"
+
           # The plan is read on its own descriptor: a command in the loop that reads stdin cannot swallow the rest of it.
           exec 3< "$plan"
           while IFS=$'\t' read -r -u 3 name version dir; do
-            # Versions are immutable (ADR 0453 decision 7): one already there is skipped, never republished.
+            # Versions are immutable (ADR 0453 decision 7): one already there is skipped, never republished. A run that
+            # stopped earlier pushed no tags, so a version it published that has no tag here is tagged now.
             if on_registry "$name" "$version"; then
               echo "skip ${name}@${version}: already on the registry"
-              skipped=$((skipped + 1))
+              echo "${name}@${version}" >> "$skipped_file"
+              git rev-parse -q --verify "refs/tags/${name}@${version}" > /dev/null || tag_release "$name" "$version"
               continue
             fi
             attempt=1
@@ -281,21 +346,16 @@ jobs:
               # A publish that reached the registry and failed on the way back is there now: never published twice.
               if on_registry "$name" "$version"; then break; fi
               if [ "$attempt" -ge 3 ]; then
-                echo "::error title=Publish stopped::${name}@${version} failed after ${attempt} attempts, with ${published} published and ${skipped} skipped before it, each with its dependencies already on the registry. Re-run the failed jobs of this run: versions already there are skipped."
+                echo "::error title=Publish stopped::${name}@${version} failed after ${attempt} attempts. Every package published so far has its dependencies on the registry. Re-run the failed jobs of this run: versions already there are skipped and the rest is published."
+                report
                 exit 1
               fi
               attempt=$((attempt + 1))
               echo "retry ${name}@${version}: attempt ${attempt}"
               sleep "${PUBLISH_RETRY_DELAY:-15}"
             done
-            published=$((published + 1))
-            # A tag left by an earlier run that published nothing is kept (run 40896627689); a new one is
-            # annotated, so it carries its tagger and date (changesets/action has set the git user).
-            git rev-parse -q --verify "refs/tags/${name}@${version}" > /dev/null || git tag -a "${name}@${version}" -m "${name}@${version}"
-            # One git-tag event per publish: the action pushes the tag and creates the GitHub release from it.
-            jq -nc --arg tag "${name}@${version}" --arg name "$name" '{type: "git-tag", tag: $tag, packageName: $name}' \
-              >> "$CHANGESETS_OUTPUT"
-            echo "New tag: ${name}@${version}"
+            echo "${name}@${version}" >> "$published_file"
+            tag_release "$name" "$version"
           done
           exec 3<&-
 
@@ -310,7 +370,7 @@ jobs:
           done
           exec 3<&-
           [ "$missing" -eq 0 ] || exit 1
-          echo "All ${total} packages are on the registry (${published} published, ${skipped} already there)"
+          echo "All ${total} packages are on the registry ($(wc -l < "$published_file") published, $(wc -l < "$skipped_file") already there)"
           SH
 
       # Packs every published package through the beforePacking hook; nothing leaves the runner. The publish plan
