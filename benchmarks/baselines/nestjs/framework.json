@@ -1,0 +1,8 @@
+{
+  "name": "nestjs",
+  "version": "12.6.0",
+  "summary": "the official starter from `nest new` (@nestjs/cli 12.0.15, strict), @nestjs/core resolved by the starter and checked against this version",
+  "create": ["node", "create.mjs"],
+  "build": ["node", "node_modules/@nestjs/cli/bin/nest.js", "build"],
+  "start": ["node", "dist/main.js"]
+}
