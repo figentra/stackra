@@ -76,9 +76,11 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
+    "@stackra/entitlements": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/iam": "workspace:*",
     "@stackra/queue": "workspace:*",
+    "@stackra/scope": "workspace:*",
     "@stackra/validation": "workspace:*",
     "encore.dev": "1.58.8",
     "zod": "catalog:"

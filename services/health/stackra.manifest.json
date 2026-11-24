@@ -80,6 +80,18 @@
         "$ref": "@stackra/actions#/schemas/actions.UsageRecorded"
       },
       "from": "@stackra/actions"
+    },
+    {
+      "name": "scope.node.moved.v1",
+      "module": "scope",
+      "class": "ScopeMoved",
+      "file": "src/node/events/scope-moved.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/scope#/schemas/scope.ScopeMoved"
+      },
+      "from": "@stackra/scope"
     }
   ],
   "permissions": [
@@ -390,6 +402,54 @@
       "from": "@stackra/database"
     },
     {
+      "code": "catalogue_change_backdated",
+      "kind": "validation",
+      "category": "validation",
+      "module": "entitlements",
+      "class": "CatalogueChangeBackdatedError",
+      "from": "@stackra/entitlements"
+    },
+    {
+      "code": "catalogue_version_not_pending",
+      "kind": "conflict",
+      "category": "conflict",
+      "module": "entitlements",
+      "class": "CatalogueVersionNotPendingError",
+      "from": "@stackra/entitlements"
+    },
+    {
+      "code": "limit_reached",
+      "kind": "entitlement_required",
+      "category": "entitlement_required",
+      "module": "entitlements",
+      "class": "LimitReachedError",
+      "from": "@stackra/entitlements"
+    },
+    {
+      "code": "quota_exceeded",
+      "kind": "entitlement_required",
+      "category": "entitlement_required",
+      "module": "entitlements",
+      "class": "QuotaExceededError",
+      "from": "@stackra/entitlements"
+    },
+    {
+      "code": "seat_limit_reached",
+      "kind": "entitlement_required",
+      "category": "entitlement_required",
+      "module": "entitlements",
+      "class": "SeatLimitReachedError",
+      "from": "@stackra/entitlements"
+    },
+    {
+      "code": "second_approver_required",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "entitlements",
+      "class": "SecondApproverRequiredError",
+      "from": "@stackra/entitlements"
+    },
+    {
       "code": "job_claim_not_loaded",
       "kind": "internal",
       "category": "internal",
@@ -444,9 +504,109 @@
       "module": "queue",
       "class": "UnknownJobError",
       "from": "@stackra/queue"
+    },
+    {
+      "code": "scope_label_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "scope",
+      "class": "ScopeLabelInvalidError",
+      "from": "@stackra/scope"
+    },
+    {
+      "code": "scope_level_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "scope",
+      "class": "ScopeLevelInvalidError",
+      "from": "@stackra/scope"
+    },
+    {
+      "code": "scope_move_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "scope",
+      "class": "ScopeMoveInvalidError",
+      "from": "@stackra/scope"
+    },
+    {
+      "code": "scope_unresolved",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "scope",
+      "class": "ScopeUnresolvedError",
+      "from": "@stackra/scope"
     }
   ],
-  "models": [],
+  "models": [
+    {
+      "key": "scope.scope_node",
+      "class": "ScopeNode",
+      "file": "src/node/models/scope-node.model.ts",
+      "table": "scope.scope_nodes",
+      "publicId": "scp",
+      "traits": ["HasPublicId", "Timestamps"],
+      "global": true,
+      "entity": {
+        "module": "scope",
+        "fields": [
+          {
+            "name": "level",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "scopePath",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "name",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          },
+          {
+            "name": "createdAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "updatedAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": [],
+        "computed": []
+      },
+      "from": "@stackra/scope"
+    }
+  ],
   "drivers": [
     {
       "port": "DeviceSequenceStore",
@@ -1130,6 +1290,164 @@
       "from": "@stackra/database"
     },
     {
+      "port": "RateLimitBudget",
+      "key": "actions.RateLimitBudget",
+      "candidates": ["entitlement"],
+      "classes": {
+        "entitlement": {
+          "class": "EntitlementRateLimitBudgetDriver",
+          "from": "@stackra/entitlements",
+          "deps": [
+            {
+              "class": {
+                "name": "EntitlementSource",
+                "from": "@stackra/entitlements/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/entitlements"
+    },
+    {
+      "port": "CatalogueVersions",
+      "key": "entitlements.CatalogueVersions",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryCatalogueVersionsDriver",
+          "from": "@stackra/entitlements"
+        }
+      },
+      "from": "@stackra/entitlements"
+    },
+    {
+      "port": "PlanSnapshots",
+      "key": "entitlements.PlanSnapshots",
+      "candidates": ["memory", "service"],
+      "classes": {
+        "memory": {
+          "class": "MemoryPlanSnapshotsDriver",
+          "from": "@stackra/entitlements"
+        },
+        "service": {
+          "class": "ServicePlanSnapshotsDriver",
+          "from": "@stackra/entitlements",
+          "deps": [
+            {
+              "class": {
+                "name": "PlanServiceChannel",
+                "from": "@stackra/entitlements/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/entitlements"
+    },
+    {
+      "port": "SeatLedger",
+      "key": "entitlements.SeatLedger",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemorySeatLedgerDriver",
+          "from": "@stackra/entitlements"
+        }
+      },
+      "from": "@stackra/entitlements"
+    },
+    {
+      "port": "EntitlementCheck",
+      "key": "actions.EntitlementCheck",
+      "candidates": ["plan"],
+      "classes": {
+        "plan": {
+          "class": "PlanEntitlementCheckDriver",
+          "from": "@stackra/entitlements",
+          "deps": [
+            {
+              "class": {
+                "name": "EntitlementSource",
+                "from": "@stackra/entitlements/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "EntitlementUsage",
+                "from": "@stackra/entitlements/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "MeterTotals",
+                "from": "@stackra/entitlements/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "QuotaWarnings",
+                "from": "@stackra/entitlements/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/entitlements"
+    },
+    {
+      "port": "LimitReservation",
+      "key": "actions.LimitReservation",
+      "candidates": ["plan"],
+      "classes": {
+        "plan": {
+          "class": "PlanLimitReservationDriver",
+          "from": "@stackra/entitlements",
+          "deps": [
+            {
+              "class": {
+                "name": "LimitReservationService",
+                "from": "@stackra/entitlements"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/entitlements"
+    },
+    {
+      "port": "EntitlementSource",
+      "key": "entitlements.EntitlementSource",
+      "candidates": ["plan_snapshot"],
+      "classes": {
+        "plan_snapshot": {
+          "class": "PlanSnapshotEntitlementSourceDriver",
+          "from": "@stackra/entitlements",
+          "deps": [
+            {
+              "class": {
+                "name": "PlanSnapshots",
+                "from": "@stackra/entitlements/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/entitlements"
+    },
+    {
       "port": "AccessControl",
       "key": "actions.AccessControl",
       "candidates": ["iam"],
@@ -1424,6 +1742,148 @@
         }
       },
       "from": "@stackra/queue"
+    },
+    {
+      "port": "ScopeResolver",
+      "key": "scope.ScopeResolver",
+      "candidates": ["chain", "claim", "header", "memory", "root"],
+      "classes": {
+        "chain": {
+          "class": "ChainScopeResolverDriver",
+          "from": "@stackra/scope",
+          "deps": [
+            {
+              "class": {
+                "name": "HeaderScopeResolverDriver",
+                "from": "@stackra/scope"
+              }
+            },
+            {
+              "class": {
+                "name": "ClaimScopeResolverDriver",
+                "from": "@stackra/scope"
+              }
+            },
+            {
+              "class": {
+                "name": "RootScopeResolverDriver",
+                "from": "@stackra/scope"
+              }
+            }
+          ]
+        },
+        "claim": {
+          "class": "ClaimScopeResolverDriver",
+          "from": "@stackra/scope",
+          "deps": [
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
+              }
+            }
+          ]
+        },
+        "header": {
+          "class": "HeaderScopeResolverDriver",
+          "from": "@stackra/scope",
+          "deps": [
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "GrantedScopes",
+                "from": "@stackra/scope/contracts"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemoryScopeResolverDriver",
+          "from": "@stackra/scope",
+          "deps": [
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "ScopeConfig",
+                "from": "@stackra/scope"
+              }
+            }
+          ]
+        },
+        "root": {
+          "class": "RootScopeResolverDriver",
+          "from": "@stackra/scope",
+          "deps": [
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "ScopeConfig",
+                "from": "@stackra/scope"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/scope"
+    },
+    {
+      "port": "ScopeTree",
+      "key": "scope.ScopeTree",
+      "candidates": ["memory", "postgres"],
+      "classes": {
+        "memory": {
+          "class": "MemoryScopeTreeDriver",
+          "from": "@stackra/scope"
+        },
+        "postgres": {
+          "class": "PostgresScopeTreeDriver",
+          "from": "@stackra/scope/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ScopeNodeService",
+                "from": "@stackra/scope/node"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/scope"
+    },
+    {
+      "port": "CacheNamespace",
+      "key": "cache.CacheNamespace",
+      "candidates": ["scope"],
+      "classes": {
+        "scope": {
+          "class": "ScopeCacheNamespaceDriver",
+          "from": "@stackra/scope",
+          "deps": [
+            {
+              "class": {
+                "name": "ContextStorage",
+                "from": "@stackra/actions/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/scope"
     }
   ],
   "integrations": [],
@@ -1431,7 +1891,18 @@
   "outcomes": [],
   "agents": [],
   "passes": [],
-  "entitlements": [],
+  "entitlements": [
+    {
+      "key": "scope.scope_depth",
+      "class": "ScopeDepthEntitlement",
+      "module": "scope",
+      "file": "src/node/access/scope-depth.entitlement.ts",
+      "kind": "limit",
+      "counts": "scope.scope_node",
+      "gates": [],
+      "from": "@stackra/scope"
+    }
+  ],
   "roles": [],
   "env": [
     {

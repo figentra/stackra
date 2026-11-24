@@ -43,6 +43,23 @@ src/modules/health/
   access/ping.permissions.ts           health.ping.read (L0)
 ```
 
+## Run it under Encore
+
+`encore run` needs a real terminal (inside tmux, not a pipe or a background job), and a fresh namespace the first time:
+
+```sh
+cd services/health
+stackra gen
+encore namespace create health-dev
+encore run -n health-dev --browser=never --port 5430
+curl -i http://127.0.0.1:5430/healthz   # 200 {"status":"up"}
+curl -i http://127.0.0.1:5430/readyz    # 200 {"database":"up","queue":"up","migrations":"up","pipeline":"up"}
+curl -i -X POST http://127.0.0.1:5430/healthz   # 405, Allow: GET, HEAD (the app stays up)
+```
+
+Encore asks `encore auth login` for the secrets of an app that has an id; for a local run, use a git-ignored `encore.app` without
+the `id` line. A migration set that changed since an earlier run (a dependency was added) needs a new namespace.
+
 ## Commands
 
 | Command                    | Does                                                                           |

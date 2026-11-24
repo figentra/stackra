@@ -9887,6 +9887,9 @@ importers:
       '@stackra/database':
         specifier: workspace:*
         version: link:../../packages/data/database
+      '@stackra/entitlements':
+        specifier: workspace:*
+        version: link:../../packages/security/entitlements
       '@stackra/events':
         specifier: workspace:*
         version: link:../../packages/foundation/events
@@ -9896,6 +9899,9 @@ importers:
       '@stackra/queue':
         specifier: workspace:*
         version: link:../../packages/runtime/queue
+      '@stackra/scope':
+        specifier: workspace:*
+        version: link:../../packages/security/scope
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../packages/foundation/validation
