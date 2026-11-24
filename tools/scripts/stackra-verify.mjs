@@ -78,6 +78,10 @@
  *   token as a BuildKit secret (piped on stdin, never a file, ENV, ARG or layer), scans the image history and every
  *   layer for the token and refuses the image if it is there, and PR installs only copy the built output. Both
  *   images are for this box only: never pushed to or published in any registry (licence: our own use).
+ *   Self-update: between passes the daemon fetches main (only main) into its own clone, and when any file it loaded
+ *   (SERVICE_FILES) differs from main it fast-forwards a clean clone after the new code's `self-check` passed in a
+ *   staged copy, then exits RESTART_EXIT so the shell that holds the lock starts the new code; a refused switch keeps
+ *   the old code and every job posts neutral naming the reason. Every switch and refusal is in ledger/service.jsonl.
  *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
@@ -106,6 +110,7 @@ import {
   existsSync,
   globSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
@@ -1955,6 +1960,7 @@ const CPUSET = /^\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$/;
 export function parseArgs(argv) {
   const args = argv.filter((a) => a !== "--");
   const verb = args.shift();
+  if (verb === "self-check") return args.length ? null : { verb };
   if (!["run", "once", "daemon"].includes(verb)) return null;
   const out = { verb, repos: [], interval: 300 };
   let interval = false;
@@ -2024,6 +2030,7 @@ export function settings(env = process.env) {
     dockerRoot: env.STACKRA_VERIFY_DOCKER_ROOT || null,
     licenceFile: env.STACKRA_VERIFY_LICENCE_FILE || null,
     cpuset: env.STACKRA_VERIFY_CPUSET || null,
+    codeDir: CODE_DIR,
     protectedRoots: list(env.STACKRA_VERIFY_PROTECTED_ROOTS, PROTECTED_ROOTS),
     allowPaths: list(env.STACKRA_VERIFY_ALLOW_PATHS, ALLOW_PATHS),
     toolSha256: Object.fromEntries(
@@ -3125,14 +3132,224 @@ export async function runJob(job, deps) {
 }
 
 /** The SHA binding: a PR result is posted only while the PR's head is still the SHA that ran. */
+// ---- self-update: the service follows main (CTO ruling, round 4 of #1043, option a) -------------------------------
+
+/** The exit code of a locked service that asks its lock holder to start it again, on the code a self-update laid in. */
+export const RESTART_EXIT = 76;
+/** The service's own code, as a path in its clone. */
+export const SELF_PATH = "tools/scripts/stackra-verify.mjs";
+/** The clone the service runs from: this file's repository, owned by the service user. */
+export const CODE_DIR = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+/**
+ * Every file the service loads, as paths in its clone: this module, the modules it imports (a test keeps the list
+ * complete by following the relative imports) and the OSV canary's lockfile. A difference from main in any of them
+ * is a definition drift, and any of them moving on main starts a self-update (review of #1043, LOW-2).
+ */
+export const SERVICE_FILES = Object.freeze([
+  SELF_PATH,
+  "tools/scripts/pr-merge.mjs",
+  "tools/scripts/bot-token.mjs",
+  "tools/scripts/osv-canary.lock.yaml",
+]);
+/** The git blob id of `bytes` (SHA-1, as GitHub's repositories hash them). */
+export const gitBlobId = (bytes) =>
+  createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+/**
+ * The blob ids of SERVICE_FILES as this process loaded them, taken once at module load (its imports are evaluated
+ * before this line), so a later change on disk, a self-update's fast-forward included, never passes for the running
+ * code (review of #1043, LOW-1).
+ */
+export const LOADED_BLOBS = Object.freeze(
+  Object.fromEntries(SERVICE_FILES.map((f) => [f, gitBlobId(readFileSync(join(CODE_DIR, f)))])),
+);
+
+/**
+ * The tests a new version's self-check runs before the service switches to it, by name: what every run depends on
+ * and runs in seconds with no network or Docker. Argument parsing, the settings and the preflight; the gate's and the
+ * mobile check's scripts, every step's commands and their mirror of main's ci.yml; the licence policy, both readers
+ * and the generated check; the tested tree's overlay (buildTree on throwaway repositories); the run's verdict, check
+ * run body, ledger and this self-update. Left out: the proxy and egress probe (sockets and timing), the store image,
+ * the licensed build and CodeQL (image scripts), and anything that needs node_modules (the staged tree has none, so
+ * those skip anyway).
+ */
+export const SELF_CHECK_TESTS =
+  /^(?:parseArgs|hostProblems|preflight|servicePass|settings|spdxAllowed|licence |lockfileGraph|workspaceManifest|memberSetProblems|pnpmFindings|closureViolations|installedMobile|withMainScripts|buildTree|gate script|gate step|gate mirrors|mobile script|kinds|checkRunBody|ledger|runJob|definitionDrift|self-update|OSV canary)/;
+
+/**
+ * What a self-update does between passes: `none` (the service is main's code), `refuse` with the reason (a job is
+ * running, the clone has local changes, or main is not a fast-forward of the clone's HEAD), or `update`. `own` and
+ * `main` map each of SERVICE_FILES to its blob id as loaded and on main; `dirty` is `git status --porcelain`.
+ */
+export function selfUpdatePlan({ busy, own, main, dirty = [], fastForward }) {
+  if (busy)
+    return { action: "refuse", reason: "a job is running; self-update waits for the next pass" };
+  const files = Object.keys(own ?? {});
+  if (files.length && files.every((f) => own[f] && own[f] === main?.[f])) return { action: "none" };
+  const absent = files.filter((f) => !main?.[f]);
+  if (!files.length || absent.length)
+    return { action: "refuse", reason: `main has no ${absent.join(", ") || "service files"}` };
+  if (dirty.length)
+    return {
+      action: "refuse",
+      reason: `the service clone has local changes (${dirty.slice(0, 3).join(", ")}${dirty.length > 3 ? ", …" : ""})`,
+    };
+  if (!fastForward)
+    return { action: "refuse", reason: "main is not a fast-forward of the service clone's HEAD" };
+  return { action: "update" };
+}
+
+/** Why a self-check run (`{ status, stdout, stderr }`) does not clear the new code, or null when it passes. */
+export function selfCheckProblem({ status, stdout = "", stderr = "" }) {
+  if (status === 0) return null;
+  const last = `${stdout}\n${stderr}`
+    .split("\n")
+    .map((l) => l.trim())
+    .findLast(Boolean);
+  return `the new code's self-check failed (exit ${status ?? "none"})${last ? `: ${last.slice(0, 160)}` : ""}`;
+}
+
+/**
+ * One self-update step, between passes only (`busy` says a job runs): fetch main (and only main) from `remote` into
+ * the service clone, and when the running file's blob differs from main's, switch only by a fast-forward of a clean
+ * clone, and only after the new code's own `self-check` passed in a staged copy of main's tree (under `home`, 0700,
+ * removed after). Every switch and every refusal goes to `ledger` with the old blob, the new blob and main's commit;
+ * a refusal leaves the old code running, so the next jobs post neutral naming the reason (definitionDrift). Returns
+ * `{ action, reason?, main?, oldBlob?, newBlob? }`; `update` means the caller exits RESTART_EXIT to be started again.
+ * `env` carries the App's read access for the fetch; `runSelfCheck(dir)` runs the staged code's self-check.
+ */
+export function selfUpdate({ clone, remote, home, busy, own, ledger, runSelfCheck, env = {} }) {
+  const git = (args, options = {}) =>
+    spawnSync(
+      "git",
+      ["-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-C", clone, ...args],
+      spawnOptions({ env: { ...gitEnv(), ...env }, ...options }),
+    );
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- reads like the git helper above it
+  const out = (r) => (r.status === 0 ? r.stdout.trim() : null);
+  const refuse = (reason, facts = {}) => {
+    ledger({ event: "self-update-refused", reason, ...facts });
+    return { action: "refuse", reason, ...facts };
+  };
+  if (busy) return refuse(selfUpdatePlan({ busy }).reason);
+  const oldBlob = own;
+  // Only main, into a remote-tracking ref: never a PR ref, never a tag, never the branch the clone has checked out.
+  const fetched = git([
+    "fetch",
+    "--quiet",
+    "--no-tags",
+    remote,
+    "+refs/heads/main:refs/remotes/origin/main",
+  ]);
+  if (fetched.status !== 0)
+    return refuse(`could not fetch main: ${String(fetched.stderr).trim().slice(0, 160)}`, {
+      oldBlob,
+    });
+  const main = out(git(["rev-parse", "--verify", "refs/remotes/origin/main^{commit}"]));
+  const newBlob = Object.fromEntries(
+    Object.keys(own).map((f) => [f, out(git(["rev-parse", "-q", "--verify", `${main}:${f}`]))]),
+  );
+  const facts = { oldBlob, newBlob, main };
+  const status = git(["status", "--porcelain", "--untracked-files=all"]);
+  const plan = selfUpdatePlan({
+    own: oldBlob,
+    main: newBlob,
+    dirty: status.status === 0 ? status.stdout.split("\n").filter(Boolean) : ["git status failed"],
+    fastForward: git(["merge-base", "--is-ancestor", "HEAD", main]).status === 0,
+  });
+  if (plan.action === "none") return { action: "none", ...facts };
+  if (plan.action === "refuse") return refuse(plan.reason, facts);
+  const stage = mkdtempSync(join(home, "self-check-"));
+  let problem;
+  try {
+    chmodSync(stage, 0o700);
+    const staged = spawnSync(
+      "sh",
+      [
+        "-c",
+        'git -c core.hooksPath=/dev/null -C "$1" archive "$2" | tar -x -C "$3"',
+        "sh",
+        clone,
+        main,
+        stage,
+      ],
+      spawnOptions({ env: gitEnv() }),
+    );
+    problem =
+      staged.status === 0
+        ? selfCheckProblem(runSelfCheck(stage))
+        : `could not stage main: ${String(staged.stderr).trim().slice(0, 160)}`;
+  } finally {
+    rmSync(stage, { recursive: true, force: true });
+  }
+  if (problem) return refuse(problem, facts);
+  const merged = git(["merge", "--ff-only", "--quiet", main]);
+  if (merged.status !== 0)
+    return refuse(`the fast-forward failed: ${String(merged.stderr).trim().slice(0, 160)}`, facts);
+  ledger({ event: "self-update", ...facts });
+  return { action: "update", ...facts };
+}
+
+/**
+ * The new code's self-check (`stackra-verify.mjs self-check`, run from the staged tree): it parses (it runs at all),
+ * the settings pass hostProblems, the preflight's filesystem half passes as a dry run, and SELF_CHECK_TESTS pass.
+ * Returns the problems; none means the service may switch to this code.
+ */
+export function selfCheck({ s, keyMode, licenceMode, filesystem, runTests }) {
+  const problems = [...hostProblems(s, keyMode, licenceMode), ...filesystem()];
+  const r = runTests();
+  if (r.status !== 0)
+    problems.push(
+      `the self-check tests failed (exit ${r.status ?? "none"}): ${
+        String(r.stdout ?? "")
+          .split("\n")
+          .filter((l) => /^ℹ (?:pass|fail)|^✖ /.test(l))
+          .slice(0, 4)
+          .join("; ") || "no output"
+      }`,
+    );
+  return problems;
+}
+
+/**
+ * The argv of `sh` that takes the service's flock and keeps it across restarts (RESTART_EXIT): the shell holds the
+ * lock on fd 9 for its whole life (`flock -n` exits LOCK_HELD_EXIT when another service holds it), runs `command`
+ * with fd 9 closed (so no child of the service ever holds the lock), forwards TERM and INT to it as TERM, and starts
+ * it again only on RESTART_EXIT, so a self-update never leaves the box without its one service or with two.
+ */
+export const lockedShell = (lockPath, command) => [
+  "-c",
+  [
+    'lock=$1; shift; exec 9>"$lock"',
+    `flock -n 9 || exit ${LOCK_HELD_EXIT}`,
+    'pid=; trap \'[ -n "$pid" ] && kill -TERM "$pid" 2>/dev/null\' TERM INT',
+    "while :; do",
+    '  "$@" 9>&- & pid=$!',
+    '  while :; do wait "$pid"; rc=$?; kill -0 "$pid" 2>/dev/null || break; done',
+    `  [ "$rc" -eq ${RESTART_EXIT} ] || exit "$rc"`,
+    "done",
+  ].join("\n"),
+  "stackra-verify",
+  lockPath,
+  ...command,
+];
+
 /**
  * Whether this service runs main's own definition: `own` is the git blob id of the running stackra-verify.mjs, `main`
  * the blob main has at the job's base (null when main has none). A difference is the reason the run cannot be
  * trusted, naming both ids; null when they match.
  */
-export function definitionDrift(own, main) {
-  if (own && main && own === main) return null;
-  return `this service runs stackra-verify.mjs blob ${own ?? "unknown"}, main has ${main ?? "none"}: update the service`;
+export function definitionDrift(own, main, refused = null) {
+  const files = Object.keys(own ?? {});
+  const differ = files.filter((f) => !own[f] || own[f] !== main?.[f]);
+  if (files.length && !differ.length) return null;
+  const why = refused ? ` (self-update refused: ${String(refused).slice(0, 120)})` : "";
+  const which = (differ.length ? differ : ["the service files"])
+    .map(
+      (f) =>
+        `${f.replace(/^tools\/scripts\//, "")} blob ${own?.[f] ?? "unknown"}, main has ${main?.[f] ?? "none"}`,
+    )
+    .join("; ");
+  return `this service runs ${which}: update the service${why}`;
 }
 
 async function settle(job, deps, result) {
@@ -3202,6 +3419,11 @@ export function filesystemProblems(s, io, extraForbidden = []) {
   for (const path of FORBIDDEN_DEFAULTS)
     if (io.exists(path) && io.canRead(path))
       problems.push(`the verify user ${s.runAs} can read ${path}`);
+  // The code clone self-update fast-forwards: the service's own, and never the verify user's to change.
+  if (s.codeDir && io.ownedByService && !io.ownedByService(s.codeDir))
+    problems.push(`the service's code clone ${s.codeDir} is not owned by the service user`);
+  if (s.codeDir && io.canWrite?.(s.codeDir))
+    problems.push(`the verify user ${s.runAs} can write the service's code clone ${s.codeDir}`);
   const roots = s.protectedRoots ?? PROTECTED_ROOTS;
   const allowed = new Set(s.allowPaths ?? ALLOW_PATHS);
   // An empty list would make the deny-by-default check pass without looking at anything.
@@ -3304,6 +3526,19 @@ function hostIo(s) {
         ["-n", "-u", s.runAs, "--", "test", "-x", path],
         spawnOptions({ timeout: 30_000 }),
       ).status === 0,
+    canWrite: (path) =>
+      spawnSync(
+        "sudo",
+        ["-n", "-u", s.runAs, "--", "test", "-w", path],
+        spawnOptions({ timeout: 30_000 }),
+      ).status === 0,
+    ownedByService: (path) => {
+      try {
+        return statSync(path).uid === process.getuid();
+      } catch {
+        return false;
+      }
+    },
     list: (dir) => {
       try {
         return readdirSync(dir);
@@ -3970,16 +4205,17 @@ export async function verify(s, job) {
       const { tarPath, mirror, tree } = archiveJob(s, job, runDir, { history: kind === "gate" });
       deps.mirror = mirror;
       deps.tree = tree;
-      const self = "tools/scripts/stackra-verify.mjs";
-      const own = git(mirror, ["hash-object", "--stdin"], {
-        input: readFileSync(fileURLToPath(import.meta.url)),
-      }).trim();
-      const onMain = spawnSync(
-        "git",
-        ["-C", mirror, "rev-parse", "-q", "--verify", `${job.base}:${self}`],
-        spawnOptions({ env: gitEnv() }),
+      const onMain = Object.fromEntries(
+        SERVICE_FILES.map((f) => {
+          const r = spawnSync(
+            "git",
+            ["-C", mirror, "rev-parse", "-q", "--verify", `${job.base}:${f}`],
+            spawnOptions({ env: gitEnv() }),
+          );
+          return [f, r.status === 0 ? r.stdout.trim() : null];
+        }),
       );
-      const drift = definitionDrift(own, onMain.status === 0 ? onMain.stdout.trim() : null);
+      const drift = definitionDrift(LOADED_BLOBS, onMain, state.selfUpdate?.refused);
       if (drift) throw Object.assign(new Error(drift), { drift: true });
       if (kind === "gate" || kind === "mobile")
         writeFileSync(
@@ -4386,12 +4622,37 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const options = parseArgs(process.argv.slice(2));
   if (!options) {
     process.stderr.write(
-      "usage: stackra-verify.mjs run --sha <sha> [--pr <n>] | once | daemon [--interval <s>]  [-R owner/repo]\n",
+      "usage: stackra-verify.mjs run --sha <sha> [--pr <n>] | once | daemon [--interval <s>]  [-R owner/repo] | self-check\n",
     );
     process.exit(2);
   }
   const s = settings();
   const { keyMode, licenceMode } = secretModes(s, statSync, process.getuid());
+  if (options.verb === "self-check") {
+    // This file's own check before the running service switches to it (selfUpdate): no lock, no job, no write.
+    const problems = selfCheck({
+      s,
+      keyMode,
+      licenceMode,
+      filesystem: () => filesystemProblems(s, hostIo(s), operatorForbidden()),
+      runTests: () =>
+        spawnSync(
+          process.execPath,
+          [
+            "--test",
+            `--test-name-pattern=${SELF_CHECK_TESTS.source}`,
+            join(CODE_DIR, "tools", "scripts", "__tests__", "stackra-verify.test.mjs"),
+          ],
+          spawnOptions({ cwd: CODE_DIR, timeout: 5 * 60_000 }),
+        ),
+    });
+    process.stdout.write(
+      problems.length
+        ? `stackra-verify self-check failed:\n${problems.map((p) => `  - ${p}`).join("\n")}\n`
+        : "stackra-verify self-check passed\n",
+    );
+    process.exit(problems.length ? 1 : 0);
+  }
   const problems = hostProblems(s, keyMode, licenceMode);
   if (!problems.length) {
     mkdirSync(s.home, { recursive: true, mode: 0o711 });
@@ -4407,19 +4668,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
   if (process.env.STACKRA_VERIFY_LOCKED !== "1") {
-    // One service per box: hold an flock for the whole life of the real process, released by the kernel on exit.
+    // One service per box: a shell holds the flock for the service's whole life, restarts included (lockedShell).
     mkdirSync(s.home, { recursive: true, mode: 0o711 });
-    // The parent forwards stop signals to the locked child and waits for it, so the child's clean-up finishes.
+    // The parent forwards stop signals to the locked shell (which passes them on) and waits for it to end.
     const child = spawnChild(
-      "flock",
-      [
-        "-n",
-        "-E",
-        String(LOCK_HELD_EXIT),
-        join(s.home, "lock"),
-        process.execPath,
-        ...process.argv.slice(1),
-      ],
+      "/bin/sh",
+      lockedShell(join(s.home, "lock"), [process.execPath, ...process.argv.slice(1)]),
       { stdio: "inherit", env: { ...process.env, STACKRA_VERIFY_LOCKED: "1" } },
     );
     for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
@@ -4431,6 +4685,48 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   } else {
     await runLocked(options, s);
   }
+}
+
+/**
+ * selfUpdate on this service: main from GitHub over the App's read access (a token in the fetch's environment only),
+ * the ledger at `<home>/ledger/service.jsonl`, and a refusal kept in the state so the next jobs' neutral names it.
+ */
+async function serviceUpdate(s, busy) {
+  mkdirSync(join(s.home, "ledger"), { recursive: true, mode: 0o700 });
+  const ledgerPath = join(s.home, "ledger", "service.jsonl");
+  let env = {};
+  try {
+    const token = await appToken(s);
+    env = {
+      GIT_CONFIG_COUNT: "1",
+      GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
+      GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString("base64")}`,
+    };
+  } catch (error) {
+    serviceLog(`self-update: no App token (${error.message}); fetching main without it`);
+  }
+  const result = selfUpdate({
+    clone: CODE_DIR,
+    remote: `https://github.com/${DEFAULT_REPO}.git`,
+    home: s.home,
+    busy,
+    own: LOADED_BLOBS,
+    env,
+    ledger: (entry) =>
+      appendFileSync(ledgerPath, `${JSON.stringify({ at: new Date().toISOString(), ...entry })}\n`),
+    runSelfCheck: (dir) =>
+      spawnSync(
+        process.execPath,
+        [join(dir, SELF_PATH), "self-check"],
+        spawnOptions({ cwd: dir, timeout: 10 * 60_000 }),
+      ),
+  });
+  const state = readState(s);
+  if (result.action === "refuse")
+    state.selfUpdate = { refused: result.reason, at: Date.now(), main: result.main ?? null };
+  else delete state.selfUpdate;
+  writeState(s, state);
+  return result;
 }
 
 async function runLocked(options, s) {
@@ -4470,6 +4766,11 @@ async function runLocked(options, s) {
         if (await pass()) process.exitCode = failed ? 1 : 0;
       } else
         while (!isStopping()) {
+          // Between passes only: follow main, then let the lock holder start the new code (RESTART_EXIT).
+          if ((await serviceUpdate(s, activeKill !== null)).action === "update") {
+            process.exitCode = RESTART_EXIT;
+            break;
+          }
           if (!(await pass())) break;
           if (!isStopping()) await sleep(options.interval * 1000);
         }

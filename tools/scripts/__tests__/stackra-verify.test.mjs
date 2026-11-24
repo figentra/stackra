@@ -23,6 +23,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -136,6 +137,19 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  SERVICE_FILES,
+  LOADED_BLOBS,
+  gitBlobId,
+  LOCK_HELD_EXIT,
+  selfUpdatePlan,
+  selfCheckProblem,
+  selfUpdate,
+  selfCheck,
+  lockedShell,
+  RESTART_EXIT,
+  SELF_PATH,
+  SELF_CHECK_TESTS,
+  CODE_DIR,
   OSV_CANARY,
   OSV_CANARY_EVERY_MS,
   osvCanaryArgs,
@@ -920,16 +934,25 @@ test("runJob: the egress probe and the install wait for the install network, the
   assert.equal(probed.proxy, "proxy:3128");
 });
 
-test("definitionDrift: a service whose stackra-verify.mjs is not main's blob errors as neutral, naming both blobs", async () => {
-  const own = "a".repeat(40);
-  const main = "b".repeat(40);
+test("definitionDrift: a service whose loaded files are not main's blobs errors as neutral, naming each one", async () => {
+  const own = {
+    "tools/scripts/stackra-verify.mjs": "a".repeat(40),
+    "tools/scripts/pr-merge.mjs": "c".repeat(40),
+  };
+  const main = {
+    "tools/scripts/stackra-verify.mjs": "b".repeat(40),
+    "tools/scripts/pr-merge.mjs": "c".repeat(40),
+  };
   assert.equal(definitionDrift(own, own), null);
   assert.equal(
     definitionDrift(own, main),
-    `this service runs stackra-verify.mjs blob ${own}, main has ${main}: update the service`,
+    `this service runs stackra-verify.mjs blob ${"a".repeat(40)}, main has ${"b".repeat(40)}: update the service`,
   );
-  assert.match(definitionDrift(own, null), /main has none/);
-  assert.match(definitionDrift(null, main), /blob unknown/);
+  assert.match(
+    definitionDrift(own, { ...main, "tools/scripts/pr-merge.mjs": null }),
+    /pr-merge\.mjs blob c{40}, main has none/,
+  );
+  assert.match(definitionDrift({}, main), /the service files blob unknown/);
   const { deps, calls } = fakeDeps({});
   deps.archive = () => {
     throw Object.assign(new Error(definitionDrift(own, main)), { drift: true });
@@ -941,7 +964,31 @@ test("definitionDrift: a service whose stackra-verify.mjs is not main's blob err
   assert.equal(calls.runs.length, 0);
   const body = checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1000 });
   assert.equal(body.conclusion, "neutral");
-  assert.ok(body.output.title.includes(own) && body.output.title.includes(main), body.output.title);
+  assert.ok(
+    body.output.title.includes("a".repeat(40)) && body.output.title.includes("b".repeat(40)),
+  );
+});
+
+test("LOADED_BLOBS: every file the service loads, as loaded, by its git blob id; the list follows every relative import", () => {
+  assert.deepEqual(Object.keys(LOADED_BLOBS), [...SERVICE_FILES]);
+  for (const file of SERVICE_FILES) {
+    const r = spawnSync("git", ["hash-object", join(CODE_DIR, file)], { encoding: "utf8" });
+    assert.equal(LOADED_BLOBS[file], r.stdout.trim(), file);
+  }
+  assert.equal(gitBlobId(Buffer.from("")), "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391");
+  // every module the service loads is listed: follow the relative imports from stackra-verify.mjs
+  const seen = new Set();
+  const visit = (file) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    const text = readFileSync(join(CODE_DIR, file), "utf8");
+    for (const m of text.matchAll(/^import[^;]*?from\s+"(\.[^"]+)"/gms))
+      visit(join(dirname(file), m[1]));
+  };
+  visit(SELF_PATH);
+  for (const file of seen)
+    assert.ok(SERVICE_FILES.includes(file), `${file} is loaded but not in SERVICE_FILES`);
+  assert.ok(SERVICE_FILES.includes(OSV_CANARY.file));
 });
 
 test("runJob: output that says PASS with exit 1 is a failure (the log is never read for a verdict)", async () => {
@@ -4375,3 +4422,385 @@ test("runJob codeql: no install and no network; one container from the store ima
   assert.equal(body.external_id, `base:${BASE}`);
   assert.equal(body.output.title, "CodeQL failed in 0s");
 });
+
+// ---- self-update (CTO ruling, round 4 of #1043, option a) -------------------------------------------------------
+
+/** A 40-character stand-in blob id. */
+const blob = (c) => c.repeat(40);
+
+test("self-update plan: none when the service is main's; refused while a job runs, on local changes, on a non-fast-forward", () => {
+  const one = (b) => ({ [SELF_PATH]: b, "tools/scripts/pr-merge.mjs": blob("p") });
+  assert.deepEqual(
+    selfUpdatePlan({ own: one(blob("a")), main: one(blob("a")), fastForward: true }),
+    {
+      action: "none",
+    },
+  );
+  assert.deepEqual(
+    selfUpdatePlan({ own: one(blob("a")), main: one(blob("b")), fastForward: true }),
+    {
+      action: "update",
+    },
+  );
+  // any service file moving on main is an update, the imported modules included
+  assert.deepEqual(
+    selfUpdatePlan({
+      own: one(blob("a")),
+      main: { ...one(blob("a")), "tools/scripts/pr-merge.mjs": blob("q") },
+      fastForward: true,
+    }),
+    { action: "update" },
+  );
+  assert.match(
+    selfUpdatePlan({ busy: true, own: one(blob("a")), main: one(blob("b")), fastForward: true })
+      .reason,
+    /a job is running/,
+  );
+  assert.match(
+    selfUpdatePlan({
+      own: one(blob("a")),
+      main: one(blob("b")),
+      dirty: ["?? x.mjs"],
+      fastForward: true,
+    }).reason,
+    /local changes \(\?\? x\.mjs\)/,
+  );
+  assert.match(
+    selfUpdatePlan({ own: one(blob("a")), main: one(blob("b")), fastForward: false }).reason,
+    /not a fast-forward/,
+  );
+  assert.match(
+    selfUpdatePlan({ own: one(blob("a")), main: { [SELF_PATH]: blob("b") }, fastForward: true })
+      .reason,
+    /main has no tools\/scripts\/pr-merge\.mjs/,
+  );
+  assert.equal(selfCheckProblem({ status: 0, stdout: "passed" }), null);
+  assert.match(
+    selfCheckProblem({
+      status: 1,
+      stdout: "stackra-verify self-check failed:\n  - the self-check tests failed",
+    }),
+    /self-check failed \(exit 1\): - the self-check tests failed/,
+  );
+  assert.match(selfCheckProblem({ status: null }), /exit none/);
+});
+
+/** A service clone of an `origin` repository whose main can move: the clone runs SELF_PATH at v1. */
+function serviceRepos() {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-self-"));
+  const origin = join(dir, "origin");
+  const clone = join(dir, "clone");
+  const home = join(dir, "home");
+  mkdirSync(origin);
+  mkdirSync(home);
+  const git = gitIn;
+  git(origin, "init", "-q", "-b", "main");
+  mkdirSync(join(origin, "tools/scripts"), { recursive: true });
+  for (const file of SERVICE_FILES) writeFileSync(join(origin, file), `// ${file} v1\n`);
+  writeFileSync(join(origin, SELF_PATH), "// v1\n");
+  writeFileSync(join(origin, "README.md"), "service\n");
+  git(origin, "add", "-A");
+  git(origin, "commit", "-qm", "v1");
+  git(dir, "clone", "-q", origin, clone);
+  const ledger = [];
+  const checked = [];
+  const run = (over = {}) =>
+    selfUpdate({
+      clone,
+      remote: origin,
+      home,
+      busy: false,
+      own: Object.fromEntries(
+        SERVICE_FILES.map((f) => [f, gitBlobId(readFileSync(join(clone, f)))]),
+      ),
+      ledger: (entry) => ledger.push(entry),
+      runSelfCheck: (stage) => {
+        checked.push(readFileSync(join(stage, SELF_PATH), "utf8"));
+        return { status: 0, stdout: "stackra-verify self-check passed" };
+      },
+      ...over,
+    });
+  const advance = (text = "// v2\n") => {
+    writeFileSync(join(origin, SELF_PATH), text);
+    git(origin, "commit", "-qam", text.trim());
+    return git(origin, "rev-parse", "HEAD");
+  };
+  return { dir, origin, clone, home, git, ledger, checked, run, advance };
+}
+
+test("self-update: main moved, so the clone fast-forwards after the new code's self-check, and the ledger records it", () => {
+  const r = serviceRepos();
+  try {
+    assert.deepEqual(r.run().action, "none");
+    assert.deepEqual(r.ledger, []);
+    const old = r.git(r.clone, "rev-parse", `HEAD:${SELF_PATH}`);
+    const main = r.advance();
+    const result = r.run();
+    assert.equal(result.action, "update");
+    // the self-check ran on main's code, staged and then removed; the clone now is main
+    assert.deepEqual(r.checked, ["// v2\n"]);
+    assert.deepEqual(readdirSync(r.home), []);
+    assert.equal(r.git(r.clone, "rev-parse", "HEAD"), main);
+    assert.equal(readFileSync(join(r.clone, SELF_PATH), "utf8"), "// v2\n");
+    assert.equal(r.ledger.length, 1);
+    assert.equal(r.ledger[0].event, "self-update");
+    assert.equal(r.ledger[0].main, main);
+    assert.equal(r.ledger[0].oldBlob[SELF_PATH], old);
+    assert.equal(r.ledger[0].newBlob[SELF_PATH], r.git(r.origin, "rev-parse", `HEAD:${SELF_PATH}`));
+    assert.equal(
+      r.ledger[0].oldBlob["tools/scripts/pr-merge.mjs"],
+      r.ledger[0].newBlob["tools/scripts/pr-merge.mjs"],
+    );
+    // only main is fetched: no PR ref or tag reaches the clone
+    assert.deepEqual(r.git(r.clone, "for-each-ref", "--format=%(refname)").split("\n").sort(), [
+      "refs/heads/main",
+      "refs/remotes/origin/HEAD",
+      "refs/remotes/origin/main",
+    ]);
+  } finally {
+    rmSync(r.dir, { recursive: true, force: true });
+  }
+});
+
+test("self-update: refused on a non-fast-forward, on local changes, while a job runs, and when the self-check fails", () => {
+  const r = serviceRepos();
+  try {
+    const before = r.git(r.clone, "rev-parse", "HEAD");
+    r.advance();
+    // a job is running: nothing is fetched or changed
+    assert.match(r.run({ busy: true }).reason, /a job is running/);
+    // local changes, tracked or untracked
+    writeFileSync(join(r.clone, "README.md"), "edited\n");
+    assert.match(r.run().reason, /local changes \( M README\.md\)/);
+    r.git(r.clone, "checkout", "-q", "--", "README.md");
+    writeFileSync(join(r.clone, "tools/scripts/extra.mjs"), "x\n");
+    assert.match(r.run().reason, /local changes \(\?\? tools\/scripts\/extra\.mjs\)/);
+    rmSync(join(r.clone, "tools/scripts/extra.mjs"));
+    // the self-check of main's code fails: the clone stays on the old code
+    const failed = r.run({
+      runSelfCheck: () => ({
+        status: 1,
+        stdout: "stackra-verify self-check failed:\n  - the verify user cannot read docker.env",
+      }),
+    });
+    assert.equal(failed.action, "refuse");
+    assert.match(
+      failed.reason,
+      /self-check failed \(exit 1\): - the verify user cannot read docker\.env/,
+    );
+    assert.equal(r.git(r.clone, "rev-parse", "HEAD"), before);
+    assert.deepEqual(readdirSync(r.home), []);
+    // a local commit main does not have: not a fast-forward
+    writeFileSync(join(r.clone, "README.md"), "local\n");
+    r.git(r.clone, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qam", "local");
+    const local = r.git(r.clone, "rev-parse", "HEAD");
+    assert.match(r.run().reason, /not a fast-forward/);
+    assert.equal(r.git(r.clone, "rev-parse", "HEAD"), local);
+    // every refusal is in the ledger, with the blobs and main's commit once main was read
+    assert.deepEqual(
+      r.ledger.map((e) => [
+        e.event,
+        /job is running|local changes|self-check failed|fast-forward/.exec(e.reason)?.[0],
+      ]),
+      [
+        ["self-update-refused", "job is running"],
+        ["self-update-refused", "local changes"],
+        ["self-update-refused", "local changes"],
+        ["self-update-refused", "self-check failed"],
+        ["self-update-refused", "fast-forward"],
+      ],
+    );
+    for (const e of r.ledger.slice(1)) {
+      assert.match(e.oldBlob[SELF_PATH], /^[0-9a-f]{40}$/);
+      assert.match(e.newBlob[SELF_PATH], /^[0-9a-f]{40}$/);
+      assert.match(e.main, /^[0-9a-f]{40}$/);
+    }
+  } finally {
+    rmSync(r.dir, { recursive: true, force: true });
+  }
+});
+
+test("self-update: a refused update keeps the neutral path, naming the refusal", async () => {
+  const own = "a".repeat(40);
+  const main = "b".repeat(40);
+  const reason = "the new code's self-check failed (exit 1): - the self-check tests failed";
+  const message = definitionDrift({ [SELF_PATH]: own }, { [SELF_PATH]: main }, reason);
+  assert.match(
+    message,
+    /blob a{40}, main has b{40}: update the service \(self-update refused: the new code's self-check failed/,
+  );
+  const { deps } = fakeDeps({});
+  deps.archive = () => {
+    throw Object.assign(new Error(message), { drift: true });
+  };
+  const r = await runJob(JOB, deps);
+  assert.equal(r.conclusion, "neutral");
+  assert.match(
+    checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1 }).output.title,
+    /self-update refused/,
+  );
+});
+
+test("self-check: the settings, the preflight's filesystem half and the self-check tests must all pass", () => {
+  const ok = { status: 0, stdout: "ℹ pass 40\nℹ fail 0" };
+  assert.deepEqual(
+    selfCheck({ s: S, keyMode: 0o400, filesystem: () => [], runTests: () => ok }),
+    [],
+  );
+  assert.match(
+    selfCheck({
+      s: { ...S, runAs: null },
+      keyMode: 0o400,
+      filesystem: () => [],
+      runTests: () => ok,
+    }).join(),
+    /RUN_AS is not set/,
+  );
+  assert.deepEqual(
+    selfCheck({
+      s: S,
+      keyMode: 0o400,
+      filesystem: () => ["the verify user can read /x"],
+      runTests: () => ok,
+    }),
+    ["the verify user can read /x"],
+  );
+  assert.match(
+    selfCheck({
+      s: S,
+      keyMode: 0o400,
+      filesystem: () => [],
+      runTests: () => ({ status: 1, stdout: "✖ buildTree: x\nℹ pass 39\nℹ fail 1" }),
+    }).join(),
+    /self-check tests failed \(exit 1\): ✖ buildTree: x; ℹ pass 39; ℹ fail 1/,
+  );
+  // the subset is named tests the service depends on; none needs the network, Docker or node_modules
+  for (const name of [
+    "parseArgs: run needs a full SHA",
+    "buildTree: the PR merged onto main",
+    "gate mirrors main's ci.yml",
+    "self-update: main moved",
+  ])
+    assert.ok(SELF_CHECK_TESTS.test(name), name);
+  for (const name of [
+    "proxy: refuses a non-allowlisted host",
+    "egress probe script",
+    "store image: digest-pinned",
+    "codeql",
+  ])
+    assert.equal(SELF_CHECK_TESTS.test(name), false, name);
+  assert.deepEqual(parseArgs(["self-check"]), { verb: "self-check" });
+  assert.equal(parseArgs(["self-check", "--sha", SHA]), null);
+  assert.equal(SELF_PATH, "tools/scripts/stackra-verify.mjs");
+  assert.equal(settings({}).codeDir, CODE_DIR);
+  assert.equal(readFileSync(join(CODE_DIR, SELF_PATH), "utf8").length > 0, true);
+});
+
+test("preflight: the service's code clone is the service user's own, and the verify user cannot write it", () => {
+  assert.deepEqual(
+    preflightProblems(S, io({ ownedByService: () => true, canWrite: () => false })),
+    [],
+  );
+  assert.match(
+    preflightProblems(S, io({ ownedByService: () => false })).join(),
+    /code clone .* is not owned by the service user/,
+  );
+  assert.match(
+    preflightProblems(S, io({ canWrite: (p) => p === S.codeDir })).join(),
+    /can write the service's code clone/,
+  );
+});
+
+/** flock(1) and sh, as box 1 has them (util-linux); a Mac has no flock. */
+const FLOCK = spawnSync("sh", ["-c", "command -v flock"], { encoding: "utf8" }).status === 0;
+const needsFlock = FLOCK ? {} : { skip: "needs flock(1) (util-linux)" };
+
+test(
+  "lockedShell: a restart keeps the one lock; the service's children never hold it; a held lock is refused",
+  needsFlock,
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), "stackra-lock-"));
+    const lock = join(dir, "lock");
+    const log = join(dir, "log");
+    const script = join(dir, "service.mjs");
+    try {
+      // each run checks the lock is held by someone else (the shell), and that its own fd 9 is closed
+      writeFileSync(
+        script,
+        [
+          'import { appendFileSync, existsSync, writeFileSync } from "node:fs";',
+          'import { spawnSync } from "node:child_process";',
+          `const held = spawnSync("flock", ["-n", ${JSON.stringify(lock)}, "true"]).status !== 0;`,
+          'const fd9 = spawnSync("sh", ["-c", "true >&9"]).status === 0;',
+          `appendFileSync(${JSON.stringify(log)}, JSON.stringify({ held, fd9 }) + "\\n");`,
+          `if (!existsSync(${JSON.stringify(join(dir, "restarted"))})) { writeFileSync(${JSON.stringify(join(dir, "restarted"))}, ""); process.exit(${RESTART_EXIT}); }`,
+          "process.exit(3);",
+        ].join("\n"),
+      );
+      const r = spawnSync("/bin/sh", lockedShell(lock, [process.execPath, script]), {
+        encoding: "utf8",
+      });
+      assert.equal(r.status, 3, r.stderr);
+      const runs = readFileSync(log, "utf8")
+        .trim()
+        .split("\n")
+        .map((l) => JSON.parse(l));
+      assert.deepEqual(runs, [
+        { held: true, fd9: false },
+        { held: true, fd9: false },
+      ]);
+      // released when the service ends for good
+      assert.equal(spawnSync("flock", ["-n", lock, "true"]).status, 0);
+      // another service holding the lock: refused with LOCK_HELD_EXIT, nothing started
+      const holder = spawn("flock", [lock, "sleep", "30"]);
+      await new Promise((resolve) => {
+        setTimeout(resolve, 300);
+      });
+      try {
+        rmSync(log);
+        const busy = spawnSync("/bin/sh", lockedShell(lock, [process.execPath, script]));
+        assert.equal(busy.status, LOCK_HELD_EXIT);
+        assert.equal(spawnSync("test", ["-e", log]).status, 1);
+      } finally {
+        holder.kill();
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "lockedShell: a stop signal reaches the service, which finishes before the lock is released",
+  needsFlock,
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), "stackra-lock-"));
+    const lock = join(dir, "lock");
+    const script = join(dir, "service.mjs");
+    try {
+      writeFileSync(
+        script,
+        [
+          'import { writeFileSync } from "node:fs";',
+          `process.on("SIGTERM", () => { writeFileSync(${JSON.stringify(join(dir, "stopped"))}, ""); setTimeout(() => process.exit(0), 200); });`,
+          `writeFileSync(${JSON.stringify(join(dir, "started"))}, "");`,
+          "setInterval(() => {}, 1000);",
+        ].join("\n"),
+      );
+      const shell = spawn("/bin/sh", lockedShell(lock, [process.execPath, script]));
+      const exited = new Promise((resolve) => {
+        shell.on("close", resolve);
+      });
+      for (let i = 0; i < 100 && spawnSync("test", ["-e", join(dir, "started")]).status !== 0; i++)
+        await new Promise((resolve) => {
+          setTimeout(resolve, 50);
+        });
+      shell.kill("SIGTERM");
+      assert.equal(await exited, 0);
+      assert.equal(spawnSync("test", ["-e", join(dir, "stopped")]).status, 0);
+      assert.equal(spawnSync("flock", ["-n", lock, "true"]).status, 0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
