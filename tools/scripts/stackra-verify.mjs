@@ -132,14 +132,20 @@ export function lockedVersions(lockText, name) {
   return [...new Set([...lockText.matchAll(pattern)].map((m) => m[1]))];
 }
 
+/** A pnpm `--filter` selector the service passes: a package name or path, optionally negated; nothing else. */
+const FILTER = /^!?[@\w./-]+$/;
+
 /**
  * The install: no lifecycle script and no pnpmfile from the PR; then only main's allowed builds that need no
  * licence; then each licensed package is laid in from the store image's prebuilt copy (`/prebuilt/<name>@<version>`),
  * or the install exits NEEDS_STORE_REBUILD_EXIT when the PR resolves a version the store image has not built.
+ * `filters` narrow the install to the members a check covers (the Quality Gate leaves out GATE_FILTERS, as ci.yml).
  */
-export function installCommand(builds, licensed = LICENSED_BUILDS) {
+export function installCommand(builds, licensed = LICENSED_BUILDS, filters = []) {
+  for (const filter of filters)
+    if (!FILTER.test(filter)) throw new Error(`not a pnpm filter: ${filter}`);
   const free = builds.filter((b) => !licensed.includes(b));
-  const steps = [INSTALL_COMMAND];
+  const steps = [[INSTALL_COMMAND, ...filters.map((f) => `--filter='${f}'`)].join(" ")];
   if (free.length) steps.push(`pnpm rebuild ${free.join(" ")}`);
   for (const name of licensed.filter((l) => builds.includes(l)))
     steps.push(
@@ -149,6 +155,438 @@ export function installCommand(builds, licensed = LICENSED_BUILDS) {
     );
   return steps.join(" && ");
 }
+
+// ---- the Quality Gate: main's ci.yml, step by step ------------------------------------------------------------
+
+/**
+ * The two members ci.yml's gate leaves out of its install, lint, typecheck and build (they alias `uniwind` to
+ * Uniwind Pro, whose build needs the licence): `stackra/verify-mobile` checks them, so a licence or quota failure
+ * never fails `stackra/verify`.
+ */
+export const GATE_FILTERS = ["!@figentra/mobile", "!@figentra/playground"];
+const EXCLUDE = GATE_FILTERS.map((f) => `--filter='${f}'`).join(" ");
+/** Where every verify container finds the run's read-only inputs, and the gate the offline OSV database. */
+export const IN_DIR = "/in";
+export const OSV_MOUNT = "/osv";
+
+/**
+ * The Squawk flags of ci.yml's "Migration lint (Squawk)" step (ADR 0159 d3), byte for byte: the excluded rules are
+ * house decisions, and the runner sets lock and statement timeouts per session.
+ */
+export const SQUAWK_FLAGS =
+  "--pg-version=18.0 \\\n    --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \\\n" +
+  "    --exclude=prefer-bigint-over-int \\\n    --exclude=require-lock-timeout --exclude=require-statement-timeout";
+
+/**
+ * The Quality Gate as `stackra/verify` runs it: ci.yml's `dependency-scan` job and its `gate` job, step by step, in
+ * order, with the same commands, filters and conditions; then the licence policy and the tests (STA-2761's verify
+ * ran them; ci.yml leaves tests to the box). Each step names the ci.yml job and step it mirrors (`job`, `ci`, the
+ * step's `- name:` line in `line`), and how it differs (`ciReplace`: text swapped, `dropEnv`: ci.yml env it cannot
+ * have); a test reads ci.yml and fails when the two drift apart. Not mirrored: Checkout and Toolchain (the archived
+ * tree and the store image), the Turborepo remote cache (no secret enters a verify), and Install dependencies (the
+ * install container runs it with GATE_FILTERS). `when` is ci.yml's `if:` on the event; `env` values are this
+ * script's own variables (FACT_* are the PR facts the daemon read from GitHub).
+ */
+export const GATE_STEPS = Object.freeze([
+  {
+    id: "dependency-scan",
+    job: "dependency-scan",
+    ci: "Dependency scan (OSV-Scanner)",
+    line: 59,
+    // Offline: the daemon refreshes the OSV database into a read-only mount and refuses a stale one (osvDbProblem).
+    env: { OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY: OSV_MOUNT },
+    ciReplace: [["scan source --lockfile", "scan source --offline --lockfile"]],
+    run: "osv-scanner scan source --offline --lockfile=pnpm-lock.yaml",
+  },
+  {
+    id: "workflow-lint",
+    job: "gate",
+    ci: "Workflow lint",
+    line: 90,
+    // No network and no token in a verify: zizmor's online audits (impostor commits, ref confusion) are off.
+    dropEnv: ["GH_TOKEN"],
+    ciReplace: [["zizmor --config", "zizmor --offline --config"]],
+    run: "actionlint\nzizmor --offline --config .github/zizmor.yml .github/workflows",
+  },
+  {
+    id: "linear-key-check",
+    job: "gate",
+    ci: "Linear key check",
+    line: 115,
+    when: "pull_request",
+    env: {
+      PR_TITLE: "$FACT_TITLE",
+      PR_BRANCH: "$FACT_BRANCH",
+      PR_LABELS: "$FACT_LABELS",
+      BASE_SHA: "$FACT_BASE",
+      HEAD_SHA: "$FACT_HEAD",
+    },
+    run: [
+      "node tools/scripts/linear.mjs check-pr",
+      'case "$PR_BRANCH" in renovate/*|changeset-release/*) exit 0 ;; esac',
+      "# The preset builds to dist for its tarball; here, before any build, Node reads its src (ADR 0025).",
+      'NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"',
+    ].join("\n"),
+  },
+  { id: "format-check", job: "gate", ci: "Format check", line: 130, run: "pnpm format:check" },
+  {
+    id: "lint",
+    job: "gate",
+    ci: "Lint",
+    line: 133,
+    run: `pnpm exec turbo run lint ${EXCLUDE} && pnpm lint:root`,
+  },
+  {
+    id: "typecheck",
+    job: "gate",
+    ci: "Typecheck",
+    line: 141,
+    env: { AFFECTED: "$AFFECTED", TURBO_SCM_BASE: "HEAD~1" },
+    run: `pnpm exec turbo run typecheck \${AFFECTED:+--affected} ${EXCLUDE} --continue=dependencies-successful --concurrency=2`,
+  },
+  {
+    id: "build",
+    job: "gate",
+    ci: "Build",
+    line: 149,
+    env: { AFFECTED: "$AFFECTED" },
+    run: [
+      "# A PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own.",
+      'if [ -n "$AFFECTED" ]; then',
+      `  pnpm exec turbo run build --filter='...[HEAD~1]' --filter='@stackra/cli...' ${EXCLUDE}`,
+      "else",
+      `  pnpm exec turbo run build ${EXCLUDE}`,
+      "fi",
+    ].join("\n"),
+  },
+  {
+    id: "service-gen",
+    job: "gate",
+    ci: "Service gen (stackra gen)",
+    line: 163,
+    run: "pnpm exec turbo run gen --filter='./services/*'",
+  },
+  {
+    id: "manifests-match-gen",
+    job: "gate",
+    ci: "Committed manifests match gen",
+    line: 168,
+    run: [
+      "if ! git diff --quiet -- '*stackra.manifest.json' '*src/node/entities.gen.ts'; then",
+      "  git diff --stat -- '*stackra.manifest.json' '*src/node/entities.gen.ts'",
+      '  echo "::error title=Stale manifests::run pnpm gen and commit the stackra.manifest.json and entities.gen.ts files above"',
+      "  exit 1",
+      "fi",
+    ].join("\n"),
+  },
+  {
+    id: "migration-lint",
+    job: "gate",
+    ci: "Migration lint (Squawk)",
+    line: 182,
+    // squawk 2.71.0 is baked into the store image (TOOLS), so `mise exec` is not needed.
+    ciReplace: [["mise exec github:sbdchd/squawk@2.71.0 -- squawk", "squawk"]],
+    run: [
+      "mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)",
+      'if [ "${#files[@]}" -eq 0 ]; then',
+      '  echo "::notice title=Squawk::no compiled migrations (.stackra/migrations) in this checkout; nothing linted"',
+      "  exit 0",
+      "fi",
+      "transactional=()",
+      "online=()",
+      'for file in "${files[@]}"; do',
+      `  if head -n 1 "$file" | grep -qx -- '-- stackra:transactional=false'; then online+=("$file"); else transactional+=("$file"); fi`,
+      "done",
+      "lint() {",
+      `  squawk ${SQUAWK_FLAGS} "$@"`,
+      "}",
+      'if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi',
+      'if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi',
+    ].join("\n"),
+  },
+  {
+    id: "validate",
+    job: "gate",
+    ci: "Validate repository",
+    line: 204,
+    env: { SPEC_GATE_REQUIRE_READY: "$READY", STACKRA_BRANCH: "$FACT_BRANCH" },
+    run: "pnpm validate",
+  },
+  {
+    id: "env-names",
+    job: "gate",
+    ci: "Environment names (runway env check)",
+    line: 212,
+    run: "pnpm exec turbo run build --filter=@stackra/runway --output-logs=errors-only\npnpm runway env check",
+  },
+  { id: "boundaries", job: "gate", ci: "Check boundaries", line: 217, run: "pnpm boundaries" },
+  {
+    id: "knip",
+    job: "gate",
+    ci: "Check unused code",
+    line: 222,
+    run: [
+      "pnpm exec turbo run build --filter=@stackra/vitest-config --output-logs=errors-only",
+      `pnpm exec turbo run gen ${EXCLUDE} --output-logs=errors-only`,
+      "pnpm knip",
+    ].join("\n"),
+  },
+  { id: "secrets-scan", job: "gate", ci: "Secrets scan", line: 228, run: "pnpm secrets:scan" },
+  {
+    // Not in ci.yml: the licence allowlist (tools/policy/licences.json, a proposal for the CTO), over every package
+    // the gate installed, offline.
+    id: "licence-policy",
+    run: [
+      'pnpm licenses list --json --offline --recursive > "${TMPDIR:-/tmp}/stackra-licences.json"',
+      'node "$GATE_IN/licence-check.mjs" tools/policy/licences.json "${TMPDIR:-/tmp}/stackra-licences.json"',
+    ].join("\n"),
+  },
+  {
+    // Not in ci.yml (it leaves tests to the box): the tests STA-2761's verify ran, for the gate's members.
+    id: "test",
+    run: `pnpm exec turbo run test ${EXCLUDE} --continue=dependencies-successful`,
+  },
+]);
+
+/**
+ * `stackra/verify-mobile`: ci.yml's `mobile` job after its install (which the install container runs in full, with
+ * the licensed builds the daemon made). Never required; its result never touches `stackra/verify`.
+ */
+export const MOBILE_STEPS = Object.freeze([
+  {
+    id: "mobile-apps",
+    job: "mobile",
+    ci: "Lint, typecheck and build the mobile apps",
+    line: 350,
+    run: "pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground --continue=dependencies-successful",
+  },
+]);
+
+/**
+ * Reads the PR facts file (written by the daemon from GitHub's answer, never from the PR tree) and prints its seven
+ * values NUL-separated, so the shell never parses a value. No single quote: it sits in a single-quoted argument.
+ */
+const FACTS_READER =
+  'const f = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); ' +
+  'const v = [f.event, f.title, f.branch, (f.labels ?? []).join(","), f.base, f.head, f.draft === true ? "true" : "false"]; ' +
+  'process.stdout.write(v.map((x) => String(x ?? "").replaceAll(String.fromCharCode(0), "") + String.fromCharCode(0)).join(""));';
+
+const stepFunction = (id) => `step_${id.replaceAll("-", "_")}`;
+
+/**
+ * The bash script that runs `steps` in `workDir`. Every step runs, failed or not, in a subshell with GitHub's
+ * `bash -eo pipefail`, between `== step: <id>` and `== result: <id> pass|FAIL|skip`, so the output names every
+ * failing step; any failure exits 1. With `facts`, the PR facts come from `<inDir>/facts.json` first.
+ */
+export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = true } = {}) {
+  for (const step of steps)
+    if (!/^[a-z][a-z0-9-]*$/.test(step.id)) throw new Error(`not a step id: ${step.id}`);
+  const lines = [
+    "#!/usr/bin/env bash",
+    "# Generated by tools/scripts/stackra-verify.mjs (STA-2761) from main's ci.yml; never edited by hand.",
+    "set -o pipefail",
+    `GATE_IN=${inDir}`,
+    `cd ${workDir} || exit 1`,
+  ];
+  if (facts)
+    lines.push(
+      "facts=()",
+      `while IFS= read -r -d '' value; do facts+=("$value"); done < <(node -e '${FACTS_READER}' "$GATE_IN/facts.json")`,
+      'if [ "${#facts[@]}" -ne 7 ]; then echo "stackra-verify: the PR facts file is unreadable"; exit 1; fi',
+      "FACT_EVENT=${facts[0]}; FACT_TITLE=${facts[1]}; FACT_BRANCH=${facts[2]}; FACT_LABELS=${facts[3]}",
+      "FACT_BASE=${facts[4]}; FACT_HEAD=${facts[5]}; FACT_DRAFT=${facts[6]}",
+      // ci.yml: `--affected` on a pull request; SPEC_GATE_REQUIRE_READY on a pull request that is not a draft.
+      'AFFECTED=; if [ "$FACT_EVENT" = pull_request ]; then AFFECTED=1; fi',
+      'READY=; if [ "$FACT_EVENT" = pull_request ] && [ "$FACT_DRAFT" != true ]; then READY=1; fi',
+    );
+  lines.push(
+    "failed=()",
+    "run_step() {",
+    "  local id=$1 when=$2 fn=$3",
+    '  echo "== step: $id"',
+    '  if [ -n "$when" ] && [ "${FACT_EVENT:-}" != "$when" ]; then',
+    '    echo "skipped: ci.yml runs this step on $when only"',
+    '    echo "== result: $id skip"',
+    "    return 0",
+    "  fi",
+    '  ( set -eo pipefail; "$fn" ) 2>&1',
+    "  local rc=$?",
+    '  if [ "$rc" -eq 0 ]; then echo "== result: $id pass"; else echo "== result: $id FAIL"; failed+=("$id"); fi',
+    "}",
+  );
+  for (const step of steps) {
+    lines.push(`${stepFunction(step.id)}() {`);
+    for (const [name, value] of Object.entries(step.env ?? {})) {
+      if (!/^[A-Z_][A-Z0-9_]*$/.test(name) || /["`\\]/.test(value))
+        throw new Error(`not a step env: ${name}`);
+      lines.push(`  export ${name}="${value}"`);
+    }
+    lines.push(...step.run.split("\n").map((line) => `  ${line}`), "}");
+  }
+  for (const step of steps)
+    lines.push(`run_step ${step.id} "${step.when ?? ""}" ${stepFunction(step.id)}`);
+  lines.push(
+    'if [ "${#failed[@]}" -gt 0 ]; then echo "== failed: ${failed[*]}"; exit 1; fi',
+    'echo "== passed: every step"',
+    "",
+  );
+  return lines.join("\n");
+}
+
+export const gateScript = (options) => stepScript(GATE_STEPS, options);
+export const mobileScript = (options) => stepScript(MOBILE_STEPS, { ...options, facts: false });
+
+/**
+ * Before the gate: the tested tree is unpacked again over /work and committed as a merge onto main, like GitHub's
+ * merge ref: first parent main (`refs/stackra/base`), second the PR head (`refs/stackra/head`, absent for main
+ * itself), both with their history from the daemon's read-only bundle. So `HEAD~1` is main for `--affected`,
+ * commitlint reads the PR's commits, and gitleaks scans main's and the PR's history.
+ */
+export const gatePrepare = (inDir = IN_DIR, workDir = "/work") =>
+  [
+    "set -e",
+    `tar -xf ${inDir}/src.tar -C ${workDir}`,
+    `cd ${workDir}`,
+    "rm -rf .git",
+    "git init -q",
+    `git fetch -q --no-tags ${inDir}/history.bundle '+refs/stackra/*:refs/stackra/*'`,
+    "git add -A",
+    "tree=$(git write-tree)",
+    "parents='-p refs/stackra/base'",
+    'if git rev-parse -q --verify refs/stackra/head >/dev/null; then parents="$parents -p refs/stackra/head"; fi',
+    // $parents is split on purpose: it holds one or two `-p <ref>` pairs this script wrote.
+    'commit=$(git -c user.name=stackra-verify -c user.email=verify@stackra.invalid commit-tree "$tree" $parents -m tested)',
+    'git update-ref HEAD "$commit"',
+    "git reset -q",
+  ].join("; ");
+
+/**
+ * Whether an SPDX licence expression is allowed: every licence an AND joins, and at least one an OR offers, is on
+ * `allowed` (a Set). `X WITH Y` must be listed whole. Anything that does not parse (MIT/X11, an empty field) is not.
+ * Self-contained: the licence check file the gate runs is this function's own source.
+ */
+export function spdxAllowed(expression, allowed) {
+  const tokens = String(expression ?? "").match(/\(|\)|[^\s()]+/g) ?? [];
+  let i = 0;
+  const keyword = (word) => (tokens[i] ?? "").toUpperCase() === word;
+  const atom = () => {
+    const token = tokens[i++];
+    if (token === "(") {
+      const value = anyOf();
+      if (tokens[i++] !== ")") throw new Error("unbalanced");
+      return value;
+    }
+    if (token === undefined || token === ")" || /^(?:AND|OR|WITH)$/i.test(token))
+      throw new Error("malformed");
+    if (keyword("WITH")) {
+      const exception = tokens[i + 1];
+      i += 2;
+      if (!exception) throw new Error("malformed");
+      return allowed.has(`${token} WITH ${exception}`);
+    }
+    return allowed.has(token);
+  };
+  const allOf = () => {
+    let value = atom();
+    while (keyword("AND")) {
+      i++;
+      const next = atom();
+      value = value && next;
+    }
+    return value;
+  };
+  const anyOf = () => {
+    let value = allOf();
+    while (keyword("OR")) {
+      i++;
+      const next = allOf();
+      value = value || next;
+    }
+    return value;
+  };
+  try {
+    const value = anyOf();
+    return tokens.length > 0 && i === tokens.length && value;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The packages of a `pnpm licenses list --json` listing (`{ licence: [{ name, versions, license }] }`) whose licence
+ * the policy (`{ allow: [SPDX id], exceptions: [{ name, licence, reason }] }`) does not allow, as sorted lines. An
+ * exception holds for one package under the exact licence string it names. A policy without `allow`, or an empty or
+ * unreadable listing, is itself a violation: nothing passes vacuously.
+ */
+export function licenceViolations(listing, policy) {
+  if (!Array.isArray(policy?.allow) || policy.allow.length === 0)
+    return ["the licence policy has no `allow` list"];
+  const allowed = new Set(policy.allow);
+  const exceptions = Array.isArray(policy.exceptions) ? policy.exceptions : [];
+  const entries = Object.entries(listing && typeof listing === "object" ? listing : {});
+  if (!entries.some(([, packages]) => Array.isArray(packages) && packages.length))
+    return ["the licence listing names no package"];
+  const out = [];
+  for (const [licence, packages] of entries)
+    for (const pkg of Array.isArray(packages) ? packages : []) {
+      const id = pkg.license ?? licence;
+      if (spdxAllowed(id, allowed)) continue;
+      if (exceptions.some((e) => e.name === pkg.name && e.licence === id)) continue;
+      out.push(`${pkg.name}@${(pkg.versions ?? []).join(",")}: ${id}`);
+    }
+  return out.toSorted();
+}
+
+/** The licence check the gate runs (`node licence-check.mjs <policy> <listing>`): this file's two functions. */
+export const licenceCheckSource = () =>
+  [
+    "// Generated by tools/scripts/stackra-verify.mjs (STA-2761): the licence policy step of stackra/verify.",
+    'import { readFileSync } from "node:fs";',
+    spdxAllowed.toString(),
+    licenceViolations.toString(),
+    "const read = (path) => {",
+    "  try {",
+    '    return JSON.parse(readFileSync(path, "utf8"));',
+    "  } catch (error) {",
+    "    return { unreadable: `${path}: ${error.message}` };",
+    "  }",
+    "};",
+    "const [policyPath, listingPath] = process.argv.slice(2);",
+    "const policy = read(policyPath);",
+    "const listing = read(listingPath);",
+    "const problems = [policy, listing].filter((x) => x.unreadable).map((x) => x.unreadable);",
+    "if (!problems.length) problems.push(...licenceViolations(listing, policy));",
+    "if (problems.length) {",
+    '  console.log(`licences not allowed by ${policyPath}:\\n${problems.map((p) => `  - ${p}`).join("\\n")}`);',
+    "  process.exit(1);",
+    "}",
+    "const count = Object.values(listing).reduce((n, list) => n + list.length, 0);",
+    "console.log(`${count} packages, every licence allowed by ${policyPath}`);",
+    "",
+  ].join("\n");
+
+/**
+ * The steps of a run log, for display only (a PR's output can print anything, so nothing here decides a verdict):
+ * each `== step: <id>` … `== result: <id> pass|FAIL|skip` section with its lines; a step that never printed its result
+ * is `unfinished`.
+ */
+export function stepSections(log) {
+  const sections = [];
+  let current = null;
+  for (const line of String(log).split("\n")) {
+    const start = /^== step: ([a-z][a-z0-9-]*)$/.exec(line);
+    const end = /^== result: ([a-z][a-z0-9-]*) (pass|FAIL|skip)$/.exec(line);
+    if (start) {
+      current = { id: start[1], result: "unfinished", lines: [] };
+      sections.push(current);
+    } else if (end && current?.id === end[1]) {
+      current.result = end[2];
+      current = null;
+    } else if (current) current.lines.push(line);
+  }
+  return sections;
+}
+
 export const VERIFY_COMMAND = "pnpm verify";
 /** The uid:gid PR code runs as inside every container (the base image's unprivileged user), never root. */
 export const CONTAINER_USER = "1000:1000";
@@ -643,13 +1081,29 @@ export function pnpmVersionOf(packageJson) {
   return match[1];
 }
 
-/** A package.json text with `scripts` taken from main's copy: the PR keeps its dependencies, never its commands. */
+/**
+ * The package.json fields the tested tree always takes from main's copy: the commands, and the knip and commitlint
+ * configs a package.json can carry (the Quality Gate reads both). A field main does not have is dropped.
+ */
+export const OVERLAY_FIELDS = ["scripts", "knip", "commitlint"];
+
+const overlayFields = (json) => JSON.stringify(OVERLAY_FIELDS.map((field) => json[field] ?? null));
+
+/**
+ * A package.json text with OVERLAY_FIELDS taken from main's copy, keys in the PR's order: the PR keeps its
+ * dependencies, never its checks. Null when the PR's fields already equal main's, so its file stays byte for byte.
+ */
 export function withMainScripts(headText, mainText) {
   const head = JSON.parse(headText);
   const main = JSON.parse(mainText);
-  if (main.scripts === undefined) delete head.scripts;
-  else head.scripts = main.scripts;
-  return `${JSON.stringify(head, null, 2)}\n`;
+  if (overlayFields(head) === overlayFields(main)) return null;
+  const out = {};
+  for (const [key, value] of Object.entries(head))
+    if (!OVERLAY_FIELDS.includes(key)) out[key] = value;
+    else if (main[key] !== undefined) out[key] = main[key];
+  for (const field of OVERLAY_FIELDS)
+    if (!(field in head) && main[field] !== undefined) out[field] = main[field];
+  return `${JSON.stringify(out, null, 2)}\n`;
 }
 
 /** The paths of `tree` (ls-tree lines) that take main's copy: verify-definition files, and package.json scripts. */
@@ -1362,6 +1816,7 @@ export function buildTree(mirror, base, sha, scratchIndex) {
       git(mirror, ["cat-file", "blob", mergedByPath.get(path).object]),
       git(mirror, ["cat-file", "blob", mainByPath.get(path).object]),
     );
+    if (text === null) continue;
     const object = git(mirror, ["hash-object", "-w", "--stdin"], { input: text }).trim();
     lines.push(`${mergedByPath.get(path).mode} ${object}\t${path}`);
   }

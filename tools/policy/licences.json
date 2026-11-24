@@ -1,0 +1,63 @@
+{
+  "$comment": "PROPOSAL for Idris (CTO), not yet a ruling. The licence allowlist stackra/verify's licence-policy step enforces over every package the Quality Gate installs (`pnpm licenses list --json --offline --recursive`, STA-2761). `allow` holds SPDX ids; an expression passes when every AND part and at least one OR part is allowed. Measured on main 79f0ba8e (box 1, full install, 2026-11-24): MIT 1423, Apache-2.0 154, ISC 116, BSD-3-Clause 33, BSD-2-Clause 17, BlueOak-1.0.0 15, MPL-2.0 8, Unlicense 4, CC0-1.0 3, MIT-0 2, 0BSD 2, Python-2.0 1, CC-BY-4.0 1, CC-BY-3.0 1, Zlib (inside an AND) 1. Beyond the five permissive core licences, each extra id and each exception below needs the CTO's yes. An exception holds for one package under the exact licence string it names; a change of licence fails the step again. Read by tools/scripts/stackra-verify.mjs; the verify service takes main's copy of this file (VERIFY_OVERLAY).",
+  "status": "proposal",
+  "allow": [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "0BSD",
+    "MIT-0",
+    "BlueOak-1.0.0",
+    "CC0-1.0",
+    "Unlicense",
+    "Zlib",
+    "Python-2.0",
+    "MPL-2.0",
+    "CC-BY-3.0",
+    "CC-BY-4.0"
+  ],
+  "exceptions": [
+    {
+      "name": "@electric-sql/pglite-postgis",
+      "licence": "Apache-2.0 AND GPL-2.0-or-later",
+      "reason": "PROPOSAL: PostGIS for PGlite carries GPL-2.0-or-later beside Apache-2.0; the CTO decides whether it may stay and where"
+    },
+    {
+      "name": "@img/sharp-libvips-linux-x64",
+      "licence": "LGPL-3.0-or-later",
+      "reason": "PROPOSAL: libvips, the native library sharp loads; LGPL-3.0-or-later"
+    },
+    {
+      "name": "@sentry/cli",
+      "licence": "FSL-1.1-MIT",
+      "reason": "PROPOSAL: Sentry's CLI under the Functional Source Licence (FSL-1.1-MIT, MIT after two years)"
+    },
+    {
+      "name": "@sentry/cli-linux-x64",
+      "licence": "FSL-1.1-MIT",
+      "reason": "PROPOSAL: the Linux binary of @sentry/cli, as above"
+    },
+    {
+      "name": "@zowe/secrets-for-zowe-sdk",
+      "licence": "EPL-2.0",
+      "reason": "PROPOSAL: a transitive dependency under EPL-2.0 (weak copyleft)"
+    },
+    {
+      "name": "buffers",
+      "licence": "Unknown",
+      "reason": "PROPOSAL: buffers@0.1.1 has no licence pnpm can read (listed as Unknown); a transitive dependency"
+    },
+    {
+      "name": "chainsaw",
+      "licence": "MIT/X11",
+      "reason": "PROPOSAL: chainsaw@0.1.0 names its licence with the non-SPDX string MIT/X11"
+    },
+    {
+      "name": "uniwind-pro",
+      "licence": "UNLICENSED",
+      "reason": "PROPOSAL: the commercial Uniwind Pro build we hold a licence for (ADR 0310); only the two mobile members use it"
+    }
+  ]
+}
