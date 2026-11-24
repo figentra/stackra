@@ -272,6 +272,10 @@ test("STA-2761: no agent writes a commit status, check run or check suite; reads
     ["api", `repos/figentra/stackra/statuse%73/${SHA}`, "-fstate=success"],
     ["api", "graphql", "-f", "query=mutation{createCheckRun(input:{}){checkRun{id}}}"],
     ["api", "graphql", "-f", "query=mutation{createCommitStatus(input:{}){clientMutationId}}"],
+    ["api", "graphql", "--input", "q.json"],
+    ["api", "graphql", "--input=q.json"],
+    ["api", "graphql", "-F", "query=@q.graphql"],
+    ["api", "graphql", "--field", "query=@q.graphql"],
   ];
   for (const args of forged) assert.equal(writesCheck(args), true, args.join(" "));
   const reads = [

@@ -141,6 +141,8 @@ const WRITE_FLAG =
 export function writesCheck(args) {
   const [group] = words("gh", args);
   if (group !== "api") return false;
+  // A GraphQL document from a file (`--input`, `-F query=@f`) cannot be read here, so it counts as a write.
+  if (args.includes("graphql") && args.some((a) => /=@|^@|^--input\b/.test(a))) return true;
   const all = args.map((a) => `${a} ${normalizeWord(a)}`);
   if (all.some((a) => CHECK_MUTATION.test(a))) return true;
   if (!all.some((a) => CHECK_PATH.test(a))) return false;
