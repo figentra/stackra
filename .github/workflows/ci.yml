@@ -398,10 +398,12 @@ jobs:
           version: 2026.11.4
           install_args: node pnpm
 
-      # The five packages and what they depend on; not the two Uniwind Pro members (licensed install, a secret).
+      # As the gate installs: every member but the two Uniwind Pro ones (licensed install, a secret). A narrower install
+      # fails: turbo's `test` waits on `//#gen:workspace`, which builds members the five packages do not depend on
+      # (`tsdown: not found`, exit 127, seen on box 1).
       - name: Install dependencies
         if: steps.scope.outputs.run == 'true'
-        run: pnpm install --frozen-lockfile --filter='@stackra/tokens...' --filter='@stackra/ui...' --filter='@stackra/icons...' --filter='@stackra/branding...' --filter='@stackra/showcase...'
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
 
       - name: Test
         if: steps.scope.outputs.run == 'true'
