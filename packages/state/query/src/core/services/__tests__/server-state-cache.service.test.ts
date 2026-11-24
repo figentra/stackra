@@ -132,6 +132,21 @@ describe("ServerStateCache", () => {
     expect(cache.client.getQueryState(KPIS)?.isInvalidated).toBe(false);
   });
 
+  it("watches nothing for a query with no invalidateOn, and stopping it ends no one else's watch", () => {
+    const { cache, realtime } = cacheOf();
+    const subscribe = vi.spyOn(realtime, "subscribe");
+    const live = cache.watch(OrderKpisQuery);
+    const subscribed = subscribe.mock.calls.length;
+    const stop = cache.watch(GetOrderQuery);
+    expect(subscribe).toHaveBeenCalledTimes(subscribed);
+    expect(stop()).toBeUndefined();
+    expect(stop()).toBeUndefined();
+    cache.client.setQueryData(KPIS, { total: 3 });
+    realtime.emit(OrderPaid);
+    expect(cache.client.getQueryState(KPIS)?.isInvalidated).toBe(true);
+    live();
+  });
+
   it("ends every live subscription on shutdown", () => {
     const { cache, realtime } = cacheOf();
     cache.watch(OrderKpisQuery);

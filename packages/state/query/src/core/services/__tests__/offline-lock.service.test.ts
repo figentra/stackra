@@ -15,7 +15,8 @@ import { DeviceIdentity } from "@stackra/devices/contracts";
 import { MemoryPlatformDriver } from "@stackra/platform";
 import { MemorySettingValueStoreDriver, SettingsReader } from "@stackra/settings";
 import { MemoryStorageDriver } from "@stackra/storage";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { AcknowledgementReader } from "#contracts/ports/acknowledgement-reader.port";
 import { OfflineSession } from "#contracts/ports/offline-session.port";
@@ -94,7 +95,7 @@ const settle = () =>
   });
 
 /** A lock over memory storage holding something in each area it wipes. */
-function lockOf(online = true) {
+function lockOf(online = true, settings = new SettingsReader(new MemorySettingValueStoreDriver())) {
   const storage = new MemoryStorageDriver();
   for (const area of [storage.outbox, storage.cache, storage.secrets]) area.set("held", "data");
   const session = new TestSession();
@@ -106,11 +107,18 @@ function lockOf(online = true) {
     session,
     reader,
     new TestDevice(),
-    new SettingsReader(new MemorySettingValueStoreDriver()),
+    settings,
     platform,
     clock,
   );
   return { lock, storage, session, reader, platform, clock };
+}
+
+/** A settings store that cannot be read, so the lock falls back to its default limit. */
+class UnreadableSettingStore extends MemorySettingValueStoreDriver {
+  override layers(): Promise<never> {
+    return Promise.reject(new Error("settings unavailable"));
+  }
 }
 
 /** Whether every area the lock wipes is empty. */
@@ -217,5 +225,68 @@ describe("OfflineLock", () => {
     stopped.session.isRevoked.set(true);
     await settle();
     expect(isWiped(stopped.storage)).toBe(false);
+  });
+
+  it("syncs when the network comes back, and does nothing when it goes", async () => {
+    const { lock, reader, platform } = lockOf(false);
+    lock.start();
+    await settle();
+    expect(reader.asked).toEqual([]);
+    platform.network.isOnline.set(true);
+    await settle();
+    expect(reader.asked).toEqual(["device-1"]);
+    platform.network.isOnline.set(false);
+    await settle();
+    expect(reader.asked).toEqual(["device-1"]);
+    lock.onApplicationShutdown();
+  });
+
+  it("falls back to the 24 hour limit when the settings cannot be read", async () => {
+    const { lock, storage, session, reader, clock } = lockOf(
+      false,
+      new SettingsReader(new UnreadableSettingStore()),
+    );
+    lock.start();
+    await settle();
+    reader.fails = true;
+    clock.at += 23 * HOUR_MS;
+    await lock.check();
+    expect(isWiped(storage)).toBe(false);
+    clock.at += 2 * HOUR_MS;
+    await lock.check();
+    expect(isWiped(storage)).toBe(true);
+    expect(session.ended).toBe(1);
+    lock.onApplicationShutdown();
+  });
+
+  describe("the next check", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("runs on its own when the limit falls due, and wipes if the sync still fails", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { lock, storage, session, reader, clock } = lockOf(false);
+      lock.start();
+      await vi.advanceTimersByTimeAsync(0);
+      reader.fails = true;
+      clock.at += 24 * HOUR_MS;
+      await vi.advanceTimersByTimeAsync(24 * HOUR_MS);
+      expect(isWiped(storage)).toBe(true);
+      expect(session.ended).toBe(1);
+      lock.onApplicationShutdown();
+    });
+
+    it("is cancelled by shutdown", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { lock, storage, reader, clock } = lockOf(false);
+      lock.start();
+      await vi.advanceTimersByTimeAsync(0);
+      lock.onApplicationShutdown();
+      reader.fails = true;
+      clock.at += 24 * HOUR_MS;
+      await vi.advanceTimersByTimeAsync(24 * HOUR_MS);
+      expect(isWiped(storage)).toBe(false);
+    });
   });
 });

@@ -20,6 +20,7 @@ import { MemoryPlatformDriver, MemorySystemSettingsDriver } from "@stackra/platf
 import { fakeRealtime } from "@stackra/realtime/testing";
 import { MemoryPayloadSealDriver, MemoryStorageDriver } from "@stackra/storage";
 import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { QueryConfig } from "#config/query.config";
 import { ReplicaSource } from "#contracts/ports/replica-source.port";
@@ -255,6 +256,57 @@ describe("ReplicaStore", () => {
     await third.store.open(USER);
     expect(third.store.read(RecentSalesQuery)).toEqual({ data: [], asOf: null });
     for (const opened of [first, second, third]) opened.store.onApplicationShutdown();
+  });
+
+  it("keeps what it holds, and fails no one, when a refresh on the realtime signal fails", async () => {
+    const { store, source, realtime } = storeOf();
+    source.queue(RecentSalesQuery.key, answer([row("sal_1", 1)], "c1"));
+    await store.open(USER);
+    await store.refresh(RecentSalesQuery);
+    realtime.emit(SaleRecorded);
+    await settle();
+    expect(source.asked.at(-1)).toEqual([RecentSalesQuery.key, "c1", {}]);
+    expect(idsOf(store, RecentSalesQuery)).toEqual(["sal_1"]);
+    store.onApplicationShutdown();
+  });
+
+  it("refills with a full download when a stored replica cannot be read", async () => {
+    const storage = new MemoryStorageDriver();
+    const values = { persistEncrypted: false };
+    const first = storeOf(values, storage);
+    first.source.queue(RecentSalesQuery.key, answer([row("sal_1", 1)], "c1"));
+    await first.store.open(USER);
+    await first.store.refresh(RecentSalesQuery);
+    await settle();
+    first.store.onApplicationShutdown();
+    const unreadable = vi.spyOn(storage.cache, "get").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    const second = storeOf(values, storage);
+    await second.store.open(USER);
+    await settle();
+    expect(second.store.read(RecentSalesQuery)).toEqual({ data: [], asOf: null });
+    unreadable.mockRestore();
+    second.source.queue(RecentSalesQuery.key, answer([row("sal_2", 1)], "c1"));
+    await second.store.refresh(RecentSalesQuery);
+    expect(second.source.asked[0]).toEqual([RecentSalesQuery.key, null, {}]);
+    second.store.onApplicationShutdown();
+  });
+
+  it("keeps a replica in memory when its write fails", async () => {
+    const storage = new MemoryStorageDriver();
+    const failing = vi.spyOn(storage.cache, "set").mockImplementation(() => {
+      throw new Error("disk full");
+    });
+    const { store, source } = storeOf({ persistEncrypted: false }, storage);
+    source.queue(RecentSalesQuery.key, answer([row("sal_1", 1)], "c1"));
+    await store.open(USER);
+    await expect(store.refresh(RecentSalesQuery)).resolves.toBeUndefined();
+    await settle();
+    expect(failing).toHaveBeenCalled();
+    expect(idsOf(store, RecentSalesQuery)).toEqual(["sal_1"]);
+    expect(storage.cache.keys()).toEqual([]);
+    store.onApplicationShutdown();
   });
 
   it("drops every replica and its refresh signal on a wipe, and tells its subscribers", async () => {

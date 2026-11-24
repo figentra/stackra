@@ -253,6 +253,19 @@ async function queueOf(setup: Setup = {}) {
   return { queue, storage, persister, sender, leader, platform, clock, lock };
 }
 
+/** A queue with one call waiting, whose `nth` persist after this point (1 = the stamp, 2 = the settle) fails. */
+async function queueFailingPersist(nth: number) {
+  const opened = await queueOf();
+  await opened.queue.enqueue(CreateOrderAction, { n: 1 }, "ord_1");
+  const write = opened.persister.write.bind(opened.persister);
+  let writes = 0;
+  vi.spyOn(opened.persister, "write").mockImplementation((area, key, value) => {
+    writes += 1;
+    return writes === nth ? Promise.reject(new Error("quota exceeded")) : write(area, key, value);
+  });
+  return opened;
+}
+
 describe("MutationQueue", () => {
   it("is a service that is closed until opened", async () => {
     const { queue, lock } = await queueOf();
@@ -348,6 +361,30 @@ describe("MutationQueue", () => {
     });
     await seed.queue.open(USER);
     expect(seed.queue.items).toEqual([{ ...call, deviceId: DEVICE, sequence: null }]);
+  });
+
+  it("upgrades the conflicts of a version 1 queue to this device too, unsequenced", async () => {
+    const storage = new MemoryStorageDriver();
+    const seed = await queueOf({ storage });
+    const conflict = {
+      id: "key-1",
+      action: "orders.order.create@1",
+      input: {},
+      aggregate: "ord_1",
+      queuedAt: NOW.toISOString(),
+      expiresAt: new Date(NOW.getTime() + HOUR_MS).toISOString(),
+      code: "version_conflict",
+      server: { version: 3 },
+      conflictedAt: NOW.toISOString(),
+    };
+    await seed.persister.write(StorageArea.Outbox, KEY, {
+      version: 1,
+      items: [],
+      conflicts: [conflict],
+    });
+    await seed.queue.open(USER);
+    expect(seed.queue.conflicts).toEqual([{ ...conflict, deviceId: DEVICE, sequence: null }]);
+    expect(seed.queue.items).toEqual([]);
   });
 
   it("refuses to open a stored queue it cannot read and leaves it untouched", async () => {
@@ -609,6 +646,23 @@ describe("MutationQueue", () => {
     const { queue, persister } = await queueOf();
     vi.spyOn(persister, "write").mockRejectedValueOnce(new Error("quota exceeded"));
     await expect(queue.enqueue(CreateOrderAction, {})).rejects.toThrow("quota exceeded");
+    expect(queue.pending).toBe(0);
+  });
+
+  it("sends a call whose sequence could not be persisted, and still settles it", async () => {
+    const { queue, sender, platform } = await queueFailingPersist(1);
+    platform.network.isOnline.set(true);
+    await expect(queue.drain()).resolves.toBeUndefined();
+    expect(sender.sent).toHaveLength(1);
+    expect(sender.sent[0]?.order.sequence).toBeGreaterThanOrEqual(NOW.getTime());
+    expect(queue.pending).toBe(0);
+  });
+
+  it("takes an answered call out of the queue even when the stored queue cannot be updated", async () => {
+    const { queue, sender, platform } = await queueFailingPersist(2);
+    platform.network.isOnline.set(true);
+    await expect(queue.drain()).resolves.toBeUndefined();
+    expect(sender.sent).toHaveLength(1);
     expect(queue.pending).toBe(0);
   });
 
