@@ -28,6 +28,8 @@ const record = {
   tokensIn: 0,
   tokensOut: 0,
   toolCalls: 3,
+  wrongEdits: 0,
+  searchCalls: 1,
   filesOpened: ["src/a.ts"],
   filesTouched: ["src/a.ts"],
   acceptance: { passed: 2, failed: 0, total: 2, ok: true },

@@ -22,6 +22,8 @@
  * - tokensIn: input tokens, 0 for a dry run
  * - tokensOut: output tokens, 0 for a dry run
  * - toolCalls: number of tool calls the agent made
+ * - wrongEdits: edits the agent later reverted or replaced before it finished (readability metric)
+ * - searchCalls: tool calls that search the code, such as grep, glob or find (readability metric)
  * - filesOpened: paths the agent read, relative to the starting state
  * - filesTouched: paths the agent created or changed, relative to the starting state
  * - acceptance: { passed, failed, total, ok } of the HTTP acceptance tests
@@ -40,6 +42,8 @@ const REQUIRED = [
   ["tokensIn", "number"],
   ["tokensOut", "number"],
   ["toolCalls", "number"],
+  ["wrongEdits", "number"],
+  ["searchCalls", "number"],
   ["filesOpened", "array"],
   ["filesTouched", "array"],
   ["acceptance", "object"],
