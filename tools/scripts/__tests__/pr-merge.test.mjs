@@ -23,6 +23,7 @@ import {
   VERIFY_FRESH_MS,
   isVerifyDefinition,
   isVerifyOverlay,
+  isRootDefinition,
   scriptsChanged,
   OWNER,
   ownerLabelled,
@@ -460,6 +461,105 @@ test("condition 6: a PR that changes what the verify service checks needs risk:R
   );
 });
 
+test("condition 6: every config a gate tool discovers by name, at any depth, is main's (CTO review HIGH 1)", () => {
+  for (const path of [
+    "package.yaml",
+    "packages/a/package.yaml",
+    "packages/a/package.json5",
+    ".commitlintrc",
+    ".commitlintrc.json",
+    ".commitlintrc.cts",
+    "commitlint.config.mts",
+    ".config/config.json",
+    "packages/a/.config/commitlintrc.yaml",
+    "knip.json",
+    ".knip.json",
+    ".knip.jsonc",
+    "knip.ts",
+    "packages/a/knip.config.js",
+    "packages/a/.oxlintrc.json",
+    "packages/a/oxlint.config.mts",
+    "oxfmt.config.ts",
+    ".eslintignore",
+    ".oxlintignore",
+    "packages/a/.prettierignore",
+    ".prettierrc.json",
+    ".editorconfig",
+    "scripts/.shellcheckrc",
+    "services/a/.squawk.toml",
+    ".github/actionlint.yaml",
+    ".github/actionlint.yml",
+    "zizmor.yml",
+    "packages/a/vitest.projects.ts",
+  ]) {
+    assert.equal(isVerifyOverlay(path), true, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+});
+
+test("condition 6: a root-level file is a definition unless it is inert documentation or tested code", () => {
+  // every root file main has today, as the rule sorts it
+  for (const path of [
+    ".commitlintrc.yaml",
+    ".editorconfig",
+    ".gitattributes",
+    ".gitignore",
+    ".gitleaks.toml",
+    ".gitleaksignore",
+    ".gitmodules",
+    ".markdownlint.yaml",
+    ".mcp.yaml",
+    ".node-version",
+    ".npmrc",
+    ".oxfmtrc.jsonc",
+    ".oxlintrc.jsonc",
+    ".pnpmfile.mjs",
+    "cspell.config.yaml",
+    "flow.config.json",
+    "knip.jsonc",
+    "lefthook.yml",
+    "mise.toml",
+    "opencode.jsonc",
+    "osv-scanner.toml",
+    "turbo.jsonc",
+    // and anything new a tool might read
+    "biome.json",
+    ".tool-versions",
+    "deno.json",
+  ]) {
+    assert.equal(isRootDefinition(path), true, path);
+    assert.equal(isVerifyOverlay(path), true, path);
+  }
+  for (const path of [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "SECURITY.md",
+    "STATE.md",
+    "THIRD_PARTY_NOTICES.md",
+    "TRADEMARKS.md",
+    "llms.txt",
+    "CHANGELOG.md",
+  ]) {
+    assert.equal(isRootDefinition(path), false, path);
+    assert.equal(isVerifyDefinition(path), false, path);
+  }
+  // tested code: a lane PR that bumps a dependency or edits a member's source is not a definition change
+  for (const path of ["package.json", "runway.yaml", "packages/a/src/index.ts", "docs/guide.md"])
+    assert.equal(isVerifyDefinition(path), false, path);
+  for (const path of ["pnpm-lock.yaml", "pnpm-workspace.yaml"]) {
+    assert.equal(isRootDefinition(path), false, path);
+    assert.equal(isVerifyOverlay(path), false, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+  // a name that only looks inert at the root is a definition below it only when a tool reads it
+  assert.equal(isVerifyDefinition("packages/a/README.md"), false);
+  assert.equal(isVerifyDefinition("packages/a/mise.toml"), false);
+});
+
 test("condition 6: a PR that adds only a patch and a workspace entry needs risk:R3 (it changes what verify runs)", () => {
   for (const path of [
     "patches/vitest@5.0.5.patch",
@@ -556,7 +656,9 @@ test("verifyFacts: the main block reads the head's verify runs, current main and
     "turbo.jsonc",
   ]);
   assert.ok(calls.includes("repos/figentra/stackra/pulls/7/files?per_page=100"));
-  assert.match(calls[0], /check-runs\?check_name=stackra%2Fverify&filter=all/);
+  // only our App's runs are listed (LOW 8): another App's flood cannot push ours past the first page
+  assert.match(calls[0], /check-runs\?check_name=stackra%2Fverify&app_id=5907714&filter=all/);
+  assert.equal(VERIFY_APP.id, 5_907_714);
 });
 
 test("condition 6: a package.json `bin` or `directories` change can shadow a tool, so it counts", () => {

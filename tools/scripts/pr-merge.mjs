@@ -84,10 +84,43 @@ export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
  * Gate script and its Squawk flags live in `tools/scripts/stackra-verify.mjs`), the registry config, the git
  * attribute and ignore files, and the gate's policies: zizmor's (`.github/zizmor.yml`), gitleaks' (`.gitleaks.toml`,
  * `.gitleaksignore`), commitlint's, OSV-Scanner's (`osv-scanner.toml`) and the licence allowlist (`tools/policy/`).
- * A PR's copy of them never runs.
+ * Every name a gate tool discovers by itself is here, at any depth, from each tool's lookup list in the installed
+ * versions (CTO review of #1043, HIGH 1): commitlint 21.2.3 (`@commitlint/load` lib/utils/load-config.js:
+ * `package.yaml`, `.commitlintrc`, `.commitlintrc.{json,yaml,yml,js,cjs,mjs,ts,cts,mts}`,
+ * `commitlint.config.{js,cjs,mjs,ts,cts,mts}`) on cosmiconfig 9.0.2 (dist/defaults.js metaSearchPlaces:
+ * `package.yaml`, `.config/config.*`); pnpm's other manifest names (`package.json5`, `package.yaml`); knip 6.41.0
+ * (dist/constants.js KNIP_CONFIG_LOCATIONS: `knip.json`, `knip.jsonc`, `.knip.json`, `.knip.jsonc`, `knip.ts`,
+ * `knip.js`, `knip.config.ts`, `knip.config.js`); oxlint 1.86.0 (its binding's strings: `.oxlintrc.json(c)`,
+ * `oxlint.config.{ts,mts}`, `.eslintignore`); oxfmt 0.71.0 (`.oxfmtrc.json(c)`, `oxfmt.config.{ts,mts}`,
+ * `.prettierignore`, `.editorconfig`); actionlint 1.7.12 (`.github/actionlint.{yaml,yml}`); shellcheck 0.11.0
+ * (`.shellcheckrc`, searched upward); shfmt 3.14.1 (`.editorconfig`); zizmor 1.31.1 (`zizmor.{yml,yaml}`); gitleaks
+ * 8.30.1 (`.gitleaks.toml`, `.gitleaksignore`); OSV-Scanner 2.7.0 (`osv-scanner.toml`); squawk (`.squawk.toml`, from
+ * its documentation: no squawk binary on box 1 to read). Extensions are widened to every module form. A PR's copy of
+ * them never runs: the tested tree takes main's copy, and buildTree removes one main does not have.
  */
 export const VERIFY_OVERLAY =
-  /(?:^|\/)(?:turbo\.jsonc?|knip\.jsonc?|\.oxlintrc\.jsonc?|\.oxfmtrc\.jsonc?|oxlint\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.[\w]+)?|commitlint\.config\.[cm]?[jt]s)$|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins)\/|^\.github\/zizmor\.ya?ml$/;
+  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$/;
+
+/**
+ * Root-level files a PR may change without changing what the verify service checks: documentation no gate tool
+ * reads as configuration. Every other root-level file is a verify definition (CTO design note on HIGH 1: an allow
+ * list instead of chasing every tool's discovery rules): the tested tree takes main's copy, or drops the PR's when
+ * main has none, and a PR that touches it needs the owner's review. Directories need no entry: a tool that walks up
+ * for a config starts from the root or from the file it checks, so a config inside `docs/` or `apps/docs/` reaches
+ * only its own folder, and the names above catch it at any depth.
+ */
+export const ROOT_INERT =
+  /^(?:(?:README|LICEN[CS]E|NOTICE|CHANGELOG)(?:[.-][\w.-]+)?|(?:SECURITY|CONTRIBUTING|STATE|THIRD_PARTY_NOTICES|TRADEMARKS|AGENTS|CLAUDE)\.md|llms\.txt)$/;
+/**
+ * Root-level files that are tested code, not definitions: the PR's copy runs. package.json keeps its checks from main
+ * (OVERLAY_FIELDS); the workspace and the lockfile are VERIFY_SENSITIVE; runway.yaml is what `runway env check`
+ * checks.
+ */
+export const ROOT_TESTED = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "runway.yaml"];
+
+/** A root-level file that is neither inert nor tested code: a verify definition by default. */
+export const isRootDefinition = (path) =>
+  !path.includes("/") && !ROOT_INERT.test(path) && !ROOT_TESTED.includes(path);
 
 /**
  * Files a PR legitimately changes that still change what `pnpm verify` checks: the workspace (catalogs, overrides,
@@ -118,9 +151,8 @@ export const mergeBlockers = (pr, runs, options, facts) =>
     definitionChanges: facts.definitionChanges,
   });
 
-export const isVerifyOverlay = (path) => VERIFY_OVERLAY.test(path);
-export const isVerifyDefinition = (path) =>
-  VERIFY_OVERLAY.test(path) || VERIFY_SENSITIVE.test(path);
+export const isVerifyOverlay = (path) => VERIFY_OVERLAY.test(path) || isRootDefinition(path);
+export const isVerifyDefinition = (path) => isVerifyOverlay(path) || VERIFY_SENSITIVE.test(path);
 
 /**
  * The package.json fields that change what runs or resolves in a verify: commands, pnpm settings, overrides, and the
@@ -174,7 +206,7 @@ export const scriptsChanged = (baseText, headText) => definitionFieldsChanged(ba
  */
 export function verifyFacts({ repo, n, headSha, api, list: listAll = api, raw }) {
   const verifyRuns = api(
-    `repos/${repo}/commits/${headSha}/check-runs?check_name=${encodeURIComponent(VERIFY_CHECK)}&filter=all&per_page=100`,
+    `repos/${repo}/commits/${headSha}/check-runs?check_name=${encodeURIComponent(VERIFY_CHECK)}&app_id=${VERIFY_APP.id}&filter=all&per_page=100`,
   ).check_runs;
   const pull = api(`repos/${repo}/pulls/${n}`);
   const mainSha = api(`repos/${repo}/commits/${pull.base.ref}`).sha;

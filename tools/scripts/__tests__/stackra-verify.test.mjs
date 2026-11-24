@@ -21,8 +21,9 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync 
 import { createConnection, createServer } from "node:net";
 import { PassThrough } from "node:stream";
 import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   allowedBuilds,
   refsToDelete,
@@ -916,6 +917,10 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
       "src/a.ts",
       "turbo.jsonc",
       ".gitattributes",
+      "knip.json",
+      "packages/a/.oxlintrc.json",
+      "mise.toml",
+      "README.md",
     ],
     [
       { path: "package.json" },
@@ -934,6 +939,8 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
     "turbo.jsonc",
   ]);
   assert.deepEqual(plan.scripts, ["package.json", "packages/a/package.json"]);
+  // definition files main does not have leave the tested tree; inert root files and source stay
+  assert.deepEqual(plan.remove, ["knip.json", "packages/a/.oxlintrc.json", "mise.toml"]);
 });
 
 /** A temporary repository with main, a PR and an attacker's commit, for `buildTree`. */
@@ -1005,6 +1012,116 @@ test("buildTree: the PR merged onto main, with main's verify definition — a PR
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+/**
+ * A PR that adds, next to main's `.commitlintrc.yaml`, every config a gate tool would find first (CTO review of
+ * #1043, HIGH 1): each must be gone from the tested tree, main's must stay, and source and docs must stay.
+ */
+const PR_ADDED_CONFIGS = {
+  ".commitlintrc.json": '{"rules":{}}\n',
+  "package.yaml": "commitlint:\n  rules: {}\n",
+  "packages/a/package.json5": "{commitlint: {rules: {}}}\n",
+  "commitlint.config.mjs": "export default { rules: {} };\n",
+  ".config/config.json": '{"cosmiconfig":{"searchPlaces":["x.json"]}}\n',
+  "knip.json": '{"ignore":["**"]}\n',
+  ".knip.jsonc": '{"ignore":["**"]}\n',
+  "packages/a/knip.config.ts": "export default { ignore: ['**'] };\n",
+  "packages/a/.oxlintrc.json": '{"rules":{}}\n',
+  "packages/a/oxlint.config.ts": "export default {};\n",
+  "oxfmt.config.ts": "export default {};\n",
+  ".github/actionlint.yaml": "self-hosted-runner:\n  labels: [x]\n",
+  ".shellcheckrc": "disable=all\n",
+  ".prettierignore": "**\n",
+  ".eslintignore": "**\n",
+  ".oxlintignore": "**\n",
+  ".editorconfig": "root = true\n",
+  "packages/a/.squawk.toml": "excluded_rules = []\n",
+  "zizmor.yml": "rules: {}\n",
+  "packages/a/vitest.config.mts": "export default { test: { include: [] } };\n",
+  ".new-tool.toml": "anything = true\n",
+};
+
+function overlayRepo() {
+  const repo = fixtureRepo();
+  const { dir, git } = repo;
+  const write = (path, text) => {
+    mkdirSync(join(dir, path, ".."), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  };
+  git("checkout", "-q", "main");
+  write(".commitlintrc.yaml", "rules:\n  header-max-length: [2, always, 100]\n");
+  write("mise.toml", '[tools]\nnode = "24"\n');
+  git("add", "-A");
+  git("commit", "-qm", "main configs");
+  const base = git("rev-parse", "HEAD");
+  git("checkout", "-qb", "pr-configs");
+  for (const [path, text] of Object.entries(PR_ADDED_CONFIGS)) write(path, text);
+  write("mise.toml", '[tools]\nnode = "22"\n');
+  write("README.md", "# changed\n");
+  write("docs/guide.md", "a guide\n");
+  write("packages/a/src/b.ts", "export const b = 1;\n");
+  git("add", "-A");
+  git("commit", "-qm", "pr adds configs");
+  return { ...repo, base, sha: git("rev-parse", "HEAD") };
+}
+
+test("buildTree: a definition file the PR adds and main lacks is removed, at any depth and at the root", () => {
+  const { dir, git, base, sha } = overlayRepo();
+  try {
+    const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+    const paths = git("ls-tree", "-r", "--name-only", tree).split("\n");
+    for (const path of Object.keys(PR_ADDED_CONFIGS))
+      assert.equal(paths.includes(path), false, `${path} reached the tested tree`);
+    const show = (path) => git("cat-file", "blob", `${tree}:${path}`);
+    // main's own definitions stay, and a root file main has keeps main's copy
+    assert.match(show(".commitlintrc.yaml"), /header-max-length/);
+    assert.match(show("mise.toml"), /node = "24"/);
+    // documentation, source and new docs are the PR's
+    assert.equal(show("README.md"), "# changed");
+    assert.equal(show("docs/guide.md"), "a guide");
+    assert.equal(show("packages/a/src/b.ts"), "export const b = 1;");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/** The real `@commitlint/load` the gate runs, when this checkout has it installed (box 1 does; a bare clone not). */
+async function commitlintLoad() {
+  try {
+    const root = fileURLToPath(new URL("../../../", import.meta.url));
+    const cli = createRequire(join(root, "package.json")).resolve("@commitlint/cli/package.json");
+    const load = createRequire(cli).resolve("@commitlint/load");
+    return (await import(pathToFileURL(load).href)).default;
+  } catch {
+    return null;
+  }
+}
+const COMMITLINT = await commitlintLoad();
+
+test(
+  "buildTree: the real @commitlint/load over the tested tree reads main's rules, not a PR's .commitlintrc.json or package.yaml",
+  { skip: COMMITLINT ? false : "@commitlint/load is not installed in this checkout" },
+  async () => {
+    const { dir, base, sha } = overlayRepo();
+    const out = mkdtempSync(join(tmpdir(), "stackra-tested-"));
+    try {
+      // the attack works on the PR's own tree: its package.yaml wins over main's .commitlintrc.yaml
+      const unsafe = spawnSync("sh", ["-c", `git -C "${dir}" archive ${sha} | tar -x -C "${out}"`]);
+      assert.equal(unsafe.status, 0);
+      assert.deepEqual((await COMMITLINT({}, { cwd: out })).rules, {});
+      rmSync(out, { recursive: true, force: true });
+      mkdirSync(out);
+      const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+      const r = spawnSync("sh", ["-c", `git -C "${dir}" archive ${tree} | tar -x -C "${out}"`]);
+      assert.equal(r.status, 0);
+      const config = await COMMITLINT({}, { cwd: out });
+      assert.deepEqual(config.rules, { "header-max-length": [2, "always", 100] });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(out, { recursive: true, force: true });
+    }
+  },
+);
 
 test("buildTree: a replace ref in the mirror never swaps the tested tree", () => {
   const { dir, git, base, sha, evil } = fixtureRepo();

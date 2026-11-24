@@ -2102,14 +2102,20 @@ export function withMainScripts(headText, mainText) {
   return `${JSON.stringify(out, null, 2)}\n`;
 }
 
-/** The paths of `tree` (ls-tree lines) that take main's copy: verify-definition files, and package.json scripts. */
+/**
+ * What the tested tree takes from main: `whole`, main's entry of every verify-definition file (isVerifyOverlay);
+ * `remove`, every merged path that is a verify definition main does not have (a PR-added `.commitlintrc.json` or
+ * `knip.json` that a tool would find before main's config); `scripts`, the package.json files whose checks come from
+ * main (OVERLAY_FIELDS).
+ */
 export function overlayPlan(mergedPaths, mainEntries) {
   const main = new Map(mainEntries.map((e) => [e.path, e]));
   const whole = [...main.values()].filter((e) => isVerifyOverlay(e.path));
+  const remove = mergedPaths.filter((p) => isVerifyOverlay(p) && !main.has(p));
   const scripts = mergedPaths.filter(
     (p) => /(?:^|\/)package\.json$/.test(p) && main.has(p) && !isVerifyOverlay(p),
   );
-  return { whole, scripts };
+  return { whole, remove, scripts };
 }
 
 /** The container's own exit code from `docker inspect --format '{{.State.StartedAt}} {{.State.ExitCode}}'`; null when it never started. */
@@ -2893,9 +2899,9 @@ function docker(s, args, options = {}) {
 }
 
 /**
- * The tree that is tested: the PR head merged onto `base` (main), then main's verify definition laid over it, so a
- * PR can neither skip a check nor redefine one. Built in a scratch index of the daemon's mirror; a merge conflict
- * throws `{ conflict: true }`, which is the PR's failure.
+ * The tree that is tested: the PR head merged onto `base` (main), then main's verify definition laid over it and
+ * every definition file main lacks removed (overlayPlan), so a PR can neither skip a check nor redefine one. Built in
+ * a scratch index of the daemon's mirror; a merge conflict throws `{ conflict: true }`, which is the PR's failure.
  */
 export function buildTree(mirror, base, sha, scratchIndex) {
   const merge = spawnSync(
@@ -2930,7 +2936,7 @@ export function buildTree(mirror, base, sha, scratchIndex) {
       .filter((e) => e.type === "blob");
   const mergedEntries = listing(merged);
   const mainEntries = listing(base);
-  const { whole, scripts } = overlayPlan(
+  const { whole, remove, scripts } = overlayPlan(
     mergedEntries.map((e) => e.path),
     mainEntries,
   );
@@ -2951,6 +2957,12 @@ export function buildTree(mirror, base, sha, scratchIndex) {
     git(mirror, ["update-index", "--index-info"], {
       index: scratchIndex,
       input: `${lines.join("\n")}\n`,
+    });
+  // NUL-separated, so no path character reaches a parser.
+  if (remove.length)
+    git(mirror, ["update-index", "--force-remove", "-z", "--stdin"], {
+      index: scratchIndex,
+      input: `${remove.join("\0")}\0`,
     });
   return git(mirror, ["write-tree"], { index: scratchIndex }).trim();
 }
