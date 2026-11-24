@@ -26,6 +26,8 @@ import type { EdgeDeps } from "#src/interfaces/edge-deps.interface";
 const SECRET = "edge-secret";
 const ISSUER = "https://auth.acme.example";
 const AUDIENCE = "project-1";
+/** The scope a host resolves to: a well-formed `scp_` public id, the only scope the API's `EdgeHeaderGuard` trusts. */
+const HOST_SCOPE = "scp_01j9z3k4m5n6p7q8r9s0t1v2wa";
 const NOW = new Date();
 const SECONDS = Math.floor(NOW.getTime() / 1000);
 
@@ -78,7 +80,7 @@ function edge(
           product: "commerce",
           surface: "console",
           realm: "staff",
-          scope: "scp_1",
+          scope: HOST_SCOPE,
         },
         "figentra.example": { product: "os", surface: "landing", realm: "public", scope: null },
         "checkout.pay.example": {
@@ -146,7 +148,7 @@ describe("handleRequest", () => {
     expect(out.url).toBe("https://api.internal.example/api/orders?page=2");
     expect(out.method).toBe("POST");
     expect(out.headers.get("content-type")).toBe("application/json");
-    expect(out.headers.get(EdgeHeader.Scope)).toBe("scp_1");
+    expect(out.headers.get(EdgeHeader.Scope)).toBe(HOST_SCOPE);
     expect(out.headers.get(EdgeHeader.Realm)).toBe("staff");
     expect(out.headers.get(EdgeHeader.Signature)).not.toBe("forged");
     expect(await out.clone().text()).toBe('{"total":5}');
