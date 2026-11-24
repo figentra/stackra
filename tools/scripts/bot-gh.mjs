@@ -175,11 +175,13 @@ export function parseApi(args) {
 
 /** The endpoint as a normalized, lower-case path: a full URL reduced to its path first. */
 export function endpointPath(endpoint) {
-  let path = endpoint;
+  let path;
   try {
     path = new URL(endpoint).pathname;
   } catch {
-    // a relative endpoint such as `repos/o/r/statuses/<sha>` or `graphql`
+    // A relative endpoint such as `repos/o/r/statuses/<sha>` or `graphql`: its query and fragment go, or
+    // `statuses?x=1` would hide the segment (L4, second read of figentra#73).
+    path = endpoint.split(/[?#]/, 1)[0];
   }
   return normalizeWord(path).toLowerCase();
 }

@@ -330,10 +330,17 @@ test("STA-2761 (L4 review of figentra#73): gh's own flag parsing — bundles, fu
     ["api", `repos/figentra/stackra/STATUSES/${SHA}`, "-f", "state=success"],
     ["api", `repos/figentra/stackra/stat%2575ses/${SHA}`, "-f", "state=success"],
     ["api", "graphql", "-F", "query=@-"],
+    ["api", "repos/figentra/stackra/check-runs?x=1", "-f", "name=stackra/verify"],
+    ["api", "repos/figentra/stackra/statuses?x=1", "-f", "state=success"],
+    ["api", "graphql?x=1", "--input", "q.json"],
+    ["api", "graphql?x=1", "-F", "query=@q.graphql"],
+    ["api", "graphql#x", "--input", "q.json"],
   ];
   for (const args of mustBlock) assert.equal(writesCheck(args), true, args.join(" "));
   const mustAllow = [
     ["api", "graphql", "-f", "query={viewer{login}}"],
+    ["api", "graphql?x=1", "-f", "query={viewer{login}}"],
+    ["api", "repos/figentra/stackra/check-runs?per_page=1"],
     ["api", "repos/figentra/stackra/issues/1/comments", "-f", "body=see the statuses endpoint"],
     ["api", "repos/figentra/stackra/issues/1/comments", "-f", "body=the check-runs failed"],
     ["api", "repos/figentra/ci-notes/issues", "-f", "title=x", "-f", "body=the check-suites run"],
