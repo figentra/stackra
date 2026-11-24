@@ -61,7 +61,13 @@ case "$url" in
   "\${ACTIONS_ID_TOKEN_REQUEST_URL%%\\?*}"*) echo '{"value":"id-token"}' ;;
   *oidc/token/exchange*) echo '{"token":"publish-token"}' ;;
   *) key="\${url#"$REGISTRY"}"; key="\${key//\\//@}"
-     [ -e "$STATE/registry/$key" ] ;;
+     if [ -e "$STATE/registry/$key" ]; then exit 0
+     elif [ -e "$STATE/lagging/$key" ]; then
+       # a version the store accepted but does not show yet: it appears once its count of answers has run out
+       n="$(cat "$STATE/lagging/$key")"
+       if [ "$n" -gt 0 ]; then echo $(( n - 1 )) > "$STATE/lagging/$key"; exit 22; fi
+       touch "$STATE/registry/$key"; exit 0
+     else exit 22; fi ;;
 esac
 `;
 
@@ -79,7 +85,9 @@ if [ "$1" = publish ]; then
     [ -e "$failures.registers" ] && touch "$STATE/registry/\${name/\\//%2f}@$version"
     exit 1
   fi
-  [ -e "$STATE/hide/\${name//\\//_}" ] || touch "$STATE/registry/\${name/\\//%2f}@$version"
+  regkey="\${name/\\//%2f}@$version"
+  if [ -e "$STATE/lag/\${name//\\//_}" ]; then cp "$STATE/lag/\${name//\\//_}" "$STATE/lagging/$regkey"
+  elif [ ! -e "$STATE/hide/\${name//\\//_}" ]; then touch "$STATE/registry/$regkey"; fi
   exit 0
 fi
 exec "$REAL_PNPM" "$@"
@@ -95,7 +103,15 @@ function fixture(packages) {
   const root = mkdtempSync(join(tmpdir(), "registry-publish-"));
   const state = join(root, "state");
   const bin = join(root, "bin");
-  for (const dir of [state, bin, join(state, "registry"), join(state, "fail"), join(state, "hide")])
+  for (const dir of [
+    state,
+    bin,
+    join(state, "registry"),
+    join(state, "fail"),
+    join(state, "hide"),
+    join(state, "lag"),
+    join(state, "lagging"),
+  ])
     mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(root, "package.json"),
@@ -183,6 +199,10 @@ function fixture(packages) {
           stdio: "ignore",
         },
       );
+    },
+    /** Mark a package whose version the registry shows only after it answered 404 to `count` checks. */
+    lag(name, count) {
+      writeFileSync(join(state, "lag", `@t_${name}`), String(count));
     },
     /** Put a version on the stand-in registry before the run. */
     preload(name) {
@@ -399,6 +419,33 @@ test("a loop that ends with a version missing from the registry fails the run", 
   const run = fixture(CHAIN);
   try {
     run.hide("z");
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Publish incomplete::@t\/z@1\.0\.0 is not on the registry/,
+    );
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a version the registry shows a moment late does not fail the run", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.lag("z", 2);
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /All 4 packages are on the registry/);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("a version the registry still does not show after three checks fails the run", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.lag("z", 5);
     const result = run.run();
     assert.equal(result.status, 1);
     assert.match(

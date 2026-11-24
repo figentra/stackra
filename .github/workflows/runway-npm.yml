@@ -265,6 +265,17 @@ jobs:
 
           on_registry() { curl -fsS -o /dev/null "${REGISTRY}${1/\//%2f}/$2"; }
 
+          # The registry's store may answer 404 for a moment after a publish it accepted: the final check asks up to
+          # three times before it calls a version missing.
+          on_registry_settled() {
+            local tries=1
+            until on_registry "$1" "$2"; do
+              [ "$tries" -lt 3 ] || return 1
+              tries=$((tries + 1))
+              sleep "${PUBLISH_RETRY_DELAY:-15}"
+            done
+          }
+
           # Per package: a GitHub ID token exchanged for a publish token bound to that one name. Every step answers
           # `|| return 1`, because a function called from `until` runs without `set -e`. The publish reads no stdin.
           publish_one() {
@@ -363,7 +374,7 @@ jobs:
           missing=0
           exec 3< "$plan"
           while IFS=$'\t' read -r -u 3 name version _; do
-            on_registry "$name" "$version" || {
+            on_registry_settled "$name" "$version" || {
               echo "::error title=Publish incomplete::${name}@${version} is not on the registry"
               missing=$((missing + 1))
             }
