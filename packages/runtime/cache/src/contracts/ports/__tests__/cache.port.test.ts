@@ -89,4 +89,13 @@ describe("Cache", () => {
     await container.get(Cache).put(KEY, 1, Duration.minutes(1));
     expect(driver.values.get(KEY)).toBe(1);
   });
+
+  it("refuses flush by default, naming the driver that cannot enumerate its entries", async () => {
+    const driver = new MapCacheDriver();
+    driver.values.set(KEY, 1);
+    const refusal = driver.flush();
+    await expect(refusal).rejects.toBeInstanceOf(TypeError);
+    await expect(refusal).rejects.toThrow("MapCacheDriver does not support flush");
+    expect(driver.values.get(KEY)).toBe(1);
+  });
 });
