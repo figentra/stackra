@@ -38,6 +38,7 @@ export { PaymentFieldRequiredError } from "#core/errors/payment-field-required.e
 export { PaymentUnknownError } from "#core/errors/payment-unknown.error";
 export { PayoutHeldError } from "#core/errors/payout-held.error";
 export { PreVerificationCapExceededError } from "#core/errors/pre-verification-cap-exceeded.error";
+export { RefundReferenceReusedError } from "#core/errors/refund-reference-reused.error";
 export { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
 export { RestrictedTenderUnavailableError } from "#core/errors/restricted-tender-unavailable.error";
 export { SoftPosUnavailableError } from "#core/errors/soft-pos-unavailable.error";

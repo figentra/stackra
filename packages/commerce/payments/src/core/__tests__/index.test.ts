@@ -43,6 +43,7 @@ describe("@stackra/payments", () => {
       "PaymentsOptions",
       "PayoutHeldError",
       "PreVerificationCapExceededError",
+      "RefundReferenceReusedError",
       "ResolutionReasonRequiredError",
       "RestrictedTenderService",
       "RestrictedTenderUnavailableError",

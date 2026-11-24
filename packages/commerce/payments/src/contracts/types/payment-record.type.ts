@@ -12,6 +12,7 @@ import type { Money } from "@stackra/money";
 import type { PaymentStatus } from "#contracts/enums/payment-status.enum";
 import type { AgentConfirmation } from "#contracts/types/agent-confirmation.type";
 import type { CheckoutSession } from "#contracts/types/checkout-session.type";
+import type { PaymentRefund } from "#contracts/types/payment-refund.type";
 import type { PaymentResolution } from "#contracts/types/payment-resolution.type";
 import type { SavedMethod } from "#contracts/types/saved-method.type";
 
@@ -42,6 +43,12 @@ export interface PaymentRecord {
 
   /** What has been refunded so far. */
   readonly refunded: Money;
+
+  /**
+   * The refunds the provider accepted, each under its idempotency reference, so a retry of one is answered with its first
+   * answer and counted once. Absent when none was recorded (older records have none).
+   */
+  readonly refunds?: readonly PaymentRefund[];
 
   /** Where it stands. */
   readonly status: PaymentStatus;

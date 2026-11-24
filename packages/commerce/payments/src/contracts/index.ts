@@ -50,6 +50,7 @@ export type { PaymentConnectionMode } from "#contracts/types/payment-connection-
 export type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 export type { PaymentLine } from "#contracts/types/payment-line.type";
 export type { PaymentRecord } from "#contracts/types/payment-record.type";
+export type { PaymentRefund } from "#contracts/types/payment-refund.type";
 export type { PaymentResolution } from "#contracts/types/payment-resolution.type";
 export type { PaymentTarget } from "#contracts/types/payment-target.type";
 export type { PayoutGateway } from "#contracts/types/payout-gateway.type";

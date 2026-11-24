@@ -15,14 +15,17 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { PaymentStatus } from "#contracts/enums/payment-status.enum";
 import { SessionKind } from "#contracts/enums/session-kind.enum";
+import { TransferStatus } from "#contracts/enums/transfer-status.enum";
 import type { PaymentRecord } from "#contracts/types/payment-record.type";
 import { CreatePaymentRecordsMigration } from "#node/database/migrations/0001-create-payment-records.migration";
+import { AddRefundsToPaymentRecordsMigration } from "#node/database/migrations/0003-add-refunds-to-payment-records.migration";
 import { PostgresPaymentRecordsDriver } from "#node/drivers/postgres-payment-records.driver";
 
 const postgres = usePostgres({
   entities: [],
   migrations: [
     compileMigration(CreatePaymentRecordsMigration, { schema: "payments", createsSchema: true }),
+    compileMigration(AddRefundsToPaymentRecordsMigration, { schema: "payments" }),
   ],
 });
 
@@ -36,7 +39,21 @@ const FULL: PaymentRecord = {
   providerRef: "pi_1",
   amount: Money.ofMinor(12_345, "EUR"),
   tip: Money.ofMinor(500, "EUR"),
-  refunded: Money.ofMinor(0, "EUR"),
+  refunded: Money.ofMinor(2500, "EUR"),
+  refunds: [
+    {
+      reference: "r1",
+      amount: Money.ofMinor(1500, "EUR"),
+      providerRef: "re_1",
+      status: TransferStatus.Succeeded,
+    },
+    {
+      reference: "r2",
+      amount: Money.ofMinor(1000, "EUR"),
+      providerRef: "re_2",
+      status: TransferStatus.Pending,
+    },
+  ],
   status: PaymentStatus.Unknown,
   terminalId: "tml_1",
   session: {

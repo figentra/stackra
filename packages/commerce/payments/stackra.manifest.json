@@ -115,6 +115,13 @@
       "class": "PreVerificationCapExceededError"
     },
     {
+      "code": "refund_reference_reused",
+      "kind": "conflict",
+      "category": "conflict",
+      "module": "payments",
+      "class": "RefundReferenceReusedError"
+    },
+    {
       "code": "resolution_reason_required",
       "kind": "validation",
       "category": "validation",

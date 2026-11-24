@@ -17,6 +17,7 @@ import { Money } from "@stackra/money";
 
 import { PaymentRecords } from "#contracts/ports/payment-records.port";
 import type { PaymentRecord } from "#contracts/types/payment-record.type";
+import type { PaymentRefund } from "#contracts/types/payment-refund.type";
 
 /** The table. */
 const RECORDS = '"payments"."payment_records"';
@@ -42,11 +43,21 @@ const COLUMNS = [
   "method",
   "resolution",
   "agent",
+  "refunds",
   "updated_at",
 ] as const;
 
 /** The JSON columns. */
-const JSON_COLUMNS = new Set<string>(["session", "method", "resolution", "agent"]);
+const JSON_COLUMNS = new Set<string>(["session", "method", "resolution", "agent", "refunds"]);
+
+/** A refund as the `refunds` column keeps it: the amount as minor units and its currency, the rest as is. */
+interface StoredRefund {
+  readonly reference: string;
+  readonly amountMinor: number;
+  readonly currency: string;
+  readonly providerRef: string;
+  readonly status: PaymentRefund["status"];
+}
 
 /** The raw-SQL surface of the entity manager this driver uses. */
 interface Sql {
@@ -65,12 +76,40 @@ const jsonOf = (value: unknown): Record<string, unknown> | undefined =>
 /** A bigint column's value as a number of minor units. */
 const minorOf = (value: unknown): number => Number(value);
 
+/** The `refunds` column's value as the record's refunds, parsed when the client hands back text; absent when null. */
+function refundsOf(value: unknown): readonly PaymentRefund[] | undefined {
+  if (value === null || value === undefined) return undefined;
+  const stored = (typeof value === "string" ? JSON.parse(value) : value) as readonly StoredRefund[];
+  return stored.map((refund) => ({
+    reference: refund.reference,
+    amount: Money.ofMinor(refund.amountMinor, refund.currency),
+    providerRef: refund.providerRef,
+    status: refund.status,
+  }));
+}
+
+/** The `refunds` column's JSON text for the record's refunds; null when it has none. */
+function refundsJson(refunds: readonly PaymentRefund[] | undefined): string | null {
+  return refunds === undefined
+    ? null
+    : JSON.stringify(
+        refunds.map((refund): StoredRefund => ({
+          reference: refund.reference,
+          amountMinor: refund.amount.minor,
+          currency: refund.amount.currency,
+          providerRef: refund.providerRef,
+          status: refund.status,
+        })),
+      );
+}
+
 /** A row as the port's record; optional parts absent when null. */
 function recordOf(row: RecordRow): PaymentRecord {
   const session = jsonOf(row.session);
   const method = jsonOf(row.method);
   const resolution = jsonOf(row.resolution);
   const agent = jsonOf(row.agent);
+  const refunds = refundsOf(row.refunds);
   return {
     reference: String(row.reference),
     provider: String(row.provider),
@@ -81,6 +120,7 @@ function recordOf(row: RecordRow): PaymentRecord {
       ? {}
       : { tip: Money.ofMinor(minorOf(row.tip_minor), String(row.tip_currency)) }),
     refunded: Money.ofMinor(minorOf(row.refunded_minor), String(row.refunded_currency)),
+    ...(refunds === undefined ? {} : { refunds }),
     status: row.status as PaymentRecord["status"],
     ...(row.terminal_id === null ? {} : { terminalId: String(row.terminal_id) }),
     ...(session === undefined
@@ -130,6 +170,7 @@ function valuesOf(record: PaymentRecord): unknown[] {
     record.method === undefined ? null : JSON.stringify(record.method),
     record.resolution === undefined ? null : JSON.stringify(record.resolution),
     record.agent === undefined ? null : JSON.stringify(record.agent),
+    refundsJson(record.refunds),
     record.updatedAt,
   ];
 }

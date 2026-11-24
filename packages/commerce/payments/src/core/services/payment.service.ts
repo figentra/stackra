@@ -64,6 +64,7 @@ import { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiate
 import { PaymentUnknownError } from "#core/errors/payment-unknown.error";
 import { PayoutHeldError } from "#core/errors/payout-held.error";
 import { PreVerificationCapExceededError } from "#core/errors/pre-verification-cap-exceeded.error";
+import { RefundReferenceReusedError } from "#core/errors/refund-reference-reused.error";
 import { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
 import { assertApplicationFee } from "#core/functions/assert-application-fee.function";
 import { hasPaymentCapability } from "#core/functions/has-payment-capability.function";
@@ -408,8 +409,11 @@ export class PaymentService extends Service {
   }
 
   /**
-   * Refunds `amount` of a captured payment under `refundReference` (its idempotency key).
+   * Refunds `amount` of a captured payment under `refundReference` (its idempotency key). A repeat of a refund the provider
+   * accepted, with the same reference and amount, returns its first answer and changes nothing; a refund the provider
+   * failed is not remembered, so its reference may be sent again.
    *
+   * @throws RefundReferenceReusedError when `refundReference` was already used on this payment for another amount.
    * @throws InvalidPaymentTransitionError when the payment is not captured or `amount` exceeds what is left.
    * @throws PaymentUnknownError when its last answer was lost (and when this one is).
    */
@@ -421,6 +425,14 @@ export class PaymentService extends Service {
   ): Promise<TransferResult> {
     return this.locked(reference, async () => {
       const record = await this.load(reference);
+      // A repeat of a refund the provider accepted (a client retry after a timeout) is answered with the first answer and
+      // counted once, whatever state the payment is in now: the provider dedupes on this reference, and so must the record.
+      const prior = record.refunds?.find((entry) => entry.reference === refundReference);
+      if (prior !== undefined) {
+        if (prior.amount.minor !== amount.minor || prior.amount.currency !== amount.currency)
+          throw RefundReferenceReusedError.create({ reference, refundReference });
+        return { providerRef: prior.providerRef, status: prior.status };
+      }
       this.assert(record, "refund", [PaymentStatus.Captured, PaymentStatus.PartiallyRefunded]);
       const total = totalOf(record);
       const refunded = record.refunded.plus(amount);
@@ -446,6 +458,15 @@ export class PaymentService extends Service {
         await this.save({
           ...record,
           refunded,
+          refunds: [
+            ...(record.refunds ?? []),
+            {
+              reference: refundReference,
+              amount,
+              providerRef: result.providerRef,
+              status: result.status,
+            },
+          ],
           status:
             refunded.minor >= total.minor
               ? PaymentStatus.Refunded
