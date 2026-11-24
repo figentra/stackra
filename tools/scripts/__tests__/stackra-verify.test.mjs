@@ -16,10 +16,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createConnection, createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   allowedBuilds,
   refsToDelete,
@@ -89,6 +89,16 @@ import {
   storeTag,
   verifyArgs,
   withMainScripts,
+  GATE_FILTERS,
+  GATE_STEPS,
+  MOBILE_STEPS,
+  gatePrepare,
+  gateScript,
+  licenceCheckSource,
+  licenceViolations,
+  mobileScript,
+  spdxAllowed,
+  stepSections,
 } from "../stackra-verify.mjs";
 import { VERIFY_APP } from "../pr-merge.mjs";
 
@@ -763,6 +773,22 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
   assert.deepEqual(out.scripts, { verify: "pnpm format:check && turbo run test" });
   assert.deepEqual(out.dependencies, { zod: "4" });
   assert.equal("scripts" in JSON.parse(withMainScripts(head, '{"name":"x"}')), false);
+  // knip and commitlint configs in a package.json are main's too: a PR cannot loosen the gate through them
+  const loose = '{"name":"x","knip":{"ignore":["**"]},"commitlint":{"rules":{}}}';
+  const strict = '{"name":"x","knip":{"ignore":[]}}';
+  const merged = JSON.parse(withMainScripts(loose, strict));
+  assert.deepEqual(merged.knip, { ignore: [] });
+  assert.equal("commitlint" in merged, false);
+  // a package.json whose checks already match main's is left byte for byte (no reformatting)
+  assert.equal(
+    withMainScripts('{"name":"y","scripts":{"a":"b"}}', '{"scripts":{"a":"b"},"name":"z"}'),
+    null,
+  );
+  assert.deepEqual(Object.keys(JSON.parse(withMainScripts(head, main))), [
+    "name",
+    "dependencies",
+    "scripts",
+  ]);
   const plan = overlayPlan(
     [
       "package.json",
@@ -1411,4 +1437,626 @@ test("install and probe containers resolve no external name (a non-answering res
   });
   const probe = probeArgs(S, { name: "p", image: "s", envFile: ENV, targets: [], network: "n" });
   for (const argv of [install, probe]) assert.equal(argv[argv.indexOf("--dns") + 1], "127.0.0.1");
+});
+
+// ---- the Quality Gate (main's ci.yml) -----------------------------------------------------------------------------
+
+const CI_YML = new URL("../../../.github/workflows/ci.yml", import.meta.url);
+
+/** ci.yml's jobs → steps ({ name, line, run, if, env names }), read the way GitHub reads the block scalars. */
+function ciJobs(text) {
+  const jobs = {};
+  let job;
+  let step;
+  let block = null;
+  let inEnv = false;
+  const close = () => {
+    if (block && step)
+      step.run = (
+        block.folded
+          ? block.lines
+              .map((l) => l.trim())
+              .filter(Boolean)
+              .join(" ")
+          : block.lines.join("\n")
+      ).trimEnd();
+    block = null;
+  };
+  text.split("\n").forEach((line, index) => {
+    if (block) {
+      if (line.trim() === "" || line.startsWith(" ".repeat(10))) {
+        block.lines.push(line.slice(10));
+        return;
+      }
+      close();
+    }
+    let m;
+    if ((m = /^ {2}([\w-]+):\s*$/.exec(line))) {
+      jobs[m[1]] = job = [];
+      step = undefined;
+      return;
+    }
+    if (!job) return;
+    if ((m = /^ {6}- name: (.+)$/.exec(line))) {
+      step = { name: m[1].trim(), line: index + 1, env: [], run: null, if: null };
+      job.push(step);
+      inEnv = false;
+      return;
+    }
+    if (!step) return;
+    if ((m = /^ {8}run: ([|>])-?\s*$/.exec(line))) block = { lines: [], folded: m[1] === ">" };
+    else if ((m = /^ {8}run: (.+)$/.exec(line))) step.run = m[1].trim();
+    else if ((m = /^ {8}if: (.+)$/.exec(line))) step.if = m[1].trim();
+    else if (/^ {8}env:\s*$/.test(line)) {
+      inEnv = true;
+      return;
+    } else if (inEnv && (m = /^ {10}([A-Z_][A-Z0-9_]*):/.exec(line))) {
+      step.env.push(m[1]);
+      return;
+    }
+    if (/^ {8}\S/.test(line)) inEnv = false;
+  });
+  close();
+  return jobs;
+}
+const norm = (text) =>
+  String(text)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join("\n");
+
+test("gate mirrors main's ci.yml: every dependency-scan, gate and mobile step, in order, same commands, filters, env and conditions", () => {
+  const jobs = ciJobs(readFileSync(CI_YML, "utf8"));
+  const notMirrored = {
+    "dependency-scan": ["Toolchain (mise)", "Put osv-scanner on PATH", "Checkout"],
+    gate: ["Checkout", "Toolchain (mise)", "Turborepo remote cache (sops)", "Install dependencies"],
+  };
+  for (const job of ["dependency-scan", "gate"])
+    assert.deepEqual(
+      GATE_STEPS.filter((s) => s.job === job).map((s) => s.ci),
+      jobs[job].map((s) => s.name).filter((n) => !notMirrored[job].includes(n)),
+      job,
+    );
+  assert.deepEqual(
+    GATE_STEPS.filter((s) => !s.job).map((s) => s.id),
+    ["licence-policy", "test"],
+  );
+  for (const step of [...GATE_STEPS, ...MOBILE_STEPS].filter((s) => s.job)) {
+    const ci = jobs[step.job].find((s) => s.name === step.ci);
+    assert.ok(ci, `${step.id}: no ci.yml step "${step.ci}"`);
+    assert.equal(ci.line, step.line, `${step.id}: ci.yml line`);
+    let expected = ci.run;
+    for (const [from, to] of step.ciReplace ?? []) {
+      assert.ok(expected.includes(from), `${step.id}: ci.yml no longer has ${from}`);
+      expected = expected.replaceAll(from, to);
+    }
+    assert.equal(norm(step.run), norm(expected), step.id);
+    for (const name of ci.env.filter((n) => !(step.dropEnv ?? []).includes(n)))
+      assert.ok(name in (step.env ?? {}), `${step.id}: ci.yml env ${name}`);
+    assert.equal(Boolean(ci.if), Boolean(step.when), `${step.id}: if`);
+    if (ci.if) assert.equal(ci.if, `github.event_name == '${step.when}'`);
+  }
+  const install = jobs.gate.find((s) => s.name === "Install dependencies").run;
+  assert.deepEqual(
+    [...install.matchAll(/--filter='([^']+)'/g)].map((m) => m[1]),
+    GATE_FILTERS,
+  );
+  assert.match(
+    installCommand(["esbuild"], [], GATE_FILTERS),
+    /--ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild esbuild$/,
+  );
+  assert.throws(() => installCommand([], [], ["x; rm -rf /"]), /not a pnpm filter/);
+});
+
+/** The first bash on PATH that is 4 or later (ci.yml's `mapfile`); the verify image and CI have bash 5. */
+const BASH = (process.env.PATH ?? "")
+  .split(":")
+  .map((dir) => join(dir, "bash"))
+  .find(
+    (path) =>
+      Number(
+        spawnSync(path, ["-c", "echo ${BASH_VERSINFO[0]}"], { encoding: "utf8" }).stdout?.trim(),
+      ) >= 4,
+  );
+const needsBash = BASH
+  ? {}
+  : { skip: "needs bash 4 or later on PATH (the verify image has bash 5)" };
+
+/** Commands the stubs stand in for: each prints `CALL: <argv>` and the env the gate sets, and fails on FAIL. */
+const STUB = [
+  "#!/bin/sh",
+  'line="$(basename "$0")${*:+ $*}"',
+  // On stderr, which the step merges into its section, so a call whose stdout goes to a file is still seen.
+  'echo >&2 "CALL: $line|TURBO_SCM_BASE=${TURBO_SCM_BASE-}|SPEC_GATE_REQUIRE_READY=${SPEC_GATE_REQUIRE_READY-}|STACKRA_BRANCH=${STACKRA_BRANCH-}|NODE_OPTIONS=${NODE_OPTIONS-}|OSV=${OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY-}"',
+  'case "$line" in $FAIL) echo "stub failure"; exit 1 ;; esac',
+  "",
+].join("\n");
+/** The node scripts the gate runs from the tree or the run (linear.mjs, the licence check), recorded the same way. */
+const NODE_STUB = (name) =>
+  [
+    `const line = ["${name}", ...process.argv.slice(2)].join(" ");`,
+    'const e = (k) => process.env[k] ?? "";',
+    'console.error(`CALL: ${line}|PR_TITLE=${e("PR_TITLE")}|PR_BRANCH=${e("PR_BRANCH")}|PR_LABELS=${e("PR_LABELS")}|BASE_SHA=${e("BASE_SHA")}|HEAD_SHA=${e("HEAD_SHA")}`);',
+    'const glob = new RegExp(`^${process.env.FAIL.split("*").map((p) => p.replaceAll(/[.+?^${}()|[\\]\\\\]/g, "\\\\$&")).join(".*")}$`);',
+    "if (glob.test(line)) process.exit(1);",
+    "",
+  ].join("\n");
+
+const PR_FACTS = {
+  event: "pull_request",
+  title: "feat(ci): the gate (STA-2761)",
+  branch: "figentra/sta-2761-gate",
+  labels: ["risk:R3", "chore-lane"],
+  draft: false,
+  base: BASE,
+  head: SHA,
+};
+
+/** A tree to run the gate script in: a git repository with two compiled migrations, stub tools and PR facts. */
+function gateFixture(facts = PR_FACTS) {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-gate-"));
+  const work = join(dir, "work");
+  const input = join(dir, "in");
+  const bin = join(dir, "bin");
+  for (const d of [work, input, bin, join(work, "tools/scripts"), join(work, "x")])
+    mkdirSync(d, { recursive: true });
+  mkdirSync(join(work, "services/a/.stackra/migrations"), { recursive: true });
+  writeFileSync(
+    join(work, "services/a/.stackra/migrations/0001.up.sql"),
+    "create table a (id int);\n",
+  );
+  writeFileSync(
+    join(work, "services/a/.stackra/migrations/0002.up.sql"),
+    "-- stackra:transactional=false\ncreate index concurrently a_id on a (id);\n",
+  );
+  writeFileSync(join(work, "x/stackra.manifest.json"), "{}\n");
+  writeFileSync(join(work, "tools/scripts/linear.mjs"), NODE_STUB("linear"));
+  writeFileSync(join(input, "licence-check.mjs"), NODE_STUB("licence-check"));
+  writeFileSync(join(input, "facts.json"), JSON.stringify(facts));
+  for (const tool of ["pnpm", "actionlint", "zizmor", "osv-scanner", "squawk"]) {
+    writeFileSync(join(bin, tool), STUB);
+    chmodSync(join(bin, tool), 0o755);
+  }
+  const git = (...args) =>
+    spawnSync(
+      "git",
+      ["-c", "user.name=t", "-c", "user.email=t@t.invalid", "-c", "commit.gpgsign=false", ...args],
+      { cwd: work, encoding: "utf8" },
+    );
+  git("init", "-q");
+  git("add", "-A");
+  git("commit", "-qm", "fixture");
+  return { dir, work, input, bin };
+}
+
+/** Runs the gate script in a fixture; `fail` is a shell glob of the stub call to fail. */
+function runGate(fixture, fail = "__never__", script = gateScript) {
+  const path = join(fixture.dir, "gate.sh");
+  writeFileSync(path, script({ inDir: fixture.input, workDir: fixture.work }));
+  const r = spawnSync(BASH, [path], {
+    encoding: "utf8",
+    env: {
+      PATH: [fixture.bin, dirname(process.execPath), "/usr/bin", "/bin"].join(":"),
+      HOME: fixture.dir,
+      TMPDIR: fixture.dir,
+      FAIL: fail,
+    },
+  });
+  const sections = Object.fromEntries(stepSections(r.stdout).map((x) => [x.id, x]));
+  const calls = (id) =>
+    (sections[id]?.lines ?? [])
+      .filter((l) => l.startsWith("CALL: "))
+      .map((l) => {
+        const [call, ...env] = l.slice(6).split("|");
+        return { call, env: Object.fromEntries(env.map((kv) => kv.split(/=(.*)/s).slice(0, 2))) };
+      });
+  return { status: r.status, stdout: r.stdout, sections, calls };
+}
+
+const X = "--filter=!@figentra/mobile --filter=!@figentra/playground";
+const SQUAWK =
+  "squawk --pg-version=18.0 --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field " +
+  "--exclude=prefer-bigint-over-int --exclude=require-lock-timeout --exclude=require-statement-timeout";
+/**
+ * Each step on a pull request: the calls it makes (ci.yml's commands after the shell's quoting), the env it sets,
+ * and the stub call that fails it (`fail`; the manifests step fails on a stale committed manifest instead).
+ */
+const STEP_CASES = {
+  "dependency-scan": {
+    calls: ["osv-scanner scan source --offline --lockfile=pnpm-lock.yaml"],
+    env: { OSV: "/osv" },
+    fail: "osv-scanner *",
+  },
+  "workflow-lint": {
+    calls: ["actionlint", "zizmor --offline --config .github/zizmor.yml .github/workflows"],
+    fail: "zizmor *",
+  },
+  "linear-key-check": {
+    calls: ["linear check-pr", `pnpm exec commitlint --from ${BASE} --to ${SHA}`],
+    env: { NODE_OPTIONS: "--conditions=@stackra/source" },
+    fail: "linear *",
+  },
+  "format-check": { calls: ["pnpm format:check"], fail: "pnpm format:check" },
+  lint: { calls: [`pnpm exec turbo run lint ${X}`, "pnpm lint:root"], fail: "pnpm lint:root" },
+  typecheck: {
+    calls: [
+      `pnpm exec turbo run typecheck --affected ${X} --continue=dependencies-successful --concurrency=2`,
+    ],
+    env: { TURBO_SCM_BASE: "HEAD~1" },
+    fail: "pnpm exec turbo run typecheck *",
+  },
+  build: {
+    calls: [`pnpm exec turbo run build --filter=...[HEAD~1] --filter=@stackra/cli... ${X}`],
+    fail: "*@stackra/cli...*",
+  },
+  "service-gen": {
+    calls: ["pnpm exec turbo run gen --filter=./services/*"],
+    fail: "pnpm exec turbo run gen --filter=./services/*",
+  },
+  "manifests-match-gen": { calls: [], stale: true },
+  "migration-lint": {
+    calls: [
+      `${SQUAWK} --assume-in-transaction ./services/a/.stackra/migrations/0001.up.sql`,
+      `${SQUAWK} ./services/a/.stackra/migrations/0002.up.sql`,
+    ],
+    fail: "squawk *",
+  },
+  validate: {
+    calls: ["pnpm validate"],
+    env: { SPEC_GATE_REQUIRE_READY: "1", STACKRA_BRANCH: PR_FACTS.branch },
+    fail: "pnpm validate",
+  },
+  "env-names": {
+    calls: [
+      "pnpm exec turbo run build --filter=@stackra/runway --output-logs=errors-only",
+      "pnpm runway env check",
+    ],
+    fail: "pnpm runway env check",
+  },
+  boundaries: { calls: ["pnpm boundaries"], fail: "pnpm boundaries" },
+  knip: {
+    calls: [
+      "pnpm exec turbo run build --filter=@stackra/vitest-config --output-logs=errors-only",
+      `pnpm exec turbo run gen ${X} --output-logs=errors-only`,
+      "pnpm knip",
+    ],
+    fail: "pnpm knip",
+  },
+  "secrets-scan": { calls: ["pnpm secrets:scan"], fail: "pnpm secrets:scan" },
+  "licence-policy": {
+    calls: [
+      "pnpm licenses list --json --offline --recursive",
+      "licence-check tools/policy/licences.json <tmp>/stackra-licences.json",
+    ],
+    fail: "licence-check *",
+  },
+  test: {
+    calls: [`pnpm exec turbo run test ${X} --continue=dependencies-successful`],
+    fail: "pnpm exec turbo run test *",
+  },
+};
+
+test("gate script: the step cases cover every step, in GATE_STEPS order", () => {
+  assert.deepEqual(
+    Object.keys(STEP_CASES),
+    GATE_STEPS.map((s) => s.id),
+  );
+});
+
+let passing;
+const passingRun = () => {
+  passing ??= (() => {
+    const fixture = gateFixture();
+    return { fixture, ...runGate(fixture) };
+  })();
+  return passing;
+};
+
+for (const [id, expected] of Object.entries(STEP_CASES)) {
+  test(
+    `gate step ${id}: runs ci.yml's commands with its env, in its own section, and passes`,
+    needsBash,
+    () => {
+      const run = passingRun();
+      assert.equal(run.status, 0, run.stdout);
+      assert.equal(run.sections[id]?.result, "pass", run.stdout);
+      const calls = run.calls(id);
+      assert.deepEqual(
+        calls.map((c) => c.call.replaceAll(run.fixture.dir, "<tmp>")),
+        expected.calls,
+      );
+      for (const [key, value] of Object.entries(expected.env ?? {}))
+        for (const c of calls.filter((x) => key in x.env)) assert.equal(c.env[key], value, key);
+      if (id === "linear-key-check")
+        assert.deepEqual(calls[0].env, {
+          PR_TITLE: PR_FACTS.title,
+          PR_BRANCH: PR_FACTS.branch,
+          PR_LABELS: "risk:R3,chore-lane",
+          BASE_SHA: BASE,
+          HEAD_SHA: SHA,
+        });
+    },
+  );
+
+  test(
+    `gate step ${id}: its failure is named, every later step still runs, and the gate exits 1`,
+    needsBash,
+    () => {
+      const fixture = gateFixture();
+      if (expected.stale)
+        writeFileSync(join(fixture.work, "x/stackra.manifest.json"), '{"stale":1}\n');
+      const run = runGate(fixture, expected.fail ?? "__never__");
+      assert.equal(run.status, 1, run.stdout);
+      assert.equal(run.sections[id]?.result, "FAIL", run.stdout);
+      for (const other of GATE_STEPS.map((s) => s.id).filter((x) => x !== id))
+        assert.equal(run.sections[other]?.result, "pass", `${other} after ${id} failed`);
+      assert.match(run.stdout, new RegExp(`^== failed: ${id}$`, "m"));
+    },
+  );
+}
+
+test(
+  "gate script: on a push to main the Linear check is skipped and typecheck and build cover every gate member",
+  needsBash,
+  () => {
+    const run = runGate(gateFixture({ event: "push", base: BASE, head: BASE }));
+    assert.equal(run.status, 0, run.stdout);
+    assert.equal(run.sections["linear-key-check"].result, "skip");
+    assert.deepEqual(run.calls("linear-key-check"), []);
+    assert.equal(
+      run.calls("typecheck")[0].call,
+      `pnpm exec turbo run typecheck ${X} --continue=dependencies-successful --concurrency=2`,
+    );
+    assert.equal(run.calls("build")[0].call, `pnpm exec turbo run build ${X}`);
+    assert.deepEqual(
+      {
+        ready: run.calls("validate")[0].env.SPEC_GATE_REQUIRE_READY,
+        branch: run.calls("validate")[0].env.STACKRA_BRANCH,
+      },
+      { ready: "", branch: "" },
+    );
+  },
+);
+
+test(
+  "gate script: a draft PR does not require a ready spec; renovate and changeset-release skip commitlint",
+  needsBash,
+  () => {
+    const draft = runGate(gateFixture({ ...PR_FACTS, draft: true }));
+    assert.equal(draft.calls("validate")[0].env.SPEC_GATE_REQUIRE_READY, "");
+    for (const branch of ["renovate/zod-4.x", "changeset-release/main"]) {
+      const run = runGate(gateFixture({ ...PR_FACTS, branch }));
+      assert.equal(run.sections["linear-key-check"].result, "pass");
+      assert.deepEqual(
+        run.calls("linear-key-check").map((c) => c.call),
+        ["linear check-pr"],
+      );
+    }
+  },
+);
+
+test("gate script: without readable PR facts no step runs and the gate fails", needsBash, () => {
+  const fixture = gateFixture();
+  rmSync(join(fixture.input, "facts.json"));
+  const run = runGate(fixture);
+  assert.equal(run.status, 1);
+  assert.equal(stepSections(run.stdout).length, 0);
+  assert.match(run.stdout, /PR facts file is unreadable/);
+});
+
+test("gate script: a hostile PR title or branch is data, never shell", needsBash, () => {
+  const title = '$(touch pwned) `touch pwned2` "; touch pwned3; "';
+  const fixture = gateFixture({ ...PR_FACTS, title, branch: "figentra/x;touch pwned4" });
+  const run = runGate(fixture);
+  assert.equal(run.status, 0, run.stdout);
+  for (const f of ["pwned", "pwned2", "pwned3", "pwned4"])
+    assert.equal(spawnSync("test", ["-e", join(fixture.work, f)]).status, 1, f);
+  assert.equal(run.calls("linear-key-check")[0].env.PR_TITLE, title);
+});
+
+test("mobile script: ci.yml's mobile job step, with no PR facts needed", needsBash, () => {
+  const fixture = gateFixture();
+  rmSync(join(fixture.input, "facts.json"));
+  const run = runGate(fixture, "__never__", mobileScript);
+  assert.equal(run.status, 0, run.stdout);
+  assert.deepEqual(
+    run.calls("mobile-apps").map((c) => c.call),
+    [
+      "pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground --continue=dependencies-successful",
+    ],
+  );
+  const failed = runGate(fixture, "pnpm exec turbo run lint *", mobileScript);
+  assert.equal(failed.status, 1);
+  assert.equal(failed.sections["mobile-apps"].result, "FAIL");
+});
+
+/** git in `cwd` with a fixed identity; asserts success and returns trimmed stdout. */
+function gitIn(cwd, ...args) {
+  const r = spawnSync(
+    "git",
+    ["-c", "user.name=t", "-c", "user.email=t@t.invalid", "-c", "commit.gpgsign=false", ...args],
+    { cwd, encoding: "utf8" },
+  );
+  assert.equal(r.status, 0, r.stderr);
+  return r.stdout.trim();
+}
+
+test("gate prepare: the tested tree is a merge onto main with main's and the PR's history from the bundle", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-prepare-"));
+  const repo = join(dir, "mirror");
+  const input = join(dir, "in");
+  const work = join(dir, "work");
+  for (const d of [repo, input, work]) mkdirSync(d, { recursive: true });
+  const git = gitIn;
+  git(repo, "init", "-q");
+  writeFileSync(join(repo, "a.txt"), "main\n");
+  git(repo, "add", "-A");
+  git(repo, "commit", "-qm", "main one");
+  const base = git(repo, "rev-parse", "HEAD");
+  git(repo, "checkout", "-qb", "pr");
+  writeFileSync(join(repo, "b.txt"), "pr\n");
+  git(repo, "add", "-A");
+  git(repo, "commit", "-qm", "feat: pr one");
+  const head = git(repo, "rev-parse", "HEAD");
+  git(repo, "update-ref", "refs/stackra/base", base);
+  git(repo, "update-ref", "refs/stackra/head", head);
+  git(
+    repo,
+    "bundle",
+    "create",
+    "-q",
+    join(input, "history.bundle"),
+    "refs/stackra/base",
+    "refs/stackra/head",
+  );
+  git(repo, "archive", "--format=tar", "-o", join(input, "src.tar"), head);
+  const r = spawnSync("sh", ["-c", gatePrepare(input, work)], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(git(work, "rev-parse", "HEAD~1"), base);
+  assert.equal(git(work, "rev-parse", "HEAD^2"), head);
+  assert.equal(git(work, "log", "--format=%s", `${base}..${head}`), "feat: pr one");
+  assert.equal(git(work, "status", "--porcelain"), "");
+  assert.equal(readFileSync(join(work, "b.txt"), "utf8"), "pr\n");
+  // main itself: one parent, no PR ref
+  const mainOnly = join(dir, "main-in");
+  mkdirSync(mainOnly);
+  git(repo, "update-ref", "-d", "refs/stackra/head");
+  git(repo, "bundle", "create", "-q", join(mainOnly, "history.bundle"), "refs/stackra/base");
+  git(repo, "archive", "--format=tar", "-o", join(mainOnly, "src.tar"), base);
+  const work2 = join(dir, "work2");
+  mkdirSync(work2);
+  assert.equal(spawnSync("sh", ["-c", gatePrepare(mainOnly, work2)]).status, 0);
+  assert.equal(git(work2, "rev-parse", "HEAD~1"), base);
+  assert.equal(spawnSync("git", ["-C", work2, "rev-parse", "-q", "--verify", "HEAD^2"]).status, 1);
+});
+
+test("spdxAllowed: AND needs every part, OR one; WITH must be listed whole; anything unparsable is refused", () => {
+  const allowed = new Set([
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "GPL-2.0-only WITH Classpath-exception-2.0",
+  ]);
+  for (const ok of [
+    "MIT",
+    "(MIT OR GPL-3.0-or-later)",
+    "MIT AND BSD-3-Clause",
+    "(BSD-3-Clause AND Apache-2.0)",
+    "GPL-3.0-only OR (MIT AND Apache-2.0)",
+    "mit or Apache-2.0".replace("mit", "MIT"),
+    "GPL-2.0-only WITH Classpath-exception-2.0",
+  ])
+    assert.equal(spdxAllowed(ok, allowed), true, ok);
+  for (const bad of [
+    "GPL-3.0-only",
+    "MIT AND GPL-2.0-or-later",
+    "Apache-2.0 AND GPL-2.0-or-later",
+    "MIT/X11",
+    "Unknown",
+    "",
+    undefined,
+    "(MIT",
+    "MIT OR",
+    "AND MIT",
+    "GPL-2.0-only WITH Other-exception",
+    "MIT Apache-2.0",
+  ])
+    assert.equal(spdxAllowed(bad, allowed), false, String(bad));
+});
+
+test("licence policy: a licence off the list fails unless a package exception names that exact licence; nothing passes vacuously", () => {
+  const policy = {
+    allow: ["MIT", "ISC"],
+    exceptions: [{ name: "uniwind-pro", licence: "UNLICENSED", reason: "held" }],
+  };
+  const listing = {
+    MIT: [{ name: "a", versions: ["1.0.0"], license: "MIT" }],
+    "(MIT OR GPL-3.0)": [{ name: "b", versions: ["2.0.0"], license: "(MIT OR GPL-3.0)" }],
+    UNLICENSED: [{ name: "uniwind-pro", versions: ["1.9.0"], license: "UNLICENSED" }],
+    "GPL-3.0-only": [{ name: "c", versions: ["3.0.0", "3.1.0"], license: "GPL-3.0-only" }],
+  };
+  assert.deepEqual(licenceViolations(listing, policy), ["c@3.0.0,3.1.0: GPL-3.0-only"]);
+  // the exception is for one package under one licence string
+  assert.deepEqual(
+    licenceViolations(
+      { UNLICENSED: [{ name: "evil", versions: ["1"], license: "UNLICENSED" }] },
+      policy,
+    ),
+    ["evil@1: UNLICENSED"],
+  );
+  assert.deepEqual(licenceViolations(listing, { allow: [] }), [
+    "the licence policy has no `allow` list",
+  ]);
+  assert.deepEqual(licenceViolations({}, policy), ["the licence listing names no package"]);
+  assert.deepEqual(licenceViolations(null, policy), ["the licence listing names no package"]);
+});
+
+test("licence policy: the check the gate runs is the tested functions' own source, and tools/policy/licences.json is a marked proposal", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-licence-"));
+  const check = join(dir, "licence-check.mjs");
+  writeFileSync(check, licenceCheckSource());
+  const policy = JSON.parse(
+    readFileSync(new URL("../../policy/licences.json", import.meta.url), "utf8"),
+  );
+  assert.equal(policy.status, "proposal");
+  assert.match(policy.$comment, /PROPOSAL for Idris/);
+  for (const core of ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"])
+    assert.ok(policy.allow.includes(core), core);
+  for (const e of policy.exceptions) assert.match(e.reason, /^PROPOSAL: /, e.name);
+  writeFileSync(join(dir, "policy.json"), JSON.stringify(policy));
+  const listing = (extra = {}) => {
+    writeFileSync(
+      join(dir, "listing.json"),
+      JSON.stringify({
+        MIT: [{ name: "a", versions: ["1"], license: "MIT" }],
+        "MIT/X11": [{ name: "chainsaw", versions: ["0.1.0"], license: "MIT/X11" }],
+        ...extra,
+      }),
+    );
+    return spawnSync(
+      process.execPath,
+      [check, join(dir, "policy.json"), join(dir, "listing.json")],
+      {
+        encoding: "utf8",
+      },
+    );
+  };
+  const ok = listing();
+  assert.equal(ok.status, 0, ok.stdout);
+  assert.match(ok.stdout, /^2 packages, every licence allowed/);
+  const bad = listing({
+    "AGPL-3.0-only": [{ name: "x", versions: ["1"], license: "AGPL-3.0-only" }],
+  });
+  assert.equal(bad.status, 1);
+  assert.match(bad.stdout, /x@1: AGPL-3\.0-only/);
+  const missing = spawnSync(
+    process.execPath,
+    [check, join(dir, "none.json"), join(dir, "listing.json")],
+    {
+      encoding: "utf8",
+    },
+  );
+  assert.equal(missing.status, 1);
+  assert.match(missing.stdout, /none\.json/);
+});
+
+test("stepSections: each step's lines and result, for display; an unfinished step says so", () => {
+  const log = [
+    "install noise",
+    "== step: lint",
+    "ok",
+    "== result: lint pass",
+    "== step: typecheck",
+    "error TS1",
+    "== result: lint pass",
+    "== result: typecheck FAIL",
+    "== step: build",
+    "killed",
+  ].join("\n");
+  assert.deepEqual(stepSections(log), [
+    { id: "lint", result: "pass", lines: ["ok"] },
+    { id: "typecheck", result: "FAIL", lines: ["error TS1", "== result: lint pass"] },
+    { id: "build", result: "unfinished", lines: ["killed"] },
+  ]);
 });
