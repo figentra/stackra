@@ -2677,6 +2677,35 @@ test("licence closures: a mobile package anywhere in another member's closure fa
   ]);
 });
 
+test("licence closures: a package or link the walk reaches without a lockfile entry fails closed, with its path", () => {
+  // pnpm writes a snapshot for every package, `{}` included: a missing one means the reader misread the file.
+  const noSnapshot = LOCK.replace("  pg-gis@0.2.15: {}\n", "");
+  assert.notEqual(noSnapshot, LOCK);
+  assert.deepEqual(closure(noSnapshot), [
+    "pnpm-lock.yaml has no snapshot for pg-gis@0.2.15 (reached via . → gis-tests@1.0.0 → pg-gis@0.2.15)",
+  ]);
+  const noLoop = LOCK.replace(
+    "  loop@1.0.0:\n    dependencies:\n      cycle: 1.0.0\n",
+    "  other@1.0.0:\n    dependencies:\n      cycle: 1.0.0\n",
+  );
+  assert.notEqual(noLoop, LOCK);
+  assert.deepEqual(closure(noLoop), [
+    "pnpm-lock.yaml has no snapshot for loop@1.0.0 (reached via packages/lib/a → cycle@1.0.0 → loop@1.0.0)",
+  ]);
+  const noImporter = LOCK.replace(
+    "  packages/lib/util:\n    devDependencies:",
+    "  packages/lib/utility:\n    devDependencies:",
+  );
+  assert.notEqual(noImporter, LOCK);
+  const lines = closure(
+    noImporter,
+    LOCK_MEMBERS.filter((m) => m.dir !== "packages/lib/util"),
+  );
+  assert.deepEqual(lines, [
+    "pnpm-lock.yaml has no importer for packages/lib/util (reached via packages/lib/a → packages/lib/util)",
+  ]);
+});
+
 test("licence closures: a lockfile without importers, or without a member, is itself a violation", () => {
   assert.deepEqual(closure(""), ["pnpm-lock.yaml lists no importers"]);
   assert.deepEqual(closure(LOCK, [...LOCK_MEMBERS, member("packages/lib/new", {})]), [

@@ -914,8 +914,10 @@ export function lockfileGraph(lockText) {
  * (no `"private": true`) production closure, which follows its `dependencies`, `optionalDependencies` and non-optional
  * peers, through workspace links (`link:`) and every snapshot's dependencies, but never devDependencies nor a peer the
  * package marks optional; a `mobile` package is never in the full closure (devDependencies included) of a member other
- * than `mobileMembers`. Each package is visited once, so a cycle ends. A lockfile without importers, or a member it
- * does not list, is itself a violation. Self-contained: the licence check file is this function's own source.
+ * than `mobileMembers`. Each package is visited once, so a cycle ends. A lockfile without importers, a member it does
+ * not list, and a package or workspace link the walk reaches without a snapshot or importer entry (pnpm writes one
+ * for every package, `{}` included, so a missing one means the reader misread the file) are themselves violations,
+ * never a shorter closure. Self-contained: the licence check file is this function's own source.
  */
 export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
   const exceptions = Array.isArray(policy?.exceptions)
@@ -955,15 +957,18 @@ export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
     if (/^(?:@[^/@(]+\/)?[^@(:/][^@(:]*@/.test(version)) return version;
     return `${name}@${version}`;
   };
+  // Null when the lockfile has no entry for `from`: the caller reports it instead of walking on.
   const edges = (from, full) => {
     if (!from.startsWith("importer:")) {
+      if (!Object.hasOwn(graph.snapshots ?? {}, from)) return null;
       const optional = graph.optionalPeers?.[from.replace(/\(.*$/, "")];
-      return Object.entries(graph.snapshots?.[from] ?? {})
+      return Object.entries(graph.snapshots[from])
         .filter(([name]) => !optional?.has(name))
         .map(([name, version]) => node(".", name, version));
     }
     const dir = from.slice(9);
-    const importer = importers[dir] ?? {};
+    if (!Object.hasOwn(importers, dir)) return null;
+    const importer = importers[dir];
     const kinds = full
       ? ["dependencies", "optionalDependencies", "devDependencies"]
       : ["dependencies", "optionalDependencies"];
@@ -984,25 +989,34 @@ export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
         );
     return next;
   };
+  const pathTo = (end, parent) => {
+    const path = [];
+    for (let at = end; at !== null; at = parent.get(at)) path.unshift(show(at));
+    return path.join(" → ");
+  };
+  // Lockfile entries the walk reached but could not find (key: the node), each with the first path that reached it.
+  const missing = new Map();
   // Breadth first from the member, so each package found is named with its shortest path.
   const reach = (dir, full, targets) => {
     const start = `importer:${dir}`;
     const parent = new Map([[start, null]]);
     const queue = [start];
     const found = new Map();
-    for (let i = 0; i < queue.length; i++)
-      for (const next of edges(queue[i], full && i === 0)) {
-        if (next === null || parent.has(next)) continue;
-        parent.set(next, queue[i]);
-        queue.push(next);
-        const name = next.startsWith("importer:") ? null : nameOf(next);
-        if (name !== null && targets.has(name) && !found.has(name)) found.set(name, next);
+    for (let i = 0; i < queue.length; i++) {
+      const next = edges(queue[i], full && i === 0);
+      if (next === null) {
+        if (!missing.has(queue[i])) missing.set(queue[i], pathTo(queue[i], parent));
+        continue;
       }
-    return [...found].map(([name, end]) => {
-      const path = [];
-      for (let at = end; at !== null; at = parent.get(at)) path.unshift(show(at));
-      return [name, path.join(" → ")];
-    });
+      for (const to of next) {
+        if (to === null || parent.has(to)) continue;
+        parent.set(to, queue[i]);
+        queue.push(to);
+        const name = to.startsWith("importer:") ? null : nameOf(to);
+        if (name !== null && targets.has(name) && !found.has(name)) found.set(name, to);
+      }
+    }
+    return [...found].map(([name, end]) => [name, pathTo(end, parent)]);
   };
   const mobileDirs = mobileMembers.map((m) => m.dir).join(" and ");
   const out = [];
@@ -1025,6 +1039,12 @@ export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
       for (const [name, path] of reach(member.dir, true, mobile))
         out.push(`${where}: ${name} (scope mobile) is installed: ${path}; only ${mobileDirs} may`);
   }
+  for (const [at, path] of missing)
+    out.push(
+      at.startsWith("importer:")
+        ? `pnpm-lock.yaml has no importer for ${at.slice(9)} (reached via ${path})`
+        : `pnpm-lock.yaml has no snapshot for ${at} (reached via ${path})`,
+    );
   return out.toSorted();
 }
 
