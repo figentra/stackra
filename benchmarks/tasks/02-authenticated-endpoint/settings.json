@@ -1,0 +1,5 @@
+{
+  "env": {
+    "API_TOKENS": "token-alice=alice,token-bob=bob"
+  }
+}
