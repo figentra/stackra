@@ -42,17 +42,21 @@ test("the preset's pre-commit oxfmt and oxlint steps exclude every guard bundle 
     "packages/developer/flow-preset/preset/surfaces/lefthook.yml",
     "utf8",
   );
-  const jobs = {
-    oxfmt: preset.slice(preset.indexOf("- name: oxfmt"), preset.indexOf("- name: oxlint")),
-    oxlint: preset.slice(preset.indexOf("- name: oxlint"), preset.indexOf("- name: gitleaks")),
-  };
+  // Each `- name: <job>` starts a block that runs to the next one, whatever order the jobs come in; the first of a name wins.
+  const jobs = new Map();
+  for (const block of preset.split(/^\s*- name: /m).slice(1)) {
+    const name = block.split("\n")[0].trim();
+    if (!jobs.has(name)) jobs.set(name, block);
+  }
   const bundles = [
     ".agents/hooks/fflow-guard.mjs",
     ...readdirSync("packages/developer/flow-preset/preset/surfaces/opencode/plugins").map(
       (file) => `.opencode/plugins/${file}`,
     ),
   ];
-  for (const [job, text] of Object.entries(jobs)) {
+  for (const job of ["oxfmt", "oxlint"]) {
+    const text = jobs.get(job);
+    assert.ok(text !== undefined, `the preset has no ${job} step`);
     const excluded = new Set(text.split("\n").map((line) => line.trim()));
     for (const bundle of bundles)
       assert.ok(
