@@ -1225,3 +1225,76 @@ describe("NativeWorkflowRunnerDriver documents and plans", () => {
     expect((await runner.find((parked as WorkflowRun).id))?.steps.at(-1)?.result).toBe("v1");
   });
 });
+
+/**
+ * A step with a 30 s heartbeat gap that only ends when it is aborted, or, when the run says it reports, reports
+ * liveness at 20 s and ends at 40 s.
+ */
+class WatchedWorkflow extends Workflow<{ readonly reports: boolean }>({}) {
+  /** How many times the step's body has started, so a test advances the fake clock only once it runs. */
+  begun = 0;
+
+  @Step<WatchedWorkflow>({ heartbeat: "30s" })
+  async watch(run: Run<this>, ctx: StepContext): Promise<string> {
+    this.begun += 1;
+    await new Promise<void>((resolve, reject) => {
+      ctx.abortSignal?.addEventListener("abort", () => {
+        reject(ctx.abortSignal?.reason);
+      });
+      if (!run.input.reports) return;
+      setTimeout(() => {
+        void ctx.heartbeat({ at: 20 });
+      }, 20_000);
+      setTimeout(resolve, 40_000);
+    });
+    return "done";
+  }
+}
+
+describe("NativeWorkflowRunnerDriver heartbeats", () => {
+  it("aborts a step that misses its heartbeat, naming the step, and compensates the run", async () => {
+    const workflow = new WatchedWorkflow();
+    const { runner } = engineWith([[WatchedWorkflow, workflow]]);
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    let outcome: unknown;
+    try {
+      const started = runner.start(WatchedWorkflow, { reports: false }, ORIGIN).then(
+        () => "returned",
+        (error: unknown) => error,
+      );
+      while (workflow.begun === 0) await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(30_000);
+      outcome = await started;
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(outcome).toBeInstanceOf(Error);
+    expect((outcome as Error).message).toBe("watch missed its heartbeat");
+    const run = await runner.last(WatchedWorkflow);
+    expect(run?.status).toBe(WorkflowRunStatus.Compensated);
+    expect(run?.steps.at(-1)).toMatchObject({ name: "watch", status: StepStatus.Failed });
+  });
+
+  it("lets a step that reports in time run past the declared gap, the report restarting the watchdog", async () => {
+    const workflow = new WatchedWorkflow();
+    const { runner } = engineWith([[WatchedWorkflow, workflow]]);
+    // clearTimeout too: a heartbeat restarts the watchdog by clearing its timer, which must be the fake one.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const started = runner.start(WatchedWorkflow, { reports: true }, ORIGIN);
+      while (workflow.begun === 0) await vi.advanceTimersByTimeAsync(0);
+      // 40 s is past the 30 s gap: without the report at 20 s the watchdog would have aborted the step at 30 s.
+      await vi.advanceTimersByTimeAsync(40_000);
+      await started;
+    } finally {
+      vi.useRealTimers();
+    }
+    const run = await runner.last(WatchedWorkflow);
+    expect(run?.status).toBe(WorkflowRunStatus.Completed);
+    expect(run?.steps.at(-1)).toMatchObject({
+      name: "watch",
+      status: StepStatus.Done,
+      result: "done",
+    });
+  });
+});
