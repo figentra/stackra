@@ -380,6 +380,12 @@ catalogs:
 overrides:
   "@mintlify/previewing>is-online": "catalog:docs"
   "is-online>public-ip": "catalog:docs"
+  # STA-2781: @contentauth/c2pa-node (every release from 0.9.10 to 0.12.2) depends on unzipper ^0.10.14, whose only
+  # release in that range pulls binary 0.3.0 and so `buffers` 0.1.1, a package with no licence anywhere (no LICENSE file,
+  # no `license` field, upstream repository gone), which the licence policy refuses. c2pa-node uses unzipper only in its
+  # postinstall, to unpack the native binding with `ParseOne()`; unzipper 0.12 keeps that call and has no `binary`. The
+  # selector names that one edge, so no other unzipper changes. Remove it once c2pa-node moves off unzipper 0.10.
+  "@contentauth/c2pa-node>unzipper": 0.12.5
   # ADR 0174 (OSV-Scanner in the Quality Gate): transitive versions with known advisories are lifted to the first fixed
   # release of the same major. Each selector names the vulnerable range only, so a parent that moves past it on its own
   # drops out of the override; remove a line once no lockfile entry matches its range. Advisories without a same-major
