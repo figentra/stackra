@@ -20,6 +20,7 @@ import { ALLOWED } from "#node/duplicate-exports/constants/allowed.constant";
 import { PENDING } from "#node/duplicate-exports/constants/pending.constant";
 import { duplicateExportFindings } from "#node/duplicate-exports/functions/duplicate-export-findings.function";
 import { duplicateExports } from "#node/duplicate-exports/functions/duplicate-exports.function";
+import { ownsAllowLists } from "#node/duplicate-exports/functions/owns-allow-lists.function";
 import { staleAllowListEntries } from "#node/duplicate-exports/functions/stale-allow-list-entries.function";
 
 /** A temp workspace: `files` maps a repository path to its text; each member gets a package.json from `members`. */
@@ -146,4 +147,35 @@ test("the shipped lists never exempt a helper stackra-224 gave one home", () => 
     assert.equal(Object.hasOwn(ALLOWED, name) || Object.hasOwn(PENDING, name), false, name);
   }
   for (const reason of Object.values(ALLOWED)) assert.ok(reason.length > 20);
+});
+
+const LISTS_FILE =
+  "packages/developer/cli/src/node/duplicate-exports/constants/pending.constant.ts";
+
+test("core's allow-lists mean nothing in another repository: a product with no duplicate has no finding", () => {
+  // A repository made with `stackra create`: no packages, no CLI source. Every shipped entry used to read as stale (84 findings).
+  const product = workspace(
+    { "apps/web": "@acme/web" },
+    { "apps/web/src/main.ts": "export const x = 1;\n" },
+  );
+  assert.equal(ownsAllowLists(product), false);
+  assert.deepEqual(duplicateExportFindings(product), []);
+  // Explicit lists still apply anywhere, as the other tests rely on.
+  assert.deepEqual(
+    duplicateExportFindings(product, {}, { Stale: "was duplicated" }).map((f) => f.text),
+    [
+      "PENDING name Stale is no longer declared in two packages: delete it from PENDING in pending.constant.ts",
+    ],
+  );
+});
+
+test("in the repository that holds the lists, the shipped ones still apply and go stale as before", () => {
+  const core = workspace(
+    { "apps/web": "@acme/web" },
+    { [LISTS_FILE]: "export const PENDING = {};\n" },
+  );
+  assert.equal(ownsAllowLists(core), true);
+  const findings = duplicateExportFindings(core);
+  assert.ok(findings.length > 0 && findings.every((f) => f.text.startsWith("PENDING name ")));
+  assert.equal(findings.length, Object.keys(PENDING).length);
 });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `duplicateExportFindings(root, allowed?, pending?)`, the duplicate-export findings of `pnpm validate`
+ * Purpose: `duplicateExportFindings(root, allowedNames?, pendingNames?)`, the duplicate-export findings of `pnpm validate`
  *          (stackra-224): one per exported name declared in two packages that neither list exempts, plus one per
  *          `PENDING` entry whose duplicate is gone, so that list only shrinks (rule-gap N-6) (moved from
  *          `tools/scripts/duplicate-exports.mjs`).
@@ -11,6 +11,7 @@
 import { ALLOWED } from "#node/duplicate-exports/constants/allowed.constant";
 import { PENDING } from "#node/duplicate-exports/constants/pending.constant";
 import { duplicateExports } from "#node/duplicate-exports/functions/duplicate-exports.function";
+import { ownsAllowLists } from "#node/duplicate-exports/functions/owns-allow-lists.function";
 import { sorted } from "#node/functions/sorted.function";
 import type { DirFinding } from "#node/types/dir-finding.type";
 
@@ -18,16 +19,20 @@ import type { DirFinding } from "#node/types/dir-finding.type";
  * The findings of the workspace at `root`.
  *
  * @param root - the workspace root.
- * @param allowed - the intended copies; `ALLOWED` by default, tests pass their own.
- * @param pending - the copies another batch removes; `PENDING` by default.
+ * @param allowedNames - the intended copies; core's `ALLOWED` in the repository that holds it, none elsewhere; tests pass their own.
+ * @param pendingNames - the copies another batch removes; core's `PENDING` in the repository that holds it, none elsewhere.
  * @example
  * duplicateExportFindings(root); // [] when every duplicate is exempt
  */
 export function duplicateExportFindings(
   root: string,
-  allowed: Readonly<Record<string, string>> = ALLOWED,
-  pending: Readonly<Record<string, string>> = PENDING,
+  allowedNames?: Readonly<Record<string, string>>,
+  pendingNames?: Readonly<Record<string, string>>,
 ): DirFinding[] {
+  // The shipped lists are core's: in another repository there is nothing for them to exempt or to call stale.
+  const owned = ownsAllowLists(root);
+  const allowed = allowedNames ?? (owned ? ALLOWED : {});
+  const pending = pendingNames ?? (owned ? PENDING : {});
   const duplicates = duplicateExports(root);
   const copies = [...duplicates]
     .filter(([exported]) => !Object.hasOwn(allowed, exported) && !Object.hasOwn(pending, exported))

@@ -12,6 +12,7 @@ import { Command, type CommandIo } from "@stackra/console";
 
 import { ALLOWED } from "#node/duplicate-exports/constants/allowed.constant";
 import { duplicateExportFindings } from "#node/duplicate-exports/functions/duplicate-export-findings.function";
+import { ownsAllowLists } from "#node/duplicate-exports/functions/owns-allow-lists.function";
 import { staleAllowListEntries } from "#node/duplicate-exports/functions/stale-allow-list-entries.function";
 import { reportFindings } from "#node/functions/report-findings.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
@@ -30,7 +31,7 @@ export class DuplicateExportsCommand extends Command({
       duplicateExportFindings(root),
       "no exported name is declared twice",
     );
-    const stale = staleAllowListEntries(root, ALLOWED, {});
+    const stale = ownsAllowLists(root) ? staleAllowListEntries(root, ALLOWED, {}) : [];
     if (stale.length > 0)
       io.output.warn(`no longer duplicated, remove from ALLOWED: ${stale.join(", ")}`);
     return code;
