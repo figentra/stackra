@@ -135,6 +135,11 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  OSV_CANARY,
+  OSV_CANARY_EVERY_MS,
+  osvCanaryArgs,
+  osvCanaryDue,
+  osvCanaryProblem,
   definitionDrift,
   PROXY_READY,
   exceptionScopeViolations,
@@ -152,7 +157,7 @@ import {
   spdxAllowed,
   stepSections,
 } from "../stackra-verify.mjs";
-import { VERIFY_APP } from "../pr-merge.mjs";
+import { VERIFY_APP, isVerifyOverlay } from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const BASE = "fedcba9876543210fedcba9876543210fedcba98";
@@ -503,6 +508,65 @@ test("childLine: a follower that cannot start rejects with its error, never an u
     stdio: ["ignore", "pipe", "ignore"],
   });
   assert.equal(await childLine(ok, PROXY_READY, 60_000), "stackra-proxy listening on 3128");
+});
+
+test("OSV canary: only exit 1 naming the canary's advisory proves the offline database; anything else refuses it", () => {
+  const id = OSV_CANARY.advisory;
+  assert.equal(id, "GHSA-35jh-r3h4-6jhm");
+  assert.equal(
+    osvCanaryProblem({ code: 1, stdout: `| https://osv.dev/${id} | lodash | 4.17.20 |` }),
+    null,
+  );
+  assert.match(
+    osvCanaryProblem({ code: 1, stdout: "| GHSA-other | lodash |" }),
+    /without naming GHSA-35jh-r3h4-6jhm/,
+  );
+  assert.match(
+    osvCanaryProblem({ code: 0, stdout: `No issues found (${id} not here)` }),
+    /found nothing/,
+  );
+  assert.match(osvCanaryProblem({ code: 127, stdout: id }), /did not run \(exit 127\)/);
+  assert.match(osvCanaryProblem({ code: null, stdout: "" }), /did not run \(exit none\)/);
+  // the fixture locks the vulnerable version, under a name no dependency scanner reads as a lockfile
+  const fixture = readFileSync(new URL("../osv-canary.lock.yaml", import.meta.url), "utf8");
+  assert.match(fixture, /^  lodash@4\.17\.20:$/m);
+  assert.equal(OSV_CANARY.file, "tools/scripts/osv-canary.lock.yaml");
+  assert.equal(isVerifyOverlay(OSV_CANARY.file), true);
+});
+
+test("OSV canary: runs at a new database (mtime or size) and a day after its last pass; offline in the store image", () => {
+  const now = Date.parse("2026-11-24T12:00:00Z");
+  const db = { mtimeMs: 1000, size: 5 };
+  assert.equal(osvCanaryDue(undefined, db, now), true);
+  assert.equal(osvCanaryDue({ mtimeMs: 1000, size: 5, at: now - 60_000 }, db, now), false);
+  assert.equal(osvCanaryDue({ mtimeMs: 999, size: 5, at: now - 60_000 }, db, now), true);
+  assert.equal(osvCanaryDue({ mtimeMs: 1000, size: 6, at: now - 60_000 }, db, now), true);
+  assert.equal(
+    osvCanaryDue({ mtimeMs: 1000, size: 5, at: now - OSV_CANARY_EVERY_MS }, db, now),
+    true,
+  );
+  assert.equal(osvCanaryDue({ mtimeMs: 1000, size: 5, at: now + 60_000 }, db, now), true);
+  const argv = osvCanaryArgs(S, {
+    name: "c",
+    image: "store",
+    envFile: ENV,
+    osvDir: "/osv-db",
+    lockfile: "/runs/x/osv-canary-lock.yaml",
+  });
+  assert.equal(argv[argv.indexOf("--network") + 1], "none");
+  assert.ok(argv.includes("/osv-db:/osv:ro"));
+  assert.ok(argv.includes("/runs/x/osv-canary-lock.yaml:/canary/pnpm-lock.yaml:ro"));
+  assert.ok(argv.includes("OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY=/osv"));
+  assert.deepEqual(argv.slice(argv.indexOf("store")), [
+    "store",
+    "osv-scanner",
+    "scan",
+    "source",
+    "--offline",
+    "--lockfile=pnpm-lock.yaml",
+  ]);
+  // the same command the gate's dependency-scan step runs
+  assert.equal(GATE_STEPS[0].run, "osv-scanner scan source --offline --lockfile=pnpm-lock.yaml");
 });
 
 test("egress probe: metadata, docker0, the host-loopback gateway and every host address on the service ports", () => {

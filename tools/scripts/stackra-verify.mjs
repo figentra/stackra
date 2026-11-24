@@ -1726,6 +1726,66 @@ export const osvDbPath = (dir) => join(dir, "osv-scalibr", "npm", "all.zip");
 export const OSV_REFRESH_MS = 6 * 60 * 60 * 1000;
 
 /**
+ * The OSV canary (review of #1043, MEDIUM 4): a lockfile that locks lodash 4.17.20, whose command injection advisory
+ * GHSA-35jh-r3h4-6jhm (CVE-2021-23337, fixed in 4.17.21) every OSV npm database since 2021 carries. Committed as
+ * `tools/scripts/osv-canary.lock.yaml` (not a lockfile name, so no dependency scanner reads it) and scanned as
+ * `pnpm-lock.yaml` exactly as the gate scans: osv-scanner offline, `--network none`, in the store image, over the
+ * mounted database. A database it cannot find the advisory in is refused: a service error, never a green scan.
+ */
+export const OSV_CANARY = Object.freeze({
+  file: "tools/scripts/osv-canary.lock.yaml",
+  advisory: "GHSA-35jh-r3h4-6jhm",
+  package: "lodash@4.17.20",
+});
+/** The canary runs again after this long even when the database file has not changed (a database swapped in place). */
+export const OSV_CANARY_EVERY_MS = 24 * 60 * 60 * 1000;
+
+/** Whether the canary must run: a database it has not passed (by mtime and size), or a day since it last did. */
+export const osvCanaryDue = (last, db, now) =>
+  !last ||
+  last.mtimeMs !== db.mtimeMs ||
+  last.size !== db.size ||
+  !(now - last.at >= 0 && now - last.at < OSV_CANARY_EVERY_MS);
+
+/**
+ * Why a canary scan (`{ code, stdout }` of the container) does not prove the database, or null when it does: the
+ * scan must fail (osv-scanner exits 1 when it finds vulnerabilities) and name the canary's advisory.
+ */
+export function osvCanaryProblem({ code, stdout }, advisory = OSV_CANARY.advisory) {
+  if (code === 0)
+    return `the OSV canary found nothing: the offline database does not know ${advisory}`;
+  if (code !== 1) return `the OSV canary did not run (exit ${code ?? "none"})`;
+  if (!String(stdout ?? "").includes(advisory))
+    return `the OSV canary failed without naming ${advisory}: the offline database is not the one the gate needs`;
+  return null;
+}
+
+/** The canary container: the store image, no network, the database and the canary lockfile read-only. */
+export const osvCanaryArgs = (s, { name, image, envFile, osvDir, lockfile }) => [
+  "run",
+  "--rm",
+  "--name",
+  name,
+  "--network",
+  "none",
+  ...containerLimits(s, envFile),
+  "--env",
+  `OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY=${OSV_MOUNT}`,
+  "--volume",
+  `${osvDir}:${OSV_MOUNT}:ro`,
+  "--volume",
+  `${lockfile}:/canary/pnpm-lock.yaml:ro`,
+  "--workdir",
+  "/canary",
+  image,
+  "osv-scanner",
+  "scan",
+  "source",
+  "--offline",
+  "--lockfile=pnpm-lock.yaml",
+];
+
+/**
  * Why the offline OSV database may not be used (missing, from the future, or older than `maxAgeMs`), or null. A run
  * without a fresh database is a service error (retried, then `neutral`), never a green dependency scan.
  */
@@ -3612,10 +3672,10 @@ function isZip(path) {
 
 /**
  * The offline OSV database the gate mounts read-only: refreshed by this process when older than OSV_REFRESH_MS
- * (readable by the verify user's Docker, 0755 / 0644), and refused (an error, never a pass) when missing or older
- * than STACKRA_VERIFY_OSV_MAX_AGE_H.
+ * (readable by the verify user's Docker, 0755 / 0644), and refused (an error, never a pass) when missing, older than
+ * STACKRA_VERIFY_OSV_MAX_AGE_H, or failing the OSV canary (OSV_CANARY) at a new database or a day after its last pass.
  */
-async function ensureOsvDb(s) {
+async function ensureOsvDb(s, { store, envFile, runDir, state }) {
   const path = osvDbPath(s.osvDir);
   const mtime = () => {
     try {
@@ -3644,6 +3704,37 @@ async function ensureOsvDb(s) {
   }
   const problem = osvDbProblem(mtime(), Date.now(), s.osvMaxAgeMs);
   if (problem) throw new Error(problem);
+  // At each new database and once a day: the canary proves osv-scanner reads this database the way the gate does.
+  const db = statSync(path);
+  const last = state.osvCanary;
+  if (!osvCanaryDue(last, db, Date.now())) return;
+  const lockfile = join(runDir, "osv-canary-lock.yaml");
+  writeFileSync(
+    lockfile,
+    readFileSync(join(dirname(fileURLToPath(import.meta.url)), "osv-canary.lock.yaml")),
+    {
+      mode: 0o644,
+    },
+  );
+  const r = docker(
+    s,
+    osvCanaryArgs(s, {
+      name: `sv-osv-canary-${Date.now().toString(36)}`,
+      image: store,
+      envFile,
+      osvDir: s.osvDir,
+      lockfile,
+    }),
+    { timeout: 10 * 60_000 },
+  );
+  const canary = osvCanaryProblem(r);
+  if (canary) {
+    delete state.osvCanary;
+    writeState(s, state);
+    throw new Error(canary);
+  }
+  state.osvCanary = { mtimeMs: db.mtimeMs, size: db.size, at: Date.now() };
+  writeState(s, state);
 }
 
 /**
@@ -3896,8 +3987,8 @@ export async function verify(s, job) {
     // The gate: the store image and a fresh OSV database, never a licensed build. Mobile: the licensed image, whose
     // failure is stackra/verify-mobile's alone (marked `licence`).
     storeImage: async () => {
-      if (kind === "gate") await ensureOsvDb(s);
       const store = await ensureStore(s, deps.mirror, job.base, runDir, state);
+      if (kind === "gate") await ensureOsvDb(s, { store, envFile, runDir, state });
       if (kind === "codeql") deps.codeqlDir = await ensureCodeql(s);
       if (kind !== "mobile") return store;
       try {
