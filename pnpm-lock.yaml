@@ -659,8 +659,8 @@ catalogs:
       version: 41.26.0
   quality:
     '@vitest/coverage-v8':
-      specifier: 5.0.3
-      version: 5.0.3
+      specifier: 5.0.5
+      version: 5.0.5
     fake-indexeddb:
       specifier: 6.2.5
       version: 6.2.5
@@ -877,7 +877,7 @@ importers:
         version: 8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       wrangler:
         specifier: catalog:deploy
         version: 4.148.0(@types/node@26.6.4)
@@ -1184,7 +1184,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   apps/playground:
     dependencies:
@@ -1335,7 +1335,7 @@ importers:
         version: 8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/application/achievements:
     dependencies:
@@ -1408,7 +1408,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -1423,7 +1423,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/application/actions:
     dependencies:
@@ -1472,7 +1472,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -1487,7 +1487,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/application/ai:
     dependencies:
@@ -1563,7 +1563,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -1587,7 +1587,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/application/clients:
     dependencies:
@@ -1657,7 +1657,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -1681,7 +1681,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/application/registry:
     dependencies:
@@ -1715,7 +1715,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -1730,7 +1730,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       yaml:
         specifier: 'catalog:'
         version: 2.9.1
@@ -1818,7 +1818,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -1842,7 +1842,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/application/segments:
     dependencies:
@@ -1912,7 +1912,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -1927,7 +1927,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/fiscal:
     dependencies:
@@ -1970,7 +1970,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -1985,7 +1985,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/ledger:
     dependencies:
@@ -2028,7 +2028,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -2043,7 +2043,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/loyalty-kit:
     dependencies:
@@ -2158,7 +2158,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -2185,7 +2185,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/money:
     dependencies:
@@ -2219,7 +2219,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -2234,7 +2234,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/payments:
     dependencies:
@@ -2304,7 +2304,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -2328,7 +2328,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/pricing:
     dependencies:
@@ -2380,7 +2380,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -2404,7 +2404,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/shipping:
     dependencies:
@@ -2441,7 +2441,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -2456,7 +2456,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/communication/integrations:
     dependencies:
@@ -2517,7 +2517,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -2532,7 +2532,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -2614,7 +2614,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -2641,7 +2641,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/communication/versioning:
     dependencies:
@@ -2681,7 +2681,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -2696,7 +2696,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -2775,7 +2775,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -2790,7 +2790,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/cross-cutting/analytics:
     dependencies:
@@ -2860,7 +2860,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -2887,7 +2887,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/cross-cutting/seo:
     dependencies:
@@ -2936,7 +2936,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -2951,7 +2951,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/assets:
     dependencies:
@@ -2994,7 +2994,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3015,7 +3015,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/content:
     dependencies:
@@ -3067,7 +3067,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3082,7 +3082,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/data-maintenance:
     dependencies:
@@ -3149,7 +3149,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3164,7 +3164,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/data-transfer:
     dependencies:
@@ -3210,7 +3210,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3225,7 +3225,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       yaml:
         specifier: 'catalog:'
         version: 2.9.1
@@ -3307,7 +3307,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3325,7 +3325,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/documents:
     dependencies:
@@ -3383,7 +3383,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3398,7 +3398,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/filesystem:
     dependencies:
@@ -3447,7 +3447,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       electron:
         specifier: catalog:desktop
         version: 44.9.1(supports-color@10.2.2)
@@ -3468,7 +3468,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/media:
     dependencies:
@@ -3538,7 +3538,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3559,7 +3559,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/model:
     dependencies:
@@ -3599,7 +3599,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3614,7 +3614,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/reports:
     dependencies:
@@ -3663,7 +3663,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3678,7 +3678,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/search:
     dependencies:
@@ -3739,7 +3739,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3754,7 +3754,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/state-machine:
     dependencies:
@@ -3797,7 +3797,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3812,7 +3812,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/data/storage:
     dependencies:
@@ -3855,7 +3855,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       electron:
         specifier: catalog:desktop
         version: 44.9.1(supports-color@10.2.2)
@@ -3885,7 +3885,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/design-system/branding:
     dependencies:
@@ -3943,7 +3943,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -3958,7 +3958,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/design-system/icons:
     dependencies:
@@ -4001,7 +4001,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -4037,7 +4037,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/design-system/showcase:
     dependencies:
@@ -4059,7 +4059,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4077,7 +4077,7 @@ importers:
         version: typescript@6.0.3
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/design-system/tokens:
     dependencies:
@@ -4111,7 +4111,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4126,7 +4126,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/design-system/ui:
     dependencies:
@@ -4226,7 +4226,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo-blur:
         specifier: catalog:mobile
         version: 57.0.3(expo@57.0.30)(react-native@0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)
@@ -4319,7 +4319,7 @@ importers:
         version: 8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/brand-kit:
     dependencies:
@@ -4353,7 +4353,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4368,7 +4368,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/cli:
     dependencies:
@@ -4426,7 +4426,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4441,7 +4441,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/coding-standard:
     devDependencies:
@@ -4462,7 +4462,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4477,7 +4477,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/console:
     dependencies:
@@ -4520,7 +4520,7 @@ importers:
         version: 19.3.0
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4535,7 +4535,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/devtools-kit:
     dependencies:
@@ -4566,7 +4566,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4581,7 +4581,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/flow-preset:
     devDependencies:
@@ -4642,7 +4642,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4654,7 +4654,7 @@ importers:
         version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/mcp:
     dependencies:
@@ -4688,7 +4688,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4703,7 +4703,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/renderers:
     dependencies:
@@ -4734,7 +4734,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4749,7 +4749,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/repo-checks:
     dependencies:
@@ -4780,7 +4780,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4795,7 +4795,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/runway:
     dependencies:
@@ -4847,7 +4847,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4862,7 +4862,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/skills:
     dependencies:
@@ -4893,7 +4893,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -4908,7 +4908,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/testing:
     devDependencies:
@@ -4947,7 +4947,7 @@ importers:
         version: 19.3.0
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -4977,7 +4977,7 @@ importers:
         version: 8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/developer/vite-plugin:
     dependencies:
@@ -5029,7 +5029,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -5047,7 +5047,7 @@ importers:
         version: 8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/builder:
     dependencies:
@@ -5120,7 +5120,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -5144,7 +5144,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       yjs:
         specifier: 'catalog:'
         version: 13.6.33
@@ -5235,7 +5235,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -5259,7 +5259,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       yjs:
         specifier: 'catalog:'
         version: 13.6.33
@@ -5332,7 +5332,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -5356,7 +5356,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/native-card-terminal:
     dependencies:
@@ -5393,7 +5393,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -5411,7 +5411,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/native-cash-drawer:
     dependencies:
@@ -5445,7 +5445,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -5463,7 +5463,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/native-customer-display:
     dependencies:
@@ -5497,7 +5497,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -5515,7 +5515,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/native-receipt-printer:
     dependencies:
@@ -5549,7 +5549,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -5567,7 +5567,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/native-scale:
     dependencies:
@@ -5613,7 +5613,7 @@ importers:
         version: 19.3.0
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -5631,7 +5631,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/native-share:
     dependencies:
@@ -5680,7 +5680,7 @@ importers:
         version: 19.3.0
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -5713,7 +5713,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/native-spotlight:
     dependencies:
@@ -5753,7 +5753,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -5771,7 +5771,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/navigation:
     dependencies:
@@ -5859,7 +5859,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       heroui-native:
         specifier: catalog:mobile
         version: 1.0.10(4002db31373b22bf1e77d750a595ffd9)
@@ -5907,7 +5907,7 @@ importers:
         version: 1.12.1(@expo/metro-config@57.0.13(expo@57.0.30)(supports-color@10.2.2)(typescript@7.0.2))(metro-cache@0.87.1(supports-color@10.2.2))(metro-transform-worker@0.87.1(supports-color@10.2.2))(metro@0.87.1(supports-color@10.2.2))(react-native@0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(tailwindcss@4.3.3)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/panel:
     dependencies:
@@ -6022,7 +6022,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -6052,7 +6052,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/peripherals:
     dependencies:
@@ -6098,7 +6098,7 @@ importers:
         version: 19.3.0
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       electron:
         specifier: catalog:desktop
         version: 44.9.1(supports-color@10.2.2)
@@ -6116,7 +6116,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/platform:
     dependencies:
@@ -6180,7 +6180,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       electron:
         specifier: catalog:desktop
         version: 44.9.1(supports-color@10.2.2)
@@ -6249,7 +6249,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/shortcuts:
     dependencies:
@@ -6295,7 +6295,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -6319,7 +6319,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/calendar:
     dependencies:
@@ -6356,7 +6356,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6371,7 +6371,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/config:
     dependencies:
@@ -6417,7 +6417,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6438,7 +6438,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/container:
     dependencies:
@@ -6469,7 +6469,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6490,7 +6490,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/contracts:
     devDependencies:
@@ -6511,7 +6511,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6526,7 +6526,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/errors:
     dependencies:
@@ -6569,7 +6569,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6590,7 +6590,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/events:
     dependencies:
@@ -6621,7 +6621,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6636,7 +6636,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -6697,7 +6697,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo-constants:
         specifier: catalog:mobile
         version: 57.0.22(expo@57.0.30)(react-native@0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(supports-color@10.2.2)
@@ -6736,7 +6736,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/logger:
     dependencies:
@@ -6773,7 +6773,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6788,7 +6788,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/market-packs:
     dependencies:
@@ -6837,7 +6837,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6852,7 +6852,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/support:
     devDependencies:
@@ -6873,7 +6873,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6888,7 +6888,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/transport:
     dependencies:
@@ -6916,7 +6916,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       expo:
         specifier: catalog:mobile
         version: 57.0.30(@babel/core@7.29.7(supports-color@10.2.2))(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)(supports-color@10.2.2)(typescript@7.0.2)
@@ -6934,7 +6934,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/foundation/validation:
     dependencies:
@@ -6965,7 +6965,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -6980,7 +6980,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-aws:
     dependencies:
@@ -7026,7 +7026,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7041,7 +7041,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-aws-runtime:
     dependencies:
@@ -7093,7 +7093,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7108,7 +7108,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-cloudflare:
     dependencies:
@@ -7154,7 +7154,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7169,7 +7169,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-gcp:
     dependencies:
@@ -7215,7 +7215,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7230,7 +7230,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-github:
     dependencies:
@@ -7276,7 +7276,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7291,7 +7291,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-identity:
     dependencies:
@@ -7340,7 +7340,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7355,7 +7355,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-mobile:
     dependencies:
@@ -7401,7 +7401,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7416,7 +7416,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-observability:
     dependencies:
@@ -7471,7 +7471,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7486,7 +7486,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-testbed:
     dependencies:
@@ -7520,7 +7520,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7535,7 +7535,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/infrastructure/infra-tools:
     dependencies:
@@ -7572,7 +7572,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7587,7 +7587,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/app:
     dependencies:
@@ -7672,7 +7672,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       electron:
         specifier: catalog:desktop
         version: 44.9.1(supports-color@10.2.2)
@@ -7708,7 +7708,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/cache:
     dependencies:
@@ -7751,7 +7751,7 @@ importers:
         version: link:../../tooling/vitest
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7766,7 +7766,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/devices:
     dependencies:
@@ -7818,7 +7818,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7833,7 +7833,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/locking:
     dependencies:
@@ -7882,7 +7882,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7897,7 +7897,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/outbox:
     dependencies:
@@ -7961,7 +7961,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -7976,7 +7976,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/queue:
     dependencies:
@@ -8028,7 +8028,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -8043,7 +8043,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/realtime:
     dependencies:
@@ -8104,7 +8104,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -8128,7 +8128,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/sandbox:
     dependencies:
@@ -8165,7 +8165,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -8180,7 +8180,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/scheduler:
     dependencies:
@@ -8235,7 +8235,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -8250,7 +8250,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/runtime/workflow:
     dependencies:
@@ -8326,7 +8326,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -8341,7 +8341,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/access-log:
     dependencies:
@@ -8417,7 +8417,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -8432,7 +8432,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/consent:
     dependencies:
@@ -8502,7 +8502,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -8526,7 +8526,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/csp:
     dependencies:
@@ -8563,7 +8563,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -8587,7 +8587,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/entitlements:
     dependencies:
@@ -8639,7 +8639,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -8663,7 +8663,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/iam:
     dependencies:
@@ -8730,7 +8730,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -8754,7 +8754,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/identity:
     dependencies:
@@ -8857,7 +8857,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       electron:
         specifier: catalog:desktop
         version: 44.9.1(supports-color@10.2.2)
@@ -8896,7 +8896,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/licensing:
     dependencies:
@@ -8942,7 +8942,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -8957,7 +8957,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/privacy:
     dependencies:
@@ -9030,7 +9030,7 @@ importers:
         version: 26.6.4
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -9045,7 +9045,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/scope:
     dependencies:
@@ -9124,7 +9124,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -9148,7 +9148,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/tenancy:
     dependencies:
@@ -9227,7 +9227,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -9254,7 +9254,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/state/coordinator:
     dependencies:
@@ -9285,7 +9285,7 @@ importers:
         version: 19.3.0
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -9303,7 +9303,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/state/feature-flags:
     dependencies:
@@ -9346,7 +9346,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -9367,7 +9367,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/state/query:
     dependencies:
@@ -9434,7 +9434,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -9455,7 +9455,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/state/settings:
     dependencies:
@@ -9531,7 +9531,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -9558,7 +9558,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/state/state:
     dependencies:
@@ -9607,7 +9607,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -9631,7 +9631,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/state/theming:
     dependencies:
@@ -9692,7 +9692,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
@@ -9719,7 +9719,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/tooling/commitlint:
     dependencies:
@@ -9744,7 +9744,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/tooling/oxlint:
     dependencies:
@@ -9766,7 +9766,7 @@ importers:
         version: 1.86.0
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/tooling/tsdown:
     dependencies:
@@ -9791,7 +9791,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/tooling/typescript:
     devDependencies:
@@ -9803,19 +9803,19 @@ importers:
         version: 1.86.0
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/tooling/vitest:
     dependencies:
       '@vitest/coverage-v8':
         specifier: catalog:quality
-        version: 5.0.3(vitest@5.0.5)
+        version: 5.0.5(vitest@5.0.5)
       jsdom:
         specifier: catalog:frontend
         version: 30.1.0(@noble/hashes@1.8.0)
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
     devDependencies:
       '@stackra/typescript-config':
         specifier: workspace:*
@@ -9944,7 +9944,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       wrangler:
         specifier: catalog:deploy
         version: 4.148.0(@types/node@26.6.4)
@@ -9983,7 +9983,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       wrangler:
         specifier: catalog:deploy
         version: 4.148.0(@types/node@26.6.4)
@@ -10019,7 +10019,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       wrangler:
         specifier: catalog:deploy
         version: 4.148.0(@types/node@26.6.4)
@@ -10055,7 +10055,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: catalog:quality
-        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       wrangler:
         specifier: catalog:deploy
         version: 4.148.0(@types/node@26.6.4)
@@ -15026,11 +15026,11 @@ packages:
       oxc-transform-react:
         optional: true
 
-  '@vitest/coverage-v8@5.0.3':
-    resolution: {integrity: sha512-+klsyz7BvT1vCU28Zkfzms1Ia78XD0V41U3FUtRaa3S+vOr/EXvK1O6BvVD7l1RzEjm6SONR2aybOvDDf9u0mQ==}
+  '@vitest/coverage-v8@5.0.5':
+    resolution: {integrity: sha512-4KpkGdIrSqBihx/JyP/e+S+IKB98etg1XDQiLAxksLfcShnwi1VReGeOT9NI43hLHbknosKp/1CCLn9Zgcs8mg==}
     peerDependencies:
-      '@vitest/browser': 5.0.3
-      vitest: 5.0.3
+      '@vitest/browser': 5.0.5
+      vitest: 5.0.5
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -18995,10 +18995,6 @@ packages:
     resolution: {integrity: sha512-nK28WOo+QIjBkDduTINE4JkF/UJJKyf2EJxvJKfblDpyg0Q+pkOHNTL0Qwy6NP6FhE/EnzV73BxxqcJaXY9anw==}
     engines: {node: '>= 0.4'}
 
-  obug@2.2.1:
-    resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
-    engines: {node: '>=12.20.0'}
-
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
     engines: {node: '>=12.20.0'}
@@ -21362,22 +21358,27 @@ packages:
   yuku-analyzer@0.19.0:
     resolution: {integrity: sha512-Iu7DV5cWOQ3ERSA7oBquz/RT5IEGsUyUeCivYs9lQaZ4nSjM31yD17mH616JKcTyVoVWYivsFZ+twT3UyBosTA==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-ast@0.19.0:
     resolution: {integrity: sha512-PyCsiScaelhxBGzL8dyeJkLqvRZycoh78R31Vrt/WqYrm0hMFoKwIw/X7Dx5mBKLWAMlV9I9HEyBOHnj2gZVyw==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-codegen@0.19.0:
     resolution: {integrity: sha512-uymAKHjDuaP4BEpkXC/BSLz4DUEF5oArZ5AuD3888nb2miChjWSgpPdojEJxm3pjpXkgUaCRJQyNAbnMN33wHg==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-core@0.19.0:
     resolution: {integrity: sha512-kYK9e1XdfirNhkipzW0wmMcSWcVF/CWnuugodfVYRCUwvoBefweL9HzB96OiKEhsx78V5WbUxbJqlizMX869Qg==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-parser@0.19.0:
     resolution: {integrity: sha512-XrBh9ZiQK5mJVRxZBAvD6LwRyAYrK3MFtH3+onyuxFL5hFD44EC3QOmIC1FjTj6H2MMwq46/NAI+NZxLZPZgxg==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   zbsearch@4.0.2:
     resolution: {integrity: sha512-ma4P7eyXSX5kNPU7yJvCyqa/X8E8aA90Fyd/vMz2K2wFhb4i+Yw1Qezo8/X8hNVzot3+oq5XmwgMcKcFgMOz4Q==}
@@ -28419,17 +28420,17 @@ snapshots:
     optionalDependencies:
       babel-plugin-react-compiler: 1.0.0
 
-  '@vitest/coverage-v8@5.0.3(vitest@5.0.5)':
+  '@vitest/coverage-v8@5.0.5(vitest@5.0.5)':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/istanbul-lib-coverage': 1.0.2
       '@vitest/istanbul-lib-report': 1.0.2
       ast-v8-to-istanbul: 1.0.7
       magicast: 0.5.5
-      obug: 2.2.1
+      obug: 3.0.0
       std-env: 4.3.0
       tinyrainbow: 3.2.0
-      vitest: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      vitest: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   '@vitest/istanbul-lib-coverage@1.0.2': {}
 
@@ -34109,8 +34110,6 @@ snapshots:
       has-symbols: 1.1.0
       object-keys: 1.1.1
 
-  obug@2.2.1: {}
-
   obug@3.0.0: {}
 
   on-finished@2.3.0:
@@ -36873,7 +36872,7 @@ snapshots:
       terser: 5.51.2
       yaml: 2.9.1
 
-  vitest@5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)):
+  vitest@5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.5)(jsdom@30.1.0(@noble/hashes@1.8.0))(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/mocker': 5.0.5(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -36892,7 +36891,7 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.10.0
       '@types/node': 26.6.4
-      '@vitest/coverage-v8': 5.0.3(vitest@5.0.5)
+      '@vitest/coverage-v8': 5.0.5(vitest@5.0.5)
       jsdom: 30.1.0(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - msw
