@@ -22,13 +22,14 @@ import { Driver } from "@stackra/container";
 import { Revision } from "@stackra/content/node";
 import { ActorKind, Realm } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
-import { CrudService, Database, registerModelPartners } from "@stackra/database";
-import { isRefusal } from "@stackra/errors";
+import { CrudService, Database, registerModelPartners, UniqueViolation } from "@stackra/database";
+import { isRefusal, NotFoundError } from "@stackra/errors";
 import { DomainEvent } from "@stackra/events";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import {
+  AutomationChangedError,
   AutomationExceedsPublisherError,
   AutomationInvalidError,
   AutomationNotDryRunError,
@@ -511,5 +512,71 @@ describe("AutomationService automation quota", () => {
     await expect(quota.check(SCOPE, "wfa_01j9z3k4m5n6p7q8r9s0t1v2w3")).resolves.toBe(
       AutomationQuotaAnswer.Allow,
     );
+  });
+});
+
+describe("AutomationService reads, races and empty answers", () => {
+  it("reads a revision by number, or the published one", async () => {
+    const automation = storedAutomation({ publishedRevision: 2 });
+    connect(
+      [automation],
+      [storedRevision(automation, 2, { document: { ...DOCUMENT, version: 2 } })],
+    );
+    const service = serviceOf();
+    expect(await service.revision(automation.id)).toMatchObject({
+      number: 2,
+      document: { ...DOCUMENT, version: 2 },
+    });
+    expect(await service.revision(automation.id, 2)).toMatchObject({ number: 2 });
+  });
+
+  it("refuses a revision nobody published, and a number that does not exist, as not found", async () => {
+    // A draft revision exists, but none is published: the published one is what a read without a number asks for.
+    const unpublished = storedAutomation({ publishedRevision: null });
+    connect(
+      [unpublished],
+      [storedRevision(unpublished, 1, { document: { ...DOCUMENT, version: 1 } })],
+    );
+    const none = await serviceOf()
+      .revision(unpublished.id)
+      .catch((error: unknown) => error);
+    expect(isRefusal(none, NotFoundError)).toBe(true);
+
+    const live = storedAutomation({ publishedRevision: 1 });
+    connect([live], []);
+    const missing = await serviceOf()
+      .revision(live.id, 7)
+      .catch((error: unknown) => error);
+    expect(isRefusal(missing, NotFoundError)).toBe(true);
+  });
+
+  it("answers nothing for a trigger no published automation has, and skips one with no principal", async () => {
+    connect([]);
+    expect(await serviceOf().triggered("orders.order_paid")).toEqual([]);
+
+    const orphan = storedAutomation({
+      publishedRevision: 1,
+      principal: null,
+      trigger: "orders.order_paid",
+    });
+    connect([orphan], [storedRevision(orphan, 1, { document: { ...DOCUMENT, version: 1 } })]);
+    expect(await serviceOf().triggered("orders.order_paid")).toEqual([]);
+  });
+
+  it("refuses a draft that races another for the same revision number as changed, not as a database error", async () => {
+    const automation = storedAutomation();
+    const { em } = connect([automation], [storedRevision(automation, 1, {})]);
+    em.flush.mockRejectedValue(
+      new UniqueViolation(Object.assign(new Error("duplicate key"), { code: "23505" })),
+    );
+    const raced = await serviceOf()
+      .draft(automation.id, DOCUMENT)
+      .catch((error: unknown) => error);
+    expect(isRefusal(raced, AutomationChangedError)).toBe(true);
+
+    // Any other failure of the write is not hidden behind that refusal.
+    em.flush.mockReset();
+    em.flush.mockRejectedValue(new Error("connection lost"));
+    await expect(serviceOf().draft(automation.id, DOCUMENT)).rejects.toThrow("connection lost");
   });
 });
