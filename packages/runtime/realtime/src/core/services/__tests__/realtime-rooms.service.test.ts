@@ -58,6 +58,25 @@ function peer() {
   };
 }
 
+/** A socket that records what it is sent and how it is closed, and keeps its listeners to call by hand. */
+function fakeSocket() {
+  const listeners: Record<string, (event: { readonly data: unknown }) => void> = {};
+  const sent: string[] = [];
+  const closed: unknown[][] = [];
+  const socket: RoomSocket = {
+    send: (data) => {
+      sent.push(data);
+    },
+    close: (...args) => {
+      closed.push(args);
+    },
+    addEventListener: (type: string, listener: (event: { readonly data: unknown }) => void) => {
+      listeners[type] = listener;
+    },
+  };
+  return { socket, listeners, sent, closed };
+}
+
 function roomsOf(rooms: Record<string, number | boolean> = {}) {
   const fanout = new LocalRealtimeFanoutDriver();
   const published: FanoutMessage[] = [];
@@ -348,5 +367,61 @@ describe(RealtimeRooms, () => {
     const { rooms: alone } = roomsOf({ countAcrossInstances: false });
     alone.receive({ kind: "room-members", room: "ten_1:pag_1", origin: "another", members: 2 });
     expect(alone.join(alone.issueToken(grant("usr_a")).token, peer())).toBeDefined();
+  });
+
+  it("closes a socket that asks into a full room with 4429, and joins none", () => {
+    const { rooms } = roomsOf({ maxMembers: 1 });
+    rooms.join(rooms.issueToken(grant("usr_a")).token, peer());
+    const { socket, closed, sent } = fakeSocket();
+    expect(rooms.accept(socket, roomUrl(rooms.issueToken(grant("usr_b")).token))).toBe(false);
+    expect(closed).toEqual([[4429, "room_limit_reached"]]);
+    expect(sent).toEqual([]);
+    expect(rooms.size("ten_1:pag_1")).toBe(1);
+  });
+
+  it("ignores a binary frame and a frame that is not a publish, and still relays a real one", () => {
+    const { rooms } = roomsOf();
+    const other = peer();
+    rooms.join(rooms.issueToken(grant("usr_o")).token, other);
+    const { socket, listeners } = fakeSocket();
+    expect(rooms.accept(socket, roomUrl(rooms.issueToken(grant("usr_s")).token))).toBe(true);
+    const heard = other.frames.length;
+
+    listeners["message"]?.({ data: new Uint8Array([1, 2, 3]) });
+    listeners["message"]?.({ data: JSON.stringify(null) });
+    listeners["message"]?.({ data: JSON.stringify({ t: "shout", data: 1 }) });
+    listeners["message"]?.({ data: JSON.stringify({ t: "presence" }) });
+    expect(other.frames).toHaveLength(heard);
+
+    listeners["message"]?.({ data: JSON.stringify({ t: "presence", data: { cursor: 3 } }) });
+    expect(other.frames).toHaveLength(heard + 1);
+    expect(other.frames.at(-1)).toMatchObject({ t: "presence" });
+  });
+
+  it("lets a member publish again once the one-second rate window has passed", () => {
+    const { rooms } = roomsOf();
+    const carol = rooms.join(rooms.issueToken(grant("usr_c")).token, peer());
+    for (let n = 0; n < 3; n += 1) carol?.publish({ t: "presence", data: {} });
+    vi.advanceTimersByTime(1000);
+    // A new window: three more are allowed, and the fourth in it is over the cap.
+    for (let n = 0; n < 3; n += 1) carol?.publish({ t: "presence", data: {} });
+    expect(() => carol?.publish({ t: "presence", data: {} })).toThrow(RoomLimitReachedError);
+  });
+
+  it("keeps an event stream alive with a comment every 25 seconds, and tells a dropped member why", async () => {
+    const { rooms } = roomsOf({ idleCloseSeconds: 30 });
+    const response = rooms.stream(new Request(roomUrl(rooms.issueToken(grant("usr_a")).token)));
+    const reader = response.body?.getReader();
+    const next = async (): Promise<string> =>
+      new TextDecoder().decode((await reader?.read())?.value);
+    expect(await next()).toMatch(/^event: frame\ndata: \{"t":"welcome"/);
+
+    vi.advanceTimersByTime(25_000);
+    expect(await next()).toBe(": ping\n\n");
+
+    vi.advanceTimersByTime(5000);
+    expect(await next()).toBe('event: close\ndata: {"code":4408,"reason":"idle"}\n\n');
+    expect((await reader?.read())?.done).toBe(true);
+    expect(rooms.size("ten_1:pag_1")).toBe(0);
   });
 });
