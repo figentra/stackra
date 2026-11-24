@@ -102,7 +102,7 @@ function fixture(packages) {
     JSON.stringify({ name: "fixture-root", private: true }),
   );
   writeFileSync(join(root, "pnpm-workspace.yaml"), 'packages:\n  - "pkgs/*"\n');
-  for (const { name, deps = [], isPrivate = false } of packages) {
+  for (const { name, deps = [], isPrivate = false, prepack } of packages) {
     mkdirSync(join(root, "pkgs", name), { recursive: true });
     writeFileSync(
       join(root, "pkgs", name, "package.json"),
@@ -110,10 +110,12 @@ function fixture(packages) {
         name: `@t/${name}`,
         version: "1.0.0",
         ...(isPrivate ? { private: true } : {}),
+        ...(prepack === undefined ? {} : { scripts: { prepack } }),
         dependencies: Object.fromEntries(deps.map((dep) => [`@t/${dep}`, "workspace:*"])),
       }),
     );
   }
+  for (const { name } of packages) writeFileSync(join(root, "pkgs", name, "LICENSE"), "MIT\n");
   for (const [file, text] of [
     ["curl", CURL_SHIM],
     ["pnpm", PNPM_SHIM],
@@ -163,6 +165,24 @@ function fixture(packages) {
     /** Mark a package so its publish succeeds but the registry never shows it. */
     hide(name) {
       writeFileSync(join(state, "hide", `@t_${name}`), "");
+    },
+    /** Drop the git tags, as a failed run does: the action pushes tags only after a script that succeeded. */
+    forgetTags() {
+      for (const tag of execFileSync("git", ["tag", "-l"], { cwd: root, encoding: "utf8" })
+        .split("\n")
+        .filter(Boolean))
+        execFileSync("git", ["tag", "-d", tag], { cwd: root, stdio: "ignore" });
+    },
+    /** Tag a version, as an earlier release run that got as far as pushing its tags did. */
+    tag(name) {
+      execFileSync(
+        "git",
+        ["-c", "user.name=t", "-c", "user.email=t@t", "tag", `@t/${name}@1.0.0`],
+        {
+          cwd: root,
+          stdio: "ignore",
+        },
+      );
     },
     /** Put a version on the stand-in registry before the run. */
     preload(name) {
@@ -300,15 +320,18 @@ test("a release publishes every package dependencies first, tags each and verifi
   }
 });
 
-test("a version already on the registry is skipped, never republished, and not tagged again", () => {
+test("a version already on the registry is skipped and never republished; an existing tag is kept", () => {
   const run = fixture(CHAIN);
   try {
     run.preload("c");
+    run.tag("c");
     const result = run.run();
     assert.equal(result.status, 0, result.output);
     assert.ok(!result.published.includes("@t/c"));
     assert.match(result.output, /skip @t\/c@1\.0\.0: already on the registry/);
     assert.match(result.output, /\(3 published, 1 already there\)/);
+    assert.equal(result.events.length, 3);
+    assert.ok(!result.events.some((event) => event.includes("@t/c@1.0.0")));
   } finally {
     run.dispose();
   }
@@ -349,6 +372,15 @@ test("a package that keeps failing stops the run with a published set no package
       result.output,
       /::error title=Publish stopped::@t\/b@1\.0\.0 failed after 3 attempts/,
     );
+    const publishedList = /Published in this run \((\d+)\):\n((?: {2}\S+\n)+)/.exec(result.output);
+    assert.ok(publishedList, result.output);
+    // c and z, which pins nothing, went out before b failed; a never started.
+    assert.equal(publishedList[1], "2");
+    assert.ok(publishedList[2].includes("@t/c@1.0.0") && publishedList[2].includes("@t/z@1.0.0"));
+    const notPublished = /Not published \((\d+)\):\n((?: {2}\S+\n?)+)/.exec(result.output);
+    assert.ok(notPublished, result.output);
+    assert.ok(notPublished[2].includes("@t/b@1.0.0") && notPublished[2].includes("@t/a@1.0.0"));
+    assert.ok(!notPublished[2].includes("@t/c@1.0.0"));
     const onRegistry = new Set(result.published.filter((name) => name !== "@t/b"));
     // c came first and is there; a, which pins b, was never attempted.
     assert.ok(onRegistry.has("@t/c"));
@@ -391,6 +423,117 @@ test("a public package on a private one stops the run before anything is publish
   } finally {
     run.dispose();
   }
+});
+
+test("a failure at one package, then a re-run, completes the release without republishing", () => {
+  const run = fixture(CHAIN);
+  try {
+    run.failPublish("b", 99);
+    const first = run.run();
+    assert.equal(first.status, 1);
+    assert.deepEqual(
+      first.published.filter((name) => name === "@t/c"),
+      ["@t/c"],
+    );
+    // The failed run pushed no tags; the registry keeps what it published.
+    run.forgetTags();
+    run.failPublish("b", 0);
+    const second = run.run();
+    assert.equal(second.status, 0, second.output);
+    assert.match(second.output, /skip @t\/c@1\.0\.0: already on the registry/);
+    // Every package was published exactly once across the two runs.
+    const everything = second.published;
+    for (const name of ["@t/a", "@t/c", "@t/z"])
+      assert.equal(everything.filter((published) => published === name).length, 1, name);
+    assert.equal(everything.filter((published) => published === "@t/b").length, 3 + 1);
+    // c, published by the first run and untagged, is tagged by the resumed one: all four releases get an event.
+    assert.deepEqual(second.tags.sort(), ["@t/a@1.0.0", "@t/b@1.0.0", "@t/c@1.0.0", "@t/z@1.0.0"]);
+    assert.equal(second.events.length, 4);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("the pre-flight packs every package before the first publish and stops with nothing published", () => {
+  const run = fixture([
+    { name: "a", deps: ["b"] },
+    { name: "b", deps: ["c"] },
+    { name: "c", prepack: "exit 1" },
+  ]);
+  try {
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Preflight failed::cannot pack: @t\/c@1\.0\.0\. Nothing was published/,
+    );
+    assert.deepEqual(result.published, []);
+    assert.deepEqual(result.events, []);
+  } finally {
+    run.dispose();
+  }
+});
+
+test("the pre-flight packs only what is not on the registry yet", () => {
+  const run = fixture([
+    { name: "a", deps: ["c"] },
+    { name: "c", prepack: "exit 1" },
+  ]);
+  try {
+    run.preload("c");
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /Preflight: 1 packages packed and checked/);
+  } finally {
+    run.dispose();
+  }
+});
+
+/** A tarball with the given package.json and files, as `pnpm pack` writes one: everything under `package/`. */
+function tarball(manifest, files = ["LICENSE"]) {
+  const dir = mkdtempSync(join(tmpdir(), "registry-tarball-"));
+  mkdirSync(join(dir, "package"));
+  writeFileSync(join(dir, "package", "package.json"), JSON.stringify(manifest));
+  for (const file of files) writeFileSync(join(dir, "package", file), "x\n");
+  execFileSync("tar", ["-czf", join(dir, "t.tgz"), "-C", dir, "package"]);
+  return { dir, file: join(dir, "t.tgz") };
+}
+
+/** Run the verify mode of the plan script on a tarball. */
+function verify(manifest, files, expected = ["@t/a", "1.0.0"]) {
+  const { dir, file } = tarball(manifest, files);
+  try {
+    writeFileSync(join(dir, "plan.mjs"), PLAN_SCRIPT);
+    const result = spawnSync("node", [join(dir, "plan.mjs"), "--verify", file, ...expected], {
+      encoding: "utf8",
+    });
+    return { status: result.status, stdout: result.stdout };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test("verify passes a tarball that names its package, has no workspace protocol left and carries a LICENSE", () => {
+  const good = { name: "@t/a", version: "1.0.0", dependencies: { "@t/b": "1.0.0" } };
+  assert.equal(verify(good).status, 0);
+});
+
+test("verify refuses a wrong name or version, a leftover protocol and a missing LICENSE", () => {
+  const good = { name: "@t/a", version: "1.0.0" };
+  assert.match(verify({ ...good, name: "@t/x" }).stdout, /package\.json names @t\/x/);
+  assert.match(verify({ ...good, version: "2.0.0" }).stdout, /package\.json says 2\.0\.0/);
+  for (const [field, range] of [
+    ["dependencies", "workspace:*"],
+    ["peerDependencies", "catalog:frontend"],
+    ["optionalDependencies", "link:../x"],
+  ])
+    assert.match(
+      verify({ ...good, [field]: { "@t/b": range } }).stdout,
+      new RegExp(`${field}\\.@t/b is still ${range}`),
+    );
+  const missing = verify(good, []);
+  assert.equal(missing.status, 1);
+  assert.match(missing.stdout, /no LICENSE file/);
 });
 
 test("the dry run checks the same plan before it packs", () => {
