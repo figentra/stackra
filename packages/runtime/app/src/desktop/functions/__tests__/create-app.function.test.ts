@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 8); ADR 0251 (decision 3).
  */
-import { Driver } from "@stackra/container";
+import { Container, Driver } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
 import { CspConfig } from "@stackra/csp";
 import { NotFoundError } from "@stackra/errors";
@@ -315,5 +315,80 @@ describe("createApp (desktop)", () => {
       url: "https://feed.example/console/stable/",
     });
     expect(electron.autoUpdater.checkForUpdates).toHaveBeenCalledOnce();
+  });
+
+  it("reports an update feed error", async () => {
+    electron.app.isPackaged = true;
+    await (
+      await createApp({ ...options, updateFeed: "https://feed.example/console/stable/" })
+    ).start();
+    const onError = handlerOf<(error: Error) => void>(electron.autoUpdater.on, 1);
+    expect(electron.autoUpdater.on).toHaveBeenCalledWith("error", expect.any(Function));
+    const failure = new Error("feed unreachable");
+    onError(failure);
+    expect(MemoryErrorReporterDriver.errors).toEqual([failure]);
+  });
+
+  it("focuses the window when a second instance starts, restoring it first when minimized", async () => {
+    const desktop = await createApp(options);
+    await desktop.start();
+    const [window] = electron.windows;
+    if (window === undefined) throw new Error("no window opened");
+    const secondInstance = electron.appListeners["second-instance"] as () => void;
+
+    secondInstance();
+    expect(window.restore).not.toHaveBeenCalled();
+    expect(window.focus).toHaveBeenCalledOnce();
+
+    window.isMinimized.mockReturnValue(true);
+    secondInstance();
+    expect(window.restore).toHaveBeenCalledOnce();
+    expect(window.focus).toHaveBeenCalledTimes(2);
+  });
+
+  it("does nothing when a second instance starts and no window is open", async () => {
+    const desktop = await createApp(options);
+    await desktop.start();
+    const [window] = electron.windows;
+    if (window === undefined) throw new Error("no window opened");
+    (window.listeners["closed"] as () => void)();
+    expect(desktop.windows).toHaveLength(0);
+    (electron.appListeners["second-instance"] as () => void)();
+    expect(window.focus).not.toHaveBeenCalled();
+    expect(window.restore).not.toHaveBeenCalled();
+  });
+
+  it("quits when the last window closes, except on macOS", async () => {
+    await (await createApp(options)).start();
+    const allClosed = electron.appListeners["window-all-closed"] as () => void;
+    const platform = Object.getOwnPropertyDescriptor(process, "platform");
+    try {
+      Object.defineProperty(process, "platform", { value: "darwin" });
+      allClosed();
+      expect(electron.app.quit).not.toHaveBeenCalled();
+      Object.defineProperty(process, "platform", { value: "linux" });
+      allClosed();
+      expect(electron.app.quit).toHaveBeenCalledOnce();
+    } finally {
+      if (platform !== undefined) Object.defineProperty(process, "platform", platform);
+    }
+  });
+
+  it("closes the container when the app quits, and reports a close that fails", async () => {
+    await (await createApp(options)).start();
+    const willQuit = electron.appListeners["will-quit"] as () => void;
+    const close = vi.spyOn(Container.prototype, "close");
+    try {
+      willQuit();
+      await vi.waitFor(() => expect(close).toHaveBeenCalledOnce());
+      expect(MemoryErrorReporterDriver.errors).toEqual([]);
+
+      const failure = new Error("close failed");
+      close.mockRejectedValueOnce(failure);
+      willQuit();
+      await vi.waitFor(() => expect(MemoryErrorReporterDriver.errors).toEqual([failure]));
+    } finally {
+      close.mockRestore();
+    }
   });
 });
