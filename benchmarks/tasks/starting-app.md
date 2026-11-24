@@ -15,4 +15,4 @@ the tests only call it over HTTP, one acceptance set fits every framework.
 - Storage is in memory; a restart empties it. The server listens on the port in the `PORT` environment variable.
 
 How a test run works: the runner starts a fresh app (no tasks in it) for every run, exports its address as `BASE_URL`, and runs
-`node --test` on the task's `acceptance/` folder. The result is the pass and fail counts of that run.
+`node --test` on the task's `__tests__/` folder (its acceptance tests). The result is the pass and fail counts of that run.

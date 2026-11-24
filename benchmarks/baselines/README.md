@@ -4,7 +4,9 @@ One folder per framework, `baselines/<framework>/`, holding:
 
 - `framework.json`: `name`, the pinned `version` (echoed into every run record as `frameworkVersion`), `create` (the
   command that builds the starting app in a directory it is given) and `start` (the command that runs the app on the
-  port in `PORT`).
+  port in `PORT`). The harness's JSON files (this one, `agent-script.json`, a task's `settings.json`) stay strict
+  `.json`: the runner reads them with `JSON.parse` in plain Node, which has no YAML parser and rejects comments, so
+  each is declared in `MUST_STAY_JSON` of `@stackra/repo-checks` with that reason.
 - `create.mjs` (or the script `create` names): creates the framework's official starter at the pinned version, plus the
   starting app of [`../tasks/starting-app.md`](../tasks/starting-app.md) on top of it.
 - `solutions/<task>/`: for dry runs only, the files the scripted fake agent copies over the starting app, with an

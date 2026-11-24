@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: run a task's acceptance tests against a running app and count the results.
- * Boundary: one `node --test` child process over the task's acceptance/*.test.mjs files, with BASE_URL set and a
+ * Boundary: one `node --test` child process over the task's __tests__/*.test.mjs files, with BASE_URL set and a
  *   minimal environment; killed when it passes the time limit. It never starts the app.
  * Runtime: node
  * Governing contract: STA-2709 (the owner's method rules).
- * Input: the acceptance directory and the app's base URL.
+ * Input: the task's acceptance tests directory (`__tests__/`) and the app's base URL.
  * Output: { passed, failed, total, ok, firstError } where firstError is the first failing test's line, or null.
  * Secrets: none.
  */

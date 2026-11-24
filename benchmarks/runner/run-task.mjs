@@ -96,7 +96,7 @@ try {
   if (built.status === 0) {
     app = await startApp({ directory: workdir, command: framework.start, env: settings.env });
     acceptance = await runAcceptance({
-      directory: join(taskDirectory, "acceptance"),
+      directory: join(taskDirectory, "__tests__"),
       baseUrl: app.baseUrl,
     });
   } else {

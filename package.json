@@ -89,7 +89,8 @@
         ".notes": "the private owner-only notes submodule",
         "THIRD_PARTY_NOTICES.md": "the notices of code the published packages carry",
         "TRADEMARKS.md": "the Stackra trademark policy of the public framework",
-        "apps": "the published docs site and the console and mobile reference apps (ADR 0526 d2, d3)"
+        "apps": "the published docs site and the console and mobile reference apps (ADR 0526 d2, d3)",
+        "benchmarks": "the AI-era benchmark harness: plain Node scripts and data, not a workspace member (STA-2709)"
       }
     }
   }
