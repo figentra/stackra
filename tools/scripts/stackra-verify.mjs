@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: the Stackra verify service (STA-2761, replaces the merge-now rule STA-2083). For a head SHA it runs
- *   `pnpm install --frozen-lockfile` and then `pnpm verify` (format, lint, typecheck, test, build, validate,
- *   boundaries, knip) in a throwaway container, and records the result as a `stackra/verify` check run posted by the
- *   stackra-verify GitHub App, plus a ledger line. `pr-merge.mjs` refuses a merge without a successful check run from
- *   that App on the PR's current head.
+ * Purpose: the Stackra verify service (STA-2761, replaces the merge-now rule STA-2083). For a head SHA it runs main's
+ *   whole Quality Gate (ci.yml's `dependency-scan` and `gate` jobs step by step, GATE_STEPS, then the licence policy
+ *   in tools/policy/licences.json and the tests) in throwaway containers, every step to the end, and records the
+ *   result as a `stackra/verify` check run posted by the stackra-verify GitHub App (id 5907714), plus a ledger line.
+ *   `pr-merge.mjs` refuses a merge without a successful check run from that App on the PR's current head. The same
+ *   App posts two checks that are never required: `stackra/verify-mobile` (ci.yml's `mobile` job: the two Uniwind
+ *   Pro members the gate leaves out, on the licensed path; its failures, licence ones included, touch nothing else)
+ *   and `stackra/codeql` (CodeQL nightly on main and for PRs labelled `codeql` or `risk:R3`). All three carry the
+ *   same head SHA and `external_id` (`base:<main>`).
  *   Verbs:  run --sha <sha> [--pr <n>]  |  once  |  daemon [--interval <s>]      Common: [-R owner/repo] (repeatable)
  * Boundary: trust as the CTO ruled on 2026-11-24 (decisions A, B, C):
  *   - This process (the daemon user) is the only trusted actor. It holds the App key in a 0400 file, fetches into its
@@ -47,8 +51,28 @@
  *   make its own run pass (an emptied test does that too). That is what review, the risk:R3 label on a change to
  *   the verify definition, and the owner's approval are for. Residual risk: a verify-user escape from a container
  *   could alter the kept base or store image layers on disk without changing their ids.
- *   Start it directly (`node tools/scripts/stackra-verify.mjs daemon …` from systemd), never through secrets-exec:
- *   it needs no stackra-bot secret, only its own key file.
+ *   Start it directly from systemd, never through secrets-exec: it needs no stackra-bot secret, only its own key file.
+ * Runbook (box 1): the unit runs as `User=stackra-verifyd` from the code clone /work/stackra/service with
+ *     ExecStart=/usr/local/bin/node tools/scripts/stackra-verify.mjs daemon -R figentra/stackra -R figentra/stackra-template
+ *   and these settings (none is a secret; the files they name are):
+ *     STACKRA_VERIFY_HOME=/work/stackra/verify (the daemon's home; set to 0711 at start, so the verify user can reach
+ *       a run's inputs by name and never list it), STACKRA_VERIFY_RUN_AS=stackra-verify (uid 1003),
+ *       STACKRA_VERIFY_DOCKER_HOST (that user's rootless Docker), STACKRA_VERIFY_DOCKER_ROOT=/work/stackra/verify-docker/data,
+ *       STACKRA_VERIFY_BASE_IMAGE (name@sha256:…), STACKRA_VERIFY_CPUS=8 (a number, `docker --cpus`),
+ *       STACKRA_VERIFY_CPUSET=0-7 (a CPU list, `docker --cpuset-cpus`), STACKRA_VERIFY_MEMORY, STACKRA_VERIFY_PIDS;
+ *     STACKRA_VERIFY_APP_ID=5907714, STACKRA_VERIFY_INSTALLATION_ID=185462179, STACKRA_VERIFY_KEY_FILE (the App's
+ *       private key) and STACKRA_VERIFY_LICENCE_FILE=/etc/stackra-verify/uniwind.token (the Uniwind Pro CI token):
+ *       /etc/stackra-verify is 0750 root:stackra-verifyd and each file in it 0400 stackra-verifyd;
+ *     STACKRA_VERIFY_SHA256_ACTIONLINT, _ZIZMOR, _OSV_SCANNER, _GITLEAKS, _SHFMT, _SQUAWK, _SHELLCHECK (required: the
+ *       sha256 of each TOOLS download, from the release's published checksums; main has no mise.lock);
+ *     STACKRA_VERIFY_OSV_DIR (default <home>/osv; refreshed by the daemon every 6 h) and STACKRA_VERIFY_OSV_MAX_AGE_H
+ *       (default 24: an older database is a service error, never a green scan);
+ *     STACKRA_VERIFY_CODEQL_BUNDLE_URL and STACKRA_VERIFY_CODEQL_BUNDLE_SHA256 (both or neither; neither: no CodeQL),
+ *       STACKRA_VERIFY_CODEQL_LANGUAGES (default javascript-typescript,actions), STACKRA_VERIFY_CODEQL_HOUR_UTC (2);
+ *     STACKRA_VERIFY_PROTECTED_ROOTS (default /work,/work/stackra: each traverse-only for the verify user, o=x, and
+ *       listable by the service) and STACKRA_VERIFY_ALLOW_PATHS (default /work/stackra/verify, /work/stackra/service,
+ *       /work/stackra/verify-work, /work/stackra/verify-docker): deny by default, every other entry of a protected
+ *       root the verify user can read or list stops the service, and so does a protected path that does not exist.
  *   Licensed builds (uniwind-pro): the daemon builds them into the store image from main's versions, with the licence
  *   token as a BuildKit secret (piped on stdin, never a file, ENV, ARG or layer), scans the image history and every
  *   layer for the token and refuses the image if it is there, and PR installs only copy the built output. The store
@@ -56,7 +80,8 @@
  * Runtime: node on Linux with flock, sudo, git, and docker for the verify user.
  * Governing contract: ADR 0119 (merge policy); ADR 0523 (decision 3); STA-2761.
  * Secrets: the App key is read from STACKRA_VERIFY_KEY_FILE (owner-placed, mode 0400) only to mint a token, which
- *   stays in the gh child's environment. No secret is passed to sudo, docker or a container.
+ *   stays in the gh child's environment. No secret is passed to sudo, docker or a container: the gate runs with no
+ *   token, so zizmor's online audits are off (`--offline`) and the PR facts come from the daemon's API read.
  * Exit: 0 every head recorded, 1 a head could not be recorded or the host is not set up, 2 usage, 75 lock held.
  */
 import { spawn as spawnChild, spawnSync } from "node:child_process";
