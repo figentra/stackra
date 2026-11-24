@@ -90,6 +90,22 @@
  *   (SERVICE_FILES) differs from main it fast-forwards a clean clone after the new code's `self-check` passed in a
  *   staged copy, then exits RESTART_EXIT so the shell that holds the lock starts the new code; a refused switch keeps
  *   the old code and every job posts neutral naming the reason. Every switch and refusal is in ledger/service.jsonl.
+ *   Shared steps (format-check, knip: one process over every member) run with main's copy of every config module they
+ *   could execute (SHARED_STEP_LOADERS); a new member's own config, kept for its per-package steps, is set aside for
+ *   them. When knip then reports the new member as misconfigured, that is an honest red: the PR resolves it through
+ *   risk:R3 and the owner (the config lands on main), never by keeping the config in the shared step.
+ *   When stackra/verify goes neutral (the check run's "Reason" line says which), the operator's action:
+ *     - "this service runs ... blob X, main has Y": self-update normally follows within one pass. If the reason adds
+ *       "self-update refused: …": local changes in the clone: restore it (git -C /work/stackra/service status;
+ *       discard or move the changes); not a fast-forward: fetch and reset the clone to main after reading why it moved;
+ *       a job is running: wait one pass; the self-check failed: read ledger/service.jsonl, and when it names the
+ *       service clone's yaml run `pnpm install --frozen-lockfile --ignore-scripts --filter .` in /work/stackra/service.
+ *     - The offline OSV database is missing, too old, under 1 MiB or dated in the future, or the OSV canary failed:
+ *       check the refresh in the service log (download from osv-vulnerabilities.storage.googleapis.com), then the
+ *       store image (osv-scanner in it) and the canary's GHSA in the database.
+ *     - Any other error three times on one SHA (a fetch, Docker, the store image, the install network or its proxy,
+ *       disk): the service log names it; fix the host and post a new run (`stackra-verify.mjs run --sha <sha>`).
+ *     - The egress probe found a leak or did not run: the service has stopped itself; fix the network rules first.
  *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
@@ -140,6 +156,7 @@ import {
   VERIFY_OVERLAY_DIRS,
   aliasTarget,
   isGateToolPackage,
+  SHARED_STEP_LOADERS,
   VERIFY_APP,
   VERIFY_CHECK,
   VERIFY_MOBILE_CHECK,
@@ -321,7 +338,15 @@ export const GATE_STEPS = Object.freeze([
       'NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"',
     ].join("\n"),
   },
-  { id: "format-check", job: "gate", ci: "Format check", line: 130, run: "pnpm format:check" },
+  // Shared: one oxfmt process over the whole tree, which executes any nested oxfmt.config.{ts,mts} (C1).
+  {
+    id: "format-check",
+    job: "gate",
+    ci: "Format check",
+    line: 130,
+    run: "pnpm format:check",
+    shared: true,
+  },
   {
     id: "lint",
     job: "gate",
@@ -414,6 +439,8 @@ export const GATE_STEPS = Object.freeze([
   },
   { id: "boundaries", job: "gate", ci: "Check boundaries", line: 217, run: "pnpm boundaries" },
   {
+    // Shared: one knip process at the root, whose plugins execute every workspace's config modules (C1).
+    shared: true,
     id: "knip",
     job: "gate",
     ci: "Check unused code",
@@ -487,16 +514,50 @@ export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = t
     );
   lines.push(
     "failed=()",
+    // A shared step (one process over every member) runs with main's copy of each config module it could execute:
+    // the daemon lists the tested tree's loader files that are not main's (shared-definitions) and packs main's copy
+    // of those main has (shared-main.tar); they are set aside, main's laid in, and the PR's put back after (C1).
+    "shared_dir=${TMPDIR:-/tmp}/stackra-shared",
+    "swap_out() {",
+    '  rm -rf "$shared_dir" && mkdir -p "$shared_dir/pr" || return 1',
+    '  [ -s "$GATE_IN/shared-definitions" ] || return 0',
+    "  local p",
+    "  while IFS= read -r -d '' p; do",
+    '    case "$p" in /*|..|../*|*/..|*/../*) echo "stackra-verify: a shared-step path is not relative: $p"; return 1 ;; esac',
+    '    if [ -e "$p" ] || [ -L "$p" ]; then',
+    '      mkdir -p "$shared_dir/pr/$(dirname -- "$p")" && mv -- "$p" "$shared_dir/pr/$p" || return 1',
+    "    fi",
+    '  done < "$GATE_IN/shared-definitions"',
+    '  if [ -s "$GATE_IN/shared-main.tar" ]; then tar -xf "$GATE_IN/shared-main.tar" || return 1; fi',
+    "}",
+    "swap_back() {",
+    '  [ -s "$GATE_IN/shared-definitions" ] || return 0',
+    "  local p",
+    "  while IFS= read -r -d '' p; do",
+    '    rm -f -- "$p"',
+    '    if [ -e "$shared_dir/pr/$p" ] || [ -L "$shared_dir/pr/$p" ]; then',
+    '      mkdir -p "$(dirname -- "$p")" && mv -- "$shared_dir/pr/$p" "$p"',
+    "    fi",
+    '  done < "$GATE_IN/shared-definitions"',
+    '  rm -rf "$shared_dir"',
+    "}",
     "run_step() {",
-    "  local id=$1 when=$2 fn=$3",
+    "  local id=$1 when=$2 fn=$3 shared=$4",
     '  echo "== step: $id"',
     '  if [ -n "$when" ] && [ "${FACT_EVENT:-}" != "$when" ]; then',
     '    echo "skipped: ci.yml runs this step on $when only"',
     '    echo "== result: $id skip"',
     "    return 0",
     "  fi",
-    '  ( set -eo pipefail; "$fn" ) 2>&1',
-    "  local rc=$?",
+    "  local rc=0",
+    '  if [ -n "$shared" ] && ! swap_out; then',
+    '    echo "stackra-verify: could not lay in main\x27s config modules for this shared step"',
+    "    rc=1",
+    "  else",
+    '    ( set -eo pipefail; "$fn" ) 2>&1',
+    "    rc=$?",
+    "  fi",
+    '  if [ -n "$shared" ] && ! swap_back; then echo "stackra-verify: could not put the PR\x27s config modules back"; rc=1; fi',
     '  if [ "$rc" -eq 0 ]; then echo "== result: $id pass"; else echo "== result: $id FAIL"; failed+=("$id"); fi',
     "}",
   );
@@ -510,7 +571,9 @@ export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = t
     lines.push(...step.run.split("\n").map((line) => `  ${line}`), "}");
   }
   for (const step of steps)
-    lines.push(`run_step ${step.id} "${step.when ?? ""}" ${stepFunction(step.id)}`);
+    lines.push(
+      `run_step ${step.id} "${step.when ?? ""}" ${stepFunction(step.id)}${step.shared ? " shared" : ""}`,
+    );
   lines.push(
     'if [ "${#failed[@]}" -gt 0 ]; then echo "== failed: ${failed[*]}"; exit 1; fi',
     'echo "== passed: every step"',
@@ -1671,6 +1734,8 @@ export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
       file("gate.sh"),
       file("licence-check.mjs"),
       file("licences.json"),
+      file("shared-definitions"),
+      file("shared-main.tar"),
       file("facts.json"),
       file("history.bundle"),
       [osvDir, OSV_MOUNT],
@@ -2747,6 +2812,9 @@ function ignoredByMain(mirror, base, paths) {
 export const serviceYaml = (codeDir = CODE_DIR) =>
   createRequire(join(codeDir, "package.json"))("yaml");
 
+/** The operator's command for the service clone's own dependencies (the runbook's, and every message's that needs it). */
+export const SERVICE_INSTALL = "pnpm install --frozen-lockfile --ignore-scripts --filter .";
+
 /** Why the service cannot parse with main's `yaml` (missing, or not the version main's lockfile locks), or null. */
 export function yamlProblem(codeDir = CODE_DIR) {
   let installed;
@@ -2754,7 +2822,7 @@ export function yamlProblem(codeDir = CODE_DIR) {
     const manifest = createRequire(join(codeDir, "package.json")).resolve("yaml/package.json");
     installed = JSON.parse(readFileSync(manifest, "utf8")).version;
   } catch {
-    return `the service clone ${codeDir} has no \`yaml\` installed: run pnpm install --frozen-lockfile --ignore-scripts --filter . there`;
+    return `the service clone has no \`yaml\` installed: run \`${SERVICE_INSTALL}\` in ${codeDir}`;
   }
   let locked;
   try {
@@ -2766,7 +2834,7 @@ export function yamlProblem(codeDir = CODE_DIR) {
   }
   if (!locked) return `the service clone's pnpm-lock.yaml locks no \`yaml\` for the root`;
   if (locked !== installed)
-    return `the service clone has yaml ${installed} installed, main locks ${locked}: reinstall there`;
+    return `the service clone has yaml ${installed} installed, main locks ${locked}: run \`${SERVICE_INSTALL}\` in ${codeDir}`;
   return null;
 }
 
@@ -2935,6 +3003,21 @@ export function dependencySpecProblems({
       check(`${path} pnpm.overrides`, overrideTarget(selector), spec, { override: true });
   }
   return problems;
+}
+
+/**
+ * What the shared gate steps (one process over every member) must not run from the PR (CTO ruling, round 5, C1):
+ * each tested-tree file matching SHARED_STEP_LOADERS that is not main's copy. `paths` are all of them (set aside for
+ * the step), `main` those main has (main's copy laid in for the step). A new member's own config modules, kept in the
+ * tested tree by ruling 3 for its per-package steps, are among them.
+ */
+export function sharedStepSwaps(testedEntries, mainEntries) {
+  const main = new Map(mainEntries.map((e) => [e.path, e.object]));
+  const paths = testedEntries
+    .filter((e) => SHARED_STEP_LOADERS.test(e.path) && main.get(e.path) !== e.object)
+    .map((e) => e.path)
+    .toSorted();
+  return { paths, main: paths.filter((p) => main.has(p)) };
 }
 
 /** The directory a definition file configures: its own, or for a file under `.config/`, the one holding `.config`. */
@@ -3282,6 +3365,9 @@ export function checkRunBody({
           ? `- Install: \`${INSTALL_COMMAND}\`${KINDS[kind].install === "gate" ? ` without ${GATE_FILTERS.map((f) => f.slice(1)).join(" and ")}` : ""} (registries only), then \`${kindCommand(kind)}\` (no network)`
           : `- Run: \`${kindCommand(kind)}\` on the tested tree (no install, no network)`,
         `- Box: ${box}; throwaway containers`,
+        ...(conclusion === "neutral" || phase === "tree"
+          ? [`- Reason: ${reason ?? "unknown"}`]
+          : []),
         `- Head: \`${sha}\`, merged onto main \`${base ?? "-"}\` with main's verify definition (scripts, configs, policies)`,
         ...(failed.length ? [`- Failed steps (from the log): ${failed.join(", ")}`] : []),
       ].join("\n"),
@@ -3559,11 +3645,13 @@ export function selfUpdatePlan({ busy, own, main, dirty = [], fastForward }) {
 /** Why a self-check run (`{ status, stdout, stderr }`) does not clear the new code, or null when it passes. */
 export function selfCheckProblem({ status, stdout = "", stderr = "" }) {
   if (status === 0) return null;
-  const last = `${stdout}\n${stderr}`
+  const lines = `${stdout}\n${stderr}`
     .split("\n")
     .map((l) => l.trim())
-    .findLast(Boolean);
-  return `the new code's self-check failed (exit ${status ?? "none"})${last ? `: ${last.slice(0, 160)}` : ""}`;
+    .filter(Boolean);
+  // The first named problem (an operator command in it, such as SERVICE_INSTALL, survives), else the last line.
+  const named = lines.find((l) => l.startsWith("- ")) ?? lines.at(-1);
+  return `the new code's self-check failed (exit ${status ?? "none"})${named ? `: ${named.slice(0, 240)}` : ""}`;
 }
 
 /**
@@ -3703,7 +3791,7 @@ export function definitionDrift(own, main, refused = null) {
   const files = Object.keys(own ?? {});
   const differ = files.filter((f) => !own[f] || own[f] !== main?.[f]);
   if (files.length && !differ.length) return null;
-  const why = refused ? ` (self-update refused: ${String(refused).slice(0, 120)})` : "";
+  const why = refused ? ` (self-update refused: ${String(refused).slice(0, 300)})` : "";
   const which = (differ.length ? differ : ["the service files"])
     .map(
       (f) =>
@@ -4064,7 +4152,7 @@ function docker(s, args, options = {}) {
  * (spliceWorkspace, with `yaml`, the real parser), and a dependency spec that does not resolve from the registry or
  * renames a gate tool (dependencySpecProblems). A merge conflict throws `{ conflict: true }`, the PR's failure too.
  */
-export function buildTree(mirror, base, sha, scratchIndex, yaml = null) {
+export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}) {
   const merge = spawnSync(
     "git",
     [
@@ -4163,7 +4251,9 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null) {
       index: scratchIndex,
       input: `${lines.join("\0")}\0`,
     });
-  return git(mirror, ["write-tree"], { index: scratchIndex }).trim();
+  const tree = git(mirror, ["write-tree"], { index: scratchIndex }).trim();
+  out.shared = sharedStepSwaps(listing(tree), mainEntries);
+  return tree;
 }
 
 /** A token of the stackra-verify App, minted from the 0400 key file; the key never enters an environment. */
@@ -4254,7 +4344,25 @@ function archiveJob(s, job, runDir, { history = false } = {}) {
   git(mirror, ["rev-parse", "--verify", `${job.sha}^{commit}`]);
   job.base ??= git(mirror, ["rev-parse", "--verify", "refs/heads/main^{commit}"]).trim();
   try {
-    const tree = buildTree(mirror, job.base, job.sha, join(runDir, "index"));
+    const built = {};
+    const tree = buildTree(mirror, job.base, job.sha, join(runDir, "index"), null, built);
+    // The shared steps' swap: the paths (NUL-separated) and main's copy of those main has, both read-only inputs.
+    writeFileSync(
+      join(runDir, "shared-definitions"),
+      built.shared.paths.map((p) => `${p}\0`).join(""),
+      { mode: 0o644 },
+    );
+    writeFileSync(join(runDir, "shared-main.tar"), "", { mode: 0o644 });
+    if (built.shared.main.length)
+      git(mirror, [
+        "archive",
+        "--format=tar",
+        "-o",
+        join(runDir, "shared-main.tar"),
+        job.base,
+        "--",
+        ...built.shared.main.map((p) => `:(literal)${p}`),
+      ]);
     const tarPath = join(runDir, "src.tar");
     neutraliseAttributes(mirror);
     git(mirror, ["archive", "--format=tar", "-o", tarPath, tree]);

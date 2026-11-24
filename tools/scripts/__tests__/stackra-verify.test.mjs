@@ -137,6 +137,9 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  SERVICE_INSTALL,
+  stepScript,
+  sharedStepSwaps,
   containerLimits,
   serviceYaml,
   yamlProblem,
@@ -184,6 +187,7 @@ import {
   GATE_TOOL_BINS,
   NOT_PACKAGE_COMMANDS,
   isGateToolPackage,
+  SHARED_STEP_LOADERS,
 } from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
@@ -3897,6 +3901,8 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
     ["/runs/x/gate.sh", "/in/gate.sh"],
     ["/runs/x/licence-check.mjs", "/in/licence-check.mjs"],
     ["/runs/x/licences.json", "/in/licences.json"],
+    ["/runs/x/shared-definitions", "/in/shared-definitions"],
+    ["/runs/x/shared-main.tar", "/in/shared-main.tar"],
     ["/runs/x/facts.json", "/in/facts.json"],
     ["/runs/x/history.bundle", "/in/history.bundle"],
     ["/osv-db", "/osv"],
@@ -3909,7 +3915,7 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
   assert.throws(() => kindMounts("nope", { runDir: "/r" }), /not a verify kind/);
   const argv = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR, mounts });
   const volumes = argv.filter((_, i) => argv[i - 1] === "--volume");
-  assert.equal(volumes.length, 7);
+  assert.equal(volumes.length, 9);
   for (const v of volumes) assert.match(v, /:ro$/, v);
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
   assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs"]);
@@ -5330,4 +5336,306 @@ test("OSV canary: a new store image or osv-scanner version runs it again; an in-
     /1024 bytes \(at least 1048576\)/,
   );
   assert.equal(osvDbProblem(now - 60_000, now, 86_400_000, OSV_DB_MIN_BYTES), null);
+});
+
+// ---- round 5, C1: shared-process steps never run a config module that is not main's ------------------------------
+
+/** A tree entry for sharedStepSwaps. */
+const e = (path, object) => ({ path, object });
+
+test("sharedStepSwaps: every tested-tree loader file that is not main's copy; main's copy for those main has", () => {
+  const swaps = sharedStepSwaps(
+    [
+      e("knip.jsonc", "k"),
+      e("packages/a/vitest.config.ts", "same"),
+      e("packages/a/postcss.config.js", "pr"),
+      e("packages/a/src/index.ts", "pr"),
+      e("packages/new/vitest.config.mts", "new"),
+      e("packages/new/.storybook/main.ts", "new"),
+      e("packages/b/jest.config.js", "new"),
+    ],
+    [
+      e("knip.jsonc", "k"),
+      e("packages/a/vitest.config.ts", "same"),
+      e("packages/a/postcss.config.js", "main"),
+    ],
+  );
+  assert.deepEqual(swaps, {
+    paths: [
+      "packages/a/postcss.config.js",
+      "packages/b/jest.config.js",
+      "packages/new/.storybook/main.ts",
+      "packages/new/vitest.config.mts",
+    ],
+    main: ["packages/a/postcss.config.js"],
+  });
+});
+
+test("buildTree: a new member keeps its vitest config for its own tests, and the shared steps get it listed to set aside", () => {
+  const { dir, base, sha } = newMemberRepo();
+  try {
+    const out = {};
+    const tree = buildTree(mirrorOf(dir), base, sha, join(dir, "scratch-index"), null, out);
+    assert.match(tree, /^[0-9a-f]{40}$/);
+    assert.ok(
+      out.shared.paths.includes("packages/new/vitest.config.mjs"),
+      out.shared.paths.join(","),
+    );
+    assert.deepEqual(out.shared.main, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test(
+  "gate script: a shared step runs with main's config modules laid in, and the PR's are back for the next step",
+  needsBash,
+  () => {
+    const fixture = gateFixture();
+    const { work, input, bin } = fixture;
+    mkdirSync(join(work, "packages/new"), { recursive: true });
+    mkdirSync(join(work, "packages/a"), { recursive: true });
+    writeFileSync(join(work, "packages/new/vitest.config.ts"), "process.exit(0);\n");
+    writeFileSync(join(work, "packages/a/postcss.config.js"), "// the PR's\n");
+    writeFileSync(
+      join(input, "shared-definitions"),
+      "packages/new/vitest.config.ts\0packages/a/postcss.config.js\0",
+    );
+    // main's copy of the one main has
+    const main = join(fixture.dir, "main");
+    mkdirSync(join(main, "packages/a"), { recursive: true });
+    writeFileSync(join(main, "packages/a/postcss.config.js"), "// main's\n");
+    spawnSync("tar", [
+      "-cf",
+      join(input, "shared-main.tar"),
+      "-C",
+      main,
+      "packages/a/postcss.config.js",
+    ]);
+    // pnpm reports what each step sees
+    writeFileSync(
+      join(bin, "pnpm"),
+      [
+        "#!/bin/sh",
+        'echo >&2 "CALL: pnpm $*"',
+        'echo >&2 "SEES: $( [ -e packages/new/vitest.config.ts ] && echo new-config || echo no-new-config ) $(cat packages/a/postcss.config.js)"',
+        "",
+      ].join("\n"),
+    );
+    chmodSync(join(bin, "pnpm"), 0o755);
+    const run = runGate(fixture);
+    const sees = (id) => run.sections[id].lines.filter((l) => l.startsWith("SEES: "));
+    for (const id of ["format-check", "knip"]) {
+      assert.equal(run.sections[id].result, "pass", run.stdout);
+      for (const line of sees(id)) assert.equal(line, "SEES: no-new-config // main's", id);
+    }
+    // the per-package steps (lint, test) run the PR's own files
+    for (const id of ["lint", "test"])
+      for (const line of sees(id)) assert.equal(line, "SEES: new-config // the PR's", id);
+    assert.equal(readFileSync(join(work, "packages/a/postcss.config.js"), "utf8"), "// the PR's\n");
+    assert.deepEqual(
+      GATE_STEPS.filter((s) => s.shared).map((s) => s.id),
+      ["format-check", "knip"],
+    );
+  },
+);
+
+/** The installed knip of this checkout (box 1 has it under node_modules/.pnpm), or null. */
+const KNIP = (() => {
+  const root = CODE_DIR;
+  const dist = globSync("node_modules/.pnpm/knip@*/node_modules/knip/dist", {
+    cwd: root,
+  }).toSorted()[0];
+  return dist ? join(root, dist) : null;
+})();
+const needsKnip = KNIP ? {} : { skip: "knip is not installed in this checkout" };
+
+/** Every concrete file name a knip config pattern stands for: braces expanded, `?(.)` both ways, globs filled. */
+function patternNames(pattern) {
+  const m = /\{([^{}]*)\}|\?\(([^()]*)\)/.exec(pattern);
+  if (!m) return [pattern.replaceAll("**", "a/b").replaceAll("*", "x")];
+  const alternatives = m[1] !== undefined ? m[1].split(",") : ["", m[2]];
+  return alternatives.flatMap((alt) =>
+    patternNames(pattern.slice(0, m.index) + alt + pattern.slice(m.index + m[0].length)),
+  );
+}
+
+test(
+  "C1: every config module the installed knip can execute is a shared-step loader; those it enables here are main's",
+  needsKnip,
+  async () => {
+    const { Plugins } = await import(pathToFileURL(join(KNIP, "plugins/index.js")).href);
+    const executable = /\.[cm]?[jt]sx?$/;
+    const manifests = [
+      "package.json",
+      ...globSync(
+        [
+          "apps/*/package.json",
+          "packages/*/*/package.json",
+          "services/*/package.json",
+          "workers/*/package.json",
+        ],
+        { cwd: CODE_DIR },
+      ),
+    ].map((f) => JSON.parse(readFileSync(join(CODE_DIR, f), "utf8")));
+    const deps = new Set(
+      manifests.flatMap((m) =>
+        ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"].flatMap(
+          (k) => Object.keys(m[k] ?? {}),
+        ),
+      ),
+    );
+    let all = 0;
+    const enabledNames = [];
+    for (const [name, plugin] of Object.entries(Plugins)) {
+      const names = (Array.isArray(plugin.config) ? plugin.config : [])
+        .flatMap(patternNames)
+        .filter((n) => executable.test(n));
+      all += names.length;
+      for (const n of names)
+        assert.ok(
+          SHARED_STEP_LOADERS.test(`packages/new/${n}`),
+          `knip ${name} executes ${n}, which SHARED_STEP_LOADERS misses`,
+        );
+      let enabled;
+      try {
+        enabled = await plugin.isEnabled({
+          dependencies: deps,
+          manifest: manifests[0],
+          config: {},
+          cwd: CODE_DIR,
+        });
+      } catch {
+        enabled = false;
+      }
+      if (enabled) enabledNames.push(...names.map((n) => [name, n]));
+    }
+    assert.ok(all > 500, `${all} names`);
+    for (const [name, n] of enabledNames)
+      assert.ok(
+        isVerifyOverlay(`packages/a/${n}`),
+        `knip ${name} executes ${n} here, which VERIFY_OVERLAY misses`,
+      );
+    // oxfmt (format-check) executes a nested oxfmt.config too
+    for (const n of ["oxfmt.config.ts", "oxfmt.config.mts"]) {
+      assert.ok(SHARED_STEP_LOADERS.test(`packages/new/${n}`), n);
+      assert.ok(isVerifyOverlay(`packages/a/${n}`), n);
+    }
+  },
+);
+
+test(
+  "C1, real knip: a new member's vitest.config that exits 0 never turns the shared knip step green; its own tests use it",
+  { ...needsKnip, ...needsBash },
+  () => {
+    const dir = mkdtempSync(join(tmpdir(), "stackra-c1-"));
+    const work = join(dir, "work");
+    const input = join(dir, "in");
+    try {
+      const write = (path, text) => {
+        mkdirSync(join(work, path, ".."), { recursive: true });
+        writeFileSync(join(work, path), text);
+      };
+      mkdirSync(input, { recursive: true });
+      write("package.json", '{"name":"root","private":true,"workspaces":["packages/*"]}\n');
+      write("pnpm-workspace.yaml", "packages:\n  - packages/*\n");
+      write(
+        "knip.json",
+        '{"workspaces":{"packages/*":{"entry":["src/index.js"],"project":["src/**/*.js"]}}}\n',
+      );
+      // a real finding elsewhere: an unused file in an existing member
+      write("packages/a/package.json", '{"name":"a","private":true,"main":"src/index.js"}\n');
+      write("packages/a/src/index.js", "export const a = 1;\n");
+      write("packages/a/src/unused.js", "export const unused = 2;\n");
+      // the new member: its vitest.config.mjs ends any knip process green, and narrows its own tests to *.check.mjs
+      write(
+        "packages/new/package.json",
+        '{"name":"new","private":true,"main":"src/index.js","devDependencies":{"vitest":"5"}}\n',
+      );
+      write("packages/new/src/index.js", "export const b = 1;\n");
+      write("packages/new/src/new.check.mjs", "test('new member', () => expect(1 + 1).toBe(2));\n");
+      write(
+        "packages/new/vitest.config.mjs",
+        [
+          "if (process.argv.some((a) => a.includes('knip'))) process.exit(0);",
+          "export default { test: { globals: true, include: ['src/**/*.check.mjs'] } };",
+          "",
+        ].join("\n"),
+      );
+      const knip = join(dirname(KNIP), "bin/knip.js");
+      const step = { id: "knip", run: `node "${knip}" --no-progress`, shared: true };
+      const script = (shared) =>
+        stepScript([{ ...step, shared }], { inDir: input, workDir: work, facts: false });
+      const run = (shared) => {
+        writeFileSync(join(dir, "gate.sh"), script(shared));
+        return spawnSync(BASH, [join(dir, "gate.sh")], {
+          encoding: "utf8",
+          env: { ...process.env, TMPDIR: dir },
+        });
+      };
+      writeFileSync(join(input, "shared-definitions"), "packages/new/vitest.config.mjs\0");
+      writeFileSync(join(input, "shared-main.tar"), "");
+      // without the swap the attack works: the config exits 0 inside knip and the step is green
+      const attacked = run(false);
+      assert.equal(attacked.status, 0, attacked.stdout);
+      // with it (the gate's knip step), main's rules hold: knip runs and reports the unused file
+      const guarded = run(true);
+      assert.equal(guarded.status, 1, guarded.stdout);
+      assert.match(guarded.stdout, /unused\.js/);
+      assert.equal(
+        readFileSync(join(work, "packages/new/vitest.config.mjs"), "utf8").includes(
+          "process.exit(0)",
+        ),
+        true,
+      );
+      // and the member's own tests (a per-package step) run with that config: one test, found by its include only
+      if (VITEST) {
+        const own = spawnSync(
+          process.execPath,
+          [VITEST, "run", "--root", join(work, "packages/new")],
+          {
+            encoding: "utf8",
+            env: { ...process.env, CI: "1", NO_COLOR: "1" },
+          },
+        );
+        assert.equal(own.status, 0, own.stdout + own.stderr);
+        assert.match(own.stdout, /Tests\s+1 passed/);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test("N1: a self-check that refuses on the clone's root deps names the operator's command, through to the check run", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-n1-"));
+  try {
+    writeFileSync(join(dir, "package.json"), "{}\n");
+    const problem = yamlProblem(dir);
+    assert.ok(problem.includes(`run \`${SERVICE_INSTALL}\` in ${dir}`), problem);
+    assert.equal(SERVICE_INSTALL, "pnpm install --frozen-lockfile --ignore-scripts --filter .");
+    // the staged self-check prints its problems; the refusal keeps the first one whole
+    const refused = selfCheckProblem({
+      status: 1,
+      stdout: `stackra-verify self-check failed:\n  - ${problem}\n  - the self-check tests failed (exit 1): ℹ fail 3`,
+    });
+    assert.ok(refused.includes(SERVICE_INSTALL), refused);
+    const message = definitionDrift(
+      { [SELF_PATH]: "a".repeat(40) },
+      { [SELF_PATH]: "b".repeat(40) },
+      refused,
+    );
+    assert.ok(message.includes(SERVICE_INSTALL), message);
+    const body = checkRunBody({
+      sha: SHA,
+      base: BASE,
+      conclusion: "neutral",
+      phase: "definition",
+      reason: message,
+      durationMs: 1,
+    });
+    assert.ok(body.output.summary.includes(`- Reason: ${message}`));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
