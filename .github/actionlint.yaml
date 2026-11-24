@@ -1,0 +1,12 @@
+# Stackra file contract:
+# Purpose: actionlint's configuration for `.github/workflows`, read by the Quality Gate's workflow lint (`actionlint`,
+#          ADR 0019, STA-311). It names the labels of figentra's self-hosted runner (`figentra-b2-1` on box 2, labels
+#          self-hosted, Linux, X64, box2, figentra), so a job with `runs-on: [self-hosted, figentra]` is not refused as an
+#          unknown label (STA-2785). A new label here is a new runner the jobs may land on: the owner approves it.
+# Scope: .github/workflows
+# Owner: release-operations
+# Secrets: forbidden
+self-hosted-runner:
+  labels:
+    - figentra
+    - box2
