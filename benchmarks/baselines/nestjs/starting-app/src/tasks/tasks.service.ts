@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { Injectable } from "@nestjs/common";
 
-import { ApiError } from "../api-error";
+import { ApiError } from "../api-error.js";
 
 export interface Task {
   id: string;

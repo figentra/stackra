@@ -1,7 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 
-import { ApiErrorFilter } from "./api-error.filter";
-import { AppModule } from "./app.module";
+import { ApiErrorFilter } from "./api-error.filter.js";
+import { AppModule } from "./app.module.js";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: ["error"] });

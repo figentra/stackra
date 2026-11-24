@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 
-import { ApiError } from "../api-error";
-import { TasksService } from "./tasks.service";
+import { ApiError } from "../api-error.js";
+import { TasksService } from "./tasks.service.js";
 
 function asObject(body: unknown): Record<string, unknown> {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
