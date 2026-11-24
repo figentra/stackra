@@ -78,6 +78,8 @@ import {
   pnpmVersionOf,
   postCheckRun,
   preflightProblems,
+  filesystemProblems,
+  servicePass,
   probeArgs,
   probeScript,
   probeTargets,
@@ -172,11 +174,16 @@ const runProbe = (targets, proxy, dnsName = "stackra-verify.invalid") =>
     child.stdout.on("data", (d) => (stdout += d));
     child.on("close", (status) => resolve({ status, stdout }));
   });
-/** The preflight's machine checks, all passing unless overridden. */
-const io = (over = {}) => ({
+/** The path the verify user must read (the preflight's positive control). */
+const CONTROL = "/work/stackra/verify/docker.env";
+/**
+ * The preflight's machine checks, all passing unless overridden: the verify user reads only the positive control
+ * (an override's `canRead` adds to it unless `control: false`) and traverses only the protected roots.
+ */
+const io = ({ control = true, canRead = () => false, ...over } = {}) => ({
   exists: () => true,
-  canRead: () => false,
-  canTraverse: () => true,
+  canRead: (p) => (control && p === CONTROL) || canRead(p),
+  canTraverse: (p) => ["/work", "/work/stackra"].includes(p),
   list: () => [],
   cgroup: () => "1000",
   subuid: () => "build:100000:65536\nstackra-verify:300000:65536\n",
@@ -3412,7 +3419,7 @@ test("preflight: deny by default under each protected root; allowlisted entries 
     readable.add(path);
     assert.match(
       preflightProblems(S, host()).join(),
-      new RegExp(`can read ${path} \\(deny by default`),
+      new RegExp(`can read or traverse ${path} \\(deny by default`),
       path,
     );
     readable.delete(path);
@@ -3454,6 +3461,68 @@ test("preflight: deny by default under each protected root; allowlisted entries 
   );
   // the settings take a list, trailing slashes trimmed
   assert.deepEqual(settings({ STACKRA_VERIFY_ALLOW_PATHS: "/a/, /b" }).allowPaths, ["/a", "/b"]);
+});
+
+test("preflight: an entry the verify user can traverse is reached, even when it cannot list it", () => {
+  const box = { "/work": ["stackra", "lanes"], "/work/stackra": ["verify", "wt-train"] };
+  const host = (traversable) =>
+    io({
+      list: (dir) => box[dir] ?? null,
+      canTraverse: (p) => ["/work", "/work/stackra", ...traversable].includes(p),
+    });
+  assert.deepEqual(preflightProblems(S, host([])), []);
+  for (const path of ["/work/lanes", "/work/stackra/wt-train"])
+    assert.match(
+      preflightProblems(S, host([path])).join(),
+      new RegExp(`can read or traverse ${path} \\(deny by default`),
+      path,
+    );
+  // an allowlisted entry may be traversed: the run inputs sit under it
+  assert.deepEqual(preflightProblems(S, host(["/work/stackra/verify"])), []);
+});
+
+test("preflight: an empty or blank protected-root or allow list refuses; so does a verify user who reads nothing", () => {
+  for (const value of ["", " ", " , ,"]) {
+    const roots = settings({ STACKRA_VERIFY_PROTECTED_ROOTS: value }).protectedRoots;
+    assert.deepEqual(roots, [], JSON.stringify(value));
+    assert.match(
+      preflightProblems({ ...S, protectedRoots: roots }, io()).join(),
+      /STACKRA_VERIFY_PROTECTED_ROOTS names no directory/,
+    );
+    const allow = settings({ STACKRA_VERIFY_ALLOW_PATHS: value }).allowPaths;
+    assert.match(
+      preflightProblems({ ...S, allowPaths: allow }, io()).join(),
+      /STACKRA_VERIFY_ALLOW_PATHS names no path/,
+    );
+  }
+  // the positive control: with sudo broken every `test -r` fails, so every path would look unreadable
+  assert.match(
+    preflightProblems(S, io({ control: false })).join(),
+    /cannot read \/work\/stackra\/verify\/docker\.env, which it must/,
+  );
+  assert.match(
+    preflightProblems(S, io({ exists: (p) => p !== CONTROL })).join(),
+    /cannot read \/work\/stackra\/verify\/docker\.env/,
+  );
+  // the same checks are the filesystem half the service repeats before each pass
+  assert.deepEqual(filesystemProblems(S, io()), []);
+  assert.match(filesystemProblems(S, io({ control: false })).join(), /which it must/);
+});
+
+test("servicePass: the filesystem checks run again before each pass; a new problem stops the service, nothing runs", async () => {
+  const ran = [];
+  const stopped = [];
+  const pass = (problems) =>
+    servicePass(["a/b", "c/d"], {
+      recheck: () => problems,
+      run: async (repo) => ran.push(repo),
+      stop: (p) => stopped.push(p),
+    });
+  assert.equal(await pass([]), true);
+  assert.deepEqual(ran, ["a/b", "c/d"]);
+  assert.equal(await pass(["the verify user stackra-verify can read /work/new"]), false);
+  assert.deepEqual(ran, ["a/b", "c/d"]);
+  assert.deepEqual(stopped, [["the verify user stackra-verify can read /work/new"]]);
   assert.equal(FORBIDDEN_DEFAULTS.includes("/work/academorix"), false);
 });
 

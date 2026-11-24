@@ -2666,16 +2666,18 @@ export function subuidOverlap(text, user) {
 }
 
 /**
- * The host checks that need the machine, through `io` so a test can stand in: `exists(path)`, `canRead(path)` (as the
- * verify user: read a file, list a directory), `canTraverse(path)` (as the verify user), `list(dir)` (as this
- * process; null when it cannot), `cgroup(file)` (the verify user's slice, null when missing) and `dockerInfo()`
- * ({ code, stdout }). The verify user can read none of the forbidden paths; under each protected root (deny by
- * default) it can read no entry but the allowed ones, and the root itself is traverse-only; its slice has CPU,
- * memory and task caps, and its Docker is rootless. A path that is named but missing, or a root this process cannot
- * list, is a problem too: what cannot be checked never passes. Each problem is a reason not to start.
+ * The filesystem half of the preflight, run at start and again before every pass (a new problem stops the service
+ * the same way): the forbidden and named paths, each protected root and its entries (reading or traversing a
+ * non-allowlisted entry is reaching it), non-empty root and allow lists, and a positive control: the verify user must
+ * read `<home>/docker.env` (0644 under the 0711 home), or a broken sudo would make every path look unreadable.
  */
-export function preflightProblems(s, io, extraForbidden = []) {
+export function filesystemProblems(s, io, extraForbidden = []) {
   const problems = [];
+  const control = join(s.home, "docker.env");
+  if (!io.exists(control) || !io.canRead(control))
+    problems.push(
+      `the verify user ${s.runAs} cannot read ${control}, which it must: the readability checks would prove nothing (check sudo -u ${s.runAs})`,
+    );
   // Named by the settings or the operator: each must exist, or its check would pass without proving anything.
   const named = [s.keyFile, s.licenceFile, s.home, ...extraForbidden].filter(Boolean);
   for (const path of named)
@@ -2688,6 +2690,9 @@ export function preflightProblems(s, io, extraForbidden = []) {
       problems.push(`the verify user ${s.runAs} can read ${path}`);
   const roots = s.protectedRoots ?? PROTECTED_ROOTS;
   const allowed = new Set(s.allowPaths ?? ALLOW_PATHS);
+  // An empty list would make the deny-by-default check pass without looking at anything.
+  if (!roots.length) problems.push("STACKRA_VERIFY_PROTECTED_ROOTS names no directory");
+  if (!allowed.size) problems.push("STACKRA_VERIFY_ALLOW_PATHS names no path");
   for (const root of roots) {
     if (!io.exists(root)) {
       problems.push(`the protected root ${root} does not exist, so nothing proves it`);
@@ -2709,12 +2714,27 @@ export function preflightProblems(s, io, extraForbidden = []) {
     for (const entry of entries) {
       const path = root === "/" ? `/${entry}` : `${root}/${entry}`;
       if (roots.includes(path) || allowed.has(path)) continue;
-      if (io.canRead(path))
+      // Traversing is reaching: through an o=x directory the verify user opens any name it can guess.
+      if (io.canRead(path) || io.canTraverse?.(path))
         problems.push(
-          `the verify user ${s.runAs} can read ${path} (deny by default: not on STACKRA_VERIFY_ALLOW_PATHS)`,
+          `the verify user ${s.runAs} can read or traverse ${path} (deny by default: not on STACKRA_VERIFY_ALLOW_PATHS)`,
         );
     }
   }
+  return problems;
+}
+
+/**
+ * The host checks that need the machine, through `io` so a test can stand in: `exists(path)`, `canRead(path)` (as the
+ * verify user: read a file, list a directory), `canTraverse(path)` (as the verify user), `list(dir)` (as this
+ * process; null when it cannot), `cgroup(file)` (the verify user's slice, null when missing) and `dockerInfo()`
+ * ({ code, stdout }). The verify user can read none of the forbidden paths; under each protected root (deny by
+ * default) it can read no entry but the allowed ones, and the root itself is traverse-only; its slice has CPU,
+ * memory and task caps, and its Docker is rootless. A path that is named but missing, or a root this process cannot
+ * list, is a problem too: what cannot be checked never passes. Each problem is a reason not to start.
+ */
+export function preflightProblems(s, io, extraForbidden = []) {
+  const problems = filesystemProblems(s, io, extraForbidden);
   for (const file of ["memory.max", "pids.max", "cpu.max"]) {
     const value = io.cgroup(file);
     if (value === null || value.startsWith("max"))
@@ -2739,72 +2759,96 @@ export function preflightProblems(s, io, extraForbidden = []) {
   return problems;
 }
 
+/** The paths the operator names as unreadable besides the settings': the service user's home and the list it sets. */
+const operatorForbidden = () => [
+  process.env.HOME,
+  ...(process.env.STACKRA_VERIFY_FORBIDDEN?.split(",").filter(Boolean) ?? []),
+];
+
 function preflight(s) {
+  return preflightProblems(s, hostIo(s), operatorForbidden());
+}
+
+/** The filesystem half again, before each pass of `once` or the daemon. */
+const recheckHost = (s) => filesystemProblems(s, hostIo(s), operatorForbidden());
+
+/** The machine behind preflightProblems' `io`. */
+function hostIo(s) {
   const uid = spawnSync("id", ["-u", s.runAs], spawnOptions({ timeout: 30_000 })).stdout?.trim();
-  return preflightProblems(
-    s,
-    {
-      exists: existsSync,
-      // STACKRA_VERIFY_HOME is 0711: the verify user may pass through it to a run's archive, never list or read it.
-      canRead: (path) =>
-        spawnSync(
-          "sudo",
-          ["-n", "-u", s.runAs, "--", "test", "-r", path],
-          spawnOptions({ timeout: 30_000 }),
-        ).status === 0,
-      canTraverse: (path) =>
-        spawnSync(
-          "sudo",
-          ["-n", "-u", s.runAs, "--", "test", "-x", path],
-          spawnOptions({ timeout: 30_000 }),
-        ).status === 0,
-      list: (dir) => {
-        try {
-          return readdirSync(dir);
-        } catch {
-          return null;
-        }
-      },
-      cgroup: (file) => {
-        try {
-          return readFileSync(`/sys/fs/cgroup/user.slice/user-${uid}.slice/${file}`, "utf8").trim();
-        } catch {
-          return null;
-        }
-      },
-      bridgeProbe: () => {
-        if (docker(s, ["pull", "--quiet", s.baseImage], { timeout: 10 * 60_000 }).code !== 0)
-          return null;
-        return probeVerdict([
-          docker(
-            s,
-            [
-              "run",
-              "--rm",
-              "--network",
-              "bridge",
-              ...containerLimits(s, join(s.home, "preflight.env")),
-              s.baseImage,
-              "node",
-              "-e",
-              probeScript(["169.254.169.254:80", "169.254.169.254:443", "[fd00:ec2::254]:80"]),
-            ],
-            { timeout: 5 * 60_000 },
-          ),
-        ]);
-      },
-      subuid: () => {
-        try {
-          return readFileSync("/etc/subuid", "utf8");
-        } catch {
-          return "";
-        }
-      },
-      dockerInfo: () =>
-        docker(s, ["info", "--format", "{{json .SecurityOptions}}"], { timeout: 60_000 }),
+  return {
+    exists: existsSync,
+    // STACKRA_VERIFY_HOME is 0711: the verify user may pass through it to a run's archive, never list or read it.
+    canRead: (path) =>
+      spawnSync(
+        "sudo",
+        ["-n", "-u", s.runAs, "--", "test", "-r", path],
+        spawnOptions({ timeout: 30_000 }),
+      ).status === 0,
+    canTraverse: (path) =>
+      spawnSync(
+        "sudo",
+        ["-n", "-u", s.runAs, "--", "test", "-x", path],
+        spawnOptions({ timeout: 30_000 }),
+      ).status === 0,
+    list: (dir) => {
+      try {
+        return readdirSync(dir);
+      } catch {
+        return null;
+      }
     },
-    [process.env.HOME, ...(process.env.STACKRA_VERIFY_FORBIDDEN?.split(",").filter(Boolean) ?? [])],
-  );
+    cgroup: (file) => {
+      try {
+        return readFileSync(`/sys/fs/cgroup/user.slice/user-${uid}.slice/${file}`, "utf8").trim();
+      } catch {
+        return null;
+      }
+    },
+    bridgeProbe: () => {
+      if (docker(s, ["pull", "--quiet", s.baseImage], { timeout: 10 * 60_000 }).code !== 0)
+        return null;
+      return probeVerdict([
+        docker(
+          s,
+          [
+            "run",
+            "--rm",
+            "--network",
+            "bridge",
+            ...containerLimits(s, join(s.home, "preflight.env")),
+            s.baseImage,
+            "node",
+            "-e",
+            probeScript(["169.254.169.254:80", "169.254.169.254:443", "[fd00:ec2::254]:80"]),
+          ],
+          { timeout: 5 * 60_000 },
+        ),
+      ]);
+    },
+    subuid: () => {
+      try {
+        return readFileSync("/etc/subuid", "utf8");
+      } catch {
+        return "";
+      }
+    },
+    dockerInfo: () =>
+      docker(s, ["info", "--format", "{{json .SecurityOptions}}"], { timeout: 60_000 }),
+  };
+}
+
+/**
+ * One pass of `once` or the daemon over `repos`: the filesystem checks run again first (`recheck()`, problems as
+ * lines), and a problem now stops the service as one at start does (`stop(problems)`; false, nothing runs).
+ */
+export async function servicePass(repos, { recheck, run, stop }) {
+  const problems = recheck();
+  if (problems.length) {
+    stop(problems);
+    return false;
+  }
+  for (const repo of repos) await run(repo);
+  return true;
 }
 
 let stopping = false;
@@ -3838,18 +3882,35 @@ async function runLocked(options, s) {
         process.stdout.write(
           `${KINDS[kind].check} ${entry?.error ? `error: ${entry.error}` : entry ? entry.conclusion : "not recorded"} ${options.repo}@${options.sha}\n`,
         );
-    } else if (options.verb === "once") {
-      let failed = 0;
-      for (const repo of options.repos) failed += await once(s, repo);
-      process.exitCode = failed ? 1 : 0;
     } else {
-      while (!isStopping()) {
-        for (const repo of options.repos)
-          await once(s, repo).catch((error) =>
-            process.stderr.write(`stackra-verify: ${error.message}\n`),
-          );
-        if (!isStopping()) await sleep(options.interval * 1000);
-      }
+      let failed = 0;
+      // The same stop as at start: the problems on stderr, no job runs, exit 1.
+      const stop = (problems) => {
+        process.stderr.write(
+          `stackra-verify: this host is not set up:\n${problems.map((p) => `  - ${p}`).join("\n")}\n`,
+        );
+        process.exitCode = 1;
+        onStop();
+      };
+      const pass = () =>
+        servicePass(options.repos, {
+          recheck: () => recheckHost(s),
+          stop,
+          run: async (repo) => {
+            if (options.verb === "once") failed += await once(s, repo);
+            else
+              await once(s, repo).catch((error) =>
+                process.stderr.write(`stackra-verify: ${error.message}\n`),
+              );
+          },
+        });
+      if (options.verb === "once") {
+        if (await pass()) process.exitCode = failed ? 1 : 0;
+      } else
+        while (!isStopping()) {
+          if (!(await pass())) break;
+          if (!isStopping()) await sleep(options.interval * 1000);
+        }
     }
   } catch (error) {
     process.stderr.write(`stackra-verify: ${error.message}\n`);
