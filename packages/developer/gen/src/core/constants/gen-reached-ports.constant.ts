@@ -16,6 +16,10 @@ import { SERVER_CONTRIBUTIONS } from "#core/constants/server-contributions.const
 export const GEN_REACHED_PORTS: readonly string[] = Object.freeze([
   ...new Set([
     // pipelinePorts and replicaReadsPorts
+    "AccessControl",
+    "CallIsolation",
+    "UnitOfWork",
+    "ContextStorage",
     "EventOutbox",
     "IdempotencyStore",
     "DeviceSequenceStore",

@@ -34,13 +34,34 @@ function withActions(
 
 const names = (ir: MemberIR): string[] => pipelinePorts(ir).map((port) => port.class.name);
 
+/** The ports every call needs, whatever the action declares: its permission step, isolation, transaction and context. */
+const CALL = ["AccessControl", "CallIsolation", "UnitOfWork", "ContextStorage"];
+
+/** A service that declares nothing of its own and hosts one package call of `kind`. */
+const hostOnly = (kind: "action" | "query"): MemberIR => ({
+  ...COMMERCE_IR,
+  classes: [],
+  contractsDependencies: [],
+  dependencies: [
+    {
+      package: "@stackra/iam",
+      manifest: {
+        member: "iam",
+        package: "@stackra/iam",
+        version: "0.33.0",
+        actions: [{ key: "iam.role.list@1", kind }],
+      } as unknown as MemberIR["dependencies"][number]["manifest"],
+    },
+  ],
+});
+
 describe("pipelinePorts", () => {
   it("reaches the outbox and the idempotency store for the fixture's event and action", () => {
-    expect(names(COMMERCE_IR)).toEqual(["EventOutbox", "IdempotencyStore"]);
+    expect(names(COMMERCE_IR)).toEqual([...CALL, "EventOutbox", "IdempotencyStore"]);
   });
 
-  it("reaches nothing for a never-idempotent action and no event", () => {
-    expect(names(withActions({ idempotency: "never" }))).toEqual([]);
+  it("reaches only the call ports for a never-idempotent action and no event", () => {
+    expect(names(withActions({ idempotency: "never" }))).toEqual(CALL);
   });
 
   it("reaches the outbox for a hosted integration event, a meter or analytics", () => {
@@ -58,11 +79,15 @@ describe("pipelinePorts", () => {
         },
       ],
     };
-    expect(names(hosted)).toEqual(["EventOutbox"]);
+    expect(names(hosted)).toEqual([...CALL, "EventOutbox"]);
     expect(names(withActions({ idempotency: "never", meter: { name: "m" } }))).toEqual([
+      ...CALL,
       "EventOutbox",
     ]);
-    expect(names(withActions({ idempotency: "never", analytics: {} }))).toEqual(["EventOutbox"]);
+    expect(names(withActions({ idempotency: "never", analytics: {} }))).toEqual([
+      ...CALL,
+      "EventOutbox",
+    ]);
   });
 
   it("reaches the offline, review and step-up stores for what an action declares", () => {
@@ -75,8 +100,9 @@ describe("pipelinePorts", () => {
           stepUp: "aal2",
         }),
       ),
-    ).toEqual(["DeviceSequenceStore", "OfflineCapStore", "ReviewItemSink", "StepUpCheck"]);
+    ).toEqual([...CALL, "DeviceSequenceStore", "OfflineCapStore", "ReviewItemSink", "StepUpCheck"]);
     expect(names(withActions({ idempotency: "never", offline: {} }))).toEqual([
+      ...CALL,
       "DeviceSequenceStore",
     ]);
   });
@@ -91,8 +117,39 @@ describe("pipelinePorts", () => {
       kind: "workflow",
       options: {},
     };
-    expect(names(ir)).toEqual([]);
-    expect(names({ ...ir, classes: [...ir.classes, workflow] })).toEqual(["WorkflowRunner"]);
+    expect(names(ir)).toEqual(CALL);
+    expect(names({ ...ir, classes: [...ir.classes, workflow] })).toEqual([
+      ...CALL,
+      "WorkflowRunner",
+    ]);
+  });
+
+  it("reaches the call ports for a service that declares only a query", () => {
+    const query = COMMERCE_IR.classes.find((declared) => declared.kind === "query");
+    if (query === undefined) throw new Error("the fixture declares a query");
+    const queryOnly: MemberIR = {
+      ...COMMERCE_IR,
+      classes: [query],
+      dependencies: [],
+      contractsDependencies: [],
+    };
+    // a query is never keyed and the fixture's event is gone: nothing but the ports every call needs
+    expect(names(queryOnly)).toEqual(CALL);
+  });
+
+  it("reaches the call ports for a service that only hosts a package's actions or queries", () => {
+    expect(names(hostOnly("query"))).toEqual(CALL);
+    expect(names(hostOnly("action"))).toEqual([...CALL, "IdempotencyStore"]);
+  });
+
+  it("reaches no call port for a service with no action, query or hosted call", () => {
+    const bare: MemberIR = {
+      ...COMMERCE_IR,
+      classes: [],
+      dependencies: [],
+      contractsDependencies: [],
+    };
+    expect(names(bare)).toEqual([]);
   });
 
   it("reaches nothing in a package", () => {

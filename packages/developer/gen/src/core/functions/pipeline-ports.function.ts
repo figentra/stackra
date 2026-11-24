@@ -3,6 +3,9 @@
  * Purpose: `pipelinePorts`, the ports the action pipeline itself requires for what a service declares, as tokens its
  *          wiring reaches, so each gets its driver table from the declared packages' manifests even when no
  *          constructor injects it:
+ *          - `AccessControl` (the permission step of every call, which fails closed without it), `CallIsolation` (the
+ *            tenant isolation transaction), `UnitOfWork` (the call's transaction) and `ContextStorage` (the running
+ *            call), whenever the service or a package it hosts declares an action or a query;
  *          - `EventOutbox` when the service or a package it hosts declares an integration event (`ctx.publish` writes
  *            one), or an own action declares a `meter` or `analytics`;
  *          - `IdempotencyStore` when an own or hosted action is not `Idempotency.Never` (a sent key is honoured by
@@ -45,6 +48,14 @@ export function pipelinePorts(ir: MemberIR): TokenRef[] {
     ...ir.dependencies.map(({ manifest }) => manifest),
     ...(ir.contractsDependencies ?? []).map(({ manifest }) => manifest),
   ].filter((manifest) => manifest.kind !== "app");
+  // Any call, a query's included, runs the permission step and the isolation and transaction around `handle`.
+  const calls =
+    ir.classes.some((declared) => declared.kind === "action" || declared.kind === "query") ||
+    ir.dependencies.some(({ manifest }) =>
+      (manifest.actions ?? []).some(
+        (action) => action.kind === "action" || action.kind === "query",
+      ),
+    );
   const some = (option: string): boolean =>
     actions.some((declared) => declared.options[option] !== undefined);
   const publishes =
@@ -64,6 +75,14 @@ export function pipelinePorts(ir: MemberIR): TokenRef[] {
       (declared.options["offline"] as { readonly cap?: unknown } | undefined)?.cap !== undefined,
   );
   return [
+    ...(calls
+      ? [
+          actionsPort("AccessControl"),
+          actionsPort("CallIsolation"),
+          actionsPort("UnitOfWork"),
+          actionsPort("ContextStorage"),
+        ]
+      : []),
     ...(publishes ? [EVENT_OUTBOX] : []),
     ...(keyed ? [actionsPort("IdempotencyStore")] : []),
     ...(some("offline") ? [actionsPort("DeviceSequenceStore")] : []),

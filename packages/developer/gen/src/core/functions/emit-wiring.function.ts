@@ -788,6 +788,17 @@ export function emitWiring(ir: MemberIR): string {
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
     );
     const system = systemDefaults.get(port.name);
+    // A service's port that nothing selects (no config field) and whose candidates are one driver and the testing entry's
+    // stand-ins (`AccessControl`: `iam` and the memory fake) takes the one driver that is not a stand-in, so the container
+    // does not stop at "no config field selects one" (STA-2573).
+    const production = candidates.filter((candidate) => !testing.includes(candidate));
+    const sole =
+      ir.layout === "service" &&
+      select === undefined &&
+      candidates.length > 1 &&
+      production.length === 1
+        ? production[0]?.name
+        : undefined;
     // A producer's deliveries and a consumer's inbox claims are Postgres rows beside the outbox (STA-1910).
     const forced =
       (producer && key === "outbox.DeliveryDriver") || (inbox && key === "outbox.InboxDriver")
@@ -798,15 +809,17 @@ export function emitWiring(ir: MemberIR): string {
         ? forced
         : system !== undefined && candidates.some((candidate) => candidate.name === system)
           ? system
-          : ir.layout !== "package" || candidates.length < 2
-            ? undefined
-            : candidates.some((candidate) => candidate.name === "memory")
-              ? "memory"
-              : testing.length === 1
-                ? testing[0]?.name
-                : candidates.filter((candidate) => candidate.testDefault === true).length === 1
-                  ? candidates.find((candidate) => candidate.testDefault === true)?.name
-                  : undefined;
+          : sole !== undefined
+            ? sole
+            : ir.layout !== "package" || candidates.length < 2
+              ? undefined
+              : candidates.some((candidate) => candidate.name === "memory")
+                ? "memory"
+                : testing.length === 1
+                  ? testing[0]?.name
+                  : candidates.filter((candidate) => candidate.testDefault === true).length === 1
+                    ? candidates.find((candidate) => candidate.testDefault === true)?.name
+                    : undefined;
     const deps = candidates
       .filter((candidate) => candidate.deps.length > 0)
       .map((candidate) => `${JSON.stringify(candidate.name)}: ${list(candidate.deps.map(token))}`);

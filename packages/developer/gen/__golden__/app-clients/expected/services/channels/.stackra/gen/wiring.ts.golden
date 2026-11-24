@@ -12,7 +12,7 @@
 import { PublishChannelsAction } from "#node/actions/publish-channels.action";
 import { ChannelsModule } from "#stackra/module";
 import { EdgeNonceStore, EdgeSigningKeys } from "@stackra/app/contracts";
-import { CorsConfig, CsrfConfig, CsrfGuard, EdgeConfig, EdgeHeaderGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
+import { CorsConfig, CsrfConfig, CsrfGuard, EdgeConfig, EdgeHeaderGuard, HttpConfig, OriginGuard, VisitorConfig, VisitorIdentityService } from "@stackra/app/server";
 import type { Wiring } from "@stackra/container";
 import { QueueConfig, QueueHealthIndicatorDriver } from "@stackra/queue";
 import { QueueDriver } from "@stackra/queue/contracts";
@@ -29,12 +29,14 @@ export const wiring = {
   bindings: [
     { module: "channels", kind: "action", provide: PublishChannelsAction, deps: [] },
     { module: "channels", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },
+    { module: "channels", kind: "service", provide: VisitorIdentityService, deps: [VisitorConfig] },
     { module: "channels", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },
     { module: "channels", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },
     { module: "channels", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },
   ],
   config: [
     { key: "app.edge", provide: EdgeConfig },
+    { key: "app.visitor", provide: VisitorConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
     { key: "app.http", provide: HttpConfig },

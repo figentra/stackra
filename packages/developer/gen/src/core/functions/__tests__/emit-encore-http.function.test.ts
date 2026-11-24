@@ -42,7 +42,7 @@ describe(emitEncoreHttp, () => {
     const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
     for (const line of [
       "export async function answerCall(req: IncomingMessage, resp: ServerResponse, call: Call): Promise<void> {",
-      '    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),',
+      '    ...(method === "GET" || method === "HEAD" ? {} : { body: webBodyOf(req), duplex: "half" }),',
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
@@ -53,6 +53,10 @@ describe(emitEncoreHttp, () => {
       "  else Readable.fromWeb(response.body as never).pipe(resp);",
     ])
       expect(content).toContain(line);
+    // The body is read with webBodyOf, never Readable.toWeb: on Encore's raw request (its `req` is not an event emitter)
+    // toWeb raises an uncaught TypeError at close, which ended the process on the first write request.
+    expect(content).toMatch(/import \{[^}]*\bwebBodyOf\b[^}]*\} from "@stackra\/app\/server";/);
+    expect(content).not.toContain("Readable.toWeb");
   });
 
   it("answers a rate-limited refusal with 429 and its back-off headers when @stackra/errors is declared", () => {
