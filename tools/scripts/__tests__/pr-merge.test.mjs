@@ -29,6 +29,9 @@ import {
   parseArgs,
   VERIFY_APP,
   VERIFY_CHECK,
+  VERIFY_MOBILE_CHECK,
+  CODEQL_CHECK,
+  DEFINITION_FIELDS,
   verifyFacts,
   verifyRun,
 } from "../pr-merge.mjs";
@@ -49,7 +52,7 @@ const pr = (over = {}) => ({
   ...over,
 });
 const green = [{ id: 2, status: "completed", conclusion: "success" }];
-// The verify App as it will be once the owner registers it; VERIFY_APP itself keeps id null until then.
+// A stand-in verify App, so each case names the App it trusts; VERIFY_APP is the registered one (id 5907714).
 const APP = { slug: "stackra-verify", id: 4242 };
 const appRun = (
   conclusion,
@@ -261,10 +264,55 @@ test("condition 5: no stackra/verify check run from the verify App refuses (STA-
   );
 });
 
-test("condition 5: while VERIFY_APP has no id, nothing passes, whatever runs exist", () => {
-  assert.equal(VERIFY_APP.id, null);
-  assert.match(blockers(pr(), green, { verifyRuns: verified }).join(), /App is not registered/);
-  assert.equal(verifyRun(verified, SHA, VERIFY_APP), undefined);
+test("condition 5: VERIFY_APP is the registered stackra-verify App; an App without an id passes nothing", () => {
+  assert.deepEqual({ ...VERIFY_APP }, { slug: "stackra-verify", id: 5_907_714 });
+  assert.equal(Object.isFrozen(VERIFY_APP), true);
+  const registered = [appRun("success", { app: { slug: "stackra-verify", id: 5_907_714 } })];
+  assert.deepEqual(blockers(pr(), green, { verifyRuns: registered }), []);
+  // the slug check stays: the right id under another slug never counts
+  const otherSlug = [appRun("success", { app: { slug: "stackra-bot", id: 5_907_714 } })];
+  assert.match(
+    blockers(pr(), green, { verifyRuns: otherSlug }).join(),
+    /no stackra\/verify check run/,
+  );
+  const unregistered = { slug: "stackra-verify", id: null };
+  const runs = [appRun("success", { app: unregistered })];
+  assert.match(
+    blockers(pr(), green, { verifyRuns: runs, app: unregistered }).join(),
+    /App is not registered/,
+  );
+  assert.equal(verifyRun(runs, SHA, unregistered), undefined);
+});
+
+test("condition 5: stackra/verify-mobile and stackra/codeql never pass or block a merge, whatever they say", () => {
+  assert.notEqual(VERIFY_MOBILE_CHECK, VERIFY_CHECK);
+  assert.notEqual(CODEQL_CHECK, VERIFY_CHECK);
+  // a red mobile or CodeQL run beside a green stackra/verify: merges
+  const redOthers = [
+    appRun("success", { id: 1 }),
+    appRun("failure", { id: 2, name: VERIFY_MOBILE_CHECK }),
+    appRun("failure", { id: 3, name: CODEQL_CHECK }),
+  ];
+  assert.deepEqual(check(pr(), green, { verifyRuns: redOthers }), []);
+  assert.equal(verifyRun(redOthers, SHA, APP).id, 1);
+  // a green mobile or CodeQL run alone never stands in for stackra/verify
+  const greenOthers = [
+    appRun("success", { id: 4, name: VERIFY_MOBILE_CHECK }),
+    appRun("success", { id: 5, name: CODEQL_CHECK }),
+  ];
+  assert.match(
+    check(pr(), green, { verifyRuns: greenOthers }).join(),
+    /no stackra\/verify check run/,
+  );
+  // and a newer mobile run never shadows the newest stackra/verify run (conditions 5 and 6 read only that name)
+  const mixed = [
+    appRun("failure", { id: 6 }),
+    appRun("success", { id: 7, name: VERIFY_MOBILE_CHECK }),
+  ];
+  assert.match(
+    check(pr(), green, { verifyRuns: mixed }).join(),
+    /stackra\/verify on .* is failure/,
+  );
 });
 
 test("condition 5: a failed, neutral, cancelled or unfinished run refuses and names its link", () => {
@@ -339,7 +387,7 @@ test("condition 5: only the newest App run counts (a re-run in progress refuses)
   );
 });
 
-test("condition 6: a PR that changes what pnpm verify checks needs risk:R3", () => {
+test("condition 6: a PR that changes what the verify service checks needs risk:R3", () => {
   for (const path of [
     "turbo.jsonc",
     "packages/data/database/turbo.jsonc",
@@ -353,6 +401,30 @@ test("condition 6: a PR that changes what pnpm verify checks needs risk:R3", () 
     "lefthook.yml",
   ])
     assert.equal(isVerifyDefinition(path), true, path);
+  // the Quality Gate's own policies are main's, so a PR cannot weaken the gate it is judged by
+  for (const path of [
+    ".github/zizmor.yml",
+    ".gitleaks.toml",
+    ".gitleaksignore",
+    ".commitlintrc.yaml",
+    "commitlint.config.mjs",
+    "osv-scanner.toml",
+    "tools/policy/licences.json",
+    "tools/scripts/stackra-verify.mjs",
+  ]) {
+    assert.equal(isVerifyOverlay(path), true, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+  for (const path of [".github/workflows/ci.yml", "docs/zizmor.yml", "packages/x/osv-scanner.md"])
+    assert.equal(isVerifyOverlay(path), false, path);
+  for (const field of ["knip", "commitlint"]) {
+    assert.equal(DEFINITION_FIELDS.includes(field), true, field);
+    assert.equal(
+      definitionFieldsChanged(`{"${field}":{"a":1}}`, `{"${field}":{"a":2}}`),
+      true,
+      field,
+    );
+  }
   for (const path of [
     "packages/ai/src/index.ts",
     "README.md",
