@@ -17,9 +17,11 @@ import {
   enqueueReady,
   gh,
   graphql,
+  latestVerify,
   OWNER,
   ownerLabelled,
   parseArgs,
+  VERIFY_CONTEXT,
 } from "../pr-merge.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -38,6 +40,15 @@ const pr = (over = {}) => ({
   ...over,
 });
 const green = [{ id: 2, status: "completed", conclusion: "success" }];
+const status = (state, created_at = T1, id = 1) => ({
+  context: VERIFY_CONTEXT,
+  state,
+  created_at,
+  id,
+});
+const verified = [status("success")];
+// Every pre-STA-2761 case runs with a green stackra/verify; condition 5 has its own tests below.
+const check = (p, runs, options = {}) => blockers(p, runs, { statuses: verified, ...options });
 // Shapes as the REST pull reviews API returns them.
 const review = (over = {}) => ({
   user: { login: OWNER, type: "User" },
@@ -48,30 +59,30 @@ const review = (over = {}) => ({
 });
 
 test("merges an open PR with a green gate, a clean merge state and no hold, with no review at all", () => {
-  assert.deepEqual(blockers(pr(), green), []);
+  assert.deepEqual(check(pr(), green), []);
   // UNSTABLE: only a non-required check is not green; HAS_HOOKS: mergeable with pre-receive hooks
-  assert.deepEqual(blockers(pr({ mergeStateStatus: "UNSTABLE" }), green), []);
-  assert.deepEqual(blockers(pr({ mergeStateStatus: "HAS_HOOKS" }), green), []);
+  assert.deepEqual(check(pr({ mergeStateStatus: "UNSTABLE" }), green), []);
+  assert.deepEqual(check(pr({ mergeStateStatus: "HAS_HOOKS" }), green), []);
 });
 
 test("condition 1: draft and closed PRs are refused", () => {
-  assert.match(blockers(pr({ isDraft: true }), green).join(), /draft/);
-  assert.match(blockers(pr({ state: "MERGED" }), green).join(), /MERGED/);
-  assert.match(blockers(pr({ state: "CLOSED" }), green).join(), /CLOSED/);
+  assert.match(check(pr({ isDraft: true }), green).join(), /draft/);
+  assert.match(check(pr({ state: "MERGED" }), green).join(), /MERGED/);
+  assert.match(check(pr({ state: "CLOSED" }), green).join(), /CLOSED/);
 });
 
 test("condition 2: gate missing, failed, in progress, or only an older rerun green", () => {
-  assert.match(blockers(pr(), []).join(), /no Quality Gate run/);
-  assert.match(blockers(pr(), [{ id: 1, conclusion: "failure" }]).join(), /is failure/);
+  assert.match(check(pr(), []).join(), /no Quality Gate run/);
+  assert.match(check(pr(), [{ id: 1, conclusion: "failure" }]).join(), /is failure/);
   assert.match(
-    blockers(pr(), [{ id: 1, status: "in_progress", conclusion: null }]).join(),
+    check(pr(), [{ id: 1, status: "in_progress", conclusion: null }]).join(),
     /is in_progress/,
   );
   const rerunRed = [
     { id: 1, conclusion: "success" },
     { id: 3, conclusion: "failure" },
   ];
-  assert.match(blockers(pr(), rerunRed).join(), /is failure/);
+  assert.match(check(pr(), rerunRed).join(), /is failure/);
 });
 
 test("condition 3: without a merge queue, the ruleset's merge state must let it merge", () => {
@@ -82,30 +93,27 @@ test("condition 3: without a merge queue, the ruleset's merge state must let it 
     ["UNKNOWN", /run pr:merge again/],
   ])
     assert.match(
-      blockers(pr({ mergeStateStatus: state }), green).join(),
+      check(pr({ mergeStateStatus: state }), green).join(),
       new RegExp(`mergeStateStatus is ${state} \\(.*${hint.source}`),
       state,
     );
-  assert.match(blockers(pr({ mergeStateStatus: undefined }), green).join(), /is UNKNOWN/);
+  assert.match(check(pr({ mergeStateStatus: undefined }), green).join(), /is UNKNOWN/);
   // the queue applies the ruleset itself, so any state enqueues
-  assert.deepEqual(blockers(pr({ mergeStateStatus: "BLOCKED" }), green, { queue: true }), []);
+  assert.deepEqual(check(pr({ mergeStateStatus: "BLOCKED" }), green, { queue: true }), []);
 });
 
 test("condition 4: a hold label in any case refuses, queue or not", () => {
   for (const name of ["hold", "HOLD", "Hold"]) {
-    assert.match(blockers(pr({ labels: [{ name }] }), green).join(), /labelled hold/, name);
-    assert.match(
-      blockers(pr({ labels: [{ name }] }), green, { queue: true }).join(),
-      /labelled hold/,
-    );
+    assert.match(check(pr({ labels: [{ name }] }), green).join(), /labelled hold/, name);
+    assert.match(check(pr({ labels: [{ name }] }), green, { queue: true }).join(), /labelled hold/);
   }
-  assert.deepEqual(blockers(pr({ labels: [{ name: "on-hold-later" }] }), green), []);
+  assert.deepEqual(check(pr({ labels: [{ name: "on-hold-later" }] }), green), []);
 });
 
 test("an AI-REVIEW verdict is never read: a FAIL comment does not refuse, and none is needed", () => {
   // blockers takes no comments; the reviewer App is retired (ADR 0523 decision 6)
   assert.equal(blockers.length, 2);
-  assert.deepEqual(blockers(pr(), green, { reviews: [] }), []);
+  assert.deepEqual(check(pr(), green, { reviews: [] }), []);
 });
 
 test("pr:merge arguments: a number and an optional -R owner/repo", () => {
@@ -118,17 +126,17 @@ test("pr:merge arguments: a number and an optional -R owner/repo", () => {
 
 test("design / risk:R3 need an owner approval on the head SHA or owner-approved", () => {
   const labels = [{ name: "risk:R3" }];
-  assert.match(blockers(pr({ labels }), green).join(), /owner approval/);
+  assert.match(check(pr({ labels }), green).join(), /owner approval/);
   const stale = [review({ commit_id: "abc" })];
-  assert.match(blockers(pr({ labels }), green, { reviews: stale }).join(), /owner approval/);
+  assert.match(check(pr({ labels }), green, { reviews: stale }).join(), /owner approval/);
   const notOwner = [review({ user: { login: "someone", type: "User" } })];
-  assert.match(blockers(pr({ labels }), green, { reviews: notOwner }).join(), /owner approval/);
+  assert.match(check(pr({ labels }), green, { reviews: notOwner }).join(), /owner approval/);
   const botOwner = [review({ user: { login: OWNER, type: "Bot" } })];
-  assert.match(blockers(pr({ labels }), green, { reviews: botOwner }).join(), /owner approval/);
-  assert.deepEqual(blockers(pr({ labels }), green, { reviews: [review()] }), []);
+  assert.match(check(pr({ labels }), green, { reviews: botOwner }).join(), /owner approval/);
+  assert.deepEqual(check(pr({ labels }), green, { reviews: [review()] }), []);
   const labelled = [{ name: "design" }, { name: "owner-approved" }];
   const byOwner = [labelEvent("labeled", OWNER, "User")];
-  assert.deepEqual(blockers(pr({ labels: labelled }), green, { events: byOwner }), []);
+  assert.deepEqual(check(pr({ labels: labelled }), green, { events: byOwner }), []);
 });
 
 // Shapes as the REST issue events API returns them.
@@ -142,7 +150,7 @@ const labelEvent = (event, login, type, created_at = T0, name = "owner-approved"
 
 test("STA-330 review: owner-approved counts only when the owner added it and it was not removed since", () => {
   const labels = [{ name: "design" }, { name: "owner-approved" }];
-  const merge = (events) => blockers(pr({ labels }), green, { events });
+  const merge = (events) => check(pr({ labels }), green, { events });
   assert.deepEqual(merge([labelEvent("labeled", OWNER, "User")]), []);
   // the label on the PR alone, or added by anyone but the owner, never counts
   for (const events of [
@@ -180,7 +188,7 @@ test("STA-330 review: owner-approved counts only when the owner added it and it 
     false,
   );
   // an owner review on the head still passes without the label
-  assert.deepEqual(blockers(pr({ labels }), green, { reviews: [review()], events: [] }), []);
+  assert.deepEqual(check(pr({ labels }), green, { reviews: [review()], events: [] }), []);
 });
 
 test("OP7: enqueueing waits for STA-302's connect timeout and retries", () => {
@@ -226,4 +234,31 @@ test("STA-302: gh() and graphql() retry reads only; a write that omits the flag 
     run(() => graphql("query{x}", [], "t")),
     { value: { x: 1 }, runs: 2 },
   );
+});
+
+test("condition 5: no stackra/verify status on the head refuses (STA-2761, replaces merge-now)", () => {
+  assert.match(blockers(pr(), green).join(), /no stackra\/verify status on 0123/);
+  assert.match(blockers(pr(), green, { statuses: [] }).join(), /wait for the verify service/);
+});
+
+test("condition 5: a pending, failed or errored verify refuses and names its link", () => {
+  for (const state of ["pending", "failure", "error"]) {
+    const statuses = [{ ...status(state), target_url: "https://example.test/log" }];
+    assert.match(
+      blockers(pr(), green, { statuses }).join(),
+      new RegExp(`stackra/verify on ${SHA} is ${state}`),
+    );
+    assert.match(blockers(pr(), green, { statuses }).join(), /example\.test\/log/);
+  }
+});
+
+test("condition 5: only the newest stackra/verify counts, and other contexts never stand in for it", () => {
+  const old = status("success", T0, 1);
+  const newer = status("failure", T2, 2);
+  assert.equal(latestVerify([newer, old]).state, "failure");
+  assert.match(blockers(pr(), green, { statuses: [old, newer] }).join(), /is failure/);
+  const redThenGreen = [status("failure", T0, 1), status("success", T2, 2)];
+  assert.deepEqual(blockers(pr(), green, { statuses: redThenGreen }), []);
+  const other = [{ context: "ci/other", state: "success", created_at: T2, id: 3 }];
+  assert.match(blockers(pr(), green, { statuses: other }).join(), /no stackra\/verify status/);
 });

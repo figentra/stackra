@@ -56,6 +56,7 @@
     "bot:gh": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/bot-gh.mjs gh",
     "bot:git": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/bot-gh.mjs git",
     "pr:merge": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/pr-merge.mjs",
+    "verify:service": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/stackra-verify.mjs",
     "adr:reserve": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/adr-reserve.mjs"
   },
   "devDependencies": {

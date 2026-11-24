@@ -11,7 +11,9 @@
  *   3. the ruleset lets it merge: the base has a merge queue (the queue applies the ruleset), or `mergeStateStatus`
  *      is CLEAN, HAS_HOOKS or UNSTABLE (only a non-required check is not green; the gate is condition 2, so a red
  *      non-required check is reported, not blocking);
- *   4. the PR carries no `hold` label (any case).
+ *   4. the PR carries no `hold` label (any case);
+ *   5. the newest `stackra/verify` commit status on the head SHA is `success`: `pnpm verify`, tests included, passed
+ *      on that exact SHA on our machines (`stackra-verify.mjs`, STA-2761; replaces the merge-now rule STA-2083).
  *   A PR labelled `design` or `risk:R3` also needs an owner APPROVED review on the head SHA, or `owner-approved` put
  *   there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is the owner
  *   user, never a bot (ADR 0119 decision 2 as amended 2026-10-28, ADR 0293). The events are read only then; an API
@@ -35,6 +37,19 @@ export const OWNER = "figentra-usr";
 const GATED_LABELS = ["design", "risk:R3"];
 /** The label that stops a merge (ADR 0523 decision 3: the merger honours a HOLD label). */
 export const HOLD_LABEL = "hold";
+/** The commit status `stackra-verify.mjs` posts on a head SHA; condition 5 needs it green (STA-2761). */
+export const VERIFY_CONTEXT = "stackra/verify";
+
+/**
+ * The newest `stackra/verify` status among `statuses` (REST commit statuses, any order), or undefined. GitHub keeps
+ * every status a context ever had; the newest by `created_at`, then `id`, is the one that counts.
+ */
+export const latestVerify = (statuses) =>
+  statuses
+    .filter((s) => s.context === VERIFY_CONTEXT)
+    .toSorted((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
+    .at(-1);
+
 /** The merge states in which the ruleset lets a PR without a merge queue merge. */
 export const MERGEABLE_STATES = ["CLEAN", "HAS_HOOKS", "UNSTABLE"];
 
@@ -78,9 +93,14 @@ const STATE_HINTS = {
 /**
  * Reasons the PR may not merge; empty means merge. `pr` carries `mergeStateStatus`; `checkRuns` are the head SHA's
  * "Quality Gate" runs; `queue` says the base branch has a merge queue; `reviews` are the REST pull reviews and
- * `events` the REST issue events (`ownerLabelled`), empty when not read.
+ * `events` the REST issue events (`ownerLabelled`), empty when not read; `statuses` the head SHA's REST commit
+ * statuses (condition 5).
  */
-export function blockers(pr, checkRuns, { queue = false, reviews = [], events = [] } = {}) {
+export function blockers(
+  pr,
+  checkRuns,
+  { queue = false, reviews = [], events = [], statuses = [] } = {},
+) {
   const reasons = [];
   const sha = pr.headRefOid;
   if (pr.state !== "OPEN") reasons.push(`PR is ${pr.state}`);
@@ -90,6 +110,13 @@ export function blockers(pr, checkRuns, { queue = false, reviews = [], events = 
   if (!gate) reasons.push(`no Quality Gate run on ${sha}`);
   else if (gate.conclusion !== "success")
     reasons.push(`Quality Gate on ${sha} is ${gate.conclusion ?? gate.status}`);
+
+  const verify = latestVerify(statuses);
+  if (!verify) reasons.push(`no ${VERIFY_CONTEXT} status on ${sha}: wait for the verify service`);
+  else if (verify.state !== "success")
+    reasons.push(
+      `${VERIFY_CONTEXT} on ${sha} is ${verify.state}${verify.target_url ? ` (${verify.target_url})` : ""}`,
+    );
 
   const state = pr.mergeStateStatus ?? "UNKNOWN";
   if (!queue && !MERGEABLE_STATES.includes(state))
@@ -197,7 +224,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       gated && labels.has(OWNER_LABEL)
         ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
         : [];
-    const reasons = blockers(pr, runs, { queue: Boolean(repository.mergeQueue), reviews, events });
+    // Condition 5: every status of the head SHA (paginated), so an old context never hides the newest verify.
+    const statuses = list(`repos/${repo}/commits/${pr.headRefOid}/statuses?per_page=100`, token);
+    const reasons = blockers(pr, runs, {
+      queue: Boolean(repository.mergeQueue),
+      reviews,
+      events,
+      statuses,
+    });
     if (reasons.length) {
       process.stderr.write(
         `pr-merge: not merging #${n}:\n${reasons.map((r) => `  - ${r}`).join("\n")}\n`,
