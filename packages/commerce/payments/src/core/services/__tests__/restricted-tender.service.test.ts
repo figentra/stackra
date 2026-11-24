@@ -30,6 +30,7 @@ import { RestrictedTenderUnavailableError } from "#core/errors/restricted-tender
 import { PaymentService } from "#core/services/payment.service";
 import { RestrictedTenderService } from "#core/services/restricted-tender.service";
 import { ConnectedAccountLimitsFake } from "#testing/connected-account-limits.fake";
+import { paymentLocksOf } from "#testing/payment-locks-of.function";
 import { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 import { PaymentGatewaysFake } from "#testing/payment-gateways.fake";
 
@@ -95,6 +96,7 @@ describe("RestrictedTenderService", () => {
       records,
       new FixedClock(),
       ConnectedAccountLimitsFake.with(),
+      paymentLocksOf(new FixedClock()),
     );
     tenders = new RestrictedTenderService(
       payments,

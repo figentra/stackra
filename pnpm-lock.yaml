@@ -2256,6 +2256,9 @@ importers:
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@stackra/locking':
+        specifier: workspace:*
+        version: link:../../runtime/locking
       '@stackra/market-packs':
         specifier: workspace:*
         version: link:../../foundation/market-packs

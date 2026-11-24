@@ -27,6 +27,7 @@ import { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records
 import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
 import { PaymentService } from "#core/services/payment.service";
 import { ConnectedAccountLimitsFake } from "#testing/connected-account-limits.fake";
+import { paymentLocksOf } from "#testing/payment-locks-of.function";
 import { EcrLinkFake } from "#testing/ecr-link.fake";
 import { PaymentGatewaysFake } from "#testing/payment-gateways.fake";
 
@@ -264,6 +265,7 @@ describe("EcrTerminalGateway", () => {
       records,
       new FixedClock(),
       ConnectedAccountLimitsFake.with(),
+      paymentLocksOf(new FixedClock()),
     );
     await expect(payments.startTerminal("sa", sale)).rejects.toThrow();
     expect((await records.find("chk_9"))?.status).toBe(PaymentStatus.Unknown);

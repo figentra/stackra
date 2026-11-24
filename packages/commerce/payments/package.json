@@ -123,6 +123,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
+    "@stackra/locking": "workspace:*",
     "@stackra/market-packs": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/ui": "workspace:*",

@@ -28,6 +28,7 @@
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
+import type { Locks } from "@stackra/locking";
 import { Money } from "@stackra/money";
 
 import { ChargeInitiator } from "#contracts/enums/charge-initiator.enum";
@@ -55,6 +56,7 @@ import type { TerminalRequest } from "#contracts/types/terminal-request.type";
 import type { TerminalSession } from "#contracts/types/terminal-session.type";
 import type { TokenCharge } from "#contracts/types/token-charge.type";
 import type { TransferResult } from "#contracts/types/transfer-result.type";
+import { PAYMENT_LOCK_TTL } from "#core/constants/payment-lock-ttl.constant";
 import { AgentConfirmationRefusedError } from "#core/errors/agent-confirmation-refused.error";
 import { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
 import { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
@@ -101,6 +103,9 @@ export class PaymentService extends Service {
   /** The cap and the payout hold of a connected account. */
   private readonly limits: ConnectedAccountLimits;
 
+  /** The server's named locks: one payment is changed by one call at a time. */
+  private readonly locks: Locks;
+
   /** The agent protocols' wallet confirmations; none bound means no agent payment is taken. */
   private readonly agents: AgentCommerceProtocols | undefined;
 
@@ -109,6 +114,7 @@ export class PaymentService extends Service {
    * @param records - the host's durable store; the memory driver in tests.
    * @param clock - the container's clock.
    * @param limits - the host's verification-backed limits; a fake in tests.
+   * @param locks - the server's named locks (`@stackra/locking`); the real `Locks` over the memory driver in tests.
    * @param agents - the host's protocol connectors; gen's wiring always passes it, a test may leave it out.
    */
   constructor(
@@ -116,6 +122,7 @@ export class PaymentService extends Service {
     records: PaymentRecords,
     clock: Clock,
     limits: ConnectedAccountLimits,
+    locks: Locks,
     agents?: AgentCommerceProtocols,
   ) {
     super();
@@ -123,6 +130,7 @@ export class PaymentService extends Service {
     this.records = records;
     this.clock = clock;
     this.limits = limits;
+    this.locks = locks;
     this.agents = agents;
   }
 
@@ -222,28 +230,30 @@ export class PaymentService extends Service {
     amount: Money,
     incrementReference: string,
   ): Promise<PaymentRecord> {
-    const record = await this.load(reference);
-    this.assert(record, "increment", [PaymentStatus.Authorized]);
-    if (amount.minor <= 0 || amount.currency !== record.amount.currency)
-      throw InvalidPaymentTransitionError.create({
-        reference,
-        status: record.status,
-        operation: "increment",
+    return this.locked(reference, async () => {
+      const record = await this.load(reference);
+      this.assert(record, "increment", [PaymentStatus.Authorized]);
+      if (amount.minor <= 0 || amount.currency !== record.amount.currency)
+        throw InvalidPaymentTransitionError.create({
+          reference,
+          status: record.status,
+          operation: "increment",
+        });
+      const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
+      const raiser = this.capable(gateway, PaymentCapability.IncrementalAuth);
+      await this.withinCap(gateway, reference, totalOf(record).plus(amount));
+      const request: IncrementRequest = {
+        payment: this.targetOf(record),
+        amount,
+        reference: incrementReference,
+      };
+      const result = await this.guard(record, () => raiser.increment(request), false);
+      return this.save({
+        ...record,
+        providerRef: result.providerRef,
+        status: result.status,
+        amount: record.tip === undefined ? result.amount : result.amount.minus(record.tip),
       });
-    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
-    const raiser = this.capable(gateway, PaymentCapability.IncrementalAuth);
-    await this.withinCap(gateway, reference, totalOf(record).plus(amount));
-    const request: IncrementRequest = {
-      payment: this.targetOf(record),
-      amount,
-      reference: incrementReference,
-    };
-    const result = await this.guard(record, () => raiser.increment(request), false);
-    return this.save({
-      ...record,
-      providerRef: result.providerRef,
-      status: result.status,
-      amount: record.tip === undefined ? result.amount : result.amount.minus(record.tip),
     });
   }
 
@@ -323,19 +333,21 @@ export class PaymentService extends Service {
    * paid in the meantime).
    */
   async cancelTerminal(reference: string): Promise<PaymentRecord> {
-    const record = await this.load(reference);
-    this.assert(record, "cancel_terminal", [PaymentStatus.Pending]);
-    if (record.terminalId === undefined)
-      throw InvalidPaymentTransitionError.create({
-        reference,
-        status: record.status,
-        operation: "cancel_terminal",
-      });
-    const { terminalId, providerRef } = record;
-    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
-    const terminal = this.capable(gateway, PaymentCapability.Terminal);
-    await this.guard(record, () => terminal.cancelTerminal(terminalId, providerRef), false);
-    return this.reconcile(reference);
+    return this.locked(reference, async () => {
+      const record = await this.load(reference);
+      this.assert(record, "cancel_terminal", [PaymentStatus.Pending]);
+      if (record.terminalId === undefined)
+        throw InvalidPaymentTransitionError.create({
+          reference,
+          status: record.status,
+          operation: "cancel_terminal",
+        });
+      const { terminalId, providerRef } = record;
+      const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
+      const terminal = this.capable(gateway, PaymentCapability.Terminal);
+      await this.guard(record, () => terminal.cancelTerminal(terminalId, providerRef), false);
+      return this.reconcileHeld(reference);
+    });
   }
 
   /**
@@ -345,20 +357,7 @@ export class PaymentService extends Service {
    * @throws NotFoundError when the reference has no record.
    */
   async reconcile(reference: string): Promise<PaymentRecord> {
-    const record = await this.load(reference);
-    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
-    const found = await gateway.lookup(this.targetOf(record));
-    if (found === null)
-      return record.status === PaymentStatus.Unknown
-        ? this.save({ ...record, status: PaymentStatus.Failed })
-        : record;
-    return this.save({
-      ...record,
-      providerRef: found.providerRef,
-      status: found.status,
-      ...(found.tip === undefined ? {} : { tip: found.tip }),
-      ...(found.method === undefined ? {} : { method: found.method }),
-    });
+    return this.locked(reference, () => this.reconcileHeld(reference));
   }
 
   /**
@@ -370,24 +369,26 @@ export class PaymentService extends Service {
    * @throws ApplicationFeeInvalidError when the fee is in another currency, negative or above what is captured.
    */
   async capture(reference: string, amount?: Money, applicationFee?: Money): Promise<PaymentRecord> {
-    const record = await this.load(reference);
-    this.assert(record, "capture", [PaymentStatus.Authorized]);
-    const taken = amount ?? totalOf(record);
-    assertApplicationFee(reference, taken, applicationFee);
-    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
-    const capturer = this.capable(gateway, PaymentCapability.Capture);
-    const result = await this.guard(
-      record,
-      () =>
-        capturer.capture({
-          payment: this.targetOf(record),
-          amount: taken,
-          reference: `capture:${reference}`,
-          ...(applicationFee === undefined ? {} : { applicationFee }),
-        }),
-      false,
-    );
-    return this.save({ ...record, providerRef: result.providerRef, status: result.status });
+    return this.locked(reference, async () => {
+      const record = await this.load(reference);
+      this.assert(record, "capture", [PaymentStatus.Authorized]);
+      const taken = amount ?? totalOf(record);
+      assertApplicationFee(reference, taken, applicationFee);
+      const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
+      const capturer = this.capable(gateway, PaymentCapability.Capture);
+      const result = await this.guard(
+        record,
+        () =>
+          capturer.capture({
+            payment: this.targetOf(record),
+            amount: taken,
+            reference: `capture:${reference}`,
+            ...(applicationFee === undefined ? {} : { applicationFee }),
+          }),
+        false,
+      );
+      return this.save({ ...record, providerRef: result.providerRef, status: result.status });
+    });
   }
 
   /**
@@ -396,12 +397,14 @@ export class PaymentService extends Service {
    * @throws PaymentUnknownError when its last answer was lost (and when this one is).
    */
   async void(reference: string): Promise<PaymentRecord> {
-    const record = await this.load(reference);
-    this.assert(record, "void", [PaymentStatus.Pending, PaymentStatus.Authorized]);
-    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
-    const voider = this.capable(gateway, PaymentCapability.Capture);
-    const result = await this.guard(record, () => voider.void(this.targetOf(record)), false);
-    return this.save({ ...record, providerRef: result.providerRef, status: result.status });
+    return this.locked(reference, async () => {
+      const record = await this.load(reference);
+      this.assert(record, "void", [PaymentStatus.Pending, PaymentStatus.Authorized]);
+      const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
+      const voider = this.capable(gateway, PaymentCapability.Capture);
+      const result = await this.guard(record, () => voider.void(this.targetOf(record)), false);
+      return this.save({ ...record, providerRef: result.providerRef, status: result.status });
+    });
   }
 
   /**
@@ -416,36 +419,40 @@ export class PaymentService extends Service {
     refundReference: string,
     reason?: string,
   ): Promise<TransferResult> {
-    const record = await this.load(reference);
-    this.assert(record, "refund", [PaymentStatus.Captured, PaymentStatus.PartiallyRefunded]);
-    const total = totalOf(record);
-    const refunded = record.refunded.plus(amount);
-    if (amount.minor <= 0 || refunded.minor > total.minor)
-      throw InvalidPaymentTransitionError.create({
-        reference,
-        status: record.status,
-        operation: "refund",
-      });
-    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
-    const result = await this.guard(
-      record,
-      () =>
-        gateway.refund({
-          payment: this.targetOf(record),
-          amount,
-          reference: refundReference,
-          ...(reason === undefined ? {} : { reason }),
-        }),
-      false,
-    );
-    if (result.status !== TransferStatus.Failed)
-      await this.save({
-        ...record,
-        refunded,
-        status:
-          refunded.minor >= total.minor ? PaymentStatus.Refunded : PaymentStatus.PartiallyRefunded,
-      });
-    return result;
+    return this.locked(reference, async () => {
+      const record = await this.load(reference);
+      this.assert(record, "refund", [PaymentStatus.Captured, PaymentStatus.PartiallyRefunded]);
+      const total = totalOf(record);
+      const refunded = record.refunded.plus(amount);
+      if (amount.minor <= 0 || refunded.minor > total.minor)
+        throw InvalidPaymentTransitionError.create({
+          reference,
+          status: record.status,
+          operation: "refund",
+        });
+      const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
+      const result = await this.guard(
+        record,
+        () =>
+          gateway.refund({
+            payment: this.targetOf(record),
+            amount,
+            reference: refundReference,
+            ...(reason === undefined ? {} : { reason }),
+          }),
+        false,
+      );
+      if (result.status !== TransferStatus.Failed)
+        await this.save({
+          ...record,
+          refunded,
+          status:
+            refunded.minor >= total.minor
+              ? PaymentStatus.Refunded
+              : PaymentStatus.PartiallyRefunded,
+        });
+      return result;
+    });
   }
 
   /**
@@ -495,19 +502,21 @@ export class PaymentService extends Service {
     status: PaymentStatus,
     resolution: { readonly by: string; readonly reason: string },
   ): Promise<PaymentRecord> {
-    const record = await this.load(reference);
-    if (record.status !== PaymentStatus.Unknown || !RESOLVABLE.has(status))
-      throw InvalidPaymentTransitionError.create({
-        reference,
-        status: record.status,
-        operation: "resolve",
+    return this.locked(reference, async () => {
+      const record = await this.load(reference);
+      if (record.status !== PaymentStatus.Unknown || !RESOLVABLE.has(status))
+        throw InvalidPaymentTransitionError.create({
+          reference,
+          status: record.status,
+          operation: "resolve",
+        });
+      const reason = resolution.reason.trim();
+      if (reason === "") throw ResolutionReasonRequiredError.create({ reference });
+      return this.save({
+        ...record,
+        status,
+        resolution: { by: resolution.by, reason, at: this.clock.now() },
       });
-    const reason = resolution.reason.trim();
-    if (reason === "") throw ResolutionReasonRequiredError.create({ reference });
-    return this.save({
-      ...record,
-      status,
-      resolution: { by: resolution.by, reason, at: this.clock.now() },
     });
   }
 
@@ -650,6 +659,40 @@ export class PaymentService extends Service {
       if (creates) await this.save({ ...record, status: PaymentStatus.Failed });
       throw error;
     }
+  }
+
+  /** `reconcile` for a caller that already holds the payment's lock (`Locks` is not re-entrant). */
+  private async reconcileHeld(reference: string): Promise<PaymentRecord> {
+    const record = await this.load(reference);
+    const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
+    const found = await gateway.lookup(this.targetOf(record));
+    if (found === null)
+      return record.status === PaymentStatus.Unknown
+        ? this.save({ ...record, status: PaymentStatus.Failed })
+        : record;
+    return this.save({
+      ...record,
+      providerRef: found.providerRef,
+      status: found.status,
+      ...(found.tip === undefined ? {} : { tip: found.tip }),
+      ...(found.method === undefined ? {} : { method: found.method }),
+    });
+  }
+
+  /**
+   * Runs `work` holding the lock of the payment `reference`, so two calls on one payment never interleave: the check of
+   * a refund against what was taken, the provider call and the save of the new total happen as one step (without it two
+   * refunds both pass the check, both reach the provider, and the later save overwrites the earlier one). `work` reads
+   * the record again under the lock. The key is `payments.payment:<connectionId>:<reference>`: the connection is the
+   * tenant's own public id, so two tenants' identical references never wait on each other.
+   *
+   * @throws NotFoundError when there is no such payment.
+   * @throws LockUnavailableError (`lock_unavailable`, 503, retryable) when another call holds the payment for longer
+   *         than `PAYMENT_LOCK_TTL`.
+   */
+  private async locked<T>(reference: string, work: () => Promise<T>): Promise<T> {
+    const { connectionId } = await this.load(reference);
+    return this.locks.with(`payments.payment:${connectionId}:${reference}`, PAYMENT_LOCK_TTL, work);
   }
 
   /**

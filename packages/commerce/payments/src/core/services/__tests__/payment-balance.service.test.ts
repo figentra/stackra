@@ -25,6 +25,7 @@ import { PaymentUnknownError } from "#core/errors/payment-unknown.error";
 import { PaymentBalanceService } from "#core/services/payment-balance.service";
 import { PaymentService } from "#core/services/payment.service";
 import { ConnectedAccountLimitsFake } from "#testing/connected-account-limits.fake";
+import { paymentLocksOf } from "#testing/payment-locks-of.function";
 import { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 import { PaymentGatewaysFake } from "#testing/payment-gateways.fake";
 
@@ -61,6 +62,7 @@ describe("PaymentBalanceService", () => {
       records,
       clock,
       ConnectedAccountLimitsFake.with(),
+      paymentLocksOf(clock),
     );
     return new PaymentBalanceService(payments, new MemoryPaymentBalancesDriver(), records, clock);
   }

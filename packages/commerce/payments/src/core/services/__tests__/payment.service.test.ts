@@ -43,6 +43,7 @@ import { PreVerificationCapExceededError } from "#core/errors/pre-verification-c
 import { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
 import { PaymentService } from "#core/services/payment.service";
 import { ConnectedAccountLimitsFake } from "#testing/connected-account-limits.fake";
+import { paymentLocksOf } from "#testing/payment-locks-of.function";
 import { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 import { PaymentGatewaysFake } from "#testing/payment-gateways.fake";
 
@@ -90,6 +91,7 @@ describe("PaymentService", () => {
       records,
       clock,
       ConnectedAccountLimitsFake.with(),
+      paymentLocksOf(clock),
     );
   });
 
@@ -174,6 +176,7 @@ describe("PaymentService", () => {
       records,
       clock,
       ConnectedAccountLimitsFake.with(),
+      paymentLocksOf(clock),
     );
     const session = await service.checkout("m1", request);
     hosted.settle(session.providerRef, PaymentStatus.Authorized);
@@ -254,6 +257,7 @@ describe("PaymentService", () => {
       records,
       clock,
       ConnectedAccountLimitsFake.with(),
+      paymentLocksOf(clock),
     );
     const terminal = { reference: "chk_7", terminalId: "tmr_1", amount };
     await expect(plain.startTerminal("m1", { ...terminal, pinEntry: true })).rejects.toRefuseWith(
@@ -300,7 +304,13 @@ describe("PaymentService", () => {
       });
       return {
         limits,
-        service: new PaymentService(PaymentGatewaysFake.with([own]), records, clock, limits),
+        service: new PaymentService(
+          PaymentGatewaysFake.with([own]),
+          records,
+          clock,
+          limits,
+          paymentLocksOf(clock),
+        ),
       };
     }
 
@@ -346,6 +356,7 @@ describe("PaymentService", () => {
         records,
         clock,
         ConnectedAccountLimitsFake.with(),
+        paymentLocksOf(clock),
       );
       expect(await service.paymentMethods("m1")).toEqual(["card", "apple_pay", "klarna"]);
       const hosted = PaymentGatewayFake.with({ capabilities: [PaymentCapability.Checkout] });
@@ -354,6 +365,7 @@ describe("PaymentService", () => {
         records,
         clock,
         ConnectedAccountLimitsFake.with(),
+        paymentLocksOf(clock),
       );
       expect(await plain.paymentMethods("m1")).toBeNull();
     });
@@ -368,6 +380,7 @@ describe("PaymentService", () => {
       records,
       clock,
       ConnectedAccountLimitsFake.with(),
+      paymentLocksOf(clock),
     );
     const tap = { reference: "chk_8", terminalId: "tmr_phone", amount, softPos: true };
     await expect(plain.startTerminal("m1", tap)).rejects.toRefuseWith(
@@ -395,6 +408,7 @@ describe("PaymentService", () => {
         records,
         clock,
         ConnectedAccountLimitsFake.with(),
+        paymentLocksOf(clock),
         new MemoryAgentCommerceProtocolsDriver().confirm("proof_1", confirmed),
       );
     }
@@ -533,6 +547,7 @@ describe("PaymentService", () => {
         new MemoryPaymentRecordsDriver(),
         clock,
         ConnectedAccountLimitsFake.with(),
+        paymentLocksOf(clock),
       );
       await expect(service.preAuthorize(hold)).rejects.toRefuseWith(
         refusal(CapabilityUnsupportedError, { capability: "pre_auth" }),

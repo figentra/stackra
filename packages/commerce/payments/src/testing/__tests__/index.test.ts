@@ -17,6 +17,7 @@ describe("@stackra/payments/testing", () => {
       "MarketPaymentDefaultsFake",
       "PaymentGatewayFake",
       "PaymentGatewaysFake",
+      "paymentLocksOf",
       "runDisputeCase",
       "runPayoutCase",
     ]);

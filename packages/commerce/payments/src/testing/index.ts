@@ -15,6 +15,7 @@ export type { GatewayCaseResult } from "#testing/gateway-case-result.type";
 export { MarketPaymentDefaultsFake } from "#testing/market-payment-defaults.fake";
 export { PaymentGatewayFake } from "#testing/payment-gateway.fake";
 export { PaymentGatewaysFake } from "#testing/payment-gateways.fake";
+export { paymentLocksOf } from "#testing/payment-locks-of.function";
 export type { PayoutCase } from "#testing/payout-case.type";
 export { runDisputeCase } from "#testing/run-dispute-case.function";
 export { runPayoutCase } from "#testing/run-payout-case.function";
