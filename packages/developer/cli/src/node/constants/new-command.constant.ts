@@ -90,6 +90,7 @@ export const NEW_COMMAND: CliCommand = {
   positionals: true,
   async run({ cwd, positionals, values, io }) {
     const [kind, name, ...extra] = positionals;
+    const dryRun = values["dry-run"] === true;
     const templated =
       kind === "package" && (values["entries"] !== undefined || values["data"] === true);
     if (kind !== undefined && (TEMPLATE_KINDS.includes(kind) || templated)) {
@@ -97,7 +98,6 @@ export const NEW_COMMAND: CliCommand = {
         throw new CliUsageError("name the member: stackra new <kind> <name>");
       const repo = text(values["repo"]);
       const port = text(values["port"]);
-      const dryRun = values["dry-run"] === true;
       try {
         const made = scaffold({
           kind,
@@ -195,23 +195,48 @@ export const NEW_COMMAND: CliCommand = {
     const where = relative(root, folder);
     if (existsSync(folder) && !over)
       throw new CliUsageError(`${where} already exists; pass --over to regenerate over it`);
-    if (freshWorkspace) {
-      const manifest = JSON.parse(
-        files.find((file) => file.path === "package.json")?.content ?? "{}",
-      ) as {
-        dependencies?: Record<string, string>;
-        devDependencies?: Record<string, string>;
-      };
-      for (const file of workspaceTemplate({
-        cliVersion: cliVersion(),
-        dependencies: { ...manifest.dependencies, ...manifest.devDependencies },
-      })) {
-        const target = join(root, file.path);
-        if (existsSync(target)) continue;
-        mkdirSync(dirname(target), { recursive: true });
-        writeFileSync(target, file.content);
-        io.out(`wrote ${file.path}\n`);
+    // The minimal workspace root a folder with none gets, less what is already there.
+    const manifest: {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    } = freshWorkspace
+      ? JSON.parse(files.find((file) => file.path === "package.json")?.content ?? "{}")
+      : {};
+    const workspaceFiles = freshWorkspace
+      ? workspaceTemplate({
+          cliVersion: cliVersion(),
+          dependencies: { ...manifest.dependencies, ...manifest.devDependencies },
+        }).filter((file) => !existsSync(join(root, file.path)))
+      : [];
+    // The member's own LICENSE: copied from the root into a new package, unless the template wrote one.
+    const copiesLicense =
+      kind === "package" &&
+      existsSync(join(root, "LICENSE")) &&
+      !existsSync(join(folder, "LICENSE")) &&
+      !files.some((file) => file.path === "LICENSE");
+    if (dryRun) {
+      // What the writes below would do, with none of them: `--over` neither writes nor diffs `src/` and keeps the
+      // CHANGELOG, and a file that already exists is never rewritten.
+      io.out(`Would ${over ? "regenerate" : "create"} ${where}:\n`);
+      for (const file of files)
+        if (
+          !(over && file.path.startsWith("src/")) &&
+          !(over && file.path === "CHANGELOG.md") &&
+          !existsSync(join(folder, file.path))
+        )
+          io.out(`  ${file.path}\n`);
+      if (copiesLicense) io.out("  LICENSE\n");
+      if (workspaceFiles.length > 0) {
+        io.out("Would also write the workspace root, which the target folder lacks:\n");
+        for (const file of workspaceFiles) io.out(`  ${file.path}\n`);
       }
+      return 0;
+    }
+    for (const file of workspaceFiles) {
+      const target = join(root, file.path);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, file.content);
+      io.out(`wrote ${file.path}\n`);
     }
     for (const file of files) {
       // `src/` is written on create only: `--over` neither writes nor diffs it.
@@ -229,12 +254,7 @@ export const NEW_COMMAND: CliCommand = {
       writeFileSync(target, file.content);
       if (over) io.out(`wrote ${where}/${file.path}\n`);
     }
-    if (
-      kind === "package" &&
-      existsSync(join(root, "LICENSE")) &&
-      !existsSync(join(folder, "LICENSE"))
-    )
-      copyFileSync(join(root, "LICENSE"), join(folder, "LICENSE"));
+    if (copiesLicense) copyFileSync(join(root, "LICENSE"), join(folder, "LICENSE"));
 
     io.out(
       kind === "seed-pack"

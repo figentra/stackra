@@ -313,4 +313,47 @@ describe("NEW_COMMAND", () => {
     expect(await refused.code).toBe(1);
     expect(refused.output()).toMatch(/^--description is required/);
   });
+
+  /** `--dry-run` is the first thing the scaffolding guide says to run: it must write nothing, whatever the kind. */
+  it("writes nothing for a package, a service or a seed pack with --dry-run, and lists what it would write", async () => {
+    const cases: readonly [readonly string[], CliContext["values"], string][] = [
+      [["package", "loyalty-kit"], { category: "data" }, "packages/data/loyalty-kit"],
+      [["service", "orders"], { area: "app" }, "services/orders"],
+      [["seed-pack", "commerce"], {}, "seed-packs/commerce"],
+    ];
+    for (const [positionals, values, folder] of cases) {
+      const made = run(positionals, { ...values, "dry-run": true });
+      expect(await made.code).toBe(0);
+      expect(made.output()).toMatch(new RegExp(`^Would create ${folder}:\\n {2}\\S`));
+      expect(made.output()).not.toMatch(/^(created|wrote) /m);
+      expect(existsSync(join(root, folder))).toBe(false);
+    }
+    // a package takes the root's LICENSE, and the plan says so
+    expect(
+      run(["package", "loyalty-kit"], { category: "data", "dry-run": true }).output(),
+    ).toContain("  LICENSE\n");
+  });
+
+  it("lists the workspace root a --repo folder with none would get, and writes none of it", async () => {
+    const made = run(["service", "demo"], { area: "app", repo: "../fresh", "dry-run": true });
+    expect(await made.code).toBe(0);
+    expect(made.output()).toContain("Would also write the workspace root");
+    expect(made.output()).toContain("  pnpm-workspace.yaml\n");
+    expect(existsSync(join(root, "fresh"))).toBe(false);
+  });
+
+  it("still refuses an existing member on a dry run, and with --over lists only what --over would write", async () => {
+    expect(await run(["service", "orders"], { area: "app" }).code).toBe(0);
+    const before = readdirSync(join(root, "services/orders"), { recursive: true }).toSorted();
+    await expect(run(["service", "orders"], { area: "app", "dry-run": true }).code).rejects.toThrow(
+      CliUsageError,
+    );
+    const planned = run(["service", "orders"], { area: "app", over: true, "dry-run": true });
+    expect(await planned.code).toBe(0);
+    expect(planned.output()).toMatch(/^Would regenerate services\/orders:\n/);
+    expect(planned.output()).not.toMatch(/^ {2}src\//m);
+    expect(readdirSync(join(root, "services/orders"), { recursive: true }).toSorted()).toEqual(
+      before,
+    );
+  });
 });
