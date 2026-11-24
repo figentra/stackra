@@ -326,6 +326,8 @@ export const NOT_PACKAGE_COMMANDS = Object.freeze([
   "encore",
   "maestro",
   "case",
+  "cd",
+  "continue",
   "do",
   "done",
   "echo",
