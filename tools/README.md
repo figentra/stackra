@@ -7,7 +7,7 @@ Repository tooling that is not a workspace member: it has no `package.json`, no 
 | [`scripts/`](scripts)   | the Node scripts behind the root `pnpm` commands, with their tests in `__tests__/`        |
 | [`scaffold/`](scaffold) | the member templates `pnpm new <kind> <name>` renders                                     |
 | [`schemas/`](schemas)   | JSON Schemas (draft 2020-12) for Stackra's own config files: runway, lock, MCP            |
-| [`policy/`](policy)     | policies the verify service enforces: `licences.json`, the licence allowlist (a proposal) |
+| [`policy/`](policy)     | policies the verify service enforces: `licences.json`, the licence policy (CTO ruling 2026-11-24) |
 
 ## Rules
 
