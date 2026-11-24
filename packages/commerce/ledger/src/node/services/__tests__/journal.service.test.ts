@@ -426,6 +426,40 @@ describe("Journal", () => {
     expect(entries.rows).toEqual([]);
   });
 
+  it("decides whether a posting balances in exact arithmetic, not in a float sum that rounds past 2^53", async () => {
+    const entries = new MemoryEntries("account");
+    const journal = journalOver(CashEntry, entries);
+    const big = Number.MAX_SAFE_INTEGER;
+    // Every line is a safe integer. The true total is 1, but the running number sum reaches 2^53 + 1, rounds to 2^53 and
+    // ends at 0: a `number` reduce would take these lines for a balanced posting.
+    const unbalanced = await journal
+      .post([line("a", big), line("b", 2), line("c", -big), line("d", -1)])
+      .catch((error: unknown) => error);
+    expect(isRefusal(unbalanced, UnbalancedPostingError)).toBe(true);
+    expect(unbalanced).toMatchObject({ lines: 4, total: 1 });
+    expect(entries.rows).toEqual([]);
+    // The same magnitudes with a true total of 0: the running sum ends at -1, so a `number` reduce would refuse a posting
+    // that does balance.
+    expect(
+      await journal.post([line("a", big), line("b", 2), line("c", -big), line("d", -2)]),
+    ).toEqual({ written: true, belowFloor: false });
+    expect(entries.rows).toHaveLength(4);
+  });
+
+  it("refuses a balance beyond the safe integers instead of returning it rounded", async () => {
+    const journal = journalOver(CashEntry, new MemoryEntries("account"));
+    await journal.append({
+      account: "a",
+      amount: Number.MAX_SAFE_INTEGER,
+      kind: "issue",
+      reference: "r1",
+      at: day(1),
+    });
+    expect(await journal.balance({ account: "a" })).toBe(Number.MAX_SAFE_INTEGER);
+    await journal.append({ account: "a", amount: 4, kind: "issue", reference: "r2", at: day(2) });
+    await expect(journal.balance({ account: "a" })).rejects.toThrow(RangeError);
+  });
+
   it("refuses an amount that is not a whole number of units", async () => {
     const journal = journalOver(CashEntry, new MemoryEntries("account"));
 

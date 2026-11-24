@@ -32,6 +32,7 @@ import type { CurrencyCode } from "@stackra/money";
 
 import { JOURNAL_FIELDS } from "#node/constants/journal-fields.constant";
 import { JOURNAL_LOCK_TTL } from "#node/constants/journal-lock-ttl.constant";
+import { addSafe } from "#node/functions/add-safe.function";
 import { Journaled } from "#core/decorators/journaled.decorator";
 import { UnbalancedPostingError } from "#core/errors/unbalanced-posting.error";
 import type { JournalEntry } from "#core/types/journal-entry.type";
@@ -191,6 +192,7 @@ export abstract class Journal<M extends object> extends Service {
    *                sum never mixes two), and the integer field to sum when it is not the journal's amount (a
    *                base-currency amount kept beside the transaction amount, ADR 0220 decision 1).
    * @throws TypeError when the model has a currency field and no currency is given, or has none and one is.
+   * @throws RangeError when the total is beyond the safe integers: it is refused, never returned rounded.
    */
   async balance(query: {
     readonly account: string;
@@ -202,13 +204,19 @@ export abstract class Journal<M extends object> extends Service {
       throw new TypeError(
         `${this.model.name}'s balance is per currency exactly when its @Journaled names a currency field`,
       );
-    return this.entries().sum(
+    const total = await this.entries().sum(
       query.amount ?? fields.amount,
       whereOf<M>({
         [fields.account]: query.account,
         ...(fields.currency === undefined ? {} : { [fields.currency]: query.currency }),
       }),
     );
+    // the database sums exactly and hands the total over as a number: past 2^53 that number is already rounded
+    if (!Number.isSafeInteger(total))
+      throw new RangeError(
+        `${this.model.name}: the balance of ${query.account} is beyond the safe integers (${total}) and is refused, not rounded`,
+      );
+    return total;
   }
 
   /** The entry under (`query.account`, `query.reference`), or null when there is none. */
@@ -265,7 +273,7 @@ export abstract class Journal<M extends object> extends Service {
       if ((await this.find(entry)) !== null) return NOT_WRITTEN;
       if (
         floor !== undefined &&
-        (await this.balance({ account: entry.account, currency })) + entry.amount < floor
+        addSafe(await this.balance({ account: entry.account, currency }), entry.amount) < floor
       )
         return BELOW_FLOOR;
       return (await this.insertOnce(entry, fields)) ? WRITTEN : NOT_WRITTEN;
@@ -339,7 +347,9 @@ export abstract class Journal<M extends object> extends Service {
             : // oxlint-disable-next-line no-await-in-loop -- read once per currency, before its first reversal
               await this.balance({ account: where.account, currency: entry.currency }));
         const amount =
-          floor === undefined || full >= 0 ? full : Math.min(0, Math.max(full, floor - balance));
+          floor === undefined || full >= 0
+            ? full
+            : Math.min(0, Math.max(full, addSafe(floor, -balance)));
         // oxlint-disable-next-line no-await-in-loop -- each reversal is cut against the balance the one before left
         await this.entries().insert(
           rowOf<M>(
@@ -355,7 +365,7 @@ export abstract class Journal<M extends object> extends Service {
             fields,
           ),
         );
-        balances.set(entry.currency, balance + amount);
+        balances.set(entry.currency, addSafe(balance, amount));
         reversed.push({ ...entry, amount: -amount || 0 }); // `|| 0`: a cut-to-nothing reversal reports 0, never -0
       }
       return reversed;
@@ -381,14 +391,17 @@ export abstract class Journal<M extends object> extends Service {
     const fields = this.fields();
     for (const line of lines) extraOf(line, fields);
     const currencies = [...new Set(lines.map((line) => currencyOf(line, fields)))];
-    const total = lines.reduce((sum, line) => sum + line.amount, 0);
+    // Exact: each line is a safe integer, but a running `number` sum rounds once it passes 2^53, so it can reach zero
+    // for lines that do not balance (or miss zero for lines that do). BigInt holds the true total.
+    const exact = lines.reduce((sum, line) => sum + BigInt(line.amount), 0n);
+    const total = Number(exact);
     if (currencies.length > 1)
       throw UnbalancedPostingError.create({
         lines: lines.length,
         total,
         currencies: currencies.map(String),
       });
-    if (lines.length < 2 || total !== 0)
+    if (lines.length < 2 || exact !== 0n)
       throw UnbalancedPostingError.create({ lines: lines.length, total });
     const pairs = new Set(lines.map((line) => JSON.stringify([line.account, line.reference])));
     if (pairs.size !== lines.length)
