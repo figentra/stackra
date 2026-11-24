@@ -23,6 +23,7 @@ import {
   clearSecrets,
   deployEncore,
   deployWorker,
+  lockImporters,
   lockedArgv,
   newestVerifyRun,
   parseArgs,
@@ -859,4 +860,36 @@ test("a version waiting for approval is looked at again each pass, even after ma
       args: ["workers", "run", "--worker", "registry", "--sha", SHA, "--trigger", "timer"],
     },
   ]);
+});
+
+test("the lockfile's workspace importers come from pnpm 12's second document", () => {
+  const importers = lockImporters(
+    [
+      "---",
+      "lockfileVersion: '9.0'",
+      "importers:",
+      "  .:",
+      "    packageManagerDependencies:",
+      "      pnpm: { specifier: 12.16.1, version: 12.16.1 }",
+      "packages:",
+      "  pnpm@12.16.1: {}",
+      "---",
+      "lockfileVersion: '9.0'",
+      "settings:",
+      "  autoInstallPeers: true",
+      "importers:",
+      "  .: {}",
+      "  workers/registry:",
+      "    devDependencies:",
+      "      wrangler: { specifier: 'catalog:deploy', version: 4.148.0(@types/node@26.6.4) }",
+      "packages:",
+      "  wrangler@4.148.0: {}",
+    ].join("\n"),
+  );
+  assert.deepEqual(Object.keys(importers), [".", "workers/registry"]);
+  // The repository's own lockfile parses, and registry's closure reaches workspace packages.
+  const real = lockImporters(readFileSync(join(REPO_ROOT, "pnpm-lock.yaml"), "utf8"));
+  const closure = workspaceClosure(real, "workers/registry");
+  assert.ok(closure.size > 1);
+  assert.ok([...closure].every((path) => real[path] !== undefined));
 });

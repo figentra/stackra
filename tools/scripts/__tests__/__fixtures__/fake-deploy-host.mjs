@@ -48,7 +48,18 @@ const TRAINER_UID = 4242;
 const APPROVER_UID = 4343;
 
 const LOCK = [
+  "---",
   "lockfileVersion: '9.0'",
+  "importers:",
+  "  .:",
+  "    packageManagerDependencies:",
+  "      pnpm:",
+  "        specifier: 12.16.1",
+  "        version: 12.16.1",
+  "---",
+  "lockfileVersion: '9.0'",
+  "settings:",
+  "  autoInstallPeers: true",
   "importers:",
   "  .:",
   "    devDependencies:",
@@ -70,6 +81,9 @@ const LOCK = [
   "        specifier: 'catalog:'",
   "        version: 4.0.0",
   "  packages/state/store: {}",
+  "packages:",
+  "  zod@4.0.0:",
+  "    resolution: {integrity: sha512-AAAA}",
   "",
 ].join("\n");
 

@@ -109,7 +109,7 @@ import {
 import { hostname, userInfo } from "node:os";
 import { dirname, isAbsolute, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parse as parseYaml } from "yaml";
+import { parseAllDocuments, parse as parseYaml } from "yaml";
 import { migrationVerdict, pendingMigrations } from "./stackra-deploy-sql.mjs";
 import { registryBaseline, registrySample, smokeWorker } from "./stackra-deploy-smoke.mjs";
 
@@ -737,8 +737,20 @@ export function callerInputs(workflow) {
   };
 }
 
-/** The importers section of a pnpm lockfile. */
-export const lockImporters = (lockText) => parseYaml(lockText)?.importers ?? {};
+/**
+ * The workspace importers of a pnpm lockfile. pnpm 12 writes two YAML documents: the package manager's own (its
+ * `importers` hold only `.`'s pnpm pin) and then the workspace's, with its `settings`; this reads the latter.
+ */
+export function lockImporters(lockText) {
+  const docs = parseAllDocuments(lockText).map((doc) => doc.toJS());
+  // The workspace's document carries its settings; else the one with the most importers.
+  const workspace =
+    docs.find((doc) => doc?.settings && doc?.importers) ??
+    docs
+      .filter((doc) => doc?.importers)
+      .toSorted((a, b) => Object.keys(b.importers).length - Object.keys(a.importers).length)[0];
+  return workspace?.importers ?? {};
+}
 
 /**
  * The workspace dependency closure of the importer at `start` (a path such as `workers/registry`): every importer it
