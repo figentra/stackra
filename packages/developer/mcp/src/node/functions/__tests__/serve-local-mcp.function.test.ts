@@ -4,7 +4,8 @@
  *          local tools and the Encore tools under `encore_`; `manifest` reads the committed manifests; `new`, `gen`,
  *          `validate` and `verify` run through the given CLI runner (the CLI's gates), with a failing exit marked as
  *          an error; invalid arguments are refused before anything runs; an Encore call is forwarded unprefixed; the
- *          server resolves when the client disconnects; command tools (STA-1966) are served with their own schema and
+ *          server resolves when the client disconnects, or when its abort signal fires (a SIGTERM must not leave it
+ *          reading standard input), closing the Encore proxy too; command tools (STA-1966) are served with their own schema and
  *          handler, their `--json` document as the structured result.
  * Boundary: test only; in-memory streams, a fake runner, a fake Encore peer and a throwaway repository in the OS temp
  *           directory.
@@ -50,6 +51,7 @@ function start(
   run: StackraRunner,
   encore: McpPeer | null = null,
   tools: readonly LocalTool[] = [],
+  signal?: AbortSignal,
 ) {
   const toServer = new PassThrough();
   const toClient = new PassThrough();
@@ -61,6 +63,7 @@ function start(
     run,
     encore,
     tools,
+    ...(signal === undefined ? {} : { signal }),
   });
   const client = connectMcp(toClient, toServer);
   return { client, served, disconnect: () => toServer.end() };
@@ -262,5 +265,29 @@ describe("serveLocalMcp", () => {
 
     disconnect();
     await served;
+  });
+
+  it("stops when its signal aborts: the server resolves and the Encore proxy closes", async () => {
+    const toEncore = new PassThrough();
+    const fromEncore = new PassThrough();
+    connectMcp(toEncore, fromEncore, async () => ({ tools: [] }));
+    const encore = connectMcp(fromEncore, toEncore);
+    const controller = new AbortController();
+
+    const { client, served } = start(vi.fn<StackraRunner>(), encore, [], controller.signal);
+    await expect(client.request("ping")).resolves.toEqual({});
+    controller.abort("SIGTERM");
+
+    await expect(served).resolves.toBeUndefined();
+    await expect(encore.closed).resolves.toBeUndefined();
+  });
+
+  it("does not wait for a client when its signal is already aborted", async () => {
+    const controller = new AbortController();
+    controller.abort("SIGTERM");
+
+    const { served } = start(vi.fn<StackraRunner>(), null, [], controller.signal);
+
+    await expect(served).resolves.toBeUndefined();
   });
 });

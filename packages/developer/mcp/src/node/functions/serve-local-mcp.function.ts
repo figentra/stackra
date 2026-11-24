@@ -3,7 +3,7 @@
  * Purpose: `serveLocalMcp(options)`, the local developer MCP behind `stackra mcp`: answers `initialize`, `ping`,
  *          `tools/list` and `tools/call` over stdio with the `LOCAL_TOOLS` (manifest reads and the CLI's `new`, `gen`,
  *          `validate` and `verify`) and every local Encore tool, proxied under an `encore_` prefix. Resolves when the
- *          client disconnects.
+ *          client disconnects or the `signal` aborts.
  * Boundary: every write runs through the given `StackraRunner`, the CLI's own commands and gates; this file writes
  *           nothing itself. Tool arguments are checked before anything runs. The hosted mode of ADR 0282 is a separate
  *           deployment, not this server.
@@ -50,7 +50,7 @@ const argumentsOf = <T extends z.ZodType>(schema: T, value: unknown): z.infer<T>
 };
 
 /**
- * Serves the local MCP until the client disconnects.
+ * Serves the local MCP until the client disconnects or the signal aborts.
  *
  * @param options - the version, and optionally the root, streams, CLI runner and Encore connection.
  * @example
@@ -138,57 +138,60 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
     }
   };
 
-  const peer = connectMcp(
-    options.input ?? process.stdin,
-    options.output ?? process.stdout,
-    async (method, params) => {
-      switch (method) {
-        case "initialize": {
-          const requested = (params as { protocolVersion?: unknown } | undefined)?.protocolVersion;
-          return {
-            protocolVersion:
-              typeof requested === "string" && MCP_PROTOCOL_VERSIONS.includes(requested)
-                ? requested
-                : MCP_PROTOCOL_VERSIONS[0],
-            capabilities: { tools: {} },
-            serverInfo: { name: "stackra", version: options.version },
-          };
-        }
-        case "ping": {
-          return {};
-        }
-        case "tools/list": {
-          return {
-            tools: [
-              ...Object.entries(LOCAL_TOOLS)
-                .filter(([name]) => !commandTools.has(name))
-                .map(([name, tool]) => ({
-                  name,
-                  description: tool.description,
-                  inputSchema: z.toJSONSchema(tool.input, { io: "input" }),
-                  annotations: { readOnlyHint: tool.readOnly },
-                })),
-              ...[...commandTools.values()].map((tool) => ({
-                name: tool.name,
+  const input = options.input ?? process.stdin;
+  // An abort closes the input: that ends the connection like a disconnect and releases standard input, which would
+  // otherwise keep the process alive after its signal handler returned.
+  const stop = () => input.destroy();
+  if (options.signal?.aborted === true) stop();
+  else options.signal?.addEventListener("abort", stop, { once: true });
+  const peer = connectMcp(input, options.output ?? process.stdout, async (method, params) => {
+    switch (method) {
+      case "initialize": {
+        const requested = (params as { protocolVersion?: unknown } | undefined)?.protocolVersion;
+        return {
+          protocolVersion:
+            typeof requested === "string" && MCP_PROTOCOL_VERSIONS.includes(requested)
+              ? requested
+              : MCP_PROTOCOL_VERSIONS[0],
+          capabilities: { tools: {} },
+          serverInfo: { name: "stackra", version: options.version },
+        };
+      }
+      case "ping": {
+        return {};
+      }
+      case "tools/list": {
+        return {
+          tools: [
+            ...Object.entries(LOCAL_TOOLS)
+              .filter(([name]) => !commandTools.has(name))
+              .map(([name, tool]) => ({
+                name,
                 description: tool.description,
-                inputSchema: tool.inputSchema,
+                inputSchema: z.toJSONSchema(tool.input, { io: "input" }),
                 annotations: { readOnlyHint: tool.readOnly },
               })),
-              ...(await upstreamTools).map((tool) => ({ ...tool, name: `${ENCORE}${tool.name}` })),
-            ],
-          };
-        }
-        case "tools/call": {
-          return callTool(params);
-        }
-        default: {
-          if (method.startsWith("notifications/")) return undefined;
-          throw new McpProtocolError(-32_601, `Method not found: ${method}`);
-        }
+            ...[...commandTools.values()].map((tool) => ({
+              name: tool.name,
+              description: tool.description,
+              inputSchema: tool.inputSchema,
+              annotations: { readOnlyHint: tool.readOnly },
+            })),
+            ...(await upstreamTools).map((tool) => ({ ...tool, name: `${ENCORE}${tool.name}` })),
+          ],
+        };
       }
-    },
-  );
+      case "tools/call": {
+        return callTool(params);
+      }
+      default: {
+        if (method.startsWith("notifications/")) return undefined;
+        throw new McpProtocolError(-32_601, `Method not found: ${method}`);
+      }
+    }
+  });
 
   await peer.closed;
+  options.signal?.removeEventListener("abort", stop);
   (await upstream)?.close();
 }

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ServeLocalMcpOptions`, what `serveLocalMcp` needs: the CLI's version and, all defaulted, the repository
- *          root, the stdio streams, the CLI runner and the upstream Encore connection.
+ *          root, the stdio streams, the CLI runner, the upstream Encore connection and the signal that stops the server.
  * Boundary: type only.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 5); R-29.
@@ -35,4 +35,11 @@ export type ServeLocalMcpOptions = {
    * handler; one named like a built-in tool replaces it.
    */
   readonly tools?: readonly LocalTool[];
+
+  /**
+   * Stops the server: aborting closes `input`, which ends the connection as a disconnecting client does, so the
+   * server resolves and closes the Encore proxy. A client stops a stdio server with SIGTERM, and a server that keeps
+   * reading standard input outlives it.
+   */
+  readonly signal?: AbortSignal;
 };
