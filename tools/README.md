@@ -18,12 +18,15 @@ every installed package and every workspace manifest:
   never counts as allowed, so it passes only as an OR alternative beside an allowed licence, or through an exception.
 - An exception names one package, its exact licence string, a reason, a `scope` and, when pinned, its `versions`; a
   change of name, string or pinned version fails the step again, and a malformed exception is itself a failure.
-- `dev-only`: the package is never in a publishable member's (no `"private": true`) `dependencies`,
-  `optionalDependencies` or non-optional `peerDependencies`. `optionalDependencies` count as shipped, because
-  consumers install them by default, so a dev-only package there fails the check; devDependencies and peers marked
-  optional in `peerDependenciesMeta` pass.
-- `mobile`: the package is a dependency of `apps/mobile` and `apps/playground` only (the two members
-  `stackra/verify-mobile` covers), never of another member and never through an override.
+- `dev-only` and `tool`: the package is never in a publishable member's (no `"private": true`) `dependencies`,
+  `optionalDependencies` or non-optional `peerDependencies`, directly or anywhere in the production closure
+  `pnpm-lock.yaml` records for it (those three edges, through workspace links and every installed package, never
+  devDependencies nor a peer its package marks optional); a failure names the path. `optionalDependencies` count as
+  shipped, because consumers install them by default, so a dev-only package there fails the check; devDependencies
+  and peers marked optional in `peerDependenciesMeta` pass.
+- `mobile`: the package is in the closure, devDependencies included, of `apps/mobile` and `apps/playground` only
+  (the two members `stackra/verify-mobile` covers), never of another member and never through an override.
+- `runtime`: shipped with our packages, so its reason names the path when it is not obvious.
 
 ## Rules
 

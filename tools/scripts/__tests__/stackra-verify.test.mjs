@@ -125,6 +125,8 @@ import {
   untilLine,
   PROXY_READY,
   exceptionScopeViolations,
+  lockfileGraph,
+  lockfileScopeViolations,
   workspaceManifest,
   workspaceMembers,
   MOBILE_MEMBERS,
@@ -2383,6 +2385,305 @@ test("licence scopes: a mobile package may be a dependency of apps/mobile and ap
   );
 });
 
+/** The lockfile of the generated check's workspace: the root, the mobile app and the database member. */
+const CLI_LOCK = [
+  "lockfileVersion: '9.0'",
+  "",
+  "importers:",
+  "",
+  "  .: {}",
+  "",
+  "  apps/mobile:",
+  "    dependencies:",
+  "      uniwind:",
+  "        specifier: catalog:uniwind-pro",
+  "        version: uniwind-pro@1.9.0",
+  "",
+  "  packages/data/database:",
+  "    devDependencies:",
+  "      '@electric-sql/pglite-postgis':",
+  "        specifier: 0.2.15",
+  "        version: 0.2.15",
+  "",
+  "snapshots:",
+  "",
+  "  '@electric-sql/pglite-postgis@0.2.15': {}",
+  "",
+  "  uniwind-pro@1.9.0: {}",
+  "",
+].join("\n");
+
+/**
+ * A pnpm 12 lockfile in its real layout (a package-manager document first, then the workspace's): the publishable
+ * `packages/lib/a` reaches pg-gis only through its devDependencies, an optional peer of `maps`, and a workspace link
+ * to `packages/lib/util`, whose devDependencies a consumer never installs; the private member ships it; `cycle` and
+ * `loop` depend on each other.
+ */
+const LOCK = [
+  "---",
+  "lockfileVersion: '9.0'",
+  "",
+  "importers:",
+  "",
+  "  .:",
+  "    packageManagerDependencies:",
+  "      pnpm:",
+  "        specifier: 12.16.1",
+  "        version: 12.16.1",
+  "",
+  "snapshots:",
+  "",
+  "  pnpm@12.16.1: {}",
+  "",
+  "---",
+  "lockfileVersion: '9.0'",
+  "",
+  "settings:",
+  "  autoInstallPeers: true",
+  "",
+  "importers:",
+  "",
+  "  .:",
+  "    devDependencies:",
+  "      gis-tests:",
+  "        specifier: 1.0.0",
+  "        version: 1.0.0",
+  "",
+  "  apps/mobile:",
+  "    dependencies:",
+  "      uniwind:",
+  "        specifier: catalog:uniwind-pro",
+  "        version: uniwind-pro@1.9.0(react@19.3.0)",
+  "",
+  "  packages/lib/a:",
+  "    dependencies:",
+  "      cycle:",
+  "        specifier: 'catalog:'",
+  "        version: 1.0.0",
+  "      maps:",
+  "        specifier: ^2.0.0",
+  "        version: 2.0.0(pg-gis@0.2.15)",
+  "      '@t/util':",
+  "        specifier: workspace:*",
+  "        version: link:../util",
+  "    devDependencies:",
+  "      gis-tests:",
+  "        specifier: 1.0.0",
+  "        version: 1.0.0",
+  "",
+  "  packages/lib/util:",
+  "    devDependencies:",
+  "      gis-tests:",
+  "        specifier: 1.0.0",
+  "        version: 1.0.0",
+  "",
+  "  packages/lib/private:",
+  "    dependencies:",
+  "      gis-tests:",
+  "        specifier: 1.0.0",
+  "        version: 1.0.0",
+  "",
+  "packages:",
+  "",
+  "  '@electric-sql/pglite@0.5.15':",
+  "    resolution: {integrity: sha512-AAAA}",
+  "",
+  "  maps@2.0.0:",
+  "    resolution: {integrity: sha512-BBBB}",
+  "    peerDependencies:",
+  "      pg-gis: '>=0.2'",
+  "    peerDependenciesMeta:",
+  "      pg-gis:",
+  "        optional: true",
+  "",
+  "snapshots:",
+  "",
+  "  cycle@1.0.0:",
+  "    dependencies:",
+  "      loop: 1.0.0",
+  "",
+  "  loop@1.0.0:",
+  "    dependencies:",
+  "      cycle: 1.0.0",
+  "    optionalDependencies:",
+  "      '@scope/native': 3.0.0",
+  "    transitivePeerDependencies:",
+  "      - supports-color",
+  "",
+  "  '@scope/native@3.0.0':",
+  "    optional: true",
+  "",
+  "  maps@2.0.0(pg-gis@0.2.15):",
+  "    dependencies:",
+  "      pg-gis: 0.2.15",
+  "",
+  "  gis-tests@1.0.0:",
+  "    dependencies:",
+  "      pg-gis: 0.2.15",
+  "",
+  "  pg-gis@0.2.15: {}",
+  "",
+  "  uniwind-pro@1.9.0(react@19.3.0): {}",
+  "",
+].join("\n");
+const LOCK_MEMBERS = [
+  member(".", { name: "root", private: true }),
+  member("apps/mobile", { name: "@figentra/mobile", private: true }),
+  member("packages/lib/a", {}),
+  member("packages/lib/util", {}),
+  member("packages/lib/private", { private: true }),
+];
+const closure = (lock, members = LOCK_MEMBERS, policy = POLICY) =>
+  lockfileScopeViolations(lockfileGraph(lock), members, policy, MOBILE_MEMBERS);
+/** LOCK with `lines` added under the first line that is exactly `under`. */
+const withEdge = (under, ...lines) => {
+  const all = LOCK.split("\n");
+  const index = all.indexOf(under);
+  assert.notEqual(index, -1, under);
+  all.splice(index + 1, 0, ...lines);
+  return all.join("\n");
+};
+
+test("lockfileGraph: importers, snapshots (dependencies and optionalDependencies) and optional peers, every document", () => {
+  const graph = lockfileGraph(LOCK);
+  assert.deepEqual(Object.keys(graph.importers), [
+    ".",
+    "apps/mobile",
+    "packages/lib/a",
+    "packages/lib/util",
+    "packages/lib/private",
+  ]);
+  assert.deepEqual(
+    { ...graph.importers["packages/lib/a"].dependencies },
+    {
+      cycle: "1.0.0",
+      maps: "2.0.0(pg-gis@0.2.15)",
+      "@t/util": "link:../util",
+    },
+  );
+  assert.deepEqual(
+    { ...graph.importers["packages/lib/a"].devDependencies },
+    { "gis-tests": "1.0.0" },
+  );
+  assert.equal(
+    graph.importers["apps/mobile"].dependencies.uniwind,
+    "uniwind-pro@1.9.0(react@19.3.0)",
+  );
+  assert.deepEqual(
+    { ...graph.snapshots["loop@1.0.0"] },
+    { cycle: "1.0.0", "@scope/native": "3.0.0" },
+  );
+  assert.deepEqual({ ...graph.snapshots["pg-gis@0.2.15"] }, {});
+  assert.ok("pnpm@12.16.1" in graph.snapshots);
+  assert.deepEqual([...graph.optionalPeers["maps@2.0.0"]], ["pg-gis"]);
+  assert.equal(graph.importers["."].packageManagerDependencies, undefined);
+});
+
+test("licence closures: devDependencies, an optional peer, a private member and a cycle keep a dev-only package out", () => {
+  assert.deepEqual(closure(LOCK), []);
+  // the same package as a `tool`: the same rule
+  const asTool = {
+    ...POLICY,
+    exceptions: POLICY.exceptions.map((e) => ({
+      ...e,
+      scope: e.scope === "dev-only" ? "tool" : e.scope,
+    })),
+  };
+  assert.deepEqual(closure(LOCK, LOCK_MEMBERS, asTool), []);
+});
+
+test("licence closures: a dev-only or tool package a publishable member ships transitively fails, with its path", () => {
+  const where = "packages/lib/a (@t/packages/lib/a): pg-gis";
+  // a runtime dependency two steps down
+  assert.deepEqual(closure(withEdge("      loop: 1.0.0", "      gis-tests: 1.0.0")), [
+    `${where} (scope dev-only) ships with a publishable package: packages/lib/a → cycle@1.0.0 → gis-tests@1.0.0 → pg-gis@0.2.15`,
+  ]);
+  // through an optional dependency of a dependency
+  assert.deepEqual(
+    closure(withEdge("  '@scope/native@3.0.0':", "    dependencies:", "      pg-gis: 0.2.15")),
+    [
+      `${where} (scope dev-only) ships with a publishable package: packages/lib/a → cycle@1.0.0 → loop@1.0.0 → @scope/native@3.0.0 → pg-gis@0.2.15`,
+    ],
+  );
+  // through a workspace link to a member that ships it at runtime
+  const linked = LOCK.replace(
+    "  packages/lib/util:\n    devDependencies:",
+    "  packages/lib/util:\n    dependencies:",
+  );
+  assert.notEqual(linked, LOCK);
+  assert.deepEqual(closure(linked), [
+    `${where} (scope dev-only) ships with a publishable package: packages/lib/a → packages/lib/util → gis-tests@1.0.0 → pg-gis@0.2.15`,
+    "packages/lib/util (@t/packages/lib/util): pg-gis (scope dev-only) ships with a publishable package: packages/lib/util → gis-tests@1.0.0 → pg-gis@0.2.15",
+  ]);
+  // the private member that ships it is never published
+  const shipped = LOCK_MEMBERS.map((m) =>
+    m.dir === "packages/lib/private" ? member(m.dir, {}) : m,
+  );
+  assert.deepEqual(closure(LOCK, shipped), [
+    "packages/lib/private (@t/packages/lib/private): pg-gis (scope dev-only) ships with a publishable package: packages/lib/private → gis-tests@1.0.0 → pg-gis@0.2.15",
+  ]);
+  // a peer the package does not mark optional counts
+  assert.deepEqual(closure(LOCK.replace("      pg-gis:\n        optional: true\n", "")), [
+    `${where} (scope dev-only) ships with a publishable package: packages/lib/a → maps@2.0.0 → pg-gis@0.2.15`,
+  ]);
+  // the member's own non-optional peer, resolved where the importer lists it
+  const peer = LOCK_MEMBERS.map((m) =>
+    m.dir === "packages/lib/a" ? member(m.dir, { peerDependencies: { "gis-tests": "1" } }) : m,
+  );
+  assert.deepEqual(closure(LOCK, peer), [
+    `${where} (scope dev-only) ships with a publishable package: packages/lib/a → gis-tests@1.0.0 → pg-gis@0.2.15`,
+  ]);
+  const optionalPeer = LOCK_MEMBERS.map((m) =>
+    m.dir === "packages/lib/a"
+      ? member(m.dir, {
+          peerDependencies: { "gis-tests": "1" },
+          peerDependenciesMeta: { "gis-tests": { optional: true } },
+        })
+      : m,
+  );
+  assert.deepEqual(closure(LOCK, optionalPeer), []);
+  const asTool = {
+    ...POLICY,
+    exceptions: POLICY.exceptions.map((e) => ({
+      ...e,
+      scope: e.scope === "dev-only" ? "tool" : e.scope,
+    })),
+  };
+  assert.match(
+    closure(LOCK, peer, asTool)[0],
+    /pg-gis \(scope tool\) ships with a publishable package/,
+  );
+});
+
+test("licence closures: a mobile package anywhere in another member's closure fails, devDependencies included", () => {
+  const only = "only apps/mobile and apps/playground may";
+  const viaDev = withEdge(
+    "  gis-tests@1.0.0:",
+    "    optionalDependencies:",
+    "      styling: uniwind-pro@1.9.0(react@19.3.0)",
+  );
+  assert.deepEqual(closure(viaDev), [
+    `. (root): uniwind-pro (scope mobile) is installed: . → gis-tests@1.0.0 → uniwind-pro@1.9.0; ${only}`,
+    `packages/lib/a (@t/packages/lib/a): uniwind-pro (scope mobile) is installed: packages/lib/a → gis-tests@1.0.0 → uniwind-pro@1.9.0; ${only}`,
+    `packages/lib/private (@t/packages/lib/private): uniwind-pro (scope mobile) is installed: packages/lib/private → gis-tests@1.0.0 → uniwind-pro@1.9.0; ${only}`,
+    `packages/lib/util (@t/packages/lib/util): uniwind-pro (scope mobile) is installed: packages/lib/util → gis-tests@1.0.0 → uniwind-pro@1.9.0; ${only}`,
+  ]);
+  // the mobile app itself may, and only under its own directory and name
+  const renamed = LOCK_MEMBERS.map((m) =>
+    m.dir === "apps/mobile" ? member(m.dir, { name: "@t/other", private: true }) : m,
+  );
+  assert.deepEqual(closure(LOCK, renamed), [
+    `apps/mobile (@t/other): uniwind-pro (scope mobile) is installed: apps/mobile → uniwind-pro@1.9.0; ${only}`,
+  ]);
+});
+
+test("licence closures: a lockfile without importers, or without a member, is itself a violation", () => {
+  assert.deepEqual(closure(""), ["pnpm-lock.yaml lists no importers"]);
+  assert.deepEqual(closure(LOCK, [...LOCK_MEMBERS, member("packages/lib/new", {})]), [
+    "packages/lib/new (@t/packages/lib/new) is not in pnpm-lock.yaml",
+  ]);
+});
+
 test("licence scopes: main's manifests keep each shipped exception in its scope", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const policy = JSON.parse(
@@ -2394,6 +2695,8 @@ test("licence scopes: main's manifests keep each shipped exception in its scope"
   assert.ok(members.some((m) => m.dir === "packages/data/database"));
   assert.ok(!members.some((m) => m.dir.split("/").includes("node_modules")));
   assert.deepEqual(exceptionScopeViolations(members, workspace, policy, MOBILE_MEMBERS), []);
+  const graph = lockfileGraph(readFileSync(join(root, "pnpm-lock.yaml"), "utf8"));
+  assert.deepEqual(lockfileScopeViolations(graph, members, policy, MOBILE_MEMBERS), []);
   // where the dev-only and mobile packages sit today
   const database = members.find((m) => m.dir === "packages/data/database").manifest;
   assert.notEqual(database.private, true);
@@ -2490,6 +2793,7 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
     name: "@t/database",
     devDependencies: { "@electric-sql/pglite-postgis": "0.2.15" },
   });
+  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK);
   manifest("packages/data/database/node_modules/x", {
     name: "x",
     dependencies: { "uniwind-pro": "1" },
@@ -2534,6 +2838,22 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
     devOnly.stdout,
     /@electric-sql\/pglite-postgis \(scope dev-only\) is in dependencies/,
   );
+  manifest("packages/data/database", {
+    name: "@t/database",
+    devDependencies: { "@electric-sql/pglite-postgis": "0.2.15" },
+  });
+  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK.replace("devDependencies:", "dependencies:"));
+  const transitive = run();
+  assert.equal(transitive.status, 1);
+  assert.match(
+    transitive.stdout,
+    /ships with a publishable package: packages\/data\/database → @electric-sql\/pglite-postgis@0\.2\.15$/m,
+  );
+  rmSync(join(ws, "pnpm-lock.yaml"));
+  const noLock = run();
+  assert.equal(noLock.status, 1);
+  assert.match(noLock.stdout, /pnpm-lock\.yaml: ENOENT/);
+  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK);
   const noRoot = run({}, null);
   assert.equal(noRoot.status, 1);
   assert.match(noRoot.stdout, /no workspace root/);

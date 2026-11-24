@@ -566,10 +566,11 @@ export function spdxAllowed(expression, allowed) {
  * case-insensitive regular expressions over one SPDX id, and a denied id is taken out of `allow` even when listed
  * there, so it passes only as one OR alternative beside an allowed licence, or through a named exception. Each
  * exception has exactly `name`, `licence` (the exact string the listing shows), `reason`, `scope` (dev-only, runtime,
- * tool or mobile; exceptionScopeViolations holds dev-only and mobile to theirs) and, when it is pinned, `versions`: it
- * holds for that package under that string, and only while every version installed is pinned. A malformed exception
- * is a violation and holds for nothing. A policy without `allow` or `deny`, or an empty or unreadable listing, is
- * itself a violation: nothing passes vacuously. Self-contained: the licence check file is this function's own source.
+ * tool or mobile; exceptionScopeViolations and lockfileScopeViolations hold dev-only, tool and mobile to theirs) and,
+ * when it is pinned, `versions`: it holds for that package under that string, and only while every version installed
+ * is pinned. A malformed exception is a violation and holds for nothing. A policy without `allow` or `deny`, or an
+ * empty or unreadable listing, is itself a violation: nothing passes vacuously. Self-contained: the licence check file
+ * is this function's own source.
  */
 export function licenceViolations(listing, policy) {
   if (!Array.isArray(policy?.allow) || policy.allow.length === 0)
@@ -745,9 +746,10 @@ export function workspaceMembers(root, patterns) {
 }
 
 /**
- * Where the policy's scoped exceptions may sit in the workspace, as sorted lines: a `dev-only` package is never in a
- * publishable member's (no `"private": true`) `dependencies`, `optionalDependencies` or non-optional
- * `peerDependencies` (devDependencies and peers marked optional in `peerDependenciesMeta` are fine); a `mobile`
+ * Where the policy's scoped exceptions may sit in each member's own package.json, as sorted lines (lockfileScopeViolations
+ * holds the installed closures to the same rules): a `dev-only` or `tool` package is never in a publishable member's
+ * (no `"private": true`) `dependencies`, `optionalDependencies` or non-optional `peerDependencies` (devDependencies
+ * and peers marked optional in `peerDependenciesMeta` are fine); a `mobile`
  * package is a dependency of any kind of `mobileMembers` only (each `{ dir, name }`, both must match), and no override
  * aliases it. A dependency counts under its real name: an `npm:<name>@…` alias, directly or through the `catalog:`
  * entry it names. `workspace` is workspaceManifest's answer; `members` workspaceMembers'. No `packages`, no member or
@@ -757,7 +759,11 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
   const exceptions = Array.isArray(policy?.exceptions)
     ? policy.exceptions.filter((e) => e && typeof e === "object" && typeof e.name === "string")
     : [];
-  const devOnly = new Set(exceptions.filter((e) => e.scope === "dev-only").map((e) => e.name));
+  const unshipped = new Map(
+    exceptions
+      .filter((e) => e.scope === "dev-only" || e.scope === "tool")
+      .map((e) => [e.name, e.scope]),
+  );
   const mobile = new Set(exceptions.filter((e) => e.scope === "mobile").map((e) => e.name));
   const out = [];
   if (!Array.isArray(workspace?.packages) || workspace.packages.length === 0)
@@ -798,9 +804,9 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
           out.push(`${where}: ${name} (scope mobile) is in ${kind}; only ${mobileDirs} may use it`);
         const optionalPeer =
           kind === "peerDependencies" && manifest.peerDependenciesMeta?.[key]?.optional === true;
-        if (devOnly.has(name) && publishable && kind !== "devDependencies" && !optionalPeer)
+        if (unshipped.has(name) && publishable && kind !== "devDependencies" && !optionalPeer)
           out.push(
-            `${where}: ${name} (scope dev-only) is in ${kind === "peerDependencies" ? "non-optional peerDependencies" : kind} of a publishable package; only devDependencies or an optional peer`,
+            `${where}: ${name} (scope ${unshipped.get(name)}) is in ${kind === "peerDependencies" ? "non-optional peerDependencies" : kind} of a publishable package; only devDependencies or an optional peer`,
           );
       }
     }
@@ -822,8 +828,211 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
 }
 
 /**
+ * What the licence check reads from pnpm-lock.yaml (lockfile v9, every `---` document merged: pnpm 12 writes its own
+ * package-manager document first): each importer's `dependencies`, `devDependencies` and `optionalDependencies`
+ * (`{ name: version }`, the version as the lockfile writes it: `1.2.3(peer@1.0.0)`, `alias@1.2.3(…)` or `link:../x`);
+ * each snapshot's `dependencies` and `optionalDependencies` together (`snapshots[key]`, resolved peers included);
+ * and each package's optional peers (`optionalPeers["name@1.2.3"]`, a Set). A reader for the block layout pnpm
+ * writes (two-space steps, single-quoted keys, flow values left as text); the rest of the file is skipped.
+ * Self-contained: the licence check file is this function's own source.
+ */
+export function lockfileGraph(lockText) {
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const map = () => Object.create(null);
+  const graph = { importers: map(), snapshots: map(), optionalPeers: map() };
+  const sections = new Set(["dependencies", "devDependencies", "optionalDependencies"]);
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const scalar = (raw) => {
+    const value = raw.trim();
+    const quoted = /^'((?:[^']|'')*)'$|^"((?:[^"\\]|\\.)*)"$/.exec(value);
+    if (!quoted) return value;
+    return quoted[1] === undefined
+      ? quoted[2].replaceAll(/\\(.)/g, "$1")
+      : quoted[1].replaceAll("''", "'");
+  };
+  const pair = (body) => {
+    const quoted = /^('(?:[^']|'')*'|"(?:[^"\\]|\\.)*")\s*:(?:\s+(.*))?$/.exec(body);
+    if (quoted) return [scalar(quoted[1]), quoted[2] === undefined ? "" : scalar(quoted[2])];
+    const colon = body.search(/:(?:\s|$)/);
+    if (colon < 1 || body.startsWith("- ")) return null;
+    return [body.slice(0, colon).trim(), scalar(body.slice(colon + 1))];
+  };
+  let top = null;
+  let k2 = null;
+  let k4 = null;
+  let k6 = null;
+  for (const raw of String(lockText ?? "").split(/\r?\n/)) {
+    if (raw.trim() === "") continue;
+    if (raw.trimEnd() === "---") {
+      top = null;
+      continue;
+    }
+    const indent = raw.length - raw.trimStart().length;
+    const entry = pair(raw.trim());
+    if (!entry) continue;
+    const [key, value] = entry;
+    if (indent === 0) {
+      top = key;
+      k2 = null;
+      continue;
+    }
+    if (indent === 2) {
+      k2 = key;
+      k4 = null;
+      if (top === "importers") graph.importers[key] ??= map();
+      if (top === "snapshots") graph.snapshots[key] ??= map();
+      continue;
+    }
+    if (k2 === null) continue;
+    if (indent === 4) {
+      k4 = key;
+      k6 = null;
+      continue;
+    }
+    if (top === "importers" && sections.has(k4)) {
+      if (indent === 6) k6 = key;
+      else if (indent === 8 && key === "version" && k6 !== null)
+        (graph.importers[k2][k4] ??= map())[k6] = value;
+    } else if (
+      top === "snapshots" &&
+      indent === 6 &&
+      (k4 === "dependencies" || k4 === "optionalDependencies")
+    )
+      graph.snapshots[k2][key] = value;
+    else if (top === "packages" && k4 === "peerDependenciesMeta") {
+      if (indent === 6) k6 = key;
+      else if (indent === 8 && key === "optional" && value === "true" && k6 !== null)
+        (graph.optionalPeers[k2] ??= new Set()).add(k6);
+    }
+  }
+  return graph;
+}
+
+/**
+ * The scoped exceptions over the installed closures in a lockfileGraph, as sorted lines, each naming the path that
+ * reaches the package (`member → … → package`): a `dev-only` or `tool` package is never in a publishable member's
+ * (no `"private": true`) production closure, which follows its `dependencies`, `optionalDependencies` and non-optional
+ * peers, through workspace links (`link:`) and every snapshot's dependencies, but never devDependencies nor a peer the
+ * package marks optional; a `mobile` package is never in the full closure (devDependencies included) of a member other
+ * than `mobileMembers`. Each package is visited once, so a cycle ends. A lockfile without importers, or a member it
+ * does not list, is itself a violation. Self-contained: the licence check file is this function's own source.
+ */
+export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
+  const exceptions = Array.isArray(policy?.exceptions)
+    ? policy.exceptions.filter((e) => e && typeof e === "object" && typeof e.name === "string")
+    : [];
+  const unshipped = new Map(
+    exceptions
+      .filter((e) => e.scope === "dev-only" || e.scope === "tool")
+      .map((e) => [e.name, e.scope]),
+  );
+  const mobile = new Map(
+    exceptions.filter((e) => e.scope === "mobile").map((e) => [e.name, e.scope]),
+  );
+  const importers = graph?.importers ?? {};
+  if (Object.keys(importers).length === 0) return ["pnpm-lock.yaml lists no importers"];
+  const manifests = new Map(
+    (Array.isArray(members) ? members : [])
+      .filter((m) => m?.manifest)
+      .map((m) => [m.dir, m.manifest]),
+  );
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const nameOf = (key) => key.slice(0, key.indexOf("@", 1));
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const show = (node) => (node.startsWith("importer:") ? node.slice(9) : node.replace(/\(.*$/, ""));
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const linked = (dir, relative) => {
+    const parts = dir === "." ? [] : dir.split("/");
+    for (const part of relative.split("/"))
+      if (part === "..") parts.pop();
+      else if (part && part !== ".") parts.push(part);
+    return parts.length ? parts.join("/") : ".";
+  };
+  const node = (dir, name, version) => {
+    if (typeof version !== "string" || version === "") return null;
+    if (version.startsWith("link:")) return `importer:${linked(dir, version.slice(5))}`;
+    // An alias resolves to another package: `uniwind: uniwind-pro@1.9.0(…)`.
+    if (/^(?:@[^/@(]+\/)?[^@(:/][^@(:]*@/.test(version)) return version;
+    return `${name}@${version}`;
+  };
+  const edges = (from, full) => {
+    if (!from.startsWith("importer:")) {
+      const optional = graph.optionalPeers?.[from.replace(/\(.*$/, "")];
+      return Object.entries(graph.snapshots?.[from] ?? {})
+        .filter(([name]) => !optional?.has(name))
+        .map(([name, version]) => node(".", name, version));
+    }
+    const dir = from.slice(9);
+    const importer = importers[dir] ?? {};
+    const kinds = full
+      ? ["dependencies", "optionalDependencies", "devDependencies"]
+      : ["dependencies", "optionalDependencies"];
+    const next = kinds.flatMap((kind) =>
+      Object.entries(importer[kind] ?? {}).map(([name, version]) => node(dir, name, version)),
+    );
+    const manifest = manifests.get(dir);
+    for (const peer of Object.keys(manifest?.peerDependencies ?? {}))
+      if (manifest.peerDependenciesMeta?.[peer]?.optional !== true)
+        next.push(
+          node(
+            dir,
+            peer,
+            importer.dependencies?.[peer] ??
+              importer.optionalDependencies?.[peer] ??
+              importer.devDependencies?.[peer],
+          ),
+        );
+    return next;
+  };
+  // Breadth first from the member, so each package found is named with its shortest path.
+  const reach = (dir, full, targets) => {
+    const start = `importer:${dir}`;
+    const parent = new Map([[start, null]]);
+    const queue = [start];
+    const found = new Map();
+    for (let i = 0; i < queue.length; i++)
+      for (const next of edges(queue[i], full && i === 0)) {
+        if (next === null || parent.has(next)) continue;
+        parent.set(next, queue[i]);
+        queue.push(next);
+        const name = next.startsWith("importer:") ? null : nameOf(next);
+        if (name !== null && targets.has(name) && !found.has(name)) found.set(name, next);
+      }
+    return [...found].map(([name, end]) => {
+      const path = [];
+      for (let at = end; at !== null; at = parent.get(at)) path.unshift(show(at));
+      return [name, path.join(" → ")];
+    });
+  };
+  const mobileDirs = mobileMembers.map((m) => m.dir).join(" and ");
+  const out = [];
+  for (const member of Array.isArray(members) ? members : []) {
+    if (!member?.manifest) continue;
+    const where = `${member.dir} (${member.manifest.name ?? "unnamed"})`;
+    if (!(member.dir in importers)) {
+      out.push(`${where} is not in pnpm-lock.yaml`);
+      continue;
+    }
+    if (member.manifest.private !== true && unshipped.size)
+      for (const [name, path] of reach(member.dir, false, unshipped))
+        out.push(
+          `${where}: ${name} (scope ${unshipped.get(name)}) ships with a publishable package: ${path}`,
+        );
+    const isMobile = mobileMembers.some(
+      (m) => m.dir === member.dir && m.name === member.manifest.name,
+    );
+    if (!isMobile && mobile.size)
+      for (const [name, path] of reach(member.dir, true, mobile))
+        out.push(`${where}: ${name} (scope mobile) is installed: ${path}; only ${mobileDirs} may`);
+  }
+  return out.toSorted();
+}
+
+/**
  * The licence check the gate runs (`node licence-check.mjs <policy> <listing> <workspace root>`): this file's
- * spdxAllowed, licenceViolations, workspaceManifest, workspaceMembers and exceptionScopeViolations, with MOBILE_MEMBERS.
+ * spdxAllowed, licenceViolations, workspaceManifest, workspaceMembers, exceptionScopeViolations, lockfileGraph and
+ * lockfileScopeViolations, with MOBILE_MEMBERS. It reads `<root>/pnpm-workspace.yaml`, each member's package.json and
+ * `<root>/pnpm-lock.yaml`; any of them unreadable fails the step.
  */
 export const licenceCheckSource = () =>
   [
@@ -835,6 +1044,8 @@ export const licenceCheckSource = () =>
     workspaceManifest.toString(),
     workspaceMembers.toString(),
     exceptionScopeViolations.toString(),
+    lockfileGraph.toString(),
+    lockfileScopeViolations.toString(),
     "const read = (path) => {",
     "  try {",
     '    return JSON.parse(readFileSync(path, "utf8"));',
@@ -859,6 +1070,12 @@ export const licenceCheckSource = () =>
     "  if (workspace) {",
     "    members = workspaceMembers(root, workspace.packages);",
     "    problems.push(...exceptionScopeViolations(members, workspace, policy, MOBILE_MEMBERS));",
+    "    try {",
+    '      const graph = lockfileGraph(readFileSync(`${root}/pnpm-lock.yaml`, "utf8"));',
+    "      problems.push(...lockfileScopeViolations(graph, members, policy, MOBILE_MEMBERS));",
+    "    } catch (error) {",
+    "      problems.push(`${root}/pnpm-lock.yaml: ${error.message}`);",
+    "    }",
     "  }",
     "}",
     "if (problems.length) {",
