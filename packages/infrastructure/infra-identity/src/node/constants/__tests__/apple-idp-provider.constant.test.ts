@@ -35,10 +35,13 @@ const INPUTS: AppleIdpInputs = {
 /** Every admin call after the token: method, path and body. */
 const calls: { method: string; path: string; body: unknown }[] = [];
 let status = 200;
+/** A status to answer a particular call with instead of `status` (`undefined`: no override). */
+let refuse: ((method: string, path: string) => number | undefined) | undefined;
 
 beforeEach(() => {
   calls.length = 0;
   status = 200;
+  refuse = undefined;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init: RequestInit) => {
@@ -55,7 +58,10 @@ beforeEach(() => {
         path: pathname,
         body: init.body === undefined ? undefined : JSON.parse(String(init.body)),
       });
-      return Response.json({ id: "idp1" }, { status });
+      return Response.json(
+        { id: "idp1" },
+        { status: refuse?.(String(init.method), pathname) ?? status },
+      );
     }),
   );
 });
@@ -111,6 +117,26 @@ describe("APPLE_IDP_PROVIDER", () => {
       "DELETE /admin/v1/policies/login/idps/idp1",
       "DELETE /admin/v1/idps/templates/idp1",
     ]);
+  });
+
+  it("deletes the instance's provider even when the login policy no longer lists it, and fails when that delete does", async () => {
+    const olds = (await APPLE_IDP_PROVIDER.create?.(INPUTS))?.outs;
+    calls.length = 0;
+    // The policy link is already gone (another run, or by hand): not an error, the provider still goes.
+    refuse = (_method, path) =>
+      path.startsWith("/admin/v1/policies/login/idps/") ? 404 : undefined;
+
+    await expect(APPLE_IDP_PROVIDER.delete?.("idp1", olds)).resolves.toBeUndefined();
+    expect(calls.map(({ method, path }) => `${method} ${path}`)).toEqual([
+      "DELETE /admin/v1/policies/login/idps/idp1",
+      "DELETE /admin/v1/idps/templates/idp1",
+    ]);
+
+    // The provider itself refusing to go is an error, naming only the status.
+    refuse = (_method, path) => (path.startsWith("/admin/v1/idps/templates/") ? 500 : undefined);
+    await expect(APPLE_IDP_PROVIDER.delete?.("idp1", olds)).rejects.toThrow(
+      "ZITADEL DELETE /admin/v1/idps/templates/idp1 failed (HTTP 500)",
+    );
   });
 
   it("names only the status of a refused call", async () => {
