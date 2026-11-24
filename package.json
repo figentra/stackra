@@ -10,6 +10,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "gen": "turbo run gen:workspace gen",
+    "showcase:coverage": "node packages/design-system/showcase/scripts/coverage.ts",
     "gen:workspace": "node packages/developer/cli/dist/stackra.mjs gen",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint && pnpm lint:root",

@@ -34,6 +34,8 @@ Never edit them by hand: change the source and run gen. `vendor/` is HeroUI's do
 ## Commands
 
 `pnpm turbo run <task> --filter=@stackra/showcase` — `build`, `typecheck`, `lint`, `test`; `gen`, `gen:check`.
+`pnpm showcase:coverage` (from the repository root) lists the built react entries that lack a playground route, a demo,
+an English or Arabic title or a test, and exits 1 on any; it reports and fixes nothing (STA-2738).
 
 ## PII
 
