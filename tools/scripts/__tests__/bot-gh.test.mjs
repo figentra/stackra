@@ -276,6 +276,8 @@ test("STA-2761: no agent writes a commit status, check run or check suite; reads
     ["api", "graphql", "--input=q.json"],
     ["api", "graphql", "-F", "query=@q.graphql"],
     ["api", "graphql", "--field", "query=@q.graphql"],
+    ["api", "/graphql", "--input", "q.json"],
+    ["api", "%2Fgraphql", "-F", "query=@q.graphql"],
   ];
   for (const args of forged) assert.equal(writesCheck(args), true, args.join(" "));
   const reads = [
