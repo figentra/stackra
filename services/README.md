@@ -8,11 +8,12 @@ the packages and the generator; product services live in Figentra OS
 | Service              | Package                     | Holds                                                |
 | -------------------- | --------------------------- | ---------------------------------------------------- |
 | [`example`](example) | `@figentra/service-example` | the reference service; root module `ExampleModule`   |
-| [`health`](health)   | `@figentra/service-health`  | the health-check service; root module `HealthModule` |
+| [`health`](health)   | `@figentra/service-health`  | `GET /healthz` liveness and `GET /readyz` readiness  |
 
-Each has an entry `src/main.ts` and a root module named by `"stackra": { "module": … }` in its `package.json`
-([ADR 0090](../apps/docs/src/docs/adr/0090-codegen-discovery-by-root-module.mdx)). Both are placeholders until the
-container and action packages land.
+Each is a programming-model v3 member ([ADR 0294](../apps/docs/src/docs/adr/0294-programming-model-v3-grammar-folders-identities-and-naming.mdx), 0295):
+`stackra.config.ts`, a root module that gen derives, feature modules under `src/modules/`, and no `main.ts`.
+`stackra gen` writes the entry, the wiring and the Encore app into `.stackra/`. What each one proves, and how to run it,
+is in its own README.
 
 ## Rules
 
