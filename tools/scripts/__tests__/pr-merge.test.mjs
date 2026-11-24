@@ -24,6 +24,10 @@ import {
   isVerifyDefinition,
   isVerifyOverlay,
   isRootDefinition,
+  isGateToolPackage,
+  GATE_TOOL_BINS,
+  GATE_TOOL_PACKAGES,
+  VERIFY_OVERLAY_DIRS,
   scriptsChanged,
   OWNER,
   ownerLabelled,
@@ -730,4 +734,67 @@ test("isRecent: a future completed_at never counts as recent", () => {
   assert.equal(isRecent(new Date(NOW - 60_000).toISOString(), NOW), true);
   assert.equal(isRecent(new Date(NOW + 60_000).toISOString(), NOW), false);
   assert.equal(isRecent("garbage", NOW), false);
+});
+
+test("condition 6: a change to how a gate tool resolves needs risk:R3; the PR's resolution still runs (CTO ruling 2c)", () => {
+  // a vitest bump in a member's devDependencies is a definition change (the owner reviews it)
+  assert.equal(
+    definitionFieldsChanged(
+      '{"devDependencies":{"vitest":"5.0.5"}}',
+      '{"devDependencies":{"vitest":"5.0.6"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    definitionFieldsChanged(
+      '{"dependencies":{"x":"1"}}',
+      '{"dependencies":{"x":"1","y":"npm:turbo@2"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    definitionFieldsChanged(
+      '{"devDependencies":{"@vitest/coverage-v8":"5"}}',
+      '{"devDependencies":{}}',
+    ),
+    true,
+  );
+  // any other dependency stays tested code
+  assert.equal(
+    definitionFieldsChanged('{"dependencies":{"zod":"3"}}', '{"dependencies":{"zod":"4"}}'),
+    false,
+  );
+  // the catalogs, overrides and lockfile are VERIFY_SENSITIVE already
+  for (const path of ["pnpm-workspace.yaml", "pnpm-lock.yaml"])
+    assert.equal(isVerifyDefinition(path), true);
+  for (const name of [
+    "turbo",
+    "vitest",
+    "typescript",
+    "@commitlint/cli",
+    "@vitest/runner",
+    "tsx",
+    "knip",
+  ])
+    assert.equal(isGateToolPackage(name), true, name);
+  assert.deepEqual(GATE_TOOL_PACKAGES, [...new Set(Object.values(GATE_TOOL_BINS))].toSorted());
+});
+
+test("condition 6: devEngines, the Flow install and a nested pnpm-workspace.yaml are definitions (review LOW-4, NIT, HIGH-2)", () => {
+  assert.equal(DEFINITION_FIELDS.includes("devEngines"), true);
+  assert.equal(
+    definitionFieldsChanged('{"devEngines":{"packageManager":{"name":"pnpm"}}}', "{}"),
+    true,
+  );
+  for (const path of [
+    ".flow/lock.json",
+    ".flow/overrides/rules/x.md",
+    "packages/a/pnpm-workspace.yaml",
+    "apps/x/pnpm-workspace.yml",
+  ]) {
+    assert.equal(isVerifyOverlay(path), true, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+  assert.equal(isVerifyOverlay("pnpm-workspace.yaml"), false);
+  assert.equal(VERIFY_OVERLAY_DIRS.test(".flow/new.json"), true);
 });

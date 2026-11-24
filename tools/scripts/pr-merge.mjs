@@ -96,17 +96,19 @@ export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
  * (`.shellcheckrc`, searched upward); shfmt 3.14.1 (`.editorconfig`); zizmor 1.31.1 (`zizmor.{yml,yaml}`); gitleaks
  * 8.30.1 (`.gitleaks.toml`, `.gitleaksignore`); OSV-Scanner 2.7.0 (`osv-scanner.toml`); squawk (`.squawk.toml`, from
  * its documentation: no squawk binary on box 1 to read). Extensions are widened to every module form. A PR's copy of
- * them never runs: the tested tree takes main's copy, and buildTree removes one main does not have.
+ * them never runs: the tested tree takes main's copy, and buildTree removes one main does not have. Also main's: the
+ * Flow install under `.flow/` (its lock and override rules drive `fflow gate ci`, review LOW-4), and a
+ * pnpm-workspace.yaml anywhere below the root (pnpm 12 reads settings such as `scriptShell` from it, review HIGH-2).
  */
 export const VERIFY_OVERLAY =
-  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$/;
+  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$|^.+\/pnpm-workspace\.ya?ml$/;
 
 /**
  * The verify-definition directories whose every file is main's, new ones included (a new file there is removed from
  * the tested tree even inside a new subdirectory): the config presets, the repository scripts and policies, the hooks.
  */
 export const VERIFY_OVERLAY_DIRS =
-  /^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins)\//;
+  /^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\//;
 
 /**
  * Root-level files a PR may change without changing what the verify service checks: documentation no gate tool
@@ -177,7 +179,98 @@ export const DEFINITION_FIELDS = [
   // A workspace package's `bin` (or `directories.bin`) can shadow a tool another package runs (CTO review M1).
   "bin",
   "directories",
+  // Which package manager and engines a command runs under (review of #1043, NIT).
+  "devEngines",
 ];
+
+/**
+ * The executables the Quality Gate's commands run, mapped to the package that provides each (CTO ruling, round 4
+ * of #1043, 2c): the steps' commands, the root scripts they call and every member script the steps' turbo tasks
+ * run. A test derives the commands from the steps and fails when one runs an executable this map does not name (or
+ * NOT_PACKAGE_COMMANDS lists as a system tool or a shell builtin).
+ */
+export const GATE_TOOL_BINS = Object.freeze({
+  commitlint: "@commitlint/cli",
+  fflow: "@figentra-oss/flow",
+  knip: "knip",
+  oxfmt: "oxfmt",
+  oxlint: "oxlint",
+  // A workspace member's bin (@stackra/cli): its own `bin` and `scripts` are definition fields already.
+  stackra: "@stackra/cli",
+  tsc: "typescript",
+  tsdown: "tsdown",
+  // Named by the CTO's ruling although no step runs it today.
+  tsx: "tsx",
+  turbo: "turbo",
+  vitest: "vitest",
+});
+/**
+ * What else the gate's commands run: the downloaded tools (the store image's TOOLS), node and pnpm from the image,
+ * git, coreutils and shell syntax, and the migration-lint step's own `lint` shell function.
+ */
+export const NOT_PACKAGE_COMMANDS = Object.freeze([
+  "actionlint",
+  "case",
+  "do",
+  "done",
+  "echo",
+  "else",
+  "esac",
+  "exit",
+  "fi",
+  "find",
+  "for",
+  "git",
+  "gitleaks",
+  "grep",
+  "if",
+  "lint",
+  "mapfile",
+  "node",
+  "osv-scanner",
+  "pnpm",
+  "shfmt",
+  "sort",
+  "squawk",
+  "then",
+  "zizmor",
+]);
+/** Packages whose resolution decides what the gate runs: GATE_TOOL_BINS' packages and the vitest and commitlint scopes. */
+export const GATE_TOOL_PACKAGES = Object.freeze(
+  [...new Set(Object.values(GATE_TOOL_BINS))].toSorted(),
+);
+export const isGateToolPackage = (name) =>
+  GATE_TOOL_PACKAGES.includes(name) || /^@(?:vitest|commitlint)\//.test(name);
+
+/** The registry package an `npm:<name>@<range>` alias names, or null. */
+export const aliasTarget = (spec) =>
+  /^npm:((?:@[^/@\s]+\/)?[^@\s]+)(?:@.*)?$/.exec(typeof spec === "string" ? spec : "")?.[1] ?? null;
+
+/**
+ * A package.json's specs for gate-tool packages (by key, or by the package an alias names), as one comparable string:
+ * a change is a change to how the gate's runner resolves, so the PR needs the owner's review (risk:R3), while the
+ * verify still runs on the PR's resolution (CTO ruling, round 4, 2c).
+ */
+const gateToolSpecsOf = (text) => {
+  try {
+    const json = JSON.parse(text ?? "{}");
+    const out = [];
+    for (const kind of [
+      "dependencies",
+      "devDependencies",
+      "optionalDependencies",
+      "peerDependencies",
+    ])
+      for (const [key, spec] of Object.entries(json[kind] ?? {}))
+        if (isGateToolPackage(key) || isGateToolPackage(aliasTarget(spec) ?? ""))
+          out.push([kind, key, spec]);
+    return JSON.stringify(
+      out.toSorted((a, b) => `${a[0]}:${a[1]}`.localeCompare(`${b[0]}:${b[1]}`)),
+    );
+  } catch {
+    return "unparsable";
+  }
+};
 
 /** A package.json text's definition fields as one comparable string (a missing file has none). */
 const definitionOf = (text) => {
@@ -199,7 +292,9 @@ export function definitionFieldsChanged(baseText, headText, status = "modified")
   const headMissing = headText === null || headText === undefined;
   if ((baseMissing && status !== "added") || (headMissing && status !== "removed")) return true;
   return (
-    definitionOf(baseMissing ? null : baseText) !== definitionOf(headMissing ? null : headText)
+    definitionOf(baseMissing ? null : baseText) !== definitionOf(headMissing ? null : headText) ||
+    gateToolSpecsOf(baseMissing ? null : baseText) !==
+      gateToolSpecsOf(headMissing ? null : headText)
   );
 }
 
