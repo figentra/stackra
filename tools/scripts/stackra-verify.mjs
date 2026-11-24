@@ -163,6 +163,12 @@ export const VERIFY_PREPARE =
 export const ERROR_RETRY_MS = 30 * 60 * 1000;
 /** … and after this many on one SHA the service posts `neutral` (could not run), which never merges. */
 export const MAX_ERROR_ATTEMPTS = 3;
+/** Whether a run finished within FRESH_MS of `now`; a time in the future (or unreadable) is never fresh. */
+export function isFresh(completedAt, now = Date.now()) {
+  const age = now - Date.parse(completedAt ?? "");
+  return Number.isFinite(age) && age >= 0 && age < FRESH_MS;
+}
+
 /** How long a green against an older main stands, for the PR to enter the merge queue (CTO ruling M3). */
 export const FRESH_MS = 24 * 60 * 60 * 1000;
 export const LOG_KEEP_MS = 14 * 24 * 60 * 60 * 1000;
@@ -396,7 +402,6 @@ export const PROBE_PORTS = [22, 80, 443, 2375, 2376, 3000, 4000, 5432, 6379, 808
  */
 export function probeTargets(hostAddresses = [], gateways = []) {
   const targets = [
-    "127.0.0.11:53",
     ...gateways.flatMap((g) =>
       [53, ...PROBE_PORTS].map((port) => (g.includes(":") ? `[${g}]:${port}` : `${g}:${port}`)),
     ),
@@ -419,7 +424,7 @@ export function probeTargets(hostAddresses = [], gateways = []) {
  * The probe: node in the store image tries a TCP connection to each target for 2 s and exits 9 when any connects
  * (it prints which), 0 when none does. Any other exit is an error, never a pass.
  */
-export function probeScript(targets, proxy = null) {
+export function probeScript(targets, proxy = null, dnsName = "example.com") {
   return [
     'const net = require("node:net");',
     `const targets = ${JSON.stringify(targets)};`,
@@ -431,6 +436,10 @@ export function probeScript(targets, proxy = null) {
     '  s.on("data", (d) => { buf += d; if (buf.includes("\\r\\n")) { s.destroy(); done(/^HTTP\\/1\\.[01] 200/.test(buf) ? "proxy->" + t : null); } });',
     '  s.on("timeout", () => { s.destroy(); done(null); }); s.on("error", () => done(null)); s.on("end", () => done(null));',
     "});",
+    // Docker's embedded DNS answers on every network (the install needs it for `proxy`); a leak is an external name
+    // that resolves, so the probe resolves one and any answer counts.
+    `const dnsName = ${JSON.stringify(dnsName)};`,
+    'const dnsLeak = () => new Promise((done) => require("node:dns").lookup(dnsName, (e, a) => done(e ? null : "dns->" + dnsName + "=" + a)));',
     "const tryOne = (t) => new Promise((done) => {",
     '  const i = t.lastIndexOf(":"); const host = t.slice(0, i).replace(/^\\[|\\]$/g, ""); const port = Number(t.slice(i + 1));',
     "  const s = net.connect({ host, port, timeout: 2000 });",
@@ -438,7 +447,7 @@ export function probeScript(targets, proxy = null) {
     '  s.on("timeout", () => { s.destroy(); done(null); });',
     '  s.on("error", () => done(null));',
     "});",
-    'Promise.all([...targets.map(tryOne), ...targets.map(viaProxy)]).then((r) => { const open = r.filter(Boolean); if (open.length) { console.log("reachable: " + open.join(" ")); process.exit(9); } process.exit(0); });',
+    'Promise.all([...targets.map(tryOne), ...targets.map(viaProxy), dnsLeak()]).then((r) => { const open = r.filter(Boolean); if (open.length) { console.log("reachable: " + open.join(" ")); process.exit(9); } process.exit(0); });',
   ].join("\n");
 }
 
@@ -521,7 +530,7 @@ export function licensedDockerfile(storeImage) {
   return [
     `FROM ${storeImage}`,
     "USER root",
-    "RUN --mount=type=secret,id=licence,required=true --mount=type=bind,source=licensed.sh,target=/tmp/licensed.sh sh /tmp/licensed.sh",
+    "RUN --mount=type=secret,id=licence,required=true --mount=type=tmpfs,target=/scan --mount=type=bind,source=licensed.sh,target=/tmp/licensed.sh sh /tmp/licensed.sh",
     `RUN chown -R ${CONTAINER_USER} /prebuilt`,
     "",
   ].join("\n");
@@ -548,9 +557,11 @@ export function licensedScript(packages) {
       throw new Error(`not a package: ${name}@${version}`);
   const lines = [
     "set -e",
-    'T="$(cat /run/secrets/licence)"',
-    'B="$(printf %s "$T" | base64 | tr -d \'\\n\')"',
-    'redact() { awk -v t="$T" -v b="$B" \'{ while ((i = index($0, t)) > 0) $0 = substr($0, 1, i - 1) "[redacted]" substr($0, i + length(t)); while ((i = index($0, b)) > 0) $0 = substr($0, 1, i - 1) "[redacted]" substr($0, i + length(b)); print }\'; }',
+    // The secret holds the token on its first line and its base64 cores on the next: only builtins and files
+    // touch them, so no value is ever on a command line (`ps`).
+    "head -n 1 /run/secrets/licence > /scan/token",
+    "cp /run/secrets/licence /scan/patterns",
+    "redact() { awk 'NR == FNR { p[++n] = $0; next } { for (k = 1; k <= n; k++) while ((i = index($0, p[k])) > 0) $0 = substr($0, 1, i - 1) \"[redacted]\" substr($0, i + length(p[k])); print }' /scan/patterns -; }",
     "mkdir -p /lic /prebuilt",
   ];
   for (const { name, version, integrity } of packages) {
@@ -565,7 +576,8 @@ export function licensedScript(packages) {
       `pnpm add "$f" --store-dir /store --ignore-scripts > /dev/null`,
       `p=${dir}/node_modules/${name}`,
       `(cd "$p" && find . -type f -exec sha256sum {} + | sort -k2) > ${dir}/.before`,
-      `(cd "$p" && UNIWIND_AUTH_TOKEN="$T" UNIWIND_CACHE_DIR=${dir}/.cache sh -c "$(node -p 'require("./package.json").scripts.postinstall')") > ${dir}/.out 2>&1 || { redact < ${dir}/.out; exit 1; }`,
+      // The token reaches the postinstall through its environment only, read from the file by the shell itself.
+      `(cd "$p" && UNIWIND_CACHE_DIR=${dir}/.cache UNIWIND_AUTH_TOKEN="$(cat /scan/token)" sh -c "$(node -p 'require("./package.json").scripts.postinstall')") > ${dir}/.out 2>&1 || { redact < ${dir}/.out; exit 1; }`,
       `(cd "$p" && find . -type f -exec sha256sum {} + | sort -k2) > ${dir}/.after`,
       `mkdir -p /prebuilt/${name}@${version}`,
       `comm -13 ${dir}/.before ${dir}/.after | awk '{ print substr($0, 67) }' | (cd "$p" && tar -cf - -T -) | tar -xf - -C /prebuilt/${name}@${version}`,
@@ -573,8 +585,10 @@ export function licensedScript(packages) {
     );
   }
   lines.push(
-    "unset T_UNUSED; rm -rf /lic /tmp/* /root/.cache /root/.npm /root/.uniwind /root/.local /root/.config",
-    'if grep -rlF -e "$T" -e "$B" --exclude-dir=proc --exclude-dir=sys --exclude-dir=dev --exclude-dir=run / 2>/dev/null; then echo "the licence token was persisted"; exit 1; fi',
+    "rm -rf /lic /tmp/* /root/.cache /root/.npm /root/.uniwind /root/.local /root/.config",
+    // Proof the token was not persisted: every file outside the kernel's and the secret mounts (pruned by full path,
+    // so a nested dev/ or run/ is still searched) is searched for the token and its base64 cores.
+    'if find / \\( -path /proc -o -path /sys -o -path /dev -o -path /run/secrets -o -path /scan \\) -prune -o -type f -print0 | xargs -0 -r grep -lF -f /scan/patterns 2>/dev/null; then echo "the licence token was persisted"; exit 1; fi',
   );
   return lines.join("\n");
 }
@@ -650,6 +664,20 @@ export const STORE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 export const storeReusable = ({ recordedId, currentId, builtAt }, now = Date.now()) =>
   Boolean(recordedId) && currentId === recordedId && now - (builtAt ?? 0) < STORE_MAX_AGE_MS;
 
+/** At most this many licensed package versions are built for one tested tree. */
+export const MAX_LICENSED_PER_TREE = 3;
+
+/**
+ * The licensed images worth keeping: those built on the current store image and younger than STORE_MAX_AGE_MS. The
+ * rest would pin old store layers forever, so they leave the record (and the clean-up then removes them).
+ */
+export const pruneLicensed = (licensed, storeId, now = Date.now()) =>
+  Object.fromEntries(
+    Object.entries(licensed).filter(
+      ([, entry]) => entry?.storeId === storeId && now - (entry.builtAt ?? 0) < STORE_MAX_AGE_MS,
+    ),
+  );
+
 /** The image ids a clean-up keeps: the base, and every store and licensed image the daemon recorded. */
 export const keepIdsFrom = (state, baseId) =>
   [
@@ -659,6 +687,21 @@ export const keepIdsFrom = (state, baseId) =>
     baseId,
   ].filter(Boolean);
 
+/** The key and licence files' modes as hostProblems reads them: null when missing, unreadable or not ours. */
+export function secretModes(s, stat, uid) {
+  const modeOf = (path) => {
+    try {
+      return ownedMode(stat(path), uid);
+    } catch {
+      return null;
+    }
+  };
+  return {
+    keyMode: s.keyFile ? modeOf(s.keyFile) : null,
+    licenceMode: s.licenceFile ? modeOf(s.licenceFile) : 0o400,
+  };
+}
+
 /** A secret file's mode bits when this process owns it; null otherwise (someone else's file could be swapped). */
 export const ownedMode = (stat, uid) => (stat && stat.uid === uid ? stat.mode & 0o777 : null);
 
@@ -666,6 +709,13 @@ export const ownedMode = (stat, uid) => (stat && stat.uid === uid ? stat.mode & 
  * What the service does with a run's result: `stop` when the host proved unsafe (nothing more runs), `skip` when
  * nothing is recorded (a stop or a moved head), `error` for an infrastructure error, `post` for a result.
  */
+/** The stop on an unsafe host: stops the service, posts nothing and counts nothing against the PR. */
+export function stopIfUnsafe(result, stop) {
+  if (outcome(result) !== "stop") return;
+  stop();
+  throw new Error(`stopping: ${result.error}; seal the install network (box runbook) and restart`);
+}
+
 export function outcome(result) {
   if (result.unsafe) return "stop";
   if (result.stopped || result.moved) return "skip";
@@ -697,7 +747,7 @@ export function needsRun({ checkRuns, sha, appId, base, errors = { count: 0 } },
   // A run against an older main stands while it is fresh: re-verifying every PR on every main merge, one verify at a
   // time, would never finish. The merge queue's own commit verify is the gate that sees the latest main.
   const fresh = recordedRun(checkRuns, sha, appId);
-  if (fresh && now - Date.parse(fresh.completed_at ?? 0) < FRESH_MS) return false;
+  if (fresh && isFresh(fresh.completed_at, now)) return false;
   if (errors.count === 0) return true;
   return errors.count < MAX_ERROR_ATTEMPTS && now - errors.at > ERROR_RETRY_MS;
 }
@@ -717,20 +767,45 @@ const SECRET_SHAPES = [
   /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
   /\bAGE-SECRET-KEY-1[0-9A-Z]{50,}\b/g,
 ];
+/**
+ * The byte patterns that give a secret away in data: the value, and the stable core of its base64 at each of the three
+ * alignments it can start at inside a longer base64 run (standard and URL-safe alphabets). Used for the scans, where
+ * the token may sit anywhere in a file.
+ */
+export function secretPatterns(value) {
+  const v = Buffer.from(String(value));
+  const out = new Set([v.toString("utf8")]);
+  for (let k = 0; k < 3; k++) {
+    const b64 = Buffer.concat([Buffer.alloc(k), v]).toString("base64");
+    const start = Math.ceil((k * 4) / 3);
+    const end = Math.floor(((k + v.length) * 4) / 3) - ((k + v.length) % 3 ? 1 : 0);
+    const core = b64.slice(start, Math.max(start, end));
+    if (core.length >= 8) {
+      out.add(core);
+      out.add(core.replaceAll("+", "-").replaceAll("/", "_"));
+    }
+  }
+  return [...out];
+}
+
 /** Secret values this process holds (the licence token), in every encoding a tool may print them. */
 const SECRET_VALUES = new Set();
 /** Registers a secret so `scrub` removes it (plain, base64, base64url and URL-encoded) from every output path. */
 export function registerSecret(value) {
   const v = String(value ?? "").trim();
   if (v.length < 8) return;
+  const percent = encodeURIComponent(v);
   for (const form of [
     v,
     Buffer.from(v).toString("base64"),
     Buffer.from(v).toString("base64").replace(/=+$/, ""),
     Buffer.from(v).toString("base64url"),
-    encodeURIComponent(v),
+    percent,
+    percent.replaceAll(/%[0-9A-F]{2}/g, (m) => m.toLowerCase()),
+    new URLSearchParams({ v }).toString().slice(2),
+    ...secretPatterns(v),
   ])
-    SECRET_VALUES.add(form);
+    if (form.length >= 8) SECRET_VALUES.add(form);
 }
 
 /** Display hygiene for every output path: no colour or control codes, no registered secret, no token or key shape. */
@@ -1022,6 +1097,14 @@ export function preflightProblems(s, io, extraForbidden = []) {
         `the verify user's slice has no ${file} cap (a drop-in on its user@.service sets it)`,
       );
   }
+  // The per-uid REJECT rules, proven: on the default bridge (where the proxy and the builds run), instance metadata
+  // must not answer, over IPv4 or IPv6.
+  const bridge = io.bridgeProbe?.();
+  if (bridge === null) problems.push("the bridge probe did not run");
+  else if (bridge?.length)
+    problems.push(
+      `the bridge network reaches ${bridge.join(" ")} (the per-uid REJECT rules are missing)`,
+    );
   const overlap = subuidOverlap(io.subuid?.() ?? "", s.runAs);
   if (overlap) problems.push(overlap);
   const info = io.dockerInfo();
@@ -1050,6 +1133,27 @@ function preflight(s) {
         } catch {
           return null;
         }
+      },
+      bridgeProbe: () => {
+        if (docker(s, ["pull", "--quiet", s.baseImage], { timeout: 10 * 60_000 }).code !== 0)
+          return null;
+        return probeVerdict([
+          docker(
+            s,
+            [
+              "run",
+              "--rm",
+              "--network",
+              "bridge",
+              ...containerLimits(s, join(s.home, "preflight.env")),
+              s.baseImage,
+              "node",
+              "-e",
+              probeScript(["169.254.169.254:80", "169.254.169.254:443", "[fd00:ec2::254]:80"]),
+            ],
+            { timeout: 5 * 60_000 },
+          ),
+        ]);
       },
       subuid: () => {
         try {
@@ -1299,6 +1403,11 @@ function archiveJob(s, job, runDir) {
     return { tarPath, mirror, tree };
   } finally {
     if (job.pr) git(mirror, ["update-ref", "-d", `refs/verify/pr-${job.pr}`]);
+    if (job.queue)
+      for (const ref of git(mirror, ["for-each-ref", "--format=%(refname)", "refs/verify/queue/"])
+        .split("\n")
+        .filter(Boolean))
+        git(mirror, ["update-ref", "-d", ref]);
   }
 }
 
@@ -1348,11 +1457,15 @@ function ensureStore(s, mirror, base, runDir, state) {
  */
 async function ensureLicensed(s, store, packages, runDir, state) {
   if (!packages.length) return store;
+  if (packages.length > MAX_LICENSED_PER_TREE)
+    throw new Error(
+      `the tree locks ${packages.length} licensed builds; at most ${MAX_LICENSED_PER_TREE} are built`,
+    );
   if (!s.licenceFile)
     throw new Error("the tree has licensed builds; STACKRA_VERIFY_LICENCE_FILE is not set");
   const storeId = docker(s, ["image", "inspect", "--format", "{{.Id}}", store]).stdout.trim();
   const tag = `stackra-verify-licensed:${createHash("sha256").update(storeId).update(JSON.stringify(packages)).digest("hex").slice(0, 16)}`;
-  state.licensed ??= {};
+  state.licensed = pruneLicensed(state.licensed ?? {}, storeId);
   const recorded = state.licensed[tag];
   const current = docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim();
   if (storeReusable({ recordedId: recorded?.id, currentId: current, builtAt: recorded?.builtAt }))
@@ -1377,7 +1490,7 @@ async function ensureLicensed(s, store, packages, runDir, state) {
       tag,
       ctx,
     ],
-    { timeout: 60 * 60 * 1000, input: token },
+    { timeout: 60 * 60 * 1000, input: [token, ...secretPatterns(token).slice(1)].join("\n") },
   );
   if (build.code !== 0) {
     // The tool prints its download URL, which holds the token: only the scrubbed text reaches the service log, and
@@ -1395,6 +1508,7 @@ async function ensureLicensed(s, store, packages, runDir, state) {
     ...state.licensed,
     [tag]: {
       id: docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim(),
+      storeId,
       builtAt: Date.now(),
     },
   };
@@ -1442,14 +1556,13 @@ export async function imageCarries(reader, image, token) {
   if (history.code !== 0 || config.code !== 0) return true;
   for (const text of [history.stdout, config.stdout])
     if (text.includes(token) || text.includes("UNIWIND_AUTH_TOKEN")) return true;
-  // Secondary to the in-build search: the image's final filesystem, streamed, for the token in plain and base64.
-  const plain = needleScanner(token);
-  const encoded = needleScanner(Buffer.from(token).toString("base64"));
+  // Secondary to the in-build search: the image's final filesystem, streamed, for the token and its base64 cores at
+  // every alignment.
+  const scanners = secretPatterns(token).map((pattern) => needleScanner(pattern));
   const ok = await reader.exportStream(image, (chunk) => {
-    plain.push(chunk);
-    encoded.push(chunk);
+    for (const scanner of scanners) scanner.push(chunk);
   });
-  return !ok || plain.found || encoded.found;
+  return !ok || scanners.some((scanner) => scanner.found);
 }
 
 /** Everything a run left in the verify user's Docker goes: containers, run images, volumes, networks, other images. */
@@ -1622,13 +1735,7 @@ export async function verify(s, job) {
     rmSync(runDir, { recursive: true, force: true });
   }
   if (result.error) appendFileSync(logPath, `\nstackra-verify: ${result.error}\n`);
-  if (outcome(result) === "stop") {
-    // The host is not safe for PR code: stop the service, post nothing, count nothing against the PR.
-    onStop();
-    throw new Error(
-      `stopping: ${result.error}; seal the install network (box runbook) and restart`,
-    );
-  }
+  stopIfUnsafe(result, onStop);
 
   const key = `${job.repo}@${job.sha}`;
   if (result.stopped || result.moved) {
@@ -1805,27 +1912,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(2);
   }
   const s = settings();
-  let keyMode;
-  try {
-    const key = s.keyFile ? statSync(s.keyFile) : null;
-    // A key file someone else owns could be swapped under the service: it counts as unreadable.
-    keyMode = ownedMode(key, process.getuid());
-  } catch {
-    keyMode = null;
-  }
-  let licenceMode = 0o400;
-  if (s.licenceFile)
-    try {
-      const licence = statSync(s.licenceFile);
-      licenceMode = ownedMode(licence, process.getuid());
-    } catch {
-      licenceMode = null;
-    }
+  const { keyMode, licenceMode } = secretModes(s, statSync, process.getuid());
   const problems = hostProblems(s, keyMode, licenceMode);
   if (!problems.length) {
     mkdirSync(s.home, { recursive: true, mode: 0o711 });
     chmodSync(s.home, 0o711);
     writeFileSync(join(s.home, "docker.env"), dockerEnvFile(s), { mode: 0o644 });
+    writeFileSync(join(s.home, "preflight.env"), CONTAINER_ENV, { mode: 0o644 });
     problems.push(...preflight(s));
   }
   if (problems.length) {

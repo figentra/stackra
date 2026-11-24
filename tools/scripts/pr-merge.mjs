@@ -93,6 +93,12 @@ export const VERIFY_SENSITIVE =
  */
 export const VERIFY_FRESH_MS = 24 * 60 * 60 * 1000;
 
+/** Whether a run finished within VERIFY_FRESH_MS of `now`; a future or unreadable time never counts. */
+export function isRecent(completedAt, now = Date.now()) {
+  const age = now - Date.parse(completedAt ?? "");
+  return Number.isFinite(age) && age >= 0 && age < VERIFY_FRESH_MS;
+}
+
 /** Conditions 1 to 6 for the main block: the facts from `verifyFacts` (runs, main, definition changes) always go in. */
 export const mergeBlockers = (pr, runs, options, facts) =>
   blockers(pr, runs, {
@@ -262,7 +268,7 @@ export function blockers(
   else if (
     mainSha &&
     verify.external_id !== `base:${mainSha}` &&
-    !(now - Date.parse(verify.completed_at ?? 0) < VERIFY_FRESH_MS)
+    !isRecent(verify.completed_at, now)
   )
     reasons.push(
       `${VERIFY_CHECK} on ${sha} was run against ${verify.external_id ?? "an unknown base"} more than a day ago, and main is now ${mainSha}: wait for the re-verify`,

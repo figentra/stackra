@@ -22,6 +22,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   allowedBuilds,
+  stopIfUnsafe,
+  secretPatterns,
+  secretModes,
+  pruneLicensed,
+  MAX_LICENSED_PER_TREE,
+  isFresh,
   subuidOverlap,
   registerSecret,
   probeVerdict,
@@ -104,9 +110,9 @@ const TAR = "/runs/x/src.tar";
 /** `host:port` of a listening test server. */
 const at = (server) => `127.0.0.1:${server.address().port}`;
 /** Runs the probe script in a child without blocking this process, whose test servers must keep answering. */
-const runProbe = (targets, proxy) =>
+const runProbe = (targets, proxy, dnsName = "stackra-verify.invalid") =>
   new Promise((resolve) => {
-    const child = spawn(process.execPath, ["-e", probeScript(targets, proxy)], {
+    const child = spawn(process.execPath, ["-e", probeScript(targets, proxy, dnsName)], {
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
@@ -944,7 +950,7 @@ test("licensed image: a secret mount and a bind-mounted script on top of the sto
   assert.match(dockerfile, /^FROM stackra-verify-store:abc$/m);
   assert.match(
     dockerfile,
-    /RUN --mount=type=secret,id=licence,required=true --mount=type=bind,source=licensed\.sh,target=\/tmp\/licensed\.sh sh \/tmp\/licensed\.sh/,
+    /RUN --mount=type=secret,id=licence,required=true --mount=type=tmpfs,target=\/scan --mount=type=bind,source=licensed\.sh,target=\/tmp\/licensed\.sh sh \/tmp\/licensed\.sh/,
   );
   assert.doesNotMatch(dockerfile, /^(?:ARG|ENV)/m);
   assert.doesNotMatch(dockerfile, /UNIWIND_AUTH_TOKEN/);
@@ -963,13 +969,17 @@ test("licensed stage script: publisher tarball checked against the lockfile inte
     new RegExp(`\\[ "\\$got" = "${integrity.replaceAll("+", "\\+")}" \\] \\|\\| \\{`),
   );
   assert.match(script, /pnpm add "\$f" --store-dir \/store --ignore-scripts/);
-  assert.match(script, /UNIWIND_AUTH_TOKEN="\$T"/);
+  assert.match(script, /UNIWIND_AUTH_TOKEN="\$\(cat \/scan\/token\)"/);
   assert.match(script, /redact < /);
   assert.match(script, /comm -13 .*\.before .*\.after/);
   assert.match(
     script,
-    /grep -rlF -e "\$T" -e "\$B" .* \/ 2>\/dev\/null; then echo "the licence token was persisted"; exit 1; fi$/,
+    /find \/ \\\( -path \/proc -o -path \/sys -o -path \/dev -o -path \/run\/secrets -o -path \/scan \\\) -prune .* grep -lF -f \/scan\/patterns/,
   );
+  assert.match(script, /then echo "the licence token was persisted"; exit 1; fi$/);
+  // no value on a command line: grep reads patterns from a file, awk from a file, never -e "$T" or -v t=
+  assert.doesNotMatch(script, /-e "\$|awk -v|\$T"|echo "\$/);
+  assert.doesNotMatch(script, /--exclude-dir/);
   assert.equal(spawnSync("sh", ["-n"], { input: script }).status, 0);
   for (const bad of [
     { name: "x; rm -rf /", version: "1.0.0", integrity },
@@ -1111,9 +1121,10 @@ test("probeVerdict: a probe that did not run is retried once; still not run is u
   assert.equal(probeVerdict([{ code: 125, stdout: "" }, () => ({ code: 125, stdout: "" })]), null);
 });
 
-test("egress probe: the internal network's gateway and embedded DNS are probed too", () => {
+test("egress probe: the internal network's gateway is probed; the embedded DNS address is not a target", () => {
   const targets = probeTargets([], ["172.30.0.1"]);
-  for (const t of ["127.0.0.11:53", "172.30.0.1:53", "172.30.0.1:5432", "172.30.0.1:2375"])
+  assert.equal(targets.includes("127.0.0.11:53"), false);
+  for (const t of ["172.30.0.1:53", "172.30.0.1:5432", "172.30.0.1:2375"])
     assert.ok(targets.includes(t), t);
 });
 
@@ -1202,4 +1213,97 @@ test("imageCarries: the token or its name in history or config, or the token (pl
     true,
   );
   assert.equal(await imageCarries(imageReader({ exported: false }), "img", token), true);
+});
+
+test("egress probe script: an external name that resolves is a DNS leak; one that does not is sealed", async () => {
+  const leak = await runProbe([], null, "localhost");
+  assert.equal(leak.status, 9);
+  assert.match(leak.stdout, /dns->localhost=/);
+  assert.equal((await runProbe([], null, "stackra-verify.invalid")).status, 0);
+});
+
+test("secretPatterns: the token's base64 core is found at every alignment inside a longer base64 run", () => {
+  for (const token of [`lic-${"r".repeat(13)}`, `${"\u00ff".repeat(4)}+/?${"s".repeat(9)}`]) {
+    const cores = secretPatterns(token).slice(1);
+    for (let pre = 0; pre < 6; pre++)
+      for (let suf = 0; suf < 4; suf++) {
+        const run = Buffer.concat([Buffer.alloc(pre, 7), Buffer.from(token), Buffer.alloc(suf, 9)]);
+        for (const encoded of [run.toString("base64"), run.toString("base64url")])
+          assert.ok(
+            cores.some((core) => encoded.includes(core)),
+            `${pre}/${suf}`,
+          );
+      }
+  }
+});
+
+test("registerSecret: base64url, URL-encoded (upper and lower hex) and form-encoded forms are scrubbed too", () => {
+  const token = `t0k+en/with?&= chars-${"w".repeat(8)}`;
+  registerSecret(token);
+  const forms = [
+    Buffer.from(token).toString("base64url"),
+    encodeURIComponent(token),
+    encodeURIComponent(token).replaceAll(/%[0-9A-F]{2}/g, (m) => m.toLowerCase()),
+    new URLSearchParams({ v: token }).toString().slice(2),
+  ];
+  for (const form of forms) assert.equal(scrub(`x ${form} y`).includes(form), false, form);
+});
+
+test("stopIfUnsafe: an unsafe host calls stop and throws; anything else does neither", () => {
+  let stopped = 0;
+  const stop = () => stopped++;
+  assert.throws(
+    () => stopIfUnsafe({ post: false, unsafe: true, error: "leak" }, stop),
+    /stopping: leak/,
+  );
+  assert.equal(stopped, 1);
+  stopIfUnsafe({ post: false, error: "x" }, stop);
+  stopIfUnsafe({ post: true, conclusion: "success" }, stop);
+  assert.equal(stopped, 1);
+});
+
+test("secretModes: a key or licence someone else owns, or one that cannot be read, counts as null", () => {
+  const files = { "/k": { uid: 7, mode: 33_024 }, "/l": { uid: 8, mode: 33_024 } };
+  const stat = (path) => {
+    if (!files[path]) throw new Error("ENOENT");
+    return files[path];
+  };
+  assert.deepEqual(secretModes({ keyFile: "/k", licenceFile: "/l" }, stat, 7), {
+    keyMode: 0o400,
+    licenceMode: null,
+  });
+  assert.deepEqual(secretModes({ keyFile: "/missing", licenceFile: null }, stat, 7), {
+    keyMode: null,
+    licenceMode: 0o400,
+  });
+});
+
+test("pruneLicensed: licensed images on an old store, or too old, leave the record; the cap holds", () => {
+  const now = NOW;
+  const licensed = {
+    a: { id: "sha256:a", storeId: "sha256:store2", builtAt: now - 1000 },
+    b: { id: "sha256:b", storeId: "sha256:store1", builtAt: now - 1000 },
+    c: { id: "sha256:c", storeId: "sha256:store2", builtAt: now - STORE_MAX_AGE_MS - 1 },
+  };
+  assert.deepEqual(Object.keys(pruneLicensed(licensed, "sha256:store2", now)), ["a"]);
+  assert.equal(MAX_LICENSED_PER_TREE, 3);
+});
+
+test("isFresh: a run in the last day is fresh; one from the future or unreadable never is", () => {
+  assert.equal(isFresh(new Date(NOW - 60_000).toISOString(), NOW), true);
+  assert.equal(isFresh(new Date(NOW - FRESH_MS - 1).toISOString(), NOW), false);
+  assert.equal(isFresh(new Date(NOW + 3_600_000).toISOString(), NOW), false);
+  assert.equal(isFresh(undefined, NOW), false);
+});
+
+test("preflight: a bridge network that reaches instance metadata (missing REJECT rules) refuses", () => {
+  assert.match(
+    preflightProblems(S, io({ bridgeProbe: () => ["169.254.169.254:80"] })).join(),
+    /bridge network reaches 169\.254\.169\.254:80/,
+  );
+  assert.match(
+    preflightProblems(S, io({ bridgeProbe: () => null })).join(),
+    /bridge probe did not run/,
+  );
+  assert.deepEqual(preflightProblems(S, io({ bridgeProbe: () => [] })), []);
 });

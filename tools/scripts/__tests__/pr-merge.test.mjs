@@ -18,6 +18,7 @@ import {
   gh,
   graphql,
   definitionFieldsChanged,
+  isRecent,
   mergeBlockers,
   VERIFY_FRESH_MS,
   isVerifyDefinition,
@@ -543,4 +544,11 @@ test("mergeBlockers: the main block always passes main, the runs and the definit
   const reasons = mergeBlockers(pr(), green, { app: APP }, facts).join();
   assert.match(reasons, /main is now e{40}/);
   assert.match(reasons, /label it risk:R3/);
+});
+
+test("isRecent: a future completed_at never counts as recent", () => {
+  const NOW = Date.parse("2026-11-24T15:00:00Z");
+  assert.equal(isRecent(new Date(NOW - 60_000).toISOString(), NOW), true);
+  assert.equal(isRecent(new Date(NOW + 60_000).toISOString(), NOW), false);
+  assert.equal(isRecent("garbage", NOW), false);
 });
