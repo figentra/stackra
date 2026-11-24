@@ -4,15 +4,21 @@
  *          refuses a `--to` that does not deploy on promotion even on a dry run (exit 1), lists the targets on a dry
  *          run as the `--json` data (noting one without a provider), refuses an approval-gated environment without
  *          `--approved` (exit 2), and hands Runway's `promote()` both environments, the providers and the commit, then
- *          draws each record.
- * Boundary: test only; Runway's `readRunway` and `promote` are mocked, nothing is deployed.
+ *          draws each record; an environment whose deploy lock is held is refused (exit 1) without promoting.
+ * Boundary: test only; Runway's `readRunway`, `promote` and `fileDeployLock` are mocked, nothing is deployed. The lock is
+ *           a stand-in, never the host's lock folder: `stackra deploy`'s tests and other runs of this file on the same
+ *           box (every lane shares /tmp) take the same `runway:deploy:core:production` file, and whichever came second
+ *           exited 1.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352; ADR 0468; STA-607; STA-1966.
  */
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { runCommandForTest } from "@stackra/console/testing";
 import { promote } from "@stackra/runway";
-import type { RootRunway } from "@stackra/runway";
-import { proveGithubJob, readRunway } from "@stackra/runway/node";
+import type { DeployLock, RootRunway } from "@stackra/runway";
+import { fileDeployLock, proveGithubJob, readRunway } from "@stackra/runway/node";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -27,6 +33,7 @@ vi.mock("@stackra/runway/node", async (original) => ({
   ...(await original<Record<string, unknown>>()),
   readRunway: vi.fn(),
   proveGithubJob: vi.fn(),
+  fileDeployLock: vi.fn(),
 }));
 
 /** The console draws an error in a box; its text, unwrapped. */
@@ -47,9 +54,21 @@ const ROOT = {
   targets: { mintlify: { branch: "docs-site" } },
 } as unknown as RootRunway;
 
+/** A deploy lock nobody holds: it runs the work. */
+const FREE: DeployLock = {
+  tryWith: async (_key, _ttl, work) => {
+    await work();
+    return true;
+  },
+};
+
+/** A deploy lock another apply holds: it runs nothing. */
+const HELD: DeployLock = { tryWith: async () => false };
+
 const run = (...argv: string[]) => runCommandForTest([PromoteCommand], ["promote", ...argv]);
 
 beforeEach(() => {
+  vi.mocked(fileDeployLock).mockReset().mockReturnValue(FREE);
   vi.mocked(readRunway).mockReset().mockReturnValue(ROOT);
   vi.mocked(promote)
     .mockReset()
@@ -123,5 +142,16 @@ describe("PromoteCommand", () => {
     expect(result.stdout).toContain("production/docs");
     expect(result.stdout).toContain(SHA.slice(0, 12));
     expect(result.stdout).toContain("up");
+    // The real lock is the host's, in the temp folder, shared with `stackra deploy`.
+    expect(fileDeployLock).toHaveBeenCalledWith(join(tmpdir(), "stackra-runway-locks"));
+  });
+
+  it("refuses an environment whose deploy lock another apply holds, and promotes nothing", async () => {
+    vi.mocked(proveGithubJob).mockResolvedValueOnce({ repository: "figentra/stackra" });
+    vi.mocked(fileDeployLock).mockReturnValue(HELD);
+    const result = await run("--to", "production", "--sha", SHA);
+    expect(result.exitCode).toBe(1);
+    expect(text(result.stderr)).toContain("Another apply is running in production");
+    expect(promote).not.toHaveBeenCalled();
   });
 });
