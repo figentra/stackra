@@ -14,7 +14,9 @@
  *           call's work runs on a fresh fork as the transaction context, outside the call's committed transaction, with
  *           this instance's own step store (`runDetached`, `detached`). Reads stay on the primary
  *           unless `onReplica` asks (MikroORM's replica preference is off), because the scope settings live in the
- *           primary's transaction.
+ *           primary's transaction. The container builds the `Database` port's driver with no ORM (the wiring gives it
+ *           no deps): that instance is a handle on the driver `connect` made, so everything it does (`em`, `orm`, `close`,
+ *           the detached store) is the connected driver's, and it fails with "No database is connected" until one is.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
  *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool);
@@ -56,18 +58,20 @@ import type { TransactionOptions } from "#core/types/transaction-options.type";
  * await database.close();
  */
 export class PostgresDatabaseDriver extends Driver(Database) {
-  /** The MikroORM instance. */
-  readonly orm: MikroORM;
+  /** The MikroORM instance this driver was connected with; none for an instance the container built. */
+  private readonly connected: MikroORM | undefined;
 
   /** The step of each detached call running in this database (`runDetached`). */
   private readonly detachedSteps = new AsyncLocalStorage<DetachedStep>();
 
   /**
-   * @param orm - a connected MikroORM instance; use `connect` instead.
+   * @param orm - a connected MikroORM instance; use `connect` instead. The container builds the `Database` port's driver
+   *              with none: that instance is a handle on the connected one (`owner`), so a service that injects
+   *              `Database` reaches the connection the app's boot made.
    */
-  constructor(orm: MikroORM) {
+  constructor(orm?: MikroORM) {
     super();
-    this.orm = orm;
+    this.connected = orm;
   }
 
   /**
@@ -106,9 +110,14 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     return driver;
   }
 
+  /** The MikroORM instance: this driver's own, or the connected driver's for a handle the container built. */
+  get orm(): MikroORM {
+    return this.owner().connected as MikroORM;
+  }
+
   /** Implements `Database.detached`, documented there: this instance's own store, never another database's. */
   override detached(): DetachedStep | undefined {
-    return this.detachedSteps.getStore();
+    return this.owner().detachedSteps.getStore();
   }
 
   /**
@@ -116,7 +125,9 @@ export class PostgresDatabaseDriver extends Driver(Database) {
    * neither it nor a step it opens joins the call's committed transaction, which MikroORM keeps in the context.
    */
   override runDetached<T>(step: DetachedStep, work: () => Promise<T>): Promise<T> {
-    return this.detachedSteps.run(step, () => TransactionContext.create(this.orm.em.fork(), work));
+    return this.owner().detachedSteps.run(step, () =>
+      TransactionContext.create(this.orm.em.fork(), work),
+    );
   }
 
   /** Implements `Database.em`, documented there. */
@@ -170,7 +181,23 @@ export class PostgresDatabaseDriver extends Driver(Database) {
 
   /** Implements `Database.close`, documented there. */
   async close(): Promise<void> {
-    if (ACTIVE_DATABASE.current === this) ACTIVE_DATABASE.current = undefined;
-    await this.orm.close(true);
+    const owner = this.owner();
+    if (ACTIVE_DATABASE.current === owner) ACTIVE_DATABASE.current = undefined;
+    await owner.orm.close(true);
+  }
+
+  /**
+   * The driver that owns the connection: this one when it was connected with `connect`, else the connected one.
+   *
+   * @throws Error when none is connected, before the app's boot (or `usePostgres` in a test) connected one.
+   */
+  private owner(): PostgresDatabaseDriver {
+    if (this.connected !== undefined) return this;
+    const current = ACTIVE_DATABASE.current;
+    if (current instanceof PostgresDatabaseDriver && current.connected !== undefined)
+      return current;
+    throw new Error(
+      "No database is connected: the app's boot (or usePostgres in a test) connects one first",
+    );
   }
 }
