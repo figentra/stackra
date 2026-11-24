@@ -5,7 +5,8 @@
 #          tag per version, then signs the CycloneDX SBOM keylessly with cosign and attaches it, with a
 #          `sha256sums.txt` of the published tarballs, to each GitHub release it created. A Trivy filesystem scan of
 #          the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). Every tarball
-#          is made by `pnpm publish` (or `pnpm pack` for the dry run), so the workspace `.pnpmfile.mjs` beforePacking
+#          is made by `pnpm pack`, then published as it is (the dry run packs and checks the same tarballs, reads the registry and
+#          publishes nothing), so the workspace `.pnpmfile.mjs` beforePacking
 #          hook strips the repo-only `imports` map and `@stackra/source` condition first.
 # Boundary: publishes only to `registry`; never to npmjs (the optional mirror of ADR 0453 decision 16 is off and not
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
@@ -40,7 +41,7 @@ on:
         type: string
         required: true
       dry-run:
-        description: Pack and run `pnpm -r publish --dry-run` instead of the version PR and the publish.
+        description: Rehearse the publish (plan, pack and check every package, compare with the registry, read-only) instead of the version PR and the publish.
         type: boolean
         default: false
       registry:
@@ -184,7 +185,8 @@ jobs:
           cat > "$RUNNER_TEMP/registry-plan.mjs" <<'MJS'
           import { execFileSync } from "node:child_process";
           import { createHash } from "node:crypto";
-          import { readFileSync, writeFileSync } from "node:fs";
+          import { readFileSync, statSync, writeFileSync } from "node:fs";
+          import { gunzipSync } from "node:zlib";
 
           const [mode, out, expectedName, expectedVersion] = process.argv.slice(2);
           const fail = (message) => {
@@ -268,6 +270,13 @@ jobs:
               .map((entry) => `package/${entry.replace(/^\.\//, "")}`);
             const absent = [...new Set(entries)].filter((entry) => !files.has(entry));
             if (absent.length > 0) problems.push(`the tarball lacks ${absent.map((entry) => entry.replace(/^package\//, "")).join(", ")}`);
+            // The registry Worker's own limits (workers/registry/wrangler.jsonc: REGISTRY_MAX_TARBALL_BYTES and
+            // REGISTRY_MAX_UNPACKED_BYTES): a tarball over either is refused at publish, after earlier packages went out.
+            const MAX_TARBALL_BYTES = 52428800;
+            const MAX_UNPACKED_BYTES = 104857600;
+            if (statSync(out).size > MAX_TARBALL_BYTES) problems.push(`the tarball is over ${MAX_TARBALL_BYTES} bytes`);
+            else if (gunzipSync(readFileSync(out)).length > MAX_UNPACKED_BYTES)
+              problems.push(`the tarball unpacks to more than ${MAX_UNPACKED_BYTES} bytes`);
             if (problems.length > 0) fail(`${expectedName}@${expectedVersion}: ${problems.join("; ")}`);
             // The sha512 integrity of the tarball, as the registry's `dist.integrity` writes it.
             console.log(`sha512-${createHash("sha512").update(readFileSync(out)).digest("base64")}`);
@@ -284,7 +293,9 @@ jobs:
           host="${REGISTRY#https://}"
           # changesets/action v2 reads the published tags from the NDJSON file it names in CHANGESETS_OUTPUT, not from
           # stdout: an absent file left 0.2.0 (run 41166821024) without tags or GitHub releases. Created empty first.
-          : > "$CHANGESETS_OUTPUT"
+          : > "${CHANGESETS_OUTPUT:-/dev/null}"
+          # A dry run rehearses every check up to the first write: nothing is published, tagged or announced.
+          dry_run="${DRY_RUN:-false}"
           plan="$RUNNER_TEMP/registry-plan.tsv"
           pnpm -r --workspace-concurrency=1 --reporter=silent exec node "$RUNNER_TEMP/registry-plan.mjs" --manifest |
             node "$RUNNER_TEMP/registry-plan.mjs" --plan "$plan"
@@ -293,6 +304,11 @@ jobs:
           count() { awk 'END { print NR }' "$1"; }
           expected="$(pnpm -r --reporter=silent ls --depth -1 --json | jq '[.[] | select(.private != true)] | length')"
           rows="$(count "$plan")"
+          # An empty or unreadable `pnpm ls` must stop the run, not skip the comparison: both counts have to be numbers.
+          if ! [[ "$expected" =~ ^[0-9]+$ ]]; then
+            echo "::error title=Publish plan::pnpm did not report how many public packages the workspace has (got '${expected}')"
+            exit 1
+          fi
           if [ "$rows" -eq 0 ] || [ "$rows" -ne "$expected" ]; then
             echo "::error title=Publish plan::the plan has ${rows} packages and the workspace has ${expected} public ones"
             exit 1
@@ -407,6 +423,35 @@ jobs:
           fi
           echo "Preflight: ${index} packages packed and checked"
 
+          # A dry run stops here after reading the registry: the same comparison the publish makes, with no write.
+          if [ "$dry_run" = true ]; then
+            load_lines "$packed"
+            would_publish=0
+            would_skip=0
+            stops=0
+            for line in "${lines[@]}"; do
+              IFS=$'\t' read -r name version integrity tarball <<< "$line"
+              state="$(registry_state "$name" "$version" "$integrity")"
+              case "$state" in
+                present)
+                  echo "would skip ${name}@${version}: on the registry, same content"
+                  would_skip=$((would_skip + 1))
+                  ;;
+                absent)
+                  echo "would publish ${name}@${version}"
+                  would_publish=$((would_publish + 1))
+                  ;;
+                *)
+                  echo "::error title=Dry run::${name}@${version}: ${state}"
+                  stops=$((stops + 1))
+                  ;;
+              esac
+            done
+            [ "$stops" -eq 0 ] || exit 1
+            echo "Dry run: ${would_publish} would be published, ${would_skip} already there; nothing was published, tagged or announced"
+            exit 0
+          fi
+
           # From here every way out that is not success prints what was published, what was already there and what is not.
           published_file="$RUNNER_TEMP/registry-published.txt"
           skipped_file="$RUNNER_TEMP/registry-skipped.txt"
@@ -495,11 +540,8 @@ jobs:
         if: inputs.dry-run
         env:
           REGISTRY: ${{ inputs.registry }}
-        run: |
-          set -euo pipefail
-          pnpm -r --workspace-concurrency=1 --reporter=silent exec node "$RUNNER_TEMP/registry-plan.mjs" --manifest |
-            node "$RUNNER_TEMP/registry-plan.mjs" --plan "$RUNNER_TEMP/registry-plan.tsv"
-          pnpm -r publish --dry-run --no-git-checks --registry "$REGISTRY"
+          DRY_RUN: "true"
+        run: bash "$RUNNER_TEMP/registry-publish.sh"
 
       # ADR 0025 / 0119 D7: automation prepares, the owner decides. With pending changesets this opens or updates the
       # "chore(release): version packages" PR (`pnpm changeset:version` also refreshes the lockfile); the owner merges

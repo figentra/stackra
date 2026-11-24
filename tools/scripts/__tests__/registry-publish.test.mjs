@@ -16,7 +16,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   chmodSync,
   existsSync,
@@ -113,7 +113,15 @@ const net = path.join(state, "net", key);
 if (fs.existsSync(net)) {
   const mode = fs.readFileSync(net, "utf8");
   if (mode === "timeout") process.exit(28);
-  reply(Number(mode.replace("http:", "")));
+  if (mode.startsWith("seq:")) {
+    // The answers of successive attempts; curl's --retry N asks again after a 408, 429 or 5xx, up to N more times.
+    const codes = mode.slice(4).split(",").map(Number);
+    const retries = args.includes("--retry") ? Number(args[args.indexOf("--retry") + 1]) : 0;
+    let code = codes[0];
+    for (let attempt = 1; attempt <= retries && [408, 429, 500, 502, 503, 504].includes(code); attempt++)
+      code = codes[Math.min(attempt, codes.length - 1)];
+    if (code !== 200) reply(code);
+  } else reply(Number(mode.replace("http:", "")));
 }
 const document = (integrity) => {
   const at = key.lastIndexOf("@");
@@ -162,6 +170,10 @@ if (args[0] === "publish") {
   process.exit(0);
 }
 if (args[0] === "pack") { drain(); process.exit(real()); }
+if (args.includes("ls") && process.env.LS_EMPTY) {
+  if (process.env.LS_EMPTY === "list") process.stdout.write("[]");
+  process.exit(0);
+}
 if (args.includes("ls") && process.env.LS_EXTRA) {
   const result = spawnSync(process.env.REAL_PNPM, args, { encoding: "utf8" });
   const list = JSON.parse(result.stdout);
@@ -830,7 +842,7 @@ test("the pre-flight packs every package, even one already on the registry, and 
 });
 
 /** A tarball with the given package.json and files, as `pnpm pack` writes one: everything under `package/`. */
-function makeTarball(manifest, files = ["LICENSE"]) {
+function makeTarball(manifest, files = ["LICENSE"], contents = {}) {
   const dir = mkdtempSync(join(tmpdir(), "registry-tarball-"));
   mkdirSync(join(dir, "package"));
   writeFileSync(join(dir, "package", "package.json"), JSON.stringify(manifest));
@@ -838,13 +850,15 @@ function makeTarball(manifest, files = ["LICENSE"]) {
     mkdirSync(dirname(join(dir, "package", file)), { recursive: true });
     writeFileSync(join(dir, "package", file), "x\n");
   }
+  for (const [file, bytes] of Object.entries(contents))
+    writeFileSync(join(dir, "package", file), bytes);
   execFileSync("tar", ["-czf", join(dir, "t.tgz"), "-C", dir, "package"]);
   return { dir, file: join(dir, "t.tgz") };
 }
 
 /** Run the verify mode of the plan script on a tarball. */
-function verify(manifest, files, expected = ["@t/a", "1.0.0"]) {
-  const { dir, file } = makeTarball(manifest, files);
+function verify(manifest, files, expected = ["@t/a", "1.0.0"], contents = {}) {
+  const { dir, file } = makeTarball(manifest, files, contents);
   try {
     writeFileSync(join(dir, "plan.mjs"), PLAN_SCRIPT);
     const result = spawnSync("node", [join(dir, "plan.mjs"), "--verify", file, ...expected], {
@@ -937,10 +951,152 @@ test("the script keeps no descriptor open and counts lines without wc", () => {
   assert.doesNotMatch(PUBLISH_SCRIPT, /read -r -u 3/);
 });
 
-test("the dry run checks the same plan before it packs", () => {
-  const dryRun = WORKFLOW.slice(WORKFLOW.indexOf("- name: Publish dry run"));
-  assert.ok(
-    dryRun.indexOf("registry-plan.mjs") !== -1 &&
-      dryRun.indexOf("registry-plan.mjs") < dryRun.indexOf("publish --dry-run"),
+test("the dry run step runs the publish script read-only, and no longer calls pnpm publish", () => {
+  const step = WORKFLOW.slice(WORKFLOW.indexOf("- name: Publish dry run"));
+  const body = step.slice(0, step.indexOf("\n\n"));
+  assert.match(body, /DRY_RUN: "true"/);
+  assert.match(body, /bash "\$RUNNER_TEMP\/registry-publish\.sh"/);
+  assert.doesNotMatch(body, /pnpm -r publish/);
+});
+
+test("every curl call is bounded and retried: the wrapper's flags are in the script and on every call", () => {
+  assert.match(
+    PUBLISH_SCRIPT,
+    /curl\(\) \{ command curl -sS --connect-timeout 10 --max-time 20 --retry 3 --retry-delay 5 "\$@"; \}/,
   );
+  withFixture(CHAIN, (run) => {
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.ok(result.argv.length > 8);
+    for (const line of result.argv)
+      for (const flag of ["--connect-timeout 10", "--max-time 20", "--retry 3"])
+        assert.ok(line.includes(flag), `a curl call lacks ${flag}: ${line}`);
+  });
+});
+
+test("a registry that answers 503 once and then 200 is read as present: the wrapper's retry covers it", () => {
+  withFixture(CHAIN, (run) => {
+    run.preload("c");
+    run.answer("c", "seq:503,200");
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /skip @t\/c@1\.0\.0: already on the registry, same content/);
+  });
+});
+
+test("a registry that keeps answering 503 is unavailable after the retries, not absent", () => {
+  withFixture(CHAIN, (run) => {
+    run.answer("c", "seq:503,503,503,503,503");
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(result.output, /@t\/c@1\.0\.0: unavailable: the registry answered HTTP 503/);
+    assert.deepEqual(result.published, []);
+  });
+});
+
+test("without the wrapper's --retry the same one-off 503 would stop the run (the control)", () => {
+  withFixture(CHAIN, (run) => {
+    run.preload("c");
+    run.answer("c", "seq:503,200");
+    const bare = PUBLISH_SCRIPT.replace(
+      /curl\(\) \{ command curl [^}]*\}/,
+      'curl() { command curl -sS "$@"; }',
+    );
+    assert.notEqual(bare, PUBLISH_SCRIPT);
+    writeFileSync(join(run.root, "registry-publish.sh"), bare);
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(result.output, /unavailable: the registry answered HTTP 503/);
+  });
+});
+
+test("a pnpm ls that prints nothing stops the run instead of skipping the count check; an empty list stops it too", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run({ extraEnv: { LS_EMPTY: "silent" } });
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Publish plan::pnpm did not report how many public packages the workspace has \(got ''\)/,
+    );
+    assert.deepEqual(result.published, []);
+  });
+  withFixture(CHAIN, (run) => {
+    const result = run.run({ extraEnv: { LS_EMPTY: "list" } });
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Publish plan::the plan has 4 packages and the workspace has 0 public ones/,
+    );
+    assert.deepEqual(result.published, []);
+  });
+});
+
+test("the dry run packs and checks every package, reads the registry, and publishes, tags and announces nothing", () => {
+  withFixture(CHAIN, (run) => {
+    run.preload("c");
+    const result = run.run({ extraEnv: { DRY_RUN: "true", CHANGESETS_OUTPUT: "" } });
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /Preflight: 4 packages packed and checked/);
+    assert.match(result.output, /would skip @t\/c@1\.0\.0: on the registry, same content/);
+    for (const name of ["a", "b", "z"])
+      assert.match(result.output, new RegExp(`would publish @t/${name}@1\\.0\\.0`));
+    assert.match(
+      result.output,
+      /Dry run: 3 would be published, 1 already there; nothing was published, tagged or announced/,
+    );
+    assert.deepEqual(result.published, []);
+    assert.deepEqual(result.tarballs, []);
+    assert.deepEqual(result.tags, []);
+    assert.deepEqual(result.events, []);
+    // It never asked for a token: no ID-token or exchange call, only reads of version documents.
+    assert.ok(
+      !result.argv.some(
+        (line) => line.includes("oidc/token/exchange") || line.includes("audience="),
+      ),
+    );
+  });
+});
+
+test("the dry run stops on the same findings the publish would: other content, an unreadable registry, an unpackable package", () => {
+  withFixture(CHAIN, (run) => {
+    run.preload("c", "sha512-NOT-THE-TARBALL");
+    const result = run.run({ extraEnv: { DRY_RUN: "true" } });
+    assert.equal(result.status, 1);
+    assert.match(result.output, /::error title=Dry run::@t\/c@1\.0\.0: mismatch:/);
+    assert.deepEqual(result.published, []);
+  });
+  withFixture(CHAIN, (run) => {
+    run.answer("b", "http:503");
+    const result = run.run({ extraEnv: { DRY_RUN: "true" } });
+    assert.equal(result.status, 1);
+    assert.match(result.output, /::error title=Dry run::@t\/b@1\.0\.0: unavailable:/);
+    assert.match(result.output, /would publish @t\/c@1\.0\.0/);
+  });
+  withFixture([{ name: "a", main: "./dist/index.mjs" }], (run) => {
+    const result = run.run({ extraEnv: { DRY_RUN: "true" } });
+    assert.equal(result.status, 1);
+    assert.match(result.output, /::error title=Preflight failed::cannot pack: @t\/a@1\.0\.0/);
+  });
+});
+
+test("verify refuses a tarball over the registry's size limits, which are the Worker's own", () => {
+  const wrangler = readFileSync("workers/registry/wrangler.jsonc", "utf8");
+  const limit = (name) => Number(new RegExp(`"${name}":\\s*(\\d+)`).exec(wrangler)[1]);
+  assert.equal(limit("REGISTRY_MAX_TARBALL_BYTES"), 52_428_800);
+  assert.equal(limit("REGISTRY_MAX_UNPACKED_BYTES"), 104_857_600);
+  assert.match(PLAN_SCRIPT, /MAX_TARBALL_BYTES = 52428800;/);
+  assert.match(PLAN_SCRIPT, /MAX_UNPACKED_BYTES = 104857600;/);
+  const manifest = { name: "@t/a", version: "1.0.0" };
+  // 105 MB of zeros compresses to a few kilobytes: over the unpacked limit, far under the tarball one.
+  const unpacked = verify(manifest, ["LICENSE"], ["@t/a", "1.0.0"], {
+    "big.bin": Buffer.alloc(105 * 1024 * 1024),
+  });
+  assert.equal(unpacked.status, 1);
+  assert.match(unpacked.stdout, /the tarball unpacks to more than 104857600 bytes/);
+  // 51 MiB of random bytes does not compress: over the tarball limit.
+  const heavy = verify(manifest, ["LICENSE"], ["@t/a", "1.0.0"], {
+    "big.bin": randomBytes(51 * 1024 * 1024),
+  });
+  assert.equal(heavy.status, 1);
+  assert.match(heavy.stdout, /the tarball is over 52428800 bytes/);
 });
