@@ -28,6 +28,7 @@ import { RELEASE_REFERENCE_PREFIX } from "#core/constants/release-reference-pref
 import { SETTLE_REFERENCE_PREFIX } from "#core/constants/settle-reference-prefix.constant";
 import { InsufficientPointsError } from "#core/errors/insufficient-points.error";
 import { NotAMemberError } from "#core/errors/not-a-member.error";
+import { earnPoints } from "#core/functions/earn-points.function";
 
 /**
  * The kit's public service. Inject it by class in any module of the host.
@@ -83,10 +84,12 @@ export class LoyaltyService extends Service {
    *
    * @param earnPerMinor - the scope's rate (the `LoyaltyKitSettings.earnPerMinor` setting, ADR 0454); a client-side
    *                       preview passes the rate its settings read returned.
-   * @returns zero for a sub-point amount.
+   * @returns zero for a sub-point amount. The product is exact (`earnPoints`): a rate of 0.29 earns 29 points on 100 minor
+   *          units, where a float product floors to 28.
+   * @throws RangeError when the amount is not a safe integer, or the rate is not a finite number of at least zero.
    */
   quoteEarn(amountMinor: number, earnPerMinor: number): number {
-    return Math.floor(amountMinor * earnPerMinor);
+    return earnPoints(amountMinor, earnPerMinor);
   }
 
   /**

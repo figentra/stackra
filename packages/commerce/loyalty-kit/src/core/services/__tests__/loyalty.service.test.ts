@@ -45,6 +45,8 @@ describe("LoyaltyService", () => {
     expect(loyalty.quoteEarn(5000, 0.1)).toBe(500);
     expect(loyalty.quoteEarn(9, 0.1)).toBe(0);
     expect(loyalty.quoteEarn(5000, 0.02)).toBe(100);
+    // a rate of 0.29 earns 29 on 100 minor units; the float product 28.999999999999996 would floor to 28
+    expect(loyalty.quoteEarn(100, 0.29)).toBe(29);
     expect(loyalty.pointsFor(250, 1)).toBe(250);
     expect(loyalty.pointsFor(250, 10)).toBe(25);
     expect(await ledger.balance(usr1)).toBe(0);
