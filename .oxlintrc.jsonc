@@ -46,5 +46,9 @@
     "packages/developer/flow-preset/preset/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",
+    // benchmark baselines hold other frameworks' own idiomatic starting apps (NestJS decorators and the like) and the
+    // scripted solutions written over them; Stackra's kind, decorator and file rules do not apply to that code
+    "benchmarks/baselines/*/starting-app/**",
+    "benchmarks/baselines/*/solutions/**",
   ],
 }
