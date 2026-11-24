@@ -2920,6 +2920,13 @@ export async function runJob(job, deps) {
           phase: "merge",
           reason: "conflicts with main",
         });
+      // The service is not main's definition: it cannot vouch for this head either way (LOW 6).
+      if (error.drift)
+        return settle(job, deps, {
+          conclusion: "neutral",
+          phase: "definition",
+          reason: error.message,
+        });
       throw error;
     }
     if (deps.facts && (await deps.facts(job)) === false) return { post: false, moved: true };
@@ -3017,6 +3024,16 @@ export async function runJob(job, deps) {
 }
 
 /** The SHA binding: a PR result is posted only while the PR's head is still the SHA that ran. */
+/**
+ * Whether this service runs main's own definition: `own` is the git blob id of the running stackra-verify.mjs, `main`
+ * the blob main has at the job's base (null when main has none). A difference is the reason the run cannot be
+ * trusted, naming both ids; null when they match.
+ */
+export function definitionDrift(own, main) {
+  if (own && main && own === main) return null;
+  return `this service runs stackra-verify.mjs blob ${own ?? "unknown"}, main has ${main ?? "none"}: update the service`;
+}
+
 async function settle(job, deps, result) {
   const head = await deps.headOf(job);
   if (head !== job.sha) return { post: false, moved: true };
@@ -3821,6 +3838,17 @@ export async function verify(s, job) {
       const { tarPath, mirror, tree } = archiveJob(s, job, runDir, { history: kind === "gate" });
       deps.mirror = mirror;
       deps.tree = tree;
+      const self = "tools/scripts/stackra-verify.mjs";
+      const own = git(mirror, ["hash-object", "--stdin"], {
+        input: readFileSync(fileURLToPath(import.meta.url)),
+      }).trim();
+      const onMain = spawnSync(
+        "git",
+        ["-C", mirror, "rev-parse", "-q", "--verify", `${job.base}:${self}`],
+        spawnOptions({ env: gitEnv() }),
+      );
+      const drift = definitionDrift(own, onMain.status === 0 ? onMain.stdout.trim() : null);
+      if (drift) throw Object.assign(new Error(drift), { drift: true });
       if (kind === "gate")
         writeFileSync(
           join(runDir, "licences.json"),

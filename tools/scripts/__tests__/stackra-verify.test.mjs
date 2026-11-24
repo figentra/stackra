@@ -135,6 +135,7 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  definitionDrift,
   PROXY_READY,
   exceptionScopeViolations,
   lockfileGraph,
@@ -852,6 +853,30 @@ test("runJob: the egress probe and the install wait for the install network, the
   assert.equal(r.conclusion, "success");
   assert.match(probed.network, /^sv-net-/);
   assert.equal(probed.proxy, "proxy:3128");
+});
+
+test("definitionDrift: a service whose stackra-verify.mjs is not main's blob errors as neutral, naming both blobs", async () => {
+  const own = "a".repeat(40);
+  const main = "b".repeat(40);
+  assert.equal(definitionDrift(own, own), null);
+  assert.equal(
+    definitionDrift(own, main),
+    `this service runs stackra-verify.mjs blob ${own}, main has ${main}: update the service`,
+  );
+  assert.match(definitionDrift(own, null), /main has none/);
+  assert.match(definitionDrift(null, main), /blob unknown/);
+  const { deps, calls } = fakeDeps({});
+  deps.archive = () => {
+    throw Object.assign(new Error(definitionDrift(own, main)), { drift: true });
+  };
+  const r = await runJob(JOB, deps);
+  assert.equal(r.post, true);
+  assert.equal(r.conclusion, "neutral");
+  assert.equal(r.phase, "definition");
+  assert.equal(calls.runs.length, 0);
+  const body = checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1000 });
+  assert.equal(body.conclusion, "neutral");
+  assert.ok(body.output.title.includes(own) && body.output.title.includes(main), body.output.title);
 });
 
 test("runJob: output that says PASS with exit 1 is a failure (the log is never read for a verdict)", async () => {
