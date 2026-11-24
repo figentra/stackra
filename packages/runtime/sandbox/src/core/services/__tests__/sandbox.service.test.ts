@@ -135,6 +135,21 @@ describe(Sandbox, () => {
     );
   });
 
+  it("reports what the guest threw as text when it is not an Error, and rejections the same way", async () => {
+    const { sandbox } = setup();
+    const failureOf = async (code: string): Promise<string> => {
+      const refused = await refusalOf(sandbox, request(code));
+      expect(isRefusal(refused, SandboxCodeFailedError)).toBe(true);
+      return (refused as SandboxCodeFailedError).failure;
+    };
+    expect(await failureOf('throw "plain text";')).toBe("plain text");
+    expect(await failureOf("throw 42;")).toBe("42");
+    expect(await failureOf('await Promise.reject("rejected text");')).toBe("rejected text");
+    expect(await failureOf('await Promise.reject(new RangeError("late"));')).toBe(
+      "RangeError: late",
+    );
+  });
+
   it("reads the output with the guest's own JSON even when the code replaces it", async () => {
     const { sandbox } = setup();
     const result = await sandbox.run(
@@ -249,6 +264,43 @@ describe(Sandbox, () => {
       ),
     );
     expect(rejected.output).toBe("egress refused");
+  });
+
+  it("passes on a proxy rejection that is not an Error as its text, and refuses a fetch with no usable url", async () => {
+    const { proxy, sandbox } = setup();
+    const allowed = { allowedOrigins: ["https://api.example.com"] };
+    proxy.answer = () => Promise.reject("egress down" as unknown as Error);
+    const text = await sandbox.run(
+      request(
+        'try { await fetch("https://api.example.com/x"); } catch (error) { return error.message; }',
+        allowed,
+      ),
+    );
+    expect(text.output).toBe("egress down");
+    const calls = proxy.calls.length;
+    const bad = await sandbox.run(
+      request(
+        'try { await fetch(42); } catch (error) { return error.message; }\nreturn "no error";',
+        allowed,
+      ),
+    );
+    expect(bad.output).toBe("fetch: the URL is a string");
+    expect(proxy.calls).toHaveLength(calls);
+  });
+
+  it("passes on a proxy that throws at once, Error or not, as the fetch's rejection", async () => {
+    const { proxy, sandbox } = setup();
+    const allowed = { allowedOrigins: ["https://api.example.com"] };
+    const guest =
+      'try { await fetch("https://api.example.com/x"); } catch (error) { return error.message; }';
+    proxy.answer = () => {
+      throw "dropped at once";
+    };
+    expect((await sandbox.run(request(guest, allowed))).output).toBe("dropped at once");
+    proxy.answer = () => {
+      throw new Error("proxy exploded");
+    };
+    expect((await sandbox.run(request(guest, allowed))).output).toBe("proxy exploded");
   });
 
   it("aborts a fetch still waiting when the run passes its time", async () => {
