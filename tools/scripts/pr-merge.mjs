@@ -13,12 +13,14 @@
  *      non-required check is reported, not blocking);
  *   4. the PR carries no `hold` label (any case);
  *   5. the newest `stackra/verify` check run on the head SHA, created by the stackra-verify GitHub App (slug and id
- *      in `VERIFY_APP`), is completed with conclusion `success`: `pnpm verify`, tests included, passed
- *      on that exact SHA in a throwaway container on our machines (`stackra-verify.mjs`, STA-2761; replaces the
- *      merge-now rule STA-2083). A commit status, or a check run any other App posts (stackra-bot included, which
- *      every agent can act as), never counts.
- *   6. a PR that changes what `pnpm verify` checks (`isVerifyDefinition`, or a package.json definition field) is
- *      labelled `risk:R3`, so it needs the owner's approval below: the verify service runs main's definition.
+ *      in `VERIFY_APP`), is completed with conclusion `success`: main's whole Quality Gate (ci.yml's `gate` and
+ *      `dependency-scan` jobs, plus the licence policy and the tests) passed on that exact SHA in a throwaway
+ *      container on our machines (`stackra-verify.mjs`, STA-2761; replaces the merge-now rule STA-2083). A commit
+ *      status, or a check run any other App posts (stackra-bot included, which every agent can act as), never
+ *      counts. The same App's `stackra/verify-mobile` and `stackra/codeql` runs are not required and never count
+ *      here, either way.
+ *   6. a PR that changes what the verify service checks (`isVerifyDefinition`, or a package.json definition field)
+ *      is labelled `risk:R3`, so it needs the owner's approval below: the verify service runs main's definition.
  *   A PR labelled `design` or `risk:R3` also needs an owner APPROVED review on the head SHA, or `owner-approved` put
  *   there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is the owner
  *   user, never a bot (ADR 0119 decision 2 as amended 2026-10-28, ADR 0293). The events are read only then; an API
@@ -44,13 +46,18 @@ const GATED_LABELS = ["design", "risk:R3"];
 export const HOLD_LABEL = "hold";
 /** The check run `stackra-verify.mjs` posts on a head SHA; condition 5 needs it green (STA-2761). */
 export const VERIFY_CHECK = "stackra/verify";
+/**
+ * The verify service's other check runs on the same head SHA, from the same App: the two Uniwind Pro members
+ * (ci.yml's `mobile` job) and the nightly or on-demand CodeQL. Neither is required: neither passes nor blocks a merge.
+ */
+export const VERIFY_MOBILE_CHECK = "stackra/verify-mobile";
+export const CODEQL_CHECK = "stackra/codeql";
 
 /**
- * The App whose `stackra/verify` counts: the stackra-verify GitHub App, `checks: write` and `contents: read` only, whose
- * key only the verify service on box 1 holds. `id` is null until the owner creates the App; a pull request then sets
- * it, and until then nothing passes condition 5.
+ * The App whose `stackra/verify` counts: the stackra-verify GitHub App (id 5907714), `checks: write` and
+ * `contents: read` only, whose key only the verify service on box 1 holds. An App without an id passes nothing.
  */
-export const VERIFY_APP = Object.freeze({ slug: "stackra-verify", id: null });
+export const VERIFY_APP = Object.freeze({ slug: "stackra-verify", id: 5_907_714 });
 
 /**
  * The `stackra/verify` check run that decides condition 5 for `sha`, or undefined: among `checkRuns` (REST check
@@ -72,12 +79,15 @@ export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
 }
 
 /**
- * The files that define what `pnpm verify` checks and that the verify service always takes from main (STA-2761):
- * scripts pipelines, test, lint, format and knip configs, the config presets, the repository scripts and hooks, the
- * registry config and the git attribute and ignore files. A PR's copy of them never runs.
+ * The files that define what the verify service checks and that it always takes from main (STA-2761): scripts
+ * pipelines, test, lint, format and knip configs, the config presets, the repository scripts and hooks (the Quality
+ * Gate script and its Squawk flags live in `tools/scripts/stackra-verify.mjs`), the registry config, the git
+ * attribute and ignore files, and the gate's policies: zizmor's (`.github/zizmor.yml`), gitleaks' (`.gitleaks.toml`,
+ * `.gitleaksignore`), commitlint's, OSV-Scanner's (`osv-scanner.toml`) and the licence allowlist (`tools/policy/`).
+ * A PR's copy of them never runs.
  */
 export const VERIFY_OVERLAY =
-  /(?:^|\/)(?:turbo\.jsonc?|knip\.jsonc?|\.oxlintrc\.jsonc?|\.oxfmtrc\.jsonc?|oxlint\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?)$|^(?:packages\/tooling|tools\/scripts|\.agents\/hooks|\.opencode\/plugins)\//;
+  /(?:^|\/)(?:turbo\.jsonc?|knip\.jsonc?|\.oxlintrc\.jsonc?|\.oxfmtrc\.jsonc?|oxlint\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.[\w]+)?|commitlint\.config\.[cm]?[jt]s)$|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins)\/|^\.github\/zizmor\.ya?ml$/;
 
 /**
  * Files a PR legitimately changes that still change what `pnpm verify` checks: the workspace (catalogs, overrides,
@@ -112,9 +122,14 @@ export const isVerifyOverlay = (path) => VERIFY_OVERLAY.test(path);
 export const isVerifyDefinition = (path) =>
   VERIFY_OVERLAY.test(path) || VERIFY_SENSITIVE.test(path);
 
-/** The package.json fields that change what runs or resolves in a verify: commands, pnpm settings, overrides. */
+/**
+ * The package.json fields that change what runs or resolves in a verify: commands, pnpm settings, overrides, and the
+ * knip and commitlint configs a package.json can carry (the verify service takes those three from main's copy).
+ */
 export const DEFINITION_FIELDS = [
   "scripts",
+  "knip",
+  "commitlint",
   "pnpm",
   "overrides",
   "resolutions",
@@ -277,7 +292,7 @@ export function blockers(
   const labelNames = new Set(pr.labels.map((l) => l.name));
   if (definitionChanges.length && !labelNames.has("risk:R3"))
     reasons.push(
-      `it changes what pnpm verify checks (${definitionChanges.slice(0, 5).join(", ")}${definitionChanges.length > 5 ? ", …" : ""}), which the verify service never runs from a PR: label it risk:R3 for the owner's review`,
+      `it changes what the verify service checks (${definitionChanges.slice(0, 5).join(", ")}${definitionChanges.length > 5 ? ", …" : ""}), which the verify service never runs from a PR: label it risk:R3 for the owner's review`,
     );
 
   const state = pr.mergeStateStatus ?? "UNKNOWN";

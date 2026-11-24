@@ -90,12 +90,14 @@ import {
   verifyArgs,
   withMainScripts,
 } from "../stackra-verify.mjs";
+import { VERIFY_APP } from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const BASE = "fedcba9876543210fedcba9876543210fedcba98";
 const NOW = Date.parse("2026-11-24T15:00:00Z");
 const PINNED = `node@sha256:${"a".repeat(64)}`;
-const APP_ID = "4242";
+/** The registered stackra-verify App, as the host settings name it. */
+const APP_ID = String(VERIFY_APP.id);
 const FAKE_INSTALLATION = `${"gh"}s_${"a".repeat(36)}`;
 const KEY = (edge) => `-----${edge} RSA ${"PRIVATE"} KEY-----`;
 const S = {
@@ -186,6 +188,7 @@ test("hostProblems: no verify user, no rootless Docker, an unpinned base or a ke
   for (const mode of [0o440, 0o600, 0o644]) assert.match(hostProblems(S, mode).join(), /mode 0400/);
   assert.match(hostProblems(S, null).join(), /not readable/);
   assert.match(hostProblems({ ...S, keyFile: null }, 0o400).join(), /required/);
+  assert.match(hostProblems({ ...S, appId: "4242" }, 0o400).join(), /differs from VERIFY_APP\.id/);
   const sameUser = settings({ STACKRA_VERIFY_SAME_USER: "1" });
   assert.equal("sameUser" in sameUser, false);
   assert.match(hostProblems(sameUser, 0o400).join(), /RUN_AS is not set/);
@@ -477,7 +480,7 @@ test("needsRun: only our App's completed run against current main stands; forger
     head_sha: SHA,
     status: "completed",
     conclusion: "failure",
-    app: { id: 4242 },
+    app: { id: Number(APP_ID) },
     external_id: `base:${BASE}`,
   };
   assert.equal(needsRun({ checkRuns: [ours], sha: SHA, appId: APP_ID, base: BASE }, NOW), false);
@@ -1161,7 +1164,7 @@ test("needsRun: a fresh green against an older main stands (no livelock); a stal
     head_sha: SHA,
     status: "completed",
     conclusion: "success",
-    app: { id: 4242 },
+    app: { id: Number(APP_ID) },
     external_id: `base:${"d".repeat(40)}`,
     completed_at: completedAt,
   });
