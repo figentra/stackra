@@ -13,7 +13,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr } from "../bot-gh.mjs";
+import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr, writesCheck } from "../bot-gh.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
 test("STA-214: credential helpers leak too; merges go only through pnpm pr:merge", () => {
@@ -249,4 +249,60 @@ test("STA-302: a reader that stops early (`| head`) ends a captured read quietly
   });
   assert.equal(code, 141);
   assert.doesNotMatch(stderr, /EPIPE|Unhandled/);
+});
+
+test("STA-2761: no agent writes a commit status, check run or check suite; reads stay open", () => {
+  const SHA = "0123456789abcdef0123456789abcdef01234567";
+  const forged = [
+    [
+      "api",
+      "-X",
+      "POST",
+      `repos/figentra/stackra/statuses/${SHA}`,
+      "-f",
+      "state=success",
+      "-f",
+      "context=stackra/verify",
+    ],
+    ["api", `repos/figentra/stackra/statuses/${SHA}`, "-f", "state=success"],
+    ["api", "--method=POST", "repos/figentra/stackra/check-runs", "--input", "body.json"],
+    ["api", "repos/figentra/stackra/check-runs", "-F", "name=stackra/verify"],
+    ["api", "-XPATCH", "repos/figentra/stackra/check-runs/12"],
+    ["api", "repos/{owner}/{repo}/check-suites/9/rerequest", "-X", "POST"],
+    ["api", `repos/figentra/stackra/statuse%73/${SHA}`, "-fstate=success"],
+    ["api", "graphql", "-f", "query=mutation{createCheckRun(input:{}){checkRun{id}}}"],
+    ["api", "graphql", "-f", "query=mutation{createCommitStatus(input:{}){clientMutationId}}"],
+  ];
+  for (const args of forged) assert.equal(writesCheck(args), true, args.join(" "));
+  const reads = [
+    ["api", `repos/figentra/stackra/commits/${SHA}/check-runs?check_name=stackra%2Fverify`],
+    ["api", `repos/figentra/stackra/commits/${SHA}/statuses`],
+    ["api", "-X", "GET", "repos/figentra/stackra/check-runs/12"],
+    ["pr", "checks", "12"],
+    ["api", "repos/figentra/stackra/pulls/12", "--jq", ".head.sha"],
+  ];
+  for (const args of reads) assert.equal(writesCheck(args), false, args.join(" "));
+});
+
+test("STA-2761: the CLI refuses a forged stackra/verify before it mints a token", () => {
+  const sha = "0123456789abcdef0123456789abcdef01234567";
+  const r = spawnSync(
+    process.execPath,
+    [
+      new URL("../bot-gh.mjs", import.meta.url).pathname,
+      "gh",
+      "api",
+      "-X",
+      "POST",
+      `repos/figentra/stackra/statuses/${sha}`,
+      "-f",
+      "state=success",
+      "-f",
+      "context=stackra/verify",
+    ],
+    { encoding: "utf8", env: { PATH: process.env.PATH } },
+  );
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /only the stackra-verify App posts results/);
+  assert.doesNotMatch(r.stderr, /missing env/);
 });

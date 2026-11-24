@@ -125,6 +125,32 @@ export function mergesPr(args) {
   return group === "api" && args.some((a) => MERGE.test(a) || MERGE.test(normalizeWord(a)));
 }
 
+const CHECK_PATH =
+  /\bcommits\/[^/\s]+\/(?:statuses|check-runs|check-suites)\b|\b(?:statuses|check-runs|check-suites)\b/i;
+const CHECK_MUTATION =
+  /\b(?:createCheckRun|updateCheckRun|createCheckSuite|rerequestCheckSuite|createCommitStatus)\b/;
+const WRITE_FLAG =
+  /^(?:-f|-F|--field|--raw-field|--input)$|^(?:--field|--raw-field|--input)=|^-[fF]./;
+
+/**
+ * A write of a commit status or a check run or suite (STA-2761): `gh api` on `…/statuses/<sha>`, `…/check-runs`,
+ * `…/check-suites` with a non-GET method or any field or input, and the GraphQL check and status mutations. Every
+ * agent acts as stackra-bot, so such a write could forge `stackra/verify` or any other merge signal; only the
+ * stackra-verify App posts results. Reads stay open.
+ */
+export function writesCheck(args) {
+  const [group] = words("gh", args);
+  if (group !== "api") return false;
+  const all = args.map((a) => `${a} ${normalizeWord(a)}`);
+  if (all.some((a) => CHECK_MUTATION.test(a))) return true;
+  if (!all.some((a) => CHECK_PATH.test(a))) return false;
+  const method = args.find(
+    (a, i) => ["-X", "--method"].includes(args[i - 1]) || /^--method=|^-X./.test(a),
+  );
+  const verb = (method ?? "").replace(/^--method=|^-X/, "").toUpperCase();
+  return (verb !== "" && verb !== "GET" && verb !== "HEAD") || args.some((a) => WRITE_FLAG.test(a));
+}
+
 /** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
 const ALLOWED_C =
   /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
@@ -248,6 +274,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const unsafe = unsafeArgs(tool, args);
   if (unsafe) {
     process.stderr.write(`bot-gh: ${unsafe}\n`);
+    process.exit(2);
+  }
+  if (tool !== "git" && writesCheck(args)) {
+    process.stderr.write(
+      "bot-gh: agents never write commit statuses or check runs; only the stackra-verify App posts results (STA-2761)\n",
+    );
     process.exit(2);
   }
   if (tool !== "git" && mergesPr(args)) {
