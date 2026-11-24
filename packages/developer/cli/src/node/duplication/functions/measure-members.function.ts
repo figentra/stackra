@@ -13,6 +13,7 @@ import { join } from "node:path";
 
 import { DEFAULT_SETTINGS } from "#node/duplication/constants/default-settings.constant";
 import { jscpdArgs } from "#node/duplication/functions/jscpd-args.function";
+import { jscpdBinary } from "#node/duplication/functions/jscpd-binary.function";
 import { reportTotals } from "#node/duplication/functions/report-totals.function";
 import type { JscpdReport } from "#node/duplication/types/jscpd-report.type";
 import { readManifestMembers } from "#node/functions/read-workspace-members.function";
@@ -29,11 +30,10 @@ type JscpdRunner = (
 const runJscpd: JscpdRunner = (root, srcDir, part, minTokens) => {
   const output = mkdtempSync(join(tmpdir(), "duplication-"));
   try {
-    const result = spawnSync(
-      join(root, "node_modules", ".bin", "jscpd"),
-      jscpdArgs(srcDir, part, minTokens, output),
-      { cwd: root, encoding: "utf8" },
-    );
+    const result = spawnSync(jscpdBinary(root), jscpdArgs(srcDir, part, minTokens, output), {
+      cwd: root,
+      encoding: "utf8",
+    });
     const reportFile = join(output, "jscpd-report.json");
     if (result.status !== 0 || !existsSync(reportFile))
       throw new Error(
