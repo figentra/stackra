@@ -87,12 +87,36 @@ export const VERIFY_OVERLAY =
 export const VERIFY_SENSITIVE =
   /(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vite\.config\.[cm]?[jt]s|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^(?:packages\/developer\/cli|patches)\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
 
+/**
+ * How long a stackra/verify success against an older main counts (CTO ruling M3): long enough to enter the merge
+ * queue, whose own commit verify sees the latest main. Older than this, the head waits for its re-verify.
+ */
+export const VERIFY_FRESH_MS = 24 * 60 * 60 * 1000;
+
+/** Conditions 1 to 6 for the main block: the facts from `verifyFacts` (runs, main, definition changes) always go in. */
+export const mergeBlockers = (pr, runs, options, facts) =>
+  blockers(pr, runs, {
+    ...options,
+    verifyRuns: facts.verifyRuns,
+    mainSha: facts.mainSha,
+    definitionChanges: facts.definitionChanges,
+  });
+
 export const isVerifyOverlay = (path) => VERIFY_OVERLAY.test(path);
 export const isVerifyDefinition = (path) =>
   VERIFY_OVERLAY.test(path) || VERIFY_SENSITIVE.test(path);
 
 /** The package.json fields that change what runs or resolves in a verify: commands, pnpm settings, overrides. */
-export const DEFINITION_FIELDS = ["scripts", "pnpm", "overrides", "resolutions", "packageManager"];
+export const DEFINITION_FIELDS = [
+  "scripts",
+  "pnpm",
+  "overrides",
+  "resolutions",
+  "packageManager",
+  // A workspace package's `bin` (or `directories.bin`) can shadow a tool another package runs (CTO review M1).
+  "bin",
+  "directories",
+];
 
 /** A package.json text's definition fields as one comparable string (a missing file has none). */
 const definitionOf = (text) => {
@@ -207,6 +231,7 @@ export function blockers(
     app = VERIFY_APP,
     definitionChanges = [],
     mainSha,
+    now = Date.now(),
   } = {},
 ) {
   const reasons = [];
@@ -234,9 +259,13 @@ export function blockers(
     reasons.push(
       `${VERIFY_CHECK} on ${sha} is ${verify.conclusion}${verify.html_url ? ` (${verify.html_url})` : ""}`,
     );
-  else if (mainSha && verify.external_id !== `base:${mainSha}`)
+  else if (
+    mainSha &&
+    verify.external_id !== `base:${mainSha}` &&
+    !(now - Date.parse(verify.completed_at ?? 0) < VERIFY_FRESH_MS)
+  )
     reasons.push(
-      `${VERIFY_CHECK} on ${sha} was run against ${verify.external_id ?? "an unknown base"}, and main is now ${mainSha}: wait for the re-verify`,
+      `${VERIFY_CHECK} on ${sha} was run against ${verify.external_id ?? "an unknown base"} more than a day ago, and main is now ${mainSha}: wait for the re-verify`,
     );
 
   const labelNames = new Set(pr.labels.map((l) => l.name));
@@ -352,7 +381,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
         : [];
     // Conditions 5 and 6: read through verifyFacts, so the wiring is tested with fakes.
-    const { verifyRuns, mainSha, definitionChanges } = verifyFacts({
+    const facts = verifyFacts({
       repo,
       n,
       headSha: pr.headRefOid,
@@ -376,14 +405,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         return r.status === 0 ? r.stdout : null;
       },
     });
-    const reasons = blockers(pr, runs, {
-      queue: Boolean(repository.mergeQueue),
-      reviews,
-      events,
-      verifyRuns,
-      definitionChanges,
-      mainSha,
-    });
+    const reasons = mergeBlockers(
+      pr,
+      runs,
+      { queue: Boolean(repository.mergeQueue), reviews, events },
+      facts,
+    );
     if (reasons.length) {
       process.stderr.write(
         `pr-merge: not merging #${n}:\n${reasons.map((r) => `  - ${r}`).join("\n")}\n`,

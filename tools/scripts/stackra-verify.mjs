@@ -12,16 +12,19 @@
  *     own mirror, archives the exact SHA with `git archive`, builds the warm pnpm store image from main's lockfile, and
  *     reads results. PR code never runs as this user and never sees the mirror, the key, the ledger or the state.
  *   - PR code runs only inside containers of the verify user's own rootless Docker (STACKRA_VERIFY_RUN_AS through
- *     `sudo -n -u <user> -- env -i`), two per run: an install container with network (registries; nothing secret is
- *     inside it) committed to a run image, then a verify container from that image with `--network none`. Both drop
+ *     `sudo -n -u <user> -- sh` with an env file), two per run: an install container on a per-run `--internal`
+ *     network whose only way out is the daemon's allowlisting proxy (the package registries; nothing secret is inside
+ *     it), committed to a run image, then a verify container from that image with `--network none`. Both drop
  *     every capability, set no-new-privileges, and are capped (cpus, memory, pids, tmpfs sizes); the verify container
  *     is killed at the time limit. The writable layer has no disk quota (rootless overlay on ext4 has none), so the
  *     free-space gate and the per-run clean-up bound it.
  *   - The install network is sealed: before every install, a throwaway probe container on the same network tries to
- *     reach the instance metadata service (169.254.169.254, which hands out the box's IAM credentials), the rootless
- *     host-loopback gateway, the box's own addresses and their service ports. Any answer stops the service. The seal
- *     itself is set up by the box operator (REJECT rules in the rootless dockerd's network namespace); the probe
- *     proves it before every install.
+ *     reach the instance metadata service (169.254.169.254, which hands out the box's IAM credentials), the internal
+ *     network's gateway and DNS, docker0, the rootless host-loopback gateway, the box's own addresses and their
+ *     service ports, directly and through the proxy. Any answer, or a probe that fails twice, stops the service. The
+ *     host's backstop is per-uid REJECT rules for the verify user, set up by the box operator. Residual: the proxy
+ *     admits the registries' hostnames on 443, so a PR could send data out to a service fronted on the same CDN
+ *     (SNI/domain fronting). That is exfiltration only, the PR's own log is an equal channel, and no secret is there.
  *   - Nothing that a later run uses can be written by a PR: HOME and /tmp are per-run tmpfs; the warm store lives in
  *     image layers (read-only, copy-on-write per container); the base image is pinned by digest and pulled (verified)
  *     each run; the store image id is checked against the id this process recorded; after each run every container,
@@ -107,6 +110,21 @@ export const LICENSED_BUILDS = ["uniwind-pro"];
 /** The install's exit code when the PR needs a licensed build the store image does not have. */
 export const NEEDS_STORE_REBUILD_EXIT = 78;
 
+/**
+ * Each locked version of `name` with its integrity, from a pnpm lockfile's `packages:` section
+ * (`  name@1.2.3:` then `    resolution: {integrity: sha512-…}`). Entries without an integrity are left out.
+ */
+export function lockedPackages(lockText, name) {
+  const escaped = name.replaceAll(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+  const pattern = new RegExp(
+    `^  '?/?${escaped}@(\\d[\\w.+-]*)'?:\\n    resolution: \\{integrity: (sha512-[A-Za-z0-9+/=]+)`,
+    "gm",
+  );
+  const seen = new Map();
+  for (const m of lockText.matchAll(pattern)) seen.set(m[1], m[2]);
+  return [...seen].map(([version, integrity]) => ({ name, version, integrity }));
+}
+
 /** The versions of `name` in a pnpm lockfile's packages and snapshots (`  name@1.2.3:` or `  name@1.2.3(peers):`). */
 export function lockedVersions(lockText, name) {
   const escaped = name.replaceAll(/[.*+?^${}()|[\]\\/]/g, "\\$&");
@@ -145,6 +163,8 @@ export const VERIFY_PREPARE =
 export const ERROR_RETRY_MS = 30 * 60 * 1000;
 /** … and after this many on one SHA the service posts `neutral` (could not run), which never merges. */
 export const MAX_ERROR_ATTEMPTS = 3;
+/** How long a green against an older main stands, for the PR to enter the merge queue (CTO ruling M3). */
+export const FRESH_MS = 24 * 60 * 60 * 1000;
 export const LOG_KEEP_MS = 14 * 24 * 60 * 60 * 1000;
 /** The check run output's text limit is 65535 characters; the log tail stays well inside it. */
 export const OUTPUT_TEXT_MAX = 60_000;
@@ -374,8 +394,12 @@ export const PROBE_PORTS = [22, 80, 443, 2375, 2376, 3000, 4000, 5432, 6379, 808
  * The addresses an install must never reach: instance metadata, the rootless host-loopback gateway, and each of the
  * box's own addresses (`hostAddresses`, from `hostname -I`) on PROBE_PORTS.
  */
-export function probeTargets(hostAddresses = []) {
+export function probeTargets(hostAddresses = [], gateways = []) {
   const targets = [
+    "127.0.0.11:53",
+    ...gateways.flatMap((g) =>
+      [53, ...PROBE_PORTS].map((port) => (g.includes(":") ? `[${g}]:${port}` : `${g}:${port}`)),
+    ),
     "169.254.169.254:80",
     "169.254.169.254:443",
     "169.254.170.2:80",
@@ -418,6 +442,23 @@ export function probeScript(targets, proxy = null) {
   ].join("\n");
 }
 
+/**
+ * The leaks a probe found, from its docker result: [] sealed, the reachable targets on exit 9. A probe that did not
+ * run (any other exit) is run again once (`attempts[1]` is the retry); still not run, the answer is null: unsafe.
+ */
+const probeLeaks = (r) =>
+  r.code === 0
+    ? []
+    : r.code === 9
+      ? (r.stdout.match(/^reachable: (.*)$/m)?.[1] ?? "unknown").split(" ")
+      : null;
+
+export function probeVerdict([first, again]) {
+  const firstVerdict = probeLeaks(first);
+  if (firstVerdict !== null || !again) return firstVerdict;
+  return probeLeaks(again());
+}
+
 /** The probe container: the install's network and limits, nothing mounted, removed when it ends. */
 export const probeArgs = (s, { name, image, envFile, targets, network, proxy = null }) => [
   "run",
@@ -456,7 +497,7 @@ export const storeTag = (lockfile, baseImage = "") =>
   `stackra-verify-store:${createHash("sha256").update(baseImage).update("\0").update(lockfile).digest("hex").slice(0, 16)}`;
 
 /** The warm store: main's lockfile fetched into /store on top of the pinned base, built by the daemon only. */
-export function storeDockerfile({ baseImage, pnpmVersion, licensed = [] }) {
+export function storeDockerfile({ baseImage, pnpmVersion }) {
   if (!DIGEST_PINNED.test(baseImage)) throw new Error("the base image must be pinned by digest");
   if (!/^\d+\.\d+\.\d+$/.test(pnpmVersion)) throw new Error(`not a pnpm version: ${pnpmVersion}`);
   return [
@@ -467,41 +508,75 @@ export function storeDockerfile({ baseImage, pnpmVersion, licensed = [] }) {
     "WORKDIR /seed",
     "COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./",
     "RUN pnpm fetch --store-dir /store && rm -rf /seed",
-    ...(licensed.length
-      ? [
-          // The licensed builds, from main's versions, with the token as a BuildKit secret mount: it is never an ENV,
-          // an ARG or a file in a layer, and the script is bind-mounted, so no layer records how the token is read.
-          "RUN --mount=type=secret,id=licence,required=true --mount=type=bind,source=licensed.sh,target=/tmp/licensed.sh sh /tmp/licensed.sh",
-        ]
-      : []),
     `RUN mkdir -p /work /prebuilt && chown -R ${CONTAINER_USER} /store /work /prebuilt`,
     "",
   ].join("\n");
 }
 
 /**
- * The script the licensed stage runs (bind-mounted, never in a layer): a throwaway project that depends on exactly
- * main's licensed versions, installed against the warm store with the token read from the secret mount, whose built
- * package directories are copied to /prebuilt/<name>@<version>. The project and any file the install left are removed.
+ * The licensed image: the store image plus /prebuilt/<name>@<version>, built by the daemon only. The token is a
+ * BuildKit secret mount and the stage script a bind mount, so no layer holds either.
+ */
+export function licensedDockerfile(storeImage) {
+  return [
+    `FROM ${storeImage}`,
+    "USER root",
+    "RUN --mount=type=secret,id=licence,required=true --mount=type=bind,source=licensed.sh,target=/tmp/licensed.sh sh /tmp/licensed.sh",
+    `RUN chown -R ${CONTAINER_USER} /prebuilt`,
+    "",
+  ].join("\n");
+}
+
+const PACKAGE_NAME = /^[a-z0-9][\w.-]*$/;
+const PACKAGE_VERSION = /^\d[\w.+-]*$/;
+const INTEGRITY = /^sha512-[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * The licensed stage (bind-mounted, never in a layer). For each package: `npm pack` the publisher's tarball from the
+ * registry and check it against the lockfile's integrity; install it with scripts off; hash the package directory;
+ * run its postinstall with the token; copy to /prebuilt only the files the postinstall added or changed (the explicit
+ * artifact list). A failure prints its output with the token redacted (plain and base64). Last, the whole filesystem
+ * is searched for the token in both forms, and the build fails if it is anywhere: proof it was not persisted.
  */
 export function licensedScript(packages) {
-  for (const { name, version } of packages)
-    if (!/^[a-z0-9][\w.-]*$/.test(name) || !/^\d[\w.+-]*$/.test(version))
+  for (const { name, version, integrity } of packages)
+    if (
+      !PACKAGE_NAME.test(name) ||
+      !PACKAGE_VERSION.test(version) ||
+      !INTEGRITY.test(integrity ?? "")
+    )
       throw new Error(`not a package: ${name}@${version}`);
-  const dependencies = Object.fromEntries(packages.map(({ name, version }) => [name, version]));
-  const allow = packages.map(({ name }) => `  ${name}: true`).join("\n");
-  return [
+  const lines = [
     "set -e",
-    "mkdir -p /lic /prebuilt && cd /lic",
-    `printf '%s' '${JSON.stringify({ name: "licensed", private: true, dependencies })}' > package.json`,
-    `printf 'allowBuilds:\\n${allow.replaceAll("\n", "\\n")}\\n' > pnpm-workspace.yaml`,
-    'UNIWIND_AUTH_TOKEN="$(cat /run/secrets/licence)" pnpm install --store-dir /store --config.node-linker=isolated',
-    ...packages.map(
-      ({ name, version }) =>
-        `mkdir -p /prebuilt/${name}@${version} && cp -a node_modules/${name}/. /prebuilt/${name}@${version}/`,
-    ),
-    "cd / && rm -rf /lic /root/.cache /root/.config /root/.local /tmp/*",
-  ].join("\n");
+    'T="$(cat /run/secrets/licence)"',
+    'B="$(printf %s "$T" | base64 | tr -d \'\\n\')"',
+    'redact() { awk -v t="$T" -v b="$B" \'{ while ((i = index($0, t)) > 0) $0 = substr($0, 1, i - 1) "[redacted]" substr($0, i + length(t)); while ((i = index($0, b)) > 0) $0 = substr($0, 1, i - 1) "[redacted]" substr($0, i + length(b)); print }\'; }',
+    "mkdir -p /lic /prebuilt",
+  ];
+  for (const { name, version, integrity } of packages) {
+    const dir = `/lic/${name}@${version}`;
+    lines.push(
+      `mkdir -p ${dir} && cd ${dir}`,
+      `npm pack ${name}@${version} --silent --pack-destination ${dir} > /dev/null`,
+      `f=$(ls ${dir}/*.tgz)`,
+      `got=$(node -e 'process.stdout.write("sha512-"+require("crypto").createHash("sha512").update(require("fs").readFileSync(process.argv[1])).digest("base64"))' "$f")`,
+      `[ "$got" = "${integrity}" ] || { echo "${name}@${version}: the registry tarball does not match the lockfile integrity"; exit 1; }`,
+      `printf '%s' '${JSON.stringify({ name: "licensed", private: true })}' > package.json`,
+      `pnpm add "$f" --store-dir /store --ignore-scripts > /dev/null`,
+      `p=${dir}/node_modules/${name}`,
+      `(cd "$p" && find . -type f -exec sha256sum {} + | sort -k2) > ${dir}/.before`,
+      `(cd "$p" && UNIWIND_AUTH_TOKEN="$T" UNIWIND_CACHE_DIR=${dir}/.cache sh -c "$(node -p 'require("./package.json").scripts.postinstall')") > ${dir}/.out 2>&1 || { redact < ${dir}/.out; exit 1; }`,
+      `(cd "$p" && find . -type f -exec sha256sum {} + | sort -k2) > ${dir}/.after`,
+      `mkdir -p /prebuilt/${name}@${version}`,
+      `comm -13 ${dir}/.before ${dir}/.after | awk '{ print substr($0, 67) }' | (cd "$p" && tar -cf - -T -) | tar -xf - -C /prebuilt/${name}@${version}`,
+      "cd /",
+    );
+  }
+  lines.push(
+    "unset T_UNUSED; rm -rf /lic /tmp/* /root/.cache /root/.npm /root/.uniwind /root/.local /root/.config",
+    'if grep -rlF -e "$T" -e "$B" --exclude-dir=proc --exclude-dir=sys --exclude-dir=dev --exclude-dir=run / 2>/dev/null; then echo "the licence token was persisted"; exit 1; fi',
+  );
+  return lines.join("\n");
 }
 
 /**
@@ -575,6 +650,29 @@ export const STORE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 export const storeReusable = ({ recordedId, currentId, builtAt }, now = Date.now()) =>
   Boolean(recordedId) && currentId === recordedId && now - (builtAt ?? 0) < STORE_MAX_AGE_MS;
 
+/** The image ids a clean-up keeps: the base, and every store and licensed image the daemon recorded. */
+export const keepIdsFrom = (state, baseId) =>
+  [
+    ...[...Object.values(state.stores ?? {}), ...Object.values(state.licensed ?? {})].map(
+      (entry) => entry?.id ?? entry,
+    ),
+    baseId,
+  ].filter(Boolean);
+
+/** A secret file's mode bits when this process owns it; null otherwise (someone else's file could be swapped). */
+export const ownedMode = (stat, uid) => (stat && stat.uid === uid ? stat.mode & 0o777 : null);
+
+/**
+ * What the service does with a run's result: `stop` when the host proved unsafe (nothing more runs), `skip` when
+ * nothing is recorded (a stop or a moved head), `error` for an infrastructure error, `post` for a result.
+ */
+export function outcome(result) {
+  if (result.unsafe) return "stop";
+  if (result.stopped || result.moved) return "skip";
+  if (!result.post) return "error";
+  return "post";
+}
+
 /** Every image id to remove after a run: all of them but the pinned base and the current store. */
 export const imagesToRemove = (ids, keep) => [...new Set(ids)].filter((id) => !keep.includes(id));
 
@@ -596,6 +694,10 @@ export const recordedRun = (checkRuns, sha, appId, base) =>
  */
 export function needsRun({ checkRuns, sha, appId, base, errors = { count: 0 } }, now = Date.now()) {
   if (recordedRun(checkRuns, sha, appId, base)) return false;
+  // A run against an older main stands while it is fresh: re-verifying every PR on every main merge, one verify at a
+  // time, would never finish. The merge queue's own commit verify is the gate that sees the latest main.
+  const fresh = recordedRun(checkRuns, sha, appId);
+  if (fresh && now - Date.parse(fresh.completed_at ?? 0) < FRESH_MS) return false;
   if (errors.count === 0) return true;
   return errors.count < MAX_ERROR_ATTEMPTS && now - errors.at > ERROR_RETRY_MS;
 }
@@ -615,9 +717,27 @@ const SECRET_SHAPES = [
   /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
   /\bAGE-SECRET-KEY-1[0-9A-Z]{50,}\b/g,
 ];
-/** Display hygiene for PR-controlled output: no colour or control codes, no token or key shapes. */
+/** Secret values this process holds (the licence token), in every encoding a tool may print them. */
+const SECRET_VALUES = new Set();
+/** Registers a secret so `scrub` removes it (plain, base64, base64url and URL-encoded) from every output path. */
+export function registerSecret(value) {
+  const v = String(value ?? "").trim();
+  if (v.length < 8) return;
+  for (const form of [
+    v,
+    Buffer.from(v).toString("base64"),
+    Buffer.from(v).toString("base64").replace(/=+$/, ""),
+    Buffer.from(v).toString("base64url"),
+    encodeURIComponent(v),
+  ])
+    SECRET_VALUES.add(form);
+}
+
+/** Display hygiene for every output path: no colour or control codes, no registered secret, no token or key shape. */
 export function scrub(text) {
-  let out = text.replaceAll(ANSI, "").replaceAll("\r", "").replaceAll(CONTROL, "");
+  let out = String(text).replaceAll(ANSI, "").replaceAll("\r", "").replaceAll(CONTROL, "");
+  for (const secret of [...SECRET_VALUES].toSorted((a, b) => b.length - a.length))
+    out = out.replaceAll(secret, "[redacted]");
   for (const shape of SECRET_SHAPES) out = out.replaceAll(shape, "[redacted]");
   return out.replaceAll(
     /(-----BEGIN [A-Z ]*PRIVATE KEY-----)[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----)/g,
@@ -660,17 +780,15 @@ export function checkRunBody({
   const verdict =
     conclusion === "success"
       ? "pnpm verify passed"
-      : conclusion === "neutral" && reason === "needs store rebuild"
-        ? "needs a store rebuild (a licensed build at a version main has not built; it runs after merge)"
-        : conclusion === "neutral"
-          ? `could not run (${reason})`
-          : phase === "merge"
-            ? "the PR conflicts with main"
-            : phase === "install"
-              ? "pnpm install failed"
-              : reason === "time limit"
-                ? "pnpm verify hit the time limit"
-                : "pnpm verify failed";
+      : conclusion === "neutral"
+        ? `could not run (${reason})`
+        : phase === "merge"
+          ? "the PR conflicts with main"
+          : phase === "install"
+            ? "pnpm install failed"
+            : reason === "time limit"
+              ? "pnpm verify hit the time limit"
+              : "pnpm verify failed";
   return {
     name: VERIFY_CHECK,
     head_sha: sha,
@@ -779,7 +897,7 @@ export async function runJob(job, deps) {
         });
       throw error;
     }
-    const store = deps.storeImage(job);
+    const store = await deps.storeImage(job);
     const envFile = deps.envFile;
 
     const net = deps.network({ id, image: store, proxyName, network });
@@ -804,12 +922,10 @@ export async function runJob(job, deps) {
       return settle(job, deps, { conclusion: "failure", phase: "install", reason: "time limit" });
     const installExit = deps.exitCodeOf(install);
     if (installExit === null) return { post: false, error: "the install container did not start" };
+    // The licensed image is built for exactly the versions this tree locks, so a missing build is the service's
+    // fault: an error (retried), never the PR's pass, fail or neutral.
     if (installExit === NEEDS_STORE_REBUILD_EXIT)
-      return settle(job, deps, {
-        conclusion: "neutral",
-        phase: "install",
-        reason: "needs store rebuild",
-      });
+      return { post: false, error: "a licensed build is missing from the run image" };
     if (installExit !== 0) return settle(job, deps, { conclusion: "failure", phase: "install" });
 
     const commit = deps.docker(["commit", install, runImage]);
@@ -859,6 +975,29 @@ export const FORBIDDEN_DEFAULTS = [
  * cgroup caps (CPU, memory, tasks), and its Docker is rootless. Each problem is a reason not to start.
  */
 /**
+ * Why the verify user's subordinate uid range (`/etc/subuid`, `name:start:count`) is unsafe, or null: it must exist,
+ * and overlap no other user's range, or a container's root could own another user's files.
+ */
+export function subuidOverlap(text, user) {
+  const ranges = text
+    .split("\n")
+    .map((l) => l.trim().split(":"))
+    .filter((p) => p.length === 3 && /^\d+$/.test(p[1]) && /^\d+$/.test(p[2]))
+    .map(([name, start, count]) => ({
+      name,
+      start: Number(start),
+      end: Number(start) + Number(count),
+    }));
+  const own = ranges.filter((r) => r.name === user);
+  if (!own.length) return `the verify user ${user} has no /etc/subuid range`;
+  for (const mine of own)
+    for (const other of ranges.filter((r) => r.name !== user))
+      if (mine.start < other.end && other.start < mine.end)
+        return `the verify user's /etc/subuid range overlaps ${other.name}'s`;
+  return null;
+}
+
+/**
  * The host checks that need the machine, through `io` so a test can stand in: `exists(path)`, `canRead(path)` (as the
  * verify user), `cgroup(file)` (the verify user's slice, null when missing) and `dockerInfo()` ({ code, stdout }).
  * The verify user can read none of the forbidden paths, its slice has CPU, memory and task caps, and its Docker is
@@ -883,6 +1022,8 @@ export function preflightProblems(s, io, extraForbidden = []) {
         `the verify user's slice has no ${file} cap (a drop-in on its user@.service sets it)`,
       );
   }
+  const overlap = subuidOverlap(io.subuid?.() ?? "", s.runAs);
+  if (overlap) problems.push(overlap);
   const info = io.dockerInfo();
   if (info.code !== 0) problems.push("the verify user's Docker does not answer");
   else if (!info.stdout.includes("rootless"))
@@ -908,6 +1049,13 @@ function preflight(s) {
           return readFileSync(`/sys/fs/cgroup/user.slice/user-${uid}.slice/${file}`, "utf8").trim();
         } catch {
           return null;
+        }
+      },
+      subuid: () => {
+        try {
+          return readFileSync("/etc/subuid", "utf8");
+        } catch {
+          return "";
         }
       },
       dockerInfo: () =>
@@ -1110,6 +1258,14 @@ function freeBytes(dir) {
   return stat.bavail * stat.bsize;
 }
 
+/** The refs a job fetches: main, and the PR head or the merge queue's group commits (or the queue job stalls). */
+export function fetchRefs(job) {
+  const refs = ["+refs/heads/main:refs/heads/main"];
+  if (job.pr) refs.push(`+refs/pull/${job.pr}/head:refs/verify/pr-${job.pr}`);
+  if (job.queue) refs.push("+refs/heads/gh-readonly-queue/*:refs/verify/queue/*");
+  return refs;
+}
+
 /**
  * `git archive` honours the archived tree's `.gitattributes`: a PR's `export-ignore` would drop main's overlaid
  * configs or its own tests from the tested tree, and `export-subst` would rewrite files. The mirror's own
@@ -1131,9 +1287,7 @@ function archiveJob(s, job, runDir) {
     sh("git", ["clone", "--quiet", "--bare", `https://github.com/${job.repo}.git`, mirror], {
       env: gitEnv(),
     });
-  const refs = ["+refs/heads/main:refs/heads/main"];
-  if (job.pr) refs.push(`+refs/pull/${job.pr}/head:refs/verify/pr-${job.pr}`);
-  git(mirror, ["fetch", "--quiet", "--no-tags", "origin", ...refs]);
+  git(mirror, ["fetch", "--quiet", "--no-tags", "origin", ...fetchRefs(job)]);
   git(mirror, ["rev-parse", "--verify", `${job.sha}^{commit}`]);
   job.base ??= git(mirror, ["rev-parse", "--verify", "refs/heads/main^{commit}"]).trim();
   try {
@@ -1142,7 +1296,7 @@ function archiveJob(s, job, runDir) {
     neutraliseAttributes(mirror);
     git(mirror, ["archive", "--format=tar", "-o", tarPath, tree]);
     chmodSync(tarPath, 0o644);
-    return { tarPath, mirror };
+    return { tarPath, mirror, tree };
   } finally {
     if (job.pr) git(mirror, ["update-ref", "-d", `refs/verify/pr-${job.pr}`]);
   }
@@ -1166,39 +1320,17 @@ function ensureStore(s, mirror, base, runDir, state) {
   const current = docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim();
   if (storeReusable({ recordedId: recorded?.id, currentId: current, builtAt: recorded?.builtAt }))
     return tag;
-  const lockText = lockfile.toString("utf8");
-  const builds = allowedBuilds(readFileSync(join(ctx, "pnpm-workspace.yaml"), "utf8"));
-  const licensed = LICENSED_BUILDS.filter((name) => builds.includes(name)).flatMap((name) =>
-    lockedVersions(lockText, name).map((version) => ({ name, version })),
-  );
-  let token = null;
-  if (licensed.length) {
-    if (!s.licenceFile)
-      throw new Error("main has licensed builds; STACKRA_VERIFY_LICENCE_FILE is not set");
-    token = readFileSync(s.licenceFile, "utf8").trim();
-    writeFileSync(join(ctx, "licensed.sh"), licensedScript(licensed), { mode: 0o644 });
-  }
   const dockerfile = storeDockerfile({
     baseImage: s.baseImage,
     pnpmVersion: pnpmVersionOf(readFileSync(join(ctx, "package.json"), "utf8")),
-    licensed,
   });
   writeFileSync(join(ctx, "Dockerfile"), dockerfile, { mode: 0o644 });
-  // The token reaches BuildKit on stdin only: no file the verify user can read, no argument, no environment.
-  const secret = token ? ["--secret", "id=licence,src=/dev/stdin"] : [];
-  const build = docker(
-    s,
-    ["build", "--quiet", "--pull=false", "--no-cache", ...secret, "--tag", tag, ctx],
-    {
-      timeout: 60 * 60 * 1000,
-      ...(token ? { input: token } : {}),
-    },
-  );
-  if (build.code !== 0)
-    throw new Error(`could not build the store image: ${scrub(build.stderr).slice(0, 300)}`);
-  if (token && imageCarries(s, tag, token)) {
-    docker(s, ["rmi", "-f", tag]);
-    throw new Error("the store image carries the licence token or its name; refused and removed");
+  const build = docker(s, ["build", "--quiet", "--pull=false", "--no-cache", "--tag", tag, ctx], {
+    timeout: 60 * 60 * 1000,
+  });
+  if (build.code !== 0) {
+    serviceLog(`store image build failed: ${scrub(build.stderr).slice(-4000)}`);
+    throw new Error("could not build the store image (the service log has the detail)");
   }
   state.stores = {
     [tag]: {
@@ -1210,21 +1342,114 @@ function ensureStore(s, mirror, base, runDir, state) {
 }
 
 /**
+ * The licensed image for a tested tree: the store image plus a build of each licensed package at the version the
+ * tree locks (publisher code from the registry, checked against the lockfile integrity, never PR code). Built once per
+ * version set and recorded like the store image. Without licensed builds in the tree it is the store image itself.
+ */
+async function ensureLicensed(s, store, packages, runDir, state) {
+  if (!packages.length) return store;
+  if (!s.licenceFile)
+    throw new Error("the tree has licensed builds; STACKRA_VERIFY_LICENCE_FILE is not set");
+  const storeId = docker(s, ["image", "inspect", "--format", "{{.Id}}", store]).stdout.trim();
+  const tag = `stackra-verify-licensed:${createHash("sha256").update(storeId).update(JSON.stringify(packages)).digest("hex").slice(0, 16)}`;
+  state.licensed ??= {};
+  const recorded = state.licensed[tag];
+  const current = docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim();
+  if (storeReusable({ recordedId: recorded?.id, currentId: current, builtAt: recorded?.builtAt }))
+    return tag;
+  const token = readFileSync(s.licenceFile, "utf8").trim();
+  registerSecret(token);
+  const ctx = join(runDir, "licensed-context");
+  mkdirSync(ctx, { recursive: true, mode: 0o755 });
+  writeFileSync(join(ctx, "licensed.sh"), licensedScript(packages), { mode: 0o644 });
+  writeFileSync(join(ctx, "Dockerfile"), licensedDockerfile(store), { mode: 0o644 });
+  // The token reaches BuildKit on stdin only: no file the verify user can read, no argument, no environment.
+  const build = docker(
+    s,
+    [
+      "build",
+      "--quiet",
+      "--pull=false",
+      "--no-cache",
+      "--secret",
+      "id=licence,src=/dev/stdin",
+      "--tag",
+      tag,
+      ctx,
+    ],
+    { timeout: 60 * 60 * 1000, input: token },
+  );
+  if (build.code !== 0) {
+    // The tool prints its download URL, which holds the token: only the scrubbed text reaches the service log, and
+    // none of it reaches a check run.
+    serviceLog(`licensed build failed: ${scrub(build.stderr).slice(-4000)}`);
+    throw new Error("could not build the licensed image (the service log has the detail)");
+  }
+  if (await imageCarries(dockerReader(s), tag, token)) {
+    docker(s, ["rmi", "-f", tag]);
+    throw new Error(
+      "the licensed image carries the licence token or its name; refused and removed",
+    );
+  }
+  state.licensed = {
+    ...state.licensed,
+    [tag]: {
+      id: docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim(),
+      builtAt: Date.now(),
+    },
+  };
+  return tag;
+}
+
+/** The service's own log (stderr, the journal under systemd), always scrubbed. */
+function serviceLog(line) {
+  process.stderr.write(`stackra-verify: ${scrub(line)}\n`);
+}
+
+/** The docker reads imageCarries needs, as the verify user; `exportStream` streams the image's final filesystem. */
+function dockerReader(s) {
+  return {
+    history: (image) => docker(s, ["history", "--no-trunc", "--format", "{{.CreatedBy}}", image]),
+    config: (image) => docker(s, ["image", "inspect", image]),
+    exportStream: (image, onChunk) =>
+      new Promise((resolve) => {
+        const name = `sv-scan-${Date.now().toString(36)}`;
+        if (docker(s, ["create", "--name", name, image, "true"]).code !== 0) {
+          resolve(false);
+          return;
+        }
+        const [bin, ...argv] = dockerAs(s, ["export", name]);
+        const child = spawnChild(bin, argv, { stdio: ["ignore", "pipe", "ignore"] });
+        const timer = setTimeout(() => child.kill("SIGKILL"), 30 * 60_000);
+        child.stdout.on("data", onChunk);
+        child.on("close", (code) => {
+          clearTimeout(timer);
+          docker(s, ["rm", "-f", name]);
+          resolve(code === 0);
+        });
+        child.on("error", () => resolve(false));
+      }),
+  };
+}
+
+/**
  * Whether an image carries the licence token: its history and config (the token or its variable name), or any byte
  * of any layer (the token; the variable name legitimately appears in the licensed package's own code).
  */
-function imageCarries(s, image, token) {
-  const history = docker(s, ["history", "--no-trunc", "--format", "{{.CreatedBy}}", image]);
-  const config = docker(s, ["image", "inspect", image]);
+export async function imageCarries(reader, image, token) {
+  const history = reader.history(image);
+  const config = reader.config(image);
   if (history.code !== 0 || config.code !== 0) return true;
   for (const text of [history.stdout, config.stdout])
     if (text.includes(token) || text.includes("UNIWIND_AUTH_TOKEN")) return true;
-  const [bin, ...argv] = dockerAs(s, ["save", image]);
-  const scanner = needleScanner(token);
-  const r = spawnSync(bin, argv, { maxBuffer: 64 * 1024 * 1024 * 1024, timeout: 30 * 60_000 });
-  if (r.status !== 0) return true;
-  scanner.push(r.stdout);
-  return scanner.found;
+  // Secondary to the in-build search: the image's final filesystem, streamed, for the token in plain and base64.
+  const plain = needleScanner(token);
+  const encoded = needleScanner(Buffer.from(token).toString("base64"));
+  const ok = await reader.exportStream(image, (chunk) => {
+    plain.push(chunk);
+    encoded.push(chunk);
+  });
+  return !ok || plain.found || encoded.found;
 }
 
 /** Everything a run left in the verify user's Docker goes: containers, run images, volumes, networks, other images. */
@@ -1274,8 +1499,9 @@ export async function verify(s, job) {
       for (const dir of [s.home, s.dockerRoot].filter(Boolean))
         if (freeBytes(dir) < s.minFreeBytes)
           throw new Error(`not enough free disk in ${dir} for a run`);
-      const { tarPath, mirror } = archiveJob(s, job, runDir);
+      const { tarPath, mirror, tree } = archiveJob(s, job, runDir);
       deps.mirror = mirror;
+      deps.tree = tree;
       deps.buildList = allowedBuilds(git(mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
       return tarPath;
     },
@@ -1291,9 +1517,27 @@ export async function verify(s, job) {
         if (r.code !== 0)
           throw new Error(`could not set up the install network: ${scrub(r.stderr).slice(0, 200)}`);
       }
-      return { network, proxy: `proxy:${PROXY_PORT}` };
+      const gateway = docker(s, [
+        "network",
+        "inspect",
+        "--format",
+        "{{range .IPAM.Config}}{{.Gateway}} {{end}}",
+        network,
+      ])
+        .stdout.trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      return { network, proxy: `proxy:${PROXY_PORT}`, gateway };
     },
-    storeImage: () => ensureStore(s, deps.mirror, job.base, runDir, state),
+    storeImage: async () => {
+      const store = ensureStore(s, deps.mirror, job.base, runDir, state);
+      const lockText = git(deps.mirror, ["show", `${deps.tree}:pnpm-lock.yaml`]);
+      const builds = allowedBuilds(git(deps.mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
+      const packages = LICENSED_BUILDS.filter((licensed) => builds.includes(licensed)).flatMap(
+        (licensed) => lockedPackages(lockText, licensed),
+      );
+      return ensureLicensed(s, store, packages, runDir, state);
+    },
     docker: (args) => docker(s, args),
     runContainer: (args) =>
       new Promise((resolve) => {
@@ -1332,21 +1576,21 @@ export async function verify(s, job) {
         .stdout?.trim()
         .split(/\s+/)
         .filter(Boolean);
-      const r = docker(
-        s,
-        probeArgs(s, {
-          name: `sv-probe-${Date.now().toString(36)}`,
-          image,
-          envFile,
-          network: net.network,
-          proxy: net.proxy,
-          targets: probeTargets(hostAddresses),
-        }),
-        { timeout: 5 * 60_000 },
-      );
-      if (r.code === 0) return [];
-      if (r.code === 9) return (r.stdout.match(/^reachable: (.*)$/m)?.[1] ?? "unknown").split(" ");
-      return null;
+      const probe = () =>
+        docker(
+          s,
+          probeArgs(s, {
+            name: `sv-probe-${Date.now().toString(36)}`,
+            image,
+            envFile,
+            network: net.network,
+            proxy: net.proxy,
+            targets: probeTargets(hostAddresses, net.gateway),
+          }),
+          { timeout: 5 * 60_000 },
+        );
+      // A probe that did not run is tried once more before the service stops.
+      return probeVerdict([probe(), probe]);
     },
     // The keep list comes from the daemon's own state at clean-up time, so a run that failed early (a merge conflict,
     // a fetch error) never removes the base or the store image.
@@ -1355,10 +1599,10 @@ export async function verify(s, job) {
         s,
         names,
         images,
-        [
-          ...Object.values(state.stores).map((entry) => entry?.id ?? entry),
+        keepIdsFrom(
+          state,
           docker(s, ["image", "inspect", "--format", "{{.Id}}", s.baseImage]).stdout.trim(),
-        ].filter(Boolean),
+        ),
       ),
     headOf: () => headOf(s, job),
     readLog: () => readFileSync(logPath, "utf8"),
@@ -1378,7 +1622,7 @@ export async function verify(s, job) {
     rmSync(runDir, { recursive: true, force: true });
   }
   if (result.error) appendFileSync(logPath, `\nstackra-verify: ${result.error}\n`);
-  if (result.unsafe) {
+  if (outcome(result) === "stop") {
     // The host is not safe for PR code: stop the service, post nothing, count nothing against the PR.
     onStop();
     throw new Error(
@@ -1483,7 +1727,7 @@ async function heads(s, repo) {
   // A merge queue's group commits (gh-readonly-queue/main/…) need the check too, or the queue stalls.
   const queue = JSON.parse(
     gh(["api", `repos/${repo}/git/matching-refs/heads/gh-readonly-queue/`], token, true),
-  ).map((ref) => ({ repo, sha: ref.object?.sha, base: main }));
+  ).map((ref) => ({ repo, sha: ref.object?.sha, base: main, queue: true }));
   return jobsFrom({ repo, pulls, main, queue });
 }
 
@@ -1565,7 +1809,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     const key = s.keyFile ? statSync(s.keyFile) : null;
     // A key file someone else owns could be swapped under the service: it counts as unreadable.
-    keyMode = key && key.uid === process.getuid() ? key.mode & 0o777 : null;
+    keyMode = ownedMode(key, process.getuid());
   } catch {
     keyMode = null;
   }
@@ -1573,7 +1817,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (s.licenceFile)
     try {
       const licence = statSync(s.licenceFile);
-      licenceMode = licence.uid === process.getuid() ? licence.mode & 0o777 : null;
+      licenceMode = ownedMode(licence, process.getuid());
     } catch {
       licenceMode = null;
     }

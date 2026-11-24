@@ -22,6 +22,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   allowedBuilds,
+  subuidOverlap,
+  registerSecret,
+  probeVerdict,
+  ownedMode,
+  outcome,
+  lockedPackages,
+  licensedDockerfile,
+  keepIdsFrom,
+  imageCarries,
+  FRESH_MS,
+  fetchRefs,
   buildTree,
   cappedLog,
   checkRunBody,
@@ -107,11 +118,27 @@ const io = (over = {}) => ({
   exists: () => true,
   canRead: () => false,
   cgroup: () => "1000",
+  subuid: () => "build:100000:65536\nstackra-verify:300000:65536\n",
   dockerInfo: () => ({ code: 0, stdout: '["name=seccomp","name=rootless"]' }),
   ...over,
 });
 /** The file names in a tar archive. */
 const tarList = (tar) => spawnSync("tar", ["-tf", tar], { encoding: "utf8" }).stdout.split("\n");
+
+/** A fake image reader for imageCarries. */
+const imageReader = ({
+  history = "RUN sh /tmp/licensed.sh",
+  config = "{}",
+  files = ["clean bytes"],
+  exported = true,
+} = {}) => ({
+  history: () => ({ code: 0, stdout: history }),
+  config: () => ({ code: 0, stdout: config }),
+  exportStream: async (_image, onChunk) => {
+    for (const f of files) onChunk(Buffer.from(f));
+    return exported;
+  },
+});
 
 test("parseArgs: run needs a full SHA; --in-place and same-user modes are gone; bad input is a usage error", () => {
   assert.equal(parseArgs(["run", "--sha", SHA, "--pr", "12"]).sha, SHA);
@@ -912,34 +939,57 @@ test("licensed builds: main's versions from the lockfile; the install copies the
   assert.equal(installCommand(["esbuild"]).includes("prebuilt"), false);
 });
 
-test("licensed store stage: a secret mount and a bind-mounted script; no token in an ENV, ARG or layer", () => {
-  const dockerfile = storeDockerfile({
-    baseImage: PINNED,
-    pnpmVersion: "12.16.1",
-    licensed: [{ name: "uniwind-pro", version: "1.9.0" }],
-  });
+test("licensed image: a secret mount and a bind-mounted script on top of the store image; no token in ENV, ARG or a layer", () => {
+  const dockerfile = licensedDockerfile("stackra-verify-store:abc");
+  assert.match(dockerfile, /^FROM stackra-verify-store:abc$/m);
   assert.match(
     dockerfile,
     /RUN --mount=type=secret,id=licence,required=true --mount=type=bind,source=licensed\.sh,target=\/tmp\/licensed\.sh sh \/tmp\/licensed\.sh/,
   );
-  assert.doesNotMatch(dockerfile, /^(?:ARG|ENV).*(?:TOKEN|LICENCE|UNIWIND)/m);
+  assert.doesNotMatch(dockerfile, /^(?:ARG|ENV)/m);
   assert.doesNotMatch(dockerfile, /UNIWIND_AUTH_TOKEN/);
   assert.equal(
     storeDockerfile({ baseImage: PINNED, pnpmVersion: "12.16.1" }).includes("secret"),
     false,
   );
-  const script = licensedScript([{ name: "uniwind-pro", version: "1.9.0" }]);
+});
+
+test("licensed stage script: publisher tarball checked against the lockfile integrity, only changed files kept, token never persisted", () => {
+  const integrity = `sha512-${"A".repeat(86)}==`;
+  const script = licensedScript([{ name: "uniwind-pro", version: "1.9.0", integrity }]);
+  assert.match(script, /npm pack uniwind-pro@1\.9\.0/);
   assert.match(
     script,
-    /UNIWIND_AUTH_TOKEN="\$\(cat \/run\/secrets\/licence\)" pnpm install --store-dir \/store/,
+    new RegExp(`\\[ "\\$got" = "${integrity.replaceAll("+", "\\+")}" \\] \\|\\| \\{`),
   );
-  assert.match(script, /cp -a node_modules\/uniwind-pro\/\. \/prebuilt\/uniwind-pro@1\.9\.0\//);
-  assert.match(script, /rm -rf \/lic /);
+  assert.match(script, /pnpm add "\$f" --store-dir \/store --ignore-scripts/);
+  assert.match(script, /UNIWIND_AUTH_TOKEN="\$T"/);
+  assert.match(script, /redact < /);
+  assert.match(script, /comm -13 .*\.before .*\.after/);
+  assert.match(
+    script,
+    /grep -rlF -e "\$T" -e "\$B" .* \/ 2>\/dev\/null; then echo "the licence token was persisted"; exit 1; fi$/,
+  );
+  assert.equal(spawnSync("sh", ["-n"], { input: script }).status, 0);
   for (const bad of [
-    { name: "x; rm -rf /", version: "1.0.0" },
-    { name: "uniwind-pro", version: "1.0.0$(id)" },
+    { name: "x; rm -rf /", version: "1.0.0", integrity },
+    { name: "uniwind-pro", version: "1.0.0$(id)", integrity },
+    { name: "uniwind-pro", version: "1.0.0", integrity: "sha1-abc" },
+    { name: "uniwind-pro", version: "1.0.0" },
   ])
     assert.throws(() => licensedScript([bad]), /not a package/);
+  const lock = [
+    "packages:",
+    "",
+    "  uniwind-pro@1.9.0:",
+    `    resolution: {integrity: ${integrity}}`,
+    "",
+    "  uniwind@1.12.1:",
+    "    resolution: {integrity: sha512-x}",
+  ].join("\n");
+  assert.deepEqual(lockedPackages(lock, "uniwind-pro"), [
+    { name: "uniwind-pro", version: "1.9.0", integrity },
+  ]);
 });
 
 test("token scan: finds the token across chunk boundaries; nothing found stays not found", () => {
@@ -954,27 +1004,13 @@ test("token scan: finds the token across chunk boundaries; nothing found stays n
   assert.equal(clean.found, false);
 });
 
-test("runJob: a PR needing a licensed version the store has not built is neutral (needs store rebuild), not pass or fail", async () => {
+test("runJob: a licensed build missing from the run image is the service's error, never the PR's pass, fail or neutral", async () => {
   const r = await runJob(
     JOB,
     fakeDeps({ exits: { install: NEEDS_STORE_REBUILD_EXIT, verify: 0 } }).deps,
   );
-  assert.equal(r.post, true);
-  assert.equal(r.conclusion, "neutral");
-  assert.equal(r.reason, "needs store rebuild");
-  const body = checkRunBody({
-    sha: SHA,
-    base: BASE,
-    conclusion: "neutral",
-    phase: "install",
-    reason: "needs store rebuild",
-    durationMs: 1000,
-    box: "box1",
-    log: "",
-    startedAt: "t0",
-    completedAt: "t1",
-  });
-  assert.match(body.output.title, /^needs a store rebuild/);
+  assert.equal(r.post, false);
+  assert.match(r.error, /licensed build is missing/);
 });
 
 test("hostProblems: a licence token file that is not 0400 and ours refuses", () => {
@@ -982,4 +1018,188 @@ test("hostProblems: a licence token file that is not 0400 and ours refuses", () 
   assert.deepEqual(hostProblems(withLicence, 0o400, 0o400), []);
   assert.match(hostProblems(withLicence, 0o400, 0o644).join(), /licence token file/);
   assert.match(hostProblems(withLicence, 0o400, null).join(), /licence token file/);
+});
+
+test("proxy: an address literal is refused even when it is on the allowlist", async () => {
+  const port = 30_000 + Math.floor(Math.random() * 20_000);
+  const child = spawn(process.execPath, ["-e", proxyScript(["127.0.0.1"], port)], {
+    stdio: "ignore",
+  });
+  try {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 300);
+    });
+    const line = await new Promise((resolve) => {
+      const socket = createConnection(port, "127.0.0.1", () =>
+        socket.write("CONNECT 127.0.0.1:443 HTTP/1.1\r\n\r\n"),
+      );
+      let buf = "";
+      socket.on("data", (d) => {
+        buf += d;
+        if (buf.includes("\r\n")) {
+          socket.destroy();
+          resolve(buf.split("\r\n")[0]);
+        }
+      });
+      socket.on("error", () => resolve("error"));
+    });
+    assert.match(line, /^HTTP\/1\.1 403/);
+  } finally {
+    child.kill();
+  }
+});
+
+test("allowedBuilds: a key that is not an npm package name never reaches the shell", () => {
+  assert.deepEqual(
+    allowedBuilds(
+      "allowBuilds:\n  ../etc: true\n  .hidden: true\n  Upper: true\n  esbuild: true\n",
+    ),
+    ["esbuild"],
+  );
+});
+
+test("outcome: an unsafe host stops the service; stops and moved heads skip; errors and results are told apart", () => {
+  assert.equal(outcome({ post: false, unsafe: true, error: "x" }), "stop");
+  assert.equal(outcome({ post: false, stopped: true }), "skip");
+  assert.equal(outcome({ post: false, moved: true }), "skip");
+  assert.equal(outcome({ post: false, error: "x" }), "error");
+  assert.equal(outcome({ post: true, conclusion: "failure" }), "post");
+});
+
+test("keepIdsFrom: the base and every recorded store and licensed image are kept", () => {
+  const state = { stores: { a: { id: "sha256:s" } }, licensed: { b: { id: "sha256:l" } } };
+  assert.deepEqual(keepIdsFrom(state, "sha256:base"), ["sha256:s", "sha256:l", "sha256:base"]);
+  assert.deepEqual(keepIdsFrom({}, ""), []);
+});
+
+test("ownedMode: a secret file someone else owns counts as unreadable", () => {
+  assert.equal(ownedMode({ uid: 1001, mode: 33_024 }, 1001), 0o400);
+  assert.equal(ownedMode({ uid: 0, mode: 33_024 }, 1001), null);
+  assert.equal(ownedMode(null, 1001), null);
+});
+
+test("preflight: the licence file in the forbidden list; a missing or overlapping subuid range refuses", () => {
+  const withLicence = { ...S, licenceFile: "/home/svc/licence" };
+  assert.match(
+    preflightProblems(withLicence, io({ canRead: (p) => p === "/home/svc/licence" })).join(),
+    /can read \/home\/svc\/licence/,
+  );
+  assert.match(subuidOverlap("build:100000:65536\n", "stackra-verify"), /no \/etc\/subuid range/);
+  assert.match(
+    subuidOverlap("build:100000:65536\nstackra-verify:150000:65536\n", "stackra-verify"),
+    /overlaps build/,
+  );
+  assert.equal(
+    subuidOverlap("build:100000:65536\nstackra-verify:300000:65536\n", "stackra-verify"),
+    null,
+  );
+  assert.match(preflightProblems(S, io({ subuid: () => "" })).join(), /subuid/);
+});
+
+test("probeVerdict: a probe that did not run is retried once; still not run is unsafe (null)", () => {
+  assert.deepEqual(probeVerdict([{ code: 0, stdout: "" }]), []);
+  assert.deepEqual(probeVerdict([{ code: 9, stdout: "reachable: 169.254.169.254:80\n" }]), [
+    "169.254.169.254:80",
+  ]);
+  let retried = 0;
+  const again = () => {
+    retried++;
+    return { code: 0, stdout: "" };
+  };
+  assert.deepEqual(probeVerdict([{ code: 125, stdout: "" }, again]), []);
+  assert.equal(retried, 1);
+  assert.equal(probeVerdict([{ code: 125, stdout: "" }, () => ({ code: 125, stdout: "" })]), null);
+});
+
+test("egress probe: the internal network's gateway and embedded DNS are probed too", () => {
+  const targets = probeTargets([], ["172.30.0.1"]);
+  for (const t of ["127.0.0.11:53", "172.30.0.1:53", "172.30.0.1:5432", "172.30.0.1:2375"])
+    assert.ok(targets.includes(t), t);
+});
+
+test("fetchRefs: a merge-queue job fetches the queue's refs, a PR its head, main always", () => {
+  assert.deepEqual(fetchRefs({ sha: SHA }), ["+refs/heads/main:refs/heads/main"]);
+  assert.ok(fetchRefs({ sha: SHA, pr: "7" }).includes("+refs/pull/7/head:refs/verify/pr-7"));
+  assert.ok(
+    fetchRefs({ sha: SHA, queue: true }).includes(
+      "+refs/heads/gh-readonly-queue/*:refs/verify/queue/*",
+    ),
+  );
+});
+
+test("needsRun: a fresh green against an older main stands (no livelock); a stale one runs again", () => {
+  const run = (completedAt) => ({
+    name: "stackra/verify",
+    head_sha: SHA,
+    status: "completed",
+    conclusion: "success",
+    app: { id: 4242 },
+    external_id: `base:${"d".repeat(40)}`,
+    completed_at: completedAt,
+  });
+  assert.equal(
+    needsRun(
+      {
+        checkRuns: [run(new Date(NOW - 60_000).toISOString())],
+        sha: SHA,
+        appId: APP_ID,
+        base: BASE,
+      },
+      NOW,
+    ),
+    false,
+  );
+  assert.equal(
+    needsRun(
+      {
+        checkRuns: [run(new Date(NOW - FRESH_MS - 60_000).toISOString())],
+        sha: SHA,
+        appId: APP_ID,
+        base: BASE,
+      },
+      NOW,
+    ),
+    true,
+  );
+});
+
+test("scrub: a registered secret goes from every output in every encoding", () => {
+  const token = `lic-${"k".repeat(12)}-${"m".repeat(12)}`;
+  registerSecret(token);
+  const out = scrub(
+    `url https://cdn/ci/1.9.0/${token} b64 ${Buffer.from(token).toString("base64")} enc ${encodeURIComponent(token)}`,
+  );
+  assert.equal(out.includes(token), false);
+  assert.equal(out.includes(Buffer.from(token).toString("base64")), false);
+  assert.match(out, /\[redacted\]/);
+});
+
+test("imageCarries: the token or its name in history or config, or the token (plain or base64) in the filesystem, refuses", async () => {
+  const token = `lic-${"p".repeat(12)}-${"q".repeat(12)}`;
+  assert.equal(await imageCarries(imageReader(), "img", token), false);
+  assert.equal(
+    await imageCarries(imageReader({ history: `RUN echo ${token}` }), "img", token),
+    true,
+  );
+  assert.equal(
+    await imageCarries(imageReader({ config: '{"Env":["UNIWIND_AUTH_TOKEN=x"]}' }), "img", token),
+    true,
+  );
+  assert.equal(
+    await imageCarries(
+      imageReader({ files: ["a", `x${token.slice(0, 9)}`, `${token.slice(9)}y`] }),
+      "img",
+      token,
+    ),
+    true,
+  );
+  assert.equal(
+    await imageCarries(
+      imageReader({ files: [Buffer.from(token).toString("base64")] }),
+      "img",
+      token,
+    ),
+    true,
+  );
+  assert.equal(await imageCarries(imageReader({ exported: false }), "img", token), true);
 });

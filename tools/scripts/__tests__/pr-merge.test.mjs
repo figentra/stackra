@@ -18,6 +18,8 @@ import {
   gh,
   graphql,
   definitionFieldsChanged,
+  mergeBlockers,
+  VERIFY_FRESH_MS,
   isVerifyDefinition,
   isVerifyOverlay,
   scriptsChanged,
@@ -482,4 +484,63 @@ test("verifyFacts: the main block reads the head's verify runs, current main and
   ]);
   assert.ok(calls.includes("repos/figentra/stackra/pulls/7/files?per_page=100"));
   assert.match(calls[0], /check-runs\?check_name=stackra%2Fverify&filter=all/);
+});
+
+test("condition 6: a package.json `bin` or `directories` change can shadow a tool, so it counts", () => {
+  const base = '{"name":"a","scripts":{"t":"x"}}';
+  assert.equal(
+    definitionFieldsChanged(base, '{"name":"a","scripts":{"t":"x"},"bin":{"tsc":"./fake.js"}}'),
+    true,
+  );
+  assert.equal(
+    definitionFieldsChanged(base, '{"name":"a","scripts":{"t":"x"},"directories":{"bin":"./b"}}'),
+    true,
+  );
+});
+
+/** A success against an older main, finished at `completed_at`. */
+const oldBase = (completed_at) => ({
+  ...appRun("success"),
+  external_id: `base:${"d".repeat(40)}`,
+  completed_at,
+});
+
+test("condition 5: a green against an older main stands for a day (to enter the queue), then refuses", () => {
+  const MAIN = "e".repeat(40);
+  const NOW = Date.parse("2026-11-24T15:00:00Z");
+  assert.deepEqual(
+    blockers(pr(), green, {
+      app: APP,
+      verifyRuns: [oldBase(new Date(NOW - 60_000).toISOString())],
+      mainSha: MAIN,
+      now: NOW,
+    }),
+    [],
+  );
+  assert.match(
+    blockers(pr(), green, {
+      app: APP,
+      verifyRuns: [oldBase(new Date(NOW - VERIFY_FRESH_MS - 60_000).toISOString())],
+      mainSha: MAIN,
+      now: NOW,
+    }).join(),
+    /more than a day ago/,
+  );
+});
+
+test("mergeBlockers: the main block always passes main, the runs and the definition changes from verifyFacts", () => {
+  const facts = {
+    verifyRuns: [
+      {
+        ...appRun("success"),
+        external_id: `base:${"d".repeat(40)}`,
+        completed_at: "2026-01-01T00:00:00Z",
+      },
+    ],
+    mainSha: "e".repeat(40),
+    definitionChanges: ["turbo.jsonc"],
+  };
+  const reasons = mergeBlockers(pr(), green, { app: APP }, facts).join();
+  assert.match(reasons, /main is now e{40}/);
+  assert.match(reasons, /label it risk:R3/);
 });
