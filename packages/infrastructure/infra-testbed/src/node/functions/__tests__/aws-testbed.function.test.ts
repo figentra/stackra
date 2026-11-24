@@ -116,6 +116,15 @@ describe("awsTestbed", () => {
     ]);
   });
 
+  it("refuses a plan without a toolchain pin before it declares any resource", () => {
+    const declared = registered.length;
+    const { node: _node, ...withoutNode } = PLAN.toolchain;
+    expect(() =>
+      awsTestbed({ ...PLAN, toolchain: withoutNode }, { allowedCidrs: [], lockfilePath: LOCKFILE }),
+    ).toThrow('no toolchain pin "node"');
+    expect(registered).toHaveLength(declared);
+  });
+
   it("pins the provider to the plan's region", () => {
     expect(resource("providers:aws", "testbed").inputs.region).toBe("eu-west-1");
     expect(stack.region).toBe("eu-west-1");

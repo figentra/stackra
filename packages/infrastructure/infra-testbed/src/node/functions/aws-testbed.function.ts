@@ -28,6 +28,7 @@ import { testbedUserData } from "#core/functions/testbed-user-data.function";
 import type { TestbedPlan } from "#core/types/testbed-plan.type";
 import { fillComponent } from "#node/functions/fill-component.function";
 import { testbedInputs } from "#node/functions/testbed-inputs.function";
+import { toolchainValues } from "#node/functions/toolchain-values.function";
 import type { AwsTestbed } from "#node/types/aws-testbed.type";
 import type { AwsTestbedOptions } from "#node/types/aws-testbed-options.type";
 
@@ -58,6 +59,9 @@ function assumedBy(service: string): string {
  * );
  */
 export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTestbed {
+  // First, so a home plan without a toolchain pin fails before any resource is declared, not as an empty version in an
+  // image. Only the home region builds the image, so only it needs the pins.
+  const pinValues = plan.home ? toolchainValues(plan.toolchain) : undefined;
   const provider = new aws.Provider("testbed", { region: plan.region as aws.Region });
   const opts: pulumi.CustomResourceOptions = { provider };
   const tags = {
@@ -119,14 +123,16 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
   );
 
   // ---- the home region only: the global roles and profiles, the build inputs and the image pipeline (STA-2042) ----
-  const home = plan.home
-    ? awsTestbedHome(plan, options, {
-        opts,
-        tags,
-        accountId: account.accountId,
-        securityGroupId: securityGroup.id,
-      })
-    : undefined;
+  const home =
+    pinValues === undefined
+      ? undefined
+      : awsTestbedHome(plan, options, {
+          opts,
+          tags,
+          accountId: account.accountId,
+          securityGroupId: securityGroup.id,
+          pinValues,
+        });
 
   // ---- the launch template and the two groups ---------------------------------------------------------------
   const groupTags = (group: "heavy" | "light") =>
@@ -304,9 +310,11 @@ function awsTestbedHome(
     readonly tags: Record<string, string>;
     readonly accountId: pulumi.Output<string>;
     readonly securityGroupId: pulumi.Output<string>;
+    /** The image components' placeholder values, from the plan's toolchain pins. */
+    readonly pinValues: Readonly<Record<string, string>>;
   },
 ): HomeResources {
-  const { opts, tags } = shared;
+  const { opts, tags, pinValues } = shared;
   // ---- the box's role: SSM, Auto Scaling on its own groups, and the AWS identity Infisical checks ------------------
   const instanceRole = new aws.iam.Role(
     "testbed-instance",
@@ -442,17 +450,6 @@ function awsTestbedHome(
     opts,
   );
 
-  const pins = plan.toolchain;
-  const values = {
-    MISE: pins.mise ?? "",
-    NODE: pins.node ?? "",
-    PNPM: pins.pnpm ?? "",
-    INFISICAL: pins.infisical ?? "",
-    SHFMT: pins.shfmt ?? "",
-    ENCORE: pins.encore ?? "",
-    PLAYWRIGHT: pins.playwright ?? "",
-    POSTGRES: pins.postgresImage ?? "",
-  };
   // A component or recipe is a version: new inputs replace it, and because its `name` stays the same the provider
   // replaces it delete-first. AWS refuses to delete a version an image was built from, so the old versions are kept
   // in AWS and only leave the state (STA-1953). They cost nothing and old images keep their provenance.
@@ -467,7 +464,7 @@ function awsTestbedHome(
           version: inputs.version,
           description: `${source.name}, built from ${inputs.version} of the testbed inputs`,
           data: bucket.bucket.apply((name) =>
-            fillComponent(source.document, { ...values, BUCKET: name }),
+            fillComponent(source.document, { ...pinValues, BUCKET: name }),
           ),
           tags,
         },
