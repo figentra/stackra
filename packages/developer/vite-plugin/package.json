@@ -77,8 +77,7 @@
     "@stackra/i18n": "workspace:*",
     "@stackra/runway": "workspace:*",
     "@tailwindcss/vite": "catalog:frontend",
-    "@vitejs/plugin-react": "catalog:frontend",
-    "vite-plugin-pwa": "catalog:frontend"
+    "@vitejs/plugin-react": "catalog:frontend"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
@@ -92,10 +91,17 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vite": "catalog:frontend",
+    "vite-plugin-pwa": "catalog:frontend",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
-    "vite": "catalog:frontend"
+    "vite": "catalog:frontend",
+    "vite-plugin-pwa": "catalog:frontend"
+  },
+  "peerDependenciesMeta": {
+    "vite-plugin-pwa": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"
