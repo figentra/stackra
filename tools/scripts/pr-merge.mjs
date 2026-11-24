@@ -102,6 +102,13 @@ export const VERIFY_OVERLAY =
   /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$/;
 
 /**
+ * The verify-definition directories whose every file is main's, new ones included (a new file there is removed from
+ * the tested tree even inside a new subdirectory): the config presets, the repository scripts and policies, the hooks.
+ */
+export const VERIFY_OVERLAY_DIRS =
+  /^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins)\//;
+
+/**
  * Root-level files a PR may change without changing what the verify service checks: documentation no gate tool
  * reads as configuration. Every other root-level file is a verify definition (CTO design note on HIGH 1: an allow
  * list instead of chasing every tool's discovery rules): the tested tree takes main's copy, or drops the PR's when
@@ -124,11 +131,12 @@ export const isRootDefinition = (path) =>
 
 /**
  * Files a PR legitimately changes that still change what `pnpm verify` checks: the workspace (catalogs, overrides,
- * allowed builds), the TypeScript projects and the CLI the repository checks run. The service runs the PR's copy, so
+ * allowed builds), the TypeScript projects and the CLI the repository checks run, and `runway.yaml`, which decides
+ * where things deploy (CTO ruling, round 4). The service runs the PR's copy, so
  * a change to them needs the owner's review (condition 6), like a change to VERIFY_OVERLAY.
  */
 export const VERIFY_SENSITIVE =
-  /(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vite\.config\.[cm]?[jt]s|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^(?:packages\/developer\/cli|patches)\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
+  /^runway\.yaml$|(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vite\.config\.[cm]?[jt]s|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^(?:packages\/developer\/cli|patches)\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
 
 /**
  * How long a stackra/verify success against an older main counts (CTO ruling M3): long enough to enter the merge

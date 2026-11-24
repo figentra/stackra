@@ -19,6 +19,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
+  globSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -1043,6 +1044,13 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
       "packages/a/.oxlintrc.json",
       "mise.toml",
       "README.md",
+      "packages/new/vitest.config.ts",
+      "packages/new/src/new.test.ts",
+      "packages/new/.config/config.json",
+      "packages/a/.config/config.json",
+      "tools/scripts/new.mjs",
+      "tools/scripts/newdir/x.mjs",
+      "packages/tooling/new-preset/index.js",
     ],
     [
       { path: "package.json" },
@@ -1062,7 +1070,16 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
   ]);
   assert.deepEqual(plan.scripts, ["package.json", "packages/a/package.json"]);
   // definition files main does not have leave the tested tree; inert root files and source stay
-  assert.deepEqual(plan.remove, ["knip.json", "packages/a/.oxlintrc.json", "mise.toml"]);
+  assert.deepEqual(plan.remove, [
+    "knip.json",
+    "packages/a/.oxlintrc.json",
+    "mise.toml",
+    "packages/a/.config/config.json",
+    "tools/scripts/new.mjs",
+    "tools/scripts/newdir/x.mjs",
+    "packages/tooling/new-preset/index.js",
+  ]);
+  // a new member's own configs stay in the tested tree (CTO ruling, round 4): main has no packages/new at all
 });
 
 /** A temporary repository with main, a PR and an attacker's commit, for `buildTree`. */
@@ -1099,6 +1116,7 @@ function fixtureRepo() {
   write("turbo.jsonc", '{"tasks":{"test":{}}}\n');
   write("packages/a/vitest.config.ts", "export default { test: { include: ['src/**'] } };\n");
   write("packages/a/src/a.ts", "export const a = 1;\n");
+  write(".github/workflows/ci.yml", "on: push\n");
   git("add", "-A");
   git("commit", "-qm", "main");
   const base = git("rev-parse", "HEAD");
@@ -1207,6 +1225,95 @@ test("buildTree: a definition file the PR adds and main lacks is removed, at any
   }
 });
 
+/**
+ * A PR that adds a new workspace member with its own configs (a directory main does not have at all), next to a
+ * config in a directory main has: the new member keeps its configs, the existing directory loses the PR's.
+ */
+function newMemberRepo() {
+  const repo = overlayRepo();
+  const { dir, git } = repo;
+  const write = (path, text) => {
+    mkdirSync(join(dir, path, ".."), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  };
+  git("checkout", "-qb", "pr-new-member", repo.base);
+  write("packages/new/package.json", '{"name":"new","private":true}\n');
+  // a test file only this config's `include` reaches, so a run that finds it used the config
+  write(
+    "packages/new/vitest.config.mjs",
+    "export default { test: { globals: true, include: ['src/**/*.check.mjs'] } };\n",
+  );
+  write("packages/new/src/new.check.mjs", "test('new member', () => expect(1 + 1).toBe(2));\n");
+  write("packages/new/.commitlintrc.json", '{"rules":{}}\n');
+  write("packages/new/.oxlintrc.json", '{"rules":{}}\n');
+  write("packages/a/knip.json", '{"ignore":["**"]}\n');
+  write("tools/scripts/added.mjs", "export const x = 1;\n");
+  git("add", "-A");
+  git("commit", "-qm", "pr adds a member");
+  return { ...repo, sha: git("rev-parse", "HEAD") };
+}
+
+test("buildTree: a new member's own definition files stay (it runs with them); one in a directory main has goes", () => {
+  const { dir, git, base, sha } = newMemberRepo();
+  try {
+    const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+    const paths = git("ls-tree", "-r", "--name-only", tree).split("\n");
+    for (const path of [
+      "packages/new/vitest.config.mjs",
+      "packages/new/src/new.check.mjs",
+      "packages/new/.commitlintrc.json",
+      "packages/new/.oxlintrc.json",
+    ])
+      assert.ok(paths.includes(path), `${path} left the tested tree`);
+    for (const path of ["packages/a/knip.json", "tools/scripts/added.mjs"])
+      assert.equal(paths.includes(path), false, `${path} reached the tested tree`);
+    // main's own configs are untouched for every file outside the new member
+    assert.match(git("cat-file", "blob", `${tree}:.commitlintrc.yaml`), /header-max-length/);
+    assert.match(
+      git("cat-file", "blob", `${tree}:packages/a/vitest.config.ts`),
+      /include: \['src\/\*\*'\]/,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/** The real vitest CLI of this checkout, when it has one installed (box 1 does; a bare clone does not). */
+const VITEST = (() => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  return globSync("node_modules/.pnpm/vitest@*/node_modules/vitest/vitest.mjs", { cwd: root })
+    .toSorted()
+    .map((bin) => join(root, bin))[0];
+})();
+
+test(
+  "buildTree: the new member's tests run with its own vitest config in the tested tree",
+  { skip: VITEST ? false : "vitest is not installed in this checkout" },
+  () => {
+    const { dir, base, sha } = newMemberRepo();
+    const out = mkdtempSync(join(tmpdir(), "stackra-tested-"));
+    try {
+      const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+      const r = spawnSync("sh", ["-c", `git -C "${dir}" archive ${tree} | tar -x -C "${out}"`]);
+      assert.equal(r.status, 0);
+      const run = spawnSync(
+        process.execPath,
+        [VITEST, "run", "--root", join(out, "packages/new")],
+        {
+          encoding: "utf8",
+          env: { ...process.env, CI: "1", NO_COLOR: "1" },
+        },
+      );
+      // only the member's config includes *.check.mjs: one test found and passed proves it ran with that config
+      assert.equal(run.status, 0, run.stdout + run.stderr);
+      assert.match(run.stdout, /Tests\s+1 passed/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(out, { recursive: true, force: true });
+    }
+  },
+);
+
 /** The real `@commitlint/load` the gate runs, when this checkout has it installed (box 1 does; a bare clone not). */
 async function commitlintLoad() {
   try {
@@ -1238,6 +1345,28 @@ test(
       assert.equal(r.status, 0);
       const config = await COMMITLINT({}, { cwd: out });
       assert.deepEqual(config.rules, { "header-max-length": [2, "always", 100] });
+      // a `.commitlintrc.json` in a new member stays in its directory; the gate's commitlint runs at the root
+      rmSync(out, { recursive: true, force: true });
+      mkdirSync(out);
+      const member = newMemberRepo();
+      try {
+        const memberTree = buildTree(
+          member.dir,
+          member.base,
+          member.sha,
+          join(member.dir, "scratch-index"),
+        );
+        const x = spawnSync("sh", [
+          "-c",
+          `git -C "${member.dir}" archive ${memberTree} | tar -x -C "${out}"`,
+        ]);
+        assert.equal(x.status, 0);
+        assert.deepEqual((await COMMITLINT({}, { cwd: out })).rules, {
+          "header-max-length": [2, "always", 100],
+        });
+      } finally {
+        rmSync(member.dir, { recursive: true, force: true });
+      }
     } finally {
       rmSync(dir, { recursive: true, force: true });
       rmSync(out, { recursive: true, force: true });

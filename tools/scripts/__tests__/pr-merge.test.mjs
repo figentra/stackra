@@ -548,8 +548,13 @@ test("condition 6: a root-level file is a definition unless it is inert document
     assert.equal(isVerifyDefinition(path), false, path);
   }
   // tested code: a lane PR that bumps a dependency or edits a member's source is not a definition change
-  for (const path of ["package.json", "runway.yaml", "packages/a/src/index.ts", "docs/guide.md"])
+  for (const path of ["package.json", "packages/a/src/index.ts", "docs/guide.md"])
     assert.equal(isVerifyDefinition(path), false, path);
+  // runway.yaml decides where things deploy: the PR's copy is tested, and the PR needs risk:R3 (CTO ruling, round 4)
+  assert.equal(isVerifyOverlay("runway.yaml"), false);
+  assert.equal(isRootDefinition("runway.yaml"), false);
+  assert.equal(isVerifyDefinition("runway.yaml"), true);
+  assert.equal(isVerifyDefinition("packages/a/runway.yaml"), false);
   for (const path of ["pnpm-lock.yaml", "pnpm-workspace.yaml"]) {
     assert.equal(isRootDefinition(path), false, path);
     assert.equal(isVerifyOverlay(path), false, path);

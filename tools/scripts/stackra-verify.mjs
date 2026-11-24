@@ -122,6 +122,7 @@ import * as botNetwork from "./bot-token.mjs";
 import {
   gh,
   isVerifyOverlay,
+  VERIFY_OVERLAY_DIRS,
   VERIFY_APP,
   VERIFY_CHECK,
   VERIFY_MOBILE_CHECK,
@@ -2578,16 +2579,36 @@ export function withMainScripts(headText, mainText) {
   return `${JSON.stringify(out, null, 2)}\n`;
 }
 
+/** The directory a definition file configures: its own, or for a file under `.config/`, the one holding `.config`. */
+export function definitionDirectory(path) {
+  const config = /^(?:(.*)\/)?\.config\//.exec(path);
+  if (config) return config[1] ?? "";
+  return path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+}
+
 /**
  * What the tested tree takes from main: `whole`, main's entry of every verify-definition file (isVerifyOverlay);
- * `remove`, every merged path that is a verify definition main does not have (a PR-added `.commitlintrc.json` or
- * `knip.json` that a tool would find before main's config); `scripts`, the package.json files whose checks come from
- * main (OVERLAY_FIELDS).
+ * `remove`, every merged path that is a verify definition main does not have, at the root or in a directory main
+ * already has (a PR-added `.commitlintrc.json` or `knip.json` that a tool would find before main's config), and every
+ * new file under VERIFY_OVERLAY_DIRS; `scripts`, the package.json files whose checks come from main (OVERLAY_FIELDS).
+ * A definition file inside a directory main does not have at all (a new workspace member's own vitest.config) stays,
+ * so the new member runs with it; it reaches only that directory, and it still needs the owner's review (CTO ruling,
+ * round 4). A `.config/` directory belongs to the directory that holds it.
  */
 export function overlayPlan(mergedPaths, mainEntries) {
   const main = new Map(mainEntries.map((e) => [e.path, e]));
   const whole = [...main.values()].filter((e) => isVerifyOverlay(e.path));
-  const remove = mergedPaths.filter((p) => isVerifyOverlay(p) && !main.has(p));
+  const dirs = new Set([""]);
+  for (const path of main.keys()) {
+    const parts = path.split("/");
+    for (let i = 1; i < parts.length; i++) dirs.add(parts.slice(0, i).join("/"));
+  }
+  const remove = mergedPaths.filter(
+    (p) =>
+      isVerifyOverlay(p) &&
+      !main.has(p) &&
+      (VERIFY_OVERLAY_DIRS.test(p) || dirs.has(definitionDirectory(p))),
+  );
   const scripts = mergedPaths.filter(
     (p) => /(?:^|\/)package\.json$/.test(p) && main.has(p) && !isVerifyOverlay(p),
   );
