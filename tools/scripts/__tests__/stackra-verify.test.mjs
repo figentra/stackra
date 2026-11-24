@@ -19,6 +19,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createConnection, createServer } from "node:net";
+import { PassThrough } from "node:stream";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -121,6 +122,8 @@ import {
   gateScript,
   licenceCheckSource,
   licenceViolations,
+  untilLine,
+  PROXY_READY,
   exceptionScopeViolations,
   workspaceManifest,
   workspaceMembers,
@@ -392,30 +395,43 @@ test("verify: the tested tree is unpacked again over /work and committed (the ga
   );
 });
 
-test("proxy: refuses a non-allowlisted host, an address literal and a port other than 443", async () => {
-  const port = 30_000 + Math.floor(Math.random() * 20_000);
-  const child = spawn(process.execPath, ["-e", proxyScript(["registry.npmjs.org"], port)], {
-    stdio: "ignore",
+/**
+ * The proxy on a port the system picks, once it has said it listens (its readiness line): no port another process may
+ * hold, no guess at how long a loaded machine takes to start node.
+ */
+async function startProxy(allow) {
+  const child = spawn(process.execPath, ["-e", proxyScript(allow, 0)], {
+    stdio: ["ignore", "pipe", "inherit"],
   });
-  try {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 300);
+  const ready = await untilLine(child.stdout, PROXY_READY, 10 * 60_000).catch((error) => {
+    child.kill();
+    throw error;
+  });
+  const port = Number(ready.slice(PROXY_READY.length));
+  assert.ok(Number.isInteger(port) && port > 0, ready);
+  return { child, port };
+}
+
+/** The status line the proxy on `port` answers a CONNECT to `target` with (`error: <code>` if it cannot be asked). */
+const askProxy = (port, target) =>
+  new Promise((resolve) => {
+    const socket = createConnection(port, "127.0.0.1", () =>
+      socket.write(`CONNECT ${target} HTTP/1.1\r\nHost: ${target}\r\n\r\n`),
+    );
+    let buf = "";
+    socket.on("data", (d) => {
+      buf += d;
+      if (buf.includes("\r\n")) {
+        socket.destroy();
+        resolve(buf.split("\r\n")[0]);
+      }
     });
-    const ask = (target) =>
-      new Promise((resolve) => {
-        const s = createConnection(port, "127.0.0.1", () =>
-          s.write(`CONNECT ${target} HTTP/1.1\r\nHost: ${target}\r\n\r\n`),
-        );
-        let buf = "";
-        s.on("data", (d) => {
-          buf += d;
-          if (buf.includes("\r\n")) {
-            s.destroy();
-            resolve(buf.split("\r\n")[0]);
-          }
-        });
-        s.on("error", () => resolve("error"));
-      });
+    socket.on("error", (error) => resolve(`error: ${error.code}`));
+  });
+
+test("proxy: refuses a non-allowlisted host, an address literal and a port other than 443", async () => {
+  const { child, port } = await startProxy(["registry.npmjs.org"]);
+  try {
     for (const target of [
       "169.254.169.254:80",
       "169.254.169.254:443",
@@ -423,10 +439,33 @@ test("proxy: refuses a non-allowlisted host, an address literal and a port other
       "registry.npmjs.org:80",
       "127.0.0.1:443",
     ])
-      assert.match(await ask(target), /^HTTP\/1\.1 403/, target);
+      assert.match(await askProxy(port, target), /^HTTP\/1\.1 403/, target);
   } finally {
     child.kill();
   }
+});
+
+test("proxy: prints its readiness line with the port it listens on, and only once it listens", () => {
+  const script = proxyScript(["registry.npmjs.org"]);
+  assert.match(
+    script,
+    /server\.listen\(3128, "0\.0\.0\.0", \(\) => console\.log\("stackra-proxy listening on " \+ server\.address\(\)\.port\)\);$/,
+  );
+  assert.equal(script.split("console.log").length, 2);
+});
+
+test("untilLine: the first matching line, even split across chunks; rejects on end or at the deadline", async () => {
+  const stream = new PassThrough();
+  const line = untilLine(stream, PROXY_READY, 60_000);
+  stream.write("noise\nstackra-proxy liste");
+  stream.write("ning on 3128\r\nlater\n");
+  assert.equal(await line, "stackra-proxy listening on 3128");
+  assert.equal(stream.listenerCount("data"), 0);
+  const ended = new PassThrough();
+  const never = untilLine(ended, PROXY_READY, 60_000);
+  ended.end("crashed: EADDRINUSE\n");
+  await assert.rejects(never, /ended before printing "stackra-proxy listening on"/);
+  await assert.rejects(untilLine(new PassThrough(), PROXY_READY, 1), /within 1 ms/);
 });
 
 test("egress probe: metadata, docker0, the host-loopback gateway and every host address on the service ports", () => {
@@ -752,6 +791,31 @@ test("runJob: exit 0 of the verify container is the only pass; install on the ru
   assert.equal(calls.runs[1][calls.runs[1].indexOf("--network") + 1], "none");
   assert.equal(calls.cleanUp.length, 1);
   assert.equal(calls.cleanUp[0].names.length, 3);
+});
+
+test("runJob: the egress probe and the install wait for the install network, the proxy's readiness included", async () => {
+  const { deps, calls } = fakeDeps({});
+  let ready;
+  deps.network = ({ network }) =>
+    new Promise((resolve) => {
+      ready = () => resolve({ network, proxy: "proxy:3128" });
+    });
+  let probed = null;
+  deps.egressLeaks = (_image, net) => {
+    probed = net;
+    return [];
+  };
+  const run = runJob(JOB, deps);
+  await new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+  assert.equal(probed, null);
+  assert.equal(calls.runs.length, 0);
+  ready();
+  const r = await run;
+  assert.equal(r.conclusion, "success");
+  assert.match(probed.network, /^sv-net-/);
+  assert.equal(probed.proxy, "proxy:3128");
 });
 
 test("runJob: output that says PASS with exit 1 is a failure (the log is never read for a verdict)", async () => {
@@ -1144,29 +1208,9 @@ test("hostProblems: a licence token file that is not 0400 and ours refuses", () 
 });
 
 test("proxy: an address literal is refused even when it is on the allowlist", async () => {
-  const port = 30_000 + Math.floor(Math.random() * 20_000);
-  const child = spawn(process.execPath, ["-e", proxyScript(["127.0.0.1"], port)], {
-    stdio: "ignore",
-  });
+  const { child, port } = await startProxy(["127.0.0.1"]);
   try {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 300);
-    });
-    const line = await new Promise((resolve) => {
-      const socket = createConnection(port, "127.0.0.1", () =>
-        socket.write("CONNECT 127.0.0.1:443 HTTP/1.1\r\n\r\n"),
-      );
-      let buf = "";
-      socket.on("data", (d) => {
-        buf += d;
-        if (buf.includes("\r\n")) {
-          socket.destroy();
-          resolve(buf.split("\r\n")[0]);
-        }
-      });
-      socket.on("error", () => resolve("error"));
-    });
-    assert.match(line, /^HTTP\/1\.1 403/);
+    assert.match(await askProxy(port, "127.0.0.1:443"), /^HTTP\/1\.1 403/);
   } finally {
     child.kill();
   }

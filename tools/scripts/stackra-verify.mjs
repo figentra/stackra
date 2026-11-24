@@ -1485,10 +1485,15 @@ export const installArgs = (
 /** The hosts the install's proxy lets through, on port 443 only: the package registries. */
 export const REGISTRY_HOSTS = ["registry.npmjs.org", "npm.stackra.figentra.com"];
 export const PROXY_PORT = 3128;
+/** What the proxy prints, followed by its port, once it listens: the install network's readiness signal. */
+export const PROXY_READY = "stackra-proxy listening on ";
+/** How long the network step waits for PROXY_READY before the run errors (a proxy that never comes up). */
+export const PROXY_START_MS = 2 * 60_000;
 
 /**
  * The allowlisting proxy: the install container sits on an `--internal` network whose only way out is this proxy,
  * which answers CONNECT to an allowed host on 443 and refuses everything else (403), including any address literal.
+ * It prints PROXY_READY and its port once it listens (port 0: one the system picks); nothing reaches it before.
  */
 export function proxyScript(allow, port = PROXY_PORT) {
   return [
@@ -1504,8 +1509,44 @@ export function proxyScript(allow, port = PROXY_PORT) {
     '  up.on("error", () => socket.end("HTTP/1.1 502 Bad Gateway\\r\\n\\r\\n"));',
     '  socket.on("error", () => up.destroy());',
     "});",
-    `server.listen(${port}, "0.0.0.0");`,
+    `server.listen(${port}, "0.0.0.0", () => console.log(${JSON.stringify(PROXY_READY)} + server.address().port));`,
   ].join("\n");
+}
+
+/**
+ * The first line of `stream` that starts with `prefix`, as soon as it is written (lines may arrive split across
+ * chunks); rejects when the stream ends or closes without one, or at `timeoutMs`, a deadline for a process that never
+ * comes up, never a wait for one that does.
+ */
+export function untilLine(stream, prefix, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let buffer = "";
+    let timer = null;
+    const finish = (done, value) => {
+      clearTimeout(timer);
+      stream.off("data", onData);
+      stream.off("end", onEnd);
+      stream.off("close", onEnd);
+      stream.off("error", onEnd);
+      done(value);
+    };
+    const onData = (chunk) => {
+      buffer += chunk;
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+      const line = lines.find((l) => l.startsWith(prefix));
+      if (line !== undefined) finish(resolve, line.trimEnd());
+    };
+    const onEnd = () => finish(reject, new Error(`it ended before printing "${prefix.trim()}"`));
+    timer = setTimeout(
+      () => finish(reject, new Error(`no "${prefix.trim()}" within ${timeoutMs} ms`)),
+      timeoutMs,
+    );
+    stream.on("data", onData);
+    stream.on("end", onEnd);
+    stream.on("close", onEnd);
+    stream.on("error", onEnd);
+  });
 }
 
 /** The proxy container: on the default bridge (the only one with egress), joined to the run's internal network. */
@@ -2260,7 +2301,7 @@ export async function runJob(job, deps) {
     if (KINDS[kind].install) {
       const builds = deps.builds();
 
-      const net = deps.network({ id, image: store, proxyName, network });
+      const net = await deps.network({ id, image: store, proxyName, network });
       const leaks = deps.egressLeaks(store, net);
       if (leaks === null || leaks.length) {
         // Unsafe host: no PR code runs, and the service stops before anything else does.
@@ -3093,7 +3134,9 @@ export async function verify(s, job) {
       return tarPath;
     },
     builds: () => deps.buildList ?? [],
-    network: ({ image, proxyName, network }) => {
+    // Ready means the proxy printed PROXY_READY: before it, the egress probe's checks through the proxy would find it
+    // refusing connections and count that as sealed, and the install would fail on a proxy still starting.
+    network: async ({ image, proxyName, network }) => {
       const steps = [
         ["network", "create", "--internal", network],
         proxyArgs(s, { name: proxyName, image, envFile, allow: s.registries }),
@@ -3103,6 +3146,15 @@ export async function verify(s, job) {
         const r = docker(s, args, { timeout: 120_000 });
         if (r.code !== 0)
           throw new Error(`could not set up the install network: ${scrub(r.stderr).slice(0, 200)}`);
+      }
+      const [bin, ...argv] = dockerAs(s, ["logs", "--follow", proxyName]);
+      const logs = spawnChild(bin, argv, { stdio: ["ignore", "pipe", "ignore"] });
+      try {
+        await untilLine(logs.stdout, PROXY_READY, PROXY_START_MS);
+      } catch (error) {
+        throw new Error(`the install proxy did not start: ${error.message}`, { cause: error });
+      } finally {
+        logs.kill();
       }
       const gateway = docker(s, [
         "network",
