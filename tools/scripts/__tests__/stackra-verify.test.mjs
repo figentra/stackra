@@ -21,6 +21,7 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync 
 import { createConnection, createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   allowedBuilds,
   refsToDelete,
@@ -120,6 +121,10 @@ import {
   gateScript,
   licenceCheckSource,
   licenceViolations,
+  exceptionScopeViolations,
+  workspaceManifest,
+  workspaceMembers,
+  MOBILE_MEMBERS,
   mobileScript,
   spdxAllowed,
   stepSections,
@@ -1789,7 +1794,7 @@ const STEP_CASES = {
   "licence-policy": {
     calls: [
       "pnpm licenses list --json --offline --recursive",
-      "licence-check tools/policy/licences.json <tmp>/stackra-licences.json",
+      "licence-check tools/policy/licences.json <tmp>/stackra-licences.json .",
     ],
     fail: "licence-check *",
   },
@@ -2027,47 +2032,422 @@ test("spdxAllowed: AND needs every part, OR one; WITH must be listed whole; anyt
     assert.equal(spdxAllowed(bad, allowed), false, String(bad));
 });
 
-test("licence policy: a licence off the list fails unless a package exception names that exact licence; nothing passes vacuously", () => {
-  const policy = {
-    allow: ["MIT", "ISC"],
-    exceptions: [{ name: "uniwind-pro", licence: "UNLICENSED", reason: "held" }],
-  };
-  const listing = {
-    MIT: [{ name: "a", versions: ["1.0.0"], license: "MIT" }],
-    "(MIT OR GPL-3.0)": [{ name: "b", versions: ["2.0.0"], license: "(MIT OR GPL-3.0)" }],
-    UNLICENSED: [{ name: "uniwind-pro", versions: ["1.9.0"], license: "UNLICENSED" }],
-    "GPL-3.0-only": [{ name: "c", versions: ["3.0.0", "3.1.0"], license: "GPL-3.0-only" }],
-  };
-  assert.deepEqual(licenceViolations(listing, policy), ["c@3.0.0,3.1.0: GPL-3.0-only"]);
-  // the exception is for one package under one licence string
-  assert.deepEqual(
-    licenceViolations(
-      { UNLICENSED: [{ name: "evil", versions: ["1"], license: "UNLICENSED" }] },
-      policy,
-    ),
-    ["evil@1: UNLICENSED"],
-  );
-  assert.deepEqual(licenceViolations(listing, { allow: [] }), [
-    "the licence policy has no `allow` list",
+/** A policy shaped like tools/policy/licences.json, small enough to read in a test. */
+const POLICY = Object.freeze({
+  allow: ["MIT", "ISC", "GPL-3.0-only"],
+  deny: [
+    "^GPL",
+    "^LGPL",
+    "^AGPL",
+    "^CC-.*-(NC|ND)(-|$)",
+    "^(Unknown|UNKNOWN|UNLICENSED|SEE LICENSE IN .*)$",
+  ],
+  exceptions: [
+    { name: "uniwind-pro", licence: "UNLICENSED", reason: "held", scope: "mobile" },
+    { name: "chainsaw", licence: "MIT/X11", reason: "MIT", scope: "runtime", versions: ["0.1.0"] },
+    {
+      name: "pg-gis",
+      licence: "Apache-2.0 AND GPL-2.0-or-later",
+      reason: "tests",
+      scope: "dev-only",
+    },
+  ],
+});
+const pkg = (name, license, versions = ["1.0.0"]) => ({ [license]: [{ name, versions, license }] });
+const violations = (listing, policy = POLICY) => licenceViolations(listing, policy);
+
+test("licence policy: an unknown licence fails; an allowed one passes; nothing passes vacuously", () => {
+  assert.deepEqual(violations({ ...pkg("a", "MIT"), ...pkg("b", "ISC", ["2.0.0"]) }), []);
+  assert.deepEqual(violations({ ...pkg("a", "MIT"), ...pkg("x", "WTFPL", ["1", "2"]) }), [
+    "x@1,2: WTFPL",
   ]);
-  assert.deepEqual(licenceViolations({}, policy), ["the licence listing names no package"]);
-  assert.deepEqual(licenceViolations(null, policy), ["the licence listing names no package"]);
+  assert.deepEqual(violations(pkg("u", "Unknown")), ["u@1.0.0: Unknown"]);
+  assert.deepEqual(violations({}), ["the licence listing names no package"]);
+  assert.deepEqual(violations(null), ["the licence listing names no package"]);
+  assert.deepEqual(violations({ MIT: [] }), ["the licence listing names no package"]);
 });
 
-test("licence policy: the check the gate runs is the tested functions' own source, and tools/policy/licences.json is a marked proposal", () => {
+test("licence policy: a denied family fails even when `allow` lists it; OR passes beside an allowed licence, AND does not", () => {
+  // GPL-3.0-only is on POLICY.allow, and ^GPL denies it.
+  assert.deepEqual(violations(pkg("g", "GPL-3.0-only")), ["g@1.0.0: GPL-3.0-only"]);
+  assert.deepEqual(violations(pkg("l", "lgpl-2.1-or-later")), ["l@1.0.0: lgpl-2.1-or-later"]);
+  assert.deepEqual(violations(pkg("n", "CC-BY-NC-4.0")), ["n@1.0.0: CC-BY-NC-4.0"]);
+  assert.deepEqual(violations(pkg("s", "SEE LICENSE IN LICENSE.md")), [
+    "s@1.0.0: SEE LICENSE IN LICENSE.md",
+  ]);
+  assert.deepEqual(violations(pkg("o", "MIT OR GPL-2.0")), []);
+  assert.deepEqual(violations(pkg("o", "(GPL-2.0 OR MIT)")), []);
+  assert.deepEqual(violations(pkg("a", "MIT AND GPL-2.0")), ["a@1.0.0: MIT AND GPL-2.0"]);
+  assert.deepEqual(violations(pkg("a", "GPL-2.0 OR LGPL-3.0")), ["a@1.0.0: GPL-2.0 OR LGPL-3.0"]);
+});
+
+test("licence policy: an exception holds only for its exact name, licence string and pinned versions", () => {
+  assert.deepEqual(violations(pkg("uniwind-pro", "UNLICENSED", ["1.9.0", "2.0.0"])), []);
+  assert.deepEqual(violations(pkg("pg-gis", "Apache-2.0 AND GPL-2.0-or-later", ["0.2.15"])), []);
+  assert.deepEqual(violations(pkg("chainsaw", "MIT/X11", ["0.1.0"])), []);
+  // another package under the same string; the same package under another string
+  assert.deepEqual(violations(pkg("evil", "UNLICENSED")), ["evil@1.0.0: UNLICENSED"]);
+  assert.deepEqual(violations(pkg("uniwind-pro", "Unknown")), ["uniwind-pro@1.0.0: Unknown"]);
+  assert.deepEqual(violations(pkg("pg-gis", "Apache-2.0 AND GPL-3.0-or-later")), [
+    "pg-gis@1.0.0: Apache-2.0 AND GPL-3.0-or-later",
+  ]);
+  assert.deepEqual(violations(pkg("chainsaw", "MIT / X11", ["0.1.0"])), [
+    "chainsaw@0.1.0: MIT / X11",
+  ]);
+  // a pinned exception: a new version, a second version beside the pinned one, or no version at all
+  assert.deepEqual(violations(pkg("chainsaw", "MIT/X11", ["0.1.1"])), ["chainsaw@0.1.1: MIT/X11"]);
+  assert.deepEqual(violations(pkg("chainsaw", "MIT/X11", ["0.1.0", "0.2.0"])), [
+    "chainsaw@0.1.0,0.2.0: MIT/X11",
+  ]);
+  assert.deepEqual(violations({ "MIT/X11": [{ name: "chainsaw", license: "MIT/X11" }] }), [
+    "chainsaw@: MIT/X11",
+  ]);
+});
+
+test("licence policy: a malformed exception is a violation and holds for nothing; so is a missing or broken deny list", () => {
+  const withExceptions = (...exceptions) => ({ ...POLICY, exceptions });
+  const good = { name: "chainsaw", licence: "MIT/X11", reason: "MIT", scope: "runtime" };
+  const listing = pkg("chainsaw", "MIT/X11", ["0.1.0"]);
+  const { scope: _scope, ...noScope } = good;
+  assert.deepEqual(violations(listing, withExceptions(noScope)), [
+    "chainsaw@0.1.0: MIT/X11",
+    "licence exception 1 (chainsaw) has no `scope` of dev-only, runtime, tool, mobile",
+  ]);
+  for (const [bad, problem] of [
+    [{ ...good, scope: "prod" }, "has no `scope` of dev-only, runtime, tool, mobile"],
+    [{ ...good, reason: " " }, "has no `reason`"],
+    [{ ...good, licence: undefined }, "has no `licence`"],
+    [{ ...good, versions: [] }, "has a `versions` that is not a list of versions"],
+    [{ ...good, versions: "0.1.0" }, "has a `versions` that is not a list of versions"],
+    [{ ...good, version: ["0.1.0"] }, "has an unknown field `version`"],
+  ])
+    assert.deepEqual(violations(listing, withExceptions(bad)), [
+      "chainsaw@0.1.0: MIT/X11",
+      `licence exception 1 (chainsaw) ${problem}`,
+    ]);
+  assert.deepEqual(violations(listing, withExceptions(null, good)), [
+    "licence exception 1 is not an object",
+  ]);
+  assert.deepEqual(violations(pkg("a", "MIT"), { ...POLICY, exceptions: {} }), [
+    "the licence policy's `exceptions` is not a list",
+  ]);
+  assert.deepEqual(violations(listing, { ...POLICY, deny: undefined }), [
+    "the licence policy has no `deny` list",
+  ]);
+  assert.deepEqual(violations(listing, { ...POLICY, deny: [] }), [
+    "the licence policy has no `deny` list",
+  ]);
+  assert.match(
+    violations(listing, { ...POLICY, deny: ["^GPL", "(unclosed"] })[0],
+    /does not parse/,
+  );
+  assert.match(violations(listing, { ...POLICY, deny: [""] })[0], /does not parse/);
+  assert.deepEqual(violations(listing, { ...POLICY, allow: [] }), [
+    "the licence policy has no `allow` list",
+  ]);
+});
+
+test("workspaceManifest: packages, the default and named catalogs, and overrides, from pnpm's block style", () => {
+  const yaml = [
+    "# a comment",
+    "packages:",
+    "  - apps/*",
+    '  - "packages/*/*" # quoted',
+    "- services/*",
+    "  - '!**/fixtures/**'",
+    "catalogMode: strict",
+    "catalog:",
+    '  "@types/node": 26.6.4',
+    "  zod: 4.6.7 # trailing",
+    "catalogs:",
+    "  # Uniwind Pro",
+    "  uniwind-pro:",
+    "    uniwind: npm:uniwind-pro@1.9.0",
+    "  quality:",
+    "    oxlint: 1.86.0",
+    "    'it''s': 1",
+    "overrides:",
+    '  "x@1>y": npm:uniwind-pro@1.9.0',
+    "allowBuilds:",
+    "  uniwind: true",
+  ].join("\n");
+  const w = workspaceManifest(yaml);
+  assert.deepEqual(w.packages, ["apps/*", "packages/*/*", "services/*", "!**/fixtures/**"]);
+  assert.deepEqual({ ...w.catalogs.default }, { "@types/node": "26.6.4", zod: "4.6.7" });
+  assert.deepEqual({ ...w.catalogs["uniwind-pro"] }, { uniwind: "npm:uniwind-pro@1.9.0" });
+  assert.deepEqual({ ...w.catalogs.quality }, { oxlint: "1.86.0", "it's": "1" });
+  assert.deepEqual({ ...w.overrides }, { "x@1>y": "npm:uniwind-pro@1.9.0" });
+  assert.deepEqual(workspaceManifest("").packages, []);
+  // main's own file: the two Uniwind Pro members' alias and the PostGIS entry
+  const main = workspaceManifest(
+    readFileSync(new URL("../../../pnpm-workspace.yaml", import.meta.url), "utf8"),
+  );
+  assert.ok(main.packages.includes("apps/*"));
+  assert.match(main.catalogs["uniwind-pro"].uniwind, /^npm:uniwind-pro@/);
+  assert.ok(main.catalogs.default["@electric-sql/pglite-postgis"]);
+});
+
+/** A workspace member for exceptionScopeViolations. */
+const member = (dir, manifest) => ({ dir, manifest: { name: `@t/${dir}`, ...manifest } });
+const WORKSPACE = workspaceManifest(
+  [
+    "packages:",
+    "  - apps/*",
+    "  - packages/*/*",
+    "catalog:",
+    "  pg-gis: 0.2.15",
+    "  gis-alias: npm:pg-gis@0.2.15",
+    "catalogs:",
+    "  uniwind-pro:",
+    "    uniwind: npm:uniwind-pro@1.9.0",
+    "  quality:",
+    "    uniwind: 1.12.1",
+  ].join("\n"),
+);
+const scopeViolations = (members, workspace = WORKSPACE) =>
+  exceptionScopeViolations(
+    [member(".", { name: "root", private: true }), ...members],
+    workspace,
+    POLICY,
+    MOBILE_MEMBERS,
+  );
+
+/** The member main keeps PostGIS for PGlite in, with `manifest`. */
+const db = (manifest) => [member("packages/data/database", manifest)];
+
+test("licence scopes: a dev-only package fails in a publishable member's dependencies or non-optional peer, nowhere else", () => {
+  // where main has it: devDependencies of a publishable package
+  assert.deepEqual(
+    scopeViolations(db({ private: false, devDependencies: { "pg-gis": "catalog:" } })),
+    [],
+  );
+  assert.deepEqual(
+    scopeViolations(
+      db({
+        peerDependencies: { "pg-gis": "catalog:" },
+        peerDependenciesMeta: { "pg-gis": { optional: true } },
+      }),
+    ),
+    [],
+  );
+  // a private member may ship it in dependencies: it is never published
+  assert.deepEqual(
+    scopeViolations(db({ private: true, dependencies: { "pg-gis": "catalog:" } })),
+    [],
+  );
+  const where = "packages/data/database (@t/packages/data/database): pg-gis (scope dev-only) is in";
+  const tail = "of a publishable package; only devDependencies or an optional peer";
+  assert.deepEqual(scopeViolations(db({ dependencies: { "pg-gis": "catalog:" } })), [
+    `${where} dependencies ${tail}`,
+  ]);
+  assert.deepEqual(scopeViolations(db({ peerDependencies: { "pg-gis": "^0.2.0" } })), [
+    `${where} non-optional peerDependencies ${tail}`,
+  ]);
+  assert.deepEqual(
+    scopeViolations(
+      db({
+        peerDependencies: { "pg-gis": "^0.2.0" },
+        peerDependenciesMeta: { "pg-gis": { optional: false } },
+      }),
+    ),
+    [`${where} non-optional peerDependencies ${tail}`],
+  );
+  assert.deepEqual(scopeViolations(db({ optionalDependencies: { "pg-gis": "0.2.15" } })), [
+    `${where} optionalDependencies ${tail}`,
+  ]);
+  // under another name: an npm alias, directly or through a catalog entry
+  assert.deepEqual(scopeViolations(db({ dependencies: { gis: "npm:pg-gis@0.2.15" } })), [
+    `${where} dependencies ${tail}`,
+  ]);
+  assert.deepEqual(scopeViolations(db({ dependencies: { "gis-alias": "catalog:default" } })), [
+    `${where} dependencies ${tail}`,
+  ]);
+});
+
+test("licence scopes: a mobile package may be a dependency of apps/mobile and apps/playground only", () => {
+  const pro = { uniwind: "catalog:uniwind-pro" };
+  const mobileMembers = [
+    member("apps/mobile", { name: "@figentra/mobile", private: true, dependencies: pro }),
+    member("apps/playground", {
+      name: "@figentra/playground",
+      private: true,
+      devDependencies: pro,
+    }),
+  ];
+  assert.deepEqual(scopeViolations(mobileMembers), []);
+  // the free `uniwind` from another catalog is not Uniwind Pro
+  assert.deepEqual(
+    scopeViolations([
+      member("packages/ui/ui", { devDependencies: { uniwind: "catalog:quality" } }),
+    ]),
+    [],
+  );
+  const only = "only apps/mobile and apps/playground may use it";
+  for (const kind of [
+    "dependencies",
+    "devDependencies",
+    "optionalDependencies",
+    "peerDependencies",
+  ])
+    assert.deepEqual(
+      scopeViolations([...mobileMembers, member("packages/ui/ui", { private: true, [kind]: pro })]),
+      [`packages/ui/ui (@t/packages/ui/ui): uniwind-pro (scope mobile) is in ${kind}; ${only}`],
+    );
+  assert.deepEqual(
+    scopeViolations([member("apps/web", { dependencies: { "uniwind-pro": "1.9.0" } })]),
+    [`apps/web (@t/apps/web): uniwind-pro (scope mobile) is in dependencies; ${only}`],
+  );
+  // the right name in another directory, or the right directory under another name
+  assert.deepEqual(
+    scopeViolations([member("apps/fake", { name: "@figentra/mobile", dependencies: pro })]),
+    [`apps/fake (@figentra/mobile): uniwind-pro (scope mobile) is in dependencies; ${only}`],
+  );
+  assert.deepEqual(
+    scopeViolations([member("apps/mobile", { name: "@figentra/other", dependencies: pro })]),
+    [`apps/mobile (@figentra/other): uniwind-pro (scope mobile) is in dependencies; ${only}`],
+  );
+  // an override that aliases it in for everyone
+  assert.deepEqual(
+    scopeViolations([], {
+      ...WORKSPACE,
+      overrides: { uniwind: "npm:uniwind-pro@1.9.0" },
+    }),
+    [`pnpm-workspace.yaml overrides: uniwind is aliased to uniwind-pro (scope mobile); ${only}`],
+  );
+  assert.deepEqual(
+    exceptionScopeViolations(
+      [member(".", { private: true, pnpm: { overrides: { uniwind: "npm:uniwind-pro@1" } } })],
+      WORKSPACE,
+      POLICY,
+      MOBILE_MEMBERS,
+    ),
+    [`package.json pnpm.overrides: uniwind is aliased to uniwind-pro (scope mobile); ${only}`],
+  );
+  // nothing passes vacuously
+  assert.deepEqual(exceptionScopeViolations([], WORKSPACE, POLICY, MOBILE_MEMBERS), [
+    "the workspace has no member",
+  ]);
+  assert.deepEqual(scopeViolations([], { ...WORKSPACE, packages: [] }), [
+    "pnpm-workspace.yaml names no `packages`",
+  ]);
+  assert.deepEqual(scopeViolations([{ dir: "apps/broken", unreadable: "Unexpected token" }]), [
+    "apps/broken/package.json is unreadable: Unexpected token",
+  ]);
+  assert.deepEqual(
+    MOBILE_MEMBERS.map((m) => `!${m.name}`),
+    GATE_FILTERS,
+  );
+});
+
+test("licence scopes: main's manifests keep each shipped exception in its scope", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const policy = JSON.parse(
+    readFileSync(new URL("../../policy/licences.json", import.meta.url), "utf8"),
+  );
+  const workspace = workspaceManifest(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8"));
+  const members = workspaceMembers(root, workspace.packages);
+  assert.ok(members.length > 20, `${members.length} members`);
+  assert.ok(members.some((m) => m.dir === "packages/data/database"));
+  assert.ok(!members.some((m) => m.dir.split("/").includes("node_modules")));
+  assert.deepEqual(exceptionScopeViolations(members, workspace, policy, MOBILE_MEMBERS), []);
+  // where the dev-only and mobile packages sit today
+  const database = members.find((m) => m.dir === "packages/data/database").manifest;
+  assert.notEqual(database.private, true);
+  assert.ok(database.devDependencies["@electric-sql/pglite-postgis"]);
+  for (const m of MOBILE_MEMBERS) {
+    const manifest = members.find((x) => x.dir === m.dir).manifest;
+    assert.equal(manifest.name, m.name);
+    assert.equal(manifest.dependencies.uniwind, "catalog:uniwind-pro");
+  }
+});
+
+test("licence policy: tools/policy/licences.json is the CTO's approved ruling, every exception scoped", () => {
+  const policy = JSON.parse(
+    readFileSync(new URL("../../policy/licences.json", import.meta.url), "utf8"),
+  );
+  assert.equal(policy.status, "approved");
+  assert.match(policy.$comment, /Idris \(CTO\) ruling 2026-11-24/);
+  assert.doesNotMatch(JSON.stringify(policy), /PROPOSAL/i);
+  assert.deepEqual(policy.allow, [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "0BSD",
+    "MIT-0",
+    "BlueOak-1.0.0",
+    "CC0-1.0",
+    "Unlicense",
+    "Zlib",
+    "Python-2.0",
+    "MPL-2.0",
+    "CC-BY-3.0",
+    "CC-BY-4.0",
+  ]);
+  for (const e of policy.exceptions) {
+    assert.ok(["dev-only", "runtime", "tool", "mobile"].includes(e.scope), e.name);
+    assert.ok(e.reason.length > 10, e.name);
+  }
+  assert.deepEqual(
+    policy.exceptions.map((e) => [e.name, e.licence, e.scope, e.versions ?? null]),
+    [
+      ["@electric-sql/pglite-postgis", "Apache-2.0 AND GPL-2.0-or-later", "dev-only", null],
+      ["@img/sharp-libvips-linux-x64", "LGPL-3.0-or-later", "runtime", null],
+      ["@sentry/cli", "FSL-1.1-MIT", "tool", null],
+      ["@sentry/cli-linux-x64", "FSL-1.1-MIT", "tool", null],
+      ["@zowe/secrets-for-zowe-sdk", "EPL-2.0", "runtime", null],
+      ["chainsaw", "MIT/X11", "runtime", ["0.1.0"]],
+      ["uniwind-pro", "UNLICENSED", "mobile", null],
+    ],
+  );
+  // a shipped policy that faults on its own shape fails here, not first on a PR
+  assert.deepEqual(licenceViolations(pkg("a", "MIT"), policy), []);
+  assert.deepEqual(licenceViolations(pkg("buffers", "Unknown", ["0.1.1"]), policy), [
+    "buffers@0.1.1: Unknown",
+  ]);
+});
+
+test("licence policy: the check the gate runs is the tested functions' own source, over a real workspace", () => {
   const dir = mkdtempSync(join(tmpdir(), "stackra-licence-"));
   const check = join(dir, "licence-check.mjs");
   writeFileSync(check, licenceCheckSource());
   const policy = JSON.parse(
     readFileSync(new URL("../../policy/licences.json", import.meta.url), "utf8"),
   );
-  assert.equal(policy.status, "proposal");
-  assert.match(policy.$comment, /PROPOSAL for Idris/);
-  for (const core of ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"])
-    assert.ok(policy.allow.includes(core), core);
-  for (const e of policy.exceptions) assert.match(e.reason, /^PROPOSAL: /, e.name);
   writeFileSync(join(dir, "policy.json"), JSON.stringify(policy));
-  const listing = (extra = {}) => {
+  const ws = join(dir, "ws");
+  const manifest = (path, value) => {
+    mkdirSync(join(ws, path), { recursive: true });
+    writeFileSync(join(ws, path, "package.json"), JSON.stringify(value));
+  };
+  mkdirSync(ws);
+  writeFileSync(
+    join(ws, "pnpm-workspace.yaml"),
+    [
+      "packages:",
+      "  - apps/*",
+      "  - packages/*/*",
+      "catalogs:",
+      "  uniwind-pro:",
+      "    uniwind: npm:uniwind-pro@1.9.0",
+    ].join("\n"),
+  );
+  manifest(".", { name: "root", private: true });
+  manifest("apps/mobile", {
+    name: "@figentra/mobile",
+    private: true,
+    dependencies: { uniwind: "catalog:uniwind-pro" },
+  });
+  manifest("packages/data/database", {
+    name: "@t/database",
+    devDependencies: { "@electric-sql/pglite-postgis": "0.2.15" },
+  });
+  manifest("packages/data/database/node_modules/x", {
+    name: "x",
+    dependencies: { "uniwind-pro": "1" },
+  });
+  const run = (extra = {}, root = ws) => {
     writeFileSync(
       join(dir, "listing.json"),
       JSON.stringify({
@@ -2076,28 +2456,47 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
         ...extra,
       }),
     );
-    return spawnSync(
-      process.execPath,
-      [check, join(dir, "policy.json"), join(dir, "listing.json")],
-      {
-        encoding: "utf8",
-      },
-    );
+    const args = [check, join(dir, "policy.json"), join(dir, "listing.json")];
+    return spawnSync(process.execPath, root ? [...args, root] : args, { encoding: "utf8" });
   };
-  const ok = listing();
-  assert.equal(ok.status, 0, ok.stdout);
-  assert.match(ok.stdout, /^2 packages, every licence allowed/);
-  const bad = listing({
-    "AGPL-3.0-only": [{ name: "x", versions: ["1"], license: "AGPL-3.0-only" }],
-  });
+  const ok = run();
+  assert.equal(ok.status, 0, ok.stdout + ok.stderr);
+  assert.match(ok.stdout, /^2 packages, every licence allowed .*; 3 workspace members keep/);
+  assert.equal(ok.stderr, "");
+  const bad = run({ "AGPL-3.0-only": [{ name: "x", versions: ["1"], license: "AGPL-3.0-only" }] });
   assert.equal(bad.status, 1);
   assert.match(bad.stdout, /x@1: AGPL-3\.0-only/);
+  manifest("packages/ui/ui", {
+    name: "@t/ui",
+    devDependencies: { uniwind: "catalog:uniwind-pro" },
+  });
+  const scoped = run();
+  assert.equal(scoped.status, 1);
+  assert.match(
+    scoped.stdout,
+    /packages\/ui\/ui \(@t\/ui\): uniwind-pro \(scope mobile\) is in devDependencies/,
+  );
+  rmSync(join(ws, "packages/ui"), { recursive: true });
+  manifest("packages/data/database", {
+    name: "@t/database",
+    dependencies: { "@electric-sql/pglite-postgis": "0.2.15" },
+  });
+  const devOnly = run();
+  assert.equal(devOnly.status, 1);
+  assert.match(
+    devOnly.stdout,
+    /@electric-sql\/pglite-postgis \(scope dev-only\) is in dependencies/,
+  );
+  const noRoot = run({}, null);
+  assert.equal(noRoot.status, 1);
+  assert.match(noRoot.stdout, /no workspace root/);
+  const noWorkspace = run({}, join(dir, "nowhere"));
+  assert.equal(noWorkspace.status, 1);
+  assert.match(noWorkspace.stdout, /pnpm-workspace\.yaml: ENOENT/);
   const missing = spawnSync(
     process.execPath,
-    [check, join(dir, "none.json"), join(dir, "listing.json")],
-    {
-      encoding: "utf8",
-    },
+    [check, join(dir, "none.json"), join(dir, "listing.json"), ws],
+    { encoding: "utf8" },
   );
   assert.equal(missing.status, 1);
   assert.match(missing.stdout, /none\.json/);

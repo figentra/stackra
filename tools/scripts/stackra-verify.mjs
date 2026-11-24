@@ -95,6 +95,7 @@ import {
   readSync,
   renameSync,
   existsSync,
+  globSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -200,9 +201,14 @@ export function installCommand(builds, licensed = LICENSED_BUILDS, filters = [])
 /**
  * The two members ci.yml's gate leaves out of its install, lint, typecheck and build (they alias `uniwind` to
  * Uniwind Pro, whose build needs the licence): `stackra/verify-mobile` checks them, so a licence or quota failure
- * never fails `stackra/verify`.
+ * never fails `stackra/verify`. The licence policy's `mobile`-scoped exceptions may be a dependency of these two only,
+ * each named by its directory and its package name together.
  */
-export const GATE_FILTERS = ["!@figentra/mobile", "!@figentra/playground"];
+export const MOBILE_MEMBERS = Object.freeze([
+  Object.freeze({ dir: "apps/mobile", name: "@figentra/mobile" }),
+  Object.freeze({ dir: "apps/playground", name: "@figentra/playground" }),
+]);
+export const GATE_FILTERS = MOBILE_MEMBERS.map((member) => `!${member.name}`);
 const EXCLUDE = GATE_FILTERS.map((f) => `--filter='${f}'`).join(" ");
 /** Where every verify container finds the run's read-only inputs, and the gate the offline OSV database. */
 export const IN_DIR = "/in";
@@ -372,12 +378,12 @@ export const GATE_STEPS = Object.freeze([
   },
   { id: "secrets-scan", job: "gate", ci: "Secrets scan", line: 228, run: "pnpm secrets:scan" },
   {
-    // Not in ci.yml: the licence allowlist (tools/policy/licences.json, a proposal for the CTO), over every package
-    // the gate installed, offline.
+    // Not in ci.yml: the licence policy (tools/policy/licences.json, the CTO's ruling of 2026-11-24) over every
+    // package the gate installed, offline, and the scope of each exception over the workspace's manifests (`.`).
     id: "licence-policy",
     run: [
       'pnpm licenses list --json --offline --recursive > "${TMPDIR:-/tmp}/stackra-licences.json"',
-      'node "$GATE_IN/licence-check.mjs" tools/policy/licences.json "${TMPDIR:-/tmp}/stackra-licences.json"',
+      'node "$GATE_IN/licence-check.mjs" tools/policy/licences.json "${TMPDIR:-/tmp}/stackra-licences.json" .',
     ].join("\n"),
   },
   {
@@ -553,36 +559,280 @@ export function spdxAllowed(expression, allowed) {
 
 /**
  * The packages of a `pnpm licenses list --json` listing (`{ licence: [{ name, versions, license }] }`) whose licence
- * the policy (`{ allow: [SPDX id], exceptions: [{ name, licence, reason }] }`) does not allow, as sorted lines. An
- * exception holds for one package under the exact licence string it names. A policy without `allow`, or an empty or
- * unreadable listing, is itself a violation: nothing passes vacuously.
+ * the policy does not allow, and the policy's own faults, as sorted lines. The policy (tools/policy/licences.json):
+ * `allow` holds SPDX ids; `deny` names licence families (GPL, LGPL, AGPL, SSPL, BUSL, Elastic, CC NC/ND, Unknown) as
+ * case-insensitive regular expressions over one SPDX id, and a denied id is taken out of `allow` even when listed
+ * there, so it passes only as one OR alternative beside an allowed licence, or through a named exception. Each
+ * exception has exactly `name`, `licence` (the exact string the listing shows), `reason`, `scope` (dev-only, runtime,
+ * tool or mobile; exceptionScopeViolations holds dev-only and mobile to theirs) and, when it is pinned, `versions`: it
+ * holds for that package under that string, and only while every version installed is pinned. A malformed exception
+ * is a violation and holds for nothing. A policy without `allow` or `deny`, or an empty or unreadable listing, is
+ * itself a violation: nothing passes vacuously. Self-contained: the licence check file is this function's own source.
  */
 export function licenceViolations(listing, policy) {
   if (!Array.isArray(policy?.allow) || policy.allow.length === 0)
     return ["the licence policy has no `allow` list"];
-  const allowed = new Set(policy.allow);
-  const exceptions = Array.isArray(policy.exceptions) ? policy.exceptions : [];
+  if (!Array.isArray(policy.deny) || policy.deny.length === 0)
+    return ["the licence policy has no `deny` list"];
+  let denyPatterns;
+  try {
+    denyPatterns = policy.deny.map((pattern) => {
+      if (typeof pattern !== "string" || pattern === "")
+        throw new Error(`${JSON.stringify(pattern)} is not a pattern`);
+      return new RegExp(pattern, "i");
+    });
+  } catch (error) {
+    return [`the licence policy's \`deny\` list does not parse: ${error.message}`];
+  }
+  const denied = (id) => denyPatterns.some((pattern) => pattern.test(id));
+  const allowed = new Set(policy.allow.filter((id) => !denied(id)));
+  const out = [];
+  if (policy.exceptions !== undefined && !Array.isArray(policy.exceptions))
+    out.push("the licence policy's `exceptions` is not a list");
+  const scopes = ["dev-only", "runtime", "tool", "mobile"];
+  const fields = new Set(["name", "licence", "reason", "scope", "versions"]);
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const text = (value) => typeof value === "string" && value.trim() !== "";
+  const exceptions = [];
+  for (const [index, exception] of (Array.isArray(policy.exceptions)
+    ? policy.exceptions
+    : []
+  ).entries()) {
+    const problems = [];
+    if (!exception || typeof exception !== "object" || Array.isArray(exception))
+      problems.push("is not an object");
+    else {
+      for (const key of Object.keys(exception))
+        if (!fields.has(key)) problems.push(`has an unknown field \`${key}\``);
+      for (const key of ["name", "licence", "reason"])
+        if (!text(exception[key])) problems.push(`has no \`${key}\``);
+      if (!scopes.includes(exception.scope))
+        problems.push(`has no \`scope\` of ${scopes.join(", ")}`);
+      if (
+        "versions" in exception &&
+        !(
+          Array.isArray(exception.versions) &&
+          exception.versions.length > 0 &&
+          exception.versions.every(text)
+        )
+      )
+        problems.push("has a `versions` that is not a list of versions");
+    }
+    const label = `licence exception ${index + 1}${text(exception?.name) ? ` (${exception.name})` : ""}`;
+    if (problems.length) out.push(`${label} ${problems.join("; ")}`);
+    else exceptions.push(exception);
+  }
   const entries = Object.entries(listing && typeof listing === "object" ? listing : {});
   if (!entries.some(([, packages]) => Array.isArray(packages) && packages.length))
-    return ["the licence listing names no package"];
-  const out = [];
+    return [...out, "the licence listing names no package"].toSorted();
   for (const [licence, packages] of entries)
     for (const pkg of Array.isArray(packages) ? packages : []) {
       const id = pkg.license ?? licence;
+      const versions = Array.isArray(pkg.versions) ? pkg.versions : [];
       if (spdxAllowed(id, allowed)) continue;
-      if (exceptions.some((e) => e.name === pkg.name && e.licence === id)) continue;
-      out.push(`${pkg.name}@${(pkg.versions ?? []).join(",")}: ${id}`);
+      const excepted = exceptions.some(
+        (e) =>
+          e.name === pkg.name &&
+          e.licence === id &&
+          (e.versions === undefined ||
+            (versions.length > 0 && versions.every((v) => e.versions.includes(v)))),
+      );
+      if (!excepted) out.push(`${pkg.name}@${versions.join(",")}: ${id}`);
     }
   return out.toSorted();
 }
 
-/** The licence check the gate runs (`node licence-check.mjs <policy> <listing>`): this file's two functions. */
+/**
+ * What the licence check reads from a pnpm-workspace.yaml: the `packages` globs, the default `catalog` and the named
+ * `catalogs` (as `catalogs.default` and `catalogs.<name>`, each `{ dependency: spec }`), and the `overrides`. A line
+ * reader for the block style pnpm writes (no flow collections, anchors or multi-line scalars); what it cannot read it
+ * leaves out, so a member it misses is never one it passes (exceptionScopeViolations fails on no `packages`).
+ * Self-contained: the licence check file is this function's own source.
+ */
+export function workspaceManifest(yamlText) {
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const map = () => Object.create(null);
+  const result = { packages: [], catalogs: map(), overrides: map() };
+  result.catalogs.default = map();
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const scalar = (raw) => {
+    const value = raw.trim();
+    const quoted = /^"((?:[^"\\]|\\.)*)"$|^'((?:[^']|'')*)'$/.exec(value);
+    if (!quoted) return value;
+    return quoted[1] === undefined
+      ? quoted[2].replaceAll("''", "'")
+      : quoted[1].replaceAll(/\\(.)/g, "$1");
+  };
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const uncomment = (line) => {
+    let quote = null;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (quote) {
+        if (c === quote) quote = null;
+      } else if (c === '"' || c === "'") quote = c;
+      else if (c === "#" && (i === 0 || /\s/.test(line[i - 1]))) return line.slice(0, i);
+    }
+    return line;
+  };
+  const pair = (body) => {
+    const m = /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^"'\s-][^:]*?)\s*:(?:\s+(.*))?$/.exec(body);
+    return m ? [scalar(m[1]), m[2] === undefined ? "" : scalar(m[2])] : null;
+  };
+  let section = null;
+  let catalog = null;
+  let catalogIndent = null;
+  for (const raw of String(yamlText ?? "").split(/\r?\n/)) {
+    const line = uncomment(raw).trimEnd();
+    if (line.trim() === "") continue;
+    const indent = line.length - line.trimStart().length;
+    const body = line.trimStart();
+    const item = /^-\s+(.+)$/.exec(body);
+    if (section === "packages" && item) {
+      result.packages.push(scalar(item[1]));
+      continue;
+    }
+    if (indent === 0) {
+      const top = pair(body);
+      section = top && top[1] === "" ? top[0] : null;
+      catalog = null;
+      catalogIndent = null;
+      continue;
+    }
+    const entry = pair(body);
+    if (!entry) continue;
+    if (section === "catalog" && entry[1] !== "") result.catalogs.default[entry[0]] = entry[1];
+    else if (section === "overrides" && entry[1] !== "") result.overrides[entry[0]] = entry[1];
+    else if (section === "catalogs") {
+      if (catalogIndent === null || indent <= catalogIndent) {
+        catalogIndent = indent;
+        catalog = entry[1] === "" ? entry[0] : null;
+        if (catalog !== null) result.catalogs[catalog] ??= map();
+      } else if (catalog !== null && entry[1] !== "") result.catalogs[catalog][entry[0]] = entry[1];
+    }
+  }
+  return result;
+}
+
+/**
+ * The workspace's members under `root`: the root itself (`.`) and every directory a `packages` glob matches that holds
+ * a package.json (a `!` glob takes directories out; node_modules never counts), each `{ dir, manifest }`, or
+ * `{ dir, unreadable }` when its package.json does not parse. Self-contained: the licence check file is this
+ * function's own source (it needs `globSync` and `readFileSync` from node:fs).
+ */
+export function workspaceMembers(root, patterns) {
+  const globs = Array.isArray(patterns) ? patterns.filter((p) => typeof p === "string") : [];
+  const excluded = new Set(
+    globs
+      .filter((p) => p.startsWith("!"))
+      .flatMap((p) => globSync(p.slice(1).replace(/\/+$/, ""), { cwd: root })),
+  );
+  const dirs = new Set(["."]);
+  for (const pattern of globs.filter((p) => !p.startsWith("!")))
+    for (const file of globSync(`${pattern.replace(/\/+$/, "")}/package.json`, { cwd: root })) {
+      const dir = file.slice(0, -"/package.json".length);
+      if (!dir.split("/").includes("node_modules") && !excluded.has(dir)) dirs.add(dir);
+    }
+  return [...dirs].toSorted().map((dir) => {
+    try {
+      return { dir, manifest: JSON.parse(readFileSync(`${root}/${dir}/package.json`, "utf8")) };
+    } catch (error) {
+      return { dir, unreadable: error.message };
+    }
+  });
+}
+
+/**
+ * Where the policy's scoped exceptions may sit in the workspace, as sorted lines: a `dev-only` package is never in a
+ * publishable member's (no `"private": true`) `dependencies`, `optionalDependencies` or non-optional
+ * `peerDependencies` (devDependencies and peers marked optional in `peerDependenciesMeta` are fine); a `mobile`
+ * package is a dependency of any kind of `mobileMembers` only (each `{ dir, name }`, both must match), and no override
+ * aliases it. A dependency counts under its real name: an `npm:<name>@…` alias, directly or through the `catalog:`
+ * entry it names. `workspace` is workspaceManifest's answer; `members` workspaceMembers'. No `packages`, no member or
+ * an unreadable manifest is itself a violation. Self-contained: the licence check file is this function's own source.
+ */
+export function exceptionScopeViolations(members, workspace, policy, mobileMembers) {
+  const exceptions = Array.isArray(policy?.exceptions)
+    ? policy.exceptions.filter((e) => e && typeof e === "object" && typeof e.name === "string")
+    : [];
+  const devOnly = new Set(exceptions.filter((e) => e.scope === "dev-only").map((e) => e.name));
+  const mobile = new Set(exceptions.filter((e) => e.scope === "mobile").map((e) => e.name));
+  const out = [];
+  if (!Array.isArray(workspace?.packages) || workspace.packages.length === 0)
+    out.push("pnpm-workspace.yaml names no `packages`");
+  if (!Array.isArray(members) || members.length === 0)
+    return [...out, "the workspace has no member"].toSorted();
+  const catalogs = workspace?.catalogs ?? {};
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const aliasOf = (spec) =>
+    /^npm:((?:@[^/\s]+\/)?[^@\s]+)(?:@.*)?$/.exec(typeof spec === "string" ? spec : "")?.[1];
+  const realName = (key, spec) => {
+    const fromCatalog = /^catalog:(.*)$/.exec(typeof spec === "string" ? spec : "");
+    const resolved = fromCatalog ? catalogs[fromCatalog[1].trim() || "default"]?.[key] : spec;
+    return aliasOf(resolved) ?? key;
+  };
+  const mobileDirs = mobileMembers.map((m) => m.dir).join(" and ");
+  const isMobile = (member) =>
+    mobileMembers.some((m) => m.dir === member.dir && m.name === member.manifest.name);
+  for (const member of members) {
+    if (!member?.manifest || typeof member.manifest !== "object") {
+      out.push(`${member?.dir}/package.json is unreadable: ${member?.unreadable ?? "no manifest"}`);
+      continue;
+    }
+    const manifest = member.manifest;
+    const where = `${member.dir} (${manifest.name ?? "unnamed"})`;
+    const publishable = manifest.private !== true;
+    for (const kind of [
+      "dependencies",
+      "optionalDependencies",
+      "peerDependencies",
+      "devDependencies",
+    ]) {
+      const deps = manifest[kind];
+      if (!deps || typeof deps !== "object") continue;
+      for (const [key, spec] of Object.entries(deps)) {
+        const name = realName(key, spec);
+        if (mobile.has(name) && !isMobile(member))
+          out.push(`${where}: ${name} (scope mobile) is in ${kind}; only ${mobileDirs} may use it`);
+        const optionalPeer =
+          kind === "peerDependencies" && manifest.peerDependenciesMeta?.[key]?.optional === true;
+        if (devOnly.has(name) && publishable && kind !== "devDependencies" && !optionalPeer)
+          out.push(
+            `${where}: ${name} (scope dev-only) is in ${kind === "peerDependencies" ? "non-optional peerDependencies" : kind} of a publishable package; only devDependencies or an optional peer`,
+          );
+      }
+    }
+  }
+  const rootManifest = members.find((m) => m?.dir === ".")?.manifest;
+  for (const [source, overrides] of [
+    ["pnpm-workspace.yaml overrides", workspace?.overrides],
+    ["package.json pnpm.overrides", rootManifest?.pnpm?.overrides],
+    ["package.json resolutions", rootManifest?.resolutions],
+  ])
+    for (const [key, spec] of Object.entries(
+      overrides && typeof overrides === "object" ? overrides : {},
+    ))
+      if (mobile.has(aliasOf(spec)))
+        out.push(
+          `${source}: ${key} is aliased to ${aliasOf(spec)} (scope mobile); only ${mobileDirs} may use it`,
+        );
+  return out.toSorted();
+}
+
+/**
+ * The licence check the gate runs (`node licence-check.mjs <policy> <listing> <workspace root>`): this file's
+ * spdxAllowed, licenceViolations, workspaceManifest, workspaceMembers and exceptionScopeViolations, with MOBILE_MEMBERS.
+ */
 export const licenceCheckSource = () =>
   [
     "// Generated by tools/scripts/stackra-verify.mjs (STA-2761): the licence policy step of stackra/verify.",
-    'import { readFileSync } from "node:fs";',
+    'import { globSync, readFileSync } from "node:fs";',
+    `const MOBILE_MEMBERS = ${JSON.stringify(MOBILE_MEMBERS)};`,
     spdxAllowed.toString(),
     licenceViolations.toString(),
+    workspaceManifest.toString(),
+    workspaceMembers.toString(),
+    exceptionScopeViolations.toString(),
     "const read = (path) => {",
     "  try {",
     '    return JSON.parse(readFileSync(path, "utf8"));',
@@ -590,17 +840,33 @@ export const licenceCheckSource = () =>
     "    return { unreadable: `${path}: ${error.message}` };",
     "  }",
     "};",
-    "const [policyPath, listingPath] = process.argv.slice(2);",
+    "const [policyPath, listingPath, root] = process.argv.slice(2);",
     "const policy = read(policyPath);",
     "const listing = read(listingPath);",
     "const problems = [policy, listing].filter((x) => x.unreadable).map((x) => x.unreadable);",
-    "if (!problems.length) problems.push(...licenceViolations(listing, policy));",
+    'if (!root) problems.push("no workspace root: licence-check <policy> <listing> <workspace root>");',
+    "let members = [];",
+    "if (!problems.length) {",
+    "  problems.push(...licenceViolations(listing, policy));",
+    "  let workspace = null;",
+    "  try {",
+    '    workspace = workspaceManifest(readFileSync(`${root}/pnpm-workspace.yaml`, "utf8"));',
+    "  } catch (error) {",
+    "    problems.push(`${root}/pnpm-workspace.yaml: ${error.message}`);",
+    "  }",
+    "  if (workspace) {",
+    "    members = workspaceMembers(root, workspace.packages);",
+    "    problems.push(...exceptionScopeViolations(members, workspace, policy, MOBILE_MEMBERS));",
+    "  }",
+    "}",
     "if (problems.length) {",
-    '  console.log(`licences not allowed by ${policyPath}:\\n${problems.map((p) => `  - ${p}`).join("\\n")}`);',
+    '  console.log(`licence policy ${policyPath} not met:\\n${problems.map((p) => `  - ${p}`).join("\\n")}`);',
     "  process.exit(1);",
     "}",
     "const count = Object.values(listing).reduce((n, list) => n + list.length, 0);",
-    "console.log(`${count} packages, every licence allowed by ${policyPath}`);",
+    "console.log(",
+    "  `${count} packages, every licence allowed by ${policyPath}; ${members.length} workspace members keep each exception in its scope`,",
+    ");",
     "",
   ].join("\n");
 
