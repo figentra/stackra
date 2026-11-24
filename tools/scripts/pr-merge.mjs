@@ -105,7 +105,7 @@ export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
  * and commitlint. A test derives that list from the installed knip's plugins and fails when a name is missing here.
  */
 export const VERIFY_OVERLAY =
-  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|(?:vite|tsdown|babel|metro|playwright|react-native|react-router|nuxt|app)\.config\.[cm]?[jt]s|\.babelrc(?:\.[cm]?[jt]s|\.json)?|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$|^.+\/pnpm-workspace\.ya?ml$/;
+  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|(?:vite|tsdown|babel|metro|playwright|react-native|react-router|nuxt|app|stackra)\.config\.[cm]?[jt]s|\.babelrc(?:\.[cm]?[jt]s|\.json)?|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$|^.+\/pnpm-workspace\.ya?ml$/;
 
 /**
  * The verify-definition directories whose every file is main's, new ones included (a new file there is removed from
@@ -221,6 +221,14 @@ export const DEFINITION_FIELDS = [
  */
 export const GATE_TOOL_BINS = Object.freeze({
   commitlint: "@commitlint/cli",
+  // The tools the stackra CLI starts for a member's task (resolveTool) or by path (duplication's jscpd), review L4.
+  expo: "expo",
+  jscpd: "jscpd",
+  mint: "mint",
+  playwright: "@playwright/test",
+  "react-router": "@react-router/dev",
+  vite: "vite",
+  wrangler: "wrangler",
   fflow: "@figentra-oss/flow",
   knip: "knip",
   oxfmt: "oxfmt",
@@ -240,6 +248,9 @@ export const GATE_TOOL_BINS = Object.freeze({
  */
 export const NOT_PACKAGE_COMMANDS = Object.freeze([
   "actionlint",
+  // downloaded by mise, started by the stackra CLI for a service or a mobile flow
+  "encore",
+  "maestro",
   "case",
   "do",
   "done",
