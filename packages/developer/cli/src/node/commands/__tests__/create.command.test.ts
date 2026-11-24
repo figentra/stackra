@@ -42,13 +42,14 @@ afterEach(() => {
 const argv = ["create", "app", "--starter", "starter", "--yes", "--no-doctor"];
 
 describe("CreateCommand", () => {
-  it("runs install, gen, type-check and tests as process steps and draws gen's files as a tree", async () => {
+  it("runs install, gen, the app's formatter, type-check and tests as process steps and draws gen's files as a tree", async () => {
     const process = new MemoryProcessRunnerDriver()
       .on("pnpm install")
       .on("pnpm exec stackra gen", {
         output:
           "wrote services/example/stackra.manifest.json\nwrote services/example/.stackra/gen/wiring.ts\n",
       })
+      .on("pnpm exec stackra code:fix")
       .on("pnpm run typecheck")
       .on("pnpm run test")
       .on("git init -q")
@@ -59,6 +60,7 @@ describe("CreateCommand", () => {
     expect(process.calls.map((call) => call.line)).toEqual([
       "pnpm install",
       "pnpm exec stackra gen",
+      "pnpm exec stackra code:fix",
       "pnpm run typecheck",
       "pnpm run test",
       "git init -q",
@@ -69,6 +71,40 @@ describe("CreateCommand", () => {
     expect(result.stdout).toContain("stackra gen wrote 2 files");
     expect(result.stdout).toContain("services/example");
     expect(result.stdout).toContain("the contract");
+  });
+
+  it("formats after gen even with --no-check, and stops when the formatter finds what it cannot fix", async () => {
+    const formatted = new MemoryProcessRunnerDriver()
+      .on("pnpm install")
+      .on("pnpm exec stackra gen")
+      .on("pnpm exec stackra code:fix")
+      .on("git init -q")
+      .on("git add -A")
+      .on("git commit -q -m chore: create the app with stackra create");
+    const ok = await runCommandForTest([CreateCommand], [...argv, "--no-check"], {
+      process: formatted,
+      cwd: root,
+    });
+    expect(ok.exitCode).toBe(0);
+    expect(formatted.calls.map((call) => call.line).slice(0, 3)).toEqual([
+      "pnpm install",
+      "pnpm exec stackra gen",
+      "pnpm exec stackra code:fix",
+    ]);
+    expect(formatted.calls.some((call) => call.line.startsWith("pnpm run "))).toBe(false);
+
+    const refused = new MemoryProcessRunnerDriver()
+      .on("pnpm install")
+      .on("pnpm exec stackra gen")
+      .on("pnpm exec stackra code:fix", { code: 1, output: "fix failed: 2 left\n" });
+    const another = ["create", "second", ...argv.slice(2)];
+    const stopped = await runCommandForTest([CreateCommand], another, {
+      process: refused,
+      cwd: root,
+    });
+    expect(stopped.exitCode).toBe(1);
+    expect(`${stopped.stdout}${stopped.stderr}`).toContain("fix failed: 2 left");
+    expect(refused.calls.some((call) => call.line === "pnpm run typecheck")).toBe(false);
   });
 
   it("stops at a failed step and shows the tail of its output", async () => {

@@ -221,6 +221,9 @@ export class CreateCommand extends Command({
       generated = [...wrote.output.matchAll(/^wrote (\S+)$/gm)].map((match) => match[1] ?? "");
       io.output.title(`stackra gen wrote ${generated.length} files`);
       io.output.tree(genTree(generated));
+      // The starter's rename rewrites names, which changes the width of table rows and the formatting of package.json:
+      // the app's own formatter puts what was written right, so a fresh app passes `stackra code:check`.
+      await io.output.task("Formatting", () => step(pm, ["exec", "stackra", "code:fix"]));
       if (this.check) {
         await io.output.task("Type-checking", () => step(pm, ["run", "typecheck"]));
         await io.output.task("Testing", () => step(pm, ["run", "test"]));
