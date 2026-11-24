@@ -1,10 +1,10 @@
 # Feature Specification: playground: regenerate the committed manifest and OpenAPI document after the API-area prefix
 
-**Feature Branch**: `stackra/l7/playground-manifest-regen`
+**Feature Branch**: `figentra/sta-2036-playground-manifest-regen`
 
 **Created**: 2026-11-24
 
-**Status**: Planned
+**Status**: Implementing
 
 **Tier**: feature
 
@@ -23,7 +23,7 @@ playground's was not. Its wiring section and its route list also changed since t
 
 The Linear key is STA-2036, the issue behind "committed manifests match gen" (the CI step of that name, and the earlier
 regenerations #560, #562 and #580). It was chosen from that history by lane L7, which has no Linear access to open a new
-issue: the leader confirms it or renames this folder.
+issue; the leader confirmed STA-2036 on 2026-11-24.
 
 ### Sources
 
@@ -65,4 +65,6 @@ issue: the leader confirms it or renames this folder.
 ## Status history
 
 - 2026-11-24 → Clarified (X5: both files stale against gen since the area prefix landed)
-- 2026-11-24 → Planned (plan.md): approval requested from the leader; not yet given
+- 2026-11-24 → Planned (plan.md): Approved by leader (Tarek · Stackra Lead) 2026-11-24
+- 2026-11-24 → Tasked (tasks.md)
+- 2026-11-24 → Implementing (T001 to T003 done; the evidence is in the commit that set this status)
