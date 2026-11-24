@@ -319,4 +319,28 @@ describe(SandboxPool, () => {
     ).rejects.toBeInstanceOf(TypeError);
     expect(() => pool.open({ ...OPTIONS, size: 0 })).toThrow(RangeError);
   });
+
+  it("refuses to open twice, with a negative or non-numeric grace, or with a start-up deadline of zero or less", () => {
+    expect(() => poolOf().open(OPTIONS)).toThrow("The sandbox pool is already open");
+    const closed = new SandboxPool(new EchoProxy());
+    expect(() => closed.open({ ...OPTIONS, graceMs: -1 })).toThrow(/grace is zero or more/);
+    expect(() => closed.open({ ...OPTIONS, graceMs: Number.NaN })).toThrow(RangeError);
+    expect(() => closed.open({ ...OPTIONS, startupMs: 0 })).toThrow(/more than 0 milliseconds/);
+    expect(() => closed.open({ ...OPTIONS, startupMs: -5 })).toThrow(RangeError);
+  });
+
+  it("refuses the runs still queued when it closes", async () => {
+    const pool = poolOf(new EchoProxy(), NEVER_READY);
+    const request = { code: "return 1;", input: null, limits: LIMITS, allowedOrigins: [] };
+    // One process: the first run holds it, the second waits in the queue behind it.
+    const first = pool.run({ ...request, reference: "first" }).catch((error: unknown) => error);
+    const second = pool.run({ ...request, reference: "second" });
+    const refusal = expect(second).rejects.toThrow("The sandbox pool closed");
+    await pool.close();
+    await refusal;
+    expect(await first).toBeInstanceOf(Error);
+    await expect(pool.run({ ...request, reference: "third" })).rejects.toThrow(
+      "The sandbox pool is not open",
+    );
+  }, 20_000);
 });
