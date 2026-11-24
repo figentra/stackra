@@ -24,6 +24,7 @@ import {
   isVerifyDefinition,
   isVerifyOverlay,
   isRootDefinition,
+  SHARED_STEP_LOADERS,
   isGateToolPackage,
   GATE_TOOL_BINS,
   GATE_TOOL_PACKAGES,
@@ -797,4 +798,31 @@ test("condition 6: devEngines, the Flow install and a nested pnpm-workspace.yaml
   }
   assert.equal(isVerifyOverlay("pnpm-workspace.yaml"), false);
   assert.equal(VERIFY_OVERLAY_DIRS.test(".flow/new.json"), true);
+});
+
+test("condition 6 (round 5, C1): knip's config modules are main's; the members validate loads need risk:R3", () => {
+  for (const name of [
+    "vite.config.ts",
+    "tsdown.config.mts",
+    "babel.config.js",
+    ".babelrc.cjs",
+    "metro.config.js",
+    "app.config.ts",
+    "playwright.config.ts",
+    "react-native.config.js",
+    "react-router.config.ts",
+    "nuxt.config.mjs",
+  ])
+    for (const dir of ["", "packages/a/"]) {
+      assert.equal(isVerifyOverlay(`${dir}${name}`), true, `${dir}${name}`);
+      assert.equal(SHARED_STEP_LOADERS.test(`${dir}${name}`), true, `${dir}${name}`);
+    }
+  for (const path of [
+    "packages/developer/runway/src/x.ts",
+    "packages/developer/repo-checks/src/x.ts",
+    "packages/developer/skills/src/contracts.ts",
+  ])
+    assert.equal(isVerifyDefinition(path), true, path);
+  assert.equal(SHARED_STEP_LOADERS.test("packages/a/src/index.ts"), false);
+  assert.equal(SHARED_STEP_LOADERS.test("packages/a/.storybook/main.ts"), true);
 });

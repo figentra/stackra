@@ -99,9 +99,13 @@ export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
  * them never runs: the tested tree takes main's copy, and buildTree removes one main does not have. Also main's: the
  * Flow install under `.flow/` (its lock and override rules drive `fflow gate ci`, review LOW-4), and a
  * pnpm-workspace.yaml anywhere below the root (pnpm 12 reads settings such as `scriptShell` from it, review HIGH-2).
+ * And every config module knip 6.41.0 executes for this repository's dependencies (review of #1043, round 5, C1:
+ * its plugins load them with jiti in the one repo-wide knip process): babel, expo (`app.config.*`), metro,
+ * playwright, react-native, react-router, tsdown, vite (and vite-plugin-pwa's `nuxt.config.*`), vitest, oxlint, oxfmt
+ * and commitlint. A test derives that list from the installed knip's plugins and fails when a name is missing here.
  */
 export const VERIFY_OVERLAY =
-  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$|^.+\/pnpm-workspace\.ya?ml$/;
+  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|(?:vite|tsdown|babel|metro|playwright|react-native|react-router|nuxt|app)\.config\.[cm]?[jt]s|\.babelrc(?:\.[cm]?[jt]s|\.json)?|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$|^.+\/pnpm-workspace\.ya?ml$/;
 
 /**
  * The verify-definition directories whose every file is main's, new ones included (a new file there is removed from
@@ -132,13 +136,39 @@ export const isRootDefinition = (path) =>
   !path.includes("/") && !ROOT_INERT.test(path) && !ROOT_TESTED.includes(path);
 
 /**
+ * The config modules a repo-wide (shared-process) gate step may execute from any directory: every executable config
+ * name of every knip plugin (knip runs once at the root and loads each workspace's configs with jiti, so a PR that adds
+ * a dependency can enable a plugin this repository does not use yet) and oxfmt's nested `oxfmt.config.{ts,mts}`. For
+ * the shared steps (SHARED_STEPS), a file matching this that is not main's copy is set aside (or main's copy laid in)
+ * while the step runs (CTO ruling, round 5, C1). A test derives every name from the installed knip and fails when one
+ * does not match.
+ */
+export const SHARED_STEP_LOADERS = new RegExp(
+  [
+    "(?:^|/)(?:",
+    [
+      "(?:[\\w.@*-]*[.-])?config(?:[.-][\\w*-]+)?",
+      "\\.[\\w.-]*rc",
+      "\\.?[\\w*.-]*\\.conf",
+      "\\.?(?:cucumber|esbuild|gatsby-node|codegen|knexfile|nano-staged|serverless|release-it|simple-git-hooks)",
+      "\\.?(?:typedoc|dependency-cruiser|eleventy|markdownlint(?:-cli2)?|stryker\\.conf(?:ig)?)",
+      "(?:rsbuild|rslib)[\\w*.-]*\\.config|rspack\\.config[\\w*.-]*|vitest\\.(?:workspace|projects)",
+      "\\.(?:rn)?storybook/(?:main|test-runner)|spec/support/jasmine|\\.railway/railway|\\.config/[\\w.-]+",
+    ].join("|"),
+    ")\\.[cm]?[jt]sx?$",
+  ].join(""),
+);
+
+/**
  * Files a PR legitimately changes that still change what `pnpm verify` checks: the workspace (catalogs, overrides,
  * allowed builds), the TypeScript projects and the CLI the repository checks run, and `runway.yaml`, which decides
- * where things deploy (CTO ruling, round 4). The service runs the PR's copy, so
+ * where things deploy (CTO ruling, round 4). The members whose built code the shared validate and env-names steps
+ * load into one repo-wide process are here too (round 5, C1): the CLI and the repo-checks, runway and skills
+ * (its contracts) members under packages/developer. The service runs the PR's copy, so
  * a change to them needs the owner's review (condition 6), like a change to VERIFY_OVERLAY.
  */
 export const VERIFY_SENSITIVE =
-  /^runway\.yaml$|(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vite\.config\.[cm]?[jt]s|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^(?:packages\/developer\/cli|patches)\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
+  /^runway\.yaml$|(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^(?:packages\/developer\/(?:cli|repo-checks|runway|skills)|patches)\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
 
 /**
  * How long a stackra/verify success against an older main counts (CTO ruling M3): long enough to enter the merge
