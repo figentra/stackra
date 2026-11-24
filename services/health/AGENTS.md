@@ -6,6 +6,9 @@ the entry, the wiring and the Encore app into `.stackra/`; nobody writes `main.t
 ## Rules that fail the build
 
 - No Encore file or import, no `main.ts`, no tool config: gen writes them into `.stackra/`.
+- No `"sideEffects": false` in `package.json`. The generated Encore files import `./database` for its side effect
+  (`provideDatabaseUrl`), and a bundler that honours the flag drops that import: the app then fails at boot with "no
+  database url was provided". A service is an application, not a tree-shaken library.
 - Never import another service; use its generated client or its events.
 - `/healthz` calls no dependency (it must not fail because one is down). `/readyz` answers a status per check and never a
   check's detail: no host, no error message, no row.
