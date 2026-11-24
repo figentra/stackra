@@ -4,10 +4,10 @@
   "preset": {
     "name": "./packages/developer/flow-preset/preset",
     "version": "0.11.0",
-    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
+    "digest": "sha256:5b387864a56b70d2a2e4e92fd30c76a7a6abe294ca3db8f26f69a4a76545816a"
   },
   "profile": "framework",
-  "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
+  "overrides": "sha256:01da256dd4ae3b35d641f4601db6d065f1e3347b64ba4af1462f61f05b5d79ed",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:e9bd4919bafea5d6e8ce7dd7d88a47d8ff841bd48d19ccbad8756ecea302d973",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:a21f86c0761479111b99ec88802b44a06c7a0bcab44a9344fb41c109c197bb35",
@@ -119,7 +119,7 @@
     ".mcp.yaml": "sha256:3b9cd6e6f147b2037a293f4b7ef168ff02f5e2eb3293e5c50786dba161660a0f",
     "AGENTS.md": "sha256:dab4cf454062d629d97175371c2c1d40a21800cb60dd4df29881bad305b97017",
     "CLAUDE.md": "sha256:1bb66f4650b13073d4dab49176c59479864a28274e4c6fb4a7902500a3c21dfc",
-    "lefthook.yml": "sha256:56d729654d9993aebf75d7b7bedf829cbdd138ae121d08f3d30bcbdba9459c6b",
+    "lefthook.yml": "sha256:531c824ca1478e67c545533ffbc05af73a38cb70dd31fd501214d14b4a06f127",
     "README.md": "sha256:ece6c89119dd00daebdee62a167cc671d059619c2b359c9a951729e935c9a102",
     ".github/workflows/fflow-baseline.yml": "sha256:21164d6f6eab0ac0f1cc25be52daa83a69f5f1765339a16b02d71835cdc6f3f4",
     ".github/workflows/fflow-approve.yml": "sha256:ac6cf910062f6c1eb83d64bd1e1a7ee43685245f13edd9f30eed425401e68048",
