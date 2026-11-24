@@ -8,7 +8,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { auth, client, digest, linear, main, prCarriesKey } from "../linear.mjs";
+import { readFileSync } from "node:fs";
+import { auth, BRANCH_RE, client, digest, KEY_RE, linear, main, prCarriesKey } from "../linear.mjs";
 import { adrStatuses, apply, plan, prKeys } from "../linear-reconcile.mjs";
 
 const SECRET = "lin_api_SECRETVALUE";
@@ -236,6 +237,125 @@ test("check-pr: key in title or branch, or an exempt lane", () => {
   assert.ok(prCarriesKey({ title: "chore", branch: "renovate/foo" }).ok);
   assert.ok(prCarriesKey({ title: "chore", branch: "x", labels: ["chore-lane"] }).ok);
   assert.ok(!prCarriesKey({ title: "feat: x", branch: "feature/x" }).ok);
+});
+
+test("check-pr: a lane branch stackra/l<n>/<slug> passes when the PR title carries an STA key", () => {
+  for (const branch of [
+    "stackra/l6/verify",
+    "stackra/l7/bench-dry-run-verify",
+    "stackra/l12/x1-fix",
+  ]) {
+    const ok = prCarriesKey({ title: "fix(release): publish in order (STA-2777)", branch });
+    assert.ok(ok.ok, branch);
+    assert.match(ok.why, /lane branch/);
+  }
+  assert.ok(prCarriesKey({ title: "STA-2777 publish in order", branch: "stackra/l6/x" }).ok);
+});
+
+test("check-pr: a lane branch without a key in the title is refused, and a key only in the slug does not count", () => {
+  const none = prCarriesKey({ title: "fix(release): publish in order", branch: "stackra/l6/x" });
+  assert.ok(!none.ok);
+  assert.match(none.why, /needs an STA-n key in the PR title/);
+  assert.ok(!prCarriesKey({ title: "fix: x", branch: "stackra/l6/sta-2777-x" }).ok);
+});
+
+test("check-pr: the chore-lane label and bot branches still pass a lane or other branch without a key", () => {
+  assert.ok(prCarriesKey({ title: "fix: x", branch: "stackra/l6/x", labels: ["chore-lane"] }).ok);
+  assert.ok(prCarriesKey({ title: "chore: x", branch: "renovate/foo" }).ok);
+  assert.ok(prCarriesKey({ title: "chore: x", branch: "changeset-release/main" }).ok);
+});
+
+test("check-pr: only well-formed lane branches are lane branches", () => {
+  for (const branch of [
+    "stackra/l6",
+    "stackra/l6/",
+    "stackra/lx/y",
+    "stackra/l6/Y",
+    "stackra/l6/a_b",
+    "stackra/l6/a/b",
+    "stackra/L6/y",
+    "stackra//y",
+    "other/l6/y",
+    "xstackra/l6/y",
+    "stackra/l6/y ",
+  ]) {
+    const result = prCarriesKey({ title: "fix: x (STA-1)", branch });
+    assert.ok(!result.ok, branch);
+    assert.match(result.why, /stackra\/l<n>\/<slug>/, branch);
+  }
+});
+
+test("check-pr: the Linear-named branches keep their rules (title or branch key)", () => {
+  assert.ok(prCarriesKey({ title: "feat: x", branch: "figentra/sta-42-y" }).ok);
+  assert.ok(prCarriesKey({ title: "feat: x (STA-42)", branch: "delegate/sta-42-y" }).ok);
+  assert.ok(!prCarriesKey({ title: "STA-42", branch: "claude/sta-42-y" }).ok);
+});
+
+/** The `prCarriesKey` source and the two constants it reads, as text, from a module's source. */
+function carriesKeySource(source) {
+  const fn = /export function prCarriesKey[\s\S]*?\n}\n/.exec(source)?.[0];
+  const key = /const KEY_RE = .*;/.exec(source)?.[0];
+  const branch = /const BRANCH_RE = .*;/.exec(source)?.[0];
+  assert.ok(fn && key && branch, "prCarriesKey or the constants it reads are not in that source");
+  return { fn: fn.replace("export function", "function"), key, branch };
+}
+
+/** The sources a fflow guard bundle embeds, by path: the template literals of its FILES table, evaluated. */
+function bundleSources(bundle) {
+  const sources = new Map();
+  for (const entry of bundle.matchAll(/^ {2}"(src\/[^"]+)": `/gm)) {
+    let end = entry.index + entry[0].length;
+    for (; bundle[end] !== "`"; end += bundle[end] === "\\" ? 2 : 1);
+    const literal = bundle.slice(entry.index + entry[0].length, end);
+    sources.set(entry[1], new Function(`return \`${literal}\`;`)());
+  }
+  return sources;
+}
+
+/** `prCarriesKey` built from a module's source text. */
+function buildCarriesKey(source) {
+  const { fn, key, branch } = carriesKeySource(source);
+  return new Function(
+    `${key}\n${branch}\nconst LANE_BRANCH_RE = /^stackra\\/l\\d+\\/[a-z0-9]+(?:-[a-z0-9]+)*$/;\n${fn}\nreturn prCarriesKey;`,
+  )();
+}
+
+test("check-pr: the guard bundle's copy of prCarriesKey is Flow's, and agrees with core's on every case but the lane rule", () => {
+  const bundle = readFileSync(".agents/hooks/fflow-guard.mjs", "utf8");
+  const embedded = [...bundleSources(bundle)].find(([, source]) =>
+    source.includes("function prCarriesKey"),
+  );
+  assert.ok(embedded, "the guard bundle no longer embeds prCarriesKey");
+  const theirs = buildCarriesKey(embedded[1]);
+  const ours = buildCarriesKey(readFileSync("tools/scripts/linear.mjs", "utf8"));
+  // The constants the copies read are the same text, so the table below compares the rules and nothing else.
+  assert.equal(carriesKeySource(embedded[1]).key, `const KEY_RE = ${KEY_RE};`);
+  assert.equal(carriesKeySource(embedded[1]).branch, `const BRANCH_RE = ${BRANCH_RE};`);
+  const shared = [
+    { title: "feat: x", branch: "figentra/sta-42-y" },
+    { title: "fix(x): y", branch: "delegate/sta-3-fix-y" },
+    { title: "fix(x): y (STA-3)", branch: "z" },
+    { title: "STA-3", branch: "claude/sta-3-y" },
+    { title: "STA-3", branch: "figentra/STA-3-Y" },
+    { title: "chore", branch: "renovate/foo" },
+    { title: "chore", branch: "changeset-release/main" },
+    { title: "chore", branch: "x", labels: ["chore-lane"] },
+    { title: "feat: x", branch: "feature/x" },
+    { title: "feat: x", branch: "figentra/sta-42-y", labels: [] },
+  ];
+  for (const pr of shared) assert.deepEqual(ours(pr).ok, theirs(pr).ok, JSON.stringify(pr));
+  // The lane rule is core's alone until a Flow release carries it: the bundle is generated from @figentra-oss/flow by
+  // `fflow sync` with its bytes locked, so it cannot be edited here. When Flow accepts a keyed lane branch this fails:
+  // move the lane cases into `shared` above and delete this block.
+  for (const branch of ["stackra/l6/verify", "stackra/l7/bench-dry-run-verify"]) {
+    const pr = { title: "fix: x (STA-1)", branch };
+    assert.equal(ours(pr).ok, true, branch);
+    assert.equal(
+      theirs(pr).ok,
+      false,
+      "Flow's guard now accepts lane branches: promote the lane cases into the shared table",
+    );
+  }
 });
 
 test("prKeys: branch, Refs and Fixes/Closes close; title, Part of and Linear only mention", () => {
