@@ -64,6 +64,11 @@ import { createHash } from "node:crypto";
 import {
   appendFileSync,
   chmodSync,
+  closeSync,
+  createWriteStream,
+  openSync,
+  readSync,
+  renameSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -74,10 +79,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { hostname } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import * as botNetwork from "./bot-token.mjs";
-import { gh, isVerifyOverlay, VERIFY_APP, VERIFY_CHECK } from "./pr-merge.mjs";
+import { gh, isVerifyOverlay, VERIFY_APP, VERIFY_CHECK, VERIFY_MOBILE_CHECK } from "./pr-merge.mjs";
 
 export const DEFAULT_REPO = "figentra/stackra";
 export const INSTALL_COMMAND =
@@ -587,7 +594,216 @@ export function stepSections(log) {
   return sections;
 }
 
-export const VERIFY_COMMAND = "pnpm verify";
+/**
+ * What one run checks, each posted as its own check run on the head SHA by the same App with the same `external_id`
+ * scheme: `gate` is `stackra/verify` (required; the Quality Gate without the two Uniwind Pro members), `mobile` is
+ * `stackra/verify-mobile` (never required; those two members, on the licensed path). A mobile or licence failure
+ * fails `stackra/verify-mobile` only.
+ */
+export const KINDS = Object.freeze({
+  gate: {
+    check: VERIFY_CHECK,
+    label: "Quality Gate",
+    script: "gate.sh",
+    install: "gate",
+    describe:
+      "ci.yml's dependency-scan and Quality Gate jobs, then the licence policy and the tests",
+  },
+  mobile: {
+    check: VERIFY_MOBILE_CHECK,
+    label: "Mobile apps (Uniwind Pro)",
+    script: "mobile.sh",
+    install: "full",
+    describe: "ci.yml's mobile job: lint, typecheck and build of the two Uniwind Pro members",
+  },
+});
+/** The command the verify container runs for a kind: its generated script, mounted read-only. */
+export const kindCommand = (kind) => `bash ${IN_DIR}/${KINDS[kind].script}`;
+export const VERIFY_COMMAND = kindCommand("gate");
+
+/**
+ * The read-only inputs a kind's verify container gets besides the archive: the gate its script, the licence check,
+ * the PR facts, the history bundle and the offline OSV database; mobile its script. Each `[host path, container path]`.
+ */
+export function kindMounts(kind, { runDir, osvDir }) {
+  const file = (name) => [join(runDir, name), `${IN_DIR}/${name}`];
+  if (kind === "gate")
+    return [
+      file("gate.sh"),
+      file("licence-check.mjs"),
+      file("facts.json"),
+      file("history.bundle"),
+      [osvDir, OSV_MOUNT],
+    ];
+  if (kind === "mobile") return [file("mobile.sh")];
+  throw new Error(`not a verify kind: ${kind}`);
+}
+
+/** The files a kind's run writes for its mounts (the facts and the bundle come from GitHub and the mirror). */
+export function kindFiles(kind) {
+  if (kind === "gate")
+    return { "gate.sh": gateScript(), "licence-check.mjs": licenceCheckSource() };
+  if (kind === "mobile") return { "mobile.sh": mobileScript() };
+  throw new Error(`not a verify kind: ${kind}`);
+}
+
+/**
+ * The PR facts the gate's Linear check and validate step read, from GitHub's pull request (the daemon's own API call,
+ * never the PR tree); a job without a PR (main, a merge-queue commit) is a push.
+ */
+export const prFacts = (job, pull) =>
+  pull
+    ? {
+        event: "pull_request",
+        title: String(pull.title ?? ""),
+        branch: String(pull.head?.ref ?? ""),
+        labels: (pull.labels ?? []).map((l) => String(l.name)),
+        draft: pull.draft === true,
+        base: job.base,
+        head: job.sha,
+      }
+    : {
+        event: "push",
+        title: "",
+        branch: "",
+        labels: [],
+        draft: false,
+        base: job.base,
+        head: job.sha,
+      };
+
+/**
+ * The gate's tools, as main's mise.toml pins them (shellcheck, which actionlint runs on every `run:`, as box 1's mise
+ * has it), baked into the store image. Each download is checked against its sha256 setting (TOOL_SHA_SETTING; main
+ * has no mise.lock, so the owner sets them from each release's published checksums) before Docker sees it.
+ */
+export const TOOLS = Object.freeze([
+  {
+    name: "actionlint",
+    version: "1.7.12",
+    url: "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz",
+    member: "actionlint",
+    check: "actionlint -version",
+  },
+  {
+    name: "zizmor",
+    version: "1.31.1",
+    url: "https://github.com/zizmorcore/zizmor/releases/download/v1.31.1/zizmor-x86_64-unknown-linux-gnu.tar.gz",
+    member: "zizmor",
+    check: "zizmor --version",
+  },
+  {
+    name: "osv-scanner",
+    version: "2.7.0",
+    url: "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64",
+    check: "osv-scanner --version",
+  },
+  {
+    name: "gitleaks",
+    version: "8.30.1",
+    url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz",
+    member: "gitleaks",
+    check: "gitleaks version",
+  },
+  {
+    name: "shfmt",
+    version: "3.14.1",
+    url: "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_amd64",
+    check: "shfmt --version",
+  },
+  {
+    name: "squawk",
+    version: "2.71.0",
+    url: "https://github.com/sbdchd/squawk/releases/download/v2.71.0/squawk-linux-x64",
+    check: "squawk --version",
+  },
+  {
+    name: "shellcheck",
+    version: "0.11.0",
+    url: "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz",
+    member: "shellcheck-v0.11.0/shellcheck",
+    check: "shellcheck --version",
+  },
+]);
+/** The setting that holds a tool's sha256: STACKRA_VERIFY_SHA256_<NAME>. */
+export const toolShaSetting = (tool) =>
+  `STACKRA_VERIFY_SHA256_${tool.name.toUpperCase().replaceAll("-", "_")}`;
+/** The tool's file in the store image's build context. */
+export const toolFile = (tool) =>
+  `${tool.name}-${tool.version}${/\.tar\.(?:gz|xz)$/.exec(tool.url)?.[0] ?? ""}`;
+const SHA256 = /^[0-9a-f]{64}$/;
+
+/** The store build's tool step (a bind mount, so no layer holds the downloads): unpack, install, prove each runs. */
+export function toolInstallScript(tools = TOOLS) {
+  const lines = ["set -e", "mkdir -p /opt/stackra-verify/bin /tmp/stackra-tools"];
+  for (const tool of tools) {
+    const file = `/tools/${toolFile(tool)}`;
+    if (tool.member)
+      lines.push(
+        `tar -xf ${file} -C /tmp/stackra-tools ${tool.member}`,
+        `install -m 0755 /tmp/stackra-tools/${tool.member} /opt/stackra-verify/bin/${tool.name}`,
+      );
+    else lines.push(`install -m 0755 ${file} /opt/stackra-verify/bin/${tool.name}`);
+  }
+  lines.push(
+    "rm -rf /tmp/stackra-tools",
+    'PATH="/opt/stackra-verify/bin:$PATH"',
+    ...tools.map((t) => t.check),
+    "",
+  );
+  return lines.join("\n");
+}
+
+/**
+ * Streams `url` to `dest`, checking its sha256 on the way (`sha256` null: no published checksum, the caller checks the
+ * content); a mismatch leaves no file. `fetcher` is fetch (a test passes a fake).
+ */
+export async function downloadVerified(url, sha256, dest, fetcher = fetch) {
+  const response = await fetcher(url, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(30 * 60_000),
+  });
+  if (!response.ok || !response.body) throw new Error(`download ${url}: HTTP ${response.status}`);
+  const hash = createHash("sha256");
+  const part = `${dest}.part`;
+  await pipeline(
+    Readable.fromWeb(response.body),
+    async function* hashed(source) {
+      for await (const chunk of source) {
+        hash.update(chunk);
+        yield chunk;
+      }
+    },
+    createWriteStream(part, { mode: 0o644 }),
+  );
+  const got = hash.digest("hex");
+  if (sha256 && got !== sha256) {
+    rmSync(part, { force: true });
+    throw new Error(`${url}: sha256 is ${got}, the setting says ${sha256}`);
+  }
+  renameSync(part, dest);
+  return got;
+}
+
+/** The OSV npm database osv-scanner reads offline (`<cache>/osv-scalibr/npm/all.zip`, as osv-scanner 2.7.0 lays it). */
+export const OSV_DB_URL = "https://osv-vulnerabilities.storage.googleapis.com/npm/all.zip";
+export const osvDbPath = (dir) => join(dir, "osv-scalibr", "npm", "all.zip");
+/** The daemon refreshes the database when it is older than this; STACKRA_VERIFY_OSV_MAX_AGE_H refuses a run. */
+export const OSV_REFRESH_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Why the offline OSV database may not be used (missing, from the future, or older than `maxAgeMs`), or null. A run
+ * without a fresh database is a service error (retried, then `neutral`), never a green dependency scan.
+ */
+export function osvDbProblem(mtimeMs, now, maxAgeMs) {
+  if (mtimeMs === null || mtimeMs === undefined) return "the offline OSV database is missing";
+  const age = now - mtimeMs;
+  if (!Number.isFinite(age) || age < 0) return "the offline OSV database is dated in the future";
+  if (age > maxAgeMs)
+    return `the offline OSV database is ${Math.floor(age / 3_600_000)} h old (at most ${Math.round(maxAgeMs / 3_600_000)} h)`;
+  return null;
+}
+
 /** The uid:gid PR code runs as inside every container (the base image's unprivileged user), never root. */
 export const CONTAINER_USER = "1000:1000";
 /**
@@ -616,6 +832,8 @@ export const LOCK_HELD_EXIT = 75;
 const REPO_PART = /^(?!\.+$)[\w.-]+$/;
 const validRepo = (r) => r.split("/").length === 2 && r.split("/").every((p) => REPO_PART.test(p));
 const DIGEST_PINNED = /^[\w./:-]+@sha256:[0-9a-f]{64}$/;
+/** A cpuset list for `docker --cpuset-cpus`: CPU numbers and ranges, comma-separated. */
+const CPUSET = /^\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$/;
 
 // ---- arguments and settings ---------------------------------------------------------------------------------
 
@@ -667,6 +885,13 @@ export function settings(env = process.env) {
     keyFile: env.STACKRA_VERIFY_KEY_FILE || null,
     dockerRoot: env.STACKRA_VERIFY_DOCKER_ROOT || null,
     licenceFile: env.STACKRA_VERIFY_LICENCE_FILE || null,
+    cpuset: env.STACKRA_VERIFY_CPUSET || null,
+    toolSha256: Object.fromEntries(
+      TOOLS.map((tool) => [tool.name, env[toolShaSetting(tool)]?.trim().toLowerCase() || null]),
+    ),
+    osvDir:
+      env.STACKRA_VERIFY_OSV_DIR || join(env.STACKRA_VERIFY_HOME ?? "/work/stackra/verify", "osv"),
+    osvMaxAgeMs: Number(env.STACKRA_VERIFY_OSV_MAX_AGE_H ?? 24) * 3_600_000,
     registries: (env.STACKRA_VERIFY_REGISTRIES?.split(",").filter(Boolean) ?? REGISTRY_HOSTS).map(
       (h) => h.trim(),
     ),
@@ -698,7 +923,21 @@ export function hostProblems(s, keyMode, licenceMode = 0o400) {
     problems.push(
       `STACKRA_VERIFY_APP_ID differs from VERIFY_APP.id (${VERIFY_APP.id}) in pr-merge.mjs`,
     );
+  for (const tool of TOOLS)
+    if (!SHA256.test(s.toolSha256?.[tool.name] ?? ""))
+      problems.push(
+        `${toolShaSetting(tool)} must be the sha256 (64 hex) of ${tool.url}, from the release's published checksums`,
+      );
+  if (!/^\d+(?:\.\d+)?$/.test(String(s.cpus)) || !(Number(s.cpus) > 0))
+    problems.push(
+      `STACKRA_VERIFY_CPUS is "${s.cpus}": it must be a positive number of CPUs such as 8 (docker --cpus); a CPU list such as 0-7 goes in STACKRA_VERIFY_CPUSET`,
+    );
+  if (s.cpuset && !CPUSET.test(s.cpuset))
+    problems.push(
+      `STACKRA_VERIFY_CPUSET is "${s.cpuset}": it must be a CPU list such as 0-7 or 0,2-4 (docker --cpuset-cpus)`,
+    );
   for (const [name, value] of [
+    ["STACKRA_VERIFY_OSV_MAX_AGE_H", s.osvMaxAgeMs],
     ["STACKRA_VERIFY_PIDS", s.pids],
     ["STACKRA_VERIFY_TIMEOUT_MIN", s.timeoutMs],
     ["STACKRA_VERIFY_MIN_FREE_GB", s.minFreeBytes],
@@ -738,6 +977,7 @@ export const CONTAINER_ENV =
 export const containerLimits = (s, envFile) => [
   "--cpus",
   s.cpus,
+  ...(s.cpuset ? ["--cpuset-cpus", s.cpuset] : []),
   "--memory",
   s.memory,
   "--memory-swap",
@@ -762,7 +1002,10 @@ export const containerLimits = (s, envFile) => [
  * The install container: the archived SHA (read-only) unpacked into /work, then `pnpm install` against the warm
  * store in the image. It has network for the registries and nothing secret.
  */
-export const installArgs = (s, { name, image, tarPath, envFile, network, builds = [] }) => [
+export const installArgs = (
+  s,
+  { name, image, tarPath, envFile, network, builds = [], licensed = LICENSED_BUILDS, filters = [] },
+) => [
   "run",
   "--name",
   name,
@@ -777,7 +1020,7 @@ export const installArgs = (s, { name, image, tarPath, envFile, network, builds 
   image,
   "sh",
   "-c",
-  `set -e; tar -xf /in/src.tar -C /work; cd /work; ${installCommand(builds)}`,
+  `set -e; tar -xf /in/src.tar -C /work; cd /work; ${installCommand(builds, licensed, filters)}`,
 ];
 
 /** The hosts the install's proxy lets through, on port 443 only: the package registries. */
@@ -926,8 +1169,14 @@ export const probeArgs = (s, { name, image, envFile, targets, network, proxy = n
   probeScript(targets, proxy),
 ];
 
-/** The verify container: the committed install, the tree unpacked again (read-only archive), no network. */
-export const verifyArgs = (s, { name, image, envFile, tarPath }) => [
+/**
+ * The verify container: the committed install, the tree unpacked again (read-only archive) by `prepare`, the kind's
+ * other inputs as read-only `mounts` ([host, container] pairs), no network, then `command`.
+ */
+export const verifyArgs = (
+  s,
+  { name, image, envFile, tarPath, mounts = [], command = VERIFY_COMMAND, prepare = gatePrepare() },
+) => [
   "run",
   "--name",
   name,
@@ -935,18 +1184,23 @@ export const verifyArgs = (s, { name, image, envFile, tarPath }) => [
   "none",
   ...containerLimits(s, envFile),
   "--volume",
-  `${tarPath}:/in/src.tar:ro`,
+  `${tarPath}:${IN_DIR}/src.tar:ro`,
+  ...mounts.flatMap(([host, container]) => ["--volume", `${host}:${container}:ro`]),
   "--workdir",
   "/work",
   image,
   "sh",
   "-c",
-  `${VERIFY_PREPARE}; ${VERIFY_COMMAND}`,
+  `${prepare}; ${command}`,
 ];
 
 /** The warm store image's tag, from the lockfile it was fetched for. */
-export const storeTag = (lockfile, baseImage = "") =>
-  `stackra-verify-store:${createHash("sha256").update(baseImage).update("\0").update(lockfile).digest("hex").slice(0, 16)}`;
+export const storeTag = (lockfile, baseImage = "", tools = "") =>
+  `stackra-verify-store:${createHash("sha256").update(baseImage).update("\0").update(lockfile).update("\0").update(tools).digest("hex").slice(0, 16)}`;
+
+/** The store tag's tool part: every pin and its checksum, so a changed pin or checksum builds a new image. */
+export const toolsFingerprint = (s) =>
+  JSON.stringify(TOOLS.map((t) => [t.name, t.version, t.url, s.toolSha256?.[t.name] ?? null]));
 
 /** The warm store: main's lockfile fetched into /store on top of the pinned base, built by the daemon only. */
 export function storeDockerfile({ baseImage, pnpmVersion }) {
@@ -956,7 +1210,10 @@ export function storeDockerfile({ baseImage, pnpmVersion }) {
     `FROM ${baseImage}`,
     "ENV CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0 COREPACK_HOME=/opt/corepack",
     `RUN corepack enable && corepack prepare pnpm@${pnpmVersion} --activate && chmod -R a+rX /opt/corepack`,
-    "RUN git --version && tar --version",
+    // The gate's pinned tools, from the checked downloads in the context's tools/ (a bind mount, never a layer).
+    "RUN --mount=type=bind,source=tools,target=/tools sh /tools/install.sh",
+    "ENV PATH=/opt/stackra-verify/bin:$PATH",
+    "RUN git --version && tar --version && bash --version",
     "WORKDIR /seed",
     "COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./",
     "RUN pnpm fetch --store-dir /store && rm -rf /seed",
@@ -1223,10 +1480,10 @@ export function outcome(result) {
 export const imagesToRemove = (ids, keep) => [...new Set(ids)].filter((id) => !keep.includes(id));
 
 /** The verify App's completed `stackra/verify` run for `sha`, or undefined (our own App only, by id). */
-export const recordedRun = (checkRuns, sha, appId, base) =>
+export const recordedRun = (checkRuns, sha, appId, base, name = VERIFY_CHECK) =>
   checkRuns.find(
     (r) =>
-      r.name === VERIFY_CHECK &&
+      r.name === name &&
       r.head_sha === sha &&
       String(r.app?.id) === String(appId) &&
       r.status === "completed" &&
@@ -1238,11 +1495,14 @@ export const recordedRun = (checkRuns, sha, appId, base) =>
  * head or main moves; pr-merge refuses a run against an older main. Otherwise the local error record decides: no
  * error yet, or the last one older than ERROR_RETRY_MS while fewer than MAX_ERROR_ATTEMPTS.
  */
-export function needsRun({ checkRuns, sha, appId, base, errors = { count: 0 } }, now = Date.now()) {
-  if (recordedRun(checkRuns, sha, appId, base)) return false;
+export function needsRun(
+  { checkRuns, sha, appId, base, errors = { count: 0 }, name = VERIFY_CHECK },
+  now = Date.now(),
+) {
+  if (recordedRun(checkRuns, sha, appId, base, name)) return false;
   // A run against an older main stands while it is fresh: re-verifying every PR on every main merge, one verify at a
   // time, would never finish. The merge queue's own commit verify is the gate that sees the latest main.
-  const fresh = recordedRun(checkRuns, sha, appId);
+  const fresh = recordedRun(checkRuns, sha, appId, undefined, name);
   if (fresh && isFresh(fresh.completed_at, now)) return false;
   if (errors.count === 0) return true;
   return errors.count < MAX_ERROR_ATTEMPTS && now - errors.at > ERROR_RETRY_MS;
@@ -1332,11 +1592,45 @@ export const formatDuration = (ms) => {
   return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
 };
 
+/** A fenced, scrubbed, inert tail of `text` in at most `budget` characters. */
+const fence = (text, budget) => `\`\`\`text\n${logTail(text, Math.max(0, budget))}\n\`\`\``;
+
+/**
+ * The check run's text: a table of the steps the log names and, for each that failed or never finished, the end of
+ * its own output, then the end of the whole log, all within `max`. Display only: the table comes from the log, which
+ * a PR can write to, so it never decides anything. A log without steps is one fenced tail, as before.
+ */
+export function outputText(log, max = OUTPUT_TEXT_MAX) {
+  const sections = stepSections(scrub(log));
+  if (!sections.length) return fence(log, max - 20);
+  const table = [
+    "### Steps (from the log, display only)",
+    "",
+    "| step | result |",
+    "| --- | --- |",
+    ...sections.map((x) => `| ${x.id} | ${x.result === "FAIL" ? "**FAIL**" : x.result} |`),
+    "",
+  ].join("\n");
+  const failing = sections.filter((x) => x.result === "FAIL" || x.result === "unfinished");
+  const parts = [table];
+  let left = max - table.length - 400;
+  const each = failing.length ? Math.floor((left * 0.7) / failing.length) - 80 : 0;
+  for (const section of failing) {
+    const part = `### ${section.id} (${section.result})\n\n${fence(section.lines.join("\n"), each)}\n`;
+    parts.push(part);
+    left -= part.length;
+  }
+  if (left > 200) parts.push(`### Log tail\n\n${fence(log, left - 40)}`);
+  const text = parts.join("\n");
+  return text.length <= max ? text : fence(log, max - 20);
+}
+
 /**
  * The check run body. The verdict and the title come only from the result (`conclusion`, `phase`, `reason`); the
- * log is shown, never read for a verdict. It carries no environment and no secret.
+ * log is shown, never read for a verdict. It carries no environment and no secret. `kind` names the check run.
  */
 export function checkRunBody({
+  kind = "gate",
   sha,
   base,
   conclusion,
@@ -1348,20 +1642,28 @@ export function checkRunBody({
   startedAt,
   completedAt,
 }) {
+  const { check, label, describe } = KINDS[kind];
   const verdict =
     conclusion === "success"
-      ? "pnpm verify passed"
+      ? `${label} passed`
       : conclusion === "neutral"
         ? `could not run (${reason})`
         : phase === "merge"
           ? "the PR conflicts with main"
           : phase === "install"
-            ? "pnpm install failed"
-            : reason === "time limit"
-              ? "pnpm verify hit the time limit"
-              : "pnpm verify failed";
+            ? reason === "time limit"
+              ? "pnpm install hit the time limit"
+              : "pnpm install failed"
+            : phase === "licence"
+              ? `the licensed build is unavailable (${reason ?? "see the service log"})`
+              : reason === "time limit"
+                ? `${label} hit the time limit`
+                : `${label} failed`;
+  const failed = stepSections(scrub(log ?? ""))
+    .filter((x) => x.result === "FAIL" || x.result === "unfinished")
+    .map((x) => x.id);
   return {
-    name: VERIFY_CHECK,
+    name: check,
     head_sha: sha,
     external_id: base ? `base:${base}` : undefined,
     status: "completed",
@@ -1371,17 +1673,20 @@ export function checkRunBody({
     output: {
       title: `${verdict} in ${formatDuration(durationMs)}`,
       summary: [
-        `- Commands: \`${INSTALL_COMMAND}\` (network), then \`${VERIFY_COMMAND}\` (no network)`,
-        `- Box: ${box}; throwaway containers; the result is the container's exit code`,
-        `- Head: \`${sha}\`, merged onto main \`${base ?? "-"}\` with main's verify definition (scripts, configs, presets)`,
+        `- Checks: ${describe}; every step runs, and the verdict is the container's exit code`,
+        `- Install: \`${INSTALL_COMMAND}\`${KINDS[kind].install === "gate" ? ` without ${GATE_FILTERS.map((f) => f.slice(1)).join(" and ")}` : ""} (registries only), then \`${kindCommand(kind)}\` (no network)`,
+        `- Box: ${box}; throwaway containers`,
+        `- Head: \`${sha}\`, merged onto main \`${base ?? "-"}\` with main's verify definition (scripts, configs, policies)`,
+        ...(failed.length ? [`- Failed steps (from the log): ${failed.join(", ")}`] : []),
       ].join("\n"),
-      text: `\`\`\`text\n${logTail(log)}\n\`\`\``,
+      text: outputText(log ?? ""),
     },
   };
 }
 
 /** One ledger entry: JSON (the machine copy) and a markdown row (the human copy). */
 export function ledgerEntry({
+  kind = "gate",
   repo,
   sha,
   pr,
@@ -1399,8 +1704,9 @@ export function ledgerEntry({
     repo,
     sha,
     pr: pr ? Number(pr) : null,
+    check: KINDS[kind].check,
     install: INSTALL_COMMAND,
-    command: VERIFY_COMMAND,
+    command: kindCommand(kind),
     conclusion,
     phase: phase ?? null,
     reason: reason ?? null,
@@ -1409,7 +1715,7 @@ export function ledgerEntry({
     link: link ?? null,
     posted,
   };
-  const result = `${conclusion ?? "error"}${reason ? ` (${reason})` : ""}${posted ? "" : ", not posted"}`;
+  const result = `${KINDS[kind].check}: ${conclusion ?? "error"}${reason ? ` (${reason})` : ""}${posted ? "" : ", not posted"}`;
   const md = `| ${at} | ${repo} | ${pr ? `#${pr}` : "main"} | \`${sha.slice(0, 12)}\` | ${result} | ${formatDuration(durationMs)} | ${link ?? "-"} |`;
   return { json, md };
 }
@@ -1420,7 +1726,7 @@ export const LEDGER_HEADER =
 // ---- the job --------------------------------------------------------------------------------------------------
 
 /**
- * Runs one verify of `job` ({ repo, sha, pr }) with the side effects in `deps`, and returns what to record:
+ * Runs one verify of `job` ({ repo, sha, pr, kind }) with the side effects in `deps`, and returns what to record:
  *   { post: false, error, stopped } — an infrastructure error or a stop: nothing is posted;
  *   { post: false, moved: true }     — the PR's head moved during the run: nothing is posted, it runs again;
  *   { post: true, conclusion, phase, reason, log } — a result the container's exit code decided.
@@ -1428,9 +1734,14 @@ export const LEDGER_HEADER =
  * user); runContainer(args, name) → Promise<{ code }> (the docker client's exit); exitCodeOf(name) → number or null
  * (the container's own exit code; null when it never started); kill(name); cleanUp(names, images); headOf(job) →
  * current head SHA or null (main: the job's own SHA); readLog() → string; stopping() → boolean; timeoutMs;
- * setTimer(fn, ms) → cancel.
+ * setTimer(fn, ms) → cancel; optional: facts(job) → false when the PR's head moved (the gate's PR facts);
+ * verifyMounts() → the kind's read-only inputs. `job.kind` (KINDS, default gate) picks the install and the command: a
+ * storeImage error marked `licence` (the mobile kind's licensed build) is that check's failure, never an error of
+ * another check.
  */
 export async function runJob(job, deps) {
+  const kind = job.kind ?? "gate";
+  if (!KINDS[kind]) throw new Error(`not a verify kind: ${kind}`);
   const id = `${job.sha.slice(0, 12)}-${Date.now().toString(36)}`;
   const install = `sv-${id}-install`;
   const check = `sv-${id}-verify`;
@@ -1468,8 +1779,22 @@ export async function runJob(job, deps) {
         });
       throw error;
     }
-    const store = await deps.storeImage(job);
+    if (deps.facts && (await deps.facts(job)) === false) return { post: false, moved: true };
+    let store;
+    try {
+      store = await deps.storeImage(job);
+    } catch (error) {
+      if (!error.licence) throw error;
+      return settle(job, deps, {
+        conclusion: "failure",
+        phase: "licence",
+        reason: String(error.message).slice(0, 120),
+      });
+    }
     const envFile = deps.envFile;
+    // The gate installs without the Uniwind Pro members and never lays in a licensed build; mobile installs all.
+    const gate = KINDS[kind].install === "gate";
+    const builds = deps.builds();
 
     const net = deps.network({ id, image: store, proxyName, network });
     const leaks = deps.egressLeaks(store, net);
@@ -1493,7 +1818,9 @@ export async function runJob(job, deps) {
         tarPath,
         envFile: deps.installEnvFile,
         network: net.network,
-        builds: deps.builds(),
+        builds: gate ? builds.filter((b) => !LICENSED_BUILDS.includes(b)) : builds,
+        licensed: gate ? [] : LICENSED_BUILDS,
+        filters: gate ? GATE_FILTERS : [],
       }),
       install,
     );
@@ -1512,7 +1839,15 @@ export async function runJob(job, deps) {
     if (commit.code !== 0) return { post: false, error: "could not commit the install container" };
 
     const verifyTimedOut = await limited(
-      verifyArgs(s, { name: check, image: runImage, envFile, tarPath }),
+      verifyArgs(s, {
+        name: check,
+        image: runImage,
+        envFile,
+        tarPath,
+        mounts: deps.verifyMounts?.() ?? [],
+        command: kindCommand(kind),
+        prepare: gate ? gatePrepare() : VERIFY_PREPARE,
+      }),
       check,
     );
     if (deps.stopping() && !verifyTimedOut) return { post: false, stopped: true };
@@ -1896,8 +2231,17 @@ export function neutraliseAttributes(mirror) {
   writeFileSync(join(gitDir, "info", "attributes"), "* -export-ignore -export-subst\n");
 }
 
-/** The daemon's mirror of `repo`, fetched; the tested tree built and archived; `job.base` set to main's head. */
-function archiveJob(s, job, runDir) {
+/** The refs a history bundle carries: main's head and, for a PR or queue commit, the head. */
+export const historyRefs = (job) => [
+  ["refs/stackra/base", job.base],
+  ...(job.sha === job.base ? [] : [["refs/stackra/head", job.sha]]),
+];
+
+/**
+ * The daemon's mirror of `repo`, fetched; the tested tree built and archived; `job.base` set to main's head. With
+ * `history`, a bundle of main's and the head's history (read-only in the gate: commitlint and gitleaks need it).
+ */
+function archiveJob(s, job, runDir, { history = false } = {}) {
   const mirror = join(s.home, "mirror", job.repo.replace("/", "__"));
   if (!existsSync(join(mirror, "HEAD")))
     sh("git", ["clone", "--quiet", "--bare", `https://github.com/${job.repo}.git`, mirror], {
@@ -1912,8 +2256,21 @@ function archiveJob(s, job, runDir) {
     neutraliseAttributes(mirror);
     git(mirror, ["archive", "--format=tar", "-o", tarPath, tree]);
     chmodSync(tarPath, 0o644);
+    if (history) {
+      const refs = historyRefs(job);
+      for (const [ref, sha] of refs) git(mirror, ["update-ref", ref, sha]);
+      const bundle = join(runDir, "history.bundle");
+      git(mirror, ["bundle", "create", "--quiet", bundle, ...refs.map(([ref]) => ref)]);
+      chmodSync(bundle, 0o644);
+    }
     return { tarPath, mirror, tree };
   } finally {
+    for (const ref of ["refs/stackra/base", "refs/stackra/head"])
+      spawnSync(
+        "git",
+        ["-c", "core.hooksPath=/dev/null", "-C", mirror, "update-ref", "-d", ref],
+        spawnOptions({ env: gitEnv() }),
+      );
     const queued = job.queue
       ? git(mirror, ["for-each-ref", "--format=%(refname)", "refs/verify/queue/"])
       : "";
@@ -1925,7 +2282,7 @@ function archiveJob(s, job, runDir) {
  * The warm store image for main's current lockfile: built by this process from main (trusted, merged), its id
  * recorded in the daemon's state, and checked against that record before every use. The base is pulled by digest.
  */
-function ensureStore(s, mirror, base, runDir, state) {
+async function ensureStore(s, mirror, base, runDir, state) {
   const pull = docker(s, ["pull", "--quiet", s.baseImage]);
   if (pull.code !== 0)
     throw new Error(`could not pull the pinned base image: ${pull.stderr.trim()}`);
@@ -1934,7 +2291,7 @@ function ensureStore(s, mirror, base, runDir, state) {
   for (const file of ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"])
     writeFileSync(join(ctx, file), git(mirror, ["show", `${base}:${file}`]), { mode: 0o644 });
   const lockfile = readFileSync(join(ctx, "pnpm-lock.yaml"));
-  const tag = storeTag(lockfile, s.baseImage);
+  const tag = storeTag(lockfile, s.baseImage, toolsFingerprint(s));
   const recorded = state.stores[tag];
   const current = docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim();
   if (storeReusable({ recordedId: recorded?.id, currentId: current, builtAt: recorded?.builtAt }))
@@ -1944,6 +2301,7 @@ function ensureStore(s, mirror, base, runDir, state) {
     pnpmVersion: pnpmVersionOf(readFileSync(join(ctx, "package.json"), "utf8")),
   });
   writeFileSync(join(ctx, "Dockerfile"), dockerfile, { mode: 0o644 });
+  await ensureTools(s, ctx);
   const build = docker(s, ["build", "--quiet", "--pull=false", "--no-cache", "--tag", tag, ctx], {
     timeout: 60 * 60 * 1000,
   });
@@ -1958,6 +2316,73 @@ function ensureStore(s, mirror, base, runDir, state) {
     },
   };
   return tag;
+}
+
+const sha256Of = (path) => createHash("sha256").update(readFileSync(path)).digest("hex");
+
+/**
+ * The gate's tools in the store build context (`tools/`): each download kept in `<home>/tools/<sha256>`, checked
+ * against its setting on every use, and the install script beside them.
+ */
+async function ensureTools(s, ctx) {
+  const cache = join(s.home, "tools");
+  mkdirSync(cache, { recursive: true, mode: 0o700 });
+  mkdirSync(join(ctx, "tools"), { recursive: true, mode: 0o755 });
+  for (const tool of TOOLS) {
+    const sha = s.toolSha256[tool.name];
+    const cached = join(cache, sha);
+    if (!existsSync(cached) || sha256Of(cached) !== sha)
+      await downloadVerified(tool.url, sha, cached);
+    writeFileSync(join(ctx, "tools", toolFile(tool)), readFileSync(cached), { mode: 0o644 });
+  }
+  writeFileSync(join(ctx, "tools", "install.sh"), toolInstallScript(), { mode: 0o644 });
+}
+
+/** Whether a file starts like a zip archive (the OSV database download is checked by its content). */
+function isZip(path) {
+  const fd = openSync(path, "r");
+  try {
+    const head = Buffer.alloc(4);
+    return readSync(fd, head, 0, 4, 0) === 4 && head.equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/**
+ * The offline OSV database the gate mounts read-only: refreshed by this process when older than OSV_REFRESH_MS
+ * (readable by the verify user's Docker, 0755 / 0644), and refused (an error, never a pass) when missing or older
+ * than STACKRA_VERIFY_OSV_MAX_AGE_H.
+ */
+async function ensureOsvDb(s) {
+  const path = osvDbPath(s.osvDir);
+  const mtime = () => {
+    try {
+      return statSync(path).mtimeMs;
+    } catch {
+      return null;
+    }
+  };
+  const before = mtime();
+  if (before === null || Date.now() - before > OSV_REFRESH_MS) {
+    try {
+      mkdirSync(dirname(path), { recursive: true, mode: 0o755 });
+      for (const dir of [s.osvDir, join(s.osvDir, "osv-scalibr"), dirname(path)])
+        chmodSync(dir, 0o755);
+      const fresh = `${path}.new`;
+      await downloadVerified(OSV_DB_URL, null, fresh);
+      if (!isZip(fresh) || statSync(fresh).size < 1024 * 1024) {
+        rmSync(fresh, { force: true });
+        throw new Error("the download is not the OSV database (not a zip, or too small)");
+      }
+      chmodSync(fresh, 0o644);
+      renameSync(fresh, path);
+    } catch (error) {
+      serviceLog(`OSV database refresh failed: ${error.message}`);
+    }
+  }
+  const problem = osvDbProblem(mtime(), Date.now(), s.osvMaxAgeMs);
+  if (problem) throw new Error(problem);
 }
 
 /**
@@ -2087,9 +2512,10 @@ async function headOf(s, job) {
 
 /** Verifies one head end to end and records it. Returns the ledger JSON entry, or null when nothing ran. */
 export async function verify(s, job) {
+  const kind = job.kind ?? "gate";
   const started = Date.now();
   const startedAt = new Date(started).toISOString();
-  const name = `${job.repo.replace("/", "__")}-${job.sha}`;
+  const name = `${job.repo.replace("/", "__")}-${job.sha}-${kind}`;
   for (const dir of ["logs", "ledger", "runs", "mirror"])
     mkdirSync(join(s.home, dir), { recursive: true });
   chmodSync(join(s.home, "logs"), 0o700);
@@ -2107,6 +2533,8 @@ export async function verify(s, job) {
     mode: 0o644,
   });
   writeFileSync(join(s.home, "docker.env"), dockerEnvFile(s), { mode: 0o644 });
+  for (const [file, text] of Object.entries(kindFiles(kind)))
+    writeFileSync(join(runDir, file), text, { mode: 0o644 });
   const state = readState(s);
 
   const deps = {
@@ -2118,7 +2546,7 @@ export async function verify(s, job) {
       for (const dir of [s.home, s.dockerRoot].filter(Boolean))
         if (freeBytes(dir) < s.minFreeBytes)
           throw new Error(`not enough free disk in ${dir} for a run`);
-      const { tarPath, mirror, tree } = archiveJob(s, job, runDir);
+      const { tarPath, mirror, tree } = archiveJob(s, job, runDir, { history: kind === "gate" });
       deps.mirror = mirror;
       deps.tree = tree;
       deps.buildList = allowedBuilds(git(mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
@@ -2148,12 +2576,37 @@ export async function verify(s, job) {
         .filter(Boolean);
       return { network, proxy: `proxy:${PROXY_PORT}`, gateway };
     },
+    // The gate: the store image and a fresh OSV database, never a licensed build. Mobile: the licensed image, whose
+    // failure is stackra/verify-mobile's alone (marked `licence`).
     storeImage: async () => {
-      const store = ensureStore(s, deps.mirror, job.base, runDir, state);
-      const lockText = git(deps.mirror, ["show", `${deps.tree}:pnpm-lock.yaml`]);
-      const builds = allowedBuilds(git(deps.mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
-      return ensureLicensed(s, store, licensedPackagesFor(lockText, builds), runDir, state);
+      if (kind === "gate") await ensureOsvDb(s);
+      const store = await ensureStore(s, deps.mirror, job.base, runDir, state);
+      if (kind !== "mobile") return store;
+      try {
+        const lockText = git(deps.mirror, ["show", `${deps.tree}:pnpm-lock.yaml`]);
+        const builds = allowedBuilds(git(deps.mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
+        return await ensureLicensed(s, store, licensedPackagesFor(lockText, builds), runDir, state);
+      } catch (error) {
+        throw Object.assign(error, { licence: true });
+      }
     },
+    facts:
+      kind === "gate"
+        ? async () => {
+            let pull = null;
+            if (job.pr) {
+              pull = JSON.parse(
+                gh(["api", `repos/${job.repo}/pulls/${job.pr}`], await appToken(s), true),
+              );
+              if (pull.head?.sha !== job.sha) return false;
+            }
+            writeFileSync(join(runDir, "facts.json"), JSON.stringify(prFacts(job, pull)), {
+              mode: 0o644,
+            });
+            return true;
+          }
+        : undefined,
+    verifyMounts: () => kindMounts(kind, { runDir, osvDir: s.osvDir }),
     docker: (args) => docker(s, args),
     runContainer: (args) =>
       new Promise((resolve) => {
@@ -2241,7 +2694,7 @@ export async function verify(s, job) {
   if (result.error) appendFileSync(logPath, `\nstackra-verify: ${result.error}\n`);
   stopIfUnsafe(result, onStop);
 
-  const key = `${job.repo}@${job.sha}`;
+  const key = errorKey(job);
   if (result.stopped || result.moved) {
     writeState(s, state);
     return null;
@@ -2262,6 +2715,7 @@ export async function verify(s, job) {
 
   const durationMs = Date.now() - started;
   const body = checkRunBody({
+    kind,
     sha: job.sha,
     base: job.base,
     conclusion,
@@ -2284,6 +2738,7 @@ export async function verify(s, job) {
   }
   const { json, md } = ledgerEntry({
     ...job,
+    kind,
     conclusion,
     phase: result.phase,
     reason,
@@ -2342,6 +2797,25 @@ async function heads(s, repo) {
   return jobsFrom({ repo, pulls, main, queue });
 }
 
+/** The local error record's key for a job: one per head and check, so one check's errors never hold another back. */
+export const errorKey = (job) =>
+  `${job.repo}@${job.sha}${(job.kind ?? "gate") === "gate" ? "" : `#${job.kind}`}`;
+
+/**
+ * Runs each kind of `job` in turn through `runOne` (needs-run check, verify and post), each on its own: a kind that
+ * throws or fails is recorded for that kind only, so a mobile or licence failure never stops or changes the gate.
+ */
+export async function runKinds(job, kinds, runOne) {
+  const results = {};
+  for (const kind of kinds)
+    try {
+      results[kind] = await runOne({ ...job, kind });
+    } catch (error) {
+      results[kind] = { error: error.message };
+    }
+  return results;
+}
+
 /** A full 40-hex commit id. */
 const isSha = (value) => typeof value === "string" && /^[0-9a-f]{40}$/.test(value);
 
@@ -2368,14 +2842,21 @@ async function wanted(s, job) {
     gh(
       [
         "api",
-        `repos/${job.repo}/commits/${job.sha}/check-runs?check_name=${encodeURIComponent(VERIFY_CHECK)}&filter=all&per_page=100`,
+        `repos/${job.repo}/commits/${job.sha}/check-runs?check_name=${encodeURIComponent(KINDS[job.kind ?? "gate"].check)}&filter=all&per_page=100`,
       ],
       token,
       true,
     ),
   ).check_runs;
-  const errors = readState(s).errors[`${job.repo}@${job.sha}`];
-  return needsRun({ checkRuns: runs, sha: job.sha, appId: s.appId, base: job.base, errors });
+  const errors = readState(s).errors[errorKey(job)];
+  return needsRun({
+    checkRuns: runs,
+    sha: job.sha,
+    appId: s.appId,
+    base: job.base,
+    errors,
+    name: KINDS[job.kind ?? "gate"].check,
+  });
 }
 
 function pruneLogs(s) {
@@ -2392,17 +2873,21 @@ async function once(s, repo) {
   let failed = 0;
   for (const job of await heads(s, repo)) {
     if (isStopping()) break;
-    try {
-      if (!(await wanted(s, job))) continue;
-      const entry = await verify(s, job);
+    // stackra/verify first, then stackra/verify-mobile: separate runs, separate check runs, separate errors.
+    const results = await runKinds(job, Object.keys(KINDS), async (kindJob) => {
+      if (isStopping() || !(await wanted(s, kindJob))) return null;
+      const entry = await verify(s, kindJob);
       if (entry)
         process.stdout.write(
-          `${entry.conclusion} ${repo}@${job.sha}${job.pr ? ` #${job.pr}` : ""}\n`,
+          `${entry.check} ${entry.conclusion} ${repo}@${job.sha}${job.pr ? ` #${job.pr}` : ""}\n`,
         );
-    } catch (error) {
-      failed++;
-      process.stderr.write(`stackra-verify: ${repo}@${job.sha}: ${error.message}\n`);
-    }
+      return entry;
+    });
+    for (const [kind, result] of Object.entries(results))
+      if (result?.error) {
+        failed++;
+        process.stderr.write(`stackra-verify: ${repo}@${job.sha} ${kind}: ${result.error}\n`);
+      }
   }
   return failed;
 }
@@ -2463,10 +2948,12 @@ async function runLocked(options, s) {
   process.on("SIGTERM", onStop);
   try {
     if (options.verb === "run") {
-      const entry = await verify(s, { repo: options.repo, sha: options.sha, pr: options.pr });
-      process.stdout.write(
-        `${entry ? entry.conclusion : "not recorded"} ${options.repo}@${options.sha}\n`,
-      );
+      const job = { repo: options.repo, sha: options.sha, pr: options.pr };
+      const results = await runKinds(job, Object.keys(KINDS), (kindJob) => verify(s, kindJob));
+      for (const [kind, entry] of Object.entries(results))
+        process.stdout.write(
+          `${KINDS[kind].check} ${entry?.error ? `error: ${entry.error}` : entry ? entry.conclusion : "not recorded"} ${options.repo}@${options.sha}\n`,
+        );
     } else if (options.verb === "once") {
       let failed = 0;
       for (const repo of options.repos) failed += await once(s, repo);
