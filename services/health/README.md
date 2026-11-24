@@ -50,5 +50,5 @@ src/modules/health/
 | `stackra gen`              | Writes the wiring, entries and Encore app into `.stackra/` (needs the root runway's Encore app id) |
 | `stackra gen --manifests`  | Writes only `stackra.manifest.json` (what core checks today)                   |
 | `stackra test`             | The unit tests                                                                 |
-| `stackra test --tier int`  | The integration test: the migrations check against a real Postgres (Docker)    |
+| `stackra test --tier int`  | 9 integration tests on a real Postgres (Docker): the migrations check against the real runner's ledger (5), and `GET /readyz` end to end, 200 then 503 with the failed check named and nothing of its detail (4) |
 | `pnpm typecheck` / `pnpm lint` / `pnpm format` | The usual checks                                           |
