@@ -17,12 +17,14 @@ import {
   enqueueReady,
   gh,
   graphql,
-  latestVerify,
+  isVerifyDefinition,
+  scriptsChanged,
   OWNER,
   ownerLabelled,
   parseArgs,
-  VERIFY_CONTEXT,
-  VERIFY_CREATOR,
+  VERIFY_APP,
+  VERIFY_CHECK,
+  verifyRun,
 } from "../pr-merge.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -41,16 +43,24 @@ const pr = (over = {}) => ({
   ...over,
 });
 const green = [{ id: 2, status: "completed", conclusion: "success" }];
-const status = (state, created_at = T1, id = 1, login = VERIFY_CREATOR) => ({
-  context: VERIFY_CONTEXT,
-  state,
-  created_at,
+// The verify App as it will be once the owner registers it; VERIFY_APP itself keeps id null until then.
+const APP = { slug: "stackra-verify", id: 4242 };
+const appRun = (
+  conclusion,
+  { id = 1, sha = SHA, app = APP, status = "completed", name = VERIFY_CHECK } = {},
+) => ({
   id,
-  creator: { login },
+  name,
+  head_sha: sha,
+  status,
+  conclusion: status === "completed" ? conclusion : null,
+  app,
+  html_url: `https://github.com/figentra/stackra/runs/${id}`,
 });
-const verified = [status("success")];
-// Every pre-STA-2761 case runs with a green stackra/verify; condition 5 has its own tests below.
-const check = (p, runs, options = {}) => blockers(p, runs, { statuses: verified, ...options });
+const verified = [appRun("success")];
+// Every pre-STA-2761 case runs with a green stackra/verify; conditions 5 and 6 have their own tests below.
+const check = (p, runs, options = {}) =>
+  blockers(p, runs, { verifyRuns: verified, app: APP, ...options });
 // Shapes as the REST pull reviews API returns them.
 const review = (over = {}) => ({
   user: { login: OWNER, type: "User" },
@@ -238,39 +248,136 @@ test("STA-302: gh() and graphql() retry reads only; a write that omits the flag 
   );
 });
 
-test("condition 5: no stackra/verify status on the head refuses (STA-2761, replaces merge-now)", () => {
-  assert.match(blockers(pr(), green).join(), /no stackra\/verify status on 0123/);
-  assert.match(blockers(pr(), green, { statuses: [] }).join(), /wait for the verify service/);
+test("condition 5: no stackra/verify check run from the verify App refuses (STA-2761, replaces merge-now)", () => {
+  assert.match(
+    blockers(pr(), green, { app: APP }).join(),
+    /no stackra\/verify check run from stackra-verify on 0123/,
+  );
 });
 
-test("condition 5: a pending, failed or errored verify refuses and names its link", () => {
-  for (const state of ["pending", "failure", "error"]) {
-    const statuses = [{ ...status(state), target_url: "https://example.test/log" }];
+test("condition 5: while VERIFY_APP has no id, nothing passes, whatever runs exist", () => {
+  assert.equal(VERIFY_APP.id, null);
+  assert.match(blockers(pr(), green, { verifyRuns: verified }).join(), /App is not registered/);
+  assert.equal(verifyRun(verified, SHA, VERIFY_APP), undefined);
+});
+
+test("condition 5: a failed, neutral, cancelled or unfinished run refuses and names its link", () => {
+  for (const conclusion of ["failure", "neutral", "cancelled", "timed_out", "skipped"])
     assert.match(
-      blockers(pr(), green, { statuses }).join(),
-      new RegExp(`stackra/verify on ${SHA} is ${state}`),
+      blockers(pr(), green, { app: APP, verifyRuns: [appRun(conclusion)] }).join(),
+      new RegExp(
+        `stackra/verify on ${SHA} is ${conclusion} \\(https://github.com/figentra/stackra/runs/1\\)`,
+      ),
     );
-    assert.match(blockers(pr(), green, { statuses }).join(), /example\.test\/log/);
+  for (const status of ["queued", "in_progress"])
+    assert.match(
+      blockers(pr(), green, { app: APP, verifyRuns: [appRun(null, { status })] }).join(),
+      new RegExp(`is ${status}: wait`),
+    );
+});
+
+test("condition 5: forgery — a run from stackra-bot, another App, a same-slug App with another id, or a commit status never counts", () => {
+  const forged = [
+    appRun("success", { id: 9, app: { slug: "stackra-bot", id: 1 } }),
+    appRun("success", { id: 10, app: { slug: "github-actions", id: 15_368 } }),
+    appRun("success", { id: 11, app: { slug: "stackra-verify", id: 1 } }),
+    appRun("success", { id: 12, app: { slug: "impostor", id: APP.id } }),
+  ];
+  for (const forgery of forged) {
+    assert.equal(verifyRun([forgery], SHA, APP), undefined, JSON.stringify(forgery.app));
+    assert.match(
+      blockers(pr(), green, { app: APP, verifyRuns: [forgery] }).join(),
+      /no stackra\/verify check run/,
+    );
   }
+  // A newer forged success never hides the App's own failure.
+  assert.match(
+    blockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("failure", { id: 1 }), ...forged],
+    }).join(),
+    /is failure/,
+  );
 });
 
-test("condition 5: only the newest stackra/verify counts, and other contexts never stand in for it", () => {
-  const old = status("success", T0, 1);
-  const newer = status("failure", T2, 2);
-  assert.equal(latestVerify([newer, old]).state, "failure");
-  assert.match(blockers(pr(), green, { statuses: [old, newer] }).join(), /is failure/);
-  const redThenGreen = [status("failure", T0, 1), status("success", T2, 2)];
-  assert.deepEqual(blockers(pr(), green, { statuses: redThenGreen }), []);
-  const other = [{ context: "ci/other", state: "success", created_at: T2, id: 3 }];
-  assert.match(blockers(pr(), green, { statuses: other }).join(), /no stackra\/verify status/);
+test("condition 5: a stale SHA — a run for another commit never stands in for the head", () => {
+  const stale = appRun("success", { sha: "f".repeat(40) });
+  assert.equal(verifyRun([stale], SHA, APP), undefined);
+  assert.match(
+    blockers(pr(), green, { app: APP, verifyRuns: [stale] }).join(),
+    /no stackra\/verify check run/,
+  );
 });
 
-test("condition 5: a stackra/verify posted by anyone but the bot never counts, even when it is newer", () => {
-  const spoof = status("success", T2, 9, "someone-with-write");
-  assert.equal(latestVerify([spoof]), undefined);
-  assert.match(blockers(pr(), green, { statuses: [spoof] }).join(), /no stackra\/verify status/);
-  const botRed = status("failure", T0, 1);
-  assert.match(blockers(pr(), green, { statuses: [botRed, spoof] }).join(), /is failure/);
-  const appSpoof = status("success", T2, 10, "other-app[bot]");
-  assert.match(blockers(pr(), green, { statuses: [botRed, appSpoof] }).join(), /is failure/);
+test("condition 5: only the newest App run counts (a re-run in progress refuses)", () => {
+  assert.deepEqual(
+    blockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("failure", { id: 1 }), appRun("success", { id: 2 })],
+    }),
+    [],
+  );
+  assert.match(
+    blockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("success", { id: 1 }), appRun("failure", { id: 2 })],
+    }).join(),
+    /is failure/,
+  );
+  assert.match(
+    blockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("success", { id: 1 }), appRun(null, { id: 2, status: "in_progress" })],
+    }).join(),
+    /in_progress/,
+  );
+});
+
+test("condition 6: a PR that changes what pnpm verify checks needs risk:R3", () => {
+  for (const path of [
+    "turbo.jsonc",
+    "packages/data/database/turbo.jsonc",
+    "knip.jsonc",
+    "packages/ai/vitest.config.ts",
+    "packages/data/database/vitest.int.config.ts",
+    ".oxlintrc.json",
+    "packages/tooling/vitest-config/src/index.ts",
+    "tools/scripts/pr-merge.mjs",
+    ".npmrc",
+    "lefthook.yml",
+  ])
+    assert.equal(isVerifyDefinition(path), true, path);
+  for (const path of [
+    "packages/ai/src/index.ts",
+    "README.md",
+    "packages/ai/package.json",
+    "apps/docs/src/docs/x.mdx",
+  ])
+    assert.equal(isVerifyDefinition(path), false, path);
+  assert.equal(
+    scriptsChanged('{"scripts":{"test":"vitest run"}}', '{"scripts":{"test":"true"}}'),
+    true,
+  );
+  assert.equal(
+    scriptsChanged(
+      '{"scripts":{"test":"vitest run"},"version":"1"}',
+      '{"version":"2","scripts":{"test":"vitest run"}}',
+    ),
+    false,
+  );
+  assert.equal(scriptsChanged(null, '{"scripts":{"verify":"true"}}'), true);
+  const changes = ["turbo.jsonc", "package.json"];
+  assert.match(
+    blockers(pr(), green, { app: APP, verifyRuns: verified, definitionChanges: changes }).join(),
+    /label it risk:R3/,
+  );
+  // with risk:R3 the owner's approval decides (the existing gated-label rule)
+  assert.match(
+    blockers(pr({ labels: [{ name: "risk:R3" }] }), green, {
+      app: APP,
+      verifyRuns: verified,
+      definitionChanges: changes,
+    }).join(),
+    /needs an owner approval/,
+  );
 });

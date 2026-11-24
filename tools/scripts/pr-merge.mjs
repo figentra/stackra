@@ -12,8 +12,13 @@
  *      is CLEAN, HAS_HOOKS or UNSTABLE (only a non-required check is not green; the gate is condition 2, so a red
  *      non-required check is reported, not blocking);
  *   4. the PR carries no `hold` label (any case);
- *   5. the newest `stackra/verify` commit status on the head SHA is `success`: `pnpm verify`, tests included, passed
- *      on that exact SHA on our machines (`stackra-verify.mjs`, STA-2761; replaces the merge-now rule STA-2083).
+ *   5. the newest `stackra/verify` check run on the head SHA, created by the stackra-verify GitHub App (slug and id
+ *      in `VERIFY_APP`), is completed with conclusion `success`: `pnpm verify`, tests included, passed
+ *      on that exact SHA in a throwaway container on our machines (`stackra-verify.mjs`, STA-2761; replaces the
+ *      merge-now rule STA-2083). A commit status, or a check run any other App posts (stackra-bot included, which
+ *      every agent can act as), never counts.
+ *   6. a PR that changes what `pnpm verify` checks (`VERIFY_DEFINITION`, or the `scripts` of a package.json) is
+ *      labelled `risk:R3`, so it needs the owner's approval below: the verify service runs main's definition.
  *   A PR labelled `design` or `risk:R3` also needs an owner APPROVED review on the head SHA, or `owner-approved` put
  *   there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is the owner
  *   user, never a bot (ADR 0119 decision 2 as amended 2026-10-28, ADR 0293). The events are read only then; an API
@@ -37,23 +42,59 @@ export const OWNER = "figentra-usr";
 const GATED_LABELS = ["design", "risk:R3"];
 /** The label that stops a merge (ADR 0523 decision 3: the merger honours a HOLD label). */
 export const HOLD_LABEL = "hold";
-/** The commit status `stackra-verify.mjs` posts on a head SHA; condition 5 needs it green (STA-2761). */
-export const VERIFY_CONTEXT = "stackra/verify";
-
-/** The only account whose `stackra/verify` counts: the stackra-bot App the verify service posts as. */
-export const VERIFY_CREATOR = "stackra-bot[bot]";
+/** The check run `stackra-verify.mjs` posts on a head SHA; condition 5 needs it green (STA-2761). */
+export const VERIFY_CHECK = "stackra/verify";
 
 /**
- * The newest `stackra/verify` status among `statuses` (REST commit statuses, any order), or undefined. GitHub keeps
- * every status a context ever had; the newest by `created_at`, then `id`, is the one that counts. Only the bot's own
- * statuses count: anyone with `statuses: write` (a collaborator, another App, a workflow) can post the same context,
- * and such a status must neither pass a merge nor stop the service from verifying the head.
+ * The App whose `stackra/verify` counts: the stackra-verify GitHub App, `checks: write` and `contents: read` only, whose
+ * key only the verify service on box 1 holds. `id` is null until the owner creates the App; a pull request then sets
+ * it, and until then nothing passes condition 5.
  */
-export const latestVerify = (statuses) =>
-  statuses
-    .filter((s) => s.context === VERIFY_CONTEXT && s.creator?.login === VERIFY_CREATOR)
-    .toSorted((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
+export const VERIFY_APP = Object.freeze({ slug: "stackra-verify", id: null });
+
+/**
+ * The `stackra/verify` check run that decides condition 5 for `sha`, or undefined: among `checkRuns` (REST check
+ * runs of the head, any order), only those created by `app` (slug AND id) for exactly `sha` count, and of those the
+ * newest by id. Any other App, a commit status, or a run for another SHA can neither pass nor block a merge.
+ */
+export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
+  if (!app.id) return undefined;
+  return checkRuns
+    .filter(
+      (r) =>
+        r.name === VERIFY_CHECK &&
+        r.head_sha === sha &&
+        r.app?.slug === app.slug &&
+        r.app?.id === app.id,
+    )
+    .toSorted((a, b) => a.id - b.id)
     .at(-1);
+}
+
+/**
+ * The files that define what `pnpm verify` checks (STA-2761): scripts and task pipelines, test, lint and knip
+ * configs, the config presets, the repository scripts and the registry config. The verify service always runs main's
+ * copy of them against a PR's source, so a PR that changes them is not verified by its own change: it needs the
+ * owner's review (`risk:R3`, condition 6). `package.json` counts only when its `scripts` change (`scriptsChanged`).
+ */
+export const VERIFY_DEFINITION =
+  /(?:^|\/)(?:turbo\.jsonc?|knip\.jsonc?|\.oxlintrc\.jsonc?|oxlint\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s|\.npmrc|lefthook\.ya?ml)$|^(?:packages\/tooling|tools\/scripts)\//;
+
+export const isVerifyDefinition = (path) => VERIFY_DEFINITION.test(path);
+
+/** A package.json text's `scripts`, as a comparable string (a missing file has none; an unparsable one is marked). */
+const scriptsOf = (text) => {
+  try {
+    return JSON.stringify(JSON.parse(text ?? "{}").scripts ?? {});
+  } catch {
+    return "unparsable";
+  }
+};
+
+/** Whether two package.json texts differ in `scripts`. */
+export function scriptsChanged(baseText, headText) {
+  return scriptsOf(baseText) !== scriptsOf(headText);
+}
 
 /** The merge states in which the ruleset lets a PR without a merge queue merge. */
 export const MERGEABLE_STATES = ["CLEAN", "HAS_HOOKS", "UNSTABLE"];
@@ -98,13 +139,21 @@ const STATE_HINTS = {
 /**
  * Reasons the PR may not merge; empty means merge. `pr` carries `mergeStateStatus`; `checkRuns` are the head SHA's
  * "Quality Gate" runs; `queue` says the base branch has a merge queue; `reviews` are the REST pull reviews and
- * `events` the REST issue events (`ownerLabelled`), empty when not read; `statuses` the head SHA's REST commit
- * statuses (condition 5).
+ * `events` the REST issue events (`ownerLabelled`), empty when not read; `verifyRuns` the head SHA's REST check runs
+ * named stackra/verify (condition 5); `app` the accepted verify App; `definitionChanges` the changed paths that define
+ * what pnpm verify checks (condition 6).
  */
 export function blockers(
   pr,
   checkRuns,
-  { queue = false, reviews = [], events = [], statuses = [] } = {},
+  {
+    queue = false,
+    reviews = [],
+    events = [],
+    verifyRuns = [],
+    app = VERIFY_APP,
+    definitionChanges = [],
+  } = {},
 ) {
   const reasons = [];
   const sha = pr.headRefOid;
@@ -116,11 +165,26 @@ export function blockers(
   else if (gate.conclusion !== "success")
     reasons.push(`Quality Gate on ${sha} is ${gate.conclusion ?? gate.status}`);
 
-  const verify = latestVerify(statuses);
-  if (!verify) reasons.push(`no ${VERIFY_CONTEXT} status on ${sha}: wait for the verify service`);
-  else if (verify.state !== "success")
+  const verify = verifyRun(verifyRuns, sha, app);
+  if (!app.id)
     reasons.push(
-      `${VERIFY_CONTEXT} on ${sha} is ${verify.state}${verify.target_url ? ` (${verify.target_url})` : ""}`,
+      `the ${app.slug} App is not registered (VERIFY_APP has no id), so no ${VERIFY_CHECK} can pass`,
+    );
+  else if (!verify)
+    reasons.push(
+      `no ${VERIFY_CHECK} check run from ${app.slug} on ${sha}: wait for the verify service`,
+    );
+  else if (verify.status !== "completed")
+    reasons.push(`${VERIFY_CHECK} on ${sha} is ${verify.status}: wait for it to finish`);
+  else if (verify.conclusion !== "success")
+    reasons.push(
+      `${VERIFY_CHECK} on ${sha} is ${verify.conclusion}${verify.html_url ? ` (${verify.html_url})` : ""}`,
+    );
+
+  const labelNames = new Set(pr.labels.map((l) => l.name));
+  if (definitionChanges.length && !labelNames.has("risk:R3"))
+    reasons.push(
+      `it changes what pnpm verify checks (${definitionChanges.slice(0, 5).join(", ")}${definitionChanges.length > 5 ? ", …" : ""}), which the verify service never runs from a PR: label it risk:R3 for the owner's review`,
     );
 
   const state = pr.mergeStateStatus ?? "UNKNOWN";
@@ -229,13 +293,47 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       gated && labels.has(OWNER_LABEL)
         ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
         : [];
-    // Condition 5: every status of the head SHA (paginated), so an old context never hides the newest verify.
-    const statuses = list(`repos/${repo}/commits/${pr.headRefOid}/statuses?per_page=100`, token);
+    // Condition 5: every stackra/verify check run of the head SHA, from any App; verifyRun keeps the verify App's.
+    const verifyRuns = JSON.parse(
+      gh(
+        [
+          "api",
+          `repos/${repo}/commits/${pr.headRefOid}/check-runs?check_name=${encodeURIComponent(VERIFY_CHECK)}&filter=all&per_page=100`,
+        ],
+        token,
+        true,
+      ),
+    ).check_runs;
+    // Condition 6: the changed files, and for a package.json whether its scripts changed between base and head.
+    const files = list(`repos/${repo}/pulls/${n}/files?per_page=100`, token);
+    const base = JSON.parse(gh(["api", `repos/${repo}/pulls/${n}`], token, true)).base.sha;
+    const raw = (path, ref) => {
+      const r = spawnSync(
+        "gh",
+        [
+          "api",
+          "-H",
+          "Accept: application/vnd.github.raw",
+          `repos/${repo}/contents/${encodeURI(path)}?ref=${ref}`,
+        ],
+        { encoding: "utf8", env: { ...process.env, GH_TOKEN: token }, maxBuffer: 16 * 1024 * 1024 },
+      );
+      return r.status === 0 ? r.stdout : null;
+    };
+    const definitionChanges = files
+      .flatMap((f) => [f.filename, f.previous_filename].filter(Boolean))
+      .filter(
+        (path) =>
+          isVerifyDefinition(path) ||
+          (/(?:^|\/)package\.json$/.test(path) &&
+            scriptsChanged(raw(path, base), raw(path, pr.headRefOid))),
+      );
     const reasons = blockers(pr, runs, {
       queue: Boolean(repository.mergeQueue),
       reviews,
       events,
-      statuses,
+      verifyRuns,
+      definitionChanges,
     });
     if (reasons.length) {
       process.stderr.write(
