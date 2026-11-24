@@ -35,6 +35,7 @@ import { dirname, join, relative, resolve } from "node:path";
 
 import { ApiArea, Enum } from "@stackra/contracts";
 
+import { prepareEncoreService } from "#node/encore/functions/prepare-encore-service.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { lineDiff } from "#node/functions/line-diff.function";
 import { memberNaming } from "#node/functions/member-naming.function";
@@ -236,11 +237,22 @@ export const NEW_COMMAND: CliCommand = {
     )
       copyFileSync(join(root, "LICENSE"), join(folder, "LICENSE"));
 
+    // A service is an Encore service: gen refuses one whose package.json does not pin `encore.dev` (the generated
+    // `stackra-encore/` imports it), so a new one gets what `stackra encore:prepare` writes when the workspace names a
+    // version, and a note when it does not (yet).
+    let encoreNote = "";
+    if (kind === "service" && !over)
+      try {
+        prepareEncoreService(folder, root);
+      } catch (error) {
+        encoreNote = `note: ${(error as Error).message}; run \`stackra encore:prepare\` in ${where} once it does\n`;
+      }
+
     io.out(
       kind === "seed-pack"
         ? `${over ? "regenerated" : "created"} ${where}\nnext: add records under profiles/, then \`stackra seed-pack ${name} --check\`\n`
         : kind === "service"
-          ? `${over ? "regenerated" : "created"} ${where}\nnext, in ${where}: \`pnpm install && stackra gen && stackra test\`\n`
+          ? `${over ? "regenerated" : "created"} ${where}\n${encoreNote}next, in ${where}: \`pnpm install && stackra gen && stackra test\`\n`
           : `${over ? "regenerated" : "created"} ${where}\nnext: \`pnpm install\`, then \`stackra gen\` in ${where}\n`,
     );
     return 0;

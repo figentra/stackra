@@ -139,6 +139,35 @@ describe("NEW_COMMAND", () => {
     expect(existsSync(join(root, ".npmrc"))).toBe(false);
   });
 
+  it("pins encore.dev and writes the tsconfig paths when the workspace names a version, as encore:prepare does", async () => {
+    writeFileSync(
+      join(root, "pnpm-workspace.yaml"),
+      "packages: []\ncatalog:\n  encore.dev: 1.58.8\n",
+    );
+    const { code, output } = run(["service", "demo"], { area: "app" });
+    expect(await code).toBe(0);
+    const folder = join(root, "services/demo");
+    const pkg = JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    expect(pkg.dependencies["encore.dev"]).toBe("1.58.8");
+    expect(readFileSync(join(folder, "tsconfig.json"), "utf8")).toContain('"paths"');
+    expect(output()).not.toContain("note:");
+  });
+
+  it("makes a service without a named encore.dev version anyway, and says what to run", async () => {
+    const { code, output } = run(["service", "demo"], { area: "app" });
+    expect(await code).toBe(0);
+    const pkg = JSON.parse(readFileSync(join(root, "services/demo/package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    expect(pkg.dependencies["encore.dev"]).toBeUndefined();
+    expect(output()).toMatch(
+      /note: no encore\.dev reference version.*run `stackra encore:prepare` in services\/demo once it does/,
+    );
+    expect(output()).toContain("pnpm install && stackra gen && stackra test");
+  });
+
   it("adds the example module and test:int with --data", async () => {
     expect(await run(["service", "demo"], { area: "app", data: true }).code).toBe(0);
     const folder = join(root, "services/demo");
