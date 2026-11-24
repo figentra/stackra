@@ -3,21 +3,27 @@
  * Purpose: unit tests of `BundledResolvedPackSourceDriver`, the interim source: a pinned live pack is served and an
  *          unpinned file never read; a pin with no bundled pack, a pack whose content no longer hashes to its pin and a
  *          pinned draft are refused; production without `allowBundledInProduction` refuses at construction; and
- *          `BUNDLED_PACK_HASHES` lists exactly the live bundled files under their content hash.
- * Boundary: test only; made-up packs (market `xa`) through `with`, and the real `assets/data/packs/` files for the
- *           index check.
+ *          `BUNDLED_PACK_HASHES` lists exactly the live bundled files under their content hash. The driver itself, not
+ *          only the `with` helper: a host that pins nothing is served an empty set, the load is kept once, the production
+ *          warning is written once per load and never elsewhere, a failed load is not kept so the next call tries again,
+ *          and every bundled loader answers a well-formed pack of its own market.
+ * Boundary: test only; made-up packs (market `xa`) through `with`, the real `assets/data/packs/` files for the index
+ *           check and the loaders, and a recording logger. No bundled pack is live yet, so a pin on the real index is
+ *           always refused as not stored; serving a live pack is shown through `with`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269; ADR 0386 (as amended 2026-11-09); ADR 0385 (decision 7).
  */
 import { readdirSync, readFileSync } from "node:fs";
 
 import { buildConfig } from "@stackra/config";
+import { Logger } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
 import { MarketPacksConfig } from "#config/market-packs.config";
 import { BUNDLED_PACK_HASHES } from "#core/constants/bundled-pack-hashes.constant";
 import { BUNDLED_PACK_LOADERS } from "#core/constants/bundled-pack-loaders.constant";
+import { MARKET_PACK_SCHEMA } from "#core/constants/market-pack-schema.constant";
 import { BundledResolvedPackSourceDriver } from "#core/drivers/bundled-resolved-pack-source.driver";
 import { PackRejection } from "#core/enums/pack-rejection.enum";
 import { PackStatus } from "#core/enums/pack-status.enum";
@@ -69,6 +75,25 @@ const rejection = async (load: Promise<unknown>) => {
 
 /** The market-packs config with `values` over the defaults. */
 const config = (values: Record<string, unknown>) => buildConfig(MarketPacksConfig, { values });
+
+/** A logger that records the warnings it is given. */
+class RecordingLogger extends Logger {
+  readonly warnings: { event: string; fields?: Readonly<Record<string, unknown>> }[] = [];
+
+  debug(): void {}
+
+  info(): void {}
+
+  warn(event: string, fields?: Readonly<Record<string, unknown>>): void {
+    this.warnings.push({ event, ...(fields === undefined ? {} : { fields }) });
+  }
+
+  error(): void {}
+}
+
+/** A hash no bundled pack is indexed under. */
+const NOT_BUNDLED = "0".repeat(64);
+const ALSO_NOT_BUNDLED = "f".repeat(64);
 
 describe("BundledResolvedPackSourceDriver", () => {
   it("serves a pinned live pack, once", async () => {
@@ -138,5 +163,91 @@ describe("BundledResolvedPackSourceDriver", () => {
     }
 
     expect(BUNDLED_PACK_HASHES).toEqual(live);
+  });
+});
+
+describe("BundledResolvedPackSourceDriver#packs", () => {
+  it("serves an empty set to a host that pins nothing", async () => {
+    const source = new BundledResolvedPackSourceDriver(
+      config({ environment: "dev", packHashes: [] }),
+    );
+    expect(await source.packs()).toEqual([]);
+  });
+
+  it("keeps the load: one promise while it is in flight, then the same set", async () => {
+    const source = new BundledResolvedPackSourceDriver(
+      config({ environment: "dev", packHashes: [] }),
+    );
+    const loading = source.packs();
+    expect(source.packs()).toBe(loading);
+    expect(await source.packs()).toBe(await loading);
+  });
+
+  it("warns once, with the number of pins, that unsigned packs are served in production", async () => {
+    const logger = new RecordingLogger();
+    const source = new BundledResolvedPackSourceDriver(
+      config({ environment: "production", allowBundledInProduction: true, packHashes: [] }),
+      logger,
+    );
+    await source.packs();
+    await source.packs();
+    expect(logger.warnings).toEqual([
+      { event: "market_packs.bundled_source_in_production", fields: { packHashes: 0 } },
+    ]);
+  });
+
+  it("does not warn outside production", async () => {
+    const logger = new RecordingLogger();
+    for (const environment of ["dev", "staging"])
+      // oxlint-disable-next-line no-await-in-loop -- reason: two environments, loaded in turn
+      await new BundledResolvedPackSourceDriver(
+        config({ environment, packHashes: [] }),
+        logger,
+      ).packs();
+    expect(logger.warnings).toEqual([]);
+  });
+
+  it("loads in production with no logger bound", async () => {
+    const source = new BundledResolvedPackSourceDriver(
+      config({ environment: "production", allowBundledInProduction: true, packHashes: [] }),
+    );
+    expect(await source.packs()).toEqual([]);
+  });
+
+  it("refuses a pin the bundled index does not hold, naming the refusal", async () => {
+    const source = new BundledResolvedPackSourceDriver(
+      config({ environment: "dev", packHashes: [NOT_BUNDLED] }),
+    );
+    expect(await rejection(source.packs())).toBe(PackRejection.NotStored);
+  });
+
+  it("does not keep a failed load: the next call loads again, and warns again", async () => {
+    const logger = new RecordingLogger();
+    const source = new BundledResolvedPackSourceDriver(
+      config({
+        environment: "production",
+        allowBundledInProduction: true,
+        packHashes: [NOT_BUNDLED, ALSO_NOT_BUNDLED],
+      }),
+      logger,
+    );
+    const failed = source.packs();
+    expect(await rejection(failed)).toBe(PackRejection.NotStored);
+    const again = source.packs();
+    expect(again).not.toBe(failed);
+    expect(await rejection(again)).toBe(PackRejection.NotStored);
+    expect(logger.warnings).toEqual([
+      { event: "market_packs.bundled_source_in_production", fields: { packHashes: 2 } },
+      { event: "market_packs.bundled_source_in_production", fields: { packHashes: 2 } },
+    ]);
+  });
+
+  it("has a loader for every bundled market, each answering a well-formed pack of that market", async () => {
+    for (const [market, load] of Object.entries(BUNDLED_PACK_LOADERS)) {
+      // oxlint-disable-next-line no-await-in-loop -- reason: a handful of files, loaded in turn so a failure names its market
+      const parsed = MARKET_PACK_SCHEMA.safeParse((await load()).default);
+      expect(parsed.success, market).toBe(true);
+      expect(parsed.data?.market, market).toBe(market);
+    }
   });
 });
