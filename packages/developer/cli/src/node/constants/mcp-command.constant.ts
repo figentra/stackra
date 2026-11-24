@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `MCP_COMMAND`, `stackra mcp`: serves the local developer MCP over stdio until the client disconnects. Its
- *          command tools run through this CLI in-process with a capturing io, so an assistant's `gen`, `validate` or
- *          `verify` passes the same commands and gates as a person's.
+ * Purpose: `MCP_COMMAND`, `stackra mcp`: serves the local developer MCP over stdio until the client disconnects or the
+ *          run is interrupted (SIGINT, SIGTERM). Its command tools run through this CLI in-process with a capturing io,
+ *          so an assistant's `gen`, `validate` or `verify` passes the same commands and gates as a person's.
  * Boundary: standard output carries the MCP protocol only; command output is captured and returned as tool results.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 5: local mode shares one core with the CLI); R-29 (proxy the local Encore
@@ -22,10 +22,12 @@ export const MCP_COMMAND: CliCommand = {
   name: "mcp",
   summary: "Serve the local developer MCP over stdio",
   usage: "stackra mcp",
-  async run({ cwd, cli }) {
+  async run({ cwd, cli, signal }) {
     await serveLocalMcp({
       version: cliVersion(),
       root: cwd,
+      // SIGTERM or SIGINT closes standard input, so the server ends with its signal instead of outliving it.
+      ...(signal === undefined ? {} : { signal }),
       // A converted command is served from its own definition; the rest stay on LOCAL_TOOLS until they are converted.
       tools: toolsOf(
         { name: "stackra", version: cliVersion(), commands: [DoctorCommand] },
