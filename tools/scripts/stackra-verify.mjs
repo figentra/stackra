@@ -46,6 +46,10 @@
  *   could alter the kept base or store image layers on disk without changing their ids.
  *   Start it directly (`node tools/scripts/stackra-verify.mjs daemon …` from systemd), never through secrets-exec:
  *   it needs no stackra-bot secret, only its own key file.
+ *   Licensed builds (uniwind-pro): the daemon builds them into the store image from main's versions, with the licence
+ *   token as a BuildKit secret (piped on stdin, never a file, ENV, ARG or layer), scans the image history and every
+ *   layer for the token and refuses the image if it is there, and PR installs only copy the built output. The store
+ *   image is for this box only: it is never pushed to or published in any registry (licence: our own use).
  * Runtime: node on Linux with flock, sudo, git, and docker for the verify user.
  * Governing contract: ADR 0119 (merge policy); ADR 0523 (decision 3); STA-2761.
  * Secrets: the App key is read from STACKRA_VERIFY_KEY_FILE (owner-placed, mode 0400) only to mint a token, which
@@ -98,9 +102,35 @@ export function allowedBuilds(workspaceYaml) {
   return [...new Set(names)].filter((n) => /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/.test(n));
 }
 
-/** The install: no lifecycle script and no pnpmfile from the PR; then only main's allowed builds. */
-export const installCommand = (builds) =>
-  builds.length ? `${INSTALL_COMMAND} && pnpm rebuild ${builds.join(" ")}` : INSTALL_COMMAND;
+/** Builds that need a licence token (their postinstall downloads a licensed binary); never run with PR code. */
+export const LICENSED_BUILDS = ["uniwind-pro"];
+/** The install's exit code when the PR needs a licensed build the store image does not have. */
+export const NEEDS_STORE_REBUILD_EXIT = 78;
+
+/** The versions of `name` in a pnpm lockfile's packages and snapshots (`  name@1.2.3:` or `  name@1.2.3(peers):`). */
+export function lockedVersions(lockText, name) {
+  const escaped = name.replaceAll(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+  const pattern = new RegExp(`^  '?/?${escaped}@(\\d[\\w.+-]*)[(:']`, "gm");
+  return [...new Set([...lockText.matchAll(pattern)].map((m) => m[1]))];
+}
+
+/**
+ * The install: no lifecycle script and no pnpmfile from the PR; then only main's allowed builds that need no
+ * licence; then each licensed package is laid in from the store image's prebuilt copy (`/prebuilt/<name>@<version>`),
+ * or the install exits NEEDS_STORE_REBUILD_EXIT when the PR resolves a version the store image has not built.
+ */
+export function installCommand(builds, licensed = LICENSED_BUILDS) {
+  const free = builds.filter((b) => !licensed.includes(b));
+  const steps = [INSTALL_COMMAND];
+  if (free.length) steps.push(`pnpm rebuild ${free.join(" ")}`);
+  for (const name of licensed.filter((l) => builds.includes(l)))
+    steps.push(
+      `for d in node_modules/.pnpm/${name}@*/node_modules/${name}; do [ -e "$d" ] || continue; ` +
+        `v=$(node -p "require('./$d/package.json').version"); ` +
+        `[ -d "/prebuilt/${name}@$v" ] || exit ${NEEDS_STORE_REBUILD_EXIT}; cp -a "/prebuilt/${name}@$v/." "$d/"; done`,
+    );
+  return steps.join(" && ");
+}
 export const VERIFY_COMMAND = "pnpm verify";
 /** The uid:gid PR code runs as inside every container (the base image's unprivileged user), never root. */
 export const CONTAINER_USER = "1000:1000";
@@ -172,6 +202,7 @@ export function settings(env = process.env) {
     installationId: env.STACKRA_VERIFY_INSTALLATION_ID || null,
     keyFile: env.STACKRA_VERIFY_KEY_FILE || null,
     dockerRoot: env.STACKRA_VERIFY_DOCKER_ROOT || null,
+    licenceFile: env.STACKRA_VERIFY_LICENCE_FILE || null,
     registries: (env.STACKRA_VERIFY_REGISTRIES?.split(",").filter(Boolean) ?? REGISTRY_HOSTS).map(
       (h) => h.trim(),
     ),
@@ -182,7 +213,7 @@ export function settings(env = process.env) {
  * Why this host may not run the service; empty when it may. `keyMode` is the key file's permission bits (null when
  * unreadable). PR code must never run as the key holder, and only a digest-pinned base image is trusted.
  */
-export function hostProblems(s, keyMode) {
+export function hostProblems(s, keyMode, licenceMode = 0o400) {
   const problems = [];
   if (!s.runAs)
     problems.push("STACKRA_VERIFY_RUN_AS is not set: PR code would run as the key holder");
@@ -197,6 +228,8 @@ export function hostProblems(s, keyMode) {
   else if (keyMode === null) problems.push("the App key file is not readable");
   else if (keyMode !== 0o400)
     problems.push("the App key file must be mode 0400 (readable by its owner only)");
+  if (s.licenceFile && licenceMode !== 0o400)
+    problems.push("the licence token file must be mode 0400 and owned by the service");
   if (VERIFY_APP.id && s.appId && String(VERIFY_APP.id) !== String(s.appId))
     problems.push(
       `STACKRA_VERIFY_APP_ID differs from VERIFY_APP.id (${VERIFY_APP.id}) in pr-merge.mjs`,
@@ -423,7 +456,7 @@ export const storeTag = (lockfile, baseImage = "") =>
   `stackra-verify-store:${createHash("sha256").update(baseImage).update("\0").update(lockfile).digest("hex").slice(0, 16)}`;
 
 /** The warm store: main's lockfile fetched into /store on top of the pinned base, built by the daemon only. */
-export function storeDockerfile({ baseImage, pnpmVersion }) {
+export function storeDockerfile({ baseImage, pnpmVersion, licensed = [] }) {
   if (!DIGEST_PINNED.test(baseImage)) throw new Error("the base image must be pinned by digest");
   if (!/^\d+\.\d+\.\d+$/.test(pnpmVersion)) throw new Error(`not a pnpm version: ${pnpmVersion}`);
   return [
@@ -434,9 +467,60 @@ export function storeDockerfile({ baseImage, pnpmVersion }) {
     "WORKDIR /seed",
     "COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./",
     "RUN pnpm fetch --store-dir /store && rm -rf /seed",
-    `RUN mkdir -p /work && chown -R ${CONTAINER_USER} /store /work`,
+    ...(licensed.length
+      ? [
+          // The licensed builds, from main's versions, with the token as a BuildKit secret mount: it is never an ENV,
+          // an ARG or a file in a layer, and the script is bind-mounted, so no layer records how the token is read.
+          "RUN --mount=type=secret,id=licence,required=true --mount=type=bind,source=licensed.sh,target=/tmp/licensed.sh sh /tmp/licensed.sh",
+        ]
+      : []),
+    `RUN mkdir -p /work /prebuilt && chown -R ${CONTAINER_USER} /store /work /prebuilt`,
     "",
   ].join("\n");
+}
+
+/**
+ * The script the licensed stage runs (bind-mounted, never in a layer): a throwaway project that depends on exactly
+ * main's licensed versions, installed against the warm store with the token read from the secret mount, whose built
+ * package directories are copied to /prebuilt/<name>@<version>. The project and any file the install left are removed.
+ */
+export function licensedScript(packages) {
+  for (const { name, version } of packages)
+    if (!/^[a-z0-9][\w.-]*$/.test(name) || !/^\d[\w.+-]*$/.test(version))
+      throw new Error(`not a package: ${name}@${version}`);
+  const dependencies = Object.fromEntries(packages.map(({ name, version }) => [name, version]));
+  const allow = packages.map(({ name }) => `  ${name}: true`).join("\n");
+  return [
+    "set -e",
+    "mkdir -p /lic /prebuilt && cd /lic",
+    `printf '%s' '${JSON.stringify({ name: "licensed", private: true, dependencies })}' > package.json`,
+    `printf 'allowBuilds:\\n${allow.replaceAll("\n", "\\n")}\\n' > pnpm-workspace.yaml`,
+    'UNIWIND_AUTH_TOKEN="$(cat /run/secrets/licence)" pnpm install --store-dir /store --config.node-linker=isolated',
+    ...packages.map(
+      ({ name, version }) =>
+        `mkdir -p /prebuilt/${name}@${version} && cp -a node_modules/${name}/. /prebuilt/${name}@${version}/`,
+    ),
+    "cd / && rm -rf /lic /root/.cache /root/.config /root/.local /tmp/*",
+  ].join("\n");
+}
+
+/**
+ * Whether `needle` occurs in a stream of chunks, across chunk boundaries (the image scan for the licence token).
+ * Returns a consumer `{ push(chunk), found }`.
+ */
+export function needleScanner(needle) {
+  const target = Buffer.from(needle);
+  let carry = Buffer.alloc(0);
+  const scanner = {
+    found: false,
+    push(chunk) {
+      if (scanner.found || target.length === 0) return;
+      const data = Buffer.concat([carry, Buffer.from(chunk)]);
+      if (data.indexOf(target) !== -1) scanner.found = true;
+      carry = data.subarray(Math.max(0, data.length - target.length + 1));
+    },
+  };
+  return scanner;
 }
 
 /** pnpm's version from a root package.json's `packageManager` (`pnpm@12.16.1+sha…`). */
@@ -576,15 +660,17 @@ export function checkRunBody({
   const verdict =
     conclusion === "success"
       ? "pnpm verify passed"
-      : conclusion === "neutral"
-        ? `could not run (${reason})`
-        : phase === "merge"
-          ? "the PR conflicts with main"
-          : phase === "install"
-            ? "pnpm install failed"
-            : reason === "time limit"
-              ? "pnpm verify hit the time limit"
-              : "pnpm verify failed";
+      : conclusion === "neutral" && reason === "needs store rebuild"
+        ? "needs a store rebuild (a licensed build at a version main has not built; it runs after merge)"
+        : conclusion === "neutral"
+          ? `could not run (${reason})`
+          : phase === "merge"
+            ? "the PR conflicts with main"
+            : phase === "install"
+              ? "pnpm install failed"
+              : reason === "time limit"
+                ? "pnpm verify hit the time limit"
+                : "pnpm verify failed";
   return {
     name: VERIFY_CHECK,
     head_sha: sha,
@@ -718,6 +804,12 @@ export async function runJob(job, deps) {
       return settle(job, deps, { conclusion: "failure", phase: "install", reason: "time limit" });
     const installExit = deps.exitCodeOf(install);
     if (installExit === null) return { post: false, error: "the install container did not start" };
+    if (installExit === NEEDS_STORE_REBUILD_EXIT)
+      return settle(job, deps, {
+        conclusion: "neutral",
+        phase: "install",
+        reason: "needs store rebuild",
+      });
     if (installExit !== 0) return settle(job, deps, { conclusion: "failure", phase: "install" });
 
     const commit = deps.docker(["commit", install, runImage]);
@@ -774,7 +866,13 @@ export const FORBIDDEN_DEFAULTS = [
  */
 export function preflightProblems(s, io, extraForbidden = []) {
   const problems = [];
-  const forbidden = [s.keyFile, s.home, ...FORBIDDEN_DEFAULTS, ...extraForbidden].filter(Boolean);
+  const forbidden = [
+    s.keyFile,
+    s.licenceFile,
+    s.home,
+    ...FORBIDDEN_DEFAULTS,
+    ...extraForbidden,
+  ].filter(Boolean);
   for (const path of forbidden)
     if (io.exists(path) && io.canRead(path))
       problems.push(`the verify user ${s.runAs} can read ${path}`);
@@ -1068,15 +1166,40 @@ function ensureStore(s, mirror, base, runDir, state) {
   const current = docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim();
   if (storeReusable({ recordedId: recorded?.id, currentId: current, builtAt: recorded?.builtAt }))
     return tag;
+  const lockText = lockfile.toString("utf8");
+  const builds = allowedBuilds(readFileSync(join(ctx, "pnpm-workspace.yaml"), "utf8"));
+  const licensed = LICENSED_BUILDS.filter((name) => builds.includes(name)).flatMap((name) =>
+    lockedVersions(lockText, name).map((version) => ({ name, version })),
+  );
+  let token = null;
+  if (licensed.length) {
+    if (!s.licenceFile)
+      throw new Error("main has licensed builds; STACKRA_VERIFY_LICENCE_FILE is not set");
+    token = readFileSync(s.licenceFile, "utf8").trim();
+    writeFileSync(join(ctx, "licensed.sh"), licensedScript(licensed), { mode: 0o644 });
+  }
   const dockerfile = storeDockerfile({
     baseImage: s.baseImage,
     pnpmVersion: pnpmVersionOf(readFileSync(join(ctx, "package.json"), "utf8")),
+    licensed,
   });
   writeFileSync(join(ctx, "Dockerfile"), dockerfile, { mode: 0o644 });
-  const build = docker(s, ["build", "--quiet", "--pull=false", "--no-cache", "--tag", tag, ctx], {
-    timeout: 60 * 60 * 1000,
-  });
-  if (build.code !== 0) throw new Error(`could not build the store image: ${build.stderr.trim()}`);
+  // The token reaches BuildKit on stdin only: no file the verify user can read, no argument, no environment.
+  const secret = token ? ["--secret", "id=licence,src=/dev/stdin"] : [];
+  const build = docker(
+    s,
+    ["build", "--quiet", "--pull=false", "--no-cache", ...secret, "--tag", tag, ctx],
+    {
+      timeout: 60 * 60 * 1000,
+      ...(token ? { input: token } : {}),
+    },
+  );
+  if (build.code !== 0)
+    throw new Error(`could not build the store image: ${scrub(build.stderr).slice(0, 300)}`);
+  if (token && imageCarries(s, tag, token)) {
+    docker(s, ["rmi", "-f", tag]);
+    throw new Error("the store image carries the licence token or its name; refused and removed");
+  }
   state.stores = {
     [tag]: {
       id: docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim(),
@@ -1084,6 +1207,24 @@ function ensureStore(s, mirror, base, runDir, state) {
     },
   };
   return tag;
+}
+
+/**
+ * Whether an image carries the licence token: its history and config (the token or its variable name), or any byte
+ * of any layer (the token; the variable name legitimately appears in the licensed package's own code).
+ */
+function imageCarries(s, image, token) {
+  const history = docker(s, ["history", "--no-trunc", "--format", "{{.CreatedBy}}", image]);
+  const config = docker(s, ["image", "inspect", image]);
+  if (history.code !== 0 || config.code !== 0) return true;
+  for (const text of [history.stdout, config.stdout])
+    if (text.includes(token) || text.includes("UNIWIND_AUTH_TOKEN")) return true;
+  const [bin, ...argv] = dockerAs(s, ["save", image]);
+  const scanner = needleScanner(token);
+  const r = spawnSync(bin, argv, { maxBuffer: 64 * 1024 * 1024 * 1024, timeout: 30 * 60_000 });
+  if (r.status !== 0) return true;
+  scanner.push(r.stdout);
+  return scanner.found;
 }
 
 /** Everything a run left in the verify user's Docker goes: containers, run images, volumes, networks, other images. */
@@ -1428,7 +1569,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   } catch {
     keyMode = null;
   }
-  const problems = hostProblems(s, keyMode);
+  let licenceMode = 0o400;
+  if (s.licenceFile)
+    try {
+      const licence = statSync(s.licenceFile);
+      licenceMode = licence.uid === process.getuid() ? licence.mode & 0o777 : null;
+    } catch {
+      licenceMode = null;
+    }
+  const problems = hostProblems(s, keyMode, licenceMode);
   if (!problems.length) {
     mkdirSync(s.home, { recursive: true, mode: 0o711 });
     chmodSync(s.home, 0o711);

@@ -36,6 +36,11 @@ import {
   hostProblems,
   imagesToRemove,
   installArgs,
+  installCommand,
+  licensedScript,
+  lockedVersions,
+  needleScanner,
+  NEEDS_STORE_REBUILD_EXIT,
   jobsFrom,
   ledgerEntry,
   logTail,
@@ -882,4 +887,99 @@ test("ledgerEntry and formatDuration: the result, the posted flag and the link",
   assert.equal(json.posted, false);
   assert.equal(json.pr, 7);
   assert.match(md, /\| failure, not posted \| 1m 1s \|/);
+});
+
+test("licensed builds: main's versions from the lockfile; the install copies the prebuilt output, never runs it", () => {
+  const lock = [
+    "packages:",
+    "  uniwind-pro@1.9.0:",
+    "    resolution: {integrity: sha512-x}",
+    "  uniwind@1.12.1:",
+    "snapshots:",
+    "  uniwind-pro@1.9.0(@expo/metro-config@57.0.13)(metro@0.87.1):",
+    "  uniwind-pro-extra@2.0.0:",
+  ].join("\n");
+  assert.deepEqual(lockedVersions(lock, "uniwind-pro"), ["1.9.0"]);
+  const cmd = installCommand(["esbuild", "uniwind-pro", "sharp"]);
+  assert.match(cmd, /--ignore-scripts --ignore-pnpmfile && pnpm rebuild esbuild sharp && /);
+  assert.doesNotMatch(cmd, /pnpm rebuild[^&]*uniwind-pro/);
+  assert.match(cmd, /node_modules\/\.pnpm\/uniwind-pro@\*\/node_modules\/uniwind-pro/);
+  assert.match(
+    cmd,
+    new RegExp(`\\[ -d "/prebuilt/uniwind-pro@\\$v" \\] \\|\\| exit ${NEEDS_STORE_REBUILD_EXIT}`),
+  );
+  assert.match(cmd, /cp -a "\/prebuilt\/uniwind-pro@\$v\/\." "\$d\/"/);
+  assert.equal(installCommand(["esbuild"]).includes("prebuilt"), false);
+});
+
+test("licensed store stage: a secret mount and a bind-mounted script; no token in an ENV, ARG or layer", () => {
+  const dockerfile = storeDockerfile({
+    baseImage: PINNED,
+    pnpmVersion: "12.16.1",
+    licensed: [{ name: "uniwind-pro", version: "1.9.0" }],
+  });
+  assert.match(
+    dockerfile,
+    /RUN --mount=type=secret,id=licence,required=true --mount=type=bind,source=licensed\.sh,target=\/tmp\/licensed\.sh sh \/tmp\/licensed\.sh/,
+  );
+  assert.doesNotMatch(dockerfile, /^(?:ARG|ENV).*(?:TOKEN|LICENCE|UNIWIND)/m);
+  assert.doesNotMatch(dockerfile, /UNIWIND_AUTH_TOKEN/);
+  assert.equal(
+    storeDockerfile({ baseImage: PINNED, pnpmVersion: "12.16.1" }).includes("secret"),
+    false,
+  );
+  const script = licensedScript([{ name: "uniwind-pro", version: "1.9.0" }]);
+  assert.match(
+    script,
+    /UNIWIND_AUTH_TOKEN="\$\(cat \/run\/secrets\/licence\)" pnpm install --store-dir \/store/,
+  );
+  assert.match(script, /cp -a node_modules\/uniwind-pro\/\. \/prebuilt\/uniwind-pro@1\.9\.0\//);
+  assert.match(script, /rm -rf \/lic /);
+  for (const bad of [
+    { name: "x; rm -rf /", version: "1.0.0" },
+    { name: "uniwind-pro", version: "1.0.0$(id)" },
+  ])
+    assert.throws(() => licensedScript([bad]), /not a package/);
+});
+
+test("token scan: finds the token across chunk boundaries; nothing found stays not found", () => {
+  const token = `uw-${"q".repeat(8)}-${"z".repeat(8)}`;
+  const split = needleScanner(token);
+  split.push(`....layer bytes ... ${token.slice(0, 12)}`);
+  split.push(`${token.slice(12)} more bytes`);
+  assert.equal(split.found, true);
+  const clean = needleScanner(token);
+  clean.push("UNIWIND_AUTH_TOKEN is read by the package's own code");
+  clean.push(Buffer.alloc(100_000, 1));
+  assert.equal(clean.found, false);
+});
+
+test("runJob: a PR needing a licensed version the store has not built is neutral (needs store rebuild), not pass or fail", async () => {
+  const r = await runJob(
+    JOB,
+    fakeDeps({ exits: { install: NEEDS_STORE_REBUILD_EXIT, verify: 0 } }).deps,
+  );
+  assert.equal(r.post, true);
+  assert.equal(r.conclusion, "neutral");
+  assert.equal(r.reason, "needs store rebuild");
+  const body = checkRunBody({
+    sha: SHA,
+    base: BASE,
+    conclusion: "neutral",
+    phase: "install",
+    reason: "needs store rebuild",
+    durationMs: 1000,
+    box: "box1",
+    log: "",
+    startedAt: "t0",
+    completedAt: "t1",
+  });
+  assert.match(body.output.title, /^needs a store rebuild/);
+});
+
+test("hostProblems: a licence token file that is not 0400 and ours refuses", () => {
+  const withLicence = { ...S, licenceFile: "/home/svc/licence" };
+  assert.deepEqual(hostProblems(withLicence, 0o400, 0o400), []);
+  assert.match(hostProblems(withLicence, 0o400, 0o644).join(), /licence token file/);
+  assert.match(hostProblems(withLicence, 0o400, null).join(), /licence token file/);
 });
