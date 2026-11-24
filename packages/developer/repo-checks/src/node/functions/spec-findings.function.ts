@@ -47,7 +47,7 @@ const foldersOf = (names: readonly string[], pattern: RegExp): string[] => [
  * specFindings({ base: "origin/main", branch: "os-12-x", requireReady: false, git, exists, read, list });
  */
 export function specFindings(options: SpecFindingsOptions): Finding[] {
-  const { base, branch, requireReady, git, exists, read, list } = options;
+  const { base, branch, title = "", requireReady, git, exists, read, list } = options;
   const out: Finding[] = [];
   const add = (rule: "spec-gate" | "spec-trace", path: string, message: string): void => {
     out.push({
@@ -101,7 +101,7 @@ export function specFindings(options: SpecFindingsOptions): Finding[] {
     const status = specStatusOf(text(spec));
     if (
       requireReady &&
-      specIsOwn(folderName(dir), branch, prefixes) &&
+      specIsOwn(folderName(dir), branch, prefixes, title) &&
       !["abandoned", "superseded"].includes(status) &&
       !specAtLeast(status, "tasked")
     )
@@ -119,6 +119,7 @@ export function specFindings(options: SpecFindingsOptions): Finding[] {
         before: git(["show", `${mergeBase}:${dir}/spec.md`]) ?? "",
         after: text(`${dir}/spec.md`),
         branch,
+        title,
         commits,
         prefixes,
       }))

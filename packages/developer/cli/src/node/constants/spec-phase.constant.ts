@@ -5,8 +5,9 @@
  *          `origin/main`), the foreign-status, bug-lane and lane gates, and the trace rules. A repository without
  *          `.agents/specs` reports "skipped (no specs)".
  * Boundary: the checks are published code in `@stackra/repo-checks`, so the phase runs in any repository; it reads
- *           files and runs `git` through the functions it hands the checks. The `STACKRA_BRANCH` and
- *           `SPEC_GATE_REQUIRE_READY=1` environment variables are read here, as the repository's scripts read them.
+ *           files and runs `git` through the functions it hands the checks. The `STACKRA_BRANCH`, `PR_TITLE` (a lane
+ *           branch `stackra/l<n>/<slug>` names its spec by the key in the title) and `SPEC_GATE_REQUIRE_READY=1`
+ *           environment variables are read here, as the repository's scripts read them.
  *           Only the Linear side effects of core's spec workflow stay in core's `tools/scripts`.
  * Runtime: node
  * Governing contract: ADR 0198 (spec states and traceability); ADR 0282 (decisions 3 and 4, as amended).
@@ -43,6 +44,7 @@ export const SPEC_PHASE: CheckPhase = {
     const findings = specFindings({
       base: base ?? "origin/main",
       branch,
+      title: process.env["PR_TITLE"] ?? "",
       requireReady: process.env["SPEC_GATE_REQUIRE_READY"] === "1",
       git,
       exists: (path) => existsSync(join(root, path)),

@@ -16,6 +16,9 @@ export type SpecFindingsOptions = {
   /** The current branch name; `""` when unknown. */
   readonly branch: string;
 
+  /** The PR title, `""` when unknown: a lane branch (`stackra/l<n>/<slug>`) names its spec by the key in it. */
+  readonly title?: string;
+
   /** True on a ready-for-review PR: the PR's own spec must then be at Tasked or later. */
   readonly requireReady: boolean;
 

@@ -16,7 +16,7 @@ import { specStatusLine } from "./spec-status-line.function.ts";
 /**
  * Problems for one changed spec folder.
  *
- * @param context - the folder, its spec.md before (at the merge base) and after, the branch, the commits and the prefixes.
+ * @param context - the folder, its spec.md before (at the merge base) and after, the branch, the PR title (a lane branch's key), the commits and the prefixes.
  * @example
  * specCheckForeignStatus({ folder: "os-3-x", before: a, after: b, branch: "os-4-y", commits: [], prefixes: ["os"] });
  */
@@ -25,11 +25,20 @@ export function specCheckForeignStatus(context: {
   before?: string;
   after?: string;
   branch?: string;
+  title?: string;
   commits?: readonly string[];
   prefixes?: readonly string[];
 }): string[] {
-  const { folder, before = "", after = "", branch = "", commits = [], prefixes = [] } = context;
-  if (specIsOwn(folder, branch, prefixes) || !before) return [];
+  const {
+    folder,
+    before = "",
+    after = "",
+    branch = "",
+    title = "",
+    commits = [],
+    prefixes = [],
+  } = context;
+  if (specIsOwn(folder, branch, prefixes, title) || !before) return [];
   const [was, now] = [specStatusLine(before), specStatusLine(after)];
   if (was === now) return [];
   const parsed = specFolderOf(folder);

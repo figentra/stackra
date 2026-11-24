@@ -26,12 +26,14 @@ function repo(
     changed = [] as string[],
     commits = [] as string[],
     branch = "feature/os-901-x",
+    title = "",
     requireReady = false,
   } = {},
 ) {
   return specFindings({
     base: "origin/main",
     branch,
+    title,
     requireReady,
     git: (args) => {
       if (args[0] === "diff") return changed.join("\n");
@@ -121,6 +123,29 @@ describe("specFindings", () => {
       branch: "feature/os-5-x",
     });
     expect(other.map((f) => f.message).join()).not.toMatch(/ready-for-review PR/);
+  });
+
+  it("holds a lane PR's own spec, named by its title's key, to Tasked on a ready PR; a foreign spec is not held", () => {
+    const draft = read("spec.md").replace("**Status**: Done", "**Status**: Draft");
+    const files = { ...widget(), [`${DIR}/spec.md`]: draft };
+    const lane = "stackra/l6/widget";
+    const own = repo(files, {
+      changed: [`${DIR}/spec.md`],
+      requireReady: true,
+      branch: lane,
+      title: "feat(widget): build it (OS-901)",
+    });
+    expect(own.map((f) => f.message).join()).toMatch(/ready-for-review PR/);
+    const foreign = repo(files, {
+      changed: [`${DIR}/spec.md`],
+      requireReady: true,
+      branch: lane,
+      title: "feat(widget): build it (OS-5)",
+    });
+    expect(foreign.map((f) => f.message).join()).not.toMatch(/ready-for-review PR/);
+    // Before this, a lane PR was never "own": no title and no branch key meant no hold at all.
+    const untitled = repo(files, { changed: [`${DIR}/spec.md`], requireReady: true, branch: lane });
+    expect(untitled.map((f) => f.message).join()).not.toMatch(/ready-for-review PR/);
   });
 
   it("refuses a path under a root specs folder", () => {

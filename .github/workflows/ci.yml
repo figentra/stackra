@@ -205,6 +205,7 @@ jobs:
         env:
           SPEC_GATE_REQUIRE_READY: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && '1' || '' }}
           STACKRA_BRANCH: ${{ github.head_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: pnpm validate
 
       # ADR 0525 (as ADR 0173's 2026-11-04 amendment, STA-2104): every environment name is declared and has a sops
