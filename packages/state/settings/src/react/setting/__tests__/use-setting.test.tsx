@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves `useSetting` shows a key's default, then the stored value and its lock, writes a value at the
+ * Purpose: proves `useSetting` shows a key's default, then the stored value and its lock, keeps the default when the
+ *          read fails, writes a value at the
  *          page's scope, refuses one that breaks its key without writing, restores a refused write with the refusal's
  *          catalogue key, and throws for a name that is not a key of the page.
  * Boundary: unit tier, jsdom, a real container that binds the case's reader.
@@ -68,6 +69,21 @@ describe("useSetting", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.value).toBe(3);
     expect(result.current.isLocked).toBe(true);
+  });
+
+  it("keeps the default on screen, unlocked and not loading, when the read fails", async () => {
+    const wrapper = await wrapperOver({
+      read: async () => {
+        throw new Error("the settings service is unreachable");
+      },
+      write: async () => undefined,
+    });
+    const { result } = renderHook(() => useSetting(PAGE, "volume"), { wrapper });
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.value).toBe(5);
+    expect(result.current.isLocked).toBe(false);
+    expect(result.current.error).toBeUndefined();
   });
 
   it("writes a value at the page's scope and refuses one that breaks its key", async () => {
