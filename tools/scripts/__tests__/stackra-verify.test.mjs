@@ -137,6 +137,9 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  recordedRun,
+  serviceProblemConclusion,
+  SERVICE_PROBLEM,
   SERVICE_INSTALL,
   stepScript,
   sharedStepSwaps,
@@ -737,13 +740,32 @@ test("needsRun: only our App's completed run against current main stands; forger
   const old = { count: 1, at: NOW - ERROR_RETRY_MS - 60_000 };
   assert.equal(needsRun({ checkRuns: [], sha: SHA, appId: APP_ID, errors: recent }, NOW), false);
   assert.equal(needsRun({ checkRuns: [], sha: SHA, appId: APP_ID, errors: old }, NOW), true);
+  // after MAX_ERROR_ATTEMPTS the service problem is posted, and the head is tried again after the delay (M2)
   assert.equal(
     needsRun(
       { checkRuns: [], sha: SHA, appId: APP_ID, errors: { count: MAX_ERROR_ATTEMPTS, at: old.at } },
       NOW,
     ),
+    true,
+  );
+  assert.equal(
+    needsRun(
+      {
+        checkRuns: [],
+        sha: SHA,
+        appId: APP_ID,
+        errors: { count: MAX_ERROR_ATTEMPTS, at: recent.at },
+      },
+      NOW,
+    ),
     false,
   );
+  // a service problem, or a neutral from an older service, never stands
+  for (const run of [
+    { ...ours, output: { title: `${SERVICE_PROBLEM} (not the PR's fault): docker` } },
+    { ...ours, conclusion: "neutral" },
+  ])
+    assert.equal(needsRun({ checkRuns: [run], sha: SHA, appId: APP_ID, base: BASE }, NOW), true);
 });
 
 test("jobsFrom: own-repo, non-draft PRs oldest first, merge queue commits, then main; malformed SHAs skipped", () => {
@@ -953,7 +975,7 @@ test("runJob: the egress probe and the install wait for the install network, the
   assert.equal(probed.proxy, "proxy:3128");
 });
 
-test("definitionDrift: a service whose loaded files are not main's blobs errors as neutral, naming each one", async () => {
+test("definitionDrift: a service whose loaded files are not main's blobs posts a service problem, naming each one", async () => {
   const own = {
     "tools/scripts/stackra-verify.mjs": "a".repeat(40),
     "tools/scripts/pr-merge.mjs": "c".repeat(40),
@@ -978,11 +1000,12 @@ test("definitionDrift: a service whose loaded files are not main's blobs errors 
   };
   const r = await runJob(JOB, deps);
   assert.equal(r.post, true);
-  assert.equal(r.conclusion, "neutral");
-  assert.equal(r.phase, "definition");
+  assert.equal(r.conclusion, "failure");
+  assert.equal(r.phase, "service");
   assert.equal(calls.runs.length, 0);
   const body = checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1000 });
-  assert.equal(body.conclusion, "neutral");
+  assert.equal(body.conclusion, "failure");
+  assert.match(body.output.title, /^stackra\/verify service problem \(not the PR's fault\): /);
   assert.ok(
     body.output.title.includes("a".repeat(40)) && body.output.title.includes("b".repeat(40)),
   );
@@ -4679,7 +4702,7 @@ test("self-update: refused on a non-fast-forward, on local changes, while a job 
   }
 });
 
-test("self-update: a refused update keeps the neutral path, naming the refusal", async () => {
+test("self-update: a refused update posts a service problem, naming the refusal", async () => {
   const own = "a".repeat(40);
   const main = "b".repeat(40);
   const reason = "the new code's self-check failed (exit 1): - the self-check tests failed";
@@ -4693,7 +4716,8 @@ test("self-update: a refused update keeps the neutral path, naming the refusal",
     throw Object.assign(new Error(message), { drift: true });
   };
   const r = await runJob(JOB, deps);
-  assert.equal(r.conclusion, "neutral");
+  assert.equal(r.conclusion, "failure");
+  assert.equal(r.phase, "service");
   assert.match(
     checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1 }).output.title,
     /self-update refused/,
@@ -5629,8 +5653,8 @@ test("N1: a self-check that refuses on the clone's root deps names the operator'
     const body = checkRunBody({
       sha: SHA,
       base: BASE,
-      conclusion: "neutral",
-      phase: "definition",
+      conclusion: "failure",
+      phase: "service",
       reason: message,
       durationMs: 1,
     });
@@ -5638,4 +5662,59 @@ test("N1: a self-check that refuses on the clone's root deps names the operator'
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("M2: stackra/verify never posts neutral; a service problem is a failure that says so, on the gate only", () => {
+  assert.throws(
+    () =>
+      checkRunBody({
+        kind: "gate",
+        sha: SHA,
+        base: BASE,
+        conclusion: "neutral",
+        reason: "x",
+        durationMs: 1,
+      }),
+    /never posts neutral/,
+  );
+  assert.equal(serviceProblemConclusion("gate"), "failure");
+  // the two checks that are never required keep "could not run"
+  for (const kind of ["mobile", "codeql"]) {
+    assert.equal(serviceProblemConclusion(kind), "neutral");
+    const body = checkRunBody({
+      kind,
+      sha: SHA,
+      base: BASE,
+      conclusion: "neutral",
+      phase: "service",
+      reason: "docker",
+      durationMs: 1,
+    });
+    assert.equal(body.conclusion, "neutral");
+  }
+  const body = checkRunBody({
+    sha: SHA,
+    base: BASE,
+    conclusion: "failure",
+    phase: "service",
+    reason: "the store image could not be pulled",
+    durationMs: 1,
+  });
+  assert.equal(body.conclusion, "failure");
+  assert.match(
+    body.output.title,
+    /^stackra\/verify service problem \(not the PR's fault\): the store image could not be pulled/,
+  );
+  assert.ok(body.output.summary.includes("- Reason: the store image could not be pulled"));
+  const posted = {
+    name: "stackra/verify",
+    head_sha: SHA,
+    app: { id: 1 },
+    status: "completed",
+    conclusion: "failure",
+    output: { title: body.output.title },
+  };
+  assert.equal(recordedRun([posted], SHA, 1), undefined);
+  const prFailure = { ...posted, output: { title: "Quality Gate failed in 1 s" } };
+  assert.equal(recordedRun([prFailure], SHA, 1), prFailure);
 });

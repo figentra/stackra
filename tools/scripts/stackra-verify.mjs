@@ -94,7 +94,9 @@
  *   could execute (SHARED_STEP_LOADERS); a new member's own config, kept for its per-package steps, is set aside for
  *   them. When knip then reports the new member as misconfigured, that is an honest red: the PR resolves it through
  *   risk:R3 and the owner (the config lands on main), never by keeping the config in the shared step.
- *   When stackra/verify goes neutral (the check run's "Reason" line says which), the operator's action:
+ *   When stackra/verify posts a service problem (a `failure` titled "stackra/verify service problem (not the PR's
+ *   fault): …", never `neutral`, which GitHub counts as passing; the check run's "Reason" line says which), the
+ *   operator's action (the head is verified again on its own once the service is healthy):
  *     - "this service runs ... blob X, main has Y": self-update normally follows within one pass. If the reason adds
  *       "self-update refused: …": local changes in the clone: restore it (git -C /work/stackra/service status;
  *       discard or move the changes); not a fast-forward: fetch and reset the clone to main after reading why it moved;
@@ -3170,13 +3172,18 @@ export const recordedRun = (checkRuns, sha, appId, base, name = VERIFY_CHECK) =>
       r.head_sha === sha &&
       String(r.app?.id) === String(appId) &&
       r.status === "completed" &&
+      // A service problem, or a `neutral` (an older service's word for one), never stands (M2).
+      r.conclusion !== "neutral" &&
+      !String(r.output?.title ?? "").startsWith(SERVICE_PROBLEM) &&
       (!base || r.external_id === `base:${base}`),
   );
 
 /**
  * Whether a head needs a verify. A completed run from this App against the current main (`base`) stands until the
- * head or main moves; pr-merge refuses a run against an older main. Otherwise the local error record decides: no
- * error yet, or the last one older than ERROR_RETRY_MS while fewer than MAX_ERROR_ATTEMPTS.
+ * head or main moves; pr-merge refuses a run against an older main. A service problem (or a neutral) never stands.
+ * Otherwise the local error record decides: no error yet, or the last one older than ERROR_RETRY_MS (after
+ * MAX_ERROR_ATTEMPTS the service problem is posted and the head is tried again every ERROR_RETRY_MS, so it is verified
+ * once the service is healthy).
  */
 export function needsRun(
   { checkRuns, sha, appId, base, errors = { count: 0 }, name = VERIFY_CHECK },
@@ -3188,7 +3195,7 @@ export function needsRun(
   const fresh = recordedRun(checkRuns, sha, appId, undefined, name);
   if (fresh && isFresh(fresh.completed_at, now)) return false;
   if (errors.count === 0) return true;
-  return errors.count < MAX_ERROR_ATTEMPTS && now - errors.at > ERROR_RETRY_MS;
+  return now - errors.at > ERROR_RETRY_MS;
 }
 
 /** Terminal colour codes, built from the ESC code point so the source holds none. */
@@ -3312,6 +3319,17 @@ export function outputText(log, max = OUTPUT_TEXT_MAX) {
  * The check run body. The verdict and the title come only from the result (`conclusion`, `phase`, `reason`); the
  * log is shown, never read for a verdict. It carries no environment and no secret. `kind` names the check run.
  */
+/**
+ * The title prefix of a check run the service posts for its own problem (review of #1043, round 5, M2): GitHub's
+ * required-check rules count `neutral` as passing, so stackra/verify never posts it; a service problem is a `failure`
+ * that says it is not the PR's fault, and a run with this title never stands (recordedRun) and is verified again once
+ * the service is healthy. stackra/verify-mobile and stackra/codeql are never required, so their `neutral` ("could not
+ * run") gates nothing and stays the accurate word for them.
+ */
+export const SERVICE_PROBLEM = "stackra/verify service problem";
+/** The conclusion and title words of a service problem on `kind`: a failure on the gate, neutral on the others. */
+export const serviceProblemConclusion = (kind) => (kind === "gate" ? "failure" : "neutral");
+
 export function checkRunBody({
   kind = "gate",
   sha,
@@ -3326,26 +3344,30 @@ export function checkRunBody({
   completedAt,
 }) {
   const { check, label, describe } = KINDS[kind];
+  if (kind === "gate" && conclusion === "neutral")
+    throw new Error("stackra/verify never posts neutral: GitHub counts it as passing (M2)");
   const verdict =
     conclusion === "success"
       ? `${label} passed`
-      : conclusion === "neutral"
-        ? `could not run (${reason})`
-        : phase === "merge"
-          ? "the PR conflicts with main"
-          : phase === "tree"
-            ? `the PR's tree is refused (${String(reason ?? "")
-                .replace(/^the tested tree is refused: /, "")
-                .slice(0, 160)})`
-            : phase === "install"
-              ? reason === "time limit"
-                ? "pnpm install hit the time limit"
-                : "pnpm install failed"
-              : phase === "licence"
-                ? `the licensed build is unavailable (${reason ?? "see the service log"})`
-                : reason === "time limit"
-                  ? `${label} hit the time limit`
-                  : `${label} failed`;
+      : phase === "service"
+        ? `${SERVICE_PROBLEM} (not the PR's fault): ${String(reason ?? "unknown").slice(0, 200)}`
+        : conclusion === "neutral"
+          ? `could not run (${reason})`
+          : phase === "merge"
+            ? "the PR conflicts with main"
+            : phase === "tree"
+              ? `the PR's tree is refused (${String(reason ?? "")
+                  .replace(/^the tested tree is refused: /, "")
+                  .slice(0, 160)})`
+              : phase === "install"
+                ? reason === "time limit"
+                  ? "pnpm install hit the time limit"
+                  : "pnpm install failed"
+                : phase === "licence"
+                  ? `the licensed build is unavailable (${reason ?? "see the service log"})`
+                  : reason === "time limit"
+                    ? `${label} hit the time limit`
+                    : `${label} failed`;
   const failed = stepSections(scrub(log ?? ""))
     .filter((x) => x.result === "FAIL" || x.result === "unfinished")
     .map((x) => x.id);
@@ -3365,7 +3387,7 @@ export function checkRunBody({
           ? `- Install: \`${INSTALL_COMMAND}\`${KINDS[kind].install === "gate" ? ` without ${GATE_FILTERS.map((f) => f.slice(1)).join(" and ")}` : ""} (registries only), then \`${kindCommand(kind)}\` (no network)`
           : `- Run: \`${kindCommand(kind)}\` on the tested tree (no install, no network)`,
         `- Box: ${box}; throwaway containers`,
-        ...(conclusion === "neutral" || phase === "tree"
+        ...(conclusion === "neutral" || phase === "tree" || phase === "service"
           ? [`- Reason: ${reason ?? "unknown"}`]
           : []),
         `- Head: \`${sha}\`, merged onto main \`${base ?? "-"}\` with main's verify definition (scripts, configs, policies)`,
@@ -3475,8 +3497,8 @@ export async function runJob(job, deps) {
       // The service is not main's definition: it cannot vouch for this head either way (LOW 6).
       if (error.drift)
         return settle(job, deps, {
-          conclusion: "neutral",
-          phase: "definition",
+          conclusion: serviceProblemConclusion(kind),
+          phase: "service",
           reason: error.message,
         });
       throw error;
@@ -4914,13 +4936,20 @@ export async function verify(s, job) {
   }
   let conclusion = result.conclusion;
   let reason = result.reason;
+  let phase = result.phase;
   if (!result.post) {
     const errors = state.errors[key] ?? { count: 0 };
     state.errors[key] = { count: errors.count + 1, at: Date.now() };
     writeState(s, state);
     if (state.errors[key].count < MAX_ERROR_ATTEMPTS) return null;
-    conclusion = "neutral";
-    reason = scrub(result.error ?? "unknown").slice(0, 120);
+    // A service problem, posted so the head shows why; it never stands (recordedRun), and the error record stays so
+    // the head is verified again after ERROR_RETRY_MS (needsRun), once the service is healthy.
+    conclusion = serviceProblemConclusion(kind);
+    phase = "service";
+    reason = scrub(result.error ?? "unknown").slice(0, 200);
+  } else if (phase === "service") {
+    state.errors[key] = { count: MAX_ERROR_ATTEMPTS, at: Date.now() };
+    writeState(s, state);
   } else {
     state.errors = Object.fromEntries(Object.entries(state.errors).filter(([k]) => k !== key));
     writeState(s, state);
@@ -4932,7 +4961,7 @@ export async function verify(s, job) {
     sha: job.sha,
     base: job.base,
     conclusion,
-    phase: result.phase,
+    phase,
     reason,
     durationMs,
     box: s.box,
@@ -4953,7 +4982,7 @@ export async function verify(s, job) {
     ...job,
     kind,
     conclusion,
-    phase: result.phase,
+    phase,
     reason,
     durationMs,
     box: s.box,
