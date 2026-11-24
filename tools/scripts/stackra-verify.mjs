@@ -276,6 +276,20 @@ export const GATE_STEPS = Object.freeze([
       'NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"',
     ].join("\n"),
   },
+  {
+    // Not in ci.yml, so its place is free: right after the install's commit checks and before any PR code runs (lint,
+    // build and validate run the PR's code and could rewrite the lockfile or node_modules). Main's licence policy
+    // (/in/licences.json, the CTO's ruling of 2026-11-24) over every package the install laid down, offline; the
+    // workspace's members and closures from pnpm-lock.yaml and from pnpm's own view of the installed tree, which must
+    // agree (review of #1043, MEDIUM A, LOW 5 and LOW C).
+    id: "licence-policy",
+    run: [
+      // The licences of what the gate installed: without the mobile members, as the install (GATE_FILTERS).
+      `pnpm licenses list --json --offline --recursive ${EXCLUDE} > "\${TMPDIR:-/tmp}/stackra-licences.json"`,
+      'pnpm list --recursive --json --depth Infinity --offline > "${TMPDIR:-/tmp}/stackra-pnpm-list.json"',
+      'node "$GATE_IN/licence-check.mjs" "$GATE_IN/licences.json" "${TMPDIR:-/tmp}/stackra-licences.json" . "${TMPDIR:-/tmp}/stackra-pnpm-list.json"',
+    ].join("\n"),
+  },
   { id: "format-check", job: "gate", ci: "Format check", line: 130, run: "pnpm format:check" },
   {
     id: "lint",
@@ -380,15 +394,6 @@ export const GATE_STEPS = Object.freeze([
     ].join("\n"),
   },
   { id: "secrets-scan", job: "gate", ci: "Secrets scan", line: 228, run: "pnpm secrets:scan" },
-  {
-    // Not in ci.yml: the licence policy (tools/policy/licences.json, the CTO's ruling of 2026-11-24) over every
-    // package the gate installed, offline, and the scope of each exception over the workspace's manifests (`.`).
-    id: "licence-policy",
-    run: [
-      'pnpm licenses list --json --offline --recursive > "${TMPDIR:-/tmp}/stackra-licences.json"',
-      'node "$GATE_IN/licence-check.mjs" tools/policy/licences.json "${TMPDIR:-/tmp}/stackra-licences.json" .',
-    ].join("\n"),
-  },
   {
     // Not in ci.yml (it leaves tests to the box): the tests STA-2761's verify ran, for the gate's members.
     id: "test",
@@ -648,25 +653,30 @@ export function licenceViolations(listing, policy) {
 
 /**
  * What the licence check reads from a pnpm-workspace.yaml: the `packages` globs, the default `catalog` and the named
- * `catalogs` (as `catalogs.default` and `catalogs.<name>`, each `{ dependency: spec }`), and the `overrides`. A line
- * reader for the block style pnpm writes (no flow collections, anchors or multi-line scalars); what it cannot read it
- * leaves out, so a member it misses is never one it passes (exceptionScopeViolations fails on no `packages`).
- * Self-contained: the licence check file is this function's own source.
+ * `catalogs` (as `catalogs.default` and `catalogs.<name>`, each `{ dependency: spec }`), the `overrides`, and
+ * `problems`. A line reader for the block style pnpm writes. In the sections it reads, any YAML construct it does not
+ * understand is a problem, never a value it skips: a flow collection, an anchor, an alias, a tag, a block scalar, a
+ * complex or merge key, a second document (review of #1043, MEDIUM 3). Comments are fine. Self-contained: the licence
+ * check file is this function's own source.
  */
 export function workspaceManifest(yamlText) {
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const map = () => Object.create(null);
-  const result = { packages: [], catalogs: map(), overrides: map() };
+  const result = { packages: [], catalogs: map(), overrides: map(), problems: [] };
   result.catalogs.default = map();
+  const read = new Set(["packages", "catalog", "catalogs", "overrides"]);
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const quoted = (raw) => /^(?:"(?:[^"\\]|\\.)*"|'(?:[^']|'')*')$/.test(raw);
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const scalar = (raw) => {
     const value = raw.trim();
-    const quoted = /^"((?:[^"\\]|\\.)*)"$|^'((?:[^']|'')*)'$/.exec(value);
-    if (!quoted) return value;
-    return quoted[1] === undefined
-      ? quoted[2].replaceAll("''", "'")
-      : quoted[1].replaceAll(/\\(.)/g, "$1");
+    const m = /^"((?:[^"\\]|\\.)*)"$|^'((?:[^']|'')*)'$/.exec(value);
+    if (!m) return value;
+    return m[1] === undefined ? m[2].replaceAll("''", "'") : m[1].replaceAll(/\\(.)/g, "$1");
   };
+  // A plain scalar may not start with a YAML indicator; a quoted one is taken as written.
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const special = (raw) => raw !== "" && !quoted(raw) && /^[&*!|>?%@`{[\]},#]|^<<$/.test(raw);
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const uncomment = (line) => {
     let quote = null;
@@ -679,50 +689,106 @@ export function workspaceManifest(yamlText) {
     }
     return line;
   };
+  // Linear: a quoted key, or the text before the first `: ` (or a final `:`).
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const pair = (body) => {
-    const m = /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^"'\s-][^:]*?)\s*:(?:\s+(.*))?$/.exec(body);
-    return m ? [scalar(m[1]), m[2] === undefined ? "" : scalar(m[2])] : null;
+    const q = /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*')\s*:(?:\s+(.*))?$/.exec(body);
+    if (q) return [q[1], q[2] ?? ""];
+    const colon = body.search(/:(?:\s|$)/);
+    if (colon < 1) return null;
+    return [body.slice(0, colon).trimEnd(), body.slice(colon + 1).trim()];
   };
   let section = null;
   let catalog = null;
   let catalogIndent = null;
+  let line = 0;
+  const problem = (text) => result.problems.push(`pnpm-workspace.yaml line ${line}: ${text}`);
   for (const raw of String(yamlText ?? "").split(/\r?\n/)) {
-    const line = uncomment(raw).trimEnd();
-    if (line.trim() === "") continue;
-    const indent = line.length - line.trimStart().length;
-    const body = line.trimStart();
-    const item = /^-\s+(.+)$/.exec(body);
-    if (section === "packages" && item) {
-      result.packages.push(scalar(item[1]));
+    line++;
+    const text = uncomment(raw).trimEnd();
+    if (text.trim() === "") continue;
+    if (/^(?:---|\.\.\.)(?:\s|$)/.test(text)) {
+      problem("a second YAML document");
+      section = null;
       continue;
     }
-    if (indent === 0) {
-      const top = pair(body);
-      section = top && top[1] === "" ? top[0] : null;
-      catalog = null;
-      catalogIndent = null;
+    const indent = text.length - text.trimStart().length;
+    const body = text.trimStart();
+    const watched = read.has(section);
+    if (/^ *\t/.test(text) && (watched || indent === 0)) problem("a tab in the indentation");
+    const item = /^-(?:\s+(.*))?$/.exec(body);
+    if (item) {
+      if (section !== "packages") {
+        if (watched) problem(`a list item in \`${section}\``);
+        continue;
+      }
+      const value = (item[1] ?? "").trim();
+      if (value === "" || special(value))
+        problem(`a \`packages\` entry the reader cannot read: ${body}`);
+      else result.packages.push(scalar(value));
       continue;
     }
     const entry = pair(body);
-    if (!entry) continue;
-    if (section === "catalog" && entry[1] !== "") result.catalogs.default[entry[0]] = entry[1];
-    else if (section === "overrides" && entry[1] !== "") result.overrides[entry[0]] = entry[1];
-    else if (section === "catalogs") {
-      if (catalogIndent === null || indent <= catalogIndent) {
-        catalogIndent = indent;
-        catalog = entry[1] === "" ? entry[0] : null;
-        if (catalog !== null) result.catalogs[catalog] ??= map();
-      } else if (catalog !== null && entry[1] !== "") result.catalogs[catalog][entry[0]] = entry[1];
+    if (indent === 0) {
+      catalog = null;
+      catalogIndent = null;
+      if (!entry) {
+        section = null;
+        continue;
+      }
+      section = scalar(entry[0]);
+      if (read.has(section) && entry[1] !== "")
+        problem(`\`${section}\` is not a block mapping (${entry[1]})`);
+      continue;
+    }
+    if (!watched) continue;
+    if (!entry) {
+      problem(`a line the reader cannot read: ${body}`);
+      continue;
+    }
+    const [rawKey, rawValue] = entry;
+    if (special(rawKey) || special(rawValue)) {
+      problem(`a YAML construct the reader does not follow: ${body}`);
+      continue;
+    }
+    const key = scalar(rawKey);
+    const value = scalar(rawValue);
+    if (section === "packages") problem(`a mapping in \`packages\`: ${body}`);
+    else if (section === "catalog" || section === "overrides") {
+      if (value === "") problem(`a nested mapping in \`${section}\`: ${body}`);
+      else (section === "catalog" ? result.catalogs.default : result.overrides)[key] = value;
+    } else if (catalogIndent === null || indent <= catalogIndent) {
+      catalogIndent = indent;
+      catalog = value === "" ? key : null;
+      if (catalog === null) problem(`a catalog that is not a block mapping: ${body}`);
+      else result.catalogs[catalog] ??= map();
+    } else if (catalog !== null) {
+      if (value === "") problem(`a nested mapping in catalog \`${catalog}\`: ${body}`);
+      else result.catalogs[catalog][key] = value;
     }
   }
   return result;
 }
 
 /**
- * The workspace's members under `root`: the root itself (`.`) and every directory a `packages` glob matches that holds
- * a package.json (a `!` glob takes directories out; node_modules never counts), each `{ dir, manifest }`, or
- * `{ dir, unreadable }` when its package.json does not parse. Self-contained: the licence check file is this
- * function's own source (it needs `globSync` and `readFileSync` from node:fs).
+ * The manifests of `dirs` under `root`, each `{ dir, manifest }`, or `{ dir, unreadable }` when its package.json does
+ * not parse. Self-contained: the licence check file is this function's own source (it needs `readFileSync`).
+ */
+export function readMembers(root, dirs) {
+  return [...dirs].toSorted().map((dir) => {
+    try {
+      return { dir, manifest: JSON.parse(readFileSync(`${root}/${dir}/package.json`, "utf8")) };
+    } catch (error) {
+      return { dir, unreadable: error.message };
+    }
+  });
+}
+
+/**
+ * The workspace's members under `root` by its globs: the root itself (`.`) and every directory a `packages` glob
+ * matches that holds a package.json (a `!` glob takes directories out; node_modules never counts), as readMembers
+ * reads them. The licence check takes its members from pnpm-lock.yaml's importers and fails when these differ
+ * (memberSetProblems). Self-contained: the licence check file is this function's own source (it needs `globSync`).
  */
 export function workspaceMembers(root, patterns) {
   const globs = Array.isArray(patterns) ? patterns.filter((p) => typeof p === "string") : [];
@@ -737,26 +803,39 @@ export function workspaceMembers(root, patterns) {
       const dir = file.slice(0, -"/package.json".length);
       if (!dir.split("/").includes("node_modules") && !excluded.has(dir)) dirs.add(dir);
     }
-  return [...dirs].toSorted().map((dir) => {
-    try {
-      return { dir, manifest: JSON.parse(readFileSync(`${root}/${dir}/package.json`, "utf8")) };
-    } catch (error) {
-      return { dir, unreadable: error.message };
-    }
-  });
+  return readMembers(root, dirs);
 }
 
 /**
- * Where the policy's scoped exceptions may sit in each member's own package.json, as sorted lines (lockfileScopeViolations
- * holds the installed closures to the same rules): a `dev-only` or `tool` package is never in a publishable member's
- * (no `"private": true`) `dependencies`, `optionalDependencies` or non-optional `peerDependencies` (devDependencies
- * and peers marked optional in `peerDependenciesMeta` are fine); a `mobile`
- * package is a dependency of any kind of `mobileMembers` only (each `{ dir, name }`, both must match), and no override
- * aliases it. A dependency counts under its real name: an `npm:<name>@…` alias, directly or through the `catalog:`
- * entry it names. `workspace` is workspaceManifest's answer; `members` workspaceMembers'. No `packages`, no member or
- * an unreadable manifest is itself a violation. Self-contained: the licence check file is this function's own source.
+ * Where the workspace's globs and pnpm-lock.yaml's importers disagree, as sorted lines: a member the lockfile does not
+ * list, or an importer no glob matches. The members the check walks are the lockfile's, so either is a violation.
+ * Self-contained: the licence check file is this function's own source.
  */
-export function exceptionScopeViolations(members, workspace, policy, mobileMembers) {
+export function memberSetProblems(globDirs, importerDirs) {
+  const globbed = new Set(globDirs);
+  const imported = new Set(importerDirs);
+  return [
+    ...[...globbed]
+      .filter((dir) => !imported.has(dir))
+      .map((dir) => `${dir} is a workspace member pnpm-lock.yaml does not list`),
+    ...[...imported]
+      .filter((dir) => !globbed.has(dir))
+      .map((dir) => `pnpm-lock.yaml lists ${dir}, which no pnpm-workspace.yaml glob matches`),
+  ].toSorted();
+}
+
+/**
+ * Where the policy's scoped exceptions may sit in each member's own package.json, as sorted lines (the closure checks
+ * hold the installed tree to the same rules): a `dev-only` or `tool` package is never in a publishable member's (no
+ * `"private": true`) `dependencies`, `optionalDependencies` or non-optional `peerDependencies` (devDependencies and
+ * peers marked optional in `peerDependenciesMeta` are fine); a `mobile` package is a dependency of any kind of
+ * `mobileMembers` only (each `{ dir, name }`, both must match), and no override aliases it. A dependency counts under
+ * its real name: the alias pnpm-lock.yaml resolved it to in the member's importer (`graph`, lockfileGraph's answer),
+ * else an `npm:<name>@…` spec, directly or through the `catalog:` entry it names. `workspace` is workspaceManifest's
+ * answer, whose problems are violations too. No `packages`, no member or an unreadable manifest is itself a violation.
+ * Self-contained: the licence check file is this function's own source.
+ */
+export function exceptionScopeViolations(members, workspace, policy, mobileMembers, graph = null) {
   const exceptions = Array.isArray(policy?.exceptions)
     ? policy.exceptions.filter((e) => e && typeof e === "object" && typeof e.name === "string")
     : [];
@@ -766,7 +845,7 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
       .map((e) => [e.name, e.scope]),
   );
   const mobile = new Set(exceptions.filter((e) => e.scope === "mobile").map((e) => e.name));
-  const out = [];
+  const out = [...(workspace?.problems ?? [])];
   if (!Array.isArray(workspace?.packages) || workspace.packages.length === 0)
     out.push("pnpm-workspace.yaml names no `packages`");
   if (!Array.isArray(members) || members.length === 0)
@@ -775,7 +854,17 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const aliasOf = (spec) =>
     /^npm:((?:@[^/\s]+\/)?[^@\s]+)(?:@.*)?$/.exec(typeof spec === "string" ? spec : "")?.[1];
-  const realName = (key, spec) => {
+  const realName = (dir, kind, key, spec) => {
+    const importer = graph?.importers?.[dir];
+    const locked =
+      importer?.[kind]?.[key] ??
+      importer?.dependencies?.[key] ??
+      importer?.optionalDependencies?.[key] ??
+      importer?.devDependencies?.[key];
+    const lockedAlias = /^((?:@[^/@(]+\/)?[^@(:/][^@(:]*)@/.exec(
+      typeof locked === "string" ? locked : "",
+    )?.[1];
+    if (lockedAlias) return lockedAlias;
     const fromCatalog = /^catalog:(.*)$/.exec(typeof spec === "string" ? spec : "");
     const resolved = fromCatalog ? catalogs[fromCatalog[1].trim() || "default"]?.[key] : spec;
     return aliasOf(resolved) ?? key;
@@ -800,7 +889,7 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
       const deps = manifest[kind];
       if (!deps || typeof deps !== "object") continue;
       for (const [key, spec] of Object.entries(deps)) {
-        const name = realName(key, spec);
+        const name = realName(member.dir, kind, key, spec);
         if (mobile.has(name) && !isMobile(member))
           out.push(`${where}: ${name} (scope mobile) is in ${kind}; only ${mobileDirs} may use it`);
         const optionalPeer =
@@ -833,94 +922,195 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
  * package-manager document first): each importer's `dependencies`, `devDependencies` and `optionalDependencies`
  * (`{ name: version }`, the version as the lockfile writes it: `1.2.3(peer@1.0.0)`, `alias@1.2.3(…)` or `link:../x`);
  * each snapshot's `dependencies` and `optionalDependencies` together (`snapshots[key]`, resolved peers included);
- * and each package's optional peers (`optionalPeers["name@1.2.3"]`, a Set). A reader for the block layout pnpm
- * writes (two-space steps, single-quoted keys, flow values left as text); the rest of the file is skipped.
+ * each package's optional peers (`optionalPeers["name@1.2.3"]`, a Set); and `problems`. A reader for the block layout
+ * pnpm writes, which fails closed (review of #1043, MEDIUM A): inside `importers`, `packages` and `snapshots`, a line
+ * it does not consume is a problem, never a skipped edge: a comment, a flow value other than `{}` (a package's own
+ * fields, such as `resolution: {…}` or `os: [linux]`, excepted), a YAML indicator (`& * ! | > ? %`), an indent off
+ * the two-space steps, a line under a scalar, or a key the layout does not have where the reader looks.
  * Self-contained: the licence check file is this function's own source.
  */
 export function lockfileGraph(lockText) {
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const map = () => Object.create(null);
-  const graph = { importers: map(), snapshots: map(), optionalPeers: map() };
+  const graph = { importers: map(), snapshots: map(), optionalPeers: map(), problems: [] };
   const sections = new Set(["dependencies", "devDependencies", "optionalDependencies"]);
+  const depKeys = new Set([
+    "dependencies",
+    "optionalDependencies",
+    "peerDependencies",
+    "peerDependenciesMeta",
+  ]);
+  const snapshotKeys = new Set([
+    "dependencies",
+    "optionalDependencies",
+    "transitivePeerDependencies",
+    "optional",
+    "patched",
+    "id",
+  ]);
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const quoted = (raw) => /^(?:'(?:[^']|'')*'|"(?:[^"\\]|\\.)*")$/.test(raw);
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const scalar = (raw) => {
     const value = raw.trim();
-    const quoted = /^'((?:[^']|'')*)'$|^"((?:[^"\\]|\\.)*)"$/.exec(value);
-    if (!quoted) return value;
-    return quoted[1] === undefined
-      ? quoted[2].replaceAll(/\\(.)/g, "$1")
-      : quoted[1].replaceAll("''", "'");
+    const m = /^'((?:[^']|'')*)'$|^"((?:[^"\\]|\\.)*)"$/.exec(value);
+    if (!m) return value;
+    return m[1] === undefined ? m[2].replaceAll(/\\(.)/g, "$1") : m[1].replaceAll("''", "'");
   };
+  // Linear: a quoted key, or the text before the first `: ` (or a final `:`).
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const pair = (body) => {
-    const quoted = /^('(?:[^']|'')*'|"(?:[^"\\]|\\.)*")\s*:(?:\s+(.*))?$/.exec(body);
-    if (quoted) return [scalar(quoted[1]), quoted[2] === undefined ? "" : scalar(quoted[2])];
+    const q = /^('(?:[^']|'')*'|"(?:[^"\\]|\\.)*")\s*:(?:\s+(.*))?$/.exec(body);
+    if (q) return [q[1], q[2] ?? ""];
     const colon = body.search(/:(?:\s|$)/);
-    if (colon < 1 || body.startsWith("- ")) return null;
-    return [body.slice(0, colon).trim(), scalar(body.slice(colon + 1))];
+    if (colon < 1) return null;
+    return [body.slice(0, colon).trimEnd(), body.slice(colon + 1).trim()];
   };
+  // A plain scalar that starts with an indicator, or carries a comment, is a construct the reader does not follow.
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const special = (raw) =>
+    raw !== "" && !quoted(raw) && (/^[&*!|>?%@`\]},#]|^<<$/.test(raw) || /\s#/.test(raw));
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const flow = (raw) => /^[{[]/.test(raw);
   let top = null;
-  let k2 = null;
-  let k4 = null;
-  let k6 = null;
+  let line = 0;
+  // keys[d]: the key open at indent 2d (null when that line held a scalar, so nothing may sit under it).
+  let keys = [];
+  const problem = (text) => {
+    if (graph.problems.length < 20) graph.problems.push(`pnpm-lock.yaml line ${line}: ${text}`);
+  };
   for (const raw of String(lockText ?? "").split(/\r?\n/)) {
+    line++;
     if (raw.trim() === "") continue;
     if (raw.trimEnd() === "---") {
       top = null;
+      keys = [];
       continue;
     }
     const indent = raw.length - raw.trimStart().length;
-    const entry = pair(raw.trim());
-    if (!entry) continue;
-    const [key, value] = entry;
+    const body = raw.trim();
     if (indent === 0) {
-      top = key;
-      k2 = null;
+      const entry = pair(body);
+      top = entry ? scalar(entry[0]) : null;
+      keys = [top];
+      if (["importers", "packages", "snapshots"].includes(top) && entry[1] !== "")
+        problem(`\`${top}\` is not a block mapping`);
       continue;
     }
-    if (indent === 2) {
-      k2 = key;
-      k4 = null;
-      if (top === "importers") graph.importers[key] ??= map();
-      if (top === "snapshots") graph.snapshots[key] ??= map();
+    if (top !== "importers" && top !== "packages" && top !== "snapshots") continue;
+    if (/^ *\t/.test(raw)) {
+      problem("a tab in the indentation");
       continue;
     }
-    if (k2 === null) continue;
-    if (indent === 4) {
-      k4 = key;
-      k6 = null;
+    if (body.startsWith("#")) {
+      problem(`a comment: ${body}`);
       continue;
     }
-    if (top === "importers" && sections.has(k4)) {
-      if (indent === 6) k6 = key;
-      else if (indent === 8 && key === "version" && k6 !== null)
-        (graph.importers[k2][k4] ??= map())[k6] = value;
-    } else if (
-      top === "snapshots" &&
-      indent === 6 &&
-      (k4 === "dependencies" || k4 === "optionalDependencies")
-    )
-      graph.snapshots[k2][key] = value;
-    else if (top === "packages" && k4 === "peerDependenciesMeta") {
-      if (indent === 6) k6 = key;
-      else if (indent === 8 && key === "optional" && value === "true" && k6 !== null)
-        (graph.optionalPeers[k2] ??= new Set()).add(k6);
+    if (indent % 2 !== 0) {
+      problem(`an indent of ${indent} spaces: ${body}`);
+      continue;
     }
+    const depth = indent / 2;
+    if (keys.length < depth || keys[depth - 1] === null) {
+      problem(`a line under a scalar or a missing key: ${body}`);
+      continue;
+    }
+    keys = keys.slice(0, depth);
+    const path = keys.slice(1);
+    // A list item: only a snapshot's transitivePeerDependencies and a package's own list fields hold them.
+    const item = /^-(?:\s+(.*))?$/.exec(body);
+    if (item) {
+      const value = (item[1] ?? "").trim();
+      const allowed =
+        (top === "snapshots" && depth === 3 && path[1] === "transitivePeerDependencies") ||
+        (top === "packages" && depth === 3 && !depKeys.has(path[1]));
+      if (!allowed || value === "" || special(value) || flow(value))
+        problem(`a list item the reader does not follow: ${body}`);
+      keys.push(null);
+      continue;
+    }
+    const entry = pair(body);
+    if (!entry) {
+      problem(`a line the reader cannot read: ${body}`);
+      keys.push(null);
+      continue;
+    }
+    const [rawKey, rawValue] = entry;
+    const key = scalar(rawKey);
+    const value = scalar(rawValue);
+    const packageField = top === "packages" && depth === 2 && !depKeys.has(key);
+    if (special(rawKey) || flow(rawKey) || special(rawValue)) {
+      problem(`a YAML construct the reader does not follow: ${body}`);
+      keys.push(null);
+      continue;
+    }
+    if (flow(rawValue) && rawValue !== "{}" && !packageField) {
+      problem(`a flow value the reader does not follow: ${body}`);
+      keys.push(null);
+      continue;
+    }
+    keys.push(rawValue === "" ? key : null);
+    const empty = rawValue === "" || rawValue === "{}";
+    if (top === "importers") {
+      if (depth === 1) {
+        if (!empty) problem(`an importer that is not a mapping: ${body}`);
+        else graph.importers[key] ??= map();
+      } else if (sections.has(path[1])) {
+        if (depth === 3 && rawValue !== "") problem(`a dependency that is not a mapping: ${body}`);
+        else if (depth === 4) {
+          if ((key !== "specifier" && key !== "version") || value === "")
+            problem(`an importer dependency field the reader does not know: ${body}`);
+          else if (key === "version")
+            (graph.importers[path[0]][path[1]] ??= map())[path[2]] = value;
+        } else if (depth > 4) problem(`a line too deep in an importer: ${body}`);
+      } else if (depth === 2 && sections.has(key) && !empty)
+        problem(`importer dependencies that are not a mapping: ${body}`);
+      else if (depth > 5) problem(`a line too deep in an importer: ${body}`);
+    } else if (top === "snapshots") {
+      if (depth === 1) {
+        if (!empty) problem(`a snapshot that is not a mapping: ${body}`);
+        else graph.snapshots[key] ??= map();
+      } else if (depth === 2) {
+        if (!snapshotKeys.has(key)) problem(`a snapshot field the reader does not know: ${body}`);
+        else if ((key === "dependencies" || key === "optionalDependencies") && !empty)
+          problem(`snapshot dependencies that are not a mapping: ${body}`);
+      } else if (
+        depth === 3 &&
+        (path[1] === "dependencies" || path[1] === "optionalDependencies")
+      ) {
+        if (value === "") problem(`a snapshot dependency without a version: ${body}`);
+        else graph.snapshots[path[0]][key] = value;
+      } else problem(`a snapshot line the reader does not follow: ${body}`);
+    } else if (depth === 1) {
+      if (!empty) problem(`a package that is not a mapping: ${body}`);
+    } else if (depth === 2) {
+      if (depKeys.has(key) && !empty) problem(`package ${key} that are not a mapping: ${body}`);
+    } else if (path[1] === "peerDependenciesMeta") {
+      if (depth === 3 && rawValue !== "") problem(`a peer meta that is not a mapping: ${body}`);
+      else if (depth === 4) {
+        if (key !== "optional" || (value !== "true" && value !== "false"))
+          problem(`a peer meta field the reader does not know: ${body}`);
+        else if (value === "true") (graph.optionalPeers[path[0]] ??= new Set()).add(path[2]);
+      } else if (depth > 4) problem(`a peer meta line too deep: ${body}`);
+    } else if (depKeys.has(path[1]) && (depth > 3 || value === ""))
+      problem(`a package ${path[1]} line the reader does not follow: ${body}`);
   }
   return graph;
 }
 
 /**
- * The scoped exceptions over the installed closures in a lockfileGraph, as sorted lines, each naming the path that
- * reaches the package (`member → … → package`): a `dev-only` or `tool` package is never in a publishable member's
- * (no `"private": true`) production closure, which follows its `dependencies`, `optionalDependencies` and non-optional
- * peers, through workspace links (`link:`) and every snapshot's dependencies, but never devDependencies nor a peer the
- * package marks optional; a `mobile` package is never in the full closure (devDependencies included) of a member other
- * than `mobileMembers`. Each package is visited once, so a cycle ends. A lockfile without importers, a member it does
- * not list, and a package or workspace link the walk reaches without a snapshot or importer entry (pnpm writes one
- * for every package, `{}` included, so a missing one means the reader misread the file) are themselves violations,
- * never a shorter closure. Self-contained: the licence check file is this function's own source.
+ * The scoped exceptions the lockfile's closures reach, from a lockfileGraph: `found`, a Map keyed `<dir>\t<package>`
+ * of `{ where, name, scope, path }` (the path `member → … → package`, breadth first, so the shortest), and `problems`
+ * (the reader's own, and lockfile entries the walk reached but could not find). A `dev-only` or `tool` package is
+ * searched in each publishable member's (no `"private": true`) production closure, which follows its `dependencies`,
+ * `optionalDependencies` and non-optional peers, through workspace links (`link:`) and every snapshot's dependencies,
+ * but never devDependencies nor a peer the package marks optional; a `mobile` package in the full closure
+ * (devDependencies included) of every member other than `mobileMembers`. Each package is visited once, so a cycle
+ * ends. A lockfile without importers, a member it does not list, and a package or link the walk reaches without a
+ * snapshot or importer entry (pnpm writes one for every package, `{}` included) are problems, never a shorter
+ * closure. Self-contained: the licence check file is this function's own source.
  */
-export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
+export function lockfileFindings(graph, members, policy, mobileMembers) {
   const exceptions = Array.isArray(policy?.exceptions)
     ? policy.exceptions.filter((e) => e && typeof e === "object" && typeof e.name === "string")
     : [];
@@ -932,8 +1122,11 @@ export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
   const mobile = new Map(
     exceptions.filter((e) => e.scope === "mobile").map((e) => [e.name, e.scope]),
   );
+  const found = new Map();
+  const problems = [...(graph?.problems ?? [])];
   const importers = graph?.importers ?? {};
-  if (Object.keys(importers).length === 0) return ["pnpm-lock.yaml lists no importers"];
+  if (Object.keys(importers).length === 0)
+    return { found, problems: [...problems, "pnpm-lock.yaml lists no importers"] };
   const manifests = new Map(
     (Array.isArray(members) ? members : [])
       .filter((m) => m?.manifest)
@@ -1002,7 +1195,7 @@ export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
     const start = `importer:${dir}`;
     const parent = new Map([[start, null]]);
     const queue = [start];
-    const found = new Map();
+    const hits = new Map();
     for (let i = 0; i < queue.length; i++) {
       const next = edges(queue[i], full && i === 0);
       if (next === null) {
@@ -1014,59 +1207,244 @@ export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
         parent.set(to, queue[i]);
         queue.push(to);
         const name = to.startsWith("importer:") ? null : nameOf(to);
-        if (name !== null && targets.has(name) && !found.has(name)) found.set(name, to);
+        if (name !== null && targets.has(name) && !hits.has(name)) hits.set(name, to);
       }
     }
-    return [...found].map(([name, end]) => [name, pathTo(end, parent)]);
+    return [...hits].map(([name, end]) => [name, pathTo(end, parent)]);
   };
-  const mobileDirs = mobileMembers.map((m) => m.dir).join(" and ");
-  const out = [];
   for (const member of Array.isArray(members) ? members : []) {
     if (!member?.manifest) continue;
     const where = `${member.dir} (${member.manifest.name ?? "unnamed"})`;
-    if (!(member.dir in importers)) {
-      out.push(`${where} is not in pnpm-lock.yaml`);
+    if (!Object.hasOwn(importers, member.dir)) {
+      problems.push(`${where} is not in pnpm-lock.yaml`);
       continue;
     }
     if (member.manifest.private !== true && unshipped.size)
       for (const [name, path] of reach(member.dir, false, unshipped))
-        out.push(
-          `${where}: ${name} (scope ${unshipped.get(name)}) ships with a publishable package: ${path}`,
-        );
+        found.set(`${member.dir}\t${name}`, { where, name, scope: unshipped.get(name), path });
     const isMobile = mobileMembers.some(
       (m) => m.dir === member.dir && m.name === member.manifest.name,
     );
     if (!isMobile && mobile.size)
       for (const [name, path] of reach(member.dir, true, mobile))
-        out.push(`${where}: ${name} (scope mobile) is installed: ${path}; only ${mobileDirs} may`);
+        found.set(`${member.dir}\t${name}`, { where, name, scope: "mobile", path });
   }
   for (const [at, path] of missing)
-    out.push(
+    problems.push(
       at.startsWith("importer:")
         ? `pnpm-lock.yaml has no importer for ${at.slice(9)} (reached via ${path})`
         : `pnpm-lock.yaml has no snapshot for ${at} (reached via ${path})`,
     );
+  return { found, problems };
+}
+
+/**
+ * The same search as lockfileFindings over pnpm's own view of the installed tree, the authoritative one (review of
+ * #1043, MEDIUM A): `list` is `pnpm list --recursive --json --depth Infinity --offline` run in the workspace `root`
+ * (absolute) after the gate's install. pnpm prints a repeated subtree once and marks later copies `deduped`, so a
+ * deduped node is expanded from its first copy (by `path`), and a workspace link from that project's own entry. A
+ * peer a package marks optional (`optionalPeers`, lockfileGraph's) is not followed. Returns `{ found, problems }`,
+ * keyed and shaped as lockfileFindings'; a path names an alias as `key (package)`. Self-contained: the licence check
+ * file is this function's own source.
+ */
+export function pnpmFindings(list, root, members, policy, mobileMembers, optionalPeers = {}) {
+  const exceptions = Array.isArray(policy?.exceptions)
+    ? policy.exceptions.filter((e) => e && typeof e === "object" && typeof e.name === "string")
+    : [];
+  const unshipped = new Map(
+    exceptions
+      .filter((e) => e.scope === "dev-only" || e.scope === "tool")
+      .map((e) => [e.name, e.scope]),
+  );
+  const mobile = new Set(exceptions.filter((e) => e.scope === "mobile").map((e) => e.name));
+  const found = new Map();
+  const problems = [];
+  if (!Array.isArray(list) || list.length === 0)
+    return { found, problems: ["pnpm list names no project"] };
+  const dirOf = (path) =>
+    path === root ? "." : String(path).startsWith(`${root}/`) ? path.slice(root.length + 1) : null;
+  const projects = new Map(list.map((p) => [p.path, p]));
+  const full = new Map();
+  // The first printed copy of each package, wherever pnpm printed it (a project's devDependencies included).
+  const index = (node) => {
+    for (const kind of ["dependencies", "optionalDependencies", "devDependencies"])
+      for (const child of Object.values(node[kind] ?? {})) {
+        if (!child || typeof child !== "object" || child.deduped || full.has(child.path)) continue;
+        full.set(child.path, child);
+        index(child);
+      }
+  };
+  for (const project of list) index(project);
+  const manifests = new Map(
+    (Array.isArray(members) ? members : [])
+      .filter((m) => m?.manifest)
+      .map((m) => [m.dir, m.manifest]),
+  );
+  const projectEdges = (project, withDev) => {
+    const kinds = withDev
+      ? ["dependencies", "optionalDependencies", "devDependencies"]
+      : ["dependencies", "optionalDependencies"];
+    const next = kinds.flatMap((kind) => Object.entries(project[kind] ?? {}));
+    const manifest = manifests.get(dirOf(project.path));
+    for (const peer of Object.keys(manifest?.peerDependencies ?? {}))
+      if (manifest.peerDependenciesMeta?.[peer]?.optional !== true) {
+        const child =
+          project.dependencies?.[peer] ??
+          project.optionalDependencies?.[peer] ??
+          project.devDependencies?.[peer];
+        if (child) next.push([peer, child]);
+      }
+    return next;
+  };
+  const edges = (node) => {
+    if (String(node.version ?? "").startsWith("link:")) {
+      const project = projects.get(node.path);
+      if (project) return projectEdges(project, false);
+    }
+    const whole = node.deduped ? full.get(node.path) : node;
+    if (!whole) {
+      problems.push(`pnpm list dedupes ${node.path} without printing its subtree`);
+      return [];
+    }
+    const optional = optionalPeers[`${node.from}@${String(node.version).replace(/\(.*$/, "")}`];
+    return Object.entries(whole.dependencies ?? {}).filter(([key]) => !optional?.has(key));
+  };
+  const show = (key, node) => {
+    if (String(node.version ?? "").startsWith("link:")) return dirOf(node.path) ?? node.path;
+    const name = node.from ?? key;
+    return `${key === name ? name : `${key} (${name})`}@${node.version}`;
+  };
+  const reach = (project, withDev, targets) => {
+    const start = dirOf(project.path);
+    const parent = new Map([[project.path, null]]);
+    const label = new Map([[project.path, start]]);
+    const queue = [[project.path, project, true]];
+    const hits = new Map();
+    // The queue grows while it is read: breadth first.
+    for (const [at, node, top] of queue) {
+      for (const [key, child] of top ? projectEdges(node, withDev) : edges(node)) {
+        if (!child || typeof child !== "object" || parent.has(child.path)) continue;
+        parent.set(child.path, at);
+        label.set(child.path, show(key, child));
+        queue.push([child.path, child, false]);
+        const name = child.from ?? key;
+        if (targets.has(name) && !hits.has(name)) hits.set(name, child.path);
+      }
+    }
+    return [...hits].map(([name, end]) => {
+      const path = [];
+      for (let at = end; at !== null; at = parent.get(at)) path.unshift(label.get(at));
+      return [name, path.join(" → ")];
+    });
+  };
+  for (const project of list) {
+    const dir = dirOf(project.path);
+    const manifest = manifests.get(dir);
+    if (dir === null || !manifest) {
+      problems.push(`pnpm list names ${project.path}, which is not a workspace member`);
+      continue;
+    }
+    const where = `${dir} (${manifest.name ?? "unnamed"})`;
+    if (manifest.private !== true && unshipped.size)
+      for (const [name, path] of reach(project, false, unshipped))
+        found.set(`${dir}\t${name}`, { where, name, scope: unshipped.get(name), path });
+    const isMobile = mobileMembers.some((m) => m.dir === dir && m.name === manifest.name);
+    if (!isMobile && mobile.size)
+      for (const [name, path] of reach(project, true, mobile))
+        found.set(`${dir}\t${name}`, { where, name, scope: "mobile", path });
+  }
+  return { found, problems: [...new Set(problems)] };
+}
+
+/**
+ * The closure verdict, as sorted lines: each problem of either side, each package both found (with the lockfile's
+ * path), and each one only one side found, naming both answers so a human can tell a reader bug from a hostile
+ * lockfile. `pnpm` is null when only the lockfile is read (the unit tests' shape). Self-contained: the licence check
+ * file is this function's own source.
+ */
+export function closureViolations(reader, pnpm, mobileMembers) {
+  const mobileDirs = mobileMembers.map((m) => m.dir).join(" and ");
+  const line = ({ where, name, scope, path }) =>
+    scope === "mobile"
+      ? `${where}: ${name} (scope mobile) is installed: ${path}; only ${mobileDirs} may`
+      : `${where}: ${name} (scope ${scope}) ships with a publishable package: ${path}`;
+  const out = [...reader.problems, ...(pnpm?.problems ?? [])];
+  for (const [key, hit] of reader.found) if (!pnpm || pnpm.found.has(key)) out.push(line(hit));
+  if (pnpm)
+    for (const key of new Set([...reader.found.keys(), ...pnpm.found.keys()])) {
+      const a = pnpm.found.get(key);
+      const b = reader.found.get(key);
+      if (a && b) continue;
+      const { where, name, scope } = a ?? b;
+      out.push(
+        `${where}: ${name} (scope ${scope}): pnpm finds ${a ? a.path : "nothing"}; the lockfile reader finds ${b ? b.path : "nothing"}`,
+      );
+    }
   return out.toSorted();
 }
 
 /**
- * The licence check the gate runs (`node licence-check.mjs <policy> <listing> <workspace root>`): this file's
- * spdxAllowed, licenceViolations, workspaceManifest, workspaceMembers, exceptionScopeViolations, lockfileGraph and
- * lockfileScopeViolations, with MOBILE_MEMBERS. It reads `<root>/pnpm-workspace.yaml`, each member's package.json and
- * `<root>/pnpm-lock.yaml`; any of them unreadable fails the step.
+ * The lockfile half alone, as sorted lines (closureViolations without pnpm's view): what the unit tests and a tree
+ * without an install can check. Self-contained: the licence check file is this function's own source.
+ */
+export function lockfileScopeViolations(graph, members, policy, mobileMembers) {
+  return closureViolations(
+    lockfileFindings(graph, members, policy, mobileMembers),
+    null,
+    mobileMembers,
+  );
+}
+
+/**
+ * A mobile-scoped package the gate's install holds at all, as lines: the gate installs without `mobileMembers`, so
+ * any `node_modules/.pnpm/<name>@…` directory (`entries`) means something else pulled it in; `pnpm` (pnpmFindings')
+ * names the path when pnpm can. Self-contained: the licence check file is this function's own source.
+ */
+export function installedMobile(entries, policy, mobileMembers, pnpm = null) {
+  const names = (Array.isArray(policy?.exceptions) ? policy.exceptions : [])
+    .filter((e) => e?.scope === "mobile" && typeof e.name === "string")
+    .map((e) => e.name);
+  const mobileDirs = mobileMembers.map((m) => m.dir).join(" and ");
+  const out = [];
+  for (const name of names)
+    for (const entry of entries.filter((e) => e.startsWith(`${name.replace("/", "+")}@`))) {
+      const via = [...(pnpm?.found.values() ?? [])]
+        .filter((hit) => hit.name === name)
+        .map((hit) => hit.path);
+      out.push(
+        `node_modules/.pnpm/${entry}: ${name} (scope mobile) is in the gate's install, which leaves out ${mobileDirs}; ${via.length ? `pulled in by ${via.join("; ")}` : "no member's pnpm tree names it"}`,
+      );
+    }
+  return out.toSorted();
+}
+
+/**
+ * The licence check the gate runs, right after the install and before any PR code
+ * (`node licence-check.mjs <policy> <listing> <workspace root> <pnpm list>`): this file's spdxAllowed,
+ * licenceViolations, workspaceManifest, readMembers, workspaceMembers, memberSetProblems, exceptionScopeViolations,
+ * lockfileGraph, lockfileFindings, pnpmFindings, closureViolations, lockfileScopeViolations and installedMobile, with
+ * MOBILE_MEMBERS. The policy is main's (`/in/licences.json`). The members are pnpm-lock.yaml's importers, which must
+ * match the workspace globs; the closures come from pnpm's view and the lockfile reader, which must agree. Anything it
+ * cannot read fails the step.
  */
 export const licenceCheckSource = () =>
   [
     "// Generated by tools/scripts/stackra-verify.mjs (STA-2761): the licence policy step of stackra/verify.",
-    'import { globSync, readFileSync } from "node:fs";',
+    'import { globSync, readFileSync, readdirSync, realpathSync } from "node:fs";',
     `const MOBILE_MEMBERS = ${JSON.stringify(MOBILE_MEMBERS)};`,
     spdxAllowed.toString(),
     licenceViolations.toString(),
     workspaceManifest.toString(),
+    readMembers.toString(),
     workspaceMembers.toString(),
+    memberSetProblems.toString(),
     exceptionScopeViolations.toString(),
     lockfileGraph.toString(),
+    lockfileFindings.toString(),
+    pnpmFindings.toString(),
+    closureViolations.toString(),
     lockfileScopeViolations.toString(),
+    installedMobile.toString(),
     "const read = (path) => {",
     "  try {",
     '    return JSON.parse(readFileSync(path, "utf8"));',
@@ -1074,29 +1452,29 @@ export const licenceCheckSource = () =>
     "    return { unreadable: `${path}: ${error.message}` };",
     "  }",
     "};",
-    "const [policyPath, listingPath, root] = process.argv.slice(2);",
+    "const [policyPath, listingPath, root, pnpmListPath] = process.argv.slice(2);",
     "const policy = read(policyPath);",
     "const listing = read(listingPath);",
-    "const problems = [policy, listing].filter((x) => x.unreadable).map((x) => x.unreadable);",
-    'if (!root) problems.push("no workspace root: licence-check <policy> <listing> <workspace root>");',
+    "const pnpmList = pnpmListPath ? read(pnpmListPath) : null;",
+    "const problems = [policy, listing, pnpmList ?? {}].filter((x) => x.unreadable).map((x) => x.unreadable);",
+    "if (!root || !pnpmListPath)",
+    '  problems.push("usage: licence-check <policy> <listing> <workspace root> <pnpm list --json>");',
     "let members = [];",
     "if (!problems.length) {",
     "  problems.push(...licenceViolations(listing, policy));",
-    "  let workspace = null;",
     "  try {",
-    '    workspace = workspaceManifest(readFileSync(`${root}/pnpm-workspace.yaml`, "utf8"));',
+    '    const workspace = workspaceManifest(readFileSync(`${root}/pnpm-workspace.yaml`, "utf8"));',
+    '    const graph = lockfileGraph(readFileSync(`${root}/pnpm-lock.yaml`, "utf8"));',
+    "    const globbed = workspaceMembers(root, workspace.packages);",
+    "    members = readMembers(root, Object.keys(graph.importers));",
+    "    problems.push(...memberSetProblems(globbed.map((m) => m.dir), members.map((m) => m.dir)));",
+    "    problems.push(...exceptionScopeViolations(members, workspace, policy, MOBILE_MEMBERS, graph));",
+    "    const reader = lockfileFindings(graph, members, policy, MOBILE_MEMBERS);",
+    "    const pnpm = pnpmFindings(pnpmList, realpathSync(root), members, policy, MOBILE_MEMBERS, graph.optionalPeers);",
+    "    problems.push(...closureViolations(reader, pnpm, MOBILE_MEMBERS));",
+    "    problems.push(...installedMobile(readdirSync(`${root}/node_modules/.pnpm`), policy, MOBILE_MEMBERS, pnpm));",
     "  } catch (error) {",
-    "    problems.push(`${root}/pnpm-workspace.yaml: ${error.message}`);",
-    "  }",
-    "  if (workspace) {",
-    "    members = workspaceMembers(root, workspace.packages);",
-    "    problems.push(...exceptionScopeViolations(members, workspace, policy, MOBILE_MEMBERS));",
-    "    try {",
-    '      const graph = lockfileGraph(readFileSync(`${root}/pnpm-lock.yaml`, "utf8"));',
-    "      problems.push(...lockfileScopeViolations(graph, members, policy, MOBILE_MEMBERS));",
-    "    } catch (error) {",
-    "      problems.push(`${root}/pnpm-lock.yaml: ${error.message}`);",
-    "    }",
+    "    problems.push(error.message);",
     "  }",
     "}",
     "if (problems.length) {",
@@ -1171,7 +1549,7 @@ export const VERIFY_COMMAND = kindCommand("gate");
 
 /**
  * The read-only inputs a kind's verify container gets besides the archive: the gate its script, the licence check,
- * the PR facts, the history bundle and the offline OSV database; mobile its script. Each `[host path, container path]`.
+ * main's licence policy (written from the mirror at the job's base), the PR facts, the history bundle and the offline OSV database; mobile its script. Each `[host path, container path]`.
  */
 export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
   const file = (name) => [join(runDir, name), `${IN_DIR}/${name}`];
@@ -1179,6 +1557,7 @@ export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
     return [
       file("gate.sh"),
       file("licence-check.mjs"),
+      file("licences.json"),
       file("facts.json"),
       file("history.bundle"),
       [osvDir, OSV_MOUNT],
@@ -3442,6 +3821,12 @@ export async function verify(s, job) {
       const { tarPath, mirror, tree } = archiveJob(s, job, runDir, { history: kind === "gate" });
       deps.mirror = mirror;
       deps.tree = tree;
+      if (kind === "gate")
+        writeFileSync(
+          join(runDir, "licences.json"),
+          git(mirror, ["show", `${job.base}:tools/policy/licences.json`]),
+          { mode: 0o644 },
+        );
       deps.buildList = allowedBuilds(git(mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
       return tarPath;
     },

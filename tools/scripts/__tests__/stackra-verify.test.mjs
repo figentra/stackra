@@ -17,7 +17,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createConnection, createServer } from "node:net";
 import { PassThrough } from "node:stream";
 import { tmpdir } from "node:os";
@@ -131,6 +139,11 @@ import {
   exceptionScopeViolations,
   lockfileGraph,
   lockfileScopeViolations,
+  lockfileFindings,
+  pnpmFindings,
+  closureViolations,
+  installedMobile,
+  memberSetProblems,
   workspaceManifest,
   workspaceMembers,
   MOBILE_MEMBERS,
@@ -1927,6 +1940,14 @@ const STEP_CASES = {
     env: { NODE_OPTIONS: "--conditions=@stackra/source" },
     fail: "linear *",
   },
+  "licence-policy": {
+    calls: [
+      `pnpm licenses list --json --offline --recursive ${X}`,
+      "pnpm list --recursive --json --depth Infinity --offline",
+      "licence-check <tmp>/in/licences.json <tmp>/stackra-licences.json . <tmp>/stackra-pnpm-list.json",
+    ],
+    fail: "licence-check *",
+  },
   "format-check": { calls: ["pnpm format:check"], fail: "pnpm format:check" },
   lint: { calls: [`pnpm exec turbo run lint ${X}`, "pnpm lint:root"], fail: "pnpm lint:root" },
   typecheck: {
@@ -1974,13 +1995,6 @@ const STEP_CASES = {
     fail: "pnpm knip",
   },
   "secrets-scan": { calls: ["pnpm secrets:scan"], fail: "pnpm secrets:scan" },
-  "licence-policy": {
-    calls: [
-      "pnpm licenses list --json --offline --recursive",
-      "licence-check tools/policy/licences.json <tmp>/stackra-licences.json .",
-    ],
-    fail: "licence-check *",
-  },
   test: {
     calls: [`pnpm exec turbo run test ${X} --continue=dependencies-successful`],
     fail: "pnpm exec turbo run test *",
@@ -2850,6 +2864,292 @@ test("licence closures: a lockfile without importers, or without a member, is it
   ]);
 });
 
+test("lockfileGraph fails closed: each hostile layout pnpm would install is a problem, never a smaller graph", () => {
+  // each variant hides the pg-gis edge from a line reader that keys off exact indentation (review of #1043, MEDIUM A)
+  const variants = {
+    "a comment between a snapshot key and its dependencies": [
+      "  gis-tests@1.0.0:\n    dependencies:",
+      "  gis-tests@1.0.0:\n  # note:\n    dependencies:",
+    ],
+    "a flow mapping of snapshot dependencies": [
+      "  gis-tests@1.0.0:\n    dependencies:\n      pg-gis: 0.2.15",
+      "  gis-tests@1.0.0:\n    dependencies: {pg-gis: 0.2.15, uniwind-pro: 1.9.0}",
+    ],
+    "snapshot dependencies at a 7-space indent": [
+      "  gis-tests@1.0.0:\n    dependencies:\n      pg-gis: 0.2.15",
+      "  gis-tests@1.0.0:\n    dependencies:\n       pg-gis: 0.2.15",
+    ],
+    "a comment inside an importer": [
+      "  packages/lib/a:\n    dependencies:",
+      "  packages/lib/a:\n    # dependencies: {}\n    dependencies:",
+    ],
+    "a flow mapping for an importer dependency": [
+      "      maps:\n        specifier: ^2.0.0\n        version: 2.0.0(pg-gis@0.2.15)",
+      "      maps: {specifier: ^2.0.0, version: 2.0.0(pg-gis@0.2.15)}",
+    ],
+    "an anchor": ["      pg-gis: 0.2.15", "      pg-gis: &v 0.2.15"],
+    "an alias": ["      cycle: 1.0.0\n", "      cycle: *v\n"],
+    "a tag": ["      loop: 1.0.0", "      loop: !!str 1.0.0"],
+    "a block scalar": ["      loop: 1.0.0", "      loop: >-\n        1.0.0"],
+    "a trailing comment": ["      loop: 1.0.0", "      loop: 1.0.0 # was 2"],
+    "a key under a scalar": ["  pg-gis@0.2.15: {}", "  pg-gis@0.2.15: {}\n    dependencies:"],
+    "a tab": ["      loop: 1.0.0", "\t      loop: 1.0.0"],
+    "an unknown snapshot field": [
+      "  pg-gis@0.2.15: {}",
+      "  pg-gis@0.2.15:\n    requires:\n      x: 1",
+    ],
+  };
+  assert.deepEqual(lockfileGraph(LOCK).problems, []);
+  for (const [name, [from, to]] of Object.entries(variants)) {
+    assert.ok(LOCK.includes(from), name);
+    const hostile = LOCK.replace(from, to);
+    const problems = lockfileGraph(hostile).problems;
+    assert.ok(problems.length > 0, name);
+    assert.match(problems[0], /^pnpm-lock\.yaml line \d+: /, name);
+    // and the problem reaches the verdict
+    assert.ok(
+      closure(hostile).some((l) => l.startsWith("pnpm-lock.yaml line ")),
+      name,
+    );
+  }
+});
+
+test("workspaceManifest fails closed: flow style, anchors, aliases, tags, block scalars and a second document", () => {
+  const ok = workspaceManifest("packages:\n  - apps/*\ncatalog:\n  zod: 4.6.7 # a comment\n");
+  assert.deepEqual(ok.problems, []);
+  for (const yaml of [
+    'packages:\n  - apps/*\ncatalog: {uw: "npm:uniwind-pro@1.9.0"}\n',
+    "packages: [apps/*]\n",
+    "packages:\n  - &p packages/*\n",
+    "packages:\n  - !!str packages/*\n",
+    "packages:\n  - >-\n    packages/*\n",
+    "packages:\n  - apps/*\ncatalog:\n  base: &b 1.0.0\n  copy: *b\n",
+    "packages:\n  - apps/*\noverrides:\n  <<: *base\n",
+    "packages:\n  - apps/*\ncatalogs:\n  mobile: {uniwind: npm:uniwind-pro@1.9.0}\n",
+    "packages:\n  - apps/*\ncatalog:\n  x: |\n    1.0.0\n",
+    "packages:\n  - apps/*\n---\npackages:\n  - evil/*\n",
+    "packages:\n  - apps/*\ncatalog:\n  ? complex\n  : 1\n",
+  ]) {
+    const w = workspaceManifest(yaml);
+    assert.ok(w.problems.length > 0, yaml);
+    assert.match(w.problems[0], /^pnpm-workspace\.yaml line \d+: /, yaml);
+    // the problems are violations of the scope check
+    assert.ok(
+      exceptionScopeViolations(LOCK_MEMBERS, w, POLICY, MOBILE_MEMBERS).includes(w.problems[0]),
+      yaml,
+    );
+  }
+  // linear: a long line without a colon does not backtrack
+  const started = performance.now();
+  workspaceManifest(`catalog:\n  ${"a".repeat(200_000)}\n`);
+  assert.ok(performance.now() - started < 1000);
+});
+
+test("licence scopes: an alias the YAML reader cannot see is still resolved from the lockfile's importer", () => {
+  // `catalog: {uw: …}` is flow style: the reader reports it and learns no catalog, but pnpm resolved the alias
+  const workspace = workspaceManifest(
+    'packages:\n  - packages/*/*\ncatalog: {uw: "npm:uniwind-pro@1.9.0"}\n',
+  );
+  const lock = withEdge(
+    "  packages/lib/a:",
+    "    devDependencies:",
+    "      uw:",
+    "        specifier: 'catalog:'",
+    "        version: uniwind-pro@1.9.0(react@19.3.0)",
+  ).replace(
+    "    devDependencies:\n      gis-tests:\n        specifier: 1.0.0\n        version: 1.0.0\n\n  packages/lib/util",
+    "\n  packages/lib/util",
+  );
+  const graph = lockfileGraph(lock);
+  const members = LOCK_MEMBERS.map((m) =>
+    m.dir === "packages/lib/a" ? member(m.dir, { devDependencies: { uw: "catalog:" } }) : m,
+  );
+  const lines = exceptionScopeViolations(members, workspace, POLICY, MOBILE_MEMBERS, graph);
+  assert.ok(
+    lines.includes(
+      "packages/lib/a (@t/packages/lib/a): uniwind-pro (scope mobile) is in devDependencies; only apps/mobile and apps/playground may use it",
+    ),
+    lines.join("\n"),
+  );
+  assert.ok(
+    lines.some((l) => /pnpm-workspace\.yaml line 3: `catalog` is not a block mapping/.test(l)),
+  );
+});
+
+test("memberSetProblems: the lockfile's importers and the workspace globs must name the same members", () => {
+  assert.deepEqual(memberSetProblems([".", "apps/a"], ["apps/a", "."]), []);
+  assert.deepEqual(memberSetProblems([".", "apps/a", "apps/b"], [".", "apps/a", "tools/x"]), [
+    "apps/b is a workspace member pnpm-lock.yaml does not list",
+    "pnpm-lock.yaml lists tools/x, which no pnpm-workspace.yaml glob matches",
+  ]);
+});
+
+/** pnpm list's view of LOCK's workspace (root `/w`): deduped subtrees and a workspace link, as pnpm prints them. */
+const PNPM_ROOT = "/w";
+const pnpmNode = (from, version, deps, extra = {}) => ({
+  from,
+  version,
+  path: `/w/node_modules/.pnpm/${from}@${version}/node_modules/${from}`,
+  ...(deps ? { dependencies: deps } : {}),
+  ...extra,
+});
+const PNPM_LIST = () => {
+  const pg = pnpmNode("pg-gis", "0.2.15");
+  const gisTests = pnpmNode("gis-tests", "1.0.0", { "pg-gis": pg });
+  return [
+    { name: "root", path: "/w", private: true, devDependencies: { "gis-tests": gisTests } },
+    {
+      name: "@figentra/mobile",
+      path: "/w/apps/mobile",
+      private: true,
+      dependencies: { uniwind: pnpmNode("uniwind-pro", "1.9.0", {}) },
+    },
+    {
+      name: "@t/packages/lib/a",
+      path: "/w/packages/lib/a",
+      dependencies: {
+        cycle: pnpmNode("cycle", "1.0.0", {
+          loop: pnpmNode("loop", "1.0.0", {
+            cycle: pnpmNode("cycle", "1.0.0", null, { deduped: true }),
+          }),
+        }),
+        // pnpm lists a resolved optional peer as a child; maps@2.0.0 marks pg-gis optional
+        maps: pnpmNode("maps", "2.0.0", {
+          "pg-gis": pnpmNode("pg-gis", "0.2.15", null, { deduped: true }),
+        }),
+        "@t/util": {
+          from: "@t/util",
+          version: "link:../util",
+          path: "/w/packages/lib/util",
+          deduped: true,
+        },
+      },
+      devDependencies: { "gis-tests": pnpmNode("gis-tests", "1.0.0", null, { deduped: true }) },
+    },
+    {
+      name: "@t/packages/lib/util",
+      path: "/w/packages/lib/util",
+      devDependencies: { "gis-tests": pnpmNode("gis-tests", "1.0.0", null, { deduped: true }) },
+    },
+    {
+      name: "@t/packages/lib/private",
+      path: "/w/packages/lib/private",
+      private: true,
+      dependencies: { "gis-tests": pnpmNode("gis-tests", "1.0.0", null, { deduped: true }) },
+    },
+  ];
+};
+const optionalPeers = () => lockfileGraph(LOCK).optionalPeers;
+
+test("pnpmFindings: pnpm's own tree, deduped copies and workspace links expanded, agrees with the lockfile reader", () => {
+  const pnpm = pnpmFindings(
+    PNPM_LIST(),
+    PNPM_ROOT,
+    LOCK_MEMBERS,
+    POLICY,
+    MOBILE_MEMBERS,
+    optionalPeers(),
+  );
+  assert.deepEqual(pnpm.problems, []);
+  assert.deepEqual([...pnpm.found.keys()], []);
+  const reader = lockfileFindings(lockfileGraph(LOCK), LOCK_MEMBERS, POLICY, MOBILE_MEMBERS);
+  assert.deepEqual(closureViolations(reader, pnpm, MOBILE_MEMBERS), []);
+  // the util member ships gis-tests at runtime: found through the link, by both
+  const list = PNPM_LIST();
+  list[3].dependencies = list[3].devDependencies;
+  delete list[3].devDependencies;
+  const linked = LOCK.replace(
+    "  packages/lib/util:\n    devDependencies:",
+    "  packages/lib/util:\n    dependencies:",
+  );
+  const both = closureViolations(
+    lockfileFindings(lockfileGraph(linked), LOCK_MEMBERS, POLICY, MOBILE_MEMBERS),
+    pnpmFindings(list, PNPM_ROOT, LOCK_MEMBERS, POLICY, MOBILE_MEMBERS, optionalPeers()),
+    MOBILE_MEMBERS,
+  );
+  assert.deepEqual(both, [
+    "packages/lib/a (@t/packages/lib/a): pg-gis (scope dev-only) ships with a publishable package: packages/lib/a → packages/lib/util → gis-tests@1.0.0 → pg-gis@0.2.15",
+    "packages/lib/util (@t/packages/lib/util): pg-gis (scope dev-only) ships with a publishable package: packages/lib/util → gis-tests@1.0.0 → pg-gis@0.2.15",
+  ]);
+  // an alias is named as pnpm installed it
+  const aliased = PNPM_LIST();
+  aliased[3].devDependencies.styling = pnpmNode("uniwind-pro", "1.9.0", {});
+  const found = pnpmFindings(
+    aliased,
+    PNPM_ROOT,
+    LOCK_MEMBERS,
+    POLICY,
+    MOBILE_MEMBERS,
+    optionalPeers(),
+  );
+  assert.equal(
+    found.found.get("packages/lib/util\tuniwind-pro").path,
+    "packages/lib/util → styling (uniwind-pro)@1.9.0",
+  );
+  // fail closed: a deduped package pnpm never printed, a project that is not a member, an empty list
+  const broken = PNPM_LIST();
+  broken[2].dependencies.cycle = pnpmNode("ghost", "9.9.9", null, { deduped: true });
+  broken.push({ name: "stranger", path: "/elsewhere" });
+  const problems = pnpmFindings(
+    broken,
+    PNPM_ROOT,
+    LOCK_MEMBERS,
+    POLICY,
+    MOBILE_MEMBERS,
+    {},
+  ).problems;
+  assert.ok(
+    problems.some((p) => /dedupes \/w\/node_modules\/\.pnpm\/ghost@9\.9\.9/.test(p)),
+    problems.join("\n"),
+  );
+  assert.ok(problems.includes("pnpm list names /elsewhere, which is not a workspace member"));
+  assert.deepEqual(pnpmFindings([], PNPM_ROOT, LOCK_MEMBERS, POLICY, MOBILE_MEMBERS).problems, [
+    "pnpm list names no project",
+  ]);
+});
+
+/** One finding, as lockfileFindings and pnpmFindings key it. */
+const hit = (path) => ({
+  where: "packages/lib/a (@t/a)",
+  name: "pg-gis",
+  scope: "dev-only",
+  path,
+});
+
+test("closureViolations: when pnpm and the lockfile reader disagree, the violation names both answers", () => {
+  const reader = { found: new Map(), problems: [] };
+  const pnpm = {
+    found: new Map([["packages/lib/a\tpg-gis", hit("packages/lib/a → x@1.0.0 → pg-gis@0.2.15")]]),
+    problems: [],
+  };
+  assert.deepEqual(closureViolations(reader, pnpm, MOBILE_MEMBERS), [
+    "packages/lib/a (@t/a): pg-gis (scope dev-only): pnpm finds packages/lib/a → x@1.0.0 → pg-gis@0.2.15; the lockfile reader finds nothing",
+  ]);
+  assert.deepEqual(closureViolations(pnpm, { found: new Map(), problems: [] }, MOBILE_MEMBERS), [
+    "packages/lib/a (@t/a): pg-gis (scope dev-only): pnpm finds nothing; the lockfile reader finds packages/lib/a → x@1.0.0 → pg-gis@0.2.15",
+  ]);
+});
+
+test("installedMobile: a Uniwind Pro directory in the gate's install fails, naming what pnpm says pulled it in", () => {
+  assert.deepEqual(installedMobile(["zod@4.6.7", "uniwind@1.12.1"], POLICY, MOBILE_MEMBERS), []);
+  const pnpm = {
+    found: new Map([
+      [
+        "packages/ui/ui\tuniwind-pro",
+        { name: "uniwind-pro", path: "packages/ui/ui → uniwind (uniwind-pro)@1.9.0" },
+      ],
+    ]),
+    problems: [],
+  };
+  assert.deepEqual(installedMobile(["uniwind-pro@1.9.0_abc"], POLICY, MOBILE_MEMBERS, pnpm), [
+    "node_modules/.pnpm/uniwind-pro@1.9.0_abc: uniwind-pro (scope mobile) is in the gate's install, which leaves out apps/mobile and apps/playground; pulled in by packages/ui/ui → uniwind (uniwind-pro)@1.9.0",
+  ]);
+  assert.match(
+    installedMobile(["uniwind-pro@1.9.0_abc"], POLICY, MOBILE_MEMBERS)[0],
+    /no member's pnpm tree names it/,
+  );
+});
+
 test("licence scopes: main's manifests keep each shipped exception in its scope", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const policy = JSON.parse(
@@ -2932,12 +3232,11 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
     readFileSync(new URL("../../policy/licences.json", import.meta.url), "utf8"),
   );
   writeFileSync(join(dir, "policy.json"), JSON.stringify(policy));
-  const ws = join(dir, "ws");
+  const ws = realpathSync(mkdtempSync(join(tmpdir(), "stackra-ws-")));
   const manifest = (path, value) => {
     mkdirSync(join(ws, path), { recursive: true });
     writeFileSync(join(ws, path, "package.json"), JSON.stringify(value));
   };
-  mkdirSync(ws);
   writeFileSync(
     join(ws, "pnpm-workspace.yaml"),
     [
@@ -2959,12 +3258,26 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
     name: "@t/database",
     devDependencies: { "@electric-sql/pglite-postgis": "0.2.15" },
   });
-  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK);
   manifest("packages/data/database/node_modules/x", {
     name: "x",
     dependencies: { "uniwind-pro": "1" },
   });
-  const run = (extra = {}, root = ws) => {
+  mkdirSync(join(ws, "node_modules/.pnpm"), { recursive: true });
+  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK);
+  const postgis = {
+    from: "@electric-sql/pglite-postgis",
+    version: "0.2.15",
+    path: `${ws}/node_modules/.pnpm/@electric-sql+pglite-postgis@0.2.15/node_modules/@electric-sql/pglite-postgis`,
+  };
+  // pnpm's view after the gate's install: the mobile app is left out, so it has no tree
+  const pnpmList = (
+    database = { devDependencies: { "@electric-sql/pglite-postgis": postgis } },
+  ) => [
+    { name: "root", path: ws, private: true },
+    { name: "@figentra/mobile", path: `${ws}/apps/mobile`, private: true },
+    { name: "@t/database", path: `${ws}/packages/data/database`, private: false, ...database },
+  ];
+  const run = (extra = {}, { root = ws, list = pnpmList() } = {}) => {
     writeFileSync(
       join(dir, "listing.json"),
       JSON.stringify({
@@ -2973,8 +3286,11 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
         ...extra,
       }),
     );
+    writeFileSync(join(dir, "pnpm-list.json"), JSON.stringify(list));
     const args = [check, join(dir, "policy.json"), join(dir, "listing.json")];
-    return spawnSync(process.execPath, root ? [...args, root] : args, { encoding: "utf8" });
+    return spawnSync(process.execPath, root ? [...args, root, join(dir, "pnpm-list.json")] : args, {
+      encoding: "utf8",
+    });
   };
   const ok = run();
   assert.equal(ok.status, 0, ok.stdout + ok.stderr);
@@ -2983,56 +3299,96 @@ test("licence policy: the check the gate runs is the tested functions' own sourc
   const bad = run({ "AGPL-3.0-only": [{ name: "x", versions: ["1"], license: "AGPL-3.0-only" }] });
   assert.equal(bad.status, 1);
   assert.match(bad.stdout, /x@1: AGPL-3\.0-only/);
+  // a member the lockfile lists is checked by its own package.json too
   manifest("packages/ui/ui", {
     name: "@t/ui",
     devDependencies: { uniwind: "catalog:uniwind-pro" },
   });
-  const scoped = run();
+  const uiLock = `${CLI_LOCK.trimEnd()}\n`.replace(
+    "snapshots:",
+    "  packages/ui/ui:\n    devDependencies:\n      uniwind:\n        specifier: catalog:uniwind-pro\n        version: uniwind-pro@1.9.0\n\nsnapshots:",
+  );
+  writeFileSync(join(ws, "pnpm-lock.yaml"), uiLock);
+  const scoped = run(
+    {},
+    { list: [...pnpmList(), { name: "@t/ui", path: `${ws}/packages/ui/ui` }] },
+  );
   assert.equal(scoped.status, 1);
   assert.match(
     scoped.stdout,
     /packages\/ui\/ui \(@t\/ui\): uniwind-pro \(scope mobile\) is in devDependencies/,
   );
-  rmSync(join(ws, "packages/ui"), { recursive: true });
-  manifest("packages/data/database", {
-    name: "@t/database",
-    dependencies: { "@electric-sql/pglite-postgis": "0.2.15" },
-  });
-  const devOnly = run();
-  assert.equal(devOnly.status, 1);
+  // pnpm's view, without the package, disagrees with the lockfile reader: both answers are named
   assert.match(
-    devOnly.stdout,
-    /@electric-sql\/pglite-postgis \(scope dev-only\) is in dependencies/,
+    scoped.stdout,
+    /packages\/ui\/ui \(@t\/ui\): uniwind-pro \(scope mobile\): pnpm finds nothing; the lockfile reader finds packages\/ui\/ui → uniwind-pro@1\.9\.0$/m,
   );
-  manifest("packages/data/database", {
-    name: "@t/database",
-    devDependencies: { "@electric-sql/pglite-postgis": "0.2.15" },
-  });
-  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK.replace("devDependencies:", "dependencies:"));
-  const transitive = run();
-  assert.equal(transitive.status, 1);
+  // a member the lockfile does not list is a violation, whatever it holds
+  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK);
+  const unlisted = run();
+  assert.equal(unlisted.status, 1);
   assert.match(
-    transitive.stdout,
+    unlisted.stdout,
+    /packages\/ui\/ui is a workspace member pnpm-lock\.yaml does not list/,
+  );
+  rmSync(join(ws, "packages/ui"), { recursive: true });
+  // the lockfile and pnpm agree that the database ships PostGIS: one plain violation
+  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK.replace("devDependencies:", "dependencies:"));
+  const shipped = run(
+    {},
+    { list: pnpmList({ dependencies: { "@electric-sql/pglite-postgis": postgis } }) },
+  );
+  assert.equal(shipped.status, 1);
+  assert.match(
+    shipped.stdout,
     /ships with a publishable package: packages\/data\/database → @electric-sql\/pglite-postgis@0\.2\.15$/m,
   );
+  assert.doesNotMatch(shipped.stdout, /pnpm finds/);
+  // a hostile lockfile hides the edge from the reader; pnpm's view still has it, and the disagreement names both
+  const hidden = CLI_LOCK.replace("devDependencies:", "dependencies: {}\n  # note:");
+  writeFileSync(join(ws, "pnpm-lock.yaml"), hidden);
+  const hostile = run(
+    {},
+    { list: pnpmList({ dependencies: { "@electric-sql/pglite-postgis": postgis } }) },
+  );
+  assert.equal(hostile.status, 1);
+  assert.match(hostile.stdout, /pnpm-lock\.yaml line \d+: a comment: # note:/);
+  assert.match(
+    hostile.stdout,
+    /pnpm finds packages\/data\/database → @electric-sql\/pglite-postgis@0\.2\.15; the lockfile reader finds nothing/,
+  );
+  writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK);
+  // Uniwind Pro in the gate's install at all: something other than the mobile apps pulled it in
+  mkdirSync(join(ws, "node_modules/.pnpm/uniwind-pro@1.9.0_abc"));
+  const installed = run();
+  assert.equal(installed.status, 1);
+  assert.match(
+    installed.stdout,
+    /node_modules\/\.pnpm\/uniwind-pro@1\.9\.0_abc: uniwind-pro \(scope mobile\) is in the gate's install/,
+  );
+  rmSync(join(ws, "node_modules/.pnpm/uniwind-pro@1.9.0_abc"), { recursive: true });
   rmSync(join(ws, "pnpm-lock.yaml"));
   const noLock = run();
   assert.equal(noLock.status, 1);
-  assert.match(noLock.stdout, /pnpm-lock\.yaml: ENOENT/);
+  assert.match(noLock.stdout, /pnpm-lock\.yaml'?/);
+  assert.match(noLock.stdout, /ENOENT/);
   writeFileSync(join(ws, "pnpm-lock.yaml"), CLI_LOCK);
-  const noRoot = run({}, null);
+  assert.equal(run().status, 0);
+  const noRoot = run({}, { root: null });
   assert.equal(noRoot.status, 1);
-  assert.match(noRoot.stdout, /no workspace root/);
-  const noWorkspace = run({}, join(dir, "nowhere"));
+  assert.match(noRoot.stdout, /usage: licence-check/);
+  const noWorkspace = run({}, { root: join(dir, "nowhere") });
   assert.equal(noWorkspace.status, 1);
-  assert.match(noWorkspace.stdout, /pnpm-workspace\.yaml: ENOENT/);
+  assert.match(noWorkspace.stdout, /ENOENT/);
   const missing = spawnSync(
     process.execPath,
-    [check, join(dir, "none.json"), join(dir, "listing.json"), ws],
+    [check, join(dir, "none.json"), join(dir, "listing.json"), ws, join(dir, "pnpm-list.json")],
     { encoding: "utf8" },
   );
   assert.equal(missing.status, 1);
   assert.match(missing.stdout, /none\.json/);
+  rmSync(ws, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
 });
 
 test("stepSections: each step's lines and result, for display; an unfinished step says so", () => {
@@ -3167,11 +3523,12 @@ test("OSV database: missing, future-dated or older than the maximum is refused (
   assert.match(hostProblems({ ...S, osvMaxAgeMs: Number.NaN }, 0o400).join(), /OSV_MAX_AGE_H/);
 });
 
-test("kinds: the gate mounts its script, licence check, PR facts, history and OSV database read-only, and nothing else", () => {
+test("kinds: the gate mounts its script, licence check, main's licence policy, PR facts, history and OSV database read-only, and nothing else", () => {
   const mounts = kindMounts("gate", { runDir: "/runs/x", osvDir: "/osv-db" });
   assert.deepEqual(mounts, [
     ["/runs/x/gate.sh", "/in/gate.sh"],
     ["/runs/x/licence-check.mjs", "/in/licence-check.mjs"],
+    ["/runs/x/licences.json", "/in/licences.json"],
     ["/runs/x/facts.json", "/in/facts.json"],
     ["/runs/x/history.bundle", "/in/history.bundle"],
     ["/osv-db", "/osv"],
@@ -3182,7 +3539,7 @@ test("kinds: the gate mounts its script, licence check, PR facts, history and OS
   assert.throws(() => kindMounts("nope", { runDir: "/r" }), /not a verify kind/);
   const argv = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR, mounts });
   const volumes = argv.filter((_, i) => argv[i - 1] === "--volume");
-  assert.equal(volumes.length, 6);
+  assert.equal(volumes.length, 7);
   for (const v of volumes) assert.match(v, /:ro$/, v);
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
   assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs"]);

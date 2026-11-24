@@ -21,11 +21,16 @@ every installed package and every workspace manifest:
 - `dev-only` and `tool`: the package is never in a publishable member's (no `"private": true`) `dependencies`,
   `optionalDependencies` or non-optional `peerDependencies`, directly or anywhere in the production closure
   `pnpm-lock.yaml` records for it (those three edges, through workspace links and every installed package, never
-  devDependencies nor a peer its package marks optional); a failure names the path. `optionalDependencies` count as
-  shipped, because consumers install them by default, so a dev-only package there fails the check; devDependencies
-  and peers marked optional in `peerDependenciesMeta` pass.
+  devDependencies nor a peer its package marks optional), and in pnpm's own list of the gate's install; the two
+  must agree, and a failure names the path each one found. `optionalDependencies` count as shipped, because
+  consumers install them by default, so a dev-only package there fails the check; devDependencies and peers marked
+  optional in `peerDependenciesMeta` pass.
 - `mobile`: the package is in the closure, devDependencies included, of `apps/mobile` and `apps/playground` only
-  (the two members `stackra/verify-mobile` covers), never of another member and never through an override.
+  (the two members `stackra/verify-mobile` covers), never of another member and never through an override; the
+  gate's install, which leaves those two out, must not hold it at all.
+- The members are `pnpm-lock.yaml`'s importers, which must match the workspace globs, and both YAML readers fail
+  closed on any construct they do not follow (comments in the lockfile's package sections, flow style, anchors,
+  aliases, tags, block scalars). The step runs right after the install's commit checks, before any PR code.
 - `runtime`: shipped with our packages, so its reason names the path when it is not obvious.
 
 ## Rules
