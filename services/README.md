@@ -7,7 +7,7 @@ the packages and the generator; product services live in Figentra OS
 
 | Service              | Package                     | Holds                                                |
 | -------------------- | --------------------------- | ---------------------------------------------------- |
-| [`example`](example) | `@figentra/service-example` | the reference service; root module `ExampleModule`   |
+| [`example`](example) | `@figentra/service-example` | a tenant-owned notes resource, create to delete      |
 | [`health`](health)   | `@figentra/service-health`  | `GET /healthz` liveness and `GET /readyz` readiness  |
 
 Each is a programming-model v3 member ([ADR 0294](../apps/docs/src/docs/adr/0294-programming-model-v3-grammar-folders-identities-and-naming.mdx), 0295):
