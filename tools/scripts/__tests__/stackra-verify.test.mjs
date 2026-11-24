@@ -22,6 +22,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   allowedBuilds,
+  refsToDelete,
+  persistenceCheck,
+  licensedPackagesFor,
+  licenceSecret,
   stopIfUnsafe,
   secretPatterns,
   secretModes,
@@ -145,6 +149,13 @@ const imageReader = ({
     return exported;
   },
 });
+
+/** One locked uniwind-pro version, as a pnpm lockfile writes it. */
+const lockEntry = (v) =>
+  [`  uniwind-pro@${v}:`, `    resolution: {integrity: sha512-${"B".repeat(86)}==}`].join("\n");
+
+/** A lockfile that locks these uniwind-pro versions. */
+const lockWith = (versions) => ["packages:", ...versions.map(lockEntry)].join("\n\n");
 
 test("parseArgs: run needs a full SHA; --in-place and same-user modes are gone; bad input is a usage error", () => {
   assert.equal(parseArgs(["run", "--sha", SHA, "--pr", "12"]).sha, SHA);
@@ -652,6 +663,9 @@ function fakeDeps({
     headOf: async () => head,
     readLog: () => "PASS everything is fine\n",
     stopping: () => stopping,
+    stop: () => {
+      calls.stopped = (calls.stopped ?? 0) + 1;
+    },
     timeoutMs: 5,
     setTimer: (fn, ms) => {
       const t = setTimeout(fn, ms);
@@ -950,7 +964,7 @@ test("licensed image: a secret mount and a bind-mounted script on top of the sto
   assert.match(dockerfile, /^FROM stackra-verify-store:abc$/m);
   assert.match(
     dockerfile,
-    /RUN --mount=type=secret,id=licence,required=true --mount=type=tmpfs,target=\/scan --mount=type=bind,source=licensed\.sh,target=\/tmp\/licensed\.sh sh \/tmp\/licensed\.sh/,
+    /RUN --mount=type=secret,id=licence,required=true --mount=type=tmpfs,target=\/scan --mount=type=bind,source=licensed\.sh,target=\/licensed\.sh sh \/licensed\.sh/,
   );
   assert.doesNotMatch(dockerfile, /^(?:ARG|ENV)/m);
   assert.doesNotMatch(dockerfile, /UNIWIND_AUTH_TOKEN/);
@@ -976,7 +990,10 @@ test("licensed stage script: publisher tarball checked against the lockfile inte
     script,
     /find \/ \\\( -path \/proc -o -path \/sys -o -path \/dev -o -path \/run\/secrets -o -path \/scan \\\) -prune .* grep -lF -f \/scan\/patterns/,
   );
-  assert.match(script, /then echo "the licence token was persisted"; exit 1; fi$/);
+  assert.match(
+    script,
+    /\[ -z "\$hits" \] \|\| \{ echo "the licence token was persisted"; exit 1; \}$/,
+  );
   // no value on a command line: grep reads patterns from a file, awk from a file, never -e "$T" or -v t=
   assert.doesNotMatch(script, /-e "\$|awk -v|\$T"|echo "\$/);
   assert.doesNotMatch(script, /--exclude-dir/);
@@ -1306,4 +1323,89 @@ test("preflight: a bridge network that reaches instance metadata (missing REJECT
     /bridge probe did not run/,
   );
   assert.deepEqual(preflightProblems(S, io({ bridgeProbe: () => [] })), []);
+});
+
+test("persistence check: a token in a later batch of files is found (the verdict is the list, not xargs' status)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-persist-"));
+  try {
+    const token = `lic-${"t".repeat(14)}`;
+    writeFileSync(join(dir, "patterns"), `${token}\n`);
+    mkdirSync(join(dir, "root"));
+    for (let i = 0; i < 3000; i++)
+      writeFileSync(join(dir, "root", `f${String(i).padStart(4, "0")}`), "clean\n");
+    const check = persistenceCheck(join(dir, "root"), join(dir, "patterns"));
+    assert.equal(spawnSync("sh", ["-c", check], { encoding: "utf8" }).status, 0);
+    writeFileSync(join(dir, "root", "f2999"), `x ${token} y\n`);
+    const found = spawnSync("sh", ["-c", check], { encoding: "utf8" });
+    assert.equal(found.status, 1);
+    assert.match(found.stdout, /the licence token was persisted/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("licensed stage: the script is mounted outside /tmp, which the stage empties", () => {
+  const script = licensedScript([
+    { name: "uniwind-pro", version: "1.9.0", integrity: `sha512-${"A".repeat(86)}==` },
+  ]);
+  assert.match(script, /rm -rf \/lic \/tmp\/\*/);
+  assert.doesNotMatch(licensedDockerfile("s"), /target=\/tmp\//);
+  assert.match(
+    script,
+    /pnpm add "\$f" --store-dir \/store --ignore-scripts --config\.minimum-release-age=1440/,
+  );
+});
+
+test("licensedPackagesFor: more than three licensed versions in one tree is refused", () => {
+  assert.equal(
+    licensedPackagesFor(lockWith(["1.9.0", "1.9.1", "1.9.2"]), ["uniwind-pro"]).length,
+    3,
+  );
+  assert.throws(
+    () => licensedPackagesFor(lockWith(["1.9.0", "1.9.1", "1.9.2", "1.9.3"]), ["uniwind-pro"]),
+    /at most 3/,
+  );
+  assert.deepEqual(licensedPackagesFor(lockWith(["1.9.0"]), ["esbuild"]), []);
+});
+
+test("licenceSecret: the BuildKit secret carries the token and every base64 core the in-build scan needs", () => {
+  const token = `lic-${"u".repeat(14)}`;
+  const lines = licenceSecret(token).split("\n");
+  assert.equal(lines[0], token);
+  for (const core of secretPatterns(token).slice(1)) assert.ok(lines.includes(core), core);
+  assert.ok(lines.length >= 4);
+});
+
+test("refsToDelete: a PR job drops its ref; a queue job drops every queue ref it fetched", () => {
+  assert.deepEqual(refsToDelete({ sha: SHA, pr: "7" }), ["refs/verify/pr-7"]);
+  assert.deepEqual(
+    refsToDelete(
+      { sha: SHA, queue: true },
+      "refs/verify/queue/main/pr-7-abc\nrefs/verify/queue/main/pr-8-def\nrefs/heads/main\n",
+    ),
+    ["refs/verify/queue/main/pr-7-abc", "refs/verify/queue/main/pr-8-def"],
+  );
+  assert.deepEqual(refsToDelete({ sha: SHA }, "refs/verify/queue/x"), []);
+});
+
+test("runJob: an unsafe host stops the service from inside the run, before any PR code", async () => {
+  const leaking = fakeDeps({ leaks: ["169.254.169.254:80"] });
+  await runJob(JOB, leaking.deps);
+  assert.equal(leaking.calls.stopped, 1);
+  assert.equal(leaking.calls.runs.length, 0);
+  const sealed = fakeDeps({});
+  await runJob(JOB, sealed.deps);
+  assert.equal(sealed.calls.stopped, undefined);
+});
+
+test("install and probe containers resolve no external name (a non-answering resolver)", () => {
+  const install = installArgs(S, {
+    name: "i",
+    image: "s",
+    tarPath: TAR,
+    envFile: ENV,
+    network: "n",
+  });
+  const probe = probeArgs(S, { name: "p", image: "s", envFile: ENV, targets: [], network: "n" });
+  for (const argv of [install, probe]) assert.equal(argv[argv.indexOf("--dns") + 1], "127.0.0.1");
 });

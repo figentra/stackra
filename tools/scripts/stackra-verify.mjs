@@ -330,6 +330,9 @@ export const installArgs = (s, { name, image, tarPath, envFile, network, builds 
   name,
   "--network",
   network,
+  // External names never resolve, whatever the Docker version; the embedded DNS still answers for `proxy`.
+  "--dns",
+  "127.0.0.1",
   ...containerLimits(s, envFile),
   "--volume",
   `${tarPath}:/in/src.tar:ro`,
@@ -476,6 +479,8 @@ export const probeArgs = (s, { name, image, envFile, targets, network, proxy = n
   name,
   "--network",
   network,
+  "--dns",
+  "127.0.0.1",
   ...containerLimits(s, envFile),
   image,
   "node",
@@ -530,7 +535,7 @@ export function licensedDockerfile(storeImage) {
   return [
     `FROM ${storeImage}`,
     "USER root",
-    "RUN --mount=type=secret,id=licence,required=true --mount=type=tmpfs,target=/scan --mount=type=bind,source=licensed.sh,target=/tmp/licensed.sh sh /tmp/licensed.sh",
+    "RUN --mount=type=secret,id=licence,required=true --mount=type=tmpfs,target=/scan --mount=type=bind,source=licensed.sh,target=/licensed.sh sh /licensed.sh",
     `RUN chown -R ${CONTAINER_USER} /prebuilt`,
     "",
   ].join("\n");
@@ -547,6 +552,24 @@ const INTEGRITY = /^sha512-[A-Za-z0-9+/]+={0,2}$/;
  * artifact list). A failure prints its output with the token redacted (plain and base64). Last, the whole filesystem
  * is searched for the token in both forms, and the build fails if it is anywhere: proof it was not persisted.
  */
+/**
+ * The proof the token was not persisted: every file outside the kernel's and the secret mounts (pruned by full path)
+ * is searched for the patterns, and any file listed fails the build. The verdict is the list itself, never xargs'
+ * exit status (which a batch without a match turns into 123 even when another batch matched).
+ */
+export function persistenceCheck(root, patterns) {
+  const prune = root === "/" ? "/proc /sys /dev /run/secrets /scan" : "";
+  const pruneExpr = prune
+    .split(" ")
+    .filter(Boolean)
+    .map((path) => `-path ${path}`)
+    .join(" -o ");
+  const walk = pruneExpr
+    ? `find ${root} \\( ${pruneExpr} \\) -prune -o -type f -print0`
+    : `find ${root} -type f -print0`;
+  return `hits=$(${walk} | xargs -0 -r grep -lF -f ${patterns} 2>/dev/null || true); [ -z "$hits" ] || { echo "the licence token was persisted"; exit 1; }`;
+}
+
 export function licensedScript(packages) {
   for (const { name, version, integrity } of packages)
     if (
@@ -573,7 +596,8 @@ export function licensedScript(packages) {
       `got=$(node -e 'process.stdout.write("sha512-"+require("crypto").createHash("sha512").update(require("fs").readFileSync(process.argv[1])).digest("base64"))' "$f")`,
       `[ "$got" = "${integrity}" ] || { echo "${name}@${version}: the registry tarball does not match the lockfile integrity"; exit 1; }`,
       `printf '%s' '${JSON.stringify({ name: "licensed", private: true })}' > package.json`,
-      `pnpm add "$f" --store-dir /store --ignore-scripts > /dev/null`,
+      // Its dependencies resolve only to versions published at least a day ago (a fresh malicious release is the risk).
+      `pnpm add "$f" --store-dir /store --ignore-scripts --config.minimum-release-age=1440 > /dev/null`,
       `p=${dir}/node_modules/${name}`,
       `(cd "$p" && find . -type f -exec sha256sum {} + | sort -k2) > ${dir}/.before`,
       // The token reaches the postinstall through its environment only, read from the file by the shell itself.
@@ -588,7 +612,7 @@ export function licensedScript(packages) {
     "rm -rf /lic /tmp/* /root/.cache /root/.npm /root/.uniwind /root/.local /root/.config",
     // Proof the token was not persisted: every file outside the kernel's and the secret mounts (pruned by full path,
     // so a nested dev/ or run/ is still searched) is searched for the token and its base64 cores.
-    'if find / \\( -path /proc -o -path /sys -o -path /dev -o -path /run/secrets -o -path /scan \\) -prune -o -type f -print0 | xargs -0 -r grep -lF -f /scan/patterns 2>/dev/null; then echo "the licence token was persisted"; exit 1; fi',
+    persistenceCheck("/", "/scan/patterns"),
   );
   return lines.join("\n");
 }
@@ -666,6 +690,24 @@ export const storeReusable = ({ recordedId, currentId, builtAt }, now = Date.now
 
 /** At most this many licensed package versions are built for one tested tree. */
 export const MAX_LICENSED_PER_TREE = 3;
+
+/**
+ * The licensed packages a tested tree needs: each licensed build main allows, at every version the tree's lockfile
+ * locks, with its integrity. More than MAX_LICENSED_PER_TREE is refused (a service error, never built).
+ */
+export function licensedPackagesFor(lockText, builds) {
+  const packages = LICENSED_BUILDS.filter((name) => builds.includes(name)).flatMap((name) =>
+    lockedPackages(lockText, name),
+  );
+  if (packages.length > MAX_LICENSED_PER_TREE)
+    throw new Error(
+      `the tree locks ${packages.length} licensed builds; at most ${MAX_LICENSED_PER_TREE} are built`,
+    );
+  return packages;
+}
+
+/** The BuildKit secret: the token on its first line, then its base64 cores, which the in-build scan searches for. */
+export const licenceSecret = (token) => [token, ...secretPatterns(token).slice(1)].join("\n");
 
 /**
  * The licensed images worth keeping: those built on the current store image and younger than STORE_MAX_AGE_MS. The
@@ -977,9 +1019,18 @@ export async function runJob(job, deps) {
 
     const net = deps.network({ id, image: store, proxyName, network });
     const leaks = deps.egressLeaks(store, net);
-    if (leaks === null) return { post: false, error: "the egress probe did not run", unsafe: true };
-    if (leaks.length)
-      return { post: false, error: `the install network reaches ${leaks.join(" ")}`, unsafe: true };
+    if (leaks === null || leaks.length) {
+      // Unsafe host: no PR code runs, and the service stops before anything else does.
+      deps.stop();
+      return {
+        post: false,
+        error:
+          leaks === null
+            ? "the egress probe did not run"
+            : `the install network reaches ${leaks.join(" ")}`,
+        unsafe: true,
+      };
+    }
 
     const installTimedOut = await limited(
       installArgs(s, {
@@ -1362,6 +1413,12 @@ function freeBytes(dir) {
   return stat.bavail * stat.bsize;
 }
 
+/** The refs to delete after a job: its PR ref, and every queue ref it fetched (`queued`: for-each-ref output). */
+export const refsToDelete = (job, queued = "") => [
+  ...(job.pr ? [`refs/verify/pr-${job.pr}`] : []),
+  ...(job.queue ? queued.split("\n").filter((ref) => ref.startsWith("refs/verify/queue/")) : []),
+];
+
 /** The refs a job fetches: main, and the PR head or the merge queue's group commits (or the queue job stalls). */
 export function fetchRefs(job) {
   const refs = ["+refs/heads/main:refs/heads/main"];
@@ -1402,12 +1459,10 @@ function archiveJob(s, job, runDir) {
     chmodSync(tarPath, 0o644);
     return { tarPath, mirror, tree };
   } finally {
-    if (job.pr) git(mirror, ["update-ref", "-d", `refs/verify/pr-${job.pr}`]);
-    if (job.queue)
-      for (const ref of git(mirror, ["for-each-ref", "--format=%(refname)", "refs/verify/queue/"])
-        .split("\n")
-        .filter(Boolean))
-        git(mirror, ["update-ref", "-d", ref]);
+    const queued = job.queue
+      ? git(mirror, ["for-each-ref", "--format=%(refname)", "refs/verify/queue/"])
+      : "";
+    for (const ref of refsToDelete(job, queued)) git(mirror, ["update-ref", "-d", ref]);
   }
 }
 
@@ -1457,10 +1512,6 @@ function ensureStore(s, mirror, base, runDir, state) {
  */
 async function ensureLicensed(s, store, packages, runDir, state) {
   if (!packages.length) return store;
-  if (packages.length > MAX_LICENSED_PER_TREE)
-    throw new Error(
-      `the tree locks ${packages.length} licensed builds; at most ${MAX_LICENSED_PER_TREE} are built`,
-    );
   if (!s.licenceFile)
     throw new Error("the tree has licensed builds; STACKRA_VERIFY_LICENCE_FILE is not set");
   const storeId = docker(s, ["image", "inspect", "--format", "{{.Id}}", store]).stdout.trim();
@@ -1490,7 +1541,7 @@ async function ensureLicensed(s, store, packages, runDir, state) {
       tag,
       ctx,
     ],
-    { timeout: 60 * 60 * 1000, input: [token, ...secretPatterns(token).slice(1)].join("\n") },
+    { timeout: 60 * 60 * 1000, input: licenceSecret(token) },
   );
   if (build.code !== 0) {
     // The tool prints its download URL, which holds the token: only the scrubbed text reaches the service log, and
@@ -1646,10 +1697,7 @@ export async function verify(s, job) {
       const store = ensureStore(s, deps.mirror, job.base, runDir, state);
       const lockText = git(deps.mirror, ["show", `${deps.tree}:pnpm-lock.yaml`]);
       const builds = allowedBuilds(git(deps.mirror, ["show", `${job.base}:pnpm-workspace.yaml`]));
-      const packages = LICENSED_BUILDS.filter((licensed) => builds.includes(licensed)).flatMap(
-        (licensed) => lockedPackages(lockText, licensed),
-      );
-      return ensureLicensed(s, store, packages, runDir, state);
+      return ensureLicensed(s, store, licensedPackagesFor(lockText, builds), runDir, state);
     },
     docker: (args) => docker(s, args),
     runContainer: (args) =>
@@ -1720,6 +1768,7 @@ export async function verify(s, job) {
     headOf: () => headOf(s, job),
     readLog: () => readFileSync(logPath, "utf8"),
     stopping: isStopping,
+    stop: onStop,
     timeoutMs: s.timeoutMs,
     setTimer: (fn, ms) => {
       const timer = setTimeout(fn, ms);
