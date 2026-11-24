@@ -312,3 +312,48 @@ test("STA-2761: the CLI refuses a forged stackra/verify before it mints a token"
   assert.match(r.stderr, /only the stackra-verify App posts results/);
   assert.doesNotMatch(r.stderr, /missing env/);
 });
+
+test("STA-2761 (L4 review of figentra#73): gh's own flag parsing — bundles, full URLs, last method — cannot slip a write past", () => {
+  const SHA = "0123456789abcdef0123456789abcdef01234567";
+  const ST = `repos/figentra/stackra/statuses/${SHA}`;
+  const mustBlock = [
+    ["api", ST, "-iF", "state=success"],
+    ["api", ST, "-ifstate=success"],
+    ["api", "-iXPOST", ST, "-if", "state=success"],
+    ["api", "repos/figentra/stackra/check-runs", "-if", "name=stackra/verify"],
+    ["api", "https://api.github.com/graphql", "--input", "q.json"],
+    ["api", "https://api.github.com/graphql", "-F", "query=@q.graphql"],
+    ["api", `https://api.github.com/repos/figentra/stackra/statuses/${SHA}`, "-f", "state=success"],
+    ["api", "-X", "GET", "-X", "POST", "repos/figentra/stackra/check-suites/9/rerequest"],
+    ["api", "--hostname", "github.com", "graphql", "--input", "q.json"],
+    ["-R", "figentra/stackra", "api", ST, "-f", "state=success"],
+    ["api", `repos/figentra/stackra/STATUSES/${SHA}`, "-f", "state=success"],
+    ["api", `repos/figentra/stackra/stat%2575ses/${SHA}`, "-f", "state=success"],
+    ["api", "graphql", "-F", "query=@-"],
+  ];
+  for (const args of mustBlock) assert.equal(writesCheck(args), true, args.join(" "));
+  const mustAllow = [
+    ["api", "graphql", "-f", "query={viewer{login}}"],
+    ["api", "repos/figentra/stackra/issues/1/comments", "-f", "body=see the statuses endpoint"],
+    ["api", "repos/figentra/stackra/issues/1/comments", "-f", "body=the check-runs failed"],
+    ["api", "repos/figentra/ci-notes/issues", "-f", "title=x", "-f", "body=the check-suites run"],
+    ["api", `repos/figentra/stackra/commits/${SHA}/statuses`, "--paginate", "-q", ".[].state"],
+  ];
+  for (const args of mustAllow) assert.equal(writesCheck(args), false, args.join(" "));
+});
+
+/** Runs the bot-gh CLI as gh with no credentials in its environment. */
+const cli = (...args) =>
+  spawnSync(process.execPath, [new URL("../bot-gh.mjs", import.meta.url).pathname, "gh", ...args], {
+    encoding: "utf8",
+    env: { PATH: process.env.PATH },
+  });
+
+test("STA-2761: GraphQL from a file to a full-URL endpoint is refused by the CLI too, and gh extension is refused", () => {
+  const graphql = cli("api", "https://api.github.com/graphql", "-F", "query=@q.graphql");
+  assert.equal(graphql.status, 2);
+  assert.doesNotMatch(graphql.stderr, /missing env/);
+  const extension = cli("extension", "install", "someone/gh-thing");
+  assert.equal(extension.status, 2);
+  assert.match(extension.stderr, /gh extension/);
+});
