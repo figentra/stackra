@@ -137,6 +137,10 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  ledgerNews,
+  SWITCH_STARTED,
+  SWITCH_PREVIOUS,
+  globMatches,
   recordedRun,
   serviceProblemConclusion,
   SERVICE_PROBLEM,
@@ -1133,9 +1137,14 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
       "packages/a/.oxlintrc.json",
       "mise.toml",
       "README.md",
+      "packages/new/package.json",
       "packages/new/vitest.config.ts",
       "packages/new/src/new.test.ts",
       "packages/new/.config/config.json",
+      "packages/new/sub/vitest.config.ts",
+      "packages/a/src/newdir/.oxlintrc.json",
+      "newtop/pnpm-workspace.yaml",
+      "newtop/package.json",
       "packages/a/.config/config.json",
       "tools/scripts/new.mjs",
       "tools/scripts/newdir/x.mjs",
@@ -1150,6 +1159,7 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
       { path: ".gitattributes" },
       { path: ".pnpmfile.cjs" },
     ],
+    ["packages/*"],
   );
   assert.deepEqual(plan.whole.map((e) => e.path).sort(), [
     ".gitattributes",
@@ -1163,11 +1173,18 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
     "knip.json",
     "packages/a/.oxlintrc.json",
     "mise.toml",
+    "packages/new/sub/vitest.config.ts",
+    "packages/a/src/newdir/.oxlintrc.json",
+    "newtop/pnpm-workspace.yaml",
     "packages/a/.config/config.json",
     "tools/scripts/new.mjs",
     "tools/scripts/newdir/x.mjs",
     "packages/tooling/new-preset/index.js",
   ]);
+  // review round 5, L2: only a new workspace member's own directory is exempt (a package.json main lacks, at a glob)
+  assert.equal(globMatches("packages/*", "packages/new"), true);
+  assert.equal(globMatches("packages/*/*", "packages/new"), false);
+  assert.equal(globMatches("!packages/*", "packages/new"), false);
   // a new member's own configs stay in the tested tree (CTO ruling, round 4): main has no packages/new at all
 });
 
@@ -1241,6 +1258,7 @@ function fixtureRepo() {
   write("packages/a/vitest.config.ts", "export default { test: { include: ['src/**'] } };\n");
   write("packages/a/src/a.ts", "export const a = 1;\n");
   write(".github/workflows/ci.yml", "on: push\n");
+  write("pnpm-workspace.yaml", "packages:\n  - packages/*\n");
   git("add", "-A");
   git("commit", "-qm", "main");
   const base = git("rev-parse", "HEAD");
@@ -4931,6 +4949,10 @@ function treeRepo() {
       "",
     ].join("\n"),
   );
+  write(
+    "pnpm-lock.yaml",
+    "lockfileVersion: '9.0'\n\nimporters:\n\n  .: {}\n\n  packages/a: {}\n\n  packages/b: {}\n",
+  );
   git("add", "-A");
   git("commit", "-qm", "main workspace");
   const base = git("rev-parse", "HEAD");
@@ -5113,6 +5135,13 @@ test(
   },
 );
 
+/** dependencySpecProblems for two `$` overrides against a root package.json's devDependencies. */
+const rootOverrides = (deps) =>
+  dependencySpecProblems({
+    workspace: { overrides: { knip: "$knipx", c: "$c" } },
+    rootManifest: { devDependencies: deps },
+  });
+
 /** dependencySpecProblems over one workspace, its manifests and member names. */
 const specProblems = (workspace, manifests = [], members = []) =>
   dependencySpecProblems({ workspace, manifests, memberNames: new Set(members) });
@@ -5123,7 +5152,25 @@ test("dependencySpecProblems: the spec grammar, without a repository", () => {
     problems({ catalog: { a: "^1", b: "1.2.3", c: "latest", d: ">=1 <2", e: "npm:e@1" } }),
     [],
   );
-  assert.deepEqual(problems({ overrides: { "a@1>b": "-", c: "$c", "d>vitest": "5.0.6" } }), []);
+  assert.deepEqual(problems({ overrides: { "a@1>b": "-", "d>vitest": "5.0.6" } }), []);
+  // review round 5, L3: a `$name` override is checked as the root's spec for `name`
+  const root = rootOverrides;
+  assert.deepEqual(root({ knipx: "6.41.0", c: "^1" }), []);
+  assert.match(
+    root({ knipx: "npm:evil-knip@1.0.0", c: "^1" })[0],
+    /renames the gate tool knip to evil-knip/,
+  );
+  assert.match(root({ c: "^1" })[0], /knip "\$knipx" names no root dependency/);
+  assert.match(root({ knipx: "link:./x", c: "^1" })[0], /is not a registry spec/);
+  // and a gate tool is never a workspace link, even to a member
+  assert.match(
+    specProblems(
+      {},
+      [{ path: "p/package.json", json: { devDependencies: { vitest: "workspace:*" } } }],
+      ["vitest"],
+    )[0],
+    /links a gate tool to a workspace member/,
+  );
   for (const spec of [
     "link:../x",
     "file:x.tgz",
@@ -5248,8 +5295,36 @@ function gateCommands(steps, root) {
   return found;
 }
 
+/**
+ * The tools the stackra CLI starts itself (review L4): every command resolveTool picks for a member task (`at("vite",
+ * …)`) and every bin it runs by path (`join(root, "node_modules", ".bin", "jscpd")`), read from the CLI's source.
+ */
+function cliSpawned(root) {
+  const found = new Set();
+  for (const file of globSync("packages/developer/cli/src/**/*.ts", { cwd: root })) {
+    if (file.includes("__tests__")) continue;
+    const text = readFileSync(join(root, file), "utf8");
+    for (const m of text.matchAll(/\bat\("([a-z][\w.-]*)"/g)) found.add(m[1]);
+    for (const m of text.matchAll(/"node_modules",\s*"\.bin",\s*"([a-z][\w.-]*)"/g))
+      found.add(m[1]);
+  }
+  return found;
+}
+
 test("GATE_TOOL_PACKAGES: derived from what the gate's steps run; a command without its package fails here (ruling 2c)", () => {
   const commands = gateCommands(GATE_STEPS, CODE_DIR);
+  // the gate runs the stackra CLI (by its bin, or by path in validate), so the tools it starts count too
+  const rootScripts = JSON.stringify(
+    JSON.parse(readFileSync(join(CODE_DIR, "package.json"), "utf8")).scripts,
+  );
+  assert.ok(
+    commands.has("stackra") || rootScripts.includes("packages/developer/cli/dist/stackra.mjs"),
+  );
+  const spawned = cliSpawned(CODE_DIR);
+  for (const bin of ["jscpd", "vite", "vitest", "tsdown", "oxlint", "tsc"])
+    assert.ok(spawned.has(bin), `${bin} is no longer started by the CLI`);
+  for (const cmd of spawned)
+    if (!commands.has(cmd)) commands.set(cmd, "started by the stackra CLI");
   for (const [cmd, where] of commands)
     assert.ok(
       cmd in GATE_TOOL_BINS || NOT_PACKAGE_COMMANDS.includes(cmd),
@@ -5717,4 +5792,197 @@ test("M2: stackra/verify never posts neutral; a service problem is a failure tha
   assert.equal(recordedRun([posted], SHA, 1), undefined);
   const prFailure = { ...posted, output: { title: "Quality Gate failed in 1 s" } };
   assert.equal(recordedRun([prFailure], SHA, 1), prFailure);
+});
+
+test("M1: main's .gitignore never refuses a definition file or a path main tracks (main force-tracks vitest configs)", () => {
+  const repo = treeRepo();
+  try {
+    const { dir, git } = repo;
+    // like main: an ignore rule for generated vitest configs, and the configs tracked anyway
+    writeFileSync(
+      join(dir, ".gitignore"),
+      "node_modules/\n.turbo/\ndist/\npackages/*/vitest.config.ts\n",
+    );
+    git("add", "-A", "-f");
+    git("commit", "-qm", "main ignores generated vitest configs");
+    assert.match(git("ls-files", "packages/a/vitest.config.ts"), /vitest\.config\.ts/);
+    const base = git("rev-parse", "HEAD");
+    const build = (files) => {
+      git("checkout", "-q", "-b", `m1-${Object.keys(files)[0].replaceAll("/", "-")}`, base);
+      for (const [path, text] of Object.entries(files)) {
+        mkdirSync(join(dir, path, ".."), { recursive: true });
+        writeFileSync(join(dir, path), text);
+      }
+      git("add", "-A", "-f");
+      git("commit", "-qm", "pr");
+      const sha = git("rev-parse", "HEAD");
+      git("checkout", "-q", "main");
+      return buildTree(mirrorOf(dir), base, sha, join(dir, `index-${sha}`), YAML);
+    };
+    // a new member's vitest.config.ts (ignored by name, a definition file): kept for the member, not refused
+    const added = build({
+      "packages/new/package.json": '{"name":"new"}\n',
+      "packages/new/vitest.config.ts": "export default {};\n",
+    });
+    assert.ok(
+      git("ls-tree", "-r", "--name-only", added)
+        .split("\n")
+        .includes("packages/new/vitest.config.ts"),
+    );
+    // an edit to a tracked one: not refused (main's copy wins, as for every definition file)
+    const edited = build({ "packages/a/vitest.config.ts": "export default { test: {} };\n" });
+    assert.match(
+      git("cat-file", "blob", `${edited}:packages/a/vitest.config.ts`),
+      /include: \['src\/\*\*'\]/,
+    );
+    // node_modules is refused whatever the rules say
+    assert.throws(
+      () => build({ "packages/a/node_modules/x.js": "x\n" }),
+      (error) => error.refused,
+    );
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("L5: a gitlink the PR adds or changes is refused; main's own unchanged gitlink stays", () => {
+  const repo = treeRepo();
+  try {
+    const { dir, git } = repo;
+    const commit = git("rev-parse", "HEAD");
+    git("update-index", "--add", "--cacheinfo", `160000,${commit},.notes`);
+    git("commit", "-qm", "main has a gitlink");
+    const base = git("rev-parse", "HEAD");
+    let n = 0;
+    const pr = (path, target) => {
+      git("checkout", "-q", "-b", `l5-${++n}`, base);
+      git("update-index", "--add", "--cacheinfo", `160000,${target},${path}`);
+      writeFileSync(join(dir, "packages/a/src/l5.ts"), `export const x = "${path}";\n`);
+      git("add", "packages/a/src/l5.ts");
+      git("commit", "-qm", "pr");
+      const sha = git("rev-parse", "HEAD");
+      git("checkout", "-q", "main");
+      return sha;
+    };
+    const build = (sha) => buildTree(mirrorOf(dir), base, sha, join(dir, `index-${sha}`), YAML);
+    assert.match(build(pr(".notes", commit)), /^[0-9a-f]{40}$/);
+    for (const [path, target] of [
+      ["vendor/tool", commit],
+      ["node_modules/.bin/node", commit],
+      [".notes", git("rev-parse", "HEAD~2")],
+    ])
+      assert.throws(
+        () => build(pr(path, target)),
+        (error) => error.refused && error.message.includes(path),
+        path,
+      );
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test(
+  "L1: a stop during a run that would restart ends the service; it is not started again",
+  needsFlock,
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), "stackra-lock-"));
+    const script = join(dir, "service.mjs");
+    try {
+      writeFileSync(
+        script,
+        [
+          'import { appendFileSync, writeFileSync } from "node:fs";',
+          `appendFileSync(${JSON.stringify(join(dir, "runs"))}, "run\\n");`,
+          // a self-update finished just as the stop arrived: this run would ask for a restart
+          `process.on("SIGTERM", () => process.exit(${RESTART_EXIT}));`,
+          `writeFileSync(${JSON.stringify(join(dir, "started"))}, "");`,
+          "setInterval(() => {}, 1000);",
+        ].join("\n"),
+      );
+      const shell = spawn("/bin/sh", lockedShell(join(dir, "lock"), [process.execPath, script]));
+      const exited = new Promise((resolve) => {
+        shell.on("close", resolve);
+      });
+      for (let i = 0; i < 100 && spawnSync("test", ["-e", join(dir, "started")]).status !== 0; i++)
+        await new Promise((resolve) => {
+          setTimeout(resolve, 50);
+        });
+      shell.kill("SIGTERM");
+      assert.equal(await exited, RESTART_EXIT);
+      assert.equal(readFileSync(join(dir, "runs"), "utf8"), "run\n");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "L1: new code that ends before its first pass is rolled back to the previous HEAD, in the ledger, and the old code runs",
+  needsFlock,
+  () => {
+    const dir = mkdtempSync(join(tmpdir(), "stackra-roll-"));
+    const home = join(dir, "home");
+    const clone = join(dir, "clone");
+    try {
+      mkdirSync(join(home, "ledger"), { recursive: true });
+      mkdirSync(clone);
+      gitIn(clone, "init", "-q", "-b", "main");
+      writeFileSync(join(clone, "code.txt"), "old\n");
+      gitIn(clone, "add", "-A");
+      gitIn(clone, "commit", "-qm", "old");
+      const old = gitIn(clone, "rev-parse", "HEAD");
+      writeFileSync(join(clone, "code.txt"), "new\n");
+      gitIn(clone, "commit", "-qam", "new");
+      const fresh = gitIn(clone, "rev-parse", "HEAD");
+      // the switch just happened: the daemon recorded the HEAD to go back to and cleared the started mark
+      writeFileSync(join(home, SWITCH_PREVIOUS), `${old}\n`);
+      // the service: the new code dies at start; the old code reaches its passes and stops
+      const script = join(dir, "service.mjs");
+      writeFileSync(
+        script,
+        [
+          'import { readFileSync, writeFileSync, appendFileSync } from "node:fs";',
+          `const code = readFileSync(${JSON.stringify(join(clone, "code.txt"))}, "utf8").trim();`,
+          `appendFileSync(${JSON.stringify(join(dir, "runs"))}, code + "\\n");`,
+          'if (code === "new") process.exit(3);',
+          `writeFileSync(${JSON.stringify(join(home, SWITCH_STARTED))}, "");`,
+          "process.exit(0);",
+        ].join("\n"),
+      );
+      const r = spawnSync(
+        "/bin/sh",
+        lockedShell(join(dir, "lock"), [process.execPath, script], { home, clone }),
+        {
+          encoding: "utf8",
+        },
+      );
+      assert.equal(r.status, 0, r.stderr);
+      assert.equal(readFileSync(join(dir, "runs"), "utf8"), "new\nold\n");
+      assert.equal(gitIn(clone, "rev-parse", "HEAD"), old);
+      const ledger = readFileSync(join(home, "ledger/service.jsonl"), "utf8")
+        .trim()
+        .split("\n")
+        .map((l) => JSON.parse(l));
+      assert.equal(ledger.length, 1);
+      assert.equal(ledger[0].event, "self-update-rolled-back");
+      assert.equal(ledger[0].from, fresh);
+      assert.equal(ledger[0].to, old);
+      assert.equal(ledger[0].exit, 3);
+      assert.equal(spawnSync("test", ["-e", join(home, SWITCH_PREVIOUS)]).status, 1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test("ledgerNews: a refusal is written once per episode; every switch is written", () => {
+  const refused = { event: "self-update-refused", reason: "local changes", main: "m1" };
+  assert.equal(ledgerNews(undefined, refused), true);
+  assert.equal(ledgerNews({ refused: "local changes", main: "m1" }, refused), false);
+  assert.equal(ledgerNews({ refused: "local changes", main: "m0" }, refused), true);
+  assert.equal(ledgerNews({ refused: "a job is running", main: "m1" }, refused), true);
+  assert.equal(
+    ledgerNews({ refused: "x", main: "m1" }, { event: "self-update", main: "m1" }),
+    true,
+  );
 });

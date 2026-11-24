@@ -158,6 +158,7 @@ import {
   VERIFY_OVERLAY_DIRS,
   aliasTarget,
   isGateToolPackage,
+  isVerifyDefinition,
   SHARED_STEP_LOADERS,
   VERIFY_APP,
   VERIFY_CHECK,
@@ -2956,24 +2957,47 @@ const overrideTarget = (selector) =>
  * optionalDependencies and peerDependencies. A spec is a semver range, a version or a dist-tag, a `catalog:`
  * reference, or an `npm:<name>@<range>` alias; `workspace:` only between members (`memberNames`). `link:`, `file:`,
  * `portal:`, git, GitHub and http(s) tarball specs, and paths, are refused. An alias that renames a gate-tool package
- * (GATE_TOOL_PACKAGES) to another registry name is refused too: it would swap the gate's runner for a stub. An
- * override may also be `-` (removal) or a `$name` reference.
+ * (GATE_TOOL_PACKAGES) to another registry name is refused too, and so is a `workspace:` spec for one: either would
+ * swap the gate's runner for a stub. An override may also be `-` (removal) or a `$name` reference, which is checked as
+ * the root package.json's spec for `name` (`rootManifest`); `memberNames` are the lockfile importers' names.
  */
 export function dependencySpecProblems({
   workspace = {},
   manifests = [],
   memberNames = new Set(),
+  rootManifest = {},
 }) {
   const problems = [];
+  // An override's `$name` is the root package.json's spec for `name`; it is checked as that spec (L3).
+  const reference = (spec) => {
+    const name = /^\$([@\w./-]+)$/.exec(spec)?.[1];
+    if (!name) return null;
+    for (const kind of [
+      "dependencies",
+      "devDependencies",
+      "optionalDependencies",
+      "peerDependencies",
+    ])
+      if (typeof rootManifest?.[kind]?.[name] === "string") return rootManifest[kind][name];
+    return undefined;
+  };
   const check = (where, key, spec, { workspaceOk = false, override = false } = {}) => {
     const bad = (why) => problems.push(`${where}: ${key} ${JSON.stringify(spec)} ${why}`);
     if (typeof spec !== "string") return bad("is not a version spec");
-    if (override && (spec === "-" || /^\$[@\w./-]+$/.test(spec))) return;
+    if (override && spec === "-") return;
+    if (override && spec.startsWith("$")) {
+      const resolved = reference(spec);
+      if (resolved === undefined) return bad("names no root dependency");
+      if (resolved === null) return bad("is not a reference");
+      return check(where, key, resolved, { workspaceOk });
+    }
     if (/^catalog:[\w.-]*$/.test(spec)) return;
-    if (spec.startsWith("workspace:"))
+    if (spec.startsWith("workspace:")) {
+      if (isGateToolPackage(key)) return bad("links a gate tool to a workspace member");
       return workspaceOk
         ? undefined
         : bad("is a workspace: spec for a package that is not a member");
+    }
     if (spec.startsWith("npm:")) {
       const target = aliasTarget(spec);
       const range = target ? spec.slice(`npm:${target}`.length).replace(/^@/, "") : null;
@@ -3029,16 +3053,25 @@ export function definitionDirectory(path) {
   return path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
 }
 
+/** Whether a workspace glob (`packages/*\/*`, segments of `*` or literals; `!` globs never match) matches `dir`. */
+export function globMatches(glob, dir) {
+  if (glob.startsWith("!")) return false;
+  const want = glob.replace(/\/+$/, "").split("/");
+  const have = dir.split("/");
+  return want.length === have.length && want.every((w, i) => w === "*" || w === have[i]);
+}
+
 /**
  * What the tested tree takes from main: `whole`, main's entry of every verify-definition file (isVerifyOverlay);
  * `remove`, every merged path that is a verify definition main does not have, at the root or in a directory main
  * already has (a PR-added `.commitlintrc.json` or `knip.json` that a tool would find before main's config), and every
  * new file under VERIFY_OVERLAY_DIRS; `scripts`, the package.json files whose checks come from main (OVERLAY_FIELDS).
- * A definition file inside a directory main does not have at all (a new workspace member's own vitest.config) stays,
- * so the new member runs with it; it reaches only that directory, and it still needs the owner's review (CTO ruling,
- * round 4). A `.config/` directory belongs to the directory that holds it.
+ * A definition file in a new workspace member's own directory (a package.json main lacks, in a directory main lacks,
+ * at one of main's `memberGlobs`) stays, so the new member runs with it; it reaches only that directory, and it still
+ * needs the owner's review (CTO ruling, round 4). Any other new directory gets no exemption (review round 5, L2). A
+ * `.config/` directory belongs to the directory that holds it.
  */
-export function overlayPlan(mergedPaths, mainEntries) {
+export function overlayPlan(mergedPaths, mainEntries, memberGlobs = []) {
   const main = new Map(mainEntries.map((e) => [e.path, e]));
   const whole = [...main.values()].filter((e) => isVerifyOverlay(e.path));
   const dirs = new Set([""]);
@@ -3046,11 +3079,18 @@ export function overlayPlan(mergedPaths, mainEntries) {
     const parts = path.split("/");
     for (let i = 1; i < parts.length; i++) dirs.add(parts.slice(0, i).join("/"));
   }
+  // A new member: a package.json main does not have, in a directory main does not have, at a workspace glob.
+  const newMembers = new Set(
+    mergedPaths
+      .filter((p) => /(?:^|\/)package\.json$/.test(p) && !main.has(p))
+      .map((p) => definitionDirectory(p))
+      .filter((d) => d !== "" && !dirs.has(d) && memberGlobs.some((g) => globMatches(g, d))),
+  );
   const remove = mergedPaths.filter(
     (p) =>
       isVerifyOverlay(p) &&
       !main.has(p) &&
-      (VERIFY_OVERLAY_DIRS.test(p) || dirs.has(definitionDirectory(p))),
+      (VERIFY_OVERLAY_DIRS.test(p) || !newMembers.has(definitionDirectory(p))),
   );
   const scripts = mergedPaths.filter(
     (p) => /(?:^|\/)package\.json$/.test(p) && main.has(p) && !isVerifyOverlay(p),
@@ -3635,8 +3675,8 @@ export const LOADED_BLOBS = Object.freeze(
  * mobile check's scripts, every step's commands and their mirror of main's ci.yml; the licence policy, both readers
  * and the generated check; the tested tree's overlay (buildTree on throwaway repositories); the run's verdict, check
  * run body, ledger and this self-update. Left out: the proxy and egress probe (sockets and timing), the store image,
- * the licensed build and CodeQL (image scripts), and anything that needs node_modules (the staged tree has none, so
- * those skip anyway).
+ * the licensed build and CodeQL (image scripts). The staged tree gets the clone's node_modules linked in (selfUpdate),
+ * so the tests that need an installed package (yaml, knip, vitest, commitlint) run there as in the service.
  */
 export const SELF_CHECK_TESTS =
   /^(?:parseArgs|hostProblems|preflight|servicePass|settings|spdxAllowed|licence |lockfileGraph|workspaceManifest|memberSetProblems|pnpmFindings|closureViolations|installedMobile|withMainScripts|buildTree|gate script|gate step|gate mirrors|mobile script|kinds|checkRunBody|ledger|runJob|definitionDrift|self-update|OSV canary)/;
@@ -3781,26 +3821,50 @@ export function selfCheck({ s, keyMode, licenceMode, filesystem, runTests }) {
   return problems;
 }
 
+/** The files the locked shell and the daemon share for a switch (in the daemon's home). */
+export const SWITCH_PREVIOUS = "self-update-previous";
+export const SWITCH_STARTED = "self-update-started";
+
 /**
  * The argv of `sh` that takes the service's flock and keeps it across restarts (RESTART_EXIT): the shell holds the
  * lock on fd 9 for its whole life (`flock -n` exits LOCK_HELD_EXIT when another service holds it), runs `command`
- * with fd 9 closed (so no child of the service ever holds the lock), forwards TERM and INT to it as TERM, and starts
- * it again only on RESTART_EXIT, so a self-update never leaves the box without its one service or with two.
+ * with fd 9 closed (so no child of the service ever holds the lock), and forwards TERM and INT to it as TERM. It
+ * starts the service again only on RESTART_EXIT and only when no stop arrived (review round 5, L1). After a switch
+ * (`home/SWITCH_PREVIOUS` holds the clone's HEAD before it), new code that ends with any other code before it marks
+ * `home/SWITCH_STARTED` is rolled back: the clone is reset to that HEAD, the ledger records it, and the old code is
+ * started again. The child is waited for with `wait` alone (no `kill -0` on a PID that could be reused).
  */
-export const lockedShell = (lockPath, command) => [
+export const lockedShell = (lockPath, command, { home, clone } = {}) => [
   "-c",
   [
-    'lock=$1; shift; exec 9>"$lock"',
+    'lock=$1; home=$2; clone=$3; shift 3; exec 9>"$lock"',
     `flock -n 9 || exit ${LOCK_HELD_EXIT}`,
-    'pid=; trap \'[ -n "$pid" ] && kill -TERM "$pid" 2>/dev/null\' TERM INT',
+    'pid=; stop=; trap \'stop=1; [ -n "$pid" ] && kill -TERM "$pid" 2>/dev/null\' TERM INT',
+    `prev="$home/${SWITCH_PREVIOUS}"; started="$home/${SWITCH_STARTED}"`,
     "while :; do",
     '  "$@" 9>&- & pid=$!',
-    '  while :; do wait "$pid"; rc=$?; kill -0 "$pid" 2>/dev/null || break; done',
-    `  [ "$rc" -eq ${RESTART_EXIT} ] || exit "$rc"`,
+    // A trapped signal interrupts `wait` (status > 128): wait again for the real status; 127 means it was already
+    // reaped. Only this shell's own child is ever waited for, so a reused PID is never mistaken for it.
+    '  wait "$pid"; rc=$?',
+    '  while [ -n "$stop" ]; do wait "$pid"; r=$?; [ "$r" -eq 127 ] && break; rc=$r; [ "$r" -le 128 ] && break; done',
+    '  pid=; [ -n "$stop" ] && exit "$rc"',
+    `  [ "$rc" -eq ${RESTART_EXIT} ] && continue`,
+    '  if [ -n "$home" ] && [ -s "$prev" ] && [ ! -e "$started" ]; then',
+    '    to=$(cat "$prev"); from=$(git -C "$clone" rev-parse HEAD 2>/dev/null)',
+    '    if git -C "$clone" -c core.hooksPath=/dev/null reset -q --hard "$to"; then',
+    '      printf \'{"at":"%s","event":"self-update-rolled-back","from":"%s","to":"%s","exit":%s}\\n\' \\',
+    '        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$from" "$to" "$rc" >> "$home/ledger/service.jsonl"',
+    '      rm -f "$prev"; continue',
+    "    fi",
+    "  fi",
+    '  [ -n "$home" ] && rm -f "$prev"',
+    '  exit "$rc"',
     "done",
   ].join("\n"),
   "stackra-verify",
   lockPath,
+  home ?? "",
+  clone ?? "",
   ...command,
 ];
 
@@ -4195,7 +4259,7 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
   if (merge.status !== 0)
     throw new Error(`git merge-tree: ${(merge.stderr || merge.stdout).trim()}`);
   const merged = merge.stdout.split("\n")[0].trim();
-  const listing = (treeish) =>
+  const everything = (treeish) =>
     git(mirror, ["ls-tree", "-r", "-z", "--full-tree", treeish])
       .split("\0")
       .filter(Boolean)
@@ -4203,19 +4267,45 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
         const [meta, path] = line.split("\t");
         const [mode, type, object] = meta.split(" ");
         return { mode, type, object, path };
-      })
-      .filter((e) => e.type === "blob");
-  const mergedEntries = listing(merged);
-  const mainEntries = listing(base);
+      });
+  const listing = (treeish) => everything(treeish).filter((e) => e.type === "blob");
+  const mergedAll = everything(merged);
+  const mainAll = everything(base);
+  const mergedEntries = mergedAll.filter((e) => e.type === "blob");
+  const mainEntries = mainAll.filter((e) => e.type === "blob");
   const mainByPath = new Map(mainEntries.map((e) => [e.path, e]));
-  const changed = mergedEntries
-    .filter((e) => mainByPath.get(e.path)?.object !== e.object)
+  // Gitlinks (submodule commits) are seen by every check below; only main's own, unchanged, may stay (L5).
+  const mainLinks = new Map(
+    mainAll.filter((e) => e.type === "commit").map((e) => [e.path, e.object]),
+  );
+  const links = mergedAll
+    .filter((e) => e.type === "commit" && mainLinks.get(e.path) !== e.object)
+    .map(
+      (e) =>
+        `${e.path} is a gitlink (a submodule commit) main does not have; the tested tree never carries one`,
+    );
+  const changed = mergedAll
+    .filter(
+      (e) =>
+        (e.type === "blob" ? mainByPath.get(e.path)?.object : mainLinks.get(e.path)) !== e.object,
+    )
     .map((e) => e.path);
-  const forbidden = forbiddenPaths(changed, ignoredByMain(mirror, base, changed));
+  // main's .gitignore applies to new paths only, and never to a definition file (main force-tracks, for one, every
+  // generated vitest.config.ts its ignore rules name): review round 5, M1. node_modules/ and .turbo/ are always out.
+  const ignorable = changed.filter(
+    (p) => !mainByPath.has(p) && !mainLinks.has(p) && !isVerifyDefinition(p),
+  );
+  const forbidden = [...links, ...forbiddenPaths(changed, ignoredByMain(mirror, base, ignorable))];
   if (forbidden.length) throw treeRefusal(forbidden);
+  const memberGlobs = mainByPath.has("pnpm-workspace.yaml")
+    ? workspaceManifest(
+        git(mirror, ["cat-file", "blob", mainByPath.get("pnpm-workspace.yaml").object]),
+      ).packages
+    : [];
   const { whole, remove, scripts } = overlayPlan(
     mergedEntries.map((e) => e.path),
     mainEntries,
+    memberGlobs,
   );
   const mergedByPath = new Map(mergedEntries.map((e) => [e.path, e]));
   const blob = (entry) => git(mirror, ["cat-file", "blob", entry.object]);
@@ -4245,11 +4335,24 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
     } catch {
       problems.push(`${entry.path} is not JSON`);
     }
+  // The members are the lockfile's importers (L3): a package.json no importer names is not a member.
+  let importerDirs = new Set();
+  if (mergedByPath.has("pnpm-lock.yaml")) {
+    const graph = lockfileGraph(blob(mergedByPath.get("pnpm-lock.yaml")));
+    importerDirs = new Set(Object.keys(graph.importers));
+  }
+  const memberNames = new Set(
+    manifests
+      .filter((m) => importerDirs.has(definitionDirectory(m.path) || "."))
+      .map((m) => m.json?.name)
+      .filter(Boolean),
+  );
   problems.push(
     ...dependencySpecProblems({
       workspace,
       manifests,
-      memberNames: new Set(manifests.map((m) => m.json?.name).filter(Boolean)),
+      memberNames,
+      rootManifest: manifests.find((m) => m.path === "package.json")?.json ?? {},
     }),
   );
   if (problems.length) throw treeRefusal(problems);
@@ -5232,7 +5335,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     // The parent forwards stop signals to the locked shell (which passes them on) and waits for it to end.
     const child = spawnChild(
       "/bin/sh",
-      lockedShell(join(s.home, "lock"), [process.execPath, ...process.argv.slice(1)]),
+      lockedShell(join(s.home, "lock"), [process.execPath, ...process.argv.slice(1)], {
+        home: s.home,
+        clone: CODE_DIR,
+      }),
       { stdio: "inherit", env: { ...process.env, STACKRA_VERIFY_LOCKED: "1" } },
     );
     for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
@@ -5247,12 +5353,24 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 }
 
 /**
+ * Whether a self-update ledger entry is news: every switch is, and a refusal unless the last one (`last`, the state's
+ * selfUpdate) had the same reason against the same main (one ledger line per refusal episode, review nit).
+ */
+export const ledgerNews = (last, entry) =>
+  entry.event !== "self-update-refused" ||
+  last?.refused !== entry.reason ||
+  (last?.main ?? null) !== (entry.main ?? null);
+
+/**
  * selfUpdate on this service: main from GitHub over the App's read access (a token in the fetch's environment only),
  * the ledger at `<home>/ledger/service.jsonl`, and a refusal kept in the state so the next jobs' neutral names it.
  */
 async function serviceUpdate(s, busy) {
   mkdirSync(join(s.home, "ledger"), { recursive: true, mode: 0o700 });
   const ledgerPath = join(s.home, "ledger", "service.jsonl");
+  // The App token reaches git as config in its environment (GIT_CONFIG_*), the only way git-remote-https, the child
+  // that sends the request, gets the header without the token in an argv (ps) or a file. The fetch runs as this user
+  // with hooks and fsmonitor off, so git and its remote helper are the only processes that inherit it.
   let env = {};
   try {
     const token = await appToken(s);
@@ -5264,6 +5382,12 @@ async function serviceUpdate(s, busy) {
   } catch (error) {
     serviceLog(`self-update: no App token (${error.message}); fetching main without it`);
   }
+  const last = readState(s).selfUpdate;
+  const previous = spawnSync(
+    "git",
+    ["-C", CODE_DIR, "rev-parse", "HEAD"],
+    spawnOptions({ env: gitEnv() }),
+  ).stdout.trim();
   const result = selfUpdate({
     clone: CODE_DIR,
     remote: `https://github.com/${DEFAULT_REPO}.git`,
@@ -5271,8 +5395,11 @@ async function serviceUpdate(s, busy) {
     busy,
     own: LOADED_BLOBS,
     env,
-    ledger: (entry) =>
-      appendFileSync(ledgerPath, `${JSON.stringify({ at: new Date().toISOString(), ...entry })}\n`),
+    // One ledger line per refusal episode: the same reason against the same main is not written again each pass.
+    ledger: (entry) => {
+      if (!ledgerNews(last, entry)) return;
+      appendFileSync(ledgerPath, `${JSON.stringify({ at: new Date().toISOString(), ...entry })}\n`);
+    },
     runSelfCheck: (dir) =>
       spawnSync(
         process.execPath,
@@ -5285,6 +5412,11 @@ async function serviceUpdate(s, busy) {
     state.selfUpdate = { refused: result.reason, at: Date.now(), main: result.main ?? null };
   else delete state.selfUpdate;
   writeState(s, state);
+  if (result.action === "update") {
+    // For lockedShell: the HEAD to go back to if the new code never reaches its passes.
+    writeFileSync(join(s.home, SWITCH_PREVIOUS), `${previous}\n`, { mode: 0o600 });
+    rmSync(join(s.home, SWITCH_STARTED), { force: true });
+  }
   return result;
 }
 
@@ -5323,16 +5455,22 @@ async function runLocked(options, s) {
         });
       if (options.verb === "once") {
         if (await pass()) process.exitCode = failed ? 1 : 0;
-      } else
+      } else {
+        // This code reached its passes: a switch to it holds (lockedShell rolls back new code that never gets here).
+        writeFileSync(join(s.home, SWITCH_STARTED), `${new Date().toISOString()}\n`, {
+          mode: 0o600,
+        });
         while (!isStopping()) {
-          // Between passes only: follow main, then let the lock holder start the new code (RESTART_EXIT).
+          // Between passes only: follow main, then let the lock holder start the new code (RESTART_EXIT), unless a
+          // stop arrived meanwhile (L1): the next start runs the new code anyway.
           if ((await serviceUpdate(s, activeKill !== null)).action === "update") {
-            process.exitCode = RESTART_EXIT;
+            if (!isStopping()) process.exitCode = RESTART_EXIT;
             break;
           }
           if (!(await pass())) break;
           if (!isStopping()) await sleep(options.interval * 1000);
         }
+      }
     }
   } catch (error) {
     process.stderr.write(`stackra-verify: ${error.message}\n`);
