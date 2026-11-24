@@ -40,13 +40,18 @@ export const HOLD_LABEL = "hold";
 /** The commit status `stackra-verify.mjs` posts on a head SHA; condition 5 needs it green (STA-2761). */
 export const VERIFY_CONTEXT = "stackra/verify";
 
+/** The only account whose `stackra/verify` counts: the stackra-bot App the verify service posts as. */
+export const VERIFY_CREATOR = "stackra-bot[bot]";
+
 /**
  * The newest `stackra/verify` status among `statuses` (REST commit statuses, any order), or undefined. GitHub keeps
- * every status a context ever had; the newest by `created_at`, then `id`, is the one that counts.
+ * every status a context ever had; the newest by `created_at`, then `id`, is the one that counts. Only the bot's own
+ * statuses count: anyone with `statuses: write` (a collaborator, another App, a workflow) can post the same context,
+ * and such a status must neither pass a merge nor stop the service from verifying the head.
  */
 export const latestVerify = (statuses) =>
   statuses
-    .filter((s) => s.context === VERIFY_CONTEXT)
+    .filter((s) => s.context === VERIFY_CONTEXT && s.creator?.login === VERIFY_CREATOR)
     .toSorted((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
     .at(-1);
 

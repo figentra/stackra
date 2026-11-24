@@ -22,6 +22,7 @@ import {
   ownerLabelled,
   parseArgs,
   VERIFY_CONTEXT,
+  VERIFY_CREATOR,
 } from "../pr-merge.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -40,11 +41,12 @@ const pr = (over = {}) => ({
   ...over,
 });
 const green = [{ id: 2, status: "completed", conclusion: "success" }];
-const status = (state, created_at = T1, id = 1) => ({
+const status = (state, created_at = T1, id = 1, login = VERIFY_CREATOR) => ({
   context: VERIFY_CONTEXT,
   state,
   created_at,
   id,
+  creator: { login },
 });
 const verified = [status("success")];
 // Every pre-STA-2761 case runs with a green stackra/verify; condition 5 has its own tests below.
@@ -261,4 +263,14 @@ test("condition 5: only the newest stackra/verify counts, and other contexts nev
   assert.deepEqual(blockers(pr(), green, { statuses: redThenGreen }), []);
   const other = [{ context: "ci/other", state: "success", created_at: T2, id: 3 }];
   assert.match(blockers(pr(), green, { statuses: other }).join(), /no stackra\/verify status/);
+});
+
+test("condition 5: a stackra/verify posted by anyone but the bot never counts, even when it is newer", () => {
+  const spoof = status("success", T2, 9, "someone-with-write");
+  assert.equal(latestVerify([spoof]), undefined);
+  assert.match(blockers(pr(), green, { statuses: [spoof] }).join(), /no stackra\/verify status/);
+  const botRed = status("failure", T0, 1);
+  assert.match(blockers(pr(), green, { statuses: [botRed, spoof] }).join(), /is failure/);
+  const appSpoof = status("success", T2, 10, "other-app[bot]");
+  assert.match(blockers(pr(), green, { statuses: [botRed, appSpoof] }).join(), /is failure/);
 });
