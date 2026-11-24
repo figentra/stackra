@@ -65,6 +65,10 @@ const billingClass = (name: string, kind: string, extra: object = {}) => ({
 const isTesting = (block: string): boolean =>
   /import\("(?:[^"]*\/testing|#testing\/[^"]*)"\)/.test(block);
 
+/** Whether a driver table lists a stand-in: a testing-entry driver or a `memory` one. */
+const hasStandIn = (block: string): boolean =>
+  isTesting(block) || /\n        "memory": \(\) => import/.test(block);
+
 describe("emitWiring", () => {
   const wiring = emitWiring(COMMERCE_IR);
 
@@ -1058,10 +1062,11 @@ describe("emitWiring", () => {
           {
             port: "IdempotencyStore",
             key: "actions.IdempotencyStore",
-            candidates: ["memory", "valkey"],
+            candidates: ["memory", "valkey", "postgres"],
             classes: {
               memory: { class: "MemoryIdempotencyStoreDriver", from: "@stackra/actions" },
               valkey: { class: "ValkeyIdempotencyStoreDriver", from: "@stackra/actions/node" },
+              postgres: { class: "PostgresIdempotencyStoreDriver", from: "@stackra/database/node" },
             },
           },
         ],
@@ -1078,14 +1083,39 @@ describe("emitWiring", () => {
             port: "AccessControl",
             key: "actions.AccessControl",
             candidates: ["iam"],
-            classes: { iam: { class: "IamAccessControlDriver", from: "@stackra/iam" } },
+            classes: {
+              iam: {
+                class: "IamAccessControlDriver",
+                from: "@stackra/iam",
+                deps: [{ class: { name: "ScopeTree", from: "@stackra/scope/contracts" } }],
+              },
+            },
+          },
+        ],
+      },
+    };
+    const scope: MemberIR["dependencies"][number] = {
+      package: "@stackra/scope",
+      manifest: {
+        member: "scope",
+        package: "@stackra/scope",
+        version: "0.33.0",
+        drivers: [
+          {
+            port: "ScopeTree",
+            key: "scope.ScopeTree",
+            candidates: ["memory", "postgres"],
+            classes: {
+              memory: { class: "MemoryScopeTreeDriver", from: "@stackra/scope" },
+              postgres: { class: "PostgresScopeTreeDriver", from: "@stackra/scope/node" },
+            },
           },
         ],
       },
     };
     const content = emitWiring({
       ...BILLING_IR,
-      dependencies: [...BILLING_IR.dependencies, actions, iam],
+      dependencies: [...BILLING_IR.dependencies, actions, iam, scope],
     });
     // AccessControl is injected by nothing, yet bound: the permission step of every call needs it.
     expect(content).toContain('      key: "actions.AccessControl",');
@@ -1098,6 +1128,10 @@ describe("emitWiring", () => {
     // two candidates, one of them the testing stand-in, nothing selecting: the real one is the default
     expect(content).toMatch(
       /key: "actions\.AccessControl",\n      default: "iam",\n      candidates: \{/,
+    );
+    // a memory driver is a stand-in too: the one persistent driver beside it is the default
+    expect(content).toMatch(
+      /key: "scope\.ScopeTree",\n      default: "postgres",\n      candidates: \{/,
     );
     // a lone candidate needs no default, and two real candidates are not guessed between
     expect(content).toContain('      key: "actions.ContextStorage",');
@@ -1226,18 +1260,18 @@ describe("emitWiring's defaults for a package's own tests", () => {
 
   it("gives a service's wiring a default only to the one driver that is not a testing stand-in", () => {
     // A package's own tests take its memory or testing driver by default; a service takes none of that. The one default a
-    // service's port gets is a port nothing selects whose candidates are one real driver and the testing entry's
-    // stand-ins (`AccessControl`: `iam` and the memory fake), where it names the real driver (STA-2573).
+    // service's port gets is a port nothing selects whose candidates are one real driver and stand-ins (the testing
+    // entry's, or a `memory` driver), where it names the real driver (STA-2573).
     const wiring = emitWiring({ ...ir, layout: "service" });
     const tables = wiring.split("\n    {\n      port: ").slice(1);
     for (const block of tables) {
       const defaulted = /\n      default: "([^"]+)",/.exec(block)?.[1];
       if (defaulted === undefined) continue;
-      expect(isTesting(block), block.slice(0, 60)).toBe(true);
+      expect(hasStandIn(block), block.slice(0, 60)).toBe(true);
       // and the default is a candidate that is not the stand-in
       const line =
         block.split("\n").find((entry) => entry.trimStart().startsWith(`"${defaulted}":`)) ?? "";
-      expect(isTesting(line), line).toBe(false);
+      expect(hasStandIn(line) || defaulted === "memory", line).toBe(false);
     }
   });
 

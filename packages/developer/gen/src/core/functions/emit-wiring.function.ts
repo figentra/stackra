@@ -788,10 +788,12 @@ export function emitWiring(ir: MemberIR): string {
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
     );
     const system = systemDefaults.get(port.name);
-    // A service's port that nothing selects (no config field) and whose candidates are one driver and the testing entry's
-    // stand-ins (`AccessControl`: `iam` and the memory fake) takes the one driver that is not a stand-in, so the container
-    // does not stop at "no config field selects one" (STA-2573).
-    const production = candidates.filter((candidate) => !testing.includes(candidate));
+    // A service's port that nothing selects (no config field) and whose candidates are one real driver and stand-ins (the
+    // testing entry's, as `AccessControl`'s memory fake, and a `memory` driver, as `ScopeTree`'s) takes the one driver that
+    // is not a stand-in, so the container does not stop at "no config field selects one" (STA-2573).
+    const production = candidates.filter(
+      (candidate) => !testing.includes(candidate) && candidate.name !== "memory",
+    );
     const sole =
       ir.layout === "service" &&
       select === undefined &&
