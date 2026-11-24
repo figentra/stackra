@@ -4,7 +4,8 @@
 Stackra file contract:
 Purpose: the third-party code ported into this repository (ADR 0291, `.agents/rules/third-party-sources.md` rule 3):
          each source, its licence, its upstream commit and the files that carry portions of it.
-Boundary: ported source only; dependencies are listed by their own manifests and checked by ADR 0174's allow-list.
+Boundary: ported source, plus the notices the licence policy's exceptions call for (tools/policy/licences.json, the
+          CTO's ruling of 2026-11-24); other dependencies are listed by their own manifests and checked by that policy.
 Runtime: none
 Governing contract: ADR 0291; ADR 0174.
 -->
@@ -55,3 +56,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## libvips (a dependency, not ported)
+
+- Package: `@img/sharp-libvips-linux-x64` 1.3.4, libvips 8.18.7 prebuilt by https://github.com/lovell/sharp-libvips,
+  installed through `sharp` (used by `@stackra/media` and by the Cloudflare tooling).
+- Source: https://github.com/libvips/libvips, tag `v8.18.7`.
+- Licence: the package declares `LGPL-3.0-or-later`. libvips itself is LGPL-2.1-or-later (its `LICENSE` at that tag
+  is the GNU Lesser General Public License, version 2.1); the prebuilt package uses it, and the LGPL libraries it
+  bundles (glib, pango, librsvg, fribidi, libexif, libheif, proxy-libintl), under LGPL-3.0 through the "any later
+  version" clause. The package's README lists every bundled library with its licence.
+- Use: loaded dynamically as the shared library `libvips-cpp.so.8.18.7`, unmodified, and never committed to this
+  repository. Policy exception: `@img/sharp-libvips-linux-x64`, scope `runtime`.
+- Licence text: https://www.gnu.org/licenses/lgpl-3.0.txt (with https://www.gnu.org/licenses/gpl-3.0.txt, which it
+  incorporates) and libvips' own `LICENSE` at https://github.com/libvips/libvips/blob/v8.18.7/LICENSE.
