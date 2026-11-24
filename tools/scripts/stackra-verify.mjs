@@ -78,6 +78,14 @@
  *   token as a BuildKit secret (piped on stdin, never a file, ENV, ARG or layer), scans the image history and every
  *   layer for the token and refuses the image if it is there, and PR installs only copy the built output. Both
  *   images are for this box only: never pushed to or published in any registry (licence: our own use).
+ *   The service clone needs main's `yaml` (the root's devDependency, the parser buildTree reads a PR's
+ *   pnpm-workspace.yaml with): `pnpm install --frozen-lockfile --ignore-scripts --filter .` in /work/stackra/service,
+ *   and again when main's lockfile moves `yaml`; the preflight and the self-check refuse a missing or different one.
+ *   What PR code can reach before the gate: the install container runs `pnpm rebuild --ignore-pnpmfile` for main's
+ *   allowBuilds only, at the versions the PR's lockfile resolves (registry code the PR chose for those packages; main's
+ *   allowBuilds limits which), with main's pnpmfile and settings (buildTree keeps every pnpm-workspace.yaml key but
+ *   packages, catalog, catalogs and overrides main's). The licence step runs first in the gate, before any
+ *   lockfile-installed tool.
  *   Self-update: between passes the daemon fetches main (only main) into its own clone, and when any file it loaded
  *   (SERVICE_FILES) differs from main it fast-forwards a clean clone after the new code's `self-check` passed in a
  *   staged copy, then exits RESTART_EXIT so the shell that holds the lock starts the new code; a refused switch keeps
@@ -116,9 +124,11 @@ import {
   rmSync,
   statfsSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { hostname } from "node:os";
+import { createRequire } from "node:module";
+import { hostname, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -128,6 +138,8 @@ import {
   gh,
   isVerifyOverlay,
   VERIFY_OVERLAY_DIRS,
+  aliasTarget,
+  isGateToolPackage,
   VERIFY_APP,
   VERIFY_CHECK,
   VERIFY_MOBILE_CHECK,
@@ -201,7 +213,7 @@ export function installCommand(builds, licensed = LICENSED_BUILDS, filters = [])
     if (!FILTER.test(filter)) throw new Error(`not a pnpm filter: ${filter}`);
   const free = builds.filter((b) => !licensed.includes(b));
   const steps = [[INSTALL_COMMAND, ...filters.map((f) => `--filter='${f}'`)].join(" ")];
-  if (free.length) steps.push(`pnpm rebuild ${free.join(" ")}`);
+  if (free.length) steps.push(`pnpm rebuild --ignore-pnpmfile ${free.join(" ")}`);
   for (const name of licensed.filter((l) => builds.includes(l)))
     steps.push(
       `for d in node_modules/.pnpm/${name}@*/node_modules/${name}; do [ -e "$d" ] || continue; ` +
@@ -249,8 +261,8 @@ export function licenceRun(install) {
   if (install !== "gate" && install !== "mobile") throw new Error(`not an install: ${install}`);
   const filters = install === "gate" ? ` ${EXCLUDE}` : "";
   return [
-    `pnpm licenses list --json --offline --recursive${filters} > "\${TMPDIR:-/tmp}/stackra-licences.json"`,
-    'pnpm list --recursive --json --depth Infinity --offline > "${TMPDIR:-/tmp}/stackra-pnpm-list.json"',
+    `pnpm licenses list --json --offline --ignore-pnpmfile --recursive${filters} > "\${TMPDIR:-/tmp}/stackra-licences.json"`,
+    'pnpm list --recursive --json --depth Infinity --offline --ignore-pnpmfile > "${TMPDIR:-/tmp}/stackra-pnpm-list.json"',
     `node "$GATE_IN/licence-check.mjs" "$GATE_IN/licences.json" "\${TMPDIR:-/tmp}/stackra-licences.json" . "\${TMPDIR:-/tmp}/stackra-pnpm-list.json" ${install}`,
   ].join("\n");
 }
@@ -266,6 +278,9 @@ export function licenceRun(install) {
  * script's own variables (FACT_* are the PR facts the daemon read from GitHub).
  */
 export const GATE_STEPS = Object.freeze([
+  // Not in ci.yml, so its place is free: first, before any lockfile-installed code runs (linear-key-check's
+  // `pnpm exec commitlint`, lint, build, validate), reading the install pnpm laid down as the install left it.
+  { id: "licence-policy", run: licenceRun("gate") },
   {
     id: "dependency-scan",
     job: "dependency-scan",
@@ -306,9 +321,6 @@ export const GATE_STEPS = Object.freeze([
       'NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"',
     ].join("\n"),
   },
-  // Not in ci.yml, so its place is free: right after the install's commit checks and before any PR code runs (lint,
-  // build and validate run the PR's code and could rewrite the lockfile or node_modules).
-  { id: "licence-policy", run: licenceRun("gate") },
   { id: "format-check", job: "gate", ci: "Format check", line: 130, run: "pnpm format:check" },
   {
     id: "lint",
@@ -689,11 +701,42 @@ export function workspaceManifest(yamlText) {
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const quoted = (raw) => /^(?:"(?:[^"\\]|\\.)*"|'(?:[^']|'')*')$/.test(raw);
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  // YAML's double-quoted escapes (\\x61 is "a"); an escape YAML does not have is an error, never a guess.
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const unescape = (body) => {
+    const named = {
+      0: "\0",
+      a: "\x07",
+      b: "\b",
+      t: "\t",
+      "\t": "\t",
+      n: "\n",
+      v: "\v",
+      f: "\f",
+      r: "\r",
+    };
+    Object.assign(named, {
+      e: "\x1b",
+      " ": " ",
+      '"': '"',
+      "/": "/",
+      "\\": "\\",
+      N: "\x85",
+      _: "\xa0",
+    });
+    Object.assign(named, { L: "\u2028", P: "\u2029" });
+    return body.replaceAll(/\\(x[\dA-Fa-f]{2}|u[\dA-Fa-f]{4}|U[\dA-Fa-f]{8}|[^])/g, (_, e) => {
+      if (e.length > 1) return String.fromCodePoint(Number.parseInt(e.slice(1), 16));
+      if (Object.hasOwn(named, e)) return named[e];
+      throw new Error(`a double-quoted scalar with the escape \\${e}`);
+    });
+  };
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const scalar = (raw) => {
     const value = raw.trim();
     const m = /^"((?:[^"\\]|\\.)*)"$|^'((?:[^']|'')*)'$/.exec(value);
     if (!m) return value;
-    return m[1] === undefined ? m[2].replaceAll("''", "'") : m[1].replaceAll(/\\(.)/g, "$1");
+    return m[1] === undefined ? m[2].replaceAll("''", "'") : unescape(m[1]);
   };
   // A plain scalar may not start with a YAML indicator; a quoted one is taken as written.
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
@@ -725,67 +768,72 @@ export function workspaceManifest(yamlText) {
   let line = 0;
   const problem = (text) => result.problems.push(`pnpm-workspace.yaml line ${line}: ${text}`);
   for (const raw of String(yamlText ?? "").split(/\r?\n/)) {
-    line++;
-    const text = uncomment(raw).trimEnd();
-    if (text.trim() === "") continue;
-    if (/^(?:---|\.\.\.)(?:\s|$)/.test(text)) {
-      problem("a second YAML document");
-      section = null;
-      continue;
-    }
-    const indent = text.length - text.trimStart().length;
-    const body = text.trimStart();
-    const watched = read.has(section);
-    if (/^ *\t/.test(text) && (watched || indent === 0)) problem("a tab in the indentation");
-    const item = /^-(?:\s+(.*))?$/.exec(body);
-    if (item) {
-      if (section !== "packages") {
-        if (watched) problem(`a list item in \`${section}\``);
-        continue;
-      }
-      const value = (item[1] ?? "").trim();
-      if (value === "" || special(value))
-        problem(`a \`packages\` entry the reader cannot read: ${body}`);
-      else result.packages.push(scalar(value));
-      continue;
-    }
-    const entry = pair(body);
-    if (indent === 0) {
-      catalog = null;
-      catalogIndent = null;
-      if (!entry) {
+    // A line the reader cannot decode (a bad escape) is a problem, never a skipped line.
+    try {
+      line++;
+      const text = uncomment(raw).trimEnd();
+      if (text.trim() === "") continue;
+      if (/^(?:---|\.\.\.)(?:\s|$)/.test(text)) {
+        problem("a second YAML document");
         section = null;
         continue;
       }
-      section = scalar(entry[0]);
-      if (read.has(section) && entry[1] !== "")
-        problem(`\`${section}\` is not a block mapping (${entry[1]})`);
-      continue;
-    }
-    if (!watched) continue;
-    if (!entry) {
-      problem(`a line the reader cannot read: ${body}`);
-      continue;
-    }
-    const [rawKey, rawValue] = entry;
-    if (special(rawKey) || special(rawValue)) {
-      problem(`a YAML construct the reader does not follow: ${body}`);
-      continue;
-    }
-    const key = scalar(rawKey);
-    const value = scalar(rawValue);
-    if (section === "packages") problem(`a mapping in \`packages\`: ${body}`);
-    else if (section === "catalog" || section === "overrides") {
-      if (value === "") problem(`a nested mapping in \`${section}\`: ${body}`);
-      else (section === "catalog" ? result.catalogs.default : result.overrides)[key] = value;
-    } else if (catalogIndent === null || indent <= catalogIndent) {
-      catalogIndent = indent;
-      catalog = value === "" ? key : null;
-      if (catalog === null) problem(`a catalog that is not a block mapping: ${body}`);
-      else result.catalogs[catalog] ??= map();
-    } else if (catalog !== null) {
-      if (value === "") problem(`a nested mapping in catalog \`${catalog}\`: ${body}`);
-      else result.catalogs[catalog][key] = value;
+      const indent = text.length - text.trimStart().length;
+      const body = text.trimStart();
+      const watched = read.has(section);
+      if (/^ *\t/.test(text) && (watched || indent === 0)) problem("a tab in the indentation");
+      const item = /^-(?:\s+(.*))?$/.exec(body);
+      if (item) {
+        if (section !== "packages") {
+          if (watched) problem(`a list item in \`${section}\``);
+          continue;
+        }
+        const value = (item[1] ?? "").trim();
+        if (value === "" || special(value))
+          problem(`a \`packages\` entry the reader cannot read: ${body}`);
+        else result.packages.push(scalar(value));
+        continue;
+      }
+      const entry = pair(body);
+      if (indent === 0) {
+        catalog = null;
+        catalogIndent = null;
+        if (!entry) {
+          section = null;
+          continue;
+        }
+        section = scalar(entry[0]);
+        if (read.has(section) && entry[1] !== "")
+          problem(`\`${section}\` is not a block mapping (${entry[1]})`);
+        continue;
+      }
+      if (!watched) continue;
+      if (!entry) {
+        problem(`a line the reader cannot read: ${body}`);
+        continue;
+      }
+      const [rawKey, rawValue] = entry;
+      if (special(rawKey) || special(rawValue)) {
+        problem(`a YAML construct the reader does not follow: ${body}`);
+        continue;
+      }
+      const key = scalar(rawKey);
+      const value = scalar(rawValue);
+      if (section === "packages") problem(`a mapping in \`packages\`: ${body}`);
+      else if (section === "catalog" || section === "overrides") {
+        if (value === "") problem(`a nested mapping in \`${section}\`: ${body}`);
+        else (section === "catalog" ? result.catalogs.default : result.overrides)[key] = value;
+      } else if (catalogIndent === null || indent <= catalogIndent) {
+        catalogIndent = indent;
+        catalog = value === "" ? key : null;
+        if (catalog === null) problem(`a catalog that is not a block mapping: ${body}`);
+        else result.catalogs[catalog] ??= map();
+      } else if (catalog !== null) {
+        if (value === "") problem(`a nested mapping in catalog \`${catalog}\`: ${body}`);
+        else result.catalogs[catalog][key] = value;
+      }
+    } catch (error) {
+      problem(error.message);
     }
   }
   return result;
@@ -972,11 +1020,42 @@ export function lockfileGraph(lockText) {
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const quoted = (raw) => /^(?:'(?:[^']|'')*'|"(?:[^"\\]|\\.)*")$/.test(raw);
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  // YAML's double-quoted escapes (\\x61 is "a"); an escape YAML does not have is an error, never a guess.
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
+  const unescape = (body) => {
+    const named = {
+      0: "\0",
+      a: "\x07",
+      b: "\b",
+      t: "\t",
+      "\t": "\t",
+      n: "\n",
+      v: "\v",
+      f: "\f",
+      r: "\r",
+    };
+    Object.assign(named, {
+      e: "\x1b",
+      " ": " ",
+      '"': '"',
+      "/": "/",
+      "\\": "\\",
+      N: "\x85",
+      _: "\xa0",
+    });
+    Object.assign(named, { L: "\u2028", P: "\u2029" });
+    return body.replaceAll(/\\(x[\dA-Fa-f]{2}|u[\dA-Fa-f]{4}|U[\dA-Fa-f]{8}|[^])/g, (_, e) => {
+      if (e.length > 1) return String.fromCodePoint(Number.parseInt(e.slice(1), 16));
+      if (Object.hasOwn(named, e)) return named[e];
+      throw new Error(`a double-quoted scalar with the escape \\${e}`);
+    });
+  };
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const scalar = (raw) => {
     const value = raw.trim();
     const m = /^'((?:[^']|'')*)'$|^"((?:[^"\\]|\\.)*)"$/.exec(value);
     if (!m) return value;
-    return m[1] === undefined ? m[2].replaceAll(/\\(.)/g, "$1") : m[1].replaceAll("''", "'");
+    return m[1] === undefined ? unescape(m[2]) : m[1].replaceAll("''", "'");
   };
   // Linear: a quoted key, or the text before the first `: ` (or a final `:`).
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
@@ -1001,120 +1080,126 @@ export function lockfileGraph(lockText) {
     if (graph.problems.length < 20) graph.problems.push(`pnpm-lock.yaml line ${line}: ${text}`);
   };
   for (const raw of String(lockText ?? "").split(/\r?\n/)) {
-    line++;
-    if (raw.trim() === "") continue;
-    if (raw.trimEnd() === "---") {
-      top = null;
-      keys = [];
-      continue;
-    }
-    const indent = raw.length - raw.trimStart().length;
-    const body = raw.trim();
-    if (indent === 0) {
+    // A line the reader cannot decode (a bad escape) is a problem, never a skipped line.
+    try {
+      line++;
+      if (raw.trim() === "") continue;
+      if (raw.trimEnd() === "---") {
+        top = null;
+        keys = [];
+        continue;
+      }
+      const indent = raw.length - raw.trimStart().length;
+      const body = raw.trim();
+      if (indent === 0) {
+        const entry = pair(body);
+        top = entry ? scalar(entry[0]) : null;
+        keys = [top];
+        if (["importers", "packages", "snapshots"].includes(top) && entry[1] !== "")
+          problem(`\`${top}\` is not a block mapping`);
+        continue;
+      }
+      if (top !== "importers" && top !== "packages" && top !== "snapshots") continue;
+      if (/^ *\t/.test(raw)) {
+        problem("a tab in the indentation");
+        continue;
+      }
+      if (body.startsWith("#")) {
+        problem(`a comment: ${body}`);
+        continue;
+      }
+      if (indent % 2 !== 0) {
+        problem(`an indent of ${indent} spaces: ${body}`);
+        continue;
+      }
+      const depth = indent / 2;
+      if (keys.length < depth || keys[depth - 1] === null) {
+        problem(`a line under a scalar or a missing key: ${body}`);
+        continue;
+      }
+      keys = keys.slice(0, depth);
+      const path = keys.slice(1);
+      // A list item: only a snapshot's transitivePeerDependencies and a package's own list fields hold them.
+      const item = /^-(?:\s+(.*))?$/.exec(body);
+      if (item) {
+        const value = (item[1] ?? "").trim();
+        const allowed =
+          (top === "snapshots" && depth === 3 && path[1] === "transitivePeerDependencies") ||
+          (top === "packages" && depth === 3 && !depKeys.has(path[1]));
+        if (!allowed || value === "" || special(value) || flow(value))
+          problem(`a list item the reader does not follow: ${body}`);
+        keys.push(null);
+        continue;
+      }
       const entry = pair(body);
-      top = entry ? scalar(entry[0]) : null;
-      keys = [top];
-      if (["importers", "packages", "snapshots"].includes(top) && entry[1] !== "")
-        problem(`\`${top}\` is not a block mapping`);
-      continue;
-    }
-    if (top !== "importers" && top !== "packages" && top !== "snapshots") continue;
-    if (/^ *\t/.test(raw)) {
-      problem("a tab in the indentation");
-      continue;
-    }
-    if (body.startsWith("#")) {
-      problem(`a comment: ${body}`);
-      continue;
-    }
-    if (indent % 2 !== 0) {
-      problem(`an indent of ${indent} spaces: ${body}`);
-      continue;
-    }
-    const depth = indent / 2;
-    if (keys.length < depth || keys[depth - 1] === null) {
-      problem(`a line under a scalar or a missing key: ${body}`);
-      continue;
-    }
-    keys = keys.slice(0, depth);
-    const path = keys.slice(1);
-    // A list item: only a snapshot's transitivePeerDependencies and a package's own list fields hold them.
-    const item = /^-(?:\s+(.*))?$/.exec(body);
-    if (item) {
-      const value = (item[1] ?? "").trim();
-      const allowed =
-        (top === "snapshots" && depth === 3 && path[1] === "transitivePeerDependencies") ||
-        (top === "packages" && depth === 3 && !depKeys.has(path[1]));
-      if (!allowed || value === "" || special(value) || flow(value))
-        problem(`a list item the reader does not follow: ${body}`);
-      keys.push(null);
-      continue;
-    }
-    const entry = pair(body);
-    if (!entry) {
-      problem(`a line the reader cannot read: ${body}`);
-      keys.push(null);
-      continue;
-    }
-    const [rawKey, rawValue] = entry;
-    const key = scalar(rawKey);
-    const value = scalar(rawValue);
-    const packageField = top === "packages" && depth === 2 && !depKeys.has(key);
-    if (special(rawKey) || flow(rawKey) || special(rawValue)) {
-      problem(`a YAML construct the reader does not follow: ${body}`);
-      keys.push(null);
-      continue;
-    }
-    if (flow(rawValue) && rawValue !== "{}" && !packageField) {
-      problem(`a flow value the reader does not follow: ${body}`);
-      keys.push(null);
-      continue;
-    }
-    keys.push(rawValue === "" ? key : null);
-    const empty = rawValue === "" || rawValue === "{}";
-    if (top === "importers") {
-      if (depth === 1) {
-        if (!empty) problem(`an importer that is not a mapping: ${body}`);
-        else graph.importers[key] ??= map();
-      } else if (sections.has(path[1])) {
-        if (depth === 3 && rawValue !== "") problem(`a dependency that is not a mapping: ${body}`);
-        else if (depth === 4) {
-          if ((key !== "specifier" && key !== "version") || value === "")
-            problem(`an importer dependency field the reader does not know: ${body}`);
-          else if (key === "version")
-            (graph.importers[path[0]][path[1]] ??= map())[path[2]] = value;
-        } else if (depth > 4) problem(`a line too deep in an importer: ${body}`);
-      } else if (depth === 2 && sections.has(key) && !empty)
-        problem(`importer dependencies that are not a mapping: ${body}`);
-      else if (depth > 5) problem(`a line too deep in an importer: ${body}`);
-    } else if (top === "snapshots") {
-      if (depth === 1) {
-        if (!empty) problem(`a snapshot that is not a mapping: ${body}`);
-        else graph.snapshots[key] ??= map();
+      if (!entry) {
+        problem(`a line the reader cannot read: ${body}`);
+        keys.push(null);
+        continue;
+      }
+      const [rawKey, rawValue] = entry;
+      const key = scalar(rawKey);
+      const value = scalar(rawValue);
+      const packageField = top === "packages" && depth === 2 && !depKeys.has(key);
+      if (special(rawKey) || flow(rawKey) || special(rawValue)) {
+        problem(`a YAML construct the reader does not follow: ${body}`);
+        keys.push(null);
+        continue;
+      }
+      if (flow(rawValue) && rawValue !== "{}" && !packageField) {
+        problem(`a flow value the reader does not follow: ${body}`);
+        keys.push(null);
+        continue;
+      }
+      keys.push(rawValue === "" ? key : null);
+      const empty = rawValue === "" || rawValue === "{}";
+      if (top === "importers") {
+        if (depth === 1) {
+          if (!empty) problem(`an importer that is not a mapping: ${body}`);
+          else graph.importers[key] ??= map();
+        } else if (sections.has(path[1])) {
+          if (depth === 3 && rawValue !== "")
+            problem(`a dependency that is not a mapping: ${body}`);
+          else if (depth === 4) {
+            if ((key !== "specifier" && key !== "version") || value === "")
+              problem(`an importer dependency field the reader does not know: ${body}`);
+            else if (key === "version")
+              (graph.importers[path[0]][path[1]] ??= map())[path[2]] = value;
+          } else if (depth > 4) problem(`a line too deep in an importer: ${body}`);
+        } else if (depth === 2 && sections.has(key) && !empty)
+          problem(`importer dependencies that are not a mapping: ${body}`);
+        else if (depth > 5) problem(`a line too deep in an importer: ${body}`);
+      } else if (top === "snapshots") {
+        if (depth === 1) {
+          if (!empty) problem(`a snapshot that is not a mapping: ${body}`);
+          else graph.snapshots[key] ??= map();
+        } else if (depth === 2) {
+          if (!snapshotKeys.has(key)) problem(`a snapshot field the reader does not know: ${body}`);
+          else if ((key === "dependencies" || key === "optionalDependencies") && !empty)
+            problem(`snapshot dependencies that are not a mapping: ${body}`);
+        } else if (
+          depth === 3 &&
+          (path[1] === "dependencies" || path[1] === "optionalDependencies")
+        ) {
+          if (value === "") problem(`a snapshot dependency without a version: ${body}`);
+          else graph.snapshots[path[0]][key] = value;
+        } else problem(`a snapshot line the reader does not follow: ${body}`);
+      } else if (depth === 1) {
+        if (!empty) problem(`a package that is not a mapping: ${body}`);
       } else if (depth === 2) {
-        if (!snapshotKeys.has(key)) problem(`a snapshot field the reader does not know: ${body}`);
-        else if ((key === "dependencies" || key === "optionalDependencies") && !empty)
-          problem(`snapshot dependencies that are not a mapping: ${body}`);
-      } else if (
-        depth === 3 &&
-        (path[1] === "dependencies" || path[1] === "optionalDependencies")
-      ) {
-        if (value === "") problem(`a snapshot dependency without a version: ${body}`);
-        else graph.snapshots[path[0]][key] = value;
-      } else problem(`a snapshot line the reader does not follow: ${body}`);
-    } else if (depth === 1) {
-      if (!empty) problem(`a package that is not a mapping: ${body}`);
-    } else if (depth === 2) {
-      if (depKeys.has(key) && !empty) problem(`package ${key} that are not a mapping: ${body}`);
-    } else if (path[1] === "peerDependenciesMeta") {
-      if (depth === 3 && rawValue !== "") problem(`a peer meta that is not a mapping: ${body}`);
-      else if (depth === 4) {
-        if (key !== "optional" || (value !== "true" && value !== "false"))
-          problem(`a peer meta field the reader does not know: ${body}`);
-        else if (value === "true") (graph.optionalPeers[path[0]] ??= new Set()).add(path[2]);
-      } else if (depth > 4) problem(`a peer meta line too deep: ${body}`);
-    } else if (depKeys.has(path[1]) && (depth > 3 || value === ""))
-      problem(`a package ${path[1]} line the reader does not follow: ${body}`);
+        if (depKeys.has(key) && !empty) problem(`package ${key} that are not a mapping: ${body}`);
+      } else if (path[1] === "peerDependenciesMeta") {
+        if (depth === 3 && rawValue !== "") problem(`a peer meta that is not a mapping: ${body}`);
+        else if (depth === 4) {
+          if (key !== "optional" || (value !== "true" && value !== "false"))
+            problem(`a peer meta field the reader does not know: ${body}`);
+          else if (value === "true") (graph.optionalPeers[path[0]] ??= new Set()).add(path[2]);
+        } else if (depth > 4) problem(`a peer meta line too deep: ${body}`);
+      } else if (depKeys.has(path[1]) && (depth > 3 || value === ""))
+        problem(`a package ${path[1]} line the reader does not follow: ${body}`);
+    } catch (error) {
+      problem(error.message);
+    }
   }
   return graph;
 }
@@ -1358,6 +1443,10 @@ export function pnpmFindings(list, root, members, policy, mobileMembers, optiona
       return [name, path.join(" → ")];
     });
   };
+  // pnpm's projects and the lockfile's importer members must be the same set, either way (review nit).
+  const listed = new Set(list.map((p) => dirOf(p.path)));
+  for (const dir of manifests.keys())
+    if (!listed.has(dir)) problems.push(`${dir} is a workspace member pnpm list does not name`);
   for (const project of list) {
     const dir = dirOf(project.path);
     const manifest = manifests.get(dir);
@@ -1766,12 +1855,19 @@ export const OSV_CANARY = Object.freeze({
 /** The canary runs again after this long even when the database file has not changed (a database swapped in place). */
 export const OSV_CANARY_EVERY_MS = 24 * 60 * 60 * 1000;
 
-/** Whether the canary must run: a database it has not passed (by mtime and size), or a day since it last did. */
+/**
+ * Whether the canary must run: a database, store image or osv-scanner version it has not passed (by the database's
+ * mtime and size, the image id, the scanner's pinned version), or a day since it last did (review LOW-3).
+ */
 export const osvCanaryDue = (last, db, now) =>
   !last ||
   last.mtimeMs !== db.mtimeMs ||
   last.size !== db.size ||
+  last.image !== db.image ||
+  last.scanner !== db.scanner ||
   !(now - last.at >= 0 && now - last.at < OSV_CANARY_EVERY_MS);
+/** The smallest OSV npm database the gate accepts, in place as well as at download (review LOW-3). */
+export const OSV_DB_MIN_BYTES = 1024 * 1024;
 
 /**
  * Why a canary scan (`{ code, stdout }` of the container) does not prove the database, or null when it does: the
@@ -1812,11 +1908,14 @@ export const osvCanaryArgs = (s, { name, image, envFile, osvDir, lockfile }) => 
 ];
 
 /**
- * Why the offline OSV database may not be used (missing, from the future, or older than `maxAgeMs`), or null. A run
+ * Why the offline OSV database may not be used (missing, under OSV_DB_MIN_BYTES, from the future, or older than
+ * `maxAgeMs`), or null. A run
  * without a fresh database is a service error (retried, then `neutral`), never a green dependency scan.
  */
-export function osvDbProblem(mtimeMs, now, maxAgeMs) {
+export function osvDbProblem(mtimeMs, now, maxAgeMs, size = OSV_DB_MIN_BYTES) {
   if (mtimeMs === null || mtimeMs === undefined) return "the offline OSV database is missing";
+  if (!(size >= OSV_DB_MIN_BYTES))
+    return `the offline OSV database is ${size ?? 0} bytes (at least ${OSV_DB_MIN_BYTES})`;
   const age = now - mtimeMs;
   if (!Number.isFinite(age) || age < 0) return "the offline OSV database is dated in the future";
   if (age > maxAgeMs)
@@ -2137,7 +2236,8 @@ export const dockerEnvFile = (s) => `PATH=${s.path}\nDOCKER_HOST=${s.dockerHost}
 
 /** Every PR container's environment, passed with `--env-file`: an allowlist, nothing from this process. */
 export const CONTAINER_ENV =
-  "HOME=/home/run\nCI=1\nTURBO_TELEMETRY_DISABLED=1\nFORCE_COLOR=0\nLANG=C.UTF-8\nTZ=UTC\n";
+  "HOME=/home/run\nXDG_CACHE_HOME=/home/run/.cache\nTURBO_CACHE_DIR=/tmp/turbo-cache\nCI=1\nTURBO_TELEMETRY_DISABLED=1\n" +
+  "FORCE_COLOR=0\nLANG=C.UTF-8\nTZ=UTC\n";
 
 /** The limits every PR container runs with; `envFile` holds CONTAINER_ENV. */
 export const containerLimits = (s, envFile) => [
@@ -2586,6 +2686,257 @@ export function withMainScripts(headText, mainText) {
   return `${JSON.stringify(out, null, 2)}\n`;
 }
 
+// ---- what the tested tree may carry (review of #1043, HIGH-1 and HIGH-2; CTO rulings, round 4) ---------------------
+
+/** A refusal of the tested tree: the PR's failure, with the reason the check run names. */
+const treeRefusal = (problems) =>
+  Object.assign(
+    new Error(
+      `the tested tree is refused: ${problems.slice(0, 8).join("; ")}${problems.length > 8 ? `; and ${problems.length - 8} more` : ""}`,
+    ),
+    { refused: true, problems },
+  );
+
+/**
+ * The paths a PR adds or changes that the tested tree may never carry, as problems: anything under a `node_modules/`
+ * or `.turbo/` directory at any depth (a committed `node_modules/.bin/node` would run in place of node through every
+ * pnpm bin shim, a `.bin/gitleaks` in place of the secrets scan, a `.turbo/cache` entry would replay a cached pass),
+ * and anything main's `.gitignore` files ignore (`ignored`, from git check-ignore).
+ */
+export function forbiddenPaths(paths, ignored = new Set()) {
+  return paths
+    .filter((p) => /(?:^|\/)(?:node_modules|\.turbo)(?:\/|$)/.test(p) || ignored.has(p))
+    .map((p) => `${p} is a tool or cache path main ignores and the tested tree never carries`);
+}
+
+/**
+ * Which of `paths` main's `.gitignore` files ignore: those files (blobs at the job's base, read from the bare mirror)
+ * are laid into a throwaway work tree, and `git check-ignore --no-index` answers for each path.
+ */
+function ignoredByMain(mirror, base, paths) {
+  if (!paths.length) return new Set();
+  const dir = mkdtempSync(join(tmpdir(), "stackra-ignore-"));
+  try {
+    sh("git", ["init", "-q", dir], { env: gitEnv() });
+    for (const line of git(mirror, ["ls-tree", "-r", "-z", "--full-tree", base]).split("\0")) {
+      const [meta, path] = line.split("\t");
+      if (!path || !/(?:^|\/)\.gitignore$/.test(path)) continue;
+      mkdirSync(join(dir, dirname(path)), { recursive: true });
+      writeFileSync(join(dir, path), git(mirror, ["cat-file", "blob", meta.split(" ")[2]]));
+    }
+    const r = spawnSync(
+      "git",
+      ["-c", "core.hooksPath=/dev/null", "-C", dir, "check-ignore", "--no-index", "-z", "--stdin"],
+      spawnOptions({ env: gitEnv(), input: `${paths.join("\0")}\0` }),
+    );
+    if (r.status !== 0 && r.status !== 1)
+      throw new Error(`git check-ignore: ${String(r.stderr).trim()}`);
+    return new Set(String(r.stdout).split("\0").filter(Boolean));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The real YAML library the daemon parses a PR's pnpm-workspace.yaml with: the root's `yaml` devDependency, as the
+ * operator installed it in the service clone (`pnpm install --frozen-lockfile --ignore-scripts --filter .`), resolved
+ * from `codeDir`. Trusted because the clone is main's code and pnpm checked the package against main's lockfile
+ * integrity; `yaml` is pure JavaScript with no dependency. Missing or not main's locked version is a host problem
+ * (yamlProblem), never a skip.
+ */
+export const serviceYaml = (codeDir = CODE_DIR) =>
+  createRequire(join(codeDir, "package.json"))("yaml");
+
+/** Why the service cannot parse with main's `yaml` (missing, or not the version main's lockfile locks), or null. */
+export function yamlProblem(codeDir = CODE_DIR) {
+  let installed;
+  try {
+    const manifest = createRequire(join(codeDir, "package.json")).resolve("yaml/package.json");
+    installed = JSON.parse(readFileSync(manifest, "utf8")).version;
+  } catch {
+    return `the service clone ${codeDir} has no \`yaml\` installed: run pnpm install --frozen-lockfile --ignore-scripts --filter . there`;
+  }
+  let locked;
+  try {
+    const graph = lockfileGraph(readFileSync(join(codeDir, "pnpm-lock.yaml"), "utf8"));
+    locked =
+      graph.importers["."]?.devDependencies?.yaml ?? graph.importers["."]?.dependencies?.yaml;
+  } catch {
+    locked = null;
+  }
+  if (!locked) return `the service clone's pnpm-lock.yaml locks no \`yaml\` for the root`;
+  if (locked !== installed)
+    return `the service clone has yaml ${installed} installed, main locks ${locked}: reinstall there`;
+  return null;
+}
+
+/** A value as one comparable string, keys sorted at every level. */
+const canonical = (value) =>
+  JSON.stringify(value, (_, v) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : v,
+  );
+
+/** The keys of pnpm-workspace.yaml that are the PR's to change: what it installs. Everything else is main's. */
+export const WORKSPACE_TESTED_KEYS = Object.freeze([
+  "packages",
+  "catalog",
+  "catalogs",
+  "overrides",
+]);
+
+/**
+ * The tested pnpm-workspace.yaml (CTO ruling, round 4, HIGH-2): main's text, with only the PR's `packages`,
+ * `catalog`, `catalogs` and `overrides` sections spliced in. The PR's copy is parsed with the real `yaml` library and
+ * refused on any parse error or warning, any anchor, alias, explicit tag or merge key, and any other top-level key it
+ * adds, removes or changes (pnpm 12 reads settings such as `scriptShell` and `pnpmfile` from this file for every
+ * command), each named. The splice is by text: each top-level key's lines run to the next column-0 key, main's for
+ * every other section and the PR's for the four. The result is then parsed again, and must equal the PR's four values
+ * and main's everything else, and pass the fail-closed line reader (`reader`, workspaceManifest); anything else is a
+ * problem, never a guess. Returns `{ text, value, problems }`.
+ */
+export function spliceWorkspace(mainText, prText, yaml, reader = workspaceManifest) {
+  const problems = [];
+  const parse = (text, who) => {
+    const doc = yaml.parseDocument(text, { uniqueKeys: true, prettyErrors: false });
+    for (const e of [...doc.errors, ...doc.warnings])
+      problems.push(`${who} pnpm-workspace.yaml does not parse: ${e.message.split("\n")[0]}`);
+    return doc;
+  };
+  const prDoc = parse(prText, "the PR's");
+  const mainDoc = parse(mainText, "main's");
+  yaml.visit(prDoc, {
+    Alias: () => {
+      problems.push("the PR's pnpm-workspace.yaml uses an alias");
+    },
+    Node: (_, node) => {
+      if (node.anchor)
+        problems.push(`the PR's pnpm-workspace.yaml uses an anchor (&${node.anchor})`);
+      if (node.tag) problems.push(`the PR's pnpm-workspace.yaml uses a tag (${node.tag})`);
+    },
+    Pair: (_, pair) => {
+      if (yaml.isScalar(pair.key) && pair.key.value === "<<")
+        problems.push("the PR's pnpm-workspace.yaml uses a merge key (<<)");
+    },
+  });
+  if (problems.length) return { text: null, value: null, problems };
+  const pr = prDoc.toJS() ?? {};
+  const main = mainDoc.toJS() ?? {};
+  if (!yaml.isMap(prDoc.contents) || typeof pr !== "object" || Array.isArray(pr))
+    return { text: null, value: null, problems: ["the PR's pnpm-workspace.yaml is not a mapping"] };
+  for (const key of new Set([...Object.keys(pr), ...Object.keys(main)]))
+    if (!WORKSPACE_TESTED_KEYS.includes(key) && canonical(pr[key]) !== canonical(main[key]))
+      problems.push(`the PR changes pnpm-workspace.yaml \`${key}\`, which only main may set`);
+  if (problems.length) return { text: null, value: null, problems };
+  const sections = (text) => {
+    const out = [{ key: null, lines: [] }];
+    for (const line of text.split("\n")) {
+      const m = /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[A-Za-z_$@][\w$@.-]*)\s*:(?:\s|$)/.exec(line);
+      if (m) out.push({ key: yaml.parse(m[1]), lines: [line] });
+      else out.at(-1).lines.push(line);
+    }
+    return out;
+  };
+  const prSections = new Map(
+    sections(prText)
+      .filter((x) => x.key !== null)
+      .map((x) => [x.key, x]),
+  );
+  const spliced = [];
+  const done = new Set();
+  for (const section of sections(mainText)) {
+    if (!WORKSPACE_TESTED_KEYS.includes(section.key)) spliced.push(...section.lines);
+    else if (prSections.has(section.key)) spliced.push(...prSections.get(section.key).lines);
+    done.add(section.key);
+  }
+  for (const key of WORKSPACE_TESTED_KEYS)
+    if (!done.has(key) && prSections.has(key)) {
+      if (spliced.at(-1) !== "") spliced.push("");
+      spliced.push(...prSections.get(key).lines);
+    }
+  const text = spliced.join("\n");
+  const check = yaml.parseDocument(text, { uniqueKeys: true });
+  const value = check.errors.length ? null : (check.toJS() ?? {});
+  const expected = Object.fromEntries([
+    ...Object.entries(main).filter(([key]) => !WORKSPACE_TESTED_KEYS.includes(key)),
+    ...Object.entries(pr).filter(([key]) => WORKSPACE_TESTED_KEYS.includes(key)),
+  ]);
+  if (!value || canonical(value) !== canonical(expected))
+    problems.push(
+      "the PR's pnpm-workspace.yaml sections cannot be spliced into main's file as written",
+    );
+  else problems.push(...reader(text).problems);
+  return { text, value, problems };
+}
+
+/** A version, a semver range or a dist-tag: what a registry resolves (no protocol, no path). */
+const registryRange = (range) =>
+  typeof range === "string" && /^[\w.^~<>=*|+ -]*$/.test(range) && !/^[.~]?\//.test(range);
+/** The package an override's selector (`a@1>b@2`) targets. */
+const overrideTarget = (selector) =>
+  String(selector)
+    .split(">")
+    .at(-1)
+    .replace(/(?<=.)@[^@]*$/, "");
+
+/**
+ * The dependency specs that must resolve from the registry (CTO ruling, round 4, 2a and 2b), as problems: every spec
+ * in the workspace's `catalog`, `catalogs` and `overrides` and in each manifest's dependencies, devDependencies,
+ * optionalDependencies and peerDependencies. A spec is a semver range, a version or a dist-tag, a `catalog:`
+ * reference, or an `npm:<name>@<range>` alias; `workspace:` only between members (`memberNames`). `link:`, `file:`,
+ * `portal:`, git, GitHub and http(s) tarball specs, and paths, are refused. An alias that renames a gate-tool package
+ * (GATE_TOOL_PACKAGES) to another registry name is refused too: it would swap the gate's runner for a stub. An
+ * override may also be `-` (removal) or a `$name` reference.
+ */
+export function dependencySpecProblems({
+  workspace = {},
+  manifests = [],
+  memberNames = new Set(),
+}) {
+  const problems = [];
+  const check = (where, key, spec, { workspaceOk = false, override = false } = {}) => {
+    const bad = (why) => problems.push(`${where}: ${key} ${JSON.stringify(spec)} ${why}`);
+    if (typeof spec !== "string") return bad("is not a version spec");
+    if (override && (spec === "-" || /^\$[@\w./-]+$/.test(spec))) return;
+    if (/^catalog:[\w.-]*$/.test(spec)) return;
+    if (spec.startsWith("workspace:"))
+      return workspaceOk
+        ? undefined
+        : bad("is a workspace: spec for a package that is not a member");
+    if (spec.startsWith("npm:")) {
+      const target = aliasTarget(spec);
+      const range = target ? spec.slice(`npm:${target}`.length).replace(/^@/, "") : null;
+      if (!target || !registryRange(range)) return bad("is not a registry alias");
+      if (isGateToolPackage(key) && target !== key)
+        return bad(`renames the gate tool ${key} to ${target}`);
+      return;
+    }
+    if (!registryRange(spec))
+      bad("is not a registry spec (link:, file:, portal:, git, http and paths are refused)");
+  };
+  for (const [key, spec] of Object.entries(workspace.catalog ?? {}))
+    check("pnpm-workspace.yaml catalog", key, spec);
+  for (const [name, entries] of Object.entries(workspace.catalogs ?? {}))
+    for (const [key, spec] of Object.entries(entries ?? {}))
+      check(`pnpm-workspace.yaml catalogs.${name}`, key, spec);
+  for (const [selector, spec] of Object.entries(workspace.overrides ?? {}))
+    check("pnpm-workspace.yaml overrides", overrideTarget(selector), spec, { override: true });
+  for (const { path, json } of manifests) {
+    for (const kind of [
+      "dependencies",
+      "devDependencies",
+      "optionalDependencies",
+      "peerDependencies",
+    ])
+      for (const [key, spec] of Object.entries(json?.[kind] ?? {}))
+        check(`${path} ${kind}`, key, spec, { workspaceOk: memberNames.has(key) });
+    for (const [selector, spec] of Object.entries(json?.pnpm?.overrides ?? {}))
+      check(`${path} pnpm.overrides`, overrideTarget(selector), spec, { override: true });
+  }
+  return problems;
+}
+
 /** The directory a definition file configures: its own, or for a file under `.config/`, the one holding `.config`. */
 export function definitionDirectory(path) {
   const config = /^(?:(.*)\/)?\.config\//.exec(path);
@@ -2899,15 +3250,19 @@ export function checkRunBody({
         ? `could not run (${reason})`
         : phase === "merge"
           ? "the PR conflicts with main"
-          : phase === "install"
-            ? reason === "time limit"
-              ? "pnpm install hit the time limit"
-              : "pnpm install failed"
-            : phase === "licence"
-              ? `the licensed build is unavailable (${reason ?? "see the service log"})`
-              : reason === "time limit"
-                ? `${label} hit the time limit`
-                : `${label} failed`;
+          : phase === "tree"
+            ? `the PR's tree is refused (${String(reason ?? "")
+                .replace(/^the tested tree is refused: /, "")
+                .slice(0, 160)})`
+            : phase === "install"
+              ? reason === "time limit"
+                ? "pnpm install hit the time limit"
+                : "pnpm install failed"
+              : phase === "licence"
+                ? `the licensed build is unavailable (${reason ?? "see the service log"})`
+                : reason === "time limit"
+                  ? `${label} hit the time limit`
+                  : `${label} failed`;
   const failed = stepSections(scrub(log ?? ""))
     .filter((x) => x.result === "FAIL" || x.result === "unfinished")
     .map((x) => x.id);
@@ -3028,6 +3383,9 @@ export async function runJob(job, deps) {
           phase: "merge",
           reason: "conflicts with main",
         });
+      // A path or setting the tested tree may not carry: the PR's failure, each problem named (buildTree).
+      if (error.refused)
+        return settle(job, deps, { conclusion: "failure", phase: "tree", reason: error.message });
       // The service is not main's definition: it cannot vouch for this head either way (LOW 6).
       if (error.drift)
         return settle(job, deps, {
@@ -3274,6 +3632,9 @@ export function selfUpdate({ clone, remote, home, busy, own, ledger, runSelfChec
       ],
       spawnOptions({ env: gitEnv() }),
     );
+    // The staged code resolves its one dependency (`yaml`) from the clone's install, as the service does.
+    if (staged.status === 0 && existsSync(join(clone, "node_modules")))
+      symlinkSync(join(clone, "node_modules"), join(stage, "node_modules"));
     problem =
       staged.status === 0
         ? selfCheckProblem(runSelfCheck(stage))
@@ -3502,7 +3863,10 @@ const operatorForbidden = () => [
 ];
 
 function preflight(s) {
-  return preflightProblems(s, hostIo(s), operatorForbidden());
+  return [
+    ...preflightProblems(s, hostIo(s), operatorForbidden()),
+    ...[yamlProblem(s.codeDir ?? CODE_DIR)].filter(Boolean),
+  ];
 }
 
 /** The filesystem half again, before each pass of `once` or the daemon. */
@@ -3694,9 +4058,13 @@ function docker(s, args, options = {}) {
 /**
  * The tree that is tested: the PR head merged onto `base` (main), then main's verify definition laid over it and
  * every definition file main lacks removed (overlayPlan), so a PR can neither skip a check nor redefine one. Built in
- * a scratch index of the daemon's mirror; a merge conflict throws `{ conflict: true }`, which is the PR's failure.
+ * a scratch index of the daemon's bare mirror (every index change goes through `update-index --index-info`, which
+ * needs no work tree; review MEDIUM-1). Refused, as the PR's failure (`{ refused: true }`, each problem named): a
+ * path the tree may never carry (forbiddenPaths), a pnpm-workspace.yaml change outside what it installs
+ * (spliceWorkspace, with `yaml`, the real parser), and a dependency spec that does not resolve from the registry or
+ * renames a gate tool (dependencySpecProblems). A merge conflict throws `{ conflict: true }`, the PR's failure too.
  */
-export function buildTree(mirror, base, sha, scratchIndex) {
+export function buildTree(mirror, base, sha, scratchIndex, yaml = null) {
   const merge = spawnSync(
     "git",
     [
@@ -3729,14 +4097,53 @@ export function buildTree(mirror, base, sha, scratchIndex) {
       .filter((e) => e.type === "blob");
   const mergedEntries = listing(merged);
   const mainEntries = listing(base);
+  const mainByPath = new Map(mainEntries.map((e) => [e.path, e]));
+  const changed = mergedEntries
+    .filter((e) => mainByPath.get(e.path)?.object !== e.object)
+    .map((e) => e.path);
+  const forbidden = forbiddenPaths(changed, ignoredByMain(mirror, base, changed));
+  if (forbidden.length) throw treeRefusal(forbidden);
   const { whole, remove, scripts } = overlayPlan(
     mergedEntries.map((e) => e.path),
     mainEntries,
   );
   const mergedByPath = new Map(mergedEntries.map((e) => [e.path, e]));
-  const mainByPath = new Map(mainEntries.map((e) => [e.path, e]));
-  git(mirror, ["read-tree", merged], { index: scratchIndex });
+  const blob = (entry) => git(mirror, ["cat-file", "blob", entry.object]);
+  // pnpm-workspace.yaml: the PR's sections pnpm installs from, spliced into main's file; anything else is refused.
+  const problems = [];
+  const wsPath = "pnpm-workspace.yaml";
+  let workspace = {};
   const lines = whole.map((e) => `${e.mode} ${e.object}\t${e.path}`);
+  if (mainByPath.has(wsPath) && !mergedByPath.has(wsPath))
+    problems.push("the PR removes pnpm-workspace.yaml, which only main may set");
+  else if (mergedByPath.get(wsPath)?.object !== mainByPath.get(wsPath)?.object) {
+    const prText = blob(mergedByPath.get(wsPath));
+    const mainText = mainByPath.has(wsPath) ? blob(mainByPath.get(wsPath)) : "";
+    const spliced = spliceWorkspace(mainText, prText, yaml ?? serviceYaml());
+    problems.push(...spliced.problems);
+    workspace = spliced.value ?? {};
+    if (!spliced.problems.length && spliced.text !== prText) {
+      const object = git(mirror, ["hash-object", "-w", "--stdin"], { input: spliced.text }).trim();
+      lines.push(`${mergedByPath.get(wsPath).mode} ${object}\t${wsPath}`);
+    }
+  }
+  // Every member's dependency specs: registry only, and no gate tool renamed.
+  const manifests = [];
+  for (const entry of mergedEntries.filter((e) => /(?:^|\/)package\.json$/.test(e.path)))
+    try {
+      manifests.push({ path: entry.path, json: JSON.parse(blob(entry)) });
+    } catch {
+      problems.push(`${entry.path} is not JSON`);
+    }
+  problems.push(
+    ...dependencySpecProblems({
+      workspace,
+      manifests,
+      memberNames: new Set(manifests.map((m) => m.json?.name).filter(Boolean)),
+    }),
+  );
+  if (problems.length) throw treeRefusal(problems);
+  git(mirror, ["read-tree", merged], { index: scratchIndex });
   for (const path of scripts) {
     const text = withMainScripts(
       git(mirror, ["cat-file", "blob", mergedByPath.get(path).object]),
@@ -3746,16 +4153,15 @@ export function buildTree(mirror, base, sha, scratchIndex) {
     const object = git(mirror, ["hash-object", "-w", "--stdin"], { input: text }).trim();
     lines.push(`${mergedByPath.get(path).mode} ${object}\t${path}`);
   }
+  // A removal is a zero-id entry (mode 0); NUL-separated, so no path character reaches a parser.
+  const zero = "0".repeat(
+    git(mirror, ["rev-parse", "--show-object-format"]).trim() === "sha256" ? 64 : 40,
+  );
+  for (const path of remove) lines.push(`0 ${zero}\t${path}`);
   if (lines.length)
-    git(mirror, ["update-index", "--index-info"], {
+    git(mirror, ["update-index", "-z", "--index-info"], {
       index: scratchIndex,
-      input: `${lines.join("\n")}\n`,
-    });
-  // NUL-separated, so no path character reaches a parser.
-  if (remove.length)
-    git(mirror, ["update-index", "--force-remove", "-z", "--stdin"], {
-      index: scratchIndex,
-      input: `${remove.join("\0")}\0`,
+      input: `${lines.join("\0")}\0`,
     });
   return git(mirror, ["write-tree"], { index: scratchIndex }).trim();
 }
@@ -3968,7 +4374,7 @@ async function ensureOsvDb(s, { store, envFile, runDir, state }) {
         chmodSync(dir, 0o755);
       const fresh = `${path}.new`;
       await downloadVerified(OSV_DB_URL, null, fresh);
-      if (!isZip(fresh) || statSync(fresh).size < 1024 * 1024) {
+      if (!isZip(fresh) || statSync(fresh).size < OSV_DB_MIN_BYTES) {
         rmSync(fresh, { force: true });
         throw new Error("the download is not the OSV database (not a zip, or too small)");
       }
@@ -3978,10 +4384,23 @@ async function ensureOsvDb(s, { store, envFile, runDir, state }) {
       serviceLog(`OSV database refresh failed: ${error.message}`);
     }
   }
-  const problem = osvDbProblem(mtime(), Date.now(), s.osvMaxAgeMs);
+  let size;
+  try {
+    size = statSync(path).size;
+  } catch {
+    size = null;
+  }
+  const problem = osvDbProblem(mtime(), Date.now(), s.osvMaxAgeMs, size);
   if (problem) throw new Error(problem);
-  // At each new database and once a day: the canary proves osv-scanner reads this database the way the gate does.
-  const db = statSync(path);
+  // At each new database, store image or scanner, and once a day: the canary proves osv-scanner reads this database
+  // the way the gate does.
+  const stat = statSync(path);
+  const db = {
+    mtimeMs: stat.mtimeMs,
+    size: stat.size,
+    image: docker(s, ["image", "inspect", "--format", "{{.Id}}", store]).stdout.trim() || null,
+    scanner: TOOLS.find((t) => t.name === "osv-scanner")?.version ?? null,
+  };
   const last = state.osvCanary;
   if (!osvCanaryDue(last, db, Date.now())) return;
   const lockfile = join(runDir, "osv-canary-lock.yaml");
@@ -4009,7 +4428,7 @@ async function ensureOsvDb(s, { store, envFile, runDir, state }) {
     writeState(s, state);
     throw new Error(canary);
   }
-  state.osvCanary = { mtimeMs: db.mtimeMs, size: db.size, at: Date.now() };
+  state.osvCanary = { ...db, at: Date.now() };
   writeState(s, state);
 }
 
@@ -4634,7 +5053,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       s,
       keyMode,
       licenceMode,
-      filesystem: () => filesystemProblems(s, hostIo(s), operatorForbidden()),
+      filesystem: () => [
+        ...filesystemProblems(s, hostIo(s), operatorForbidden()),
+        ...[yamlProblem(CODE_DIR)].filter(Boolean),
+      ],
       runTests: () =>
         spawnSync(
           process.execPath,

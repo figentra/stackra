@@ -137,6 +137,12 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  containerLimits,
+  serviceYaml,
+  yamlProblem,
+  forbiddenPaths,
+  dependencySpecProblems,
+  OSV_DB_MIN_BYTES,
   SERVICE_FILES,
   LOADED_BLOBS,
   gitBlobId,
@@ -172,7 +178,13 @@ import {
   spdxAllowed,
   stepSections,
 } from "../stackra-verify.mjs";
-import { VERIFY_APP, isVerifyOverlay } from "../pr-merge.mjs";
+import {
+  VERIFY_APP,
+  isVerifyOverlay,
+  GATE_TOOL_BINS,
+  NOT_PACKAGE_COMMANDS,
+  isGateToolPackage,
+} from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const BASE = "fedcba9876543210fedcba9876543210fedcba98";
@@ -392,7 +404,7 @@ test("install: no PR lifecycle script or pnpmfile; only main's allowed builds ru
   });
   assert.match(
     install.at(-1),
-    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile && pnpm rebuild esbuild @shopify\/react-native-skia$/,
+    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile && pnpm rebuild --ignore-pnpmfile esbuild @shopify\/react-native-skia$/,
   );
   const none = installArgs(S, {
     name: "i",
@@ -581,7 +593,10 @@ test("OSV canary: runs at a new database (mtime or size) and a day after its las
     "--lockfile=pnpm-lock.yaml",
   ]);
   // the same command the gate's dependency-scan step runs
-  assert.equal(GATE_STEPS[0].run, "osv-scanner scan source --offline --lockfile=pnpm-lock.yaml");
+  assert.equal(
+    GATE_STEPS.find((step) => step.id === "dependency-scan").run,
+    "osv-scanner scan source --offline --lockfile=pnpm-lock.yaml",
+  );
 });
 
 test("egress probe: metadata, docker0, the host-loopback gateway and every host address on the service ports", () => {
@@ -1129,6 +1144,41 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
   // a new member's own configs stay in the tested tree (CTO ruling, round 4): main has no packages/new at all
 });
 
+/**
+ * The daemon's shape of a fixture repository: a BARE mirror (as archiveJob clones it), refreshed from the work
+ * repository's branches and replace refs, kept inside its .git so it goes with it. The work repository borrows the
+ * mirror's objects (alternates), so a test reads the trees buildTree writes there (review MEDIUM-1).
+ */
+function mirrorOf(dir) {
+  const mirror = join(dir, ".git", "stackra-mirror");
+  const run = (...args) => {
+    const r = spawnSync("git", args, {
+      encoding: "utf8",
+      env: { PATH: process.env.PATH, HOME: dir },
+    });
+    if (r.status !== 0) throw new Error(r.stderr);
+  };
+  if (spawnSync("test", ["-d", mirror]).status !== 0) run("clone", "-q", "--bare", dir, mirror);
+  run(
+    "-C",
+    mirror,
+    "fetch",
+    "-q",
+    "--no-tags",
+    dir,
+    "+refs/heads/*:refs/heads/*",
+    "+refs/replace/*:refs/replace/*",
+  );
+  assert.equal(
+    spawnSync("git", ["-C", mirror, "rev-parse", "--is-bare-repository"], {
+      encoding: "utf8",
+    }).stdout.trim(),
+    "true",
+  );
+  writeFileSync(join(dir, ".git", "objects", "info", "alternates"), `${join(mirror, "objects")}\n`);
+  return mirror;
+}
+
 /** A temporary repository with main, a PR and an attacker's commit, for `buildTree`. */
 function fixtureRepo() {
   const dir = mkdtempSync(join(tmpdir(), "stackra-verify-"));
@@ -1187,7 +1237,7 @@ function fixtureRepo() {
 test("buildTree: the PR merged onto main, with main's verify definition — a PR's `verify: \"true\"` never runs", () => {
   const { dir, git, base, sha } = fixtureRepo();
   try {
-    const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+    const tree = buildTree(mirrorOf(dir), base, sha, join(dir, "scratch-index"));
     const show = (path) => git("cat-file", "blob", `${tree}:${path}`);
     const pkg = JSON.parse(show("package.json"));
     assert.deepEqual(pkg.scripts, { verify: "turbo run test" });
@@ -1255,7 +1305,7 @@ function overlayRepo() {
 test("buildTree: a definition file the PR adds and main lacks is removed, at any depth and at the root", () => {
   const { dir, git, base, sha } = overlayRepo();
   try {
-    const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+    const tree = buildTree(mirrorOf(dir), base, sha, join(dir, "scratch-index"));
     const paths = git("ls-tree", "-r", "--name-only", tree).split("\n");
     for (const path of Object.keys(PR_ADDED_CONFIGS))
       assert.equal(paths.includes(path), false, `${path} reached the tested tree`);
@@ -1303,7 +1353,7 @@ function newMemberRepo() {
 test("buildTree: a new member's own definition files stay (it runs with them); one in a directory main has goes", () => {
   const { dir, git, base, sha } = newMemberRepo();
   try {
-    const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+    const tree = buildTree(mirrorOf(dir), base, sha, join(dir, "scratch-index"));
     const paths = git("ls-tree", "-r", "--name-only", tree).split("\n");
     for (const path of [
       "packages/new/vitest.config.mjs",
@@ -1340,7 +1390,7 @@ test(
     const { dir, base, sha } = newMemberRepo();
     const out = mkdtempSync(join(tmpdir(), "stackra-tested-"));
     try {
-      const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+      const tree = buildTree(mirrorOf(dir), base, sha, join(dir, "scratch-index"));
       const r = spawnSync("sh", ["-c", `git -C "${dir}" archive ${tree} | tar -x -C "${out}"`]);
       assert.equal(r.status, 0);
       const run = spawnSync(
@@ -1387,7 +1437,7 @@ test(
       assert.deepEqual((await COMMITLINT({}, { cwd: out })).rules, {});
       rmSync(out, { recursive: true, force: true });
       mkdirSync(out);
-      const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+      const tree = buildTree(mirrorOf(dir), base, sha, join(dir, "scratch-index"));
       const r = spawnSync("sh", ["-c", `git -C "${dir}" archive ${tree} | tar -x -C "${out}"`]);
       assert.equal(r.status, 0);
       const config = await COMMITLINT({}, { cwd: out });
@@ -1398,7 +1448,7 @@ test(
       const member = newMemberRepo();
       try {
         const memberTree = buildTree(
-          member.dir,
+          mirrorOf(member.dir),
           member.base,
           member.sha,
           join(member.dir, "scratch-index"),
@@ -1426,7 +1476,7 @@ test("buildTree: a replace ref in the mirror never swaps the tested tree", () =>
   try {
     git("replace", sha, evil);
     assert.match(git("cat-file", "-p", `${sha}:packages/a/src/a.ts`), /evil/);
-    const tree = buildTree(dir, base, sha, join(dir, "scratch-index"));
+    const tree = buildTree(mirrorOf(dir), base, sha, join(dir, "scratch-index"));
     assert.equal(git("cat-file", "blob", `${tree}:packages/a/src/a.ts`), "export const a = 2;");
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -1442,7 +1492,7 @@ test("buildTree: a PR that conflicts with main is refused as a conflict", () => 
     const newBase = git("rev-parse", "HEAD");
     assert.notEqual(newBase, base);
     assert.throws(
-      () => buildTree(dir, newBase, sha, join(dir, "scratch-index")),
+      () => buildTree(mirrorOf(dir), newBase, sha, join(dir, "scratch-index")),
       (error) => error.conflict === true,
     );
   } finally {
@@ -1461,7 +1511,7 @@ test("archive: a PR's .gitattributes export-ignore never drops a file from the t
     git("add", "-A");
     git("commit", "-qm", "hide");
     const hidden = git("rev-parse", "HEAD");
-    const tree = buildTree(dir, base, hidden, join(dir, "scratch-index"));
+    const tree = buildTree(mirrorOf(dir), base, hidden, join(dir, "scratch-index"));
     const before = join(dir, "before.tar");
     git("archive", "--format=tar", "-o", before, tree);
     // without the protection, git honours the tree's own attributes (overlaid from main here, so use the PR's)
@@ -1525,7 +1575,10 @@ test("licensed builds: main's versions from the lockfile; the install copies the
   ].join("\n");
   assert.deepEqual(lockedVersions(lock, "uniwind-pro"), ["1.9.0"]);
   const cmd = installCommand(["esbuild", "uniwind-pro", "sharp"]);
-  assert.match(cmd, /--ignore-scripts --ignore-pnpmfile && pnpm rebuild esbuild sharp && /);
+  assert.match(
+    cmd,
+    /--ignore-scripts --ignore-pnpmfile && pnpm rebuild --ignore-pnpmfile esbuild sharp && /,
+  );
   assert.doesNotMatch(cmd, /pnpm rebuild[^&]*uniwind-pro/);
   assert.match(cmd, /node_modules\/\.pnpm\/uniwind-pro@\*\/node_modules\/uniwind-pro/);
   assert.match(
@@ -2072,7 +2125,7 @@ test("gate mirrors main's ci.yml: every dependency-scan, gate and mobile step, i
   );
   assert.match(
     installCommand(["esbuild"], [], GATE_FILTERS),
-    /--ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild esbuild$/,
+    /--ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild$/,
   );
   assert.throws(() => installCommand([], [], ["x; rm -rf /"]), /not a pnpm filter/);
 });
@@ -2191,6 +2244,14 @@ const SQUAWK =
  * and the stub call that fails it (`fail`; the manifests step fails on a stale committed manifest instead).
  */
 const STEP_CASES = {
+  "licence-policy": {
+    calls: [
+      `pnpm licenses list --json --offline --ignore-pnpmfile --recursive ${X}`,
+      "pnpm list --recursive --json --depth Infinity --offline --ignore-pnpmfile",
+      "licence-check <tmp>/in/licences.json <tmp>/stackra-licences.json . <tmp>/stackra-pnpm-list.json gate",
+    ],
+    fail: "licence-check *",
+  },
   "dependency-scan": {
     calls: ["osv-scanner scan source --offline --lockfile=pnpm-lock.yaml"],
     env: { OSV: "/osv" },
@@ -2204,14 +2265,6 @@ const STEP_CASES = {
     calls: ["linear check-pr", `pnpm exec commitlint --from ${BASE} --to ${SHA}`],
     env: { NODE_OPTIONS: "--conditions=@stackra/source" },
     fail: "linear *",
-  },
-  "licence-policy": {
-    calls: [
-      `pnpm licenses list --json --offline --recursive ${X}`,
-      "pnpm list --recursive --json --depth Infinity --offline",
-      "licence-check <tmp>/in/licences.json <tmp>/stackra-licences.json . <tmp>/stackra-pnpm-list.json gate",
-    ],
-    fail: "licence-check *",
   },
   "format-check": { calls: ["pnpm format:check"], fail: "pnpm format:check" },
   lint: { calls: [`pnpm exec turbo run lint ${X}`, "pnpm lint:root"], fail: "pnpm lint:root" },
@@ -2400,8 +2453,8 @@ test(
     assert.deepEqual(
       run.calls("licence-policy").map((c) => c.call.replaceAll(fixture.dir, "<tmp>")),
       [
-        "pnpm licenses list --json --offline --recursive",
-        "pnpm list --recursive --json --depth Infinity --offline",
+        "pnpm licenses list --json --offline --ignore-pnpmfile --recursive",
+        "pnpm list --recursive --json --depth Infinity --offline --ignore-pnpmfile",
         "licence-check <tmp>/in/licences.json <tmp>/stackra-licences.json . <tmp>/stackra-pnpm-list.json mobile",
       ],
     );
@@ -3872,7 +3925,7 @@ test("runJob gate: installs without the Uniwind Pro members and never lays in a 
   const install = calls.runs[0].at(-1);
   assert.match(
     install,
-    /--filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild esbuild$/,
+    /--filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild$/,
   );
   assert.doesNotMatch(install, /uniwind-pro|prebuilt/);
   assert.match(calls.runs[1].at(-1), /; bash \/in\/gate\.sh$/);
@@ -3886,7 +3939,7 @@ test("runJob mobile: the full install with the licensed build; a licence failure
   assert.doesNotMatch(calls.runs[0].at(-1), /--filter=/);
   assert.match(
     calls.runs[0].at(-1),
-    /pnpm rebuild esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
+    /pnpm rebuild --ignore-pnpmfile esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
   );
   assert.match(calls.runs[1].at(-1), /commit -qm tested --no-verify; bash \/in\/mobile\.sh$/);
   const licence = Object.assign(new Error("could not build the licensed image"), { licence: true });
@@ -4804,3 +4857,477 @@ test(
     }
   },
 );
+
+// ---- round 4: what the tested tree may carry (review HIGH-1, HIGH-2; CTO rulings 2a-2c) ------------------------
+
+/** The real `yaml` the daemon parses with, when this checkout has it installed (box 1's clone does). */
+const YAML = (() => {
+  try {
+    return serviceYaml();
+  } catch {
+    return null;
+  }
+})();
+const needsYaml = YAML ? {} : { skip: "the root's yaml is not installed in this checkout" };
+
+/** A fixture whose main has a pnpm-workspace.yaml and a .gitignore; `pr(files)` commits a PR branch onto main. */
+function treeRepo() {
+  const repo = fixtureRepo();
+  const { dir, git } = repo;
+  const write = (path, text) => {
+    mkdirSync(join(dir, path, ".."), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  };
+  git("checkout", "-q", "main");
+  write(".gitignore", "node_modules/\n.turbo/\ndist/\n*.log\n");
+  write(
+    "pnpm-workspace.yaml",
+    [
+      "# the workspace",
+      "packages:",
+      "  - packages/*",
+      "",
+      "# shared versions",
+      "catalog:",
+      "  vitest: 5.0.5",
+      "  turbo: 2.11.9",
+      "",
+      "overrides:",
+      "  undici: 8.12.2",
+      "",
+      "# builds main allows",
+      "allowBuilds:",
+      "  esbuild: true",
+      "",
+    ].join("\n"),
+  );
+  git("add", "-A");
+  git("commit", "-qm", "main workspace");
+  const base = git("rev-parse", "HEAD");
+  let n = 0;
+  const pr = (files) => {
+    git("checkout", "-q", "-b", `pr-${++n}`, base);
+    for (const [path, text] of Object.entries(files)) write(path, text);
+    git("add", "-A", "-f");
+    git("commit", "-qm", `pr ${n}`);
+    const sha = git("rev-parse", "HEAD");
+    git("checkout", "-q", "main");
+    return sha;
+  };
+  const build = (sha) => buildTree(mirrorOf(dir), base, sha, join(dir, `index-${sha}`), YAML);
+  return { ...repo, base, pr, build };
+}
+
+test("buildTree refuses a committed tool binary or turbo cache, and anything main's .gitignore ignores, naming each", () => {
+  const repo = treeRepo();
+  try {
+    for (const path of [
+      "node_modules/.bin/node",
+      "node_modules/.bin/gitleaks",
+      "packages/a/node_modules/.bin/oxlint",
+      ".turbo/cache/abc.tar.zst",
+      "packages/a/.turbo/cache/x-meta.json",
+      "dist/out.js",
+      "packages/a/debug.log",
+    ]) {
+      const sha = repo.pr({ [path]: "#!/bin/sh\nexit 0\n" });
+      assert.throws(
+        () => repo.build(sha),
+        (error) => error.refused === true && error.message.includes(path),
+        path,
+      );
+    }
+    // a source file is fine
+    assert.match(
+      repo.build(repo.pr({ "packages/a/src/b.ts": "export const b = 1;\n" })),
+      /^[0-9a-f]{40}$/,
+    );
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("forbiddenPaths: node_modules and .turbo at any depth, and what main ignores", () => {
+  assert.deepEqual(
+    forbiddenPaths(
+      ["src/a.ts", "node_modules/.bin/node", "a/b/.turbo/x", "dist/x.js", "docs/node_modules.md"],
+      new Set(["dist/x.js"]),
+    ).map((p) => p.split(" ")[0]),
+    ["node_modules/.bin/node", "a/b/.turbo/x", "dist/x.js"],
+  );
+});
+
+test(
+  "buildTree: pnpm-workspace.yaml keeps main's settings; only packages, catalog, catalogs and overrides are the PR's",
+  needsYaml,
+  () => {
+    const repo = treeRepo();
+    try {
+      // settings pnpm reads for every command: refused, each named
+      for (const [text, key] of [
+        ["scriptShell: ./docs/fake.sh\n", "scriptShell"],
+        ["pnpmfile: docs/hook.cjs\n", "pnpmfile"],
+        ["allowBuilds:\n  esbuild: true\n  evil: true\n", "allowBuilds"],
+      ]) {
+        const main = readFileSync(join(repo.dir, "pnpm-workspace.yaml"), "utf8");
+        const next =
+          key === "allowBuilds"
+            ? main.replace("allowBuilds:\n  esbuild: true\n", text)
+            : `${main}${text}`;
+        const sha = repo.pr({ "pnpm-workspace.yaml": next });
+        assert.throws(
+          () => repo.build(sha),
+          (error) => error.refused && error.message.includes(`pnpm-workspace.yaml \`${key}\``),
+          key,
+        );
+      }
+      // anchors, aliases, tags and merge keys: refused anywhere
+      for (const [text, what] of [
+        ["catalog:\n  vitest: &v 5.0.5\n  turbo: *v\n", "anchor"],
+        ["catalog:\n  vitest: !!str 5.0.5\n", "tag"],
+        ["base: &b\n  vitest: 5.0.5\ncatalog:\n  <<: *b\n", "alias"],
+      ]) {
+        const sha = repo.pr({ "pnpm-workspace.yaml": `packages:\n  - packages/*\n${text}` });
+        assert.throws(
+          () => repo.build(sha),
+          (error) => error.refused && error.message.includes(what),
+          what,
+        );
+      }
+      // a vitest bump in the catalog runs: the tested file is main's, with the PR's catalog spliced in
+      const main = readFileSync(join(repo.dir, "pnpm-workspace.yaml"), "utf8");
+      const bump = main.replace(
+        "# shared versions\ncatalog:\n  vitest: 5.0.5",
+        "# bumped\ncatalog:\n  vitest: 5.0.6",
+      );
+      const tree = repo.build(repo.pr({ "pnpm-workspace.yaml": bump }));
+      const tested = repo.git("cat-file", "blob", `${tree}:pnpm-workspace.yaml`);
+      assert.match(tested, /vitest: 5\.0\.6/);
+      assert.match(tested, /# builds main allows\nallowBuilds:\n {2}esbuild: true/);
+      assert.deepEqual(YAML.parse(tested).allowBuilds, { esbuild: true });
+      // a nested pnpm-workspace.yaml is main's (pnpm reads its settings too): removed in a directory main has
+      const nested = repo.build(
+        repo.pr({ "packages/a/pnpm-workspace.yaml": "scriptShell: ./fake.sh\n" }),
+      );
+      assert.equal(
+        repo
+          .git("ls-tree", "-r", "--name-only", nested)
+          .split("\n")
+          .includes("packages/a/pnpm-workspace.yaml"),
+        false,
+      );
+    } finally {
+      rmSync(repo.dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "buildTree: every dependency spec resolves from the registry, and no gate tool is renamed (CTO ruling 2a, 2b)",
+  needsYaml,
+  () => {
+    const repo = treeRepo();
+    try {
+      const main = readFileSync(join(repo.dir, "pnpm-workspace.yaml"), "utf8");
+      for (const [files, why] of [
+        [
+          { "pnpm-workspace.yaml": main.replace("turbo: 2.11.9", "turbo: npm:fake-turbo@1.0.0") },
+          "renames the gate tool turbo to fake-turbo",
+        ],
+        [
+          {
+            "pnpm-workspace.yaml": main.replace(
+              "undici: 8.12.2",
+              "undici: 8.12.2\n  vitest: link:./docs/x",
+            ),
+          },
+          'vitest "link:./docs/x" is not a registry spec',
+        ],
+        [
+          {
+            "packages/a/package.json":
+              '{"name":"a","devDependencies":{"tsx":"file:../../docs/tsx"}}\n',
+          },
+          'tsx "file:../../docs/tsx" is not a registry spec',
+        ],
+        [
+          { "packages/a/package.json": '{"name":"a","dependencies":{"x":"github:evil/x"}}\n' },
+          "is not a registry spec",
+        ],
+        [
+          { "packages/a/package.json": '{"name":"a","dependencies":{"knip":"npm:not-knip@1"}}\n' },
+          "renames the gate tool knip to not-knip",
+        ],
+        [
+          { "packages/a/package.json": '{"name":"a","dependencies":{"stranger":"workspace:*"}}\n' },
+          "not a member",
+        ],
+      ]) {
+        const sha = repo.pr(files);
+        assert.throws(
+          () => repo.build(sha),
+          (error) => error.refused && error.message.includes(why),
+          why,
+        );
+      }
+      // registry ranges, tags, catalog references, aliases that keep the name, and workspace links between members
+      const ok = repo.pr({
+        "packages/a/package.json":
+          '{"name":"a","dependencies":{"b":"workspace:*","zod":"^4","x":"latest","vitest":"catalog:","y":"npm:@scope/y@1.2.3"}}\n',
+        "packages/b/package.json": '{"name":"b","devDependencies":{"turbo":"npm:turbo@2.11.9"}}\n',
+      });
+      assert.match(repo.build(ok), /^[0-9a-f]{40}$/);
+    } finally {
+      rmSync(repo.dir, { recursive: true, force: true });
+    }
+  },
+);
+
+/** dependencySpecProblems over one workspace, its manifests and member names. */
+const specProblems = (workspace, manifests = [], members = []) =>
+  dependencySpecProblems({ workspace, manifests, memberNames: new Set(members) });
+
+test("dependencySpecProblems: the spec grammar, without a repository", () => {
+  const problems = specProblems;
+  assert.deepEqual(
+    problems({ catalog: { a: "^1", b: "1.2.3", c: "latest", d: ">=1 <2", e: "npm:e@1" } }),
+    [],
+  );
+  assert.deepEqual(problems({ overrides: { "a@1>b": "-", c: "$c", "d>vitest": "5.0.6" } }), []);
+  for (const spec of [
+    "link:../x",
+    "file:x.tgz",
+    "portal:x",
+    "git+https://x/y.git",
+    "https://x/y.tgz",
+    "github:a/b",
+    "a/b",
+    "./x",
+    "../x",
+    "jsr:@a/b",
+  ])
+    assert.equal(problems({ catalog: { x: spec } }).length, 1, spec);
+  assert.match(
+    problems({ overrides: { "foo@1>vitest": "npm:other@1" } })[0],
+    /renames the gate tool vitest/,
+  );
+  assert.match(
+    problems({ catalogs: { c: { "@vitest/coverage-v8": "npm:fake@1" } } })[0],
+    /renames the gate tool @vitest\/coverage-v8/,
+  );
+  assert.deepEqual(
+    problems({}, [{ path: "p/package.json", json: { dependencies: { a: "workspace:^" } } }], ["a"]),
+    [],
+  );
+});
+
+test("serviceYaml: the daemon's parser is main's installed yaml; a missing or different one is a host problem", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stackra-yaml-"));
+  try {
+    writeFileSync(join(dir, "package.json"), "{}\n");
+    assert.match(yamlProblem(dir), /has no `yaml` installed/);
+    mkdirSync(join(dir, "node_modules/yaml"), { recursive: true });
+    writeFileSync(
+      join(dir, "node_modules/yaml/package.json"),
+      '{"name":"yaml","version":"2.0.0","main":"x.js"}\n',
+    );
+    writeFileSync(join(dir, "node_modules/yaml/x.js"), "module.exports = {};\n");
+    writeFileSync(
+      join(dir, "pnpm-lock.yaml"),
+      "lockfileVersion: '9.0'\n\nimporters:\n\n  .:\n    devDependencies:\n      yaml:\n        specifier: 'catalog:'\n        version: 2.9.1\n",
+    );
+    assert.match(yamlProblem(dir), /yaml 2\.0\.0 installed, main locks 2\.9\.1/);
+    writeFileSync(
+      join(dir, "node_modules/yaml/package.json"),
+      '{"name":"yaml","version":"2.9.1","main":"x.js"}\n',
+    );
+    assert.equal(yamlProblem(dir), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  if (YAML) assert.equal(yamlProblem(), null);
+});
+
+/**
+ * The executables the gate's steps run: their commands, the root scripts they call (`pnpm <script>`) and the member
+ * scripts their `turbo run` tasks reach under the step's filters. Shell syntax is skipped by shape.
+ */
+function gateCommands(steps, root) {
+  const rootPkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const members = globSync(
+    [
+      "apps/*/package.json",
+      "packages/*/*/package.json",
+      "services/*/package.json",
+      "workers/*/package.json",
+    ],
+    { cwd: root },
+  ).map((f) => ({
+    dir: f.slice(0, -"/package.json".length),
+    json: JSON.parse(readFileSync(join(root, f), "utf8")),
+  }));
+  const found = new Map();
+  const seen = new Set();
+  const expand = (text, scripts, where, filters = String(text)) => {
+    const exclude = new Set([...filters.matchAll(/--filter='?!([^'\s]+)/g)].map((m) => m[1]));
+    const only = [...filters.matchAll(/--filter='?\.\/([^'\s*]+)/g)].map((m) => m[1]);
+    const named = [...filters.matchAll(/--filter='?(@?[a-z][^'\s!.[]*)'?(?=\s|$)/g)].map(
+      (m) => m[1],
+    );
+    const wide = /--filter='?\.\.\.|\.\.\.'?(?=\s|$)/.test(filters);
+    const clean = String(text)
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("#"))
+      .join("\n")
+      .replaceAll(/"(?:[^"\\]|\\.)*"|'[^']*'/g, "''");
+    for (const segment of clean.split(/\n|&&|\|\||;|\||\$\(|<\(|\(|\)|\{|\}/)) {
+      const words = segment.trim().split(/\s+/).filter(Boolean);
+      while (words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[0])) words.shift();
+      while (["xargs", "timeout", "nice", "exec"].includes(words[0])) {
+        words.shift();
+        while (words[0]?.startsWith("-")) words.shift();
+      }
+      if (words[0] === "pnpm" && words[1] === "exec") words.splice(0, 2);
+      const cmd = words[0];
+      if (!cmd || !/^[a-z][a-z0-9._-]*$/.test(cmd)) continue;
+      if (cmd === "pnpm" && scripts[words[1]] !== undefined) {
+        const key = `${where}\t${words[1]}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          expand(scripts[words[1]], scripts, where);
+        }
+        continue;
+      }
+      if (cmd === "turbo" && words[1] === "run")
+        for (const task of words.slice(2).filter((w) => !w.startsWith("-")))
+          for (const m of members) {
+            if (exclude.has(m.json.name)) continue;
+            if (only.length && !only.some((p) => m.dir.startsWith(p))) continue;
+            if (!wide && named.length && !named.includes(m.json.name)) continue;
+            if (m.json.scripts?.[task] === undefined) continue;
+            const key = `${m.dir}\t${task}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              expand(m.json.scripts[task], m.json.scripts ?? {}, m.dir);
+            }
+          }
+      if (!found.has(cmd)) found.set(cmd, `${where}: ${segment.trim().slice(0, 80)}`);
+    }
+  };
+  for (const step of steps) expand(step.run, rootPkg.scripts ?? {}, `step ${step.id}`);
+  return found;
+}
+
+test("GATE_TOOL_PACKAGES: derived from what the gate's steps run; a command without its package fails here (ruling 2c)", () => {
+  const commands = gateCommands(GATE_STEPS, CODE_DIR);
+  for (const [cmd, where] of commands)
+    assert.ok(
+      cmd in GATE_TOOL_BINS || NOT_PACKAGE_COMMANDS.includes(cmd),
+      `${cmd} (${where}) has no package in GATE_TOOL_BINS`,
+    );
+  for (const bin of ["turbo", "vitest", "tsc", "oxlint", "oxfmt", "knip", "commitlint"])
+    assert.ok(commands.has(bin), `${bin} is no longer run by a step`);
+  for (const name of [
+    "turbo",
+    "vitest",
+    "@vitest/coverage-v8",
+    "typescript",
+    "@commitlint/cli",
+    "@commitlint/load",
+    "tsx",
+  ])
+    assert.equal(isGateToolPackage(name), true, name);
+  assert.equal(isGateToolPackage("zod"), false);
+  // the derivation itself catches a new command: a step that runs `eslint` would fail the first assertion
+  const extra = gateCommands([...GATE_STEPS, { id: "x", run: "pnpm exec eslint ." }], CODE_DIR);
+  assert.ok(
+    extra.has("eslint") &&
+      !("eslint" in GATE_TOOL_BINS) &&
+      !NOT_PACKAGE_COMMANDS.includes("eslint"),
+  );
+});
+
+test("the gate container's HOME, XDG cache and turbo cache are fresh tmpfs paths; the licence step is first", () => {
+  const env = Object.fromEntries(
+    CONTAINER_ENV.trim()
+      .split("\n")
+      .map((l) => l.split(/=(.*)/s).slice(0, 2)),
+  );
+  assert.equal(env.HOME, "/home/run");
+  assert.equal(env.XDG_CACHE_HOME, "/home/run/.cache");
+  assert.equal(env.TURBO_CACHE_DIR, "/tmp/turbo-cache");
+  const limits = containerLimits(S, ENV);
+  const tmpfs = limits.filter((_, i) => limits[i - 1] === "--tmpfs").map((t) => t.split(":")[0]);
+  for (const path of [env.HOME, env.XDG_CACHE_HOME, env.TURBO_CACHE_DIR])
+    assert.ok(
+      tmpfs.some((t) => path === t || path.startsWith(`${t}/`)),
+      path,
+    );
+  assert.equal(GATE_STEPS[0].id, "licence-policy");
+  assert.match(GATE_STEPS[0].run, /--ignore-pnpmfile/);
+  assert.equal(
+    GATE_STEPS[0].run
+      .split("\n")
+      .filter((l) => l.startsWith("pnpm ") && !l.includes("--ignore-pnpmfile")).length,
+    0,
+  );
+});
+
+test("runJob: a refused tree is the PR's failure, each problem named in the check run", async () => {
+  const { deps, calls } = fakeDeps({});
+  deps.archive = () => {
+    throw treeRefusalFor([
+      "node_modules/.bin/node is a tool or cache path main ignores and the tested tree never carries",
+    ]);
+  };
+  const r = await runJob(JOB, deps);
+  assert.equal(r.conclusion, "failure");
+  assert.equal(r.phase, "tree");
+  assert.equal(calls.runs.length, 0);
+  assert.match(
+    checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1 }).output.title,
+    /^the PR's tree is refused \(node_modules\/\.bin\/node is a tool/,
+  );
+});
+
+/** A refusal shaped as buildTree throws it. */
+const treeRefusalFor = (problems) =>
+  Object.assign(new Error(`the tested tree is refused: ${problems.join("; ")}`), {
+    refused: true,
+    problems,
+  });
+
+test("readers: YAML double-quoted escapes decode (\\x61 is a); an escape YAML lacks is a problem", () => {
+  const w = workspaceManifest('packages:\n  - "pkg\\x73/*"\ncatalog:\n  "\\u0061": 1\n');
+  assert.deepEqual(w.packages, ["pkgs/*"]);
+  assert.deepEqual({ ...w.catalogs.default }, { a: "1" });
+  assert.match(workspaceManifest('packages:\n  - "a\\qb"\n').problems[0], /escape \\q/);
+  assert.match(lockfileGraph('importers:\n\n  "a\\qb":\n').problems[0], /escape \\q/);
+  assert.deepEqual(
+    Object.keys(lockfileGraph('importers:\n\n  "\\x2e":\n    dependencies: {}\n').importers),
+    ["."],
+  );
+});
+
+test("pnpmFindings: a lockfile member pnpm list does not name is a problem (both sets must match)", () => {
+  const list = PNPM_LIST().filter((p) => p.path !== "/w/packages/lib/util");
+  const problems = pnpmFindings(list, PNPM_ROOT, LOCK_MEMBERS, POLICY, MOBILE_MEMBERS, {}).problems;
+  assert.ok(
+    problems.includes("packages/lib/util is a workspace member pnpm list does not name"),
+    problems.join("\n"),
+  );
+});
+
+test("OSV canary: a new store image or osv-scanner version runs it again; an in-place database under 1 MiB is refused", () => {
+  const now = Date.parse("2026-11-24T12:00:00Z");
+  const database = { mtimeMs: 1000, size: 5, image: "sha256:a", scanner: "2.7.0" };
+  const last = { ...database, at: now - 60_000 };
+  assert.equal(osvCanaryDue(last, database, now), false);
+  assert.equal(osvCanaryDue(last, { ...database, image: "sha256:b" }, now), true);
+  assert.equal(osvCanaryDue(last, { ...database, scanner: "2.8.0" }, now), true);
+  assert.match(
+    osvDbProblem(now - 60_000, now, 86_400_000, 1024),
+    /1024 bytes \(at least 1048576\)/,
+  );
+  assert.equal(osvDbProblem(now - 60_000, now, 86_400_000, OSV_DB_MIN_BYTES), null);
+});
