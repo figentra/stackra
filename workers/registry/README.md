@@ -164,6 +164,11 @@ Secret: `REGISTRY_SIGNING_KEY`, the PKCS#8 PEM of the ECDSA P-256 key (sops scop
 the old key's SPKI (base64, from `/-/npm/v1/keys`) into `REGISTRY_RETIRED_KEYS` with its `expires`, then set the new
 secret.
 
+The registry fails closed when it is not configured: with a var missing or malformed, or `REGISTRY_SIGNING_KEY` unset,
+empty or not a PKCS#8 key, every route (`/-/ping` included) answers `503 { "error": "registry_misconfigured" }`, and the
+Worker log names the cause (`RangeError: REGISTRY_SIGNING_KEY is not set`), never a key or a var's value. Set the secret
+or var and the next request serves normally; nothing else needs a restart.
+
 ## Layout
 
 | Path                      | Holds                                                                                                                                                                                                                                                           |
