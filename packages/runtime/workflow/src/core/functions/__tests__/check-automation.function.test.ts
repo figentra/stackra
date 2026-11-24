@@ -84,6 +84,15 @@ const VALID = {
   ],
 };
 
+/** A document whose second step waits on `orders.order_paid`, correlated on the reference `correlate`. */
+const waiting = (correlate: string) => ({
+  key: "commerce.correlate",
+  steps: [
+    { name: "ask", block: "sms.send" },
+    { name: "wait", waitFor: { block: "orders.order_paid", correlate } },
+  ],
+});
+
 describe(checkAutomation, () => {
   it("returns a valid document with its defaults", () => {
     const document = checkAutomation(VALID);
@@ -178,5 +187,44 @@ describe(checkAutomation, () => {
         steps: [{ name: "a", block: "sms.send", when: { ...when, field: "trigger.missing" } }],
       }),
     ).toEqual({ "steps.0.when": "when_invalid" });
+  });
+
+  it("refuses a document that is not an object at its root, and a trigger or awaited block nobody registered", () => {
+    expect(refusal(null)).toEqual({ "(root)": "shape_invalid" });
+    expect(refusal("orders.order_paid")).toEqual({ "(root)": "shape_invalid" });
+    expect(
+      refusal({
+        key: "commerce.unknown",
+        trigger: { block: "orders.never_registered" },
+        steps: [
+          {
+            name: "a",
+            waitFor: { block: "orders.also_never_registered", correlate: "input.orderId" },
+          },
+        ],
+      }),
+    ).toEqual({
+      "trigger.block": "block_unknown",
+      "steps.0.waitFor.block": "block_unknown",
+    });
+  });
+
+  it("refuses a wait whose correlation is not a reference to the input or an earlier step", () => {
+    // A path of no known root is caught by the shape, before the registry is consulted.
+    expect(refusal(waiting("somewhere.orderId"))).toEqual({
+      "steps.1.waitFor.correlate": "shape_invalid",
+    });
+    // The awaited event is not received yet, so it cannot be what the wait correlates on.
+    expect(refusal(waiting("event.orderId"))).toEqual({
+      "steps.1.waitFor.correlate": "ref_invalid",
+    });
+    expect(refusal(waiting("item.orderId"))).toEqual({
+      "steps.1.waitFor.correlate": "ref_invalid",
+    });
+    expect(refusal(waiting("results.later.orderId"))).toEqual({
+      "steps.1.waitFor.correlate": "ref_forward",
+    });
+    expect(() => checkAutomation(waiting("results.ask.orderId"))).not.toThrow();
+    expect(() => checkAutomation(waiting("input.orderId"))).not.toThrow();
   });
 });
