@@ -183,6 +183,7 @@ jobs:
           # package before its dependency.
           cat > "$RUNNER_TEMP/registry-plan.mjs" <<'MJS'
           import { execFileSync } from "node:child_process";
+          import { createHash } from "node:crypto";
           import { readFileSync, writeFileSync } from "node:fs";
 
           const [mode, out, expectedName, expectedVersion] = process.argv.slice(2);
@@ -232,7 +233,7 @@ jobs:
             writeFileSync(out, plan.map((row) => `${row.name}\t${row.version}\t${row.dir}\n`).join(""));
             console.log(`Publish plan: ${plan.length} packages, dependencies first`);
           } else if (mode === "--verify" && out && expectedName && expectedVersion) {
-            // The packed tarball is what would be published: the name and version it says, no protocol left for the
+            // The packed tarball is what is published: the name and version it says, no protocol left for the
             // registry to choke on (pnpm rewrites `workspace:` and `catalog:` when it packs), and a LICENSE file.
             const tar = (...args) => execFileSync("tar", args, { encoding: "utf8", maxBuffer: 1 << 28 });
             const manifest = JSON.parse(tar("-xzOf", out, "package/package.json"));
@@ -245,6 +246,8 @@ jobs:
             if (!tar("-tzf", out).split("\n").some((file) => /^package\/LICEN[CS]E(\.(md|txt))?$/i.test(file)))
               problems.push("no LICENSE file");
             if (problems.length > 0) fail(`${expectedName}@${expectedVersion}: ${problems.join("; ")}`);
+            // The sha512 integrity of the tarball, as the registry's `dist.integrity` writes it.
+            console.log(`sha512-${createHash("sha512").update(readFileSync(out)).digest("base64")}`);
           } else {
             fail("usage: registry-plan.mjs --manifest | --plan <file> | --verify <tarball> <name> <version>");
           }
@@ -252,9 +255,9 @@ jobs:
           # The one script `changeset publish` is replaced by, so each package gets its own short-lived token.
           cat > "$RUNNER_TEMP/registry-publish.sh" <<'SH'
           set -euo pipefail
-          # A stalled TLS handshake waited curl's 300 s default and failed run 40891451236: bound each call and
-          # retry the transient failures (timeouts, 429, 5xx); a 404 still answers at once.
-          curl() { command curl --connect-timeout 20 --max-time 90 --retry 4 --retry-delay 5 "$@"; }
+          # Every call is bounded and retried on the transient failures (timeouts, 429, 5xx): a stalled TLS handshake waited
+          # curl's 300 s default and failed run 40891451236. No -f: the registry's answer is read from its status code.
+          curl() { command curl -sS --connect-timeout 10 --max-time 20 --retry 3 --retry-delay 5 "$@"; }
           host="${REGISTRY#https://}"
           # changesets/action v2 reads the published tags from the NDJSON file it names in CHANGESETS_OUTPUT, not from
           # stdout: an absent file left 0.2.0 (run 41166821024) without tags or GitHub releases. Created empty first.
@@ -263,102 +266,180 @@ jobs:
           pnpm -r --workspace-concurrency=1 --reporter=silent exec node "$RUNNER_TEMP/registry-plan.mjs" --manifest |
             node "$RUNNER_TEMP/registry-plan.mjs" --plan "$plan"
 
-          on_registry() { curl -fsS -o /dev/null "${REGISTRY}${1/\//%2f}/$2"; }
+          # A plan that is empty, or shorter than the workspace's public packages, would publish less and still end green.
+          count() { awk 'END { print NR }' "$1"; }
+          expected="$(pnpm -r --reporter=silent ls --depth -1 --json | jq '[.[] | select(.private != true)] | length')"
+          rows="$(count "$plan")"
+          if [ "$rows" -eq 0 ] || [ "$rows" -ne "$expected" ]; then
+            echo "::error title=Publish plan::the plan has ${rows} packages and the workspace has ${expected} public ones"
+            exit 1
+          fi
 
-          # The registry's store may answer 404 for a moment after a publish it accepted: the final check asks up to
-          # three times before it calls a version missing.
-          on_registry_settled() {
-            local tries=1
-            until on_registry "$1" "$2"; do
-              [ "$tries" -lt 3 ] || return 1
+          # The lines of a tab-separated file into the array `lines`, read to the end before anything else runs: no later command
+          # can swallow what is left of it, and no descriptor stays open.
+          load_lines() {
+            lines=()
+            local line
+            while IFS= read -r line; do lines+=("$line"); done < "$1"
+          }
+
+          # curl with an Authorization header read from its config on stdin, so a token is never in a command line.
+          authed_curl() {
+            local header="$1"
+            shift
+            printf 'header = "Authorization: %s"\n' "$header" | curl --config - "$@"
+          }
+
+          # What the registry holds for name@version, as one line: `present` (200, and the document names this package and
+          # version with the integrity of the tarball packed here), `absent` (404), `mismatch: ...` (200 for other content) or
+          # `unavailable: ...` (a timeout, a redirect, a 5xx, anything else). Existing is not enough: versions are immutable
+          # (ADR 0453 decision 7), so a version there with other content is a stop, never a skip.
+          registry_state() {
+            local body="$RUNNER_TEMP/registry-version.json" code
+            rm -f "$body"
+            code="$(curl -o "$body" -w '%{http_code}' "${REGISTRY}${1/\//%2f}/$2" < /dev/null)" || {
+              echo "unavailable: the registry did not answer"
+              return 0
+            }
+            case "$code" in
+              200)
+                if jq -e --arg n "$1" --arg v "$2" --arg i "$3" '.name == $n and .version == $v and .dist.integrity == $i' "$body" > /dev/null 2>&1; then
+                  echo present
+                else
+                  echo "mismatch: the registry holds $1@$2 with $(jq -r '.dist.integrity // "no integrity"' "$body" 2> /dev/null), this run packed $3"
+                fi
+                ;;
+              404) echo absent ;;
+              *) echo "unavailable: the registry answered HTTP ${code}" ;;
+            esac
+          }
+
+          # The registry's store may answer 404 for a moment after a publish it accepted: the final check asks up to three
+          # times while a version is absent, and takes any other answer at once.
+          settled_state() {
+            local tries=1 state
+            while :; do
+              state="$(registry_state "$@")"
+              if [ "$state" != absent ] || [ "$tries" -ge 3 ]; then
+                echo "$state"
+                return 0
+              fi
               tries=$((tries + 1))
               sleep "${PUBLISH_RETRY_DELAY:-15}"
             done
           }
 
-          # Per package: a GitHub ID token exchanged for a publish token bound to that one name. Every step answers
-          # `|| return 1`, because a function called from `until` runs without `set -e`. The publish reads no stdin.
+          # Per package: a GitHub ID token exchanged for a publish token bound to that one name, then the tarball that was
+          # packed and checked, as it is. Every step answers `|| return 1`, because a function called from `until` runs without
+          # `set -e`. Nothing here reads stdin.
           publish_one() {
-            local name="$1" dir="$2" id_token token
-            id_token="$(curl -fsS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-              "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:${host%/}" | jq -r '.value')" || return 1
+            local name="$1" tarball="$2" id_token token
+            id_token="$(authed_curl "bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" -f \
+              "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:${host%/}" | jq -er '.value')" || return 1
             echo "::add-mask::${id_token}"
-            token="$(curl -fsS -X POST -H "Authorization: Bearer ${id_token}" \
-              "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${name/\//%2f}" | jq -r '.token')" || return 1
+            token="$(authed_curl "Bearer ${id_token}" -f -X POST \
+              "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${name/\//%2f}" | jq -er '.token')" || return 1
             echo "::add-mask::${token}"
-            (cd "$dir" && NODE_AUTH_TOKEN="$token" pnpm publish --no-git-checks --access public --provenance \
-              --registry "$REGISTRY" < /dev/null)
-          }
-
-          total="$(wc -l < "$plan")"
-          published_file="$RUNNER_TEMP/registry-published.txt"
-          skipped_file="$RUNNER_TEMP/registry-skipped.txt"
-          : > "$published_file"
-          : > "$skipped_file"
-
-          # What this run published, what was already there and what is still missing, for the log of a run that stops.
-          report() {
-            local all="$RUNNER_TEMP/registry-all.txt" settled="$RUNNER_TEMP/registry-settled.txt"
-            awk -F'\t' '{ print $1 "@" $2 }' "$plan" > "$all"
-            cat "$skipped_file" "$published_file" > "$settled"
-            echo "Published in this run ($(wc -l < "$published_file")):"
-            sed 's/^/  /' "$published_file"
-            echo "Already on the registry ($(wc -l < "$skipped_file"))"
-            echo "Not published ($(grep -cvxFf "$settled" "$all" || true)):"
-            { grep -vxFf "$settled" "$all" || true; } | sed 's/^/  /'
+            NODE_AUTH_TOKEN="$token" pnpm publish "$tarball" --no-git-checks --access public --provenance \
+              --registry "$REGISTRY" < /dev/null
           }
 
           # One git-tag event per version: the action pushes the tag and creates the GitHub release from it. A tag left by an
           # earlier run that published nothing is kept (run 40896627689); a new one is annotated, so it carries its tagger and
           # date (changesets/action has set the git user).
           tag_release() {
-            git rev-parse -q --verify "refs/tags/${1}@${2}" > /dev/null || git tag -a "${1}@${2}" -m "${1}@${2}"
+            git rev-parse -q --verify "refs/tags/${1}@${2}" > /dev/null < /dev/null || git tag -a "${1}@${2}" -m "${1}@${2}" < /dev/null
             jq -nc --arg tag "${1}@${2}" --arg name "$1" '{type: "git-tag", tag: $tag, packageName: $name}' >> "$CHANGESETS_OUTPUT"
             echo "New tag: ${1}@${2}"
           }
 
-          # Pre-flight: before the first publish, every package that is not on the registry yet is packed (the beforePacking
-          # hook runs) and its tarball checked. One that cannot be packed stops the run with nothing published.
+          # Pre-flight: before anything is published, EVERY package of the plan is packed (the beforePacking hook runs), its
+          # tarball checked and its sha512 integrity taken. One that cannot be packed stops the run with nothing published.
           packs="$RUNNER_TEMP/registry-packs"
+          packed="$RUNNER_TEMP/registry-packed.tsv"
           rm -rf "$packs"
           mkdir -p "$packs"
+          : > "$packed"
           unpackable=""
           index=0
-          exec 3< "$plan"
-          while IFS=$'\t' read -r -u 3 name version dir; do
-            if on_registry "$name" "$version"; then continue; fi
+          load_lines "$plan"
+          for line in "${lines[@]}"; do
+            IFS=$'\t' read -r name version dir <<< "$line"
             index=$((index + 1))
             mkdir -p "$packs/$index"
-            if ! { (cd "$dir" && pnpm pack --pack-destination "$packs/$index" < /dev/null > /dev/null) \
-              && node "$RUNNER_TEMP/registry-plan.mjs" --verify "$packs/$index"/*.tgz "$name" "$version"; }; then
+            if ! (cd "$dir" && pnpm pack --pack-destination "$packs/$index" < /dev/null > /dev/null); then
               unpackable="${unpackable} ${name}@${version}"
+              continue
             fi
+            if ! integrity="$(node "$RUNNER_TEMP/registry-plan.mjs" --verify "$packs/$index"/*.tgz "$name" "$version" < /dev/null)"; then
+              echo "$integrity"
+              unpackable="${unpackable} ${name}@${version}"
+              continue
+            fi
+            printf '%s\t%s\t%s\t%s\n' "$name" "$version" "$integrity" "$packs/$index"/*.tgz >> "$packed"
           done
-          exec 3<&-
           if [ -n "$unpackable" ]; then
             echo "::error title=Preflight failed::cannot pack:${unpackable}. Nothing was published."
             exit 1
           fi
           echo "Preflight: ${index} packages packed and checked"
 
-          # The plan is read on its own descriptor: a command in the loop that reads stdin cannot swallow the rest of it.
-          exec 3< "$plan"
-          while IFS=$'\t' read -r -u 3 name version dir; do
-            # Versions are immutable (ADR 0453 decision 7): one already there is skipped, never republished. A run that
-            # stopped earlier pushed no tags, so a version it published that has no tag here is tagged now.
-            if on_registry "$name" "$version"; then
-              echo "skip ${name}@${version}: already on the registry"
-              echo "${name}@${version}" >> "$skipped_file"
-              git rev-parse -q --verify "refs/tags/${name}@${version}" > /dev/null || tag_release "$name" "$version"
-              continue
-            fi
+          # From here every way out that is not success prints what was published, what was already there and what is not.
+          published_file="$RUNNER_TEMP/registry-published.txt"
+          skipped_file="$RUNNER_TEMP/registry-skipped.txt"
+          : > "$published_file"
+          : > "$skipped_file"
+          report() {
+            local all="$RUNNER_TEMP/registry-all.txt" settled="$RUNNER_TEMP/registry-settled.txt"
+            awk -F'\t' '{ print $1 "@" $2 }' "$packed" > "$all"
+            cat "$skipped_file" "$published_file" > "$settled"
+            echo "Published in this run ($(count "$published_file")):"
+            sed 's/^/  /' "$published_file"
+            echo "Already on the registry, same content ($(count "$skipped_file"))"
+            echo "Not published ($(grep -cvxFf "$settled" "$all" || true)):"
+            { grep -vxFf "$settled" "$all" || true; } | sed 's/^/  /'
+          }
+          finish() {
+            local status=$?
+            if [ "$status" -ne 0 ]; then report; fi
+          }
+          trap finish EXIT
+
+          load_lines "$packed"
+          packed_rows=("${lines[@]}")
+          for line in "${packed_rows[@]}"; do
+            IFS=$'\t' read -r name version integrity tarball <<< "$line"
+            state="$(registry_state "$name" "$version" "$integrity")"
+            case "$state" in
+              present)
+                # Skipped, never republished. A run that stopped earlier pushed no tags, so a version it published that has no
+                # tag here is tagged now; only a version whose content is this run's own is tagged.
+                echo "skip ${name}@${version}: already on the registry, same content"
+                echo "${name}@${version}" >> "$skipped_file"
+                git rev-parse -q --verify "refs/tags/${name}@${version}" > /dev/null < /dev/null || tag_release "$name" "$version"
+                continue
+                ;;
+              absent) ;;
+              *)
+                echo "::error title=Registry check failed::${name}@${version}: ${state}"
+                exit 1
+                ;;
+            esac
             attempt=1
-            until publish_one "$name" "$dir"; do
-              # A publish that reached the registry and failed on the way back is there now: never published twice.
-              if on_registry "$name" "$version"; then break; fi
+            until publish_one "$name" "$tarball"; do
+              # A publish that reached the registry and failed on the way back is there now: never published twice, and only
+              # accepted if what is there is what was packed.
+              state="$(registry_state "$name" "$version" "$integrity")"
+              case "$state" in
+                present) break ;;
+                absent) ;;
+                *)
+                  echo "::error title=Registry check failed::${name}@${version}: ${state}"
+                  exit 1
+                  ;;
+              esac
               if [ "$attempt" -ge 3 ]; then
                 echo "::error title=Publish stopped::${name}@${version} failed after ${attempt} attempts. Every package published so far has its dependencies on the registry. Re-run the failed jobs of this run: versions already there are skipped and the rest is published."
-                report
                 exit 1
               fi
               attempt=$((attempt + 1))
@@ -368,20 +449,20 @@ jobs:
             echo "${name}@${version}" >> "$published_file"
             tag_release "$name" "$version"
           done
-          exec 3<&-
 
-          # The loop ending is not proof: every planned version must now be on the registry, or the run fails.
+          # The loop ending is not proof: every planned version must now be on the registry with the content packed here.
           missing=0
-          exec 3< "$plan"
-          while IFS=$'\t' read -r -u 3 name version _; do
-            on_registry_settled "$name" "$version" || {
-              echo "::error title=Publish incomplete::${name}@${version} is not on the registry"
+          for line in "${packed_rows[@]}"; do
+            IFS=$'\t' read -r name version integrity tarball <<< "$line"
+            state="$(settled_state "$name" "$version" "$integrity")"
+            if [ "$state" != present ]; then
+              [ "$state" != absent ] || state="is not on the registry"
+              echo "::error title=Publish incomplete::${name}@${version} ${state}"
               missing=$((missing + 1))
-            }
+            fi
           done
-          exec 3<&-
           [ "$missing" -eq 0 ] || exit 1
-          echo "All ${total} packages are on the registry ($(wc -l < "$published_file") published, $(wc -l < "$skipped_file") already there)"
+          echo "All $(count "$packed") packages are on the registry ($(count "$published_file") published, $(count "$skipped_file") already there)"
           SH
 
       # Packs every published package through the beforePacking hook; nothing leaves the runner. The publish plan
