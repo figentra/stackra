@@ -6,7 +6,7 @@
  * Governing contract: ADR 0294 (as amended by programming model v3.1, AGENTS.md); ADR 0098; ADR 0305 (one declaration per file).; the HTTP conventions (cursor pagination).
  */
 import { Query, type QueryContext } from "@stackra/actions";
-import { ActorKind, type PublicId, SortDirection } from "@stackra/contracts";
+import { ActorKind, SortDirection } from "@stackra/contracts";
 
 import { noteViewOf } from "#modules/notes/functions/note-view-of.function";
 import type { ListNotesInput } from "#modules/notes/schemas/list-notes-input.schema";
@@ -30,7 +30,7 @@ export class ListNotesQuery extends Query({
 
   /** The page after `input.cursor` (the first page without one). */
   async handle(input: ListNotesInput, _ctx: QueryContext): Promise<ListNotesOutput> {
-    const after = input.cursor as PublicId<"not"> | undefined;
+    const after = input.cursor;
     const rows = await this.notes.find(after === undefined ? {} : { id: { $lt: after } }, {
       orderBy: { id: SortDirection.Desc },
       limit: input.limit + 1,

@@ -25,10 +25,16 @@ import {
   UnitOfWork,
 } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
-import type { Actor } from "@stackra/contracts";
+import { Clock } from "@stackra/contracts";
+import type { Actor, ScopeRef } from "@stackra/contracts";
 import { DatabaseUnitOfWorkDriver, PostgresIdempotencyStoreDriver } from "@stackra/database/node";
 import { usePostgres } from "@stackra/database/testing";
-import { NotFoundError } from "@stackra/errors";
+import { ForbiddenError, NotFoundError } from "@stackra/errors";
+import {
+  IamAccessControlDriver,
+  MemoryPolicySourceDriver,
+  PolicyDecisionPointService,
+} from "@stackra/iam";
 import { MemoryScopeTreeDriver } from "@stackra/scope";
 import { CallIsolationDriver, TenantIsolationService } from "@stackra/tenancy/node";
 import { fakeTenantId, tenantActor, tenantIsolationOptions } from "@stackra/tenancy/testing";
@@ -57,21 +63,17 @@ class AllowAll extends Driver(AccessControl) {
 }
 
 /** A pipeline over the real isolation driver and unit of work, with the note classes bound to one `NoteService`. */
-function pipelineOf(): ActionPipeline {
+function pipelineOf(
+  access: AccessControl = new AllowAll(),
+  tree: MemoryScopeTreeDriver = new MemoryScopeTreeDriver(),
+): ActionPipeline {
   const { database } = postgres;
   const notes = new NoteService();
   const bound = new Map<AnyClass, object>([
-    [AccessControl, new AllowAll()],
+    [AccessControl, access],
     [UnitOfWork, new DatabaseUnitOfWorkDriver()],
     [IdempotencyStore, new PostgresIdempotencyStoreDriver(database)],
-    [
-      CallIsolation,
-      new CallIsolationDriver(
-        database,
-        new TenantIsolationService(database),
-        new MemoryScopeTreeDriver(),
-      ),
-    ],
+    [CallIsolation, new CallIsolationDriver(database, new TenantIsolationService(database), tree)],
     [CreateNoteAction, new CreateNoteAction(notes)],
     [UpdateNoteAction, new UpdateNoteAction(notes)],
     [DeleteNoteAction, new DeleteNoteAction(notes)],
@@ -97,6 +99,7 @@ function asService<T>(work: () => Promise<T>): Promise<T> {
 async function prepare(): Promise<void> {
   const em = postgres.database.em();
   await em.execute('truncate table "notes"."notes" cascade');
+  await em.execute('truncate table "database"."idempotency_keys"');
   await em.execute(
     `do $$ begin if not exists (select 1 from pg_roles where rolname = '${role}') then create role "${role}" nologin nobypassrls; end if; end $$`,
   );
@@ -119,10 +122,16 @@ async function storedCount(): Promise<number> {
   return row?.n ?? 0;
 }
 
-/** One call of `type` as `actor`, as the service role. */
-const call = (type: AnyClass, input: unknown, actor: Actor) =>
+/** The permission step and scope tree of a call; the default allows everything. */
+interface Access {
+  readonly access: AccessControl;
+  readonly tree: MemoryScopeTreeDriver;
+}
+
+/** One call of `type` as `actor`, as the service role; `wiring` swaps in a real permission step. */
+const call = (type: AnyClass, input: unknown, actor: Actor, wiring?: Access) =>
   asService(() =>
-    pipelineOf().execute(type as never, input as never, {
+    pipelineOf(wiring?.access, wiring?.tree).execute(type as never, input as never, {
       actor,
       ...(type === CreateNoteAction ? { idempotencyKey: randomUUID() } : {}),
     }),
@@ -219,6 +228,24 @@ describe("the notes actions through the pipeline", () => {
     expect(await storedCount()).toBe(0);
   });
 
+  /** A cursor that is not a note id is a client error, refused before the query runs. */
+  it("refuses a malformed cursor as invalid input", async () => {
+    await call(CreateNoteAction, { title: "one" }, userA);
+    for (const cursor of [
+      "bogus",
+      "not_",
+      "usr_01ja0000000000000000000001",
+      "not_01ja000000000000000000000!",
+    ])
+      await expect(call(ListNotesQuery, { cursor }, userA)).rejects.toMatchObject({
+        kind: "validation",
+      });
+    // a well-formed cursor still pages: this one sorts after every id, so the note is on its page
+    expect(
+      (await call(ListNotesQuery, { cursor: `not_${"z".repeat(26)}` }, userA)).items,
+    ).toHaveLength(1);
+  });
+
   /** A create without its key is refused: a retry must never add a second note. */
   it("refuses a create without an Idempotency-Key", async () => {
     const refusal = await asService(() =>
@@ -248,5 +275,88 @@ describe("the notes actions through the pipeline", () => {
       title: "stays",
     });
     expect(await storedCount()).toBe(1);
+  });
+});
+
+/** A fixed clock for the policy decision point. */
+class FixedClockDriver extends Driver(Clock) {
+  now(): Date {
+    return new Date("2026-11-24T12:00:00Z");
+  }
+}
+
+describe("the notes permissions through the pipeline", () => {
+  const home = fakeTenantId();
+  const scope: ScopeRef = { id: home, path: "platform.alpha" };
+  const writer: Actor = { ...tenantActor(home), id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w1" };
+  const reader: Actor = { ...tenantActor(home), id: "usr_01j9z3k4m5n6p7q8r9s0t1v2r1" };
+  const stranger: Actor = { ...tenantActor(home), id: "usr_01j9z3k4m5n6p7q8r9s0t1v2x1" };
+
+  /** The real permission step: the writer role holds every notes permission, the reader role only read. */
+  function real(): Access {
+    const source = new MemoryPolicySourceDriver();
+    source.load({
+      grants: [
+        { principal: writer.id, role: "writer", scope },
+        { principal: reader.id, role: "reader", scope },
+      ],
+      roles: {
+        writer: ["notes.note.create", "notes.note.read", "notes.note.update", "notes.note.delete"],
+        reader: ["notes.note.read"],
+      },
+    });
+    const tree = new MemoryScopeTreeDriver().seed([
+      { id: fakeTenantId(), path: "platform", level: "platform", name: "Platform" },
+      { ...scope, level: "product", name: "Alpha" },
+    ]);
+    const pdp = new PolicyDecisionPointService(source, new FixedClockDriver());
+    return { access: new IamAccessControlDriver(pdp, tree), tree };
+  }
+
+  beforeEach(prepare);
+
+  /** The grant is what lets a write through. */
+  it("lets a caller holding notes.note.create create a note", async () => {
+    const created = await call(CreateNoteAction, { title: "allowed" }, writer, real());
+    expect(created).toMatchObject({ title: "allowed" });
+    expect(await storedCount()).toBe(1);
+  });
+
+  /** No create permission: refused, and nothing is written (not the row, not the idempotency record). */
+  it("refuses a caller without notes.note.create and writes nothing", async () => {
+    await expect(
+      call(CreateNoteAction, { title: "denied" }, reader, real()),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      call(CreateNoteAction, { title: "denied" }, stranger, real()),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(await storedCount()).toBe(0);
+    const [keys] = (await postgres.database
+      .em()
+      .execute('select count(*)::int as n from "database"."idempotency_keys"')) as { n: number }[];
+    expect(keys?.n).toBe(0);
+  });
+
+  /** Read is a different permission from write: the reader reads, and cannot update or delete. */
+  it("lets a reader read but refuses it update and delete, leaving the note as it was", async () => {
+    const note = await call(CreateNoteAction, { title: "kept" }, writer, real());
+    expect(await call(GetNoteQuery, { noteId: note["id"] }, reader, real())).toMatchObject({
+      title: "kept",
+    });
+    await expect(
+      call(UpdateNoteAction, { noteId: note["id"], title: "changed" }, reader, real()),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      call(DeleteNoteAction, { noteId: note["id"] }, reader, real()),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(await call(GetNoteQuery, { noteId: note["id"] }, writer, real())).toMatchObject({
+      title: "kept",
+    });
+    expect(await storedCount()).toBe(1);
+  });
+
+  /** A caller with no grant at all holds nothing, not even read. */
+  it("refuses a caller with no grant, even for a read", async () => {
+    await expect(call(ListNotesQuery, {}, stranger, real())).rejects.toBeInstanceOf(ForbiddenError);
   });
 });

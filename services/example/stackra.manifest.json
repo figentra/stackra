@@ -54,6 +54,7 @@
       "permission": "notes.note.delete",
       "risk": "L2",
       "actors": ["user", "agent"],
+      "effects": ["irreversible"],
       "idempotency": "optional",
       "area": "app",
       "endpoint": {
@@ -66,7 +67,7 @@
         "default": true,
         "hints": {
           "readOnlyHint": false,
-          "destructiveHint": false,
+          "destructiveHint": true,
           "idempotentHint": false,
           "openWorldHint": false
         }
@@ -3371,7 +3372,8 @@
           "default": 20
         },
         "cursor": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^not_[0-9A-Za-z]{26}$"
         }
       }
     },

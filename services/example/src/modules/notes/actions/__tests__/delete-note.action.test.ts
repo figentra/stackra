@@ -45,6 +45,11 @@ describe(DeleteNoteAction, () => {
     });
   });
 
+  /** It deletes the row for good, so it says so: the generated tool then carries `destructiveHint: true`. */
+  it("declares the irreversible effect", () => {
+    expect(kindOf(DeleteNoteAction)?.options).toMatchObject({ effects: ["irreversible"] });
+  });
+
   /** The row goes, and the answer is its id. */
   it("deletes the note and answers its id", async () => {
     const note = Object.assign(new Note(), { id: noteId });

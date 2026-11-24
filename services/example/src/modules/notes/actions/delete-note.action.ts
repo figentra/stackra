@@ -6,6 +6,7 @@
  * Governing contract: ADR 0294 (as amended by programming model v3.1, AGENTS.md); ADR 0098; ADR 0305 (one declaration per file).
  */
 import { Action, type ActionContext, Idempotency } from "@stackra/actions";
+import { Effect } from "@stackra/actions/contracts";
 import { ActorKind } from "@stackra/contracts";
 
 import { NoteDeleted } from "#modules/notes/events/note-deleted.event";
@@ -18,6 +19,7 @@ export class DeleteNoteAction extends Action({
   key: "note.delete",
   actors: [ActorKind.User, ActorKind.Agent],
   idempotency: Idempotency.Optional,
+  effects: [Effect.Irreversible],
 }) {
   private readonly notes: NoteService;
 

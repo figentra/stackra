@@ -55,7 +55,7 @@ describe(ListNotesQuery, () => {
     expect(first.hasMore).toBe(true);
     expect(first.nextCursor).toBe(stored[1]?.id);
     const second = await query.handle(
-      ListNotesInput.create({ limit: 2, cursor: first.nextCursor ?? "" }),
+      ListNotesInput.create({ limit: 2, cursor: first.nextCursor as PublicId<"not"> }),
       context,
     );
     expect(second.items.map((item) => item.title)).toEqual(["note 1"]);

@@ -37,11 +37,14 @@ Callers are users and agents (`ActorKind.User`, `ActorKind.Agent`); the read ope
 
 | Command                     | Runs                                                                                                                              |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `stackra test`              | 23 unit tests: each action and query with a stand-in service, the view mapping, the refusal, the recorded events                    |
+| `stackra test`              | 30 unit tests: each action and query with a stand-in service, the view mapping, the refusal, the recorded events, and the committed manifest (permissions, risk, the irreversible delete and its `destructiveHint`, the typed cursor) |
 | `stackra test --tier int`   | Postgres (Docker): `note-pipeline` runs the five operations through the real actions pipeline, with the real idempotency store, the tenant isolation driver and the unit of work; `note-isolation` proves, as the `NOBYPASSRLS` service role, that tenant B cannot list, get, update or delete tenant A's notes and that a read with no tenant returns none; and gen's own `tenant-isolation.int.test.ts` audit |
 
-The permission step is IAM's own test; the integration tests bind an allow-all access control so that what they prove is the
-service's behaviour and the database's isolation.
+Most integration tests bind an allow-all access control, so that what they prove is the service's behaviour and the database's
+isolation. A second suite in `note-pipeline` runs the real IAM access control (`IamAccessControlDriver` over a policy with a
+writer and a reader role): a caller without `notes.note.create` is refused and nothing is written, a reader reads but cannot
+update or delete, and a caller with no grant holds nothing. A malformed list cursor is refused as invalid input (a client error)
+before the query runs.
 
 ## Commands
 
