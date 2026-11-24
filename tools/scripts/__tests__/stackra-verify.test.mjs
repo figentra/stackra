@@ -13,6 +13,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createServer } from "node:net";
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -36,6 +37,9 @@ import {
   overlayPlan,
   parseArgs,
   pnpmVersionOf,
+  probeArgs,
+  probeScript,
+  probeTargets,
   runJob,
   scrub,
   settings,
@@ -217,6 +221,7 @@ function fakeDeps({
   hang = null,
   conflict = false,
   stop = null,
+  leaks = [],
 }) {
   const calls = { kill: [], cleanUp: [], docker: [], runs: [] };
   let stopping = false;
@@ -228,6 +233,7 @@ function fakeDeps({
       return "/runs/x/src.tar";
     },
     storeImage: () => "stackra-verify-store:abc",
+    egressLeaks: () => leaks,
     docker: (args) => {
       calls.docker.push(args);
       return { code: 0, stdout: "" };
@@ -468,4 +474,55 @@ test("ledgerEntry and formatDuration: the result, the posted flag and the link",
   assert.equal(json.posted, false);
   assert.equal(json.pr, 7);
   assert.match(md, /\| failure, not posted \| 1m 1s \|/);
+});
+
+test("egress probe: metadata, the host-loopback gateway and every host address on the service ports", () => {
+  const targets = probeTargets(["10.77.0.12", "100.110.138.74", "fd7a::1"]);
+  for (const t of [
+    "169.254.169.254:80",
+    "169.254.169.254:443",
+    "10.0.2.2:5432",
+    "10.77.0.12:2375",
+    "100.110.138.74:4000",
+    "[fd7a::1]:6379",
+  ])
+    assert.ok(targets.includes(t), t);
+  const argv = probeArgs(S, { name: "p", image: "store", envFile: "/e", targets });
+  assert.equal(argv[argv.indexOf("--network") + 1], "bridge");
+  assert.equal(argv.includes("--volume"), false);
+  assert.equal(argv[argv.indexOf("--cap-drop") + 1], "ALL");
+});
+
+test("egress probe script: exits 9 and names the target when one connects, 0 when none does", async () => {
+  const server = createServer((c) => c.end());
+  await new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const open = `127.0.0.1:${server.address().port}`;
+  try {
+    const leak = spawnSync(process.execPath, ["-e", probeScript([open, "127.0.0.1:1"])], {
+      encoding: "utf8",
+    });
+    assert.equal(leak.status, 9);
+    assert.match(leak.stdout, new RegExp(`reachable: ${open}`));
+  } finally {
+    server.close();
+  }
+  const sealed = spawnSync(process.execPath, ["-e", probeScript(["127.0.0.1:1", "[::1]:1"])], {
+    encoding: "utf8",
+  });
+  assert.equal(sealed.status, 0);
+});
+
+test("runJob: a leaking or unprobed install network runs no PR code and marks the host unsafe", async () => {
+  const leaking = fakeDeps({ leaks: ["169.254.169.254:80"] });
+  const r = await runJob(JOB, leaking.deps);
+  assert.equal(r.post, false);
+  assert.equal(r.unsafe, true);
+  assert.match(r.error, /reaches 169\.254\.169\.254:80/);
+  assert.equal(leaking.calls.runs.length, 0);
+  const unprobed = fakeDeps({ leaks: null });
+  const u = await runJob(JOB, unprobed.deps);
+  assert.equal(u.unsafe, true);
+  assert.equal(unprobed.calls.runs.length, 0);
 });

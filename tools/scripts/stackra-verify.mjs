@@ -17,6 +17,11 @@
  *     every capability, set no-new-privileges, and are capped (cpus, memory, pids, tmpfs sizes); the verify container
  *     is killed at the time limit. The writable layer has no disk quota (rootless overlay on ext4 has none), so the
  *     free-space gate and the per-run clean-up bound it.
+ *   - The install network is sealed: before every install, a throwaway probe container on the same network tries to
+ *     reach the instance metadata service (169.254.169.254, which hands out the box's IAM credentials), the rootless
+ *     host-loopback gateway, the box's own addresses and their service ports. Any answer stops the service. The seal
+ *     itself is set up by the box operator (REJECT rules in the rootless dockerd's network namespace); the probe
+ *     proves it before every install.
  *   - Nothing that a later run uses can be written by a PR: HOME and /tmp are per-run tmpfs; the warm store lives in
  *     image layers (read-only, copy-on-write per container); the base image is pinned by digest and pulled (verified)
  *     each run; the store image id is checked against the id this process recorded; after each run every container,
@@ -223,6 +228,61 @@ export const installArgs = (s, { name, image, tarPath, envFile }) => [
   "sh",
   "-c",
   `set -e; mkdir -p /work; tar -xf /in/src.tar -C /work; cd /work; ${INSTALL_COMMAND}`,
+];
+
+/** Ports probed on every host address: ssh, web, Encore, Postgres, Redis, the Docker API, dev servers. */
+export const PROBE_PORTS = [22, 80, 443, 2375, 2376, 3000, 4000, 5432, 6379, 8080, 9400];
+
+/**
+ * The addresses an install must never reach: instance metadata, the rootless host-loopback gateway, and each of the
+ * box's own addresses (`hostAddresses`, from `hostname -I`) on PROBE_PORTS.
+ */
+export function probeTargets(hostAddresses = []) {
+  const targets = [
+    "169.254.169.254:80",
+    "169.254.169.254:443",
+    "169.254.170.2:80",
+    "[fd00:ec2::254]:80",
+    ...PROBE_PORTS.map((port) => `10.0.2.2:${port}`),
+  ];
+  for (const address of hostAddresses)
+    for (const port of PROBE_PORTS)
+      targets.push(address.includes(":") ? `[${address}]:${port}` : `${address}:${port}`);
+  return [...new Set(targets)];
+}
+
+/**
+ * The probe: node in the store image tries a TCP connection to each target for 2 s and exits 9 when any connects
+ * (it prints which), 0 when none does. Any other exit is an error, never a pass.
+ */
+export function probeScript(targets) {
+  return [
+    'const net = require("node:net");',
+    `const targets = ${JSON.stringify(targets)};`,
+    "const tryOne = (t) => new Promise((done) => {",
+    '  const i = t.lastIndexOf(":"); const host = t.slice(0, i).replace(/^\\[|\\]$/g, ""); const port = Number(t.slice(i + 1));',
+    "  const s = net.connect({ host, port, timeout: 2000 });",
+    '  s.on("connect", () => { s.destroy(); done(t); });',
+    '  s.on("timeout", () => { s.destroy(); done(null); });',
+    '  s.on("error", () => done(null));',
+    "});",
+    'Promise.all(targets.map(tryOne)).then((r) => { const open = r.filter(Boolean); if (open.length) { console.log("reachable: " + open.join(" ")); process.exit(9); } process.exit(0); });',
+  ].join("\n");
+}
+
+/** The probe container: the install's network and limits, nothing mounted, removed when it ends. */
+export const probeArgs = (s, { name, image, envFile, targets }) => [
+  "run",
+  "--rm",
+  "--name",
+  name,
+  "--network",
+  "bridge",
+  ...containerLimits(s, envFile),
+  image,
+  "node",
+  "-e",
+  probeScript(targets),
 ];
 
 /** The verify container: the committed install, no network, the same limits. */
@@ -481,6 +541,11 @@ export async function runJob(job, deps) {
     }
     const store = deps.storeImage(job);
     const envFile = deps.envFile;
+
+    const leaks = deps.egressLeaks(store);
+    if (leaks === null) return { post: false, error: "the egress probe did not run", unsafe: true };
+    if (leaks.length)
+      return { post: false, error: `the install network reaches ${leaks.join(" ")}`, unsafe: true };
 
     const installTimedOut = await limited(
       installArgs(s, { name: install, image: store, tarPath, envFile }),
@@ -885,6 +950,25 @@ export async function verify(s, job) {
       return startedAtIso.startsWith("0001-") ? null : Number(code);
     },
     kill: (container) => docker(s, ["kill", container]),
+    egressLeaks: (image) => {
+      const hostAddresses = spawnSync("hostname", ["-I"], spawnOptions({ timeout: 10_000 }))
+        .stdout?.trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      const r = docker(
+        s,
+        probeArgs(s, {
+          name: `sv-probe-${Date.now().toString(36)}`,
+          image,
+          envFile,
+          targets: probeTargets(hostAddresses),
+        }),
+        { timeout: 5 * 60_000 },
+      );
+      if (r.code === 0) return [];
+      if (r.code === 9) return (r.stdout.match(/^reachable: (.*)$/m)?.[1] ?? "unknown").split(" ");
+      return null;
+    },
     cleanUp: (names, images) => cleanDocker(s, names, images, keepIds),
     headOf: () => headOf(s, job),
     readLog: () => readFileSync(logPath, "utf8"),
@@ -904,6 +988,13 @@ export async function verify(s, job) {
     rmSync(runDir, { recursive: true, force: true });
   }
   if (result.error) appendFileSync(logPath, `\nstackra-verify: ${result.error}\n`);
+  if (result.unsafe) {
+    // The host is not safe for PR code: stop the service, post nothing, count nothing against the PR.
+    onStop();
+    throw new Error(
+      `stopping: ${result.error}; seal the install network (box runbook) and restart`,
+    );
+  }
 
   const key = `${job.repo}@${job.sha}`;
   if (result.stopped || result.moved) {
