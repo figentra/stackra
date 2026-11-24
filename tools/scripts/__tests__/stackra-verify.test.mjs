@@ -90,6 +90,7 @@ import {
   storeTag,
   verifyArgs,
   withMainScripts,
+  FORBIDDEN_DEFAULTS,
   GATE_FILTERS,
   GATE_STEPS,
   KINDS,
@@ -159,6 +160,8 @@ const runProbe = (targets, proxy, dnsName = "stackra-verify.invalid") =>
 const io = (over = {}) => ({
   exists: () => true,
   canRead: () => false,
+  canTraverse: () => true,
+  list: () => [],
   cgroup: () => "1000",
   subuid: () => "build:100000:65536\nstackra-verify:300000:65536\n",
   dockerInfo: () => ({ code: 0, stdout: '["name=seccomp","name=rootless"]' }),
@@ -2469,4 +2472,70 @@ test("cpus: a positive number goes to --cpus; a cpuset such as 0-7 is refused th
     ),
     false,
   );
+});
+
+test("preflight: deny by default under each protected root; allowlisted entries pass; a missing path never passes", () => {
+  const box = {
+    "/work": ["repos", "git", "lanes", "stackra", "tmp"],
+    "/work/stackra": ["verify", "service", "verify-work", "verify-docker", "wt-main", "wt-train"],
+  };
+  const readable = new Set();
+  const host = (over = {}) =>
+    io({ list: (dir) => box[dir] ?? null, canRead: (p) => readable.has(p), ...over });
+  assert.deepEqual(settings({}).protectedRoots, ["/work", "/work/stackra"]);
+  assert.deepEqual(settings({}).allowPaths, [
+    "/work/stackra/verify",
+    "/work/stackra/service",
+    "/work/stackra/verify-work",
+    "/work/stackra/verify-docker",
+  ]);
+  assert.deepEqual(preflightProblems(S, host()), []);
+  // an unlisted readable sibling fails, at either level
+  for (const path of ["/work/repos", "/work/tmp", "/work/stackra/wt-main"]) {
+    readable.add(path);
+    assert.match(
+      preflightProblems(S, host()).join(),
+      new RegExp(`can read ${path} \\(deny by default`),
+      path,
+    );
+    readable.delete(path);
+  }
+  // an allowlisted one passes (the code clone is 0755 by design); the roots themselves are checked as roots
+  readable.add("/work/stackra/service");
+  readable.add("/work/stackra/verify-docker");
+  assert.deepEqual(preflightProblems(S, host()), []);
+  // a root the verify user can list, or cannot traverse, refuses
+  readable.add("/work/stackra");
+  assert.match(
+    preflightProblems(S, host()).join(),
+    /can list \/work\/stackra: make it traverse-only/,
+  );
+  readable.delete("/work/stackra");
+  assert.match(
+    preflightProblems(S, host({ canTraverse: (p) => p !== "/work" })).join(),
+    /cannot traverse \/work,/,
+  );
+  // vacuous: a missing root, a root this service cannot list, or a named path that does not exist never passes
+  assert.match(
+    preflightProblems(
+      { ...S, protectedRoots: ["/work", "/work/academorix"] },
+      host({ exists: (p) => p !== "/work/academorix" }),
+    ).join(),
+    /protected root \/work\/academorix does not exist/,
+  );
+  assert.match(
+    preflightProblems(S, host({ list: () => null })).join(),
+    /cannot list \/work, so its entries/,
+  );
+  assert.match(
+    preflightProblems(S, host({ exists: (p) => p !== "/srv/secrets" }), ["/srv/secrets"]).join(),
+    /\/srv\/secrets is named as unreadable but does not exist/,
+  );
+  assert.match(
+    preflightProblems(S, host({ exists: (p) => p !== S.keyFile })).join(),
+    /stackra-verify\.pem is named as unreadable but does not exist/,
+  );
+  // the settings take a list, trailing slashes trimmed
+  assert.deepEqual(settings({ STACKRA_VERIFY_ALLOW_PATHS: "/a/, /b" }).allowPaths, ["/a", "/b"]);
+  assert.equal(FORBIDDEN_DEFAULTS.includes("/work/academorix"), false);
 });
