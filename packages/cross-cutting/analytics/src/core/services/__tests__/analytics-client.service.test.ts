@@ -482,6 +482,7 @@ function trackPlans(client: AnalyticsClient, ...plans: string[]): void {
 describe("AnalyticsClient delivery engine (stackra-406)", () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it("sends one batch once flushAt deliveries wait", () => {
@@ -604,6 +605,54 @@ describe("AnalyticsClient delivery engine (stackra-406)", () => {
     trackPlans(two.client, "c");
     listeners.get("pagehide")?.();
     expect(plain.batches).toEqual([["c"]]);
+  });
+
+  it("leaves on visibilitychange only when the page has become hidden", () => {
+    const listeners = new Map<string, () => void>();
+    vi.stubGlobal("addEventListener", (type: string, listener: () => void) => {
+      listeners.set(type, listener);
+    });
+    const document = { visibilityState: "visible" };
+    vi.stubGlobal("document", document);
+    const beaconing = new BatchRecordingDriver(0, true);
+    const { client } = engineWith(beaconing, { flushAt: 20, flushIntervalMs: 60_000 });
+    trackPlans(client, "a", "b");
+    listeners.get("visibilitychange")?.();
+    expect(beaconing.beaconed).toEqual([]);
+    document.visibilityState = "hidden";
+    listeners.get("visibilitychange")?.();
+    expect(beaconing.beaconed).toEqual([["a", "b"]]);
+  });
+
+  it("falls back to send when the beacon throws", async () => {
+    const listeners = new Map<string, () => void>();
+    vi.stubGlobal("addEventListener", (type: string, listener: () => void) => {
+      listeners.set(type, listener);
+    });
+    const blocked = new (class extends BatchRecordingDriver {
+      override beacon(): boolean {
+        throw new Error("blocked by the browser");
+      }
+    })();
+    const { client } = engineWith(blocked, { flushAt: 20, flushIntervalMs: 60_000 });
+    trackPlans(client, "a");
+    listeners.get("pagehide")?.();
+    await vi.waitFor(() => expect(blocked.batches).toEqual([["a"]]));
+  });
+
+  it("keeps what a closing page could neither beacon nor send for the offline queue", async () => {
+    const listeners = new Map<string, () => void>();
+    vi.stubGlobal("addEventListener", (type: string, listener: () => void) => {
+      listeners.set(type, listener);
+    });
+    const failing = new BatchRecordingDriver(1);
+    const offline = new MemoryAnalyticsOfflineQueueDriver(buildConfig(AnalyticsConfig));
+    const { client } = engineWith(failing, { flushAt: 20, flushIntervalMs: 60_000 }, offline);
+    trackPlans(client, "a", "b");
+    listeners.get("pagehide")?.();
+    await vi.waitFor(() => expect(offline.load()).toHaveLength(2));
+    expect(offline.load().map((delivery) => String(delivery.properties.plan))).toEqual(["a", "b"]);
+    expect(failing.batches).toEqual([]);
   });
 
   it("drops the buffer and the offline queue when consent is withdrawn", () => {

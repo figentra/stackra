@@ -122,6 +122,20 @@ describe("native RelayAnalyticsDriver", () => {
     expect(batches(fetch)[0]?.map((item) => item.name)).toEqual(["e.0", "e.1", "e.2"]);
   });
 
+  // @covers sta-1624:FR-002
+  it("keeps a batch that fails at 20 events without failing the caller, and sends it first next time", async () => {
+    answer(503);
+    const driver = relay();
+    await expect(driver.send(deliveries(20))).resolves.toBeUndefined();
+    const fetch = answer();
+    await driver.send(deliveries(1, 20));
+    const [batch] = batches(fetch);
+    expect(batches(fetch)).toHaveLength(1);
+    expect(batch?.map((item) => item.name)).toEqual(
+      Array.from({ length: 21 }, (_, index) => `e.${index}`),
+    );
+  });
+
   // @covers sta-1624:FR-003
   it("stamps the coarse device and keeps one already set", async () => {
     const fetch = answer();
