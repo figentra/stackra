@@ -1630,3 +1630,8 @@
   status: accepted
   owner: claude
   issue: STA-2115
+"0536":
+  slug: box-deploys-promote-automatically-behind-mandatory-gates
+  status: accepted
+  owner: claude
+  issue: STA-2783
