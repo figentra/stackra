@@ -59,22 +59,31 @@
  *     shared view (main's config modules only, C1), committed; then one container per step, in ci.yml's order.
  *   - A judging step (licence-policy, dependency-scan, workflow-lint, linear-key-check, format-check, lint,
  *     migration-lint, validate, env-names, boundaries, knip, secrets-scan) starts fresh from a view, never from an
- *     image a PR step wrote, with the root filesystem read-only (so /work and node_modules), HOME and /tmp on tmpfs,
- *     the judge image read-only at /judge, main's tools first on PATH, and every Node process guarded (judgeGuard:
- *     the `node` on PATH imports it, and NODE_OPTIONS names it). Under the guard a file of /work runs only when its
- *     bytes are main's (main-paths, the tracked paths whose blob is main's, or a file equal to the judge image's
- *     copy); any other runs as the judge image's copy at that path, or not at all; a bare import from /work resolves
- *     in main's install. So the oxlint plugin, repo-checks, runway, gen's templates and every config a judge loads
- *     are main's, whatever the PR changed. What each judge reads as data: the tree's files (format-check, lint,
- *     validate, boundaries, knip, secrets-scan, workflow-lint; env-names reads runway.yaml), the install's packages
- *     (licence-policy), the lockfile (dependency-scan), the PR facts (linear-key-check), and the migrations main's
- *     gen compiled in manifests-match-gen (migration-lint, unpacked into a directory of its own).
+ *     image a PR step wrote, with the root filesystem read-only, HOME and /tmp on tmpfs, /work from a volume of the
+ *     view's layers mounted read-only and noexec (noexecVolumeArgs: nothing in the tree, binary or addon, executes),
+ *     the judge image read-only at /judge, and main's tools first on PATH. Every Node process is guarded: the only
+ *     node a judge reaches is the guarded node (/in/bin/node, first on PATH and mounted over the image's node; the
+ *     real node is the judge image's copy, which nothing points to), the guard sets process.execPath to it, so a
+ *     child started from process.execPath is guarded whatever NODE_OPTIONS says, and code generation from strings
+ *     is disallowed (eval, new Function). The one exception is linear-key-check: commitlint validates its config
+ *     with ajv, which compiles schemas with new Function. Under the guard a file of /work runs only when its bytes
+ *     are main's (main-paths, the tracked paths whose blob is main's, or a file equal to the judge image's copy); any
+ *     other runs as the judge image's copy at that path, or not at all; a bare import from /work resolves in main's
+ *     install. So the oxlint plugin, repo-checks, runway, gen's templates and every config a judge loads are main's,
+ *     whatever the PR changed. What each judge reads as data: the tree's files (format-check, lint, validate,
+ *     boundaries, knip, secrets-scan, workflow-lint; env-names reads runway.yaml; migration-lint reads the migration
+ *     SQL the tree commits under .stackra/migrations), the install's packages (licence-policy), the lockfile
+ *     (dependency-scan) and the PR facts (linear-key-check).
  *   - A PR step (typecheck, build, service-gen, manifests-match-gen, test) runs in a writable container of its own,
- *     from the base image (typecheck, build) or the build's (service-gen, manifests-match-gen, test). Nothing it
- *     writes reaches a judge except files it `collect`s, which the daemon copies out (docker cp) and mounts read-only
- *     for the step whose `input` they are. manifests-match-gen runs main's gen (the judge image's CLI) on the PR's
- *     sources and decides by git diff; gen imports the PR's own migrations and resource trees, so it is a PR step.
- *   Residual: PR code can still make its own tests pass (it writes the tests); that is what review is for.
+ *     from the base image (typecheck, build) or the build's (service-gen, manifests-match-gen, test); nothing it
+ *     writes reaches a judge. manifests-match-gen runs main's gen (the judge image's CLI) on the PR's sources and
+ *     decides by git diff; gen imports the PR's own migrations and resource trees, so it is a PR step.
+ *   - A PR that changes a gate tool's version (risk:R3) is judged by main's version until it merges: the judges run
+ *     main's install. A new workspace member's own package.json scripts stand (the new member is risk:R3), and its
+ *     config modules are set aside for the shared judges, so knip may honestly report it until main has them.
+ *   Residual: PR code can still make its own tests pass (it writes the tests), and manifests-match-gen's gen runs the
+ *   PR's own migrations, so the PR's code shapes the generated output that step compares with the PR's own commit (in
+ *   its own container; nothing it writes reaches another step). That is what review is for.
  * Threat model, stated plainly: the service proves that a PR's code passes main's checks on our machines, cannot
  *   forge or replay a result, cannot reach the key, the host's services or instance credentials, and cannot poison
  *   another run. It cannot prove that a PR's own code is honest: code that runs during install or test can always
@@ -143,9 +152,16 @@
  *       package is missing from it; the next pass builds the image again.
  *     - "the base / view / shared container failed" or "did not start": the service's own containers (tar, git, cp,
  *       ln) failed: read the run's log and the verify user's Docker (disk, image mounts need Docker 28 or later).
+ *     - "/work cannot be mounted noexec" or "could not make the noexec /work volume": the verify user's Docker must
+ *       keep images as overlay2 layer directories (storage-driver overlay2, not the containerd image store) and be
+ *       able to mount an overlay volume (kernel 5.11 or later for a rootless one); fix the daemon's configuration.
  *   A judge that says "a judge never runs the tested tree's <path>" refused to run the PR's code: an honest red. The
  *   PR's change to that path is judged by main's copy of the judge, or lands through risk:R3 and the owner first.
- *   Residual: PR code can still make its own tests pass (it writes the tests); that is what review is for.
+ *   A gate-tool version bump (risk:R3) is judged by main's version until it merges; a new member's own scripts stand
+ *   (risk:R3) and knip may honestly report it until main has its config. Both are as designed.
+ *   Residual: PR code can still make its own tests pass (it writes the tests), and manifests-match-gen's gen runs the
+ *   PR's own migrations, so the PR's code shapes the generated output that step compares with the PR's own commit (in
+ *   its own container; nothing it writes reaches another step). That is what review is for.
  *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
@@ -388,6 +404,9 @@ export const GATE_STEPS = Object.freeze([
   {
     id: "linear-key-check",
     judge: true,
+    // The one judge whose Node may build code from strings: commitlint validates its configuration with ajv, which
+    // compiles each schema with `new Function` (EvalError under --disallow-code-generation-from-strings, checked).
+    evalAllowed: "commitlint's config validator (ajv) compiles schemas with new Function",
     job: "gate",
     ci: "Linear key check",
     line: 115,
@@ -461,11 +480,11 @@ export const GATE_STEPS = Object.freeze([
   },
   {
     // Main's gen (the judge image's CLI) on the PR's sources: it imports the PR's own migrations and resource trees,
-    // so it runs in a PR container of its own, and the migrations it compiles leave it as data (`collect`).
+    // so it runs in a PR container of its own (an accepted residual: it checks only the PR's own generated output
+    // against its own commit, and nothing it writes reaches another step).
     id: "manifests-match-gen",
     from: "built",
     judgeTools: true,
-    collect: "'*/.stackra/migrations/*.up.sql'",
     job: "gate",
     ci: "Committed manifests match gen",
     line: 168,
@@ -480,10 +499,10 @@ export const GATE_STEPS = Object.freeze([
     ].join("\n"),
   },
   {
-    // Lints the migrations main's gen compiled in manifests-match-gen (data, unpacked into its own directory).
+    // Lints the migration SQL the read-only tree holds (the judge view), never the output of a container where PR
+    // code ran (Idris, round 5b). The judge view lays in none of main's compiled migrations (judgeViewScript).
     id: "migration-lint",
     judge: true,
-    input: "manifests-match-gen",
     job: "gate",
     ci: "Migration lint (Squawk)",
     line: 182,
@@ -597,16 +616,12 @@ const FACTS_READER =
 
 const stepFunction = (id) => `step_${id.replaceAll("-", "_")}`;
 
-/** Where a step that `collect`s leaves its files (in its own container), for the step whose `input` it is. */
-export const COLLECT_DIR = ".stackra-out";
-
 /**
  * The bash script that runs `steps` in `workDir`. Every step runs, failed or not, in a subshell with GitHub's
  * `bash -eo pipefail`, between `== step: <id>` and `== result: <id> pass|FAIL|skip`, so the output names every
  * failing step; any failure exits 1. With `facts`, the PR facts come from `<inDir>/facts.json` first.
- * `gate.sh --step <id>` runs that one step (each step has a container of its own, runJob): a step that `collect`s
- * then copies the files its glob names into COLLECT_DIR, and a step with an `input` first unpacks that step's files
- * (`<inDir>/<input>.tar`) and runs in them. `gate.sh --swap` only lays in main's config modules (the shared view).
+ * `gate.sh --step <id>` runs that one step (each step has a container of its own, runJob); `gate.sh --swap` only
+ * lays in main's config modules (the shared view).
  * With no argument every step runs in one process, a shared step between the swap and its undoing.
  */
 export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = true } = {}) {
@@ -668,21 +683,6 @@ export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = t
     '  rm -rf "$shared_dir"',
     "}",
     '[ "$mode" = swap ] && { swap_out || { echo "stackra-verify: could not lay in main\x27s config modules"; exit 1; }; exit 0; }',
-    // One step's files for a later step's container: copied (regular files only) under COLLECT_DIR.
-    "collect_out() {",
-    `  rm -rf ${COLLECT_DIR} && mkdir ${COLLECT_DIR} || return 1`,
-    "  local f",
-    "  while IFS= read -r -d '' f; do",
-    `    mkdir -p "${COLLECT_DIR}/$(dirname -- "$f")" && cp -- "$f" "${COLLECT_DIR}/$f" || return 1`,
-    `  done < <(find . -path ./node_modules -prune -o -path ./${COLLECT_DIR} -prune -o -type f -path "$1" -print0)`,
-    "}",
-    // An earlier step's files, unpacked into a directory of their own: the step runs there, never in the tree.
-    "enter_input() {",
-    '  local into="${TMPDIR:-/tmp}/stackra-input"',
-    '  rm -rf "$into" && mkdir -p "$into" && tar -xf "$GATE_IN/$1.tar" -C "$into" --no-same-owner --no-same-permissions || return 1',
-    `  [ -d "$into/${COLLECT_DIR}" ] && [ ! -L "$into/${COLLECT_DIR}" ] || return 1`,
-    `  cd "$into/${COLLECT_DIR}"`,
-    "}",
     "run_step() {",
     "  local id=$1 when=$2 fn=$3 shared=$4",
     '  [ "$mode" = all ] || shared=',
@@ -715,15 +715,7 @@ export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = t
   }
   for (const step of steps) {
     const run = `run_step ${step.id} "${step.when ?? ""}" ${stepFunction(step.id)}${step.shared ? " shared" : ""}`;
-    if (step.input && !ids.includes(step.input))
-      throw new Error(`${step.id}: no step ${step.input}`);
-    const before = step.input
-      ? `if [ "$mode" = step ] && ! enter_input ${step.input}; then echo "== step: ${step.id}"; echo "stackra-verify: ${step.input}'s files are not readable"; echo "== result: ${step.id} FAIL"; failed+=(${step.id}); else ${run}; fi`
-      : run;
-    const after = step.collect
-      ? `; if [ "$mode" = step ] && ! collect_out ${step.collect}; then echo "stackra-verify: could not collect ${step.id}'s files"; failed+=(${step.id}); fi`
-      : "";
-    lines.push(`if [ "$mode" = all ] || [ "$only" = ${step.id} ]; then ${before}${after}; fi`);
+    lines.push(`if [ "$mode" = all ] || [ "$only" = ${step.id} ]; then ${run}; fi`);
   }
   lines.push(
     'if [ "${#failed[@]}" -gt 0 ]; then echo "== failed: ${failed[*]}"; exit 1; fi',
@@ -1825,13 +1817,16 @@ export const licenceCheckSource = () =>
  * from the tree resolves as if imported from the same place in the judge image, so packages come from main's install.
  * Covered: import and require (module.registerHooks), Module._resolveFilename, Module.prototype._compile, and every
  * node:vm entry that names a file (jiti evaluates the configs it loads through vm.runInThisContext). Resolving a path
- * is never refused, only running it, so a judge can still read the tree as data. Self-contained: the generated file
- * is this function's source.
+ * is never refused, only running it, so a judge can still read the tree as data. `execPath` (the guarded node) becomes
+ * process.execPath, so a child started from it is guarded whatever NODE_OPTIONS it gets. Self-contained: the
+ * generated file is this function's source.
  */
-export function judgeGuard({ tree, root, mainList }) {
+export function judgeGuard({ tree, root, mainList, execPath = null }) {
   const loaded = Symbol.for("stackra-verify.judgeGuard");
   if (globalThis[loaded]) return;
   globalThis[loaded] = true;
+  // A child started as process.execPath (fork, spawn, worker pools) starts the guarded node, whatever its env says.
+  if (execPath) process.execPath = execPath;
   const fs = process.getBuiltinModule("node:fs");
   const path = process.getBuiltinModule("node:path");
   const url = process.getBuiltinModule("node:url");
@@ -1976,20 +1971,31 @@ export function judgeGuard({ tree, root, mainList }) {
 export const judgeGuardSource = (inDir = IN_DIR) =>
   [
     "// Generated by tools/scripts/stackra-verify.mjs (STA-2761): a judge runs main's code only.",
-    `(${judgeGuard.toString()})(${JSON.stringify({ tree: "/work", root: JUDGE_MOUNT, mainList: `${inDir}/main-paths` })});`,
+    `(${judgeGuard.toString()})(${JSON.stringify({ tree: "/work", root: JUDGE_MOUNT, mainList: `${inDir}/main-paths`, execPath: `${inDir}/bin/node` })});`,
     "",
   ].join("\n");
 
+/** Where the judge image keeps the real node (copied there when it is built; nothing on PATH points to it). */
+export const JUDGE_NODE = `${JUDGE_MOUNT}/.stackra-node/node`;
+/** Where the base image keeps node; a judging container with the judge image sees the guarded node there instead. */
+export const IMAGE_NODE = "/usr/local/bin/node";
+
 /**
- * `node` for a judging container (`/in/bin/node`, first on PATH): the real node with the judge guard imported first,
- * so a process that drops NODE_OPTIONS (turbo's strict environment mode does) still runs guarded.
+ * `node` for a judging container: `/in/bin/node`, first on PATH, also mounted over IMAGE_NODE when the judge image is
+ * there (so every path to node is this one; the guard makes it process.execPath too). It runs the real node (the
+ * judge image's copy, JUDGE_NODE; the base image's only where there is no judge image, which is never mounted over)
+ * with the judge guard imported first and code generation from strings disallowed, unless the step allows it
+ * (STACKRA_JUDGE_EVAL=1, set only for an `evalAllowed` step; an environment that drops it stays disallowed).
  */
 export const judgeNodeSource = (inDir = IN_DIR) =>
   [
     "#!/bin/sh",
     "# Generated by tools/scripts/stackra-verify.mjs (STA-2761): node, with the judge guard imported first.",
-    "for node in /usr/local/bin/node /usr/bin/node; do",
-    `  [ -x "$node" ] && exec "$node" --import ${inDir}/judge-guard.mjs "$@"`,
+    "flags=--disallow-code-generation-from-strings",
+    '[ "${STACKRA_JUDGE_EVAL-}" = 1 ] && flags=',
+    `for node in ${JUDGE_NODE} ${IMAGE_NODE} /usr/bin/node; do`,
+    "  # never itself: where it is mounted over the image's node, that path is this script",
+    `  [ -x "$node" ] && [ ! "$node" -ef "$0" ] && exec "$node" --import ${inDir}/judge-guard.mjs $flags "$@"`,
     "done",
     'echo "stackra-verify: no node" >&2; exit 127',
     "",
@@ -1997,17 +2003,20 @@ export const judgeNodeSource = (inDir = IN_DIR) =>
 
 /**
  * A judging container's environment (with CONTAINER_ENV): the guarded node and main's tools first on PATH, the guard
- * in NODE_OPTIONS too, and turbo with no cache (the tree is read-only, so it writes no task log either).
+ * and the ban on code generation from strings in NODE_OPTIONS too (the guarded node applies both anyway), and turbo
+ * with no cache (the tree is read-only, so it writes no task log either). `evalAllowed`: the step's tools need eval.
  */
-export const judgeEnv = (inDir = IN_DIR) =>
+export const judgeEnv = (inDir = IN_DIR, { evalAllowed = false } = {}) =>
   `PATH=${inDir}/bin:${JUDGE_MOUNT}/node_modules/.bin:/opt/stackra-verify/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n` +
-  `NODE_OPTIONS=--import ${inDir}/judge-guard.mjs\nTURBO_CACHE=local:,remote:\n`;
+  `NODE_OPTIONS=--import ${inDir}/judge-guard.mjs${evalAllowed ? "" : " --disallow-code-generation-from-strings"}\n` +
+  `TURBO_CACHE=local:,remote:\n${evalAllowed ? "STACKRA_JUDGE_EVAL=1\n" : ""}`;
 
 /**
  * The judge view, made by a container of its own from the prepared tree (main's code only: this script, cp, ln):
  * main's generated files (the judge image ran main's gen on main's tree) are added wherever the tree has the member,
- * never replacing a file of the tree; and every node_modules/.bin in the tree becomes the judge image's one at the
- * same place (none where main has no such member), so a script's tool is main's tool.
+ * never replacing a file of the tree, and never main's compiled migrations (migration-lint reads the tree's own SQL);
+ * and every node_modules/.bin in the tree becomes the judge image's one at the same place (none where main has no
+ * such member), so a script's tool is main's tool.
  */
 export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work") =>
   [
@@ -2020,6 +2029,7 @@ export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work") =>
     '    parent=$(dirname -- "$p")',
     `    [ -d "${tree}/$parent" ] && [ ! -L "${tree}/$parent" ] && [ ! -L "${tree}/$p" ] || continue`,
     "    (cd \"$p\" && find . -print0) | while IFS= read -r -d '' f; do",
+    '      case "$f" in ./migrations|./migrations/*) continue ;; esac',
     `      if [ -d "$p/$f" ] && [ ! -L "$p/$f" ]; then mkdir -p "${tree}/$p/$f"`,
     `      elif [ ! -e "${tree}/$p/$f" ] && [ ! -L "${tree}/$p/$f" ]; then cp -P -- "$p/$f" "${tree}/$p/$f"; fi`,
     "    done",
@@ -2963,12 +2973,24 @@ export const verifyArgs = (
 
 /**
  * One step's container (CTO ruling, round 5, B): no network, the run's limits, the archive and the kind's inputs
- * read-only. A judging step's container is `readOnly` (the root filesystem, so /work and node_modules, with HOME and
- * /tmp on tmpfs) and sees the judge image at JUDGE_MOUNT, read-only too; so does a PR step that runs main's gen.
+ * read-only. A judging step's container is `readOnly` (the root filesystem, with HOME and /tmp on tmpfs), has /work
+ * from a noexec volume (`workVolume`), the guarded node over the image's (`guardedNode`) and the judge image at
+ * JUDGE_MOUNT, read-only; a PR step that runs main's gen sees the judge image too.
  */
 export const stepArgs = (
   s,
-  { name, image, envFile, tarPath, mounts = [], command, readOnly = false, judgeImage = null },
+  {
+    name,
+    image,
+    envFile,
+    tarPath,
+    mounts = [],
+    command,
+    readOnly = false,
+    judgeImage = null,
+    workVolume = null,
+    guardedNode = null,
+  },
 ) => [
   "run",
   "--name",
@@ -2983,6 +3005,12 @@ export const stepArgs = (
         `type=image,source=${judgeImage},target=${JUDGE_MOUNT},image-subpath=${JUDGE_IMAGE_PATH}`,
       ]
     : []),
+  // The view's /work from a volume mounted noexec, nosuid, nodev and read-only (noexecVolumeArgs); no `readonly`
+  // here, since remounting the bind read-only could drop noexec on a rootful Docker.
+  ...(workVolume
+    ? ["--mount", `type=volume,source=${workVolume},target=/work,volume-subpath=work`]
+    : []),
+  ...(guardedNode ? ["--volume", `${guardedNode}:${IMAGE_NODE}:ro`] : []),
   "--volume",
   `${tarPath}:${IN_DIR}/src.tar:ro`,
   ...mounts.flatMap(([host, container]) => ["--volume", `${host}:${container}:ro`]),
@@ -2993,6 +3021,40 @@ export const stepArgs = (
   "-c",
   command,
 ];
+
+/**
+ * The local volume a judging container gets /work from (round 5b): every layer of the view image (`graphDriver`, its
+ * `docker image inspect` GraphDriver) as an overlay with no upper layer, so read-only, and mounted noexec, nosuid and
+ * nodev: nothing in the tree, a native binary or an addon, can be executed or mapped executable. Anything but overlay2
+ * layer directories is refused (the run is a service error, never a judge without noexec).
+ */
+export function noexecVolumeArgs(name, graphDriver) {
+  const data = graphDriver?.Data ?? {};
+  if (graphDriver?.Name !== "overlay2" || typeof data.UpperDir !== "string")
+    throw new Error(
+      `the view image's layers are not overlay2 directories (${graphDriver?.Name ?? "none"}): /work cannot be mounted noexec`,
+    );
+  const layers = [data.UpperDir, ...(data.LowerDir ? String(data.LowerDir).split(":") : [])];
+  for (const layer of layers)
+    if (!/^\/[\w./-]+$/.test(layer) || layer.includes(".."))
+      throw new Error(`not a layer directory: ${layer}`);
+  const options = `lowerdir=${layers.join(":")},ro,noexec,nosuid,nodev`;
+  if (layers.length < 2 || options.length > 4000)
+    throw new Error(`the view image has ${layers.length} layers: /work cannot be mounted noexec`);
+  return [
+    "volume",
+    "create",
+    "--driver",
+    "local",
+    "--opt",
+    "type=overlay",
+    "--opt",
+    "device=overlay",
+    "--opt",
+    `o=${options}`,
+    name,
+  ];
+}
 
 /** The judge image's tag: main's tree (its root tree id), the store image it starts from, and how it is built. */
 export const judgeTag = (baseTree, storeId, dockerfile) =>
@@ -3012,7 +3074,7 @@ export function judgeDockerfile({ storeImage, builds, roots }) {
     `FROM ${storeImage}`,
     "USER root",
     `ADD tree.tar /${JUDGE_IMAGE_PATH}/`,
-    `RUN chown -R ${CONTAINER_USER} /${JUDGE_IMAGE_PATH}`,
+    `RUN mkdir -p ${JUDGE_NODE.replace(JUDGE_MOUNT, `/${JUDGE_IMAGE_PATH}`).replace(/\/node$/, "")} && cp "$(readlink -f "$(command -v node)")" ${JUDGE_NODE.replace(JUDGE_MOUNT, `/${JUDGE_IMAGE_PATH}`)} && chown -R ${CONTAINER_USER} /${JUDGE_IMAGE_PATH}`,
     `USER ${CONTAINER_USER}`,
     `WORKDIR /${JUDGE_IMAGE_PATH}`,
     "ENV CI=1 HOME=/tmp/judge-home TURBO_TELEMETRY_DISABLED=1 TURBO_CACHE_DIR=/tmp/turbo-cache FORCE_COLOR=0",
@@ -4103,11 +4165,10 @@ export async function runJob(job, deps) {
  *     install's image; committed as the base image. No PR code runs in it (tar and git only).
  *   - the judge view (the gate): from the base image, judge-view.sh lays main's generated files and main's tool bins
  *     in from the judge image; committed. The shared view adds `gate.sh --swap` (main's config modules only, C1).
- *   - a judging step (`judge`) starts fresh from its view, read-only, guarded (judgeEnv), with the judge image at
- *     JUDGE_MOUNT; it never starts from an image a PR step wrote.
+ *   - a judging step (`judge`) starts fresh from its view, read-only, /work from a noexec volume, guarded (judgeEnv
+ *     and the guarded node), with the judge image at JUDGE_MOUNT; it never starts from an image a PR step wrote.
  *   - a PR step (`from`) starts from the base image or from the build's (`commit`); its writes stay in its own
- *     container. What a later step needs from it leaves as data: `collect`ed files, copied out by the daemon and
- *     mounted read-only for the step whose `input` they are.
+ *     container and never reach a judge.
  * Every step runs, failed or not; any failure is the PR's failure. A container that never started is an error.
  */
 async function runSteps(
@@ -4182,22 +4243,40 @@ async function runSteps(
     from.shared = r.tag;
   }
 
+  // Each view's /work as a noexec volume, made once per view image.
+  const volumes = new Map();
+  const workVolume = async (view) => {
+    if (!volumes.has(view))
+      volumes.set(view, await deps.workVolume(view, `sv-${id}-work-${volumes.size}`));
+    return volumes.get(view);
+  };
+  /** A judging step's environment: code from strings only for a step that names why it needs it. */
+  const judgeEnvOf = (step) => (step.evalAllowed ? deps.judgeEvalEnvFile : deps.judgeEnvFile);
   const failed = [];
   for (const step of steps) {
     const name = named(`step-${step.id}`);
     const start = step.judge ? from[step.shared ? "shared" : "view"] : from[step.from ?? "base"];
     if (!start)
       return { post: false, error: `${step.id} has no image to start from (${step.from})` };
+    let volume = null;
+    if (step.judge)
+      try {
+        volume = await workVolume(start);
+      } catch (error) {
+        return { post: false, error: error.message };
+      }
     r = await runOne(
       stepArgs(s, {
         name,
         image: start,
-        envFile: step.judge ? deps.judgeEnvFile : deps.envFile,
+        envFile: step.judge ? judgeEnvOf(step) : deps.envFile,
         tarPath,
-        mounts: step.input ? [...mounts, deps.collected(step.input)] : mounts,
+        mounts,
         command: command(`--step ${step.id}`),
         readOnly: Boolean(step.judge),
         judgeImage: step.judge || step.judgeTools ? judge : null,
+        workVolume: volume,
+        guardedNode: step.judge && judge ? deps.guardedNode : null,
       }),
       name,
     );
@@ -4210,7 +4289,6 @@ async function runSteps(
         return { post: false, error: `could not commit the ${step.id} container` };
       from[step.commit] = tag;
     }
-    if (step.collect) deps.collect(name, step.id);
   }
   return settle(job, deps, { conclusion: failed.length ? "failure" : "success", phase: "verify" });
 }
@@ -5472,12 +5550,17 @@ export async function verify(s, job) {
   }
   const judgeEnvFile = join(runDir, "judge.env");
   writeFileSync(judgeEnvFile, CONTAINER_ENV + judgeEnv(), { mode: 0o644 });
+  const judgeEvalEnvFile = join(runDir, "judge-eval.env");
+  writeFileSync(judgeEvalEnvFile, CONTAINER_ENV + judgeEnv(IN_DIR, { evalAllowed: true }), {
+    mode: 0o644,
+  });
   const state = readState(s);
 
   const deps = {
     settings: s,
     envFile,
     judgeEnvFile,
+    judgeEvalEnvFile,
     installEnvFile,
     now: Date.now,
     archive: () => {
@@ -5586,19 +5669,18 @@ export async function verify(s, job) {
         runDir,
         state,
       }),
-    // A step's collected files leave its container as a tar stream (docker cp), into the run directory; the step
-    // whose input they are mounts that file read-only. Nothing collected is an empty file, which that step refuses.
-    collect: (container, step) => {
-      const out = join(runDir, `${step}.tar`);
-      const [bin, ...argv] = dockerAs(s, ["cp", `${container}:/work/${COLLECT_DIR}`, "-"]);
-      const r = spawnSync(bin, argv, { ...spawnOptions({}), encoding: "buffer" });
-      writeFileSync(out, r.status === 0 && !r.error ? r.stdout : Buffer.alloc(0), { mode: 0o644 });
+    // A view's /work for its judges: its layers as a read-only overlay mounted noexec (noexecVolumeArgs).
+    workVolume: (view, volume) => {
+      const inspect = docker(s, ["image", "inspect", "--format", "{{json .GraphDriver}}", view]);
+      if (inspect.code !== 0) throw new Error(`could not read the layers of ${view}`);
+      const created = docker(s, noexecVolumeArgs(volume, JSON.parse(inspect.stdout)));
+      if (created.code !== 0)
+        throw new Error(
+          `could not make the noexec /work volume: ${scrub(created.stderr).slice(0, 200)}`,
+        );
+      return volume;
     },
-    collected: (step) => {
-      const out = join(runDir, `${step}.tar`);
-      if (!existsSync(out)) writeFileSync(out, Buffer.alloc(0), { mode: 0o644 });
-      return [out, `${IN_DIR}/${step}.tar`];
-    },
+    guardedNode: join(runDir, "bin/node"),
     docker: (args) => docker(s, args),
     runContainer: (args) =>
       new Promise((resolve) => {

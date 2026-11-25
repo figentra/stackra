@@ -195,7 +195,9 @@ import {
   judgeViewScript,
   JUDGE_GEN,
   JUDGE_MOUNT,
-  COLLECT_DIR,
+  noexecVolumeArgs,
+  JUDGE_NODE,
+  IMAGE_NODE,
   judgeDockerfile,
   judgeTag,
   stepArgs,
@@ -912,8 +914,12 @@ function fakeDeps({
     envFile: ENV,
     judgeEnvFile: "/runs/x/judge.env",
     judgeImage: async () => "stackra-verify-judge:abc",
-    collect: (container, step) => (calls.collect ??= []).push([container, step]),
-    collected: (step) => [`/runs/x/${step}.tar`, `/in/${step}.tar`],
+    judgeEvalEnvFile: "/runs/x/judge-eval.env",
+    workVolume: async (image, name) => {
+      (calls.volumes ??= []).push([image, name]);
+      return name;
+    },
+    guardedNode: "/runs/x/bin/node",
     installEnvFile: "/runs/x/install.env",
     now: () => Date.now(),
     builds: () => builds,
@@ -2436,40 +2442,24 @@ test(
 );
 
 test(
-  "gate script --step: manifests-match-gen collects main's gen output as data; migration-lint lints only that, never the tree",
+  "gate script --step: migration-lint lints the migration SQL in the tree it is given, nothing else; manifests-match-gen leaves nothing for it",
   needsBash,
   () => {
     const fixture = gateFixture();
-    const gen = runGate(fixture, "__never__", gateScript, ["--step", "manifests-match-gen"]);
-    assert.equal(gen.status, 0, gen.stdout);
-    assert.deepEqual(
-      readdirSync(join(fixture.work, COLLECT_DIR, "services/a/.stackra/migrations")).toSorted(),
-      ["0001.up.sql", "0002.up.sql"],
-    );
-    // the daemon copies the collected directory out (docker cp's tar), and mounts it as the next step's input
-    const tar = spawnSync(
-      "tar",
-      ["-cf", join(fixture.input, "manifests-match-gen.tar"), COLLECT_DIR],
-      {
-        cwd: fixture.work,
-      },
-    );
-    assert.equal(tar.status, 0);
-    // the tree's own migrations are not what migration-lint reads: change them, the result is the collected ones
-    rmSync(join(fixture.work, "services"), { recursive: true, force: true });
-    rmSync(join(fixture.work, COLLECT_DIR), { recursive: true, force: true });
     const lint = runGate(fixture, "__never__", gateScript, ["--step", "migration-lint"]);
     assert.equal(lint.status, 0, lint.stdout);
     assert.deepEqual(
       lint.calls("migration-lint").map((c) => c.call),
       STEP_CASES["migration-lint"].calls,
     );
-    // nothing collected (an empty file) is a failure of migration-lint, never a pass with nothing to lint
-    writeFileSync(join(fixture.input, "manifests-match-gen.tar"), "");
-    const empty = runGate(fixture, "__never__", gateScript, ["--step", "migration-lint"]);
-    assert.equal(empty.status, 1, empty.stdout);
-    assert.equal(empty.sections["migration-lint"].result, "FAIL");
-    assert.match(empty.stdout, /manifests-match-gen's files are not readable/);
+    // what main's gen writes in its own container is never what squawk reads: without the tree's SQL, nothing is linted
+    rmSync(join(fixture.work, "services/a/.stackra"), { recursive: true, force: true });
+    const gen = runGate(fixture, "__never__", gateScript, ["--step", "manifests-match-gen"]);
+    assert.equal(gen.status, 0, gen.stdout);
+    const none = runGate(fixture, "__never__", gateScript, ["--step", "migration-lint"]);
+    assert.equal(none.status, 0, none.stdout);
+    assert.deepEqual(none.calls("migration-lint"), []);
+    assert.match(none.stdout, /no compiled migrations/);
     rmSync(fixture.dir, { recursive: true, force: true });
   },
 );
@@ -6161,6 +6151,15 @@ function guardFixture() {
       "",
     ].join("\n"),
     "resolve.cjs": 'console.log(require.resolve("cpkg"));\n',
+    // a judge tool starting a child from process.execPath with NODE_OPTIONS stripped (turbo's strict env does that)
+    "spawn.mjs": [
+      'import { spawnSync } from "node:child_process";',
+      'const child = spawnSync(process.execPath, [process.argv[2]], { encoding: "utf8", env: { PATH: process.env.PATH } });',
+      "console.log(JSON.stringify({ status: child.status, stdout: child.stdout, guarded: /never runs/.test(child.stderr) }));",
+      "",
+    ].join("\n"),
+    "eval.mjs":
+      'try { eval("1"); console.log("eval ran"); } catch (error) { console.log(error.name); }\n',
   });
   putFiles(root, {
     "main.mjs": "",
@@ -6177,18 +6176,34 @@ function guardFixture() {
   const mainList = join(dir, "main-paths");
   writeFileSync(
     mainList,
-    ["main.mjs", "helper.mjs", "main.cjs", "vm.mjs", "resolve.cjs", "plugin.mjs"]
+    [
+      "main.mjs",
+      "helper.mjs",
+      "main.cjs",
+      "vm.mjs",
+      "resolve.cjs",
+      "plugin.mjs",
+      "spawn.mjs",
+      "eval.mjs",
+    ]
       .map((p) => `${p}\0`)
       .join(""),
   );
   const guard = join(dir, "guard.mjs");
+  // the guarded node, as judgeNodeSource writes it: the real node, the guard first, no code from strings
+  const execPath = join(dir, "node");
+  writeFileSync(
+    execPath,
+    `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} --import ${JSON.stringify(guard)} --disallow-code-generation-from-strings "$@"\n`,
+  );
+  chmodSync(execPath, 0o755);
   writeFileSync(
     guard,
-    `(${judgeGuard.toString()})(${JSON.stringify({ tree, root, mainList })});\n`,
+    `(${judgeGuard.toString()})(${JSON.stringify({ tree, root, mainList, execPath })});\n`,
   );
   const run = (...args) =>
     spawnSync(process.execPath, ["--import", guard, ...args], { cwd: tree, encoding: "utf8" });
-  return { dir, tree, root, run };
+  return { dir, tree, root, run, execPath };
 }
 
 test("judge guard: a judge runs main's files only; the tree's own code never runs, main's copy or build runs instead", () => {
@@ -6233,6 +6248,19 @@ test("judge guard: a judge runs main's files only; the tree's own code never run
     );
     // the tree's copy of a package is main's when main's install has the same file at the same place
     assert.equal(viaRequire.stdout, "judge cpkg\n", viaRequire.stderr);
+    // a child started from process.execPath with NODE_OPTIONS stripped is still guarded: execPath is the guarded node
+    const spawned = g.run(join(g.tree, "spawn.mjs"), join(g.tree, "pr.mjs"));
+    assert.equal(spawned.status, 0, spawned.stderr);
+    const child = JSON.parse(spawned.stdout);
+    assert.notEqual(child.status, 0);
+    assert.doesNotMatch(child.stdout, /PR RAN/);
+    assert.equal(child.guarded, true);
+    // through the guarded node, code generation from strings is refused
+    const viaNode = spawnSync(g.execPath, [join(g.tree, "eval.mjs")], {
+      cwd: g.tree,
+      encoding: "utf8",
+    });
+    assert.equal(viaNode.stdout, "EvalError\n", viaNode.stderr);
     // once loaded, the guard stays: a second import does not reset it
     assert.match(judgeGuardSource(), /^\/\/ Generated by tools\/scripts\/stackra-verify\.mjs/);
     assert.match(
@@ -6244,8 +6272,14 @@ test("judge guard: a judge runs main's files only; the tree's own code never run
   }
 });
 
-test("judge container setup: guarded node first on PATH, the guard in NODE_OPTIONS, turbo without a cache", () => {
-  assert.match(judgeNodeSource(), /exec "\$node" --import \/in\/judge-guard\.mjs "\$@"/);
+test("judge container setup: guarded node first on PATH, the guard and the eval ban in NODE_OPTIONS, turbo without a cache", () => {
+  const wrapper = judgeNodeSource();
+  assert.match(wrapper, /exec "\$node" --import \/in\/judge-guard\.mjs \$flags "\$@"/);
+  assert.match(wrapper, /^flags=--disallow-code-generation-from-strings$/m);
+  // the judge image's real node first; never the wrapper itself where it is mounted over the image's node
+  assert.match(wrapper, new RegExp(`for node in ${JUDGE_NODE} ${IMAGE_NODE} /usr/bin/node; do`));
+  assert.match(wrapper, /\[ ! "\$node" -ef "\$0" \]/);
+  assert.match(judgeGuardSource(), /"execPath":"\/in\/bin\/node"/);
   const env = Object.fromEntries(
     judgeEnv()
       .trim()
@@ -6253,8 +6287,21 @@ test("judge container setup: guarded node first on PATH, the guard in NODE_OPTIO
       .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]),
   );
   assert.deepEqual(env.PATH.split(":").slice(0, 2), ["/in/bin", "/judge/node_modules/.bin"]);
-  assert.equal(env.NODE_OPTIONS, "--import /in/judge-guard.mjs");
+  assert.equal(
+    env.NODE_OPTIONS,
+    "--import /in/judge-guard.mjs --disallow-code-generation-from-strings",
+  );
   assert.equal(env.TURBO_CACHE, "local:,remote:");
+  assert.equal(env.STACKRA_JUDGE_EVAL, undefined);
+  const evalEnv = judgeEnv("/in", { evalAllowed: true });
+  assert.match(evalEnv, /^NODE_OPTIONS=--import \/in\/judge-guard\.mjs$/m);
+  assert.match(evalEnv, /^STACKRA_JUDGE_EVAL=1$/m);
+  // the one step that may build code from strings, with its reason
+  assert.deepEqual(
+    [...GATE_STEPS, ...MOBILE_STEPS].filter((step) => step.evalAllowed).map((step) => step.id),
+    ["linear-key-check"],
+  );
+  assert.match(GATE_STEPS.find((step) => step.evalAllowed).evalAllowed, /ajv/);
   assert.equal(JUDGE_MOUNT, "/judge");
   assert.match(JUDGE_GEN, /^node \/judge\/packages\/developer\/cli\/dist\/stackra\.mjs gen$/m);
   for (const m of JUDGE_GEN.matchAll(/\S*stackra\.mjs/g))
@@ -6297,10 +6344,10 @@ test("B: every gate step is a judge or a PR step, as ruled; judges never start f
   const order = GATE_STEPS.map((s) => s.id);
   for (const step of GATE_STEPS.filter((s) => s.from === "built"))
     assert.ok(order.indexOf(step.id) > order.indexOf("build"), step.id);
-  // a step's input comes from an earlier step that collects
-  for (const step of GATE_STEPS.filter((s) => s.input)) {
-    const source = GATE_STEPS.find((s) => s.id === step.input);
-    assert.ok(source?.collect && order.indexOf(source.id) < order.indexOf(step.id), step.id);
+  // no judge reads what a PR step wrote: nothing is collected from a PR step or handed to a judge (5b)
+  for (const step of GATE_STEPS) {
+    assert.equal(step.collect, undefined, step.id);
+    assert.equal(step.input, undefined, step.id);
   }
   assert.deepEqual(
     MOBILE_STEPS.map((s) => [s.id, Boolean(s.judge), s.from]),
@@ -6344,10 +6391,17 @@ test("B runJob: prepare, the judge view and the shared view, then one container 
     const judgeMount = run.some((a) =>
       a.startsWith("type=image,source=stackra-verify-judge:abc,target=/judge"),
     );
+    const work = run.find((a) => a.startsWith("type=volume,"));
     if (step.judge) {
-      // fresh from a view, read-only, guarded, with main's judge image
+      // fresh from a view, read-only, /work noexec, guarded (the only node), with main's judge image
       assert.ok(run.includes("--read-only"), step.id);
-      assert.equal(env, "/runs/x/judge.env", step.id);
+      assert.equal(env, step.evalAllowed ? "/runs/x/judge-eval.env" : "/runs/x/judge.env", step.id);
+      assert.match(
+        work,
+        /^type=volume,source=sv-[\w-]+-work-[01],target=\/work,volume-subpath=work$/,
+        step.id,
+      );
+      assert.ok(run.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), step.id);
       assert.ok(judgeMount, step.id);
       assert.equal(
         imageOf(run),
@@ -6357,18 +6411,25 @@ test("B runJob: prepare, the judge view and the shared view, then one container 
     } else {
       assert.equal(run.includes("--read-only"), false, step.id);
       assert.equal(env, ENV, step.id);
+      assert.equal(work, undefined, step.id);
+      assert.equal(run.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), false, step.id);
       assert.equal(judgeMount, step.id === "manifests-match-gen", step.id);
       assert.equal(imageOf(run), `stackra-verify-run:${id}-${step.from}`, step.id);
     }
     assert.equal(run[run.indexOf("--network") + 1], "none", step.id);
   }
-  // main's gen output leaves its container as data and reaches migration-lint read-only
-  assert.deepEqual(
-    calls.collect.map(([, step]) => step),
-    ["manifests-match-gen"],
-  );
+  // migration-lint reads the read-only tree of the view: no mount of anything a PR step wrote (5b)
   const lint = steps[GATE_STEPS.findIndex((s) => s.id === "migration-lint")];
-  assert.ok(lint.includes("/runs/x/manifests-match-gen.tar:/in/manifests-match-gen.tar:ro"));
+  assert.equal(imageOf(lint), `stackra-verify-run:${id}-view`);
+  assert.equal(
+    lint.some((a) => a.includes(".tar:/in/") && !a.startsWith(`${TAR}:`)),
+    false,
+  );
+  // one noexec /work volume per view, made from that view's image
+  assert.deepEqual(calls.volumes, [
+    [`stackra-verify-run:${id}-view`, `sv-${id}-work-0`],
+    [`stackra-verify-run:${id}-shared`, `sv-${id}-work-1`],
+  ]);
 });
 
 test("B runJob: a failing step fails the run and every later step still runs; a step that never started is an error", async () => {
@@ -6396,6 +6457,26 @@ test("B runJob: a failing step fails the run and every later step still runs; a 
     licence.some((a) => a.startsWith("type=image,")),
     false,
   );
+  assert.ok(
+    licence.some(
+      (a) => a.startsWith("type=volume,") && a.endsWith(",target=/work,volume-subpath=work"),
+    ),
+  );
+  assert.equal(licence.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), false);
+  // a view whose layers cannot be mounted noexec is a service error, never a judge without noexec
+  const flat = fakeDeps({});
+  flat.deps.workVolume = async () => {
+    throw new Error(
+      "the view image's layers are not overlay2 directories (overlayfs): /work cannot be mounted noexec",
+    );
+  };
+  const refused = await runJob(JOB, flat.deps);
+  assert.equal(refused.post, false);
+  assert.match(refused.error, /cannot be mounted noexec/);
+  assert.equal(
+    flat.calls.runs.some((run) => / --step /.test(run.at(-1))),
+    false,
+  );
   assert.match(licence.at(-4), /-base$/);
 });
 
@@ -6408,6 +6489,12 @@ test("B judge image: main's tree, installed offline as the gate installs, the ju
   const lines = dockerfile.trim().split("\n");
   assert.equal(lines[0], "FROM stackra-verify-store:abc");
   assert.ok(lines.includes("ADD tree.tar /judge/"));
+  assert.ok(
+    lines.includes(
+      'RUN mkdir -p /judge/.stackra-node && cp "$(readlink -f "$(command -v node)")" /judge/.stackra-node/node && chown -R 1000:1000 /judge',
+    ),
+  );
+  assert.equal(JUDGE_NODE, "/judge/.stackra-node/node");
   assert.match(
     dockerfile,
     /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile --offline --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild\n/,
@@ -6458,6 +6545,66 @@ test("B judge image: main's tree, installed offline as the gate installs, the ju
   assert.ok(argv.includes(`type=image,source=${tag},target=/judge,image-subpath=judge`));
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
   assert.deepEqual(argv.slice(-4), ["i", "sh", "-c", "bash /in/gate.sh --step lint"]);
+  const guarded = stepArgs(S, {
+    name: "n",
+    image: "i",
+    envFile: ENV,
+    tarPath: TAR,
+    command: "true",
+    readOnly: true,
+    workVolume: "sv-x-work-0",
+    guardedNode: "/runs/x/bin/node",
+  });
+  assert.ok(guarded.includes("type=volume,source=sv-x-work-0,target=/work,volume-subpath=work"));
+  // no `readonly` on the volume: a read-only remount could drop noexec; the overlay itself is read-only
+  assert.equal(
+    guarded.some((a) => a.startsWith("type=volume,") && a.includes("readonly")),
+    false,
+  );
+  assert.ok(guarded.includes("/runs/x/bin/node:/usr/local/bin/node:ro"));
+});
+
+test("B noexec /work: the view's layers as a read-only overlay mounted noexec, nosuid, nodev; anything else refused", () => {
+  const layers = {
+    Name: "overlay2",
+    Data: {
+      UpperDir: "/d/overlay2/top/diff",
+      LowerDir: "/d/overlay2/b/diff:/d/overlay2/c/diff",
+      MergedDir: "/d/overlay2/top/merged",
+      WorkDir: "/d/overlay2/top/work",
+    },
+  };
+  assert.deepEqual(noexecVolumeArgs("sv-x-work-0", layers), [
+    "volume",
+    "create",
+    "--driver",
+    "local",
+    "--opt",
+    "type=overlay",
+    "--opt",
+    "device=overlay",
+    "--opt",
+    "o=lowerdir=/d/overlay2/top/diff:/d/overlay2/b/diff:/d/overlay2/c/diff,ro,noexec,nosuid,nodev",
+    "sv-x-work-0",
+  ]);
+  for (const [driver, why] of [
+    [{ Name: "overlayfs", Data: null }, /not overlay2 directories \(overlayfs\)/],
+    [null, /not overlay2 directories \(none\)/],
+    [{ Name: "overlay2", Data: { UpperDir: "/d/top/diff" } }, /has 1 layers/],
+    [
+      { Name: "overlay2", Data: { UpperDir: "/d/a,b/diff", LowerDir: "/d/c" } },
+      /not a layer directory/,
+    ],
+    [
+      { Name: "overlay2", Data: { UpperDir: "/d/../etc", LowerDir: "/d/c" } },
+      /not a layer directory/,
+    ],
+    [
+      { Name: "overlay2", Data: { UpperDir: `/${"x".repeat(4000)}`, LowerDir: "/d/c" } },
+      /layers: \/work/,
+    ],
+  ])
+    assert.throws(() => noexecVolumeArgs("v", driver), why);
 });
 
 test(
@@ -6469,6 +6616,7 @@ test(
     const tree = join(dir, "work");
     putFiles(root, {
       "packages/a/.stackra/vitest.config.mts": "main gen a\n",
+      "packages/a/.stackra/migrations/0001.up.sql": "create table main ();\n",
       "packages/a/.stackra/app-manifest.json": "main manifest\n",
       "packages/gone/.stackra/vitest.config.mts": "main gen gone\n",
       "packages/developer/gen/__golden__/x/.stackra/y.golden": "golden\n",
@@ -6488,6 +6636,8 @@ test(
     assert.equal(r.status, 0, r.stderr);
     const read = (p) => readFileSync(join(tree, p), "utf8");
     assert.equal(read("packages/a/.stackra/vitest.config.mts"), "main gen a\n");
+    // never main's compiled migrations: migration-lint reads only the SQL the tree itself has
+    assert.equal(existsSync(join(tree, "packages/a/.stackra/migrations")), false);
     assert.equal(read("packages/a/.stackra/app-manifest.json"), "PR manifest\n");
     assert.equal(existsSync(join(tree, "packages/gone")), false);
     assert.equal(
