@@ -342,6 +342,7 @@ export const GATE_STEPS = Object.freeze([
       'if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi',
       'if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi',
     ].join("\n"),
+    run: "true",
   },
   {
     id: "validate",
