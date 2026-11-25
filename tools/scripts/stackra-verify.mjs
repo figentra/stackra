@@ -466,6 +466,21 @@ export const migrationLintCiReplace = (requiresCompiled) => [
 
 /** manifests-match-gen's pathspecs after the manifests: ci.yml's entity lists, and the compiled migration SQL. */
 const COMPILED_SQL_DIFF = "'*src/node/entities.gen.ts' '*/.stackra/migrations/*.up.sql'";
+/** The compiled SQL as STA-2788 commits it: a service's stream and its Encore copy, a package's own. */
+const COMPILED_SQL_PATHS =
+  "'*/.stackra/migrations/*.sql' '*/stackra-encore/*/migrations/*.sql' '*/src/node/database/compiled-migrations/*.sql'";
+/**
+ * Round 8 (L2): gen just wrote one compiled file per migration source, so a file git does not track is a source whose
+ * SQL was never committed (and so never linted); git diff misses it. Ignored files stay invisible, so a no-op until
+ * STA-2788 un-ignores the folders.
+ */
+export const UNTRACKED_SQL = [
+  `if [ -n "$(git status --porcelain --untracked-files=all -- ${COMPILED_SQL_PATHS})" ]; then`,
+  `  git status --short --untracked-files=all -- ${COMPILED_SQL_PATHS}`,
+  '  echo "::error title=Stale manifests::commit the compiled migration SQL gen wrote above (STA-2788)"',
+  "  exit 1",
+  "fi",
+].join("\n");
 
 /** Where a judging container sees the judge image's tree (main's, installed and built), and its path in that image. */
 export const JUDGE_MOUNT = "/judge";
@@ -629,12 +644,13 @@ export const GATE_STEPS = Object.freeze([
     ci: "Committed manifests match gen",
     line: 168,
     ciReplace: [
-      ["if ! git diff --quiet", `${JUDGE_GEN}\nif ! git diff --quiet`],
+      ["if ! git diff --quiet", `${JUDGE_GEN}\n${UNTRACKED_SQL}\nif ! git diff --quiet`],
       // the committed compiled SQL against gen's output too (round 7, L3); a no-op until STA-2788 tracks it
       ["'*src/node/entities.gen.ts'", COMPILED_SQL_DIFF],
     ],
     run: [
       JUDGE_GEN,
+      UNTRACKED_SQL,
       `if ! git diff --quiet -- '*stackra.manifest.json' ${COMPILED_SQL_DIFF}; then`,
       `  git diff --stat -- '*stackra.manifest.json' ${COMPILED_SQL_DIFF}`,
       '  echo "::error title=Stale manifests::run pnpm gen and commit the stackra.manifest.json and entities.gen.ts files above"',
@@ -872,6 +888,14 @@ export const PNPM_DOT_ENTRIES = Object.freeze([
   ".pnpm-workspace-state-v1.json",
 ]);
 
+/** A member directory or link target inside the workspace in pnpm's normal form: relative, no `..`, no trailing slash. */
+const insideWorkspace = (path) =>
+  path === "." ||
+  (!posix.isAbsolute(path) &&
+    !path.endsWith("/") &&
+    posix.normalize(path) === path &&
+    !path.split("/").includes(".."));
+
 /**
  * What the tested tree's lockfile says each node_modules holds (round 7, R6-H1), for prepare and the judge view:
  * `importers`, the member directories ("." the root), and `entries`, one `<importer>\t<name>\t<target>` line per
@@ -880,15 +904,21 @@ export const PNPM_DOT_ENTRIES = Object.freeze([
  */
 export function nodeModulesPlan(importers) {
   const entries = [];
-  for (const [dir, deps] of Object.entries(importers))
+  for (const [dir, deps] of Object.entries(importers)) {
+    // round 8 (NIT): an importer and a link stay inside the workspace, in pnpm's normal form
+    if (!/[\t\n]/.test(dir) && !insideWorkspace(dir))
+      throw new Error(`not a workspace member directory: ${dir}`);
     for (const [name, version] of Object.entries(deps)) {
       if (/[\t\n]/.test(dir + name))
         throw new Error(`not a lockfile importer entry: ${dir} ${name}`);
       const target = String(version).startsWith("link:")
         ? posix.normalize(posix.join(dir, String(version).slice(5))).replace(/\/$/, "")
         : "registry";
+      if (target !== "registry" && !insideWorkspace(target))
+        throw new Error(`a link outside the workspace: ${dir} ${name} ${version}`);
       entries.push(`${dir}\t${name}\t${target}`);
     }
+  }
   return { importers: Object.keys(importers).toSorted(), entries: entries.toSorted() };
 }
 
@@ -911,7 +941,7 @@ export const plantedCheck = (inDir = IN_DIR) =>
     `  tar -tf ${inDir}/src.tar | { grep -v '/$' || true; } | LC_ALL=C sort -u > /tmp/stackra-tracked`,
     "  find . \\( -name node_modules -o -path ./.git \\) -prune -o \\( -type f -o -type l \\) -print | sed 's|^\\./||' | LC_ALL=C sort -u > /tmp/stackra-present",
     "  LC_ALL=C comm -13 /tmp/stackra-tracked /tmp/stackra-present",
-    "  local nm p imp e n real target",
+    "  local nm p imp e n real target id",
     // to a file first, so a failing find stops prepare (set -e) instead of feeding the loop nothing
     "  find . -path ./.git -prune -o -name node_modules -prune -print0 > /tmp/stackra-modules",
     "  while IFS= read -r -d '' nm; do",
@@ -935,7 +965,11 @@ export const plantedCheck = (inDir = IN_DIR) =>
     `      target=$(awk -F '\\t' -v i="$imp" -v n="$n" '$1 == i && $2 == n { print $3; exit }' ${inDir}/node-modules.tsv)`,
     '      case "$target" in',
     '        "") echo "$e (not a dependency the lockfile names)" ;;',
-    '        registry) case "$real" in "$PWD/node_modules/.pnpm/"*"/node_modules/$n") ;; *) echo "$e (not a link into node_modules/.pnpm)" ;; esac ;;',
+    // round 8 (NIT): exactly one directory between .pnpm and the package's own node_modules, as pnpm writes it
+    "        registry)",
+    '          id=${real#"$PWD/node_modules/.pnpm/"}; id=${id%"/node_modules/$n"}',
+    '          case "$real" in "$PWD/node_modules/.pnpm/"*"/node_modules/$n") ;; *) id=/ ;; esac',
+    '          case "$id" in "" | */* | . | ..) echo "$e (not a link to node_modules/.pnpm/<id>/node_modules/$n)" ;; esac ;;',
     '        *) if [ "$real" != "$PWD/$target" ]; then echo "$e (not a link to $target)"; fi ;;',
     "      esac",
     "    done",
@@ -2276,8 +2310,11 @@ export const VIEW_REFUSED_EXIT = 4;
  *     own SQL).
  *   - `main`, on the tree prepared from the store image (no install, no PR code ever ran there): each member's
  *     node_modules (`importers`) is the judge image's, a link to it, or none where main has no such member. Every judge
- *     but licence-policy and knip runs here: none of them needs the PR's packages.
- *   - `pr`, on the prepared PR install (prepare checked it against the lockfile): knip's, which must see the PR's
+ *     but licence-policy and knip runs here: none of them needs the PR's packages. So a workspace import resolved
+ *     through node_modules lands in main's copy of the other member, not the tree's (round 8, NIT): no judge here
+ *     resolves one (boundaries' no-restricted-imports reads specifiers; typecheck is a PR step), and one that must
+ *     belongs in the `pr` view.
+ *   - `pr`, on the PR's install before any build script ran (round 8, L1), prepared and checked against the lockfile: knip's, which must see the PR's
  *     dependencies. Each node_modules is checked again: a dot entry pnpm does not write, a top-level entry that is not
  *     a link, or a node_modules that is not a directory at a member's root stops the view (VIEW_REFUSED_EXIT). A
  *     registry dependency main's install has at the same place becomes main's copy (a bump is judged by main's copy,
@@ -4749,10 +4786,14 @@ async function runSteps(
     from.shared = r.tag;
   }
   if (views.has("pr")) {
+    // From the install before any build script ran (round 8, L1), as licence-policy: no third-party code wrote any
+    // byte knip reads, and prepare checks that install's node_modules again.
+    if (!installed)
+      return { post: false, error: "knip's view needs the install before any build script ran" };
     r = await own(
       "pr",
-      from.base,
-      `bash ${IN_DIR}/judge-view.sh pr && ${command("--swap")}`,
+      installed,
+      `${prepare} && bash ${IN_DIR}/judge-view.sh pr && ${command("--swap")}`,
       judge,
     );
     if (!r.tag) return ended(r);

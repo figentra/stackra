@@ -220,6 +220,7 @@ import {
   viewOf,
   OVERLAY_FIELDS,
   MIGRATION_PENDING_PER_MEMBER,
+  UNTRACKED_SQL,
   judgeDockerfile,
   judgeTag,
   stepArgs,
@@ -6477,9 +6478,13 @@ test("B runJob: install, its rebuild, prepare, the views, then one container per
   assert.ok(view.includes(judgeMount));
   assert.equal(imageOf(shared), `${run}-view`);
   assert.equal(shared.at(-1), "bash /in/gate.sh --swap");
-  // knip's view: the checked PR install, with main's copies, bins and config modules
-  assert.equal(imageOf(pr), `${run}-base`);
-  assert.equal(pr.at(-1), "bash /in/judge-view.sh pr && bash /in/gate.sh --swap");
+  // knip's view: the PR's install before any build script ran (round 8, L1), prepared and checked again, with main's
+  // copies, bins and config modules
+  assert.equal(imageOf(pr), `${run}-installed`);
+  assert.equal(
+    pr.at(-1),
+    "bash /in/prepare.sh && bash /in/judge-view.sh pr && bash /in/gate.sh --swap",
+  );
   assert.ok(pr.includes(judgeMount));
   assert.deepEqual(
     calls.docker
@@ -7073,7 +7078,22 @@ test("round 7 R6-H1: prepare accepts exactly what pnpm writes for the lockfile, 
           rmSync(join(w, "node_modules/turbo"));
           linkAt(w, "node_modules/turbo", "/usr/bin");
         },
-        "node_modules/turbo (not a link into node_modules/.pnpm)",
+        "node_modules/turbo (not a link to node_modules/.pnpm/<id>/node_modules/turbo)",
+      ],
+      [
+        // round 8 (NIT): the reviewer's nested path, one directory too deep under .pnpm
+        "a nested .pnpm path",
+        (w) => {
+          putFiles(w, { "node_modules/.pnpm/evil/node_modules/zod/node_modules/zod/index.js": "" });
+          rmSync(join(w, "node_modules/turbo"));
+          linkAt(
+            w,
+            "node_modules/turbo",
+            join(w, "node_modules/.pnpm/evil/node_modules/zod/node_modules/turbo"),
+          );
+          putFiles(w, { "node_modules/.pnpm/evil/node_modules/zod/node_modules/turbo/x": "" });
+        },
+        "node_modules/turbo (not a link to node_modules/.pnpm/<id>/node_modules/turbo)",
       ],
       [
         "a dependency the lockfile does not name",
@@ -7168,6 +7188,20 @@ test("round 7: the lockfile plan names each member's direct dependencies, regist
     () => nodeModulesPlan({ "a\tb": {}, ".": { "x\ty": "1" } }),
     /not a lockfile importer entry/,
   );
+  // round 8 (NIT): an importer and a workspace link stay inside the workspace, in normal form
+  for (const dir of ["../x", "/abs", "packages/../x", "packages//a", "packages/a/"])
+    assert.throws(
+      () => nodeModulesPlan({ [dir]: {}, ".": { y: "1" } }),
+      /not a workspace member directory/,
+      dir,
+    );
+  assert.throws(
+    () => nodeModulesPlan({ "packages/a": { b: "link:../../../out" } }),
+    /a link outside the workspace/,
+  );
+  assert.deepEqual(nodeModulesPlan({ "packages/a": { b: "link:../b" } }).entries, [
+    "packages/a\tb\tpackages/b",
+  ]);
 });
 
 /** The judge image's side of a view test: main's node_modules for the root and packages/a. */
@@ -7364,6 +7398,61 @@ test("round 7: a judge's PATH puts the guarded node and main's tools first, and 
     path.some((dir) => dir.startsWith("/work")),
     false,
   );
+});
+
+test("round 8 L2: compiled SQL gen wrote that git does not track fails manifests-match-gen; ignored SQL stays invisible", () => {
+  const step = GATE_STEPS.find((s) => s.id === "manifests-match-gen");
+  assert.ok(
+    step.run.indexOf(UNTRACKED_SQL) > step.run.indexOf("gen"),
+    "after gen, before the diff",
+  );
+  assert.ok(step.run.indexOf(UNTRACKED_SQL) < step.run.indexOf("if ! git diff --quiet"));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-untracked-")));
+  const git = (...args) =>
+    spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t.invalid", ...args], {
+      cwd: dir,
+      encoding: "utf8",
+    });
+  const check = () =>
+    spawnSync(
+      ANY_BASH,
+      ["-c", `cd "${dir}"; check() {\n${UNTRACKED_SQL}\n}; check; echo tracked`],
+      {
+        encoding: "utf8",
+      },
+    );
+  try {
+    git("init", "-q");
+    putFiles(dir, {
+      "services/a/.stackra/migrations/0001_a.up.sql": "create table a ();",
+      "packages/p/src/node/database/compiled-migrations/p_0001_x.up.sql": "create table x ();",
+      ".gitignore": "services/b/.stackra/\n",
+    });
+    git("add", "-A");
+    git("commit", "-qm", "base");
+    assert.equal(check().status, 0);
+    // a new source's SQL gen wrote but nobody committed: in each committed place
+    for (const file of [
+      "services/a/.stackra/migrations/0002_b.up.sql",
+      "services/a/stackra-encore/a/migrations/2_b.up.sql",
+      "packages/p/src/node/database/compiled-migrations/p_0002_y.up.sql",
+    ]) {
+      putFiles(dir, { [file]: "create table y ();" });
+      const r = check();
+      assert.equal(r.status, 1, file);
+      assert.match(
+        r.stdout,
+        /::error title=Stale manifests::commit the compiled migration SQL gen wrote above/,
+      );
+      assert.ok(r.stdout.includes(file), r.stdout);
+      rmSync(join(dir, file));
+    }
+    // still gitignored (main before STA-2788): invisible, a no-op
+    putFiles(dir, { "services/b/.stackra/migrations/0001_b.up.sql": "create table b ();" });
+    assert.equal(check().status, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("round 7 L3: once SQL is compiled, every member with migration sources must have its own; manifests-match-gen compares the SQL", () => {
