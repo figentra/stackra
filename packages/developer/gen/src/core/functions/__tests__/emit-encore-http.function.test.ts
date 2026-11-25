@@ -4,12 +4,13 @@
  *          whose `answerHttp` runs through `app.handlers.run`, answers `OPTIONS` with 204 and `corsHeaders` over the
  *          bound `CorsConfig`, and adds those headers to every other answer (`Vary` appended) with `apiCacheControl`'s
  *          `private, no-store` (ADR 0325 rule 22); a service that declares @stackra/errors answers a `RateLimitedError`
- *          with 429 and `rateLimitHeaders` (STA-1477), one without it keeps the plain answer; a service without
+ *          with 429 and `rateLimitHeaders` (STA-1477), one without it keeps the plain answer; the request body is
+ *          `nodeBodyStream(req)`, never `Readable.toWeb` (STA-2794); a service without
  *          @stackra/app, a package and an app get none.
  * Boundary: test only; asserts on the generated source text of the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0437; ADR 0295 (decision 8); ADR 0325 (rule 22); STA-1385;
- *                     STA-1448.
+ *                     STA-1448; STA-2794.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -42,7 +43,8 @@ describe(emitEncoreHttp, () => {
     const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
     for (const line of [
       "export async function answerCall(req: IncomingMessage, resp: ServerResponse, call: Call): Promise<void> {",
-      '    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),',
+      "  nodeBodyStream,",
+      '    ...(method === "GET" || method === "HEAD" ? {} : { body: nodeBodyStream(req), duplex: "half" }),',
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
@@ -53,6 +55,8 @@ describe(emitEncoreHttp, () => {
       "  else Readable.fromWeb(response.body as never).pipe(resp);",
     ])
       expect(content).toContain(line);
+    // Readable.toWeb crashes on Encore's RawRequest at the end of every body (STA-2794).
+    expect(content).not.toContain("body: Readable.toWeb(req)");
   });
 
   it("answers a rate-limited refusal with 429 and its back-off headers when @stackra/errors is declared", () => {
