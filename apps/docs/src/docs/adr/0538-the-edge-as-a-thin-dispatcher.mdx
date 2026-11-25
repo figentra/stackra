@@ -131,6 +131,30 @@ C is rejected: a separate signer adds a hop and buys no isolation once the dispa
    - the KSA launch gate (decision 12);
    - Runway is the single writer of platform host rows and release pointers, and the projector of the rest.
 
+9. **Residency is region-first** (owner ruling, 2026-11-25).
+   - **The model:** the tenant's home region drives storage, files, backups, the API and compute, logs, AI inference
+     and third-party providers. Runway sets the home region per tenant. The edge only routes to it (decisions 3 and 6).
+   - **Cloudflare's Data Localization Suite is not a substitute.** Regional Services is an optional per-tenant edge
+     setting for markets that require TLS to be terminated in-country.
+     - **Where it applies:** Saudi Arabia and the United Arab Emirates are supported regions. There, Cloudflare uses
+       only in-country data centres to decrypt and serve HTTPS (Sources).
+     - **What it doesn't cover:** where traffic exits to the origin. L3/L4 DDoS mitigation still runs anywhere, and a
+       single-country region outside the US has no automatic failover if in-country capacity is unavailable
+       (Sources).
+     - **Missing pieces there:** Geo Key Manager and Customer Metadata Boundary are not available in either region
+       (Sources). If counsel requires private keys in-country, Keyless SSL is the option: the customer runs the key
+       server, so placing it in-country is our deployment choice, not a stated Cloudflare guarantee.
+     - **Cost:** the Data Localization Suite, Regional Services and Keyless SSL are each an Enterprise paid add-on
+       (Sources), and each is the owner's call.
+   - **Tenants that cannot use Cloudflare at all** are served through a Runway deploy provider with in-country
+     ingress and hosting (for example Docker or Coolify), with Cloudflare DNS-only or absent. The dispatcher, the
+     token and the origin lock of this page do not apply to them; that provider's own ingress carries the equivalent
+     checks.
+   - **0437 decision 12's KSA launch gate stays.** For each tenant, the gate records which of three ways meets it:
+     - region-first behind Cloudflare, with counsel's acceptance;
+     - region-first with Regional Services, plus Keyless SSL where keys must stay in-country;
+     - a Runway deploy provider without Cloudflare.
+
 ## Consequences
 
 - **The edge's own code shrinks** to host resolution, status, pointer choice, token minting and dispatch. WAF, rate
@@ -185,6 +209,9 @@ All planned; nothing checks this yet.
    multiplies scripts and is what the Workers for Platforms pricing counts.
 5. **Confirm with Cloudflare** that a user Worker in a dispatch namespace cannot be reached except through the
    dispatcher (decision 4).
+6. **Per-tenant residency purchases:** for a tenant whose market requires in-country TLS, Regional Services (and
+   Keyless SSL where keys must stay in-country), each an Enterprise add-on, or a Runway deploy provider without
+   Cloudflare (decision 9).
 
 ## Supersedes and sources
 
@@ -211,6 +238,14 @@ Cloudflare docs, read 2026-11-25:
   and [rollbacks](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/)
 - [Workers VPC](https://developers.cloudflare.com/workers-vpc/) (beta)
 - [Web Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/) (ECDSA P-256, Ed25519)
+- [Data Localization Suite](https://developers.cloudflare.com/data-localization/) (an Enterprise-only paid add-on),
+  [region support](https://developers.cloudflare.com/data-localization/region-support/) (Saudi Arabia and the United
+  Arab Emirates: Regional Services yes, Geo Key Manager and Customer Metadata Boundary no) and
+  [Regional Services](https://developers.cloudflare.com/data-localization/regional-services/) (decryption in-region
+  only; not where traffic exits to the origin; no automatic failover for single-country regions outside the US)
+- [Keyless SSL](https://developers.cloudflare.com/ssl/keyless-ssl/) (Enterprise paid add-on; the customer runs the
+  key server)
+- The owner's ruling, region-first, relayed by Selim (HoE) on 2026-11-25
 - [WAF custom rules](https://developers.cloudflare.com/waf/custom-rules/),
   [rate limiting rules](https://developers.cloudflare.com/waf/rate-limiting-rules/),
   [Bot Management plans](https://developers.cloudflare.com/bots/plans/bm-subscription/),
