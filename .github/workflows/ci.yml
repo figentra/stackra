@@ -157,19 +157,32 @@ jobs:
             pnpm exec turbo run build --filter='!@figentra/mobile' --filter='!@figentra/playground'
           fi
 
-      # STA-1403: .stackra is gitignored, so gen compiles each reference service's migrations into its
-      # .stackra/migrations for the Squawk step below. Typecheck's gen tasks are cache hits here; services
-      # it skipped as unaffected run gen now.
+      # STA-1403: gen compiles each reference service's migrations into its .stackra/migrations (and their Encore
+      # copy), which are committed (STA-2788); the next step fails when they differ. Typecheck's gen tasks are cache
+      # hits here; services it skipped as unaffected run gen now.
       - name: Service gen (stackra gen)
         run: pnpm exec turbo run gen --filter='./services/*'
 
       # STA-2036: typecheck and the step above ran gen, so a committed contract that differs from what gen writes now
       # is stale: the member's hosts would read old identities from it (and from the package it is published in).
+      # STA-2788: so are the committed compiled migrations, which a deploy applies as committed, so the SQL Squawk lints
+      # below is the SQL that deploys: a changed or missing (untracked) file shows in git status, and a leftover one in
+      # each service's `stackra gen --check` (a turbo cache hit restores gen's files but never deletes one).
       - name: Committed manifests match gen
         run: |
-          if ! git diff --quiet -- '*stackra.manifest.json' '*src/node/entities.gen.ts'; then
-            git diff --stat -- '*stackra.manifest.json' '*src/node/entities.gen.ts'
-            echo "::error title=Stale manifests::run pnpm gen and commit the stackra.manifest.json and entities.gen.ts files above"
+          paths=('*stackra.manifest.json' '*src/node/entities.gen.ts' '*/.stackra/migrations/*.sql' '*/stackra-encore/*/migrations/*.sql')
+          stale=0
+          if [ -n "$(git status --porcelain --untracked-files=all -- "${paths[@]}")" ]; then
+            git status --short --untracked-files=all -- "${paths[@]}"
+            stale=1
+          fi
+          cli="$PWD/packages/developer/cli/dist/stackra.mjs"
+          for member in services/*/; do
+            grep -qs '"gen":' "${member}package.json" || continue
+            (cd "$member" && node "$cli" gen --check) || stale=1
+          done
+          if [ "$stale" -ne 0 ]; then
+            echo "::error title=Stale generated files::run pnpm gen and commit the stackra.manifest.json, entities.gen.ts and compiled migration files above"
             exit 1
           fi
 
