@@ -55,12 +55,12 @@ later ruling put the packages' migrations in scope: they are what Stackra ships,
 
 - **AC-001**: THE compiled migrations a service applies and the compiled SQL of a package's own migrations SHALL be
   committed, and every other generated file SHALL stay ignored.
-- **AC-002**: WHEN committed compiled SQL differs from what gen writes from the sources (changed, missing or
-  leftover) THE `stackra gen --check` run and the Quality Gate's "Committed manifests match gen" step SHALL fail.
+- **AC-002**: WHEN committed compiled SQL drifts from its sources THE gen check SHALL fail: `stackra gen --check`
+  and the Quality Gate's "Committed manifests match gen" step, on a changed, missing or leftover file.
 - **AC-003**: WHEN runway builds an Encore deploy commit THE deploy commit SHALL carry the source commit's compiled
   SQL byte for byte, and a working tree whose compiled SQL differs SHALL be refused before anything is committed.
-- **AC-004**: WHEN a host compiles a registry-installed package's migrations to SQL other than the SQL the package
-  ships THE host's gen SHALL refuse with `migration_package_drift`.
+- **AC-004**: WHEN a host's compile differs from a package's shipped SQL THE host's gen SHALL refuse it: a
+  registry-installed package whose migrations compile to other SQL fails with `migration_package_drift`.
 - **AC-005**: THE Quality Gate's Squawk step SHALL lint the committed compiled SQL of services and packages, with its
   transactional and online split.
 

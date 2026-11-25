@@ -194,12 +194,15 @@ jobs:
       # checksummed history never re-runs a file), varchar and char(3) columns, integer counters.
       # 2.0.0 could not parse a schema-qualified GRANT/REVOKE (STA-2117). The runner sets lock and
       # statement timeouts per session (ADR 0159), so the files need no `set lock_timeout`.
+      # STA-2788: squawk-baseline.mjs judges Squawk's JSON reports. A finding passes only in a file the CTO-owned
+      # tools/scripts/squawk-baseline.jsonc pins by exact path and SHA-256 under that rule (migrations frozen once
+      # applied); a changed or missing pinned file, an entry or rule that matches nothing, one main's list lacks
+      # (HEAD~1: the list only shrinks) and any other finding fail the step.
       - name: Migration lint (Squawk)
         run: |
           mapfile -t files < <(find . -path ./node_modules -prune -o \( -path '*/.stackra/migrations/*.up.sql' -o -path '*/src/node/database/compiled-migrations/*.up.sql' \) -print | sort)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "::notice title=Squawk::no compiled migrations (.stackra/migrations, src/node/database/compiled-migrations) in this checkout; nothing linted"
-            exit 0
           fi
           transactional=()
           online=()
@@ -210,10 +213,18 @@ jobs:
             mise exec github:sbdchd/squawk@2.71.0 -- squawk --pg-version=18.0 \
               --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \
               --exclude=prefer-bigint-over-int \
-              --exclude=require-lock-timeout --exclude=require-statement-timeout "$@"
+              --exclude=require-lock-timeout --exclude=require-statement-timeout --reporter json "$@"
           }
-          if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi
-          if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi
+          reports="${RUNNER_TEMP:-/tmp}/squawk"
+          mkdir -p "$reports"
+          echo '[]' > "$reports/transactional.json"
+          echo '[]' > "$reports/online.json"
+          # Squawk exits 1 when it reports a finding: the baseline judges them, and refuses a report that is not JSON.
+          if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}" > "$reports/transactional.json" || [ $? -eq 1 ]; fi
+          if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}" > "$reports/online.json" || [ $? -eq 1 ]; fi
+          base=()
+          if git show HEAD~1:tools/scripts/squawk-baseline.jsonc > "$reports/base.jsonc" 2> /dev/null; then base=(--base "$reports/base.jsonc"); fi
+          node tools/scripts/squawk-baseline.mjs --baseline tools/scripts/squawk-baseline.jsonc "${base[@]}" "$reports/transactional.json" "$reports/online.json"
 
       # spec-gate: a ready-for-review PR needs its own spec (the branch key's folder), when changed, at Tasked or later; other changed specs get the stage check, and a change to another spec's Status line needs a commit with `Refs:` naming that spec's key; STACKRA_BRANCH feeds the lane check (check-pr owns the branch name).
       - name: Validate repository
