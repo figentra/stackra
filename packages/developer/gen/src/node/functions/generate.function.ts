@@ -28,7 +28,8 @@
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and their Encore copies to `stackra-encore/<member>/migrations`, and removes any `.sql` file
  *           in either it did not produce; both are committed (STA-2788), so `--check` reports a stale, missing or
- *           leftover one, as it does the manifest.
+ *           leftover one, as it does the manifest. A package with migrations of its own also writes and commits their
+ *           compiled SQL to `src/node/database/compiled-migrations` (`emitPackageMigrations`), checked the same way.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
@@ -51,6 +52,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
+import { PACKAGE_MIGRATIONS_DIR } from "#core/constants/package-migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
@@ -179,8 +181,8 @@ const sqlFilesOf = (root: string, folder: string): string[] =>
     : [];
 
 /**
- * The `.sql` files in `.stackra/migrations` and in the Encore copy (`stackra-encore/<member>/migrations`) this run did
- * not produce (a renumbered or removed migration), deleted unless `check`, so no runner applies a stale file and none is
+ * The `.sql` files in `.stackra/migrations`, in the Encore copy (`stackra-encore/<member>/migrations`) and in a
+ * package's committed `src/node/database/compiled-migrations` this run did not produce (a renumbered or removed migration), deleted unless `check`, so no runner applies a stale file and none is
  * left committed; with `compiled` (a service's full run, where the migrations ran), also a leftover
  * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed. A manifests pass
  * compiles no migrations, so it leaves them alone (`full`).
@@ -196,6 +198,7 @@ function staleMigrations(
   const kept = new Set(files.map((file) => file.path));
   const stale = [
     ...sqlFilesOf(root, MIGRATIONS_DIR),
+    ...sqlFilesOf(root, PACKAGE_MIGRATIONS_DIR),
     ...(compiled ? sqlFilesOf(root, `${encoreServiceFolder(member)}/migrations`) : []),
   ].filter((path) => !kept.has(path));
   if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))

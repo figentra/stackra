@@ -545,3 +545,68 @@ describe("generate's committed compiled migrations (STA-2788)", () => {
     expect(existsSync(join(root, ENCORE_UP))).toBe(true);
   });
 });
+
+/** A package with one migration of its own, compiled by the fake database. */
+function migratedPackage(): string {
+  return writeFixtureMember("ledger", {
+    ...FAKE_DATABASE,
+    "src/node/database/migrations/0001-create-entries.migration.ts": migrationSource(
+      "CreateEntries",
+      "entries",
+    ),
+  });
+}
+
+/** The committed SQL of the fixture package's one migration. */
+const PACKAGE_UP = "src/node/database/compiled-migrations/ledger_0001_create_entries.up.sql";
+const PACKAGE_DOWN = "src/node/database/compiled-migrations/ledger_0001_create_entries.down.sql";
+
+describe("generate's committed package migrations (STA-2788)", () => {
+  it("writes the package's committed SQL beside its test stream, then a check finds nothing to change", async () => {
+    const root = migratedPackage();
+    const first = await generate(root);
+    expect(first.errors).toEqual([]);
+    expect(first.changed).toEqual(expect.arrayContaining([PACKAGE_UP, PACKAGE_DOWN]));
+    expect(readFileSync(join(root, PACKAGE_UP), "utf8")).toContain(
+      'create table "ledger"."entries" ("id" text primary key);',
+    );
+    // The test stream stays gen's scratch, with the same step under its sequence number.
+    expect(
+      readFileSync(
+        join(root, ".stackra/tests/migrations/0001_ledger_0001_create_entries.up.sql"),
+        "utf8",
+      ),
+    ).toContain('create table "ledger"."entries"');
+    expect((await generate(root)).changed).toEqual([]);
+    expect((await generate(root, { check: true })).changed).toEqual([]);
+  });
+
+  it("fails a check on committed SQL that drifted, is missing or is left over, and a write run repairs it", async () => {
+    const root = migratedPackage();
+    expect((await generate(root)).errors).toEqual([]);
+    writeFileSync(join(root, PACKAGE_UP), "drop table entries;\n");
+    rmSync(join(root, PACKAGE_DOWN));
+    const leftover = "src/node/database/compiled-migrations/ledger_0002_gone.up.sql";
+    writeFileSync(join(root, leftover), "select 1;\n");
+    expect([...(await generate(root, { check: true })).changed].toSorted()).toEqual(
+      [PACKAGE_UP, PACKAGE_DOWN, leftover].toSorted(),
+    );
+    expect(readFileSync(join(root, PACKAGE_UP), "utf8")).toBe("drop table entries;\n");
+    expect([...(await generate(root)).changed].toSorted()).toEqual(
+      [PACKAGE_UP, PACKAGE_DOWN, leftover].toSorted(),
+    );
+    expect(existsSync(join(root, leftover))).toBe(false);
+    expect((await generate(root, { check: true })).changed).toEqual([]);
+  });
+
+  it("removes the committed SQL once the package's last migration is gone", async () => {
+    const root = migratedPackage();
+    expect((await generate(root)).errors).toEqual([]);
+    rmSync(join(root, "src/node/database/migrations"), { recursive: true });
+    expect((await generate(root, { check: true })).changed).toEqual(
+      expect.arrayContaining([PACKAGE_UP, PACKAGE_DOWN]),
+    );
+    expect((await generate(root)).errors).toEqual([]);
+    expect(existsSync(join(root, PACKAGE_UP))).toBe(false);
+  });
+});

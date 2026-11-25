@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `isCommittedMigration`: the compiled `.up.sql` and `.down.sql` files in `.stackra/migrations`
- *          and in a generated Encore service's `migrations` folder are committed; a package's test copies, nested
+ * Purpose: unit tests of `isCommittedMigration`: the compiled `.up.sql` and `.down.sql` files in `.stackra/migrations`,
+ *          in a generated Encore service's `migrations` folder and in a package's `compiled-migrations` are committed; a package's test copies, nested
  *          folders, other generated files and look-alike folders are not.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
@@ -18,6 +18,8 @@ describe("isCommittedMigration", () => {
       ".stackra/migrations/0001_shop_0001_create_orders.down.sql",
       "stackra-encore/shop/migrations/0001_shop_0001_create_orders.up.sql",
       "stackra-encore/shop/migrations/0002_shop_0002_add_index.down.sql",
+      "src/node/database/compiled-migrations/loyalty_kit_0001_create_loyalty_tables.up.sql",
+      "src/node/database/compiled-migrations/loyalty_kit_0002_add_index_1.down.sql",
     ])
       expect(isCommittedMigration(path), path).toBe(true);
   });
@@ -33,6 +35,8 @@ describe("isCommittedMigration", () => {
       "xstackra/migrations/0001.up.sql",
       "a.stackra/migrations/0001.up.sql",
       "stackra.manifest.json",
+      "src/node/database/migrations/0001-create-orders.migration.ts",
+      "src/node/database/compiled-migrations/nested/x.up.sql",
     ])
       expect(isCommittedMigration(path), path).toBe(false);
   });

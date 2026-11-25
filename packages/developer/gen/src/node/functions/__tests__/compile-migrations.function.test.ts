@@ -13,7 +13,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -349,5 +349,111 @@ describe("compileMigrations", () => {
   it("writes no blueprint file when the service has no own macro", async () => {
     const { files } = await compileMigrations(host(), serviceIr(["shop"]));
     expect(files.some((file) => file.path.endsWith("blueprint.ts"))).toBe(false);
+  });
+});
+
+/** The SQL a host compiles tenancy's migration to, and its name in a package's committed folder. */
+const SHIPPED_SQL = "src/node/database/compiled-migrations/tenancy_0001_create_tenants.up.sql";
+
+/** tenancy, compiled as the package itself: its own migration, no declared package. */
+const tenancyIr: MemberIR = {
+  ...LOYALTY_KIT_IR,
+  member: "tenancy",
+  package: "@stackra/tenancy",
+  layout: "package",
+  modules: [],
+  classes: [],
+  packages: [],
+};
+
+/** The content a host's stream gives tenancy's one migration. */
+async function hostShippedSql(): Promise<string> {
+  const { files, errors } = await compileMigrations(host(), {
+    ...serviceIr(["shop"]),
+    packages: ["@stackra/tenancy"],
+  });
+  expect(errors).toEqual([]);
+  return files[0]?.content as string;
+}
+
+describe("compileMigrations: a package's committed SQL (STA-2788)", () => {
+  it("commits a package's own migrations byte for byte as a host's stream holds them", async () => {
+    const root = host({
+      "src/node/database/migrations/0001-create-tenants.migration.ts": migration(
+        "CreateTenants",
+        'schema.create("tenants", () => {});',
+      ),
+    });
+    const { files, errors } = await compileMigrations(root, tenancyIr);
+    expect(errors).toEqual([]);
+    // The test stream and the committed file: no sequence, and the host's header.
+    expect(files.map((file) => file.path)).toEqual([
+      ".stackra/migrations/0001_tenancy_0001_create_tenants.up.sql",
+      SHIPPED_SQL,
+    ]);
+    const committed = files.find((file) => file.path === SHIPPED_SQL)?.content;
+    expect(committed).toContain(
+      "from tenancy.0001_create_tenants (@stackra/tenancy/src/node/database/migrations/0001-create-tenants.migration.ts)",
+    );
+    expect(committed).toBe(await hostShippedSql());
+  });
+
+  it("commits nothing for a service, whose stream is its own", async () => {
+    const { files } = await compileMigrations(host(), serviceIr(["shop"]));
+    expect(files.some((file) => file.path.includes("compiled-migrations"))).toBe(false);
+  });
+
+  it("passes an installed package whose shipped SQL is what it compiles to here", async () => {
+    const root = host({ [`node_modules/@stackra/tenancy/${SHIPPED_SQL}`]: await hostShippedSql() });
+    expect((await compileMigrations(root, serviceIr(["shop"]))).errors).toEqual([]);
+  });
+
+  it.each([
+    ["a changed file", { [SHIPPED_SQL]: "drop table tenants;\n" }],
+    ["a missing file", { "src/node/database/compiled-migrations/README.md": "" }],
+    ["an extra file", "extra"],
+  ] as const)(
+    "refuses an installed package whose shipped SQL differs from what it compiles to here: %s",
+    async (_, shipped) => {
+      const correct = await hostShippedSql();
+      const files =
+        shipped === "extra"
+          ? {
+              [SHIPPED_SQL]: correct,
+              "src/node/database/compiled-migrations/tenancy_0009_gone.up.sql": "select 1;\n",
+            }
+          : shipped;
+      const root = host(
+        Object.fromEntries(
+          Object.entries(files).map(([path, content]) => [
+            `node_modules/@stackra/tenancy/${path}`,
+            content,
+          ]),
+        ),
+      );
+      const { files: written, errors } = await compileMigrations(root, serviceIr(["shop"]));
+      expect(written).toEqual([]);
+      expect(errors.map((error) => [error.code, error.subject])).toEqual([
+        ["migration_package_drift", "@stackra/tenancy"],
+      ]);
+    },
+  );
+
+  it("leaves a workspace package (linked, not installed) to its own gen --check", async () => {
+    const root = host({
+      "packages/tenancy/package.json": JSON.stringify({ name: "@stackra/tenancy", type: "module" }),
+      "packages/tenancy/src/node/database/migrations/0001-create-tenants.migration.ts": migration(
+        "CreateTenants",
+        'schema.create("tenants", () => {});',
+      ),
+      [`packages/tenancy/${SHIPPED_SQL}`]: "drop table tenants;\n",
+    });
+    rmSync(join(root, "node_modules/@stackra/tenancy"), { recursive: true, force: true });
+    symlinkSync(join(root, "packages/tenancy"), join(root, "node_modules/@stackra/tenancy"));
+    const { errors } = await compileMigrations(root, {
+      ...serviceIr(["shop"]),
+      packages: ["@stackra/tenancy"],
+    });
+    expect(errors).toEqual([]);
   });
 });
