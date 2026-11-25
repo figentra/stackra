@@ -84,6 +84,28 @@
  *   Residual: PR code can still make its own tests pass (it writes the tests), and manifests-match-gen's gen runs the
  *   PR's own migrations, so the PR's code shapes the generated output that step compares with the PR's own commit (in
  *   its own container; nothing it writes reaches another step). That is what review is for.
+ * Step audit (C1, round 5): what each step runs, and whether the tree's code can run in it.
+ *   step                  | runs                                                    | tree code? | container
+ *   licence-policy        | pnpm listings; this service's licence check             | no (data)  | judge
+ *   dependency-scan       | osv-scanner (store image) on the lockfile               | no (data)  | judge
+ *   workflow-lint         | actionlint, zizmor (store image)                        | no (data)  | judge
+ *   linear-key-check      | main's linear.mjs; commitlint, main's config and preset | no         | judge, eval allowed
+ *   format-check          | one oxfmt over the tree (loads oxfmt.config.*)          | no: main's | shared judge
+ *   lint                  | oxlint per member, main's plugin; lint:root             | no: main's | judge
+ *   typecheck, build      | turbo, per member                                       | yes        | PR (base image)
+ *   service-gen, test     | turbo, per member                                       | yes        | PR (built image)
+ *   manifests-match-gen   | main's gen on the PR's sources, then git diff           | yes (gen)  | PR (built image)
+ *   migration-lint        | squawk on the SQL the tree commits                      | no (data)  | judge
+ *   validate              | main's CLI: validate, doc-standard, fflow, duplication   | no: main's | judge
+ *   env-names             | main's runway on runway.yaml                            | no: main's | judge
+ *   boundaries            | turbo boundaries                                        | no (data)  | judge
+ *   knip                  | one knip (jiti loads every workspace's configs)         | no: main's | shared judge
+ *   secrets-scan          | gitleaks (store image), main's config                   | no (data)  | judge
+ *   Every judge disallows code generation from strings except linear-key-check: commitlint validates its config with
+ *   ajv, which compiles each schema with `new Function` (the step's `evalAllowed`). "no: main's" is the guard's doing.
+ *   Coverage gap, accepted only while stackra/verify is not live: compiled migrations (.stackra/migrations/*.up.sql)
+ *   are not committed, so migration-lint lints nothing on a PR until STA-2788 lands (commit the compiled migrations,
+ *   with the apply path running exactly the committed SQL).
  * Threat model, stated plainly: the service proves that a PR's code passes main's checks on our machines, cannot
  *   forge or replay a result, cannot reach the key, the host's services or instance credentials, and cannot poison
  *   another run. It cannot prove that a PR's own code is honest: code that runs during install or test can always
@@ -155,6 +177,8 @@
  *     - "/work cannot be mounted noexec" or "could not make the noexec /work volume": the verify user's Docker must
  *       keep images as overlay2 layer directories (storage-driver overlay2, not the containerd image store) and be
  *       able to mount an overlay volume (kernel 5.11 or later for a rootless one); fix the daemon's configuration.
+ *   migration-lint saying "no compiled migrations … nothing linted" on a PR is the known gap until STA-2788 (compiled
+ *   migrations committed); it is a go-live item, below.
  *   A judge that says "a judge never runs the tested tree's <path>" refused to run the PR's code: an honest red. The
  *   PR's change to that path is judged by main's copy of the judge, or lands through risk:R3 and the owner first.
  *   A gate-tool version bump (risk:R3) is judged by main's version until it merges; a new member's own scripts stand
@@ -166,6 +190,8 @@
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
  *   recorded in #1043 before the ruleset swap.
+ *   The ruleset swap also waits until STA-2788 has merged (compiled migrations committed, applied exactly as committed),
+ *   so that migration-lint lints each PR's migration SQL from the tree; until then it lints nothing on a PR.
  *   The judges from main (round 5, B) pass on main in the verify user's Docker before the swap: the judge image
  *   builds, every judge is green on main read-only and guarded, and the H1 and H2 reproductions turn no judge green;
  *   the results and the gate's time against the one-container layout (within about 1.5x) are recorded in #1043.

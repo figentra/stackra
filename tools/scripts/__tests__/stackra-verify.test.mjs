@@ -6650,3 +6650,20 @@ test(
     rmSync(dir, { recursive: true, force: true });
   },
 );
+
+test("header: the step audit covers every gate step, names the one eval exception, and the swap waits for STA-2788", () => {
+  const header = readFileSync(join(CODE_DIR, SELF_PATH), "utf8").split("\n*/")[0];
+  const audit = header.slice(
+    header.indexOf(" * Step audit (C1"),
+    header.indexOf(" * Threat model"),
+  );
+  const rows = [...audit.matchAll(/^ \*   ([a-z][\w, -]*?)\s+\|/gm)]
+    .flatMap((m) => m[1].split(",").map((id) => id.trim()))
+    .filter((id) => id !== "step");
+  assert.deepEqual(rows.toSorted(), GATE_STEPS.map((s) => s.id).toSorted());
+  assert.match(audit, /^ \*   linear-key-check .*\| judge, eval allowed$/m);
+  assert.match(audit, /ajv, which compiles each schema with `new Function`/);
+  const goLive = header.slice(header.indexOf("Go-live, before the ruleset swap"));
+  assert.match(goLive, /STA-2781/);
+  assert.match(goLive, /The ruleset swap also waits until STA-2788 has merged/);
+});
