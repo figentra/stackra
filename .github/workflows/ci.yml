@@ -28,6 +28,12 @@ on:
 permissions:
   contents: read
 
+# STA-2785: one self-hosted runner serves these jobs, so a newer push to a pull request cancels the run it supersedes
+# instead of queueing behind it. A dispatch never cancels one.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # ADR 0174: known vulnerabilities in the lockfile, as their own job. A finding fails this job and never skips the
   # gate's code steps: as a gate step it failed first on a lockfile finding and skipped install, lint, typecheck,
