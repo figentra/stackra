@@ -3,12 +3,14 @@
  * Purpose: unit tests of `serviceTemplate`: the file list of a plain service (root module, its `createTestingModule`
  *          test, no tool config, no `test:int`) and of a `--data` one (the example module with model, migration, unit
  *          and `.int` tests, the database test peers, `@stackra/testing` and `test:int`), and `--summary` landing in
- *          `stackra.summary` only when given.
+ *          `stackra.summary` only when given, and a tsconfig whose `paths` mirror the imports for Encore (STA-2794).
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (rule R12); ADR 0295 (no authored tool config); STA-1819.
  */
 import { describe, expect, it } from "@stackra/testing";
+
+import { checkEncoreService, stripJsonc } from "@stackra/repo-checks/node";
 
 import { serviceTemplate } from "#node/functions/service-template.function";
 
@@ -89,6 +91,24 @@ describe("serviceTemplate", () => {
     expect(Object.keys(pkg.dependencies)).toEqual(
       expect.arrayContaining(["@stackra/database", "@stackra/model", "@stackra/validation"]),
     );
+  });
+
+  it("writes a tsconfig whose paths mirror its imports, so Encore can parse the service (STA-2794)", () => {
+    const tsconfig = JSON.parse(stripJsonc(content(false, "tsconfig.json"))) as {
+      extends: string;
+      compilerOptions: { paths: Record<string, string[]> };
+    };
+    expect(tsconfig.extends).toBe("@stackra/typescript-config/service");
+    expect(tsconfig.compilerOptions.paths["#modules/*"]).toEqual(["./src/modules/*"]);
+    const pkg = JSON.parse(content(false, "package.json")) as Parameters<
+      typeof checkEncoreService
+    >[0]["pkg"];
+    // `encore.dev` is not the template's to pin here, so only the tsconfig findings count
+    expect(
+      checkEncoreService({ pkg, tsconfig, catalogEncore: undefined }).filter((finding) =>
+        finding.startsWith("tsconfig.json"),
+      ),
+    ).toEqual([]);
   });
 
   it("takes the summary only when given", () => {

@@ -5,7 +5,7 @@
  *          services: package.json (the `#src`, `#modules`, `#config`, `#contracts`, `#assets` and `#stackra` imports,
  *          the `./assets/*` export, `@stackra/app` and `@stackra/container` for the generated server entry and
  *          Encore app, the other `@stackra/*` at `options.stackraVersion`, scripts that call `stackra <task>`),
- *          tsconfig.json (the `service` preset), turbo.jsonc, `stackra.config.ts` with one `defineService({ area })`,
+ *          tsconfig.json (the `service` preset and the Encore `paths` of its imports, `encoreTsconfig`), turbo.jsonc, `stackra.config.ts` with one `defineService({ area })`,
  *          `runway.yaml` (version 3, nothing required yet), `assets/.gitkeep`, README.md, AGENTS.md and CHANGELOG.md,
  *          the root module `src/<name>.module.ts` and its one passing test (`createTestingModule`). With `data`: the
  *          database test peers, `@stackra/testing`, `test:int`, and one example module `src/modules/notes/` (a model,
@@ -21,6 +21,7 @@
  */
 import { npmMetadataFor, turboTagsFor } from "@stackra/repo-checks/node";
 
+import { encoreTsconfig } from "#node/encore/functions/encore-tsconfig.function";
 import { serviceExampleModule } from "#node/functions/service-example-module.function";
 import type { TemplateFile } from "#node/types/template-file.type";
 import type { TemplateOptions } from "#node/types/template-options.type";
@@ -166,12 +167,17 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
     { path: "package.json", content: `${JSON.stringify(packageJson, null, 2)}\n` },
     {
       path: "tsconfig.json",
-      content: [
-        "// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else.",
-        "// Owner: release-operations · Secrets: forbidden",
-        '{ "extends": "@stackra/typescript-config/service" }',
-        "",
-      ].join("\n"),
+      content: encoreTsconfig(
+        [
+          "// TypeScript project for this member: extends exactly one @stackra/typescript-config preset. Its",
+          "// compilerOptions hold only paths: each package.json imports key with its first target, because Encore ignores",
+          "// imports and reads paths only here, never through extends (ADR 0091); `stackra encore:prepare` rewrites them.",
+          "// Owner: release-operations · Secrets: forbidden",
+          '{ "extends": "@stackra/typescript-config/service" }',
+          "",
+        ].join("\n"),
+        packageJson.imports,
+      ),
     },
     {
       path: "turbo.jsonc",

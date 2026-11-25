@@ -3,6 +3,8 @@
  * Purpose: `starterFiles(files, options)`, the files of a new app from a starter's files: the chosen profile's
  *          included paths with its overlays, the rename list applied to every text file, catalog `stackra` pinned to
  *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`.
+ *          Each service's tsconfig.json gets the Encore `paths` of its package.json `imports` (`encoreTsconfig`,
+ *          STA-2794), so `stackra dev` can start Encore whatever the starter's tsconfig says.
  *          `stackra.starter.yaml`, `starter/` and `pnpm-lock.yaml` are never written: the install resolves fresh.
  *          Nor is `.infisical.yaml`: it binds the template's own Infisical project, never the app's (STA-2027).
  * Boundary: pure; returns the files and writes nothing. Refuses a manifest that does not match `StarterManifest`, an
@@ -15,6 +17,7 @@ import { matchesGlob } from "node:path";
 import { isMap, parse, parseDocument } from "yaml";
 
 import { STACKRA_REGISTRY_NPMRC } from "#node/constants/stackra-registry-npmrc.constant";
+import { encoreTsconfig } from "#node/encore/functions/encore-tsconfig.function";
 import type { StarterManifest } from "#node/create/types/starter-manifest.type";
 import type { StarterOptions } from "#node/create/types/starter-options.type";
 
@@ -84,6 +87,34 @@ function pinWorkspace(source: string, options: StarterOptions): string {
 }
 
 /**
+ * Gives each service of the app (a `package.json` with `stackra.tier: "service"` and `imports`) the tsconfig `paths`
+ * Encore needs to parse it (`encoreTsconfig`): Encore ignores package.json `imports` and reads `paths` only from the
+ * service's own tsconfig.json, so a starter whose service tsconfig only extends a preset would make an app that
+ * `stackra dev` cannot start (STA-2794). A service without a tsconfig.json, or whose files do not parse, is left alone.
+ */
+function encoreServices(out: Map<string, Uint8Array>): void {
+  for (const [path, bytes] of out) {
+    if (path !== "package.json" && !path.endsWith("/package.json")) continue;
+    const folder = path.slice(0, -"package.json".length);
+    const tsconfig = out.get(`${folder}tsconfig.json`);
+    if (tsconfig === undefined) continue;
+    try {
+      const pkg = JSON.parse(text(bytes) ?? "") as {
+        imports?: unknown;
+        stackra?: { tier?: unknown };
+      };
+      if (pkg.stackra?.tier !== "service" || pkg.imports === undefined) continue;
+      out.set(
+        `${folder}tsconfig.json`,
+        encoder.encode(encoreTsconfig(text(tsconfig) ?? "", pkg.imports)),
+      );
+    } catch {
+      continue;
+    }
+  }
+}
+
+/**
  * The files of the app.
  *
  * @param files - the starter's files by POSIX path.
@@ -130,6 +161,7 @@ export function starterFiles(
     if (path === "pnpm-workspace.yaml") body = pinWorkspace(body, options);
     out.set(path, encoder.encode(body));
   }
+  encoreServices(out);
   const npmrc = out.has(".npmrc") ? (text(out.get(".npmrc") ?? new Uint8Array()) ?? "") : "";
   if (!npmrc.includes("@stackra:registry="))
     out.set(
