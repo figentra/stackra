@@ -25,4 +25,8 @@ export const MUST_STAY_JSONC: readonly (readonly [RegExp, string])[] = [
     "Flow renders opencode.jsonc from this exact surface name",
   ],
   [/(^|\/)wrangler\.jsonc$/, "Wrangler: wrangler.toml / .json / .jsonc only (ADR 0284)"],
+  [
+    /^tools\/scripts\/squawk-baseline\.jsonc$/,
+    "squawk-baseline.mjs: node built-ins only, so stackra/verify's judge image runs it with no YAML parser (STA-2788)",
+  ],
 ];

@@ -446,11 +446,20 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
     flagged,
   );
-  const yamlOwed = [".agents/models.jsonc", ".mcp.jsonc", "tools/x/config.jsonc"];
+  const yamlOwed = [
+    ".agents/models.jsonc",
+    ".mcp.jsonc",
+    "tools/x/config.jsonc",
+    "tools/scripts/other-baseline.jsonc",
+  ];
   assert.deepEqual(
-    checkJsonConfigs([...yamlOwed, "knip.jsonc", "opencode.jsonc", ".oxfmtrc.jsonc"]).map(
-      (m) => m.split(":")[0],
-    ),
+    checkJsonConfigs([
+      ...yamlOwed,
+      "knip.jsonc",
+      "opencode.jsonc",
+      ".oxfmtrc.jsonc",
+      "tools/scripts/squawk-baseline.jsonc",
+    ]).map((m) => m.split(":")[0]),
     yamlOwed,
   );
 });
