@@ -29,7 +29,7 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'regen')
     # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; the `if:`
     # above keeps a fork's pull request off it. "Regen (push)" stays hosted (it needs the gh CLI).
-    runs-on: [self-hosted, figentra]
+    runs-on: [self-hosted, figentra] # zizmor: ignore[self-hosted-runner]
     timeout-minutes: 30
     permissions:
       contents: read

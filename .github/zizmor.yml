@@ -27,3 +27,9 @@ rules:
   #
   # artipacked, on regen-push.yml's `persist-credentials: true`: the job pushes the regenerated commit with the bot
   # App's token, and uploads nothing, so the persisted credential never leaves the runner.
+  #
+  # self-hosted-runner (auditor persona only), on each `runs-on: [self-hosted, figentra]` line (STA-2785): while GitHub
+  # refuses hosted runners for figentra's billing, the jobs that need no Docker, Encore, sudo, gcloud or gh run on
+  # figentra-b2-1 (box 2), whose user has no sudo or Docker and reads only its work directory. A fork's pull request
+  # reaches it only after a maintainer approves the run ("require approval for all external contributors", which stays
+  # on); regen.yml's job also skips forks. Release, deploy, apply, production and approver jobs never run there.

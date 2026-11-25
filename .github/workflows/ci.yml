@@ -42,7 +42,7 @@ jobs:
     name: Dependency scan (OSV-Scanner)
     # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; see the
     # workflows README, "Self-hosted runner".
-    runs-on: [self-hosted, figentra]
+    runs-on: [self-hosted, figentra] # zizmor: ignore[self-hosted-runner]
     timeout-minutes: 10
     permissions:
       contents: read
@@ -71,7 +71,7 @@ jobs:
     name: Quality Gate
     # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; see the
     # workflows README, "Self-hosted runner".
-    runs-on: [self-hosted, figentra]
+    runs-on: [self-hosted, figentra] # zizmor: ignore[self-hosted-runner]
     # A full run (workflow_dispatch, or a change every member depends on) builds the whole workspace; the default of six
     # hours would hold the one runner that long if a step hung.
     timeout-minutes: 90
@@ -374,7 +374,7 @@ jobs:
     name: Dependency Review
     # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; see the
     # workflows README, "Self-hosted runner".
-    runs-on: [self-hosted, figentra]
+    runs-on: [self-hosted, figentra] # zizmor: ignore[self-hosted-runner]
     timeout-minutes: 10
     if: github.event_name == 'pull_request'
     permissions:
