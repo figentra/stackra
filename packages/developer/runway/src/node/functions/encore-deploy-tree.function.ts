@@ -9,7 +9,8 @@
  *          relative paths through that member's own map, since Encore resolves neither `imports` nor a per-member
  *          tsconfig, drops the members' `__tests__` folders (Encore parses every TypeScript file under the root),
  *          writes the generated `encore.app` at the root, and commits that tree as the deploy commit: a parentless
- *          commit whose message names the source commit, so a shallow CI checkout pushes it whole.
+ *          commit whose message names the source commit, so a shallow CI checkout pushes it whole. A member app with
+ *          the empty id (what a local-only `stackra dev` runs with, STA-2794) is refused: a deploy ships the real id.
  * Boundary: reads the repository and writes only the temporary checkout (`git worktree add`), removed by `dispose`;
  *           runs `git` through the given runner. A repository with no generated service app gets `undefined`, and the
  *           caller pushes the source commit as it is.
@@ -133,7 +134,8 @@ function rewriteMember(root: string): string[] {
  *
  * @param request - the repository, the source commit and the command runner.
  * @returns the deploy tree, or `undefined` when the repository has no generated service app.
- * @throws RunwayInvalidError when the service members' generated apps name different Encore app ids.
+ * @throws RunwayInvalidError when the service members' generated apps name different Encore app ids, or one names
+ *         the empty id a local-only `stackra dev` writes.
  * @throws RunwayUnresolvedError when a `#` import resolves through no member's map, before anything is committed.
  * @example
  * const tree = await encoreDeployTree({ repository: ".", sha, run: runProgram });
@@ -155,6 +157,16 @@ export async function encoreDeployTree(
         ).id,
     ),
   );
+  // A local-only `stackra dev` (STA-2794) runs Encore with the id "" and puts gen's file back when it stops; a killed
+  // run can leave the empty id behind, which must never reach Encore Cloud.
+  if (ids.has(""))
+    throw new RunwayInvalidError("runway.yaml", [
+      {
+        path: "providers.encore.app",
+        message:
+          "A service member's encore.app names no Encore app id (a local-only stackra dev left it): run stackra gen",
+      },
+    ]);
   if (ids.size > 1)
     throw new RunwayInvalidError("runway.yaml", [
       {

@@ -4,7 +4,8 @@
  *          the repository root that carries every member's gitignored generated outputs and the workspace build
  *          outputs, rewrites each member's `#` imports to relative paths through its own map (the cross-member topic
  *          import of the relay stays), drops `__tests__` folders, writes `encore.app` at the root, and leaves the
- *          working tree untouched; no generated app gives none; two app ids and an unresolvable alias are refused.
+ *          working tree untouched; no generated app gives none; two app ids, the empty id a local-only `stackra dev`
+ *          writes (STA-2794) and an unresolvable alias are refused.
  * Boundary: test only; a temporary git repository and the real `git` (`runProgram`), nothing pushed.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0091 (decision 2); STA-2155; STA-2194.
@@ -159,6 +160,16 @@ describe("encoreDeployTree", () => {
     await expect(encoreDeployTree({ repository, sha, run: runProgram })).rejects.toThrow(
       RunwayInvalidError,
     );
+  });
+
+  /** STA-2794: a killed local-only `stackra dev` can leave id "" behind; a deploy never ships it. */
+  it("refuses a member app with the empty id a local-only dev run writes", async () => {
+    write("services/billing/encore.app", '{\n  "id": "",\n  "lang": "typescript"\n}\n');
+    write("services/usage/encore.app", '{\n  "id": "",\n  "lang": "typescript"\n}\n');
+    await expect(encoreDeployTree({ repository, sha, run: runProgram })).rejects.toThrow(
+      /names no Encore app id/,
+    );
+    expect((await git("worktree", "list")).trim().split("\n")).toHaveLength(1);
   });
 
   /** An alias that resolves nowhere would fail Encore's build later; it fails here, and the checkout is removed. */
