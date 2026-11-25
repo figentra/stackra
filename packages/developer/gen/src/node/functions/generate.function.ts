@@ -26,8 +26,9 @@
  *           A service's full run also refuses a job queue its `runway.yaml` leaves out of an environment
  *           (`queue_unprovisioned`, STA-1727).
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
- *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
- *           leftover one.
+ *           stackra-248) and their Encore copies to `stackra-encore/<member>/migrations`, and removes any `.sql` file
+ *           in either it did not produce; both are committed (STA-2788), so `--check` reports a stale, missing or
+ *           leftover one, as it does the manifest.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
@@ -39,7 +40,8 @@
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
  *                     allowed at the manifest level); ADR 0091 (decision 2) and ADR 0029 (the Encore app file); ADR 0159
- *                     (the compiled migrations); ADR 0514 (amendment of 2026-11-09: the docs member).
+ *                     (the compiled migrations); ADR 0514 (amendment of 2026-11-09: the docs member); STA-2788 (the
+ *                     compiled migrations are committed).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -58,6 +60,7 @@ import { checkSubscriptions } from "#core/functions/check-subscriptions.function
 import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generateMember } from "#core/functions/generate-member.function";
+import { isCommittedMigration } from "#core/functions/is-committed-migration.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { compileMigrations } from "#node/functions/compile-migrations.function";
@@ -135,12 +138,19 @@ function hatchErrors(root: string): GenError[] {
   return errors;
 }
 
-/** The files a member commits (ADR 0294 R10, a package's entity list since STA-1874); the rest is gitignored output. */
+/**
+ * The files a member commits (ADR 0294 R10, a package's entity list since STA-1874), with a service's compiled migrations
+ * (`isCommittedMigration`, STA-2788); the rest is gitignored output.
+ */
 const COMMITTED = new Set([MANIFEST_FILE, "openapi.json", PACKAGE_ENTITIES_FILE]);
+
+/** Whether the member-relative `path` is committed, not gitignored output. */
+const committed = (path: string): boolean => COMMITTED.has(path) || isCommittedMigration(path);
 
 /**
  * The paths of `files` that differ from disk under `root`, written unless `check`. A check passes a missing file that
- * is not committed: a clean clone has no gitignored output until gen runs (STA-1742).
+ * is not committed: a clean clone has no gitignored output until gen runs (STA-1742). A missing compiled migration
+ * fails it, since a clean clone holds every committed one (STA-2788).
  */
 function write(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
   const changed: string[] = [];
@@ -148,7 +158,7 @@ function write(root: string, files: readonly GeneratedFile[], check: boolean): s
     const path = join(root, file.path);
     const current = existsSync(path) ? readFileSync(path, "utf8") : undefined;
     if (current === file.content) continue;
-    if (check && current === undefined && !COMMITTED.has(file.path)) continue;
+    if (check && current === undefined && !committed(file.path)) continue;
     changed.push(file.path);
     if (check) continue;
     mkdirSync(dirname(path), { recursive: true });
@@ -160,23 +170,34 @@ function write(root: string, files: readonly GeneratedFile[], check: boolean): s
 /** The merged `Blueprint` augmentation `compileMigrations` writes for a service's own macros. */
 const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
 
+/** The `.sql` files of the member-relative `folder` under `root`, as member-relative paths; none when it is absent. */
+const sqlFilesOf = (root: string, folder: string): string[] =>
+  existsSync(join(root, folder))
+    ? readdirSync(join(root, folder))
+        .filter((name) => name.endsWith(".sql"))
+        .map((name) => `${folder}/${name}`)
+    : [];
+
 /**
- * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
- * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
- * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
+ * The `.sql` files in `.stackra/migrations` and in the Encore copy (`stackra-encore/<member>/migrations`) this run did
+ * not produce (a renumbered or removed migration), deleted unless `check`, so no runner applies a stale file and none is
+ * left committed; with `compiled` (a service's full run, where the migrations ran), also a leftover
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed. A manifests pass
+ * compiles no migrations, so it leaves them alone (`full`).
  */
 function staleMigrations(
   root: string,
   files: readonly GeneratedFile[],
   check: boolean,
-  compiled: boolean,
+  run: { readonly full: boolean; readonly compiled: boolean; readonly member: string },
 ): string[] {
-  const dir = join(root, MIGRATIONS_DIR);
+  const { full, compiled, member } = run;
+  if (!full) return [];
   const kept = new Set(files.map((file) => file.path));
-  const stale = (existsSync(dir) ? readdirSync(dir) : [])
-    .filter((name) => name.endsWith(".sql"))
-    .map((name) => `${MIGRATIONS_DIR}/${name}`)
-    .filter((path) => !kept.has(path));
+  const stale = [
+    ...sqlFilesOf(root, MIGRATIONS_DIR),
+    ...(compiled ? sqlFilesOf(root, `${encoreServiceFolder(member)}/migrations`) : []),
+  ].filter((path) => !kept.has(path));
   if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))
     stale.push(BLUEPRINT_FILE);
   if (!check) for (const path of stale) rmSync(join(root, path));
@@ -421,12 +442,11 @@ export async function generate(
       ...new Set([
         ...partial,
         ...write(root, result.files, check),
-        ...staleMigrations(
-          root,
-          result.files,
-          check,
-          ir.layout === "service" && options.pass === undefined,
-        ),
+        ...staleMigrations(root, result.files, check, {
+          full: options.pass === undefined,
+          compiled: ir.layout === "service" && options.pass === undefined,
+          member: ir.member,
+        }),
       ]),
     ],
   };

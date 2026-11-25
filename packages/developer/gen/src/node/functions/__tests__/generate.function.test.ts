@@ -13,7 +13,10 @@
  *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
  *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
  *          `generated_dependency_missing` (STA-344); a `.stackra/gen/blueprint.ts` left after the last own macro is gone
- *          is reported by a check run and deleted by a write run (STA-2062).
+ *          is reported by a check run and deleted by a write run (STA-2062); a service's compiled migrations and their
+ *          Encore copies are committed output (STA-2788): written deterministically, and a check fails on committed SQL
+ *          edited by hand, on sources the committed SQL has not caught up with, on a missing file and on a leftover one
+ *          (which a write run deletes), while a manifests pass leaves them alone.
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -381,5 +384,164 @@ describe("generate's shipped manifest check (STA-1308)", () => {
     expect(check.errors).toEqual([]);
     expect(check.changed).toEqual([]);
     expect(existsSync(join(root, ".stackra"))).toBe(false);
+  });
+});
+
+/** A fake `@stackra/database` whose `compileMigration` turns each `schema.create(table)` into one statement. */
+const FAKE_DATABASE: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/database/package.json": JSON.stringify({
+    name: "@stackra/database",
+    type: "module",
+    types: "./index.d.ts",
+    exports: { ".": { types: "./index.d.ts", default: "./index.js" } },
+  }),
+  "node_modules/@stackra/database/index.d.ts": [
+    "export interface SchemaBuilder { create(table: string): void }",
+    "export declare abstract class Migration { abstract up(schema: SchemaBuilder): void }",
+    "",
+  ].join("\n"),
+  "node_modules/@stackra/database/index.js": [
+    "export class Macro {}",
+    "export class Migration {}",
+    "export const compileMigration = (type, options) => {",
+    "  const tables = [];",
+    "  new type().up({ create: (table) => tables.push(table) });",
+    "  return {",
+    "    after: [],",
+    "    steps: tables.map((table) => ({",
+    '      sql: [`create table "${options.schema}"."${table}" ("id" text primary key)`],',
+    "      transactional: true,",
+    '      inverse: [`drop table "${options.schema}"."${table}"`],',
+    "    })),",
+    "  };",
+    "};",
+    "",
+  ].join("\n"),
+};
+
+/** A migration file whose one class, `<className>Migration`, creates `table`. */
+const migrationSource = (className: string, table: string): string =>
+  [
+    'import { Migration, type SchemaBuilder } from "@stackra/database";',
+    "",
+    `export class ${className}Migration extends Migration {`,
+    "  up(schema: SchemaBuilder): void {",
+    `    schema.create(${JSON.stringify(table)});`,
+    "  }",
+    "}",
+    "",
+  ].join("\n");
+
+/** One migration of the `orders` module, `<name>.migration.ts` with class `<className>Migration`, that creates `table`. */
+const ordersMigration = (
+  name: string,
+  className: string,
+  table: string,
+): Record<string, string> => ({
+  [`src/modules/orders/database/migrations/${name}.migration.ts`]: migrationSource(
+    className,
+    table,
+  ),
+});
+
+/**
+ * A v3 service with one migration, in a workspace whose root runway names an Encore app, so a full run writes the
+ * compiled stream and its Encore copy.
+ */
+function migratedService(first = migrationSource("CreateOrders", "orders")): string {
+  const root = writeFixtureMember("orders", {
+    "stackra.config.ts":
+      'import { defineService } from "@stackra/contracts";\n\nexport default defineService({});\n',
+    ...FAKE_DATABASE,
+    "src/modules/orders/database/migrations/0001-create-orders.migration.ts": first,
+  });
+  writeFileSync(join(dirname(root), "pnpm-workspace.yaml"), "packages:\n  - orders\n");
+  writeFileSync(
+    join(dirname(root), "runway.yaml"),
+    "version: 3\nproject: acme\nproviders:\n  encore:\n    app: acme-x1\n",
+  );
+  return root;
+}
+
+/** The compiled stream of the fixture service and its Encore copy. */
+const UP = ".stackra/migrations/0001_orders_0001_create_orders.up.sql";
+const DOWN = ".stackra/migrations/0001_orders_0001_create_orders.down.sql";
+const ENCORE_UP = "stackra-encore/orders/migrations/0001_orders_0001_create_orders.up.sql";
+
+describe("generate's committed compiled migrations (STA-2788)", () => {
+  it("writes the compiled stream and its Encore copy, then a check finds nothing to change", async () => {
+    const root = migratedService();
+    const first = await generate(root);
+    expect(first.errors).toEqual([]);
+    expect(first.changed).toEqual(expect.arrayContaining([UP, DOWN, ENCORE_UP]));
+    expect(readFileSync(join(root, UP), "utf8")).toContain(
+      'create table "orders"."orders" ("id" text primary key);',
+    );
+    expect(readFileSync(join(root, ENCORE_UP), "utf8")).toBe(readFileSync(join(root, UP), "utf8"));
+    // Deterministic: a second run and a check change nothing.
+    expect((await generate(root)).changed).toEqual([]);
+    expect((await generate(root, { check: true })).changed).toEqual([]);
+  });
+
+  it("fails a check when the committed SQL was edited by hand, and writes nothing", async () => {
+    const root = migratedService();
+    expect((await generate(root)).errors).toEqual([]);
+    // A hand edit to the committed SQL (what a deploy would apply) and to its Encore copy.
+    writeFileSync(join(root, UP), "drop table orders;\n");
+    writeFileSync(join(root, ENCORE_UP), "drop table orders;\n");
+    const check = await generate(root, { check: true });
+    expect(check.errors).toEqual([]);
+    expect(check.changed).toEqual(expect.arrayContaining([UP, ENCORE_UP]));
+    expect(readFileSync(join(root, UP), "utf8")).toBe("drop table orders;\n");
+  });
+
+  it("fails a check when the sources changed and the committed SQL did not catch up", async () => {
+    // The committed tree: SQL compiled from the earlier source.
+    const before = migratedService();
+    expect((await generate(before)).errors).toEqual([]);
+    // The same service after its migration changed (a fresh member: Node caches an imported migration by path).
+    const root = migratedService(migrationSource("CreateOrders", "purchases"));
+    expect((await generate(root)).errors).toEqual([]);
+    for (const path of [UP, DOWN, ENCORE_UP])
+      writeFileSync(join(root, path), readFileSync(join(before, path), "utf8"));
+    expect([...(await generate(root, { check: true })).changed].toSorted()).toEqual(
+      [UP, DOWN, ENCORE_UP].toSorted(),
+    );
+  });
+
+  it("fails a check when a compiled migration is not committed, unlike gitignored output (STA-1742)", async () => {
+    const root = migratedService();
+    expect((await generate(root)).errors).toEqual([]);
+    rmSync(join(root, UP));
+    rmSync(join(root, ENCORE_UP));
+    rmSync(join(root, ".stackra/gen"), { recursive: true, force: true });
+    const check = await generate(root, { check: true });
+    expect([...check.changed].toSorted()).toEqual([UP, ENCORE_UP].toSorted());
+  });
+
+  it("reports, then deletes, a compiled file and its Encore copy whose migration is gone", async () => {
+    const root = migratedService();
+    const second = ordersMigration("0002-create-refunds", "CreateRefunds", "refunds");
+    for (const [path, content] of Object.entries(second)) writeFileSync(join(root, path), content);
+    expect((await generate(root)).errors).toEqual([]);
+    const stale = [
+      ".stackra/migrations/0002_orders_0002_create_refunds.up.sql",
+      "stackra-encore/orders/migrations/0002_orders_0002_create_refunds.up.sql",
+    ];
+    for (const path of stale) expect(existsSync(join(root, path)), path).toBe(true);
+    for (const path of Object.keys(second)) rmSync(join(root, path));
+    expect((await generate(root, { check: true })).changed).toEqual(expect.arrayContaining(stale));
+    for (const path of stale) expect(existsSync(join(root, path)), path).toBe(true);
+    expect((await generate(root)).changed).toEqual(expect.arrayContaining(stale));
+    for (const path of stale) expect(existsSync(join(root, path)), path).toBe(false);
+  });
+
+  it("leaves the committed migrations alone in a manifests pass, which compiles none", async () => {
+    const root = migratedService();
+    expect((await generate(root)).errors).toEqual([]);
+    const manifests = await generate(root, { pass: "manifests" });
+    expect(manifests.changed).not.toContain(UP);
+    expect(existsSync(join(root, UP))).toBe(true);
+    expect(existsSync(join(root, ENCORE_UP))).toBe(true);
   });
 });

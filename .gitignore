@@ -17,6 +17,9 @@ encore.gen/
 .encore/
 **/.stackra/*
 !**/.stackra/app-manifest.json
+# A service's compiled migrations are committed, so the SQL a pull request shows (and Squawk lints) is the SQL a deploy
+# applies; `stackra gen --check` and the Quality Gate fail when they differ from the sources (STA-2788).
+!**/.stackra/migrations/
 # Gen's golden trees commit a member's expected .stackra/ output as *.golden files (STA-1320).
 !packages/developer/gen/__golden__/**/.stackra/*
 # Gen's root Vitest shim of a package or service member (ADR 0295 decision 5; STA-1299). The authored configs that
@@ -28,9 +31,14 @@ apps/*/app.config.ts
 # The Encore app file gen writes at a service's root, so the member is the Encore app root (ADR 0091, amendment of 2026-11-09).
 services/*/encore.app
 # The Encore services gen writes beside it, outside .stackra since Encore skips dot folders (ADR 0091, amendment of
-# 2026-11-10). Gen's golden trees commit them as *.golden files.
+# 2026-11-10). Gen's golden trees commit them as *.golden files. Each Encore service's `migrations/` is committed: it
+# is the folder Encore applies, and a deploy ships it as committed, never regenerated (STA-2788).
 **/stackra-encore/*
+!**/stackra-encore/*/
+**/stackra-encore/*/*
+!**/stackra-encore/*/migrations/
 !packages/developer/gen/__golden__/**/stackra-encore/*
+!packages/developer/gen/__golden__/**/stackra-encore/*/*
 # A docs app's generated Mintlify root, in any member (ADR 0002, 2026-10-27 amendment).
 **/.stackra/site/
 
