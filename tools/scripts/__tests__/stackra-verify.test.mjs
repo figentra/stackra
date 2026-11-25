@@ -3726,7 +3726,6 @@ test("licence policy: tools/policy/licences.json is the CTO's approved ruling, e
       ["@sentry/cli", "FSL-1.1-MIT", "runtime", null],
       ["@sentry/cli-linux-x64", "FSL-1.1-MIT", "runtime", null],
       ["@zowe/secrets-for-zowe-sdk", "EPL-2.0", "runtime", null],
-      ["chainsaw", "MIT/X11", "runtime", ["0.1.0"]],
       ["uniwind-pro", "UNLICENSED", "mobile", null],
     ],
   );
