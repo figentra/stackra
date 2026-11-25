@@ -27,7 +27,9 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'regen')
-    runs-on: ubuntu-latest
+    # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; the `if:`
+    # above keeps a fork's pull request off it. "Regen (push)" stays hosted (it needs the gh CLI).
+    runs-on: [self-hosted, figentra]
     timeout-minutes: 30
     permissions:
       contents: read
