@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-25
 
-**Status**: Planned — approval requested from the leader
+**Status**: Planned — leader approved; CTO read pending (after the Academorix launch)
 
 **Tier**: big
 
@@ -223,6 +223,11 @@ source is a local path, an installed package at an exact version, or a git repos
 
 ### Security
 
+- **AC-039**: THE base layer SHALL carry an explicit ceiling from a fixed, documented table (the Claude Code built-in
+  tools it allows by name, `maxMode` `acceptEdits`, an explicit list of allow rules, an explicit MCP server allowlist)
+  and its deny table; WHEN a product layer has no policy THE resolver SHALL bound its agents by that ceiling; IF a
+  layer with no parent lacks any of the four ceilings THEN THE validator SHALL refuse it with `no_ceiling`, never
+  treating a ceiling as unbounded.
 - **AC-027**: IF an install would widen any agent or layer policy compared with the manifest, or install a new
   agent with a write tool, an allow rule or an MCP server THEN THE command SHALL list each widening and SHALL write it
   only after a person confirms at an interactive terminal; a non-interactive run and every MCP tool call SHALL refuse
@@ -298,5 +303,8 @@ source is a local path, an installed package at an exact version, or a git repos
 - 2026-11-25 → Draft (STA-2787 session, from the owner's ruling and the CTO's six points)
 - 2026-11-25 → Clarified (the CTO's six points; rulings R1 to R9 on PR figentra/stackra#1080; tier raised to big
   with the new ADR 0537) — Approved by leader (Tarek · Stackra Lead) 2026-11-25
-- 2026-11-25 → Planned (plan.md, tasks.md; ADR renumbered 0535 → 0537 at the leader's review) — approval requested
-  from the leader
+- 2026-11-25 → Planned (plan.md, tasks.md; ADR renumbered 0535 → 0537 at the leader's review; the explicit base
+  ceiling added at the leader's review) — Approved by leader (Tarek · Stackra Lead) 2026-11-25 (after the explicit
+  base ceiling, P-013)
+- CTO read pending (after the Academorix launch): the base policy table values; ADR 0537 stays Proposed until then
+  (T027)

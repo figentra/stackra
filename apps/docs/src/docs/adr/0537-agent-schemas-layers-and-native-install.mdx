@@ -36,7 +36,11 @@ documented files, so no runtime of our own is needed.
    an adapter). A definition may `extends` one parent; cycles and chains deeper than 16 are refused.
 3. **Merge rules are fixed per field** (replace, append, keyed, deny-wins), listed in the spec's plan. Every deny is a
    union over the whole chain and stack and cannot be removed below; every allow, permission mode and MCP server is
-   bounded by the ceiling (`policy`) of each layer on the chain; a layer without a policy inherits its parent's.
+   bounded by the ceiling (`policy`) of each layer on the chain; a layer without a policy inherits its parent's. The
+   base always carries an explicit ceiling from a fixed, documented table (the built-in tools it allows by name,
+   `maxMode` `acceptEdits`, an explicit list of allow rules, an explicit MCP server allowlist) and a deny table; a
+   layer with no parent that lacks a ceiling is refused (`no_ceiling`). No ceiling is ever unbounded, and changing the
+   base table is a reviewed pull request at risk R3.
 4. **Install writes native files only.** `stackra agents install|sync` writes Claude Code's own formats: subagent
    Markdown in `.claude/agents/`, skill folders in `.claude/skills/`, permission rules in `.claude/settings.json`, MCP
    servers in `.mcp.yaml` (or `.mcp.json`), a generated guard hook for an agent's own scoped deny rules, or a plugin

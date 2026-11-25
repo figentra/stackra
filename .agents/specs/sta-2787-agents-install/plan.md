@@ -76,6 +76,9 @@ schema. Claude Code runs the agents; Stackra only writes its files.
 - **P-011**: no secret leaves: no output, diff, error or manifest holds a value a validator classed as a secret —
   Validates: AC-007, AC-029
 - **P-012**: disabled stays disabled: an agent a farther layer disables is never installed below it — Validates: AC-013
+- **P-013**: no unbounded ceiling: every resolved agent's effective ceiling is explicit in all four parts, taken from
+  its own layers or, failing those, from the base table; a stack whose farthest layer lacks one is refused with
+  `no_ceiling` — Validates: AC-012, AC-039
 
 ## Architecture overview
 
@@ -119,9 +122,10 @@ and the owner has not confirmed. Either way this work only takes over one behavi
      `name`, `role`, `persona.displayName` from `display_name`, `persona.character` from `ring` and the `conventions.look`
      line, `escalatesTo`, `products`, `owns` and the channel rows under `metadata`; `tools` entries that are Claude
      tool names (`Read`, `Grep`, `Glob`, `Write`, `Edit`, `Bash`) become the persona's `tools.allow` (a default the
-     product agent may replace within its own layer's ceiling); the base sets no tool ceiling until the roster
-     carries a policy, but its `policy.deny` comes from the adapter's fixed table for `humans.owner.keeps`
-     (secrets, production deploys, deletes: `Bash(gh secret *)`, `Bash(infisical *)`, `Bash(sops *)`, …);
+     product agent may replace within its own layer's ceiling); the adapter gives the base layer the explicit base
+     policy of the fixed table `BASE_POLICY` (Data models, "Base policy"): its tool, mode, allow-rule and MCP-server
+     ceilings and its deny table, which follows the roster's `humans.owner.keeps` (secrets, production deploys,
+     history rewrites, destructive deletes);
      other entries (`Linear MCP`, `gh (read)`) are kept under `metadata.tools` and grant nothing; `permissions.never`
      becomes an instruction section and, where it names a CLI (`force-push`, `gh secret`), a deny rule from the
      adapter's fixed table. The adapter writes nothing back.
@@ -136,7 +140,10 @@ and the owner has not confirmed. Either way this work only takes over one behavi
 7. **Ceilings.** Union every `deny` of every layer on the chain and every `policy.deny` in the stack (P-003). Intersect
    the allow side with each chain layer's `policy` (`tools.allow`, `permissions.allow` by exact rule string,
    `maxMode`, `mcpServers`); anything above is `above_ceiling` (refused, never silently dropped). A layer with no
-   `policy` inherits the ceiling of the layer it extends, so a missing policy fails closed to the base.
+   `policy`, or with only some of its four ceilings, inherits the missing ones from the layer it extends, so a product
+   with no policy resolves to the base's explicit ceiling. A layer with no parent (the base, or a `--from` layer that
+   extends nothing) must state all four ceilings (`tools.allow`, `maxMode`, `permissions.allow`,
+   `mcpServers.allow`); one missing is `no_ceiling`. No resolution ever runs with an unbounded ceiling (P-013).
 8. **Disable.** Drop every id any farther layer lists in `disabled` (P-012).
 9. **Models.** Map a `model.tier` through the nearest layer whose `models.claude` defines it; an alias (`sonnet`,
    `opus`, `haiku`, `fable`, `inherit`) or a `claude-*` id passes through.
@@ -170,7 +177,8 @@ document carries the same plan with `diff` strings, so an MCP client shows it as
   break; `agentsJsonSchemas()` emits the four JSON Schemas.
 - `parseAgentFile(text, path)`: frontmatter plus Markdown body into a definition; `##` headings become keyed
   instruction sections (`slug(heading)`); line numbers kept for provenance.
-- `rosterLayer(roster)`: the roster adapter (step 3a).
+- `rosterLayer(roster)`: the roster adapter (step 3a), which attaches `BASE_POLICY`.
+- `BASE_POLICY`: the explicit base ceiling and deny table (Data models, "Base policy"), data only, tested row by row.
 - `loadLayerStack(root, options)` (node): finds, fetches, pins and digests the layers.
 - `validateDefinitions(stack)`: schema and pre-resolution findings with codes.
 - `resolveAgents(stack)`: steps 4 to 10; returns resolved agents, skills, provenance, findings.
@@ -206,6 +214,7 @@ packages/developer/mcp/
   src/core/agents/constants/merge-rules.constant.ts
   src/core/agents/constants/claude-formats.constant.ts      (documented fields, values, reserved names)
   src/core/agents/constants/roster-tool-map.constant.ts
+  src/core/agents/constants/base-policy.constant.ts         (the explicit base ceiling and deny table)
   src/core/agents/types/*.type.ts                          (definition, layer, resolved agent, provenance, plan)
   src/core/agents/errors/agents-finding.error.ts
   src/core/agents/functions/agents-json-schemas.function.ts
@@ -322,6 +331,59 @@ keyed by the heading's slug.
 | `hooks`                       | append    | per event, matchers appended; commands fenced to the project (AC-030)                                                                               |
 | `disabled`                    | deny-wins | true anywhere farther stays true (P-012)                                                                                                            |
 | `metadata`                    | keyed     | deep merge; never rendered into a permission                                                                                                        |
+
+### Base policy (`BASE_POLICY`, the company base's explicit ceiling; the CTO reads these values)
+
+The roster has no policy yet, so the adapter attaches this fixed table to the base layer. It is data in
+`base-policy.constant.ts`, tested row by row, and changes only through a reviewed pull request (risk R3). When the
+roster carries its own policy, the roster's wins and the table is retired. Sources: the shared settings files in use
+today, Stackra's `.claude/settings.json` and Academorix's `.claude/settings.json`, and the servers in Stackra's
+`.mcp.yaml` and Academorix's `.mcp.json`; personal `settings.local.json` approvals are not company policy and were left
+out.
+
+- **`tools.allow`** (Claude Code built-in tools, by their documented names, code.claude.com/docs/en/tools-reference):
+  `Read`, `Grep`, `Glob`, `LSP`, `Edit`, `Write`, `NotebookEdit`, `Bash`, `WebFetch`, `WebSearch`, `Skill`, `Agent`,
+  `SendMessage`, `AskUserQuestion`, `EnterPlanMode`, `ExitPlanMode`, `EnterWorktree`, `ExitWorktree`, `Monitor`,
+  `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate`, `TaskStop`, `TodoWrite`, `ToolSearch`, `ListMcpResourcesTool`,
+  `ReadMcpResourceTool`, `ReportFindings`. Left out on purpose: tools that publish or send outside the repository or
+  act on the claude.ai account (`Artifact`, `PushNotification`, `SendUserFile`, `SendFeedback`, `ShareOnboardingGuide`,
+  `ListPlugins`, `SearchPlugins`, `ListSkills`, `SearchSkills`, `SuggestPluginInstall`, `SuggestSkills`), tools that
+  schedule beyond the session (`CronCreate`, `CronDelete`, `CronList`, `RemoteTrigger`, `ScheduleWakeup`), and
+  `PowerShell`, `REPL`, `Workflow`, `WaitForMcpServers`, `EndConversation`, `SubagentHandback` (no product agent
+  needs them today). A product that needs one asks for a base change.
+- **`maxMode`**: `acceptEdits`. `auto` is not in the table, so it is refused; `bypassPermissions` is refused always.
+- **`permissions.allow`** (the rules a product may put in `settings.json`; exact strings):
+  - from Stackra's shared settings: `Bash(turbo *)`, `Bash(mint *)`, `Bash(docker ps*)`, `Bash(docker logs *)`,
+    `Bash(docker compose *)`, `Bash(docker build *)`, `Bash(lefthook *)`, `Bash(gitleaks *)`, `Bash(oxfmt *)`,
+    `Bash(oxlint *)`, `Bash(shfmt *)`, `Bash(jq *)`, `Bash(pnpm *)`, `Bash(infisical *)`, `Bash(mise *)`,
+    `Bash(git *)`, `Bash(cd *)`, `Bash(node *)`, `Bash(npx *)`, `Bash(encore *)`, `Bash(wrangler *)`, `Bash(eas *)`;
+    the MCP rules `mcp__context7`, `mcp__heroui-react`, `mcp__heroui-native`, `mcp__uniwind`, `mcp__expo`,
+    `mcp__encore`, `mcp__encore-cloud`, `mcp__cloudflare-docs`, `mcp__cloudflare-api`, `mcp__resend-docs`,
+    `mcp__aws-knowledge`, `mcp__posthog`, `mcp__playwright`, `mcp__linear__get_*`, `mcp__linear__list_*`,
+    `mcp__linear__search_*`; and `WebFetch(domain:…)` for `code.claude.com`, `docs.anthropic.com`, `opencode.ai`,
+    `turborepo.com`, `pnpm.io`, `heroui.com`, `encore.dev`, `docs.expo.dev`, `mintlify.com`, `infisical.com`,
+    `developers.cloudflare.com`, `vitest.dev`, `github.com`, `raw.githubusercontent.com`, `ai-sdk.dev`, `linear.app`;
+  - from Academorix's shared settings:
+    `Bash(gh pr edit * -R academorix/academorix-legacy --add-label ready-to-merge)`. Flagged for the CTO: the roster
+    keeps high-risk labels with the owner, and `ready-to-merge` is the high-risk merge label, so the CTO decides
+    whether this rule stays in the base.
+  - Broad rules here (`Bash(git *)`, `Bash(infisical *)`, `Bash(npx *)`, `Bash(wrangler *)`) are bounded by the deny
+    table below and by each product's own deny and ask rules, which always win.
+- **`mcpServers.allow`** (the servers the products configure today): `aws-knowledge`, `betterstack`,
+  `cloudflare-api`, `cloudflare-docs`, `context7`, `elevenlabs`, `encore`, `encore-cloud`, `expo`, `figma`, `github`,
+  `heroui-native`, `heroui-native-pro`, `heroui-pro`, `heroui-react`, `linear`, `next-devtools`, `playwright`,
+  `posthog`, `resend`, `resend-docs`, `sanity`, `sentry`, `stripe`, `uniwind`, and `stackra` (the local developer MCP
+  this work serves). A new server needs a base pull request at risk R3.
+- **`policy.deny`** (the deny table; never removable below):
+  - secrets: `Read(//**/.env)`, `Read(//**/.env.*)`, `Read(//**/.dev.vars)`, `Read(//**/*.pem)`, `Read(//**/*.key)`,
+    `Read(~/.ssh/id_*)`, `Read(~/.aws/**)`, `Read(~/.config/gh/**)`, `Read(~/.git-credentials)`, `Read(~/.npmrc)`,
+    `Read(~/.netrc)`, `Bash(printenv*)`, `Bash(env)`, `Bash(infisical export*)`, `Bash(infisical secrets get*)`,
+    `Bash(infisical secrets set*)`, `Bash(infisical token*)`, `Bash(gh secret *)`, `Bash(encore secret set*)`,
+    `Bash(security find-generic-password*)`, `Bash(security find-internet-password*)`, `Bash(security dump-keychain*)`;
+  - production deploys: `Bash(encore deploy*)`;
+  - history rewrites: `Bash(git push --force*)`, `Bash(git push -f*)`, `Bash(git push *--force*)`;
+  - destructive deletes: `Bash(rm -rf /)`, `Bash(rm -rf / *)`, `Bash(rm -rf ~*)`, `Bash(rm -rf $HOME*)`;
+  - skipping the commit hooks: `Bash(LEFTHOOK=0*)`.
 
 ### Skill v1 (`.agents/skills/<name>/SKILL.md` plus supporting files)
 
@@ -488,7 +550,7 @@ written: [...], manifest }`. Exit codes: 0 done or nothing to do, 1 refused (con
 Every refusal is a finding `{ code, severity, layer, file, path, message }`, never a stack trace, and never quotes a
 value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`, `extends_cycle`, `extends_too_deep`,
 `extends_not_found`, `extends_changed_in_override`, `layer_cycle`, `layer_source_unpinned`, `layer_digest_mismatch`,
-`deny_not_removable`, `above_ceiling`, `unknown_model_tier`, `incomplete_agent`, `name_collision`,
+`deny_not_removable`, `above_ceiling`, `no_ceiling`, `unknown_model_tier`, `incomplete_agent`, `name_collision`,
 `claude_name_invalid`, `reserved_name`, `secret_literal`, `score_is_measured`, `mcp_server_invalid` (with the
 `@stackra/mcp` rule code inside), `mode_refused`, `path_escapes`, `symlink_refused`, `plugin_drops_field`, `conflict`,
 `foreign_file`, `widening_needs_a_person`. A source that cannot be fetched fails naming the source, not its content.
@@ -497,7 +559,9 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
 ## Security and tenancy
 
 - **Deny-wins** across the chain and the stack (P-003); allow is bounded by every chain layer's ceiling (P-004); a
-  layer without a policy inherits its parent's, so a missing ceiling fails closed to the base.
+  layer without a policy inherits its parent's, and the base always carries the explicit `BASE_POLICY` table, so a
+  missing ceiling fails closed to the base; a layer with no parent and no full ceiling is `no_ceiling` (P-013). This is
+  the harvested `AGENT_CEILING` rule: nothing starts unbounded.
 - **No self-grant.** A product agent cannot exceed its product layer's policy, which cannot exceed the base's; a repo or
   user override can narrow but never widen past the product's ceiling. Widening against the manifest needs an
   interactive confirmation by a person at a terminal, recorded in the manifest (R7, AC-035); the MCP tools and
@@ -527,7 +591,11 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
 - **Resolver** (AC-009 to AC-016, P-002 to P-005, P-012): one test per merge-table row; cycle and depth; provenance
   for scalar, list element and section; tier mapping; disabled; the roster adapter against a copy of `roster.yml`'s
   shape (synthetic personas, no real channel rows).
-- **Generated cases** (P-002, P-003, P-004): a seeded generator (no new dependency) builds 500 random four-layer
+- **Base ceiling** (AC-039, P-013): `BASE_POLICY` checked row by row (each tool name is a documented built-in, each rule
+  parses as a Claude Code rule, no allow rule is also denied); a product layer with no policy resolves to the base's
+  explicit ceiling; an allow above it (a tool, a rule, a server, `auto` mode) is `above_ceiling`; a `--from` layer
+  with no parent and a missing ceiling is `no_ceiling`.
+- **Generated cases** (P-002, P-003, P-004, P-013): a seeded generator (no new dependency) builds 500 random four-layer
   stacks; each is resolved in shuffled file order (same digest), with an extra random layer (no deny lost) and checked
   against its ceilings.
 - **Renderers** (AC-017, AC-018, AC-026, AC-031, P-001): golden files for a subagent, a skill with supporting files,

@@ -2,8 +2,9 @@
 
 **Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-2787
 
-Big tier (ADR 0502): the Clarified stop is approved (leader, 2026-11-25); this plan and these tasks wait for the
-Planned approval, and no task but T024 (the ADR draft) runs before it.
+Big tier (ADR 0502): both stops are approved by the leader on 2026-11-25 (Clarified, then Planned after the explicit
+base ceiling, P-013). The CTO reads the base policy table values after the Academorix launch; ADR 0537 stays Proposed
+until then (T027).
 
 External dependency **X1**: the leaders pull request in platform/figentra (`team/leaders-v2-2026-11-23`, with the
 Stackra lead renamed `tariq` → `tarek`) lands on `origin/main` first; the base pin moves to that commit (ruling R3).
@@ -17,6 +18,7 @@ Stackra lead renamed `tariq` → `tarek`) lands on `origin/main` first; the base
 - [ ] T005 the merge kinds (replace, append with `$remove` and `$replace`, keyed, deny-wins) per the merge table, one test per row, in `packages/developer/mcp/src/core/agents/constants/merge-rules.constant.ts`, `packages/developer/mcp/src/core/agents/functions/merge-field.function.ts` — covers: AC-010, AC-011, P-003 — route: spec-task (Opus) — deps: T001
 - [ ] T006 the resolver: index, shadowing, `extends`, cycle and depth, ceilings, disabled, model tiers, provenance and digests, with the seeded 500-stack generated tests, in `packages/developer/mcp/src/core/agents/functions/resolve-agents.function.ts`, `packages/developer/mcp/src/core/agents/types/resolved-agent.type.ts` — covers: AC-004, AC-005, AC-009, AC-010, AC-011, AC-012, AC-013, AC-014, AC-015, P-002, P-003, P-004, P-005, P-012 — route: spec-task (Opus) — deps: T004, T005
 - [ ] T007 the roster adapter and its fixed deny and tool tables, tested on a synthetic roster of the `version: 1` shape, in `packages/developer/mcp/src/core/agents/functions/roster-layer.function.ts`, `packages/developer/mcp/src/core/agents/constants/roster-tool-map.constant.ts` — covers: AC-016 — route: spec-task — deps: T001, X1
+- [ ] T028 the explicit base policy table (built-in tools by name, `maxMode` `acceptEdits`, the allow rules, the MCP server allowlist, the deny table) attached by the roster adapter, and the `no_ceiling` check, with row-by-row tests and the product-with-no-policy test, in `packages/developer/mcp/src/core/agents/constants/base-policy.constant.ts`, `packages/developer/mcp/src/core/agents/functions/roster-layer.function.ts`, `packages/developer/mcp/src/core/agents/functions/resolve-agents.function.ts` — covers: AC-012, AC-039, P-013 — route: spec-task (Opus) — deps: T006, T007
 - [ ] T008 the subagent and skill renderers (session personas with `initialPrompt` included) with golden files and a render-then-parse round trip in `packages/developer/mcp/src/core/agents/functions/render-subagent.function.ts`, `packages/developer/mcp/src/core/agents/functions/render-skill.function.ts` — covers: AC-017, AC-018, AC-036, P-001 — route: spec-task — deps: T006
 - [ ] T009 the settings-entry and MCP-server renderers (permission rules with reason and source, `.mcp.yaml` with comments kept or `.mcp.json`) with tests in `packages/developer/mcp/src/core/agents/functions/render-settings-entries.function.ts`, `packages/developer/mcp/src/core/agents/functions/render-mcp-servers.function.ts` — covers: AC-017, AC-029 — route: spec-task — deps: T006
 - [ ] T010 the guard renderer and the dependency-free guard script, run against recorded `PreToolUse` inputs for every rule form and an unreadable rule file, in `packages/developer/mcp/src/core/agents/functions/render-guard.function.ts` — covers: AC-031, P-003 — route: spec-task (Opus) — deps: T006
