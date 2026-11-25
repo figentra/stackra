@@ -1,0 +1,218 @@
+---
+title: "0538 — The edge as a thin dispatcher: Cloudflare-native perimeter, Workers for Platforms and asymmetric identity tokens"
+description: "Proposed · 2026-11-25"
+---
+
+<Note>
+  Proposed (STA-2793). Amends [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)
+  decisions 2.5, 2.6, 2.7, 4 and 9 and the host lookup of decisions 2.1 and 6, by a Note there.
+  Keeps 0437's decisions 3, 5, 7, 8, 10, 11 and 12. Nothing may rely on this page until it is
+  Accepted.
+</Note>
+
+## Context
+
+The owner asked why we write our own routing when Cloudflare has a WAF and routing of its own, and whether a separate
+request-signer Worker is needed. The goal is the most robust, isolated, fast and unified edge, driven by Runway.
+
+0437 put one OS Worker in front of every host. That Worker resolves the host, serves the shells, renders landing pages,
+applies rate limits, bot checks and security headers, and signs headers with an HMAC. Two facts argue against keeping
+all of that in our code:
+
+- Much of it depends only on the request and is already a Cloudflare product (WAF, rate limiting, bots, TLS, caching).
+- Running product code in the same Worker that holds the signing key puts every product's bugs one step from the key.
+
+Academorix runs a router in front of public per-app Workers today: `apps/edge` and `docs/runbooks/edge.md` (option A
+below). Its landing, help and tenant sites are OpenNext SSR Workers for SEO; console, operator and oversight are Vite
+SPAs; pitch is static assets only.
+
+Four designs were weighed:
+
+| Option                                                                     | Speed                                         | Isolation                                                                 | Simplicity                                            |
+| -------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| A. A router plus public per-app Workers (Academorix today)                 | One hop to the app                            | Weak: each app Worker is public and must defend itself                    | Each app repeats perimeter logic                      |
+| B. 0437 as written: one edge serves shells and renders landing pages       | One Worker, no dispatch                       | Weak: product rendering shares the isolate with the signing key           | One large Worker every product depends on             |
+| C. B plus a separate signer Worker                                         | An extra hop on every API call                | No gain while the edge runs product code; none once it does not           | One more Worker to deploy and rotate                  |
+| **D. A thin dispatcher plus app Workers in a dispatch namespace (chosen)** | One in-process dispatch; no extra network hop | Strong: the key holder runs no product code; apps are not routed publicly | One small platform Worker; perimeter as configuration |
+
+C is rejected: a separate signer adds a hop and buys no isolation once the dispatcher runs no product code.
+
+## Decision
+
+1. **Cloudflare configuration does everything that depends only on the request.** That covers:
+   - WAF managed and custom rules, and rate limiting rules;
+   - bot management and Turnstile;
+   - TLS and HSTS, cache rules, and transform and origin rules;
+   - Access for internal hosts;
+   - Cloudflare for SaaS custom hostnames.
+
+   Each is held as code and applied by Runway. Each can be managed through the Cloudflare API or Terraform (Sources). Our
+   code does only what needs our data:
+   - the host's tenant, product, surface, realm and region;
+   - the tenant's status;
+   - the release or canary to serve;
+   - the identity sent to the API.
+
+2. **The host lookup is KV first; custom-hostname metadata is an optimisation.**
+   - KV `host:<hostname>` (0437 decision 6) stays the source the dispatcher reads, with a short in-isolate cache
+     (0437 decision 7).
+   - Where the account has custom-hostname metadata, Runway writes `tenant`, `product`, `surface`, `realm` and
+     `region` into each custom hostname's `custom_metadata`, and the dispatcher reads `request.cf.hostMetadata` before
+     falling back to KV.
+   - That metadata is an Enterprise paid add-on and exists on custom hostnames only, not on a zone's own DNS records
+     (Sources). So it is an owner decision (Owner questions), and KV remains complete without it.
+
+3. **One platform dispatch Worker, with no product code.** In order, it:
+   1. resolves the host (decision 2); an unknown host gets a 404 page, never a default tenant;
+   2. gates on status: `suspended` gets a static notice and no API access, `setup` admits only the setup routes;
+   3. picks the app Worker's script name for the release or canary (decision 5);
+   4. strips every inbound identity header and mints the identity token (decision 6) for `/api/*`;
+   5. sets the security headers our data decides (the host's CSP from `@stackra/csp`, host-only cookies) and the
+      request id;
+   6. dispatches through Workers for Platforms dynamic dispatch, `env.<NAMESPACE>.get(script, props, options)`
+      (Sources).
+
+   It passes the resolved host context to the app Worker in `props`. App Workers in untrusted mode cannot read
+   `request.cf`, so they never re-resolve the host (Sources). It sets per-invocation `limits` (CPU time and
+   subrequests) on each dispatch, and an exceeded limit throws in the app Worker (Sources).
+
+4. **App Workers per product and surface, in a dispatch namespace.**
+   - **Shapes:** static-assets Workers for SPAs (console, operator, oversight, pitch); SSR Workers (Next.js through
+     OpenNext) for SEO surfaces (landing, help, tenant sites). This replaces 0437 decisions 2.5 and 2.6: shells and
+     landing pages are served by app Workers behind the dispatcher, not by the edge.
+   - **No secrets:** an app Worker holds no signing key and no identity secret.
+   - **Egress:** goes through an outbound Worker the dispatcher names. It sees only global `fetch()`; bindings (KV, R2,
+     Durable Objects, service bindings, Workers VPC, Hyperdrive) bypass it, and it turns off `connect()` (Sources).
+     So the bindings each app Worker gets are themselves part of the egress policy, reviewed per Worker.
+   - **No public route:** app Workers have none and are reached only through the dispatcher. The docs imply this
+     (all routing goes through the dispatch Worker) but never state it, so it is verified before go-live (Enforcement)
+     and asked of Cloudflare (Owner questions).
+
+5. **Releases are script names; Runway rolls out and rolls back.**
+   - Gradual deployments are not supported for user Workers in a dispatch namespace: each upload goes to 100% at once
+     (Sources). So an app Worker's release is a new script name, `<product>-<surface>@<version>`, uploaded beside the
+     current one.
+   - The dispatcher's `release:` and `canary:` pointers (0437 decision 6) choose which name serves which tenant or
+     share of traffic.
+   - A rollout is a pointer move; a rollback is the same move back.
+   - The dispatcher itself is an ordinary Worker and deploys with Cloudflare's gradual deployments.
+   - Cloudflare documents manual rollback only (Sources). Runway watches the error rate after each step and rolls back
+     automatically, for the dispatcher and for app releases. This replaces 0437 decision 9's "rolled back
+     automatically", which assumed a Cloudflare feature.
+   - Old script names are deleted only after the next release is promoted.
+
+6. **Identity to the API is a short-lived asymmetric token.** It replaces 0437 decision 4's HMAC.
+   - **Signing:** the dispatcher signs a JWT with ES256 (ECDSA P-256) or EdDSA (Ed25519). Both are supported by the
+     Workers Web Crypto API (Sources).
+   - **Claims:** tenant, product, surface, realm, the request id as `jti`, `aud` = the regional API, `iat`, and an
+     expiry of about 60 seconds (an OS setting). A hash of the method, path and body is bound in a claim, so a token
+     cannot be lifted onto another request.
+   - **Verifying:** APIs verify with a published key set (JWKS). They refuse a bad signature, a wrong `aud`, an expired
+     token and a `jti` seen inside the window; the shared nonce store of 0437's Enforcement still applies.
+   - **Keys:** only the dispatcher holds the private key. Rotation publishes the new public key first, then switches
+     signing, so no secret is shared with any API.
+   - **What stays:** the guard's rule from 0437's 2026-11-09 Note: a request carrying any identity header must verify,
+     and the dispatcher strips them all first.
+
+7. **The origin lock stays the first barrier (0437 decision 5).** A regional API is reachable only through Cloudflare,
+   one of two ways:
+   - **Workers VPC**, which reaches a private service through a Cloudflare Tunnel without a public endpoint and is in
+     beta today;
+   - **a Cloudflare Tunnel public hostname** behind Access with a service token or mTLS (Sources).
+
+   The token of decision 6 sits on top of the lock, never in place of it.
+
+8. **What stays from 0437:**
+   - the startup record is public data only (decision 3);
+   - KV is a copy, and the API is the enforcer (decision 7);
+   - the server-check order (decision 8);
+   - tenant custom domains on day 1 (decision 10);
+   - tenancy owns every host lookup (decision 11);
+   - the KSA launch gate (decision 12);
+   - Runway is the single writer of platform host rows and release pointers, and the projector of the rest.
+
+## Consequences
+
+- **The edge's own code shrinks** to host resolution, status, pointer choice, token minting and dispatch. WAF, rate
+  limits, bots and TLS become reviewed configuration, not code.
+- **The signing key is isolated:** a bug in any product's SSR or SPA Worker cannot reach it.
+- **Release work moves to Runway.** Canary percentages, automatic rollback and old-script cleanup are Runway's to build
+  for app Workers, because Cloudflare offers neither gradual deployment nor automatic rollback for them.
+- **The API team moves from HMAC to JWT.** `EdgeHeaderGuard`, `signEdgeRequest` and core's `workers/edge` change.
+  Publishing and rotating a JWKS replaces the two-key HMAC rotation.
+- **New costs:**
+  - Workers for Platforms is a separate paid plan, documented at $25 a month with included usage and overage (Sources).
+  - Custom-hostname metadata, rate limiting beyond the per-plan counts, and full Bot Management need Enterprise
+    contract items (Sources).
+  - Each is the owner's decision.
+- **Workers VPC is beta.** Choosing it accepts API changes before general availability; the Tunnel hostname is the
+  fallback.
+- **Academorix's option A becomes a migration.** Its app Workers move into the namespace and lose their public routes.
+
+## Enforcement
+
+All planned; nothing checks this yet.
+
+- planned — the dispatcher's suite:
+  - an unknown host gets 404;
+  - `suspended` and `setup` are gated;
+  - inbound identity headers are stripped;
+  - a canary pointer picks the canary script for its tenants only;
+  - `props` carry the resolved context;
+  - `limits` are set on every `get()`.
+- planned — a token round trip against the API guard:
+  - an expired token, a wrong `aud`, a replayed `jti` and a token moved onto another method, path or body are refused;
+  - a token signed by a retired key is refused once its JWKS entry is gone.
+- planned — a lint in `@stackra/repo-checks`: a member under the edge namespace declares no signing-key binding or
+  secret.
+- planned — a go-live probe: each app Worker's script name has no workers.dev address or route that answers, checked
+  from outside Cloudflare.
+- planned — Runway's rollout test: an error rate above the threshold after a step moves the pointer back, and the old
+  script is kept until promotion.
+- planned — the perimeter configuration is applied by Runway from code, and a drift check fails on a rule changed in
+  the dashboard.
+- planned — the regional origin refuses a connection that does not come through the tunnel or Workers VPC (0437's item,
+  kept).
+
+## Owner questions
+
+1. **Workers for Platforms:** buy the paid plan (documented at $25 a month, Sources), and confirm with Cloudflare
+   whether it needs Workers Paid or an Enterprise contract first. The docs do not say.
+2. **Custom-hostname metadata:** add the Enterprise paid add-on, or keep KV as the only host lookup. Without it,
+   decision 2's metadata path stays off and nothing else changes.
+3. **The private path to regional APIs:** Workers VPC (beta) or a Tunnel public hostname behind Access.
+4. **The isolation unit:** one app Worker per product and surface (proposed), per release, or per tenant. Per tenant
+   multiplies scripts and is what the Workers for Platforms pricing counts.
+5. **Confirm with Cloudflare** that a user Worker in a dispatch namespace cannot be reached except through the
+   dispatcher (decision 4).
+
+## Supersedes and sources
+
+`Supersedes: none` (amends 0437 by a Note).
+
+Sources:
+
+- the owner's question and option D, worked out with Selim (HoE), relayed 2026-11-25;
+- Academorix `apps/edge` and `docs/runbooks/edge.md`.
+
+Cloudflare docs, read 2026-11-25:
+
+- [Dynamic dispatch](https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/configuration/dynamic-dispatch/)
+  and [how Workers for Platforms works](https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/reference/how-workers-for-platforms-works/)
+- [Outbound Workers](https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/configuration/outbound-workers/)
+  (global `fetch()` only; bindings bypass it)
+- [Custom limits](https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/configuration/custom-limits/)
+- [Workers for Platforms limits](https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/reference/limits/)
+  (no gradual deployments for user Workers; no `request.cf` in untrusted mode)
+- [Workers for Platforms pricing](https://developers.cloudflare.com/cloudflare-for-platforms/workers-for-platforms/platform/pricing/)
+- [Custom metadata](https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/domain-support/custom-metadata/)
+  and [Cloudflare for SaaS plans](https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/plans/)
+- [Gradual deployments](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/gradual-deployments/)
+  and [rollbacks](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/)
+- [Workers VPC](https://developers.cloudflare.com/workers-vpc/) (beta)
+- [Web Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/) (ECDSA P-256, Ed25519)
+- [WAF custom rules](https://developers.cloudflare.com/waf/custom-rules/),
+  [rate limiting rules](https://developers.cloudflare.com/waf/rate-limiting-rules/),
+  [Bot Management plans](https://developers.cloudflare.com/bots/plans/bm-subscription/),
+  [Zero Trust API and Terraform](https://developers.cloudflare.com/cloudflare-one/api-terraform/) and
+  [Terraform additional configurations](https://developers.cloudflare.com/terraform/additional-configurations/)

@@ -12,6 +12,17 @@ description: "Proposed · 2026-10-26"
   member root of [0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker).
 </Note>
 
+<Note>
+  2026-11-25: [0538](/adr/0538-the-edge-as-a-thin-dispatcher) (Proposed, STA-2793) proposes amending
+  this page: - Decisions 2.5 and 2.6 move behind a thin dispatcher into app Workers in a Workers for
+  Platforms dispatch namespace. - Decision 2.7's request-only checks (rate limits, bot checks, HSTS)
+  become Cloudflare configuration applied by Runway. - Decision 4's HMAC becomes a short-lived
+  asymmetric token verified with a published key set. - Decision 9's automatic rollback becomes
+  Runway's: Cloudflare documents manual rollback only, and no gradual deployments for user Workers.
+  - The host lookup may read custom-hostname metadata before KV. Until 0538 is Accepted, this page
+  stands as written.
+</Note>
+
 ## Context
 
 With one deployed shell per surface ([0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells)),

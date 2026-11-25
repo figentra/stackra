@@ -1630,3 +1630,8 @@
   status: accepted
   owner: claude
   issue: STA-2115
+"0538":
+  slug: the-edge-as-a-thin-dispatcher
+  status: proposed
+  owner: claude
+  issue: STA-2793
